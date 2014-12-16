@@ -162,14 +162,6 @@ struct prop
   struct prop *next;
   };
 
-/* this struct is only used while the job is being created. */
-typedef struct job_reservation_info
-  {
-  int                          node_id;
-  int                          port;
-  execution_slot_tracker       est;
-  } job_reservation_info;
-
 struct jobinfo
   {
   int internal_job_id;

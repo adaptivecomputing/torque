@@ -95,7 +95,6 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_HEAD(pj->ji_rejectdest);
   pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;

@@ -3537,24 +3537,25 @@ int node_satisfies_request(
  * @param pnode - node to reserve
  * @param pjob - the job to be added to the node
  * @param hlistptr - a pointer to the host list 
+ * @param node_info - where to save the job reservation information
  */
 
-job_reservation_info *reserve_node(
+int reserve_node(
 
-  struct pbsnode                      *pnode,     /* I/O */
-  job                                 *pjob,      /* I */
-  char                                *ProcBMStr) /* I */
+  struct pbsnode       *pnode,     /* I/O */
+  job                  *pjob,      /* I */
+  char                 *ProcBMStr, /* I */
+  job_reservation_info &node_info) /* O */
 
   {
   if ((pnode == NULL) ||
       (pjob == NULL)  ||
       (ProcBMStr == NULL))
     {
-    return(NULL);
+    return(PBSE_BAD_PARAMETER);
     }
 
   int                   BMIndex = strlen(ProcBMStr) - 1;
-  job_reservation_info *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
   /* now reserve each node */
   for (int i = 0; i < pnode->nd_slots.get_total_execution_slots() && BMIndex >= 0; i++)
@@ -3563,27 +3564,26 @@ job_reservation_info *reserve_node(
     if (ProcBMStr[BMIndex--] != '1')
       continue;
 
-    pnode->nd_slots.reserve_execution_slot(i, node_info->est);
+    pnode->nd_slots.reserve_execution_slot(i, node_info.est);
     }
 
   if (BMIndex >= 0)
     {
     /* failure */
-    free(node_info);
-    return(NULL);
+    return(-1);
     }
     
   job_usage_info jui(pjob->ji_internal_id);
     
-  jui.est = node_info->est;
-  node_info->node_id = pnode->nd_id;
-  node_info->port = pnode->nd_mom_rm_port;
+  jui.est = node_info.est;
+  node_info.node_id = pnode->nd_id;
+  node_info.port = pnode->nd_mom_rm_port;
   pnode->nd_job_usages.push_back(jui);
     
   /* mark the node as exclusive */
   pnode->nd_state = INUSE_JOB;
 
-  return(node_info);
+  return(PBSE_NONE);
   }
 #endif /* GEOMETRY_REQUESTS */
 
@@ -4032,44 +4032,45 @@ int place_mics_in_hostlist(
  * as necessary
  */
 
-job_reservation_info *place_subnodes_in_hostlist(
+int place_subnodes_in_hostlist(
 
-  job                *pjob,
-  struct pbsnode     *pnode,
-  node_job_add_info  *naji,
-  char               *ProcBMStr)
+  job                  *pjob,
+  struct pbsnode       *pnode,
+  node_job_add_info    *naji,
+  job_reservation_info &node_info,
+  char                 *ProcBMStr)
 
   {
+  int rc = PBSE_NONE;
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    job_reservation_info *node_info = reserve_node(pnode, pjob, ProcBMStr);
+    rc = reserve_node(pnode, pjob, ProcBMStr);
 
-    if (node_info != NULL)
+    if (rc == PBSE_NONE)
       {
       // nodes are used exclusively for GEOMETRY_REQUESTS
       pnode->nd_np_to_be_used = 0;
       naji->ppn_needed = 0;
       }
 
-    return(node_info);
+    return(rc);
     }
 
 #endif
-  job_reservation_info   *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
 
-  if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info->est) == PBSE_NONE)
+  if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info.est) == PBSE_NONE)
     {
     /* SUCCESS */
     pnode->nd_np_to_be_used -= naji->ppn_needed;
     naji->ppn_needed = 0;
 
-    node_info->port = pnode->nd_mom_rm_port;
+    node_info.port = pnode->nd_mom_rm_port;
     
     job_usage_info jui(pjob->ji_internal_id);
-    jui.est = node_info->est;
+    jui.est = node_info.est;
     
-    node_info->node_id = pnode->nd_id;
+    node_info.node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
 
     bool job_exclusive_on_use = false;
@@ -4084,11 +4085,10 @@ job_reservation_info *place_subnodes_in_hostlist(
     }
   else
     {
-    free(node_info);
-    node_info = NULL;
+    rc = -1;
     }
 
-  return(node_info);
+  return(rc);
   } /* END place_subnodes_in_hostlist() */
 
 
@@ -4274,17 +4274,17 @@ void populate_range_string_from_slot_tracker(
 
 int translate_job_reservation_info_to_string(
     
-  std::vector<job_reservation_info *>  &host_info, 
-  int                                  *NCount, 
-  std::string                          &exec_host_output,
-  std::stringstream                    *exec_port_output)
+  std::vector<job_reservation_info>  &host_info, 
+  int                                *NCount, 
+  std::string                        &exec_host_output,
+  std::stringstream                  *exec_port_output)
 
   {
   bool              first = true;
 
   for (int hi_index = 0; hi_index < (int)host_info.size(); hi_index++)
     {
-    job_reservation_info *jri = host_info[hi_index];
+    const job_reservation_info &jri = host_info[hi_index];
     std::string           range_str;
     
     (*NCount)++;
@@ -4297,16 +4297,16 @@ int translate_job_reservation_info_to_string(
         *exec_port_output << "+";
       }
 
-    populate_range_string_from_slot_tracker(jri->est, range_str);
+    populate_range_string_from_slot_tracker(jri.est, range_str);
     
-    const char *node_id = node_mapper.get_name(jri->node_id);
+    const char *node_id = node_mapper.get_name(jri.node_id);
 
     exec_host_output += node_id;
     exec_host_output += "/";
     exec_host_output  += range_str;
 
     if (exec_port_output != NULL)
-      *exec_port_output << jri->port;
+      *exec_port_output << jri.port;
 
     first = false;
     } /* END for each job_reservation_info * in the vector */
@@ -4385,15 +4385,15 @@ int record_external_node(
 
 int build_hostlist_nodes_req(
 
-  job                                  *pjob,      /* M */
-  char                                 *EMsg,      /* O */
-  char                                 *spec,      /* I */
-  short                                 newstate,  /* I */
-  std::vector<job_reservation_info *>  &host_info, /* O */
-  struct howl                         **gpu_list,  /* O */
-  struct howl                         **mic_list,  /* O */ 
-  node_job_add_info                    *naji,      /* I - freed */
-  char                                 *ProcBMStr) /* I */
+  job                                *pjob,      /* M */
+  char                               *EMsg,      /* O */
+  char                               *spec,      /* I */
+  short                               newstate,  /* I */
+  std::vector<job_reservation_info>  &host_info, /* O */
+  struct howl                       **gpu_list,  /* O */
+  struct howl                       **mic_list,  /* O */ 
+  node_job_add_info                  *naji,      /* I - freed */
+  char                               *ProcBMStr) /* I */
 
   {
   struct pbsnode    *pnode = NULL;
@@ -4417,9 +4417,8 @@ int build_hostlist_nodes_req(
         }
       else
         {
-        job_reservation_info *host_single = place_subnodes_in_hostlist(pjob, pnode, current, ProcBMStr);
-
-        if (host_single != NULL)
+        job_reservation_info host_single;
+        if (place_subnodes_in_hostlist(pjob, pnode, current, host_single, ProcBMStr) == PBSE_NONE)
           {
           host_info.push_back(host_single);
           place_gpus_in_hostlist(pnode, pjob, current, gpu_list);
@@ -4478,10 +4477,10 @@ int build_hostlist_nodes_req(
 
 int build_hostlist_procs_req(
 
-  job                                 *pjob,     /* M */
-  int                                  procs,    /* I */
-  short                                newstate, /* I */
-  std::vector<job_reservation_info *> &host_info) /* O */
+  job                               *pjob,     /* M */
+  int                                procs,    /* I */
+  short                              newstate, /* I */
+  std::vector<job_reservation_info> &host_info) /* O */
 
   {
   int             procs_needed;
@@ -4519,16 +4518,14 @@ int build_hostlist_procs_req(
 
       if (execution_slots_free > 0)
         {
-        job_reservation_info   *node_info = (job_reservation_info *)calloc(1, sizeof(job_reservation_info));
-        if (pnode->nd_slots.reserve_execution_slots(execution_slots_free, node_info->est) == PBSE_NONE)
+        job_reservation_info node_info;
+        if (pnode->nd_slots.reserve_execution_slots(execution_slots_free, node_info.est) == PBSE_NONE)
           {
           procs_needed -= execution_slots_free;
 
           host_info.push_back(node_info);
-          node_info->port = pnode->nd_mom_rm_port;
+          node_info.port = pnode->nd_mom_rm_port;
           }
-        else
-          free(node_info);
         }
       } /* END for each node */
     } /* if (procs > 0) */
@@ -4600,22 +4597,6 @@ int add_multi_reqs_to_job(
 
 
 
-int free_hostinfo(
-
-  std::vector<job_reservation_info *>  &host_info) /* O */
-
-  {
-  for (unsigned int i = 0; i < host_info.size(); i++)
-    {
-    job_reservation_info *host_single = host_info[i];
-
-    if (host_single != NULL)
-      free(host_single);
-    }
-  return(PBSE_NONE);
-  }
-
-
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -4634,9 +4615,9 @@ int set_nodes(
 
   {
   FUNCTION_TIMER
-  std::vector<job_reservation_info *> host_info;
-  std::string                         exec_hosts;
-  std::stringstream                   exec_ports;
+  std::vector<job_reservation_info> host_info;
+  std::string                       exec_hosts;
+  std::stringstream                 exec_ports;
   struct howl       *gpu_list = NULL;
   struct howl       *mic_list = NULL;
 
@@ -4760,7 +4741,6 @@ int set_nodes(
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
-    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4768,7 +4748,6 @@ int set_nodes(
     {
     free_nodes(pjob);
     free_alps_req_data_array(ard_array, num_reqs);
-    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4787,7 +4766,6 @@ int set_nodes(
     
     free_alps_req_data_array(ard_array, num_reqs);
 
-    free_hostinfo(host_info);
     return(PBSE_RESCUNAV);
     }  /* END if (host_info.size() == 0) */
 
@@ -4798,7 +4776,6 @@ int set_nodes(
   if (rc != PBSE_NONE)
     {
     free_alps_req_data_array(ard_array, num_reqs);
-    free_hostinfo(host_info);
     return(rc);
     }
 
@@ -4826,7 +4803,6 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
       {
-      free_hostinfo(host_info);
       return(rc);
       }
 
@@ -4848,7 +4824,6 @@ int set_nodes(
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
       free_alps_req_data_array(ard_array, num_reqs);
-      free_hostinfo(host_info);
       return(rc);
       }
 
@@ -4898,7 +4873,6 @@ int set_nodes(
 
   add_multi_reqs_to_job(pjob, num_reqs, ard_array);
   free_alps_req_data_array(ard_array, num_reqs);
-  free_hostinfo(host_info);
 
   /* SUCCESS */
 

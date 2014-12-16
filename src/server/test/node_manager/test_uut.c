@@ -28,8 +28,8 @@ void process_job_attribute_information(std::string &job_id, std::string &attribu
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
-int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
-extern job_reservation_info *place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info *naji, char *ProcBMStr);
+int  translate_job_reservation_info_to_string(std::vector<job_reservation_info> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
+int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info *naji, job_reservation_info &jri, char *ProcBMStr);
 int initialize_alps_req_data(alps_req_data **, int num_reqs);
 void free_alps_req_data_array(alps_req_data *, int num_reqs);
 void record_fitting_node(int &num, struct pbsnode *pnode, node_job_add_info *naji, single_spec_data *req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data *all_reqs, alps_req_data **ard_array);
@@ -159,7 +159,7 @@ END_TEST
 
 START_TEST(translate_job_reservation_info_to_stirng_test)
   {
-  std::vector<job_reservation_info *> host_info;
+  std::vector<job_reservation_info> host_info;
   job_reservation_info jri[5];
   std::string          exec_host;
   std::stringstream    exec_port;
@@ -178,7 +178,7 @@ START_TEST(translate_job_reservation_info_to_stirng_test)
     jri[i].port = 15002;
     jri[i].node_id = i;
 
-    host_info.push_back(jri + i);
+    host_info.push_back(jri[i]);
     }
 
   int count = 0;
@@ -655,9 +655,10 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
-  job_reservation_info *jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
+  job_reservation_info jri;
+  int rc =  place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
 
-  fail_unless((jri != NULL), "Call to place_subnodes_in_hostlit failed");
+  fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
 
   /* turn job_exclusive_on_use off and reset the node state */
@@ -665,8 +666,9 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
   pnode->nd_state = 0;
 
-  jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
-  fail_unless((jri != NULL), "2nd call to place_subnodes_in_hostlit failed");
+  job_reservation_info jri2;
+  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri2, buf);
+  fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
 
   /* test case when the attribute SVR_ATR_JobExclusiveOnUse was never set */
@@ -674,8 +676,9 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
   pnode->nd_state = 0;
 
-  jri = place_subnodes_in_hostlist(&pjob, pnode, naji, buf);
-  fail_unless((jri != NULL), "3rd call to place_subnodes_in_hostlit failed");
+  job_reservation_info jri3;
+  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri3, buf);
+  fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
   }
 END_TEST

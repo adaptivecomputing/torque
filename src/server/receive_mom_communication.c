@@ -386,7 +386,7 @@ void *svr_is_request(
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)
     {
-    char *name = get_cached_nameinfo(&addr);
+    const char *name = get_cached_nameinfo(&addr);
 
     if (name != NULL)
       snprintf(nodename, sizeof(nodename), "%s", name);
