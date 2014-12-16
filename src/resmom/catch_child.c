@@ -39,6 +39,7 @@
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
+#include "cray_energy.h"
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -1189,6 +1190,8 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
+  get_energy_used(pjob);
+
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
   encode_flagged_attrs(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
@@ -1322,7 +1325,7 @@ void preobit_preparation(
  * This function is a message handler that is hooked to a server connection.
  * The connection is established in post_epilogue().
  *
- * A socket connection to the server is opened, a job obiturary notice
+ * A socket connection to the server is opened, a job obituary notice
  * message is sent to the server, and then at some later time, the server
  * sends back a reply and we end up here.
  *
@@ -2058,6 +2061,7 @@ int send_job_obit_to_ms(
   u_long       cput = resc_used(pjob, "cput", gettime);
   u_long       mem = resc_used(pjob, "mem", getsize);
   u_long       vmem = resc_used(pjob, "vmem", getsize);
+  u_long       joules = resc_used(pjob, "energy_used", gettime);
   int          command;
   tm_event_t   event;
   hnodent     *np;
@@ -2108,16 +2112,16 @@ int send_job_obit_to_ms(
             if ((rc = diswul(chan, vmem)) == DIS_SUCCESS)
               {
               if (mom_radix >= 2)
-                {
                 rc = diswsi(chan, pjob->ji_nodeid);
-                }
-              
+              if (rc == DIS_SUCCESS)
+                rc = diswul(chan, joules);
+
               if (rc == DIS_SUCCESS)
                 rc = DIS_tcp_wflush(chan);
 
               if (rc == DIS_SUCCESS)
                 {
-                /* Don't wait for a reply from Mother Superior since this could lead to a 
+                /* Don't wait for a reply from Mother Superior since this could lead to a
                    live lock. That is Mother Superior is waiting for a read from us and
                    we are waiting on this read */
                 /* SUCCESS - no more retries needed */

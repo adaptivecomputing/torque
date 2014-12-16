@@ -14,6 +14,7 @@ int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
+void job_free(job *pj, int  use_recycle);
 
 char buf[4096];
 

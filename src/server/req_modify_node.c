@@ -236,7 +236,7 @@ int mgr_modify_node(
           break;
         case ND_ATR_ttl:
           {
-          strcpy((char *)((*ppnode)->nd_ttl),pnew->at_val.at_str);
+          snprintf((*ppnode)->nd_ttl, sizeof((*ppnode)->nd_ttl), "%s", pnew->at_val.at_str);
           rc = PBSE_NONE;
           }
           break;

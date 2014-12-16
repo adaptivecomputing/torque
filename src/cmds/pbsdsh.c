@@ -16,6 +16,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -44,14 +45,16 @@ struct tm_errcode
   } tm_errcode[] =
 
   {
-    { TM_ESYSTEM, "TM_ESYSTEM" },
-  { TM_ENOEVENT, "TM_ENOEVENT" },
-  { TM_ENOTCONNECTED, "TM_ENOTCONNECTED" },
-  { TM_EUNKNOWNCMD, "TM_EUNKNOWNCMD" },
+  { TM_ESYSTEM,         "TM_ESYSTEM" },
+  { TM_ENOEVENT,        "TM_ENOEVENT" },
+  { TM_ENOTCONNECTED,   "TM_ENOTCONNECTED" },
+  { TM_EUNKNOWNCMD,     "TM_EUNKNOWNCMD" },
   { TM_ENOTIMPLEMENTED, "TM_ENOTIMPLEMENTED" },
   { TM_EBADENVIRONMENT, "TM_EBADENVIRONMENT" },
-  { TM_ENOTFOUND, "TM_ENOTFOUND" },
-  { 0,  "?" }
+  { TM_ENOTFOUND,       "TM_ENOTFOUND" },
+  { TM_BADINIT,         "TM_BADINIT" },
+  { TM_EPERM,           "TM_EPERM" },
+  { 0,                  "?" }
   };
 
 int            *ev;
@@ -59,14 +62,16 @@ tm_event_t     *events_spawn;
 tm_event_t     *events_obit;
 int             numnodes;
 tm_task_id     *tid;
-int             verbose = 0;
+bool            verbose = FALSE;
 sigset_t        allsigs;
 char           *id;
 struct tm_roots rootrot;
 
 int stdoutfd, stdoutport;
-fd_set permrfsd;
-int grabstdio = 0;
+int stderrfd, stderrport;
+bool grabstdoe = FALSE;
+
+int listener_handler_pid = -1;
 
 
 const char *get_ecname(
@@ -159,8 +164,7 @@ int obit_submit(
  * spawned and initial OBIT requests have been made.
  */
 
-void
-mom_reconnect(void)
+void mom_reconnect(void)
 
   {
   int c, rc;
@@ -213,115 +217,6 @@ mom_reconnect(void)
   }  /* END mom_reconnect() */
 
 
-void
-getstdout(void)
-  {
-
-  struct timeval tv =
-    {
-    0, 10000
-    };
-
-  fd_set rfsd;
-  int newfd, i;
-  char buf[1024];
-  ssize_t bytes;
-  int ret;
-  static int maxfd = -1;
-  int flags;
-
-  if (maxfd == -1)
-    {
-    if (stdoutfd > *tm_conn)
-      maxfd = stdoutfd;
-    else
-      maxfd = *tm_conn;
-    }
-
-  rfsd = permrfsd;
-
-  if (maxfd < (int)FD_SETSIZE)
-    FD_SET(stdoutfd, &rfsd);
-
-  FD_SET(*tm_conn, &permrfsd);
-
-  if ((ret = select(maxfd + 1, &rfsd, NULL, NULL, &tv)) > 0)
-    {
-    if (FD_ISSET(*tm_conn, &rfsd))
-      {
-      return;
-      }
-
-    if (FD_ISSET(stdoutfd, &rfsd))
-      {
-      newfd = accept(stdoutfd, NULL, NULL);
-
-      if (newfd > maxfd)
-        maxfd = newfd;
-
-      flags = fcntl(newfd, F_GETFL);
-
-#if defined(FNDELAY) && !defined(__hpux)
-      flags |= FNDELAY;
-
-#else
-      flags |= O_NONBLOCK;
-
-#endif
-      fcntl(newfd, F_SETFL, flags);
-
-      FD_SET(newfd, &permrfsd);
-
-      FD_CLR(stdoutfd, &rfsd);
-
-      ret--;
-      }
-
-    if (ret)
-      {
-      for (i = 0; i <= maxfd; i++)
-        {
-        if (FD_ISSET(i, &rfsd))
-          {
-          if ((bytes = read_ac_socket(i, &buf, 1023)) > 0)
-            {
-            buf[bytes] = '\0';
-            fprintf(stdout, "%s", buf);
-            }
-          else if (bytes == 0)
-            {
-            FD_CLR(i, &permrfsd);
-            close(i);
-
-            if (i == maxfd)
-              {
-              int j;
-              maxfd = stdoutfd;
-
-              for (j = 0; j < i; j++)
-                if (FD_ISSET(j, &permrfsd))
-                  if (j > maxfd)
-                    maxfd = j;
-              }
-            }
-          else
-            {
-            fprintf(stderr, "%s: error in read\n", id);
-            }
-
-          ret--;
-
-          if (ret <= 0)
-            break;
-          }
-        }
-      }
-    }
-  }
-
-
-
-
 /*
  * wait_for_task - wait for all spawned tasks to
  * a. have the spawn acknowledged, and
@@ -330,7 +225,7 @@ getstdout(void)
 
 int wait_for_task(
 
-  int *nspawned) /* number of tasks spawned */
+  int &nspawned) /* number of tasks spawned */
 
   {
   int     c;
@@ -339,11 +234,9 @@ int wait_for_task(
   int     rc;
   int     tm_errno;
 
-  while (*nspawned || nobits)
+  while (nspawned || nobits)
     {
-    if (grabstdio)
-      getstdout();
-
+    /* if this process was interrupted, kill the tasks */
     if (fire_phasers)
       {
       tm_event_t event;
@@ -363,12 +256,17 @@ int wait_for_task(
 
       tm_finalize();
 
+      // kill listener handler if it has been setup
+      if (listener_handler_pid != -1)
+        kill(listener_handler_pid, SIGKILL);
+
       exit(1);
       }
 
     sigprocmask(SIG_UNBLOCK, &allsigs, NULL);
 
-    rc = tm_poll(TM_NULL_EVENT, &eventpolled, !grabstdio, &tm_errno);
+    // wait for an event to complete
+    rc = tm_poll(TM_NULL_EVENT, &eventpolled, 1, &tm_errno);
 
     sigprocmask(SIG_BLOCK, &allsigs, NULL);
 
@@ -402,11 +300,11 @@ int wait_for_task(
           fprintf(stderr, "%s: spawn event returned: %d (%d spawns and %d obits outstanding)\n",
                   id,
                   c,
-                  *nspawned,
+                  nspawned,
                   nobits);
           }
 
-        (*nspawned)--;
+        nspawned--;
 
         if (tm_errno)
           {
@@ -462,7 +360,7 @@ int wait_for_task(
           fprintf(stderr, "%s: obit event returned: %d (%d spawns and %d obits outstanding)\n",
                   id,
                   c,
-                  *nspawned,
+                  nspawned,
                   nobits);
           }
 
@@ -472,7 +370,7 @@ int wait_for_task(
 
         *(events_obit + c) = TM_NULL_EVENT;
 
-        if ((verbose != 0) || (*(ev + c) != 0))
+        if (verbose || (*(ev + c) != 0))
           {
           fprintf(stderr, "%s: task %d exit status %d\n",
                   id,
@@ -483,111 +381,57 @@ int wait_for_task(
       }
     }
 
-  return PBSE_NONE;
+  return(PBSE_NONE);
   }  /* END wait_for_task() */
 
 
+/*
+ * gethostnames_from_nodefile
+ *
+ * Populates allnodes which is a character array of hostnames (basically numnodes * PBS_MAXHOSTNAME)
+ *
+ * @param allnodes - the list to populate with each hostname
+ * @param nodefile - the path to the $PBS_NODEFILE
+ * @return i - the total number of hosts read from $PBS_NODEFILE
+ */
 
-
-/* ask TM for all node resc descriptions and parse the output
- * for hostnames */
-
-char *gethostnames(
-
-  tm_node_id *nodelist)
-
+int gethostnames_from_nodefile(char **allnodes, char *nodefile)
   {
-  char *allnodes;
-  char *rescinfo;
-  tm_event_t *rescevent;
-  tm_event_t resultevent;
-  char *hoststart;
-  int rc, tm_errno, i, j;
+  FILE *fp;
+  char  hostname[PBS_MAXNODENAME+2];
+  int   i = 0;
 
-  allnodes = (char *)calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
-  rescinfo = (char *)calloc(numnodes, RESCSTRLEN + 1 + sizeof(char));
-  rescevent = (tm_event_t*)calloc(numnodes, sizeof(tm_event_t));
+  /* initialize the allnodes character array */
+  *allnodes = (char *)calloc(numnodes, PBS_MAXNODENAME + 1 + sizeof(char));
 
-  if (!allnodes || !rescinfo || !rescevent)
+  if ((fp = fopen(nodefile, "r")) == NULL)
     {
-    fprintf(stderr, "%s: calloc failed!\n",
-      id);
-    tm_finalize();
+    fprintf(stderr, "failed to open %s\n", nodefile);
 
     exit(1);
     }
 
-  /* submit resource requests */
-
-  for (i = 0;i < numnodes;i++)
+  /* read hostnames from $PBS_NODEFILE (one hostname per line) */
+  while ((fgets(hostname, PBS_MAXNODENAME + 2, fp) != NULL) && (i < numnodes))
     {
-    if (tm_rescinfo(
-          nodelist[i],
-          rescinfo + (i*RESCSTRLEN),
-          RESCSTRLEN - 1,
-          rescevent + i) != TM_SUCCESS)
-      {
-      fprintf(stderr, "%s: error from tm_rescinfo()\n", id);
+    char *p;
 
-      tm_finalize();
+    /* drop the trailing newline */
+    if ((p = strchr(hostname, '\n')) != NULL)
+      *p = '\0';
 
-      exit(1);
-      }
+    /* copy onto the character array */
+    strncpy(*allnodes + (i * PBS_MAXNODENAME), hostname, PBS_MAXNODENAME);
+
+    i++;
     }
 
-  /* read back resource requests */
+  fclose(fp);
 
-  for (j = 0, i = 0; i < numnodes; i++)
-    {
-    rc = tm_poll(TM_NULL_EVENT, &resultevent, 1, &tm_errno);
-
-    if ((rc != TM_SUCCESS) || (tm_errno != TM_SUCCESS))
-      {
-      fprintf(stderr, "%s: error from tm_poll() %d\n",
-        id,
-        rc);
-
-      tm_finalize();
-
-      exit(1);
-      }
-
-    for (j = 0; j < numnodes; j++)
-      {
-      if (*(rescevent + j) == resultevent)
-        break;
-      }
-
-    if (j == numnodes)
-      {
-      fprintf(stderr, "%s: unknown resource result\n", id);
-      tm_finalize();
-      exit(1);
-      }
-
-    if (verbose)
-      fprintf(stderr, "%s: rescinfo from %d: %s\n", id, j, rescinfo + (j*RESCSTRLEN));
-
-    strtok(rescinfo + (j*RESCSTRLEN), " ");
-
-    hoststart = strtok(NULL, " ");
-
-    if (hoststart == NULL)
-      {
-      fprintf(stderr, "%s: can't find a hostname in resource result\n", id);
-      tm_finalize();
-      exit(1);
-      }
-
-    strcpy(allnodes + (j*PBS_MAXNODENAME), hoststart);
-    }
-
-  free(rescinfo);
-
-  free(rescevent);
-
-  return(allnodes);
+  /* return count of hostnames read */
+  return(i);
   }
+
 
 /* return a vnode number matching targethost */
 int findtargethost(char *allnodes, char *targethost)
@@ -616,7 +460,7 @@ int findtargethost(char *allnodes, char *targethost)
       {
       /* Sometimes the allnodes will return the FQDN of the host
        and the PBS_NODEFILE will have the short name of the host.
-       See if the shortname mataches */
+       See if the shortname matches */
       std::string targetname(targethost);
       std::string the_host(allnodes + (i*PBS_MAXNODENAME));
       std::size_t dot = the_host.find_first_of(".");
@@ -669,7 +513,123 @@ int uniquehostlist(tm_node_id *nodelist, char *allnodes)
   return(hole);
   }
 
-static int build_listener(
+/**
+ * Fork process to read from fd, which is assumed to be
+ * ready to read. If isstdoutfd is true, fd has the
+ * remote tasks' stdout, otherwise fd has the
+ * remote tasks' stderr. Put the remote tasks' stdout and/or stderr
+ * onto the appropriate output stream for pbsdsh.
+ *
+ * @see fork_listener_handler() - parent
+ * @param fd file descriptor ready for reading
+ * @param isstdoutfd true if fd is a stdout one, else stderr one
+ */
+
+int fork_read_handler(
+
+  int  fd,
+  bool isstdoutfd)
+
+  {
+  int  pid;
+  int  bytes;
+  char buf[1024];
+
+  // check if this is the parent or if there was an error
+  if ((pid = fork()) != 0)
+    {
+    // parent
+
+    // return pid or -1 if failure 
+    return(pid);
+    }
+
+  // child
+
+  // keep reading from accepted connection
+  while ((bytes = read_blocking_socket(fd, (void *)buf, (ssize_t)(sizeof(buf)-1))) > 0)
+    {
+    // terminate the buf string and output to appropriate stream
+    buf[bytes] = '\0';
+    fprintf(isstdoutfd ? stdout : stderr, "%s", buf);
+    }
+
+  // done reading so close the socket and exit
+
+  close(fd);
+
+  exit(EXIT_SUCCESS);
+  }
+
+/**
+ * Wait for activity on stdoutfd and stderrfd (the listening sockets of expected stdout and stderr
+ * of the spawned tasks) and dispatch handler for each as needed. Parent
+ * returns pid of created child. Child continues to run until killed by caller.
+ *
+ * Note: stdoutfd and stderrfd area assumed to be non-blocking sockets.
+ *
+ * @see main() - parent
+ * @see fork_read_handler() - child
+ * @param stdoutfd stdout file descriptor
+ * @param stderrfd stderr file descriptor
+ */
+
+int fork_listener_handler(
+
+  int stdoutfd,
+  int stderrfd)
+
+  {
+  int            pid;
+  int            rfd;
+  siginfo_t      info;
+
+  // check if this is the parent or if there was an error
+  if ((pid = fork()) != 0)
+    {
+    // parent
+
+    // return pid or -1 if failure 
+    return(pid);
+    }
+
+  // child
+
+  // even though this is a daemon, do not close stdout and stderr since they must be left
+  // open (needed in fork_read_handler())
+
+  // keep watching the stdout/stderr fds
+  //  note that they are non-blocking so accept() should not block
+  while(TRUE)
+    {
+    // see if stdoutfd is ready
+    if ((rfd = accept(stdoutfd, NULL, NULL)) != -1)
+      fork_read_handler(rfd, TRUE);
+
+    // see if stderrfd is ready
+    if ((rfd = accept(stderrfd, NULL, NULL)) != -1)
+      fork_read_handler(rfd, FALSE);
+
+    // give any exiting read handlers attention so that they can actually exit
+    waitid(P_ALL, 0, &info, WEXITED|WNOHANG);
+
+    // sleep for just a short bit
+    usleep(10000);
+    }
+
+    // should never get here
+    exit(EXIT_FAILURE);
+  }
+
+/**
+ * Create listening socket. Return port number in *port.
+ *
+ * @see main() - parent
+ * @param *port port number assigned
+ * @return listening non-blocking socket file descriptor
+ */
+
+int build_listener(
 
   int *port)
 
@@ -679,25 +639,42 @@ static int build_listener(
   struct sockaddr_in addr;
   torque_socklen_t len = sizeof(addr);
 
+  // create the socket
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    fprintf(stderr, "%s: socket", id);
+    {
+    return(-1);
+    }
   else
     {
+    int flags;
+
+    flags = fcntl(s, F_GETFL);
+    flags |= O_NONBLOCK;
+    if (fcntl(s, F_SETFL, flags) < 0)
+      {
+      close(s);
+      return(-1);
+      }
+
     if (listen(s, 1024) < 0)
-      fprintf(stderr, "%s: listen", id);
+      {
+      close(s);
+      return(-1);
+      }
     else
       {
+      // get the port of the new socket
       if (getsockname(s, (struct sockaddr *)&addr, &len) < 0)
         {
-        fprintf(stderr, "%s: getsockname", 
-          id);
+        close(s);
+        return(-1);
         }
       else
         *port = ntohs(addr.sin_port);
       }
     }
 
-
+  // return the socket fd
   return (s);
   }
 
@@ -711,7 +688,7 @@ int main(
 
   {
   int c;
-  int err = 0;
+  bool err = FALSE;
   int ncopies = -1;
   int onenode = -1;
   int rc;
@@ -720,9 +697,9 @@ int main(
   tm_node_id *nodelist = NULL;
   int start;
   int stop;
-  int sync = 0;
+  bool sync = FALSE;
 
-  int pernode = 0;
+  bool pernode = FALSE;
   char *targethost = NULL;
   char *allnodes;
 
@@ -775,7 +752,7 @@ int main(
 
         if (ncopies <= 0)
           {
-          err = 1;
+          err = TRUE;
           }
 
         break;
@@ -792,45 +769,47 @@ int main(
 
         if (onenode < 0)
           {
-          err = 1;
+          err = TRUE;
           }
 
         break;
 
       case 'o':
 
-        grabstdio = 1;
+        // redirect tasks' stdout and stderr to this proc's stdout and sterr streams
+        // instead of job's streams
+        grabstdoe = TRUE;
 
         break;
 
       case 's':
 
-        sync = 1; /* force synchronous spawns */
+        sync = TRUE; /* force synchronous spawns */
 
         break;
 
       case 'u':
 
-        pernode = 1; /* run once per node (unique hostnames) */
+        pernode = TRUE; /* run once per node (unique hostnames) */
 
         break;
 
       case 'v':
 
-        verbose = 1; /* turn on verbose output */
+        verbose = TRUE; /* turn on verbose output */
 
         break;
 
       default:
 
-        err = 1;
+        err = TRUE;
 
         break;
       }  /* END switch (c) */
 
     }    /* END while ((c = getopt()) != EOF) */
 
-  if ((err != 0) || ((onenode >= 0) && (ncopies >= 1)))
+  if (err || ((onenode >= 0) && (ncopies >= 1)))
     {
     fprintf(stderr, "Usage: %s [-c copies][-o][-s][-u][-v] program [args]...]\n",
       argv[0]);
@@ -843,7 +822,8 @@ int main(
 
     fprintf(stderr, "Where -c copies =  run  copy of \"args\" on the first \"copies\" nodes,\n");
     fprintf(stderr, "      -n nodenumber = run a copy of \"args\" on the \"nodenumber\"-th node,\n");
-    fprintf(stderr, "      -o = capture stdout of processes,\n");
+    fprintf(stderr, "      -o = direct tasks' stdout and stderr to the corresponding streams of pbsdsh\n");
+    fprintf(stderr, "           Otherwise, tasks' stdout and/or stderr go to the job,\n");
     fprintf(stderr, "      -s = forces synchronous execution,\n");
     fprintf(stderr, "      -u = run on unique hostnames,\n");
     fprintf(stderr, "      -h = run on this specific hostname,\n");
@@ -934,7 +914,25 @@ int main(
   /* nifty unique/hostname code */
   if (pernode || targethost)
     {
-    allnodes = gethostnames(nodelist);
+    char *nodefilename;
+    int   hostname_count;
+
+    /* get node filename from PBS_NODEFILE environment variable */
+    if ((nodefilename = getenv("PBS_NODEFILE")) == NULL)
+      {
+      fprintf(stderr, "PBS_NODEFILE environment variable not set\n");
+
+      return(1);
+      }
+
+    /* load allnodes with the hostnames in nodefilename */
+    if ((hostname_count = gethostnames_from_nodefile(&allnodes, nodefilename)) != numnodes)
+      {
+      fprintf(stderr, "number of hostnames (%d) read from %s does not match number of nodes (%d) in job\n",
+        hostname_count, nodefilename, numnodes);
+
+      return(1);
+      }
 
     if (targethost)
       {
@@ -1018,7 +1016,9 @@ int main(
     stop  = numnodes;
     }
 
-  if ((ioenv = (char **)calloc(2, sizeof(char **))) == NULL)
+  // allocate space for 3 pointers in task environment: 1 each for stdout and sterr
+  // if needed and a null one to terminate the list
+  if ((ioenv = (char **)calloc(3, sizeof(char **))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
@@ -1028,10 +1028,30 @@ int main(
     return(1);
     }
 
-  if (grabstdio != 0)
+  if (grabstdoe)
     {
-    stdoutfd = build_listener(&stdoutport);
+    // get listening sockets for tasks' stdout and stderr
+    if ((stdoutfd = build_listener(&stdoutport)) == -1)
+      {
+      fprintf(stderr,"%s: build_listener() failed for stdout\n", id);
+      return(1);
+      }
 
+    if ((stderrfd = build_listener(&stderrport)) == -1)
+      {
+      fprintf(stderr,"%s: build_listener() failed for stderr\n", id);
+      return(1);
+      }
+
+    // set up listener handler to receive incoming requests and redirect
+    // tasks' stdout and stderr to this proc's stdout and stderr streams
+    if ((listener_handler_pid = fork_listener_handler(stdoutfd, stderrfd)) < 0)
+      {
+      fprintf(stderr, "%s: fork_listener_handler() failed with %d(%s)\n", id, errno, strerror(errno));
+      return(1);
+      }
+
+    // put the stdout listening port into task environment string
     if ((*ioenv = (char *)calloc(50, sizeof(char))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
@@ -1045,7 +1065,19 @@ int main(
     snprintf(*ioenv,49,"TM_STDOUT_PORT=%d", 
       stdoutport);
 
-    FD_ZERO(&permrfsd);
+    // put the stderr listening port into task environment string
+    if ((*(ioenv+1) = (char *)calloc(50, sizeof(char))) == NULL)
+      {
+      /* FAILURE - cannot alloc memory */
+
+      fprintf(stderr,"%s: memory alloc of *(ioenv+1) failed\n",
+        id);
+
+      return(1);
+      }
+
+    snprintf(*(ioenv+1),49,"TM_STDERR_PORT=%d", 
+      stderrport);
     }
 
   sigprocmask(SIG_BLOCK, &allsigs, NULL);
@@ -1075,12 +1107,12 @@ int main(
       ++nspawned;
 
       if (sync)
-        rc = wait_for_task(&nspawned); /* one at a time */
+        rc = wait_for_task(nspawned); /* one at a time */
       }
     }    /* END for (c) */
 
-  if (sync == 0)
-    rc = wait_for_task(&nspawned); /* wait for all to finish */
+  if (!sync)
+    rc = wait_for_task(nspawned); /* wait for all to finish */
   if (rc != 0)
     return rc;
 
@@ -1089,6 +1121,10 @@ int main(
    */
 
   tm_finalize();
+
+  // kill listener handler
+  if (listener_handler_pid != -1)
+    kill(listener_handler_pid, SIGKILL);
 
   return 0;
   }  /* END main() */

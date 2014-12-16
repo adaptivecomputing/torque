@@ -8,6 +8,8 @@
 #include "batch_request.h" /* batch_request */
 #include "mutex_mgr.hpp"
 
+#include "mutex_mgr.hpp"
+
 char *path_track;
 char server_name[PBS_MAXSERVERNAME + 1];
 struct server server;
@@ -67,8 +69,13 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-mutex_mgr::mutex_mgr(pthread_mutex_t*, bool)
-{}
+mutex_mgr::mutex_mgr(
+    
+  pthread_mutex_t *m, 
+  bool             locked)
+
+  {
+  }
 
 int mutex_mgr::unlock()
   {
@@ -76,5 +83,7 @@ int mutex_mgr::unlock()
   }
 
 mutex_mgr::~mutex_mgr()
-{}
+
+  {
+  }
 

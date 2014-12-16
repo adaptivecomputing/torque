@@ -11,9 +11,18 @@ extern bool parsing_hierarchy;
 extern bool received_cluster_addrs;
 extern char *path_mom_hierarchy;
 extern int  MOMJobDirStickySet;
-extern int  exiting_tasks;
+extern time_t time_now;
+extern time_t wait_time;
+extern time_t LastServerUpdateTime;
+extern time_t last_poll_time;
+extern bool ForceServerUpdate;
 
 void read_mom_hierarchy();
+int  parse_integer_range(const char *range_str, int &start, int &end);
+time_t calculate_select_timeout();
+
+extern int  exiting_tasks;
+
 bool call_scan_for_exiting();
 extern tlist_head svr_alljobs;
 
@@ -71,6 +80,28 @@ START_TEST(test_call_scan_for_exiting)
   }
 END_TEST
 
+START_TEST(test_parse_integer_range)
+  {
+  int start;
+  int end;
+
+  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE);
+  fail_unless(start == end);
+  fail_unless(start == 0);
+
+  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE);
+  fail_unless(end == 2);
+  fail_unless(start == 0);
+
+  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE);
+  fail_unless(end == 4);
+  fail_unless(start == 2);
+
+  fail_unless(parse_integer_range("4-2", start, end) != PBSE_NONE);
+  }
+END_TEST
+
+
 START_TEST(test_mom_job_dir_sticky_config)
   {
   char *tempfilename = tempnam("/tmp", "test");
@@ -118,6 +149,77 @@ START_TEST(test_mom_job_dir_sticky_config)
 END_TEST
 
 
+/**
+ * time_t calculate_select_timeout(void)
+ * Input:
+ *  (G) time_t time_now - periodically updated current time.
+ *  (G) time_t wait_time - constant systme-dependent value.
+ *  (G) time_t LastServerUpdateTime - last status update timestamp.
+ *  (G) int ServerStatUpdateInterval - status update interval.
+ *  (G) time_t last_poll_time - last poll timestamp.
+ *  (G) int CheckPollTime - poll interval.
+ */
+START_TEST(calculate_select_timeout_test)
+  {
+  ForceServerUpdate = false;
+
+  /* wait time is minimum */
+  time_now = 110;
+  wait_time = 9;
+  LastServerUpdateTime = 100;
+  ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
+  last_poll_time = 90;
+  CheckPollTime = 30; /* 10 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 9);
+
+  /* status update is minimum */
+  time_now = 110;
+  wait_time = 10;
+  LastServerUpdateTime = 100;
+  ServerStatUpdateInterval = 19; /* 9 seconds till the next status update */
+  last_poll_time = 90;
+  CheckPollTime = 30; /* 10 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 9);
+
+  /* poll is minimum */
+  time_now = 110;
+  wait_time = 10;
+  LastServerUpdateTime = 100;
+  ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
+  last_poll_time = 90;
+  CheckPollTime = 29; /* 9 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 9);
+
+  /* LastServerUpdateTime is zero */
+  time_now = 110;
+  wait_time = 10;
+  LastServerUpdateTime = 0;
+  ServerStatUpdateInterval = 20;
+  last_poll_time = 90;
+  CheckPollTime = 30; /* 10 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 1);
+
+  /* status update is minimum and was needed to be sent some time ago */
+  time_now = 110;
+  wait_time = 10;
+  LastServerUpdateTime = 89;
+  ServerStatUpdateInterval = 20; /* -1 seconds till the next status update */
+  last_poll_time = 90;
+  CheckPollTime = 30; /* 10 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 1);
+
+  /* poll is minimum and was needed to be sent some time ago */
+  time_now = 110;
+  wait_time = 10;
+  LastServerUpdateTime = 100;
+  ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
+  last_poll_time = 79;
+  CheckPollTime = 30; /* -1 seconds till the next poll */
+  fail_unless(calculate_select_timeout() == 1);
+  }
+END_TEST
+
+
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
@@ -127,6 +229,11 @@ Suite *mom_main_suite(void)
 
   tc_core = tcase_create("test_mom_job_dir_sticky_config");
   tcase_add_test(tc_core, test_mom_job_dir_sticky_config);
+  tcase_add_test(tc_core, test_parse_integer_range);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("calculate_select_timeout_test");
+  tcase_add_test(tc_core, calculate_select_timeout_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_call_scan_for_exiting");

@@ -138,6 +138,11 @@ extern time_t time_now;
 
 int    nvidia_gpu_modes[50];
 
+#ifdef NUMA_SUPPORT
+extern int       numa_index;
+extern nodeboard node_boards[];
+#endif
+
 
 /*
  * Function to initialize the Nvidia nvml api
@@ -1121,6 +1126,12 @@ void generate_server_gpustatus_nvml(
 
   memset(&tmpbuf, 0, sizeof(tmpbuf));
 
+#ifdef NUMA_SUPPORT
+  // does this node have gpus configured?
+  if (node_boards[numa_index].gpu_end_index < 0)
+    return;
+#endif
+
   /* get timestamp to report */
   snprintf(tmpbuf, 100, "timestamp=%s", ctime(&time_now));
 
@@ -1139,17 +1150,24 @@ void generate_server_gpustatus_nvml(
     log_nvml_error (rc, NULL, __func__);
     }
 
+#ifndef NUMA_SUPPORT
   /* get the device count */
-  
+
   rc = nvmlDeviceGetCount(&device_count);
   if (rc != NVML_SUCCESS)
     {
     log_nvml_error (rc, NULL, __func__);
     return;
     }
-  
+#endif
+
   /* get the device handle for each gpu and report the data */
+#ifdef NUMA_SUPPORT
+  for (idx = node_boards[numa_index].gpu_start_index;
+       idx <= node_boards[numa_index].gpu_end_index; idx++)
+#else
   for (idx = 0; idx < (int)device_count; idx++)
+#endif
     {
     rc = nvmlDeviceGetHandleByIndex(idx, &device_hndl);
 

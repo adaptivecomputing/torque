@@ -208,6 +208,10 @@ enum srv_atr
   SRV_ATR_job_full_report_time,
 
 #include "site_svr_attr_enum.h"
+  
+  SRV_ATR_CopyOnRerun,
+  SRV_ATR_JobExclusiveOnUse,
+
   /* This must be last */
   SRV_ATR_LAST
   };
@@ -234,7 +238,6 @@ struct server
   pthread_mutex_t *sv_jobstates_mutex;
   pthread_mutex_t *sv_track_mutex;
   time_t           sv_started;  /* time server started */
-  time_t           sv_hotcycle;  /* if RECOV_HOT,time of last restart */
   time_t           sv_next_schedule; /* when to next run scheduler cycle */
   int              sv_jobstates[PBS_NUMJOBSTATE];  /* # of jobs per state */
   char             sv_jobstbuf[100];
@@ -256,7 +259,6 @@ extern struct server server;
  */
 #define SV_STATE_DOWN    0
 #define SV_STATE_INIT  1
-#define SV_STATE_HOT  2
 #define SV_STATE_RUN     3
 #define SV_STATE_SHUTDEL 4
 #define SV_STATE_SHUTIMM 5
@@ -270,9 +272,6 @@ extern struct server server;
 
 #define SVR_SAVE_QUICK 0
 #define SVR_SAVE_FULL  1
-
-#define SVR_HOT_CYCLE 15 /* retry mom every n sec on hot start     */
-#define SVR_HOT_LIMIT 300 /* after n seconds, drop out of hot start */
 
 
 /* function prototypes */

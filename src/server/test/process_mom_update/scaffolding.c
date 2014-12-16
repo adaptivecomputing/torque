@@ -13,6 +13,8 @@
 #include "u_tree.h"
 #include "id_map.hpp"
 
+#include "id_map.hpp"
+
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
 int         LOGLEVEL;
@@ -280,14 +282,11 @@ int id_map::get_id(
   const char *name)
 
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
+  return(0);
   }
 
 void write_node_power_state(void)
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
   }
 
 

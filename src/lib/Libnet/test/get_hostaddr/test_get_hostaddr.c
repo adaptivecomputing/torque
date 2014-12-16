@@ -3,20 +3,35 @@
 #include "test_get_hostaddr.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+
+START_TEST(test_netaddr_long)
   {
+  char buf[80];
+  struct in_addr a_nbo;
+  struct in_addr a_hbo;
+  const char *ip_addr_str = "192.0.2.33";
+  const char *ip_addr_str_rev = "33.2.0.192";
 
+  // get network address in network byte order
+  inet_aton(ip_addr_str, &a_nbo);
 
-  }
-END_TEST
+  // convert to host byte order
+  a_hbo.s_addr = ntohl((uint32_t) a_nbo.s_addr);
 
-START_TEST(test_two)
-  {
+  // get string from host byte order adddress
+  netaddr_long(a_hbo.s_addr, buf);
+  fail_unless(strcmp(ip_addr_str, buf) == 0);
 
+  // get string from network byte order adddress
+  netaddr_long(a_nbo.s_addr, buf);
+  fail_unless(strcmp(ip_addr_str_rev, buf) == 0);
 
   }
 END_TEST
@@ -24,12 +39,9 @@ END_TEST
 Suite *get_hostaddr_suite(void)
   {
   Suite *s = suite_create("get_hostaddr_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
-  suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  TCase *tc_core = tcase_create("test_netaddr_long");
+  tcase_add_test(tc_core, test_netaddr_long);
   suite_add_tcase(s, tc_core);
 
   return s;

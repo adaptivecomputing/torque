@@ -698,7 +698,9 @@ int do_mom(
         strerror(errno));
     
     send_command(chan,RM_CMD_CLOSE);
-    
+
+    DIS_tcp_cleanup(chan);
+
     return(-1);
     }
 

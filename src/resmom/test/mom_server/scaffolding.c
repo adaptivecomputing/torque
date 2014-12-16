@@ -3,6 +3,8 @@
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in, sockaddr */
 #include <vector>
+#include <errno.h>
+#include <sys/statfs.h>
 
 #include "mom_hierarchy.h" /* mom_hierarchy_t, node_comm_t */
 #include "mom_server.h"
@@ -18,11 +20,14 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
 #include "container.hpp"
+#include "dis.h"
+
+#define MAXLINE 1024
 
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
-int is_reporter_mom = 0;
+int is_reporter_mom = FALSE;
 mom_hierarchy_t *mh;
 u_long              localaddr = 0;
 struct config *config_array = NULL;
@@ -40,15 +45,15 @@ char TMOMRejectConn[MAXLINE];
 int PBSNodeCheckInterval;
 int UpdateFailCount = 0;
 char *auto_ideal_load = NULL;
-char *path_spool;
 char *auto_max_load = NULL;
 unsigned int pbs_rm_port = 0;
-char PBSNodeCheckPath[1024];
+char PBSNodeCheckPath[MAXLINE];
 int internal_state = 0;
-char PBSNodeMsgBuf[1024];
+char PBSNodeMsgBuf[MAXLINE];
 int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];
+char mom_host[PBS_MAXHOSTNAME + 1];
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int rm_errno;
 int needs_cluster_addrs;
@@ -58,7 +63,14 @@ time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
 container::item_container<received_node *> received_statuses;
 bool exit_called = false;
+bool ForceServerUpdate = false;
 
+
+char  ret_string[MAXLINE];
+char  path_spool[] = "/var/spool";
+
+bool no_error = true;
+bool no_event = true;
 
 #ifdef NUMA_SUPPORT
 int       num_node_boards;
@@ -73,22 +85,40 @@ int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 //hwloc_topology_t topology;
 #endif
 
+struct tcp_chan default_chan;
+
+
 int MUReadPipe(char *Command, char *Buffer, int BufSize)
   {
-  fprintf(stderr, "The call to MUReadPipe needs to be mocked!!\n");
-  exit(1);
+  if ((no_error == true) && (no_event == true))
+    {
+    memset(Buffer, 0, BufSize);
+    return(0);
+    }
+
+  if (no_error == false)
+    {
+    strcpy(Buffer, "ERROR");
+    return(0);
+    }
+
+  if (no_event == false)
+    {
+    strcpy(Buffer, "EVENT:");
+    return(0);
+    }
+
+  return(0);
   }
 
 node_comm_t *update_current_path(mom_hierarchy_t *nt)
   {
-  fprintf(stderr, "The call to update_current_path needs to be mocked!!\n");
-  exit(1);
+  return NULL;
   }
 
 const char *dependent(const char *res, struct rm_attribute *attr)
   {
-  fprintf(stderr, "The call to dependent needs to be mocked!!\n");
-  exit(1);
+  return NULL;
   }
 
 char * netaddr(struct sockaddr_in *ap)
@@ -105,14 +135,13 @@ int MUStrNCat(char **BPtr, int *BSpace, const char *Src)
 
 const char *reqgres(struct rm_attribute *attrib)
   {
-  fprintf(stderr, "The call to reqgres needs to be mocked!!\n");
-  exit(1);
+  return NULL;
   }
 
 int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int *exit_status)
   {
-  fprintf(stderr, "The call to read_tcp_reply needs to be mocked!!\n");
-  exit(1);
+  *exit_status = DIS_SUCCESS;
+  return *exit_status; 
   }
 
 char *conf_res(char *resline, struct rm_attribute *attr)
@@ -133,10 +162,10 @@ struct rm_attribute *momgetattr(char *str)
   exit(1);
   }
 
-void DIS_tcp_setup(int fd)
+struct tcp_chan *DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
-  exit(1);
+  default_chan.sock = 0;
+  return &default_chan;
   }
 
 int MUSNPrintF(char **BPtr, int *BSpace, const char *Format, ...)
@@ -159,14 +188,12 @@ int AVL_is_in_tree_no_port_compare(u_long key, uint16_t port, AvlTree tree)
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
+  return DIS_SUCCESS;
   }
 
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   {
-  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
-  exit(1);
+  return DIS_SUCCESS;
   }
 
 int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
@@ -195,8 +222,7 @@ void *get_next(list_link pl, char *file, int line)
 
 int diswui(tcp_chan *chan, unsigned value)
   {
-  fprintf(stderr, "The call to diswui needs to be mocked!!\n");
-  exit(1);
+  return DIS_SUCCESS;
   }
 
 void send_update_within_ten()
@@ -217,16 +243,46 @@ int rpp_close(int index)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
-  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 char *size_fs(char *param)
   {
-  fprintf(stderr, "The call to size_fs needs to be mocked!!\n");
-  exit(1);
+  struct statfs fsbuf;
+  
+
+  /* We need to make up our own parameter */
+  
+  if (path_spool[0] != '/')
+    {
+    sprintf(log_buffer, "%s: not full path filesystem name: %s", __func__, path_spool);
+    log_err(-1, __func__, log_buffer);
+
+    rm_errno = RM_ERR_BADPARAM;
+
+    return(NULL);
+    }
+      
+    if (statfs(path_spool, &fsbuf) == -1)
+      {
+      log_err(errno, __func__, "statfs");
+      rm_errno = RM_ERR_BADPARAM;
+      return(NULL);
+      }
+
+#ifdef RPT_BAVAIL
+#define RPT_STATFS_MEMBER f_bavail
+#else
+#define RPT_STATFS_MEMBER f_bfree
+#endif
+
+  sprintf(ret_string, "%lukb:%lukb",
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.RPT_STATFS_MEMBER) / 1024.0),
+                      (ulong)(((double)fsbuf.f_bsize * (double)fsbuf.f_blocks) / 1024.0)); /* KB */
+
+  return(ret_string);
   }
 
 void close_conn(int sd, int has_mutex)
@@ -249,14 +305,12 @@ AvlTree AVL_clear_tree(AvlTree a)
 
 struct config *rm_search(struct config *where, const char *what)
   {
-  fprintf(stderr, "The call to rm_search needs to be mocked!!\n");
-  exit(1);
+  return NULL;
   }
 
 int diswsi(tcp_chan *chan, int value)
   {
-  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
-  exit(1);
+  return DIS_SUCCESS;
   }
 
 int disrsi(tcp_chan *chan, int *retval)
@@ -357,6 +411,13 @@ int pbs_getaddrinfo(
   {
   return(0);
   }
+
+time_t get_stat_update_interval()
+
+  {
+  return ForceServerUpdate ? ServerStatUpdateInterval / 3 : ServerStatUpdateInterval;
+  } /* END get_next_update_time() */
+
 
 bool overwrite_cache(
 
