@@ -114,6 +114,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <set>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -184,6 +185,8 @@ extern int     is_login_node;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
+
+extern job_sid_set_t job_sid_set;
 
 void nodes_free(job *);
 extern int thread_unlink_calls;
@@ -886,6 +889,18 @@ void mom_job_purge(
 
   jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+  /* if ji_job_pid is set remove it from the job_sid_set */
+  if (pjob->ji_job_pid != 0)
+    {
+    job_sid_set_t::const_iterator it;
+
+    it = job_sid_set.find(pjob->ji_job_pid);
+    if (it != job_sid_set.end())
+      {
+      job_sid_set.erase(it);
+      }
+    }
 
   if (thread_unlink_calls == TRUE)
     enqueue_threadpool_request(delete_job_files,jfdi);
