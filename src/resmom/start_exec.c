@@ -318,7 +318,8 @@ static const char *variables_else[] =   /* variables to add, value computed */
 
 static int num_var_else = tveLAST;
 
-job_sid_set_t    job_sid_set; /* This contains the session id of each job */
+pid2jobsid_map_t pid2jobsid_map; /* This map contains a mapping of pids to the job ession id */
+job_pid_set_t    global_job_sid_set; /* This contains the session id of each job or task */
 
 /* prototypes */
 
@@ -2529,11 +2530,14 @@ int TMomFinalizeJob2(
     {
     }
 
-  /* put the new pid in the job_sid_set set */
-  job_sid_set.insert(cpid);
+  /* put the new pid in the pid to job session id map */
+  pid2jobsid_map[cpid] = cpid;
+
+  /* put the new pid in the global_job_sid_set set */
+  global_job_sid_set.insert(cpid);
 
   /* put the job pid in the job structure */
-  pjob->ji_job_pid = cpid;
+  pjob->ji_job_pid_set->insert(cpid);
  
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
@@ -5028,6 +5032,21 @@ int start_process(
     set_globid(pjob, &sjr);
 
     ptask->ti_qs.ti_sid = sjr.sj_session;
+
+    /* if the new pid is not in the job set then this */
+    /* is a new session and we need to insert it */
+    job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(pid);
+    if (job_pid_set_iter == pjob->ji_job_pid_set->end())
+      {
+      /* put the job pid in the job structure */
+      pjob->ji_job_pid_set->insert(pid);
+      }
+
+    /* put the new pid in the pid to job session id map */
+    pid2jobsid_map[pid] = pid;
+
+    /* put the new pid in the global_job_sid_set set */
+    global_job_sid_set.insert(pid);
 
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
