@@ -799,6 +799,7 @@ int initialize_pbsnode(
       return (PBSE_SYSTEM);
       }
     memcpy(&pnode->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
+    freeaddrinfo(pAddrInfo);
     }
 
   pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
