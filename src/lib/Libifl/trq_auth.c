@@ -998,6 +998,9 @@ int authorize_socket(
   if (trq_server_addr != NULL)
     free(trq_server_addr);
 
+  if (server_name != NULL)
+    free(server_name);
+
   return(rc);
   } // END authorize_socket() 
 
