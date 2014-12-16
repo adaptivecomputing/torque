@@ -27,6 +27,7 @@ all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int svr_totnodes = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+bool exit_called;
 
 struct batch_request *alloc_br(int type)
   {
@@ -160,7 +161,7 @@ int status_job(job *pjob, struct batch_request *preq, svrattrl *pal, tlist_head 
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);

@@ -89,7 +89,7 @@
 #include "tcp.h"
 
 static char *ulmax;
-static unsigned ulmaxdigs = 0;
+unsigned ulmaxdigs = 0;
 
 int disrsl_(
 
@@ -126,6 +126,15 @@ int disrsl_(
 
     if (dis_umaxd == 0)
       disiui_();
+    }
+
+  if (count >= ulmaxdigs)
+    {
+    if (count > ulmaxdigs)
+      goto overflow;
+
+    if (memcmp(scratch, ulmax, ulmaxdigs) > 0)
+      goto overflow;
     }
 
   c = tcp_getc(chan, pbs_tcp_timeout);

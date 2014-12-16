@@ -106,6 +106,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "utils.h"
+#include "job_func.h"
 
 
 #define SYNC_SCHED_HINT_NULL 0
@@ -656,7 +657,7 @@ int delete_dependency_job(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     
     /* pjob freed and set to NULL */
-    job_abt(pjob_ptr, log_buf);
+    job_abt(pjob_ptr, log_buf, true);
     }
 
   return(rc);
@@ -2571,6 +2572,8 @@ int decode_depend(
 
     return(PBSE_NONE);
     }
+    
+  free_depend(patr);
 
   work_val = strdup(val);
 
@@ -2979,6 +2982,8 @@ int comp_depend(
   {
   return (-1);
   }
+
+
 
 void free_depend(
 

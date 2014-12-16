@@ -102,54 +102,19 @@ void initialize_recycler()
   } /* END initialize_recycler() */
 
 
-bool is_recycled_job(job *pjob)
-  {
-  char buf[128];
-  
-  snprintf(buf,sizeof(buf),"%016lx", (long)pjob);
-  size_t l = strlen(buf);
-  size_t l2 = strlen(pjob->ji_qs.ji_jobid);
-
-  if (l != l2)
-    return false;
-
-  if (strncmp(buf, pjob->ji_qs.ji_jobid, l) == 0)
-    return true;
-
-  return false;
-  }
-
 
 job *pop_job_from_recycler(
 
   all_jobs *aj)
 
   {
-  job *pjob=NULL;
+  job *pjob;
 
   aj->lock();
+  pjob = aj->pop();
 
-  while(1)
-    {
-    /* Keep popping until we either get a valid recycled job or
-    ** end of list.
-    */
-    pjob = aj->pop();
-    if (pjob != NULL)
-      {
-      if (is_recycled_job(pjob))
-        {
-        lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-        break;
-        }
-      else
-        {
-        pjob = NULL;
-        }
-      }
-    else
-      break;
-    }
+  if (pjob != NULL)
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   aj->unlock();
 

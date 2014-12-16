@@ -117,6 +117,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "queue_func.h" /*find_queuebyname */
+#include "job_func.h"
 
 #define ROUTE_RETRY_TIME 10
 

@@ -2950,11 +2950,13 @@ int handle_rerunning_heterogeneous_jobs(
 int end_of_job_accounting(
 
   job         *pjob,
-  std::string &acct_data)
+  std::string &acct_data,
+  size_t       accttail)
 
   {
   long  events = 0;
 
+  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
   /* record accounting and maybe in log */
   account_jobend(pjob, acct_data);
 
@@ -2970,7 +2972,8 @@ int end_of_job_accounting(
   else
     {
     /* no usage in log, truncate message */
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, acct_data.c_str());
+    std::string noacctail = acct_data.substr(0, accttail - 1);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
     }
 
   return(PBSE_NONE);
@@ -3427,6 +3430,7 @@ int req_jobobit(
     mailbuf[0] = '\0';
     }
 
+  size_t accttail = acct_data.length();
   have_resc_used = get_used(patlist, acct_data);
 
 #ifdef USESAVEDRESOURCES
@@ -3489,7 +3493,7 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    end_of_job_accounting(pjob, acct_data);
+    end_of_job_accounting(pjob, acct_data, accttail);
     
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);

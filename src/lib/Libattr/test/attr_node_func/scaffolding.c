@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include "id_map.hpp"
 
 #include "execution_slot_tracker.hpp"
 #include "attribute.h" /* svrattrl */
@@ -42,7 +43,7 @@ char *parse_comma_string(char *start, char **ptr)
   exit(1);
   }
 
-void populate_range_string_from_slot_tracker(execution_slot_tracker &est, std::string &range) {}
+void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range) {}
 
 
 int ctnodes(char *spec)
@@ -50,3 +51,13 @@ int ctnodes(char *spec)
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
   }
+
+const char *id_map::get_name(int id)
+  {
+  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
+  exit(1);
+  }
+
+id_map::id_map() {}
+
+id_map::~id_map() {}

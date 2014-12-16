@@ -14,14 +14,16 @@ char pbs_current_user[PBS_MAXUSER];
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 pbs_net_t pbs_server_addr;
 unsigned int pbs_server_port_dis;
-int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+int LOGLEVEL = 10; /* force logging code to be exercised as tests run */
 
 
+int find_node_called;
+int node_unlocked;
+bool free_node_on_unlock;
 
 int addr_ok(pbs_net_t addr, struct pbsnode *pnode)
   {
-  fprintf(stderr, "The call to addr_ok to be mocked!!\n");
-  exit(1);
+  return(1);
   }
 
 int get_connection_entry(int *conn_pos)
@@ -74,8 +76,7 @@ int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, u
 
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg)
   {
-  fprintf(stderr, "The call to client_to_svr to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int encode_DIS_ReqHdr(struct tcp_chan *chan, int reqt, char *user)
@@ -111,6 +112,11 @@ int unlock_node(
   int             logging)
 
   {
+  node_unlocked++;
+
+  if (free_node_on_unlock)
+    free(the_node);
+
   return(0);
   }
 
@@ -122,4 +128,10 @@ void log_ext(int l, const char *func_name, const char *msg, int o) {}
 int socket_to_handle(int sock, int *my_err)
   {
   return(0);
+  }
+
+struct pbsnode *find_nodebyname(const char *node_name)
+  {
+  find_node_called++;
+  return(NULL);
   }

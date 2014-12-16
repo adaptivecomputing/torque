@@ -4,6 +4,7 @@
 
 #include <pbs_ifl.h> /* batch_status */
 #include "tcp.h"
+#include "pbs_error.h"
 
 char TRMEMsg[1024]; /* global rm error message */
 

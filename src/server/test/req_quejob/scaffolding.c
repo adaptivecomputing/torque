@@ -184,8 +184,8 @@ int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg
 
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   {
-  fprintf(stderr, "The call to get_fullhostname to be mocked!!\n");
-  exit(1);
+  strcpy(namebuf, shortname);
+  return(PBSE_NONE);
   }
 
 int remove_job(all_jobs *aj, job *pjob)
@@ -277,8 +277,7 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
 
 char *pbs_default(void)
   {
-  fprintf(stderr, "The call to pbs_default to be mocked!!\n");
-  exit(1);
+  return(server_name);
   }
 
 pbs_net_t get_connectaddr(int sock, int mutex)

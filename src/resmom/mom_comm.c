@@ -5399,6 +5399,15 @@ int handle_im_kill_job_radix_response(
   if (ret == DIS_SUCCESS)
     nodeid = disrsi(chan, &ret);
   
+  /*
+  ** energy_used was sent, but not retrieved because nothing is done with it.
+  ** Otherwise, gcc_warning will give us an error if we retrieve it and do 
+  ** nothing with it.
+
+  if (ret == DIS_SUCCESS)
+    u_long joules  = disrul(chan, &ret);
+  */
+
   if (ret != DIS_SUCCESS)
     {
     close_conn(chan->sock, FALSE);

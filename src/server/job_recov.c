@@ -120,9 +120,9 @@
 #ifndef PBS_MOM
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
-#include "job_func.h" /* job_free */
+#include "job_func.h"
 #else
-#include "../resmom/mom_job_func.h" /* mom_job_free */
+#include "../resmom/mom_job_func.h"
 #endif
 #include "array.h"
 #include "ji_mutex.h"
@@ -479,7 +479,7 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
-  if(freeExisting)
+  if (freeExisting)
     {
     job_attr_def[index].at_free(&pj->ji_wattr[index]);
     }

@@ -957,6 +957,7 @@ typedef struct send_job_request
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
 #define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
 #define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
+#define JOB_SVFLG_DEQUEJOB  0x10000 /* Job is being deueued */
 
 
 /*
@@ -1107,7 +1108,6 @@ extern char *get_egroup(job *);
 extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
 extern void  issue_track(job *);
-extern int   job_abt(struct job **, const char *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM

@@ -170,7 +170,7 @@ extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
-
+void handle_complete_second_time(struct work_task *ptask);
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
@@ -381,6 +381,59 @@ static int remtree(
 
 
 
+/*
+** handle_aborted_job determines whether to purge the job right away or
+** respect the KeepCompleted time.
+*/
+void handle_aborted_job(
+
+  job **job_ptr, /* M */
+  bool  dependentjob, /* I */
+  long KeepSeconds, /* I */
+  const char *text) /* I */
+
+  {
+  job *pjob = *job_ptr;
+   
+  if ((!dependentjob) || (!KeepSeconds))
+    {
+    svr_job_purge(pjob);
+    pjob = NULL;
+    }
+  else
+    {
+    /* Add a comment to say the reason it was aborted */
+    if (text != NULL)
+      {
+      char *comment=NULL;
+      if ((pjob->ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) &&
+          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str))
+        {
+        size_t len = strlen(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        len += strlen(text) + 3; /* added extra characters for ". " */
+        comment = (char *)calloc(len, sizeof(char));
+        snprintf(comment, len, "%s. %s", 
+          pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str, text);
+        free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = comment;
+        }
+      else
+        {
+        pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(text);
+        }
+      }
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    set_task(WORK_Timed, time(NULL) + KeepSeconds, handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    *job_ptr = pjob;
+    }
+  } /* handle_aborted_job */
+
+
+
+
 
 /*
  * job_abt - abort a job
@@ -409,7 +462,8 @@ static int remtree(
 int job_abt(
 
   struct job **pjobp, /* I (modified/freed) */
-  const char  *text)  /* I (optional) */
+  const char  *text,  /* I (optional) */
+        bool   dependentjob) /* I */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -438,6 +492,12 @@ int job_abt(
     }
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
+  long KeepSeconds = 0;
+  int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
+  if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
+    KeepSeconds = 0;
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -517,11 +577,10 @@ int job_abt(
       
         if (pjob != NULL)
           {
-          svr_job_purge(pjob);
-          pjob = NULL;
+          handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
           }
-
-        *pjobp = NULL;
+        if ((!dependentjob) || (!KeepSeconds) || (!pjob))
+          *pjobp = NULL;
         }
       }
     }
@@ -582,11 +641,12 @@ int job_abt(
 
     if (pjob != NULL)
       {
-      svr_job_purge(pjob);
-      pjob = NULL;
+      handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
       }
 
-    *pjobp = NULL;
+    if ((!dependentjob) || (!KeepSeconds) || (!pjob))
+      *pjobp = NULL;
+
     }
 
   if (pjob == NULL)
@@ -785,57 +845,15 @@ void job_free(
    * the lock and then deletes the job, but thread 2 gets the job's lock as
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
-
-  int rc = remove_job(&alljobs,pj); //Remove this from the alljobs array.
-  
-  if (rc == PBSE_JOBNOTFOUND)
-    {
-    if (LOGLEVEL >= 8)
-      {
-      snprintf(log_buf,sizeof(log_buf),
-        "Job %s was not found from alljobs to recycle\n",
-            pj->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buf, LOG_WARNING);
-      }
-    if (use_recycle)
-      return;
-    }
-
-  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
-    {
-    snprintf(log_buf,sizeof(log_buf),
-      "Could not remove job %s from alljobs\n",
-          pj->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buf, LOG_WARNING);
-    }
-
-  std::string jobid = pj->ji_qs.ji_jobid;
-  std::string statestr;
   if (use_recycle)
     {
     insert_into_recycler(pj);
-    sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
-    statestr = "insert_into_recycler";
     }
   else
     {
-    sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     free_job_allocation(pj);
-    statestr = "free_job_allocation";
-    }
-
-  job *pjob = alljobs.find(jobid);
-  if (pjob != NULL)
-    {
-    if (LOGLEVEL >= 8)
-      {
-      snprintf(log_buf, sizeof(log_buf),
-        "Job %s was found in the alljobs again in state: %s\n", 
-      jobid.c_str(), statestr.c_str());
-      log_ext(-1, __func__, log_buf, LOG_WARNING);
-      }
     }
 
   return;
@@ -1892,7 +1910,8 @@ int svr_job_purge(
       }
     }
 
-  if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
+  if ((job_has_arraystruct == FALSE) ||
+      (job_is_array_template == TRUE))
     {
     int rc2 = 0;
     if ((rc2=remove_job(&array_summary,pjob)) == PBSE_JOB_RECYCLED)
@@ -1965,7 +1984,23 @@ int svr_job_purge(
       {
       /* set the state to complete so that svr_dequejob() will function properly */
       pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-      rc = svr_dequejob(pjob, FALSE);
+      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_DEQUEJOB) == 0)
+        {
+        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_DEQUEJOB;
+        rc = svr_dequejob(pjob, FALSE);
+        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_DEQUEJOB;
+        }
+      else
+        {
+        /* The job is being dequeued by another thread so do nothing,
+        ** let the other thread finish the dequeueing and the remainder
+        ** things below */
+        strcpy(log_buf, "job is being dequeued by another thread");
+        log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, 
+          pjob->ji_qs.ji_jobid, log_buf);
+        pjob_mutex.unlock();
+        return(PBSE_NONE);
+        }
       }
 
     if (rc != PBSE_JOBNOTFOUND)

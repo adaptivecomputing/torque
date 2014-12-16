@@ -3,9 +3,13 @@
 #include "test_attr_node_func.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "id_map.hpp"
 
 
 #include "pbs_error.h"
+
+id_map node_mapper;
+id_map job_mapper;
 
 START_TEST(test_one)
   {

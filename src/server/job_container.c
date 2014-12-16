@@ -310,36 +310,6 @@ char *get_correct_jobname(
   } /* END get_correct_jobname() */
 
 
-bool is_deleted_job(
-
-  job *pjob, 
-  const char *job_id)
-
-  {
-  /* In some scenarios, it may point to a freed job structure;
-   * let's see if this was the case until we find the root cause. */
-
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  char ch = pjob->ji_qs.ji_jobid[0];
-  if (ch == (char)254)
-    {
-    snprintf(log_buf, sizeof(log_buf), "job content %s was already freed.", job_id);
-    log_err(-1, __func__, log_buf);
-    return true;
-    }
-
-  size_t l = strlen(job_id);
-  size_t l2 = strlen(pjob->ji_qs.ji_jobid);
-  if ((l != l2) || (strncmp(pjob->ji_qs.ji_jobid, job_id, l) != 0))
-    {
-    snprintf(log_buf, sizeof(log_buf), "job id %s did not match to jobid-key",     job_id);
-    log_err(-1, __func__, log_buf);
-    return true;
-    }
-  
-  return false;
-  }
-
 
 /*
  * Searches the array passed in for the job_id
@@ -371,18 +341,9 @@ job *find_job_by_array(
     aj->lock();
   
   pj = aj->find(job_id);
+
   if (pj != NULL)
-    {
-    if (is_deleted_job(pj, job_id))
-      {
-      aj->remove(job_id);
-      if (locked == false)
-        aj->unlock();
-      return NULL;
-      }
-    else
-      lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-    }
+    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
 
   if (locked == false)
     aj->unlock();
@@ -438,6 +399,12 @@ job *svr_find_job(
   char *jid_ptr = NULL;
 
   job  *pj = NULL;
+
+  if (NULL == jobid)
+    {
+    log_err(-1,__func__,"jobid is null");
+    return NULL;
+    }
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
@@ -903,31 +870,19 @@ job *next_job(
     }
 
   aj->lock();
-
-  container::item<job *> *pItem = iter->get_next_item2();
-
+  pjob = iter->get_next_item();
   aj->unlock();
-
-  if (pItem)
-    pjob = pItem->get();
-  else
-    pjob = NULL;
 
   if (pjob != NULL)
     {
-    if (!is_deleted_job(pjob, pItem->id.c_str()))
+    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (pjob->ji_being_recycled == TRUE)
       {
-      lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
-      if (pjob->ji_being_recycled == TRUE)
-        {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
-        pjob = next_job(aj,iter);
-        }
+      pjob = next_job(aj,iter);
       }
-      else
-        pjob = next_job(aj,iter);
     }
 
   return(pjob);
