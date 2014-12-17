@@ -196,7 +196,7 @@ int is_compute_node(char *node_id);
 int hasprop(struct pbsnode *, struct prop *);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *);
 int node_satisfies_request(struct pbsnode *,char *);
-int reserve_node(struct pbsnode *,short,job *,char *,struct howl **);
+int reserve_node(struct pbsnode *, job *, char *, job_reservation_info &);
 int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
@@ -4054,7 +4054,7 @@ int place_subnodes_in_hostlist(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    rc = reserve_node(pnode, pjob, ProcBMStr);
+    rc = reserve_node(pnode, pjob, ProcBMStr, node_info);
 
     if (rc == PBSE_NONE)
       {
