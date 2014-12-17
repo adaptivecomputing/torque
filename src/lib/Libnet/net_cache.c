@@ -394,12 +394,12 @@ public:
       freeaddrinfo(*i);
       }
     addrs.clear();
+#if 0
     for(std::vector<char *>::iterator i = hosts.begin();i != hosts.end();i++)
       {
       free(*i);
       }
     hosts.clear();
-#if 0
     free_hash(nameToAddr);
     free_hash(addrToName);
 #endif
