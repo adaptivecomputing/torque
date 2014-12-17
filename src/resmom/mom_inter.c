@@ -627,6 +627,7 @@ int x11_create_display(
             strerror(errno));
 
           free(socks);
+          freeaddrinfo(aitop);
 
           return (-1);
           }

@@ -151,7 +151,9 @@ class item_container
         }
 
       return(pItem->get());
-      }
+      } // END get_next_item()
+
+
 
     item_iterator(item_container<T> *pCtner,
 #ifdef CHECK_LOCKING
@@ -219,6 +221,7 @@ class item_container
       {
       //If exit is called, don't free the slots.
       lock();
+      map.clear();
       unlock();
       return;
       }
@@ -930,7 +933,6 @@ class item_container
 
     return(pT);
     } /* END pop_thing() */
-
 
 
   T pop_back_thing()

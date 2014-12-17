@@ -1,3 +1,5 @@
+#ifndef ID_MAP_HPP
+#define ID_MAP_HPP
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -100,3 +102,5 @@ class id_map
 
 extern id_map node_mapper;
 extern id_map job_mapper;
+
+#endif // ID_MAP_HPP

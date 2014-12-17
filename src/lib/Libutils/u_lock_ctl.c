@@ -229,6 +229,22 @@ int lock_node(
   return rc;
   } /* END lock_node() */
 
+int tmp_lock_node(
+
+  struct pbsnode *the_node,
+  const char     *id,
+  const char     *msg,
+  int             logging)
+  {
+  int rc = lock_node(the_node,id,msg,logging);
+  if(rc == PBSE_NONE)
+    {
+    the_node->nd_tmp_unlock_count--;
+    }
+  return(rc);
+  }
+
+
 int unlock_node(
     
   struct pbsnode *the_node,
@@ -262,6 +278,18 @@ int unlock_node(
 
   return rc;
   } /* END unlock_node() */
+
+int tmp_unlock_node(
+
+  struct pbsnode *the_node,
+  const char     *id,
+  const char     *msg,
+  int             logging)
+  {
+  the_node->nd_tmp_unlock_count++;
+  return(unlock_node(the_node,id,msg,logging));
+  }
+
 
 int lock_cntr_init()
   {

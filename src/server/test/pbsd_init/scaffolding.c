@@ -427,7 +427,7 @@ void track_save(struct work_task *pwt)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
   exit(1);
@@ -445,7 +445,7 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-int acct_open(char *filename)
+int acct_open(char *filename, bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_open needs to be mocked!!\n");
   exit(1);
@@ -634,18 +634,11 @@ void parse_mom_hierarchy(int fds)
   }
 
 id_map::id_map() {}
-
-id_map::~id_map(){}
-
-int id_map::get_new_id(
-
-  const char *name)
-
+id_map::~id_map() {}
+int id_map::get_new_id(const char *name)
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
+  return 0;
   }
 
+void rel_resc(job *pjob) {}
 
-void rel_resc(job *pjob)
-{}

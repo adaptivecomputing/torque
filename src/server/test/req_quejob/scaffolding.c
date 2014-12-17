@@ -184,8 +184,8 @@ int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg
 
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   {
-  fprintf(stderr, "The call to get_fullhostname to be mocked!!\n");
-  exit(1);
+  strcpy(namebuf, shortname);
+  return(PBSE_NONE);
   }
 
 int remove_job(all_jobs *aj, job *pjob)
@@ -277,8 +277,7 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
 
 char *pbs_default(void)
   {
-  fprintf(stderr, "The call to pbs_default to be mocked!!\n");
-  exit(1);
+  return(server_name);
   }
 
 pbs_net_t get_connectaddr(int sock, int mutex)
@@ -415,7 +414,7 @@ const char *add_std_filename(
   }
 
 job *find_job_by_array(all_jobs *aj, const char *jobid, int get_subjob, bool locked)
-  {
+{
   if (!strcmp(jobid, "1.napali"))
     {
     job *pj = (job *)calloc(1, sizeof(job));
@@ -437,4 +436,8 @@ int id_map::get_new_id(const char *job_name)
   }
 
 id_map job_mapper;
+
+void log_ext(int i, char const* s, char const* s2, int i2)
+  {
+  }
 

@@ -93,7 +93,6 @@
 
 #ifdef NUMA_SUPPORT
 extern int       numa_index;
-extern int       num_node_boards;
 extern nodeboard node_boards[];
 #endif
 

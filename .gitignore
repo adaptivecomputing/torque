@@ -146,7 +146,7 @@ src/cmds/test/qstart/test_qstart
 src/cmds/test/qstat/test_qstat
 src/cmds/test/qstop/test_qstop
 src/cmds/test/qsub_functions/build_test_files.sh
-src/cmds/test/qsub_functions/test_x11_get_proto
+src/cmds/test/qsub_functions/test_qsub_functions
 src/cmds/test/qterm/test_qterm
 src/daemon_client/test/trq_auth_daemon/test_trq_auth_daemon
 src/lib/Libattr/test/attr_atomic/test_attr_atomic
@@ -377,6 +377,7 @@ src/resmom/test/catch_child/test_post_epilogue
 src/resmom/test/catch_child/test_preobit_reply
 src/resmom/test/catch_child/test_scan_for_exiting
 src/resmom/test/checkpoint/test_checkpoint
+src/resmom/test/cray_energy/test_cray_energy
 src/resmom/test/generate_alps_status/test_generate_alps_status
 src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
@@ -505,3 +506,4 @@ torque-package-mom-linux-x86_64.sh
 torque-package-server-linux-x86_64.sh
 tpackages/
 src/mom_rcp/pbs_rcp
+.c9/

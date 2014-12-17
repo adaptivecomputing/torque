@@ -8,15 +8,15 @@
 
 #define ISNAMECHAR(x) ( (isgraph(x)) && ((x) != '#') && ( (x) != '@') )
 
-int pbs_errno = 0;
+int pbs_errno = PBSE_NONE;
 char *pbs_server = NULL;
+const char* default_err_msg = "err message for test qstat";
 
 bool connect_success = true;
 
 char *pbs_geterrmsg(int connect)
-  { 
-  fprintf(stderr, "The call to pbs_geterrmsg needs to be mocked!!\n");
-  return(PBSE_NONE);
+  {
+  return((pbs_errno == PBSE_NONE)? NULL : strdup(default_err_msg));
   }
 
 struct batch_status * pbs_selstat(int c, struct attropl *attrib, char *extend)
@@ -382,8 +382,8 @@ void set_attr(
   }
 
 char *pbs_strerror(int err)
-  {
-  return (char *)"This is a mocked error message.";
+  { 
+  return((err == PBSE_NONE)? NULL : strdup(default_err_msg));
   }
 #ifdef __cplusplus
 }

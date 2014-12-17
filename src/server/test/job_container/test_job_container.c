@@ -155,6 +155,106 @@ START_TEST(next_job_test)
 
   result = next_job(&alljobs,NULL);
   fail_unless(result == NULL, "NULL input iterator fail");
+
+  struct job *test_job1 = job_alloc();
+  strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
+  int rc = insert_job(&alljobs,test_job1);
+  fail_unless(rc == PBSE_NONE, "job insert fail1");
+
+  struct job *test_job2 = job_alloc();
+  strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
+  rc = insert_job(&alljobs,test_job2);
+  fail_unless(rc == PBSE_NONE, "job insert fail2");
+
+  struct job *test_job3 = job_alloc();
+  strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
+  rc = insert_job(&alljobs,test_job3);
+  fail_unless(rc == PBSE_NONE, "job insert fai3");
+
+  struct job *test_job4 = job_alloc();
+  strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
+  rc = insert_job(&alljobs,test_job4);
+  fail_unless(rc == PBSE_NONE, "job insert fail4");
+
+  struct job *test_job5 = job_alloc();
+  strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
+  rc = insert_job(&alljobs,test_job5);
+  fail_unless(rc == PBSE_NONE, "job insert fail5");
+
+  /* first transverse to see if we get all 5 jobs */
+  all_jobs_iterator *iter;
+  alljobs.lock();
+  iter = alljobs.get_iterator();
+  alljobs.unlock();
+
+  job *pjob = next_job(&alljobs,iter);
+  int jobcount = 0;
+
+  while(pjob != NULL)
+    {
+    jobcount++;
+    pjob = next_job(&alljobs,iter);
+    }
+
+  fail_unless(jobcount == 5, "Expected job counts to be 5, but it was %d",
+    jobcount);
+
+  all_jobs_iterator *iter2;
+  alljobs.lock();
+  iter2 = alljobs.get_iterator();
+  alljobs.unlock();
+
+  /* simulate another thread had added more jobs to the alljobs */
+  struct job *test_job6 = job_alloc();
+  strcpy(test_job6->ji_qs.ji_jobid, "test_job6");
+  rc = insert_job(&alljobs,test_job6);
+  fail_unless(rc == PBSE_NONE, "job insert fail6");
+
+  pjob = next_job(&alljobs,iter2);
+  jobcount = 0;
+
+  while(pjob != NULL)
+    {
+    jobcount++;
+    fail_unless(pjob->ji_qs.ji_jobid[0] != (char)254, 
+      "get_next returned a deleted job");
+    pjob = next_job(&alljobs,iter2);
+    }
+
+  fail_unless(jobcount == 6, "Expected job counts to be 6, but it was %d",
+    jobcount);
+  }
+END_TEST
+
+START_TEST(find_job_by_array_with_removed_record_test)
+  {
+  int result;
+  all_jobs alljobs;
+
+  struct job *test_job1 = job_alloc();
+  strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
+  result = insert_job(&alljobs,test_job1);
+  fail_unless(result == PBSE_NONE, "job insert fail1");
+
+  struct job *test_job2 = job_alloc();
+  strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
+  result = insert_job(&alljobs,test_job2);
+  fail_unless(result == PBSE_NONE, "job insert fail2");
+  
+  struct job *test_job3 = job_alloc();
+  strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
+  result = insert_job(&alljobs,test_job3);
+  fail_unless(result == PBSE_NONE, "job insert fai3");
+
+  struct job *test_job4 = job_alloc();
+  strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
+  result = insert_job(&alljobs,test_job4);
+  fail_unless(result == PBSE_NONE, "job insert fail4");
+
+  struct job *test_job5 = job_alloc();
+  strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
+  result = insert_job(&alljobs,test_job5);
+  fail_unless(result == PBSE_NONE, "job insert fail5");
   }
 END_TEST
 
@@ -191,6 +291,10 @@ Suite *job_container_suite(void)
 
   tc_core = tcase_create("next_job_test");
   tcase_add_test(tc_core, next_job_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("find_job_by_array_with_removed_record");
+  tcase_add_test(tc_core, find_job_by_array_with_removed_record_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
