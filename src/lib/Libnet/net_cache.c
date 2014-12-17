@@ -386,7 +386,6 @@ public:
   ~addrcache()
     {
     cacheDestroyed = TRUE;
-#if 0
     for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
       {
       freeaddrinfo(*i);
@@ -397,6 +396,7 @@ public:
       free(*i);
       }
     hosts.clear();
+#if 0
     free_hash(nameToAddr);
     free_hash(addrToName);
 #endif
