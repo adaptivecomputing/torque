@@ -1087,8 +1087,12 @@ int saveJobToXML(
     xmlDocSetRootElement(doc, root_node);
     add_fix_fields(&root_node, (const job*)pjob);
     add_union_fields(&root_node, (const job*)pjob);
+
     if (add_attributes(&root_node, pjob))
+      {
+      xmlFreeDoc(doc);
       return -1;
+      }
 
 #ifdef PBS_MOM
     add_mom_fields(&root_node, (const job*)pjob);
