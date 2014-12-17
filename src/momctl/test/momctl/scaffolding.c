@@ -98,3 +98,5 @@ char *pbs_default(void)
   }
 
 void DIS_tcp_close(struct tcp_chan *chan) {}
+
+void DIS_tcp_cleanup(struct tcp_chan *chan) {}

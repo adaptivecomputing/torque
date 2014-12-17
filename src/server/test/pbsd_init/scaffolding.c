@@ -19,6 +19,7 @@
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
 #include "id_map.hpp"
+#include "mom_hierarchy_handler.h"
 
 threadpool_t *task_pool;
 int scheduler_sock=0;
@@ -642,3 +643,6 @@ int id_map::get_new_id(const char *name)
 
 void rel_resc(job *pjob) {}
 
+void mom_hierarchy_handler::initialLoadHierarchy() {}
+
+mom_hierarchy_handler hierarchy_handler; //The global declaration.
