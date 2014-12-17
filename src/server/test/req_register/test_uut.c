@@ -706,7 +706,7 @@ END_TEST
 
 START_TEST(delete_dependency_job_test)
   {
-  job           *pjob;
+  job           *pjob = job_alloc();
   batch_request  preq;
 
   memset(&preq, 0, sizeof(preq));

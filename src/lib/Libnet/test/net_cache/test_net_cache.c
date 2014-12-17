@@ -78,9 +78,9 @@ void *add_and_lookup_stuff(void *parm)
       fail_unless((pAddr != NULL));
 
       if(pAddr != NULL)
-      {
-        char *p1;
-        char *p2;
+        {
+        const char *p1;
+        const char *p2;
         struct sockaddr_in *p3;
         struct addrinfo *p4;
 
@@ -90,10 +90,10 @@ void *add_and_lookup_stuff(void *parm)
         p3 = get_cached_addrinfo(word);
         p4 = get_cached_addrinfo_full(word);
         fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)));
-      }
+        }
       else
-      {
-      }
+        {
+        }
     }
   return NULL;
   }
