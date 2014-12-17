@@ -2219,8 +2219,7 @@ int req_commit(
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
 
-      job_mutex.unlock();
-
+      svr_job_purge(pj);
       return(PBSE_BAD_ARRAY_REQ);
       }
     }  /* end if (pj->ji_is_array_template) */
