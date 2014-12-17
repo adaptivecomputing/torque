@@ -74,8 +74,6 @@ static int mm_getsize(resource *pres, unsigned long *ret);
 
 static int mm_gettime(resource *pres, unsigned long *ret);
 
-int injob(job *pjob, pid_t pid);
-
 unsigned long cput_sum(job *pjob);
 
 int overcpu_proc(job *pjob, unsigned long limit);

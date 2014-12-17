@@ -10,7 +10,7 @@
 #include "pbs_error.h"
 #include "resizable_array.h"
 
-std::set<pid_t> job_sid_set;
+std::set<pid_t> global_job_sid_set;
 
 resizable_array *exiting_job_list;
 

@@ -118,12 +118,12 @@ proc_stat_t   *proc_array = NULL;
 static int            nproc = 0;
 static int            max_proc = 0;
 
-pid2jobsid_map_t pid2jobsid_map;
+extern pid2jobsid_map_t pid2jobsid_map;
 
 /*
 ** external functions and data
 */
-extern job_sid_set_t    job_sid_set;
+extern job_pid_set_t    global_job_sid_set;
 extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
@@ -920,7 +920,7 @@ static int mm_gettime(
   }
 
 
-int injob(
+bool injob(
 
   job   *pjob,
   pid_t  pid)
@@ -935,19 +935,30 @@ int injob(
   if (iter == pid2jobsid_map.end())
     {
     /* not in map */
-    return(FALSE);
+    return(false);
     }
 
   /* set to the job sid that was found */
   job_sid_of_pid = iter->second;
 
-  /* does the pid match the owning session id? */
-  if (pjob->ji_job_pid == job_sid_of_pid)
+  /* find the pid in ji_job_pid_set */
+  job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(job_sid_of_pid);
+  if (job_pid_set_iter != pjob->ji_job_pid_set->end())
     {
-    return(TRUE);
+    /* found it */
+    return(true);
     }
 
-  return(FALSE);
+  /* Next, check the job's tasks to see if they match the session id */
+  for (task *ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    {
+    if (job_sid_of_pid == ptask->ti_qs.ti_sid)
+      return(true);
+    }
+
+  return(false);
   }  /* END injob() */
 
 
@@ -979,7 +990,9 @@ unsigned long cput_sum(
     }
 
   /* iterate over pids of all job session ids */
-  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin(); iter != pid2jobsid_map.end(); iter++)
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
     int index;
     pid_t pid;
@@ -1053,7 +1066,9 @@ int overcpu_proc(
   proc_stat_t   *ps;
 
   /* iterate over pids of all job session ids */
-  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin(); iter != pid2jobsid_map.end(); iter++)
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
     int index;
     pid_t pid;
@@ -1124,7 +1139,9 @@ unsigned long long mem_sum(
     }
 
   /* iterate over pids of all job session ids */
-  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin(); iter != pid2jobsid_map.end(); iter++)
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
     int index;
     pid_t pid;
@@ -1202,7 +1219,9 @@ unsigned long long resi_sum(
     }
 
   /* iterate over pids of all job session ids */
-  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin(); iter != pid2jobsid_map.end(); iter++)
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
     int index;
     pid_t pid;
@@ -1303,7 +1322,9 @@ int overmem_proc(
     }
 
   /* iterate over pids of all job session ids */
-  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin(); iter != pid2jobsid_map.end(); iter++)
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
     int index;
     pid_t pid;
@@ -1966,7 +1987,7 @@ int get_job_sid_from_pid(pid_t pid)
   {
   int  index;
   int  sid;
-  job_sid_set_t::const_iterator it;
+  job_pid_set_t::const_iterator it;
 
   if (pid < 2)
     {
@@ -1990,17 +2011,17 @@ int get_job_sid_from_pid(pid_t pid)
   /* get the sid of the pid in the proc_array */
   sid = proc_array[index].session;
 
-  /* find sid in job_sid_set */
-  it = job_sid_set.find(sid);
+  /* find sid in global_job_sid_set */
+  it = global_job_sid_set.find(sid);
 
   /* found? */
-  if (it != job_sid_set.end())
+  if (it != global_job_sid_set.end())
     {
     /* yes, return the sid */
     return(sid);
     }
 
-  /* sid not in job_sid_set so try to find an owning one from pid's lineage */
+  /* sid not in global_job_sid_set so try to find an owning one from pid's lineage */
   return(get_job_sid_from_pid(proc_array[index].ppid));
   }
 
@@ -2162,7 +2183,7 @@ int mom_get_sample(void)
   for ( int i = 0; i < nproc; i++)
     {
     int  job_sid;
-    job_sid_set_t::const_iterator it;
+    job_pid_set_t::const_iterator it;
 
     if ((proc_array[i].session < 2) || (proc_array[i].pid < 2) || (proc_array[i].ppid < 2))
       {
@@ -2170,23 +2191,16 @@ int mom_get_sample(void)
       continue;
       }
 
-    it = job_sid_set.find(proc_array[i].pid);
-    if (it != job_sid_set.end())
-      {
-      /* this is the job's parent process so skip it */
-      continue;
-      }
-
-    /* If the session of this entry is in the job_sid_set then it belongs to the job.
+    /* If the session of this entry is in the global_job_sid_set then it belongs to the job.
        associate the pid with the session of the job */
-    it = job_sid_set.find(proc_array[i].session);
-    if (it != job_sid_set.end())
+    it = global_job_sid_set.find(proc_array[i].session);
+    if (it != global_job_sid_set.end())
       {
       pid2jobsid_map[proc_array[i].pid] = proc_array[i].session;
       continue;
       }
 
-    /* the entry was not in the job_sid_set so try to find owning job sid from entry's lineage */
+    /* the entry was not in the global_job_sid_set so try to find owning job sid from entry's lineage */
     if ((job_sid = get_job_sid_from_pid(proc_array[i].ppid)) != -1)
       {
       pid2jobsid_map[proc_array[i].pid] = job_sid;

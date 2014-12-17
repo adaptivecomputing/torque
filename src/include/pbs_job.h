@@ -443,6 +443,10 @@ typedef struct noderes
   } noderes;
 
 
+typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
+typedef std::map<pid_t, int> pid2procarrayindex_map_t;
+typedef std::set<pid_t> job_pid_set_t;
+
 
 
 /* mother superior to sister communication */
@@ -668,8 +672,8 @@ struct job
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
-  pid_t          ji_job_pid;        /* pid of child process forked from TMomFinalizeJob2. 
-                                     * This is the session id of the entire job */
+  job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
+                                        and tasks from start_process. */
 
 #else     /* END MOM ONLY */
 
@@ -1151,10 +1155,6 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
 
 #endif /* BATCH_REQUEST_H */
-
-typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
-typedef std::map<pid_t, int> pid2procarrayindex_map_t;
-typedef std::set<pid_t> job_sid_set_t;
 
 
 #endif /* PBS_JOB_H */
