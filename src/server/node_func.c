@@ -1598,6 +1598,9 @@ int copy_properties(
    * values */
   sub->as_next= sub->as_buf + (main_node->as_next - main_node->as_buf);
 
+  // nd_first is about to be overwritten so we must free it first
+  free_prop_list(dest->nd_first);
+
   plink = &dest->nd_first;
 
   for (i = 0; i < main_node->as_npointers; i++)
@@ -1617,7 +1620,6 @@ int copy_properties(
 
   return(PBSE_NONE);
   } /* END copy_properties() */
-
 
 
 
