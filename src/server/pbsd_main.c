@@ -1914,7 +1914,6 @@ int main(
   pthread_mutex_unlock(&job_log_mutex);
 
   /* cleans up memory allocated by the xml library */
-  xmlCleanupParser(); /* must be called the latest possible */
   exit_called = true;
   exit(0);
   }  /* END main() */
