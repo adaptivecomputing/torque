@@ -114,6 +114,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <set>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -180,6 +181,8 @@ extern time_t  time_now;
 
 extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
+
+extern job_pid_set_t global_job_sid_set;
 
 void nodes_free(job *);
 
@@ -502,6 +505,8 @@ job *job_alloc(void)
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
 
+  pj->ji_job_pid_set = new job_pid_set_t;
+
   return(pj);
   }  /* END job_alloc() */
 
@@ -551,6 +556,8 @@ void mom_job_free(
     free(pj->ji_resources);
     pj->ji_resources = NULL;
     }
+
+  delete pj->ji_job_pid_set;
 
   /* now free the main structure */
   free(pj);
@@ -859,6 +866,23 @@ void mom_job_purge(
 
   jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+  /* remove each pid in ji_job_pid_set from the global_job_sid_set */
+  for (job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->begin();
+       job_pid_set_iter != pjob->ji_job_pid_set->end();
+       job_pid_set_iter++)
+    {
+    /* get pid entry from ji_job_pid_set */
+    pid_t job_pid = *job_pid_set_iter;
+
+    /* see if job_pid exists in job_sid set */
+    job_pid_set_t::const_iterator it = global_job_sid_set.find(job_pid);
+    if (it != global_job_sid_set.end())
+      {
+      /* remove job_pid from the set */
+      global_job_sid_set.erase(it);
+      }
+    }
 
   if (thread_unlink_calls == TRUE)
     enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
