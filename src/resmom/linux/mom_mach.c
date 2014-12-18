@@ -28,6 +28,7 @@
 #include <string.h>
 #include <csv.h>
 #include <fcntl.h>
+#include <map>
 
 /* needed for oom_adj */
 #include <linux/limits.h>
@@ -100,7 +101,9 @@
 
 static char    procfs[] = "/proc";
 static DIR    *pdir = NULL;
-static int     pagesize;
+int            pagesize;
+
+pid2procarrayindex_map_t pid2procarrayindex_map;
 
 extern char *ret_string;
 
@@ -111,13 +114,16 @@ extern  int     LOGLEVEL;
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
 
-static proc_stat_t   *proc_array = NULL;
+proc_stat_t   *proc_array = NULL;
 static int            nproc = 0;
 static int            max_proc = 0;
+
+extern pid2jobsid_map_t pid2jobsid_map;
 
 /*
 ** external functions and data
 */
+extern job_pid_set_t    global_job_sid_set;
 extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
@@ -903,104 +909,46 @@ static int mm_gettime(
   }
 
 
-
-
-
-
-static int injob(
+bool injob(
 
   job   *pjob,
-  pid_t  sid,
-  struct pidl **pids)
+  pid_t  pid)
 
   {
-  task *ptask;
-  pid_t  pid;
-#ifdef PENABLE_LINUX26_CPUSETS
-  struct pidl   *pp;
-#else
-  proc_stat_t   *ps;
-#endif /* PENABLE_LINUX26_CPUSETS */
+  pid_t  job_sid_of_pid;
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+  /* look up the owning job session id */
+
+  /* see if pid is in the map */
+  pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.find(pid);
+  if (iter == pid2jobsid_map.end())
+    {
+    /* not in map */
+    return(false);
+    }
+
+  /* set to the job sid that was found */
+  job_sid_of_pid = iter->second;
+
+  /* find the pid in ji_job_pid_set */
+  job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(job_sid_of_pid);
+  if (job_pid_set_iter != pjob->ji_job_pid_set->end())
+    {
+    /* found it */
+    return(true);
+    }
+
+  /* Next, check the job's tasks to see if they match the session id */
+  for (task *ptask = (task *)GET_NEXT(pjob->ji_tasks);
        ptask != NULL;
        ptask = (task *)GET_NEXT(ptask->ti_jobtask))
     {
-    if (ptask->ti_qs.ti_sid <= 1)
-      continue;
-
-    if (ptask->ti_qs.ti_sid == sid)
-      {
-      return(TRUE);
-      }
+    if (job_sid_of_pid == ptask->ti_qs.ti_sid)
+      return(true);
     }
 
-  /* processes with a different sessionid are not necessarily not part of the
-     job: the job can call setsid; need to check whether one of the parent
-     processes has a sessionid that is in the job */
-#ifdef PENABLE_LINUX26_CPUSETS
-
-  /* check whether the sid is in the job's cpuset */
-
-  if(*pids == NULL)
-    {
-    *pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, *pids);
-    pp   = *pids;
-    }
-  else
-    {
-    pp = *pids;
-    }
-
-  while (pp != NULL)
-    {
-    pid = pp->pid;
-    pp  = pp->next;
-    if (pid == sid)
-      {
-      return(TRUE);
-      }
-    }
-#else
-
-  /* get the parent process id of the sid and check whether it is part of
-     the job; iterate */
-
-  pid = sid;
-  while (pid > 1)
-    {
-    if ((ps = get_proc_stat(pid)) == NULL)
-      {
-      if (errno != ENOENT)
-        {
-        sprintf(log_buffer, "%d: get_proc_stat", pid);
-
-        log_err(errno, __func__, log_buffer);
-        }
-      return(FALSE);
-      }
-    pid = getsid(ps->ppid);
-
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-         ptask != NULL;
-         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-      {
-      if (ptask->ti_qs.ti_sid <= 1)
-        continue;
-
-      if (ptask->ti_qs.ti_sid == pid)
-        {
-        return(TRUE);
-        }
-      }
-    }
-#endif /* PENABLE_LINUX26_CPUSETS */
-
-  return(FALSE);
+  return(false);
   }  /* END injob() */
-
-
-
 
 
 /*
@@ -1011,33 +959,56 @@ static int injob(
  * adjusted by cputfactor.
  */
 
-static unsigned long cput_sum(
+unsigned long cput_sum(
 
   job *pjob)  /* I */
 
   {
   ulong          cputime;
   int            nps = 0;
-  int            i;
   proc_stat_t   *ps;
-  struct pidl  *pids = NULL;
 
   cputime = 0;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "proc_array loop start - jobid = %s",
+    sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
             pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
-  for (i = 0;i < nproc;i++)
+  /* iterate over pids of all job session ids */
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
-    ps = &proc_array[i];
+    int index;
+    pid_t pid;
 
-    if (!injob(pjob, ps->session,&pids))
+    pid = iter->first;
+
+    if (!injob(pjob, pid))
+      {
       continue;
+      }
+
+    /* pid is in the job */
+
+    /* get the index of this pid in the proc_array */
+
+    /* see if pid is in the map */
+    pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+    if (pa_iter == pid2procarrayindex_map.end())
+      {
+      /* not in map so skip */
+       continue;
+      }
+
+    /* assign index to the index of the pid in proc_array */
+    index = pa_iter->second;
+
+    ps = &proc_array[index];
 
     nps++;
 
@@ -1054,14 +1025,7 @@ static unsigned long cput_sum(
 
       log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
       }
-    }    /* END for (i) */
-#ifdef PENABLE_LINUX26_CPUSETS
-
-  if (pids != NULL)
-    {
-    free_pidlist(pids);
-    }
-#endif
+    }    /* END for */
 
   if (nps == 0)
     pjob->ji_flags |= MOM_NO_PROC;
@@ -1080,63 +1044,47 @@ static unsigned long cput_sum(
  * Return TRUE if any process in the job is over limit for cputime usage.
  */
 
-static int overcpu_proc(
+int overcpu_proc(
 
   job  *pjob,
   unsigned long  limit)  /* I */
 
   {
   ulong          cputime;
-  pid_t          pid;
 
   proc_stat_t   *ps;
-  struct pidl   *pids = NULL;
 
-#ifdef PENABLE_LINUX26_CPUSETS
-  struct pidl   *pp;
-#else
-  struct dirent *dent;
-#endif /* PENABLE_LINUX26_CPUSETS */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-
-  /* Instead of collect stats of all processes running on a large SMP system,
-   * collect stats of processes running in and below the cpuset of the job, only. */
-
-  pids = get_cpuset_pidlist(pjob->ji_qs.ji_jobid, pids);
-  pp   = pids;
-
-  while (pp != NULL)
+  /* iterate over pids of all job session ids */
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
-    pid = pp->pid;
-    pp  = pp->next;
-#else
-  rewinddir(pdir);
+    int index;
+    pid_t pid;
 
-  while ((dent = readdir(pdir)) != NULL)
-    {
-    if (!isdigit(dent->d_name[0]))
-      continue;
+    pid = iter->first;
 
-    pid = atoi(dent->d_name);
-#endif /* PENABLE_LINUX26_CPUSETS */
-    if ((ps = get_proc_stat(pid)) == NULL)
+    if (!injob(pjob, pid))
       {
-      if (errno != ENOENT)
-        {
-        sprintf(log_buffer, "%d: get_proc_stat", pid);
-
-        log_err(errno, __func__, log_buffer);
-        }
-
       continue;
       }
 
-#ifndef PENABLE_LINUX26_CPUSETS 
-    /* if it was in the cpuset, its part of the job, no need to check */
-    if (!injob(pjob, ps->session,&pids))
+    /* pid is in the job */
+
+    /* get the index of this pid in the proc_array */
+
+    /* see if pid is in the map */
+    pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+    if (pa_iter == pid2procarrayindex_map.end())
+      {
+      /* not in map so skip */
       continue;
-#endif /* PENABLE_LINUX26_CPUSETS */
+      }
+
+    /* assign index to the index of the pid in proc_array */
+    index = pa_iter->second;
+
+    ps = &proc_array[index];
 
     /* change from ps->cutime to ps->utime, and ps->cstime to ps->stime */
 
@@ -1144,24 +1092,9 @@ static int overcpu_proc(
 
     if (cputime > limit)
       {
-#ifdef PENABLE_LINUX26_CPUSETS
-      if(pids != NULL)
-        {
-        free_pidlist(pids);
-        pids = NULL;
-        }
-#endif
-
       return(TRUE);
       }
     }
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if(pids != NULL)
-    {
-    free_pidlist(pids);
-    }
-#endif
 
   return(FALSE);
   }  /* END overcpu_proc() */
@@ -1177,31 +1110,54 @@ static int overcpu_proc(
  * space consumed by all current processes within the job.
  */
 
-static unsigned long long mem_sum(
+unsigned long long mem_sum(
 
   job *pjob)
 
   {
-  int                 i;
   unsigned long long  segadd;
   proc_stat_t        *ps;
-  struct pidl       *pids = NULL;
 
   segadd = 0;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "proc_array loop start - jobid = %s",
+    sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
             pjob->ji_qs.ji_jobid);
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
-  for (i = 0;i < nproc;i++)
+  /* iterate over pids of all job session ids */
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
-    ps = &proc_array[i];
+    int index;
+    pid_t pid;
 
-    if (!injob(pjob, ps->session,&pids))
+    pid = iter->first;
+
+    if (!injob(pjob, pid))
+      {
       continue;
+      }
+
+    /* pid is in the job */
+
+    /* get the index of this pid in the proc_array */
+
+    /* see if pid is in the map */
+    pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+    if (pa_iter == pid2procarrayindex_map.end())
+      {
+      /* not in map so skip */
+      continue;
+      }
+
+    /* assign index to the index of the pid in proc_array */
+    index = pa_iter->second;
+
+    ps = &proc_array[index];
 
     segadd += ps->vsize;
 
@@ -1216,15 +1172,7 @@ static unsigned long long mem_sum(
       log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
       }
 
-    }  /* END for (i) */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if(pids != NULL)
-    {
-    free_pidlist(pids);
-    }
-#endif
-
+    }  /* END for */
 
   return(segadd);
   }  /* END mem_sum() */
@@ -1239,15 +1187,13 @@ static unsigned long long mem_sum(
  * consumed by all current processes within the job.
  */
 
-static unsigned long long resi_sum(
+unsigned long long resi_sum(
 
   job *pjob)
 
   {
-  int                 i;
   unsigned long long  resisize;
   proc_stat_t        *ps;
-  struct pidl       *pids = NULL;
 #ifdef USELIBMEMACCT
   long long                w_rss;
 #endif
@@ -1261,12 +1207,40 @@ static unsigned long long resi_sum(
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
-  for (i = 0;i < nproc;i++)
+  /* iterate over pids of all job session ids */
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
-    ps = &proc_array[i];
+    int index;
+    pid_t pid;
 
-    if (!injob(pjob, ps->session,&pids))
+    /* get the pid (key) from the map */
+    pid = iter->first;
+
+    if (!injob(pjob, pid))
+      {
+      /* pid is not in job */
       continue;
+      }
+
+    /* pid is in the job */
+
+    /* get the index of this pid in the proc_array */
+
+    /* see if pid is in the map */
+    pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+    if (pa_iter == pid2procarrayindex_map.end())
+      {
+      /* not in map so skip */
+      continue;
+      }
+
+    /* assign index to the index of the pid in proc_array */
+    index = pa_iter->second;
+
+    ps = &proc_array[index];
+
 
 #ifdef USELIBMEMACCT
 
@@ -1308,14 +1282,7 @@ static unsigned long long resi_sum(
 
 #endif
 
-    }  /* END for (i) */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if(pids != NULL)
-    {
-    free_pidlist(pids);
-    }
-#endif
+    }  /* END for  */
 
   return(resisize);
   }  /* END resi_sum() */
@@ -1327,43 +1294,59 @@ static unsigned long long resi_sum(
  * Return TRUE if any process in the job is over limit for virtual memory usage.
  */
 
-static int overmem_proc(
+int overmem_proc(
 
   job       *pjob,  /* I */
   unsigned long long  limit) /* I */
 
   {
-  int                 i;
   proc_stat_t        *ps;
-  struct pidl       *pids = NULL;
 
   if (LOGLEVEL >= 6)
     {
-    sprintf(log_buffer, "proc_array loop start - jobid = %s",
+    sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
             pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
-  for (i = 0;i < nproc;i++)
+  /* iterate over pids of all job session ids */
+  for (pid2jobsid_map_t::const_iterator iter = pid2jobsid_map.begin();
+       iter != pid2jobsid_map.end();
+       iter++)
     {
-    ps = &proc_array[i];
+    int index;
+    pid_t pid;
 
-    if (!injob(pjob, ps->session,&pids))
+    pid = iter->first;
+
+    if (!injob(pjob, pid))
+      {
       continue;
+      }
+
+    /* pid is in the job */
+
+    /* get the index of this pid in the proc_array */
+
+    /* see if pid is in the map */
+    pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+    if (pa_iter == pid2procarrayindex_map.end())
+      {
+      /* not in map so skip */
+      continue;
+      }
+
+    /* assign index to the index of the pid in proc_array */
+    index = pa_iter->second;
+
+    ps = &proc_array[index];
 
     if (ps->vsize > limit)
       {
       return(TRUE);
       }
-    }    /* END for (i) */
-
-#ifdef PENABLE_LINUX26_CPUSETS
-  if(pids != NULL)
-    {
-    free_pidlist(pids);
-    }
-#endif
+    }    /* END for */
 
   return(FALSE);
   }  /* END overmem_proc() */
@@ -1983,7 +1966,51 @@ int mom_open_poll(void)
   return(PBSE_NONE);
   }  /* END mom_open_poll() */
 
+/*
+ * try to find owning job session id of a pid from pid's lineage
+ */
 
+int get_job_sid_from_pid(pid_t pid)
+  {
+  int  index;
+  int  sid;
+  job_pid_set_t::const_iterator it;
+
+  if (pid < 2)
+    {
+    /* don't care about pids 0 and 1 */
+    return(-1);
+    }
+
+  /* get the index of this pid in the proc_array */
+
+  /* see if pid is in the map */
+  pid2procarrayindex_map_t::const_iterator pa_iter = pid2procarrayindex_map.find(pid);
+  if (pa_iter == pid2procarrayindex_map.end())
+    {
+    /* not in map so bail out */
+    return(-1);
+    }
+
+  /* assign index to the index of the pid in proc_array */
+  index = pa_iter->second;
+
+  /* get the sid of the pid in the proc_array */
+  sid = proc_array[index].session;
+
+  /* find sid in global_job_sid_set */
+  it = global_job_sid_set.find(sid);
+
+  /* found? */
+  if (it != global_job_sid_set.end())
+    {
+    /* yes, return the sid */
+    return(sid);
+    }
+
+  /* sid not in global_job_sid_set so try to find an owning one from pid's lineage */
+  return(get_job_sid_from_pid(proc_array[index].ppid));
+  }
 
 
 /*
@@ -2004,6 +2031,8 @@ int mom_open_poll(void)
  *
  * NOTE:  populates global 'proc_array[]' variable.
  * NOTE:  reallocs proc_array[] as needed to accomodate processes.
+ * NOTE:  populates global 'pid2jobsid_map' map (pid to owning job session id mapping for all pids).
+ * NOTE:  populates global 'pid2procarrayindex_map' map (pid to index in proc_array map).
  *
  * @see mom_open_poll() - allocs proc_array table.
  * @see mom_close_poll() - frees procs_array.
@@ -2029,6 +2058,10 @@ int mom_get_sample(void)
     mom_open_poll();
 
   nproc = 0;
+
+  /* clear the maps */
+  pid2jobsid_map.clear();
+  pid2procarrayindex_map.clear();
 
   pi = proc_array;
 
@@ -2111,6 +2144,9 @@ int mom_get_sample(void)
       proc_array = hold;
       }  /* END if ((nproc+1) == max_proc) */
 
+    /* map pid to proc_array index */
+    pid2procarrayindex_map[pid] = nproc;
+
     pi = &proc_array[nproc++];
 
     memcpy(pi, ps, sizeof(proc_stat_t));
@@ -2126,6 +2162,39 @@ int mom_get_sample(void)
             nproc);
 
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
+    }
+
+  /* We have filled the proc_array table. Now find all of the processes that actually belong to a job and 
+     add them to the pid2jobsid_map associating the process id with the session id of the job to which it belongs */
+
+  for ( int i = 0; i < nproc; i++)
+    {
+    int  job_sid;
+    job_pid_set_t::const_iterator it;
+
+    if ((proc_array[i].session < 2) || (proc_array[i].pid < 2) || (proc_array[i].ppid < 2))
+      {
+      /* process 0 and 1 are nothing we need to look at */
+      continue;
+      }
+
+    /* If the session of this entry is in the global_job_sid_set then it belongs to the job.
+       associate the pid with the session of the job */
+    it = global_job_sid_set.find(proc_array[i].session);
+    if (it != global_job_sid_set.end())
+      {
+      pid2jobsid_map[proc_array[i].pid] = proc_array[i].session;
+      continue;
+      }
+
+    /* the entry was not in the global_job_sid_set so try to find owning job sid from entry's lineage */
+    if ((job_sid = get_job_sid_from_pid(proc_array[i].ppid)) != -1)
+      {
+      pid2jobsid_map[proc_array[i].pid] = job_sid;
+      continue;
+      }
+
+    /* If we get to here the proc_array entry does not belong to a current job */
     }
 
   return(PBSE_NONE);
