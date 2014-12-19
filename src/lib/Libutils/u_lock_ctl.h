@@ -42,8 +42,10 @@ int lock_ss();
 
 int unlock_ss();
 
+int tmp_lock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging);
 int lock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging);
 
+int tmp_unlock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging);
 int unlock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging);
 
 int lock_cntr_init();

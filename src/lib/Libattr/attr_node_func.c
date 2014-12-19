@@ -1276,9 +1276,9 @@ int node_ttl(
 
     case ATR_ACTION_ALTER:
 
-      if(new_attr->at_val.at_str != NULL)
+      if (new_attr->at_val.at_str != NULL)
         {
-        strcpy((char *)np->nd_ttl,new_attr->at_val.at_str);
+        snprintf(np->nd_ttl, sizeof(np->nd_ttl), "%s", new_attr->at_val.at_str);
         }
       else
         {

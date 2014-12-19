@@ -132,6 +132,8 @@ void demux_wait(int sig);
 
 void fork_demux(struct job *pjob);
 
+time_t get_stat_update_interval();
+
 void send_update_soon();
 
 int read_status_strings(struct tcp_chan *chan, int version);

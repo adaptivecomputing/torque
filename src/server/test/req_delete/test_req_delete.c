@@ -31,7 +31,6 @@ void post_delete_mom2(struct work_task *pwt);
 int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
 int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
 bool exit_called;
-
 extern int  depend_term_called;
 extern long keep_seconds;
 extern int bad_queue;
@@ -40,11 +39,12 @@ extern int signal_issued;
 extern int nanny;
 extern bool br_freed;
 extern int alloc_work;
-extern struct server server;
+struct server server;
 extern const char *delpurgestr;
 
 char server_host[PBS_MAXHOSTNAME + 1];
 time_t pbs_tcp_timeout = 300;
+time_t apply_job_delete_nanny_time = 0;
 
 extern all_jobs  alljobs;
 
@@ -355,6 +355,38 @@ START_TEST(test_is_ms_on_server)
   }
 END_TEST 
 
+START_TEST(test_setup_apply_job_delete_nanny)
+  {
+  time_t time_now = time(NULL);
+  time_t call_time = time_now + 300;
+
+  nanny = 0; /* nanny is being used by the other unit tests above */
+  server.sv_attr[SRV_ATR_KeepCompleted].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 300;
+
+  server.sv_attr[SRV_ATR_JobNanny].at_flags = ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_JobNanny].at_val.at_long = 1;
+
+  job myjob;
+  memset(&myjob, 0, sizeof(job));
+
+  nanny = 0; // don't use this hook as the other unit tests do
+  setup_apply_job_delete_nanny(&myjob, time_now);
+  fail_unless(apply_job_delete_nanny_time == call_time, 
+              "apply_job_delete_nanny did not go off at the right time");
+
+  //Now, let's test there was no keep_completed server option
+  call_time = time_now + 60;
+  server.sv_attr[SRV_ATR_KeepCompleted].at_flags = 0;
+  server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 0;
+  memset(&myjob, 0, sizeof(job)); 
+
+  setup_apply_job_delete_nanny(&myjob, time_now);
+  fail_unless(apply_job_delete_nanny_time == call_time, 
+              "apply_job_delete_nanny did not go off at the right time when there was no keep_completed");
+  }
+END_TEST 
+
 Suite *req_delete_suite(void)
   {
   Suite *s = suite_create("req_delete_suite methods");
@@ -369,6 +401,7 @@ Suite *req_delete_suite(void)
   tcase_add_test(tc_core, test_forced_jobpurge);
   tcase_add_test(tc_core, test_post_delete_mom2);
   tcase_add_test(tc_core, test_is_ms_on_server);
+  tcase_add_test(tc_core, test_setup_apply_job_delete_nanny);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("more");

@@ -230,7 +230,7 @@ int delete_inactive_job(
      * is not running, so put in into a complete state.
      */
     struct pbs_queue *pque;
-    int               KeepSeconds = 0;
+    int    KeepSeconds = 0;
 
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
 
@@ -393,6 +393,23 @@ void ensure_deleted(
   free(ptask);
   } /* END ensure_deleted() */
 
+
+
+
+void setup_apply_job_delete_nanny(
+
+  job    *pjob,           /* I */
+  time_t  time_now)       /* I */
+
+  {
+  long KeepSeconds = 0;  
+  int rc = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
+
+  if ((rc != PBSE_NONE) || (KeepSeconds <= 0))
+    apply_job_delete_nanny(pjob, time_now + 60);
+  else
+    apply_job_delete_nanny(pjob, time_now + KeepSeconds);
+  } /* END of setup_apply_job_delete_nanny */
 
 
 
@@ -566,7 +583,7 @@ jump:
       return(-1);
       }
 
-    apply_job_delete_nanny(pjob, time_now + 60);
+    setup_apply_job_delete_nanny(pjob, time_now);
 
     /*
      * Send signal request to MOM.  The server will automagically
@@ -635,6 +652,7 @@ jump:
             continue;
 
           job_mutex.unlock();
+          
           if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
             {
             free(pa->job_ids[i]);
@@ -664,26 +682,31 @@ jump:
 
             unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
             }
+
           if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
             {
             job_mutex.set_unlock_on_exit(false);
             return -1;
             }
+
           job_mutex.set_lock_state(true);
           }
 
-        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+        if (pjob != NULL)
           {
-          long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          int job_state = pjob->ji_qs.ji_state;
+          if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+            {
+            long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+            int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+            int job_state = pjob->ji_qs.ji_state;
 
-          job_mutex.unlock();
-          update_array_values(pa,job_state,aeTerminate,
-            (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
+            job_mutex.unlock();
+            update_array_values(pa,job_state,aeTerminate,
+              (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
 
-          if((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-            job_mutex.mark_as_locked();
+            if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
+              job_mutex.mark_as_locked();
+            }
           }
 
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
@@ -720,10 +743,16 @@ jump:
     /* job has staged-in file, should remove them */
     remove_stagein(&pjob);
 
-    job_mutex.set_unlock_on_exit(false);
 
     if (pjob != NULL)
+      {
       job_abt(&pjob, Msg);
+
+      if (pjob == NULL)
+        job_mutex.set_unlock_on_exit(false);
+      }
+    else
+      job_mutex.set_unlock_on_exit(false);
     }
 
   delete_inactive_job(&pjob, Msg);
@@ -1511,6 +1540,8 @@ int forced_jobpurge(
         /* FAILURE */
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
         return(-1);
         }
       }
@@ -1837,7 +1868,7 @@ int is_ms_on_server(
         if (strstr(host_tok, ".") == NULL)
           get_fullhostname(host_tok, mom_fullhostname, sizeof(mom_fullhostname), NULL);
 
-      ms_on_server = strcmp(server_host, mom_fullhostname) == 0;
+      ms_on_server = (strcmp(server_host, mom_fullhostname) == 0);
       }
     }
 

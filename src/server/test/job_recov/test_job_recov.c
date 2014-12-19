@@ -29,7 +29,6 @@ START_TEST(test_translate_dependency_to_string)
   struct depend_job dj;
 
   memset(&dj, 0, sizeof(dj));
-  CLEAR_LINK(dj.dc_link);
   strcpy(dj.dc_child, "1.napali");
   strcpy(dj.dc_svr, "napali");
   

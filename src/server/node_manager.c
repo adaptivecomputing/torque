@@ -139,13 +139,13 @@
 
 extern int              LOGLEVEL;
 
-
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int              h_errno;*/
 #endif
   
 
 int                     svr_totnodes = 0; /* total number nodes defined       */
+int                     svr_unresolvednodes = 0; /* number of nodes from the nodes file that failed to resolve. */
 int                     svr_clnodes  = 0; /* number of cluster nodes     */
 int                     svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int                     gpu_mode_rqstd = -1;  /* default gpu mode requested */
@@ -541,11 +541,10 @@ int kill_job_on_mom(
       snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", job_id);
       snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
       preq->rq_extra = strdup(SYNC_KILL);
-      
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
       rc = issue_Drequest(conn, preq, true);
       free_br(preq);
-      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
 
@@ -638,9 +637,10 @@ bool job_should_be_killed(
   if ((is_job_on_node(pnode, internal_job_id)) == FALSE)
     {
     /* must lock the job before the node */
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
     pjob = svr_find_job_by_id(internal_job_id);
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     
     if (pjob != NULL)
       {
@@ -771,9 +771,9 @@ void sync_node_jobs_with_moms(
       }
     if (removejob || removealljobs)
       {
-      unlock_node(np, __func__, NULL, LOGLEVEL);
+      tmp_unlock_node(np, __func__, NULL, LOGLEVEL);
       job *pjob = svr_find_job(jobid, TRUE);
-      lock_node(np, __func__, NULL, LOGLEVEL);
+      tmp_lock_node(np, __func__, NULL, LOGLEVEL);
       if (pjob)
         unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
       else
@@ -949,6 +949,17 @@ void *sync_node_jobs(
 
     internal_job_id = job_mapper.get_id(job_id.c_str());
 
+    if (internal_job_id == -1)
+      {
+      /* log a message if it's at loglevel 7 and proceed to kill the job.
+      */
+      if (LOGLEVEL >= 7)
+        {
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
     if (job_should_be_killed(internal_job_id, np))
       {
       if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
@@ -2762,7 +2773,7 @@ void record_fitting_node(
 
   int                 &num,
   struct pbsnode      *pnode,
-  node_job_add_info   *naji,
+  node_job_add_info   *naji,           /* O (optional) */
   single_spec_data    *req,
   int                  first_node_id,
   int                  i,
@@ -2789,10 +2800,10 @@ void record_fitting_node(
         (ard_array != NULL) &&
         (*ard_array != NULL))
       {
-      if ((*ard_array)[req->req_id].node_list.length() != 0)
-        (*ard_array)[req->req_id].node_list += ',';
+      if ((*ard_array)[req->req_id].node_list->length() != 0)
+        (*ard_array)[req->req_id].node_list->append(",");
 
-      (*ard_array)[req->req_id].node_list += pnode->nd_name;
+      (*ard_array)[req->req_id].node_list->append(pnode->nd_name);
 
       if (req->ppn > (*ard_array)[req->req_id].ppn)
         (*ard_array)[req->req_id].ppn = req->ppn;
@@ -3012,6 +3023,23 @@ bool process_as_node_list(
  
   return(false);
   } /* process_as_node_list() */
+
+
+int initialize_alps_req_data(
+
+  alps_req_data **ard_array,
+  int             num_reqs)
+
+  {
+  alps_req_data *ard = (alps_req_data *)calloc(num_reqs, sizeof(alps_req_data));
+  
+  for (int i = 0; i < num_reqs; i++)
+    ard[i].node_list = new std::string();
+
+  *ard_array = ard;
+
+  return(PBSE_NONE);
+  } // initialize_alps_req_data()
 
 
 
@@ -3294,12 +3322,8 @@ int node_spec(
         (ard_array != NULL) &&
         (job_type == JOB_TYPE_cray))
       {
-      *ard_array = (alps_req_data *)calloc(num_alps_reqs + 1, sizeof(alps_req_data));
-      
-      for (i = 0; i <= num_alps_reqs; i++)
-        (*ard_array)[i].node_list = "";
-
       *num_reqs = num_alps_reqs + 1;
+      initialize_alps_req_data(ard_array, *num_reqs);
       }
     }
 
@@ -4052,9 +4076,15 @@ job_reservation_info *place_subnodes_in_hostlist(
     
     node_info->node_id = pnode->nd_id;
     pnode->nd_job_usages.push_back(jui);
+
+    bool job_exclusive_on_use = false;
+    if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+      job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
+        (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
     }
   else
@@ -4519,11 +4549,23 @@ void free_alps_req_data_array(
   int            num_reqs)
 
   {
+  for (int i = 0; i < num_reqs; i++)
+    delete ard_array[i].node_list;
+
   free(ard_array);
   } /* END free_alps_req_data_array() */
 
 
 
+/*
+ * add_multi_reqs_to_job() -- for Cray
+ *
+ * Looks at ard_array and adds the multi-req information to the job.
+ * @param pjob - the job we should add the multi-req information to.
+ * @param num_reqs - the number of multi-reqs
+ * @param ard_array - the array holding the alps req data
+ * @return PBSE_NONE if there is no data or it is added correctly
+ */
 
 int add_multi_reqs_to_job(
     
@@ -4532,31 +4574,30 @@ int add_multi_reqs_to_job(
   alps_req_data *ard_array)
 
   {
-  int             i;
-  std::string     *attr_str;
+  std::string     attr_str;
   char            buf[MAXLINE];
 
   if (ard_array == NULL)
     return(PBSE_NONE);
 
-  attr_str = &ard_array[0].node_list;
+  attr_str = *ard_array[0].node_list;
 
-  for (i = 0; i < num_reqs; i++)
+  for (int i = 0; i < num_reqs; i++)
     {
     if (i != 0)
       {
-      *attr_str += '|';
-      *attr_str += ard_array[i].node_list.c_str();
+      attr_str += '|';
+      attr_str += ard_array[i].node_list->c_str();
       }
 
     snprintf(buf, sizeof(buf), "*%d", ard_array[i].ppn);
-    *attr_str += buf;
+    attr_str += buf;
     }
 
   if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
     free(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str);
 
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str->c_str());
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str.c_str());
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags |= ATR_VFLAG_SET;
 
   return(PBSE_NONE);
@@ -5646,9 +5687,9 @@ job *get_job_from_job_usage_info(
   {
   job *pjob;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
   pjob = svr_find_job_by_id(jui->internal_job_id);
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   }
@@ -5663,9 +5704,9 @@ job *get_job_from_jobinfo(
   {
   job *pjob;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
   pjob = svr_find_job_by_id(jp->internal_job_id);
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
 
   return(pjob);
   } /* END get_job_from_jobinfo() */

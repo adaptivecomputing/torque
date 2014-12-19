@@ -280,6 +280,7 @@ PbsErrClient(PBSE_BAD_UTC_FORMAT, (char *)"Bad UTC format, must be in the form y
 PbsErrClient(PBSE_BAD_UTC_RANGE, (char *)"The time to live date is in the past.")
 PbsErrClient(PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY, (char *)"Nodes may not be dynamically created or deleted if there is a mom_hierarchy file.")
 PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The node has not received the list of other nodes and is not ready to be set to a free state.")
+PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

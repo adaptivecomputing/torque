@@ -1,8 +1,13 @@
 #include "utils.h"
 #include "u_tree.h"
+#include <pthread.h>
+
+
+static pthread_mutex_t AVLMutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 /* height - returns the height of the given node */
-int height(NodeEntry n)
+static int height(NodeEntry n)
   {
   if (n == NULL)
     return(-1);
@@ -84,7 +89,7 @@ static NodeEntry double_rotate_with_right( NodeEntry K1 )
   return single_rotate_with_right( K1 );
   }
 
-AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
+static AvlTree AVL_insert_internal( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
   {
 	if (tree == NULL)
     {
@@ -107,7 +112,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 		 If equal compare port and go left or right accordingly */
 	if (key < tree->key)
 		{
-		tree->left = AVL_insert( key, port, node, tree->left );
+		tree->left = AVL_insert_internal( key, port, node, tree->left );
 		if (height(tree->left) - height(tree->right) >= 2 )
 			{
 			if (key <= tree->left->key )
@@ -118,7 +123,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 		}
 	else if (key > tree->key )
 		{
-		tree->right = AVL_insert( key, port, node, tree->right );
+		tree->right = AVL_insert_internal( key, port, node, tree->right );
 		if (height(tree->right) - height(tree->left) >= 2 )
 		  {
 		  if (key >= tree->right->key)
@@ -139,7 +144,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 			{
 			if (port < tree->port)
 			  {
-			  tree->left = AVL_insert( key, port, node, tree->left );
+			  tree->left = AVL_insert_internal( key, port, node, tree->left );
 			  if (height(tree->left) - height(tree->right) >= 2)
 			  	{
 			  	if (port <= tree->left->port)
@@ -150,7 +155,7 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 			  }
 			else if (port > tree->port )
 			  {
-			  tree->right = AVL_insert( key, port, node, tree->right );
+			  tree->right = AVL_insert_internal( key, port, node, tree->right );
 			  if (height(tree->right) - height(tree->left) >= 2)
 			  	{
 			  	if (port >= tree->right->port)
@@ -166,10 +171,19 @@ AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tre
 	tree->height = Max(height(tree->left), height(tree->right)) + 1;
 
 	return(tree);
-  } /* End AVL_insert */
+  } /* End AVL_insert_internal */
+
+AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
+  {
+  pthread_mutex_lock(&AVLMutex);
+  AvlTree t = AVL_insert_internal(key,port,node,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return t;
+  }
+
 
 /* return a pbsnode with the corresponding key and port */
-struct pbsnode *AVL_find(
+static struct pbsnode *AVL_find_internal(
     
   u_long   key,
   uint16_t port,
@@ -182,22 +196,33 @@ struct pbsnode *AVL_find(
 		}
 
 	if (key < tree->key)
-		return( AVL_find( key, port, tree->left ));
+		return( AVL_find_internal( key, port, tree->left ));
 	else if ( key > tree->key )
-		return( AVL_find( key, port, tree->right ));
+		return( AVL_find_internal( key, port, tree->right ));
 	else
 		{
 		if (port < tree->port)
-			return( AVL_find( key, port, tree->left ) );
+			return( AVL_find_internal( key, port, tree->left ) );
 		else if ( port > tree->port )
-			return( AVL_find( key, port, tree->right ));
+			return( AVL_find_internal( key, port, tree->right ));
 		}
 
 		return( tree->pbsnode );
-  } /* end AVL_find */
+  } /* end AVL_find_internal */
+
+struct pbsnode *AVL_find(
+    u_long   key,
+    uint16_t port,
+    AvlTree  tree)
+  {
+  pthread_mutex_lock(&AVLMutex);
+  pbsnode *pn = AVL_find_internal(key,port,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return pn;
+  }
 
 /* If the key and port are found return 1 otherwise return 0 */
-int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
+static int AVL_is_in_tree_internal(u_long key, uint16_t port, AvlTree tree)
   {
   AvlTree current = tree;
 
@@ -218,12 +243,18 @@ int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
       }
     }
   return(0);
-  } /* end AVL_is_in_tree */
+  } /* end AVL_is_in_tree_internal */
+
+int AVL_is_in_tree(u_long key, uint16_t port, AvlTree tree)
+  {
+  pthread_mutex_lock(&AVLMutex);
+  int i = AVL_is_in_tree_internal(key,port,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return i;
+  }
 
 
-
-
-int AVL_is_in_tree_no_port_compare(
+static int AVL_is_in_tree_no_port_compare_internal(
 
   u_long   key,
   uint16_t port,
@@ -234,17 +265,25 @@ int AVL_is_in_tree_no_port_compare(
     return(0);
 
   if (key < tree->key)
-    return(AVL_is_in_tree_no_port_compare(key,port,tree->left));
+    return(AVL_is_in_tree_no_port_compare_internal(key,port,tree->left));
   else if (key > tree->key)
-    return(AVL_is_in_tree_no_port_compare(key,port,tree->right));
+    return(AVL_is_in_tree_no_port_compare_internal(key,port,tree->right));
   else
     return(1);
-  } /* END AVL_is_in_tree_no_port_compare() */
+  } /* END AVL_is_in_tree_no_port_compare_internal() */
 
+int AVL_is_in_tree_no_port_compare(
+    u_long   key,
+    uint16_t port,
+    AvlTree  tree)
+  {
+  pthread_mutex_lock(&AVLMutex);
+  int i = AVL_is_in_tree_no_port_compare_internal(key,port,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return i;
+  }
 
-
-
-uint16_t AVL_get_port_by_ipaddr(
+static uint16_t AVL_get_port_by_ipaddr_internal(
     
   u_long key,
   AvlTree tree)
@@ -254,19 +293,27 @@ uint16_t AVL_get_port_by_ipaddr(
     return(0);
 
   if (key < tree->key)
-    return(AVL_get_port_by_ipaddr(key,tree->left));
+    return(AVL_get_port_by_ipaddr_internal(key,tree->left));
   else if (key > tree->key)
-    return(AVL_get_port_by_ipaddr(key,tree->right));
+    return(AVL_get_port_by_ipaddr_internal(key,tree->right));
   else
     return(tree->port);
-  } /* END AVL_get_port_by_ipaddr() */
+  } /* END AVL_get_port_by_ipaddr_internal() */
 
 
+uint16_t AVL_get_port_by_ipaddr(
+
+  u_long key,
+  AvlTree tree)
+  {
+  pthread_mutex_lock(&AVLMutex);
+  uint16_t i = AVL_get_port_by_ipaddr_internal(key,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return i;
+  }
 
 
-
-AvlTree AVL_delete_node( 
-
+static AvlTree AVL_delete_node_internal(
   u_long   key, 
   uint16_t port, 
   AvlTree  tree)
@@ -282,7 +329,7 @@ AvlTree AVL_delete_node(
     {
     if (tree->left)
       {
-      h1 = AVL_delete_node(key, port, tree->left);
+      h1 = AVL_delete_node_internal(key, port, tree->left);
       tree->left = h1;
       }
     return(tree);
@@ -291,7 +338,7 @@ AvlTree AVL_delete_node(
     {
     if (tree->right)
       {
-      h1 = AVL_delete_node(key, port, tree->right);
+      h1 = AVL_delete_node_internal(key, port, tree->right);
       tree->right = h1;
       }
     return(tree);
@@ -303,7 +350,7 @@ AvlTree AVL_delete_node(
       {
       if (tree->left)
         {
-        h1 = AVL_delete_node(key, port, tree->left);
+        h1 = AVL_delete_node_internal(key, port, tree->left);
         tree->left = h1;
         }
       return(tree);
@@ -312,7 +359,7 @@ AvlTree AVL_delete_node(
       {
       if (tree->right)
         {
-        h1 = AVL_delete_node(key, port, tree->right);
+        h1 = AVL_delete_node_internal(key, port, tree->right);
         tree->right = h1;
         }
       return(tree);
@@ -367,10 +414,21 @@ AvlTree AVL_delete_node(
       }
     }
   return(tree);
-  } /*  End AVL_delete_node */
+  } /*  End AVL_delete_node_internal */
+
+AvlTree AVL_delete_node(
+  u_long   key,
+  uint16_t port,
+  AvlTree  tree)
+  {
+  pthread_mutex_lock(&AVLMutex);
+  AvlTree t = AVL_delete_node_internal(key,port,tree);
+  pthread_mutex_unlock(&AVLMutex);
+  return t;
+  }
 
 
-int AVL_list_add_item(
+static int AVL_list_add_item(
 
   AvlTree   tree,
   char    **r_buf,
@@ -427,7 +485,7 @@ int AVL_list_add_item(
   return PBSE_NONE;
   }
 
-/* AVL_list -- return the key and port values for
+/* AVL_list_internal -- return the key and port values for
  * each entry in the tree in a ',' delimited list
  * returned in Buf 
  * @param T - root of the tree to list 
@@ -437,7 +495,7 @@ int AVL_list_add_item(
  * return PBSE_MEM_MALLOC if malloc failed 
  * return PBSE_RMNOPARAM if parameters are invalid.
  */ 
-int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
+static int AVL_list_internal( AvlTree tree, char **Buf, long *current_len, long *max_len )
   {
 	int rc = PBSE_NONE;
 
@@ -449,7 +507,7 @@ int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
 	/* start down the left side */
 	if ( tree->left != NULL )
     {
-		if ((rc = AVL_list(tree->left, Buf, current_len, max_len)) != PBSE_NONE)
+		if ((rc = AVL_list_internal(tree->left, Buf, current_len, max_len)) != PBSE_NONE)
       return rc;
     }
 
@@ -459,24 +517,32 @@ int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
 	/* now go right */
 	if ( tree->right != NULL )
     {
-    if ((rc = AVL_list(tree->right, Buf, current_len, max_len)) != PBSE_NONE)
+    if ((rc = AVL_list_internal(tree->right, Buf, current_len, max_len)) != PBSE_NONE)
       return rc;
     }
 
 	return PBSE_NONE;
-  } /* end AVL_list */
+  } /* end AVL_list_internal */
 
+int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len )
+  {
+  pthread_mutex_lock(&AVLMutex);
+  int i = AVL_list_internal(tree,Buf,current_len,max_len);
+  pthread_mutex_unlock(&AVLMutex);
+  return i;
+  }
 
 AvlTree AVL_clear_tree(
     
   AvlTree tree)
 
   {
+  pthread_mutex_lock(&AVLMutex);
   while (tree != NULL)
     {
-    tree = AVL_delete_node(tree->key, tree->port, tree);
+    tree = AVL_delete_node_internal(tree->key, tree->port, tree);
     }
-
+  pthread_mutex_unlock(&AVLMutex);
   return(NULL);
   } /* AVL_clear_tree() */
 

@@ -6,6 +6,7 @@
 
 #include "execution_slot_tracker.hpp"
 #include "attribute.h" /* svrattrl */
+#include "id_map.hpp"
 
 id_map    job_mapper;
 
@@ -45,7 +46,13 @@ char *parse_comma_string(char *start, char **ptr)
   exit(1);
   }
 
-void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str){}
+void populate_range_string_from_slot_tracker(
+    
+  const execution_slot_tracker &est,
+  std::string &range_str) 
+  
+  {
+  }
 
 
 int ctnodes(char *spec)
@@ -81,8 +88,7 @@ const char *id_map::get_name(
   int id)
 
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
+  return(NULL);
   }
 
 
@@ -112,4 +118,23 @@ id_map::id_map(const id_map &other) : counter(other.counter)
   pthread_mutex_init(&mutex, NULL);
   }
 
+int csv_length(const char *csv_str)
 
+  {
+  return(0);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+
+  {
+  return(NULL);
+  }
+
+char *csv_find_string(
+    
+  const char *csv_str,
+  const char *search_str)
+
+  {
+  return(NULL);
+  }

@@ -14,13 +14,15 @@
 #include "mom_config.h"
 #include "mom_mach.h"
 
+#define MAXLINE 1024
+
 int lockfds = -1;
 int svr_resc_size = 0;
 int DEBUGMODE = 0;
 char *path_aux = strdup("/tmp");
 int reduceprologchecks;
 resource_def *svr_resc_def;
-char PBSNodeMsgBuf[1024];
+char PBSNodeMsgBuf[MAXLINE];
 int MOMPrologFailureCount;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char log_buffer[LOG_BUF_SIZE];

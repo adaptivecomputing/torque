@@ -118,16 +118,14 @@ static const char *svr_idle   = "Idle";
 static const char *svr_sched  = "Scheduling";
 static const char *svr_state_names[] =
   {
-  "",   /* SV_STATE_DOWN */
-  "",   /* SV_STATE_INIT */
-  "Hot_Start",  /* SV_STATE_HOT  */
+  "Down",   /* SV_STATE_DOWN */
+  "Initializing",   /* SV_STATE_INIT */
+  "", /* Blank */
   "Active",  /* SV_STATE_RUN  */
   "Terminating_Delay", /* SV_STATE_SHUTDEL */
   "Terminating",  /* SV_STATE_SHUTIMM */
   "Terminating"  /* SV_STATE_SHUTSIG */
   };
-
-
 
 
 

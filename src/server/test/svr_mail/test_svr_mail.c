@@ -215,7 +215,7 @@ START_TEST(test_with_eo_when_complete)
         outFile_found = true;
       }
     fail_unless(errFile_found, "No error file path was found in the mail");
-    fail_unless(outFile_found, "No output file path was found in the mail");
+    fail_unless(outFile_found, "No output file path was found in the mail", buf);
     fclose(fp);
     remove_old_mail("/tmp/mail.out");
     }
