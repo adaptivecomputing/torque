@@ -276,6 +276,11 @@ PbsErrClient(PBSE_POWER_STATE_UNSUPPORTED, (char *)"The node does not support ch
 PbsErrClient(PBSE_POWER_STATE_UNAVAILABLE, (char *)"The node does not support the requested power state.")
 PbsErrClient(PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING, (char *)"Can't change power state on a node which has running jobs.")
 PbsErrClient(PBSE_CANT_WAKE_OFF_MACHINE, (char *)"Unable to wake a node in hibernate or shutdown state.")
+PbsErrClient(PBSE_BAD_UTC_FORMAT, (char *)"Bad UTC format, must be in the form yyyy-mm-ddThh:mm:ssZ or yyyy-mm-ddThh:mm:ss+hhmm or yyyy-mm-ddThh:mm:ss-hh or 0 to remove it.")
+PbsErrClient(PBSE_BAD_UTC_RANGE, (char *)"The time to live date is in the past.")
+PbsErrClient(PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY, (char *)"Nodes may not be dynamically created or deleted if there is a mom_hierarchy file.")
+PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The node has not received the list of other nodes and is not ready to be set to a free state.")
+PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

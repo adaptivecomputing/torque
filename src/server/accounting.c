@@ -96,6 +96,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -109,7 +110,7 @@
 #endif
 #include "svrfunc.h"
 #include "server.h"
-#include <string>
+#include "utils.h"
 
 /* Local Data */
 
@@ -123,6 +124,7 @@ pthread_mutex_t     *acctfile_mutex;
 
 extern attribute_def job_attr_def[];
 extern char     *path_acct;
+extern char     *acct_file;
 extern int       LOGLEVEL;
 
 
@@ -305,7 +307,8 @@ int acct_job(
 
 int acct_open(
 
-  char *filename)  /* abs pathname or NULL */
+  char *filename,  /* abs pathname or NULL */
+  bool  acct_mutex_locked)
 
   {
   char  filen[_POSIX_PATH_MAX];
@@ -358,14 +361,18 @@ int acct_open(
 
   setbuf(newacct, NULL);        /* set no buffering */
 
-  pthread_mutex_lock(acctfile_mutex);
+  if (acct_mutex_locked == false)
+    pthread_mutex_lock(acctfile_mutex);
+
   if (acct_opened > 0)          /* if acct was open, close it */
     fclose(acctfile);
 
   acctfile = newacct;
-  pthread_mutex_unlock(acctfile_mutex);
-
+  
   acct_opened = 1;  /* note that file is open */
+
+  if (acct_mutex_locked == false)
+    pthread_mutex_unlock(acctfile_mutex);
 
   sprintf(logmsg, "Account file %s opened",
           filename);
@@ -383,17 +390,23 @@ int acct_open(
  * acct_close - close the current open log file
  */
 
-void acct_close(void)
+void acct_close(
+    
+  bool acct_mutex_locked)
 
   {
-  pthread_mutex_lock(acctfile_mutex);
+  if (acct_mutex_locked == false)
+    pthread_mutex_lock(acctfile_mutex);
+
   if (acct_opened == 1)
     {
     fclose(acctfile);
 
     acct_opened = 0;
     }
-  pthread_mutex_unlock(acctfile_mutex);
+
+  if (acct_mutex_locked == false)
+    pthread_mutex_unlock(acctfile_mutex);
 
   return;
   }  /* END acct_close() */
@@ -408,8 +421,8 @@ void acct_close(void)
 
 void account_record(
 
-  int   acctype, /* accounting record type */
-  job  *pjob,
+  int         acctype, /* accounting record type */
+  job        *pjob,
   const char *text)  /* text to log, may be null */
 
   {
@@ -417,28 +430,27 @@ void account_record(
   struct tm *ptm;
   struct tm  tmpPtm;
 
+  pthread_mutex_lock(acctfile_mutex);
   if (acct_opened == 0)
     {
-    /* file not open, don't bother */
-
-    return;
+    acct_open(acct_file, true);
     }
 
   ptm = localtime_r(&time_now,&tmpPtm);
 
   /* Do we need to switch files */
 
-  if ((acct_auto_switch != 0) && (acct_opened_day != ptm->tm_yday))
+  if ((acct_auto_switch != 0) &&
+      (acct_opened_day != ptm->tm_yday))
     {
-    acct_close();
+    acct_close(true);
 
-    acct_open(NULL);
+    acct_open(NULL, true);
     }
 
   if (text == NULL)
     text = (char *)"";
 
-  pthread_mutex_lock(acctfile_mutex);
   fprintf(acctfile, "%02d/%02d/%04d %02d:%02d:%02d;%c;%s;%s\n",
           ptm->tm_mon + 1,
           ptm->tm_mday,
@@ -476,9 +488,68 @@ void account_jobstr(
 
   return;
   }  /* END account_jobstr() */
+ 
+ 
+ 
+/*
+ * add_procs_and_nodes_used
+ *
+ * Adds a string specifying how many procs and nodes the job used
+ * To count these values we parse the exec host list, which is in
+ * the format of host/<index>[+host2/index2[+host3/index3[...]]]
+ *
+ * @param pjob (I) - the job whose procs we're measuring
+ * @param acct_data (O) - the string we're adding to
+ */
 
+void add_procs_and_nodes_used(
 
+  job         &pjob,
+  std::string &acct_data)
 
+  {
+  if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+    {
+    char        resc_buf[1024];
+    std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    std::size_t pos = 0;
+    std::string last_host;
+    int         hosts = 0;
+    int         total_execution_slots = 0;
+
+    while (pos < nodelist.size())
+      {
+      std::size_t      plus = nodelist.find("+", pos);
+      std::string      host(nodelist.substr(pos, plus - pos));
+      std::size_t      slash = host.find("/");
+      std::string      range(host.substr(slash + 1));
+      std::vector<int> indices;
+
+      // remove the /<index>
+      host.erase(slash);
+
+      translate_range_string_to_vector(range.c_str(), indices);
+      total_execution_slots += indices.size();
+
+      if (last_host != host)
+        {
+        last_host = host;
+        hosts++;
+        }
+
+      if (plus != std::string::npos)
+        pos = plus + 1;
+      else
+        break;
+      }
+
+    snprintf(resc_buf, sizeof(resc_buf), "total_execution_slots=%d unique_node_count=%d ",
+      total_execution_slots, hosts);
+
+    acct_data += resc_buf;
+    }
+
+  } // END add_procs_and_nodes_used()
 
 
 
@@ -488,8 +559,8 @@ void account_jobstr(
 
 void account_jobend(
 
-  job  *pjob,
-  char *used) /* job usage information, see req_jobobit() */
+  job         *pjob,
+  std::string &used) /* job usage information, see req_jobobit() */
 
   {
   std::string ds = "";
@@ -520,6 +591,8 @@ void account_jobend(
 
     ds += local_buf;
     }
+
+  add_procs_and_nodes_used(*pjob, ds);
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES

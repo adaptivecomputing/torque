@@ -123,7 +123,6 @@
 
 int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
-int    ForceServerUpdate = 0;
 
 int    verbositylevel = 0;
 unsigned int default_server_port = 0;
@@ -219,6 +218,7 @@ extern long     MaxConnectTimeout;
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
@@ -323,6 +323,7 @@ u_long   localaddr = 0;
 int   cphosts_num = 0;
 
 
+char                    PBSNodeMsgBuf[MAXLINE];
 static time_t           MOMExeTime = 0;
 
 
@@ -1971,6 +1972,8 @@ void add_diag_jobs_memory_info(
         resvalue = getsize(pres);
       else if (!(strcmp(resname, "cput")))
         resvalue = gettime(pres);
+      else if (!(strcmp(resname, "energy_used")))
+        resvalue = gettime(pres);
       else
         continue;
 
@@ -3054,6 +3057,8 @@ int tcp_read_proto_version(
 
   }
 
+
+
 int do_tcp(
     
   int                 socket,
@@ -3133,7 +3138,7 @@ int do_tcp(
 
     case IS_PROTOCOL:
 
-      mom_is_request(chan,version,NULL);
+      mom_is_request(chan,version,NULL,pSockAddr);
 
       break;
 
@@ -4333,26 +4338,26 @@ bool verify_mom_hierarchy()
   int              path_index = 0;
   bool             legitimate_hierarchy = false;
 
-  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
+  for (unsigned int i = 0; i < mh->paths.size(); i++)
     {
-    mom_levels      *levels = *paths_iter;
+    mom_levels      &levels = mh->paths[i];
     int              level_index = 0;
     bool             continue_on_path = true;
     bool             legitimate_path = false;
 
-    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
+    for (unsigned int j = 0; j < levels.size(); j++)
       {
-      mom_nodes       *nodes = *levels_iter;
+      mom_nodes       &nodes = levels[j];
 
-      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
+      for (unsigned int k = 0; k < nodes.size(); k++)
         {
-        node_comm_t *nc = *nodes_iter;
-        if (!strcmp(nc->name, mom_alias))
+        node_comm_t &nc = nodes[k];
+        if (!strcmp(nc.name, mom_alias))
           continue_on_path = false;
         else
           {
-          unsigned short rm_port = ntohs(nc->sock_addr.sin_port);
-          unsigned long  ipaddr = ntohl(nc->sock_addr.sin_addr.s_addr);
+          unsigned short rm_port = ntohs(nc.sock_addr.sin_port);
+          unsigned long  ipaddr = ntohl(nc.sock_addr.sin_addr.s_addr);
           okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
           }
             
@@ -4361,16 +4366,16 @@ bool verify_mom_hierarchy()
       
       if (continue_on_path == true)
         {
-        for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
+        for (unsigned int k = 0; k < nodes.size(); k++)
           {
-          node_comm_t *nc = *nodes_iter;
+          node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc->name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc->name,
+                              nc.name,
                               addr_info,
-                              ntohs(nc->sock_addr.sin_port),
+                              ntohs(nc.sock_addr.sin_port),
                               path_index,
                               level_index);
 
@@ -5738,7 +5743,23 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+//If we have a job that's exiting we should call scan for exiting.
+bool call_scan_for_exiting()
+  {
+  if(exiting_tasks) return true;
 
+  job          *nextjob;
+  job          *pjob;
+
+  //NOTE: May want to put some kind of timeout so we only call this once in a while.
+  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+    {
+    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    }
+  return false;
+  }
 
 void check_exiting_jobs()
 
@@ -5860,6 +5881,23 @@ void prepare_child_tasks_for_delete()
 
 
 
+time_t calculate_select_timeout() {
+  time_t tmpTime;
+  extern time_t wait_time;
+
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + get_stat_update_interval()) - time_now);
+
+  tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
+
+  tmpTime = MAX(1, tmpTime);
+
+  if (LastServerUpdateTime == 0)
+    tmpTime = 1;
+
+  return tmpTime;
+}
+
+
 
 /**
  * main_loop
@@ -5870,7 +5908,6 @@ void prepare_child_tasks_for_delete()
 void main_loop(void)
 
   {
-  extern time_t wait_time;
   double        myla;
   time_t        tmpTime;
 #ifdef USESAVEDRESOURCES
@@ -5968,7 +6005,8 @@ void main_loop(void)
 
     check_jobs_in_obit();
 
-    if (exiting_tasks)
+
+    if (call_scan_for_exiting())
       scan_for_exiting();
 
     check_exiting_jobs();
@@ -5982,14 +6020,7 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = MIN(wait_time, time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-
-    tmpTime = MIN(tmpTime, time_now - (last_poll_time + CheckPollTime));
-
-    tmpTime = MAX(1, tmpTime);
-
-    if (LastServerUpdateTime == 0)
-      tmpTime = 1;
+    tmpTime = calculate_select_timeout();
 
     resend_things();
 
@@ -6065,6 +6096,58 @@ void restart_mom(
 
 
 
+/*
+ * parse_integer_range()
+ *
+ * accepts a string in the format int1[-int2] and populates start
+ * with int1 and end with int2 if specified or int1 if not.
+ */
+int parse_integer_range(
+
+  const char *range_str,
+  int        &start,
+  int        &end)
+
+  {
+  if (range_str != NULL)
+    {
+    char *val     = strdup(range_str);
+    char *val_ptr = val;
+    char *begin   = threadsafe_tokenizer(&val_ptr, "-");
+    char *end_str = threadsafe_tokenizer(&val_ptr, "-");
+
+    if (begin == NULL)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Illegal range string '%s'", range_str);
+      free(val);
+      return(-1);
+      }
+
+    start = strtol(begin, NULL, 10);
+
+    if (end_str != NULL)
+      {
+      end = strtol(end_str, NULL, 10);
+
+      if (end < start)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Illegal range string '%s': end parsed as '%d' which is less than start '%d'",
+          range_str, end, start);
+        free(val);
+        return(-1);
+        }
+      }
+    else
+      end = start;
+
+    free(val);
+    }
+
+  return(PBSE_NONE);
+  } /* END parse_integer_range() */
+
+
 
 #ifdef NUMA_SUPPORT
 /*
@@ -6105,6 +6188,7 @@ int read_layout_file()
      * so that add_mic_status() skips over the nodeboard if not 
      * configured */
     node_boards[i].mic_end_index = -1;
+    node_boards[i].gpu_end_index = -1;
 
     /* Strip off comments */
     if ((tok = strchr(line, '#')) != NULL)
@@ -6150,16 +6234,15 @@ int read_layout_file()
         {
         /* read the mics specified for this node board. This is in the form
          * index1[-index2] specifying a range*/
-        char *micval = strdup(val);
-        char *start  = strtok(micval, "-");
-        char *end    = strtok(NULL, "-");
-        node_boards[i].mic_start_index = strtol(start, NULL, 10);
-        node_boards[i].mic_end_index = node_boards[i].mic_start_index;
-
-        if (end != NULL)
-          node_boards[i].mic_end_index = strtol(end, NULL, 10);
-
-        free(micval);
+        if (parse_integer_range(val,
+              node_boards[i].mic_start_index, node_boards[i].mic_end_index) != PBSE_NONE)
+          goto failure;
+        }
+      else if (strcmp(tok, "gpu") == 0)
+        {
+        if (parse_integer_range(val,
+              node_boards[i].gpu_start_index, node_boards[i].gpu_end_index) != PBSE_NONE)
+          goto failure;
         }
       else if (strcmp(tok,"memsize") == 0)
         {

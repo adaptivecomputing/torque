@@ -121,6 +121,7 @@ struct job_array;
 #endif
 
 #define JOB_REPORTED_POLL_TIMEOUT 300
+#define JOB_CONDENSED_TIMEOUT     45
 
 /*
  * The depend_job structure is used to record the name and location
@@ -129,11 +130,10 @@ struct job_array;
 
 typedef struct depend_job
   {
-  list_link dc_link;
   short dc_state; /* released / ready to run (syncct)  */
-  long dc_cost; /* cost of this child (syncct)   */
-  char dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
+  long  dc_cost; /* cost of this child (syncct)   */
+  char  dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
+  char  dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
   } depend_job;
 
 /*
@@ -160,7 +160,6 @@ struct depend
 
 typedef struct array_depend_job
   {
-  list_link dc_link;
   /* in this case, the child is the job depending on the array */
   char dc_child[PBS_MAXSVRJOBID+1];
   char dc_svr[PBS_MAXSERVERNAME+1];
@@ -394,6 +393,7 @@ enum job_atr
   JOB_ATR_login_node_key,
 #include "site_job_attr_enum.h"
 
+  JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -670,7 +670,6 @@ struct job
   char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
-  int               ji_cold_restart; /* set to TRUE if this job has been loaded through a cold restart */
 
   /* these three are only used for heterogeneous jobs */
   struct job       *ji_external_clone; /* the sub-job on the external (to the cray) nodes */
@@ -681,6 +680,7 @@ struct job
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
+  time_t            ji_mod_time;       // the timestamp of when the state last changed
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
@@ -943,7 +943,6 @@ typedef struct send_job_request
 /* MOM: set for Mother Superior */
 #define JOB_SVFLG_HASWAIT  0x02 /* job has timed task entry for wait time */
 #define JOB_SVFLG_HASRUN   0x04 /* job has been run before (being rerun */
-#define JOB_SVFLG_HOTSTART 0x08 /* job was running, if hot init, restart */
 #define JOB_SVFLG_CHECKPOINT_FILE    0x10 /* job has checkpoint file for restart */
 #define JOB_SVFLG_SCRIPT   0x20 /* job has a Script file */
 #define JOB_SVFLG_OVERLMT1 0x40 /* job over limit first time, MOM only */
@@ -956,6 +955,7 @@ typedef struct send_job_request
 #define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
 #define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
 #define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
+
 
 /*
  * Related defines

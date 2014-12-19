@@ -272,7 +272,16 @@ int site_check_user_map(
       {
       testhost = submithosts->as_string[hostnum];
 
-      if (!strcasecmp(testhost, orighost))
+      int cmpRet = strcasecmp(testhost, orighost);
+
+      if((cmpRet != 0)&&(dptr != NULL))
+        {
+        *dptr = '.';
+        cmpRet = strcasecmp(testhost, orighost);
+        *dptr = '\0';
+        }
+
+      if (cmpRet == 0)
         {
         /* job submitted from host found in trusted submit host list, access allowed */
 
@@ -320,6 +329,11 @@ int site_check_user_map(
 #else
 
   /* This is the child */
+
+  if (HostAllowed == 0)
+    {
+    return(-1); //Host is not allowed no reason to check ruserok.
+    }
 
   /* ruserok is not thread safe. mutex it */
   pthread_mutex_lock(&ruserok_mutex);

@@ -179,8 +179,8 @@ struct jobinfo
 
 typedef struct alps_req_data
   {
-  std::string     node_list;
-  int             ppn;
+  std::string *node_list;
+  int          ppn;
   } alps_req_data;
 
 typedef struct single_spec_data
@@ -263,6 +263,8 @@ typedef struct nodeboard_t
   unsigned long long pstat_idle;
   int                mic_start_index; /* index of first mic for this board */
   int                mic_end_index;   /* index of last mic for this board */
+  int                gpu_start_index; /* index of first gpu for this board */
+  int                gpu_end_index;   /* index of last gpu for this board */
   float              cpuact;
   } nodeboard;
 #endif /* NUMA_SUPPORT */
@@ -313,6 +315,7 @@ struct pbsnode
   short                         nd_order;            /* order of user's request */
   time_t                        nd_warnbad;
   time_t                        nd_lastupdate;       /* time of last update. */
+  time_t                        nd_lastHierarchySent; /* last time the hierarchy was sent to this node. */
   unsigned short                nd_hierarchy_level;
   unsigned char                 nd_in_hierarchy;     /* set to TRUE if in the hierarchy file */
 
@@ -348,6 +351,14 @@ struct pbsnode
   unsigned short              nd_power_state;
   unsigned char               nd_mac_addr[6];
   time_t                        nd_power_state_change_time; //
+  char                          nd_ttl[32];
+  struct array_strings         *nd_acl;
+  std::string                  *nd_requestid;
+  unsigned char               nd_tmp_unlock_count;    /*Nodes will get temporarily unlocked so that
+                                                       further processing can happen, but the function
+                                                       doing the unlock intends to lock it again
+                                                       so we need a flag here to prevent a node from being
+                                                       deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -375,6 +386,7 @@ struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 
 
+#if 0
 #define HELLO_RESEND_WAIT_TIME 10
 
 class hello_info
@@ -397,11 +409,13 @@ int         add_hello_after(hello_container *, int, int);
 int         add_hello_info(hello_container *, hello_info *);
 hello_info *pop_hello(hello_container *);
 int         remove_hello(hello_container *, int);
+#endif
+
 int         send_hierarchy(char *, unsigned short);
 void       *send_hierarchy_threadtask(void *);
 
 
-extern hello_container  hellos;
+//extern hello_container  hellos;
 
 
 
@@ -465,6 +479,9 @@ int tlist(tree *, char *, int);
 #define INUSE_JOB              0x10 /* VP   in use by job (exclusive use) */
 /* 0x20 was used for sharing processors, but this is no longer supported */
 #define INUSE_BUSY             0x40 /* Node is busy (high loadave)  */
+#define INUSE_NOHIERARCHY      0x80 /* The node has not been sent the hiearchy yet. */
+
+#define INUSE_NOT_READY       (INUSE_DOWN|INUSE_NOHIERARCHY)
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
 #define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
@@ -532,6 +549,9 @@ enum nodeattr
   ND_ATR_gpustatus,
   ND_ATR_mics,
   ND_ATR_micstatus,
+  ND_ATR_ttl,
+  ND_ATR_acl,
+  ND_ATR_requestid,
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -545,8 +565,9 @@ enum node_types
   };
 
 
-typedef struct node_check_info
+class node_check_info
   {
+public:
   struct prop *first;
   struct prop *first_status;
   short        state;
@@ -555,7 +576,10 @@ typedef struct node_check_info
   int          nstatus;
   char        *note;
   short        power_state;
-  } node_check_info;
+  unsigned char ttl[32];
+  int          acl_size;
+  std::string  rqid;
+  };
 
 
 typedef struct sync_job_info
@@ -570,6 +594,7 @@ extern all_nodes allnodes;
 extern struct pbsnode *alps_reporter;
 
 extern int    svr_totnodes;  /* number of nodes (hosts) */
+extern int   svr_unresolvednodes;
 extern int    svr_clnodes;  /* number of cluster nodes */
 
 extern int    MultiMomMode; /* moms configured for multiple moms per machine */
@@ -596,6 +621,7 @@ void             free_prop_list(struct prop*);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
+int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 

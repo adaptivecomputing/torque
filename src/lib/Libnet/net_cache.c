@@ -88,6 +88,7 @@
 
 #include "net_cache.h"
 #include "pbs_error.h"
+#include "utils.h"
 #include "container.hpp"
 
 
@@ -115,20 +116,22 @@ int item_container<int>::empty_val(void)
 
 class addrcache
   {
-  public:
+private:
 
-  struct addrinfo *addToCache(
-      
+  container::item_container<int> nameToAddr;
+  container::item_container<int> addrToName;
+  std::vector<struct addrinfo *> addrs;
+  std::vector<char *> hosts;
+
+
+  struct addrinfo *in_cache(
+
     struct addrinfo *pAddr,
-    const char      *host)
+    char            *key)
 
     {
-    if ((pAddr->ai_family != AF_INET)||(cacheDestroyed == TRUE))
-      return(NULL);
-
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
     struct addrinfo    *pTmpAddr = NULL;
-    char                key[65];
     int                 i = -1;
 
     sprintf(key,"%d",pINetAddr->sin_addr.s_addr);
@@ -147,16 +150,60 @@ class addrcache
       }
     addrToName.unlock();
     pthread_mutex_unlock(&cacheMutex);
-    if (i >= 0)
+
+    return(pTmpAddr);
+    }
+
+public:
+
+  void dumpCache()
+    {
+    pthread_mutex_lock(&cacheMutex);
+
+    for(unsigned int i = 0;i < hosts.size();i++)
+      {
+      char *pName = hosts.at(i);
+      struct addrinfo *pAddr = addrs.at(i);
+
+      if((pName == NULL)||(pAddr == NULL))
+        {
+        fprintf(stderr,"NULL Pointer: name = %p, addr = %p\n",(void *)pName,(void *)pAddr);
+        }
+      else
+        {
+        fprintf(stderr,"%d.%d.%d.%d   %s\n",pAddr->ai_addr->sa_data[2]&0xff,pAddr->ai_addr->sa_data[3]&0xff,pAddr->ai_addr->sa_data[4]&0xff,pAddr->ai_addr->sa_data[5]&0xff,pName);
+        }
+      }
+
+    pthread_mutex_unlock(&cacheMutex);
+    }
+
+  struct addrinfo *addToCache(
+      
+    struct addrinfo *pAddr,
+    const char      *host)
+
+    {
+    if ((pAddr->ai_family != AF_INET) ||
+        (cacheDestroyed == TRUE))
+      return(NULL);
+
+    struct addrinfo    *pTmpAddr = NULL;
+    char                key[65];
+
+    pTmpAddr = in_cache(pAddr, key);
+
+    if (pTmpAddr != NULL)
       {
       if (pTmpAddr != pAddr)
         freeaddrinfo(pAddr);
 
       return(pTmpAddr);
       }
+
     pthread_mutex_lock(&cacheMutex);
 
-    int index = addrs.size();
+    int   index = addrs.size();
     char *priv_host = NULL;
 
     try
@@ -196,12 +243,81 @@ class addrcache
     return pAddr;
     }
 
-  struct addrinfo * getFromCache(in_addr_t addr)
+
+
+  bool overwrite_cache(
+
+    const char       *hostname,
+    struct addrinfo **new_addr_out)
+
+    {
+    struct addrinfo *old_addr = getFromCache(hostname);
+    struct addrinfo *new_addr = NULL;
+    struct addrinfo  hints;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_CANONNAME;
+
+    if (new_addr_out == NULL)
+      return(false);
+
+    if (getaddrinfo(hostname, NULL, &hints, &new_addr) != 0)
+      {
+      *new_addr_out = NULL;
+      return(false);
+      }
+
+    if (old_addr == NULL)
+      {
+      // not currently in the cache
+      *new_addr_out = addToCache(new_addr, hostname);
+      }
+    else if (((struct sockaddr_in *)new_addr->ai_addr)->sin_addr.s_addr ==
+             ((struct sockaddr_in *)old_addr->ai_addr)->sin_addr.s_addr)
+      {
+      freeaddrinfo(new_addr);
+      *new_addr_out = old_addr;
+      }
+    else
+      {
+      // overwrite the current information for this host with the new information
+      int                 index = nameToAddr.find(hostname);
+      const char         *duped_hostname = hosts[index];
+      struct sockaddr_in *pINetAddr = (struct sockaddr_in *)new_addr->ai_addr;
+      char                new_key[65];
+      struct addrinfo    *to_free;
+  
+      sprintf(new_key, "%d", pINetAddr->sin_addr.s_addr);
+
+      addrToName.insert(index, new_key, true);
+      nameToAddr.insert(index, duped_hostname, true);
+      to_free = addrs[index];
+      addrs[index] = new_addr;
+
+      // free the old addrinfo entry for this node
+      freeaddrinfo(to_free);
+     
+      *new_addr_out = new_addr;
+      }
+
+    if(*new_addr_out == NULL)
+      {
+      return false;
+      }
+    return(true);
+    }
+
+
+
+  struct addrinfo * getFromCache(
+      
+    in_addr_t addr)
+
     {
     struct addrinfo *p = NULL;
     char             key[65];
 
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == TRUE)
       {
         return NULL;
       }
@@ -210,36 +326,43 @@ class addrcache
     pthread_mutex_lock(&cacheMutex);
     addrToName.lock();
     int index = addrToName.find(key);
-    if(index >= 0) p = addrs.at(index);
+    if (index >= 0)
+      p = addrs.at(index);
     addrToName.unlock();
     pthread_mutex_unlock(&cacheMutex);
+
     return p;
     }
 
-  struct addrinfo * getFromCache(const char *hostName)
+  struct addrinfo * getFromCache(
+      
+    const char *hostName)
+
     {
     struct addrinfo *p = NULL;
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == TRUE)
       {
-        return NULL;
+      return(NULL);
       }
     pthread_mutex_lock(&cacheMutex);
     nameToAddr.lock();
     int index = nameToAddr.find(hostName);
-    if(index >= 0) p = addrs.at(index);
+    if (index >= 0)
+      p = addrs.at(index);
     nameToAddr.unlock();
     pthread_mutex_unlock(&cacheMutex);
+
     return p;
     }
 
   char *getHostName(
-      
-      in_addr_t addr)
+
+    in_addr_t addr)
 
     {
     char *p = NULL;
     char key[65];
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == TRUE)
       {
         return NULL;
       }
@@ -279,30 +402,54 @@ class addrcache
 #endif
     }
 
-private:
-
-  container::item_container<int> nameToAddr;
-  container::item_container<int> addrToName;
-  std::vector<struct addrinfo *> addrs;
-  std::vector<char *> hosts;
   };
 
 addrcache cache;
 
+void dumpAddrCache()
+  {
+  cache.dumpCache();
+  }
+
 /*******************************************************
   * Get the host name associated with an address.
   *****************************************************/
-char *get_cached_nameinfo(const struct sockaddr_in  *sai)
+char *get_cached_nameinfo(
+    
+  const struct sockaddr_in *sai)
+
   {
-  return cache.getHostName(sai->sin_addr.s_addr);
+  char *hostname = cache.getHostName(sai->sin_addr.s_addr);
+
+  // Look up the hostname if it isn't currently in the cache
+  if (hostname == NULL)
+    {
+    char               host_buf[MAXLINE];
+
+    memset(&host_buf, 0, sizeof(host_buf));
+
+    if (getnameinfo((struct sockaddr *)sai, sizeof(*sai), host_buf, sizeof(host_buf), NULL, 0, 0) == 0)
+      {
+      insert_addr_name_info(NULL, host_buf);
+      hostname = cache.getHostName(sai->sin_addr.s_addr);
+      }
+    }
+
+  return(hostname);
   } /* END get_cached_nameinfo() */
+
+
 
 /*******************************************************
   * Get the full host name from the cache using either 
   * the host name or the address depending on what is 
   * supplied.
   *****************************************************/
-char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai)
+char *get_cached_fullhostname(
+    
+  const char   *hostname,
+  const struct  sockaddr_in *sai)
+
   {
   struct addrinfo *pAddrInfo = NULL;
 
@@ -319,7 +466,13 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   return(pAddrInfo->ai_canonname);
   } /* END get_cached_fullhostname() */
 
-void get_cached_fullhostname(unsigned long address, std::string &fullhostname)
+
+
+void get_cached_fullhostname(
+    
+  unsigned long  address,
+  std::string   &fullhostname)
+
   {
   struct in_addr     addr;
   struct sockaddr_in addr_in;
@@ -338,6 +491,8 @@ void get_cached_fullhostname(unsigned long address, std::string &fullhostname)
     fullhostname = name;
   }
 
+
+
 /*************************************************************
   * Get the address from the host name.
   ***********************************************************/
@@ -345,29 +500,45 @@ struct sockaddr_in *get_cached_addrinfo(const char *hostname)
   {
   struct addrinfo *pAddrInfo = NULL;
   
-  if(hostname != NULL) pAddrInfo = cache.getFromCache(hostname);
-  if(pAddrInfo == NULL) return NULL;
+  if (hostname != NULL)
+    pAddrInfo = cache.getFromCache(hostname);
+  
+  if (pAddrInfo == NULL)
+    return NULL;
+
   return (struct sockaddr_in *)pAddrInfo->ai_addr;
   } /* END get_cached_addrinfo() */
+
+
 
 /*************************************************************
   * Get the full addrinfo structure returned by getaddrinfo
   * from the cache.
   ************************************************************/
-struct addrinfo *get_cached_addrinfo_full(const char *hostname)
+struct addrinfo *get_cached_addrinfo_full(
+    
+  const char *hostname)
+
   {
   struct addrinfo *pAddrInfo = NULL;
 
-  if(hostname != NULL) pAddrInfo = cache.getFromCache(hostname);
-  if(pAddrInfo == NULL) return NULL;
-  return pAddrInfo;
+  if (hostname != NULL)
+    pAddrInfo = cache.getFromCache(hostname);
+
+  return(pAddrInfo);
   } /* END get_cached_addrinfo() */
+
+
 
 /*****************************************************************************
   * Add a new addrinfo struct to the cache along with the host name if its not
   * already in the cache.
   ***************************************************************************/
-struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
+struct addrinfo *insert_addr_name_info(
+    
+  struct addrinfo *pAddrInfo,
+  const char      *host)
+
   {
   if (pAddrInfo == NULL)
     {
@@ -385,3 +556,16 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *h
     }
   return cache.addToCache(pAddrInfo,host);
   } /* END insert_addr_name_info() */
+
+
+
+bool overwrite_cache(
+
+  const char       *hostname,
+  struct addrinfo **addr)
+
+  {
+  return(cache.overwrite_cache(hostname, addr));
+  }
+
+

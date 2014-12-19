@@ -110,6 +110,9 @@
 #include "mom_config.h"
 
 
+const int   PELOG_DOESNT_EXIST = -1;
+
+
 extern int  MOMPrologTimeoutCount;
 extern int  MOMPrologFailureCount;
 
@@ -259,10 +262,10 @@ static char *resc_to_string(
 
 static int pelog_err(
 
-  job  *pjob,  /* I */
-  char *file,  /* I */
-  int   n,     /* I - exit code */
-  char *text)  /* I */
+  job        *pjob,  /* I */
+  const char *file,  /* I */
+  int         n,     /* I - exit code */
+  const char *text)  /* I */
 
   {
   sprintf(log_buffer,"prolog/epilog failed, file: %s, exit: %d, %s",
@@ -324,15 +327,14 @@ static void pelogalm(
     }
 
 
-  if(childSessionID <= 0)
+  if (childSessionID <= 0)
     {
     kill(child,SIGKILL);
     }
+
   run_exit = -4;
 
   return;
-
-
   }  /* END pelogalm() */
 
 
@@ -371,6 +373,941 @@ int undo_set_euid_egid(
   return(0);
   } /* END undo_set_euid_egid() */
 
+
+
+/*
+ * check_if_pelog_exists()
+ *
+ * checks if the pelog script exists. If it exists but can't be stat'ed this is an error. If it
+ * doesn't exist there is no error but we don't need to execute anything, and if it exists and
+ * can be stat'ed then we proceed.
+ *
+ * @param which - the type of pelog we're preparing to execute
+ * @param pelog - the path to the pelog script
+ * @param pelog_size - the size of the pelog buffer
+ * @param sbuf - the stat buf we should save the result of stat into
+ * @param specpelog - the path to a specific pelog
+ * @param pjob - the job whose pelog we're preparing to execute
+ * @param jobtypespecified - true if the job specified a pelog
+ * @return - PBSE_NONE if the script exists and can be stat'ed, PELOG_DOESNT_EXIST if the script
+ * doesn't exist, and the appropriate errno if the script exists but can't be stat'ed.
+ */
+
+int check_if_pelog_exists(
+  
+  int          which,
+  char        *pelog,
+  int          pelog_size,
+  struct stat &sbuf,
+  const char  *specpelog,
+  job         &pjob,
+  bool         jobtypespecified)
+
+  {
+  int               rc;
+
+  rc = stat(pelog,&sbuf);
+
+  if ((rc == -1) &&
+      (jobtypespecified == true))
+    {
+    snprintf(pelog, pelog_size, "%s", specpelog);
+
+    rc = stat(pelog, &sbuf);
+    }
+
+  if (rc == -1)
+    {
+    if (errno == ENOENT || errno == EBADF)
+      {
+      /* epilog/prolog script does not exist */
+
+      if (LOGLEVEL >= 5)
+        {
+        char tmpBuf[1024];
+
+        sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
+          PPEType[which],
+          (pelog[0] != '\0') ? pelog : "NULL",
+          pjob.ji_qs.ji_jobid,
+          getcwd(tmpBuf, sizeof(tmpBuf)),
+          getpid());
+
+        log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+        }
+
+#ifdef ENABLE_CSA
+      if ((which == PE_EPILOGUSER) &&
+          (!strcmp(pelog, path_epiloguser)))
+        {
+        /*
+          * Add a workload management end record
+        */
+        if (LOGLEVEL >= 8)
+          {
+          sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
+            pjob.ji_qs.ji_jobid);
+
+          log_err(-1, __func__, log_buffer);
+          }
+
+        add_wkm_end(pjob.ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
+            pjob.ji_qs.ji_un.ji_momt.ji_exitstat, pjob.ji_qs.ji_jobid);
+        }
+
+#endif /* ENABLE_CSA */
+
+      return(PELOG_DOESNT_EXIST);
+      }
+
+    return(pelog_err(&pjob, pelog, errno, "cannot stat"));
+    }
+
+  return(PBSE_NONE);
+  } /* check_if_pelog_exists() */
+
+
+
+/*
+ * check_pelog_permissions()
+ *
+ * Checks to verify that the pelog script's permissions are set correctly
+ * @param sbuf - the stat buf for the pelog script
+ * @param reduceprologchecks - a parameter indicating how strict the checks should be. If 
+ * set to TRUE the script only has to be executable
+ * @param pjob - the job whose pelog we're preparing to execute
+ * @param pelog - the path to the pelog script
+ * @param which - the kind of pelog we're preparing to execute
+ * @return - PBSE_NONE on success, and error code otherwise
+ */
+
+int check_pelog_permissions(
+    
+  struct stat &sbuf,
+  int          reduceprologchecks,
+  job         *pjob,
+  const char  *pelog,
+  int          which)
+
+  {
+  if (reduceprologchecks == TRUE)
+    {
+    if ((!S_ISREG(sbuf.st_mode)) ||
+        (!(sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))))
+      {
+      return(pelog_err(pjob, pelog, -1, "permission Error"));
+      }
+    }
+  else
+    {
+    if ((which == PE_PROLOGUSERJOB) ||
+        (which == PE_EPILOGUSERJOB))
+      {
+      if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) || 
+          (!S_ISREG(sbuf.st_mode)) ||
+          ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
+          (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+        {
+        return(pelog_err(pjob, pelog, -1, "permission Error"));
+        }
+      }
+    else if ((sbuf.st_uid != 0) ||
+             (!S_ISREG(sbuf.st_mode)) ||
+             ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
+             (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
+      {
+      return(pelog_err(pjob, pelog, -1, "permission Error"));
+      }
+    
+    if ((which == PE_PROLOGUSER) ||
+        (which == PE_EPILOGUSER))
+      {
+      /* script must also be read and execute by other */
+      
+      if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
+        {
+        return(pelog_err(pjob, pelog, -1,  "permission Error"));
+        }
+      }
+    } /* END !reduceprologchecks */
+
+  return(PBSE_NONE);
+  } /* END check_pelog_permissions() */
+
+
+
+/*
+ * setup_pelog_arguments()
+ *
+ * Sets arg with the correct arguments for the pelog script
+ *
+ * @param pelog (I) - the path to the pelog we're preparing to execute
+ * @param pjob (I) - the job whose pelog we're preparing to execute
+ * @param which (I) - the type of pelog we're preparing to execute
+ * @param arg (O) - the arguments that will be passed to execv
+ */
+
+void setup_pelog_arguments(
+
+  char   *pelog,
+  job    *pjob,
+  int     which,
+  char  **arg)
+
+  {
+  int  LastArg;
+  char resc_list[2048];
+  char resc_used[2048];
+
+  arg[0] = pelog;
+
+  arg[1] = pjob->ji_qs.ji_jobid;
+  arg[2] = pjob->ji_wattr[JOB_ATR_euser].at_val.at_str;
+  arg[3] = pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str;
+  arg[4] = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
+
+  /* NOTE:  inside child */
+
+  if ((which == PE_EPILOG) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+    /* for epilogue only */
+    char *sid = (char *)calloc(1, 20);
+    char *exit_stat = (char *)calloc(1, 12);
+
+    sprintf(sid, "%ld",
+            pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
+    sprintf(exit_stat,"%d",
+            pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
+
+    arg[5] = sid;
+    arg[6] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
+    arg[7] = strdup(resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used)));
+    arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
+    arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
+    arg[10] = exit_stat;
+    arg[11] = NULL;
+
+    LastArg = 11;
+    }
+  else
+    {
+    /* prologue */
+
+    arg[5] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
+    arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
+    arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
+    arg[8] = NULL;
+
+    LastArg = 8;
+    }
+
+  for (int aindex = 0;aindex < LastArg; aindex++)
+    {
+    if (arg[aindex] == NULL)
+      arg[aindex] = strdup("");
+    }  /* END for (aindex) */
+  } /* END setup_pelog_arguments() */
+
+
+
+/*
+ * setup_pelog_environment()
+ *
+ * Adds environment variables for the pelog
+ *
+ * @param pjob - the job whose pelog we're about to execute
+ * @param which - the type of pelog we're executing
+ */
+
+void setup_pelog_environment(
+    
+  job *pjob,
+  int  which)
+
+  {
+  char      buf[MAXPATHLEN + 1024];
+  resource *r;
+  /*
+   * Pass Resource_List.nodes request in environment
+   * to allow pro/epi-logue setup/teardown of system
+   * settings.  --pw, 2 Jan 02
+   * Fixed to use putenv for sysV compatibility.
+   *  --troy, 11 jun 03
+   *
+   */
+
+  r = find_resc_entry(
+        &pjob->ji_wattr[JOB_ATR_resource],
+        find_resc_def(svr_resc_def, (char *)"nodes", svr_resc_size));
+
+  if (r != NULL)
+    {
+    const char *ppn_str = "ppn=";
+    int         num_nodes = 1;
+    int         num_ppn = 1;
+
+    /* PBS_RESOURCE_NODES */
+    put_env_var("PBS_RESOURCE_NODES", r->rs_value.at_val.at_str);
+
+    /* PBS_NUM_NODES */
+    num_nodes = strtol(r->rs_value.at_val.at_str, NULL, 10);
+
+    /* 
+     * InitUserEnv() also calculates num_nodes and num_ppn the same way
+     */
+    if (num_nodes != 0)
+      {
+      char *tmp;
+      char *other_reqs;
+
+      /* get the ppn */
+      if ((tmp = strstr(r->rs_value.at_val.at_str,ppn_str)) != NULL)
+        {
+        tmp += strlen(ppn_str);
+
+        num_ppn = strtol(tmp, NULL, 10);
+        }
+
+      other_reqs = r->rs_value.at_val.at_str;
+
+      while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+        {
+        other_reqs += 1;
+        num_nodes += strtol(other_reqs, &other_reqs, 10);
+        }
+      }
+
+    sprintf(buf, "%d", num_nodes);
+    put_env_var("PBS_NUM_NODES", buf);
+
+    /* PBS_NUM_PPN */
+    sprintf(buf, "%d", num_ppn);
+    put_env_var("PBS_NUM_PPN", buf);
+
+    /* PBS_NP */
+    sprintf(buf, "%d", pjob->ji_numvnod);
+    put_env_var("PBS_NP", buf);
+    }  /* END if (r != NULL) */
+
+  r = find_resc_entry(
+        &pjob->ji_wattr[JOB_ATR_resource],
+        find_resc_def(svr_resc_def, (char *)"gres", svr_resc_size));
+
+  if (r != NULL)
+    {
+    /* setenv("PBS_RESOURCE_NODES",r->rs_value.at_val.at_str,1); */
+    put_env_var("PBS_RESOURCE_GRES", r->rs_value.at_val.at_str);
+    }
+
+  char *cpu_clock = arst_string("PBS_CPUCLOCK",&pjob->ji_wattr[JOB_ATR_variables]);
+  if (cpu_clock != NULL)
+    {
+    cpu_clock = strchr(cpu_clock,'=');
+    if (cpu_clock != NULL)
+      {
+      cpu_clock++;
+      put_env_var("PBS_CPUCLOCK",cpu_clock);
+      }
+    }
+
+  if (TTmpDirName(pjob, buf, sizeof(buf)))
+    {
+    put_env_var("TMPDIR", buf);
+    }
+
+  /* Set PBS_SCHED_HINT */
+  char *envname = (char *)"PBS_SCHED_HINT";
+  char *envval;
+
+  if ((envval = get_job_envvar(pjob, envname)) != NULL)
+    {
+    put_env_var("PBS_SCHED_HINT", envval);
+    }
+
+  /* Set PBS_NODENUM */
+
+  sprintf(buf, "%d", pjob->ji_nodeid);
+  put_env_var("PBS_NODENUM", buf);
+
+  /* Set PBS_MSHOST */
+  put_env_var("PBS_MSHOST", pjob->ji_vnods[0].vn_host->hn_host);
+
+  /* Set PBS_NODEFILE */
+  if (pjob->ji_flags & MOM_HAS_NODEFILE)
+    {
+    sprintf(buf, "%s/%s",
+      path_aux,
+      pjob->ji_qs.ji_jobid);
+    put_env_var("PBS_NODEFILE", buf);
+    }
+
+  /* Set PBS_O_WORKDIR */
+  char *workdir_val = get_job_envvar(pjob,"PBS_O_WORKDIR");
+  if (workdir_val != NULL)
+    {
+    put_env_var("PBS_O_WORKDIR", workdir_val);
+    }
+
+  /* SET BEOWULF_JOB_MAP */
+  struct array_strings *vstrs;
+
+  int VarIsSet = 0;
+  int j;
+
+  vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
+
+  for (j = 0;j < vstrs->as_usedptr;++j)
+    {
+    if (!strncmp(
+          vstrs->as_string[j],
+          "BEOWULF_JOB_MAP=",
+          strlen("BEOWULF_JOB_MAP=")))
+      {
+      VarIsSet = 1;
+
+      break;
+      }
+    }
+
+  if (VarIsSet == 1)
+    {
+    char *val = strchr(vstrs->as_string[j], '=');
+
+    if (val != NULL)
+      put_env_var("BEOWULF_JOB_MAP", val+1);
+    }
+
+  /* Set some Moab env variables if they exist */
+  if ((which == PE_PROLOG) ||
+      (which == PE_EPILOG))
+    {
+    char *tmp_val;
+    int   moabenvcnt = 14;  /* # of entries in moabenvs */
+    static char      *moabenvs[] = {
+        (char *)"MOAB_NODELIST",
+        (char *)"MOAB_JOBID",
+        (char *)"MOAB_JOBNAME",
+        (char *)"MOAB_USER",
+        (char *)"MOAB_GROUP",
+        (char *)"MOAB_CLASS",
+        (char *)"MOAB_TASKMAP",
+        (char *)"MOAB_QOS",
+        (char *)"MOAB_PARTITION",
+        (char *)"MOAB_PROCCOUNT",
+        (char *)"MOAB_NODECOUNT",
+        (char *)"MOAB_MACHINE",
+        (char *)"MOAB_JOBARRAYINDEX",
+        (char *)"MOAB_JOBARRAYRANGE"
+        };
+    
+    for (int aindex=0; aindex < moabenvcnt; aindex++)
+      {
+      tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
+      if (tmp_val != NULL)
+        {
+        put_env_var(moabenvs[aindex], tmp_val);
+        }
+      }
+    }
+  } /* END setup_pelog_environment() */
+
+
+
+/*
+ * setup_prolog_outputs
+ *
+ * Sets the stdout and stderr file descriptors (1 and 2 respectively) to the 
+ * appropriate streams according to the output type and the job's output and error files
+ *
+ * @param pjob - the job whose pelog we're preparing to execute
+ * @param pe_io_type - specifies what kind of output this pelog should have
+ * @param delete_job - TRUE if this comes as a result of a delete job request
+ * @param specpelog - the specific pelog we're executing
+ */
+
+void setup_pelog_outputs(
+    
+  job  *pjob,
+  int   pe_io_type,
+  int   delete_job,
+  char *specpelog)
+
+  {
+  int fds1 = 0;
+  int fds2 = 0;
+
+  if (pe_io_type == PE_IO_TYPE_NULL)
+    {
+    /* no output, force to /dev/null */
+
+    fds1 = open("/dev/null", O_WRONLY, 0600);
+    fds2 = open("/dev/null", O_WRONLY, 0600);
+    }
+  else if (pe_io_type == PE_IO_TYPE_STD)
+    {
+    /* open job standard out/error */
+
+    /*
+     * We need to know if files are joined or not.
+     * If they are then open the correct file and duplicate it to the other
+    */
+
+    int isjoined = is_joined(pjob);
+
+    switch (isjoined)
+      {
+      case -1:
+
+        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
+                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+        fds1 = (fds2 < 0)?-1:dup(fds2);
+
+        break;
+
+      case 1:
+
+        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
+                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+        fds2 = (fds1 < 0)?-1:dup(fds1);
+
+        break;
+
+      default:
+
+        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
+                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+
+        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
+                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+        break;
+      }
+    }
+
+  /*
+   * dupeStdFiles is a flag for those that couldn't open their .OU/.ER files
+  */
+  int dupeStdFiles = 1;
+
+  if (!delete_job)
+    {
+    if ((fds1 < 0) ||
+        (fds2 < 0))
+      {
+      if (fds1 >= 0)
+        close(fds1);
+
+      if (fds2 >= 0)
+        close(fds2);
+
+      if ((pe_io_type == PE_IO_TYPE_STD) &&
+          (strlen(specpelog) == strlen(path_epilogp)) &&
+          (strcmp(path_epilogp, specpelog) == 0))
+        dupeStdFiles = 0;
+      else
+        exit(-1);
+      }
+    }
+
+  if (pe_io_type != PE_IO_TYPE_ASIS)
+    {
+    /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
+
+    /* dup only for those fds1 >= 0 */
+
+    if (fds1 != 1)
+      {
+      close(1);
+
+      if (dupeStdFiles)
+        {
+        if ((fds1 >= 0)&&(dup(fds1) >= 0))
+          close(fds1);
+        }
+      }
+
+    if (fds2 != 2)
+      {
+      close(2);
+
+      if (dupeStdFiles)
+        {
+        if ((fds2 >= 0)&&(dup(fds2) >= 0))
+          close(fds2);
+        }
+      }
+    }
+  } /* END setup_pelog_outputs() */
+
+
+
+/*
+ * handle_pipes_as_child()
+ *
+ * Writes the session to the pipe to the parent after setting a new session, then
+ * closes the pipes.
+ *
+ * @param parent_read - file_descriptor that the parent reads
+ * @param parent_write - file descriptor that the parent writes
+ * @param kid_read - file descriptor that the child reads
+ * @param kid_write - file descriptor that the child writes
+ */
+void handle_pipes_as_child(
+
+  int parent_read,
+  int parent_write,
+  int kid_read,
+  int kid_write)
+
+  {
+  // detach from parent
+  childSessionID = setsid();
+
+  close(parent_read);
+  close(parent_write);
+  write(kid_write,(char *)&childSessionID,sizeof(childSessionID));
+  close(kid_read);
+  close(kid_write);
+  } /* END handle_pipes_as_child() */
+
+
+
+/*
+ * close_handles_as_child()
+ *
+ * Closes the handles the child shouldn't have open: log, lockfile, network connections.
+ *
+ */
+void close_handles_as_child()
+
+  {
+  log_close(0);
+
+  if (lockfds >= 0)
+    {
+    close(lockfds);
+
+    lockfds = -1;
+    }
+
+  net_close(-1);
+  } /* END close_handles_as_child() */
+
+
+
+/*
+ * change_directory_as_needed()
+ *
+ * Changes the directory to the job's home directory for user pelogs
+ *
+ * @param which - the kind of pelog we're preparing to execute
+ * @param pjob - the job whose pelog we're preparing to execute
+ * @post-cond: we have changed to the appropriate directory if possible and necessary
+ */
+void change_directory_as_needed(
+
+  int  which,
+  job *pjob)
+
+  {
+  if ((which == PE_PROLOGUSER) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_PROLOGUSERJOB) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+    if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
+      {
+      /* warn only, no failure */
+
+      sprintf(log_buffer,
+        "PBS: chdir to %s failed: %s (running user %s in current directory)",
+        pjob->ji_grpcache->gc_homedir,
+        strerror(errno),
+        which == PE_PROLOGUSER ? "prologue" : "epilogue");
+
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1) {}
+
+      fsync(2);
+      }
+    }
+  } /* END change_directory_as_needed() */
+
+
+
+/*
+ * prepare_and_run_pelog_as_child()
+ *
+ * Closes file handles, sets up the output and error streams, arguments,
+ * changes directory, etc. to get everything ready and then execs the 
+ * prologue or epilogue script.
+ *
+ * @param pjob - the job whose pelog we're executing (I)
+ * @param pe_io_type - specifies what kind of output the pelog should have (I)
+ * @param delete_job - TRUE if this is an epilogue from a delete job request (I)
+ * @param specpelog - the specific pelog script to execute (I)
+ * @param pelog - the script we're executing (I)
+ * @param which - which prologue we're executing (I)
+ * @param parent_read - file descriptor for the pipe the parent reads
+ * @param parent_write - file descriptor for the pipe the parent writes
+ * @param kid_read - file descriptor for the pipe the kid reads
+ * @param kid_write - file descriptor for the pipe the kid writes
+ * @param fd_input - file descriptor for the pelog's stdin
+ * 
+ * NOTE: this function should never return as it calls execv
+ */
+
+void prepare_and_run_pelog_as_child(
+
+  job  *pjob,
+  int   pe_io_type,
+  int   delete_job,
+  char *specpelog,
+  char *pelog,
+  int   which,
+  int   parent_read,
+  int   parent_write,
+  int   kid_read,
+  int   kid_write,
+  int   fd_input)
+
+  {
+  char *arg[12];
+
+  handle_pipes_as_child(parent_read, parent_write, kid_read, kid_write);
+
+  close_handles_as_child();
+
+  // setup stdin for the pelog
+  if (fd_input != 0)
+    {
+    close(0);
+
+    if (dup(fd_input) == -1) {}
+
+    close(fd_input);
+    }
+
+  setup_pelog_outputs(pjob, pe_io_type, delete_job, specpelog);
+
+  change_directory_as_needed(which, pjob);
+
+  /* for both prolog and epilog */
+  if (DEBUGMODE == 1)
+    {
+    char resc_list[2048];
+    fprintf(stderr, "PELOGINFO:  script:'%s'  jobid:'%s'  euser:'%s'  egroup:'%s'  jobname:'%s' SSID:'%ld'  RESC:'%s'\n",
+            pelog,
+            pjob->ji_qs.ji_jobid,
+            pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+            pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long,
+            resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
+    }
+
+  setup_pelog_arguments(pelog, pjob, which, arg);
+
+  setup_pelog_environment(pjob,  which);
+  
+  /*
+   * if we want to run as user then we need to reset real user permissions
+   * since it seems that some OSs use real not effective user id when execv'ing
+   */
+  
+  if ((which == PE_PROLOGUSER) || 
+      (which == PE_EPILOGUSER) || 
+      (which == PE_PROLOGUSERJOB) || 
+      (which == PE_EPILOGUSERJOB))
+    {
+    setuid_ext(pbsuser, TRUE);
+    setegid(pbsgroup);
+
+    if (become_the_user(pjob) != PBSE_NONE)
+      {
+      exit(-1);
+      }
+    }
+
+  execv(pelog,arg);
+
+  /* should not be reached, but clean up if error */
+  sprintf(log_buffer,"execv of %s failed: %s\n",
+    pelog,
+    strerror(errno));
+
+  if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
+    {
+    /* cannot write message to stderr */
+
+    /* NO-OP */
+    }
+
+  fsync(2);
+
+  exit(255);
+  } /* END prepare_and_run_pelog_as_child() */
+
+
+
+/*
+ * get_child_exit_status()
+ *
+ * Gets the exit status of the child and sets run_exit appropriately
+ * 
+ * @post-cond: the child has either exited or it has been determined
+ * that we can't kill the child and run_exit has been marked with an error.
+ * On a normal (non-timeout) exit run_exit has been set with the exit code
+ * of the epilogue or prologue
+ * @return - the exit status of the pelog or an appropriate error code on
+ * a timeout
+ */
+
+int get_child_exit_status(
+
+  job  *pjob,
+  char *pelog,
+  int   which)
+
+  {
+  struct sigaction  act;
+  struct sigaction  oldact;
+  unsigned int      real_alarm_time = pe_alarm_time;
+  /* The prolog cannot take longer than the TJobStartTimeout */
+  unsigned int      job_start_timeout = (unsigned int)TJobStartTimeout;
+  int               waitst;
+  int               KillSent = FALSE;
+  
+  act.sa_handler = pelogalm;
+  sigemptyset(&act.sa_mask);
+
+  act.sa_flags = 0;
+
+  sigaction(SIGALRM, &act, &oldact);
+
+  if (job_start_timeout > 10) //Kill the prolog at least ten seconds before the timeout.
+    {
+    job_start_timeout -= 10;
+    }
+
+  if (real_alarm_time > job_start_timeout)
+    {
+    real_alarm_time = job_start_timeout;
+    }
+
+  alarm(real_alarm_time);
+
+  while (waitpid(child, &waitst, 0) < 0)
+    {
+    if (errno != EINTR)
+      {
+      /* exit loop. non-alarm based failure occurred */
+
+      run_exit = -3;
+
+      MOMPrologFailureCount++;
+
+      break;
+      }
+
+    // this gets set if the alarm goes off and means a timeout occurred
+    if (run_exit == -4)
+      {
+      if (KillSent == FALSE)
+        {
+        MOMPrologTimeoutCount++;
+
+        KillSent = TRUE;
+
+        /* NOTE:  prolog/epilog may be locked in KERNEL space and unkillable */
+
+        alarm(5);
+        }
+      else
+        {
+        /* cannot kill prolog/epilog, give up */
+
+        run_exit = -5;
+
+        break;
+        }
+      }
+    } /* END while (wait(&waitst) < 0) */
+
+  /* epilog/prolog child completed */
+#ifdef ENABLE_CSA
+  if ((which == PE_EPILOGUSER) && (!strcmp(pelog, path_epiloguser)))
+    {
+    /*
+     * Add a workload management end record
+    */
+    if (LOGLEVEL >= 8)
+      {
+      sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - after user epilog",
+              pjob->ji_qs.ji_jobid);
+
+      log_err(-1, __func__, log_buffer);
+      }
+
+    add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
+        pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+    }
+
+#endif /* ENABLE_CSA */
+
+  alarm(0);
+
+  /* restore the previous handler */
+
+  sigaction(SIGALRM, &oldact, 0);
+
+  if (run_exit == 0)
+    {
+    if (WIFEXITED(waitst))
+      {
+      run_exit = WEXITSTATUS(waitst);
+      }
+    }
+  
+  switch (run_exit)
+    {
+    case 0:
+
+      /* SUCCESS */
+
+      /* NO-OP */
+
+      break;
+
+    case -3:
+
+      pelog_err(pjob, pelog, run_exit,  "child wait interrupted");
+
+      break;
+
+    case -4:
+
+      pelog_err(pjob, pelog, run_exit,  "prolog/epilog timeout occurred, child cleaned up");
+
+      break;
+
+    case -5:
+
+      pelog_err(pjob, pelog, run_exit, "prolog/epilog timeout occurred, cannot kill child");
+
+      break;
+
+    default:
+
+      pelog_err(pjob, pelog, run_exit, "nonzero p/e exit status");
+
+      break;
+    }  /* END switch (run_exit) */
+
+  return(run_exit);
+  } /* END get_child_exit_status() */
 
 
 
@@ -416,24 +1353,12 @@ int run_pelog(
   char *specpelog,  /* I - script path */
   job  *pjob,       /* I - associated job */
   int   pe_io_type, /* I - io type */
-  int   deletejob)  /* I - called before a job being deleted (purge -p) */
+  int   delete_job)  /* I - called before a job being deleted (purge -p) */
 
   {
-  struct sigaction  act;
-  struct sigaction  oldact;
-  char             *arg[12];
-  int               fds1 = 0;
-  int               fds2 = 0;
   int               fd_input;
-  char              resc_list[2048];
-  char              resc_used[2048];
 
   struct stat       sbuf;
-  char              sid[20];
-  char              exit_stat[11];
-  int               waitst;
-  int               isjoined;  /* boolean */
-  char              buf[MAXPATHLEN + 1024];
   char              pelog[MAXPATHLEN + 1024];
 
   uid_t             real_uid;
@@ -441,14 +1366,7 @@ int run_pelog(
   gid_t             real_gid;
   int               num_gids;
 
-  int               jobtypespecified = 0;
-
-  resource         *r;
-
-  char             *EmptyString = (char *)"";
-
-  int               LastArg;
-  int               aindex;
+  bool              jobtypespecified = false;
 
   int               rc;
 
@@ -460,26 +1378,9 @@ int run_pelog(
   int               parent_read;
   int               parent_write;
 
-
-  int               moabenvcnt = 14;  /* # of entries in moabenvs */
-  static char      *moabenvs[] = {
-      (char *)"MOAB_NODELIST",
-      (char *)"MOAB_JOBID",
-      (char *)"MOAB_JOBNAME",
-      (char *)"MOAB_USER",
-      (char *)"MOAB_GROUP",
-      (char *)"MOAB_CLASS",
-      (char *)"MOAB_TASKMAP",
-      (char *)"MOAB_QOS",
-      (char *)"MOAB_PARTITION",
-      (char *)"MOAB_PROCCOUNT",
-      (char *)"MOAB_NODECOUNT",
-      (char *)"MOAB_MACHINE",
-      (char *)"MOAB_JOBARRAYINDEX",
-      (char *)"MOAB_JOBARRAYRANGE"
-      };
-
-  if ((pjob == NULL) || (specpelog == NULL) || (specpelog[0] == '\0'))
+  if ((pjob == NULL) ||
+      (specpelog == NULL) ||
+      (specpelog[0] == '\0'))
     {
     return(0);
     }
@@ -488,7 +1389,7 @@ int run_pelog(
 
   if (ptr != NULL)
     {
-    jobtypespecified = 1;
+    jobtypespecified = true;
 
     snprintf(pelog,sizeof(pelog),"%s.%s",
       specpelog,
@@ -595,65 +1496,29 @@ int run_pelog(
       }
     }
 
-  rc = stat(pelog,&sbuf);
+  rc = check_if_pelog_exists(which, pelog, sizeof(pelog), sbuf, specpelog, *pjob, jobtypespecified);
 
-  if ((rc == -1) && (jobtypespecified == 1))
+  switch (rc)
     {
-    snprintf(pelog, sizeof(pelog), "%s", specpelog);
+      
+    case PBSE_NONE:
 
-    rc = stat(pelog,&sbuf);
-    }
+      // continue
+      break;
 
-  if (rc == -1)
-    {
-    if (errno == ENOENT || errno == EBADF)
-      {
-      /* epilog/prolog script does not exist */
+    case PELOG_DOESNT_EXIST:
 
-      if (LOGLEVEL >= 5)
-        {
-        static char tmpBuf[1024];
+      // not an error but we are done
+      rc = PBSE_NONE;
+      
+      // fall through
 
-        sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
-          PPEType[which],
-          (pelog[0] != '\0') ? pelog : "NULL",
-          pjob->ji_qs.ji_jobid,
-          getcwd(tmpBuf, sizeof(tmpBuf)),
-          getpid());
+    default:
 
-        log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
-        }
-
-#ifdef ENABLE_CSA
-      if ((which == PE_EPILOGUSER) && (!strcmp(pelog, path_epiloguser)))
-        {
-        /*
-          * Add a workload management end record
-        */
-        if (LOGLEVEL >= 8)
-          {
-          sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
-            pjob->ji_qs.ji_jobid);
-
-          log_err(-1, __func__, log_buffer);
-          }
-
-        add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
-            pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
-        }
-
-#endif /* ENABLE_CSA */
-
+      // error, notify caller 
       undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
       free(real_gids);
-
-      return(0);
-      }
-      
-    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
-    free(real_gids);
-
-    return(pelog_err(pjob,pelog,errno,(char *)"cannot stat"));
+      return(rc);
     }
 
   if (LOGLEVEL >= 5)
@@ -663,58 +1528,18 @@ int run_pelog(
       (pelog[0] != '\0') ? pelog : "NULL",
       pjob->ji_qs.ji_jobid);
 
-    log_ext(-1, __func__, log_buffer, LOG_DEBUG);  /* not actually an error--but informational */
+    log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
   /* script must be owned by root, be regular file, read and execute by user *
    * and not writeable by group or other */
 
-  if (reduceprologchecks == TRUE)
+  if ((rc = check_pelog_permissions(sbuf, reduceprologchecks, pjob, pelog, which)) != PBSE_NONE)
     {
-    if ((!S_ISREG(sbuf.st_mode)) ||
-        (!(sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))))
-      {
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
-      free(real_gids);
-      return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
-      }
+    undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
+    free(real_gids);
+    return(rc);
     }
-  else
-    {
-    if (which == PE_PROLOGUSERJOB || which == PE_EPILOGUSERJOB)
-      {
-      if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) || 
-          (!S_ISREG(sbuf.st_mode)) ||
-          ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
-          (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
-        {
-        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
-        free(real_gids);
-        return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
-        }
-      }
-    else if ((sbuf.st_uid != 0) ||
-        (!S_ISREG(sbuf.st_mode)) ||
-        ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||\
-        (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
-      {
-      undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
-      free(real_gids);
-      return(pelog_err(pjob,pelog,-1, (char *)"permission Error"));
-      }
-    
-    if ((which == PE_PROLOGUSER) || (which == PE_EPILOGUSER))
-      {
-      /* script must also be read and execute by other */
-      
-      if ((sbuf.st_mode & (S_IROTH | S_IXOTH)) != (S_IROTH | S_IXOTH))
-        {
-        undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
-        free(real_gids);
-        return(pelog_err(pjob, pelog, -1,  (char *)"permission Error"));
-        }
-      }
-    } /* END !reduceprologchecks */
 
   fd_input = pe_input(pjob->ji_qs.ji_jobid);
 
@@ -722,14 +1547,13 @@ int run_pelog(
     {
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
-    return(pelog_err(pjob, pelog, -2,  (char *)"no pro/epilogue input file"));
+    return(pelog_err(pjob, pelog, -2,  "no pro/epilogue input file"));
     }
 
   run_exit = 0;
 
-
-  //Set up communications between parent and child so that
-  //child can send back the session id.
+  // Set up communications between parent and child so that
+  // child can send back the session id.
   if (pipe(pipes) == -1)
     {
     free(real_gids);
@@ -779,8 +1603,6 @@ int run_pelog(
 
   if (child > 0)
     {
-    int KillSent = FALSE;
-
     /* parent - watch for prolog/epilog to complete */
 
     close(fd_input);
@@ -796,598 +1618,27 @@ int run_pelog(
     undo_set_euid_egid(which,real_uid,real_gid,num_gids,real_gids,__func__);
     free(real_gids);
 
-    act.sa_handler = pelogalm;
+    rc = get_child_exit_status(pjob, pelog, which);
 
-    sigemptyset(&act.sa_mask);
-
-    act.sa_flags = 0;
-
-    sigaction(SIGALRM, &act, &oldact);
-
-    /* it would be nice if the harvest routine could block for 5 seconds,
-       and if the prolog is not complete in that time, mark job as prolog
-       pending, append prolog child, and continue */
-
-    /* main loop should attempt to harvest prolog in non-blocking mode.
-       If unsuccessful after timeout, job should be terminated, and failure
-       reported.  If successful, mom should unset prolog pending, and
-       continue with job start sequence.  Mom should report job as running
-       while prologpending flag is set.  (NOTE:  must track per job prolog
-       start time)
-    */
-
-    /* The prolog cannot take longer than the TJobStartTimeout */
-    unsigned int real_alarm_time = pe_alarm_time;
-    unsigned int job_start_timeout = (unsigned int)TJobStartTimeout;
-    if(job_start_timeout > 10) //Kill the prolog at least ten seconds before the timeout.
-      {
-      job_start_timeout -= 10;
-      }
-    if(real_alarm_time > job_start_timeout)
-      {
-      real_alarm_time = job_start_timeout;
-      }
-    alarm(real_alarm_time);
-
-    while (waitpid(child, &waitst, 0) < 0)
-      {
-      if (errno != EINTR)
-        {
-        /* exit loop. non-alarm based failure occurred */
-
-        run_exit = -3;
-
-        MOMPrologFailureCount++;
-
-        break;
-        }
-
-      if (run_exit == -4)
-        {
-        if (KillSent == FALSE)
-          {
-          MOMPrologTimeoutCount++;
-
-          /* timeout occurred */
-
-          KillSent = TRUE;
-
-          /* NOTE:  prolog/epilog may be locked in KERNEL space and unkillable */
-
-          alarm(5);
-          }
-        else
-          {
-          /* cannot kill prolog/epilog, give up */
-
-          run_exit = -5;
-
-          break;
-          }
-        }
-      }    /* END while (wait(&waitst) < 0) */
-
-    /* epilog/prolog child completed */
-#ifdef ENABLE_CSA
-    if ((which == PE_EPILOGUSER) && (!strcmp(pelog, path_epiloguser)))
-      {
-      /*
-       * Add a workload management end record
-      */
-      if (LOGLEVEL >= 8)
-        {
-        sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - after user epilog",
-                pjob->ji_qs.ji_jobid);
-
-        log_err(-1, __func__, log_buffer);
-        }
-
-      add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
-      }
-
-#endif /* ENABLE_CSA */
-
-    alarm(0);
-
-    /* restore the previous handler */
-
-    sigaction(SIGALRM, &oldact, 0);
-
-    if (run_exit == 0)
-      {
-      if (WIFEXITED(waitst))
-        {
-        run_exit = WEXITSTATUS(waitst);
-        }
-      }
+    return(rc);
     }
-  else
+  else if (child == 0)
     {
     /* child - run script */
-
-    childSessionID = setsid();
-
-    close(parent_read);
-    close(parent_write);
-    write(kid_write,(char *)&childSessionID,sizeof(childSessionID));
-    close(kid_read);
-    close(kid_write);
-
-    log_close(0);
-
-    if (lockfds >= 0)
-      {
-      close(lockfds);
-
-      lockfds = -1;
-      }
-
-    net_close(-1);
-
-    if (fd_input != 0)
-      {
-      close(0);
-
-      if (dup(fd_input) == -1) {}
-
-      close(fd_input);
-      }
-
-    if (pe_io_type == PE_IO_TYPE_NULL)
-      {
-      /* no output, force to /dev/null */
-
-      fds1 = open("/dev/null", O_WRONLY, 0600);
-      fds2 = open("/dev/null", O_WRONLY, 0600);
-      }
-    else if (pe_io_type == PE_IO_TYPE_STD)
-      {
-      /* open job standard out/error */
-
-      /*
-       * We need to know if files are joined or not.
-       * If they are then open the correct file and duplicate it to the other
-      */
-
-      isjoined = is_joined(pjob);
-
-      switch (isjoined)
-        {
-        case -1:
-
-          fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
-                               pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-          fds1 = (fds2 < 0)?-1:dup(fds2);
-
-          break;
-
-        case 1:
-
-          fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
-                               pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-          fds2 = (fds1 < 0)?-1:dup(fds1);
-
-          break;
-
-        default:
-
-          fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
-                               pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
-          fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
-                               pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-          break;
-        }
-      }
-
-    /*
-     * dupeStdFiles is a flag for those that couldn't open their .OU/.ER files
-    */
-    int dupeStdFiles = 1;
-
-    if (!deletejob)
-      if ((fds1 < 0) ||
-          (fds2 < 0))
-        {
-        if (fds1 >= 0)
-          close(fds1);
-        if (fds2 >= 0)
-          close(fds2);
-        if (pe_io_type == PE_IO_TYPE_STD && strlen(specpelog) == strlen(path_epilogp) &&
-            (strcmp(path_epilogp, specpelog) == 0))
-          dupeStdFiles = 0;
-        else
-          exit(-1);
-        }
-
-    if (pe_io_type != PE_IO_TYPE_ASIS)
-      {
-      /* If PE_IO_TYPE_ASIS, leave as is, already open to job */
-
-      /* dup only for those fds1 >= 0 */
-
-      if (fds1 != 1)
-        {
-        close(1);
-
-        if (dupeStdFiles)
-          {
-          if ((fds1 >= 0)&&(dup(fds1) >= 0))
-            close(fds1);
-          }
-        }
-
-      if (fds2 != 2)
-        {
-        close(2);
-
-        if (dupeStdFiles)
-          {
-          if ((fds2 >= 0)&&(dup(fds2) >= 0))
-            close(fds2);
-          }
-        }
-      }
-
-    if ((which == PE_PROLOGUSER) || 
-        (which == PE_EPILOGUSER) || 
-        (which == PE_PROLOGUSERJOB) || 
-        (which == PE_EPILOGUSERJOB))
-      {
-      if (chdir(pjob->ji_grpcache->gc_homedir) != 0)
-        {
-        /* warn only, no failure */
-
-        sprintf(log_buffer,
-          "PBS: chdir to %s failed: %s (running user %s in current directory)",
-          pjob->ji_grpcache->gc_homedir,
-          strerror(errno),
-          which == PE_PROLOGUSER ? "prologue" : "epilogue");
-
-        if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1) {}
-
-        fsync(2);
-        }
-      }
-
-    /* for both prolog and epilog */
-
-    if (DEBUGMODE == 1)
-      {
-      fprintf(stderr, "PELOGINFO:  script:'%s'  jobid:'%s'  euser:'%s'  egroup:'%s'  jobname:'%s' SSID:'%ld'  RESC:'%s'\n",
-              pelog,
-              pjob->ji_qs.ji_jobid,
-              pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
-              pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,
-              pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-              pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long,
-              resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
-      }
-
-    arg[0] = pelog;
-
-    arg[1] = pjob->ji_qs.ji_jobid;
-    arg[2] = pjob->ji_wattr[JOB_ATR_euser].at_val.at_str;
-    arg[3] = pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str;
-    arg[4] = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
-
-    /* NOTE:  inside child */
-
-    if ((which == PE_EPILOG) || 
-        (which == PE_EPILOGUSER) || 
-        (which == PE_EPILOGUSERJOB))
-      {
-      /* for epilog only */
-
-      sprintf(sid, "%ld",
-              pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
-      sprintf(exit_stat,"%d",
-              pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
-
-      arg[5] = sid;
-      arg[6] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
-      arg[7] = resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used));
-      arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
-      arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
-      arg[10] = exit_stat;
-      arg[11] = NULL;
-
-      LastArg = 11;
-      }
-    else
-      {
-      /* prolog */
-
-      arg[5] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
-      arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
-      arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
-      arg[8] = NULL;
-
-      LastArg = 8;
-      }
-
-    for (aindex = 0;aindex < LastArg;aindex++)
-      {
-      if (arg[aindex] == NULL)
-        arg[aindex] = EmptyString;
-      }  /* END for (aindex) */
-
-    /*
-     * Pass Resource_List.nodes request in environment
-     * to allow pro/epi-logue setup/teardown of system
-     * settings.  --pw, 2 Jan 02
-     * Fixed to use putenv for sysV compatibility.
-     *  --troy, 11 jun 03
-     *
-     */
-
-    r = find_resc_entry(
-          &pjob->ji_wattr[JOB_ATR_resource],
-          find_resc_def(svr_resc_def, (char *)"nodes", svr_resc_size));
-
-    if (r != NULL)
-      {
-      /* setenv("PBS_RESOURCE_NODES",r->rs_value.at_val.at_str,1); */
-
-      const char *ppn_str = "ppn=";
-      int num_nodes = 1;
-      int num_ppn = 1;
-
-      /* PBS_RESOURCE_NODES */
-      put_env_var("PBS_RESOURCE_NODES", r->rs_value.at_val.at_str);
-
-      /* PBS_NUM_NODES */
-      num_nodes = strtol(r->rs_value.at_val.at_str, NULL, 10);
-
-      /* 
-       * InitUserEnv() also calculates num_nodes and num_ppn the same way
-       */
-      if (num_nodes != 0)
-        {
-        char *tmp;
-        char *other_reqs;
-
-        /* get the ppn */
-        if ((tmp = strstr(r->rs_value.at_val.at_str,ppn_str)) != NULL)
-          {
-          tmp += strlen(ppn_str);
-
-          num_ppn = strtol(tmp, NULL, 10);
-          }
-
-        other_reqs = r->rs_value.at_val.at_str;
-
-        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
-          {
-          other_reqs += 1;
-          num_nodes += strtol(other_reqs, &other_reqs, 10);
-          }
-        }
-
-      sprintf(buf, "%d", num_nodes);
-      put_env_var("PBS_NUM_NODES", buf);
-
-      /* PBS_NUM_PPN */
-      sprintf(buf, "%d", num_ppn);
-      put_env_var("PBS_NUM_PPN", buf);
-
-      /* PBS_NP */
-      sprintf(buf, "%d", pjob->ji_numvnod);
-      put_env_var("PBS_NP", buf);
-      }  /* END if (r != NULL) */
-
-    r = find_resc_entry(
-          &pjob->ji_wattr[JOB_ATR_resource],
-          find_resc_def(svr_resc_def, (char *)"gres", svr_resc_size));
-
-    if (r != NULL)
-      {
-      /* setenv("PBS_RESOURCE_NODES",r->rs_value.at_val.at_str,1); */
-      put_env_var("PBS_RESOURCE_GRES", r->rs_value.at_val.at_str);
-      }
-
-    char *cpu_clock = arst_string("PBS_CPUCLOCK",&pjob->ji_wattr[JOB_ATR_variables]);
-    if(cpu_clock != NULL)
-      {
-      cpu_clock = strchr(cpu_clock,'=');
-      if(cpu_clock != NULL)
-        {
-        cpu_clock++;
-        put_env_var("PBS_CPUCLOCK",cpu_clock);
-        }
-      }
-
-    if (TTmpDirName(pjob, buf, sizeof(buf)))
-      {
-      put_env_var("TMPDIR", buf);
-      }
-
-    /* Set PBS_SCHED_HINT */
-
-    {
-    char *envname = (char *)"PBS_SCHED_HINT";
-    char *envval;
-
-    if ((envval = get_job_envvar(pjob, envname)) != NULL)
-      {
-      put_env_var("PBS_SCHED_HINT", envval);
-      }
-    }
-
-    /* Set PBS_NODENUM */
-
-    sprintf(buf, "%d",
-      pjob->ji_nodeid);
-    put_env_var("PBS_NODENUM", buf);
-
-    /* Set PBS_MSHOST */
-
-    put_env_var("PBS_MSHOST", pjob->ji_vnods[0].vn_host->hn_host);
-
-    /* Set PBS_NODEFILE */
-
-    if (pjob->ji_flags & MOM_HAS_NODEFILE)
-      {
-      sprintf(buf, "%s/%s",
-        path_aux,
-        pjob->ji_qs.ji_jobid);
-      put_env_var("PBS_NODEFILE", buf);
-      }
-
-    /* Set PBS_O_WORKDIR */
-    {
-    char *workdir_val;
-
-    workdir_val = get_job_envvar(pjob,"PBS_O_WORKDIR");
-    if (workdir_val != NULL)
-      {
-      put_env_var("PBS_O_WORKDIR", workdir_val);
-      }
-    }
-
-    /* SET BEOWULF_JOB_MAP */
-
-    {
-
-    struct array_strings *vstrs;
-
-    int VarIsSet = 0;
-    int j;
-
-    vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
-
-    for (j = 0;j < vstrs->as_usedptr;++j)
-      {
-      if (!strncmp(
-            vstrs->as_string[j],
-            "BEOWULF_JOB_MAP=",
-            strlen("BEOWULF_JOB_MAP=")))
-        {
-        VarIsSet = 1;
-
-        break;
-        }
-      }
-
-    if (VarIsSet == 1)
-      {
-      char *val = strchr(vstrs->as_string[j], '=');
-
-      if (val != NULL)
-        put_env_var("BEOWULF_JOB_MAP", val+1);
-      }
-    }
-
-  /* Set some Moab env variables if they exist */
-
-  if ((which == PE_PROLOG) || (which == PE_EPILOG))
-    {
-    char *tmp_val;
-
-    for (aindex=0;aindex<moabenvcnt;aindex++)
-      {
-      tmp_val = get_job_envvar(pjob,moabenvs[aindex]);
-      if (tmp_val != NULL)
-        {
-        put_env_var(moabenvs[aindex], tmp_val);
-        }
-      }
-    }
-
-  /*
-   * if we want to run as user then we need to reset real user permissions
-   * since it seems that some OSs use real not effective user id when execv'ing
-   */
-
-  if ((which == PE_PROLOGUSER) || 
-      (which == PE_EPILOGUSER) || 
-      (which == PE_PROLOGUSERJOB) || 
-      (which == PE_EPILOGUSERJOB))
-    {
-    setuid_ext(pbsuser, TRUE);
-    setegid(pbsgroup);
-
-    if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "setgid(%lu) for UID = %lu failed: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-      
-      log_err(errno, __func__, log_buffer);
-     
-      exit(-1);
-      }
+    prepare_and_run_pelog_as_child(pjob, pe_io_type, delete_job, specpelog, pelog, which,
+        parent_read, parent_write, kid_read, kid_write, fd_input);
     
-    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) != 0)
-      {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "setuid(%lu) failed: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-      
-      log_err(errno, __func__, log_buffer);
-     
-      exit(-1);
-      }
-    }
-
-    execv(pelog,arg);
-
-    sprintf(log_buffer,"execv of %s failed: %s\n",
-      pelog,
-      strerror(errno));
-
-    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
-      {
-      /* cannot write message to stderr */
-
-      /* NO-OP */
-      }
-
-    fsync(2);
-
+    // NOTREACHED: the above function doesn't return
     exit(255);
     }  /* END else () */
-
-  switch (run_exit)
+  else
     {
-    case 0:
+    // ERROR
+    log_err(errno, __func__, "Fork failed");
+    rc = -1;
+    }
+    
+  free(real_gids);
 
-      /* SUCCESS */
-
-      /* NO-OP */
-
-      break;
-
-    case - 3:
-
-      pelog_err(pjob, pelog, run_exit,  (char *)"child wait interrupted");
-
-      break;
-
-    case - 4:
-
-      pelog_err(pjob, pelog, run_exit,  (char *)"prolog/epilog timeout occurred, child cleaned up");
-
-      break;
-
-    case - 5:
-
-      pelog_err(pjob, pelog, run_exit, (char *) "prolog/epilog timeout occurred, cannot kill child");
-
-      break;
-
-    default:
-
-      pelog_err(pjob, pelog, run_exit,  (char *)"nonzero p/e exit status");
-
-      break;
-    }  /* END switch (run_exit) */
-
-  return(run_exit);
+  return(rc);
   }  /* END run_pelog() */

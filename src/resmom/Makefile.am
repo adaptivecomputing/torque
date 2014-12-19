@@ -8,12 +8,16 @@ DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
 	unicos8 unicosmk2
 
 CLEANFILES = *.gcda *.gcno *.gcov
-CLEANFILES += @PBS_MACH@/*.gcda @PBS_MACH@/*.gcno @PBS_MACH@/*.gcov
 
 include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h \
-									mom_server_lib.h mom_job_func.h
+		mom_server_lib.h mom_job_func.h cray_energy.h
 
-AM_CFLAGS = `xml2-config --cflags`
+AM_CFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
+	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
+	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" \
+	       -DRCP_ARGS=\"$(RCP_ARGS)\" \
+	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
+	       `xml2-config --cflags`
 AM_LIBS   = `xml2-config --libs`
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
@@ -39,7 +43,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_req_quejob.c mom_job_func.c			\
 		   mom_process_request.c alps_reservations.c		\
 		   release_reservation.c generate_alps_status.c	\
-                   parse_config.c node_frequency.cpp \
+		   parse_config.c node_frequency.cpp cray_energy.c \
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\

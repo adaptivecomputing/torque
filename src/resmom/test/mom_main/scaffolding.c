@@ -423,7 +423,7 @@ void check_busy(double mla)
   exit(1);
   }
 
-void mom_is_request(struct tcp_chan *chan, int version, int *cmdp)
+void mom_is_request(struct tcp_chan *chan, int version, int *cmdp,struct sockaddr_in *pSockAddr)
   {
   fprintf(stderr, "The call to mom_is_request needs to be mocked!!\n");
   exit(1);
@@ -447,11 +447,21 @@ void log_close(int msg)
   exit(1);
   }
 
-void *get_next(list_link pl, char *file, int line)
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
-  }
+  if ((pl.ll_next == NULL) ||
+      ((pl.ll_next == &pl) && (pl.ll_struct != NULL)))
+    {
+    return NULL;
+    }
+
+  return(pl.ll_next->ll_struct);
+  }  /* END get_next() */
 
 int log_open(char *filename, char *directory)
   {
@@ -612,7 +622,6 @@ void DIS_tcp_settimeout(long timeout)
 mom_hierarchy_t *initialize_mom_hierarchy(void)
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
   return(nt);
   }
 
@@ -658,7 +667,7 @@ char *netaddr(struct sockaddr_in *sai)
   exit(1);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
   exit(1);
@@ -720,7 +729,8 @@ void log_ext(int type, const char *func_name, const char *msg, int o) {}
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 int put_env_var(const char *name, const char *value)
@@ -809,3 +819,51 @@ void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead
 
 void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
 
+char *threadsafe_tokenizer(
+
+  char **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  } /* END threadsafe_tokenizer() */
+
+time_t get_stat_update_interval()
+  {
+  return ServerStatUpdateInterval;
+  }

@@ -12,8 +12,6 @@ int conn_qsub(char *hostname, long port, char *EMsg);
 
 struct job *job_alloc(void);
 
-void job_free(struct job *pj, int use_recycle);
-
 struct job *copy_job(struct job *parent);
 
 struct job *job_clone(struct job *template_job, struct job_array *pa, int taskid);

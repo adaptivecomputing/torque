@@ -565,6 +565,10 @@ int modify_job(
 
     plist = (svrattrl *)GET_NEXT(plist->al_link);
     }
+
+  // at this point consider the job as getting modified
+  pjob->ji_mod_time = time(NULL);
+
   /* Reset any defaults resource limit which might have been unset */
   set_resc_deflt(pjob, NULL, FALSE);
 

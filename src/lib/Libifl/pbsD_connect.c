@@ -240,7 +240,9 @@ char *pbs_get_server_list(void)
   return(server_list);
   } /* END pbs_get_server_list() */
 
-
+#if defined(MUNGE_AUTH_LIB)
+#include <munge.h>
+#endif
 
 void get_port_from_server_name_file(unsigned int *server_name_file_port)
   {
@@ -380,7 +382,7 @@ char *PBS_get_server(
  * PBSD_munge_authenticate - This function will use munge to authenticate 
  * a user connection with the server. 
  */
-#ifdef MUNGE_AUTH
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC)
 int PBSD_munge_authenticate(
 
   int psock,  /* I */
@@ -481,7 +483,134 @@ int PBSD_munge_authenticate(
     DIS_tcp_cleanup(chan);
   return rc;
   } /* END PBSD_munge_authenticate() */
-#endif /* ifdef MUNGE_AUTH */
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_EXEC) */
+
+
+
+/* MUNGE library supported authentication
+ * PBSD_munge_authenticate - This function will use munge to authenticate 
+ * a user connection with the server. 
+ */
+#if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB)
+int PBSD_munge_cred_destroy(
+
+	char **cred) /* I */
+
+  {
+  char *ptr = NULL;
+
+  if ((cred == NULL) || 
+      (*cred == NULL))
+    return (-1);
+
+  ptr = *cred;
+
+  while (*ptr != '\0')
+    {
+    *ptr++ = 0; /* Munge memburn replacement */
+    }
+
+  free(*cred);
+  *cred = NULL;
+
+  return 0;
+  }
+
+
+/*
+ * PBSD_munge_authenticate()
+ *
+ * Authenticates a client connection for pbs_server by munging the information and sending
+ * it across.
+ */
+
+int PBSD_munge_authenticate(
+
+  int psock,  /* I */
+  int handle) /* I */
+
+  {
+  int                 rc;
+
+  munge_ctx_t         mctx = NULL;
+  munge_err_t         mret = EMUNGE_SNAFU;
+  char               *mcred = NULL;
+
+  /* user id and name stuff */
+  struct passwd      *pwent;
+  uid_t               myrealuid;
+  struct batch_reply *reply;
+  unsigned short      user_port = 0;
+  struct sockaddr_in  sockname;
+  socklen_t           socknamelen = sizeof(sockname);
+  struct tcp_chan    *chan;
+
+  if ((mctx = munge_ctx_create()) == NULL)
+    {
+    return(-1);
+    }
+
+  if ((mret = munge_encode (&mcred, mctx, NULL, 0)) != EMUNGE_SUCCESS)
+    {
+    const char *merrmsg = NULL;
+    if (!(merrmsg = munge_ctx_strerror(mctx)))
+      {
+      merrmsg = munge_strerror(mret);
+      }
+
+    fprintf(stderr, "munge_encode failed: %s (%d)\n", merrmsg, mret);
+    munge_ctx_destroy(mctx);
+    return(PBSE_MUNGE_NOT_FOUND); /*TODO more fine-grained error codes? */
+    }
+  
+  munge_ctx_destroy(mctx);
+
+  /* We got the certificate. Now make the PBS_BATCH_AltAuthenUser request */
+  myrealuid = getuid();
+  pwent = getpwuid(myrealuid);
+  
+  rc = getsockname(psock, (struct sockaddr *)&sockname, &socknamelen);
+  
+  if (rc == -1)
+    {
+    fprintf(stderr, "getsockname failed: %d\n", errno);
+    return(-1);
+    }
+  
+  user_port = ntohs(sockname.sin_port);
+  
+  if ((chan = DIS_tcp_setup(psock)) == NULL)
+    {
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_AltAuthenUser, pwent->pw_name)) ||
+           (rc = diswui(chan, user_port)) ||
+           (rc = diswst(chan, mcred)) ||
+           (rc = encode_DIS_ReqExtend(chan, NULL)) ||
+           (rc = DIS_tcp_wflush(chan)))
+    {
+    PBSD_munge_cred_destroy(&mcred);
+    /* ERROR */
+    return(rc);
+    }
+  else
+    {
+    int local_err = PBSE_NONE;
+    PBSD_munge_cred_destroy(&mcred);
+    /* read the reply */
+    if ((reply = PBSD_rdrpy(&local_err, handle)) != NULL)
+      free(reply);
+    
+    return(PBSE_NONE);
+    }
+
+  return(-1);
+  }
+#endif /* if defined(MUNGE_AUTH) && defined(MUNGE_AUTH_LIB) */
+
+
+
+
+
 
 
 /*
@@ -525,10 +654,10 @@ int get_parent_client_socket(int psock, int *pcsock)
 
 
 
-
 int validate_socket(
 
-  int psock)
+  int          psock,
+  std::string &external_err_msg)
 
   {
   int            rc = PBSE_NONE;
@@ -548,7 +677,8 @@ int validate_socket(
   int            write_buf_len = 0;
   int            local_errno;
   pid_t          mypid;
-  char     unix_sockname[MAXPATHLEN + 1];
+  char           unix_sockname[MAXPATHLEN + 1];
+  char           err_buf[MAXPATHLEN];
 
   myrealuid = getuid();
 
@@ -559,11 +689,13 @@ int validate_socket(
     }
   else if ((rc = get_hostaddr_hostent_af(&local_errno, (char *)AUTH_IP, &af_family, &l_server, &l_server_len)) != PBSE_NONE)
     {
-    fprintf(stderr, "get_hostaddr_hostend_af failed: %d", rc);
+    snprintf(err_buf, sizeof(err_buf), "get_hostaddr_hostend_af failed: %d", rc);
+    external_err_msg = err_buf;
     }
   else if ((rc = get_parent_client_socket(psock, &parent_client_socket)) != PBSE_NONE)
     {
-    fprintf(stderr, "get_parent_client_socket failed: %d", rc);
+    snprintf(err_buf, sizeof(err_buf), "get_parent_client_socket failed: %d", rc);
+    external_err_msg = err_buf;
     }
   else
     {
@@ -579,37 +711,37 @@ int validate_socket(
     write_buf_len = strlen(write_buf);
     if ((local_socket = socket_get_unix()) <= 0)
       {
-      fprintf(stderr, "socket_get_unix error\n");
+      external_err_msg = "qsub was unable to open a socket\n";
       rc = PBSE_SOCKET_FAULT;
       }
     else if ((rc = socket_connect_unix(local_socket, unix_sockname, &err_msg)) != PBSE_NONE)
       {
-      fprintf(stderr, "socket_connect error (VERIFY THAT trqauthd IS RUNNING)\n");
+      external_err_msg = "qsub couldn't connect its socket to trqauthd: VERIFY THAT trqauthd IS RUNNING\n";
       }
     else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
       {
       rc = PBSE_SOCKET_WRITE;
-      fprintf(stderr, "socket_write error\n");
+      external_err_msg = "qsub couldn't write authentication information to trqauthd";
       }
     else if ((rc = socket_read_num(local_socket, &code)) != PBSE_NONE)
       {
-      fprintf(stderr, "socket_read_num error\n");
+      external_err_msg = "qsub couldn't read the size of information from trqauthd\n";
       }
     else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
       {
-      fprintf(stderr, "socket_read_str error\n");
+      external_err_msg = "qsub couldn't read the response from trqauthd\n";
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
-      fprintf(stderr, "parse_daemon_response error %lld %s\n", code, pbse_to_txt(code));
+      snprintf(err_buf, sizeof(err_buf), "qsub received error code %lld ('%s') from trqauthd\n", code, pbse_to_txt(code));
+      external_err_msg = err_buf;
       }
     else
       {
       if (getenv("PBSDEBUG"))
         {
-        fprintf(stderr, "%s : Connection authorized (server socket %d)\n", __func__, parent_client_socket);
+        fprintf(stdout, "%s : Connection authorized (server socket %d)\n", __func__, parent_client_socket);
         }
-
       }
 
     if (local_socket >= 0)
@@ -620,7 +752,8 @@ int validate_socket(
     {
     if (err_msg != NULL)
       {
-      fprintf(stderr, "Error in connection to trqauthd (%d)-[%s]\n", rc, err_msg);
+      snprintf(err_buf, sizeof(err_buf), "Error in connection to trqauthd (%d)-[%s]\n", rc, err_msg);
+      external_err_msg = err_buf;
       }
     }
 
@@ -972,7 +1105,8 @@ int pbs_original_connect(
 
   if (!use_unixsock)
     {
-    int retries = 0;
+    int         retries = 0;
+    std::string err_msg;
     /* at this point, either using unix sockets failed, or we determined not to
      * try */
     do
@@ -1083,7 +1217,7 @@ int pbs_original_connect(
           {
           if (!retry || retries >= MAX_RETRIES)
             fprintf(stderr, "ERROR:  cannot get servername (%s) errno=%d (%s)\n",
-                  (server != NULL) ? server : "NULL",
+                  server,
                   errno,
                   strerror(errno));
           }
@@ -1260,20 +1394,20 @@ int pbs_original_connect(
 #else  
       /* new version of iff using daemon */
       if ((ENABLE_TRUSTED_AUTH == FALSE) &&
-          ((rc = validate_socket(connection[out].ch_socket)) != PBSE_NONE))
+          ((rc = validate_socket(connection[out].ch_socket, err_msg)) != PBSE_NONE))
         {
         if (!retry || retries >= MAX_RETRIES)
           {
           if (getenv("PBSDEBUG"))
             {
-            const char *err_msg = "";
+            const char *tmp_err_msg = "";
 
             if (rc > 0)
-              err_msg = pbs_strerror(rc);
+              tmp_err_msg = pbs_strerror(rc);
 
             fprintf(stderr, 
               "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-              server, rc, err_msg);
+              server, rc, tmp_err_msg);
             }
 
           local_errno = PBSE_SOCKET_FAULT;
@@ -1292,11 +1426,12 @@ int pbs_original_connect(
         }
 #endif /* ifdef MUNGE_AUTH */
       } while ((rc != PBSE_NONE) && (retries < MAX_RETRIES));
-    if(rc != PBSE_NONE)
+
+    if (rc != PBSE_NONE)
       {
+      fprintf(stderr, "%s\n", err_msg.c_str());
       goto cleanup_conn;
       }
-
     } /* END if !use_unixsock */
 
   pthread_mutex_unlock(connection[out].ch_mutex);
@@ -1305,7 +1440,7 @@ int pbs_original_connect(
 
 cleanup_conn:
   
-  if(connection[out].ch_socket >= 0)
+  if (connection[out].ch_socket >= 0)
     close(connection[out].ch_socket);
 
 cleanup_conn_lite:

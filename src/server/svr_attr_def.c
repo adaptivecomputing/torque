@@ -1368,7 +1368,36 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER},
 
    /* SRV_ATR_pass_cpu_clock */
-   {ATTR_pass_cpu_clock,
+  {ATTR_pass_cpu_clock,
+   decode_b,
+   encode_b,
+   set_b,
+   comp_b,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_job_full_report_time */
+  {ATTR_job_full_report_time, /* "job_full_report_time" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+
+
+  /* site supplied server pbs_attribute definitions if any, see site_svr_attr_*.h  */
+#include "site_svr_attr_def.h"
+
+   /* SRV_ATR_CopyOnRerun */
+  {(char *)ATTR_copy_on_rerun, /* "copy_on_rerun" */
     decode_b,
     encode_b,
     set_b,
@@ -1379,8 +1408,16 @@ attribute_def svr_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_SERVER},
 
-
-  /* site supplied server pbs_attribute definitions if any, see site_svr_attr_*.h  */
-#include "site_svr_attr_def.h"
+   /* SRV_ATR_JobExclusiveOnUse */
+  {(char *)ATTR_job_exclusive_on_use, /* "job_exclusive_on_use" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_SERVER},
 
   };

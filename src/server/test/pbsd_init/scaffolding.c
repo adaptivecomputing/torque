@@ -97,7 +97,10 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 pthread_mutex_t *retry_routing_mutex;
 user_info_holder users;
-
+id_map job_mapper;
+threadpool_t *async_pool;
+bool exit_called = false;
+char *path_nodepowerstate;
 
 void on_job_rerun_task(struct work_task *ptask)
   {
@@ -424,7 +427,7 @@ void track_save(struct work_task *pwt)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
   exit(1);
@@ -442,7 +445,7 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-int acct_open(char *filename)
+int acct_open(char *filename, bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_open needs to be mocked!!\n");
   exit(1);
@@ -477,22 +480,12 @@ int get_parent_and_child(char *start, char **parent, char **child, char **end)
   return(0);
   }
 
-int add_hello(hello_container *hc, char *node_name)
-  {
-  return(0);
-  }
-
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   {
   return(0);
   }
 
 struct pbsnode *find_nodebyname(const char *name)
-  {
-  return(NULL);
-  }
-
-hello_container *initialize_hello_container(hello_container *hc)
   {
   return(NULL);
   }
@@ -514,12 +507,6 @@ char *trim(char *str)
 int array_save(job_array *pa)
   {
   return(0);
-  }
-
-int add_hello_after(hello_container *hc, int node_id, int index)
-  {
-  fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(
@@ -632,14 +619,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
   {
   mom_hierarchy_t *nt = (mom_hierarchy_t *)calloc(1, sizeof(mom_hierarchy_t));
-  nt->paths = new mom_paths();
-
-  if (nt->paths == NULL)
-    {
-    free(nt);
-    nt = NULL;
-    return(nt);
-    }
 
   nt->current_path  = -1;
   nt->current_level = -1;
@@ -650,9 +629,16 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 
 void parse_mom_hierarchy(int fds)
   {
-  mh->paths->push_back(new mom_levels());
+  mom_levels lv;
+  mh->paths.push_back(lv);
   }
 
 id_map::id_map() {}
+id_map::~id_map() {}
+int id_map::get_new_id(const char *name)
+  {
+  return 0;
+  }
 
-void rel_resc(job *pjob);
+void rel_resc(job *pjob) {}
+

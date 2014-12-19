@@ -455,6 +455,7 @@ int get_job_id(
   else
     {
     /* Create a job id */
+    char  host_server[PBS_MAXSERVERNAME + 1]; 
     long  server_suffix = TRUE;
 
     created_here = JOB_SVFLG_HERE;
@@ -466,6 +467,18 @@ int get_job_id(
     if ((alias != NULL) &&
         (server_suffix == TRUE))
       {
+      /* get_fullhostname needs to be called because if HOST_NAME_SUFFIX has been
+         added to the torque.cfg file the server name will be different than
+         server_name. */
+      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+        {
+        svrnm = host_server;
+        }
+      else
+        {
+        svrnm = server_name;
+        }
+
       snprintf(jidbuf,sizeof(jidbuf),"%d.%s.%s",
         server.sv_qs.sv_jobidnumber, svrnm, alias);
       }
@@ -475,6 +488,18 @@ int get_job_id(
       }
     else if (server_suffix == TRUE)
       {
+      /* get_fullhostname needs to be called because if HOST_NAME_SUFFIX has been
+         added to the torque.cfg file the server name will be different than
+         server_name. */
+      if (get_fullhostname(pbs_default(), host_server, PBS_MAXSERVERNAME, NULL) == 0)
+        {
+        svrnm = host_server;
+        }
+      else
+        {
+        svrnm = server_name;
+        }
+
       snprintf(jidbuf, sizeof(jidbuf), "%d.%s", server.sv_qs.sv_jobidnumber, svrnm);
       }
     else
@@ -660,6 +685,8 @@ job *create_and_initialize_job_structure(
   pj->ji_qs.ji_svrflags = created_here;
   pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
   pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = NULL;
+  // flag this new job as recently modified
+  pj->ji_mod_time = time(NULL);
 
   return(pj);
   } /* END create_and_initialize_job_structure() */
@@ -1514,7 +1541,17 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    remove_job(&newjobs,pj);
+    if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+      {
+      if (LOGLEVEL >= 8)
+        {
+        char  log_buf[LOCAL_LOG_BUF_SIZE];
+        snprintf(log_buf,sizeof(log_buf),
+            "Could not remove job %s from newjobs\n",
+            pj->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
     decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
@@ -2140,7 +2177,17 @@ int req_commit(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-  remove_job(&newjobs,pj);
+  if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+    {
+    if (LOGLEVEL >= 8)
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      snprintf(log_buf,sizeof(log_buf),
+            "WARNING:  could not remove job %s from newjobs container\n",
+            pj->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
   
   /* job array, setup the array task
      *** job array under development */
@@ -2220,7 +2267,9 @@ int req_commit(
 
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
+    mutex_mgr pque_mutex(pque->qu_mutex,true);
+    std::string queue_name(pque->qu_qs.qu_name);
+
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
@@ -2242,7 +2291,6 @@ int req_commit(
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
         }
-      pque_mutex.lock();
       }
 
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
@@ -2257,7 +2305,6 @@ int req_commit(
         }
       
       decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-      pque_mutex.unlock();
       svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
@@ -2267,14 +2314,14 @@ int req_commit(
        is done routing the job with this flag */
     pj->ji_commit_done = 1;
 
-    /* need to format message first, before request goes away - moved here because we have the mutex */
+    /* need to format message first, before request goes away - 
+     * moved here because we have the queue name */
     snprintf(log_buf, sizeof(log_buf),
       msg_jobnew,
       preq->rq_user, preq->rq_host,
       pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
       pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-      pque->qu_qs.qu_name);
-
+      queue_name.c_str());
     }
 
 #ifdef AUTORUN_JOBS

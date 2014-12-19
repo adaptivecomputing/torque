@@ -109,9 +109,9 @@ typedef struct node_comm_t
   } node_comm_t;
 
 
- typedef std::vector<node_comm_t *> mom_nodes;
- typedef std::vector<mom_nodes *> mom_levels;
- typedef std::vector<mom_levels *> mom_paths;
+typedef std::vector<node_comm_t> mom_nodes;
+typedef std::vector<mom_nodes> mom_levels;
+typedef std::vector<mom_levels> mom_paths;
 
 /* mom_hierarchy_t holder */
 typedef struct mom_hierarchy
@@ -119,7 +119,7 @@ typedef struct mom_hierarchy
   int              current_path;  /* index of the active path */
   int              current_level; /* index of the active level of the active path */
   int              current_node;  /* index of the active node from that path */
-  mom_paths        *paths;         /* the paths we currently have, a 3D array of std::vectors */
+  mom_paths        paths;         /* the paths we currently have, a 3D array of std::vectors */
   } mom_hierarchy_t;
 
 
@@ -127,7 +127,7 @@ int add_network_entry(mom_hierarchy_t *,char *,struct addrinfo *,unsigned short,
 mom_hierarchy_t *initialize_mom_hierarchy();
 node_comm_t *force_path_update(mom_hierarchy_t *);
 node_comm_t *update_current_path(mom_hierarchy_t *);
-int tcp_connect_sockaddr(struct sockaddr *,size_t);
+int tcp_connect_sockaddr(struct sockaddr * addr_in, size_t size, bool log = true);
 int write_tcp_reply(struct tcp_chan *chan,int,int,int,int);
 int read_tcp_reply(struct tcp_chan *chan,int,int,int,int *);
 void free_mom_hierarchy(mom_hierarchy_t *);
@@ -135,4 +135,4 @@ int handle_level(char *level_iter, int path_index, int &level_index);
 int handle_path(char *path_iter, int &path_index);
 void parse_mom_hierarchy(int fds);
 
-#endif /* ndef MOM_HIERARCHY_H */
+#endif /* ifndef MOM_HIERARCHY_H */

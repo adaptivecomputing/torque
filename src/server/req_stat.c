@@ -142,8 +142,8 @@ extern pthread_mutex_t *netrates_mutex;
 
 /* Extern Functions */
 
-int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, int *);
-int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, int *, int);
+int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
+int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
 extern int  hasprop(struct pbsnode *, struct prop *);
 extern void rel_resc(job*);
@@ -160,7 +160,6 @@ static void req_stat_job_step2(struct stat_cntl *);
 #endif /* TMAX_JOB */
 
 
-
 enum TJobStatTypeEnum
   {
   tjstNONE = 0,
@@ -174,6 +173,7 @@ enum TJobStatTypeEnum
   tjstArray,
   tjstLAST
   };
+
 
 
 /**
@@ -197,6 +197,7 @@ int req_stat_job(
   pbs_queue            *pque = NULL;
   int                   rc = PBSE_NONE;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  bool                  condensed = false;
 
   enum TJobStatTypeEnum type = tjstNONE;
 
@@ -228,6 +229,11 @@ int req_stat_job(
     else if (!strncasecmp(preq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
       {
       type = tjstSummarizeArraysServer;
+      }
+
+    if (preq->rq_extend[strlen(preq->rq_extend) - 1] == 'C')
+      {
+      condensed = true;
       }
 
     }    /* END if (preq->rq_extend != NULL) */
@@ -321,6 +327,7 @@ int req_stat_job(
   cntl->sc_origrq = preq;
   cntl->sc_post   = req_stat_job_step2;
   cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
+  cntl->sc_condensed = condensed;
 
   req_stat_job_step2(cntl); /* go to step 2, see if running is current */
 
@@ -587,6 +594,7 @@ static void req_stat_job_step2(
                preq,
                (pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long >= DTime) ? pal : dpal,
                &preply->brp_un.brp_status,
+               cntl->sc_condensed,
                &bad);
 
         if ((rc != 0) && (rc != PBSE_PERM))
@@ -670,6 +678,7 @@ static void req_stat_job_step2(
            preq,
            pal,
            &preply->brp_un.brp_status,
+           cntl->sc_condensed,
            &bad);
 
     if ((rc != 0) && 
@@ -821,7 +830,7 @@ int stat_to_mom(
 
   if (node == NULL)
     return PBSE_UNKNODE;
-  if ((node->nd_state & INUSE_DOWN)||(node->nd_power_state != POWER_STATE_RUNNING))
+  if ((node->nd_state & INUSE_NOT_READY)||(node->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 6)
       {
@@ -886,7 +895,8 @@ void stat_update(
 
   preply = &preq->rq_reply;
 
-  if (preply->brp_un.brp_txt.brp_str != NULL)
+  if ((preply->brp_choice != BATCH_REPLY_CHOICE_Queue) &&
+      (preply->brp_un.brp_txt.brp_str != NULL))
     {
     msg_ptr = strstr(preply->brp_un.brp_txt.brp_str, PBS_MSG_EQUAL);
   
@@ -966,9 +976,17 @@ void stat_update(
     }
   else
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
-    log_err(preply->brp_code, __func__, log_buf);
+    if (preply->brp_choice == BATCH_REPLY_CHOICE_Queue)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Unexpected reply: reply was on queue");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+      log_err(preply->brp_code, __func__, log_buf);
+      }
     }
   
   cntl->sc_conn = -1;
@@ -1241,6 +1259,7 @@ static int status_que(
         QA_ATR_LAST,
         preq->rq_perm,
         &pstat->brp_attr,
+        false,
         &bad,
         1)) != PBSE_NONE)   /* IsOwner == TRUE */
     {
@@ -1344,7 +1363,10 @@ int req_stat_node(
   if (svr_totnodes <= 0)
     {
     rc = PBSE_NONODES;
-    req_reject(rc, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
+
+    req_reject(rc, 0, preq, NULL, (svr_unresolvednodes == 0)?
+        "node list is empty - check 'server_priv/nodes' file":
+        "none of the nodes in the 'server_priv/nodes' file resolves to a valid address");
 
     return rc;
     }
@@ -1616,6 +1638,7 @@ int req_stat_svr(
         SRV_ATR_LAST,
         preq->rq_perm,
         &pstat->brp_attr,
+        false,
         &bad,
         1))    /* IsOwner == TRUE */
     {

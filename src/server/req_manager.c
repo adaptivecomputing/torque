@@ -131,12 +131,16 @@
 #include "work_task.h"
 #include "mcom.h"
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
-#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
+#include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_dynamic_node */
 #include "node_manager.h" /* setup_notification */
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
+#include "ji_mutex.h"
+#include "req_rerun.h"
+#include "req_delete.h"
+#include "mom_hierarchy_handler.h"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -158,6 +162,7 @@ extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
 extern int            disable_timeout_check;
+//extern mom_hierarchy_t *mh;
 
 
 extern int que_purge(pbs_queue *);
@@ -165,8 +170,13 @@ extern void save_characteristic(struct pbsnode *, node_check_info *);
 extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
 extern int hasprop(struct pbsnode *, struct prop *);
 extern int PNodeStateToString(int, char *, int);
+extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 
+//extern void add_all_nodes_to_hello_container();
+//void        prepare_mom_hierarchy(std::vector<std::string> &hierarchy_holder);
+//extern      std::vector<std::string> hierarchy_holder;
+//extern       pthread_mutex_t         hierarchy_holder_Mutex;
 
 /* private data */
 
@@ -824,19 +834,30 @@ int mgr_set_node_attr(
     char OrigState[1024];
     char FinalState[1024];
 
-    /* changing node state */
+    if(pnode->nd_state&INUSE_NOHIERARCHY)
+      {
+      tnode.nd_state = pnode->nd_state;
+      sprintf(log_buf,"Node state can not be changed until node list has been sent to all nodes.");
+      log_err(PBSE_HIERARCHY_NOT_SENT,"State change not allowed.",log_buf);
+      rc = PBSE_HIERARCHY_NOT_SENT;
+      }
+    else
+      {
 
-    /* log change */
+      /* changing node state */
 
-    PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
-    PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
+      /* log change */
 
-    sprintf(log_buf, "node %s state changed from %s to %s",
-      pnode->nd_name,
-      OrigState,
-      FinalState);
+      PNodeStateToString(pnode->nd_state, OrigState, sizeof(OrigState));
+      PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
 
-    log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
+      sprintf(log_buf, "node %s state changed from %s to %s",
+        pnode->nd_name,
+        OrigState,
+        FinalState);
+
+      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
+      }
     }
 
   /* NOTE:  nd_status properly freed during pbs_attribute alter */
@@ -1900,8 +1921,97 @@ void mgr_node_set(
   }  /* END void mgr_node_set() */
 
 
+static bool wait_for_job_state(int jobid,int newState,int timeout)
+  {
+  time_t end = time(NULL) + timeout;
+  while(end > time(NULL))
+    {
+    job *pjob = svr_find_job_by_id(jobid);
+    if(pjob == NULL) return true; //the job is gone.
+    int jobState = pjob->ji_qs.ji_state;
+    unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
+    if(jobState == newState) return true; //The job has been deleted from the MOM
+    sleep(2);
+    }
+  return false; //We timed out trying to delete the job from the MOM.
+  }
 
+#define TIMEOUT_FOR_JOB_DELETE 120
+#define TIMEOUT_FOR_JOB_REQUEUE 120
 
+static bool requeue_or_delete_jobs(
+    
+  struct pbsnode *pnode,
+  batch_request  *preq)
+
+  {
+  std::vector<int> jids;
+  bool requeue_rc = true;
+
+  for(std::vector<job_usage_info>::iterator i = pnode->nd_job_usages.begin();i != pnode->nd_job_usages.end();i++)
+    {
+    jids.push_back(i->internal_job_id);
+    }
+  for(std::vector<int>::iterator jid = jids.begin();jid != jids.end();jid++)
+    {
+    tmp_unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    job *pjob = svr_find_job_by_id(*jid);
+    tmp_lock_node(pnode,__func__,NULL,LOGLEVEL);
+    if(pjob != NULL)
+      {
+      char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+      batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
+      batch_request *brDelete = alloc_br(PBS_BATCH_DeleteJob);
+      if((brRerun == NULL)||(brDelete == NULL))
+        {
+        free_br(brRerun);
+        free_br(brDelete);
+        free(dup_jobid);
+        return true; //Ignoring this error.
+        }
+      strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      strcpy(brDelete->rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
+      brRerun->rq_conn = PBS_LOCAL_CONNECTION;
+      brDelete->rq_conn = PBS_LOCAL_CONNECTION;
+      brRerun->rq_perm = preq->rq_perm;
+      brDelete->rq_perm = preq->rq_perm;
+      brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
+      brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
+      unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
+      tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      int rc = req_rerunjob(brRerun);
+      if(rc != PBSE_NONE)
+        {
+        rc = req_deletejob(brDelete);
+        if(rc == PBSE_NONE)
+          {
+          if(!wait_for_job_state(*jid,JOB_STATE_COMPLETE,TIMEOUT_FOR_JOB_DELETE))
+            {
+            set_task(WORK_Immed, 0, ensure_deleted, dup_jobid, FALSE);
+            dup_jobid = NULL;
+            requeue_rc = false; //Timing out with the MOMs is the only error we care about.
+            }
+          }
+        }
+      else
+        {
+        free_br(brDelete);
+        if(!wait_for_job_state(*jid,JOB_STATE_QUEUED,TIMEOUT_FOR_JOB_REQUEUE))
+          {
+          set_task(WORK_Immed, 0, ensure_deleted, dup_jobid, FALSE);
+          dup_jobid = NULL;
+          requeue_rc = false; //Timing out with the MOMs is the only error we care about.
+          }
+        }
+      tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
+      if(dup_jobid != NULL)
+        {
+        free(dup_jobid);
+        }
+      }
+    }
+  return requeue_rc;
+  }
 
 /*
  * mgr_node_delete - mark a node (or all nodes) in the server's node list
@@ -1960,6 +2070,34 @@ static void mgr_node_delete(
     return;
     }
 
+  //Requeue any jobs running on nodes that are about to be deleted.
+
+  bool requeue_failed = false;
+  if (check_all)
+    {
+    iter = NULL;
+
+    while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
+      {
+      if(!requeue_or_delete_jobs(pnode,preq))
+        {
+        requeue_failed = true;
+        }
+      }
+    if(iter != NULL)
+      {
+      delete iter;
+      iter = NULL;
+      }
+    }
+  else
+    {
+    if(!requeue_or_delete_jobs(pnode,preq))
+      {
+      requeue_failed = true;
+      }
+    }
+
   sprintf(log_buf, msg_manager, msg_man_del, preq->rq_user, preq->rq_host);
 
   log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, nodename, log_buf);
@@ -2007,7 +2145,17 @@ static void mgr_node_delete(
 
   recompute_ntype_cnts();
 
-  reply_ack(preq);  /*request completely successful*/
+  if(requeue_failed)
+    {
+    //The requeue or delete failed, tell the user.
+    req_reject(PBSE_MOM_TIMED_OUT_ON_REQUEUE, 0, preq, NULL, NULL);
+    }
+  else
+    {
+    reply_ack(preq);  /*request completely successful*/
+    }
+
+  hierarchy_handler.reloadHierarchy();
 
   return;
   }  /* END mgr_node_delete() */
@@ -2035,7 +2183,7 @@ void mgr_node_create(
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
-  rc = create_pbs_node(
+  rc = create_pbs_dynamic_node(
          preq->rq_ind.rq_manager.rq_objname,
          plist,
          preq->rq_perm,
@@ -2043,6 +2191,10 @@ void mgr_node_create(
 
   if (rc != 0)
     {
+    if(LOGLEVEL >= 7)
+      {
+      log_err(rc,__func__,"Error creating a node.");
+      }
     switch (rc)
       {
 
@@ -2076,6 +2228,12 @@ void mgr_node_create(
     return;
     }
 
+  if(LOGLEVEL >= 7)
+    {
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Created a node.");
+    }
+
+
   mgr_log_attr(
     msg_man_set,
     plist,
@@ -2095,7 +2253,7 @@ void mgr_node_create(
     {
     svr_chngNodesfile = 0;
     }
-
+  hierarchy_handler.reloadHierarchy();
   reply_ack(preq);     /* create request successful */
 
   return;
@@ -2148,6 +2306,15 @@ int req_manager(
           break;
 
         case MGR_OBJ_NODE:
+
+          if(hierarchy_handler.isMomHierarchyFilePresent())
+            {
+            rc = PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY;
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+                (preq->rq_ind.rq_manager.rq_cmd == MGR_CMD_DELETE)?"Can not delete node.":"Can not create node" );
+            req_reject(rc, 0, preq, NULL, log_buf);
+            return rc;
+            }
 
           if (preq->rq_ind.rq_manager.rq_cmd == MGR_CMD_CREATE)
             mgr_node_create(preq);

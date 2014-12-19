@@ -332,6 +332,7 @@
 #define ATTR_automaticrequeueexitcode "automatic_requeue_exit_code"
 #define ATTR_jobsynctimeout           "job_sync_timeout"
 #define ATTR_pass_cpu_clock           "pass_cpu_clock"
+#define ATTR_job_full_report_time     "job_full_report_time"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state            "state"
@@ -351,6 +352,12 @@
 #define ATTR_NODE_gpus_str         "numa_gpu_node_str"
 #define ATTR_NODE_mics             "mics"
 #define ATTR_NODE_micstatus        "mic_status"
+#define ATTR_NODE_ttl              "TTL"
+#define ATTR_NODE_acl              "acl"
+#define ATTR_NODE_requestid        "requestid"
+
+#define ATTR_copy_on_rerun         "copy_on_rerun"
+#define ATTR_job_exclusive_on_use   "job_exclusive_on_use"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
@@ -389,6 +396,7 @@
 #define ND_job_exclusive "job-exclusive"
 #define ND_job_sharing   "job-sharing"
 #define ND_busy          "busy"
+#define ND_nohierarchy   "MOM-list-not-sent"
 #define ND_state_unknown "state-unknown"
 
 /* node power state values */
@@ -444,8 +452,6 @@
 #define MSG_ERR 2
 
 #define SHUT_SIG -1
-#define SHUT_IMMEDIATE 0
-#define SHUT_DELAY 1
 #define SHUT_QUICK 2
 
 #define SIG_RESUME "resume"

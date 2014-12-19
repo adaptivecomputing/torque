@@ -9,7 +9,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_numa_node
 
-libnuma_node_la_SOURCES = scaffolding.c ${PROG_ROOT}/numa_node.cpp
+libnuma_node_la_SOURCES = scaffolding.c ${PROG_ROOT}/numa_node.cpp ${PROG_ROOT}/../../lib/Libutils/u_misc.c
 libnuma_node_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_numa_node_SOURCES = test_numa_node.c

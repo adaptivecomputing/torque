@@ -82,6 +82,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <vector>
 #include <sys/types.h>
 #include <ctype.h>
 #include <memory.h>
@@ -162,12 +163,13 @@ static struct node_state
   } ns[] =
 
   {
-    {INUSE_UNKNOWN, ND_state_unknown},
-    {INUSE_DOWN,    ND_down},
-    {INUSE_OFFLINE, ND_offline},
-    {INUSE_RESERVE, ND_reserve},
-    {INUSE_JOB,     ND_job_exclusive},
-    {INUSE_BUSY,    ND_busy},
+    {INUSE_UNKNOWN,     ND_state_unknown},
+    {INUSE_DOWN,        ND_down},
+    {INUSE_OFFLINE,     ND_offline},
+    {INUSE_RESERVE,     ND_reserve},
+    {INUSE_JOB,         ND_job_exclusive},
+    {INUSE_BUSY,        ND_busy},
+    {INUSE_NOHIERARCHY, ND_nohierarchy},
     {0,             NULL}
   };
 
@@ -250,6 +252,23 @@ int PNodeStateToString(
       BufSize -= len;
       }
     }
+
+  if (SBM & (INUSE_NOHIERARCHY))
+    {
+    len = strlen(ND_nohierarchy) + 1;
+
+    if (len < BufSize)
+      {
+      if (Buf[0] != '\0')
+        strcat(Buf, ",");
+      else
+        len--;
+
+      strcat(Buf, ND_nohierarchy);
+      BufSize -= len;
+      }
+    }
+
 
   if (SBM & (INUSE_RESERVE))
     {
@@ -763,7 +782,74 @@ int decode_power_state(
   return(0);
   }  /* END decode_state() */
 
+/* Decode a universal time code */
+int decode_utc(
+    pbs_attribute *pattr,   /* I (modified) */
+    const char   *name,    /* pbs_attribute name */
+    const char *rescn,   /* resource name, unused here */
+    const char    *val,     /* pbs_attribute value */
+    int            perm)    /* only used for resources */
 
+  {
+  if(!strcmp(val,"0") || (*val == '\0'))
+    {
+    return decode_str(pattr,name,rescn,"",perm);
+    }
+  struct tm tm;
+  bool offsetGiven = true;
+  memset(&tm,0,sizeof(struct tm));
+  tm.tm_isdst = -1; //This tells mktime to calculate the GMT offset and
+                    //take daylight savings time into account.
+  //Look for the format yyyy-mm-ddThh:mm:ss-hh or
+  //                    yyyy-mm-ddThh:mm:ss-hhmm
+  char *end = strptime(val,"%Y-%m-%dT%H:%M:%S%z",&tm);
+  if ((end == NULL) || (*end != '\0'))
+    {
+    if (end == NULL)
+      {
+      memset(&tm,0,sizeof(struct tm));
+      tm.tm_isdst = -1;
+      offsetGiven = false;
+      //Look for the format yyyy-mm-ddThh:mm:ssZ
+      end = strptime(val,"%Y-%m-%dT%H:%M:%SZ",&tm);
+      if ((end == NULL) || (*end != '\0'))
+        {
+        return(PBSE_BAD_UTC_FORMAT);
+        }
+      }
+    else
+      {
+      return(PBSE_BAD_UTC_FORMAT);
+      }
+    }
+  long offset = 0;
+  if (offsetGiven)
+    {
+    offset = tm.tm_gmtoff; //Save the offset, mktime puts in its own.
+    }
+  time_t givenEpoch = mktime(&tm);
+  if (offsetGiven)
+    {
+    /* This is to take care of the case where the time may be entered in one time zone but the machine running
+       Moab may be running in another. If someone enters the time on the east coast with a -04 offset, but the
+       Moab machine is running on the west coast we need to adjust the epoch time to reflect what will happen
+       on the west coast. Example:
+       Time entered 2014-08-20T00:00:00-04
+       Machine on west coast will see that as 2014-08-19T20:00:00-08
+       */
+    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+    givenEpoch -= offset;       //Add in the passed in offset.
+    }
+  else
+    {
+    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+    }
+  if(givenEpoch <= time(NULL))
+    {
+    return(PBSE_BAD_UTC_RANGE);
+    }
+  return decode_str(pattr,name,rescn,val,perm);
+  }
 
 /*
  * decode_ntype
@@ -1024,7 +1110,16 @@ static int set_nodeflag(
     }
 
   if (!strcmp(str, ND_free))
-    *pflag = 0;
+    {
+    if(*pflag & INUSE_NOHIERARCHY)
+      {
+      rc = PBSE_HIERARCHY_NOT_SENT;
+      }
+    else
+      {
+      *pflag = 0;
+      }
+    }
   else if (!strcmp(str, ND_offline))
     *pflag = *pflag | INUSE_OFFLINE;
   else if (!strcmp(str, ND_down))
@@ -1073,6 +1168,10 @@ int node_state(
 
     case ATR_ACTION_ALTER:
 
+      if(np->nd_state & INUSE_NOHIERARCHY) //Can't change the state until the hierarchy is sent.
+        {
+        return PBSE_HIERARCHY_NOT_SENT;
+        }
       np->nd_state = new_attr->at_val.at_short;
 
       break;
@@ -1139,6 +1238,184 @@ int node_power_state(
   return(rc);
   }
 
+/* change the time to live */
+
+int node_ttl(
+
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
+  void     *pnode, /*pointer to a pbsnode struct    */
+  int      actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int rc = 0;
+
+  struct pbsnode* np;
+  pbs_attribute    temp;
+
+  np = (struct pbsnode*)pnode; /*because of def of at_action  args*/
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if(np->nd_ttl[0] != '\0')
+        {
+        temp.at_val.at_str = (char *)np->nd_ttl;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_STR;
+
+        rc = set_str(new_attr, &temp, SET);
+        }
+      else
+        {
+        new_attr->at_val.at_str  = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_STR;
+        }
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if (new_attr->at_val.at_str != NULL)
+        {
+        snprintf(np->nd_ttl, sizeof(np->nd_ttl), "%s", new_attr->at_val.at_str);
+        }
+      else
+        {
+        np->nd_ttl[0] = '\0';
+        }
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }
+
+  return(rc);
+  }
+
+/* change a string property on a node */
+
+int node_requestid(
+
+  pbs_attribute *new_attr, /*derive state into this pbs_attribute*/
+  void     *pnode, /*pointer to a pbsnode struct    */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int rc = 0;
+
+  struct pbsnode *np = (struct pbsnode*)pnode; /*because of def of at_action  args*/
+
+  pbs_attribute    temp;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_NEW:
+
+      if(np->nd_requestid->size() != 0)
+        {
+        temp.at_val.at_str = (char *)np->nd_requestid->c_str();
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_STR;
+
+        rc = set_str(new_attr, &temp, SET);
+        }
+      else
+        {
+        new_attr->at_val.at_str  = NULL;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_STR;
+        }
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      if(new_attr->at_val.at_str != NULL)
+        {
+        *np->nd_requestid = new_attr->at_val.at_str;
+        }
+      else
+        {
+        np->nd_requestid->clear();
+        }
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }
+
+  return(rc);
+  }
+
+
+int node_acl(
+  pbs_attribute *new_attr,     /*derive props into this pbs_attribute*/
+  void          *pnode,   /*pointer to a pbsnode struct     */
+  int            actmode) /*action mode; "NEW" or "ALTER"   */
+
+  {
+  int   rc = 0;
+
+  struct pbsnode  *np;
+  pbs_attribute    temp;
+
+  np = (struct pbsnode*)pnode; /*because of at_action arg type*/
+
+  switch (actmode)
+    {
+
+    case ATR_ACTION_NEW:
+
+      /* if node has a property list, then copy array_strings    */
+      /* into temp to use to setup a copy, otherwise setup empty */
+
+      if (np->nd_acl != NULL)
+        {
+        /* setup temporary pbs_attribute with the array_strings */
+        /* from the node        */
+
+        temp.at_val.at_arst = np->nd_acl;
+        temp.at_flags = ATR_VFLAG_SET;
+        temp.at_type  = ATR_TYPE_ARST;
+
+        rc = set_arst(new_attr, &temp, SET);
+        }
+      else
+        {
+        /* Node has no properties, setup empty pbs_attribute */
+
+        new_attr->at_val.at_arst = 0;
+        new_attr->at_flags       = 0;
+        new_attr->at_type        = ATR_TYPE_ARST;
+        }
+
+      break;
+
+    case ATR_ACTION_ALTER:
+
+      /* update node with new attr_strings */
+
+      np->nd_acl = new_attr->at_val.at_arst;
+
+      break;
+
+    default:
+
+      rc = PBSE_INTERNAL;
+
+      break;
+    }  /* END switch(actmode) */
+
+  return(rc);
+  }  /* END node_prop_list() */
 
 
 /*

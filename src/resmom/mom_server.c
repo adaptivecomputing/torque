@@ -239,6 +239,7 @@
 #include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
+#include "net_cache.h"
 #include "mom_config.h"
 #include <string>
 #include <vector>
@@ -276,6 +277,7 @@ char                       TORQUE_JData[MMAX_LINE];
 extern int                 received_hello_count[];
 extern char                TMOMRejectConn[];
 extern time_t              LastServerUpdateTime;
+extern bool                ForceServerUpdate;
 extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
@@ -293,6 +295,7 @@ extern int                 UpdateFailCount;
 extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
+extern u_long              localaddr;
 extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
@@ -550,7 +553,7 @@ int mom_server_add(
 
     /* FIXME: must be able to retry failed lookups later */
 
-    if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) != 0)
+    if (!overwrite_cache(pms->pbs_servername, &addr_info))
       {
       sprintf(log_buffer, "host %s not found", pms->pbs_servername);
 
@@ -906,15 +909,12 @@ void gen_macaddr(
   {
   static std::string mac_addr;
 
-  if(mac_addr.length() == 0)
+  if (mac_addr.length() == 0)
     {
-    char buff[500];
-    if(gethostname(buff,sizeof(buff)))
-      {
-      return;
-      }
+    char             buff[500];
     struct addrinfo *pAddr = NULL;
-    if(getaddrinfo(buff,NULL,NULL,&pAddr))
+
+    if (pbs_getaddrinfo(mom_host, NULL,&pAddr) != 0)
       {
       return;
       }
@@ -926,25 +926,25 @@ void gen_macaddr(
       }
 
     char *macAddr = NULL;
-    while(fgets(buff,sizeof(buff),pPipe) != NULL)
+    while (fgets(buff,sizeof(buff),pPipe) != NULL)
       {
       char *tok = strtok(buff," ");
-      if(!strcmp(tok,"link/ether"))
+      if (!strcmp(tok,"link/ether"))
         {
         tok = strtok(NULL," ");
-        if(strlen(tok) != 0)
+        if (strlen(tok) != 0)
           {
-          if(macAddr != NULL) free(macAddr);
+          if (macAddr != NULL) free(macAddr);
           macAddr = strdup(tok);
           }
         }
-      else if(!strcmp(tok,"inet"))
+      else if (!strcmp(tok,"inet"))
         {
         tok = strtok(NULL," ");
         char *iaddr = strdup(tok);
-        for(char *ind = iaddr;*ind;ind++)
+        for (char *ind = iaddr;*ind;ind++)
           {
-          if(*ind == '/')
+          if (*ind == '/')
             {
             *ind = '\0';
             break;
@@ -953,7 +953,7 @@ void gen_macaddr(
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
         struct addrinfo *pAddrInd = pAddr;
-        while((pAddrInd != NULL)&&(macAddr != NULL))
+        while ((pAddrInd != NULL)&&(macAddr != NULL))
           {
           struct in_addr   saddr;
           saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
@@ -1293,14 +1293,14 @@ int mom_server_update_stat(
   struct tcp_chan *chan = NULL;
 
   if ((pms->pbs_servername[0] == '\0') ||
-      (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
+      (time_now < (pms->MOMLastSendToServerTime + get_stat_update_interval())))
     {
     /* No server is defined for this slot */
     
     return(NO_SERVER_CONFIGURED);
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), false);
  
   if (IS_VALID_STREAM(stream))
     {
@@ -1381,6 +1381,7 @@ int mom_server_update_stat(
       if (numa_index + 1 >= num_node_boards)
         pms->MOMLastSendToServerTime = time_now;
 #endif
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       
       UpdateFailCount = 0;
@@ -1486,38 +1487,32 @@ int send_update()
   if (first_update_time > time_now)
     return(FALSE);
   
-  if (time_now < (LastServerUpdateTime + ServerStatUpdateInterval))
+  if (time_now < (LastServerUpdateTime + get_stat_update_interval()))
     return(FALSE);
   
-  /* this is the minimum condition for updating */
-  if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
-    {
-    long attempt_diff;
+  long attempt_diff;
 
-    if (UpdateFailCount == 0)
+  if (UpdateFailCount == 0)
+    return(TRUE);
+
+  /* the following conditions are to continually back off if we're experiencing
+   * several failures in a row */
+  attempt_diff = time_now - LastUpdateAttempt;
+
+  /* never send updates in a rapid-fire fashion */
+  if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
+    {
+    /* cap the longest time between updates */
+    if ((LastServerUpdateTime == 0) ||
+      (attempt_diff > MAX_SERVER_UPDATE_SPACING))
       return(TRUE);
-    
-    /* the following conditions are to continually back off if we're experiencing
-     * several failures in a row */
-    attempt_diff = time_now - LastUpdateAttempt;
- 
-    /* never send updates in a rapid-fire fashion */
-    if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
-      {
-      /* cap the longest time between updates */
-      if ((LastServerUpdateTime == 0) ||
-          (attempt_diff > MAX_SERVER_UPDATE_SPACING))
-        return(TRUE);
-      
-      /* make sending more likely the longer we've waited */
-      mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
-      
-      if (rand() % mod_value == 0)
-        return(TRUE);
-      }
+
+    /* make sending more likely the longer we've waited */
+    mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
+
+    if (rand() % mod_value == 0)
+      return(TRUE);
     }
-  
-  /* conditions not met, no update is needed */ 
   return(FALSE);
   } /* END send_update() */
 
@@ -1669,7 +1664,10 @@ void mom_server_all_update_stat(void)
     generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
 
     if (send_update_to_a_server() == PBSE_NONE)
+      {
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
+      }
     }
   else
     {
@@ -1705,6 +1703,7 @@ void mom_server_all_update_stat(void)
       {
       // PARENT 
       close(fd_pipe[1]);
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
     
@@ -1753,6 +1752,8 @@ void mom_server_all_update_stat(void)
     sprintf(buf, "%d", rc);
     len = strlen(buf);
     write(fd_pipe[1], buf, len);
+
+    exit_called = true;
   
     exit(0);
     }
@@ -1946,29 +1947,21 @@ void mom_server_all_diag(
 void mom_server_update_receive_time(
     
   int stream,
-  char *command_name)
+  char *command_name,
+  struct sockaddr_in *pAddr)
 
   {
   mom_server      *pms;
   unsigned long    ipaddr;
-  struct sockaddr  addr;
-  unsigned int     len = sizeof(addr);
 
   time_now = time(NULL);
 
-  if (getpeername(stream,&addr,&len) != 0)
+  ipaddr = ntohl(pAddr->sin_addr.s_addr);
+
+  if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
     {
-    log_err(errno, __func__, "Calling getpeername() gave error.");
-    }
-  else
-    {
-    ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);
-   
-    if ((pms = mom_server_find_by_ip(ipaddr)) != NULL)
-      {
-      pms->MOMLastRecvFromServerTime = time_now;
-      snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
-      }
+    pms->MOMLastRecvFromServerTime = time_now;
+    snprintf(pms->MOMLastRecvFromServerCmd, sizeof(pms->MOMLastRecvFromServerCmd), "%s", command_name);
     }
   } /* END mom_server_update_receive_time() */
 
@@ -2035,11 +2028,10 @@ AvlTree okclients = NULL;
 mom_server *mom_server_valid_message_source(
 
   struct tcp_chan  *chan,
-  char            **err_msg)
+  char            **err_msg,
+  struct sockaddr_in *pAddr)
 
   {
-  struct sockaddr  addr;
-  unsigned int     len = sizeof(addr);
   u_long           ipaddr;
   mom_server      *pms;
 
@@ -2049,10 +2041,7 @@ mom_server *mom_server_valid_message_source(
    * message came from.
    */
 
-  if (getpeername(chan->sock,&addr,&len) != 0)
-    return(NULL);
- 
-  ipaddr = ntohl(((struct sockaddr_in *)&addr)->sin_addr.s_addr);  /* Extract IP address of source of the message. */
+  ipaddr = ntohl(pAddr->sin_addr.s_addr);  /* Extract IP address of source of the message. */
 
   /* So the stream number did not match any server but maybe
    * the server has another stream connection open to the IP address.
@@ -2094,7 +2083,7 @@ mom_server *mom_server_valid_message_source(
           struct in_addr   saddr;
           u_long           server_ip;
 
-          if (pbs_getaddrinfo(pms->pbs_servername, NULL, &addr_info) == 0)
+          if (overwrite_cache(pms->pbs_servername, &addr_info))
             {
             saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
 
@@ -2117,7 +2106,7 @@ mom_server *mom_server_valid_message_source(
       {
       *err_msg = (char *)calloc(1,240);
       snprintf(*err_msg, 240, "bad connect from %s - unauthorized server. Will check if its a valid mom",
-        netaddr(((struct sockaddr_in *)&addr)));
+        netaddr(pAddr));
       }
     }
 
@@ -2150,7 +2139,7 @@ int process_host_name(
     rm_port = (unsigned short)atoi(colon+1);
     }
   
-  if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
+  if (overwrite_cache(hostname, &addr_info))
     {
     sa.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
     ipaddr      = ntohl(sa.sin_addr.s_addr);
@@ -2228,6 +2217,9 @@ int process_level_string(
   int   rc = PBSE_NONE;
   int   temp_rc;
 
+  if (path < 0)
+    return(path);
+
   if (am_i_on_this_level(str) == TRUE)
     *path_complete = TRUE;
 
@@ -2255,16 +2247,16 @@ int process_level_string(
 void sort_paths()
 
   {
-  for(int i = 0;i < (int)mh->paths->size();i++)
+  for (unsigned int i = 0;i < mh->paths.size();i++)
     {
-    for(int j = (int)(mh->paths->size() -1);(j >= 0)&&(j != i);j--)
+    for (int j = (int)mh->paths.size() -1; (j >= 0) && (j != (int)i); j--)
       {
-      if(mh->paths->at(j)->size() < mh->paths->at(i)->size())
+      if (mh->paths.at(j).size() < mh->paths.at(i).size())
         {
         /* swap positions */
-        mom_levels *tmp = mh->paths->at(i);
-        mh->paths->at(i) = mh->paths->at(j);
-        mh->paths->at(j) = tmp;
+        mom_levels tmp = mh->paths.at(i);
+        mh->paths.at(i) = mh->paths.at(j);
+        mh->paths.at(j) = tmp;
         }
       }
     }
@@ -2273,10 +2265,55 @@ void sort_paths()
 
 
 
+void reset_okclients()
+
+  {
+  okclients = AVL_clear_tree(okclients);
+
+  // re-add each server
+  for (int sindex = 0;sindex < PBS_MAXSERVER;sindex++)
+    {
+    mom_server *pms = &mom_servers[sindex];
+
+    if (pms->pbs_servername[0] != '\0')
+      {
+      struct in_addr   saddr;
+      u_long           ipaddr;
+      struct addrinfo *addr_info;
+
+      if (!overwrite_cache(pms->pbs_servername, &addr_info))
+        {
+        sprintf(log_buffer, "host %s not found", pms->pbs_servername);
+
+        log_err(-1, __func__, log_buffer);
+        }
+      else
+        {
+        saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+
+        ipaddr = ntohl(saddr.s_addr);
+
+        if (ipaddr != 0)
+          {
+          okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+          }
+        }
+      }
+    }
+
+  // add localhost
+  okclients = AVL_insert(localaddr, 0, NULL, okclients);
+
+  // BMD: add the node's ip address
+
+  }
+
+
+
 int read_cluster_addresses(
 
   struct tcp_chan *chan,
-  int version)
+  int              version)
 
   {
   int             rc;
@@ -2294,6 +2331,7 @@ int read_cluster_addresses(
     free_mom_hierarchy(mh);
 
   mh = initialize_mom_hierarchy();
+  reset_okclients();
 
   while (((str = disrst(chan, &rc)) != NULL) &&
          (rc == DIS_SUCCESS))
@@ -2317,8 +2355,11 @@ int read_cluster_addresses(
       if (path_complete == FALSE)
         {
         /* we were not in the last path, so delete it */
-        mh->paths->pop_back();
-        path_index--;
+        if (mh->paths.size() > 0)
+          {
+          mh->paths.pop_back();
+          path_index--;
+          }
         hierarchy_file.clear();
         }
       else if (something_added == FALSE)
@@ -2416,16 +2457,14 @@ void mom_is_request(
 
   struct tcp_chan *chan,
   int              version,  /* I */
-  int             *cmdp)     /* O (optional) */
+  int             *cmdp,     /* O (optional) */
+  struct sockaddr_in *pAddr) /* Filled in internet address for this socket */
 
   {
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
  
   char               *err_msg = NULL;
-  struct sockaddr     s_addr;
-  unsigned int        len = sizeof(s_addr);
-  struct sockaddr_in *addr = NULL;
   u_long              ipaddr;
   extern char        *PBSServerCmds[];
 
@@ -2455,29 +2494,25 @@ void mom_is_request(
     }
 
   /* check that machine is okay to be a server */
-  if (mom_server_valid_message_source(chan, &err_msg) == NULL)
+  if (mom_server_valid_message_source(chan, &err_msg,pAddr) == NULL)
     {
-    if (getpeername(chan->sock, &s_addr, &len) == 0)
+    ipaddr = ntohl(pAddr->sin_addr.s_addr);
+
+    if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
       {
-      addr = (struct sockaddr_in *)&s_addr;
-      ipaddr = ntohl(addr->sin_addr.s_addr);
-  
-      if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
+      if (err_msg)
         {
-        if (err_msg)
-          {
-          log_ext(-1,"mom_server_valid_message_source", err_msg, LOG_ALERT);
-          free(err_msg);
-          }
-        else
-          log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
-        
-        sprintf(TMOMRejectConn, "%s  %s", netaddr(((struct sockaddr_in *)&addr)), "(server not authorized)");
-        
-        close_conn(chan->sock, FALSE);
-        chan->sock = -1;
-        return;
+        log_ext(-1,"mom_server_valid_message_source", err_msg, LOG_ALERT);
+        free(err_msg);
         }
+      else
+        log_ext(-1, __func__, "Invalid source for IS_REQUEST", LOG_ALERT);
+
+      sprintf(TMOMRejectConn, "%s  %s", netaddr(pAddr), "(server not authorized)");
+
+      close_conn(chan->sock, FALSE);
+      chan->sock = -1;
+      return;
       }
     }
 
@@ -2506,7 +2541,7 @@ void mom_is_request(
         log_buffer);
       }
     
-    mom_server_update_receive_time(chan->sock, PBSServerCmds[command]);
+    mom_server_update_receive_time(chan->sock, PBSServerCmds[command],pAddr);
     }
 
   switch (command)
@@ -2559,10 +2594,7 @@ void mom_is_request(
  
     if (ret > 0)
       {
-      sprintf(log_buffer, "%s from %s",
-        dis_emsg[ret],
-        (addr != NULL) ? netaddr(addr) : "???");
-      
+      sprintf(log_buffer, "%s from %s", dis_emsg[ret], netaddr(pAddr));
       log_ext(-1,__func__,log_buffer,LOG_ALERT);
       }
     }
@@ -2792,12 +2824,14 @@ void check_state(
   {
   static int ICount = 0;
 
-  static char tmpPBSNodeMsgBuf[1024];
+  char tmpPBSNodeMsgBuf[MAXLINE];
 
   if (Force)
     {
     ICount = 0;
     }
+
+  memset(tmpPBSNodeMsgBuf, 0, MAXLINE);
 
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X)
@@ -2829,6 +2863,11 @@ void check_state(
       /* NOTE:  adjusting internal state may not be proper behavior, see note below */
 
       internal_state |= INUSE_DOWN;
+      ICount++;
+
+      ICount %= MAX(1, PBSNodeCheckInterval);
+
+      return;
       }
     }    /* END BLOCK */
 
@@ -2836,8 +2875,6 @@ void check_state(
 
   if (PBSNodeCheckPath[0] != '\0')
     {
-    int IsError = 0;
-
     if (ICount == 0)
       {
       /* only do this when running the check script, otherwise down nodes are 
@@ -2855,19 +2892,39 @@ void check_state(
         {
         if (!strncasecmp(tmpPBSNodeMsgBuf, "ERROR", strlen("ERROR")))
           {
-          IsError = 1;
+          internal_state |= INUSE_DOWN;
+
+          if (LOGLEVEL >= 1)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+            "Setting node to down. The node health script output the following message:\n%s\n",
+            tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         else if (!strncasecmp(tmpPBSNodeMsgBuf, "EVENT:", strlen("EVENT:")))
           {
           /* pass event directly to scheduler for processing */
-
-          /* NO-OP */
+          /* EVENT: is a keyword for Moab */
+          if (LOGLEVEL >= 3)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         else
           {
-          /* ignore non-error messages */
-
+          /* We are not going to post this message */
           tmpPBSNodeMsgBuf[0] = '\0';
+
+          if (LOGLEVEL >= 6)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy");
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         }
       }    /* END if (ICount == 0) */
@@ -2878,30 +2935,10 @@ void check_state(
       snprintf(PBSNodeMsgBuf, sizeof(PBSNodeMsgBuf), "%s", tmpPBSNodeMsgBuf);
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
-
-      /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as
-                proper action may be context sensitive */
-
-      if (IsError == 1)
-        {
-        internal_state |= INUSE_DOWN;
-
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Setting node to down. The node health script output the following message:\n%s\n",
-          tmpPBSNodeMsgBuf); 
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-        }
-      else
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Node health script ran and says the node is healthy with this message:\n%s\n",
-          tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-        }
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
-  ICount ++;
+  ICount++;
 
   ICount %= MAX(1, PBSNodeCheckInterval);
 

@@ -144,3 +144,8 @@ char *get_cached_nameinfo(const struct sockaddr_in *sai)
   {
   return(NULL);
   }
+
+bool log_available(int eventtype)
+  {
+  return true;
+  }

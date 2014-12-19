@@ -82,6 +82,7 @@ struct stat_cntl    /* used in req_stat_job */
   int        sc_type;
   int        sc_XXXY;
   int        sc_conn;
+  bool       sc_condensed;
   pbs_queue      *sc_pque;
 
   struct batch_request *sc_origrq;

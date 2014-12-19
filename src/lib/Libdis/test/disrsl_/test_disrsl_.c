@@ -1,16 +1,23 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "dis_internal.h"
 #include "test_disrsl_.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "dis_internal.h"
+#include "dis.h"
 #include "pbs_error.h"
+#include "tcp.h"
+
+extern unsigned ulmaxdigs;
 
 START_TEST(test_one)
   {
+  struct tcp_chan chan;
+  int             negate = 0;
+  unsigned long   val;
 
-
+  memset(&chan, 0, sizeof(chan));
+  fail_unless(disrsl_(&chan, &negate, &val, ulmaxdigs + 1) == DIS_OVERFLOW);
   }
 END_TEST
 

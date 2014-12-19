@@ -578,6 +578,7 @@ int process_request(
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = PBSE_NONE;  /* bypass the authentication of the user--trust the client completely */
+#ifdef MUNGE_AUTH
     else if (munge_on)
       {
       /* If munge_on is true we will validate the connection now */
@@ -591,6 +592,7 @@ int process_request(
         rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
+#endif
     else if (conn_authen != PBS_NET_CONN_AUTHENTICATED)
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
@@ -1075,6 +1077,16 @@ int close_quejob_by_jobid(
       pjob_mutex.set_unlock_on_exit(false);
       return(rc);
       }
+    
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      snprintf(log_buf,sizeof(log_buf),
+            "Could not remove job %s from newjobs\n",
+            job_id);
+      log_err(-1, __func__, log_buf);
+      }
+
     svr_job_purge(pjob); /* pjob will always be deleted regardless of error code */
     pjob = NULL;
     }
@@ -1085,6 +1097,15 @@ int close_quejob_by_jobid(
       {
       pjob_mutex.set_unlock_on_exit(false);
       return(rc);
+      }
+
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      snprintf(log_buf,sizeof(log_buf),
+            "Could not remove job %s from newjobs\n",
+            job_id);
+      log_err(-1, __func__, log_buf);
       }
     
     pjob->ji_qs.ji_state = JOB_STATE_QUEUED;

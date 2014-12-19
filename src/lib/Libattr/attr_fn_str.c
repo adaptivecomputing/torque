@@ -90,7 +90,9 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "csv.h"
 
+using namespace std;
 /*
  * This file contains functions for manipulating attributes of type string
  *
@@ -241,7 +243,7 @@ int encode_str(
  */
 
 int set_str(
-    
+
   pbs_attribute *attr,
   pbs_attribute *new_attr,
   enum batch_op  op)
@@ -327,7 +329,159 @@ int set_str(
   return (0);
   }
 
+/*
+ * remove_from_csv - allocate memory for buffer data where all data
+ * included in src and not included in model_pattern
+ *
+ * function returs buffer with items where all items are:
+ * - included in src line
+ * - not included in model_pattern line
+ *
+ * Returns: NULL if all items from src included into model_pattern
+ *  otherwise returns buffer with items
+ */
 
+char* remove_from_csv(
+
+  char* src,            /* I - line with csv values*/
+  char* model_pattern   /* I - pattern with models*/)
+  {
+  string result;
+  int len = csv_length(src);
+  for (int index = 0; index < len; index++)
+    {
+    char *item = csv_nth(src, index);
+
+    if (item != NULL)
+      {
+      while (isspace(*item))
+        item++;
+
+      if ((strlen(item) != 0) &&
+          !(bool)csv_find_string(model_pattern, item))
+        {
+        const char* comma = (result.size()) ? "," : "";
+        result += string(comma) + string(item);
+        }
+      }
+    }
+
+  return (result.size())? strdup(result.c_str()) : NULL;
+  } // END remove_from_csv()
+
+
+
+/*
+ * set_str_csv - set pbs_attribute value based upon another. attribute
+ * values should be based on csv values
+ *
+ * A+B --> B is concatenated to end of A
+ * A=B --> A is replaced with B
+ * A-B --> If B is a substring at the end of A, it is stripped off
+ *
+ * Returns: 0 if ok
+ *  >0 if error
+ */
+
+int set_str_csv(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+
+  {
+  char *new_value;
+  size_t nsize;
+
+  assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
+
+  if ((op == INCR) && (attr->at_val.at_str == NULL))
+    op = SET; /* no current string, change INCR to SET */
+
+  switch (op)
+    {
+
+    case SET: /* set is replace old string with new */
+
+      nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
+      if ((new_value =(char *)calloc(1, nsize)) == NULL)
+        {
+        return (PBSE_SYSTEM);
+        }
+
+      if (attr->at_val.at_str)
+        {
+        free(attr->at_val.at_str);
+        }
+      attr->at_val.at_str = new_value;
+
+      strcpy(attr->at_val.at_str, new_attr->at_val.at_str);
+
+      break;
+
+    case INCR_OLD: /* support setup from qmgr */
+    case INCR: /* INCR is concatenate new to old string */
+      {
+      char* new_data = remove_from_csv(new_attr->at_val.at_str, attr->at_val.at_str);
+
+      free(new_attr->at_val.at_str);
+      new_attr->at_val.at_str = new_data;
+      if (new_attr->at_val.at_str)
+        {
+        nsize = strlen(new_attr->at_val.at_str) + 1; /* length of new string */
+        }
+      else
+        {
+        return 0; /* new line is empty*/
+        }
+
+      if (attr->at_val.at_str)
+        {
+        nsize += strlen(attr->at_val.at_str);
+        }
+
+      new_value = (char *)calloc(1, nsize + 1);
+
+      if (new_value == NULL)
+        {
+        return (PBSE_SYSTEM);
+        }
+
+      if (attr->at_val.at_str)
+        {
+        strcat(new_value, attr->at_val.at_str);
+        strcat(new_value, ",");
+        }
+      strcat(new_value, new_attr->at_val.at_str);
+
+      if (attr->at_val.at_str)
+        {
+        free(attr->at_val.at_str);
+        }
+      attr->at_val.at_str = new_value;
+      }
+      break;
+
+    case DECR: /* DECR is remove substring if match, start at end */
+      {
+      char* new_data = NULL;
+      if ((attr->at_val.at_str == NULL) || (strlen(new_attr->at_val.at_str) == 0))
+        {
+        return 0;
+        }
+
+      new_data = remove_from_csv(attr->at_val.at_str, new_attr->at_val.at_str);
+      free(attr->at_val.at_str);
+      attr->at_val.at_str = new_data;
+      break;
+      }
+    default:
+      return (PBSE_INTERNAL);
+    }
+  attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return (0);
+  }
 
 
 /*

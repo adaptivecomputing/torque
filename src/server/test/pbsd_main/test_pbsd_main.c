@@ -4,38 +4,96 @@
 #include "test_pbsd_main.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <getopt.h>
 #include "pbs_error.h"
 
 void parse_command_line(int argc, char *argv[]);
 extern bool auto_send_hierarchy;
+extern int server_init_type;
 
-START_TEST(test_parse_command_line)
+bool are_we_forking()
+
+  {
+  char *forking = getenv("CK_FORK");
+
+  if ((forking != NULL) && 
+      (!strcasecmp(forking, "no")))
+    return(false);
+
+  return(true);
+  }
+
+void set_optind()
+
+  {
+  if (are_we_forking() == false)
+    optind = 0;
+  }
+
+START_TEST(test_parse_command_line_case1)
   {
   char *argv[] = {strdup("pbs_server"), strdup("-n")};
+  set_optind();
 
   fail_unless(auto_send_hierarchy == true);
   parse_command_line(2, argv);
-  fail_unless(auto_send_hierarchy == false);
+  fail_unless(auto_send_hierarchy == false, "-n failed");
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_parse_command_line_case2)
   {
+  char *argv[] = {strdup("pbs_server"), strdup("-tcreate")};
+  set_optind();
+  server_init_type = 1;
+
+  parse_command_line(2, argv);
+  fail_unless(server_init_type == 4, "-tcreate failed");
+  }
+END_TEST
+
+START_TEST(test_parse_command_line_case3)
+  {
+  char *argv[] = {strdup("pbs_server")};
+  set_optind();
+  server_init_type = 1;
+
+  parse_command_line(1, argv);
+  fail_unless(server_init_type == 1, "empty failed");
+  }
+END_TEST
 
 
+START_TEST(test_parse_command_line_case4)
+  {
+  char *argv[] = {strdup("pbs_server"), strdup("-tlala")};
+  set_optind();
+
+  parse_command_line(2, argv);
   }
 END_TEST
 
 Suite *pbsd_main_suite(void)
   {
   Suite *s = suite_create("pbsd_main_suite methods");
-  TCase *tc_core = tcase_create("test_parse_command_line");
-  tcase_add_test(tc_core, test_parse_command_line);
+  TCase *tc_core = tcase_create("test_parse_command_line_case1");
+  tcase_add_test(tc_core, test_parse_command_line_case1);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_parse_command_line_case2");
+  tcase_add_test(tc_core, test_parse_command_line_case2);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line_case3");
+  tcase_add_test(tc_core, test_parse_command_line_case3);
+  suite_add_tcase(s, tc_core);
+
+  if (are_we_forking() == true)
+    { 
+    tc_core = tcase_create("test_parse_command_line_case4");
+    tcase_add_exit_test(tc_core, test_parse_command_line_case4, 1);
+    suite_add_tcase(s, tc_core);
+    }
 
   return s;
   }
