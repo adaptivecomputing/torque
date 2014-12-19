@@ -1,5 +1,11 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+5.0.1.h2
+  b - Reverted a change in 5.0.0 which made it so a user could not submit a
+      job from a node which had been allowed using the acl_hosts list. The
+      change to 5.0.0 made it so the ruserok call could not be made to check
+      for user authorization.
+
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
       in the command.
