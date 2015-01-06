@@ -137,7 +137,7 @@ struct batch_reply *PBSD_rdrpy(
     }
   else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
-    free(reply);
+    PBSD_FreeReply(reply);
 
     if (chan->IsTimeout == TRUE)
       {
@@ -180,8 +180,6 @@ struct batch_reply *PBSD_rdrpy(
 
   return(reply);
   }  /* END PBSD_rdrpy() */
-
-
 
 
 
