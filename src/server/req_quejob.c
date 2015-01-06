@@ -1341,8 +1341,7 @@ int check_attribute_settings(
 
 int req_quejob(
 
-  struct batch_request *preq,
-  char **pjob_id)
+  batch_request *preq)
 
   {
   int                   created_here = 0;
@@ -1557,8 +1556,6 @@ int req_quejob(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
-
-  *pjob_id = strdup(pj->ji_qs.ji_jobid);
 
   return(rc);
   }  /* END req_quejob() */

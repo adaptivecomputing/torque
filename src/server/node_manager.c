@@ -178,7 +178,6 @@ extern struct server    server;
 extern tlist_head       svr_newnodes;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern int              SvrNodeCt;
-extern all_jobs  alljobs;
 
 extern int              multi_mom;
 

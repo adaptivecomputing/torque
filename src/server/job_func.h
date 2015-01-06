@@ -10,8 +10,6 @@ int job_abt(struct job **pjobp, const char *text, bool depedentjob=0);
 
 int conn_qsub(char *hostname, long port, char *EMsg);
 
-struct job *job_alloc(void);
-
 struct job *copy_job(struct job *parent);
 
 struct job *job_clone(struct job *template_job, struct job_array *pa, int taskid);
