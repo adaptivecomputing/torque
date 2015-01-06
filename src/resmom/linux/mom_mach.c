@@ -2766,12 +2766,6 @@ int kill_task(
 			  }
 			if (sig == SIGKILL)
 			  {
-			  struct timespec req;
-
-			  req.tv_sec = 0;
-			  req.tv_nsec = 250000000;  /* .25 seconds */
-
-			  /* give the process some time to quit gracefully first (up to .25*20=5 seconds) */
 
 			  sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
 					  __func__,
@@ -2791,34 +2785,33 @@ int kill_task(
 				killpg(ps->pid, SIGTERM);
 
 			  for (i = 0;i < 20;i++)
-				{
-				/* check if process is gone */
-				if ((ps = get_proc_stat(ps->pid)) == NULL)
-				  {
-				  break;
-				  }
-				else
-				  {
-				  sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
-						  __func__,
-						  ps->pid,
-						  ps->state,
-						  SIGTERM);
-				  log_record(
-					PBSEVENT_JOB,
-					PBS_EVENTCLASS_JOB,
-					ptask->ti_job->ji_qs.ji_jobid,
-					log_buffer);
-				  if (ps->state == 'Z')
-					break;
-				  }
+          {
+          /* check if process is gone */
+          if ((ps = get_proc_stat(ps->pid)) == NULL)
+            {
+            break;
+            }
+          else
+            {
+            sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
+                __func__,
+                ps->pid,
+                ps->state,
+                SIGTERM);
+            log_record(
+            PBSEVENT_JOB,
+            PBS_EVENTCLASS_JOB,
+            ptask->ti_job->ji_qs.ji_jobid,
+            log_buffer);
+            if (ps->state == 'Z')
+            break;
+            }
 
-				/* try to kill again */
-				if (kill(ps->pid, 0) == -1)
-				  break;
+          /* try to kill again */
+          if (kill(ps->pid, 0) == -1)
+            break;
 
-				nanosleep(&req, NULL);
-				}  /* END for (i = 0) */
+          }  /* END for (i = 0) */
 			  }    /* END if (sig == SIGKILL) */
 			else
 			  {
