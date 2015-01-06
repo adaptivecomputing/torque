@@ -2906,12 +2906,6 @@ int kill_task(
     
           if (sig == SIGKILL)
             {
-            struct timespec req;
-            
-            req.tv_sec = 0;
-            req.tv_nsec = 250000000;  /* .25 seconds */
-    
-            /* give the process some time to quit gracefully first (up to .25*20=5 seconds) */
             sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
               __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
             
@@ -2944,7 +2938,6 @@ int kill_task(
               if (kill(ps->pid, 0) == -1)
                 break;
               
-              nanosleep(&req, NULL);
               }  /* END for (i = 0) */
             }    /* END if (sig == SIGKILL) */
           else
