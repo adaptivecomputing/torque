@@ -6,11 +6,14 @@
 #include "test_mom_job_func.h"
 #include "resizable_array.h"
 
+#include <set>
 
 #include "pbs_error.h"
 
 bool am_i_mother_superior(const job &pjob);
 void remove_from_exiting_list(job *pjob);
+
+std::set<pid_t> global_job_sid_set;
 
 resizable_array  *exiting_job_list;
 
