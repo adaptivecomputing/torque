@@ -305,3 +305,24 @@ int remove_alps_reservation(
   } /* END remove_alps_reservation() */
 
 
+
+/*
+ * clear_all_alps_reservations()
+ *
+ * Clears all of the reservations from the structure and deletes them.
+ */
+
+void clear_all_alps_reservations()
+
+  {
+  alps_reservation *ar;
+
+  alps_reservations.lock();
+
+  while ((ar = alps_reservations.pop()) != NULL)
+    delete ar;
+
+  alps_reservations.unlock();
+  } // END clear_all_alps_reservations()
+
+
