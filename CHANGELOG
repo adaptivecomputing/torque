@@ -1,6 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 5.0.2
+  b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
+      thread exits.
   b - TRQ-3012. Fix memory leaks that happen each time a job is run.
   b - TRQ-2966. Improved job rerun speed which had been significantly slowed down
       starting in 4.2.6. Also, pbs_mom now correctly accounts for job resources when
