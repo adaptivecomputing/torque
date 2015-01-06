@@ -1065,11 +1065,11 @@ int saveJobToXML(
   const char *filename) /* I - filename to save to */
 
   {
-  xmlDocPtr doc = NULL;       /* document pointer */
-  xmlNodePtr root_node;
-  int lenwritten = 0, rc = PBSE_NONE;
-  root_node = NULL;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  xmlDocPtr  doc = NULL;       /* document pointer */
+  xmlNodePtr root_node = NULL;
+  int        lenwritten = 0, rc = PBSE_NONE;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
   if ((doc = xmlNewDoc((const xmlChar*) "1.0")))
     {
     root_node = xmlNewNode(NULL, (const xmlChar*) JOB_TAG);
@@ -1118,10 +1118,11 @@ int saveJobToXML(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buf);
+
     rc = -1;
     }
 
-  return rc;
+  return(rc);
   } /* saveJobToXML */
 
 

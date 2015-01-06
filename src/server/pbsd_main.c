@@ -1518,10 +1518,6 @@ void main_loop(void)
         {
         state = SV_STATE_DOWN;
         set_svr_attr(SRV_ATR_State, &state);
-
-        /* at this point kill the threadpool */
-        destroy_request_pool(request_pool);
-        destroy_request_pool(task_pool);
         }
       }
 
@@ -1996,8 +1992,11 @@ int main(
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
 
-  /* cleans up memory allocated by the xml library */
-  xmlCleanupParser(); /* must be called the latest possible */
+  /* at this point kill the threadpool */
+  destroy_request_pool(task_pool);
+  destroy_request_pool(request_pool);
+  destroy_request_pool(async_pool);
+
   exit_called = true;
   exit(0);
   }  /* END main() */
