@@ -44,7 +44,13 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int attr_to_str(struct dynamic_string *ds, attribute_def *at_def, struct pbs_attribute attr, int XML)
+int attr_to_str(
+
+  std::string&      ds,     /* O */
+  attribute_def    *at_def, /* I */
+  pbs_attribute     attr,   /* I */
+  int               XML)    /* I */
+
   {
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
