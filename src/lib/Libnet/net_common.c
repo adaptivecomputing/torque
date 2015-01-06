@@ -274,6 +274,8 @@ int socket_get_tcp_priv()
   return(local_socket);
   } /* END socket_get_tcp_priv() */
 
+
+
 int socket_connect_unix(
 
   int   local_socket,
@@ -303,13 +305,13 @@ int socket_connect_unix(
 
 int socket_connect(
 
-  int   *local_socket,
-  char  *dest_addr,
-  int    dest_addr_len,
-  int    dest_port,
-  int    family,
-  int    is_privileged,
-  char **error_msg)
+  int         *local_socket,
+  char        *dest_addr,
+  int          dest_addr_len,
+  int          dest_port,
+  int          family,
+  int          is_privileged,
+  std::string &error_msg)
 
   {
   struct sockaddr_in remote;
@@ -342,7 +344,7 @@ int socket_connect_addr(
   struct sockaddr  *remote,
   size_t            remote_size,
   int               is_privileged,
-  char            **error_msg)
+  std::string      &error_msg)
 
   {
   int   cntr = 0;
@@ -362,7 +364,7 @@ int socket_connect_addr(
       case ETIMEDOUT:       /* Connection timed out */
         snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect to port %d in %s - connection refused",
           local_socket, __func__);
-        *error_msg = strdup(tmp_buf);
+        error_msg = tmp_buf;
         rc = PBS_NET_RC_RETRY;
         close(local_socket);
         local_socket = PERMANENT_SOCKET_FAIL;
@@ -424,7 +426,7 @@ int socket_connect_addr(
 
         snprintf(tmp_buf, sizeof(tmp_buf), "cannot connect with socket %d in %s - errno:%d %s",
           local_socket, __func__, errno, strerror(errno));
-        *error_msg = strdup(tmp_buf);
+        error_msg = tmp_buf;
         close(local_socket);
         rc = PBSE_SOCKET_FAULT;
         local_socket = PERMANENT_SOCKET_FAIL;
