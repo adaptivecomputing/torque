@@ -18,8 +18,6 @@ void change_restart_comment_if_needed(struct job *pjob);
 
 int has_job_delete_nanny(struct job *pjob);
 
-void remove_job_delete_nanny(struct job *pjob);
-
 void purge_completed_jobs(struct batch_request *preq);
 
 int is_ms_on_server(const job *pjob);

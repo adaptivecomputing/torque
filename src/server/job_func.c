@@ -1895,9 +1895,10 @@ int svr_job_purge(
   if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
     {
     int rc2 = 0;
-    if ((rc2=remove_job(&array_summary,pjob)) == PBSE_JOB_RECYCLED)
+    if ((rc2 = remove_job(&array_summary, pjob)) == PBSE_JOBNOTFOUND)
       {
-      /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
+      /* PBSE_JOBNOTFOUND means the job is gone.
+       * remove_job alreadly unlocked pjob->ji_mutex */
       pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }

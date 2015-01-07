@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+
+5.0.1.h4
+  c - TRQ-2987. Fix a crash around job exits due to incorrect error code handling.
+
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
       in the command.

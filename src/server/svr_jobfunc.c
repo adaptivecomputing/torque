@@ -762,10 +762,10 @@ int svr_dequejob(
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_njstate < 0. Recount required.");
         }
       }
-    else if (rc == PBSE_JOB_RECYCLED)
+    else if (rc == PBSE_JOBNOTFOUND)
       {
       /* calling functions know this return code means the job is gone */
-      return(PBSE_JOBNOTFOUND);
+      return(rc);
       }
 
     if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
@@ -777,8 +777,8 @@ int svr_dequejob(
 
     /* the only reason to care about the error is if the job is gone */
     int rc2;
-    if ((rc2=remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOB_RECYCLED)
-      return(PBSE_JOBNOTFOUND);
+    if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOBNOTFOUND)
+      return(rc2);
 
     if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 8))
       {
@@ -875,10 +875,10 @@ int svr_dequejob(
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
     }
-  else if (rc == PBSE_JOB_RECYCLED)
+  else if (rc == PBSE_JOBNOTFOUND)
     {
     /* calling functions know this return code means the job is gone */
-    return(PBSE_JOBNOTFOUND);
+    return(rc);
     }
 
   if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))

@@ -830,10 +830,12 @@ int has_job(
 
 
 /* 
- * remove a job from the array
+ * remove a job from the alljobs container
  *
+ * @param aj - the alljobs container to remove from
  * @param pjob - the job to remove
- * @return PBSE_NONE if the job is removed 
+ * @return PBSE_NONE if the job is removed, PBSE_JOBNOTFOUND if the job
+ * disappears mid-execution, or THING_NOT_FOUND if the job removal fails
  */
 
 int  remove_job(
