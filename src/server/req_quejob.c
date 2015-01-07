@@ -1539,7 +1539,7 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+    if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
       {
       if (LOGLEVEL >= 8)
         {
@@ -2175,7 +2175,7 @@ int req_commit(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-  if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+  if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
     {
     if (LOGLEVEL >= 8)
       {
