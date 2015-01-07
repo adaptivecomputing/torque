@@ -1065,7 +1065,7 @@ void close_quejob(
 
     if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
       {
-      // This job needs to be cleaned up
+      // This job needs to be cleaned up, ignore remove job errors because it is the newjobs container
       remove_job(&newjobs, pjob);
 
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
