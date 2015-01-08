@@ -262,6 +262,7 @@ enum TVarElseEnum
   tveMicFile,
   tveOffloadDevices,
   tveCudaVisibleDevices,
+  tveHostname,
   tveLAST
   };
 
@@ -290,6 +291,7 @@ static const char *variables_else[] =   /* variables to add, value computed */
   "PBS_MICFILE",          /* file containing which MICs to access */
   "OFFLOAD_DEVICES",      /* indices of MICs for the job */
   "CUDA_VISIBLE_DEVICES", /* indices of GPUs for the job */
+  "HOSTNAME",             /* the host we're executing on */
   NULL
   };
 
@@ -1600,6 +1602,9 @@ int InitUserEnv(
     bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
     }
 
+  // add the hostname to the environment
+  bld_env_variables(&vtable, variables_else[tveHostname], mom_host);
+
   /* PBS_WALLTIME */
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
@@ -2165,7 +2170,10 @@ int TMomFinalizeJob1(
         strcat(buf, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
         }
 
-      stat(buf, &sb);
+      if (stat(buf, &sb))
+        {
+        return(FAILURE);
+        }
 
       if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
         {
@@ -6417,14 +6425,16 @@ int start_exec(
       ((mom_radix + 1) <= nodenum) &&
       (is_login_node == FALSE))
     {
-    pjob->ji_resources = (noderes *)calloc(nodenum - 1, sizeof(noderes));
+    noderes *pNodeRes = (noderes *)calloc(nodenum, sizeof(noderes));
     
-    assert(pjob->ji_resources != NULL);
+    assert(pNodeRes);
     
-    pjob->ji_resources[0].nr_cput = 0;
-    pjob->ji_resources[0].nr_mem = 0;
-    pjob->ji_resources[0].nr_vmem = 0;
+    pNodeRes[0].nr_cput = 0;
+    pNodeRes[0].nr_mem = 0;
+    pNodeRes[0].nr_vmem = 0;
     
+    pjob->ji_resources = pNodeRes;
+
     pjob->ji_joins_sent = time(NULL);
     
     if ((ret = allocate_demux_sockets(pjob, MOTHER_SUPERIOR)) != PBSE_NONE)

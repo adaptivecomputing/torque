@@ -29,7 +29,7 @@ int unlock_tcp_table()
 
 void log_err(int errnum, const char *routine, const char *text) {}
 
-int socket_read(int socket, char **the_str, long long *str_len,unsigned int to)
+int socket_read(int socket, char **the_str, long long *str_len, unsigned int timeout)
   {
   fprintf(stderr, "The call to socket_read needs to be mocked!!\n");
   return(1);

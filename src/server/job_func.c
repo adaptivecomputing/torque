@@ -174,6 +174,7 @@ int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *)
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
+void free_all_of_job(job *pjob);
 
 /* Global Data items */
 all_jobs        alljobs;
@@ -507,10 +508,14 @@ int job_abt(
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             pjob_mutex.unlock();
-            update_array_values(pa,old_state,aeTerminate,
-                job_id, job_atr_hold, job_exit_status);
+             
+            if (pa)
+              {
+              update_array_values(pa,old_state,aeTerminate,
+                  job_id, job_atr_hold, job_exit_status);
             
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              }
             pjob = svr_find_job(job_id, TRUE);
             }
           }
@@ -569,10 +574,13 @@ int job_abt(
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         pjob_mutex.unlock();
-        update_array_values(pa,old_state,aeTerminate,
-            job_id, job_atr_hold, job_exit_status);
+        if (pa)
+          {
+          update_array_values(pa,old_state,aeTerminate,
+              job_id, job_atr_hold, job_exit_status);
         
-        unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
+          }
         pjob = svr_find_job(job_id, TRUE);
         }
       }
@@ -719,13 +727,13 @@ void free_job_allocation(
   if (pjob->ji_cray_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_cray_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_cray_clone);
+    free_all_of_job(pjob->ji_cray_clone);
     }
 
   if (pjob->ji_external_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_external_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_external_clone);
+    free_all_of_job(pjob->ji_external_clone);
     }
 
   /* remove any calloc working pbs_attribute space */
@@ -746,10 +754,18 @@ void free_job_allocation(
     bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
     }
 
+  } /* END free_job_allocation() */
+
+
+
+void free_all_of_job(job *pjob)
+  {
+  free_job_allocation(pjob);
   pthread_mutex_destroy(pjob->ji_mutex);
+  free(pjob->ji_mutex);
   memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
   free(pjob);
-  } /* END free_job_allocation() */
+  } /* END free_all_of_job() */
 
 
 
@@ -782,20 +798,15 @@ void job_free(
    * the lock and then deletes the job, but thread 2 gets the job's lock as
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
-
-  remove_job(&alljobs,pj); //Remove this from the alljobs array.
-
   if (use_recycle)
     {
     insert_into_recycler(pj);
-    sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     }
   else
     {
-    sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
-    free_job_allocation(pj);
+    free_all_of_job(pj);
     }
 
   return;
@@ -1685,12 +1696,12 @@ int record_jobinfo(
   pbs_attribute          *pattr;
   int                     i;
   int                     rc;
-  std::string              bf = "";
+  std::string             bf("");
   char                    job_script_buf[(MAXPATHLEN << 4) + 1];
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
   size_t                  bytes_read = 0;
-  extern pthread_mutex_t job_log_mutex;
+  extern pthread_mutex_t  job_log_mutex;
   long                    record_job_script = FALSE;
   
   if (pjob == NULL)
@@ -1714,19 +1725,8 @@ int record_jobinfo(
   bf += pjob->ji_qs.ji_jobid;
   bf += "</Job_Id>\n";
 
- #if 0
-  if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-    {
-    log_err(rc, __func__, "log_job_record failed");
-    return(rc);
-    }
-#endif
-
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-#if 0
-    bf.clear();
-#endif
     pattr = &(pjob->ji_wattr[i]);
 
     if (pattr->at_flags & ATR_VFLAG_SET)
@@ -1745,7 +1745,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
+      attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";
@@ -1753,14 +1753,6 @@ int record_jobinfo(
       bf += "</";
       bf += job_attr_def[i].at_name;
       bf += ">\n";
-
-#if 0
-      if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-        {
-        log_err(rc, __func__, "log_job_record failed recording attributes");
-        return(rc);
-        }
-#endif
       }
     }
   
@@ -1793,19 +1785,7 @@ int record_jobinfo(
       }
    
     bf += "\t</job_script>\n";
-    
-#if 0
-    if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-      {
-      log_err(rc, __func__, "log_job_record failed");
-      return(rc);
-      }
-#endif
     }
- 
-#if 0
-  bf.clear();
-#endif
 
   bf += "</Jobinfo>\n";
 
@@ -1883,13 +1863,24 @@ int svr_job_purge(
       }
     }
 
-  if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
-    if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
+  if ((job_has_arraystruct == FALSE) ||
+      (job_is_array_template == TRUE))
+    {
+    int rc2 = 0;
+    if ((rc2=remove_job(&array_summary,pjob)) == PBSE_JOB_RECYCLED)
       {
       /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
       pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
+    else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+          "Could not remove job %s from array_summary\n",
+          pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
 
   /* if part of job array then remove from array's job list */
   if ((job_has_arraystruct == TRUE) &&
@@ -1938,16 +1929,9 @@ int svr_job_purge(
   if ((job_substate != JOB_SUBSTATE_TRANSIN) &&
       (job_substate != JOB_SUBSTATE_TRANSICM))
     {
-    int need_deque = !pjob->ji_cold_restart;
-
-    /* jobs that are being deleted after a cold restart
-     * haven't been queued */
-    if (need_deque == TRUE)
-      {
-      /* set the state to complete so that svr_dequejob() will function properly */
-      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-      rc = svr_dequejob(pjob, FALSE);
-      }
+    /* set the state to complete so that svr_dequejob() will function properly */
+    pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+    rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {

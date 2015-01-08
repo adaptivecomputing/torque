@@ -461,7 +461,12 @@ attribute_def que_attr_def[] =
   {   (char *)ATTR_checkpoint_defaults,   /* "checkpoint_defaults" */
       decode_str,
       encode_str,
+#ifdef PBS_MOM
       set_str,
+#else
+      /* use special routine only for server*/
+      set_str_csv,
+#endif
       comp_str,
       free_str,
       NULL_FUNC,

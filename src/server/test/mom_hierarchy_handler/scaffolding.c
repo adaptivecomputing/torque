@@ -285,8 +285,15 @@ int DIS_tcp_setup(int)
 
 void close_conn(int,int){}
 
+int tcp_connect_sockaddr(
 
+  struct sockaddr *sa,      /* I */
+  size_t           sa_size, /* I */
+  bool             use_log) /* I */
 
+  {
+  return(0);
+  }
 
 
 

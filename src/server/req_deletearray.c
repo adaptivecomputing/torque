@@ -32,6 +32,7 @@ extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *sub
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int has_job_delete_nanny(struct job *);
+extern void setup_apply_job_delete_nanny(struct job *, time_t  time_now);
 extern void remove_stagein(job **pjob);
 extern void change_restart_comment_if_needed(struct job *);
 int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
@@ -103,8 +104,8 @@ int attempt_delete(
     
     if (pjob->ji_has_delete_nanny == FALSE)
       {
-      apply_job_delete_nanny(pjob, time_now + 60);
-      
+      setup_apply_job_delete_nanny(pjob, time_now);
+
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
       issue_signal(&pjob, "SIGTERM", free_br, NULL, NULL);

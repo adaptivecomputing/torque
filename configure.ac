@@ -403,6 +403,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile
     src/resmom/test/cray_cpa/Makefile
+    src/resmom/test/cray_energy/Makefile
     src/resmom/test/generate_alps_status/Makefile
     src/resmom/test/mom_job_func/Makefile
     src/resmom/test/mom_comm/Makefile
@@ -1011,7 +1012,7 @@ AC_ARG_WITH(mic-path, [
                      specify that the include files are in /opt/intel/mic/coi/include
                      and the libraries are in /opt/intel/mic/coi/host-linux-release/lib],
   [MICLIBS="-L${withval}/host-linux-release/lib"; MICCFLAGS="-I${withval}/include"],
-  [MICLIBS="-L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/opt/intel/mic/coi/include"])
+  [MICLIBS="-L/usr/lib64 -L/opt/intel/mic/coi/host-linux-release/lib"; MICCFLAGS="-I/usr/include/intel-coi -I/opt/intel/mic/coi/include"])
 
 
 dnl
@@ -1458,16 +1459,19 @@ case "$jobcreatedir" in
 esac
 AC_MSG_RESULT([$jobcreatedir])
 
+AUTH_TYPE="classic (pbs_iff)"
+
 dnl compile for munge authorization - allows sites to use munge
-dnl as a means to validate user identity from remote hosts.
+dnl as a means to validate user identity from remote hosts. (executable based implementation)
 dnl 
-AC_ARG_ENABLE(munge_auth, [
-  --enable-munge-auth Allows users to be authorized using munge instead of ruserok])
+AC_ARG_ENABLE(munge_auth_exec, [
+  --enable-munge-exec  (LEGACY) Allows users to be authorized using munge instead of ruserok ])
 if test "x$GCC" = "xyes" ;then
-  AC_MSG_CHECKING([whether to support munge authorization])
-  if test "${enable_munge_auth}" = "yes" ; then
+  AC_MSG_CHECKING([whether to support exec based munge authorization])
+  if test "${enable_munge_exec}" = "yes" ; then
     AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS -DMUNGE_AUTH"
+    CFLAGS="$CFLAGS -DMUNGE_AUTH -DMUNGE_AUTH_EXEC"
+    AUTH_TYPE="munge exec (LEGACY)"
     RPM_AC_OPTS="$RPM_AC_OPTS --with munge"
   else
     AC_MSG_RESULT([no])
@@ -1475,6 +1479,42 @@ if test "x$GCC" = "xyes" ;then
   fi
 fi
 
+dnl compile for munge library based authorization - link with munge library
+dnl instead of using expensive popen() calls. This option requires munge 
+dnl libraries to be installed during compilation.
+
+AC_ARG_ENABLE(munge_auth, [ 
+  --enable-munge-auth Use MUNGE authentication instead ruserok method. Munge library is required. 
+             This method is much faster than former exec-based implementation ] )
+
+AC_MSG_CHECKING([whether to support MUNGE library based authentication])
+if test  "x$GCC" = "xyes" ; then
+  
+  if test "${enable_munge_auth}" = "yes"; then
+    if test x"${enable_munge_exec}" = x"yes"; then
+        echo 
+        AC_MSG_ERROR([ --enable-munge-auth and --enable-munge-exec options are mutually exclusive])
+    fi
+
+
+    AC_MSG_RESULT([yes])
+    AC_CHECK_LIB(munge,munge_ctx_create,LDFLAGS="$LDFLAGS -lmunge")
+    AC_CHECK_HEADERS([munge.h])
+
+    if test "$ac_cv_header_munge_h" = "yes" && test "$ac_cv_lib_munge_munge_ctx_create" = "yes"; then 
+       CFLAGS="$CFLAGS -DMUNGE_AUTH -DMUNGE_AUTH_LIB"
+       AUTH_TYPE="munge library (NEW)"
+    else
+       echo
+       AC_MSG_ERROR([requested munge library API support is disabled - cannot find library or headers])
+    fi
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AM_CONDITIONAL([WITH_MUNGE_LIBRARY], [ test "${enable_munge_library}" = "yes" ])
+
+fi
 
 dnl
 dnl arch-specific libs
@@ -2392,6 +2432,7 @@ echo "Unix Domain sockets : $ENABLE_UNIX_SOCKETS"
 echo "Linux cpusets       : $build_l26_cpuset"
 echo "Tcl                 : `test "$TCL" = "1" && echo $MY_TCL_INCS $MY_TCL_LIBS || echo disabled`"
 echo "Tk                  : `test "$TK" = "1" && echo $MY_TCLTK_INCS $MY_TCLTK_LIBS || echo disabled`"
+echo "Authentication      : $AUTH_TYPE"
 echo
 
 if test "x$gccwarnings" = "xyes" ;then

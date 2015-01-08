@@ -17,6 +17,7 @@ libjob_recov_la_SOURCES = scaffolding.c ${PROG_ROOT}/job_recov.c ${PROG_ROOT}/jo
 			  ${PROG_ROOT}/../lib/Libattr/attr_fn_hold.c ${PROG_ROOT}/../lib/Libattr/attr_fn_tv.c \
 			  ${PROG_ROOT}/../lib/Libattr/attr_fn_nppcu.c \
 			  ${PROG_ROOT}/../lib/Libattr/attr_fn_freq.c \
+			  ${PROG_ROOT}/../lib/Libcsv/csv.c \
 			  ${PROG_ROOT}/../lib/Liblog/pbs_messages.c ${PROG_ROOT}/req_register.c
 libjob_recov_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 

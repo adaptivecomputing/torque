@@ -1637,6 +1637,8 @@ int run_pelog(
     log_err(errno, __func__, "Fork failed");
     rc = -1;
     }
+    
+  free(real_gids);
 
   return(rc);
   }  /* END run_pelog() */

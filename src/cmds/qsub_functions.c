@@ -1265,16 +1265,25 @@ static int get_script(
 
 
 
-
-
+/**
+ * Parse given character string in shell format to arc/argv format adding "qsub" as a first argument
+ * making it look like qsub was called from command line.
+ *
+ * This function handles quotes and escape symbols as shell does:
+ *  - arguments are splitted by any number of space characters as defined by isspace()
+ *  - unescaped quotes enclose a single argument or its part. Quotes are dropped.
+ *  - escaped characters treated as is: escaped quote and spaces are treated as a character without
+ *    any special meaning
+ */
 void make_argv(
 
-  int  *argc,
-  char *argv[],
-  char *line)
+  int        *argc,   /* O - result argc value */
+  char       *argv[], /* O - result argv value */
+  char const *line)   /* I - input cmdline shell string */
 
   {
-  char *l, *b, *c, *buffer;
+  char const *l, *c;
+  char *b, *buffer;
   int len;
   char quote;
 
@@ -1304,8 +1313,8 @@ void make_argv(
     if ((*c == '"') || (*c == '\''))
       {
       quote = *c;
-      /* we need to include the quotes in what is passed on */
-      *b++ = *c++;
+      /* don't include the quotes */
+      c++;
 
       while ((*c != quote) && *c)
         *b++ = *c++;
@@ -1318,7 +1327,8 @@ void make_argv(
         exit(1);
         }
 
-      *b++ = *c++;
+      /* don't include the quotes */
+      c++;
       }
     else if (*c == '\\')
       {
@@ -1400,9 +1410,10 @@ void do_dir(
   {
   int argc = 0;
 
-  static char *vect[MAX_ARGV_LEN + 1];
-
-  memset(&vect, 0, MAX_ARGV_LEN + 1);
+  /* initialize all vect pointers with NULLs.
+   * make_argv() frees an item if it's non-NULL and then allocates memory for a new one.
+   */
+  static char *vect[MAX_ARGV_LEN + 1] = {};
 
   make_argv(&argc, vect, opts);
 
@@ -2343,29 +2354,6 @@ int validate_group_list(
   return(TRUE);
   }
 
-
-bool came_from_moab(const char *src, std::string &escaped_semicolon)
-  {
-  char *p;
-  if ((p = strstr((char *)src, "x=SID:Moab;")))
-    {  
-    char buf[1024], *s;
-    for (s=buf; *p; p++, s++)
-      {
-      if (*p == ';')
-        {
-        *s = '\\';
-        s++;
-        }
-      *s = *p;
-      }
-    *s = '\0';
-    escaped_semicolon = std::string(buf);
-    return true;
-    }
-  else
-    return false;
-  }
 
 /** 
  * Process command line options.
@@ -3317,15 +3305,13 @@ void process_opts(
 
       for (index = 1;index < argc;index++)
         {
-        std::string escaped_semicolon;
         if (argv[index] != NULL)
           {
           cline_out += " ";
-          if (came_from_moab(argv[index], escaped_semicolon))
-            cline_out += escaped_semicolon;
-          else
-            cline_out += argv[index];
-          }
+          cline_out += "\"";
+          cline_out += argv[index];
+          cline_out += "\"";
+         }
         }    /* END for (index) */
        
       cline_out += " <";
@@ -3506,51 +3492,13 @@ void set_job_defaults(
   
   hash_add_or_exit(ji->client_attr, "pbs_dprefix", "#PBS", STATIC_DATA);
   hash_add_or_exit(ji->job_attr, ATTR_job_radix, "0", STATIC_DATA);
-  if (hash_find(ji->user_attr, "pbs_clientretry", &tmp_job_info))
+  if (hash_find(ji->user_attr, "PBS_CLIENTRETRY", &tmp_job_info))
     hash_add_or_exit(ji->client_attr, "cnt2server_retry", tmp_job_info->value.c_str(), ENV_DATA);
   return;
   }  /* END set_job_defaults() */
 
 
 
-
-
-
-char *get_param(
-
-  const char *param,      /* I */
-  const char *config_buf) /* I */
-
-  {
-  char tmpLine[1024];
-
-  char *param_val;
-  char *new_val = NULL;
-
-  /* FORMAT:  <PARAM> <WS> <VALUE> \n */
-
-  /* NOTE:  does not support comments */
-
-  /* if (strcasestr() == NULL) */
-
-  /* NOTE: currently case-sensitive (FIXME) */
-
-  if ((param_val = strstr((char *)config_buf, param)) == NULL)
-    {
-    return(NULL);
-    }
-
-  snprintf(tmpLine, sizeof(tmpLine), "%s", param_val);
-
-  strtok(tmpLine, " \t\n");
-
-  if ((new_val = (char *)strtok(NULL, "\t \n")) == NULL)
-    {
-    return(NULL);
-    }
-
-  return(new_val);
-  }  /* END get_param() */
 
 
 
@@ -3605,32 +3553,32 @@ void process_config_file(
   if (load_config(torque_cfg_buf, sizeof(torque_cfg_buf)) == 0)
     {
     /* This config entry should most likely be removed in the future */
-    if ((param_val = get_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBSLEEP", torque_cfg_buf)) != NULL)
       {
       sleep(atoi(param_val));
       }
 
-    if ((param_val = get_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("SUBMITFILTER", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_pbs_o_submit_filter, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("SERVERHOST", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("SERVERHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "serverhost", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBHOST", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBHOST", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_submit_host, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("QSUBSENDUID", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, ATTR_pbs_o_uid, param_val, ENV_DATA);
       }
 
-    if (get_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
+    if (get_trq_param("QSUBSENDGROUPLIST", torque_cfg_buf) != NULL)
       {
       gid_t group_id = getgid();
       struct group *gpent = getgrgid(group_id);
@@ -3642,18 +3590,18 @@ void process_config_file(
         }
       }
 
-    if ((param_val = get_param("XAUTHPATH", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("XAUTHPATH", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->client_attr, "xauth_path", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("CLIENTRETRY", torque_cfg_buf)) != NULL)
       {
       /* The value of this will be verified later */
       hash_add_or_exit(ji->client_attr, "cnt2server_retry", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
         print_qsub_usage_exit("qsub: cannot validate submit group.");
@@ -3661,27 +3609,27 @@ void process_config_file(
       hash_add_or_exit(ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("DEFAULTCKPT", torque_cfg_buf)) != NULL)
       {
       hash_add_or_exit(ji->job_attr, ATTR_c, param_val, CONFIG_DATA);
       }
 
-    if ((param_val = get_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("VALIDATEPATH", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_del_item(ji->client_attr, "validate_path");
       }
-    if ((param_val = get_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("RERUNNABLEBYDEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "false"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "FALSE", STATIC_DATA);
       }
-    if ((param_val = get_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("FAULT_TOLERANT_BY_DEFAULT", torque_cfg_buf)) != NULL)
       {
       if (!strcasecmp(param_val, "true"))
         hash_add_or_exit(ji->job_attr, ATTR_r, "TRUE", STATIC_DATA);
       }
-    if ((param_val = get_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
+    if ((param_val = get_trq_param("HOST_NAME_SUFFIX", torque_cfg_buf)) != NULL)
       {
       if (param_val != NULL)
         {
@@ -4183,7 +4131,7 @@ void main_func(
     }
   if (local_errno != PBSE_NONE)
     {
-    printf("qsub can not be run as root\n");
+    fprintf(stderr, "qsub can not be run as root\n");
     unlink(script_tmp);
     exit(1);
     }

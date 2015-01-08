@@ -108,6 +108,15 @@ int disrl_(
   if (dis_umaxd == 0)
     disiui_();
 
+  if (count >= dis_umaxd)
+    {
+    if (count > dis_umaxd)
+      goto overflow;
+
+    if (memcmp(scratch, dis_umax, dis_umaxd) > 0)
+      goto overflow;
+    }
+
   switch (c = tcp_getc(chan, pbs_tcp_timeout))
     {
 
@@ -305,6 +314,7 @@ int disrl_(
       break;
     }  /* END switch (c = tcp_getc(chan)) */
 
+overflow:
   *ldval = HUGE_VAL;
 
   return(DIS_OVERFLOW);

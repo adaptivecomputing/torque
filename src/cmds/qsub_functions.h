@@ -175,7 +175,7 @@ void post_check_attributes(job_info *ji,char *script_tmp);
 void make_argv(
     int  *argc,
     char *argv[],
-    char *line);
+    char const *line);
 
 void do_dir(
     char *opts,
@@ -245,7 +245,7 @@ int load_config(
   char *config_buf,               /* O */
   int   BufSize);                 /* I */
 
-char *get_param(
+char *get_trq_param(
     const char *param,                  /* I */
     const char *config_buf);            /* I */
 

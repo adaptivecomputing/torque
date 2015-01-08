@@ -277,6 +277,7 @@ char                       TORQUE_JData[MMAX_LINE];
 extern int                 received_hello_count[];
 extern char                TMOMRejectConn[];
 extern time_t              LastServerUpdateTime;
+extern bool                ForceServerUpdate;
 extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
@@ -908,15 +909,12 @@ void gen_macaddr(
   {
   static std::string mac_addr;
 
-  if(mac_addr.length() == 0)
+  if (mac_addr.length() == 0)
     {
-    char buff[500];
-    if(gethostname(buff,sizeof(buff)))
-      {
-      return;
-      }
+    char             buff[500];
     struct addrinfo *pAddr = NULL;
-    if(getaddrinfo(buff,NULL,NULL,&pAddr))
+
+    if (pbs_getaddrinfo(mom_host, NULL,&pAddr) != 0)
       {
       return;
       }
@@ -928,25 +926,25 @@ void gen_macaddr(
       }
 
     char *macAddr = NULL;
-    while(fgets(buff,sizeof(buff),pPipe) != NULL)
+    while (fgets(buff,sizeof(buff),pPipe) != NULL)
       {
       char *tok = strtok(buff," ");
-      if(!strcmp(tok,"link/ether"))
+      if (!strcmp(tok,"link/ether"))
         {
         tok = strtok(NULL," ");
-        if(strlen(tok) != 0)
+        if (strlen(tok) != 0)
           {
-          if(macAddr != NULL) free(macAddr);
+          if (macAddr != NULL) free(macAddr);
           macAddr = strdup(tok);
           }
         }
-      else if(!strcmp(tok,"inet"))
+      else if (!strcmp(tok,"inet"))
         {
         tok = strtok(NULL," ");
         char *iaddr = strdup(tok);
-        for(char *ind = iaddr;*ind;ind++)
+        for (char *ind = iaddr;*ind;ind++)
           {
-          if(*ind == '/')
+          if (*ind == '/')
             {
             *ind = '\0';
             break;
@@ -955,7 +953,7 @@ void gen_macaddr(
         in_addr_t in_addr = inet_addr(iaddr);
         free(iaddr);
         struct addrinfo *pAddrInd = pAddr;
-        while((pAddrInd != NULL)&&(macAddr != NULL))
+        while ((pAddrInd != NULL)&&(macAddr != NULL))
           {
           struct in_addr   saddr;
           saddr = ((struct sockaddr_in *)pAddrInd->ai_addr)->sin_addr;
@@ -1295,14 +1293,14 @@ int mom_server_update_stat(
   struct tcp_chan *chan = NULL;
 
   if ((pms->pbs_servername[0] == '\0') ||
-      (time_now < (pms->MOMLastSendToServerTime + ServerStatUpdateInterval)))
+      (time_now < (pms->MOMLastSendToServerTime + get_stat_update_interval())))
     {
     /* No server is defined for this slot */
     
     return(NO_SERVER_CONFIGURED);
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), false);
  
   if (IS_VALID_STREAM(stream))
     {
@@ -1383,6 +1381,7 @@ int mom_server_update_stat(
       if (numa_index + 1 >= num_node_boards)
         pms->MOMLastSendToServerTime = time_now;
 #endif
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       
       UpdateFailCount = 0;
@@ -1488,38 +1487,32 @@ int send_update()
   if (first_update_time > time_now)
     return(FALSE);
   
-  if (time_now < (LastServerUpdateTime + ServerStatUpdateInterval))
+  if (time_now < (LastServerUpdateTime + get_stat_update_interval()))
     return(FALSE);
   
-  /* this is the minimum condition for updating */
-  if (time_now >= (LastServerUpdateTime + ServerStatUpdateInterval))
-    {
-    long attempt_diff;
+  long attempt_diff;
 
-    if (UpdateFailCount == 0)
+  if (UpdateFailCount == 0)
+    return(TRUE);
+
+  /* the following conditions are to continually back off if we're experiencing
+   * several failures in a row */
+  attempt_diff = time_now - LastUpdateAttempt;
+
+  /* never send updates in a rapid-fire fashion */
+  if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
+    {
+    /* cap the longest time between updates */
+    if ((LastServerUpdateTime == 0) ||
+      (attempt_diff > MAX_SERVER_UPDATE_SPACING))
       return(TRUE);
-    
-    /* the following conditions are to continually back off if we're experiencing
-     * several failures in a row */
-    attempt_diff = time_now - LastUpdateAttempt;
- 
-    /* never send updates in a rapid-fire fashion */
-    if (attempt_diff > MIN_SERVER_UDPATE_SPACING)
-      {
-      /* cap the longest time between updates */
-      if ((LastServerUpdateTime == 0) ||
-          (attempt_diff > MAX_SERVER_UPDATE_SPACING))
-        return(TRUE);
-      
-      /* make sending more likely the longer we've waited */
-      mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
-      
-      if (rand() % mod_value == 0)
-        return(TRUE);
-      }
+
+    /* make sending more likely the longer we've waited */
+    mod_value = MAX(2, ServerStatUpdateInterval - attempt_diff);
+
+    if (rand() % mod_value == 0)
+      return(TRUE);
     }
-  
-  /* conditions not met, no update is needed */ 
   return(FALSE);
   } /* END send_update() */
 
@@ -1671,7 +1664,10 @@ void mom_server_all_update_stat(void)
     generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
 
     if (send_update_to_a_server() == PBSE_NONE)
+      {
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
+      }
     }
   else
     {
@@ -1707,6 +1703,7 @@ void mom_server_all_update_stat(void)
       {
       // PARENT 
       close(fd_pipe[1]);
+      ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
     
@@ -2220,6 +2217,9 @@ int process_level_string(
   int   rc = PBSE_NONE;
   int   temp_rc;
 
+  if (path < 0)
+    return(path);
+
   if (am_i_on_this_level(str) == TRUE)
     *path_complete = TRUE;
 
@@ -2594,10 +2594,7 @@ void mom_is_request(
  
     if (ret > 0)
       {
-      sprintf(log_buffer, "%s from %s",
-        dis_emsg[ret],
-        (pAddr != NULL) ? netaddr(pAddr) : "???");
-      
+      sprintf(log_buffer, "%s from %s", dis_emsg[ret], netaddr(pAddr));
       log_ext(-1,__func__,log_buffer,LOG_ALERT);
       }
     }
@@ -2827,12 +2824,14 @@ void check_state(
   {
   static int ICount = 0;
 
-  static char tmpPBSNodeMsgBuf[1024];
+  char tmpPBSNodeMsgBuf[MAXLINE];
 
   if (Force)
     {
     ICount = 0;
     }
+
+  memset(tmpPBSNodeMsgBuf, 0, MAXLINE);
 
   /* conditions:  external state should be down if
      - inadequate file handles available (for period X)
@@ -2864,6 +2863,11 @@ void check_state(
       /* NOTE:  adjusting internal state may not be proper behavior, see note below */
 
       internal_state |= INUSE_DOWN;
+      ICount++;
+
+      ICount %= MAX(1, PBSNodeCheckInterval);
+
+      return;
       }
     }    /* END BLOCK */
 
@@ -2871,8 +2875,6 @@ void check_state(
 
   if (PBSNodeCheckPath[0] != '\0')
     {
-    int IsError = 0;
-
     if (ICount == 0)
       {
       /* only do this when running the check script, otherwise down nodes are 
@@ -2890,19 +2892,39 @@ void check_state(
         {
         if (!strncasecmp(tmpPBSNodeMsgBuf, "ERROR", strlen("ERROR")))
           {
-          IsError = 1;
+          internal_state |= INUSE_DOWN;
+
+          if (LOGLEVEL >= 1)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+            "Setting node to down. The node health script output the following message:\n%s\n",
+            tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         else if (!strncasecmp(tmpPBSNodeMsgBuf, "EVENT:", strlen("EVENT:")))
           {
           /* pass event directly to scheduler for processing */
-
-          /* NO-OP */
+          /* EVENT: is a keyword for Moab */
+          if (LOGLEVEL >= 3)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              tmpPBSNodeMsgBuf);
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         else
           {
-          /* ignore non-error messages */
-
+          /* We are not going to post this message */
           tmpPBSNodeMsgBuf[0] = '\0';
+
+          if (LOGLEVEL >= 6)
+            {
+            snprintf(log_buffer,sizeof(log_buffer),
+              "Node health script ran and says the node is healthy");
+            log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
+            }
           }
         }
       }    /* END if (ICount == 0) */
@@ -2913,30 +2935,10 @@ void check_state(
       snprintf(PBSNodeMsgBuf, sizeof(PBSNodeMsgBuf), "%s", tmpPBSNodeMsgBuf);
 
       PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
-
-      /* NOTE:  not certain this is the correct behavior, scheduler should probably make this decision as
-                proper action may be context sensitive */
-
-      if (IsError == 1)
-        {
-        internal_state |= INUSE_DOWN;
-
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Setting node to down. The node health script output the following message:\n%s\n",
-          tmpPBSNodeMsgBuf); 
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-        }
-      else
-        {
-        snprintf(log_buffer,sizeof(log_buffer),
-          "Node health script ran and says the node is healthy with this message:\n%s\n",
-          tmpPBSNodeMsgBuf);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-        }
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
-  ICount ++;
+  ICount++;
 
   ICount %= MAX(1, PBSNodeCheckInterval);
 
