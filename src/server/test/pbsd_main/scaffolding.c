@@ -38,6 +38,7 @@ hello_container hellos;
 char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 threadpool_t *task_pool;
 int              max_poll_job_tasks;
 char           **ArgV = NULL;
@@ -514,4 +515,6 @@ void *remove_extra_recycle_jobs(void *)
   {
   return(NULL);
   }
-  
+
+void clear_all_alps_reservations() {}
+
