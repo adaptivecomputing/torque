@@ -858,3 +858,5 @@ time_t get_stat_update_interval()
   {
   return ServerStatUpdateInterval;
   }
+
+void empty_received_nodes() {}
