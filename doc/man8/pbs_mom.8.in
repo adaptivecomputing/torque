@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
+pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
