@@ -1348,6 +1348,8 @@ int set_mppnodect(
   return(PBSE_NONE);
   } /* END set_mppnodect() */
 
+
+
 /*
  * decode_procct - decode long integer into pbs_attribute structure
  *
@@ -1397,6 +1399,7 @@ int decode_procct(
   }
 
 
+
 int encode_procct(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute */
@@ -1407,31 +1410,6 @@ int encode_procct(
   int             perm)   /* only used for resources */
 
   {
-  size_t   ct;
-  char   cvnbuf[32];
-  svrattrl *pal;
-
-  if (!attr)
-    return (-1);
-
-  if (!(attr->at_flags & ATR_VFLAG_SET))
-    return (0);
-
-  sprintf(cvnbuf, "%ld", attr->at_val.at_long);
-
-  ct = strlen(cvnbuf);
-
-  pal = attrlist_create(atname, rsname, ct + 1);
-
-  if (pal == (svrattrl *)0)
-    return (-1);
-
-  memcpy(pal->al_value, cvnbuf, ct);
-
-  pal->al_flags = attr->at_flags;
-
-  append_link(phead, &pal->al_link, pal);
-
-  return (1);
+  return (0);
   }
 
