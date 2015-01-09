@@ -54,12 +54,13 @@ START_TEST(test_PBSD_QueueJob_hash)
   {
   char *jobid = NULL;
   char *destin = NULL;
-  job_data_container *job_attr = NULL;
-  job_data_container *res_attr = NULL;
+  job_data *job_attr = NULL;
+  job_data *res_attr = NULL;
   char *extend = NULL;
   char *msg;
-  fail_unless(PBSD_QueueJob_hash(-1, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
-  fail_unless(PBSD_QueueJob_hash(PBS_NET_MAX_CONNECTIONS, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
+  memmgr *mm;
+  fail_unless(PBSD_QueueJob_hash(-1, jobid, destin, &mm, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
+  fail_unless(PBSD_QueueJob_hash(PBS_NET_MAX_CONNECTIONS, jobid, destin, &mm, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
 
   }
 END_TEST
