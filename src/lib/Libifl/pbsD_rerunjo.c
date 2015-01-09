@@ -88,6 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
 
 int pbs_rerunjob_err(
     
@@ -105,6 +106,12 @@ int pbs_rerunjob_err(
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -119,8 +126,8 @@ int pbs_rerunjob_err(
     return rc;
     }
   else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Rerun, pbs_current_user)) ||
-      (rc = encode_DIS_JobId(chan, jobid)) ||
-      (rc = encode_DIS_ReqExtend(chan, extend)))
+           (rc = encode_DIS_JobId(chan, jobid)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
     {
     connection[c].ch_errtxt = strdup(dis_emsg[rc]);
 

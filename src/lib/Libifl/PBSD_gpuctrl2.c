@@ -85,6 +85,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "server_limits.h"
 
 /* PBS_gpu_put.c
  *
@@ -105,6 +106,12 @@ int PBSD_gpu_put(
   int sock;
   int rc = 0;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)

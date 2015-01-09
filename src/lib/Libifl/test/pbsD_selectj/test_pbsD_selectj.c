@@ -7,29 +7,45 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+int PBSD_select_put(int c, int type, struct attropl *attrib, char *extend);
+int PBSD_selectattr_put(int c, int type, struct attropl *attropl, struct attrl *attrib, char *extend);
+char **PBSD_select_get(int *err, int c);
+
+
+START_TEST(test_PBSD_select_get)
   {
-
-
+  fail_unless(PBSD_select_get(NULL, -1) == NULL);
+  fail_unless(PBSD_select_get(NULL, PBS_NET_MAX_CONNECTIONS) == NULL);
   }
 END_TEST
 
-START_TEST(test_two)
+
+START_TEST(test_PBSD_selectattr_put)
   {
-
-
+  fail_unless(PBSD_selectattr_put(-1, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_selectattr_put(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
+
+START_TEST(test_PBSD_select_put)
+  {
+  fail_unless(PBSD_select_put(-1, 0, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_select_put(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL) == PBSE_IVALREQ);
+  }
+END_TEST
+
 
 Suite *pbsD_selectj_suite(void)
   {
   Suite *s = suite_create("pbsD_selectj_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_PBSD_select_get");
+  tcase_add_test(tc_core, test_PBSD_select_get);
+  tcase_add_test(tc_core, test_PBSD_select_put);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_PBSD_selectattr_put");
+  tcase_add_test(tc_core, test_PBSD_selectattr_put);
   suite_add_tcase(s, tc_core);
 
   return s;

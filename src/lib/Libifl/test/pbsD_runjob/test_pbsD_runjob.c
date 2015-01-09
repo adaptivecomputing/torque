@@ -7,12 +7,16 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_runjob_err)
   {
-
-
+  int err;
+  fail_unless(pbs_runjob_err(-1, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1);
+  fail_unless(pbs_runjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1);
+  fail_unless(pbs_runjob_err(0, strdup(""), NULL, NULL, &err) == PBSE_IVALREQ * -1);
+  fail_unless(pbs_runjob_err(0, NULL, NULL, NULL, &err) == PBSE_IVALREQ * -1);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -24,8 +28,8 @@ END_TEST
 Suite *pbsD_runjob_suite(void)
   {
   Suite *s = suite_create("pbsD_runjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_runjob_err");
+  tcase_add_test(tc_core, test_pbs_runjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
