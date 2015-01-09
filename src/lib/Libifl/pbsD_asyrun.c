@@ -87,6 +87,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "server_limits.h"
 
 int pbs_asyrunjob_err(
 
@@ -104,7 +105,14 @@ int pbs_asyrunjob_err(
   int                 sock;
   struct tcp_chan *chan = NULL;
 
-  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
+  if ((jobid == NULL) ||
+      (*jobid == '\0'))
+    {
+    return(PBSE_IVALREQ);
+    }
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
     {
     return(PBSE_IVALREQ);
     }

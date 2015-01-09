@@ -7,12 +7,20 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+
+START_TEST(test_pbs_locjob_err)
   {
-
-
+  char jobid[1024];
+  sprintf(jobid, "1.napali");
+  int err;
+  fail_unless(pbs_locjob_err(-1, jobid, NULL, NULL) == NULL);
+  fail_unless(pbs_locjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL) == NULL);
+  memset(&jobid, 0, sizeof(jobid));
+  fail_unless(pbs_locjob_err(0, jobid, NULL, &err) == NULL);
+  fail_unless(pbs_locjob_err(0, NULL, NULL, &err) == NULL);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -21,11 +29,12 @@ START_TEST(test_two)
   }
 END_TEST
 
+
 Suite *pbsD_locjob_suite(void)
   {
   Suite *s = suite_create("pbsD_locjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_locjob_err");
+  tcase_add_test(tc_core, test_pbs_locjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

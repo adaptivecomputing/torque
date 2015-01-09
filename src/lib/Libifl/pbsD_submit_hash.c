@@ -94,6 +94,7 @@
 #include <unistd.h>
 #include "libpbs.h"
 #include "u_hash_map_structs.h"
+#include "server_limits.h"
 
 int pbs_submit_hash(
 
@@ -112,6 +113,12 @@ int pbs_submit_hash(
   int tmp_size = 0;
 /*  struct attropl *pal; */
   /* first be sure that the script is readable if specified ... */
+  
+  if ((socket < 0) || 
+      (socket >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   if ((script != NULL) && (*script != '\0'))
     {

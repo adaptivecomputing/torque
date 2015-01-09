@@ -87,6 +87,8 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
+
 
 int pbs_stagein(
     
@@ -106,6 +108,12 @@ int pbs_stagein(
 
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   if (location == (char *)0)
     location = (char *)"";

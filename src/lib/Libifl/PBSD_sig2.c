@@ -86,6 +86,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "mutex_mgr.hpp"
+#include "server_limits.h"
 
 /* PBS_sig_put.c
  *
@@ -103,6 +104,12 @@ int PBSD_sig_put(
   int sock;
   int rc = 0;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   mutex_mgr ch_mutex = mutex_mgr(connection[c].ch_mutex, false);
 
@@ -145,6 +152,12 @@ int PBSD_async_sig_put(
   int sock;
   int rc = 0;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

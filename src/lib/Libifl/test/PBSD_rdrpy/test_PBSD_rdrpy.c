@@ -7,9 +7,10 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_PBSD_rdrpy)
   {
-
+  fail_unless(PBSD_rdrpy(NULL, -1) == NULL);
+  fail_unless(PBSD_rdrpy(NULL, PBS_NET_MAX_CONNECTIONS) == NULL);
 
   }
 END_TEST
@@ -24,8 +25,8 @@ END_TEST
 Suite *PBSD_rdrpy_suite(void)
   {
   Suite *s = suite_create("PBSD_rdrpy_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_PBSD_rdrpy");
+  tcase_add_test(tc_core, test_PBSD_rdrpy);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

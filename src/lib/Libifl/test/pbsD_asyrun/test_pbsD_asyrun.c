@@ -7,10 +7,17 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_asyrunjob_err)
   {
+  char jobid[1024];
+  sprintf(jobid, "1.napali");
 
-
+  fail_unless(pbs_asyrunjob_err(-1, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_asyrunjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+ 
+  memset(&jobid, 0, sizeof(jobid));
+  fail_unless(pbs_asyrunjob_err(0, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_asyrunjob_err(0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
 
@@ -24,8 +31,8 @@ END_TEST
 Suite *pbsD_asyrun_suite(void)
   {
   Suite *s = suite_create("pbsD_asyrun_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_asyrunjob_err");
+  tcase_add_test(tc_core, test_pbs_asyrunjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
