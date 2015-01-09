@@ -94,10 +94,12 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
 
-static int PBSD_select_put(int, int, struct attropl *, char *);
-static int PBSD_selectattr_put(int, int, struct attropl *, struct attrl *, char *);
-static char **PBSD_select_get(int *, int);
+
+int PBSD_select_put(int, int, struct attropl *, char *);
+int PBSD_selectattr_put(int, int, struct attropl *, struct attrl *, char *);
+char **PBSD_select_get(int *, int);
 
 char **pbs_selectjob_err(
     
@@ -215,7 +217,7 @@ struct batch_status * pbs_selstatattr(
 
 
 
-static int PBSD_select_put(
+int PBSD_select_put(
 
   int             c,
   int             type,
@@ -226,6 +228,12 @@ static int PBSD_select_put(
   int rc = PBSE_NONE;
   int sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -264,7 +272,7 @@ static int PBSD_select_put(
   } /* END PBSD_select_put() */
 
 
-static int PBSD_selectattr_put(
+int PBSD_selectattr_put(
 
   int             c,
   int             type,
@@ -276,6 +284,12 @@ static int PBSD_selectattr_put(
   int rc = PBSE_NONE;
   int sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -315,7 +329,7 @@ static int PBSD_selectattr_put(
   } /* END PBSD_selectattr_put() */
 
 
-static char **PBSD_select_get(
+char **PBSD_select_get(
 
   int *local_errno,
   int  c)
@@ -331,6 +345,12 @@ static char **PBSD_select_get(
 
   struct brp_select   *sr;
   char               **retval = (char **)NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(NULL);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

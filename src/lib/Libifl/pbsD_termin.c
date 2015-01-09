@@ -87,6 +87,8 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
+
 
 int pbs_terminate_err(
 
@@ -102,6 +104,12 @@ int pbs_terminate_err(
   int                 rc = 0;
   int                 sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

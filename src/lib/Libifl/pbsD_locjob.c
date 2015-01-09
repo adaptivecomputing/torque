@@ -88,6 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "log.h"
+#include "server_limits.h"
 
 char *pbs_locjob_err(
     
@@ -104,10 +105,15 @@ char *pbs_locjob_err(
   int sock;
   struct tcp_chan *chan = NULL;
 
-
   if ((jobid == (char *)0) || (*jobid == '\0'))
     {
     *local_errno = PBSE_IVALREQ;
+    return(NULL);
+    }
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
     return(NULL);
     }
 

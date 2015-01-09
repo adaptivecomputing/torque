@@ -4,13 +4,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include "pbs_error.h"
+#include "server_limits.h"
 
-START_TEST(test_one)
+
+START_TEST(PBSD_gpu_put_test)
   {
-
-
+  fail_unless(PBSD_gpu_put(-1, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_gpu_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ);
   }
 END_TEST
 
@@ -24,8 +25,8 @@ END_TEST
 Suite *PBSD_gpuctrl2_suite(void)
   {
   Suite *s = suite_create("PBSD_gpuctrl2_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("PBSD_gpu_put_test");
+  tcase_add_test(tc_core, PBSD_gpu_put_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

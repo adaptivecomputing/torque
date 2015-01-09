@@ -7,12 +7,19 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_holdjob_err)
   {
+  char jobid[1024];
+  sprintf(jobid, "1.napali");
 
-
+  fail_unless(pbs_holdjob_err(-1, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_holdjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  memset(&jobid, 0, sizeof(jobid));
+  fail_unless(pbs_holdjob_err(0, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_holdjob_err(0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -24,8 +31,8 @@ END_TEST
 Suite *pbsD_holdjob_suite(void)
   {
   Suite *s = suite_create("pbsD_holdjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_holdjob_err");
+  tcase_add_test(tc_core, test_pbs_holdjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
