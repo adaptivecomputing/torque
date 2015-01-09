@@ -217,7 +217,7 @@ pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
 
 int remove_job(all_jobs *aj, job *pjob)
   {
-  return(PBSE_JOB_RECYCLED);
+  return(PBSE_JOBNOTFOUND);
   }
 
 int set_jobexid(job *pjob, pbs_attribute *attrry, char *EMsg)

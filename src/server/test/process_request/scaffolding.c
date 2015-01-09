@@ -274,10 +274,8 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq, char **job_id)
+void req_quejob(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_quejob needs to be mocked!!\n");
-  exit(1);
   }
 
 void req_deletearray(struct batch_request *preq)
