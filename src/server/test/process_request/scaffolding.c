@@ -274,7 +274,7 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq)
+void req_quejob(struct batch_request *preq, char **jobid)
   {
   }
 
