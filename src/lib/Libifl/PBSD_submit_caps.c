@@ -636,9 +636,11 @@ int PBSD_QueueJob_hash(
       {
       if ((rc >= 0) &&
           (rc <= DIS_INVALID))
-        connection[connect].ch_errtxt = strdup((char *)dis_emsg[rc]);
+        connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
       }
-    *msg = strdup(connection[connect].ch_errtxt);
+
+    if (connection[connect].ch_errtxt != NULL)  
+      *msg = strdup(connection[connect].ch_errtxt);
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -650,7 +652,7 @@ int PBSD_QueueJob_hash(
   if ((rc = DIS_tcp_wflush(chan)))
     {
     pthread_mutex_lock(connection[connect].ch_mutex);
-    if (connection[connect].ch_errtxt == NULL)
+    if (connection[connect].ch_errtxt != NULL)
       {
       *msg = strdup(connection[connect].ch_errtxt);
       }
