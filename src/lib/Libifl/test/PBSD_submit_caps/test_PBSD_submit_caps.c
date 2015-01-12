@@ -8,6 +8,21 @@
 #include "pbs_error.h"
 
 int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);
+extern int flush_rc;
+extern int extend_rc;
+extern struct connect_handle connection[];
+extern const char *dis_emsg[];
+
+void initialize_connections()
+
+  {
+  for (int i = 0; i < 10; i++)
+    {
+    connection[i].ch_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+    pthread_mutex_init(connection[i].ch_mutex, NULL);
+    }
+  }
+
 
 START_TEST(test_PBSD_queuejob)
   {
@@ -60,6 +75,23 @@ START_TEST(test_PBSD_QueueJob_hash)
   char *msg;
   fail_unless(PBSD_QueueJob_hash(-1, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
   fail_unless(PBSD_QueueJob_hash(PBS_NET_MAX_CONNECTIONS, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
+
+  initialize_connections();
+
+  // set to trigger a failure in encode_DIS_ReqExtend
+  extend_rc = 1;
+  connection[5].ch_errtxt = NULL;
+  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE);
+  fail_unless(!strcmp(msg, dis_emsg[extend_rc]), msg);
+  extend_rc = 0;
+
+  // prior to TRQ-3040 this caused a crash
+  msg = NULL;
+  // set to trigger a failure in DIS_tcp_wflush()
+  flush_rc = 1;
+  connection[5].ch_errtxt = NULL;
+  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE);
+  fail_unless(msg == NULL);
 
   }
 END_TEST
