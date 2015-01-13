@@ -1102,6 +1102,8 @@ void close_quejob(
       break;
       }
     }
+
+  delete iter;
   } // END close_quejob()
 
 

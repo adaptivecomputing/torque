@@ -403,7 +403,7 @@ struct batch_request *cpy_stdfile(
 
   struct batch_request *preq,
   job                  *pjob,
-  enum job_atr         ati) /* JOB_ATR_ output or error path */
+  enum job_atr          ati) /* JOB_ATR_ output or error path */
 
   {
   char          *from;
@@ -1350,7 +1350,7 @@ handle_stageout_cleanup:
 
   if (preq != NULL)
     {
-    if(preq->rq_extra != NULL)
+    if (preq->rq_extra != NULL)
       {
       free(preq->rq_extra);
       }
