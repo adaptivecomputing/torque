@@ -121,6 +121,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <string>
+#include <semaphore.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -197,6 +198,7 @@ extern char *path_jobinfo_log;
 extern char *log_file;
 extern char *job_log_file;
 
+extern sem_t *job_clone_semaphore;
 
 static void send_qsub_delmsg(
 
@@ -1191,11 +1193,11 @@ void *job_clone_wt(
   job                *pjobclone;
   char               *jobid;
   int                 i;
+  int                 rc;
   char                *prev_job_id = NULL;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
-  int                 rc;
   char                namebuf[MAXPATHLEN];
   char                arrayid[PBS_MAXSVRJOBID + 1];
   job_array          *pa;
@@ -1214,6 +1216,15 @@ void *job_clone_wt(
     return(NULL);
     }
 
+  /* increment the job_clone_semaphore so people 
+     know we are makeing jobs for this array */
+  rc = sem_post(job_clone_semaphore);
+  if (rc)
+    {
+    log_err(-1, __func__, "failed to post job_clone_semaphore");
+    return(NULL);
+    }
+
   /* don't call get_jobs_array because the template job isn't part of the array */
   if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
@@ -1222,6 +1233,7 @@ void *job_clone_wt(
 
     if (template_job != NULL)
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
+    sem_wait(job_clone_semaphore);
     return(NULL);
     }
 
@@ -1295,7 +1307,9 @@ void *job_clone_wt(
 
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) free(prev_job_id);
+          if(prev_job_id != NULL) 
+            free(prev_job_id);
+          sem_wait(job_clone_semaphore);
           return(NULL);
           }
 
@@ -1312,7 +1326,9 @@ void *job_clone_wt(
           clone_mgr.set_unlock_on_exit(false);
           }
 
-        if(prev_job_id != NULL) free(prev_job_id);
+        if(prev_job_id != NULL) 
+          free(prev_job_id);
+        sem_wait(job_clone_semaphore);
         return(NULL);
         }
       
@@ -1326,7 +1342,9 @@ void *job_clone_wt(
         
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) free(prev_job_id);
+          if(prev_job_id != NULL) 
+            free(prev_job_id);
+          sem_wait(job_clone_semaphore);
           return(NULL);
           }
 
@@ -1448,6 +1466,7 @@ void *job_clone_wt(
   
 
   unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
+  sem_wait(job_clone_semaphore);
   return(NULL);
   }  /* END job_clone_wt */
 
