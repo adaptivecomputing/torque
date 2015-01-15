@@ -343,6 +343,12 @@ int attr_to_str(
 
       break;
 
+    case ATR_TYPE_TV:
+      /* Record seconds and milliseconds */
+      sprintf(local_buf, "%ld.%ld", attr.at_val.at_timeval.tv_sec, attr.at_val.at_timeval.tv_usec);
+      ds += local_buf;
+      break;
+
     /* NYI */
     case ATR_TYPE_LIST:
     case ATR_TYPE_LL:
