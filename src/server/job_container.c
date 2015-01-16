@@ -858,7 +858,8 @@ job *next_job(
   all_jobs_iterator *iter)
 
   {
-  job *pjob;
+  job  *pjob;
+  bool  call_again = false;
 
   if (aj == NULL)
     {
@@ -873,8 +874,7 @@ job *next_job(
 
   aj->lock();
   pjob = iter->get_next_item();
-  aj->unlock();
-
+  
   if (pjob != NULL)
     {
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
@@ -882,10 +882,14 @@ job *next_job(
     if (pjob->ji_being_recycled == TRUE)
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-
-      pjob = next_job(aj,iter);
+      call_again = true;
       }
     }
+
+  aj->unlock();
+
+  if (call_again == true)
+    pjob = next_job(aj, iter);
 
   return(pjob);
   } /* END next_job() */
