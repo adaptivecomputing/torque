@@ -855,13 +855,17 @@ void effective_node_delete(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
     return;
     }
-  if(pnode->nd_name == NULL)
+  if (pnode->nd_name == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to name delete call");
     return;
     }
 
-  remove_node(&allnodes,pnode);
+  // If remove_node() fails, the node has been removed and someone else is 
+  // deleting it
+  if (remove_node(&allnodes, pnode) != PBSE_NONE)
+    return;
+
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   //The node has been removed from the allnodes array.
@@ -3644,9 +3648,10 @@ int remove_node(
     tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  //Don't care if it was in there or not.
-  an->remove(pnode->nd_name);
-  rc = PBSE_NONE;
+  if (an->remove(pnode->nd_name) == false)
+    rc = -1;
+  else
+    rc = PBSE_NONE;
 
   an->unlock();
 
