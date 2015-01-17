@@ -7,8 +7,6 @@
 
 void add_dest(job *jobp);
 
-badplace *is_bad_dest(job *jobp, char *dest);
-
 int default_router(job *jobp, struct pbs_queue *qp, long retry_time);
 
 int job_route(job *jobp);

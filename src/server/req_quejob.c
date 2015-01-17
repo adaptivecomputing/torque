@@ -1341,8 +1341,7 @@ int check_attribute_settings(
 
 int req_quejob(
 
-  struct batch_request *preq,
-  char **pjob_id)
+  batch_request *preq)
 
   {
   int                   created_here = 0;
@@ -1541,7 +1540,7 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+    if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
       {
       if (LOGLEVEL >= 8)
         {
@@ -1557,8 +1556,6 @@ int req_quejob(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
-
-  *pjob_id = strdup(pj->ji_qs.ji_jobid);
 
   return(rc);
   }  /* END req_quejob() */
@@ -2177,7 +2174,7 @@ int req_commit(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-  if (remove_job(&newjobs,pj) == THING_NOT_FOUND)
+  if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
     {
     if (LOGLEVEL >= 8)
       {
@@ -2221,8 +2218,7 @@ int req_commit(
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
 
-      job_mutex.unlock();
-
+      svr_job_purge(pj);
       return(PBSE_BAD_ARRAY_REQ);
       }
     }  /* end if (pj->ji_is_array_template) */

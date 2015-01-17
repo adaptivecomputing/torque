@@ -8669,6 +8669,7 @@ time_t get_stat_update_interval()
   } /* END get_next_update_time() */
 
 
+
 void send_update_soon()
 
   {
@@ -8676,13 +8677,25 @@ void send_update_soon()
   } /* END send_update_soon() */
 
 
+
+void empty_received_nodes()
+
+  {
+  received_node *rn;
+
+  while ((rn = received_statuses.pop()) != NULL)
+    free(rn);
+  } // END empty_received_nodes()
+
+
+
 received_node *get_received_node_entry(
 
   char *str)
 
   {
-  received_node  *rn;
-  char           *hostname;
+  received_node *rn;
+  char          *hostname;
 
   if (str == NULL)
     return(NULL);
@@ -8696,7 +8709,6 @@ received_node *get_received_node_entry(
   
   if (rn == NULL)
     {
-
     rn = (received_node *)calloc(1, sizeof(received_node));
     
     if (rn == NULL)
@@ -8721,12 +8733,18 @@ received_node *get_received_node_entry(
 
     /* add the new node to the received status list */
     received_statuses.lock();
-    if(!received_statuses.insert(rn,rn->hostname))
-      log_err(ENOMEM, __func__, "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+    if (!received_statuses.insert(rn, rn->hostname))
+      {
+      free(rn);
+      rn = NULL;
+      log_err(ENOMEM, __func__, 
+        "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
+      }
     else
       {
       send_update_soon();
       }
+
     received_statuses.unlock();
     }
   else
@@ -8746,7 +8764,6 @@ received_node *get_received_node_entry(
 
   return(rn);
   } /* END get_received_node_entry() */
-
 
 
 

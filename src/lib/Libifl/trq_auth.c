@@ -259,6 +259,9 @@ int get_active_pbs_server(
     }
   else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
+    if (read_buf != NULL)
+      free(read_buf);
+
     close(local_socket);
     return(rc);
     }
@@ -688,8 +691,10 @@ int validate_user(
 
 
 int parse_response_svr(
-    int sock,
-    char **err_msg)
+
+  int          sock,
+  std::string &err_msg)
+
   {
   /*
    * PBS_BATCH_PROT_TYPE
@@ -714,7 +719,8 @@ int parse_response_svr(
     }
   else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
-    free(reply);
+    PBSD_FreeReply(reply);
+
     if (chan->IsTimeout == TRUE)
       {
       rc = PBSE_TIMEOUT;
@@ -727,23 +733,26 @@ int parse_response_svr(
       {
       char err_buf[80];
       snprintf(err_buf, 79, "Error creating error message for code %d", rc);
-      *err_msg = strdup(err_buf);
+      err_msg = err_buf;
       }
     else
-      *err_msg = strdup(tmp_val);
+      err_msg = tmp_val;
     }
   else
     {
     rc = reply->brp_code;
     if (reply->brp_code != PBSE_NONE)
-      {
-      *err_msg = strdup(reply->brp_un.brp_txt.brp_str);
-      }
-    free(reply);
+      err_msg = reply->brp_un.brp_txt.brp_str;
+
+    PBSD_FreeReply(reply);
     }
+
   DIS_tcp_cleanup(chan);
-  return rc;
-  }
+
+  return(rc);
+  } // END parse_response_svr()
+
+
 
 int get_trq_server_addr(
    
@@ -835,19 +844,18 @@ int authorize_socket(
   std::string &err_msg)
 
   {
-  int         rc;
-  bool        disconnect_svr = true;
-  char       *server_name;
-  int         server_port;
-  int         auth_type = 0;
-  int         svr_sock = -1;
-  char       *user_name = NULL;
-  int         user_pid = 0;
-  int         user_sock = 0;
-  int         trq_server_addr_len = 0;
-  char       *trq_server_addr = NULL;
-  char       *error_msg = NULL;
-  const char *className = "trqauthd";
+  int          rc;
+  bool         disconnect_svr = true;
+  char        *server_name;
+  int          server_port;
+  int          auth_type = 0;
+  int          svr_sock = -1;
+  char        *user_name = NULL;
+  int          user_pid = 0;
+  int          user_sock = 0;
+  int          trq_server_addr_len = 0;
+  char        *trq_server_addr = NULL;
+  const char  *className = "trqauthd";
 
   /* incoming message format is:
    * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
@@ -907,7 +915,7 @@ int authorize_socket(
         usleep(10000);
         continue;
         }
-      else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
+      else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
         {
         /* for now we only need ssh_key and sign_key as dummys */
         char *ssh_key = NULL;
@@ -949,7 +957,7 @@ int authorize_socket(
         usleep(50000);
         continue;
         }
-      else if ((rc = parse_response_svr(svr_sock, &error_msg)) != PBSE_NONE)
+      else if ((rc = parse_response_svr(svr_sock, err_msg)) != PBSE_NONE)
         {
         socket_close(svr_sock);
         disconnect_svr = false;
@@ -986,14 +994,11 @@ int authorize_socket(
   if (user_name != NULL)
     free(user_name);
 
-  if (error_msg != NULL)
-    {
-    err_msg = error_msg;
-    free(error_msg);
-    }
-
   if (trq_server_addr != NULL)
     free(trq_server_addr);
+
+  if (server_name != NULL)
+    free(server_name);
 
   return(rc);
   } // END authorize_socket() 

@@ -103,6 +103,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <libxml/parser.h>
+#include <semaphore.h>
 
 #include "list_link.h"
 #include "work_task.h"
@@ -145,6 +146,7 @@
 #include "server_comm.h"
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
+#include "track_alps_reservations.h"
 
 
 #define TASK_CHECK_INTERVAL      10
@@ -313,6 +315,7 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
+sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -1435,10 +1438,6 @@ void main_loop(void)
         {
         state = SV_STATE_DOWN;
         set_svr_attr(SRV_ATR_State, &state);
-
-        /* at this point kill the threadpool */
-        destroy_request_pool(request_pool);
-        destroy_request_pool(task_pool);
         }
       }
 
@@ -1455,6 +1454,25 @@ void main_loop(void)
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
 
   track_save(NULL);                     /* save tracking data */
+
+  /* let any array jobs that might still be cloning finish */
+  int sem_val;
+  do
+    {
+    int rc;
+
+    rc = sem_getvalue(job_clone_semaphore, &sem_val);
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to get job_clone_semaphore value");
+      log_err(-1, __func__, log_buf);
+      break;
+      }
+
+    if (sem_val > 0)
+      sleep(1);
+    }while(sem_val > 0);
+
 
   alljobs.lock();
   iter = alljobs.get_iterator();
@@ -1582,6 +1600,7 @@ int main(
 
   {
   int          i;
+  int          rc;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
   char         EMsg[MAX_LINE];
@@ -1654,6 +1673,21 @@ int main(
   get_port_from_server_name_file(&server_name_file_port);
   if (server_name_file_port != 0)
     pbs_server_port_dis = server_name_file_port;
+
+  /* initialize job clone semaphore so we can track the number of outstanding 
+     job array creation requests */
+  job_clone_semaphore = (sem_t *)malloc(sizeof(sem_t));
+  if (job_clone_semaphore == NULL)
+    {
+    perror("failed to allocate memory for job_clone_semaphore");
+    exit(1);
+    }
+  rc = sem_init(job_clone_semaphore, 1 /* share */, 0);
+  if (rc != 0)
+    {
+    perror("failed to initialize job clone semaphore");
+    exit(1);
+    }
 
   strcpy(pbs_server_name, server_name);
   /* The following port numbers might have been initialized in set_globals_from_environment() above. */
@@ -1913,8 +1947,13 @@ int main(
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
 
-  /* cleans up memory allocated by the xml library */
-  xmlCleanupParser(); /* must be called the latest possible */
+  clear_all_alps_reservations();
+
+  /* at this point kill the threadpool */
+  destroy_request_pool(task_pool);
+  destroy_request_pool(request_pool);
+  destroy_request_pool(async_pool);
+
   exit_called = true;
   exit(0);
   }  /* END main() */

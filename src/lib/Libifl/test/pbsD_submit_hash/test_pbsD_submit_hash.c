@@ -7,12 +7,13 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_submit_hash)
   {
-
-
+  fail_unless(pbs_submit_hash(-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_submit_hash(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -21,11 +22,12 @@ START_TEST(test_two)
   }
 END_TEST
 
+
 Suite *pbsD_submit_hash_suite(void)
   {
   Suite *s = suite_create("pbsD_submit_hash_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_submit_hash");
+  tcase_add_test(tc_core, test_pbs_submit_hash);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

@@ -88,6 +88,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "mutex_mgr.hpp"
+#include "server_limits.h"
 
 
 int PBSD_status_put(
@@ -102,6 +103,12 @@ int PBSD_status_put(
   int rc = 0;
   int sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   mutex_mgr ch_mutex = mutex_mgr(connection[c].ch_mutex, false);
 
