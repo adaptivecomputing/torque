@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string>
+#include <sstream>
 #include "pbs_config.h"
 #include "mom_main.h"
 #include "mom_config.h"
@@ -16,7 +18,10 @@ extern time_t wait_time;
 extern time_t LastServerUpdateTime;
 extern time_t last_poll_time;
 extern bool ForceServerUpdate;
+extern int MOMCudaVisibleDevices;
 
+unsigned long setcudavisibledevices(const char *);
+void set_report_mom_cuda_visible_devices(std::stringstream &output, char *curr);
 void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_select_timeout();
@@ -178,6 +183,34 @@ START_TEST(calculate_select_timeout_test)
 END_TEST
 
 
+START_TEST(test_setcudavisibledevices)
+  {
+  char  curr[3];
+  char  *cp;
+  std::stringstream output;
+
+  setcudavisibledevices("1");
+  fail_unless(MOMCudaVisibleDevices == 1, "did not set cuda_visble_devices to 1");
+
+  setcudavisibledevices("0");
+  fail_unless(MOMCudaVisibleDevices == 0, "did not set cuda_visble_devices to 0");
+
+  strcpy(curr, " 1");
+  cp = curr;
+  set_report_mom_cuda_visible_devices(output, cp);
+  std::string result = output.str();
+  fail_unless(strcmp(result.c_str(), "cuda_visible_devices=1"));
+
+  strcpy(curr, " 0");
+  cp = curr;
+  set_report_mom_cuda_visible_devices(output, cp);
+  result = output.str();
+  fail_unless(strcmp(result.c_str(), "cuda_visible_devices=0"));
+
+  }
+END_TEST
+
+
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
@@ -192,6 +225,10 @@ Suite *mom_main_suite(void)
 
   tc_core = tcase_create("calculate_select_timeout_test");
   tcase_add_test(tc_core, calculate_select_timeout_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_setcudavisibledevices");
+  tcase_add_test(tc_core, test_setcudavisibledevices);
   suite_add_tcase(s, tc_core);
 
   return s;

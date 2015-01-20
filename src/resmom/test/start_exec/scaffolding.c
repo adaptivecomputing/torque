@@ -33,6 +33,7 @@ bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
 int logged_event;
+int MOMCudaVisibleDevices;
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
