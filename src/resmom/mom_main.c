@@ -227,6 +227,10 @@ int             MOMPrologFailureCount;
 
 char            MOMUNameMissing[64];
 
+extern int      MOMConfigDownOnError;
+extern int      MOMConfigRestart;
+extern int      MOMCudaVisibleDevices; /* on by default starting in 4.2.8 */
+extern int      MOMConfigRReconfig;
 long            system_ncpus = 0;
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
@@ -295,7 +299,6 @@ static int recover_set = FALSE;
 
 static int      call_hup = 0;
 char           *path_log;
-
 
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
@@ -2414,6 +2417,21 @@ void set_report_mom_rolling_restart(
   } /* END set_report_mom_rolling_restart() */
 
 
+void set_report_mom_cuda_visible_devices(
+    
+    std::stringstream &output, 
+    char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcudavisibledevices(curr + 1);
+    }
+
+  output << "cuda_visible_devices=" << MOMCudaVisibleDevices;
+  } /* END set_report_mom_cuda_visible_devices() */
+
+
 
 void set_report_rcpcmd(
 
@@ -2672,6 +2690,10 @@ int process_rm_cmd_request(
       else if (!strncasecmp(name, "diag", strlen("diag")))
         {
         ret = process_diag_request(output, name);
+        }
+       else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
+        {
+        set_report_mom_cuda_visible_devices(output, curr);
         }
       else
         {
@@ -6942,6 +6964,8 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+
 
 /* END mom_main.c */
 
