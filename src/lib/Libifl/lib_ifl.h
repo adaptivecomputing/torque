@@ -263,8 +263,7 @@ extern ssize_t read_ac_socket(int, void *, ssize_t);
 ssize_t read_blocking_socket(int fd, void *buf, ssize_t count);
 
 /* pbsD_alterjo.c */
-int pbs_alterjob_asyncflag(int c, char *jobid, struct attrl *attrib, char *extend, int asyncFlag); 
-int pbs_alterjob_asyncflag_err(int c, char *jobid, struct attrl *attrib, char *extend, int asyncFlag, int *); 
+int pbs_alterjob_asyncflag(int c, char *jobid, struct attrl *attrib, char *extend, int asyncFlag, int *); 
 int pbs_alterjob_async_err(int c, char *jobid, struct attrl *attrib, char *extend, int *); 
 int pbs_alterjob_err(int c, char *jobid, struct attrl *attrib, char *extend, int *); 
 

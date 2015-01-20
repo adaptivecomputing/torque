@@ -22,6 +22,7 @@ EXTRA_DIST = acinclude.m4 \
 	README.torque \
   README.trqauthd \
 	README.building_40 \
+	README.new_in_51 \
 	Release_Notes \
   run_report.py \
 	torque.setup \

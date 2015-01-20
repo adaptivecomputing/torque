@@ -86,6 +86,7 @@
 
 #include <stdio.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 
 int PBSD_manager(
@@ -103,6 +104,12 @@ int PBSD_manager(
   int                 rc;
 
   struct batch_reply *reply;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   /* send the manage request */
 

@@ -5,10 +5,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <set>
+
 #include "mom_job_cleanup.h"
 
 
 #include "pbs_error.h"
+
+std::set<pid_t> global_job_sid_set;
 
 bool am_i_mother_superior(const job &pjob);
 void remove_from_exiting_list(job *pjob);

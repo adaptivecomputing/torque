@@ -91,6 +91,8 @@
 #define PBS_JOB_H 1
 
 #include <limits.h>
+#include <map>
+#include <set>
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -101,6 +103,7 @@
 #include "net_connect.h"
 #include <string>
 #include <vector>
+
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -183,32 +186,32 @@ struct dependnames
  * Warning: the relation between the numbers assigned to after* and before*
  * is critical.
  */
-#define JOB_DEPEND_TYPE_AFTERSTART  0
-#define JOB_DEPEND_TYPE_AFTEROK   1
-#define JOB_DEPEND_TYPE_AFTERNOTOK  2
-#define JOB_DEPEND_TYPE_AFTERANY  3
-#define JOB_DEPEND_TYPE_BEFORESTART  4
-#define JOB_DEPEND_TYPE_BEFOREOK  5
-#define JOB_DEPEND_TYPE_BEFORENOTOK  6
-#define JOB_DEPEND_TYPE_BEFOREANY  7
-#define JOB_DEPEND_TYPE_ON   8
-#define JOB_DEPEND_TYPE_SYNCWITH  9
-#define JOB_DEPEND_TYPE_SYNCCT  10
-#define JOB_DEPEND_TYPE_AFTERSTARTARRAY 11
-#define JOB_DEPEND_TYPE_AFTEROKARRAY 12
-#define JOB_DEPEND_TYPE_AFTERNOTOKARRAY 13
-#define JOB_DEPEND_TYPE_AFTERANYARRAY 14
+#define JOB_DEPEND_TYPE_AFTERSTART        0
+#define JOB_DEPEND_TYPE_AFTEROK           1
+#define JOB_DEPEND_TYPE_AFTERNOTOK        2
+#define JOB_DEPEND_TYPE_AFTERANY          3
+#define JOB_DEPEND_TYPE_BEFORESTART       4
+#define JOB_DEPEND_TYPE_BEFOREOK          5
+#define JOB_DEPEND_TYPE_BEFORENOTOK       6
+#define JOB_DEPEND_TYPE_BEFOREANY         7
+#define JOB_DEPEND_TYPE_ON                8
+#define JOB_DEPEND_TYPE_SYNCWITH          9
+#define JOB_DEPEND_TYPE_SYNCCT           10
+#define JOB_DEPEND_TYPE_AFTERSTARTARRAY  11
+#define JOB_DEPEND_TYPE_AFTEROKARRAY     12
+#define JOB_DEPEND_TYPE_AFTERNOTOKARRAY  13
+#define JOB_DEPEND_TYPE_AFTERANYARRAY    14
 #define JOB_DEPEND_TYPE_BEFORESTARTARRAY 15
-#define JOB_DEPEND_TYPE_BEFOREOKARRAY 16
+#define JOB_DEPEND_TYPE_BEFOREOKARRAY    16
 #define JOB_DEPEND_TYPE_BEFORENOTOKARRAY 17
-#define JOB_DEPEND_TYPE_BEFOREANYARRAY 18
-#define JOB_DEPEND_NUMBER_TYPES  19
+#define JOB_DEPEND_TYPE_BEFOREANYARRAY   18
+#define JOB_DEPEND_NUMBER_TYPES          19
 
-#define JOB_DEPEND_OP_REGISTER  1
-#define JOB_DEPEND_OP_RELEASE  2
-#define JOB_DEPEND_OP_READY  3
-#define JOB_DEPEND_OP_DELETE  4
-#define JOB_DEPEND_OP_UNREG  5
+#define JOB_DEPEND_OP_REGISTER           1
+#define JOB_DEPEND_OP_RELEASE            2
+#define JOB_DEPEND_OP_READY              3
+#define JOB_DEPEND_OP_DELETE             4
+#define JOB_DEPEND_OP_UNREG              5
 
 /* Job recovery levels. Options used to start pbs_mom */
 #define JOB_RECOV_REQUE       0  /* -q option */
@@ -224,17 +227,7 @@ struct dependnames
 #define INTERMEDIATE_MOM      1
 #define LEAF_MOM              2
 
-/*
- * The badplace structure is used to keep track of destinations
- * which have been tried by a route queue and given a "reject"
- * status back, see svr_movejob.c.
- */
 
-typedef struct badplace
-  {
-  list_link bp_link;
-  char  bp_dest[PBS_MAXROUTEDEST + 1];
-  } badplace;
 
 /*
  * The grpcache structure defined here is used by MOM to maintain the
@@ -445,6 +438,10 @@ typedef struct noderes
   long nr_vmem; /* virtual memory */
   } noderes;
 
+
+typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
+typedef std::map<pid_t, int> pid2procarrayindex_map_t;
+typedef std::set<pid_t> job_pid_set_t;
 
 
 
@@ -659,6 +656,8 @@ struct job
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
+  job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
+                                        and tasks from start_process. */
 
 #else     /* END MOM ONLY */
 
@@ -666,7 +665,7 @@ struct job
   struct pbs_queue *ji_qhdr; /* current queue header */
   int               ji_lastdest; /* last destin tried by route */
   int               ji_retryok; /* ok to retry, some reject was temp */
-  tlist_head        ji_rejectdest; /* list of rejected destinations */
+  std::vector<std::string> *ji_rejectdest; /* list of rejected destinations */
   char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
   int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
   int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
@@ -1105,7 +1104,6 @@ extern char *get_egroup(job *);
 extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
 extern void  issue_track(job *);
-extern int   job_abt(struct job **, const char *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM

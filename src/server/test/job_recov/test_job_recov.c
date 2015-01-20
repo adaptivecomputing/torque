@@ -6,11 +6,13 @@
 #include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <semaphore.h>
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "attribute.h"
 #include "resource.h"
 
+sem_t *job_clone_semaphore;
 extern int set_nodes_attr(job *pjob);
 extern int svr_resc_size;
 extern attribute_def job_attr_def[];

@@ -1388,7 +1388,7 @@ int get_connecthost(
 
   struct sockaddr        *addr_info_ptr;
   struct sockaddr_in      addr_in;
-  char                   *name;
+  const char             *name;
   int                     socktype_flag;
 
   addr_in.sin_family = AF_INET;

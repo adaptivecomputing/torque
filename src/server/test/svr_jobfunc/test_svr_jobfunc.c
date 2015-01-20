@@ -15,6 +15,7 @@
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
 void job_wait_over(struct work_task *);
+bool is_valid_state_transition(job &pjob, int newstate, int newsubstate);
 
 extern int decrement_count;
 extern job napali_job;
@@ -30,6 +31,28 @@ void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *v
   pattr->at_val.at_str = (char *)strdup(value);
   append_link(&pattr->at_val.at_list, &rsc->rs_link, rsc);
   }
+
+
+START_TEST(is_valid_state_transition_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
+  pjob.ji_qs.ji_state = JOB_STATE_COMPLETE;
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
+
+  // not allowed
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_COMPLETE) == false);
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT) == false);
+  }
+END_TEST
+
 
 START_TEST(job_wait_over_test)
   {
@@ -598,6 +621,7 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("set_statechar_test");
   tcase_add_test(tc_core, set_statechar_test);
+  tcase_add_test(tc_core, is_valid_state_transition_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("lock_ji_mutex_test");

@@ -130,6 +130,14 @@ int create_work_thread(
 
 
 
+/*
+ * Guaranteed to be called whenever a worker thread exits
+ *
+ * Updates the threadpool variables and takes appropriate actions
+ * NOTE: tp is locked at the time that this is called from the worker thread
+ * @param a - a void pointer to the threadpool we're dealing with
+ */
+
 static void work_thread_cleanup(
   
   void *a)
@@ -314,7 +322,9 @@ static void *work_thread(
       }
     }
 
-  pthread_cleanup_pop(1); /* calls work_thread_cleanup(NULL) */
+  /* calls work_thread_cleanup(tp), this also unlock tp->tp_mutex */
+  pthread_cleanup_pop(1);
+
   /*sprintf(log_buf, "work_thread exiting. Current allocated threads: %d", request_pool->tp_nthreads);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
   sprintf(log_buf, "work_thread exiting. Current idle threads: %d", request_pool->tp_idle_threads);
@@ -514,7 +524,6 @@ void destroy_request_pool(
     free(work);
     }
   } /* END destroy_request_pool() */
-
 
 
 
