@@ -281,6 +281,7 @@ char            MOMUNameMissing[64];
 
 int             MOMConfigDownOnError      = 0;
 int             MOMConfigRestart          = 0;
+int             MOMCudaVisibleDevices     = 1; /* on by default starting in 4.2.8 */
 int             MOMConfigRReconfig        = 0;
 long            system_ncpus = 0;
 char           *auto_ideal_load = NULL;
@@ -443,6 +444,7 @@ unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
+unsigned long setcudavisibledevices(const char *);
 
 static struct specials
   {
@@ -527,6 +529,7 @@ static struct specials
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { "jobdirectory_sticky", setjobdirectorysticky},
+  { "cuda_visible_devices", setcudavisibledevices},
   { NULL,                  NULL }
   };
 
@@ -5613,6 +5616,21 @@ void set_report_mom_rolling_restart(
   } /* END set_report_mom_rolling_restart() */
 
 
+void set_report_mom_cuda_visible_devices(
+    
+    std::stringstream &output, 
+    char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcudavisibledevices(curr + 1);
+    }
+
+  output << "cuda_visible_devices=" << MOMCudaVisibleDevices;
+  } /* END set_report_mom_cuda_visible_devices() */
+
+
 
 void set_report_rcpcmd(
 
@@ -5871,6 +5889,10 @@ int process_rm_cmd_request(
       else if (!strncasecmp(name, "diag", strlen("diag")))
         {
         ret = process_diag_request(output, name);
+        }
+       else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
+        {
+        set_report_mom_cuda_visible_devices(output, curr);
         }
       else
         {
@@ -10188,6 +10210,21 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+u_long setcudavisibledevices(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "cudavisibledevices", value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMCudaVisibleDevices = enable;
+
+  return(1);
+  }  /* END setcudavisibledevices() */
 
 
 

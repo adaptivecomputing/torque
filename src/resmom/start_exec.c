@@ -195,7 +195,7 @@ typedef enum
 /* Global Variables */
 extern node_internals internal_layout;
 
-
+extern int            MOMCudaVisibleDevices;
 extern int            exec_with_exec;
 extern int            attempttomakedir;
 extern int            spoolasfinalname;
@@ -1633,8 +1633,11 @@ int InitUserEnv(
 
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL)
     {
-    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
-    bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
+    if (MOMCudaVisibleDevices)
+      {
+      get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
+      bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
+      }
     }
 
   /* PBS_WALLTIME */

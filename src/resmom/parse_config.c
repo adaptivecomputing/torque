@@ -285,6 +285,7 @@ unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
+unsigned long setcudavisibledevices(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -365,6 +366,7 @@ struct specials special[] = {
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { "jobdirectory_sticky", setjobdirectorysticky},
+  { "cuda_visible_devices", setcuda_visible_devices},
   { NULL,                  NULL }
   };
 

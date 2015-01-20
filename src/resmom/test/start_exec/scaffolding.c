@@ -25,6 +25,7 @@
 #include "node_internals.hpp"
 #endif
 
+int MOMCudaVisibleDevices;
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
