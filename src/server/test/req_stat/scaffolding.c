@@ -115,14 +115,11 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
 
 job_array *get_array(char *id)
   {
-  fprintf(stderr, "The call to get_array to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void svr_disconnect(int handle)
   {
-  fprintf(stderr, "The call to svr_disconnect to be mocked!!\n");
-  exit(1);
   }
 
 struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
@@ -133,26 +130,19 @@ struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsno
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject to be mocked!!\n");
-  exit(1);
   }
 
 job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
-  fprintf(stderr, "The call to next_job to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void rel_resc(job *pjob)
   {
-  fprintf(stderr, "The call to rel_resc to be mocked!!\n");
-  exit(1);
   }
 
 void delete_task(struct work_task *ptask)
   {
-  fprintf(stderr, "The call to delete_task to be mocked!!\n");
-  exit(1);
   }
 
 int status_job(
@@ -261,8 +251,9 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  job *pjob = (job *)calloc(1, sizeof(job));
+  strcpy(pjob->ji_qs.ji_jobid, jobid);
+  return(pjob);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
@@ -338,6 +329,11 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   }
 
 int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int lock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   {
   return(0);
   }
