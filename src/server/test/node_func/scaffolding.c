@@ -21,7 +21,9 @@
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
 
-
+std::string attrname;
+std::string attrval;
+int         created_subnode;
 
 int svr_tsnodes = 0; 
 int svr_unresolvednodes = 0;
@@ -65,7 +67,16 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
-  return(NULL);
+  int namesize = 0;
+  if (aname != NULL)
+    namesize = strlen(aname) + 1;
+  svrattrl *s = (svrattrl *)calloc(1, sizeof(svrattrl) + namesize + vsize);
+  s->al_name = (char *)s + sizeof(svrattrl);
+  s->al_value = s->al_name + namesize;
+
+  if (aname != NULL)
+    strcpy(s->al_name, aname); /* copy name right after struct */
+  return(s);
   }
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
@@ -128,14 +139,14 @@ void free_attrlist(tlist_head *pattrlisthead)
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
+  svrattrl *pal = (svrattrl *)pobj;
+  attrname = pal->al_name;
+  attrval = pal->al_value;
   }
 
 char *pbs_strerror(int err)
   {
-  fprintf(stderr, "The call to pbs_strerror needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 AvlTree AVL_insert(u_long key, uint16_t port, struct pbsnode *node, AvlTree tree)
@@ -312,6 +323,7 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
 
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   {
+  created_subnode++;
   return(NULL);
   }
 

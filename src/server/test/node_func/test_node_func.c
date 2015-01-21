@@ -13,15 +13,24 @@
 #include "attribute.h" /* svrattrl, struct  */
 #include "work_task.h"
 #include "id_map.hpp"
+#include "alps_constants.h"
 
 //#define HOST_NAME_MAX 255
 
 void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
-void add_to_property_list(std::stringstream &property_list, const char *token);
+void add_to_property_list(std::string &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 int read_val_and_advance(int *val, char **str);
 char *parse_node_token(char **start, int flags, int *err, char *term);
+int add_node_attribute_to_list(char *token, char **line_ptr, tlist_head *atrlist_ptr, int linenum);
+void add_node_property(std::string &propstr, const char *token, bool &is_alps_starter, bool &is_alps_reporter, bool &is_alps_compute);
+int record_node_property_list(std::string const &propstr, tlist_head *atrlist_ptr);
+void handle_cray_specific_node_values(char *nodename, bool cray_enabled, bool is_alps_reporter, bool is_alps_starter, bool is_alps_compute, svrattrl *pal);
+char *parse_node_name(char **ptr, int &err, int linenum, bool cray_enabled);
+
+extern std::string attrname;
+extern std::string attrval;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -53,6 +62,158 @@ void add_prop(struct pbsnode &pnode, const char *prop_name)
     curr->next = pp;
     }
   }
+
+
+START_TEST(add_node_property_test)
+  {
+  std::string props;
+  bool        is_alps_reporter = false;
+  bool        is_alps_starter = false;
+  bool        is_alps_compute = false;
+
+  add_node_property(props, "cray_compute", is_alps_starter, is_alps_reporter, is_alps_compute);
+  fail_unless(props == "cray_compute");
+  fail_unless(is_alps_compute == true);
+  fail_unless(is_alps_starter == false);
+  fail_unless(is_alps_reporter == false);
+
+  is_alps_compute = false;
+  props.clear();
+  add_node_property(props, alps_starter_feature, is_alps_starter, is_alps_reporter, is_alps_compute);
+  fail_unless(props == alps_starter_feature);
+  fail_unless(is_alps_compute == false);
+  fail_unless(is_alps_starter == true);
+  fail_unless(is_alps_reporter == false);
+  is_alps_starter = false;
+
+  props.clear();
+  add_node_property(props, alps_reporter_feature, is_alps_starter, is_alps_reporter, is_alps_compute);
+  fail_unless(props == "cray_compute");
+  fail_unless(is_alps_compute == false);
+  fail_unless(is_alps_starter == false);
+  fail_unless(is_alps_reporter == true);
+
+  is_alps_reporter = false;
+  props.clear();
+  add_node_property(props, "bigmem", is_alps_starter, is_alps_reporter, is_alps_compute);
+  fail_unless(props == "bigmem");
+  fail_unless(is_alps_compute == false);
+  fail_unless(is_alps_starter == false);
+  fail_unless(is_alps_reporter == false);
+  }
+END_TEST
+
+
+START_TEST(record_node_property_list_test)
+  {
+  tlist_head th;
+  std::string props("bigmem fast");
+  std::string empty;
+
+  attrname.clear();
+  attrval.clear();
+  CLEAR_HEAD(th);
+
+  // empty list should do nothing
+  fail_unless(record_node_property_list(empty, &th) == PBSE_NONE);
+  fail_unless(attrname.size() == 0);
+  fail_unless(attrval.size() == 0);
+
+  fail_unless(record_node_property_list(props, &th) == PBSE_NONE);
+  fail_unless(attrname == ATTR_NODE_properties);
+  fail_unless(attrval == props);
+
+  }
+END_TEST
+
+
+START_TEST(handle_cray_specific_node_values_test)
+  {
+  extern int created_subnode;
+
+  created_subnode = 0;
+
+  // nothing should happen if cray_enabled == false
+  handle_cray_specific_node_values(NULL, false, false, false, true, NULL);
+  fail_unless(created_subnode == 0);
+
+  // should create subnode with cray enabled and is_alps_compute set to true
+  handle_cray_specific_node_values(NULL, true, false, false, true, NULL);
+  fail_unless(created_subnode == 1);
+  }
+END_TEST
+
+
+START_TEST(parse_node_name_test)
+  {
+  char line[1024];
+  char *ptr;
+  int   err;
+  char *hostname;
+
+  // invalid characters should fail
+  sprintf(line, "*$!@!@");
+  ptr = line;
+  fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
+  fail_unless(err != PBSE_NONE);
+  
+  err = PBSE_NONE;
+  sprintf(line, "napali");
+  ptr = line;
+  fail_unless((hostname = parse_node_name(&ptr, err, 1, false)) != NULL);
+  fail_unless(err == PBSE_NONE);
+  fail_unless(!strcmp(hostname, "napali"));
+  
+  err = PBSE_NONE;
+  sprintf(line, "1napali");
+  ptr = line;
+  fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
+  fail_unless(err != PBSE_NONE);
+  
+  err = PBSE_NONE;
+  sprintf(line, "1214");
+  ptr = line;
+  fail_unless((hostname = parse_node_name(&ptr, err, 1, true)) != NULL);
+  fail_unless(err == PBSE_NONE);
+  fail_unless(!strcmp(hostname, "1214"));
+  }
+END_TEST
+
+
+START_TEST(add_node_attribute_to_list_test)
+  {
+  char  line[1024];
+  char *ptr;
+  tlist_head th;
+
+  CLEAR_HEAD(th);
+
+  // this should work and create the attribute np with the value of 100
+  snprintf(line, sizeof(line), "100");
+  ptr = line;
+  fail_unless(add_node_attribute_to_list(strdup("np"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(attrname == "np");
+  fail_unless(attrval == "100");
+
+  // this is invalid syntax
+  snprintf(line, sizeof(line), "100=");
+  ptr = line;
+  fail_unless(add_node_attribute_to_list(strdup("np"), &ptr, &th, 1) != PBSE_NONE);
+
+  // run over the two special cases
+  snprintf(line, sizeof(line), "100");
+  ptr = line;
+  fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(attrname == "TTL");
+  fail_unless(attrval == "100");
+
+  snprintf(line, sizeof(line), "bob,tom");
+  ptr = line;
+  fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(attrname == "acl");
+  fail_unless(attrval == "bob,tom");
+  }
+END_TEST
 
 
 START_TEST(parse_node_token_test)
@@ -139,13 +300,13 @@ END_TEST
 
 START_TEST(add_to_property_list_test)
   {
-  std::stringstream properties;
+  std::string properties;
 
   add_to_property_list(properties, NULL);
   add_to_property_list(properties, "one");
   add_to_property_list(properties, "two");
   add_to_property_list(properties, "three");
-  fail_unless(!strcmp(properties.str().c_str(), "one,two,three"));
+  fail_unless(!strcmp(properties.c_str(), "one,two,three"));
   }
 END_TEST
 
@@ -308,7 +469,7 @@ START_TEST(login_encode_jobs_test)
   fail_unless(result != PBSE_NONE, "NULL input list_link pointer fail");
 
   result = login_encode_jobs(&node, &list);
-  fail_unless(result != PBSE_NONE, "login_encode_jobs_test fail");
+  fail_unless(result == PBSE_NONE, "login_encode_jobs_test fail");
   }
 END_TEST
 
@@ -957,11 +1118,16 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("write_compute_node_properties_test");
   tcase_add_test(tc_core, write_compute_node_properties_test);
+  tcase_add_test(tc_core, add_node_attribute_to_list_test);
+  tcase_add_test(tc_core, add_node_property_test);
+  tcase_add_test(tc_core, record_node_property_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
   tcase_add_test(tc_core, parse_node_token_test);
+  tcase_add_test(tc_core, handle_cray_specific_node_values_test);
+  tcase_add_test(tc_core, parse_node_name_test);
   suite_add_tcase(s, tc_core);
 
 #if 0
