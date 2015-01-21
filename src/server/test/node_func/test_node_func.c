@@ -396,13 +396,18 @@ START_TEST(effective_node_delete_test)
   effective_node_delete(&node);
 
   /* pthread_mutex_init(allnodes.allnodes_mutex, NULL); */
+  // delete shouldn't work with nameless node
   node = (struct pbsnode *)malloc(sizeof(struct pbsnode));
   initialize_pbsnode(node, NULL, NULL, 0, FALSE);
   effective_node_delete(&node);
+  fail_unless(node != NULL, "shouldn't delete a nameless node");
   node->nd_name = strdup("nodename");
   effective_node_delete(&node);
+  fail_unless(node != NULL, "shouldn't delete a non-inserted node");
 
-  fail_unless(node == NULL, "unsuccessfull node delition %d", node);
+  allnodes.insert(node, node->nd_name);
+  effective_node_delete(&node);
+  fail_unless(node == NULL, "unsuccessful node deletion %d", node);
 
   }
 END_TEST
@@ -794,7 +799,11 @@ START_TEST(remove_node_test)
 
   node.nd_name = (char *)"nodeName";
   result = remove_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "remove_node fail");
+  fail_unless(result != PBSE_NONE, "node wasn't present in set");
+
+  test_all_nodes.insert(&node, node.nd_name);
+  result = remove_node(&test_all_nodes, &node);
+  fail_unless(result == PBSE_NONE, "couldn't remove node that was present");
 
   }
 END_TEST
