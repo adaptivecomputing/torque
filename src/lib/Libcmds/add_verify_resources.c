@@ -116,7 +116,7 @@ int add_verify_resources(
   {
   char *r;
   char *eq;
-  char *v;
+  char *v = NULL;
   char *e = NULL;
   char *str;
   char *name;
@@ -307,10 +307,7 @@ int add_verify_resources(
         e++;
       }
 
-    if (v != NULL)
-      r = e;
-    else
-      r = eq;
+    r = e;
 
     if (*r == ',')
       {

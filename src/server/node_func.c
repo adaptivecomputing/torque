@@ -2470,31 +2470,42 @@ void handle_cray_specific_node_values(
   {
   pbsnode *np;
   int      perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (cray_enabled == true)
     {
     if (is_alps_reporter == true)
       {
-      np = find_nodebyname(nodename);
-      np->nd_is_alps_reporter = TRUE;
-      alps_reporter = np;
-      np->alps_subnodes = new all_nodes();
-      unlock_node(np, __func__, NULL, LOGLEVEL);
+      if ((np = find_nodebyname(nodename)) != NULL)
+        {
+        np->nd_is_alps_reporter = TRUE;
+        alps_reporter = np;
+        np->alps_subnodes = new all_nodes();
+        unlock_node(np, __func__, NULL, LOGLEVEL);
+        }
       }
     else if (is_alps_starter == true)
       {
-      np = find_nodebyname(nodename);
-      np->nd_is_alps_login = TRUE;
-      add_to_login_holder(np);
-      /* NYI: add to login node list */
-      unlock_node(np, __func__, NULL, LOGLEVEL);
+      if ((np = find_nodebyname(nodename)) != NULL)
+        {
+        np->nd_is_alps_login = TRUE;
+        add_to_login_holder(np);
+        unlock_node(np, __func__, NULL, LOGLEVEL);
+        }
       }
     else if (is_alps_compute == true)
       {
       np = create_alps_subnode(alps_reporter, nodename);
       // add features
       int bad;
-      mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, perm, &bad, (void *)np, ATR_ACTION_ALTER);
+      if (mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, 
+                            perm, &bad, (void *)np, ATR_ACTION_ALTER) != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node %s may not have all attributes initialized correctly", nodename);
+        log_err(-1, __func__, log_buf);
+        }
+
       unlock_node(np, __func__, NULL, LOGLEVEL);
       }
     }

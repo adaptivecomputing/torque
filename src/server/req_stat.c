@@ -625,9 +625,6 @@ void req_stat_job_step2(
   if ((type == tjstTruncatedServer) || 
       (type == tjstTruncatedQueue))
     {
-    if (pjob != NULL)
-      unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
-
     handle_truncated_qstat(exec_only, cntl->sc_condensed, preq);
 
     return;

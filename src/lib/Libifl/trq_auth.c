@@ -838,15 +838,15 @@ void send_svr_disconnect(int sock, const char *user_name)
 
 int authorize_socket(
 
-  int          local_socket,
-  std::string &message,
-  char        *msg_buf,
-  std::string &err_msg)
+  int           local_socket,
+  std::string  &message,
+  char         *msg_buf,
+  char        **server_name_ptr,
+  std::string  &err_msg)
 
   {
   int          rc;
   bool         disconnect_svr = true;
-  char        *server_name;
   int          server_port;
   int          auth_type = 0;
   int          svr_sock = -1;
@@ -873,10 +873,10 @@ int authorize_socket(
    * 0|0||
    */
 
-  if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
+  if ((rc = parse_request_client(local_socket, server_name_ptr, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
     {
-    if (server_name != NULL)
-      free(server_name);
+    if (*server_name_ptr != NULL)
+      free(*server_name_ptr);
 
     if (user_name != NULL)
       free(user_name);
@@ -885,7 +885,8 @@ int authorize_socket(
     }
   else
     {
-    int retries = 0;
+    int   retries = 0;
+    char *server_name = *server_name_ptr;
 
     while (retries < MAX_RETRIES)
       {
@@ -997,9 +998,6 @@ int authorize_socket(
   if (trq_server_addr != NULL)
     free(trq_server_addr);
 
-  if (server_name != NULL)
-    free(server_name);
-
   return(rc);
   } // END authorize_socket() 
 
@@ -1075,7 +1073,7 @@ void *process_svr_conn(
 
       case TRQ_AUTH_CONNECTION:
         {
-        rc = authorize_socket(local_socket, message, msg_buf, error_string);
+        rc = authorize_socket(local_socket, message, msg_buf, &server_name, error_string);
         break;
         }
       default:
@@ -1112,13 +1110,16 @@ void *process_svr_conn(
     
     if (debug_mode == TRUE)
       {
-      fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (Err Num %d)\n", server_name, server_port, user_sock, rc);
+      if (server_name != NULL)
+        fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (Err Num %d)\n",
+          server_name, server_port, user_sock, rc);
       }
 
     if (error_string.size() == 0)
       {
-      snprintf(msg_buf, sizeof(msg_buf),
-        "User %s at IP:port %s:%d login attempt failed --no message", 
+      if (server_name != NULL)
+        snprintf(msg_buf, sizeof(msg_buf),
+          "User %s at IP:port %s:%d login attempt failed --no message", 
           (user_name) ? user_name : "null",
           server_name, server_port);
       }

@@ -4069,9 +4069,6 @@ void parse_command_line(
 
       case '-':
 
-        if (optarg == NULL)
-          break;
-
         if (!strcmp(optarg, "about"))
           {
           printf("package:     %s\n", PACKAGE_STRING);

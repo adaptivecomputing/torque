@@ -1018,7 +1018,7 @@ int main(
 
   // allocate space for 3 pointers in task environment: 1 each for stdout and sterr
   // if needed and a null one to terminate the list
-  if ((ioenv = (char **)calloc(3, sizeof(char **))) == NULL)
+  if ((ioenv = (char **)calloc(3, sizeof(char *))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
