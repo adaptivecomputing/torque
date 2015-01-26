@@ -192,6 +192,7 @@ static const int munge_on = 0;
 static void freebr_manage(struct rq_manage *);
 static void freebr_cpyfile(struct rq_cpyfile *);
 static void free_rescrq(struct rq_rescq *);
+void        close_quejob(int sfds);
 
 /* END private prototypes */
 
@@ -578,6 +579,7 @@ int process_request(
 
     if (ENABLE_TRUSTED_AUTH == TRUE )
       rc = PBSE_NONE;  /* bypass the authentication of the user--trust the client completely */
+#ifdef MUNGE_AUTH
     else if (munge_on)
       {
       /* If munge_on is true we will validate the connection now */
@@ -591,6 +593,7 @@ int process_request(
         rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
         }
       }
+#endif
     else if (conn_authen != PBS_NET_CONN_AUTHENTICATED)
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
@@ -715,7 +718,6 @@ int dispatch_request(
   {
   int   rc = PBSE_NONE;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *job_id = NULL;
 
   if (LOGLEVEL >= 5)
     {
@@ -729,11 +731,10 @@ int dispatch_request(
   switch (request->rq_type)
     {
     case PBS_BATCH_QueueJob:
-      rc = req_quejob(request, &job_id);
-      if ((rc != PBSE_NONE) && (job_id != NULL))
-        close_quejob_by_jobid(job_id);
-      if (job_id != NULL)
-        free(job_id);
+
+      net_add_close_func(sfds, close_quejob);
+      rc = req_quejob(request);
+      
       break;
 
 
@@ -743,32 +744,23 @@ int dispatch_request(
 
 
     case PBS_BATCH_jobscript:
-      job_id = strdup(request->rq_ind.rq_jobfile.rq_jobid);
+     
       rc = req_jobscript(request);
-      if ((rc != PBSE_NONE) && (job_id != NULL))
-        close_quejob_by_jobid(job_id);
-      if (job_id != NULL)
-        free(job_id);
+      
       break;
 
 
     case PBS_BATCH_RdytoCommit:
-      job_id = strdup(request->rq_ind.rq_rdytocommit);
+     
       rc = req_rdytocommit(request);
-      if ((rc != PBSE_NONE) && (job_id != NULL))
-        close_quejob_by_jobid(job_id);
-      if (job_id != NULL)
-        free(job_id);
+      
       break;
 
 
     case PBS_BATCH_Commit:
-      job_id = strdup(request->rq_ind.rq_commit);
+      
       rc = req_commit(request);
-      if ((rc != PBSE_NONE) && (job_id != NULL))
-        close_quejob_by_jobid(job_id);
-      if (job_id != NULL)
-        free(job_id);
+      
       break;
 
 
@@ -1047,66 +1039,72 @@ struct batch_request *alloc_br(
 
 
 
-int close_quejob_by_jobid(
-    
-  char *job_id)
+/*
+ * close_quejob()
+ *
+ * Cleans up a quejob request that is closed mid-flight
+ * @param sfds - the socket the request was taking place on
+ */
+
+void close_quejob(
+
+  int sfds)
 
   {
-  int    rc = PBSE_NONE;
-  job   *pjob = NULL;
+  job *pjob;
 
-  if (LOGLEVEL >= 10)
+  all_jobs_iterator *iter;
+
+  newjobs.lock();
+  iter = newjobs.get_iterator();
+  newjobs.unlock();
+
+  while ((pjob = next_job(&newjobs, iter)) != NULL)
     {
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, job_id);
+    mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
+    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
+      {
+      // This job needs to be cleaned up, ignore remove job errors because it is the newjobs container
+      remove_job(&newjobs, pjob);
+
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
+        {
+        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+          {
+          // If the job was created here, attempt to queue it. If not, just
+          // leave it hanging until the sending server contacts us again
+          pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+
+          int rc = svr_enquejob(pjob, FALSE, NULL, false);
+          
+          if ((rc == PBSE_JOBNOTFOUND) ||
+              (rc == PBSE_JOB_RECYCLED))
+            {
+            pjob_mutex.set_unlock_on_exit(false);
+            }
+          else if (rc != PBSE_NONE)
+            {
+            job_abt(&pjob, msg_err_noqueue); /* pjob will be set to null in job_abt */
+            pjob_mutex.set_unlock_on_exit(false);
+            }
+          }
+        }
+      else
+        {
+        // Delete the job
+        svr_job_purge(pjob);
+       
+        pjob_mutex.set_unlock_on_exit(false);
+        }
+
+      break;
+      }
     }
 
-  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-    {
-    rc = PBSE_JOBNOTFOUND;
-    return(rc);
-    }
-
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
-    {
-    rc = remove_job(&newjobs,pjob);
-    if (rc == PBSE_JOB_RECYCLED)
-      {
-      pjob_mutex.set_unlock_on_exit(false);
-      return(rc);
-      }
-    svr_job_purge(pjob); /* pjob will always be deleted regardless of error code */
-    pjob = NULL;
-    }
-  else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
-    {
-    rc = remove_job(&newjobs,pjob);
-    if (rc == PBSE_JOB_RECYCLED)
-      {
-      pjob_mutex.set_unlock_on_exit(false);
-      return(rc);
-      }
-    
-    pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
-    rc = svr_enquejob(pjob, FALSE, NULL, false);
-
-    if ((rc == PBSE_JOBNOTFOUND) ||
-        (rc == PBSE_JOB_RECYCLED))
-      {
-      pjob = NULL;
-      }
-    else if (rc != PBSE_NONE)
-      {
-      job_abt(&pjob, msg_err_noqueue); /* pjob will be set to null in job_abt */
-      }
-    }
-
-  if (pjob == NULL)
-    pjob_mutex.set_unlock_on_exit(false);
-
-  return(rc);
-  } /* close_quejob_by_jobid() */
+  delete iter;
+  } // END close_quejob()
 
 
 

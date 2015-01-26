@@ -6,11 +6,13 @@
 #include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <semaphore.h>
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "attribute.h"
 #include "resource.h"
 
+sem_t *job_clone_semaphore;
 extern int set_nodes_attr(job *pjob);
 extern int svr_resc_size;
 extern attribute_def job_attr_def[];
@@ -29,7 +31,6 @@ START_TEST(test_translate_dependency_to_string)
   struct depend_job dj;
 
   memset(&dj, 0, sizeof(dj));
-  CLEAR_LINK(dj.dc_link);
   strcpy(dj.dc_child, "1.napali");
   strcpy(dj.dc_svr, "napali");
   

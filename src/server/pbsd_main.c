@@ -103,6 +103,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <libxml/parser.h>
+#include <semaphore.h>
 
 #include "list_link.h"
 #include "work_task.h"
@@ -145,6 +146,7 @@
 #include "server_comm.h"
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
+#include "track_alps_reservations.h"
 
 
 #define TASK_CHECK_INTERVAL      10
@@ -164,7 +166,6 @@ extern void tcp_settimeout(long);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
-extern void acct_close(void);
 extern int  svr_startjob(job *, struct batch_request **, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
@@ -314,6 +315,7 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
+sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -457,7 +459,7 @@ int PBSShowUsage(
   fprintf(stderr, "  -p <PORT> \\\\ Server Port\n");
   fprintf(stderr, "  -R <PORT> \\\\ RM Port\n");
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");
-  fprintf(stderr, "  -t <TYPE> \\\\ Startup Type (hot, warm, cold, create)\n");
+  fprintf(stderr, "  -t <TYPE> \\\\ Startup Type (create)\n");
   fprintf(stderr, "  -v        \\\\ Version\n");
   fprintf(stderr, "  --about   \\\\ Print information about pbs_server\n");
   fprintf(stderr, "  --ha      \\\\ High Availability MODE\n");
@@ -490,7 +492,6 @@ void parse_command_line(
   extern char *optarg;
   char *pc = NULL;
   int  c;
-  int  i;
   int  local_errno = 0;
 
   char   EMsg[1024];
@@ -498,20 +499,6 @@ void parse_command_line(
   pbs_net_t def_pbs_server_addr;
   pbs_net_t listener_addr;
   unsigned int listener_port;
-
-  static struct
-    {
-    const char *it_name;
-    int   it_type;
-    } init_name_type[] =
-
-    {
-      { "hot", RECOV_HOT },
-      { "warm", RECOV_WARM },
-      { "cold", RECOV_COLD },
-      { "create", RECOV_CREATE },
-      { "", RECOV_Invalid }
-    };
 
   ForceCreation = FALSE;
 
@@ -760,21 +747,13 @@ void parse_command_line(
         break;
 
       case 't':
-
-        for (i = RECOV_HOT;i < RECOV_Invalid;i++)
+        if (strcmp(optarg, "create") == 0)
           {
-          if (strcmp(optarg, init_name_type[i].it_name) == 0)
-            {
-            server_init_type = init_name_type[i].it_type;
-
-            break;
-            }
-          }    /* END for (i) */
-
-        if (i == RECOV_Invalid)
+          server_init_type = RECOV_CREATE;
+          }
+        else
           {
-          fprintf(stderr, "%s -t bad recovery type\n",
-                  argv[0]);
+          fprintf(stderr, "%s -t bad recovery type: '%s'\n", argv[0], optarg);
 
           exit(1);
           }
@@ -955,48 +934,6 @@ void *check_tasks(void *notUsed)
   }  /* END check_tasks() */
 
 
-
-/*
- * start_hot_jobs - place any job which is state QUEUED and has the
- * HOT start flag set into execution.
- *
- * Returns the number of jobs to be hot started.
- */
-
-static int start_hot_jobs(void)
-
-  {
-  int  ct = 0;
-  job *pjob;
-
-  all_jobs_iterator  *iter = NULL;
-
-  alljobs.lock();
-  iter = alljobs.get_iterator();
-  alljobs.unlock();
-
-  while ((pjob = next_job(&alljobs,iter)) != NULL)
-    {
-
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) &&
-        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART))
-      {
-      log_event(
-        PBSEVENT_SYSTEM,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "attempting to hot start job");
-
-      svr_startjob(pjob, NULL, NULL, NULL);
-
-      ct++;
-      }
-
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    }
-
-  return(ct);
-  }  /* END start_hot_jobs() */
 
 #if 0
 
@@ -1312,7 +1249,6 @@ void monitor_route_retry_thread()
 void main_loop(void)
 
   {
-  int            c;
   long          state = SV_STATE_DOWN;
   time_t        waittime = 5;
   job          *pjob;
@@ -1375,10 +1311,7 @@ void main_loop(void)
 
   get_svr_attr_l(SRV_ATR_State, &state);
 
-  if (server_init_type == RECOV_HOT)
-    state = SV_STATE_HOT;
-  else
-    state = SV_STATE_RUN;
+  state = SV_STATE_RUN;
 
   set_svr_attr(SRV_ATR_State, &state);
 
@@ -1469,31 +1402,6 @@ void main_loop(void)
         pthread_mutex_unlock(svr_do_schedule_mutex);
         }
       }
-    else if (state == SV_STATE_HOT)
-      {
-      /* Are there HOT jobs to rerun */
-      /* only try every _CYCLE seconds */
-
-      c = 0;
-
-      if (time_now > server.sv_hotcycle + SVR_HOT_CYCLE)
-        {
-        server.sv_hotcycle = time_now + SVR_HOT_CYCLE;
-
-        c = start_hot_jobs();
-        }
-
-      /* If more than _LIMIT seconds since start, stop */
-      if ((c == 0) ||
-          (time_now > server.sv_started + SVR_HOT_LIMIT))
-        {
-        server_init_type = RECOV_WARM;
-
-        state = SV_STATE_RUN;
-        set_svr_attr(SRV_ATR_State, &state);
-        }
-      }
-
 
     /* qmgr can dynamically set the loglevel specification
      * we use the new value if PBSLOGLEVEL was not specified
@@ -1530,10 +1438,6 @@ void main_loop(void)
         {
         state = SV_STATE_DOWN;
         set_svr_attr(SRV_ATR_State, &state);
-
-        /* at this point kill the threadpool */
-        destroy_request_pool(request_pool);
-        destroy_request_pool(task_pool);
         }
       }
 
@@ -1550,6 +1454,25 @@ void main_loop(void)
   svr_save(&server, SVR_SAVE_FULL); /* final recording of server */
 
   track_save(NULL);                     /* save tracking data */
+
+  /* let any array jobs that might still be cloning finish */
+  int sem_val;
+  do
+    {
+    int rc;
+
+    rc = sem_getvalue(job_clone_semaphore, &sem_val);
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to get job_clone_semaphore value");
+      log_err(-1, __func__, log_buf);
+      break;
+      }
+
+    if (sem_val > 0)
+      sleep(1);
+    }while(sem_val > 0);
+
 
   alljobs.lock();
   iter = alljobs.get_iterator();
@@ -1677,6 +1600,7 @@ int main(
 
   {
   int          i;
+  int          rc;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
   char         EMsg[MAX_LINE];
@@ -1750,6 +1674,21 @@ int main(
   if (server_name_file_port != 0)
     pbs_server_port_dis = server_name_file_port;
 
+  /* initialize job clone semaphore so we can track the number of outstanding 
+     job array creation requests */
+  job_clone_semaphore = (sem_t *)malloc(sizeof(sem_t));
+  if (job_clone_semaphore == NULL)
+    {
+    perror("failed to allocate memory for job_clone_semaphore");
+    exit(1);
+    }
+  rc = sem_init(job_clone_semaphore, 1 /* share */, 0);
+  if (rc != 0)
+    {
+    perror("failed to initialize job clone semaphore");
+    exit(1);
+    }
+
   strcpy(pbs_server_name, server_name);
   /* The following port numbers might have been initialized in set_globals_from_environment() above. */
 
@@ -1783,8 +1722,8 @@ int main(
     }
 
   /* With multi-threaded TORQUE we need to ask confirmation for
-     RECOV_CREATE and RECOV_COLD before we daemonize the server */
-  if (server_init_type == RECOV_CREATE || server_init_type == RECOV_COLD)
+     RECOV_CREATE before we daemonize the server */
+  if (server_init_type == RECOV_CREATE)
     {
     if (ForceCreation == FALSE)
       {
@@ -1998,7 +1937,7 @@ int main(
     msg_daemonname,
     msg_svrdown);
 
-  acct_close();
+  acct_close(false);
 
   pthread_mutex_lock(&log_mutex);
   log_close(1);
@@ -2008,8 +1947,13 @@ int main(
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
 
-  /* cleans up memory allocated by the xml library */
-  xmlCleanupParser(); /* must be called the latest possible */
+  clear_all_alps_reservations();
+
+  /* at this point kill the threadpool */
+  destroy_request_pool(task_pool);
+  destroy_request_pool(request_pool);
+  destroy_request_pool(async_pool);
+
   exit_called = true;
   exit(0);
   }  /* END main() */

@@ -6,6 +6,7 @@
 #include "pbs_error.h"
 #include "mutex_mgr.hpp"
 
+bool is_bad_dest(job  *jobp, char *dest);
 
 START_TEST(test_add_dest_null)
   {
@@ -18,7 +19,7 @@ END_TEST
 START_TEST(test_add_dest)
   {
   struct job j;
-  CLEAR_HEAD(j.ji_rejectdest);
+  j.ji_rejectdest = new std::vector<std::string>();
   strcpy(j.ji_qs.ji_destin, "test");
   add_dest(&j);
   }
@@ -33,11 +34,11 @@ END_TEST
 START_TEST(test_is_bad_dest)
   {
   struct job j;
-  CLEAR_HEAD(j.ji_rejectdest);
-  strcpy(j.ji_qs.ji_destin, "test");
+  sprintf(j.ji_qs.ji_destin, "test");
+  j.ji_rejectdest = new std::vector<std::string>();
   add_dest(&j);
-  fail_unless(NULL == is_bad_dest(&j, (char *)"random"));
-  fail_unless(NULL != is_bad_dest(&j, (char *)"test"));
+  fail_unless(false == is_bad_dest(&j, (char *)"random"));
+  fail_unless(true == is_bad_dest(&j, (char *)"test"));
   }
 END_TEST
 

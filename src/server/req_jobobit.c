@@ -156,6 +156,7 @@ extern int              listener_command;
 extern int              LOGLEVEL;
 
 extern const char      *PJobState[];
+extern bool cpy_stdout_err_on_rerun;
 
 /* External Functions called */
 
@@ -402,7 +403,7 @@ struct batch_request *cpy_stdfile(
 
   struct batch_request *preq,
   job                  *pjob,
-  enum job_atr         ati) /* JOB_ATR_ output or error path */
+  enum job_atr          ati) /* JOB_ATR_ output or error path */
 
   {
   char          *from;
@@ -1349,7 +1350,7 @@ handle_stageout_cleanup:
 
   if (preq != NULL)
     {
-    if(preq->rq_extra != NULL)
+    if (preq->rq_extra != NULL)
       {
       free(preq->rq_extra);
       }
@@ -2308,17 +2309,33 @@ void on_job_rerun(
         {
         /* this is the very first call, have mom copy files */
         /* are there any stage-out files to process?  */
-
+        if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET)
+          && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
+          {
+          preq = cpy_stdfile(preq, pjob, JOB_ATR_outpath);
+          preq = cpy_stdfile(preq, pjob, JOB_ATR_errpath);
+          }
         preq = cpy_stage(preq, pjob, JOB_ATR_stageout, STAGE_DIR_OUT);
-
         if (preq != NULL)
           {
           /* have files to copy */
+          if (LOGLEVEL >= 4)
+            {
+            log_event(
+              PBSEVENT_JOB,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "about to copy stdout/stderr/stageout files");
+            }
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
+            /* FAILURE */
+            if (LOGLEVEL >= 1)
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "copy request failed");
+              
             /* set up as if mom returned error */
             IsFaked = 1;
             
@@ -2508,21 +2525,6 @@ void on_job_rerun(
 
       /* Now re-queue the job */
 
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) == 0)
-        {
-        /* in case of server shutdown, don't clear exec_host */
-        /* or session_id will use it on hotstart when next comes up */
-
-        job_attr_def[JOB_ATR_exec_host].at_free(
-          &pjob->ji_wattr[JOB_ATR_exec_host]);
-
-        job_attr_def[JOB_ATR_session_id].at_free(
-          &pjob->ji_wattr[JOB_ATR_session_id]);
-
-        job_attr_def[JOB_ATR_exec_gpus].at_free(
-          &pjob->ji_wattr[JOB_ATR_exec_gpus]);
-        }
-
       pjob->ji_modified = 1; /* force full job save */
 
       pjob->ji_momhandle = -1;
@@ -2598,15 +2600,12 @@ int setrerun(
 
 int get_used(
 
-  svrattrl   *patlist,   /* I */
-  char       *acctbuf)  /* O */
+  svrattrl    *patlist,   /* I */
+  std::string &acct_data)  /* O */
 
   {
   int       retval = FALSE;
-  int       amt;
   int       need;
-
-  amt = RESC_USED_BUF - strlen(acctbuf);
 
   while (patlist != NULL)
     {
@@ -2623,26 +2622,19 @@ int get_used(
       need += strlen(patlist->al_resc) + 3;
       }
 
-    if (need < amt)
+    acct_data += "\n";
+    acct_data += patlist->al_name;
+
+    if (patlist->al_resc)
       {
-      strcat(acctbuf, "\n");
-      strcat(acctbuf, patlist->al_name);
-
-      if (patlist->al_resc)
-        {
-        strcat(acctbuf, ".");
-        strcat(acctbuf, patlist->al_resc);
-        }
-
-      strcat(acctbuf, "=");
-
-      strcat(acctbuf, patlist->al_value);
-
-      amt -= need;
+      acct_data += ".";
+      acct_data += patlist->al_resc;
       }
 
-    retval = TRUE;
+    acct_data += "=";
+    acct_data += patlist->al_value;
 
+    retval = TRUE;
     patlist = (svrattrl *)GET_NEXT(patlist->al_link);
     }
 
@@ -2830,10 +2822,10 @@ int handle_subjob_exit_status(
 
 int rerun_job(
 
-  job  *pjob,
-  int   newstate,
-  int   newsubst,
-  char *acctbuf)
+  job         *pjob,
+  int          newstate,
+  int          newsubst,
+  std::string &acct_data)
 
   {
   int   rc = PBSE_NONE;
@@ -2881,16 +2873,8 @@ int rerun_job(
     }
   
 #ifdef RERUNUSAGE
-
-  /* replace new-lines with blanks for accounting record */
-  for (pc = acctbuf; *pc; ++pc)
-    {
-    if (*pc == '\n')
-      *pc = ' ';
-    }
-  
   /* record accounting  */
-  account_jobend(pjob, acctbuf);
+  account_jobend(pjob, acct_data);
 #endif    /* RERUNUSAGE */
   
   /* remove checkpoint restart file if there is one */
@@ -2909,17 +2893,17 @@ int rerun_job(
 
 int handle_rerunning_heterogeneous_jobs(
 
-  job  *pjob,
-  int   newstate,
-  int   newsubst,
-  char *acctbuf)
+  job         *pjob,
+  int          newstate,
+  int          newsubst,
+  std::string &acct_data)
 
   {
   job *parent_job = pjob->ji_parent_job;
   job *other_subjob;
   int  rc = PBSE_NONE;
   
-  if ((rc = rerun_job(pjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
+  if ((rc = rerun_job(pjob, newstate, newsubst, acct_data)) == PBSE_NONE)
     {
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
     lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
@@ -2932,12 +2916,12 @@ int handle_rerunning_heterogeneous_jobs(
     unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
     lock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
     
-    if ((rc = rerun_job(other_subjob, newstate, newsubst, acctbuf)) == PBSE_NONE)
+    if ((rc = rerun_job(other_subjob, newstate, newsubst, acct_data)) == PBSE_NONE)
       {
       unlock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
       lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
       
-      if ((rc = rerun_job(parent_job, newstate, newsubst, acctbuf)) == PBSE_NONE)
+      if ((rc = rerun_job(parent_job, newstate, newsubst, acct_data)) == PBSE_NONE)
         unlock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
       }
     }
@@ -2950,23 +2934,16 @@ int handle_rerunning_heterogeneous_jobs(
 
 int end_of_job_accounting(
 
-  job  *pjob,
-  char *acctbuf,
-  int   accttail)
+  job         *pjob,
+  std::string &acct_data,
+  size_t       accttail)
 
   {
-  char *pc;
   long  events = 0;
 
-  /* replace new-lines with blanks for log message */
-  for (pc = acctbuf; *pc; ++pc)
-    {
-    if (*pc == '\n')
-      *pc = ' ';
-    }
-
+  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
   /* record accounting and maybe in log */
-  account_jobend(pjob, acctbuf);
+  account_jobend(pjob, acct_data);
 
   get_svr_attr_l(SRV_ATR_log_events, &events);
   if (events & PBSEVENT_JOB_USAGE)
@@ -2975,14 +2952,13 @@ int end_of_job_accounting(
     log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
-      acctbuf);
+      acct_data.c_str());
     }
   else
     {
     /* no usage in log, truncate message */
-    *(acctbuf + accttail) = '\0';
-
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, acctbuf);
+    std::string noacctail = acct_data.substr(0, accttail - 1);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
     }
 
   return(PBSE_NONE);
@@ -3256,7 +3232,7 @@ int req_jobobit(
   int                   alreadymailed = 0;
   int                   rc = PBSE_NONE;
   char                  acctbuf[RESC_USED_BUF];
-  int                   accttail;
+  std::string           acct_data;
   int                   exitstatus;
   char                  mailbuf[RESC_USED_BUF];
   int                   local_errno = 0;
@@ -3286,8 +3262,7 @@ int req_jobobit(
     {
     /* not found or from wrong node */
 
-    if ((server_init_type == RECOV_COLD) ||
-        (server_init_type == RECOV_CREATE))
+    if (server_init_type == RECOV_CREATE)
       {
       /* tell MOM the job was blown away */
 
@@ -3427,6 +3402,7 @@ int req_jobobit(
     &rc);
 
   sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+  acct_data = acctbuf;
 
   if (exitstatus >= 10000)
     {
@@ -3438,9 +3414,8 @@ int req_jobobit(
     mailbuf[0] = '\0';
     }
 
-  accttail = strlen(acctbuf);
-
-  have_resc_used = get_used(patlist, acctbuf);
+  size_t accttail = acct_data.length();
+  have_resc_used = get_used(patlist, acct_data);
 
 #ifdef USESAVEDRESOURCES
   /* if we don't have resources from the obit, use what the job already had */
@@ -3476,7 +3451,7 @@ int req_jobobit(
 
     patlist = (svrattrl *)GET_NEXT(tmppreq->rq_ind.rq_jobobit.rq_attr);
 
-    have_resc_used = get_used(patlist, acctbuf);
+    have_resc_used = get_used(patlist, acct_data);
     
     free_br(tmppreq);
     }
@@ -3487,7 +3462,7 @@ int req_jobobit(
      }
 #endif    /* USESAVEDRESOURCES */
 
-  safe_strncat(mailbuf, acctbuf, sizeof(mailbuf) - strlen(mailbuf) - 1);
+  safe_strncat(mailbuf, acct_data.c_str(), sizeof(mailbuf) - strlen(mailbuf) - 1);
 
   reply_ack(preq);
 
@@ -3502,7 +3477,7 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    end_of_job_accounting(pjob, acctbuf, accttail);
+    end_of_job_accounting(pjob, acct_data, accttail);
     
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);
@@ -3514,7 +3489,7 @@ int req_jobobit(
     /* if this is a heterogeneous sub-job, handle it appropriately */
     if (pjob->ji_parent_job != NULL)
       {
-      rc = handle_rerunning_heterogeneous_jobs(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acctbuf);
+      rc = handle_rerunning_heterogeneous_jobs(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acct_data);
 
       /* pjob->ji_mutex is always unlocked coming out of handle_rerunning_heterogeneous_jobs */
       job_mutex.set_unlock_on_exit(false);
@@ -3523,7 +3498,7 @@ int req_jobobit(
       }
     else
       {
-      if ((rc = rerun_job(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acctbuf)) != PBSE_NONE)
+      if ((rc = rerun_job(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acct_data)) != PBSE_NONE)
         {
         job_mutex.set_unlock_on_exit(false);
         return(rc);

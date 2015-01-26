@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <string>
 #include <stdlib.h>
 #include <time.h> /* time_t */
 #include <netinet/in.h> /* sockaddr_in */
@@ -38,8 +39,8 @@ int get_listen_socket(struct addrinfo *);
 int get_random_reserved_port();
 int socket_get_tcp_priv();
 int socket_connect_unix(int local_socket, const char *sock_name, char **err_msg);
-int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, char **err_msg);
-int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, char **err_msg);
+int socket_connect(int *local_socket, char *dest_addr, int dest_addr_len, int dest_port, int family, int is_privileged, std::string &err_msg);
+int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, std::string &err_msg);
 int socket_wait_for_write(int socket);
 int socket_wait_for_xbytes(int socket, int len);
 int socket_wait_for_read(int socket, unsigned int timeout);

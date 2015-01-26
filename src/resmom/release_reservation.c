@@ -137,6 +137,7 @@ int parse_release_output(
       node = node->children;
     }
 
+  xmlFreeDoc(doc);
   return(rc);
   } /* END parse_release_output() */
 

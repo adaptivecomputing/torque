@@ -8,4 +8,10 @@ Suite *qdel_suite();
 #define METH_2 2
 Suite *meth_2_suite();
 
+int qdel_main(
+
+  int    argc,
+  char **argv,
+  char **envp);
+
 #endif /* _QDEL_CT_H */

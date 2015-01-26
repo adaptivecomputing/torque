@@ -16,6 +16,9 @@
 #include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "log.h"
 #include "threadpool.h"
+#include "net_cache.h"
+
+extern char server_name[];
 
 
 void *send_power_state_to_mom(
@@ -56,16 +59,7 @@ bool getMacAddr(
   {
   char buff[1024];
 
-  if (gethostname(buff,sizeof(buff)))
-    {
-    return false;
-    }
-
-  struct addrinfo *pAddr = NULL;
-  if (getaddrinfo(buff,NULL,NULL,&pAddr))
-    {
-    return false;
-    }
+  struct addrinfo *pAddr = get_cached_addrinfo_full(server_name);
 
   FILE *pPipe = popen("/sbin/ip addr","r");
   if (pPipe == NULL)

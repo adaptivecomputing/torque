@@ -87,6 +87,7 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
 
   
 /* NOTE:  routes over to req_runjob() on server side
@@ -146,10 +147,17 @@ int pbs_runjob_err(
 
   /* NOTE:  set_task sets WORK_Deferred_Child : request remains until child terminates */
 
-  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
+  if ((jobid == NULL) ||
+      (*jobid == '\0'))
     {
     *rc = PBSE_IVALREQ;
     return (*rc) * -1;
+    }
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ * -1);
     }
 
   if (location == NULL)

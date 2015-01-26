@@ -136,6 +136,7 @@ typedef unsigned int tm_task_id;
 #define TM_EBADENVIRONMENT 17005
 #define TM_ENOTFOUND  17006
 #define TM_BADINIT  17007
+#define TM_EPERM  17008
 
 #define TM_TODO_NOP 5000 /* Do nothing (the nodes value may be new) */
 #define TM_TODO_CKPT 5001 /* Checkpoint <what> and continue it */

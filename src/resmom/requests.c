@@ -193,6 +193,8 @@ static char  *output_retained = (char *)"Output retained on that host in: ";
 
 static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
 
+extern int  LOGLEVEL;
+extern char checkpoint_run_exe_name[]; 
 
 /* prototypes */
 
@@ -2962,36 +2964,48 @@ void req_rerunjob(
       }
     }
 
-  if (pjob->ji_qs.ji_svrflags && JOB_SVFLG_CHECKPOINT_FILE)
+  bool checkfile_sent_ok = true;
+  /* send checkpoint file to the server only when blcr was enabled */
+  if (strlen(checkpoint_run_exe_name) > 0)
     {
     rc = return_file(pjob, Checkpoint, sock, TRUE);
     if (rc != PBSE_NONE)
       {
-       /* FAILURE - cannot report file to server */
+      /* FAILURE - cannot report file to server */
 
       log_event(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_REQUEST,
         __func__,
         (char *)"cannot move output files to server. checkpoint file not found");
-
-      req_reject(rc, 0, preq, NULL, NULL);
-    
-      close(sock);
-      exit(EXIT_SUCCESS);
+      checkfile_sent_ok = false;
       }
-    }
+   }
 
-  if (((rc = return_file(pjob, StdOut, sock, TRUE)) != 0) ||
-      ((rc = return_file(pjob, StdErr, sock, TRUE)) != 0))
+  int remove_file = 1;
+
+  /* check to see if OU, ER files need to be copied back to user's dir.
+   * If so, do not remove files as the pbs_server will be sending a
+   * copy files request.
+  */
+  if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET) 
+    && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
+      remove_file = 0;
+
+  rc = return_file(pjob, StdOut, sock, remove_file);
+  int rc2 = return_file(pjob, StdErr, sock, remove_file);
+
+  if (rc != 0 || rc2 != 0 || (!checkfile_sent_ok))
     {
-    /* FAILURE - cannot report file to server */
-
-    log_event(
-      PBSEVENT_ERROR,
-      PBS_EVENTCLASS_REQUEST,
-      __func__,
-      (char *)"cannot move output files to server");
+    /* FAILURE - cannot report file to server */ 
+    /* If the following condition is true, it means
+     * the copying of output files to the server had a problem */
+    if (checkfile_sent_ok)
+      log_event(
+        PBSEVENT_ERROR,
+        PBS_EVENTCLASS_REQUEST,
+        __func__,
+        (char *)"cannot move output files to server");
 
     req_reject(rc, 0, preq, NULL, NULL);
     

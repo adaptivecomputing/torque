@@ -6,7 +6,7 @@
 
 
 /* from file add_verify_resources.c */
-int add_verify_resources(job_data **res_attr, char *resources, int p_type);
+int add_verify_resources(job_data_container *res_attr, char *resources, int p_type);
 
 /* from file ck_job_name.c */
 int check_job_name(char *name, int chk_alpha);

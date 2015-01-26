@@ -240,13 +240,11 @@ int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, cons
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status){}
-char *csv_nth(const char *csv_str, int n){return NULL;}
 int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 void issue_track(job *pjob) {}
 int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
 int set_size(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op){return 0;}
-char * csv_find_value(const char *csv_str, const char *search_str) {return NULL;}
 pbs_queue *find_queuebyname(const char *quename) {return NULL;}
 void check_job_log(struct work_task *ptask) {}
 int comp_unkn(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
@@ -264,7 +262,6 @@ char *threadsafe_tokenizer(char **str, const char *delims) {return NULL;}
 int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int set_l(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int array_delete(job_array *pa) {return 0;}
-int csv_length(const char *csv_str) {return 0;}
 int array_save(job_array *pa) {return 0;}
 int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
 void mutex_mgr::set_unlock_on_exit(bool val) {}
@@ -351,3 +348,8 @@ char *get_correct_jobname(const char *id)
   {
   return(strdup(id));
   }
+
+void handle_complete_second_time(struct work_task *ptask)
+  {
+  }
+

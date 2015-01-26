@@ -40,12 +40,6 @@ int handle_complete_first_time(job *pjob);
 
 void on_job_rerun(batch_request *preq, char *jobid);
 
-/* static void wait_for_send(struct work_task *ptask); */
-
-/* static int setrerun(job *pjob); */
-
-int get_used(svrattrl *patlist, char *acctbuf);
-
 #ifdef USESAVEDRESOURCES
 void encode_job_used(job *pjob, tlist_head *phead);
 #endif /* USESAVEDRESOURCES */

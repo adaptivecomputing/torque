@@ -10,10 +10,4 @@ void shutdown_ack(void);
 
 int req_shutdown(struct batch_request *preq);
 
-/* static int shutdown_checkpoint(job *pjob); */
-
-/* static void post_checkpoint(struct work_task *ptask); */
-
-/* static void rerun_or_kill(job *pjob, char *text); */
-
 #endif /* _REQ_SHUTDOWN_H */

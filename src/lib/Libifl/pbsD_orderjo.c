@@ -87,6 +87,8 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
+
 
 int pbs_orderjob_err(
     
@@ -106,6 +108,12 @@ int pbs_orderjob_err(
   if ((job1 == (char *)0) || (*job1 == '\0') ||
       (job2 == (char *)0) || (*job2 == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

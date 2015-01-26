@@ -6,14 +6,19 @@
 #include "batch_request.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <semaphore.h>
 #include "pbs_error.h"
 
+sem_t *job_clone_semaphore;
 extern attribute_def job_attr_def[];
 int hostname_in_externals(char *, char *);
 int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
+bool set_task_called = false;
+void job_free(job *pj, int  use_recycle);
+//bool svr_job_purge_called = false;
 
 char buf[4096];
 
@@ -181,6 +186,37 @@ START_TEST(conn_qsub_test)
   fail_unless(result != 0, "NULL input check fail");
   }
 END_TEST
+
+START_TEST(handle_aborted_job_test)
+  {
+  job pjob;
+  job *job_ptr = &pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  strcpy(pjob.ji_qs.ji_jobid, "1.lei");
+  long KeepSeconds = 50;
+
+  set_task_called = false;
+  const char *text = "Job deleted as result of dependency on job 0.lei";
+ 
+  handle_aborted_job(&job_ptr, true, KeepSeconds, text);
+ 
+  fail_unless(job_ptr == &pjob, "job_ptr should be pointing pjob");
+  fail_unless(set_task_called == true, "set_task should have been called");
+  fail_unless(pjob.ji_wattr[JOB_ATR_exitstat].at_val.at_long ==271, "job status was not set");
+  fail_unless((pjob.ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) > 0, "comment was not set in the job");
+  int comparison = -1;
+  if (pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str)
+    comparison = strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, text);
+  fail_unless(comparison == 0, "comment added to job did not match to text");
+
+  handle_aborted_job(&job_ptr, true, KeepSeconds, "Appended");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "Job deleted as result of dependency on job 0.lei. Appended"));
+
+  handle_aborted_job(&job_ptr, true, 0, text);
+  fail_unless(job_ptr == NULL);
+  }
+END_TEST /* handle_aborted_job_test */
 
 START_TEST(job_alloc_test)
   {
@@ -440,6 +476,10 @@ Suite *job_func_suite(void)
   tcase_add_test(tc_core, get_jobs_queue_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("handle_aborted_job_test");
+  tcase_add_test(tc_core, handle_aborted_job_test);
+  suite_add_tcase(s, tc_core);
+  
   return(s);
   }
 

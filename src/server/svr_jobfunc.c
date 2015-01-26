@@ -263,11 +263,11 @@ const char *PJobSubState[] =
   "SUBSTATE48",
   "SUBSTATE49",
   "EXITING",                /* start of job exiting processing */
+  "EXIT_WAIT",              /* waiting for response from other moms or server*/
   "STAGEOUT",               /* job staging out (other) files   */
   "STAGEDEL",               /* job deleting staged out files  */
   "EXITED",                 /* job exit processing completed   */
   "ABORT",                  /* job is being aborted by server  */
-  "SUBSTATE55",
   "SUBSTATE56",
   "SUBSTATE57",
   "OBIT",                   /* (MOM) job obit notice sent */
@@ -735,7 +735,8 @@ int svr_dequejob(
 
   if (pque != NULL)
     {
-    if (pque->qu_qs.qu_type == QTYPE_RoutePush)
+    /* At this point unless the job is in state of JOB_STATE_COMPLETE we need to decrement the queue count */
+    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) || (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
       rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       if (rc != PBSE_NONE)
@@ -746,6 +747,7 @@ int svr_dequejob(
         }
       }
 
+    std::string jobid = pjob->ji_qs.ji_jobid;
     if ((rc = remove_job(pque->qu_jobs, pjob)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
@@ -760,15 +762,30 @@ int svr_dequejob(
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, "qu_njstate < 0. Recount required.");
         }
       }
-    else if (rc == PBSE_JOB_RECYCLED)
+    else if (rc == PBSE_JOBNOTFOUND)
       {
       /* calling functions know this return code means the job is gone */
-      return(PBSE_JOBNOTFOUND);
+      return(rc);
+      }
+
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+         "Could not remove job %s from queue->qu_jobs\n", jobid.c_str());
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
       }
 
     /* the only reason to care about the error is if the job is gone */
-    if (remove_job(pque->qu_jobs_array_sum, pjob) == PBSE_JOB_RECYCLED)
-      return(PBSE_JOBNOTFOUND);
+    int rc2;
+    if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOBNOTFOUND)
+      return(rc2);
+
+    if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 8))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+         "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
 
     pjob->ji_qhdr = NULL;
 
@@ -858,10 +875,17 @@ int svr_dequejob(
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
     }
-  else if (rc == PBSE_JOB_RECYCLED)
+  else if (rc == PBSE_JOBNOTFOUND)
     {
     /* calling functions know this return code means the job is gone */
-    return(PBSE_JOBNOTFOUND);
+    return(rc);
+    }
+
+  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    {
+    snprintf(log_buf,sizeof(log_buf),
+      "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
+    log_ext(-1, __func__, log_buf, LOG_WARNING);
     }
 
   /* notify scheduler a job has been removed */
@@ -981,12 +1005,70 @@ int set_subjob_state(
 
 
 /*
+ * is_valid_state_transition
+ *
+ * Compares the current state and substate to the new state and
+ * substate and returns false if the transition isn't valid.
+ *
+ * NYI: So far I am only handling one case. There are others so please
+ * add if the definition in the return description is met.
+ *
+ * @param pjob - the job whose state transition we're checking
+ * @param newstate - the requested state
+ * @param newsubstate - the requested substate
+ * @return false if the transition is never legitimate, true otherwise
+ */
+
+bool is_valid_state_transition(
+
+    job &pjob,
+    int  newstate,
+    int  newsubstate)
+
+  {
+  switch (pjob.ji_qs.ji_state)
+    {
+    case JOB_STATE_COMPLETE:
+
+      switch (newstate)
+        {
+        case JOB_STATE_EXITING:
+
+          return(false);
+
+        }
+
+      break;
+    }
+
+  switch(pjob.ji_qs.ji_substate)
+    {
+    case JOB_SUBSTATE_COMPLETE:
+
+      switch (newsubstate)
+        {
+        case JOB_SUBSTATE_ABORT:
+
+          return(false);
+        }
+
+      break;
+    }
+
+
+  return(true);
+  } /* END is_valid_state_transition() */
+
+
+
+/*
  * svr_setjobstate
  *
  * @pre-cond: pjob must be a valid job pointer
  * @post-cond: pjob will have state newstate and substate newsubstate, and relevant
  * counts/events will be updated.
  * @return: PBSE_BAD_PARAMETER if pjob is NULL
+ *          PBSE_BAD_JOB_STATE_TRANSITION if the requested state or substate change isn't valid.
  *          PBSE_JOBNOTFOUND if the job disappears mid-execution
  *          return value from job_save if job_save is called (on modification)
  *          PBSE_NONE on success
@@ -1011,7 +1093,11 @@ int svr_setjobstate(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return(PBSE_BAD_PARAMETER);
     }
-  else if (pjob->ji_parent_job != NULL)
+
+  if (is_valid_state_transition(*pjob, newstate, newsubstate) == false)
+    return(PBSE_BAD_JOB_STATE_TRANSITION);
+
+  if (pjob->ji_parent_job != NULL)
     return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex));
 
   if (LOGLEVEL >= 2)

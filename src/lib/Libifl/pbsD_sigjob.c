@@ -84,6 +84,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 
 int pbs_sigjob_err(
@@ -100,8 +101,14 @@ int pbs_sigjob_err(
   struct batch_reply *reply;
 
   if ((jobid == (char *)0) || (*jobid == '\0') ||
-      (signal == (char *)0) || (*jobid == '\0'))
+      (signal == (char *)0) || (*signal == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   /* send request */
 
@@ -157,6 +164,12 @@ int pbs_sigjobasync_err(
   if ((jobid == (char *)0) || (*jobid == '\0') ||
       (signal == (char *)0) || (*jobid == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   /* send request */
 

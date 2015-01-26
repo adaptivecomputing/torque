@@ -310,6 +310,7 @@ char *get_correct_jobname(
   } /* END get_correct_jobname() */
 
 
+
 /*
  * Searches the array passed in for the job_id
  * @parent svr_find_job()
@@ -340,6 +341,7 @@ job *find_job_by_array(
     aj->lock();
   
   pj = aj->find(job_id);
+
   if (pj != NULL)
     lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
 
@@ -397,6 +399,12 @@ job *svr_find_job(
   char *jid_ptr = NULL;
 
   job  *pj = NULL;
+
+  if (NULL == jobid)
+    {
+    log_err(-1,__func__,"jobid is null");
+    return NULL;
+    }
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, jobid);
@@ -783,10 +791,12 @@ int has_job(
 
 
 /* 
- * remove a job from the array
+ * remove a job from the alljobs container
  *
+ * @param aj - the alljobs container to remove from
  * @param pjob - the job to remove
- * @return PBSE_NONE if the job is removed 
+ * @return PBSE_NONE if the job is removed, PBSE_JOBNOTFOUND if the job
+ * disappears mid-execution, or THING_NOT_FOUND if the job removal fails
  */
 
 int  remove_job(
@@ -862,9 +872,7 @@ job *next_job(
     }
 
   aj->lock();
-
   pjob = iter->get_next_item();
-
   aj->unlock();
 
   if (pjob != NULL)

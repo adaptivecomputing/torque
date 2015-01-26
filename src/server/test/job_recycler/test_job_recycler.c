@@ -96,6 +96,25 @@ START_TEST(test_pop_job_from_recycler)
   for (int i = 0; i < 3; i++)
     fail_unless(pop_job_from_recycler(&recycler.rc_jobs) == NULL);
 
+  // test for records already freed or that it has not been recycled
+  for (int i = 0; i < 5; i++)
+    {
+    pjobs[i] = job_alloc();
+    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+    }
+
+  job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
+  int count = 0;
+  char buf[80];
+  while(pjob)
+    {
+    count++;
+    snprintf(buf,sizeof(buf),"%016lx",(long)pjob);
+    fail_unless(strcmp(pjob->ji_qs.ji_jobid, buf)==0, pjob->ji_qs.ji_jobid);
+    pjob = pop_job_from_recycler(&recycler.rc_jobs);
+    }
+
+  fail_unless(count == 5, "count of valid recycled jobs were wrong: %d", count);
   }
 END_TEST
 

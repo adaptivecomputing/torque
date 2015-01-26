@@ -155,13 +155,21 @@ void delete_task(struct work_task *ptask)
   exit(1);
   }
 
-int status_job(job *pjob, struct batch_request *preq, svrattrl *pal, tlist_head *pstathd, int *bad)
+int status_job(
+
+  job           *pjob, /* ptr to job to status */
+  batch_request *preq,
+  svrattrl      *pal, /* specific attributes to status */
+  tlist_head    *pstathd, /* RETURN: head of list to append status to */
+  bool           condensed,
+  int           *bad) /* RETURN: index of first bad pbs_attribute */
+
   {
   fprintf(stderr, "The call to status_job to be mocked!!\n");
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
@@ -275,7 +283,18 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-int status_attrib(svrattrl *pal, attribute_def *padef, pbs_attribute *pattr, int limit, int priv, tlist_head *phead, int *bad, int IsOwner)
+int status_attrib(
+
+  svrattrl      *pal,      /* I */
+  attribute_def *padef,
+  pbs_attribute *pattr,
+  int            limit,
+  int            priv,
+  tlist_head    *phead,
+  bool           condensed,
+  int           *bad,
+  int            IsOwner)  /* 0 == FALSE, 1 == TRUE */
+
   {
   fprintf(stderr, "The call to status_attrib to be mocked!!\n");
   exit(1);
@@ -326,3 +345,5 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int svr_unresolvednodes = 0;

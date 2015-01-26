@@ -855,14 +855,31 @@ void effective_node_delete(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
     return;
     }
-  if(pnode->nd_name == NULL)
+  if (pnode->nd_name == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to name delete call");
     return;
     }
 
-  remove_node(&allnodes,pnode);
+  // If remove_node() fails, the node has been removed and someone else is 
+  // deleting it
+  if (remove_node(&allnodes, pnode) != PBSE_NONE)
+    return;
+
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+  //The node has been removed from the allnodes array.
+  //Give some time for other threads to be done with the node
+  //Before wiping it out.
+  unsigned char tmp_unlock_count = 0;
+  do
+    {
+    sleep(2);
+    lock_node(pnode,__func__,NULL,LOGLEVEL);
+    tmp_unlock_count = pnode->nd_tmp_unlock_count;
+    unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    }while(tmp_unlock_count != 0);
+
   free(pnode->nd_mutex);
 
   pnode->nd_last->next = NULL;      /* just in case */
@@ -1455,7 +1472,14 @@ int add_execution_slot(
   
   pnode->nd_slots.add_execution_slot();
 
-  if ((pnode->nd_state & INUSE_JOB) != 0)
+  bool job_exclusive_on_use = false;
+
+  if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+    job_exclusive_on_use = true;
+
+  if (((pnode->nd_state & INUSE_JOB) != 0) &&
+       (!job_exclusive_on_use))
     pnode->nd_state &= ~INUSE_JOB;
 
   return(PBSE_NONE);
@@ -1578,6 +1602,9 @@ int copy_properties(
    * values */
   sub->as_next= sub->as_buf + (main_node->as_next - main_node->as_buf);
 
+  // nd_first is about to be overwritten so we must free it first
+  free_prop_list(dest->nd_first);
+
   plink = &dest->nd_first;
 
   for (i = 0; i < main_node->as_npointers; i++)
@@ -1597,7 +1624,6 @@ int copy_properties(
 
   return(PBSE_NONE);
   } /* END copy_properties() */
-
 
 
 
@@ -1925,38 +1951,6 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
   return(PBSE_NONE);
   } /* End finalize_create_pbs_node() */
 
-
-/*
- * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
- */
-
-int create_pbs_dynamic_node(
-  char     *objname,
-  svrattrl *plist,
-  int       perms,
-  int      *bad)
-
-  {
-  int              ntype; /* node type; time-shared, not */
-  char            *pname = NULL; /* node name w/o any :ts       */
-  u_long          *pul = NULL;  /* 0 terminated host adrs array*/
-  int              rc;
-
-  if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
-    {
-    if(pul != NULL)
-      {
-      free(pul);
-      }
-    if(pname != NULL)
-      {
-      free(pname);
-      }
-    return rc;
-    }
-  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
-  }/* End create_pbs_dynamic_node() */
-
 /*
  * create_pbs_node - create pbs node structure, i.e. add a node
  */
@@ -1981,6 +1975,8 @@ int create_pbs_node(
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {
     svrattrl *pal, *pattrl;
+
+    svr_unresolvednodes++;
 
     if(LOGLEVEL >= 7)
       {
@@ -2075,6 +2071,12 @@ int create_pbs_node(
   } /* End create_pbs_node() */
 
 
+
+#define COLON_OK  0x01
+#define COMMA_OK  0x02
+#define PLUS_OK   0x04
+#define OPAQUE    0x08
+
 /*
  * parse_node_token - parse tokens in the nodes file
  *
@@ -2086,70 +2088,77 @@ int create_pbs_node(
  * If "cok" is true, then this is first token ( node name) and ':' is
  * allowed and '=' is not.   For following tokens, allow '=' as separator
  * between "keyword" and "value".  Will get value as next token.
- */
-
-#define COLON_OK  0x01
-#define COMMA_OK  0x02
-#define PLUS_OK   0x04
-#define OPAQUE    0x08
-
-static char *parse_node_token(
-
-  char *start, /* if null, restart where left off */
-  int   flags, /*OR'ed together values of:
+ *
+ * @param start - begin looking here
+ * @param flags - OR'ed together values of:
                   COLON_OK    The colon ':' is allowed
                   COMMA_OK    The comma ',' is allowed
                   PLUS_OK     The plus  '+' is allowed
                   OPAQUE      The string is accepted up to the next white space.
-               */
-  int  *err, /* RETURN: non-zero if error */
-  char *term) /* RETURN: character terminating token */
+ * @param err (O) - non-zero if there was an error
+ * @param term (O) - character terminating the token
+ * @return the parsed token or NULL if none are found
+ */
+
+char *parse_node_token(
+
+  char **start,
+  int    flags,
+  int   *err,
+  char  *term)
 
   {
-  static char *pt;
-  char        *ts;
+  char *pt = *start;
+  char *token;
 
   *err = 0;
 
-  if (start)
-    pt = start;
+  pt = *start;
 
   while (*pt && isspace((int)*pt)) /* skip leading whitespace */
     pt++;
 
   if (*pt == '\0')
     {
-    return (NULL);  /* no token */
+    *start = pt;
+    return(NULL);  /* no token */
     }
 
-  ts = pt;
+  token = pt;
 
   /* test for legal characters in token */
 
   for (;pt[0] != '\0';pt++)
     {
-    if(flags&OPAQUE)
+    if (flags & OPAQUE)
       {
-      if ((isspace((int)*pt))||(*pt == '\0'))
+      if ((isspace((int)*pt)) ||
+          (*pt == '\0'))
         break;
+
       continue;
       }
+
     if (isalnum((int)*pt) || strchr("-._[]", *pt) || (*pt == '\0'))
       continue;
 
     if (isspace((int)*pt))
       break;
 
-    if ((flags&COLON_OK) && (*pt == ':'))
+    if ((flags & COLON_OK) &&
+        (*pt == ':'))
       continue;
 
-    if ((flags&COMMA_OK) && (*pt == ','))
+    if ((flags & COMMA_OK) &&
+        (*pt == ','))
       continue;
 
-    if ((flags&PLUS_OK) && (*pt == '+'))
+    if ((flags & PLUS_OK) &&
+        (*pt == '+'))
       continue;
 
-    if (!(flags&COLON_OK) && (*pt == '='))
+    if (!(flags&COLON_OK) &&
+        (*pt == '='))
       break;
 
     *err = 1;
@@ -2162,8 +2171,61 @@ static char *parse_node_token(
     *pt++ = '\0';
     }
 
-  return(ts);
+  *start = pt;
+
+  return(token);
   }  /* END parse_node_token() */
+
+
+/*
+ * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
+ */
+
+int create_pbs_dynamic_node(
+
+  char     *objname,
+  svrattrl *plist,
+  int       perms,
+  int      *bad)
+
+  {
+  int     ntype; /* node type; time-shared, not */
+  char   *pname = NULL; /* node name w/o any :ts       */
+  u_long *pul = NULL;  /* 0 terminated host adrs array*/
+  int     rc;
+  int     err = 0;
+  char    xchar;
+  char   *ptr = objname;
+
+  // Call parse_node_token to ensure that the node name doesn't have any 
+  // invalid characters. Thi is the same function used when reading th
+  // nodes file on startup.
+  char *token = parse_node_token(&ptr, COLON_OK, &err, &xchar);
+
+  if ((token == NULL) ||
+      (err != 0 ))
+    {
+    return(PBSE_UNKNODE);
+    }
+
+  if ((rc = process_host_name_part(token, &pul, &pname, &ntype)) != 0)
+    {
+    if (pul != NULL)
+      {
+      free(pul);
+      }
+
+    if (pname != NULL)
+      {
+      free(pname);
+      }
+
+    return(rc);
+    }
+
+  return(finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad));
+  } // End create_pbs_dynamic_node()
+
 
 
 /*
@@ -2262,6 +2324,7 @@ int setup_nodes(void)
 
   for (linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
+    char *ptr;
     if (line[0] == '#') /* comment */
       {
       memset(line, 0, sizeof(line));
@@ -2274,8 +2337,8 @@ int setup_nodes(void)
     propstr.str("");
 
     /* first token is the node name, may have ":ts" appended */
-
-    token = parse_node_token(line, COLON_OK, &err, &xchar);
+    ptr = line;
+    token = parse_node_token(&ptr, COLON_OK, &err, &xchar);
 
     if (token == NULL)
       {
@@ -2309,7 +2372,7 @@ int setup_nodes(void)
     /* attributes (keyword=value) or old style properties        */
     while (1)
       {
-      token = parse_node_token(NULL, 0,&err, &xchar);
+      token = parse_node_token(&ptr, 0,&err, &xchar);
 
       if (err != 0)
         goto errtoken1;
@@ -2322,15 +2385,15 @@ int setup_nodes(void)
         /* have new style pbs_attribute, keyword=value */
         if(!strcmp(token,"TTL"))
           {
-          val = parse_node_token(NULL, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
+          val = parse_node_token(&ptr, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
           }
         else if(!strcmp(token,"acl"))
           {
-          val = parse_node_token(NULL, OPAQUE, &err, &xchar);
+          val = parse_node_token(&ptr, OPAQUE, &err, &xchar);
           }
         else
           {
-          val = parse_node_token(NULL, COMMA_OK, &err, &xchar);
+          val = parse_node_token(&ptr, COMMA_OK, &err, &xchar);
           }
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
@@ -3580,14 +3643,15 @@ int remove_node(
 
   if (an->trylock())
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
     an->lock();
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  //Don't care if it was in there or not.
-  an->remove(pnode->nd_name);
-  rc = PBSE_NONE;
+  if (an->remove(pnode->nd_name) == false)
+    rc = -1;
+  else
+    rc = PBSE_NONE;
 
   an->unlock();
 

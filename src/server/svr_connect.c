@@ -135,6 +135,44 @@ extern int get_num_connections();
 
 
 
+/*
+ * Opens the connection but releases pnode's mutex
+ * if there is a node being held.
+ */
+
+int connect_while_handling_mutex(
+
+  pbs_net_t        hostaddr,
+  unsigned int     port,
+  char            *EMsg,
+  struct pbsnode **pnode)
+
+  {
+  char nodename[MAXLINE];
+  int  sock;
+
+  /* don't keep the node locked through the connecting */
+  if ((pnode != NULL) &&
+      (*pnode != NULL))
+    {
+    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->nd_name);
+    unlock_node(*pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  /* establish socket connection to specified host */
+  sock = client_to_svr(hostaddr, port, 1, EMsg);
+ 
+  // Don't use the pointer. A pointer without a lock isn't safe because the object 
+  // may have been freed
+  if ((pnode != NULL) &&
+      (*pnode != NULL))
+    *pnode = find_nodebyname(nodename);
+
+  return(sock);
+  } // END connect_while_handling_mutex()
+
+
+
 int svr_connect(
 
   pbs_net_t        hostaddr,  /* host order */
@@ -144,7 +182,7 @@ int svr_connect(
   void           *(*func)(void *))
 
   {
-  char         EMsg[1024];
+  char         EMsg[MAXLINE];
   int          handle;
   int          sock;
   time_t       STime;
@@ -191,17 +229,8 @@ int svr_connect(
     return(PBS_NET_RC_RETRY);
     }
 
-  /* don't keep the node locked through the connecting */
-  if (pnode != NULL)
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  sock = connect_while_handling_mutex(hostaddr, port, EMsg, &pnode);
 
-  /* establish socket connection to specified host */
-  sock = client_to_svr(hostaddr, port, 1, EMsg);
- 
-  /* re-lock the node after connecting */
-  if (pnode != NULL)
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
- 
   time(&ETime);
 
   if (LOGLEVEL >= 2)
@@ -296,7 +325,9 @@ static void localalm(
 
 
 void connection_clear(
-   int con_pos)
+
+  int con_pos)
+
   {
   pthread_mutex_lock(connection[con_pos].ch_mutex);
   connection[con_pos].ch_errtxt = 0;
@@ -346,47 +377,45 @@ void svr_disconnect(
     sock = connection[handle].ch_socket;
     pthread_mutex_unlock(connection[handle].ch_mutex);
 
-    if ((chan = DIS_tcp_setup(sock)) == NULL)
+    if ((chan = DIS_tcp_setup(sock)) != NULL)
       {
-      }
-    else if ((encode_DIS_ReqHdr(chan, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
-        (DIS_tcp_wflush(chan) == 0))
-      {
-      struct sigaction act;
-      struct sigaction oldact;
-      /* wait for other server to close connection */
-      act.sa_handler = localalm;
-
-      sigemptyset(&act.sa_mask);
-
-      act.sa_flags = 0;
-
-      sigaction(SIGALRM, &act, &oldact);
-
-      ualarm(100000, 0); /* 1/10 of second */
-
-      while (1)
+      if ((encode_DIS_ReqHdr(chan, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
+             (DIS_tcp_wflush(chan) == 0))
         {
-        /* don't call the non-blocking function */
-        if (read_blocking_socket(sock, &x, 1) < 1)
-          break;
+        struct sigaction act;
+        struct sigaction oldact;
+        /* wait for other server to close connection */
+        act.sa_handler = localalm;
+
+        sigemptyset(&act.sa_mask);
+
+        act.sa_flags = 0;
+
+        sigaction(SIGALRM, &act, &oldact);
+
+        ualarm(100000, 0); /* 1/10 of second */
+
+        while (1)
+          {
+          /* don't call the non-blocking function */
+          if (read_blocking_socket(sock, &x, 1) < 1)
+            break;
+          }
+
+        ualarm(0, 0);
+
+        /* restore the previous handler */
+
+        sigaction(SIGALRM, &oldact, 0);
         }
 
-      ualarm(0, 0);
-
-      /* restore the previous handler */
-
-      sigaction(SIGALRM, &oldact, 0);
-
+      DIS_tcp_cleanup(chan);
       }
-
 
     pthread_mutex_lock(connection[handle].ch_mutex);
     shutdown(connection[handle].ch_socket, 2);
 
     close_conn(connection[handle].ch_socket, FALSE);
-    if (chan != NULL)
-      DIS_tcp_cleanup(chan);
 
     if (connection[handle].ch_errtxt != NULL)
       {

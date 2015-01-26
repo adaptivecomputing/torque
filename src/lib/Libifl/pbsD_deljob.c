@@ -87,6 +87,7 @@
 
 #include <stdio.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 /* NOTE:  routes over to X on server side
 
@@ -144,6 +145,12 @@ int pbs_deljob_err(
   int             rc;
 
   struct attropl *aoplp = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   if ((extend == NULL) ||
       (strncmp(extend,PURGECOMP,strlen(PURGECOMP))))

@@ -162,14 +162,6 @@ struct prop
   struct prop *next;
   };
 
-/* this struct is only used while the job is being created. */
-typedef struct job_reservation_info
-  {
-  int                          node_id;
-  int                          port;
-  execution_slot_tracker       est;
-  } job_reservation_info;
-
 struct jobinfo
   {
   int internal_job_id;
@@ -179,8 +171,8 @@ struct jobinfo
 
 typedef struct alps_req_data
   {
-  std::string     node_list;
-  int             ppn;
+  std::string *node_list;
+  int          ppn;
   } alps_req_data;
 
 typedef struct single_spec_data
@@ -263,6 +255,8 @@ typedef struct nodeboard_t
   unsigned long long pstat_idle;
   int                mic_start_index; /* index of first mic for this board */
   int                mic_end_index;   /* index of last mic for this board */
+  int                gpu_start_index; /* index of first gpu for this board */
+  int                gpu_end_index;   /* index of last gpu for this board */
   float              cpuact;
   } nodeboard;
 #endif /* NUMA_SUPPORT */
@@ -349,9 +343,14 @@ struct pbsnode
   unsigned short              nd_power_state;
   unsigned char               nd_mac_addr[6];
   time_t                        nd_power_state_change_time; //
-  unsigned char               nd_ttl[32];
+  char                          nd_ttl[32];
   struct array_strings         *nd_acl;
   std::string                  *nd_requestid;
+  unsigned char               nd_tmp_unlock_count;    /*Nodes will get temporarily unlocked so that
+                                                       further processing can happen, but the function
+                                                       doing the unlock intends to lock it again
+                                                       so we need a flag here to prevent a node from being
+                                                       deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
   };
@@ -587,6 +586,7 @@ extern all_nodes allnodes;
 extern struct pbsnode *alps_reporter;
 
 extern int    svr_totnodes;  /* number of nodes (hosts) */
+extern int   svr_unresolvednodes;
 extern int    svr_clnodes;  /* number of cluster nodes */
 
 extern int    MultiMomMode; /* moms configured for multiple moms per machine */

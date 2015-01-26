@@ -7,9 +7,13 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_rerunjob_err)
   {
-
+  char *jobid = strdup("1.napali");
+  fail_unless(pbs_rerunjob_err(-1, jobid, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_rerunjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_rerunjob_err(0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_rerunjob_err(0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
 
   }
 END_TEST
@@ -24,8 +28,8 @@ END_TEST
 Suite *pbsD_rerunjo_suite(void)
   {
   Suite *s = suite_create("pbsD_rerunjo_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_rerunjob_err");
+  tcase_add_test(tc_core, test_pbs_rerunjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
