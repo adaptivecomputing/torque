@@ -147,9 +147,6 @@ int req::set_place_value(
       int count;
       rc = parse_positive_integer(numeric_value, count);
       this->cores = count;
-      if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
-          (count > this->execution_slots))
-        this->execution_slots = count;
       }
     else
       this->cores = 1;
@@ -164,9 +161,6 @@ int req::set_place_value(
       int count;
       rc = parse_positive_integer(numeric_value, count);
       this->threads = count;
-      if ((this->execution_slots != ALL_EXECUTION_SLOTS) &&
-          (count > this->execution_slots))
-        this->execution_slots = count;
       }
     else
       this->threads = 1;
