@@ -328,13 +328,8 @@ int site_check_user_map(
     }
 #else
 
-  /* This is the child */
-
-  if(HostAllowed == 0)
-    {
-    return(-1); //Host is not allowed no reason to check ruserok.
-    }
-
+  /* ruserok is the last chance the incoming submission can work. 
+     check to see if the user hosts combination is allowed */
   /* ruserok is not thread safe. mutex it */
   pthread_mutex_lock(&ruserok_mutex);
   rc = ruserok(orighost, 0, owner, luser);

@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 int pbs_checkpointjob_err(
     
@@ -21,6 +22,12 @@ int pbs_checkpointjob_err(
   {
   if ((jobid == (char *)0) || (*jobid == '\0'))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   return PBSD_manager(c, PBS_BATCH_CheckpointJob,
                       MGR_CMD_SET,

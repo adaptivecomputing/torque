@@ -9,6 +9,7 @@ int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const c
 int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_str(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
+int set_str_csv(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
 int comp_str(struct pbs_attribute *attr, struct pbs_attribute *with);
 

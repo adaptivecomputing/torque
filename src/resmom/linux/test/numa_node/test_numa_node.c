@@ -7,8 +7,6 @@
 
 extern char cpulist[];
 
-void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices);
-
 START_TEST(test_in_this_numa_node)
   {
   numa_node nn;
@@ -22,41 +20,6 @@ START_TEST(test_in_this_numa_node)
   fail_unless(nn.in_this_numa_node(9) >= 0);
   fail_unless(nn.in_this_numa_node(2) < 0);
   fail_unless(nn.in_this_numa_node(3) < 0);
-  }
-END_TEST
-
-
-START_TEST(test_translate_range_string_to_vector)
-  {
-  std::vector<int> indices;
-
-  translate_range_string_to_vector("1\n", indices);
-  fail_unless(indices.size() == 1);
-  fail_unless(indices[0] == 1);
-
-  indices.clear();
-  translate_range_string_to_vector("0-1\n", indices);
-  fail_unless(indices.size() == 2);
-  fail_unless(indices[0] == 0);
-  fail_unless(indices[1] == 1);
-
-  indices.clear();
-  translate_range_string_to_vector("1-4", indices);
-  fail_unless(indices.size() == 4);
-  fail_unless(indices[0] == 1);
-  fail_unless(indices[1] == 2);
-  fail_unless(indices[2] == 3);
-  fail_unless(indices[3] == 4);
-  
-  indices.clear();
-  translate_range_string_to_vector("0-2,6-8", indices);
-  fail_unless(indices.size() == 6);
-  fail_unless(indices[0] == 0);
-  fail_unless(indices[1] == 1);
-  fail_unless(indices[2] == 2);
-  fail_unless(indices[3] == 6);
-  fail_unless(indices[4] == 7);
-  fail_unless(indices[5] == 8);
   }
 END_TEST
 
@@ -238,7 +201,6 @@ Suite *numa_node_suite(void)
   tcase_add_test(tc_core, test_reserve);
   tcase_add_test(tc_core, test_in_this_numa_node);
   tcase_add_test(tc_core, test_recover_reservation);
-  tcase_add_test(tc_core, test_translate_range_string_to_vector);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_allocation");

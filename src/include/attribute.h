@@ -434,22 +434,23 @@ int encode_complete_req(pbs_attribute *attr, tlist_head *phead, const char *atna
 
 
 
-int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_c(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_l(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
-int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
-int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
-int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
+extern int set_b(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_c(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_l(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_ll(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_size(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_str_csv(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
+extern int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
+extern int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 
 enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 

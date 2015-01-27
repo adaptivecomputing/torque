@@ -19,6 +19,7 @@
 #include "queue.h" /* all_queues, pbs_queue */
 #include "user_info.h"
 #include "id_map.hpp"
+#include "mom_hierarchy_handler.h"
 
 threadpool_t *task_pool;
 int scheduler_sock=0;
@@ -307,7 +308,7 @@ void initialize_all_jobs_array(all_jobs *aj)
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
@@ -427,7 +428,7 @@ void track_save(struct work_task *pwt)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
   exit(1);
@@ -445,7 +446,7 @@ int svr_save(struct server *ps, int mode)
   exit(1);
   }
 
-int acct_open(char *filename)
+int acct_open(char *filename, bool acct_mutex_locked)
   {
   fprintf(stderr, "The call to acct_open needs to be mocked!!\n");
   exit(1);
@@ -480,22 +481,12 @@ int get_parent_and_child(char *start, char **parent, char **child, char **end)
   return(0);
   }
 
-int add_hello(hello_container *hc, char *node_name)
-  {
-  return(0);
-  }
-
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   {
   return(0);
   }
 
 struct pbsnode *find_nodebyname(const char *name)
-  {
-  return(NULL);
-  }
-
-hello_container *initialize_hello_container(hello_container *hc)
   {
   return(NULL);
   }
@@ -517,12 +508,6 @@ char *trim(char *str)
 int array_save(job_array *pa)
   {
   return(0);
-  }
-
-int add_hello_after(hello_container *hc, int node_id, int index)
-  {
-  fprintf(stderr, "The call to add_hello_after needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(
@@ -650,18 +635,14 @@ void parse_mom_hierarchy(int fds)
   }
 
 id_map::id_map() {}
-
-id_map::~id_map(){}
-
-int id_map::get_new_id(
-
-  const char *name)
-
+id_map::~id_map() {}
+int id_map::get_new_id(const char *name)
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
+  return 0;
   }
 
+void rel_resc(job *pjob) {}
 
-void rel_resc(job *pjob)
-{}
+void mom_hierarchy_handler::initialLoadHierarchy() {}
+
+mom_hierarchy_handler hierarchy_handler; //The global declaration.

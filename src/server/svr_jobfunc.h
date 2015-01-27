@@ -10,8 +10,6 @@ struct resource;
 struct resource_def;
 struct pbs_queue;
 
-int svr_enquejob(struct job *pjob, int has_sv_qs_mutex, char *, bool);
-
 int svr_setjobstate(struct job *pjob, int newstate, int newsubstate, int);
 
 char *get_variable(struct job *pjob, const char *variable);

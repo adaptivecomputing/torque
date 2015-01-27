@@ -6,13 +6,9 @@
 struct job_array;
 struct batch_request;
 
-int job_abt(struct job **pjobp, const char *text);
+int job_abt(struct job **pjobp, const char *text, bool depedentjob=0);
 
 int conn_qsub(char *hostname, long port, char *EMsg);
-
-struct job *job_alloc(void);
-
-void job_free(struct job *pj, int use_recycle);
 
 struct job *copy_job(struct job *parent);
 
@@ -41,5 +37,8 @@ int fix_external_exec_hosts(struct job *pjob);
 int fix_cray_exec_hosts(struct job *pjob);
 
 int change_external_job_name(struct job *pjob);
+
+void handle_aborted_job(job **job_ptr, bool  dependentjob, long KeepSeconds, const char *text);
+
 
 #endif /* _JOB_FUNC_H */

@@ -129,7 +129,6 @@
 
 int    MOMIsLocked = 0;
 int    MOMIsPLocked = 0;
-int    ForceServerUpdate = 0;
 
 int    verbositylevel = 0;
 unsigned int default_server_port = 0;
@@ -230,6 +229,7 @@ extern long     MaxConnectTimeout;
 time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 int             UpdateFailCount = 0;
 
 time_t          MOMStartTime         = 0;
@@ -258,6 +258,7 @@ extern void     mom_server_all_diag(std::stringstream &output);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
+void            empty_received_nodes();
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
@@ -334,6 +335,7 @@ u_long   localaddr = 0;
 int   cphosts_num = 0;
 
 
+char                    PBSNodeMsgBuf[MAXLINE];
 static time_t           MOMExeTime = 0;
 
 
@@ -645,6 +647,8 @@ void cleanup(void)
 
   {
   dep_cleanup();
+
+  empty_received_nodes();
 
   return;
   }
@@ -1981,6 +1985,8 @@ void add_diag_jobs_memory_info(
       else if (!(strcmp(resname, "vmem")))
         resvalue = getsize(pres);
       else if (!(strcmp(resname, "cput")))
+        resvalue = gettime(pres);
+      else if (!(strcmp(resname, "energy_used")))
         resvalue = gettime(pres);
       else
         continue;
@@ -4000,8 +4006,6 @@ static void PBSAdjustLogLevel(
 
 
 
-
-
 /*
  * mk_dirs - make the directory names used by MOM
  */
@@ -5962,6 +5966,23 @@ void prepare_child_tasks_for_delete()
 
 
 
+time_t calculate_select_timeout() {
+  time_t tmpTime;
+  extern time_t wait_time;
+
+  tmpTime = MIN(wait_time, (LastServerUpdateTime + get_stat_update_interval()) - time_now);
+
+  tmpTime = MIN(tmpTime, (last_poll_time + CheckPollTime) - time_now);
+
+  tmpTime = MAX(1, tmpTime);
+
+  if (LastServerUpdateTime == 0)
+    tmpTime = 1;
+
+  return tmpTime;
+}
+
+
 
 /**
  * main_loop
@@ -5972,7 +5993,6 @@ void prepare_child_tasks_for_delete()
 void main_loop(void)
 
   {
-  extern time_t wait_time;
   double        myla;
   time_t        tmpTime;
 #ifdef USESAVEDRESOURCES
@@ -6085,14 +6105,7 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = MIN(wait_time, time_now - (LastServerUpdateTime + ServerStatUpdateInterval));
-
-    tmpTime = MIN(tmpTime, time_now - (last_poll_time + CheckPollTime));
-
-    tmpTime = MAX(1, tmpTime);
-
-    if (LastServerUpdateTime == 0)
-      tmpTime = 1;
+    tmpTime = calculate_select_timeout();
 
     resend_things();
 
@@ -6168,6 +6181,58 @@ void restart_mom(
 
 
 
+/*
+ * parse_integer_range()
+ *
+ * accepts a string in the format int1[-int2] and populates start
+ * with int1 and end with int2 if specified or int1 if not.
+ */
+int parse_integer_range(
+
+  const char *range_str,
+  int        &start,
+  int        &end)
+
+  {
+  if (range_str != NULL)
+    {
+    char *val     = strdup(range_str);
+    char *val_ptr = val;
+    char *begin   = threadsafe_tokenizer(&val_ptr, "-");
+    char *end_str = threadsafe_tokenizer(&val_ptr, "-");
+
+    if (begin == NULL)
+      {
+      snprintf(log_buffer, sizeof(log_buffer), "Illegal range string '%s'", range_str);
+      free(val);
+      return(-1);
+      }
+
+    start = strtol(begin, NULL, 10);
+
+    if (end_str != NULL)
+      {
+      end = strtol(end_str, NULL, 10);
+
+      if (end < start)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Illegal range string '%s': end parsed as '%d' which is less than start '%d'",
+          range_str, end, start);
+        free(val);
+        return(-1);
+        }
+      }
+    else
+      end = start;
+
+    free(val);
+    }
+
+  return(PBSE_NONE);
+  } /* END parse_integer_range() */
+
+
 
 #ifdef NUMA_SUPPORT
 /*
@@ -6208,6 +6273,7 @@ int read_layout_file()
      * so that add_mic_status() skips over the nodeboard if not 
      * configured */
     node_boards[i].mic_end_index = -1;
+    node_boards[i].gpu_end_index = -1;
 
     /* Strip off comments */
     if ((tok = strchr(line, '#')) != NULL)
@@ -6253,16 +6319,15 @@ int read_layout_file()
         {
         /* read the mics specified for this node board. This is in the form
          * index1[-index2] specifying a range*/
-        char *micval = strdup(val);
-        char *start  = strtok(micval, "-");
-        char *end    = strtok(NULL, "-");
-        node_boards[i].mic_start_index = strtol(start, NULL, 10);
-        node_boards[i].mic_end_index = node_boards[i].mic_start_index;
-
-        if (end != NULL)
-          node_boards[i].mic_end_index = strtol(end, NULL, 10);
-
-        free(micval);
+        if (parse_integer_range(val,
+              node_boards[i].mic_start_index, node_boards[i].mic_end_index) != PBSE_NONE)
+          goto failure;
+        }
+      else if (strcmp(tok, "gpu") == 0)
+        {
+        if (parse_integer_range(val,
+              node_boards[i].gpu_start_index, node_boards[i].gpu_end_index) != PBSE_NONE)
+          goto failure;
         }
       else if (strcmp(tok,"memsize") == 0)
         {
@@ -6595,6 +6660,8 @@ int main(
     {
     restart_mom(argc, argv);
     }
+
+  cleanup();
 
   /* cleans up memory allocated by the lib2xml libraries */
   xmlCleanupParser(); /* this call must be call before program exits */

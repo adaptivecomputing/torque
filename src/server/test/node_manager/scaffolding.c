@@ -40,7 +40,6 @@ attribute_def node_attr_def[2];
 char *path_nodenote_new;
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
-hello_container hellos;
 struct pbsnode reporter;
 struct pbsnode *alps_reporter = &reporter;
 const char *alps_reporter_feature  = "alps_reporter";
@@ -375,16 +374,20 @@ int lock_node(pbsnode *the_node, const char *id,const char *msg, int logging)
   return(0);
   }        
 
+int tmp_unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int tmp_lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+
 void socket_read_flush(int socket) {}        
 
 void close_conn(int sock,int has_mut) {}
-
-int remove_hello(hello_container *hc, char *nodename)
-  { 
-  fprintf(stderr, "The call to remove_hello needs to be mocked!!\n");
-  exit(1);                            
-  }
-
 
 void *send_hierarchy_threadtask(void *vp)
   { 

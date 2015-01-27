@@ -195,7 +195,6 @@ void *check_and_run_job(
   int              job_exit_status;
   int              job_state;
   char             job_id[PBS_MAXSVRJOBID+1];
-  struct badplace *bp;
   char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   *rc_ptr = PBSE_NONE;
@@ -280,10 +279,9 @@ void *check_and_run_job(
     free_nodes(pjob);
 
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
-
-    if ((bp = (badplace *)GET_NEXT(pjob->ji_rejectdest)) != NULL)
+    if (pjob->ji_rejectdest->size() > 0)
       {
-      req_reject(*rc_ptr, 0, preq, bp->bp_dest, "could not contact host");
+      req_reject(*rc_ptr, 0, preq, pjob->ji_rejectdest->at(0).c_str(), "could not contact host");
       }
     else
       {
@@ -892,8 +890,6 @@ int verify_moms_up(
   struct sockaddr_in *sai;
   struct sockaddr_in  saddr;
 
-  badplace           *bp;
-  
   /* NOTE: Copy the nodes into a temp string because threadsafe_tokenizer() is destructive. */
   hostlist = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   hostlist_ptr = hostlist;
@@ -933,17 +929,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      /* Add this host to the reject destination list for the job */
-      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
-        {
-        log_err(ENOMEM, __func__, msg_err_malloc);
-
-        return(PBSE_SYSTEM);
-        }
-
-      CLEAR_LINK(bp->bp_link);
-      strcpy(bp->bp_dest, nodestr);
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+      pjob->ji_rejectdest->push_back(nodestr);
 
       /* FAILURE - cannot lookup master compute host */
       return(PBSE_RESCUNAV);
@@ -968,19 +954,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      /* Add this host to the reject destination list for the job */
-      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
-        {
-        /* FAILURE - cannot allocate memory */
-
-        log_err(errno, __func__, msg_err_malloc);
-
-        return(PBSE_RESCUNAV);
-        }
-
-      CLEAR_LINK(bp->bp_link);
-      strcpy(bp->bp_dest, nodestr);
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+      pjob->ji_rejectdest->push_back(nodestr);
 
       /* FAILURE - cannot create socket for master compute host */
       return(PBSE_RESCUNAV);
@@ -1008,18 +982,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      /* Add this host to the reject list for the job */
-      if ((bp = (badplace *)calloc(1, sizeof(badplace))) == NULL)
-        {
-        /* FAILURE - cannot allocate memory */
-        log_err(errno, __func__, msg_err_malloc);
-
-        return(PBSE_RESCUNAV);
-        }
-
-      CLEAR_LINK(bp->bp_link);
-      strcpy(bp->bp_dest, nodestr);
-      append_link(&pjob->ji_rejectdest, &bp->bp_link, bp);
+      pjob->ji_rejectdest->push_back(nodestr);
 
       /* FAILURE - cannot connect to master compute host */
       return(PBSE_RESCUNAV);
@@ -1081,7 +1044,7 @@ int svr_startjob(
       }
     }
 
-  /* if exec_host already set and either (hot start or checkpoint) */
+  /* if exec_host already set and either checkpoint */
   /* then use the host(s) listed in exec_host                      */
 
   /* NOTE:  qrun hostlist assigned in req_runjob() */
@@ -1091,8 +1054,7 @@ int svr_startjob(
   f = pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET;
 
   if ((f != 0) &&
-      ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HOTSTART) ||
-       (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)) &&
+     ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)) &&
       ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HasNodes) == 0))
     {
     rc = assign_hosts(    /* inside svr_startjob() */
@@ -1189,7 +1151,7 @@ int svr_startjob(
 
 
 
-
+#define THRESHOLD_LEN 999000000
 int send_job_to_mom(
  
   job           **pjob_ptr,   /* M */
@@ -1239,7 +1201,20 @@ int send_job_to_mom(
 
   if ((preq != NULL) && 
       (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
-    mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
+    {
+    /* assume it's a corrupted record when the length is too high */
+    if ((preq->rq_type != PBS_BATCH_CopyFiles) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_txtlen < THRESHOLD_LEN))
+      mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
+    else
+      {
+      if (preq->rq_type != PBS_BATCH_CopyFiles)
+        {
+        sprintf(tmpLine, "Unexpected length for email's text: '%ld' - discarded as a corrupted field", preq->rq_reply.brp_un.brp_txt.brp_txtlen);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
+        }
+      }
+    }
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
@@ -1518,7 +1493,6 @@ void finish_sendmom(
 
       long job_stat_rate;
 
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
       get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
       
       if (preq != NULL)

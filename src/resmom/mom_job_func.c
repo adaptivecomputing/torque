@@ -878,7 +878,7 @@ void mom_job_purge(
     {
     /* get pid entry from ji_job_pid_set */
     pid_t job_pid = *job_pid_set_iter;
-                                     
+
     /* see if job_pid exists in job_sid set */
     job_pid_set_t::const_iterator it = global_job_sid_set.find(job_pid);
     if (it != global_job_sid_set.end())

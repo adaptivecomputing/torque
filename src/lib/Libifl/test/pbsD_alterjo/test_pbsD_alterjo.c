@@ -7,10 +7,18 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbsD_alterjob_asyncflag)
   {
+  char jobid[1024];
+  snprintf(jobid, sizeof(jobid), "1.napali");
 
+  fail_unless(pbs_alterjob_asyncflag(-1, jobid, NULL, NULL, 1, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_alterjob_asyncflag(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL, 1, NULL) == PBSE_IVALREQ);
 
+  fail_unless(pbs_alterjob_asyncflag(0, NULL, NULL, NULL, 1, NULL) == PBSE_IVALREQ);
+  memset(&jobid, 0, sizeof(jobid));
+  fail_unless(pbs_alterjob_asyncflag(0, jobid, NULL, NULL, 1, NULL) == PBSE_IVALREQ);
+  
   }
 END_TEST
 
@@ -24,8 +32,8 @@ END_TEST
 Suite *pbsD_alterjo_suite(void)
   {
   Suite *s = suite_create("pbsD_alterjo_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbsD_alterjob_aynscflag");
+  tcase_add_test(tc_core, test_pbsD_alterjob_asyncflag);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

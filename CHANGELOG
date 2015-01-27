@@ -1,6 +1,85 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-5.0
+5.1
+
+5.0.2
+  b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
+      thread exits.
+  b - TRQ-3012. Fix memory leaks that happen each time a job is run.
+  b - TRQ-2966. Improved job rerun speed which had been significantly slowed down
+      starting in 4.2.6. Also, pbs_mom now correctly accounts for job resources when
+      user jobs call setsid more than once.
+  c - TRQ-2987. Fix a crash around job exits due to incorrect error code handling.
+
+5.0.1.h2
+  b - Reverted a change in 5.0.0 which made it so a user could not submit a
+      job from a node which had been allowed using the acl_hosts list. The
+      change to 5.0.0 made it so the ruserok call could not be made to check
+      for user authorization.
+
+5.0.1
+  e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
+      in the command.
+  e - TRQ-2460. Two new fields were added to the accounting file for completed jobs:
+      total_execution_slots and unique_node_count. total_execution_slots should be
+      20 for a job that requests nodes=2:ppn=10. unique_node_count should be the
+      number of unique hosts the job occupied.
+  e - TRQ-2594. TORQUE now uses the Munge API rather than forking when configured
+      with the --enable-munge-auth option.
+  e - TRQ-2863. Reduced verbosity in error logging in HA environments.
+  e - TRQ-2868. TORQUE now allows for the modification of the output location
+      based on the Mother superior hostname. An environment variable ($HOSTNAME)
+      has been added to the job's environment.
+  e - TRQ-2882. Improved trqauthd error messages to more meaningful and less
+      redundant.
+  e - TRQ-2890. Added stderr capturing when using -o option.
+  b - TRQ-2025. Fixed bug where giving a bad queue name to qstat -Q results in
+      duplicate output.
+  b - TRQ-2292. Fixed bug where some tasks were incorrectly listed as 0 in 'qstat -a'
+      when requesting specific nodes.
+  b - TRQ-2367. Fixed bug related to accounting records on large systems.
+  b - TRQ-2411. Fixed output format bug in cases where multiple job IDs are passed
+      into qstat.
+  b - TRQ-2646. Fixed bug where qsub did not process args correctly when using
+      a submit filter.
+  b - TRQ-2652. Fixed parsing bug when using hostlist ranges in qsub.
+  b - TRQ-2653. Fixed build bug related to newer Intel MIC libraries installing
+      in different locations.
+  b - TRQ-2730. Fixed problem where GPUs were not split between NUMA nodes. You
+      now need to specify which gpus belong to each node board in the mom.layout
+      file. A sample mom.layout file might look like:
+
+          nodes=0 gpu=0
+          nodes=1 gpu=1
+
+      Also please note that this only works if you use nvml. The nvidia-smi
+      command is not supported.
+  b - TRQ-2732. Fixed bug where OU files were being left in spool when job was
+      preempted or requeued.
+  b - TRQ-2759. Fixed bug where reported cput was incorrect.
+  b - TRQ-2760. Fixed unexpected error when running 'pbsnodes -l offline -n'.
+  b - TRQ-2795. Fixed bug where jobs rejected due to max_user_queuable limit reached,
+      yet no jobs in the queue.
+  b - TRQ-2828. Fixed bug where 'momctl -q clearmsg' didn't clear error messages
+      properly.
+  b - TRQ-2837. Fixed bug where GPU modes were not passed to sister nodes.
+  b - TRQ-2852. Fixed bug while writing resources_default units to serverdb file.
+  b - TRQ-2885, CVE-2014-3684. Fixed issue around unauthorized termination
+      of processes.
+  b - TRQ-2890. Improved pbsdsh to better handle simultaneous use of -o and -s
+      options. Also fixed some problems where -o output was sometimes getting
+      truncated.
+  b - TRQ-2904. Fixed bug where TORQUE was not honoring KeepCompleted server
+      parameter when job_nanny was set to true.
+  b - TRQ-2918. Fixed problem with remote client job submission during
+      ruserok() calls.
+  b - TRQ-2919. Fixed deadlock issue when running 'qdel -p' as non-root user.
+  b - TRQ-2937. Fixed bug in qsub -m when TORQUE is configured --with-sendmail.
+      Some missing newlines were added.
+  b - TRQ-2956. Fixed bug where HOST_NAME_SUFFIX was no longer adding suffix to job names.
+  c - TRQ-2928, TRQ-2921, TRQ-2855, TRQ-2854, TRQ-2853, TRQ-2835. Fixed various crashes.
+
+5.0.0
   e - TRQ-2083. Remove job status polling from TORQUE. Have pbs_server only poll a
       mom for a job's information if the information hasn't been received for 5 
       minutes. Otherwise, this information is communicated with the mom's status
@@ -25,6 +104,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-2044. Create a unique identifier for all jobs in TORQUE. This makes it
       so that we're performing integer comparisons instead of string comparisons 
       for finding jobs.
+
+4.2.9
+  b - TRQ-2730. Make nvml and numa-support configurations work together. The admin must
+      now specify which gpus are on which node board the same way it is done with mic
+      co-processors, adding gpu=X[-Y] to the mom.layout line for that node board.
 
 4.2.8
   b - TRQ-2501. Fix the total number of execution slots having a count that is off-by-one for

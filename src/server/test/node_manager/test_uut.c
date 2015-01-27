@@ -7,12 +7,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-
+#include "server.h" /* server */
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
 const char *napali = "napali";
 const char *l11 =    "l11";
+struct server server;
 
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 int   node_in_exechostlist(char *, char *);
@@ -27,7 +28,14 @@ void process_job_attribute_information(std::string &job_id, std::string &attribu
 bool process_as_node_list(const char *spec, const node_job_add_info *naji);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
-int  translate_job_reservation_info_to_string(std::vector<job_reservation_info *> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
+int  translate_job_reservation_info_to_string(std::vector<job_reservation_info> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
+int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info *naji, job_reservation_info &jri, char *ProcBMStr);
+int initialize_alps_req_data(alps_req_data **, int num_reqs);
+void free_alps_req_data_array(alps_req_data *, int num_reqs);
+void record_fitting_node(int &num, struct pbsnode *pnode, node_job_add_info *naji, single_spec_data *req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data *all_reqs, alps_req_data **ard_array);
+int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
+int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
+int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 
 extern std::vector<int> jobsKilled;
 
@@ -35,9 +43,123 @@ extern int str_to_attr_count;
 extern int decode_resc_count;
 
 
+START_TEST(test_add_remove_mic_jobs)
+  {
+  struct pbsnode      pnode;
+  job                *pjobs = (job *)calloc(3, sizeof(job));
+  
+  memset(&pnode, 0, sizeof(pnode));
+  pnode.nd_micjobs = (struct jobinfo *)calloc(5, sizeof(struct jobinfo));
+  pnode.nd_nmics = 5;
+  pnode.nd_nmics_free = 5;
+  pnode.nd_nmics_to_be_used = 3;
+
+  for (short i = 0; i < pnode.nd_nmics; i++)
+    pnode.nd_micjobs[i].internal_job_id = -1;
+
+  pjobs[0].ji_internal_id = 0;
+  pjobs[1].ji_internal_id = 1;
+  pjobs[2].ji_internal_id = 2;
+
+  fail_unless(add_job_to_mic(&pnode, 0, pjobs + 0) == PBSE_NONE);
+  fail_unless(pnode.nd_nmics_free == 4);
+  fail_unless(pnode.nd_nmics_to_be_used == 2);
+  
+  fail_unless(add_job_to_mic(&pnode, 1, pjobs + 1) == PBSE_NONE);
+  fail_unless(pnode.nd_nmics_free == 3);
+  fail_unless(pnode.nd_nmics_to_be_used == 1);
+  
+  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) == PBSE_NONE);
+  fail_unless(pnode.nd_nmics_free == 2);
+  fail_unless(pnode.nd_nmics_to_be_used == 0);
+ 
+  // make sure an add to the same mic fails
+  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) != PBSE_NONE);
+  fail_unless(pnode.nd_nmics_free == 2);
+  fail_unless(pnode.nd_nmics_to_be_used == 0);
+
+  remove_job_from_nodes_mics(&pnode, pjobs + 0);
+  fail_unless(pnode.nd_nmics_free == 3);
+
+  // make sure a repeat doesn't change things
+  remove_job_from_nodes_mics(&pnode, pjobs + 0);
+  fail_unless(pnode.nd_nmics_free == 3);
+
+  remove_job_from_nodes_mics(&pnode, pjobs + 1);
+  fail_unless(pnode.nd_nmics_free == 4);
+
+  remove_job_from_nodes_mics(&pnode, pjobs + 2);
+  fail_unless(pnode.nd_nmics_free == 5);
+  }
+END_TEST
+
+
+START_TEST(test_initialize_alps_req_data)
+  {
+  alps_req_data      *ard;
+  node_job_add_info  *naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
+  single_spec_data    req;
+  complete_spec_data  csd;
+  int                 num = 0;
+  struct pbsnode      pnode;
+
+  memset(&req, 0, sizeof(req));
+  memset(&csd, 0, sizeof(csd));
+  memset(&pnode, 0, sizeof(pnode));
+
+  fail_unless(initialize_alps_req_data(&ard, 3) == PBSE_NONE);
+
+  pnode.nd_id = 0;
+  pnode.nd_name = strdup("napali");
+  req.req_id = 0;
+  req.ppn = 32;
+
+  record_fitting_node(num, &pnode, naji, &req, 0, 0, 3, JOB_TYPE_cray, &csd, &ard);
+
+  pnode.nd_id = 1;
+  pnode.nd_name = strdup("waimea");
+  req.req_id = 1;
+  req.ppn = 1;
+  
+  record_fitting_node(num, &pnode, naji, &req, 0, 1, 3, JOB_TYPE_cray, &csd, &ard);
+
+  pnode.nd_id = 4;
+  pnode.nd_name = strdup("wailua");
+  req.ppn = 2;
+  
+  record_fitting_node(num, &pnode, naji, &req, 0, 2, 3, JOB_TYPE_cray, &csd, &ard);
+
+  pnode.nd_id = 2;
+  pnode.nd_name = strdup("lihue");
+  req.req_id = 2;
+  req.ppn = 12;
+  
+  record_fitting_node(num, &pnode, naji, &req, 0, 3, 3, JOB_TYPE_cray, &csd, &ard);
+
+  fail_unless(!strcmp(ard[0].node_list->c_str(), "napali"), ard[0].node_list->c_str());
+  fail_unless(ard[0].ppn == 32);
+  fail_unless(!strcmp(ard[1].node_list->c_str(), "waimea,wailua"));
+  fail_unless(ard[1].ppn == 2);
+  fail_unless(!strcmp(ard[2].node_list->c_str(), "lihue"));
+  fail_unless(ard[2].ppn == 12);
+
+  job *pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
+  fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
+  fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
+ 
+  fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str, "napali*32|waimea,wailua*2|lihue*12"));
+
+  // make sure this doesn't segfault
+  free_alps_req_data_array(ard, 3);
+  }
+END_TEST
+
+
 START_TEST(translate_job_reservation_info_to_stirng_test)
   {
-  std::vector<job_reservation_info *> host_info;
+  std::vector<job_reservation_info> host_info;
   job_reservation_info jri[5];
   std::string          exec_host;
   std::stringstream    exec_port;
@@ -56,7 +178,7 @@ START_TEST(translate_job_reservation_info_to_stirng_test)
     jri[i].port = 15002;
     jri[i].node_id = i;
 
-    host_info.push_back(jri + i);
+    host_info.push_back(jri[i]);
     }
 
   int count = 0;
@@ -504,8 +626,62 @@ START_TEST(record_external_node_test)
   }
 END_TEST
 
+START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
+  {
+  job pjob;
+  memset(&pjob, 0, sizeof(job));
+  strcpy(pjob.ji_qs.ji_jobid, "1.lei");
 
+  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  for (int i = 0; i < 9; i++)
+    pnode->nd_slots.add_execution_slot();
 
+  job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
+  jui->internal_job_id = 1;
+
+  pnode->nd_slots.reserve_execution_slots(1, jui->est);
+  pnode->nd_job_usages.push_back(*jui);
+
+  fail_unless(pnode->nd_state == 0, "Node state has garbage");
+
+  node_job_add_info *naji = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
+  naji->node_id = 1;
+  naji->req_rank = 1;
+
+  char buf[10];
+  buf[0] = '\0';
+
+  /* set job_exclusive_on_use true */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
+
+  job_reservation_info jri;
+  int rc =  place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
+
+  fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
+  fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
+
+  /* turn job_exclusive_on_use off and reset the node state */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
+  pnode->nd_state = 0;
+
+  job_reservation_info jri2;
+  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri2, buf);
+  fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlit failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
+
+  /* test case when the attribute SVR_ATR_JobExclusiveOnUse was never set */
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=0;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
+  pnode->nd_state = 0;
+
+  job_reservation_info jri3;
+  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri3, buf);
+  fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlit failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
+  }
+END_TEST
 
 Suite *node_manager_suite(void)
   {
@@ -535,6 +711,11 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, sync_node_jobs_with_moms_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
+  tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
+  tcase_add_test(tc_core, test_add_remove_mic_jobs);
+  suite_add_tcase(s, tc_core);
+
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
   tcase_add_test(tc_core, remove_job_from_node_test);
@@ -544,7 +725,9 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, translate_job_reservation_info_to_stirng_test);
+  tcase_add_test(tc_core, test_initialize_alps_req_data);
   suite_add_tcase(s, tc_core);
+
 
   return(s);
   }

@@ -63,6 +63,7 @@
 #include <arpa/inet.h>
 #include "threadpool.h"
 #include "timer.hpp"
+#include "mom_hierarchy_handler.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -71,7 +72,7 @@
 #define NULLSTR static_cast <const char *>(0);
 /* Global Data */
 
-extern hello_container  failures;
+//extern hello_container  failures;
 extern struct addrinfo  hints;
 extern int              svr_totnodes;
 extern int              svr_clnodes;
@@ -83,9 +84,6 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern AvlTree          ipaddrs;
-extern std::vector<std::string> hierarchy_holder;
-extern pthread_mutex_t  hierarchy_holder_Mutex;
-
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -119,7 +117,6 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 struct pbsnode *alps_reporter;
 
 
-
 /*
  * return 0 if addr is a MOM node and node is in bad state,
  * return 1 otherwise (it is not a MOM node, or it's state is OK)
@@ -151,7 +148,7 @@ int addr_ok(
     /* definitely not ok */
     status = 0;
     }
-  else if (pnode->nd_state & INUSE_DOWN)
+  else if (pnode->nd_state & INUSE_NOT_READY)
     {
     /* the node is ok if it is still talking to us */
     long chk_len = 300; 
@@ -827,6 +824,13 @@ int initialize_pbsnode(
   pnode->nd_acl             = NULL;
   pnode->nd_requestid       = new std::string();
 
+  if(hierarchy_handler.isHiearchyLoaded())
+    {
+    pnode->nd_state |= INUSE_NOHIERARCHY; //This is a dynamic add so don't allow
+                                          //the node to be used until an updated node
+                                          //list has been send to all nodes.
+    }
+
   if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
     if (pbs_getaddrinfo(pname,NULL,&pAddrInfo))
@@ -870,14 +874,31 @@ void effective_node_delete(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer delete call");
     return;
     }
-  if(pnode->nd_name == NULL)
+  if (pnode->nd_name == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL node pointer to name delete call");
     return;
     }
 
-  remove_node(&allnodes,pnode);
+  // If remove_node() fails, the node has been removed and someone else is 
+  // deleting it
+  if (remove_node(&allnodes, pnode) != PBSE_NONE)
+    return;
+
   unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+  //The node has been removed from the allnodes array.
+  //Give some time for other threads to be done with the node
+  //Before wiping it out.
+  unsigned char tmp_unlock_count = 0;
+  do
+    {
+    sleep(2);
+    lock_node(pnode,__func__,NULL,LOGLEVEL);
+    tmp_unlock_count = pnode->nd_tmp_unlock_count;
+    unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    }while(tmp_unlock_count != 0);
+
   free(pnode->nd_mutex);
 
   pnode->nd_last->next = NULL;      /* just in case */
@@ -1470,7 +1491,14 @@ int add_execution_slot(
   
   pnode->nd_slots.add_execution_slot();
 
-  if ((pnode->nd_state & INUSE_JOB) != 0)
+  bool job_exclusive_on_use = false;
+
+  if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+    job_exclusive_on_use = true;
+
+  if (((pnode->nd_state & INUSE_JOB) != 0) &&
+       (!job_exclusive_on_use))
     pnode->nd_state &= ~INUSE_JOB;
 
   return(PBSE_NONE);
@@ -1593,6 +1621,9 @@ int copy_properties(
    * values */
   sub->as_next= sub->as_buf + (main_node->as_next - main_node->as_buf);
 
+  // nd_first is about to be overwritten so we must free it first
+  free_prop_list(dest->nd_first);
+
   plink = &dest->nd_first;
 
   for (i = 0; i < main_node->as_npointers; i++)
@@ -1612,7 +1643,6 @@ int copy_properties(
 
   return(PBSE_NONE);
   } /* END copy_properties() */
-
 
 
 
@@ -1821,6 +1851,11 @@ static void recheck_for_node(
 
     free(host_info);
     }
+  else
+    {
+    //The node has been created so load reload the heirarchy.
+    hierarchy_handler.reloadHierarchy();
+    }
 
   free(ptask->wt_mutex);
   free(ptask);
@@ -1829,7 +1864,111 @@ static void recheck_for_node(
 
 
 
+/* This is only called if we have resolved the node name and have a valid ip address for it. */
 
+static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts       */
+                                        u_long    *pul,  /* 0 terminated host adrs array*/
+                                        int       ntype, /* node type; time-shared, not */
+                                        svrattrl  *plist,
+                                        int       perms,
+                                        int       *bad)
+  {
+  int        rc = PBSE_NONE;
+  pbsnode    *pnode = NULL;
+  u_long     addr;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((pnode = find_nodebyname(pname)) != NULL)
+    {
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+    free(pname);
+    free(pul);
+
+    return(PBSE_NODEEXIST);
+    }
+
+  if ((pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode))) == NULL)
+    {
+    free(pul);
+    free(pname);
+
+    return(PBSE_SYSTEM);
+    }
+
+  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+
+    return(rc);
+    }
+
+  try
+    {
+    /* All nodes have at least one execution slot */
+    add_execution_slot(pnode);
+
+    rc = mgr_set_node_attr(
+           pnode,
+           node_attr_def,
+           ND_ATR_LAST,
+           plist,
+           perms,
+           bad,
+           (void *)pnode,
+           ATR_ACTION_ALTER);
+
+    if (rc != 0)
+      {
+      effective_node_delete(&pnode);
+
+      return(rc);
+      }
+    }
+  catch(...)
+    {
+    free(pul);
+    free(pname);
+    free(pnode);
+    return(-1);
+    }
+
+  int i;
+  for (i = 0; pul[i]; i++)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+          "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
+        pnode->nd_name,
+        (pul[i] & 0xff000000) >> 24,
+        (pul[i] & 0x00ff0000) >> 16,
+        (pul[i] & 0x0000ff00) >> 8,
+        (pul[i] & 0x000000ff));
+
+      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,__func__,log_buf);
+      }
+
+    addr = pul[i];
+    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    }  /* END for (i) */
+
+  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+
+  insert_node(&allnodes,pnode);
+
+  svr_totnodes++;
+
+  recompute_ntype_cnts();
+
+  /* SUCCESS */
+  return(PBSE_NONE);
+  } /* End finalize_create_pbs_node() */
 
 /*
  * create_pbs_node - create pbs node structure, i.e. add a node
@@ -1843,7 +1982,6 @@ int create_pbs_node(
   int      *bad)
 
   {
-  struct pbsnode  *pnode = NULL;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   int              ntype; /* node type; time-shared, not */
@@ -1851,13 +1989,19 @@ int create_pbs_node(
   u_long          *pul = NULL;  /* 0 terminated host adrs array*/
   int              rc;
   node_info        *host_info;
-  int              i;
-  u_long           addr;
   time_t           time_now = time(NULL);
 
   if ((rc = process_host_name_part(objname, &pul, &pname, &ntype)) != 0)
     {
     svrattrl *pal, *pattrl;
+
+    svr_unresolvednodes++;
+
+    if(LOGLEVEL >= 7)
+      {
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Node does not resolve, putting in delayed create.");
+      }
+
 
     /* the host name in the nodes file did not resolve.
        We will set up a process to check periodically
@@ -1916,6 +2060,11 @@ int create_pbs_node(
       strcpy(host_info->nodename, objname);
       }
 
+    if(LOGLEVEL >= 7)
+      {
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Delayed create for node set up.");
+      }
+
     set_task(WORK_Timed, time_now + 30, recheck_for_node, host_info, FALSE);
 
     if (pul != NULL)
@@ -1937,100 +2086,15 @@ int create_pbs_node(
     return(PBSE_SYSTEM);
     }
 
-  if ((pnode = find_nodebyname(pname)) != NULL)
-    {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    free(pname);
-    free(pul);
-
-    return(PBSE_NODEEXIST);
-    }
-    
-  if ((pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode))) == NULL)
-    {
-    free(pul);
-    free(pname);
-    
-    return(PBSE_SYSTEM);
-    }
-
-  if ((rc = initialize_pbsnode(pnode, pname, pul, ntype, FALSE)) != PBSE_NONE)
-    {
-    free(pul);
-    free(pname);
-    free(pnode);
-
-    return(rc);
-    }
-
-  try
-    {
-    /* All nodes have at least one execution slot */
-    add_execution_slot(pnode);
-
-    rc = mgr_set_node_attr(
-           pnode,
-           node_attr_def,
-           ND_ATR_LAST,
-           plist,
-           perms,
-           bad,
-           (void *)pnode,
-           ATR_ACTION_ALTER);
-
-    if (rc != 0)
-      {
-      effective_node_delete(&pnode);
-      
-      return(rc);
-      }
-    }
-  catch(...)
-    {
-    free(pul);
-    free(pname);
-    free(pnode);
-    return(-1);
-    }
-
-  for (i = 0; pul[i]; i++)
-    {
-    if (LOGLEVEL >= 6)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "node '%s' allows trust for ipaddr %ld.%ld.%ld.%ld\n",
-        pnode->nd_name,
-        (pul[i] & 0xff000000) >> 24,
-        (pul[i] & 0x00ff0000) >> 16,
-        (pul[i] & 0x0000ff00) >> 8,
-        (pul[i] & 0x000000ff));
-
-      log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,__func__,log_buf);
-      }
-    
-    addr = pul[i];
-    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
-    }  /* END for (i) */
-
-  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
-    {
-    return(rc);
-    }
-
-  insert_node(&allnodes,pnode);
-
-  svr_totnodes++;
-
-  recompute_ntype_cnts();
-
-  /* SUCCESS */
-  return(PBSE_NONE);
+  return finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad);
   } /* End create_pbs_node() */
 
 
 
-
+#define COLON_OK  0x01
+#define COMMA_OK  0x02
+#define PLUS_OK   0x04
+#define OPAQUE    0x08
 
 /*
  * parse_node_token - parse tokens in the nodes file
@@ -2043,70 +2107,77 @@ int create_pbs_node(
  * If "cok" is true, then this is first token ( node name) and ':' is
  * allowed and '=' is not.   For following tokens, allow '=' as separator
  * between "keyword" and "value".  Will get value as next token.
- */
-
-#define COLON_OK  0x01
-#define COMMA_OK  0x02
-#define PLUS_OK   0x04
-#define OPAQUE    0x08
-
-static char *parse_node_token(
-
-  char *start, /* if null, restart where left off */
-  int   flags, /*OR'ed together values of:
+ *
+ * @param start - begin looking here
+ * @param flags - OR'ed together values of:
                   COLON_OK    The colon ':' is allowed
                   COMMA_OK    The comma ',' is allowed
                   PLUS_OK     The plus  '+' is allowed
                   OPAQUE      The string is accepted up to the next white space.
-               */
-  int  *err, /* RETURN: non-zero if error */
-  char *term) /* RETURN: character terminating token */
+ * @param err (O) - non-zero if there was an error
+ * @param term (O) - character terminating the token
+ * @return the parsed token or NULL if none are found
+ */
+
+char *parse_node_token(
+
+  char **start,
+  int    flags,
+  int   *err,
+  char  *term)
 
   {
-  static char *pt;
-  char        *ts;
+  char *pt = *start;
+  char *token;
 
   *err = 0;
 
-  if (start)
-    pt = start;
+  pt = *start;
 
   while (*pt && isspace((int)*pt)) /* skip leading whitespace */
     pt++;
 
   if (*pt == '\0')
     {
-    return (NULL);  /* no token */
+    *start = pt;
+    return(NULL);  /* no token */
     }
 
-  ts = pt;
+  token = pt;
 
   /* test for legal characters in token */
 
   for (;pt[0] != '\0';pt++)
     {
-    if(flags&OPAQUE)
+    if (flags & OPAQUE)
       {
-      if ((isspace((int)*pt))||(*pt == '\0'))
+      if ((isspace((int)*pt)) ||
+          (*pt == '\0'))
         break;
+
       continue;
       }
+
     if (isalnum((int)*pt) || strchr("-._[]", *pt) || (*pt == '\0'))
       continue;
 
     if (isspace((int)*pt))
       break;
 
-    if ((flags&COLON_OK) && (*pt == ':'))
+    if ((flags & COLON_OK) &&
+        (*pt == ':'))
       continue;
 
-    if ((flags&COMMA_OK) && (*pt == ','))
+    if ((flags & COMMA_OK) &&
+        (*pt == ','))
       continue;
 
-    if ((flags&PLUS_OK) && (*pt == '+'))
+    if ((flags & PLUS_OK) &&
+        (*pt == '+'))
       continue;
 
-    if (!(flags&COLON_OK) && (*pt == '='))
+    if (!(flags&COLON_OK) &&
+        (*pt == '='))
       break;
 
     *err = 1;
@@ -2119,8 +2190,61 @@ static char *parse_node_token(
     *pt++ = '\0';
     }
 
-  return(ts);
+  *start = pt;
+
+  return(token);
   }  /* END parse_node_token() */
+
+
+/*
+ * create_pbs_dynamic_node - create pbs node structure, i.e. add a node
+ */
+
+int create_pbs_dynamic_node(
+
+  char     *objname,
+  svrattrl *plist,
+  int       perms,
+  int      *bad)
+
+  {
+  int     ntype; /* node type; time-shared, not */
+  char   *pname = NULL; /* node name w/o any :ts       */
+  u_long *pul = NULL;  /* 0 terminated host adrs array*/
+  int     rc;
+  int     err = 0;
+  char    xchar;
+  char   *ptr = objname;
+
+  // Call parse_node_token to ensure that the node name doesn't have any 
+  // invalid characters. Thi is the same function used when reading th
+  // nodes file on startup.
+  char *token = parse_node_token(&ptr, COLON_OK, &err, &xchar);
+
+  if ((token == NULL) ||
+      (err != 0 ))
+    {
+    return(PBSE_UNKNODE);
+    }
+
+  if ((rc = process_host_name_part(token, &pul, &pname, &ntype)) != 0)
+    {
+    if (pul != NULL)
+      {
+      free(pul);
+      }
+
+    if (pname != NULL)
+      {
+      free(pname);
+      }
+
+    return(rc);
+    }
+
+  return(finalize_create_pbs_node(pname,pul,ntype,plist,perms,bad));
+  } // End create_pbs_dynamic_node()
+
 
 
 /*
@@ -2219,6 +2343,7 @@ int setup_nodes(void)
 
   for (linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
+    char *ptr;
     if (line[0] == '#') /* comment */
       {
       memset(line, 0, sizeof(line));
@@ -2231,8 +2356,8 @@ int setup_nodes(void)
     propstr.str("");
 
     /* first token is the node name, may have ":ts" appended */
-
-    token = parse_node_token(line, COLON_OK, &err, &xchar);
+    ptr = line;
+    token = parse_node_token(&ptr, COLON_OK, &err, &xchar);
 
     if (token == NULL)
       {
@@ -2266,7 +2391,7 @@ int setup_nodes(void)
     /* attributes (keyword=value) or old style properties        */
     while (1)
       {
-      token = parse_node_token(NULL, 0,&err, &xchar);
+      token = parse_node_token(&ptr, 0,&err, &xchar);
 
       if (err != 0)
         goto errtoken1;
@@ -2279,15 +2404,15 @@ int setup_nodes(void)
         /* have new style pbs_attribute, keyword=value */
         if(!strcmp(token,"TTL"))
           {
-          val = parse_node_token(NULL, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
+          val = parse_node_token(&ptr, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
           }
         else if(!strcmp(token,"acl"))
           {
-          val = parse_node_token(NULL, OPAQUE, &err, &xchar);
+          val = parse_node_token(&ptr, OPAQUE, &err, &xchar);
           }
         else
           {
-          val = parse_node_token(NULL, COMMA_OK, &err, &xchar);
+          val = parse_node_token(&ptr, COMMA_OK, &err, &xchar);
           }
 
         if ((val == NULL) || (err != 0) || (xchar == '='))
@@ -3924,14 +4049,15 @@ int remove_node(
 
   if (an->trylock())
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
     an->lock();
-    lock_node(pnode, __func__, NULL, LOGLEVEL);
+    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
     }
 
-  //Don't care if it was in there or not.
-  an->remove(pnode->nd_name);
-  rc = PBSE_NONE;
+  if (an->remove(pnode->nd_name) == false)
+    rc = -1;
+  else
+    rc = PBSE_NONE;
 
   an->unlock();
 
@@ -3994,314 +4120,5 @@ struct pbsnode *next_host(
   } /* END next_host() */
 
 
-
-
-void *send_hierarchy_threadtask(
-
-  void *vp)
-
-  {
-  hello_info     *hi = (hello_info *)vp;
-  struct pbsnode *pnode = NULL;
-  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
-  unsigned short  port;
-
-  if (hi == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
-    return(NULL);
-    }
-
-  pnode = find_nodebyid(hi->id);
-
-  if (pnode != NULL)
-    {
-    char nodename[MAXLINE];
-    snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
-    port = pnode->nd_mom_rm_port;
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    if (send_hierarchy(nodename, port) != PBSE_NONE)
-      {
-      if (hi->num_retries < 3) /*TODO: why 3? remove magic number*/
-        {
-        hi->num_retries++;
-        hi->last_retry = time(NULL);
-        add_hello_info(&failures, hi);
-
-        /* don't let hi get free'd */
-        hi = NULL;
-        }
-      }
-    else
-      {
-      if (LOGLEVEL >= 3)
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", nodename);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
-      }
-    }
-
-  if (hi != NULL)
-    {
-    delete hi;
-    }
-
-  return(NULL);
-  } /* END send_hierarchy_threadtask() */
-
-
-
-
-int send_hierarchy(
-
-  char           *name,
-  unsigned short  port)
-
-  {
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-  const char        *string;
-  int                 ret = PBSE_NONE;
-  int                 sock;
-  struct addrinfo    *pAddrInfo = NULL;
-  struct sockaddr_in  sa;
-  struct tcp_chan    *chan = NULL;
-
-  if (name == NULL)
-    return(-1);
-
-  if ((ret = pbs_getaddrinfo(name,NULL,&pAddrInfo)) != PBSE_NONE)
-    {
-    return ret;
-    }
-  memcpy(&sa,pAddrInfo->ai_addr,sizeof(sa));
-
-  sa.sin_port = htons(port);
-
-  /* for now we'll only try once as this is going to be tried once each time in the loop */
-  sock = tcp_connect_sockaddr((struct sockaddr *)&sa, sizeof(sa));
-
-  if (sock < 0)
-    {
-    /* could not connect */
-    /* - quiting after 5 retries",*/
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "Could not send mom hierarchy to host %s:%d",
-      name, port);
-    log_err(-1, __func__, log_buf);
-
-    return(-1);
-    }
-
-  add_conn(sock, ToServerDIS, ntohl(sa.sin_addr.s_addr), sa.sin_port, PBS_SOCK_INET, NULL);
-
-  if ((chan = DIS_tcp_setup(sock)) == NULL)
-    {
-    ret = PBSE_MEM_MALLOC;
-    }
-  /* write the protocol, version and command */
-  else if ((ret = is_compose(chan, IS_CLUSTER_ADDRS)) == DIS_SUCCESS)
-    {
-    std::vector<std::string> tmpHolder;
-
-    pthread_mutex_lock(&hierarchy_holder_Mutex);
-    for (unsigned int i = 0; i < hierarchy_holder.size(); i++)
-      {
-      tmpHolder.push_back(hierarchy_holder[i]);
-      }
-    pthread_mutex_unlock(&hierarchy_holder_Mutex);
-
-    for (unsigned int i = 0; i < tmpHolder.size(); i++)
-      {
-      string = tmpHolder[i].c_str();
-      if ((ret = diswst(chan, string)) != DIS_SUCCESS)
-        {
-        if (ret > 0)
-          {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Could not send mom hierarchy to host %s - %s",
-            name, dis_emsg[ret]);
-          }
-        else
-          {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Unknown error when sending mom hierarchy to host %s",
-            name);
-          }
-        
-        log_err(-1, __func__, log_buf);
-        
-        break;
-        }
-      }
-
-    ret = diswst(chan, IS_EOL_MESSAGE);
-
-    DIS_tcp_wflush(chan);
-    }
-
-  close_conn(sock, FALSE);
-  if (chan != NULL)
-    {
-    DIS_tcp_cleanup(chan);
-    }
-
-  return(ret);
-  } /* END send_hierarchy() */
-
-
-int needs_hello(
-  hello_container *hc,
-  char            *node_name)
-
-  {
-  int needs;
-
-  hc->lock();
-  needs = (hc->find(node_name) != NULL);
-  hc->unlock();
-
-  return(needs);
-  } /* END needs_hello */
-
-
-
-
-int add_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  int         rc = PBSE_NONE;
-  hello_info *hi = new hello_info(node_id);
-
-  hc->lock();
-
-  if (!hc->insert(hi, node_mapper.get_name(hi->id)))
-    {
-    rc = ENOMEM;
-    delete hi;
-    }
-
-  hc->unlock();
-
-  return(rc);
-  } /* END add_hello() */
-
-
-
-
-int add_hello_after(
-
-  hello_container *hc,
-  int              node_id,
-  int              index)
-
-  {
-  int         rc = PBSE_NONE;
-
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-
-  hello_info *hi = new hello_info(node_id);
-  hc->lock();
-
-  index++;
-  if (index > (int)hc->count())
-    index = (int)hc->count();
-
-  if (!hc->insert_at(index, hi, node_mapper.get_name(hi->id)))
-    {
-    rc = ENOMEM;
-    delete hi;
-    }
-
-  hc->unlock();
-
-  return(rc);
-  } /* END insert_thing_after() */
-
-
-
-
-int add_hello_info(
-
-  hello_container *hc,
-  hello_info      *hi)
-
-  {
-  int rc = PBSE_NONE;
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-  if (hi == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL hello info pointer");
-    return(PBSE_BAD_PARAMETER);
-    }
-
-  hc->lock();
-  if (!hc->insert(hi, node_mapper.get_name(hi->id)))
-    rc = ENOMEM;
-  hc->unlock();
-
-  return(rc);
-  } /* END add_hello_info() */
-
-
-
-
-hello_info *pop_hello(
-
-  hello_container *hc)
-
-  {
-  hello_info *hi = NULL;
-  if (hc == NULL)
-    {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input container pointer");
-    return(NULL);
-    }
-
-  hc->lock();
-  hi = hc->pop();
-  hc->unlock();
-
-  return(hi);
-  } /* END pop_hello() */
-
-
-
-
-int remove_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  int         rc = PBSE_NONE;
-
-  if (hc == NULL)
-    {
-    rc = PBSE_BAD_PARAMETER;
-    log_err(rc, __func__, "NULL input container pointer");
-    return(rc);
-    }
-
-  hc->lock();
-  if (!hc->remove(node_mapper.get_name(node_id)))
-    rc = THING_NOT_FOUND;
-  hc->unlock();
-
-  return(rc);
-  } /* END remove_hello() */
 
 

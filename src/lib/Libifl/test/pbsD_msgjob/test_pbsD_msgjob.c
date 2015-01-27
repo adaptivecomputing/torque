@@ -7,12 +7,21 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+
+START_TEST(test_pbs_msgjob_err)
   {
+  char *jobid = strdup("1.napali");
+  char *msg = strdup("delay");
 
-
+  fail_unless(pbs_msgjob_err(-1, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(PBS_NET_MAX_CONNECTIONS, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(0, strdup(""), 0, msg, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(0, NULL, 0, msg, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(0, jobid, 0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(0, jobid, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -21,11 +30,12 @@ START_TEST(test_two)
   }
 END_TEST
 
+
 Suite *pbsD_msgjob_suite(void)
   {
   Suite *s = suite_create("pbsD_msgjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_msgjob_err");
+  tcase_add_test(tc_core, test_pbs_msgjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

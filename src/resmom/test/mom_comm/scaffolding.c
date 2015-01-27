@@ -43,6 +43,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */ /* mom_m
 int maxupdatesbeforesending = 0;
 int    ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
+bool            ForceServerUpdate = false;
 char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
 bool exit_called = false;
@@ -295,7 +296,7 @@ struct radix_buf **allocate_sister_list(int radix)
   return(0);
   }
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
   return(10);

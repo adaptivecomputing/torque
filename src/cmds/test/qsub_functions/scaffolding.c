@@ -199,12 +199,6 @@ int cnt2server_conf(long retry)
   exit(1);
   }
 
-char *pbs_strerror(int err)
-  {
-  fprintf(stderr, "The call to pbs_strerror to be mocked!!\n");
-  exit(1);
-  }
-
 void hash_add_or_exit(
 
   job_data_container *head,          /* M - hashmap */
@@ -230,6 +224,7 @@ void set_env_opts(job_data_container *env_attr, char **envp)
   exit(1);
   }
 
+<<<<<<< HEAD
 int pbs_submit_hash(
 
   int                socket,
@@ -241,8 +236,19 @@ int pbs_submit_hash(
   char              **return_jobid,
   char              **msg)
 
+=======
+extern "C"
+{
+char *pbs_strerror(int err)
   {
-  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
+  fprintf(stderr, "The call to pbs_strerror to be mocked!!\n");
+  exit(1);
+  }
+
+char *pbs_default(void)
+>>>>>>> master
+  {
+  fprintf(stderr, "The call to pbs_default to be mocked!!\n");
   exit(1);
   }
 
@@ -274,6 +280,25 @@ int cnt2server(const char *SpecServer)
   }
 }
 
+<<<<<<< HEAD
+=======
+int pbs_submit_hash(
+
+  int                 socket,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  char               *script,
+  char               *destination,
+  char               *extend,  /* (optional) */
+  char               **return_jobid,
+  char               **msg)
+
+  {
+  fprintf(stderr, "The call to pbs_submit_hash to be mocked!!\n");
+  exit(1);
+  }
+
+>>>>>>> master
 int hash_count(job_data_container *head)
   {
   fprintf(stderr, "The call to hash_count to be mocked!!\n");
@@ -311,6 +336,7 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
+<<<<<<< HEAD
 complete_req::complete_req() {}
 
 void complete_req::toString(
@@ -350,3 +376,10 @@ int req::set_from_submission_string(
   return(0);
   }
 
+=======
+char *get_trq_param(const char *param, const char *config_buf)
+  {
+  fprintf(stderr, "The call to get_trq_param to be mocked!!\n");
+  exit(1);
+  }
+>>>>>>> master

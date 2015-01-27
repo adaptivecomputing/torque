@@ -15,9 +15,9 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "threadpool.h"
+#include "mom_hierarchy_handler.h"
 
 bool exit_called = false;
-hello_container failures;
 pthread_mutex_t *job_log_mutex;
 pthread_mutex_t *log_mutex;
 all_queues svr_queues;
@@ -34,13 +34,14 @@ int listener_command = SCH_SCHEDULE_NULL;
 const char *msg_startup1 = "Server %s started, initialization type = %d";
 int svr_chngNodesfile = 0; /* 1 signals want nodes file update */
 int svr_totnodes = 0; /* total number nodes defined */
-hello_container hellos;
 char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 threadpool_t *task_pool;
 int              max_poll_job_tasks;
 char           **ArgV = NULL;
+mom_hierarchy_handler hierarchy_handler;
 
 void *start_process_pbs_server_port(void *new_sock)
   {
@@ -290,10 +291,9 @@ void *queue_route(void *vp)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
-  fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 int svr_save(struct server *ps, int mode)
@@ -343,12 +343,6 @@ void destroy_request_pool(threadpool_t *tp)
   }
 
 
-hello_info *pop_hello(hello_container *hc)
-  {
-  fprintf(stderr, "The call to pop_hello needs to be mocked!!\n");
-  exit(1);
-  }
-
 int unlock_node(struct pbsnode *pnode, const char *id, char *msg, int log_level)
   {
   fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
@@ -365,12 +359,6 @@ struct pbsnode *find_nodebyname(const char *name)
 int send_hierarchy(char *nodename, unsigned short port)
   {
   fprintf(stderr, "The call to send_hierarchy needs to be mocked!\n");
-  exit(1);
-  }
-
-int add_hello(hello_container *hc, char *node_name)
-  {
-  fprintf(stderr, "The call to add_hello needs to be mocked!\n");
   exit(1);
   }
 
@@ -414,12 +402,6 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);
-  }
-
-int add_hello_info(hello_container *hc, hello_info *hi)
-  {
-  fprintf(stderr, "The call to add_hello_info needs to be mocked!\n");
-  exit(1);
   }
 
 void get_port_from_server_name_file(unsigned int *server_name_file_port)
@@ -516,3 +498,9 @@ void *remove_extra_recycle_jobs(void *)
   return(NULL);
   }
   
+void mom_hierarchy_handler::checkAndSendHierarchy(void)
+  {
+  }
+
+void clear_all_alps_reservations() {}
+

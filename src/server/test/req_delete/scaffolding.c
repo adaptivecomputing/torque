@@ -25,7 +25,8 @@ threadpool_t *async_pool;
 const char *msg_deletejob = "Job deleted";
 all_jobs alljobs;
 const char *msg_delrunjobsig = "Job sent signal %s on delete";
-struct server server;
+extern struct server server;
+extern time_t apply_job_delete_nanny_time;
 const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 long keep_seconds;
@@ -118,6 +119,7 @@ void free_br(struct batch_request *preq)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
   {
+  apply_job_delete_nanny_time = event_id;
   return(NULL);
   }
 
@@ -131,7 +133,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   if (pjobp != NULL)
     *pjobp = NULL;
@@ -206,6 +208,11 @@ int get_svr_attr_l(int index, long *l)
   {
   if (nanny)
     *l = 1;
+  else if (index == SRV_ATR_KeepCompleted || 
+      index == SRV_ATR_JobNanny)
+    {
+    *l = server.sv_attr[index].at_val.at_long;
+    }
 
   return(0);
   }
@@ -559,4 +566,5 @@ int depend_on_term(
   depend_term_called++;
   return(0);
   }
+
 

@@ -125,7 +125,7 @@ int tm_register(tm_whattodo_t *what,
 /*
  *  DJH 15 Nov 2001.
  *  Generic "out-of-band" task adoption call for tasks parented by
- *  another job management system.  Minor security hole?
+ *  another job management system.
  *  Cannot be called with any other tm call.
  *  26 Feb 2002. Allows id to be jobid (adoptCmd = TM_ADOPT_JOBID)
  *  or some altid (adoptCmd = TM_ADOPT_ALTID)

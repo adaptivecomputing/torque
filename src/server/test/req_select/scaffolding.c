@@ -87,7 +87,15 @@ void free_str(struct pbs_attribute *attr)
   exit(1);
   }
 
-int status_job(job *pjob, struct batch_request *preq, svrattrl *pal, tlist_head *pstathd, int *bad)
+int status_job(
+
+  job           *pjob, /* ptr to job to status */
+  batch_request *preq,
+  svrattrl      *pal, /* specific attributes to status */
+  tlist_head    *pstathd, /* RETURN: head of list to append status to */
+  bool           condensed,
+  int           *bad) /* RETURN: index of first bad pbs_attribute */
+
   {
   fprintf(stderr, "The call to status_job to be mocked!!\n");
   exit(1);

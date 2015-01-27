@@ -46,6 +46,8 @@ int       numa_index;
 int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
 int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
 
+void *get_next_return_value = NULL;
+
 #ifdef PENABLE_LINUX26_CPUSETS
 //hwloc_topology_t topology = NULL;       /* system topology */
 
@@ -80,8 +82,12 @@ struct rm_attribute *momgetattr(char *str)
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  void *p = get_next_return_value;
+
+  /* return NULL for 2nd and subsequent calls */
+  get_next_return_value = NULL;
+
+  return(p);
   }
 
 void free_pidlist(struct pidl *pl)
@@ -155,7 +161,29 @@ char *threadsafe_tokenizer(
   return(NULL);
   }
 
-int trq_cg_find_job_processes(job *pjob, pid_t current_pid) 
+bool node_frequency::set_frequency(cpu_frequency_type, unsigned long, unsigned long)
   {
-  return(PBSE_NONE);
+  return(false);
   }
+
+node_frequency::node_frequency() {}
+node_frequency::~node_frequency() {}
+
+bool node_frequency::get_frequency(
+
+  cpu_frequency_type &type,
+  unsigned long      &currMhz,
+  unsigned long      &maxMhz,
+  unsigned long      &minMhz)
+
+  {
+  return(false);
+  }
+
+bool node_frequency::get_frequency_string(std::string& str,bool full)
+ {
+ return(false);
+ }
+
+node_frequency nd_frequency;
+void from_frequency(struct cpu_frequency_value *pfreq, char *cvnbuf) {}

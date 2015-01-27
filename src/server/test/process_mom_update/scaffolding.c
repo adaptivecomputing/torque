@@ -13,6 +13,8 @@
 #include "u_tree.h"
 #include "id_map.hpp"
 
+#include "id_map.hpp"
+
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
 int         LOGLEVEL;
@@ -41,7 +43,6 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
-hello_container         hellos;
 id_map job_mapper;
 bool exit_called = false;
 
@@ -52,15 +53,6 @@ char *threadsafe_tokenizer(
 
   {
   return(NULL);
-  }
-
-int remove_hello(
-
-  hello_container *hc,
-  int              node_id)
-
-  {
-  return(0);
   }
 
 int get_svr_attr_l(
@@ -290,14 +282,11 @@ int id_map::get_id(
   const char *name)
 
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
+  return(0);
   }
 
 void write_node_power_state(void)
   {
-  fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
-  exit(1);
   }
 
 

@@ -7,13 +7,6 @@
  *  qterm -t type [server ...]
  *
  * Options:
- *  -t  delay   Jobs are (1) checkpointed if possible; otherwise, (2) jobs are
- *  rerun (requeued) if possible; otherwise, (3) jobs are left to
- *              run.
- *
- *      immediate
- *              Jobs are (1) checkpointed if possible; otherwise, (2) jobs are
- *  rerun if possible; otherwise, (3) jobs are aborted.
  *
  * quick
  *  The server will save state and exit leaving running jobs
@@ -47,16 +40,12 @@ int main(
 
   {
   /*
-   * This routine sends a Server Shutdown request to the batch server.  If the
-   * batch request is accepted, and the type is IMMEDIATE, then no more jobs
-   * are accepted and all jobs are checkpointed or killed.  If the type is
-   * DELAY, then only privileged users can submit jobs, and jobs will be
-   * checkpointed if available.
+   * This routine sends a Server Shutdown request to the batch server.
    */
 
   static char opts[] = "t:";  /* See man getopt */
   int s;                  /* The execute line option */
-  static char usage[] = "Usage: qterm [-t immediate|delay|quick] [server ...]\n";
+  static char usage[] = "Usage: qterm [-t quick] [server ...]\n";
   char *type = NULL;      /* Pointer to the type of termination */
   int manner;             /* The type of termination */
   int errflg = 0;         /* Error flag */
@@ -100,15 +89,7 @@ int main(
     }
   else
     {
-    if (!strcasecmp(type, "delay"))
-      {
-      manner = SHUT_DELAY;
-      }
-    else if (!strcasecmp(type, "immediate"))
-      {
-      manner = SHUT_IMMEDIATE;
-      }
-    else if (!strcasecmp(type, "quick"))
+    if (!strcasecmp(type, "quick"))
       {
       manner = SHUT_QUICK;
       }

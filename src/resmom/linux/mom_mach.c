@@ -115,6 +115,8 @@ extern char *ret_string;
 
 extern time_t   time_now;
 
+extern  int     LOGLEVEL;
+
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
 
@@ -1031,15 +1033,6 @@ static int mm_gettime(
   }
 
 
-
-/* injob: Returns TRUE of the sid is part of the job or false of sid is not in the job
- * Starting with the Marconi release the ji_job_procs element was added to the
- * job structure. When mom_get_sample is called processes which are part of the job
- * are found they are added to the set of pids in the job. This function has been
- * greatly simplified from the original version to take advantage of the fact that the 
- * job now knows what processes were in its job and which ones were not.
- */
-
 bool injob(
 
   job   *pjob,
@@ -1080,9 +1073,6 @@ bool injob(
 
   return(false);
   }  /* END injob() */
-
-
-
 
 
 /*
@@ -1758,22 +1748,6 @@ int mom_set_limits(
           return(error(pname, retval));
           }
 
-        if (value > ULONG_MAX)
-          {
-          if (LOGLEVEL >= 0)
-            {
-            sprintf(log_buffer, "cannot set file limit to %ld for job %s (value too large)",
-                    (long int)reslim.rlim_cur,
-                    pjob->ji_qs.ji_jobid);
-
-            log_err(-1, __func__, log_buffer);
-
-            log_buffer[0] = '\0';
-            }
-
-          return(error(pname, PBSE_BADATVAL));
-          }
-
         reslim.rlim_cur = reslim.rlim_max = value;
 
         if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
@@ -1825,16 +1799,6 @@ int mom_set_limits(
               __func__);
 
             return(error(pname, retval));
-            }
-
-          if (value > ULONG_MAX)
-            {
-            log_buffer[0] = '\0';
-
-            sprintf(log_buffer, "invalid value returned by mm_getsize() for pvmem in %s",
-              __func__);
-
-            return(error(pname, PBSE_BADATVAL));
             }
 
           if ((vmem_limit == 0) || (value < vmem_limit))
@@ -2090,8 +2054,6 @@ int mom_set_limits(
 
   return(PBSE_NONE);
   }  /* END mom_set_limits() */
-
-
 
 
 
@@ -2712,6 +2674,15 @@ int mom_set_use(
     pres->rs_value.at_type = ATR_TYPE_SIZE;
     pres->rs_value.at_val.at_size.atsv_shift = 10; /* KB */
     pres->rs_value.at_val.at_size.atsv_units = ATR_SV_BYTESZ;
+
+    rd = find_resc_def(svr_resc_def, "energy_used", svr_resc_size);
+
+    assert(rd != NULL);
+
+    pres = add_resource_entry(at, rd);
+    pres->rs_value.at_flags |= ATR_VFLAG_SET;
+    pres->rs_value.at_type = ATR_TYPE_LONG;
+
     }  /* END if ((at->at_flags & ATR_VFLAG_SET) == 0) */
 
   /* get cputime */
@@ -2730,6 +2701,18 @@ int mom_set_use(
   lnum = cput_sum(pjob);
 
   *lp = MAX(*lp, lnum);
+
+#if 0
+  /* get joules */
+
+  rd = find_resc_def(svr_resc_def, "energy_used", svr_resc_size);
+
+  assert(rd != NULL);
+
+  pres = find_resc_entry(at, rd);
+
+  pres->rs_value.at_val.at_long += 3;
+#endif
 
   /* get swap */
 

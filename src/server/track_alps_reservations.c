@@ -205,7 +205,7 @@ int insert_alps_reservation(
   int rc = PBSE_NONE;
 
   alps_reservations.lock();
-  if(!alps_reservations.insert(ar,ar->rsv_id))
+  if (!alps_reservations.insert(ar,ar->rsv_id))
     rc = ENOMEM;
   alps_reservations.unlock();
 
@@ -222,7 +222,7 @@ int already_recorded(
   int               recorded = FALSE;
 
   alps_reservations.lock();
-  if(alps_reservations.find(rsv_id) != NULL)
+  if (alps_reservations.find(rsv_id) != NULL)
     recorded = TRUE;
   alps_reservations.unlock();
 
@@ -295,13 +295,39 @@ int remove_alps_reservation(
 
   {
   int               rc = PBSE_NONE;
+  alps_reservation *ar;
 
   alps_reservations.lock();
+  ar = alps_reservations.find(rsv_id);
   if (!alps_reservations.remove(rsv_id))
     rc = THING_NOT_FOUND;
   alps_reservations.unlock();
 
+  if (ar != NULL)
+    delete ar;
+
   return(rc);
   } /* END remove_alps_reservation() */
+
+
+
+/*
+ * clear_all_alps_reservations()
+ *
+ * Clears all of the reservations from the structure and deletes them.
+ */
+
+void clear_all_alps_reservations()
+
+  {
+  alps_reservation *ar;
+
+  alps_reservations.lock();
+
+  while ((ar = alps_reservations.pop()) != NULL)
+    delete ar;
+
+  alps_reservations.unlock();
+  } // END clear_all_alps_reservations()
 
 

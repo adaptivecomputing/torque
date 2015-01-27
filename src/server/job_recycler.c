@@ -85,7 +85,7 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 
-void free_job_allocation(job *pjob);
+void free_all_of_job(job *pjob);
 
 extern job_recycler recycler;
 extern int          LOGLEVEL;
@@ -151,7 +151,7 @@ void *remove_some_recycle_jobs(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    free_job_allocation(pjob);
+    free_all_of_job(pjob);
     }
 
   pthread_mutex_unlock(recycler.rc_mutex);
@@ -167,12 +167,9 @@ int insert_into_recycler(
 
   {
   int              rc;
-  pthread_mutex_t *tmp;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   pthread_mutex_lock(recycler.rc_mutex);
-
-  tmp = pjob->ji_mutex;
 
   if (pjob->ji_being_recycled == TRUE)
     {
@@ -186,9 +183,6 @@ int insert_into_recycler(
       "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
-
-  memset(pjob, 0, sizeof(job));
-  pjob->ji_mutex = tmp;
 
   sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = TRUE;

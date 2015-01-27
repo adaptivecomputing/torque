@@ -7,10 +7,14 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_sigjob_err)
   {
-
-
+  fail_unless(pbs_sigjob_err(-1, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(0, strdup(""), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(0, NULL, strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), strdup(""), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
 
@@ -24,8 +28,8 @@ END_TEST
 Suite *pbsD_sigjob_suite(void)
   {
   Suite *s = suite_create("pbsD_sigjob_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_sigjob_err");
+  tcase_add_test(tc_core, test_pbs_sigjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
