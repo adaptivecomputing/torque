@@ -21,5 +21,4 @@ int trq_cg_create_cgroup(std::string&, pid_t);
 int trq_cg_add_process_to_cgroup_accts(pid_t);
 int trq_cg_add_process_to_cgroup(std::string&, pid_t, pid_t);
 int trq_cg_remove_process_from_accts(job *pjob);
-int trq_cg_find_job_processes(job *pjob, pid_t current_pid);
 #endif /* _TRQ_CGROUPS_H_ */

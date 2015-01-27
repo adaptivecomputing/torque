@@ -90,6 +90,8 @@
 #define PBS_JOB_H 1
 
 #include <limits.h>
+#include <map>
+#include <set>
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -447,6 +449,9 @@ typedef struct noderes
   long nr_vmem; /* virtual memory */
   } noderes;
 
+typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
+typedef std::map<pid_t, int> pid2procarrayindex_map_t;
+typedef std::set<pid_t> job_pid_set_t;
 
 
 
@@ -661,10 +666,8 @@ struct job
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
-  pid_t          ji_job_pid;           /* Set in TMomFinalizeJob2. It is the pid of the process
-                                          forked to run TMomFinalizeChild. This is the directory
-                                          name of the cgroup for the job */
-  std::set<pid_t> *ji_job_procs;    /* a vector of all processes in this job */
+  job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
+                                        and tasks from start_process. */
 
 #else     /* END MOM ONLY */
 
@@ -1153,7 +1156,6 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
 
 #endif /* BATCH_REQUEST_H */
-
 
 #endif /* PBS_JOB_H */
 

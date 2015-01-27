@@ -97,6 +97,7 @@ extern "C"
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */
+#include <map>
 
 #include "libpbs.h"
 #include "portability.h"
@@ -298,6 +299,9 @@ static const char *variables_else[] =   /* variables to add, value computed */
   };
 
 static int num_var_else = tveLAST;
+
+pid2jobsid_map_t pid2jobsid_map; /* This map contains a mapping of pids to the job ession id */
+job_pid_set_t    global_job_sid_set; /* This contains the session id of each job or task */
 
 /* prototypes */
 
@@ -2497,7 +2501,14 @@ int TMomFinalizeJob2(
     {
     }
 
-  pjob->ji_job_pid = cpid;
+  /* put the new pid in the pid to job session id map */
+  pid2jobsid_map[cpid] = cpid;
+  
+  /* put the new pid in the global_job_sid_set set */
+  global_job_sid_set.insert(cpid);
+  
+  pjob->ji_job_pid_set->insert(cpid);
+
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
   
@@ -5024,6 +5035,31 @@ int start_process(
 
     ptask->ti_qs.ti_sid = sjr.sj_session;
 
+    /* if the new pid is not in the job set then this */
+    /* is a new session and we need to insert it */
+    job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(pid);
+    if (job_pid_set_iter == pjob->ji_job_pid_set->end())
+      {
+      int rc;
+
+      /* put the job pid in the job structure */
+      pjob->ji_job_pid_set->insert(pid);
+
+      /* add the pid to the cgroup */
+      rc = trq_cg_add_process_to_cgroup_accts(pid);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "failed to add pid %d to job %s", pid, pjob->ji_qs.ji_jobid);
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+        }
+      }
+    
+    /* put the new pid in the pid to job session id map */
+    pid2jobsid_map[pid] = pid;
+    
+    /* put the new pid in the global_job_sid_set set */
+    global_job_sid_set.insert(pid);
+    
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
     if (LOGLEVEL >= 6)
@@ -5267,8 +5303,9 @@ int start_process(
 
 #ifdef PENABLE_LINUX_CGROUPS
   int rc;
+  job_pid_set_t::iterator job_iter = pjob->ji_job_pid_set->begin();
 
-  rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, pjob->ji_job_pid, getpid());
+  rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, *job_iter, getpid());
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
@@ -5278,7 +5315,7 @@ int start_process(
     exit(1);
     }
 
-  rc = trq_cg_add_process_to_cgroup(cg_memory_path, pjob->ji_job_pid, getpid());
+  rc = trq_cg_add_process_to_cgroup(cg_memory_path, *job_iter, getpid());
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
@@ -8885,10 +8922,6 @@ int exec_job_on_ms(
 
     return(SC);
     }
-
-  /* Short running jobs may be tough to track all of the pids.
-   * Get them now while the job is running */
-  trq_cg_find_job_processes(pjob, pjob->ji_job_pid);
 
 
   /* SUCCESS:  MOM returns */

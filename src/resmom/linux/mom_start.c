@@ -377,7 +377,6 @@ void scan_for_terminated(void) /* linux */
         {
         /* pid match located - break out of job loop */
         pjob->ji_stats_done = true;
-        pjob->ji_job_procs->clear();
 
         break;
         }
