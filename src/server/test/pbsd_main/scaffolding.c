@@ -37,6 +37,7 @@ int svr_totnodes = 0; /* total number nodes defined */
 char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 threadpool_t *task_pool;
 int              max_poll_job_tasks;
 char           **ArgV = NULL;
@@ -290,10 +291,9 @@ void *queue_route(void *vp)
   exit(1);
   }
 
-void acct_close(void)
+void acct_close(bool acct_mutex_locked)
   {
-  fprintf(stderr, "The call to acct_close needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 int svr_save(struct server *ps, int mode)
@@ -501,3 +501,6 @@ void *remove_extra_recycle_jobs(void *)
 void mom_hierarchy_handler::checkAndSendHierarchy(void)
   {
   }
+
+void clear_all_alps_reservations() {}
+

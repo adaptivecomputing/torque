@@ -121,6 +121,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <string>
+#include <semaphore.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -170,10 +171,11 @@ extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
-
+void handle_complete_second_time(struct work_task *ptask);
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
+void free_all_of_job(job *pjob);
 
 /* Global Data items */
 all_jobs        alljobs;
@@ -196,6 +198,7 @@ extern char *path_jobinfo_log;
 extern char *log_file;
 extern char *job_log_file;
 
+extern sem_t *job_clone_semaphore;
 
 static void send_qsub_delmsg(
 
@@ -381,6 +384,75 @@ static int remtree(
 
 
 
+/*
+ * handle_aborted_job determines whether to purge the job right away or
+ * respect the KeepCompleted time.
+ *
+ * @param job_ptr - a pointer to the job pointer
+ * @param dependentjob - true if the job is a dependent job being deleted because
+ *                       the dependency can't be satisfied.
+ * @param KeepSeconds - the number of seconds keep_completed is set to
+ * @param text - the reason this job is being aborted
+*/
+
+void handle_aborted_job(
+
+  job        **job_ptr, /* M */
+  bool         dependentjob, /* I */
+  long         KeepSeconds, /* I */
+  const char  *text) /* I */
+
+  {
+  job *pjob = *job_ptr;
+  int  rc = svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
+    
+  if (rc == PBSE_UNKQUE)
+    {
+    *job_ptr = NULL;
+    return;
+    }
+  else if (rc == PBSE_BAD_JOB_STATE_TRANSITION)
+    {
+    // This is likely because something else is also cleaning up the job. Just
+    // stop and let the other thread do it.
+    return;
+    }
+   
+  if ((!dependentjob) ||
+      (!KeepSeconds))
+    {
+    svr_job_purge(pjob);
+    *job_ptr = NULL;
+    }
+  else
+    {
+    /* Add a comment to say the reason it was aborted */
+    if (text != NULL)
+      {
+      if ((pjob->ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) &&
+          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL))
+        {
+        std::string new_comment(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        new_comment += ". ";
+        new_comment += text;
+        
+        free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(new_comment.c_str());
+        }
+      else
+        {
+        pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(text);
+        }
+      }
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    set_task(WORK_Timed, time(NULL) + KeepSeconds, handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    }
+  } /* handle_aborted_job */
+
+
 
 /*
  * job_abt - abort a job
@@ -409,7 +481,8 @@ static int remtree(
 int job_abt(
 
   struct job **pjobp, /* I (modified/freed) */
-  const char  *text)  /* I (optional) */
+  const char  *text,  /* I (optional) */
+  bool         dependentjob) /* I */
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -438,6 +511,12 @@ int job_abt(
     }
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+
+  long KeepSeconds = 0;
+  int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
+  if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
+    KeepSeconds = 0;
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   /* save old state and update state to Exiting */
@@ -507,21 +586,20 @@ int job_abt(
             job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             pjob_mutex.unlock();
-            update_array_values(pa,old_state,aeTerminate,
-                job_id, job_atr_hold, job_exit_status);
+             
+            if (pa)
+              {
+              update_array_values(pa,old_state,aeTerminate,
+                  job_id, job_atr_hold, job_exit_status);
             
-            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+              }
             pjob = svr_find_job(job_id, TRUE);
             }
           }
       
         if (pjob != NULL)
-          {
-          svr_job_purge(pjob);
-          pjob = NULL;
-          }
-
-        *pjobp = NULL;
+          handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
         }
       }
     }
@@ -569,21 +647,19 @@ int job_abt(
         job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         pjob_mutex.unlock();
-        update_array_values(pa,old_state,aeTerminate,
-            job_id, job_atr_hold, job_exit_status);
+        if (pa)
+          {
+          update_array_values(pa,old_state,aeTerminate,
+              job_id, job_atr_hold, job_exit_status);
         
-        unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
+          unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
+          }
         pjob = svr_find_job(job_id, TRUE);
         }
       }
 
     if (pjob != NULL)
-      {
-      svr_job_purge(pjob);
-      pjob = NULL;
-      }
-
-    *pjobp = NULL;
+      handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
     }
 
   if (pjob == NULL)
@@ -698,7 +774,7 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_rejectdest = new std::vector<std::string>();
   pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
@@ -719,37 +795,37 @@ void free_job_allocation(
   if (pjob->ji_cray_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_cray_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_cray_clone);
+    free_all_of_job(pjob->ji_cray_clone);
     }
 
   if (pjob->ji_external_clone != NULL)
     {
     lock_ji_mutex(pjob->ji_external_clone, __func__, NULL, LOGLEVEL);
-    free_job_allocation(pjob->ji_external_clone);
+    free_all_of_job(pjob->ji_external_clone);
     }
 
   /* remove any calloc working pbs_attribute space */
   for (int i = 0;i < JOB_ATR_LAST;i++)
-    {
     job_attr_def[i].at_free(&pjob->ji_wattr[i]);
-    }
 
   /* free any bad destination structs */
-  badplace *bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
-
-  while (bp != NULL)
+  if (pjob->ji_rejectdest != NULL)
     {
-    delete_link(&bp->bp_link);
-
-    free(bp);
-
-    bp = (badplace *)GET_NEXT(pjob->ji_rejectdest);
+    delete pjob->ji_rejectdest;
+    pjob->ji_rejectdest = NULL;
     }
+  } /* END free_job_allocation() */
 
+
+
+void free_all_of_job(job *pjob)
+  {
+  free_job_allocation(pjob);
   pthread_mutex_destroy(pjob->ji_mutex);
+  free(pjob->ji_mutex);
   memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
   free(pjob);
-  } /* END free_job_allocation() */
+  } /* END free_all_of_job() */
 
 
 
@@ -782,20 +858,15 @@ void job_free(
    * the lock and then deletes the job, but thread 2 gets the job's lock as
    * the job is freed, causing segfaults. We use the recycler and the 
    * ji_being_recycled flag to solve this problem --dbeer */
-
-  remove_job(&alljobs,pj); //Remove this from the alljobs array.
-
   if (use_recycle)
     {
     insert_into_recycler(pj);
-    sprintf(log_buf, "1: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
     }
   else
     {
-    sprintf(log_buf, "2: jobid = %s", pj->ji_qs.ji_jobid);
     unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
-    free_job_allocation(pj);
+    free_all_of_job(pj);
     }
 
   return;
@@ -830,7 +901,6 @@ job *copy_job(
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
-  CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
 
   /* copy the fixed size quick save information */
@@ -914,7 +984,6 @@ job *job_clone(
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
-  CLEAR_HEAD(pnewjob->ji_rejectdest);
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
 
   /* copy the fixed size quick save information */
@@ -1124,11 +1193,11 @@ void *job_clone_wt(
   job                *pjobclone;
   char               *jobid;
   int                 i;
+  int                 rc;
   char                *prev_job_id = NULL;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
-  int                 rc;
   char                namebuf[MAXPATHLEN];
   char                arrayid[PBS_MAXSVRJOBID + 1];
   job_array          *pa;
@@ -1147,6 +1216,15 @@ void *job_clone_wt(
     return(NULL);
     }
 
+  /* increment the job_clone_semaphore so people 
+     know we are makeing jobs for this array */
+  rc = sem_post(job_clone_semaphore);
+  if (rc)
+    {
+    log_err(-1, __func__, "failed to post job_clone_semaphore");
+    return(NULL);
+    }
+
   /* don't call get_jobs_array because the template job isn't part of the array */
   if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
       ((pa = get_jobs_array(&template_job)) == NULL))
@@ -1155,6 +1233,7 @@ void *job_clone_wt(
 
     if (template_job != NULL)
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
+    sem_wait(job_clone_semaphore);
     return(NULL);
     }
 
@@ -1228,7 +1307,9 @@ void *job_clone_wt(
 
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) free(prev_job_id);
+          if(prev_job_id != NULL) 
+            free(prev_job_id);
+          sem_wait(job_clone_semaphore);
           return(NULL);
           }
 
@@ -1245,7 +1326,9 @@ void *job_clone_wt(
           clone_mgr.set_unlock_on_exit(false);
           }
 
-        if(prev_job_id != NULL) free(prev_job_id);
+        if(prev_job_id != NULL) 
+          free(prev_job_id);
+        sem_wait(job_clone_semaphore);
         return(NULL);
         }
       
@@ -1259,7 +1342,9 @@ void *job_clone_wt(
         
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) free(prev_job_id);
+          if(prev_job_id != NULL) 
+            free(prev_job_id);
+          sem_wait(job_clone_semaphore);
           return(NULL);
           }
 
@@ -1381,6 +1466,7 @@ void *job_clone_wt(
   
 
   unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
+  sem_wait(job_clone_semaphore);
   return(NULL);
   }  /* END job_clone_wt */
 
@@ -1685,12 +1771,12 @@ int record_jobinfo(
   pbs_attribute          *pattr;
   int                     i;
   int                     rc;
-  std::string              bf = "";
+  std::string             bf("");
   char                    job_script_buf[(MAXPATHLEN << 4) + 1];
   char                    namebuf[MAXPATHLEN + 1];
   int                     fd;
   size_t                  bytes_read = 0;
-  extern pthread_mutex_t job_log_mutex;
+  extern pthread_mutex_t  job_log_mutex;
   long                    record_job_script = FALSE;
   
   if (pjob == NULL)
@@ -1714,19 +1800,8 @@ int record_jobinfo(
   bf += pjob->ji_qs.ji_jobid;
   bf += "</Job_Id>\n";
 
- #if 0
-  if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-    {
-    log_err(rc, __func__, "log_job_record failed");
-    return(rc);
-    }
-#endif
-
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-#if 0
-    bf.clear();
-#endif
     pattr = &(pjob->ji_wattr[i]);
 
     if (pattr->at_flags & ATR_VFLAG_SET)
@@ -1745,7 +1820,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      rc = attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
+      attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";
@@ -1753,14 +1828,6 @@ int record_jobinfo(
       bf += "</";
       bf += job_attr_def[i].at_name;
       bf += ">\n";
-
-#if 0
-      if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-        {
-        log_err(rc, __func__, "log_job_record failed recording attributes");
-        return(rc);
-        }
-#endif
       }
     }
   
@@ -1793,19 +1860,7 @@ int record_jobinfo(
       }
    
     bf += "\t</job_script>\n";
-    
-#if 0
-    if ((rc = log_job_record(buffer->str)) != PBSE_NONE)
-      {
-      log_err(rc, __func__, "log_job_record failed");
-      return(rc);
-      }
-#endif
     }
- 
-#if 0
-  bf.clear();
-#endif
 
   bf += "</Jobinfo>\n";
 
@@ -1883,13 +1938,25 @@ int svr_job_purge(
       }
     }
 
-  if ((job_has_arraystruct == FALSE) || (job_is_array_template == TRUE))
-    if (remove_job(&array_summary,pjob) == PBSE_JOB_RECYCLED)
+  if ((job_has_arraystruct == FALSE) ||
+      (job_is_array_template == TRUE))
+    {
+    int rc2 = 0;
+    if ((rc2 = remove_job(&array_summary, pjob)) == PBSE_JOBNOTFOUND)
       {
-      /* PBSE_JOB_RECYCLED means the job is gone. remove_job alreadly unlocked pjob->ji_mutex */
+      /* PBSE_JOBNOTFOUND means the job is gone.
+       * remove_job alreadly unlocked pjob->ji_mutex */
       pjob_mutex.set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
+    else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+          "Could not remove job %s from array_summary\n",
+          pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
 
   /* if part of job array then remove from array's job list */
   if ((job_has_arraystruct == TRUE) &&
@@ -1938,16 +2005,9 @@ int svr_job_purge(
   if ((job_substate != JOB_SUBSTATE_TRANSIN) &&
       (job_substate != JOB_SUBSTATE_TRANSICM))
     {
-    int need_deque = !pjob->ji_cold_restart;
-
-    /* jobs that are being deleted after a cold restart
-     * haven't been queued */
-    if (need_deque == TRUE)
-      {
-      /* set the state to complete so that svr_dequejob() will function properly */
-      pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-      rc = svr_dequejob(pjob, FALSE);
-      }
+    /* set the state to complete so that svr_dequejob() will function properly */
+    pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+    rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
       {

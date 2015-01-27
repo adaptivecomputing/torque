@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
+pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
@@ -118,26 +118,28 @@ to the system console.
 Used with \-m (multi-mom option) to give the alias name of this instance 
 of pbs_mom
 .IP "\-a alarm" 16
-Used to specify the alarm timeout in seconds for computing a resource.
+Specifies the alarm timeout in seconds for computing a resource.
 Every time a resource request is processed, an alarm is set for the
 given amount of time.  If the request has not completed before the
 given time, an alarm signal is generated.
 The default is 5 seconds.
 .IP "\-C chkdirectory" 16
-Specifieds the path of the directory used to hold checkpoint files.
+Specifies the path of the directory used to hold checkpoint files.
 [Currently this is only valid on Cray systems.]
 The default directory is PBS_HOME/spool/checkpoint, see the \-d option.
 The directory specified with the \-C option must be owned by root and 
 accessible (rwx) only by root to protect the security of the checkpoint files.
 .IP "\-c config" 16
-Specify a alternative configuration file, see description below.
+Specifies an alternative configuration file, see description below.
 If this is a relative file name it will be relative to PBS_HOME/mom_priv,
 see the \-d option.  If the specified file cannot be opened, pbs_mom will abort.
 If the \-c option is not supplied, pbs_mom will attempt to open the default
  configuration file "config" in PBS_HOME/mom_priv.  If this file is not
 present, pbs_mom will log the fact and continue.
+.IP "\-h help" 16
+Displays the help/usage message.
 .IP "\-H hostname" 16
-Set MOM's hostname.  This can be useful on multi-homed networks.
+Sets the MOM's hostname.  This can be useful on multi-homed networks.
 .IP "\-d directory" 16
 Specifies the path of the directory which is the home of the servers
 working files, PBS_HOME.
@@ -146,7 +148,7 @@ The default directory is given by $PBS_SERVER_HOME
 which is typically
 .Ty /usr/spool/PBS .
 .IP "\-L logfile" 16
-Specify an absolute path name for use as the log file.
+Specifies an absolute path name for use as the log file.
 If not specified, MOM will
 open a file named for the current date in the PBS_HOME/mom_logs
 directory, see the

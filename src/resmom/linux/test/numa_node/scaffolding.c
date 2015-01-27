@@ -27,7 +27,7 @@ bool is_physical_core(unsigned int index)
   }
 
 int is_whitespace(
-    
+
   char c)
 
   {
@@ -39,4 +39,5 @@ int is_whitespace(
     return(TRUE);
   else
     return(FALSE);
-  }
+  } /* END is_whitespace */
+

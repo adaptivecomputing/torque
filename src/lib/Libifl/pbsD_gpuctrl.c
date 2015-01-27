@@ -84,6 +84,7 @@
 #include <stdio.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "server_limits.h"
 
 int pbs_gpumode_err(
     
@@ -100,6 +101,12 @@ int pbs_gpumode_err(
 
   if ((node == (char *)0) || (gpumode < 0 || gpumode > 3) || (gpuid == (char *)0))
     return (PBSE_IVALREQ);
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   /* send request */
 

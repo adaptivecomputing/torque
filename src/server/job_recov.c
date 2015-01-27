@@ -120,9 +120,9 @@
 #ifndef PBS_MOM
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
-#include "job_func.h" /* job_free */
+#include "job_func.h"
 #else
-#include "../resmom/mom_job_func.h" /* mom_job_free */
+#include "../resmom/mom_job_func.h"
 #endif
 #include "array.h"
 #include "ji_mutex.h"
@@ -856,6 +856,7 @@ void translate_dependency_to_string(
   extern struct dependnames  dependnames[];
   struct dependnames        *dp_name;
 
+
   if (pattr == NULL)
     return;
 
@@ -863,7 +864,17 @@ void translate_dependency_to_string(
        dep != NULL;
        dep = (struct depend *)GET_NEXT(dep->dp_link))
     {
+    if((dep->dp_type >= JOB_DEPEND_NUMBER_TYPES)||(dep->dp_type < 0))
+      {
+      return; //We have a messed up dependency so get outta here.
+      }
+
     dp_name = dependnames + dep->dp_type;
+
+    if(dp_name->name == NULL)
+      {
+      return;
+      }
 
     if (value.size() != 0)
       value += ",";
@@ -1065,19 +1076,23 @@ int saveJobToXML(
   const char *filename) /* I - filename to save to */
 
   {
-  xmlDocPtr doc = NULL;       /* document pointer */
-  xmlNodePtr root_node;
-  int lenwritten = 0, rc = PBSE_NONE;
-  root_node = NULL;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  xmlDocPtr  doc = NULL;       /* document pointer */
+  xmlNodePtr root_node = NULL;
+  int        lenwritten = 0, rc = PBSE_NONE;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
+
   if ((doc = xmlNewDoc((const xmlChar*) "1.0")))
     {
     root_node = xmlNewNode(NULL, (const xmlChar*) JOB_TAG);
     xmlDocSetRootElement(doc, root_node);
     add_fix_fields(&root_node, (const job*)pjob);
     add_union_fields(&root_node, (const job*)pjob);
+
     if (add_attributes(&root_node, pjob))
+      {
+      xmlFreeDoc(doc);
       return -1;
+      }
 
 #ifdef PBS_MOM
     add_mom_fields(&root_node, (const job*)pjob);
@@ -1114,10 +1129,11 @@ int saveJobToXML(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buf);
+
     rc = -1;
     }
 
-  return rc;
+  return(rc);
   } /* saveJobToXML */
 
 

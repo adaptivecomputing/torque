@@ -4,7 +4,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "mom_hierarchy.h"
 #include "pbs_nodes.h"
-#include "lib_net.h"
 #include "threadpool.h"
 #include "execution_slot_tracker.hpp"
 
@@ -285,8 +284,15 @@ int DIS_tcp_setup(int)
 
 void close_conn(int,int){}
 
+int tcp_connect_sockaddr(
 
+  struct sockaddr *sa,      /* I */
+  size_t           sa_size, /* I */
+  bool             use_log) /* I */
 
+  {
+  return(0);
+  }
 
 
 

@@ -149,38 +149,9 @@ If multiple servers are running on a
 single host, each must have its own unique port number.
 This option is for use in testing with multiple batch systems on a single host.
 .IP "\-t type"
-Specifies the impact on jobs which were in execution, running, when the server
-shut down.  If the running job is not rerunnable or restartable from a
-checkpoint image, the job is aborted.  If the job is rerunnable or restartable,
-then the actions described below are taken.  When the
-.Ar type
-argument is:
-.RS
-.IP hot 8
-All jobs are requeued except non-rerunnable jobs that were executing.
-Any rerunnable job which was executing when the server went down will be run
-immediately.
-This returns the server to the same state as when it went down.
-After those jobs are restarted, then normal scheduling takes place
-for all remaining queued jobs.
-.IP
-If a job cannot be restarted immediately because of a missing resource, such
-as a node being down,  the server will attempt to restart it periodically for
-upto 5 minutes.   After that period, the server will revert to a normal state,
-as if warm started, and will no longer attempt to restart any remaining jobs
-which were running prior to the shutdown.
-.IP warm 8
-All rerunnable jobs which were running when the server went down are requeued.
-All other jobs are maintained.  New selections are made for which
-jobs are placed into execution.  Warm is the default if \-t is not specified.
-.IP cold 8
-All jobs are deleted.  Positive confirmation is required before
-this direction is accepted.
-.IP create 8
-The server will discard any existing configuration files, queues and jobs,
-and initialize configuration files to the default values.  The server is
-idled.
-.RE
+If the job is rerunnable or restartable, and -t create is specified, the server will discard any existing configuration files, queues, and jobs, and initialize configuration files
+to the default values.  The server is idled.
+If -t is not specified, job states will remain the same.
 .IP "\-v" 15
 Shows version.
 .IP "\-A acctfile"

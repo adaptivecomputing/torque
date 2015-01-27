@@ -148,7 +148,7 @@ void svr_disconnect(int handle) {}
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
@@ -414,4 +414,22 @@ int ctnodes(char *spec)
 
   return(ct);
   }  /* END ctnodes() */
+
+char * csv_find_string(const char *csv_str, const char *search_str)
+  {
+  fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
+  exit(1);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  fprintf(stderr, "The call to csv_nth to be mocked!!\n");
+  exit(1);
+  }
+
+int csv_length(const char *csv_str)
+  {
+  fprintf(stderr, "The call to csv_length to be mocked!!\n");
+  exit(1);
+  }
 

@@ -217,7 +217,7 @@ pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
 
 int remove_job(all_jobs *aj, job *pjob)
   {
-  return(PBSE_JOB_RECYCLED);
+  return(PBSE_JOBNOTFOUND);
   }
 
 int set_jobexid(job *pjob, pbs_attribute *attrry, char *EMsg)
@@ -432,6 +432,22 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
   {
   fprintf(stderr, "The call to encode_size to be mocked!!\n");
+  exit(1);
+  }
+
+void log_ext(int i, char const* s, char const* s2, int i2)
+  {
+  }
+
+int csv_length(const char *csv_str)
+  {
+  fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
+  exit(1);
+  }
+
+char *csv_nth(const char *csv_str, int n)
+  {
+  fprintf(stderr, "The call to decode_tokens to be mocked!!\n");
   exit(1);
   }
 

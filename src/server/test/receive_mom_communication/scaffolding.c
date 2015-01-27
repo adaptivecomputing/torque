@@ -11,6 +11,9 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "execution_slot_tracker.hpp"
+#include "execution_slot_tracker.hpp"
+#include "mom_hierarchy_handler.h"
+
 
 int         allow_any_mom;
 AvlTree     ipaddrs = NULL;
@@ -280,3 +283,8 @@ execution_slot_tracker &execution_slot_tracker::operator =(const execution_slot_
 
 execution_slot_tracker::execution_slot_tracker(execution_slot_tracker const&){}
 
+mom_hierarchy_handler hierarchy_handler; //The global declaration.
+
+void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
+  {
+  }

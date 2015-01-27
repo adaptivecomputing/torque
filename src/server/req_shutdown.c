@@ -107,15 +107,12 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "job_func.h"
 
 
 int          issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 /* Private Fuctions Local to this File */
-
-static int shutdown_checkpoint(job **);
-static void post_checkpoint(batch_request *preq);
-void  rerun_or_kill(job **, char *text);
 
 /* Private Data Items */
 
@@ -174,10 +171,7 @@ void svr_shutdown(
   int type) /* I */
 
   {
-  pbs_attribute *pattr;
-  job           *pjob;
   long           state = SV_STATE_DOWN;
-  all_jobs_iterator *iter = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   close(lockfds);
@@ -192,7 +186,7 @@ void svr_shutdown(
   if (state == SV_STATE_SHUTIMM)
     {
     /* if already shuting down, another Immed/sig will force it */
-    if ((type == SHUT_IMMEDIATE) || (type == SHUT_SIG))
+    if (type == SHUT_SIG)
       {
       state = SV_STATE_DOWN;
       set_svr_attr(SRV_ATR_State, &state);
@@ -209,21 +203,7 @@ void svr_shutdown(
       }
     }
 
-  if (type == SHUT_IMMEDIATE)
-    {
-    state = SV_STATE_SHUTIMM;
-    set_svr_attr(SRV_ATR_State, &state);
-
-    strcat(log_buf, "Immediate");
-    }
-  else if (type == SHUT_DELAY)
-    {
-    state = SV_STATE_SHUTDEL;
-    set_svr_attr(SRV_ATR_State, &state);
-
-    strcat(log_buf, "Delayed");
-    }
-  else if (type == SHUT_QUICK)
+  if (type == SHUT_QUICK)
     {
     state = SV_STATE_DOWN; /* set to down to brk pbsd_main loop */
     set_svr_attr(SRV_ATR_State, &state);
@@ -247,48 +227,6 @@ void svr_shutdown(
   if ((type == SHUT_QUICK) || (type == SHUT_SIG)) /* quick, leave jobs as are */
     {
     return;
-    }
-
-  svr_save(&server, SVR_SAVE_QUICK);
-
-  alljobs.lock();
-  iter = alljobs.get_iterator();
-  alljobs.unlock();
-
-  while ((pjob = next_job(&alljobs,iter)) != NULL)
-    {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
-
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
-      {
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART | JOB_SVFLG_HASRUN;
-
-      pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
-
-      if ((pattr->at_flags & ATR_VFLAG_SET) &&
-          ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
-           (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
-           (csv_find_string(pattr->at_val.at_str, "shutdown") != NULL)))
-        {
-        /* do checkpoint of job */
-
-        if (shutdown_checkpoint(&pjob) == 0)
-          {
-          if (pjob == NULL)
-            job_mutex.set_unlock_on_exit(false);
-
-          continue;
-          }
-        }
-
-      /* if no checkpoint (not supported, not allowed, or fails */
-      /* rerun if possible, else kill job */
-
-      rerun_or_kill(&pjob, msg_on_shutdown);
-      }
-
-    if (pjob != NULL)
-      job_mutex.set_unlock_on_exit(false);
     }
 
   return;
@@ -356,220 +294,4 @@ void req_shutdown(
 
   return;
   }  /* END req_shutdown() */
-
-
-
-
-
-/*
- * shutdown_checkpoint - perform checkpoint of job by issuing a hold request to mom
- */
-
-static int shutdown_checkpoint(
-
-  job **pjob_ptr)
-
-  {
-  job                  *pjob = *pjob_ptr;
-  struct batch_request *phold;
-  pbs_attribute         temp;
-  char                  jobid[PBS_MAXSVRJOBID + 1];
-  int                   rc = PBSE_NONE;
-
-  phold = alloc_br(PBS_BATCH_HoldJob);
-
-  if (phold == NULL)
-    {
-    return(PBSE_SYSTEM);
-    }
-
-  temp.at_flags = ATR_VFLAG_SET;
-
-  temp.at_type  = job_attr_def[JOB_ATR_hold].at_type;
-  temp.at_val.at_long = HOLD_s;
-
-  phold->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-
-  strcpy(phold->rq_ind.rq_hold.rq_orig.rq_objname, pjob->ji_qs.ji_jobid);
-
-  CLEAR_HEAD(phold->rq_ind.rq_hold.rq_orig.rq_attr);
-
-  if (job_attr_def[JOB_ATR_hold].at_encode(
-        &temp,
-        &phold->rq_ind.rq_hold.rq_orig.rq_attr,
-        job_attr_def[JOB_ATR_hold].at_name,
-        NULL,
-        ATR_ENCODE_CLIENT,
-        0) < 0)
-    {
-    free_br(phold);
-    return(PBSE_SYSTEM);
-    }
-
-  /* The phold is freed in relay_to_mom (failure)
-   * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(&pjob, phold, NULL)) != PBSE_NONE)
-    {
-    /* FAILURE */
-    free_br(phold);
-
-    return(-1);
-    }
-    
-  jobid[0] = '\0';
-
-  if (pjob != NULL)
-    {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
-    
-    if (LOGLEVEL >= 1)
-      {
-      log_event(
-        PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "shutting down with active checkpointable job");
-      }
-  
-    job_save(pjob, SAVEJOB_QUICK, 0);
-    strcpy(jobid, pjob->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    }
-  
-  if (rc == PBSE_NONE)
-    {
-    post_checkpoint(phold);
-
-    if (jobid[0] != '\0')
-     *pjob_ptr = svr_find_job(jobid, TRUE);
-    }
-
-  return(PBSE_NONE);
-  }  /* END shutdown_checkpoint() */
-
-
-
-
-/*
- * post-checkpoint - clean up after shutdown_checkpoint
- * This is called on the reply from MOM to a Hold request made in
- * shutdown_checkpoint().  If the request succeeded, then record in job.
- * If the request failed, then we fall back to rerunning or aborting
- * the job.
- */
-
-void post_checkpoint(
-
-  batch_request *preq)
-
-  {
-  job *pjob;
-
-  if (preq == NULL)
-    return;
-
-  pjob = svr_find_job(preq->rq_ind.rq_hold.rq_orig.rq_objname, FALSE);
-
-  if (pjob != NULL)
-    {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
-
-    if (preq->rq_reply.brp_code == PBSE_NONE)
-      {
-      /* checkpointed ok */
-      if (preq->rq_reply.brp_auxcode)
-        pjob->ji_qs.ji_svrflags =
-          (pjob->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) |
-          JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
-      }
-    else
-      {
-      /* need to try rerun if possible or just abort the job */
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-
-      if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
-        {
-        rerun_or_kill(&pjob, msg_on_shutdown);
-
-        if (pjob == NULL)
-          job_mutex.set_unlock_on_exit(false);
-        }
-      }
-    }
-
-  free_br(preq);
-
-  return;
-  }  /* END post_checkpoint() */
-
-
-
-
-
-/* NOTE:  pjob may be free with dangling pointer */
-
-void rerun_or_kill(
-
-  job  **pjob_ptr, /* I (modified/freed) */
-  char  *text)     /* I */
-
-  {
-  long       server_state = SV_STATE_DOWN;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_queue *pque;
-  job       *pjob = *pjob_ptr;
-
-  get_svr_attr_l(SRV_ATR_State, &server_state);
-  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
-    {
-    /* job is rerunable, mark it to be requeued */
-
-    issue_signal(&pjob, "SIGKILL", free_br, NULL, NULL);
-
-    if (pjob != NULL)
-      {
-      pjob->ji_qs.ji_substate  = JOB_SUBSTATE_RERUN;
-      if ((pque = get_jobs_queue(&pjob)) != NULL)
-        {
-        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-        snprintf(log_buf, sizeof(log_buf), "%s%s%s", msg_init_queued, pque->qu_qs.qu_name, text);
-        }
-      }
-    }
-  else if (server_state != SV_STATE_SHUTDEL)
-    {
-    /* job not rerunable, immediate shutdown - kill it off */
-    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_job_abort, text);
-
-    /* need to record log message before purging job */
-
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
-
-    job_abt(pjob_ptr, log_buf);
-
-    return;
-    }
-  else
-    {
-    /* delayed shutdown, leave job running */
-    snprintf(log_buf, sizeof(log_buf), "%s%s", msg_leftrunning, text);
-    }
-
-  if (pjob != NULL)
-    {
-    log_event(
-      PBSEVENT_SYSTEM | PBSEVENT_JOB | PBSEVENT_DEBUG,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      log_buf);
-    }
-
-  return;
-  }  /* END rerun_or_kill() */
 

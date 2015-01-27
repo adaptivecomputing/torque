@@ -21,6 +21,7 @@ void add_to_property_list(std::stringstream &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 int read_val_and_advance(int *val, char **str);
+char *parse_node_token(char **start, int flags, int *err, char *term);
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -52,6 +53,23 @@ void add_prop(struct pbsnode &pnode, const char *prop_name)
     curr->next = pp;
     }
   }
+
+
+START_TEST(parse_node_token_test)
+  {
+  char *line = strdup("bob tom marty");
+  char *ptr = line;
+  int   err;
+  char  term;
+
+  fail_unless(!strcmp(parse_node_token(&ptr, 0, &err, &term), "bob"));
+  fail_unless(!strcmp(ptr, "tom marty"), ptr);
+  fail_unless(!strcmp(parse_node_token(&ptr, 0, &err, &term), "tom"));
+  fail_unless(!strcmp(ptr, "marty"), ptr);
+  fail_unless(!strcmp(parse_node_token(&ptr, 0, &err, &term), "marty"));
+  fail_unless(parse_node_token(&ptr, 0, &err, &term) == NULL);
+  }
+END_TEST
 
 
 START_TEST(read_val_and_advance_test)
@@ -350,6 +368,7 @@ START_TEST(status_nodeattrib_test)
   }
 END_TEST
 
+
 START_TEST(initialize_pbsnode_test)
   {
   struct pbsnode node;
@@ -362,6 +381,7 @@ START_TEST(initialize_pbsnode_test)
   fail_unless(result == PBSE_NONE, "initialization fail");
   }
 END_TEST
+
 
 START_TEST(effective_node_delete_test)
   {
@@ -386,6 +406,7 @@ START_TEST(effective_node_delete_test)
 
   }
 END_TEST
+
 
 START_TEST(update_nodes_file_test)
   {
@@ -931,6 +952,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
+  tcase_add_test(tc_core, parse_node_token_test);
   suite_add_tcase(s, tc_core);
 
 #if 0

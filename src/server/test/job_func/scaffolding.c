@@ -43,6 +43,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 user_info_holder users;
+extern bool set_task_called;
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -150,8 +151,8 @@ void free_br(struct batch_request *preq)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to work_task needs to be mocked!!\n");
-  exit(1);
+  set_task_called = true;
+  return NULL;
   }
 
 int svr_dequejob(job *pjob, int val)
@@ -250,8 +251,7 @@ void issue_track(job *pjob)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
-  exit(1);
+  return 0;
   }
 
 struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag)
@@ -603,3 +603,7 @@ int id_map::get_new_id(const char *id)
   }
 
 id_map job_mapper;
+ 
+void handle_complete_second_time(struct work_task *ptask)
+  {
+  }

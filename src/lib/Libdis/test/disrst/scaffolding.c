@@ -17,8 +17,8 @@ int disrsi_(tcp_chan *chan, int *negate, unsigned *value, unsigned count, unsign
   exit(1);
   }
 
-int tcp_gets(tcp_chan *chan, char *str, size_t ct,unsigned int to)
-  { 
+int tcp_gets(tcp_chan *chan, char *str, size_t ct, unsigned int timeout)
+  {
   fprintf(stderr, "The call to tcp_gets needs to be mocked!!\n");
   exit(1);
   }

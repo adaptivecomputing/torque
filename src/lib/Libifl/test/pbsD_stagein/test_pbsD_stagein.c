@@ -7,10 +7,12 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_stagein)
   {
-
-
+  fail_unless(pbs_stagein(-1, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_stagein(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_stagein(0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_stagein(0, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
 
@@ -24,8 +26,8 @@ END_TEST
 Suite *pbsD_stagein_suite(void)
   {
   Suite *s = suite_create("pbsD_stagein_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_stagein");
+  tcase_add_test(tc_core, test_pbs_stagein);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

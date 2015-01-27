@@ -375,6 +375,13 @@ int get_specific_attributes_status(
     pal = (svrattrl *)GET_NEXT(pal->al_link);
     }
 
+    if (padef == job_attr_def)
+      {
+      /* We want to return walltime remaining for all running jobs */
+      if ((pattr + JOB_ATR_start_time)->at_flags & ATR_VFLAG_SET)                                                                                   
+        add_walltime_remaining(JOB_ATR_start_time, pattr, phead);
+      }
+            
   /* SUCCESS */
   return(PBSE_NONE);
   } // END get_specific_attributes_values() 

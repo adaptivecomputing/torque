@@ -127,7 +127,7 @@ float            max_load_val = -1.0;
 char            *auto_ideal_load = NULL;
 char            *auto_max_load   = NULL;
 char            *AllocParCmd = NULL;  /* (alloc) */
-char             PBSNodeCheckPath[1024];
+char             PBSNodeCheckPath[MAXLINE];
 int              PBSNodeCheckProlog = 0;
 int              PBSNodeCheckEpilog = 0;
 int              PBSNodeCheckInterval = 1;
@@ -174,7 +174,6 @@ struct config   *config_array = NULL;
 char             extra_parm[] = "extra parameter(s)";
 char             no_parm[]    = "required parameter not found";
 int              rm_errno;
-char             PBSNodeMsgBuf[1024];
 #ifdef PENABLE_LINUX26_CPUSETS
 int              MOMConfigUseSMT = 1; /* 0: off, 1: on */
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
@@ -192,6 +191,7 @@ static int          nconfig;
 struct config_list *config_list = NULL;
 char                varattr_delimiter[] = ";";
 
+extern char         PBSNodeMsgBuf[MAXLINE];
 extern long         MaxConnectTimeout;
 extern char        *path_log;
 extern tlist_head   mom_varattrs; /* variable attributes */

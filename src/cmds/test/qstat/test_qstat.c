@@ -10,12 +10,19 @@
 #include "qstat.h"
 #include "cmds.h"
 
+
 using namespace std;
 
 extern bool connect_success;
 extern char *pbs_server;
+extern int pbs_errno;
+extern char* default_err_msg;
 
 int time_to_string(char *time_string, int total_seconds);
+int read_int_token(const char **ptr);
+int read_int_prop(const char **prop, const char *prefix);
+int read_node_spec(const char **nodespec);
+int get_tasks_from_nodes_resc(const char * nodes);
 
 START_TEST(time_to_string_test)
   {
@@ -393,7 +400,7 @@ START_TEST(test_run_job_mode)
   string               operand;
   bool                 have_args = false;
   size_t               len = PBS_MAXSERVERNAME;
-
+  string errmsg;
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
   fail_unless(pbs_server != NULL);
@@ -401,25 +408,29 @@ START_TEST(test_run_job_mode)
   rc = gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
-  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_job_mode failed for no operand");
 
   have_args = true;
   operand = "(null)";
-  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_job_mode failed for '(null)' operand");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "1234";
-  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234 operand");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "1234.hosta";
-  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234.kmn operand");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
-  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out);
+  rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc != PBSE_NONE, "run_job_mode failed for jobid 1234.kmn operand, bad connection");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   free(pbs_server);
   }
@@ -434,7 +445,7 @@ START_TEST(test_run_queue_mode)
   char    *server_name_out = NULL;
   string  operand;
   size_t  len = MAXSERVERNAME;
-  
+  string errmsg;
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
   fail_unless(pbs_server != NULL);
@@ -442,22 +453,26 @@ START_TEST(test_run_queue_mode)
   rc = gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
-  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out);
+  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
   fail_unless(rc == PBSE_NONE);
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
   operand = "batch";
-  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out);
+  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
   fail_unless(rc == PBSE_NONE);
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "(null)";
-  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out);
+  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
   fail_unless(rc == PBSE_NONE);
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
   operand = "batch";
-  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out);
+  rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
   fail_unless(rc != PBSE_NONE);
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   free(pbs_server);
 
@@ -471,6 +486,7 @@ START_TEST(test_run_server_mode)
   string  operand;
   bool    have_args = false;
   size_t  len = MAXSERVERNAME;
+  string errmsg;
 
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
@@ -479,34 +495,159 @@ START_TEST(test_run_server_mode)
   rc = gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
-  rc = run_server_mode(have_args, operand.c_str(), server_out);
+  rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_server_mode failed with no arguments");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
   operand = "(null)";
-  rc = run_server_mode(have_args, operand.c_str(), server_out);
+  rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_server_mode failed with no (null) arguments");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "hosta";
-  rc = run_server_mode(have_args, operand.c_str(), server_out);
+  rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_server_mode failed with arguments");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
-  rc = run_server_mode(have_args, operand.c_str(), server_out);
+  rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
   fail_unless(rc != PBSE_NONE, "run_server_mode failed bad connect");
+  fail_unless(errmsg.size() == 0, "error message contains information");
 
   }
 END_TEST
 
-
-
-START_TEST(test_two)
+START_TEST(test_err_msg)
   {
+  string errmsg;
+  const char* id = "-internal-";
+  const char* mode = "test";
+  string original_err;
 
+  char any_failed_str[16];
+  sprintf(any_failed_str, "%d", PBSE_SYSTEM);
+  original_err = string("qstat: Error (") + string(any_failed_str) + string(" - ")
+    + string(pbs_strerror(PBSE_SYSTEM)) + string(") ")
+    + string("getting status of ")
+    + string(mode) + string(" ") + string(id);
+  errmsg = get_err_msg(PBSE_SYSTEM, (char*)mode, 1, (char*)id);
 
+  fail_unless(errmsg.size() != 0, "empty error value");
+  fail_unless(strlen(errmsg.c_str()) == strlen(original_err.c_str()), "incorrect size of error message");
+  fail_unless(errmsg.compare(original_err) == 0, "incorrect err message");
+
+  pbs_errno  = 1; /* set none-zero value*/
+  original_err = string("qstat: ") + string(default_err_msg) + " " +string(id);
+  errmsg = get_err_msg(PBSE_NONE, (char*)mode, 1, (char*)id);
+  fail_unless(errmsg.size() != 0, "empty error value");
+  fail_unless(strlen(errmsg.c_str()) == strlen(original_err.c_str()), "incorrect size of error message");
+  fail_unless(errmsg.compare(original_err) == 0, "incorrect err message");
+
+  pbs_errno  = 1; /* set none-zero value*/
+  original_err = string("qstat: ") + string(default_err_msg) + " " +string(id);
+  errmsg = get_err_msg(PBSE_NONE, (char*)mode, 1, NULL);
+  fail_unless(errmsg.size() != 0, "empty error value");
+  fail_unless(strlen(errmsg.c_str()) == (strlen(original_err.c_str())-strlen(id)), "incorrect size of error message");
+
+  pbs_errno  = 1; /* set none-zero value*/
+  original_err = string("qstat: ") + string(default_err_msg) + " " +string(id);
+  errmsg = get_err_msg(PBSE_SYSTEM, NULL, -1, NULL);
+  fail_unless(errmsg.size() != 0, "empty error value");
+  fail_unless(strlen(errmsg.c_str()) == (strlen(original_err.c_str())-strlen(id)), "incorrect size of error message");
   }
 END_TEST
 
+START_TEST(test_read_int_token)
+  {
+  const char * tok = "";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "-1";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "0";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "10";
+  fail_unless(read_int_token(&tok) == 10);
+  fail_unless(tok == NULL);
+  tok = "99999999999999999"; /* int overflow */
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "12asf";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "a12";
+  fail_unless(read_int_token(&tok) == 1);
+  fail_unless(tok == NULL);
+  tok = "2:3";
+  fail_unless(read_int_token(&tok) == 2);
+  fail_unless(tok != NULL);
+  fail_unless(*tok == ':');
+  tok = "2+3";
+  fail_unless(read_int_token(&tok) == 2);
+  fail_unless(tok != NULL);
+  fail_unless(*tok == '+');
+  }
+END_TEST
+
+START_TEST(test_read_int_prop)
+  {
+  const char * prop = "prop=22";
+  fail_unless(read_int_prop(&prop, "prop=") == 22);
+  fail_unless(prop == NULL);
+  prop = "prop=";
+  fail_unless(read_int_prop(&prop, "prop=") == 1);
+  fail_unless(prop == NULL);
+  prop = "prop=asdf";
+  fail_unless(read_int_prop(&prop, "prop=") == 1);
+  fail_unless(prop == NULL);
+  prop = "a=2:b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == ':');
+  prop = "a=2+b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == '+');
+  prop = "prop=2+b=3";
+  fail_unless(read_int_prop(&prop, "prop=") == 2);
+  fail_unless(prop != NULL);
+  fail_unless(*prop == '+');
+  prop = "";
+  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(prop == NULL);
+  }
+END_TEST
+
+START_TEST(test_read_node_spec)
+  {
+  const char * spec = "n01:ppn=10";
+  fail_unless(read_node_spec(&spec) == 10);
+  fail_unless(spec == NULL);
+  spec = "2:ppn=10";
+  fail_unless(read_node_spec(&spec) == 20);
+  fail_unless(spec == NULL);
+  spec = "2";
+  fail_unless(read_node_spec(&spec) == 2);
+  fail_unless(spec == NULL);
+  spec = "2:prop=val:pr:ppn=10:prop=val";
+  fail_unless(read_node_spec(&spec) == 20);
+  fail_unless(spec == NULL);
+  }
+END_TEST
+
+START_TEST(test_get_tasks_from_nodes_resc)
+  {
+  const char * spec = "n01+n02+n03";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 3);
+  spec = "n01+2+n03";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 4);
+  spec = "n01:prop=val+5:prop=val+1+n02:prop=val:ppn=5+n03+n04:ppn=10";
+  fail_unless(get_tasks_from_nodes_resc(spec) == 23);
+  }
+END_TEST
 
 Suite *qstat_suite(void)
   {
@@ -547,8 +688,24 @@ Suite *qstat_suite(void)
   tcase_add_test(tc_core, test_run_server_mode);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_err_msg");
+  tcase_add_test(tc_core, test_err_msg);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_int_token");
+  tcase_add_test(tc_core, test_read_int_token);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_int_prop");
+  tcase_add_test(tc_core, test_read_int_prop);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_read_node_spec");
+  tcase_add_test(tc_core, test_read_node_spec);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_tasks_from_nodes_resc");
+  tcase_add_test(tc_core, test_get_tasks_from_nodes_resc);
   suite_add_tcase(s, tc_core);
 
   return s;

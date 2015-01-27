@@ -202,7 +202,7 @@ int get_active_pbs_server(
   char      unix_sockname[MAXPATHLEN + 1];
   char      write_buf[MAX_LINE];
   int       write_buf_len;
-  char     *read_buf;
+  char     *read_buf = NULL;
   long long read_buf_len = MAX_LINE;
   int       local_socket;
   int       rc = PBSE_NONE;
@@ -259,11 +259,17 @@ int get_active_pbs_server(
     }
   else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
     {
+    if (read_buf != NULL)
+      free(read_buf);
+
     close(local_socket);
     return(rc);
     }
   else if ((rc = socket_read_num(local_socket, (long long *)port)) != PBSE_NONE)
     {
+    if (read_buf != NULL)
+      free(read_buf);
+
     close(local_socket);
     return(rc);
     }
@@ -271,14 +277,22 @@ int get_active_pbs_server(
   close(local_socket);
 
   if (read_buf_len == 0)
-    return(PBSE_SOCKET_READ);
+    {
+    if (read_buf != NULL)
+      free(read_buf);
 
-  current_server = strdup(read_buf);
+    return(PBSE_SOCKET_READ);
+    }
+
+  // read_buf has been allocated in socket_read_str()
+  current_server = read_buf;
 
   *active_server = current_server;
 
   return(rc);
   } /* END get_active_pbs_server() */
+
+
 
 int trq_simple_disconnect(
 
@@ -381,6 +395,7 @@ int trq_simple_connect(
   }
 
 /* validate_server:
+ *
  * This function tries to find the currently active
  * pbs_server. If no server can be found the default 
  * server is made the active server */ 
@@ -676,8 +691,10 @@ int validate_user(
 
 
 int parse_response_svr(
-    int sock,
-    char **err_msg)
+
+  int          sock,
+  std::string &err_msg)
+
   {
   /*
    * PBS_BATCH_PROT_TYPE
@@ -702,7 +719,8 @@ int parse_response_svr(
     }
   else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
-    free(reply);
+    PBSD_FreeReply(reply);
+
     if (chan->IsTimeout == TRUE)
       {
       rc = PBSE_TIMEOUT;
@@ -715,23 +733,26 @@ int parse_response_svr(
       {
       char err_buf[80];
       snprintf(err_buf, 79, "Error creating error message for code %d", rc);
-      *err_msg = strdup(err_buf);
+      err_msg = err_buf;
       }
     else
-      *err_msg = strdup(tmp_val);
+      err_msg = tmp_val;
     }
   else
     {
     rc = reply->brp_code;
     if (reply->brp_code != PBSE_NONE)
-      {
-      *err_msg = strdup(reply->brp_un.brp_txt.brp_str);
-      }
-    free(reply);
+      err_msg = reply->brp_un.brp_txt.brp_str;
+
+    PBSD_FreeReply(reply);
     }
+
   DIS_tcp_cleanup(chan);
-  return rc;
-  }
+
+  return(rc);
+  } // END parse_response_svr()
+
+
 
 int get_trq_server_addr(
    
@@ -807,32 +828,203 @@ void send_svr_disconnect(int sock, const char *user_name)
   free(resp_msg);
   }
 
+
+
+/*
+ * authorize_socket()
+ *
+ *
+ */
+
+int authorize_socket(
+
+  int          local_socket,
+  std::string &message,
+  char        *msg_buf,
+  std::string &err_msg)
+
+  {
+  int          rc;
+  bool         disconnect_svr = true;
+  char        *server_name;
+  int          server_port;
+  int          auth_type = 0;
+  int          svr_sock = -1;
+  char        *user_name = NULL;
+  int          user_pid = 0;
+  int          user_sock = 0;
+  int          trq_server_addr_len = 0;
+  char        *trq_server_addr = NULL;
+  const char  *className = "trqauthd";
+
+  /* incoming message format is:
+   * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
+   * message format to pbs_server is:
+   * +2+22+492+user+sock+0
+   * format from pbs_server is:
+   * +2+2+0+0+1
+   * outgoing message format is:
+   * #|msg_len|message|
+   * Send response to client here!!
+   * Disconnect message to svr:
+   * +2+22+592+{user_len}{user}
+   *
+   * msg to client in the case of success:
+   * 0|0||
+   */
+
+  if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
+    {
+    if (server_name != NULL)
+      free(server_name);
+
+    if (user_name != NULL)
+      free(user_name);
+
+    return(rc);
+    }
+  else
+    {
+    int retries = 0;
+
+    while (retries < MAX_RETRIES)
+      {
+      rc = PBSE_NONE;
+      disconnect_svr = true;
+
+      if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
+        {
+        log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
+        disconnect_svr = false;
+        retries++;
+        usleep(20000);
+        continue;
+        }
+      else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
+        {
+        disconnect_svr = false;
+        retries++;
+        usleep(20000);
+        continue;
+        }
+      else if ((svr_sock = socket_get_tcp_priv()) < 0)
+        {
+        rc = PBSE_SOCKET_FAULT;
+        disconnect_svr = false;
+        retries++;
+        usleep(10000);
+        continue;
+        }
+      else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
+        {
+        /* for now we only need ssh_key and sign_key as dummys */
+        char *ssh_key = NULL;
+        char *sign_key = NULL;
+        char  log_buf[LOCAL_LOG_BUF_SIZE];
+
+        validate_server(server_name, server_port, ssh_key, &sign_key);
+        sprintf(log_buf, "Active server is %s", active_pbs_server);
+        log_event(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
+        disconnect_svr = false;
+        socket_close(svr_sock);
+        retries++;
+        usleep(50000);
+        continue;
+        }
+      else if ((rc = build_request_svr(auth_type, user_name, user_sock, message)) != PBSE_NONE)
+        {
+        socket_close(svr_sock);
+        disconnect_svr = false;
+        retries++;
+        usleep(50000);
+        continue;
+        }
+      else if (message.size() <= 0)
+        {
+        socket_close(svr_sock);
+        disconnect_svr = false;
+        rc = PBSE_INTERNAL;
+        retries++;
+        usleep(50000);
+        continue;
+        }
+      else if ((rc = socket_write(svr_sock, message.c_str(), message.size())) != (int)message.size())
+        {
+        socket_close(svr_sock);
+        disconnect_svr = false;
+        rc = PBSE_SOCKET_WRITE;
+        retries++;
+        usleep(50000);
+        continue;
+        }
+      else if ((rc = parse_response_svr(svr_sock, err_msg)) != PBSE_NONE)
+        {
+        socket_close(svr_sock);
+        disconnect_svr = false;
+        retries++;
+        usleep(50000);
+        continue;
+        }
+      else
+        {
+        /* Success case */
+        message = "0|0||";
+        if (debug_mode == TRUE)
+          {
+          fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n",
+            server_name, server_port, user_sock);
+          }
+
+        sprintf(msg_buf,
+          "User %s at IP:port %s:%d logged in", user_name, server_name, server_port);
+        log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
+          className, msg_buf);
+        }
+
+      break;
+      }
+    }
+
+  if (disconnect_svr == true)
+    {
+    send_svr_disconnect(svr_sock, user_name);
+    socket_close(svr_sock);
+    }
+
+  if (user_name != NULL)
+    free(user_name);
+
+  if (trq_server_addr != NULL)
+    free(trq_server_addr);
+
+  if (server_name != NULL)
+    free(server_name);
+
+  return(rc);
+  } // END authorize_socket() 
+
+
 void *process_svr_conn(
     
   void *sock)
 
   {
-  const char *className = "trqauthd";
-  int         rc = PBSE_NONE;
-  char       *server_name = NULL;
-  int         server_port = 0;
-  int         auth_type = 0;
-  char       *user_name = NULL;
-  int                user_pid = 0;
-  int                user_sock = 0;
-  char              *error_msg = NULL;
+  const char  *className = "trqauthd";
+  int          rc = PBSE_NONE;
+  char        *server_name = NULL;
+  int          server_port = 0;
+  char        *user_name = NULL;
+  int          user_pid = 0;
+  int          user_sock = 0;
+  std::string  error_string;
   std::string  message;
-  int         send_len = 0;
-  char       *trq_server_addr = NULL;
-  int         trq_server_addr_len = 0;
-  int         svr_sock = -1;
-  int         msg_len = 0;
-  int         debug_mark = 0;
-  int         local_socket = *(int *)sock;
-  char        msg_buf[1024];
-  long long   req_type;  /* Type of request coming in */
+  int          msg_len = 0;
+  int          local_socket = *(int *)sock;
+  char         msg_buf[1024];
+  long long    req_type;  /* Type of request coming in */
 
   rc = socket_read_num(local_socket, &req_type);
+
   if (rc == PBSE_NONE)
     {
     switch (req_type)
@@ -883,143 +1075,7 @@ void *process_svr_conn(
 
       case TRQ_AUTH_CONNECTION:
         {
-
-        int         disconnect_svr = TRUE;
-        /* incoming message format is:
-         * trq_system_len|trq_system|trq_port|Validation_type|user_len|user|pid|psock|
-         * message format to pbs_server is:
-         * +2+22+492+user+sock+0
-         * format from pbs_server is:
-         * +2+2+0+0+1
-         * outgoing message format is:
-         * #|msg_len|message|
-         * Send response to client here!!
-         * Disconnect message to svr:
-         * +2+22+592+{user_len}{user}
-         *
-         * msg to client in the case of success:
-         * 0|0||
-         */
-
-        if ((rc = parse_request_client(local_socket, &server_name, &server_port, &auth_type, &user_name, &user_pid, &user_sock)) != PBSE_NONE)
-          {
-          disconnect_svr = FALSE;
-          debug_mark = 1;
-          }
-        else
-          {
-          int retries = 0;
-          while (retries < MAX_RETRIES)
-            {
-            rc = PBSE_NONE;
-            disconnect_svr = TRUE;
-
-
-            if ((rc = validate_user(local_socket, user_name, user_pid, msg_buf)) != PBSE_NONE)
-              {
-              log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD, __func__, msg_buf);
-              disconnect_svr = FALSE;
-              debug_mark = 1;
-              retries++;
-              usleep(20000);
-              continue;
-              }
-            else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
-              {
-              disconnect_svr = FALSE;
-              debug_mark = 2;
-              retries++;
-              usleep(20000);
-              continue;
-              }
-            else if ((svr_sock = socket_get_tcp_priv()) < 0)
-              {
-              rc = PBSE_SOCKET_FAULT;
-              disconnect_svr = FALSE;
-              debug_mark = 3;
-              retries++;
-              usleep(10000);
-              continue;
-              }
-            else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, &error_msg)) != PBSE_NONE)
-              {
-              /* for now we only need ssh_key and sign_key as dummys */
-              char *ssh_key = NULL;
-              char *sign_key = NULL;
-              char  log_buf[LOCAL_LOG_BUF_SIZE];
-
-              validate_server(server_name, server_port, ssh_key, &sign_key);
-              sprintf(log_buf, "Active server is %s", active_pbs_server);
-              log_event(PBSEVENT_CLIENTAUTH, PBS_EVENTCLASS_TRQAUTHD, __func__, log_buf);
-              disconnect_svr = FALSE;
-              debug_mark = 4;
-              socket_close(svr_sock);
-              retries++;
-              usleep(50000);
-              continue;
-              }
-            else if ((rc = build_request_svr(auth_type, user_name, user_sock, message)) != PBSE_NONE)
-              {
-              socket_close(svr_sock);
-              disconnect_svr = FALSE;
-              debug_mark = 5;
-              retries++;
-              usleep(50000);
-              continue;
-              }
-            else if ((send_len = message.length()) <= 0)
-              {
-              socket_close(svr_sock);
-              disconnect_svr = FALSE;
-              rc = PBSE_INTERNAL;
-              debug_mark = 6;
-              retries++;
-              usleep(50000);
-              continue;
-              }
-            else if ((rc = socket_write(svr_sock, message.c_str(), send_len)) != send_len)
-              {
-              socket_close(svr_sock);
-              disconnect_svr = FALSE;
-              rc = PBSE_SOCKET_WRITE;
-              debug_mark = 7;
-              retries++;
-              usleep(50000);
-              continue;
-              }
-            else if ((rc = parse_response_svr(svr_sock, &error_msg)) != PBSE_NONE)
-              {
-              socket_close(svr_sock);
-              disconnect_svr = FALSE;
-              debug_mark = 8;
-              retries++;
-              usleep(50000);
-              continue;
-              }
-            else
-              {
-              /* Success case */
-              message = "0|0||";
-              if (debug_mode == TRUE)
-                {
-                fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n",
-                  server_name, server_port, user_sock);
-                }
-
-              snprintf(msg_buf, sizeof(msg_buf),
-                "User %s at IP:port %s:%d logged in", user_name, server_name, server_port);
-              log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
-                className, msg_buf);
-              }
-            break;
-            }
-          }
-
-        if (TRUE == disconnect_svr)
-          {
-          send_svr_disconnect(svr_sock, user_name);
-          socket_close(svr_sock);
-          }
+        rc = authorize_socket(local_socket, message, msg_buf, error_string);
         break;
         }
       default:
@@ -1045,29 +1101,35 @@ void *process_svr_conn(
     /* Failure case */
     msg_len = 6 + 1 + 6 + 1 + 1;
     
-    if (error_msg == NULL)
+    if (error_string.size() == 0)
       {
-      char *tmp_err = pbse_to_txt(rc);
-      if (tmp_err != NULL)
-        error_msg = strdup(tmp_err);
-      else
-        error_msg = strdup("");
+      error_string = pbse_to_txt(rc);
       }
 
-    msg_len += strlen(error_msg);
+    msg_len += error_string.size();
 
-    message = string_format("%d|%d|%s|",rc,strlen(error_msg),error_msg);
+    message = string_format("%d|%d|%s|",rc, error_string.size(), error_string.c_str());
     
     if (debug_mode == TRUE)
       {
-      fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (dm = %d, Err Num %d)\n", server_name, server_port, user_sock, debug_mark, rc);
+      fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (Err Num %d)\n", server_name, server_port, user_sock, rc);
       }
 
-    snprintf(msg_buf, sizeof(msg_buf),
-      "User %s at IP:port %s:%d login attempt failed --%s", 
-        (user_name) ? user_name : "null",
-        (server_name) ? server_name : "null", server_port, 
-        (error_msg) ? error_msg : "null");
+    if (error_string.size() == 0)
+      {
+      snprintf(msg_buf, sizeof(msg_buf),
+        "User %s at IP:port %s:%d login attempt failed --no message", 
+          (user_name) ? user_name : "null",
+          server_name, server_port);
+      }
+    else
+      {
+      snprintf(msg_buf, sizeof(msg_buf),
+        "User %s at IP:port %s:%d login attempt failed --%s", 
+          (user_name) ? user_name : "null",
+          (server_name) ? server_name : "null", server_port, 
+          error_string.c_str());
+      }
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
       className, msg_buf);
     }
@@ -1075,17 +1137,11 @@ void *process_svr_conn(
   if (message.length() != 0)
     rc = socket_write(local_socket, message.c_str(), message.length());
 
-  if (trq_server_addr != NULL)
-    free(trq_server_addr);
-
   if (server_name != NULL)
     free(server_name);
 
   if (user_name != NULL)
     free(user_name);
-
-  if (error_msg != NULL)
-    free(error_msg);
 
   socket_close(local_socket);
   free(sock);

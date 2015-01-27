@@ -112,43 +112,8 @@ In order to execute qterm, the user must have PBS Operation or Manager
 privilege.
 .SH OPTIONS
 .IP "\-t type" 10
-Specifies the type of shut down.  The types are:
+Specifies the type of shut down.  The type are:
 .RS
-.IP immediate
-All running jobs are to immediately stop execution.  
-.if !\n(Pb .ig Ig
-The value passed in the
-.I Shutdown
-request is 
-.Sc SHUT_IMMEDIATE .
-.Ig
-.IP
-If checkpoint is supported, running jobs that were submitted with "\-c shutdown"
-are checkpointed, terminated, and requeued.
-If checkpoint is not supported or the job cannot be checkpointed, running
-jobs are requeued if the
-.At rerunable
-attribute is true.  Otherwise, jobs are killed.
-.IP
-Normally the server will not shutdown until there are no jobs in the running
-state.  If the server is unable to contact the MOM of running job, the job
-is still listed as running.
-The server may be forced down by a second \*Qqterm \-t immediate\*U
-command.
-.IP delay\ 
-If checkpoint is supported, running jobs that were submitted with "\-c shutdown"
-are checkpointed, terminated, and requeued.
-If a job cannot be checkpointed, but can be rerun, the job is terminated
-and requeued.
-Otherwise, running jobs are allowed to continue to run.
-Note, the operator or administrator may use the qrerun and qdel commands to
-remove running jobs.
-.if !\n(Pb .ig Ig
-The value passed in the
-.I Shutdown
-request is 
-.Sc SHUT_DELAY .
-.Ig
 .IP quick\ 
 This option is used when you wish that running jobs be left running when
 the server shuts down.  The

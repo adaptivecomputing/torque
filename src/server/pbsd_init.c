@@ -217,6 +217,7 @@ pthread_mutex_t                *exiting_jobs_info_mutex;
 
 reservation_holder              alps_reservations;
 batch_request_holder            brh;
+bool cpy_stdout_err_on_rerun = false;
 
 extern pthread_mutex_t         *acctfile_mutex;
 pthread_mutex_t                *scheduler_sock_jobct_mutex;
@@ -245,7 +246,6 @@ void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
 extern void   set_resc_assigned(job *, enum batch_op);
 extern int    set_old_nodes(job *);
-extern void   acct_close(void);
 
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
@@ -916,6 +916,12 @@ int setup_server_attrs(
       svr_attr_def[SRV_ATR_resource_assn].at_free(
         &server.sv_attr[SRV_ATR_resource_assn]);
       }
+   
+    if ((server.sv_attr[SRV_ATR_CopyOnRerun].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_CopyOnRerun].at_val.at_long))
+      {
+      cpy_stdout_err_on_rerun = true;
+      }
     }
   else
     {
@@ -936,7 +942,7 @@ int setup_server_attrs(
     0);
 
   /* open accounting file and job log file if logging is set */
-  if (acct_open(acct_file) != 0)
+  if (acct_open(acct_file, false) != 0)
     {
     pthread_mutex_unlock(server.sv_attr_mutex);
     return(-1);
@@ -1128,8 +1134,7 @@ int handle_array_recovery(
       {
       /* if not create or clean recovery, recover arrays */
 
-      if ((type != RECOV_CREATE) && 
-          (type != RECOV_COLD))
+      if (type != RECOV_CREATE)
         {
         /* skip files without the proper suffix */
         baselen = strlen(pdirent->d_name) - array_suf_len;
@@ -1289,7 +1294,7 @@ int handle_job_recovery(
 
   if (dir == NULL)
     {
-    if ((type != RECOV_CREATE) && (type != RECOV_COLD))
+    if (type != RECOV_CREATE)
       {
       if (had == 0)
         {
@@ -1332,10 +1337,7 @@ int handle_job_recovery(
 
 
             Array[pjob->ji_qs.ji_jobid] = pjob;
-
-            if (type == RECOV_COLD)
-              pjob->ji_cold_restart = TRUE;
-            
+ 
             unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             }
 
@@ -1348,9 +1350,6 @@ int handle_job_recovery(
         if ((pjob = job_recov(pdirent->d_name)) != NULL)
           {
           Array[pjob->ji_qs.ji_jobid] = pjob;
-
-          if (type == RECOV_COLD)
-            pjob->ji_cold_restart = TRUE;
 
           unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
           }
@@ -1407,8 +1406,7 @@ int handle_job_recovery(
         }
 
 
-      if ((type != RECOV_COLD) &&
-          (type != RECOV_CREATE) &&
+      if ((type != RECOV_CREATE) &&
           (pjob->ji_arraystructid[0] == '\0') &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
@@ -1455,8 +1453,7 @@ int handle_job_recovery(
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
     if ((had != server.sv_qs.sv_numjobs) &&
-        (type != RECOV_CREATE) &&
-        (type != RECOV_COLD))
+        (type != RECOV_CREATE))
       {
       logtype = PBSEVENT_ERROR | PBSEVENT_SYSTEM;
       }
@@ -1918,15 +1915,12 @@ int pbsd_init_job(
 
   /* now based on the initialization type */
 
-  if ((type == RECOV_COLD) || (type == RECOV_CREATE))
+  if (type == RECOV_CREATE)
     {
     init_abt_job(pjob);
 
     return(PBSE_BAD_PARAMETER);
     }
-
-  if (type != RECOV_HOT)
-    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
 
   switch (pjob->ji_qs.ji_substate)
     {
@@ -2065,9 +2059,6 @@ int pbsd_init_job(
             return(rc);
             }
           }
-        
-        if (type == RECOV_HOT)
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HOTSTART;
         }
 
       break;
@@ -2090,7 +2081,6 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_EXITED:
 
-    case JOB_SUBSTATE_ABORT:
 
       /* This is delayed because it is highly likely MS is "state-unknown"
        * at this time, and there's no real hurry anyways. */
@@ -2102,6 +2092,18 @@ int pbsd_init_job(
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
+
+    case JOB_SUBSTATE_ABORT:
+      if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+        {
+        apply_job_delete_nanny(pjob, time_now + 60);
+        set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+        rc = pbsd_init_reque(pjob, KEEP_STATE);
+        break;
+        }
+
+      svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+
 
     case JOB_SUBSTATE_COMPLETE:
 
@@ -2122,10 +2124,13 @@ int pbsd_init_job(
           job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
           job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-          update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
-              job_id, job_atr_hold, job_exit_status);
+          if (pa)
+            {
+            update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
+                job_id, job_atr_hold, job_exit_status);
           
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+            unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+            }
           pjob = svr_find_job(job_id, FALSE);
           }
          
@@ -2349,13 +2354,13 @@ void change_logs()
   long record_job_info = FALSE;
 
   run_change_logs = FALSE;
-  acct_close();
+  acct_close(false);
   pthread_mutex_lock(&log_mutex);
   log_close(1);
   log_open(log_file, path_log);
   pthread_mutex_unlock(&log_mutex);
 
-  acct_open(acct_file);
+  acct_open(acct_file, false);
 
   get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)

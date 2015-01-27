@@ -24,6 +24,7 @@
 
 
 int svr_tsnodes = 0; 
+int svr_unresolvednodes = 0;
 resource_t next_resource_tag;
 char server_name[PBS_MAXSERVERNAME + 1];
 bool exit_called = false;
@@ -152,6 +153,16 @@ int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int log
   return(0); 
   }                           
 
+int tmp_unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }                           
+
+int tmp_lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  { 
+  return(0); 
+  }
+
 struct tcp_chan* DIS_tcp_setup(int sock)
   {
   return(NULL);
@@ -173,7 +184,7 @@ int diswcs (tcp_chan* c, char const* a, unsigned long l)
   }
 
 
-int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t s, bool use_log)
   {
   return(0);
   }

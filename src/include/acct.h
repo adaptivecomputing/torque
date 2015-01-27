@@ -80,6 +80,8 @@
 * without reference to its choice of law rules.
 */
 
+#include <string>
+
 /*
  * @(#) $Id$
  */
@@ -103,10 +105,11 @@
 #define PBS_ACCT_DEL (int)'D' /* Job Deleted by request */
 #define PBS_ACCT_ABT (int)'A' /* Job Abort by server */
 
-extern int  acct_open (char *filename);
+extern int  acct_open (char *filename, bool acct_mutex_locked);
+void        acct_close (bool acct_mutex_locked);
 extern void account_record (int acctype, job *pjob, const char *text);
 extern void account_jobstr (job *pjob);
-extern void account_jobend (job *pjob, char * used);
+extern void account_jobend (job *pjob, std::string &acct_data);
 
 #endif
 

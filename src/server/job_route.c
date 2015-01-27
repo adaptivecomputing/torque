@@ -117,6 +117,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "queue_func.h" /*find_queuebyname */
+#include "job_func.h"
 
 #define ROUTE_RETRY_TIME 10
 
@@ -146,25 +147,13 @@ void add_dest(
   job *jobp)
 
   {
-  badplace  *bp;
-  char      *baddest;
   if (jobp == NULL)
     {
     log_err(-1, __func__, "add_dest called with null jobp");
     return;
     }
 
-  baddest = jobp->ji_qs.ji_destin;
-  bp = (badplace *)calloc(1, sizeof(badplace));
-  if (bp == NULL)
-    {
-    log_err(errno, __func__, msg_err_malloc);
-    return;
-    }
-
-  CLEAR_LINK(bp->bp_link);
-  strcpy(bp->bp_dest, baddest);
-  append_link(&jobp->ji_rejectdest, &bp->bp_link, bp);
+  jobp->ji_rejectdest->push_back(jobp->ji_qs.ji_destin);
   }  /* END add_dest() */
 
 
@@ -176,7 +165,7 @@ void add_dest(
  * Return: pointer if found, NULL if not.
  */
 
-badplace *is_bad_dest(
+bool is_bad_dest(
 
   job  *jobp,
   char *dest)
@@ -184,18 +173,11 @@ badplace *is_bad_dest(
   {
   /* ji_rejectdest is set in add_dest if approved in ??? */
 
-  badplace *bp;
-  bp = (badplace *)GET_NEXT(jobp->ji_rejectdest);
+  for (unsigned int i = 0; i < jobp->ji_rejectdest->size(); i++)
+    if (jobp->ji_rejectdest->at(i) == dest)
+      return(true);
 
-  while (bp != NULL)
-    {
-    if (!strcmp(bp->bp_dest, dest))
-      break;
-
-    bp = (badplace *)GET_NEXT(bp->bp_link);
-    }
-
-  return(bp);
+  return(false);
   }  /* END is_bad_dest() */
 
 

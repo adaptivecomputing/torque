@@ -122,6 +122,7 @@
 #include "mutex_mgr.hpp"
 #include "unistd.h"
 #include "log.h"
+#include "job_func.h"
 
 /* Global Data Items: */
 
@@ -895,7 +896,8 @@ void stat_update(
 
   preply = &preq->rq_reply;
 
-  if (preply->brp_un.brp_txt.brp_str != NULL)
+  if ((preply->brp_choice != BATCH_REPLY_CHOICE_Queue) &&
+      (preply->brp_un.brp_txt.brp_str != NULL))
     {
     msg_ptr = strstr(preply->brp_un.brp_txt.brp_str, PBS_MSG_EQUAL);
   
@@ -975,9 +977,17 @@ void stat_update(
     }
   else
     {
-    snprintf(log_buf, sizeof(log_buf),
-      "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
-    log_err(preply->brp_code, __func__, log_buf);
+    if (preply->brp_choice == BATCH_REPLY_CHOICE_Queue)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Unexpected reply: reply was on queue");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Poll job request failed for job %s", preq->rq_ind.rq_status.rq_id);
+      log_err(preply->brp_code, __func__, log_buf);
+      }
     }
   
   cntl->sc_conn = -1;
@@ -1354,7 +1364,10 @@ int req_stat_node(
   if (svr_totnodes <= 0)
     {
     rc = PBSE_NONODES;
-    req_reject(rc, 0, preq, NULL, "node list is empty - check 'server_priv/nodes' file");
+
+    req_reject(rc, 0, preq, NULL, (svr_unresolvednodes == 0)?
+        "node list is empty - check 'server_priv/nodes' file":
+        "none of the nodes in the 'server_priv/nodes' file resolves to a valid address");
 
     return rc;
     }
