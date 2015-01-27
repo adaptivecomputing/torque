@@ -356,6 +356,7 @@ extern int  use_nvidia_gpu;
 
 void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
+int trq_cg_add_process_to_cgroup_accts(pid_t job_pid);
 
 
 
