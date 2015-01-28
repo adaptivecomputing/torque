@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h>
+#include <semaphore.h>
 #include <errno.h>
 #include <string>
 
@@ -28,6 +29,7 @@ bool exit_called = false;
 int valbuf_size = 0;
 /* end manip */
 
+sem_t *job_clone_semaphore;
 char *path_jobs;
 char path_checkpoint[MAXPATHLEN + 1];
 char *job_log_file = NULL;
