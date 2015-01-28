@@ -142,3 +142,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
+int trq_cg_remove_process_from_accts(job *pjob)  
+  {
+  return(PBSE_NONE);
+  }
