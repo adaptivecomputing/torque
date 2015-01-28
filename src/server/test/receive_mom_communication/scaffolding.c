@@ -288,3 +288,15 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
   {
   }
+
+int disrsi(tcp_chan *channel, int *ret)
+  {
+  return(PBSE_NONE);
+  }
+
+int disrui(tcp_chan *channel, int *ret)
+  {
+  return(PBSE_NONE);
+  }
+
+                                                                                                                                           
