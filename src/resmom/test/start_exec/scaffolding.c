@@ -8,6 +8,7 @@
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
 #include <pwd.h> /* gid_t, uid_t */
+#include <string> /* std::string */
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -25,6 +26,8 @@
 #include "node_internals.hpp"
 #endif
 
+std::string cg_memory_path;
+std::string cg_cpuacct_path;
 int  send_ms_called;
 int  send_sisters_called;
 int  num_contacted;
@@ -666,3 +669,12 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+int trq_cg_add_process_to_cgroup_accts(pid_t job_pid ) 
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup(std::string& cgroup_path, pid_t job_pid, pid_t new_pid) 
+  {
+  return(PBSE_NONE);
+  }
