@@ -30,6 +30,8 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeNonNUMASocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize non NUMA socket");
+      rc = new_socket.getMemoryInBytes();
+      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -44,6 +46,8 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeIntelSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
+      rc = new_socket.getMemoryInBytes();
+      fail_unless(rc == 0, "failed to get socket memory");
       }
     else
       {
@@ -58,6 +62,8 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeAMDSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
+      rc = new_socket.getMemoryInBytes();
+      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -70,8 +76,6 @@ START_TEST(test_initializeSocket)
 
 
 
-  rc = new_socket.getMemoryInBytes();
-  fail_unless(rc == 0, "failed to get socket memory");
 
   rc = new_socket.getTotalChips();
   fail_unless(rc != 0, "failed to get socket total chips");
