@@ -245,6 +245,11 @@ int rpp_close(int index)
   exit(1);
   }
 
+int close(int fd)
+  {
+  return(0);
+  }
+
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
   return 0;

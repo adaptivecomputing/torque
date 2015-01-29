@@ -71,7 +71,7 @@ START_TEST(test_initializeSocket)
 
 
   rc = new_socket.getMemoryInBytes();
-  fail_unless(rc != 0, "failed to get socket memory");
+  fail_unless(rc == 0, "failed to get socket memory");
 
   rc = new_socket.getTotalChips();
   fail_unless(rc != 0, "failed to get socket total chips");
