@@ -153,15 +153,15 @@ END_TEST
 START_TEST(addr_ok_test)
   {
   pbs_net_t address = 0;
-  /*struct pbsnode node;*/
+  struct pbsnode node;
   int result;
-  /*initialize_pbsnode(&node, NULL, NULL, 0, FALSE);*/
+  initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = addr_ok(address, NULL);
   fail_unless(result == 1, "NULL node input fail: %d", result);
 
-  /*result = addr_ok(address, &node);
-  fail_unless(result == 1, "empty node input fail: %d", result);*/
+  result = addr_ok(address, &node);
+  fail_unless(result == 1, "empty node input fail: %d", result);
 
   }
 END_TEST
@@ -402,7 +402,7 @@ START_TEST(effective_node_delete_test)
   node->nd_name = strdup("nodename");
   effective_node_delete(&node);
 
-  fail_unless(node == NULL, "unsuccessfull node delition %d", node);
+  fail_unless(node == NULL, "unsuccessfull node deletion %d", node);
 
   }
 END_TEST
@@ -826,7 +826,11 @@ END_TEST
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("node_func_suite methods");
-  TCase *tc_core = tcase_create("find_node_in_allnodes_test");
+  TCase *tc_core = tcase_create("addr_ok_test");
+  tcase_add_test(tc_core, addr_ok_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("find_node_in_allnodes_test");
   tcase_add_test(tc_core, find_node_in_allnodes_test);
   suite_add_tcase(s, tc_core);
 
@@ -844,19 +848,19 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("login_encode_jobs_test");
   tcase_add_test(tc_core, login_encode_jobs_test);
-  /*suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("status_nodeattrib_test");
   tcase_add_test(tc_core, status_nodeattrib_test);
-  /*suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("initialize_pbsnode_test");
   tcase_add_test(tc_core, initialize_pbsnode_test);
-  /*suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("effective_node_delete_test");
   tcase_add_test(tc_core, effective_node_delete_test);
-  suite_add_tcase(s, tc_core);
+  /*suite_add_tcase(s, tc_core);*/
 
   tc_core = tcase_create("update_nodes_file_test");
   tcase_add_test(tc_core, update_nodes_file_test);
@@ -932,7 +936,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("remove_node_test");
   tcase_add_test(tc_core, remove_node_test);
-  suite_add_tcase(s, tc_core);
+  /*suite_add_tcase(s, tc_core);*/
 
   tc_core = tcase_create("next_host_test");
   tcase_add_test(tc_core, next_host_test);
@@ -946,15 +950,13 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, write_compute_node_properties_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("addr_ok_test");
-  tcase_add_test(tc_core, addr_ok_test);
-  suite_add_tcase(s, tc_core);
-
   tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
-  tcase_add_test(tc_core, parse_node_token_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("parse_node_token_test");
+  tcase_add_test(tc_core, parse_node_token_test);
+  suite_add_tcase(s, tc_core);
 
 #if 0
   /* Will uncoment this test once we use the real, append_link, etc */

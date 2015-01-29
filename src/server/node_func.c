@@ -831,7 +831,7 @@ int initialize_pbsnode(
                                           //list has been send to all nodes.
     }
 
-  if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
+ if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
     if (pbs_getaddrinfo(pname,NULL,&pAddrInfo))
       {

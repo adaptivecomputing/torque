@@ -264,8 +264,7 @@ job *get_job_from_jobinfo(
 
 int insert_addr_name_info(
     struct addrinfo *,
-    const char *
-)
+    const char *)
 
   {
   return(0);
