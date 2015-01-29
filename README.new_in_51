@@ -1,0 +1,68 @@
+﻿TORQUE Resource Manager 5.1.0 Release Notes
+January 2015
+
+The release notes file contains the following sections:
+
+> New Features
+> Differences
+> Known Issues
+> Resolved Issues
+
+===== New Features =====
+
+The following is a summary of key new features in TORQUE Resource Manager 5.1.0.
+
+==> Ability to Provide Condensed qstat Output
+
+   - A 'qstat -C' option, which specifies that TORQUE will provide only a condensed output (job name, resources used, queue, state, and job owner) for jobs that have not changed recently (as per the job_full_report_time parameter), has been added. Jobs that have recently changed will continue to send a full output.
+
+==> Performance Enhancements to MOM Clean-up Time
+
+   - Some minor performance enhancements were made to improve MOM clean-up time.
+
+===== Differences =====
+
+This section contains differences in previously existing features that require a change in configuration or routine.
+
+==> CLIENTRETRY Configuration Option Support for qdel
+
+   - The qdel parameter now includes the -b option and CLIENTRETRY configuration option support. This feature functions similar to -b option for qsub. Specifically:
+	* -b <num> command line argument support
+	* CLIENTRETRY configuration option support
+	* PBS_CLIENTRETRY environment variable support
+
+==> Jobs Deleted When the Dependency Can No Longer Be Satisfied
+
+   - When a job is deleted because its dependency can no longer be satisfied, that job will follow the keep_completed parameter set (if any) for pbs_server. Previously, jobs were purged immediately.
+
+==> pbs_server -t No Longer Supports hot|warm|cold Options
+
+   - The pbs_server -t option no longer supports the hot|warm|cold Options. Other options are still supported.
+
+===== Known Issues =====
+
+The following are known issues in the TORQUE Resource Manager 5.1.0. 
+
+> DNS caches are not purged of removed nodes when Elastic Computing is enabled. SLES 11 SP1 has an issue with giving the old IP address toTORQUE even after updating /etc/hosts. Do not use SLES SP1 if you are using this method to manage the IP addresses for pbs_server. The mom'sOSs are irrelevant. (TRQ-2765)
+
+> Some limitations exist in the way that pbsdsh can be used. Please note the following situations are not currently supported: 
+   - Running multiple instances of pbsdsh concurrently within a single job.(TRQ-2851) 
+   - Using the -o and -s options concurrently; although requesting these options together is permitted, only the output from the first node is displayed rather than output from every node in the chain. (TRQ­2690) 
+
+
+===== Resolved Issues =====
+
+The following is a list of some key bugs fixed in TORQUE Resource Manager 5.1.0. Following each issue description is an associated issue number in parentheses.
+
+> HOST_NAME_SUFFIX was no longer adding suffix to job names. This bug is fixed. (TRQ-2956) 
+
+> pbs_mom filling up the logs in a HA environment. Reduced verbosity in error logging in HA environments. (TRQ-2863) 
+
+> Delays reported with Preemption. The following changes were made to reduce delays: (TRQ-3026) 
+   - Speed up process data collection to help diminish time to rerun a job. 
+   - Correctly sum job memory and cpu time resources for processes created under setsid() calls within a job. 
+   - Avoid an infinite loop in pbs_mom when running under a LinuxContainer (lxc). 
+
+
+
+Copyright 2015, Adaptive Computing Enterprises, Inc.

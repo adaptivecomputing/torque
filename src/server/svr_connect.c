@@ -377,47 +377,45 @@ void svr_disconnect(
     sock = connection[handle].ch_socket;
     pthread_mutex_unlock(connection[handle].ch_mutex);
 
-    if ((chan = DIS_tcp_setup(sock)) == NULL)
+    if ((chan = DIS_tcp_setup(sock)) != NULL)
       {
-      }
-    else if ((encode_DIS_ReqHdr(chan, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
-        (DIS_tcp_wflush(chan) == 0))
-      {
-      struct sigaction act;
-      struct sigaction oldact;
-      /* wait for other server to close connection */
-      act.sa_handler = localalm;
-
-      sigemptyset(&act.sa_mask);
-
-      act.sa_flags = 0;
-
-      sigaction(SIGALRM, &act, &oldact);
-
-      ualarm(100000, 0); /* 1/10 of second */
-
-      while (1)
+      if ((encode_DIS_ReqHdr(chan, PBS_BATCH_Disconnect, pbs_current_user) == 0) &&
+             (DIS_tcp_wflush(chan) == 0))
         {
-        /* don't call the non-blocking function */
-        if (read_blocking_socket(sock, &x, 1) < 1)
-          break;
+        struct sigaction act;
+        struct sigaction oldact;
+        /* wait for other server to close connection */
+        act.sa_handler = localalm;
+
+        sigemptyset(&act.sa_mask);
+
+        act.sa_flags = 0;
+
+        sigaction(SIGALRM, &act, &oldact);
+
+        ualarm(100000, 0); /* 1/10 of second */
+
+        while (1)
+          {
+          /* don't call the non-blocking function */
+          if (read_blocking_socket(sock, &x, 1) < 1)
+            break;
+          }
+
+        ualarm(0, 0);
+
+        /* restore the previous handler */
+
+        sigaction(SIGALRM, &oldact, 0);
         }
 
-      ualarm(0, 0);
-
-      /* restore the previous handler */
-
-      sigaction(SIGALRM, &oldact, 0);
-
+      DIS_tcp_cleanup(chan);
       }
-
 
     pthread_mutex_lock(connection[handle].ch_mutex);
     shutdown(connection[handle].ch_socket, 2);
 
     close_conn(connection[handle].ch_socket, FALSE);
-    if (chan != NULL)
-      DIS_tcp_cleanup(chan);
 
     if (connection[handle].ch_errtxt != NULL)
       {

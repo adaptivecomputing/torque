@@ -236,12 +236,12 @@ int tcp_connect_sockaddr(
   bool             use_log) /* I */
 
   {
-  int rc = PBSE_NONE;
-  int stream = TRANSIENT_SOCKET_FAIL;
-  char *err_msg = NULL;
-  char local_err_buf[LOCAL_LOG_BUF];
-  char *tmp_ip = NULL;
-  int  retryCount = 5;
+  int          rc = PBSE_NONE;
+  int          stream = TRANSIENT_SOCKET_FAIL;
+  std::string  err_msg;
+  char         local_err_buf[LOCAL_LOG_BUF];
+  char        *tmp_ip = NULL;
+  int          retryCount = 5;
 
   errno = 0;
 
@@ -253,7 +253,7 @@ int tcp_connect_sockaddr(
       if (use_log == true)
         log_err(errno,__func__,"Failed when trying to get privileged port - socket_get_tcp_priv() failed");
       }
-    else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, &err_msg)) != PBSE_NONE)
+    else if ((rc = socket_connect_addr(&stream, sa, sa_size, 1, err_msg)) != PBSE_NONE)
       {
       /* FAILED */
       if (errno != EINTR) //Interrupted system call is a retryable error so try it again.
@@ -272,13 +272,12 @@ int tcp_connect_sockaddr(
         log_err(-1,__func__,local_err_buf);
         }
 
-      if (err_msg != NULL)
+      if (err_msg.size() != 0)
         {
         if (use_log == true)
-          log_err(-1,__func__,err_msg);
+          log_err(-1, __func__, err_msg.c_str());
 
-        free(err_msg);
-        err_msg = NULL;
+        err_msg.clear();
         }
       }
     else

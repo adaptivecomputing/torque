@@ -217,7 +217,7 @@ int req_connect(struct batch_request *preq)
   return(0);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
@@ -274,10 +274,8 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq, char **job_id)
+void req_quejob(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_quejob needs to be mocked!!\n");
-  exit(1);
   }
 
 void req_deletearray(struct batch_request *preq)

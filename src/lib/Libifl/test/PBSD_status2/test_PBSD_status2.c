@@ -14,9 +14,10 @@ START_TEST(test_one)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_PBSD_status_put)
   {
-
+  fail_unless(PBSD_status_put(-1, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_status_put(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
 
   }
 END_TEST
@@ -28,8 +29,8 @@ Suite *PBSD_status2_suite(void)
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_PBSD_status_put");
+  tcase_add_test(tc_core, test_PBSD_status_put);
   suite_add_tcase(s, tc_core);
 
   return s;

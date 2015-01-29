@@ -247,6 +247,7 @@ extern void     mom_server_all_diag(std::stringstream &output);
 extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
+void            empty_received_nodes();
 extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
@@ -635,6 +636,8 @@ void cleanup(void)
 
   {
   dep_cleanup();
+
+  empty_received_nodes();
 
   return;
   }
@@ -3988,8 +3991,6 @@ static void PBSAdjustLogLevel(
 
 
 
-
-
 /*
  * mk_dirs - make the directory names used by MOM
  */
@@ -6575,6 +6576,8 @@ int main(
     {
     restart_mom(argc, argv);
     }
+
+  cleanup();
 
   /* cleans up memory allocated by the lib2xml libraries */
   xmlCleanupParser(); /* this call must be call before program exits */

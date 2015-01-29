@@ -94,6 +94,7 @@
 #include <stdlib.h>
 #include "libpbs.h"
 #include "dis.h"
+#include "server_limits.h"
 
 
 
@@ -109,6 +110,12 @@ struct batch_reply *PBSD_rdrpy(
   int      sock;
   const char    *the_msg = NULL;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(NULL);
+    }
 
   sock = connection[c].ch_socket;
   /* clear any prior error message */
@@ -137,7 +144,7 @@ struct batch_reply *PBSD_rdrpy(
     }
   else if ((rc = decode_DIS_replyCmd(chan, reply)))
     {
-    free(reply);
+    PBSD_FreeReply(reply);
 
     if (chan->IsTimeout == TRUE)
       {
@@ -180,8 +187,6 @@ struct batch_reply *PBSD_rdrpy(
 
   return(reply);
   }  /* END PBSD_rdrpy() */
-
-
 
 
 

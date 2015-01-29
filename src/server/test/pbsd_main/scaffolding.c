@@ -37,6 +37,7 @@ int svr_totnodes = 0; /* total number nodes defined */
 char pbs_server_name[1];
 pthread_mutex_t *poll_job_task_mutex;
 threadpool_t *request_pool;
+threadpool_t *async_pool;
 threadpool_t *task_pool;
 int              max_poll_job_tasks;
 char           **ArgV = NULL;
@@ -500,3 +501,6 @@ void *remove_extra_recycle_jobs(void *)
 void mom_hierarchy_handler::checkAndSendHierarchy(void)
   {
   }
+
+void clear_all_alps_reservations() {}
+

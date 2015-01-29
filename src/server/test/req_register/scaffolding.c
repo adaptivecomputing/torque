@@ -118,7 +118,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(struct job **pjobp, const char *text)
+int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   *pjobp = NULL;
   return(0);
@@ -356,7 +356,8 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_HEAD(pj->ji_rejectdest);
+  pj->ji_rejectdest = new std::vector<std::string>();
+
   pj->ji_is_array_template = FALSE;
 
   pj->ji_momhandle = -1;

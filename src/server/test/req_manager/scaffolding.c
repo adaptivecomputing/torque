@@ -11,6 +11,7 @@
 #include "batch_request.h" /* batch_request */
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_type */
+#include "mom_hierarchy_handler.h"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -392,3 +393,32 @@ int req_rerunjob(batch_request *preq)
   exit(1);
   }
 
+int tmp_lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+void ensure_deleted(struct work_task *ptask)
+  {
+  }
+
+int tmp_unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int create_pbs_dynamic_node(
+  char     *objname,
+  svrattrl *plist,
+  int       perms,
+  int      *bad)
+
+  {
+  return(0);
+  }
+
+mom_hierarchy_handler hierarchy_handler; //The global declaration.
+
+void mom_hierarchy_handler::reloadHierarchy()
+{
+}

@@ -914,7 +914,7 @@ void gen_macaddr(
     char             buff[500];
     struct addrinfo *pAddr = NULL;
 
-    if (pbs_getaddrinfo(mom_host, NULL,&pAddr) != 0)
+    if (getaddrinfo(mom_host, NULL, NULL, &pAddr) != 0)
       {
       return;
       }
@@ -922,6 +922,7 @@ void gen_macaddr(
     FILE *pPipe = popen("/sbin/ip addr","r");
     if (pPipe == NULL)
       {
+      freeaddrinfo(pAddr);
       return;
       }
 
@@ -983,10 +984,12 @@ void gen_macaddr(
       }
     freeaddrinfo(pAddr);
     }
+
   if(mac_addr.length()  == 0)
     {
     return;
     }
+
   std::string s(name);
   s += "=";
   s += mac_addr;

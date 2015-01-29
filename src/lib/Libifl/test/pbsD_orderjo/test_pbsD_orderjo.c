@@ -7,12 +7,21 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+
+START_TEST(test_pbs_orderjob_err)
   {
+  char *job1 = strdup("1.napali");
+  char *job2 = strdup("2.napali");
 
-
+  fail_unless(pbs_orderjob_err(-1, job1, job2, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_orderjob_err(PBS_NET_MAX_CONNECTIONS, job1, job2, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_orderjob_err(0, strdup(""), job2, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_orderjob_err(0, NULL, job2, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_orderjob_err(0, job1, strdup(""), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_orderjob_err(0, job1, NULL, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
@@ -21,11 +30,12 @@ START_TEST(test_two)
   }
 END_TEST
 
+
 Suite *pbsD_orderjo_suite(void)
   {
   Suite *s = suite_create("pbsD_orderjo_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_orderjob_err");
+  tcase_add_test(tc_core, test_pbs_orderjob_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
