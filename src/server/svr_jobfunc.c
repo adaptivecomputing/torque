@@ -2565,6 +2565,46 @@ static int are_job_resources_in_limits_of_queue(
   return(return_code);
   }
 
+
+
+/*
+ * Checks if the resource request in pjob is incompatible with
+ * the default resources for this queue
+ *
+ * @param pjob - the job in question
+ * @param pque - the queue in question
+ * @return true if there is a conflict, false otherwise
+ */
+
+bool has_conflicting_resource_requests(
+
+  job       *pjob,
+  pbs_queue *pque)
+
+  {
+  // check to make sure we don't have certain -l defaults and a -L request
+  if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+    {
+    static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                      "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                      "software", "geometry", "opsys", "tpn", "trl", NULL };
+    pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
+
+    // Return true if the queue has any of the conflicting_types in its -l defaults
+    for (int i = 0; conflicting_types[i] != NULL; i++)
+      {
+      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      if (find_resc_entry(pattr, prd) != NULL)
+        return(true);
+      }
+    }
+
+  return(false);
+  } /* END has_conflicting_resource_requests() */
+
+
+
 /*
  * svr_chkque - check if job can enter a queue
  *
@@ -2605,6 +2645,9 @@ int svr_chkque(
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
+  // Do not allow conflicting resource requests
+  if (has_conflicting_resource_requests(pjob, pque))
+    return(PBSE_RESC_CONFLICT);
 
   /*
    * 1. If the queue is an Execution queue ...

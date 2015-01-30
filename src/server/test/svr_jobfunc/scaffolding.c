@@ -36,6 +36,10 @@ struct pbsnode *alps_reporter;
 user_info_holder users;
 int decrement_count;
 job napali_job;
+std::string set_resource;
+const char *my_conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                       "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                       "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 
 void remove_server_suffix(
@@ -232,7 +236,11 @@ int site_acl_check(job *pjob, pbs_queue *pque)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  return(0);
+  for (int i = 0; my_conflicting_types[i] != NULL; i++)
+    if (set_resource == my_conflicting_types[i])
+      return((resource *)1);
+
+  return(NULL);
   }
 
 job *svr_find_job(const char *jobid, int get_subjob)
@@ -426,7 +434,7 @@ int decode_tokens(pbs_attribute *patr, const char *name, const char *rescn, cons
 
 int get_svr_attr_arst(int index, struct array_strings **arst)
   {
-  return(0);
+  return(-1);
   }
 
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)

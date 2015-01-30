@@ -4572,6 +4572,9 @@ int setup_program_environment(void)
   {
   int           c;
   int           hostc = 1;
+#ifdef PENABLE_LINUX_CGROUPS
+  int           ret;
+#endif
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
   FILE         *dummyfile;
 #endif
@@ -4864,8 +4867,6 @@ int setup_program_environment(void)
 #endif
 
 #ifdef PENABLE_LINUX_CGROUPS
-  int ret;
-
 #ifndef PENABLE_LINUX26_CPUSETS
   /* If cpusets are enabled initialization has already been done */
   ret = cg_initialize_hwloc_topology();

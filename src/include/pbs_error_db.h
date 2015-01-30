@@ -283,6 +283,7 @@ PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The updated okclients list hasn't
 PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
 PbsErrClient(PBSE_CGROUPS_NOT_ENABLED, (char *)"Cgroups are not enabled on this node.")
+PbsErrClient(PBSE_RESC_CONFLICT, (char *)"This job's resource request conflicts with the queue's default resources.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
