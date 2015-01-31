@@ -660,21 +660,28 @@ void req_stat_job_step2(
          pjob != NULL;
          pjob = get_next_status_job(cntl, job_array_index, pa, iter))
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
-
       /* go ahead and build the status reply for this job */
       if (pjob->ji_being_recycled == true)
+        {
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         continue;
+        }
 
       if (exec_only)
         {
         if (cntl->sc_pque != NULL)
           {
           if (cntl->sc_pque->qu_qs.qu_type != QTYPE_Execution)
+            {
+            unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
             continue;
+            }
           }
         else if (in_execution_queue(pjob, pa) == false)
+          {
+          unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           continue;
+          }
         }
 
       rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, cntl->sc_condensed, &bad);
@@ -688,9 +695,13 @@ void req_stat_job_step2(
         req_reject(rc, bad, preq, NULL, NULL);
 
         delete iter;
+        
+        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
         return;
         }
+        
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }  /* END for (pjob != NULL) */
 
     delete iter;
