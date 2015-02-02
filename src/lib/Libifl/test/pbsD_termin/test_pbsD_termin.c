@@ -7,25 +7,25 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+START_TEST(test_pbs_terminate_err)
   {
-
-
+  fail_unless(pbs_terminate_err(-1, 0, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_terminate_err(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL) == PBSE_IVALREQ);
   }
 END_TEST
+
 
 START_TEST(test_two)
   {
-
-
   }
 END_TEST
+
 
 Suite *pbsD_termin_suite(void)
   {
   Suite *s = suite_create("pbsD_termin_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_pbs_terminate_err");
+  tcase_add_test(tc_core, test_pbs_terminate_err);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

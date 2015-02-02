@@ -104,9 +104,11 @@ int PBSD_mgr_put(
   int sock;
   struct tcp_chan *chan = NULL;
 
-  if (c < 0 || c >= PBS_NET_MAX_CONNECTIONS) {
-      return(PBSE_BAD_PARAMETER);
-  }
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

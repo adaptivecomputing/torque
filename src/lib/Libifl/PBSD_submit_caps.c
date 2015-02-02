@@ -88,6 +88,7 @@
 #include "u_hash_map_structs.h"
 #include "pbs_ifl.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "server_limits.h"
 
 /* PBSD_submit.c
 
@@ -110,6 +111,12 @@ int PBSD_rdytocmt(
   struct batch_reply *reply;
   int                 sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[connect].ch_mutex);
   sock = connection[connect].ch_socket;
@@ -161,6 +168,12 @@ int PBSD_commit_get_sid(
   int                 sock;
   int                 local_errno = 0;
   struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[connect].ch_mutex);
   sock = connection[connect].ch_socket;
@@ -246,6 +259,12 @@ int PBSD_commit(
   int                 rc;
   int                 sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[connect].ch_mutex);
   sock = connection[connect].ch_socket;
@@ -290,7 +309,7 @@ int PBSD_commit(
  * zero; the server should handle that case...
 */
 
-static int PBSD_scbuf(
+int PBSD_scbuf(
 
   int   c,  /* connection handle     */
   int   reqtype, /* request type */
@@ -308,6 +327,12 @@ static int PBSD_scbuf(
   int                 sock;
   int                 local_errno = 0;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
   sock = connection[c].ch_socket;
@@ -375,6 +400,12 @@ int PBSD_jscript(
   int  cc;
   int  rc;
   char s_buf[SCRIPT_CHUNK_Z];
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   if ((fd = open(script_file, O_RDONLY, 0)) < 0)
     {
@@ -431,6 +462,12 @@ int PBSD_jobfile(
   int   rc;
   int   fd;
   char  s_buf[SCRIPT_CHUNK_Z];
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   if (path[0] == '\0')
     return(PBSE_NONE);
@@ -491,6 +528,12 @@ char *PBSD_queuejob(
   int                 rc;
   int                 sock;
   struct tcp_chan    *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(NULL);
+    }
 
   pthread_mutex_lock(connection[connect].ch_mutex);
   sock = connection[connect].ch_socket;
@@ -568,6 +611,12 @@ int PBSD_QueueJob_hash(
   int                 rc = PBSE_NONE;
   int                 sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[connect].ch_mutex);
   sock = connection[connect].ch_socket;
@@ -587,9 +636,11 @@ int PBSD_QueueJob_hash(
       {
       if ((rc >= 0) &&
           (rc <= DIS_INVALID))
-        connection[connect].ch_errtxt = strdup((char *)dis_emsg[rc]);
+        connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
       }
-    *msg = strdup(connection[connect].ch_errtxt);
+
+    if (connection[connect].ch_errtxt != NULL)  
+      *msg = strdup(connection[connect].ch_errtxt);
 
     pthread_mutex_unlock(connection[connect].ch_mutex);
 
@@ -601,7 +652,7 @@ int PBSD_QueueJob_hash(
   if ((rc = DIS_tcp_wflush(chan)))
     {
     pthread_mutex_lock(connection[connect].ch_mutex);
-    if (connection[connect].ch_errtxt == NULL)
+    if (connection[connect].ch_errtxt != NULL)
       {
       *msg = strdup(connection[connect].ch_errtxt);
       }

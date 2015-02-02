@@ -9,6 +9,8 @@ extern int func_num;
 extern attribute_def job_attr_def[];
 extern struct server server;
 
+bool set_task_called = false;
+
 /*
 START_TEST(test_job_log_open_fail)
   {

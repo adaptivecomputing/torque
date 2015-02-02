@@ -8,7 +8,7 @@
 
 void sum_select_mem_request(job * pj);
 
-int req_quejob(struct batch_request *preq, char **job_id);
+int req_quejob(struct batch_request *preq);
 
 int req_jobcredential(struct batch_request *preq);
 

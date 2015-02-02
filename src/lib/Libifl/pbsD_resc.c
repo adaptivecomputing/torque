@@ -87,6 +87,8 @@
 #include "libpbs.h"
 #include "dis.h"
 #include "tcp.h" /* tcp_chan */
+#include "server_limits.h"
+
 
 /* Variables for this file */
 
@@ -138,17 +140,24 @@ static int encode_DIS_Resc(
   return rc;
   }
 
-static int PBS_resc(
+int PBS_resc(
     
   int          c,
   int          reqtype, 
   char       **rescl,
   int          ct,
   resource_t   rh)
+
   {
   int rc;
   int sock;
   struct tcp_chan *chan = NULL;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   sock = connection[c].ch_socket;
 
@@ -203,6 +212,12 @@ int pbs_rescquery(
   struct batch_reply *reply;
   int                 rc = 0;
   int                 local_errno = 0;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -265,6 +280,12 @@ int pbs_rescreserve(
   int                 local_errno = 0;
 
   struct batch_reply *reply;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 
@@ -332,6 +353,12 @@ int pbs_rescrelease(
   struct batch_reply *reply;
   int                 rc;
   int                 local_errno = 0;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

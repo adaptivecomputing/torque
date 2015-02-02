@@ -86,6 +86,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 
 static struct batch_status *alloc_bs();
@@ -140,6 +141,12 @@ struct batch_status *PBSD_status_get(
   struct batch_status *rbsp = (struct batch_status *)NULL;
   struct batch_reply  *reply;
   int i;
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(NULL);
+    }
 
   pthread_mutex_lock(connection[c].ch_mutex);
 

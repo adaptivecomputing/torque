@@ -107,6 +107,7 @@
 #include "svr_func.h" /* get_svr_attr_* */
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
+#include "job_func.h"
 
 
 int          issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);

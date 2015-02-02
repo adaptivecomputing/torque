@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <sys/socket.h> /* struct sockaddr */
 #include <netinet/in.h> /* in_addr_t */
+#include <string>
+#include <errno.h>
 
 #include "tcp.h"
 #include "log.h" /* LOG_BUF_SIZE */
 #include "mom_hierarchy.h"
-#include <errno.h>
 
 mom_hierarchy_t *mh;
 int pbs_errno;
@@ -65,7 +66,7 @@ extern int dummySocket;
 extern int dummySocketAfterRetries;
 extern int connectAddrRetries;
 
-int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, char **err_msg)
+int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, std::string &err_msg)
   {
   if(connectAddrRetries-- <= 0)
     {

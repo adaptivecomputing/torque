@@ -87,6 +87,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "libpbs.h"
+#include "server_limits.h"
 
 /* returns pbs_error codes */
 
@@ -106,7 +107,14 @@ int pbs_alterjob_asyncflag(
 
   int i;
 
-  if ((c < 0) || (jobid == NULL) || (*jobid == '\0'))
+  if ((jobid == NULL) ||
+      (*jobid == '\0'))
+    {
+    return(PBSE_IVALREQ);
+    }
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
     {
     return(PBSE_IVALREQ);
     }

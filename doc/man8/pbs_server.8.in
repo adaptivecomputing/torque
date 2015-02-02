@@ -149,27 +149,9 @@ If multiple servers are running on a
 single host, each must have its own unique port number.
 This option is for use in testing with multiple batch systems on a single host.
 .IP "\-t type"
-Specifies the impact on jobs which were in execution, running, when the server
-shut down.  If the running job is not rerunnable or restartable from a
-checkpoint image, the job is aborted.  If the job is rerunnable or restartable,
-then the actions described below are taken.  When the
-.Ar type
-argument is:
-.RS
-.IP
-If a job cannot be restarted immediately because of a missing resource, such
-as a node being down,  the server will attempt to restart it periodically for
-upto 5 minutes.   After that period, the server will revert to a normal state,
-and will no longer attempt to restart any remaining jobs which were running 
-prior to the shutdown.
-All rerunnable jobs which were running when the server went down are requeued.
-All other jobs are maintained.  New selections are made for which
-jobs are placed into execution.  This is the default if \-t is not specified.
-.IP create 8
-The server will discard any existing configuration files, queues and jobs,
-and initialize configuration files to the default values.  The server is
-idled.
-.RE
+If the job is rerunnable or restartable, and -t create is specified, the server will discard any existing configuration files, queues, and jobs, and initialize configuration files
+to the default values.  The server is idled.
+If -t is not specified, job states will remain the same.
 .IP "\-v" 15
 Shows version.
 .IP "\-A acctfile"

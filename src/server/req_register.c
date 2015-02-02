@@ -106,6 +106,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "utils.h"
+#include "job_func.h"
 
 
 #define SYNC_SCHED_HINT_NULL 0
@@ -651,13 +652,14 @@ int delete_dependency_job(
     {
     rc = PBSE_IVALREQ; /* prevent an infinite loop */
     }
-  else
+  // only abort if the job isn't already exiting
+  else if (pjob->ji_qs.ji_state < JOB_STATE_EXITING)
     {
     sprintf(log_buf, msg_registerdel, preq->rq_ind.rq_register.rq_child);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     
     /* pjob freed and set to NULL */
-    job_abt(pjob_ptr, log_buf);
+    job_abt(pjob_ptr, log_buf, true);
     }
 
   return(rc);

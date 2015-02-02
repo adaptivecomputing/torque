@@ -91,7 +91,7 @@ static NodeEntry double_rotate_with_right( NodeEntry K1 )
 
 static AvlTree AVL_insert_internal( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )
   {
-	if (tree == NULL)
+  if (tree == NULL)
     {
     /* Create and return a node */
     if ((tree = ( AvlTree )calloc(1, sizeof( struct AvlNode ) )) == NULL)
@@ -99,78 +99,78 @@ static AvlTree AVL_insert_internal( u_long key, uint16_t port, struct pbsnode *n
       return( tree );
       }
 
-	  tree->key = key;
-	  tree->port = port;
-	  tree->pbsnode = node;
-	  tree->left = NULL;
-	  tree->right = NULL;
-	  tree->height = 0;
-	  }
+    tree->key = key;
+    tree->port = port;
+    tree->pbsnode = node;
+    tree->left = NULL;
+    tree->right = NULL;
+    tree->height = 0;
+    }
 
 
-	/* If key is less than current node value go left else go right.
+  /* If key is less than current node value go left else go right.
 		 If equal compare port and go left or right accordingly */
-	if (key < tree->key)
-		{
-		tree->left = AVL_insert_internal( key, port, node, tree->left );
-		if (height(tree->left) - height(tree->right) >= 2 )
-			{
-			if (key <= tree->left->key )
-				tree = single_rotate_with_left( tree );
-			else
-				tree = double_rotate_with_left( tree );
-			}
-		}
-	else if (key > tree->key )
-		{
-		tree->right = AVL_insert_internal( key, port, node, tree->right );
-		if (height(tree->right) - height(tree->left) >= 2 )
-		  {
-		  if (key >= tree->right->key)
+  if (key < tree->key)
+    {
+    tree->left = AVL_insert_internal( key, port, node, tree->left );
+    if (height(tree->left) - height(tree->right) >= 2 )
+      {
+      if (key <= tree->left->key )
+        tree = single_rotate_with_left( tree );
+      else
+        tree = double_rotate_with_left( tree );
+      }
+    }
+  else if (key > tree->key )
+    {
+    tree->right = AVL_insert_internal( key, port, node, tree->right );
+    if (height(tree->right) - height(tree->left) >= 2 )
+      {
+      if (key >= tree->right->key)
         tree = single_rotate_with_right( tree );
-		  
-		  else
+
+      else
         tree = double_rotate_with_right( tree );
       }
     }
-	else
-		{
+  else
+    {
     /* if it is in the tree, do not add it again */
     if (port == tree->port)
       return(tree);
 
-		/* the keys are equal. sort by port */
-		if (port != 0)
-			{
-			if (port < tree->port)
-			  {
-			  tree->left = AVL_insert_internal( key, port, node, tree->left );
-			  if (height(tree->left) - height(tree->right) >= 2)
-			  	{
-			  	if (port <= tree->left->port)
-			  		tree = single_rotate_with_left( tree );
-			  	else
-			  		tree = double_rotate_with_left( tree );
-			  	}
-			  }
-			else if (port > tree->port )
-			  {
-			  tree->right = AVL_insert_internal( key, port, node, tree->right );
-			  if (height(tree->right) - height(tree->left) >= 2)
-			  	{
-			  	if (port >= tree->right->port)
-			  		tree = single_rotate_with_right( tree );
-			  	else
-			  		tree = double_rotate_with_right( tree );
-			  	}
-			  }
+    /* the keys are equal. sort by port */
+    if (port != 0)
+      {
+      if (port < tree->port)
+        {
+        tree->left = AVL_insert_internal( key, port, node, tree->left );
+        if (height(tree->left) - height(tree->right) >= 2)
+          {
+          if (port <= tree->left->port)
+            tree = single_rotate_with_left( tree );
+          else
+            tree = double_rotate_with_left( tree );
+          }
+        }
+      else if (port > tree->port )
+        {
+        tree->right = AVL_insert_internal( key, port, node, tree->right );
+        if (height(tree->right) - height(tree->left) >= 2)
+          {
+          if (port >= tree->right->port)
+            tree = single_rotate_with_right( tree );
+          else
+            tree = double_rotate_with_right( tree );
+          }
+        }
       }
-		}
+    }
 
 
-	tree->height = Max(height(tree->left), height(tree->right)) + 1;
+  tree->height = Max(height(tree->left), height(tree->right)) + 1;
 
-	return(tree);
+  return(tree);
   } /* End AVL_insert_internal */
 
 AvlTree AVL_insert( u_long key, uint16_t port, struct pbsnode *node, AvlTree tree )

@@ -1496,7 +1496,7 @@ int tm_poll(
 
   if ((static_chan == NULL) && ((static_chan = DIS_tcp_setup(local_conn)) == NULL))
     {
-    TM_DBPRT(("%s: Error allocating memory for sock buffer %d", __func__, PBSE_MEM_MALLOC))
+    TM_DBPRT(("%s: Error allocating memory for sock buffer", __func__))
       return TM_BADINIT;
     }
 
