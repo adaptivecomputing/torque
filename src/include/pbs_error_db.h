@@ -284,6 +284,7 @@ PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to co
 PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
 PbsErrClient(PBSE_CGROUPS_NOT_ENABLED, (char *)"Cgroups are not enabled on this node.")
 PbsErrClient(PBSE_RESC_CONFLICT, (char *)"This job's resource request conflicts with the queue's default resources.")
+PbsErrClient(PBSE_UNALTERABLE_ATTR, (char *)"The requested attribute cannot be altered after submission.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

@@ -378,6 +378,29 @@ void chkpt_xfr_done(
 
 
 
+/*
+ * has_unalterable_attribute()
+ *
+ * @param plist - checks the list of attributes to see if any shouldn't be altered
+ * @return true if there's an attribute that shouldn't be altered, else false
+ */
+
+bool has_unalterable_attribute(
+
+  svrattrl *plist)
+
+  {
+  while (plist != NULL)
+    {
+    if (!strcmp(plist->al_name, ATTR_req_information))
+      return(true);
+
+    plist = (svrattrl *)GET_NEXT(plist->al_link);
+    }
+
+  return(false);
+  } // END has_unalterable_attribute()
+
 
 
 /*
@@ -466,6 +489,13 @@ int modify_job(
         }
 
       }
+    }
+
+  if (has_unalterable_attribute(plist) == true)
+    {
+    req_reject(PBSE_UNALTERABLE_ATTR, 0, preq, NULL, NULL);
+
+    return(PBSE_UNALTERABLE_ATTR);
     }
 
   /* if job is running, special checks must be made */

@@ -4,10 +4,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+bool has_unalterable_attribute(svrattrl *plist);
+
+START_TEST(test_has_unalterable_attribute)
   {
+  svrattrl plist;
 
+  memset(&plist, 0, sizeof(plist));
 
+  plist.al_atopl.name = strdup(ATTR_login_node_key);
+  fail_unless(has_unalterable_attribute(&plist) == false);
+
+  plist.al_atopl.name = strdup(ATTR_req_information);
+  fail_unless(has_unalterable_attribute(&plist) == true);
   }
 END_TEST
 
@@ -21,8 +31,8 @@ END_TEST
 Suite *req_modify_suite(void)
   {
   Suite *s = suite_create("req_modify_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_has_unalterable_attribute");
+  tcase_add_test(tc_core, test_has_unalterable_attribute);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

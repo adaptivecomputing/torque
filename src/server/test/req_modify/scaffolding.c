@@ -108,8 +108,7 @@ int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *n
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int chk_hold_priv(long val, int perm)
