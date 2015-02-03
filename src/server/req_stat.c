@@ -637,6 +637,8 @@ void req_stat_job_step2(
       req_reject(rc, bad, preq, NULL, NULL);
     else
       reply_send_svr(preq);
+
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
   else
     {
