@@ -167,13 +167,13 @@ int  decode_complete_req(
       }
 
     char *attr_name = strdup(rescn);
-    char *colon = strchr(attr_name, ':');
+    char *dot = strchr(attr_name, '.');
     int   rc = PBSE_BAD_PARAMETER;
     
-    if (colon != NULL)
+    if (dot != NULL)
       {
-      int index = strtol(colon + 1, NULL, 10);
-      *colon = '\0';
+      int index = strtol(dot + 1, NULL, 10);
+      *dot = '\0';
       rc = cr->set_value(index, attr_name, val);
       }
 
@@ -241,7 +241,7 @@ int encode_complete_req(
     }
 
   return(rc);
-  } // END decode_complete_req()
+  } // END encode_complete_req()
 
 
 

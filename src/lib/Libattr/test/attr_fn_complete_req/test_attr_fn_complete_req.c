@@ -31,7 +31,7 @@ END_TEST
 START_TEST(test_decode_encode_complete_req)
   {
   pbs_attribute  pattr;
-  const char    *resc_names[] = {"lprocs:0", "memory:0"};
+  const char    *resc_names[] = {"lprocs.0", "memory.0"};
   const char    *values[] = { "5", "1000000kb"};
 
   memset(&pattr, 0, sizeof(pattr));
@@ -83,7 +83,7 @@ START_TEST(test_set_complete_req)
 
   memset(&pattr, 0, sizeof(pattr));
   memset(&pattr2, 0, sizeof(pattr2));
-  fail_unless(decode_complete_req(&pattr, NULL, "lprocs:0", "4", 1) == PBSE_NONE);
+  fail_unless(decode_complete_req(&pattr, NULL, "lprocs.0", "4", 1) == PBSE_NONE);
 
   // DECR is unsupported
   fail_unless(set_complete_req(&pattr2, &pattr, DECR) == PBSE_INTERNAL);
@@ -98,7 +98,7 @@ START_TEST(test_set_complete_req)
   complete_req *cr1 = (complete_req *)pattr.at_val.at_ptr;
 
   fail_unless(cr2->req_count() == cr1->req_count());
-  fail_unless(decode_complete_req(&pattr2, NULL, "lprocs:1", "5", 1) == PBSE_NONE);
+  fail_unless(decode_complete_req(&pattr2, NULL, "lprocs.1", "5", 1) == PBSE_NONE);
 
   // make sure they're different now
   cr2 = (complete_req *)pattr2.at_val.at_ptr;

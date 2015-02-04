@@ -5049,18 +5049,8 @@ int start_process(
     job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(pid);
     if (job_pid_set_iter == pjob->ji_job_pid_set->end())
       {
-      int rc;
-
       /* put the job pid in the job structure */
       pjob->ji_job_pid_set->insert(pid);
-
-      /* add the pid to the cgroup */
-      rc = trq_cg_add_process_to_cgroup_accts(pid);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "failed to add pid %d to job %s", pid, pjob->ji_qs.ji_jobid);
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-        }
       }
     
     /* put the new pid in the pid to job session id map */
