@@ -1451,10 +1451,6 @@ int req_quejob(
     
     return(PBSE_MAXQUED);
     }
-  else
-    {
-    increment_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-    }
 
   /*
    * See if the job is qualified to go into the requested queue.
@@ -1496,7 +1492,6 @@ int req_quejob(
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
     que_mgr.unlock();
-    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
@@ -1550,7 +1545,7 @@ int req_quejob(
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
-    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
     return(rc);
@@ -2245,7 +2240,6 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
 
-      decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       svr_job_purge(pj);
       }
     else
@@ -2283,7 +2277,6 @@ int req_commit(
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
             log_buf);
           }
-        decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         svr_job_purge(pj);
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
@@ -2301,7 +2294,6 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
       
-      decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
