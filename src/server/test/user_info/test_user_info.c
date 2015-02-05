@@ -137,8 +137,6 @@ START_TEST(increment_queued_jobs_test)
   pjob.ji_queue_counted = 0;
   fail_unless(increment_queued_jobs(&users, (char *)"bob", &pjob) == 0, "can't increment queued jobs");
   pjob.ji_queue_counted = 0;
-  fail_unless(increment_queued_jobs(&users, (char *)"bob", &pjob) == ENOMEM, "didn't get failure");
-  pjob.ji_queue_counted = 0;
   // after 1 increment the count should be 2 because initialize_user_info() starts out with tom at 
   // 1 instead of 0, as a normal program would start. Its done this way for the decrement code.
   fail_unless(get_num_queued(&users, "tom") == 2, "didn't actually increment tom 1");
@@ -169,9 +167,9 @@ START_TEST(decrement_queued_jobs_test)
   users.unlock();
 
   pjob.ji_queue_counted = COUNTED_GLOBALLY;
-  fail_unless(decrement_queued_jobs(&users, (char *)"bob") == THING_NOT_FOUND, "decremented for non-existent user");
+  fail_unless(decrement_queued_jobs(&users, (char *)"bob", &pjob) == THING_NOT_FOUND, "decremented for non-existent user");
   pjob.ji_queue_counted = COUNTED_GLOBALLY;
-  fail_unless(decrement_queued_jobs(&users, (char *)"tom@neverland.com") == 0, "couldn't decrement for tom?");
+  fail_unless(decrement_queued_jobs(&users, (char *)"tom@neverland.com", &pjob) == 0, "couldn't decrement for tom?");
 
   fail_unless(get_num_queued(&users, "tom") == 0, "didn't actually decrement tom");
   pjob.ji_queue_counted = COUNTED_GLOBALLY;
