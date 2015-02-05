@@ -208,6 +208,15 @@ int  increment_queued_jobs(
   int           rc = PBSE_NONE;
   user_info    *ui;
   int           index;
+  unsigned      bit = COUNTED_GLOBALLY;
+
+  if (uih != &users)
+    bit = COUNTED_IN_QUEUE;
+
+  // Prevent recounting a job  
+  if (pjob->ji_queue_counted & bit)
+    return(PBSE_NONE);
+
   unsigned int  num_submitted = count_jobs_submitted(pjob);
   std::string   uname(user_name);
   
@@ -241,6 +250,9 @@ int  increment_queued_jobs(
 
   pthread_mutex_unlock(uih->ui_mutex);
 
+  // Mark this job as being counted as queued
+  pjob->ji_queue_counted |= bit;
+
   return(rc);
   } /* END increment_queued_jobs() */
 
@@ -250,7 +262,8 @@ int  increment_queued_jobs(
 int  decrement_queued_jobs(
 
   user_info_holder *uih,    
-  char             *user_name)
+  char             *user_name,
+  job              *pjob)
 
   {
   user_info   *ui;
@@ -258,6 +271,15 @@ int  decrement_queued_jobs(
   int          rc = THING_NOT_FOUND;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   std::string  uname(user_name);
+  
+  unsigned      bit = COUNTED_GLOBALLY;
+
+  if (uih != &users)
+    bit = COUNTED_IN_QUEUE;
+
+  // Prevent re-decrementing the same job twice
+  if ((pjob->ji_queue_counted & bit) == 0)
+    return(PBSE_NONE);
   
   remove_server_suffix(uname);
 
@@ -283,6 +305,9 @@ int  decrement_queued_jobs(
     }
 
   pthread_mutex_unlock(uih->ui_mutex);
+
+  // Mark this job as no longer counted as queued
+  pjob->ji_queue_counted &= ~bit;
 
   return(rc);
   } /* END decrement_queued_jobs() */

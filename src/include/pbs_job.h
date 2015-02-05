@@ -474,6 +474,10 @@ typedef std::set<pid_t> job_pid_set_t;
 #endif /* MOM */
 
 
+#define COUNTED_GLOBALLY 0x0001
+#define COUNTED_IN_QUEUE 0x0010
+
+
 typedef struct
   {
   void     *pjob;
@@ -695,6 +699,9 @@ struct job
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
+  // This is used as a bitmap to ensure that a job is only counted once as a queued job for 
+  // the queue count and the server count
+  unsigned          ji_queue_counted;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
