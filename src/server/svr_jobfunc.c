@@ -556,6 +556,7 @@ int svr_enquejob(
       }
 
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+    increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
   if ((pjob->ji_is_array_template) ||
@@ -736,13 +737,17 @@ int svr_dequejob(
   if (pque != NULL)
     {
     /* At this point unless the job is in state of JOB_STATE_COMPLETE we need to decrement the queue count */
-    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) || (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
+    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) ||
+        (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
-      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+      if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+
+      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
       if (rc != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "failed to decrement user job count: %s. %s", 
-            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pbse_to_txt(rc));
+          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pbse_to_txt(rc));
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
         }
       }
@@ -1182,7 +1187,7 @@ int svr_setjobstate(
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
             }
 
-          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
           }
 
         if (pque != NULL)
@@ -1203,7 +1208,7 @@ int svr_setjobstate(
                 sprintf(log_buf, "jobs queued job id %s for queue %s", jid.c_str(), pque->qu_qs.qu_name);
                 log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
                 }
-              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
               }
             }
 
