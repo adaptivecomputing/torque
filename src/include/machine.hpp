@@ -85,7 +85,7 @@ class Chip
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
 
-#ifdef NVIDIA_GPU
+#ifdef NVIDIA_GPUS
   #ifdef NVML_API
     int initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t);
   #endif

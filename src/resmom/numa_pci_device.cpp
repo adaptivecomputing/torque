@@ -12,7 +12,7 @@
 #include <hwloc/intel-mic.h>
 #endif
 
-#ifdef NVIDIA_GPU
+#ifdef NVIDIA_GPUS
 #ifdef NVML_API
 #include <hwloc/nvml.h>
 #endif
@@ -63,18 +63,11 @@ using namespace std;
       }
     hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 #endif
+#ifdef NVIDIA_GPUS
+    /* TODO: Ask Gary if MIC and GPU detection should be supported on the same node */
+    /* TODO: Do we need to detect nic locality? */
 
-    /* TODO: We need to add a #ifdef NVIDIA_GPU followed by an ifdef NVML_API 
-       here and then run the initiaztion code for the NVIDIA GPU hardware
-       location code */
-    /* hint: 
-      static hwloc_obj_t hwloc_nvml_get_device_osdev(hwloc_topology_t topology, nvmlDevice_t device)
-      http://www.open-mpi.org/projects/hwloc/doc/hwloc-v1.9-letter.pdf
-      nvmlDevice_t is a type from the nvml library. Look at nvidia.c for hints on how to initialize
-      the nvml device handle */
-#ifdef NVIDIA_GPU                                                                                                                                   
-  #ifdef NVML_API
-  #endif
+    /* TODO: Get the nearest cpuset. Look up hwloc API call to get the nearest cpuset for the GPU */
 #endif
 
     return(PBSE_NONE);

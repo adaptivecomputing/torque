@@ -4508,7 +4508,7 @@ int cg_initialize_hwloc_topology()
     return(-1);
     }
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
+  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM | HWLOC_TOPOLOGY_FLAG_IO_DEVICES) != 0))
     {
     log_err(-1, msg_daemonname, "Unable to configure machine topology");
     return(-1);
@@ -4541,7 +4541,7 @@ int initialize_hwloc_topology()
     return(-1);
     }
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
+  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM | HWLOC_TOPOLOGY_FLAG_IO_DEVICES) != 0))
     {
     log_err(-1, msg_daemonname, "Unable to configure machine topology");
     return(-1);
@@ -4881,11 +4881,6 @@ int setup_program_environment(void)
     fprintf(stderr, "cgroups not initialized\n");
     return(1);
     }
-
-
-#ifdef MIC
-  this_node.initialize_mics(topology);
-#endif
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
@@ -6588,21 +6583,6 @@ int main(
 
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
-  try
-    {   
-    if ((rc = setup_program_environment()) != 0)
-      {
-      return(rc);
-      }
-    }
-  catch (boost::exception &e)
-    {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "unexpected boost exception caught");
-    log_err(-1, __func__, log_buffer);
-    return -1;
-    }
-
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
   if (!init_nvidia_nvml())
@@ -6621,8 +6601,22 @@ int main(
 
     log_ext(-1, "main", log_buffer, LOG_DEBUG);
     }
-
 #endif  /* NVIDIA_GPUS */
+
+  try
+    {   
+    if ((rc = setup_program_environment()) != 0)
+      {
+      return(rc);
+      }
+    }
+  catch (boost::exception &e)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "unexpected boost exception caught");
+    log_err(-1, __func__, log_buffer);
+    return -1;
+    }
 
   main_loop();
 

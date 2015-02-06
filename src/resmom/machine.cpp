@@ -10,7 +10,7 @@
 #include <hwloc/intel-mic.h>
 #endif
 
-#ifdef NVIDIA_GPU
+#ifdef NVIDIA_GPUS
 #ifdef NVML_API
 #include <hwloc/nvml.h>
 #endif
