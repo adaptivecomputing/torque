@@ -348,6 +348,8 @@ int req::set_name_value_pair(
     this->os = value;
   else if (!strcmp(name, "reqattr"))
     this->req_attr = value;
+  else if (!strcmp(name, "swap"))
+    rc = read_mem_value(value, this->swap);
   else
     return(PBSE_BAD_PARAMETER);
 
