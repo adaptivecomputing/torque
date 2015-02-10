@@ -6,6 +6,8 @@
 #include <string.h>
 #include "pbs_error.h"
 
+int  LOGLEVEL=6;
+
 int create_cgroup_hierarchy()
   {
   int rc = PBSE_NONE;
@@ -80,3 +82,21 @@ int create_cgroup_hierarchy()
   return (rc);
   }
       
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text)
+  {
+  return;
+  }
+
+void log_err(
+
+  int         errnum,  /* I (errno or PBSErrno) */
+  const char *routine, /* I */
+  const char *text)    /* I */
+  {
+  return;
+  }

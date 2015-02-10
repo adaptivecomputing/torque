@@ -134,6 +134,7 @@ extern "C"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
+#include "complete_req.hpp"
 #endif
 
 #ifdef ENABLE_CPA
@@ -196,6 +197,7 @@ typedef enum
 #define MAX_JOB_ARGS          64
 
 
+#define KB  1024
 /* Global Variables */
 extern node_internals internal_layout;
 
@@ -4257,11 +4259,44 @@ int TMomFinalizeChild(
   /* Add this process to the cpuacct and memory subsystems */
   int rc;
 
- rc = trq_cg_add_process_to_cgroup_accts(getpid());
+  rc = trq_cg_add_process_to_cgroup_accts(getpid());
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
+    }
+
+  /* See if the memory attribute was requested and then add it to
+     memory.limit_in_bytes of the cgroup */
+  if ((pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+    {
+    char          this_hostname[PBS_MAXHOSTNAME];
+    unsigned long mem_limit;
+    unsigned long swap_limit;
+    complete_req *cr;
+
+    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+    if (rc != 0)
+      {
+      sprintf(log_buffer, "failed to get host name: %d", errno);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      exit(-1);
+      }
+
+    std::string string_hostname = this_hostname;
+
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    mem_limit = cr->get_memory_for_this_host(string_hostname);
+    if (mem_limit != 0)
+      {
+      rc = trq_cg_set_resident_memory_limit(getpid(), mem_limit * KB);
+      }
+
+    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
+    if (swap_limit != 0)
+      {
+      rc = trq_cg_set_swap_memory_limit(getpid(), swap_limit * KB);
+      }
     }
 #endif
 

@@ -387,6 +387,55 @@ START_TEST(test_set_attribute)
   }
 END_TEST
 
+START_TEST(test_get_memory_for_host)
+  {
+  req r;
+  std::string host = "napali";
+  unsigned long mem;
+
+  r.set_value("index", "0");
+  r.set_value("lprocs", "all");
+  r.set_value("memory", "1024kb");
+  r.set_value("swap", "1024kb");
+  r.set_value("task_count", "5");
+  r.set_value("thread_usage_policy", "use threads");
+  r.set_value("hostlist", "napali/0-31");
+
+  mem = r.get_memory_for_host(host);
+  fail_unless(mem != 0);
+
+  host = "right said fred";
+  mem = r.get_memory_for_host(host);
+  fail_unless(mem == 0);
+
+  }
+END_TEST
+
+START_TEST(test_get_swap_for_host)
+  {
+  req r;
+  std::string host = "napali";
+  unsigned long mem;
+
+  r.set_value("index", "0");
+  r.set_value("lprocs", "all");
+  r.set_value("memory", "1024kb");
+  r.set_value("swap", "1024kb");
+  r.set_value("task_count", "5");
+  r.set_value("thread_usage_policy", "use threads");
+  r.set_value("hostlist", "napali/0-31");
+
+  mem = r.get_swap_for_host(host);
+  fail_unless(mem != 0);
+
+  host = "right said fred";
+  mem = r.get_swap_for_host(host);
+  fail_unless(mem == 0);
+
+  }
+END_TEST
+
+
 
 Suite *req_suite(void)
   {
@@ -402,6 +451,8 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_set_attribute);
   tcase_add_test(tc_core, test_submission_string_has_duplicates);
   tcase_add_test(tc_core, test_get_set_values);
+  tcase_add_test(tc_core, test_get_memory_for_host);
+  tcase_add_test(tc_core, test_get_swap_for_host);
   suite_add_tcase(s, tc_core);
   
   return(s);

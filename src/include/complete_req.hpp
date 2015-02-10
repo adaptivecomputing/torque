@@ -103,6 +103,8 @@ class complete_req
     void toString(std::string &output) const;
     int  req_count() const;
     void get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
+    unsigned long get_memory_for_this_host(const std::string &hostname) const;
+    unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
   };
 
 #endif

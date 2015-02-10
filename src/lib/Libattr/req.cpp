@@ -32,33 +32,46 @@ const char *place_numa = "numachip";
 const char *place_core = "core";
 const char *place_thread = "thread";
 
-
-req::req() : execution_slots(1), mem(0), swap(0), disk(0),
-             task_count(1), socket(0), numa_chip(0),
-             thread_usage_policy(ALLOW_THREADS), gpus(0), mics(0),
-             pack(false), index(0), thread_usage_str(allow_threads), single_job_access(false),
-             maxtpn(0), placement_str(), nodes(0), gpu_mode(), gres(), cores(0),
-             threads(0)
+req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
+             socket(0), numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
+             thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), placement_str(), 
+             gpu_mode(), task_count(1), pack(false), single_job_access(false), index(0) 
 
   {
   }
     
 req::req(
     
-  const req &other) : execution_slots(other.execution_slots), mem(other.mem), swap(other.swap),
-                      disk(other.disk), gres(other.gres), os(other.os), arch(other.arch),
+  const req &other) : execution_slots(other.execution_slots), 
+                      mem(other.mem), 
+                      swap(other.swap),
+                      disk(other.disk), 
+                      nodes(other.nodes), 
+                      socket(other.socket), 
+                      numa_chip(other.numa_chip), 
+                      cores(other.cores), 
+                      threads(other.threads), 
+                      thread_usage_policy(other.thread_usage_policy),
+                      thread_usage_str(other.thread_usage_str), 
+                      gpus(other.gpus), 
+                      mics(other.mics), 
+                      maxtpn(other.maxtpn), 
+                      gres(other.gres), 
+                      os(other.os), 
+                      arch(other.arch), 
                       node_access_policy(other.node_access_policy), 
-                      task_count(other.task_count), hostlist(other.hostlist), socket(other.socket),
-                      numa_chip(other.numa_chip), thread_usage_policy(other.thread_usage_policy),
-                      gpus(other.gpus), mics(other.mics), pack(other.pack), index(other.index),
-                      thread_usage_str(other.thread_usage_str), placement_str(other.placement_str),
-                      features(other.features), single_job_access(other.single_job_access),
-                      maxtpn(other.maxtpn), gpu_mode(other.gpu_mode), req_attr(other.req_attr),
-                      nodes(other.nodes), cores(other.cores), threads(other.threads)
+                      features(other.features), 
+                      placement_str(other.placement_str),
+                      req_attr(other.req_attr),
+                      gpu_mode(other.gpu_mode), 
+                      task_count(other.task_count),
+                      pack(other.pack), 
+                      single_job_access(other.single_job_access),
+                      index(other.index),
+                      hostlist(other.hostlist)
 
   {
   }
-
 
 
 /*
@@ -199,17 +212,24 @@ int read_mem_value(
   
   switch (*suffix)
     {
+      /* We will multiply by 1024 later as well. Default 
+         multiplier for memory is kilobytes. */
     case 't':
+    case 'T':
 
-      memval *= 1024;
-      // fall through
+      memval *= 1024 * 1024 * 1024;
+
+      break;
 
     case 'g':
+    case 'G':
 
-      memval *= 1024;
-      // fall through
+      memval *= 1024 * 1024;
+
+      break;
 
     case 'm':
+    case 'M':
 
       memval *= 1024;
 
@@ -829,12 +849,12 @@ int req::set_from_submission_string(
  */
 
 req::req(
-    
-  const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
-                                         task_count(1), nodes(0), socket(0), numa_chip(0),
+
+   const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
+                                         nodes(0), socket(0), numa_chip(0),
                                          cores(0), threads(0), thread_usage_str(allow_threads),
-                                         single_job_access(false), maxtpn(0), placement_str(),
-                                         gpu_mode(), gres()
+                                         maxtpn(0), gres(), placement_str(), gpu_mode(), 
+                                         task_count(1), single_job_access(false) 
 
   {
   char       *work_str = strdup(resource_request.c_str());
@@ -1533,11 +1553,14 @@ void req::set_from_string(
 
     char *tmp = current;
     current = strchr(current, '\n');
-    *current = '\0';
-    current++;
+    if (current != NULL)
+    {
+      *current = '\0';
+      current++;
+      move_past_whitespace(&current);
+    }
     this->hostlist = tmp;
 
-    move_past_whitespace(&current);
     }
 
   if ((current != NULL) &&
@@ -1751,3 +1774,74 @@ int req::getIndex() const
   {
   return(this->index);
   }
+
+/*
+ * 
+ */
+
+unsigned long req::get_swap_for_host(
+
+  const std::string &host) const
+
+  {
+  // hostlist is in the format:
+  // hostname1:num_ppn+hostname2:num_ppn...
+  unsigned long swap = 0;
+  std::size_t pos = this->hostlist.find(host);
+
+  if (pos != std::string::npos)
+    {
+    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
+        (strncmp(this->placement_str.c_str(), "node", 4)))
+      swap = this->swap;
+    else
+      {
+      // skip the 'hostname:' portion of the string
+      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
+      char        *ppn_str = strdup(ppn_val.c_str());
+      int          num_ppn = strtol(ppn_str, NULL, 10);
+
+      swap = this->swap * (num_ppn / this->execution_slots);
+      }
+    }
+
+  return(swap);
+  } // END get_swap_for_host()
+
+
+
+/*
+ * 
+ */
+
+unsigned long req::get_memory_for_host(
+
+  const std::string &host) const
+
+  {
+  // hostlist is in the format:
+  // hostname1:num_ppn+hostname2:num_ppn...
+  unsigned long mem = 0;
+  std::size_t pos = this->hostlist.find(host);
+
+  if (pos != std::string::npos)
+    {
+    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
+        (strncmp(this->placement_str.c_str(), "node", 4)))
+      mem = this->mem;
+    else
+      {
+      // skip the 'hostname:' portion of the string
+      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
+      char        *ppn_str = strdup(ppn_val.c_str());
+      int          num_ppn = strtol(ppn_str, NULL, 10);
+
+      mem = this->mem * (num_ppn / this->execution_slots);
+      }
+    }
+
+  return(mem);
+  } // END get_memory_for_host()
+
+
+

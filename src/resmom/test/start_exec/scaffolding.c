@@ -26,6 +26,7 @@
 #include "node_internals.hpp"
 #endif
 
+
 std::string cg_memory_path;
 std::string cg_cpuacct_path;
 int  send_ms_called;
@@ -86,8 +87,6 @@ int       num_node_boards = 10;
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals internal_layout;
 #endif
-
-
 
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
@@ -678,3 +677,53 @@ int trq_cg_add_process_to_cgroup(std::string& cgroup_path, pid_t job_pid, pid_t 
   {
   return(PBSE_NONE);
   }
+
+int trq_cg_set_resident_memory_limit(pid_t pid, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(pid_t pid, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+#include "./complete_req.cpp"
+#endif

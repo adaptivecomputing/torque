@@ -142,7 +142,18 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-int trq_cg_remove_process_from_accts(job *pjob)  
+void *trq_cg_remove_process_from_accts(void *vp)  
   {
   return(PBSE_NONE);
+  }
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text)
+  
+  {
+  return;
   }

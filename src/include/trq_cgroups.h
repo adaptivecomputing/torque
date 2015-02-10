@@ -2,9 +2,9 @@
 #ifndef _TRQ_CGROUPS_H_
 #define  _TRQ_CGROUPS_H_
 
-#include <ostream>
 #include <string>
 #include <vector>
+#include "log.h"
 
 extern std::string cg_cpu_path;
 extern std::string cg_cpuset_path;
@@ -20,5 +20,7 @@ int trq_cg_initialize_hierarchy();
 int trq_cg_create_cgroup(std::string&, pid_t);
 int trq_cg_add_process_to_cgroup_accts(pid_t);
 int trq_cg_add_process_to_cgroup(std::string&, pid_t, pid_t);
-int trq_cg_remove_process_from_accts(job *pjob);
+void *trq_cg_remove_process_from_accts(void *vp);
+int trq_cg_set_resident_memory_limit(pid_t pid, unsigned long memory_limit);
+int trq_cg_set_swap_memory_limit(pid_t pid, unsigned long memory_limit);
 #endif /* _TRQ_CGROUPS_H_ */

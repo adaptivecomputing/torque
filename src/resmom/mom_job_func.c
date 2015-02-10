@@ -913,7 +913,15 @@ void mom_job_purge(
 
 #ifdef PENABLE_LINUX_CGROUPS
   /* We need to remove the cgroup hierarchy for this job */
-  trq_cg_remove_process_from_accts(pjob);
+  job_pid_set_t::iterator job_iter = pjob->ji_job_pid_set->begin();
+  pid_t *job_pid = (pid_t *)malloc(sizeof(pid_t));
+  *job_pid = *job_iter;
+  enqueue_threadpool_request( trq_cg_remove_process_from_accts, job_pid, request_pool);
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buffer, "removing cgroup of job %s. Process id %d", pjob->ji_qs.ji_jobid, *job_iter);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
 #endif
 
   //We had a request to change the frequency for the job and now that the job is done

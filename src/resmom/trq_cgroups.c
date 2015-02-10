@@ -20,10 +20,6 @@
 using namespace std;
 using namespace boost;
 
-#define PBSE_NONE 0
-#define PBSE_CGROUPS_NOT_ENABLED 1
-#define PBSE_SYSTEM 3
-
 #define PS_CMD "ps -eo pid,ppid,sess | grep "
 
 enum cgroup_system
@@ -477,15 +473,35 @@ int trq_cg_remove_process_from_cgroup(string cgroup_path, pid_t job_pid)
   sprintf(cgroup_name, "%d", job_pid);
   cgroup_path_name = cgroup_path + cgroup_name;
 
-  rc = rmdir(cgroup_path_name.c_str());
-
-  if (rc < 0)
+  /* TODO: We are waiting for cgroups to be done.
+     How long should we wait? */
+  do
     {
-    sprintf(log_buf, "failed to remove %s from cgroups ", cgroup_path_name.c_str());
-    log_err(-1, __func__, log_buf);
-    }
-  else
-    rc = PBSE_NONE;
+    rc = rmdir(cgroup_path_name.c_str());
+
+    if (rc < 0 )
+      {
+      if (errno == EBUSY)
+        {
+        /* cgroups are still cleaning up. try again later. */
+        if (LOGLEVEL >= 8)
+          {
+          sprintf(log_buf, "cgroup not finished %s from cgroups: %d ", cgroup_path_name.c_str(), errno);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
+        sleep(1);
+        }
+      else
+        {
+        sprintf(log_buf, "failed to remove %s from cgroups: %d ", cgroup_path_name.c_str(), errno);
+        log_err(-1, __func__, log_buf);
+        break;
+        }
+      }
+    else
+      rc = PBSE_NONE;
+
+    }while(rc != PBSE_NONE);
 
   return(rc);
 
@@ -495,25 +511,27 @@ int trq_cg_remove_process_from_cgroup(string cgroup_path, pid_t job_pid)
 /* trq_cg_remove_process_from_accts: Remove the hierarchies for
    this jobs process from the cgroups directory. That is remove
    this job from its accounting cgroups */
-int trq_cg_remove_process_from_accts(job *pjob)
+void *trq_cg_remove_process_from_accts(void *vp)
   {
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
-  job_pid_set_t::iterator job_iter = pjob->ji_job_pid_set->begin();
+  pid_t *pid = (pid_t *)vp;
+  pid_t job_pid = *pid;
+
 
   /* remove job from the cpuacct cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, *job_iter);
+  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_pid);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "Failed to remove pjob %s from cgroup cpuacct: process %d", pjob->ji_qs.ji_jobid, *job_iter);
+    sprintf(log_buf, "Failed to remove cgroup cpuacct: process %d", job_pid);
     log_err(-1, __func__, log_buf);
     }
 
   /* remove job from the cpumemory cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, *job_iter);
+  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, job_pid);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "Failed to remove pjob %s from cgroup memory: process %d", pjob->ji_qs.ji_jobid, *job_iter);
+    sprintf(log_buf, "Failed to remove cgroup memory: process %d", job_pid);
     log_err(-1, __func__, log_buf);
     }
 
@@ -521,7 +539,111 @@ int trq_cg_remove_process_from_accts(job *pjob)
   return(PBSE_NONE);
   }
 
+/*
+ * trq_cg_set_swap_memory_limit()
+ *
+ * Sets the memory.limit_in_bytes to memory_limit for the cgroup of this process.
+ *
+ * @param pid  -  The process id of the cgroup
+ * @param memory_limit - The memory limit for this cgroup 
+ *
+ * @return PBSE_NONE on success
+ */
 
+int trq_cg_set_swap_memory_limit(
+  
+  pid_t pid, 
+  unsigned long memory_limit)
 
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   cgroup_name[256];
+  char   mem_limit_string[64];
+  string oom_control_name;
+  FILE   *fd;
+  size_t  bytes_written;
+  
+  /* Create a string with a path to the 
+     memory.limit_in_bytes cgroup for the job */
+  sprintf(cgroup_name, "%d", pid);
+  oom_control_name = cg_memory_path + cgroup_name + "/memory.memsw.limit_in_bytes";
 
+  /* open the memory.limit_in_bytes file and set it to memory_limit */
+  fd = fopen(oom_control_name.c_str(), "r+");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  sprintf(mem_limit_string, "%ld", memory_limit);
+  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string) -1, strlen(mem_limit_string) -1, fd);
+  if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
+    log_err(-1, __func__, log_buf);
+    fclose(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+
+  return(PBSE_NONE);
+
+  }
+
+/*
+ * trq_cg_set_resident_memory_limit()
+ *
+ * Sets the memory.limit_in_bytes to memory_limit for the cgroup of this process.
+ *
+ * @param pid  -  The process id of the cgroup
+ * @param memory_limit - The memory limit for this cgroup 
+ *
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_set_resident_memory_limit(
+  
+  pid_t pid, 
+  unsigned long memory_limit)
+
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   cgroup_name[256];
+  char   mem_limit_string[64];
+  string oom_control_name;
+  FILE   *fd;
+  size_t  bytes_written;
+  
+  /* Create a string with a path to the 
+     memory.limit_in_bytes cgroup for the job */
+  sprintf(cgroup_name, "%d", pid);
+  oom_control_name = cg_memory_path + cgroup_name + "/memory.limit_in_bytes";
+
+  /* open the memory.limit_in_bytes file and set it to memory_limit */
+  fd = fopen(oom_control_name.c_str(), "r+");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  sprintf(mem_limit_string, "%ld", memory_limit);
+  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string) -1, strlen(mem_limit_string) -1, fd);
+  if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
+    log_err(-1, __func__, log_buf);
+    fclose(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+
+  return(PBSE_NONE);
+
+  }
 

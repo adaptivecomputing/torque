@@ -143,9 +143,7 @@ int complete_req::set_value(
   if (index < 0)
     return(PBSE_BAD_PARAMETER);
 
-  int rc;
-
-  while (this->reqs.size() <= index)
+  while (this->reqs.size() <= (unsigned int)index)
     {
     req r;
     r.set_index(this->reqs.size());
@@ -175,3 +173,35 @@ void complete_req::get_values(
   for (unsigned int i = 0; i < this->reqs.size(); i++)
     this->reqs[i].get_values(names, values);
   } // END get_values()
+    
+/* 
+ * get_swap_memory_for_this_host()
+ */
+
+unsigned long complete_req::get_swap_memory_for_this_host(const std::string &hostname) const
+
+  {
+  unsigned long mem = 0;
+  
+  for (unsigned int i = 0; i < this->reqs.size(); i++)
+    mem += this->reqs[i].get_swap_for_host(hostname);
+
+  return(mem);
+  } // END get_memory_for_host()
+
+
+
+/* 
+ * get_memory_for_this_host()
+ */
+
+unsigned long complete_req::get_memory_for_this_host(const std::string &hostname) const
+
+  {
+  unsigned long mem = 0;
+  
+  for (unsigned int i = 0; i < this->reqs.size(); i++)
+    mem += this->reqs[i].get_memory_for_host(hostname);
+
+  return(mem);
+  } // END get_memory_for_host()

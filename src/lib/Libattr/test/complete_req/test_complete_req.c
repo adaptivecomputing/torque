@@ -46,8 +46,8 @@ START_TEST(test_constructor)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa");
-  r2.set_from_string("req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: use cores\nplacement type: place socket");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: all\n thread usage policy: usethreads\nplacement type: place numa");
+  r2.set_from_string("req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: usecores\nplacement type: place socket");
 
   c.add_req(r1);
   c.add_req(r2);
@@ -86,8 +86,8 @@ START_TEST(test_to_string)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: all\n thread usage policy: use threads\nplacement type: place numa");
-  r2.set_from_string("req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: use cores\nplacement type: place socket");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: all\n thread usage policy: usethreads\nplacement type: place numa");
+  r2.set_from_string("req[1]\ntask count: 8\nlprocs: 4\n thread usage policy: usecores\nplacement type: place socket");
 
   c.add_req(r1);
   c.add_req(r2);
@@ -118,6 +118,51 @@ START_TEST(test_to_string)
   }
 END_TEST
 
+START_TEST(test_get_swap_memory_for_this_host)
+  {
+  complete_req c;
+  std::string hostname = "kmn";
+  unsigned long swap;
+
+  req r1;
+  req r2;
+
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn/0");
+
+  c.add_req(r1);
+
+  swap = c.get_swap_memory_for_this_host(hostname);
+  fail_unless(swap != 0);
+
+  hostname = "right_said_fred";
+  swap = c.get_swap_memory_for_this_host(hostname);
+  fail_unless(swap == 0);
+
+  }
+END_TEST
+
+START_TEST(test_get_memory_for_this_host)
+  {
+  complete_req c;
+  std::string hostname = "kmn";
+  unsigned long swap;
+
+  req r1;
+  req r2;
+
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn/0");
+
+  c.add_req(r1);
+
+  swap = c.get_memory_for_this_host(hostname);
+  fail_unless(swap != 0);
+
+  hostname = "right_said_fred";
+  swap = c.get_memory_for_this_host(hostname);
+  fail_unless(swap == 0);
+
+  }
+END_TEST
 
 
 Suite *complete_req_suite(void)
@@ -127,6 +172,14 @@ Suite *complete_req_suite(void)
   tcase_add_test(tc_core, test_constructor);
   suite_add_tcase(s, tc_core);
   
+  tc_core = tcase_create("test_get_swap_memory_for_this_host");
+  tcase_add_test(tc_core, test_get_swap_memory_for_this_host);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_memory_for_this_host");
+  tcase_add_test(tc_core, test_get_memory_for_this_host);
+  suite_add_tcase(s, tc_core);
+
   tc_core = tcase_create("test_to_string");
   tcase_add_test(tc_core, test_to_string);
   tcase_add_test(tc_core, test_set_get_value);
