@@ -4508,7 +4508,18 @@ int cg_initialize_hwloc_topology()
     return(-1);
     }
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM | HWLOC_TOPOLOGY_FLAG_IO_DEVICES) != 0))
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
     {
     log_err(-1, msg_daemonname, "Unable to configure machine topology");
     return(-1);
@@ -4541,7 +4552,18 @@ int initialize_hwloc_topology()
     return(-1);
     }
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM | HWLOC_TOPOLOGY_FLAG_IO_DEVICES) != 0))
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
     {
     log_err(-1, msg_daemonname, "Unable to configure machine topology");
     return(-1);
@@ -6584,8 +6606,26 @@ int main(
 
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
+  try
+    {   
+    if ((rc = setup_program_environment()) != 0)
+      {
+      return(rc);
+      }
+    }
+  catch (boost::exception &e)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "unexpected boost exception caught");
+    log_err(-1, __func__, log_buffer);
+    return -1;
+    }
+
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
+/* Due to differences in the NVIDIA libraries, NVML initialization must be done 
+ * after the MOM is daemonized which happens in setup_program_environment.
+ * */
   if (!init_nvidia_nvml())
     {
     use_nvidia_gpu = FALSE;
@@ -6603,21 +6643,6 @@ int main(
     log_ext(-1, "main", log_buffer, LOG_DEBUG);
     }
 #endif  /* NVIDIA_GPUS */
-
-  try
-    {   
-    if ((rc = setup_program_environment()) != 0)
-      {
-      return(rc);
-      }
-    }
-  catch (boost::exception &e)
-    {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "unexpected boost exception caught");
-    log_err(-1, __func__, log_buffer);
-    return -1;
-    }
 
   main_loop();
 

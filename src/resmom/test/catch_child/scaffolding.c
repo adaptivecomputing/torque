@@ -1360,3 +1360,12 @@ bool am_i_mother_superior(const job &pjob)
 
 void get_energy_used(job *pjob)
   {}
+
+int init_nvidia_nvml() 
+  {}
+
+int check_nvidia_setup()
+  {}
+
+int shut_nvidia_nvml() 
+  {}

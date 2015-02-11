@@ -216,7 +216,7 @@ using namespace std;
     
         gpu_obj = hwloc_nvml_get_device_osdev(topology, gpu);
         if (gpu_obj == NULL)
-          break;
+          continue;
     
         if (chip_obj == NULL) 
           { // this came from the Non NUMA

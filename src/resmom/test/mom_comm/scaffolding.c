@@ -18,6 +18,11 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+#ifdef NVIDIA_GPUS
+int             MOMNvidiaDriverVersion    = 0;
+int             use_nvidia_gpu = TRUE;
+#endif  /* NVIDIA_GPUS */
+
 int create_job_cpuset(job *pj) { return 0; }
 int use_cpusets(job *pj) { return 0; }
 const char *path_jobs = "some path to nowhere."; /* mom_main.c */
@@ -512,4 +517,12 @@ bool am_i_mother_superior(const job &pjob)
   }
 
 void create_cpuset_reservation_if_needed(job &pjob){}
+
+int setup_gpus_for_job(
+
+  job  *pjob) /* I */
+
+  {
+    return(PBSE_NONE);
+  }
 

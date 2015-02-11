@@ -1133,24 +1133,92 @@ dnl
 AC_ARG_WITH(hwloc-path, [
   --with-hwloc-path=PATH   
                        Specifies the path to the hwloc libraries and include files.
-                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.2
-                       Will specify that the include files are in /usr/local/hwloc-1.2/include and
-                       the libraries are in /usr/local/hwloc-1.2/lib],
+                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.9
+                       Will specify that the include files are in /usr/local/hwloc-1.9/include and
+                       the libraries are in /usr/local/hwloc-1.9/lib],
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
 
+dnl
+dnl enable Nvidia gpu support
+dnl
+AC_MSG_CHECKING([whether to build Nvidia gpu support])
+AC_ARG_ENABLE(nvidia-gpus,
+    [  --enable-nvidia-gpus    enable Nvidia gpu support
+                          Nvidia gpu support requires the use of the Nvidia Management Library (NVML)
+                          When using --enable-nvidia-gpus, you must also specify --with-nvml-lib=DIR and 
+                          --with-nvml-include=DIR. hwloc 1.9 or later is also required. 
+                          See --with-hwloc-path.
+],
+    enable_nvidia=$enableval,enable_nvidia=no)
+AC_MSG_RESULT($enable_nvidia)
+case "$enable_nvidia" in
+  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
+esac
+AM_CONDITIONAL([NVIDIA], test "$enable_nvidia" = yes)
 
-dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
+dnl
+dnl check for nvml include and lib dir only if Nvidia gpu support has been enabled
+dnl
+if test "${enable_nvidia}" = "yes"; then
+  AC_ARG_WITH(nvml_include,
+      [  --with-nvml-include=DIR include path for nvml.h],
+      nvmlinclude=$withval,nvmlinclude=none)   
+  AC_ARG_WITH(nvml_lib,
+      [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
+      nvmllib=$withval,nvmllib=none)   
+
+  if test "x$nvmlinclude" = "xnone" && test "x$nvmllib" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-lib and --with-nvml-include need to be specified])
+  elif test "x$nvmllib" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-lib needs to be specified])
+  elif test "x$nvmlinclude" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-include needs to be specified])
+  fi
+
+  if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone"; then
+    CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
+    MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
+    gccwarnings=no
+    AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
+  fi
+fi
+
+
+dnl For Linux 2.6 cpusets, libhwloc 1.2 or later is needed for pbs_mom.
+dnl For GPU detection, libhwloc 1.7 or later is needed for pbs_mom.
+dnl For cgroup support, libhwloc 1.7 or later is needed for pbs_mom.
+dnl hwloc 1.7 is newer than the versions distributed with supported operating systems.
+dnl hwloc 1.9 is stable. Therefore, 1.9 or later will be required.
 dnl We are using pkg-config to figure out libs and cflags.
 dnl The used m4 macro is found in buildutils/pkg.m4.
-dnl In addition, we check libhwloc for hwloc_bitmap_list_snprintf (present since v1.2).
-if test "${build_l26_cpuset}" = "yes" ; then
-  if test "${build_mom}" = "yes" ; then
-    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.2],
-      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
-      [ AC_MSG_ERROR([cpuset support requires the hwloc development package
+dnl In addition, we check libhwloc for hwloc_linux_get_tid_last_cpu_location (present since v1.9).
+if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test "${build_linux_cgroups}" = "yes"; then
+  if test "${build_l26_cpuset}" = "yes"; then
+    # The carriage return is siginifican. Do not delete it
+    CPUSET_DEPENDS_ON_HWLOC="cpuset support requires the hwloc development package
+"
+  fi
 
+  if test "${enable_nvidia}" = "yes"; then
+    # The carriage return is siginifican. Do not delete it
+    GPU_DETECTION_DEPENDS_ON_HWLOC="GPU detection requires the hwloc development package
+"
+  fi
+
+  if test "${build_linux_cgroups}" = "yes"; then
+    # The carriage return is siginifican. Do not delete it
+    CGROUP_DEPENDS_ON_HWLOC="cgroup support requires the hwloc development package
+"
+  fi
+
+  if test "${build_mom}" = "yes" ; then
+    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.9],
+      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
+      [ AC_MSG_ERROR([${CPUSET_DEPENDS_ON_HWLOC}${GPU_DETECTION_DEPENDS_ON_HWLOC}${CGROUP_DEPENDS_ON_HWLOC}
 $HWLOC_PKG_ERRORS
 
 This can be solved by configuring with --with-hwloc-path=<path>. This path
@@ -1168,8 +1236,8 @@ then configuring again.
 ])])
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
-    AC_CHECK_LIB([hwloc], [hwloc_bitmap_list_snprintf],,
-      [AC_MSG_ERROR([libhwloc does not look like >= 1.2])])
+    AC_CHECK_LIB([hwloc], [hwloc_linux_get_tid_last_cpu_location],,
+      [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
     LIBS=$olibs
   fi
 fi 
@@ -1337,45 +1405,6 @@ case "$BLCR" in
   no) : ;;
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
-
-
-dnl
-dnl enable Nvidia gpu support
-dnl
-AC_MSG_CHECKING([whether to build Nvidia gpu support])
-AC_ARG_ENABLE(nvidia-gpus,
-    [  --enable-nvidia-gpus    enable Nvidia gpu support],
-    NVIDIA=$enableval,NVIDIA=no)
-AC_MSG_RESULT($NVIDIA)
-case "$NVIDIA" in
-  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
-esac
-AM_CONDITIONAL([NVIDIA], test "$NVIDIA" = yes)
-
-AC_ARG_WITH(nvml_include,
-    [  --with-nvml-include=DIR include path for nvml.h],
-    nvmlinclude=$withval,nvmlinclude=none)   
-AC_ARG_WITH(nvml_lib,
-    [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
-    nvmllib=$withval,nvmllib=none)   
-
-if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone" ;then
-  CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
-  MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
-  gccwarnings=no
-  AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
-fi
-
-if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" == "xnone" ;then
-  AC_MSG_ERROR([--with-nvml-lib needs to be specified])
-fi
-
-if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
-  AC_MSG_ERROR([--with-nvml-include needs to be specified])
-fi
-
 
 dnl 
 dnl if we're running from a tarball (not checked out) automatically turn off
