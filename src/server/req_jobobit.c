@@ -3067,140 +3067,144 @@ int update_substate_from_exit_status(
   int   newstate;
   int   newsubst;
 
-  /* Was there a special exit status from MOM ? */
-  get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
-        
-  if (exitstatus == automatic_requeue)
+  // Ignore all special exit codes if the job has been qdel'ed
+  if (pjob->ji_being_deleted == false)
     {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
-    }
-  else if (exitstatus < 0)
-    {
-    /* negative exit status is special */
-
-    switch (exitstatus)
+    /* Was there a special exit status from MOM ? */
+    get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
+    
+    if (exitstatus == automatic_requeue)
       {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+      }
+    else if (exitstatus < 0)
+      {
+      /* negative exit status is special */
 
-      case JOB_EXEC_OVERLIMIT_MEM:
+      switch (exitstatus)
+        {
 
-        /* the job exceeded a memory resource limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_MEM:
 
-        break;
+          /* the job exceeded a memory resource limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_OVERLIMIT_WT:
+          break;
 
-        /* the job exceeded its  walltime limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_WT:
 
-        break;
+          /* the job exceeded its  walltime limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_OVERLIMIT_CPUT:
+          break;
 
-        /* the job exceeded its cpu time limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_CPUT:
 
-        break;
+          /* the job exceeded its cpu time limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_FAIL1:
+          break;
 
-      default:
+        case JOB_EXEC_FAIL1:
 
-        /* MOM rejected job with fatal error, abort job */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1,text);
+        default:
 
-        *alreadymailed = 1;
+          /* MOM rejected job with fatal error, abort job */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1,text);
 
-        break;
+          *alreadymailed = 1;
 
-      case JOB_EXEC_FAIL2:
+          break;
 
-        /* MOM reject job after files setup, abort job */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2,text);
+        case JOB_EXEC_FAIL2:
 
-        *alreadymailed = 1;
+          /* MOM reject job after files setup, abort job */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2,text);
 
-        break;
+          *alreadymailed = 1;
 
-      case JOB_EXEC_INITABT:
+          break;
 
-        /* MOM aborted job on her initialization */
-        *alreadymailed = setrerun(pjob,text);
+        case JOB_EXEC_INITABT:
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
-
-        break;
-
-      case JOB_EXEC_RETRY:
-
-        /* MOM rejected job, but said retry it */
-
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
-          {
-          /* has run before, treat this as another rerun */
+          /* MOM aborted job on her initialization */
           *alreadymailed = setrerun(pjob,text);
-          }
-        else
-          {
-          /* have mom remove job files, not saving them, and requeue job */
-          /* transient failure detected */
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
-          }
 
-        break;
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
-      case JOB_EXEC_BADRESRT:
+          break;
 
-        /* MOM could not restart job, setup for rerun */
-        *alreadymailed = setrerun(pjob,text);
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
+        case JOB_EXEC_RETRY:
 
-        break;
+          /* MOM rejected job, but said retry it */
 
-      case JOB_EXEC_INITRST:
+          if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+            {
+            /* has run before, treat this as another rerun */
+            *alreadymailed = setrerun(pjob,text);
+            }
+          else
+            {
+            /* have mom remove job files, not saving them, and requeue job */
+            /* transient failure detected */
+            pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+            }
 
-        /* MOM abort job on init, job has checkpoint file */
-        /* Requeue it, and thats all folks.   */
+          break;
 
-        if (LOGLEVEL >= 1)
-          {
-          log_event(
-            PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
-          }
+        case JOB_EXEC_BADRESRT:
 
-        rel_resc(pjob);
+          /* MOM could not restart job, setup for rerun */
+          *alreadymailed = setrerun(pjob,text);
+          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
+          break;
 
-        svr_evaljobstate(*pjob, newstate, newsubst, 1);
-        svr_setjobstate(pjob, newstate, newsubst, FALSE);
+        case JOB_EXEC_INITRST:
 
-        close_conn(pjob->ji_momhandle, FALSE);
-        pjob->ji_momhandle = -1;
+          /* MOM abort job on init, job has checkpoint file */
+          /* Requeue it, and thats all folks.   */
 
-        return(PBSE_SYSTEM);
+          if (LOGLEVEL >= 1)
+            {
+            log_event(
+              PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
+            }
 
-        /*NOTREACHED*/
+          rel_resc(pjob);
 
-        break;
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
-      case JOB_EXEC_INITRMG:
+          svr_evaljobstate(*pjob, newstate, newsubst, 1);
+          svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-        /* MOM abort job on init, job has migratable checkpoint */
-        /* Must recover output and checkpoint file, do eoj      */
-        *alreadymailed = setrerun(pjob,text);
+          close_conn(pjob->ji_momhandle, FALSE);
+          pjob->ji_momhandle = -1;
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+          return(PBSE_SYSTEM);
 
-        break;
-      }  /* END switch (exitstatus) */
-    }    /* END if (exitstatus < 0) */
+          /*NOTREACHED*/
+
+          break;
+
+        case JOB_EXEC_INITRMG:
+
+          /* MOM abort job on init, job has migratable checkpoint */
+          /* Must recover output and checkpoint file, do eoj      */
+          *alreadymailed = setrerun(pjob,text);
+
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+
+          break;
+        }  /* END switch (exitstatus) */
+      }    /* END if (exitstatus < 0) */
+    } // END if !pjob->ji_being_deleted
 
   if (LOGLEVEL >= 2)
     {
@@ -3214,7 +3218,7 @@ int update_substate_from_exit_status(
     }
 
   return(rc);
-  } /* END update_state_from_exit_status() */
+  } /* END update_substate_from_exit_status() */
 
 
 
