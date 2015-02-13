@@ -688,6 +688,7 @@ struct job
   // This is used as a bitmap to ensure that a job is only counted once as a queued job for 
   // the queue count and the server count
   unsigned          ji_queue_counted;
+  bool              ji_being_deleted;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
