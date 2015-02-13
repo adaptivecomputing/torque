@@ -28,6 +28,7 @@ attribute_def svr_attr_def[10];
 int svr_totnodes = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 bool exit_called = false;
+int abort_called;
 
 struct batch_request *alloc_br(int type)
   {
@@ -161,8 +162,8 @@ int status_job(
 
 int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
-  fprintf(stderr, "The call to job_abt to be mocked!!\n");
-  exit(1);
+  abort_called++;
+  return(0);
   }
 
 void *get_next(list_link pl, char *file, int line)

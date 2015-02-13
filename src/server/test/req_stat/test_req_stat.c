@@ -8,6 +8,7 @@
 
 bool in_execution_queue(job *pjob, job_array *pa);
 job *get_next_status_job(struct stat_cntl *cntl, int &job_array_index, job_array *pa, all_jobs_iterator *iter);
+extern int abort_called;
 
 enum TJobStatTypeEnum
   {
@@ -41,10 +42,31 @@ START_TEST(test_in_execution_queue)
 END_TEST
 
 
+START_TEST(test_stat_update)
+  {
+  batch_request preq;
+  stat_cntl     cntl;
+
+  memset(&preq, 0, sizeof(preq));
+  memset(&cntl, 0, sizeof(cntl));
+  abort_called = 0;
+
+  preq.rq_reply.brp_choice = BATCH_REPLY_CHOICE_Queue;
+  preq.rq_reply.brp_un.brp_txt.brp_str = strdup("MSG=1.napali");
+
+  // Make sure that the job isn't aborted.
+  stat_update(&preq, &cntl);
+  fail_unless(abort_called == 0);
+  }
+END_TEST
+
+
 START_TEST(test_get_next_status_job)
   {
   struct stat_cntl cntl;
   int              array_index = -1;
+  pbs_queue        pque;
+
   job_array *pa = (job_array *)calloc(1, sizeof(job_array));
   pa->ai_qs.array_size = 2;
   pa->job_ids = (char **)calloc(2, sizeof(char *));
@@ -53,6 +75,7 @@ START_TEST(test_get_next_status_job)
 
   // next job is currently set to return NULL every time, so all of these are NULL
   cntl.sc_type = tjstQueue;
+  cntl.sc_pque = &pque;
   fail_unless(get_next_status_job(&cntl, array_index, pa, NULL) == NULL);
 
   cntl.sc_type = tjstSummarizeArraysQueue;
@@ -83,11 +106,13 @@ START_TEST(test_get_next_status_job)
   }
 END_TEST
 
+
 Suite *req_stat_suite(void)
   {
   Suite *s = suite_create("req_stat_suite methods");
   TCase *tc_core = tcase_create("test_in_execution_queue");
   tcase_add_test(tc_core, test_in_execution_queue);
+  tcase_add_test(tc_core, test_stat_update);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_get_next_status_job");
