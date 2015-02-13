@@ -10,6 +10,7 @@ extern char scaff_buffer[];
 
 int requeue_job(job *pjob);
 extern int send_job_to_mom(job **, batch_request *, job *);
+char      *get_mail_text(batch_request *preq, const char *job_id);
 
 
 START_TEST(requeue_job_test)
@@ -31,6 +32,22 @@ START_TEST(requeue_job_test)
 END_TEST
 
 
+START_TEST(test_get_mail_text)
+  {
+  batch_request  preq;
+  const char    *txt = "tom is bob";
+  char          *ret_txt;
+
+  memset(&preq, 0, sizeof(preq));
+  preq.rq_reply.brp_un.brp_txt.brp_txtlen = 999000001;
+  preq.rq_reply.brp_un.brp_txt.brp_str = strdup(txt);
+  fail_unless(get_mail_text(&preq, "1.napali") == NULL);
+  
+  preq.rq_reply.brp_un.brp_txt.brp_txtlen = 10;
+  fail_unless((ret_txt = get_mail_text(&preq, "1.napali")) != NULL);
+  fail_unless(!strcmp(ret_txt, txt));
+  }
+END_TEST
 
 
 START_TEST(test_two)
@@ -64,6 +81,7 @@ Suite *req_runjob_suite(void)
 
   tc_core = tcase_create("test_two");
   tcase_add_test(tc_core, test_two);
+  tcase_add_test(tc_core, test_get_mail_text);
   suite_add_tcase(s, tc_core);
 
   return s;

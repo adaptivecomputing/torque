@@ -1153,6 +1153,39 @@ int svr_startjob(
 
 
 #define THRESHOLD_LEN 999000000
+char *get_mail_text(
+
+  batch_request *preq,
+  const char    *job_id)
+
+  {
+  char *mail_text = NULL;
+
+  if ((preq != NULL) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
+    {
+    /* assume it's a corrupted record when the length is too high */
+    if ((preq->rq_type != PBS_BATCH_CopyFiles) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_txtlen < THRESHOLD_LEN))
+      mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
+    else
+      {
+      if (preq->rq_type != PBS_BATCH_CopyFiles)
+        {
+        char tmpLine[MAXLINE];
+        sprintf(tmpLine,
+          "Unexpected length for email's text: '%ld' - discarded as a corrupted field",
+          preq->rq_reply.brp_un.brp_txt.brp_txtlen);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
+        }
+      }
+    }
+
+  return(mail_text);
+  } // END get_mail_text()
+
+
+
 int send_job_to_mom(
  
   job           **pjob_ptr,   /* M */
@@ -1200,22 +1233,7 @@ int send_job_to_mom(
   *pjob_ptr = NULL;
   pjob = NULL;
 
-  if ((preq != NULL) && 
-      (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
-    {
-    /* assume it's a corrupted record when the length is too high */
-    if ((preq->rq_type != PBS_BATCH_CopyFiles) && 
-      (preq->rq_reply.brp_un.brp_txt.brp_txtlen < THRESHOLD_LEN))
-      mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
-    else
-      {
-      if (preq->rq_type != PBS_BATCH_CopyFiles)
-        {
-        sprintf(tmpLine, "Unexpected length for email's text: '%ld' - discarded as a corrupted field", preq->rq_reply.brp_un.brp_txt.brp_txtlen);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
-        }
-      }
-    }
+  mail_text = get_mail_text(preq, pjob->ji_qs.ji_jobid);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
