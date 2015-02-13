@@ -479,13 +479,16 @@ jump:
 
     apply_job_delete_nanny(pjob, time_now + 60);
 
+    // mark this job as being in the middle of getting deleted
+    pjob->ji_being_deleted = true;
+
     /*
      * Send signal request to MOM.  The server will automagically
      * pick up and "finish" off the client request when MOM replies.
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1,strdup(del), strdup(preq->rq_id))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id))))
       {
       /* cant send to MOM */
 
