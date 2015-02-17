@@ -1911,6 +1911,10 @@ int svr_job_purge(
     return(rc);
     }
 
+  // Make sure that the job isn't in alljobs list
+  if (remove_job(&alljobs, pjob) == PBSE_JOBNOTFOUND)
+    return(PBSE_NONE);
+
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
  
   strcpy(job_id, pjob->ji_qs.ji_jobid);
