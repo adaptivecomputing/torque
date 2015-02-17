@@ -4,6 +4,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
   c - TRQ-3068. Fix a race condition where a job may be deleted but have it's pointer
       may still be in the alljobs container.
+  b - TRQ-2753. Fix a memory leak in generating the authoritative okclients list.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
