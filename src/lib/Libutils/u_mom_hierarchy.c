@@ -111,6 +111,22 @@ void free_mom_hierarchy(
   mom_hierarchy_t *mh)
 
   {
+  for (unsigned int i = 0; i < mh->paths.size(); i++)
+    {
+    mom_levels levels = mh->paths[i];
+    for (unsigned int j = 0; j < levels.size(); i++)
+      {
+      mom_nodes node_list = levels[j];
+
+      for (unsigned int k = 0; k < node_list.size(); k++)
+        {
+        node_comm_t nc = node_list[k];
+
+        free(nc.name);
+        }
+      }
+    }
+
   mh->paths.clear();
   free(mh);
   } /* END free_mom_hierarchy() */
