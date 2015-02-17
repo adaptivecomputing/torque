@@ -1,6 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-5.1
+5.1.1
+  c - TRQ-3068. Fix a race condition where a job may be deleted but have it's pointer
+      may still be in the alljobs container.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
