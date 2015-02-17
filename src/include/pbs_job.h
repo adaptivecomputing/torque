@@ -682,6 +682,9 @@ struct job
   pthread_mutex_t  *ji_mutex;
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
+  // This indicates that we've successfully removed the job from the alljobs container.
+  // This is used to prevent potential memory leaks.
+  bool              ji_has_been_removed;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
