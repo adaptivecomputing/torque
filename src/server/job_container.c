@@ -557,6 +557,8 @@ int insert_job(
   else
     {
     rc = PBSE_NONE;
+    if (aj == &alljobs)
+      pjob->ji_has_been_removed = false;
     }
 
   aj->unlock();
@@ -623,6 +625,8 @@ int insert_job_after(
     else
       {
       rc = PBSE_NONE;
+      if (aj == &alljobs)
+        pjob->ji_has_been_removed = false;
       }
     }
 
@@ -684,6 +688,8 @@ int insert_job_after(
   else
     {
     rc = PBSE_NONE;
+    if (aj == &alljobs)
+      pjob->ji_has_been_removed = false;
     }
 
   aj->unlock();
@@ -726,6 +732,8 @@ int insert_job_first(
   else
     {
     rc = PBSE_NONE;
+    if (aj == &alljobs)
+      pjob->ji_has_been_removed = false;
     }
 
   aj->unlock();
@@ -825,6 +833,11 @@ int  remove_job(
 
   if (aj->trylock())
     {
+    // Do not attempt to remove a job twice as it won't be found again
+    // once we've unlocked it, resulting in a memory leak.
+    if (pjob->ji_has_been_removed == true)
+      return(PBSE_NONE);
+
     char jobid[PBS_MAXSVRJOBID+1];
     snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
 
@@ -841,14 +854,14 @@ int  remove_job(
     {
     if (!aj->remove(pjob->ji_qs.ji_jobid))
       rc = THING_NOT_FOUND;
+    else if (aj == &alljobs)
+      pjob->ji_has_been_removed = true;
     }
 
   aj->unlock();
 
   return(rc);
   } /* END remove_job() */
-
-
 
 
 
@@ -889,6 +902,7 @@ job *next_job(
 
   return(pjob);
   } /* END next_job() */
+
 
 
 /* currently this function can only be called for jobs in the alljobs array */
