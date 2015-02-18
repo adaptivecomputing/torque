@@ -507,7 +507,6 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
 
   name = node_mapper.get_name(pNodeHolder->id);
   port = pNodeHolder->port;
-  pnode = find_nodebyid(pNodeHolder->id);
   time_t timeSent = time(NULL); //Record the time now to avoid a race condition.
     
   if (sendHierarchyToNode(name, port) == PBSE_NONE)
