@@ -73,5 +73,28 @@ using namespace std;
     return(PBSE_NONE);
     }
  
+  void PCI_Device::displayAsString(
+
+    stringstream &out) const
+
+    {
+    out << "      PCI " << this->id << " " << this->name << "\n";
+    } // END displayAsString()
+    
+  void PCI_Device::setName(
+      
+    const string &name)
+
+    {
+    this->name = name;
+    }
+
+  void PCI_Device::setId(
+    
+    int id)
+
+    {
+    this->id = id;
+    }
 
 #endif /* PENABLE_LINUX26_CPUSETS */   

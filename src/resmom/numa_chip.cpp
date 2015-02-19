@@ -327,4 +327,36 @@ using namespace std;
 
     }
 
+  void Chip::displayAsString(
+
+    stringstream &out) const
+
+    {
+    out << "    Chip " << this->id << " (" << this->memory / 1024 << "KB)\n";
+
+    for (unsigned int i = 0; i < this->cores.size(); i++)
+      this->cores[i].displayAsString(out);
+    
+    for (unsigned int i = 0; i < this->devices.size(); i++)
+      this->devices[i].displayAsString(out);
+    } // END displayAsString() 
+
+
+
+  void Chip::setMemoryInBytes(
+
+    long long memory)
+
+    {
+    this->memory = memory;
+    }
+  
+  void Chip::setId(
+
+    int id)
+
+    {
+    this->id = id;
+    }
+
 #endif /* PENABLE_LINUX26_CPUSETS */  

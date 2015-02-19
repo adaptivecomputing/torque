@@ -2716,6 +2716,48 @@ int process_rm_cmd_request(
 
 
 
+int process_layout_request(
+
+  struct tcp_chan *chan)
+
+  {
+  std::stringstream output;
+  int               ret = diswsi(chan, RM_RSP_OK);
+
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+  this_node.displayAsString(output);
+    
+  if ((ret = diswst(chan, output.str().c_str())) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+  
+  if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+  return(PBSE_NONE);
+  } // END process_layout_request()
+
+
+
 /*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
@@ -2959,6 +3001,13 @@ int rm_request(
       exit(0);
 
       /*NOTREACHED*/
+
+      break;
+
+    case RM_CMD_LAYOUT:
+
+      if (process_layout_request(chan) != DIS_SUCCESS)
+        goto bad;
 
       break;
 

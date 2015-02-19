@@ -286,5 +286,23 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     return(this->availableThreads);
     }
 
+  void Machine::displayAsString(
+      
+    stringstream &out) const
+
+    {
+    out << "Machine (" << (this->totalMemoryInBytes / 1024) << "KB)\n";
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].displayAsString(out);
+    }
+    
+  void Machine::setMemoryInBytes(
+      
+    long long mem)
+
+    {
+    this->totalMemoryInBytes = mem;
+    }
+
 
 #endif /* PENABLE_LINUX26_CPUSETS */

@@ -17,9 +17,8 @@ using namespace std;
 #define AMD   2
 
 
-  Core::Core()
+  Core::Core() : id(-1), totalThreads(1)
     {
-    id = -1;
     memset(core_cpuset_string, 0, MAX_CPUSET_SIZE);
     memset(core_nodeset_string, 0, MAX_NODESET_SIZE);
     }
@@ -47,6 +46,14 @@ using namespace std;
     {
     return(this->totalThreads);
     }
+
+  void Core::displayAsString(
+
+    stringstream &out) const
+
+    {
+    out << "      Core " << this->id << " (" << this->totalThreads << " threads)\n";
+    } // END displayAsString()
 
 
 #endif /* PENABLE_LINUX26_CPUSETS */  

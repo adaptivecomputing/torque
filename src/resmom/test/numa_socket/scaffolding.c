@@ -95,7 +95,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-
+void Chip::displayAsString(std::stringstream &out) const {}
 
 
 

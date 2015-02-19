@@ -4,28 +4,28 @@
 
 #include <pbs_ifl.h> /* batch_status */
 #include "tcp.h"
+#include "resmon.h"
 
 char TRMEMsg[1024]; /* global rm error message */
+int  flush_rc = 0;
+char *string_read = NULL;
 
 extern "C"
 {
 int openrm(char  *host, unsigned int port)
   {
-  fprintf(stderr, "The call to openrm needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 }
 
 int pbs_connect(char *server_name_ptr)
   {
-  fprintf(stderr, "The call to pbs_connect needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int pbs_disconnect(int connect)
   {
-  fprintf(stderr, "The call to pbs_disconnect needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int IamRoot()
@@ -36,8 +36,7 @@ int IamRoot()
 
 int diswsl(struct tcp_chan *chan, long value)
   {
-  fprintf(stderr, "The call to diswsl needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void pbs_statfree(struct batch_status *bsp)
@@ -48,8 +47,7 @@ void pbs_statfree(struct batch_status *bsp)
 
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "The call to DIS_tcp_setup needs to be mocked!!\n");
-  exit(1);
+  return((struct tcp_chan *)calloc(1, sizeof(tcp_chan)));
   }
 
 struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno)
@@ -60,26 +58,23 @@ struct batch_status *pbs_statnode_err(int c, char *id, struct attrl *attrib, cha
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
+  return(flush_rc);
   }
 
 int diswcs(struct tcp_chan *chan, const char *value, size_t nchars)
   {
-  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 char *disrst(struct tcp_chan *chan, int *retval)
   {
-  fprintf(stderr, "The call to disrst needs to be mocked!!\n");
-  exit(1);
+  return(string_read);
   }
 
 long disrsl(struct tcp_chan *chan, int *retval)
   {
-  fprintf(stderr, "The call to disrsl needs to be mocked!!\n");
-  exit(1);
+  *retval = 0;
+  return(RM_RSP_OK);
   }
 
 extern "C"

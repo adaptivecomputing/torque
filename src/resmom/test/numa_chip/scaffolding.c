@@ -67,6 +67,9 @@ int Core::getNumberOfProcessingUnits()
   return(1);
   }
 
+void Core::displayAsString(std::stringstream &out) const {}
+void PCI_Device::displayAsString(std::stringstream &out) const {}
+
 int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   {
   *memory = 123456789;

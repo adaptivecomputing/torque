@@ -422,6 +422,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/test/numa_core/Makefile
     src/resmom/test/numa_chip/Makefile
     src/resmom/test/numa_socket/Makefile
+    src/resmom/test/numa_pci_device/Makefile
     src/resmom/test/parse_config/Makefile
     src/resmom/test/pbs_demux/Makefile
     src/resmom/test/prolog/Makefile

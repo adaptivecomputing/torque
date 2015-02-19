@@ -1,8 +1,8 @@
+#include "machine.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 #include "log.h"
-#include "machine.hpp"
 #include "hwloc.h"
 #include "pbs_error.h"
 
@@ -31,14 +31,15 @@ START_TEST(test_initializeCore)
 END_TEST
 
 
-
-
-START_TEST(test_two)
+START_TEST(test_displayAsString)
   {
+  Core c;
+  std::stringstream out;
+
+  c.displayAsString(out);
+  fail_unless(out.str() == "      Core -1 (1 threads)\n", out.str().c_str());
   }
 END_TEST
-
-
 
 
 Suite *numa_core_suite(void)
@@ -48,8 +49,8 @@ Suite *numa_core_suite(void)
   tcase_add_test(tc_core, test_initializeCore);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_displayAsString");
+  tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
   return(s);

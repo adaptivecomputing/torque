@@ -1,14 +1,27 @@
+#include "machine.hpp"
+#include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include "log.h"
-#include "machine.hpp"
 #include "hwloc.h"
 #include "pbs_error.h"
 
 extern int hardware_style;
 
 int get_hardware_style(hwloc_topology_t topology);
+
+
+START_TEST(test_displayAsString)
+  {
+  Machine           new_machine;
+  std::stringstream out;
+
+  new_machine.setMemoryInBytes(2048);
+  new_machine.displayAsString(out);
+  fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
 
 START_TEST(test_get_hardware_style)
   {
@@ -99,6 +112,7 @@ Suite *machine_suite(void)
 
   tc_core = tcase_create("test_initializeMachine");
   tcase_add_test(tc_core, test_initializeMachine);
+  tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_two");

@@ -106,13 +106,14 @@ struct config
 
 #define RM_NPARM 32 /* max number of parameters for child */
 
-#define RM_CMD_CLOSE 1
-#define RM_CMD_REQUEST 2
-#define RM_CMD_CONFIG 3
+#define RM_CMD_CLOSE    1
+#define RM_CMD_REQUEST  2
+#define RM_CMD_CONFIG   3
 #define RM_CMD_SHUTDOWN 4
+#define RM_CMD_LAYOUT   5
 
-#define RM_RSP_OK 100
-#define RM_RSP_ERROR 999
+#define RM_RSP_OK       100
+#define RM_RSP_ERROR    999
 
 #define PBS_MAXSERVER   4
 

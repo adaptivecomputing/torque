@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sstream>
 #include "machine.hpp"
 #include "log.h"
 #include "pbs_error.h"
@@ -45,4 +46,5 @@ PCI_Device::~PCI_Device()
   {
   }
 
+void Socket::displayAsString(std::stringstream &output) const {}
 

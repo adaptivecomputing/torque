@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <sstream>
 #include <hwloc.h>
 
 
@@ -31,6 +32,9 @@ class PCI_Device
     PCI_Device();
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
+    void displayAsString(stringstream &out) const;
+    void setName(const string &name);
+    void setId(int id);
   };
 
 class Core
@@ -49,6 +53,7 @@ class Core
     int getNumberOfProcessingUnits();
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
     std::vector<int> getPU();
+    void displayAsString(stringstream &out) const;
   };
 
 class Chip
@@ -92,6 +97,9 @@ class Chip
 #endif
 
     std::vector<Core> getCores();
+    void displayAsString(stringstream &out) const;
+    void setMemoryInBytes(long long mem);
+    void setId(int id);
   };
 
 class Socket
@@ -125,6 +133,9 @@ class Socket
     hwloc_uint64_t getMemoryInBytes();
     int initializeAMDSocket(hwloc_obj_t, hwloc_topology_t);
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
+    void displayAsString(stringstream &out) const;
+    void setMemoryInBytes(hwloc_uint64_t mem);
+    void setId(int id);
   };
 
 
@@ -161,6 +172,8 @@ class Machine
     int getAvailableCores();
     int getAvailableThreads();
     bool isNUMA;
+    void displayAsString(stringstream &out) const;
+    void setMemoryInBytes(long long mem);
   };
 
 

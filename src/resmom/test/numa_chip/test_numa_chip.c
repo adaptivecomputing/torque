@@ -1,10 +1,11 @@
+#include "machine.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 #include "log.h"
-#include "machine.hpp"
 #include "hwloc.h"
 #include "pbs_error.h"
+#include <sstream>
 
 
 START_TEST(test_initializeChip)
@@ -79,14 +80,17 @@ START_TEST(test_initializeChip)
 END_TEST
 
 
-
-
-START_TEST(test_two)
+START_TEST(test_displayAsString)
   {
+  std::stringstream out;
+  Chip c;
+
+  c.setMemoryInBytes(2048);
+  c.setId(0);
+  c.displayAsString(out);
+  fail_unless(out.str() == "    Chip 0 (2KB)\n", out.str().c_str());
   }
 END_TEST
-
-
 
 
 Suite *numa_socket_suite(void)
@@ -96,8 +100,8 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_initializeChip);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_displayAsString");
+  tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
   return(s);

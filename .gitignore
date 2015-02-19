@@ -395,6 +395,7 @@ src/resmom/test/mom_server/test_mom_server
 src/resmom/test/numa_chip/test_numa_chip
 src/resmom/test/numa_core/test_numa_core
 src/resmom/test/numa_socket/test_numa_socket
+src/resmom/test/numa_pci_device/test_numa_pci_device
 src/resmom/test/parse_config/test_parse_config
 src/resmom/test/pbs_demux/test_pbs_demux
 src/resmom/test/prolog/test_prolog

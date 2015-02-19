@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 #include "machine.hpp"
 #include <errno.h>
 #include <hwloc.h>
@@ -178,6 +179,33 @@ using namespace std;
   int Socket::getAvailableThreads()
     {
     return(this->availableThreads);
+    }
+
+  void Socket::displayAsString(
+
+    stringstream &out) const
+  
+    {
+    out << "  Socket " << this->id << " (" << this->memory / 1024 << "KB)\n";
+
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      this->chips[i].displayAsString(out);
+    } // END displayAsString()
+
+  void Socket::setMemoryInBytes(
+      
+    hwloc_uint64_t memory)
+
+    {
+    this->memory = memory;
+    }
+
+  void Socket::setId(
+
+    int id)
+
+    {
+    this->id = id;
     }
 
 #endif /* PENABLE_LINUX26_CPUSETS */  

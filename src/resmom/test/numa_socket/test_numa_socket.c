@@ -1,10 +1,23 @@
+#include "machine.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
 #include "log.h"
-#include "machine.hpp"
 #include "hwloc.h"
 #include "pbs_error.h"
+
+
+START_TEST(test_displayAsString)
+  {
+  std::stringstream out;
+  Socket s;
+  s.setMemoryInBytes(2048);
+  s.setId(0);
+
+  s.displayAsString(out);
+  fail_unless(out.str() == "  Socket 0 (2KB)\n", out.str().c_str());
+  }
+END_TEST
 
 
 START_TEST(test_initializeSocket)
@@ -102,16 +115,6 @@ START_TEST(test_initializeSocket)
 END_TEST
 
 
-
-
-START_TEST(test_two)
-  {
-  }
-END_TEST
-
-
-
-
 Suite *numa_socket_suite(void)
   {
   Suite *s = suite_create("numa_socket test suite methods");
@@ -119,8 +122,8 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_initializeSocket);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_displayAsString");
+  tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
   return(s);

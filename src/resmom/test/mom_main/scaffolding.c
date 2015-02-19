@@ -99,6 +99,10 @@ extern int       max_join_job_wait_time;
 bool   parsing_hierarchy = false;
 extern bool received_cluster_addrs;
 
+int wsi_ret = 0;
+int wcs_ret = 0;
+int flush_ret = 0;
+
 void save_args(int argc, char **argv) {}
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime)
@@ -378,14 +382,12 @@ void mom_server_all_init(void)
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
+  return(flush_ret);
   }
 
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   {
-  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
-  exit(1);
+  return(wcs_ret);
   }
 
 void mom_checkpoint_check_periodic_timer(job *pjob)
@@ -628,8 +630,7 @@ mom_hierarchy_t *initialize_mom_hierarchy(void)
 
 int diswsi(tcp_chan *chan, int value)
   {
-  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
-  exit(1);
+  return(wsi_ret);
   }
 
 void mom_server_all_diag(std::stringstream &output)
@@ -906,3 +907,5 @@ void start_request_pool(
   {
   return;
   }
+
+void Machine::displayAsString(std::stringstream &out) const {}
