@@ -221,6 +221,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
         {
         Socket intel_socket;
         intel_socket.initializeIntelSocket(socket_obj, topology);
+        this->sockets.push_back(intel_socket);
         }
       else if (style == AMD)
         {
