@@ -1140,7 +1140,6 @@ AC_ARG_WITH(hwloc-path, [
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
-
 dnl
 dnl enable Nvidia gpu support
 dnl
@@ -1216,10 +1215,16 @@ if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test
 "
   fi
 
-  if test "${build_mom}" = "yes" ; then
-    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.9],
-      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
-      [ AC_MSG_ERROR([${CPUSET_DEPENDS_ON_HWLOC}${GPU_DETECTION_DEPENDS_ON_HWLOC}${CGROUP_DEPENDS_ON_HWLOC}
+  if test "${build_mom}" = "yes"; then
+    # Do not look for package hwloc using PKG_CHECK_MODULES if the user uses --with-hwloc-dir
+    # --with-hwloc-dir sets HWLOC_LIBS and HWLOC_CFLAGS. Therefore, if HWLOC_LIBS is not empty
+    # do not look for an installed hwloc.
+    if test -z "${HWLOC_LIBS}" ; then
+      # pkg_check_modules takes the first parameter "HWLOC" and provides an "HWLOC_LIBS" and "HWLOC_CFLAGS"
+      # variable when the second parameter (the package and version we are looking for) resolves to true.
+      PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.9],
+        [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
+        [ AC_MSG_ERROR([${CPUSET_DEPENDS_ON_HWLOC}${GPU_DETECTION_DEPENDS_ON_HWLOC}${CGROUP_DEPENDS_ON_HWLOC}
 $HWLOC_PKG_ERRORS
 
 This can be solved by configuring with --with-hwloc-path=<path>. This path
@@ -1235,10 +1240,13 @@ to the PKG_CONFIG_PATH environment variable.
 If you have done these and still get this  error, try running ./autogen.sh and
 then configuring again.
 ])])
+
+      AC_CHECK_LIB([hwloc], [hwloc_linux_get_tid_last_cpu_location],,
+        [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
+    fi
+
     olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
-    AC_CHECK_LIB([hwloc], [hwloc_linux_get_tid_last_cpu_location],,
-      [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
     LIBS=$olibs
   fi
 fi 
