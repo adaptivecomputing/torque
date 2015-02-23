@@ -965,7 +965,6 @@ START_TEST(remove_node_test)
   test_all_nodes.insert(&node, node.nd_name);
   result = remove_node(&test_all_nodes, &node);
   fail_unless(result == PBSE_NONE, "couldn't remove node that was present");
-
   }
 END_TEST
 

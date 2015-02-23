@@ -6,6 +6,7 @@
 #include "pbs_nodes.h"
 #include "threadpool.h"
 #include "execution_slot_tracker.hpp"
+#include "id_map.hpp"
 
 all_nodes                allnodes;
 char                    *path_mom_hierarchy = NULL;
@@ -13,6 +14,8 @@ threadpool_t             *async_pool = NULL;
 extern mom_hierarchy_t  *mh;
 int                     LOGLEVEL;
 bool                    exit_called = false;
+threadpool_t           *task_pool;
+id_map                  node_mapper;
 
 execution_slot_tracker::execution_slot_tracker(){}
 
@@ -294,6 +297,13 @@ int tcp_connect_sockaddr(
   return(0);
   }
 
+id_map::id_map() {}
+id_map::~id_map() {}
 
+const char *id_map::get_name(int id) 
+
+  {
+  return(NULL);
+  }
 
 
