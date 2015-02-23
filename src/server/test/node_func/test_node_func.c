@@ -401,8 +401,11 @@ START_TEST(effective_node_delete_test)
   effective_node_delete(&node);
   node->nd_name = strdup("nodename");
   effective_node_delete(&node);
-
-  fail_unless(node == NULL, "unsuccessfull node delition %d", node);
+  fail_unless(node != NULL, "shouldn't delete node that isn't in allnodes");
+  allnodes.insert(node, node->nd_name);
+  
+  effective_node_delete(&node);
+  fail_unless(node == NULL, "unsuccessfull node delition");
 
   }
 END_TEST
@@ -794,8 +797,11 @@ START_TEST(remove_node_test)
 
   node.nd_name = (char *)"nodeName";
   result = remove_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "remove_node fail");
+  fail_unless(result != PBSE_NONE, "remove_node should fail with uninserted node");
 
+  test_all_nodes.insert(&node, node.nd_name);
+  result = remove_node(&test_all_nodes, &node);
+  fail_unless(result == PBSE_NONE, "remove_node fail");
   }
 END_TEST
 
