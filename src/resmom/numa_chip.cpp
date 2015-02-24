@@ -359,4 +359,4 @@ using namespace std;
     this->id = id;
     }
 
-#endif /* PENABLE_LINUX26_CPUSETS */  
+#endif /* PENABLE_LINUX_CGROUPS */  

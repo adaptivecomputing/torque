@@ -56,4 +56,4 @@ using namespace std;
     } // END displayAsString()
 
 
-#endif /* PENABLE_LINUX26_CPUSETS */  
+#endif /* PENABLE_LINUX_CGROUPS */  
