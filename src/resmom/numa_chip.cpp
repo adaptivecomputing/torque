@@ -286,7 +286,7 @@ using namespace std;
         { /* this came from the Non NUMA */
         PCI_Device new_device;
 
-        new_device.initialzePCIDevice(mic_obj, idx, topology);
+        new_device.initializePCIDevice(mic_obj, idx, topology);
         this->devices.push_back(new_device);
         }
       else

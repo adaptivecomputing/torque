@@ -58,8 +58,9 @@ using namespace std;
       {
       string  buf;
 
-      buf << "Could not get cpuset of " << name.c_str();
-      log_err(-1, __func__, "Could not get cpuset of %s", buf);
+      buf = "Could not get cpuset of ";
+      buf = buf + name.c_str();
+      log_err(-1, __func__, buf.c_str());
       }
     hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 #endif
