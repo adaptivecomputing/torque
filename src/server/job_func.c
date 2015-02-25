@@ -823,7 +823,6 @@ void free_all_of_job(job *pjob)
   free_job_allocation(pjob);
   pthread_mutex_destroy(pjob->ji_mutex);
   free(pjob->ji_mutex);
-  memset(pjob, 254, sizeof(job)); /* TODO: remove magic number */
   free(pjob);
   } /* END free_all_of_job() */
 
