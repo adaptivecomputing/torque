@@ -153,6 +153,7 @@ class Machine
   char allowed_cpuset_string[MAX_CPUSET_SIZE];
   char allowed_nodeset_string[MAX_NODESET_SIZE];
   std::vector<Socket> sockets;
+  std::vector<PCI_Device> NVIDIA_device;
 
   public:
     Machine& operator=(const Machine& newMachine);
@@ -174,6 +175,7 @@ class Machine
     bool isNUMA;
     void displayAsString(stringstream &out) const;
     void setMemoryInBytes(long long mem);
+    void insertNvidiaDevice(PCI_Device& device);
   };
 
 

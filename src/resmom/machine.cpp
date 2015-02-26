@@ -305,5 +305,11 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     this->totalMemoryInBytes = mem;
     }
 
+  void Machine::insertNvidiaDevice(
+
+    PCI_Device& device)
+    {
+    this->NVIDIA_device.push_back(device);
+    }
 
 #endif /* PENABLE_LINUX26_CPUSETS */
