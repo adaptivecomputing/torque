@@ -163,6 +163,7 @@ class Machine
     Socket getSocket();
     int initializeMachine(hwloc_topology_t topology);
     int initializeNonNUMAMachine(hwloc_obj_t obj, hwloc_topology_t topology);
+    int initializeNVIDIADevices(hwloc_obj_t obj, hwloc_topology_t topology);
     int getTotalChips();
     hwloc_uint64_t getTotalMemory();
     int getTotalCores();
