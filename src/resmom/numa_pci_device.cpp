@@ -51,24 +51,49 @@ using namespace std;
 #ifdef MIC
     nearest_cpuset = hwloc_bitmap_alloc();
     if (nearest_cpuset == NULL)
-      return(-1);
+      return(PBSE_MEM_MALLOC);
 
     rc = hwloc_intel_mic_get_device_cpuset(topology, idx, nearest_cpuset);
     if (rc != 0)
       {
       string  buf;
 
-      buf = "Could not get cpuset of ";
+      buf = "could not get cpuset of ";
       buf = buf + name.c_str();
       log_err(-1, __func__, buf.c_str());
       }
-    hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
+    hwloc_bitmap_list_snprintf(cpuset_string, max_cpuset_size, nearest_cpuset);
 #endif
 #ifdef NVIDIA_GPUS
-    /* TODO: Ask Gary if MIC and GPU detection should be supported on the same node */
-    /* TODO: Do we need to detect nic locality? */
+    nvmlDevice_t  gpu_device;
+    
+    rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
+    if (rc != NVML_SUCCESS)
+      {
+      string buf;
 
-    /* TODO: Get the nearest cpuset. Look up hwloc API call to get the nearest cpuset for the GPU */
+      buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
+      buf = buf + name.c_str();
+      log_err(-1, __func__, buf.c_str());
+      }
+    else
+      {
+      nearest_cpuset = hwloc_bitmap_alloc();
+      if (nearest_cpuset == NULL)
+        return(PBSE_MEM_MALLOC);
+
+      rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
+      if (rc != 0)
+        {
+        string  buf;
+
+        buf = "could not get cpuset of ";
+        buf = buf + name.c_str();
+        log_err(-1, __func__, buf.c_str());
+        }
+      hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
+      }
+
 #endif
 
     return(PBSE_NONE);
@@ -79,8 +104,8 @@ using namespace std;
     stringstream &out) const
 
     {
-    out << "      PCI " << this->id << " " << this->name << "\n";
-    } // END displayAsString()
+    out << "      pci " << this->id << " " << this->name << "\n";
+    } // end displayasstring()
     
   void PCI_Device::setName(
       

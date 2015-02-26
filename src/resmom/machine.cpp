@@ -213,6 +213,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
           PCI_Device new_device;
     
           new_device.initializePCIDevice(gpu_obj, idx, topology);
+
           this->NVIDIA_device.push_back(new_device);
           }
         }
