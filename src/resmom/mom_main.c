@@ -275,6 +275,7 @@ extern int      check_nvidia_setup();
 int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
+void add_nvidia_gpu_to_machine(PCI_Device& new_device);
 
 #ifdef NUMA_SUPPORT
 int setup_nodeboards();
@@ -7099,6 +7100,10 @@ void get_mom_job_dir_sticky_config(
 
   } /* END get_mom_job_dir_sticky_config */
 
+void add_nvidia_gpu_to_machine(PCI_Device& new_device)
+  {
+  this_node.insertNvidiaDevice(new_device);
+  }
 /* END mom_main.c */
 
 

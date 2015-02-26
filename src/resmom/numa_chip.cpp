@@ -14,6 +14,7 @@
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
 #include <hwloc/nvml.h>
+void add_nvidia_gpu_to_machine(PCI_Device& nvidia_gpu)
 #endif
 #endif
 
@@ -240,6 +241,18 @@ using namespace std;
               this->devices.push_back(new_device);
               }
             }
+          else
+            {
+            /* The ancestor was not a numa chip. Is it the machine? */
+            ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_MACHINE, gpu_obj);
+            if (ancestor_obj->logical_index == chip_obj->logical_index)
+              {
+              PCI_Device new_device;
+    
+              new_device.initializePCIDevice(gpu_obj, idx, topology);
+              add_nvidia_gpu_to_machine(new_device);
+              }
+            }
           }
         }
       }
@@ -286,7 +299,7 @@ using namespace std;
         { /* this came from the Non NUMA */
         PCI_Device new_device;
 
-        new_device.initializePCIDevice(mic_obj, idx, topology);
+        new_device.initialzePCIDevice(mic_obj, idx, topology);
         this->devices.push_back(new_device);
         }
       else
