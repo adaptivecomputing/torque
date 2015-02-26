@@ -4558,6 +4558,7 @@ int cg_initialize_hwloc_topology()
     }
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
 
   #ifdef NVIDIA_GPUS
   /* Include IO devices (i.e. PCI devices) when loading topology information.
