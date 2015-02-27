@@ -40,5 +40,6 @@ int change_external_job_name(struct job *pjob);
 
 void handle_aborted_job(job **job_ptr, bool  dependentjob, long KeepSeconds, const char *text);
 
+bool job_id_exists(const std::string job_id_string);
 
 #endif /* _JOB_FUNC_H */

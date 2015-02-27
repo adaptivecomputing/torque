@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <semaphore.h>
 #include "pbs_error.h"
+#include "completed_jobs_map.h"
 
 sem_t *job_clone_semaphore;
 extern attribute_def job_attr_def[];
@@ -16,9 +17,10 @@ int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
-bool set_task_called = false;
+bool add_job_called = false;
 void job_free(job *pj, int  use_recycle);
 //bool svr_job_purge_called = false;
+extern completed_jobs_map_class completed_jobs_map;
 
 char buf[4096];
 
@@ -196,13 +198,13 @@ START_TEST(handle_aborted_job_test)
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
   long KeepSeconds = 50;
 
-  set_task_called = false;
+  add_job_called = false;
   const char *text = "Job deleted as result of dependency on job 0.lei";
  
   handle_aborted_job(&job_ptr, true, KeepSeconds, text);
  
   fail_unless(job_ptr == &pjob, "job_ptr should be pointing pjob");
-  fail_unless(set_task_called == true, "set_task should have been called");
+  fail_unless(add_job_called == true, "set_task should have been called");
   fail_unless(pjob.ji_wattr[JOB_ATR_exitstat].at_val.at_long ==271, "job status was not set");
   fail_unless((pjob.ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) > 0, "comment was not set in the job");
   int comparison = -1;

@@ -147,6 +147,7 @@
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
 #include "track_alps_reservations.h"
+#include "completed_jobs_map.h"
 
 
 #define TASK_CHECK_INTERVAL      10
@@ -395,6 +396,7 @@ static void need_y_response(
   }  /* END need_y_response() */
  
 
+completed_jobs_map_class completed_jobs_map;
 
 void clear_listeners(void)   /* I */
 
@@ -1334,6 +1336,7 @@ void main_loop(void)
   start_routing_retry_thread();
   start_exiting_retry_thread();
   start_generic_thread(NULL, remove_extra_recycle_jobs);
+  start_generic_thread(NULL, remove_completed_jobs);
 
   while (state != SV_STATE_DOWN)
     {

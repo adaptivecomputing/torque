@@ -6,10 +6,12 @@
 #include <stdio.h>
 #include <getopt.h>
 #include "pbs_error.h"
+#include "completed_jobs_map.h"
 
 void parse_command_line(int argc, char *argv[]);
 extern bool auto_send_hierarchy;
 extern int server_init_type;
+extern completed_jobs_map_class completed_jobs_map;
 
 bool are_we_forking()
 
