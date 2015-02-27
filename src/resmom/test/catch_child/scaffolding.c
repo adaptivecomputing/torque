@@ -1362,10 +1362,17 @@ void get_energy_used(job *pjob)
   {}
 
 int init_nvidia_nvml() 
-  {}
+  {
+  return(0);
+  }
 
 int check_nvidia_setup()
-  {}
+  {
+  return(0);
+  }
 
 int shut_nvidia_nvml() 
-  {}
+  {
+  return(0);
+  }
+
