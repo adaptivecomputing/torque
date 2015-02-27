@@ -62,7 +62,7 @@ using namespace std;
       buf = buf + name.c_str();
       log_err(-1, __func__, buf.c_str());
       }
-    hwloc_bitmap_list_snprintf(cpuset_string, max_cpuset_size, nearest_cpuset);
+    hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 #endif
 #ifdef NVIDIA_GPUS
     nvmlDevice_t  gpu_device;
