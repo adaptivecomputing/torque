@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "log.h"
-#include "pbs_job.h"
+#include "trq_cgroups.h"
 
 using namespace std;
 using namespace boost;

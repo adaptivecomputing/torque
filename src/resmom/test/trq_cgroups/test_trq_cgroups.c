@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "trq_cgroups.h"
 #include <check.h>
 #include <string>
-#include "trq_cgroups.h"
 #include "pbs_error.h"
 
 #define LOGLEVEL   6
