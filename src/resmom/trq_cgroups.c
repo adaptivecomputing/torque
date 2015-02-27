@@ -361,7 +361,7 @@ int trq_cg_initialize_hierarchy()
   if (fp == NULL)
     {
     printf("Something is wrong. popen failed: %d", errno);
-    return(-1);
+    return(PBSE_SYSTEM);
     }
 
   while(fgets(reply, 1024, fp) != NULL)

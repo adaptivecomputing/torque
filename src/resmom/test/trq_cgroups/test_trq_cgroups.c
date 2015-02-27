@@ -20,10 +20,12 @@ END_TEST
 
 START_TEST(test_trq_cg_initialize_hierarchy)
   {
+  char buf[256];
   int rc;
 
   rc = trq_cg_initialize_hierarchy();
-  fail_unless(rc==0, "Failed to initialize hierarchy");
+  sprintf(buf, "Failed to initialize hierarchy: %d\n", rc);
+  fail_unless(rc==0, buf);
   }
 END_TEST
 
@@ -36,27 +38,27 @@ START_TEST(test_init_subsystems)
   mount_point = "/tmp/cgroup/cpu";
   subsystem = "cpu";
   rc = init_subsystems(subsystem, mount_point);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "init subsystem failed");
 
   mount_point = "/tmp/cgroup/cpuacct";
   subsystem = "cpuacct";
   rc = init_subsystems(subsystem, mount_point);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "cpuacct");
 
   mount_point = "/tmp/cgroup/cpuset";
   subsystem = "cpuset";
   rc = init_subsystems(subsystem, mount_point);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "cpuset");
 
   mount_point = "/tmp/cgroup/memory";
   subsystem = "memory";
   rc = init_subsystems(subsystem, mount_point);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "memory");
 
   mount_point = "/tmp/cgroup/devices";
   subsystem = "devices";
   rc = init_subsystems(subsystem, mount_point);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "devices");
 
   }
 END_TEST
