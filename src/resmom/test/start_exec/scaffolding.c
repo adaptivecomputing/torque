@@ -688,6 +688,11 @@ int trq_cg_set_swap_memory_limit(pid_t pid, unsigned long memory_limit)
   return(PBSE_NONE);
   }
 
+int trq_cg_create_cpuset_cgroup(job*, int)
+  {
+  return(PBSE_NONE);
+  }
+
 int is_whitespace(
 
   char c)
