@@ -16,6 +16,8 @@ test_uut
 *.trs
 *.tmp
 .settings
+*.log
+*.trs
 autom4te.cache/
 buildutils/ar-lib
 buildutils/compile

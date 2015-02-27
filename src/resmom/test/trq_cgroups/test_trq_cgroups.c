@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <check.h>
 #include <string>
 #include "trq_cgroups.h"
 #include "pbs_error.h"

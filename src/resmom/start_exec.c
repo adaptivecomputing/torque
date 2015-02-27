@@ -4264,6 +4264,7 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
+    exit(-1);
     }
 
   /* See if the memory attribute was requested and then add it to
@@ -4274,6 +4275,7 @@ int TMomFinalizeChild(
     unsigned long mem_limit;
     unsigned long swap_limit;
     complete_req *cr;
+    pid_t this_pid = getpid();
 
     rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
     if (rc != 0)
@@ -4289,14 +4291,28 @@ int TMomFinalizeChild(
     mem_limit = cr->get_memory_for_this_host(string_hostname);
     if (mem_limit != 0)
       {
-      rc = trq_cg_set_resident_memory_limit(getpid(), mem_limit * KB);
+      rc = trq_cg_set_resident_memory_limit(this_pid, mem_limit * KB);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buffer, LOG_ERR);
+        exit(-1);
+        }
       }
 
     swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
     if (swap_limit != 0)
       {
-      rc = trq_cg_set_swap_memory_limit(getpid(), swap_limit * KB);
+      rc = trq_cg_set_swap_memory_limit(this_pid, swap_limit * KB);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buffer, LOG_ERR);
+        exit(-1);
+        }
       }
+
+    rc = trq_cg_create_cpuset_cgroup(pjob, this_pid);
     }
 #endif
 

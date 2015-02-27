@@ -130,13 +130,81 @@ int cleanup_torque_cgroups()
   }
 
 
+int trq_cg_initialize_cpuset_string(const string file_name)
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  FILE  *fd;
+  char   buf[64];
+  size_t bytes_written;
+  std::string cpus_path;
+  std::string key ("/torque");
+
+  /* the newly created torque dir needs to have the cpuset.cpus and cpuset.mems
+     files set to the same value as the parent cpuset directory */
+
+  /* First take /torque off of the cg_cpuset_path string */
+  cpus_path = cg_cpuset_path;
+  std::size_t found = cpus_path.rfind(key);
+  if (found == std::string::npos)
+    {
+    sprintf(log_buf, "Could not find sub-string \"/torque\" in %s", cpus_path.c_str());
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  cpus_path.replace(found, key.length(), ""); 
+  cpus_path = cpus_path + file_name;
+  fd = fopen(cpus_path.c_str(), "r");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  memset(buf, 0, 64);
+  fread(buf, sizeof(buf), 1, fd);
+  if (strlen(buf) < 1)
+    {
+    sprintf(log_buf, "Could not read %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+
+  cpus_path = cg_cpuset_path + file_name;
+  fd = fopen(cpus_path.c_str(), "r+");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  bytes_written = fwrite(buf, strlen(buf), 1, fd);
+  if(bytes_written < 1)
+    {
+    sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+
+  return(PBSE_NONE);
+  }
+
+
 /* We need to add a torque directory to each subsystem mount point
  * so we have a place to put the jobs */
 int init_torque_cgroups()
   {
   struct stat buf;
   string torque_path;
-  int rc;
+  string file_name;
+  int    rc;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
 
   torque_path = cg_cpu_path;
   rc = stat(torque_path.c_str(), &buf);
@@ -162,11 +230,26 @@ int init_torque_cgroups()
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
-    /* create the torque directory under cg_cpu_path */
+     /* create the torque directory under cg_cpu_path */
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
     if (rc != 0)
+      {
+      sprintf(log_buf, "Could not create %s for cgroups: error %d", torque_path.c_str(), errno);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+      return(rc);
+      }
+
+    file_name = "cpuset.mems";
+    rc = trq_cg_initialize_cpuset_string(file_name);
+    if (rc != PBSE_NONE)
+      return(rc);
+ 
+    file_name = "cpuset.cpus";
+    rc = trq_cg_initialize_cpuset_string(file_name);
+    if (rc != PBSE_NONE)
       return(rc);
     } 
+
 
   torque_path = cg_memory_path;
   rc = stat(torque_path.c_str(), &buf);
@@ -385,11 +468,58 @@ int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_p
   return(PBSE_NONE);
   }
 
-int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
+
+/*
+ * trq_cg_add_pid_to_cgroup_tasks()
+ *
+ * Add job_pid to the tasks file of the cgroup
+ *
+ * @param cgroup_path - directory path to the cgroup hierarchy
+ * @param job_pid  -  The process id of the cgroup
+ *
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_add_pid_to_cgroup_tasks(string& cgroup_path, pid_t job_pid)
   {
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   int cgroup_fd;
+  char cgroup_name[256];
+  string full_cgroup_path;
+  string cgroup_task_path;
+
+  sprintf(cgroup_name, "%d", job_pid);
+  full_cgroup_path = cgroup_path  + cgroup_name;
+
+  cgroup_task_path = full_cgroup_path + "/tasks";
+  cgroup_fd = open(cgroup_task_path.c_str(), O_WRONLY);
+  if (cgroup_fd < 0)
+    {
+    sprintf(log_buf, "failed to open %s for writing: %s", cgroup_task_path.c_str(), strerror(errno));
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  rc = write(cgroup_fd, cgroup_name, strlen(cgroup_name));
+  if (rc <= 0)
+    {
+    sprintf(log_buf, "failed to add process %s to cgroup: %d", cgroup_name, errno);
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  close(cgroup_fd);
+
+  return(PBSE_NONE);
+
+  }
+
+
+int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
+  {
+  int rc = PBSE_NONE;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
   char cgroup_name[256];
   string full_cgroup_path;
   string cgroup_task_path;
@@ -414,27 +544,7 @@ int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
     return(PBSE_SYSTEM); 
     }
 
-
-  cgroup_task_path = full_cgroup_path + "/tasks";
-  cgroup_fd = open(cgroup_task_path.c_str(), O_WRONLY);
-  if (cgroup_fd < 0)
-    {
-    sprintf(log_buf, "failed to open %s for writing: %s", cgroup_task_path.c_str(), strerror(errno));
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
-
-  rc = write(cgroup_fd, cgroup_name, strlen(cgroup_name));
-  if (rc <= 0)
-    {
-    sprintf(log_buf, "failed to add porcess %s to cgroup", cgroup_name);
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
-
-  close(cgroup_fd);
-
-  return(PBSE_NONE);
+  return(rc);
 
   }
 
@@ -449,9 +559,17 @@ int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
   if (rc != PBSE_NONE)
     return(rc);
 
+  rc = trq_cg_add_pid_to_cgroup_tasks(cg_cpuacct_path, job_pid);
+  if (rc != PBSE_NONE)
+    return(rc);
+
 
   /* create a directory for this process in the memory/torque hierarchy */
   rc = trq_cg_create_cgroup(cg_memory_path, job_pid);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  rc = trq_cg_add_pid_to_cgroup_tasks(cg_memory_path, job_pid);
   if (rc != PBSE_NONE)
     return(rc);
 
@@ -527,13 +645,22 @@ void *trq_cg_remove_process_from_accts(void *vp)
     log_err(-1, __func__, log_buf);
     }
 
-  /* remove job from the cpumemory cgroup */
+  /* remove job from the memory cgroup */
   rc = trq_cg_remove_process_from_cgroup(cg_memory_path, job_pid);
   if (rc != PBSE_NONE)
     {
     sprintf(log_buf, "Failed to remove cgroup memory: process %d", job_pid);
     log_err(-1, __func__, log_buf);
     }
+
+  /* remove job from the cpuset cgroup */
+  rc = trq_cg_remove_process_from_cgroup(cg_cpuset_path, job_pid);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buf, "Failed to remove cgroup memory: process %d", job_pid);
+    log_err(-1, __func__, log_buf);
+    }
+
 
 
   return(PBSE_NONE);
@@ -632,7 +759,7 @@ int trq_cg_set_resident_memory_limit(
     }
 
   sprintf(mem_limit_string, "%ld", memory_limit);
-  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string) -1, strlen(mem_limit_string) -1, fd);
+  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string), 1, fd);
   if (bytes_written < 1)
     {
     sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
@@ -645,5 +772,96 @@ int trq_cg_set_resident_memory_limit(
 
   return(PBSE_NONE);
 
+  }
+
+
+int trq_cg_get_cpuset_and_mem(
+  job *pjob, 
+  std::string &cpuset_string, 
+  std::string &mem_string)
+
+  {
+  cpuset_string = "1-2";
+  mem_string = "0";
+  return(PBSE_NONE);
+  }
+
+
+/*
+ * trq_cg_create_cpuset_cgroup()
+ *
+ * creates a cgroup for the current process, gets the 
+ * cpuset and memory requested and adds them to
+ * the cpuset.cpus and cpuset.mems files for the cgroup.
+ *
+ * @param pjob    -  job structure of the process
+ * @param job_pid -  The process id of this job
+ *
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid)
+  {
+  int rc = PBSE_NONE;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char cgroup_name[256];
+  std::string cpus_used;
+  std::string mems_used;
+  std::string cpuset_cpus;
+  std::string cpuset_mems;
+  FILE *fd;
+  size_t bytes_written;
+
+  rc = trq_cg_get_cpuset_and_mem(pjob, cpus_used, mems_used);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  rc = trq_cg_create_cgroup(cg_cpuset_path, job_pid);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+
+  /* This is the fun part. How do we determine which cpus and memory a job should use */
+  sprintf(cgroup_name, "%d", job_pid);
+  cpuset_cpus = cg_cpuset_path + cgroup_name + "/cpuset.cpus";
+  fd = fopen(cpuset_cpus.c_str(), "r+");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  bytes_written = fwrite(cpus_used.c_str(), cpus_used.size(), 1, fd);
+  if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cpuset for job %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    fclose(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+  
+  cpuset_mems = cg_cpuset_path + cgroup_name + "/cpuset.mems";
+  fd = fopen(cpuset_mems.c_str(), "r+"); 
+   if (fd == NULL)
+    {
+    sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());
+    log_err(-1, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+   bytes_written = fwrite(mems_used.c_str(), mems_used.size(), 1, fd);
+   if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cpu mems for job %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    fclose(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  rc = trq_cg_add_pid_to_cgroup_tasks(cg_cpuset_path, job_pid);
+  return(rc);
   }
 
