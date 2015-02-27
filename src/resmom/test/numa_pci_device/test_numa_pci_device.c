@@ -12,7 +12,7 @@ START_TEST(test_displayAsString)
   std::stringstream out;
 
   p.displayAsString(out);
-  fail_unless(out.str() == "      PCI 0 gpu\n", out.str().c_str());
+  fail_unless(out.str() == "      pci 0 gpu\n", out.str().c_str());
   }
 END_TEST
 

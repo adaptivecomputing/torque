@@ -40,7 +40,6 @@ using namespace std;
 
   int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
     {
-    int rc;
 
     id = device_obj->logical_index;
     name = device_obj->name;
@@ -49,6 +48,8 @@ using namespace std;
 
 
 #ifdef MIC
+    int rc;
+
     nearest_cpuset = hwloc_bitmap_alloc();
     if (nearest_cpuset == NULL)
       return(PBSE_MEM_MALLOC);
@@ -65,6 +66,7 @@ using namespace std;
     hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 #endif
 #ifdef NVIDIA_GPUS
+    int rc;
     nvmlDevice_t  gpu_device;
     
     rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);

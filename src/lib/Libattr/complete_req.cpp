@@ -27,6 +27,7 @@ complete_req &complete_req::operator =(
 
   {
   this->reqs = other.reqs;
+  return *this;
   }
 
 

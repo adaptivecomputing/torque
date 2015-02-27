@@ -11,40 +11,7 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
-Socket::Socket()
-  {
-  }
-
-Socket::~Socket()
-  {
-  }
-
-int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topology)
-  {
-  return(PBSE_NONE);
-  }
-
-int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
-  {
-  return(PBSE_NONE);
-  }
-
-int Socket::initializeIntelSocket(hwloc_obj_t obj, hwloc_topology_t topology)
-  {
-  return(PBSE_NONE);
-  }
-
-Core::~Core()
-  {
-  }
-
-Chip::~Chip()
-  {
-  }
-
-PCI_Device::~PCI_Device()
-  {
-  }
-
-void Socket::displayAsString(std::stringstream &output) const {}
-
+#include "../../numa_pci_device.cpp"
+#include "../../numa_socket.cpp"
+#include "../../numa_chip.cpp"
+#include "../../numa_core.cpp"

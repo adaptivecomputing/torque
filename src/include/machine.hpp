@@ -1,3 +1,5 @@
+#ifndef __MACHINE_HPP__
+#define __MACHINE_HPP__
 #include <string>
 #include <vector>
 #include <sstream>
@@ -180,4 +182,4 @@ class Machine
   };
 
 
-
+#endif  /* __MACHINE_HPP__ */

@@ -725,5 +725,6 @@ void move_past_whitespace(
 
 
 #ifdef PENABLE_LINUX_CGROUPS
-#include "./complete_req.cpp"
+#include "../../../lib/Libattr/complete_req.cpp"
+#include "../../../lib/Libattr/req.cpp"
 #endif
