@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <string>
+#include <semaphore.h>
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
@@ -15,6 +16,7 @@
 #include "work_task.h" /* all_tasks */
 #include "array.h" /* ArrayEventsEnum */
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 /* This section is for manipulting function return values */
 #include "test_job_func.h" /* *_SUITE */
@@ -41,9 +43,11 @@ all_jobs array_summary;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+completed_jobs_map_class completed_jobs_map;
+sem_t *job_clone_semaphore;
 
 user_info_holder users;
-extern bool set_task_called;
+extern bool add_job_called;
 
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -151,7 +155,6 @@ void free_br(struct batch_request *preq)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  set_task_called = true;
   return NULL;
   }
 
@@ -606,4 +609,13 @@ id_map job_mapper;
  
 void handle_complete_second_time(struct work_task *ptask)
   {
+  }
+
+completed_jobs_map_class::completed_jobs_map_class() {}
+completed_jobs_map_class::~completed_jobs_map_class() {}
+bool completed_jobs_map_class::add_job(char const* s, time_t t)
+  {
+  add_job_called = true;
+
+  return false;
   }

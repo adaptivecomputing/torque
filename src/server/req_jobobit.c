@@ -123,9 +123,12 @@
 #include "exiting_jobs.h"
 #include "track_alps_reservations.h"
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
+
+#define REMOVE_COMPLETED_JOBS_SLEEP_TIME 5
 
 /* External Global Data Items */
 
@@ -157,6 +160,8 @@ extern int              LOGLEVEL;
 
 extern const char      *PJobState[];
 extern bool cpy_stdout_err_on_rerun;
+
+extern completed_jobs_map_class completed_jobs_map;
 
 /* External Functions called */
 
@@ -1738,13 +1743,12 @@ int handle_complete_first_time(
      */
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s: rc = -1", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed,
-      pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-      handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    // add job id and clean up time for processing by cleanup task
+    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds);
     }
   else
     {
@@ -1758,12 +1762,12 @@ int handle_complete_first_time(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed, time_now + KeepSeconds,
-      handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    // add job id and clean up time for processing by cleanup task
+    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + KeepSeconds);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1836,15 +1840,12 @@ void handle_complete_second_time(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed,
-      time_now + JOBMUSTREPORTDEFAULTKEEP,
-      handle_complete_second_time,
-      strdup(pjob->ji_qs.ji_jobid),
-      FALSE);
+    // add job id and clean up time for processing by cleanup task
+    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + JOBMUSTREPORTDEFAULTKEEP);
     }
   else
     {
@@ -2043,26 +2044,7 @@ void on_job_exit(
         handle_complete_first_time(pjob);
       else
         {
-        struct work_task *ptask = (struct work_task *)calloc(1, sizeof(struct work_task));
-
-        if (ptask == NULL)
-          return;
-
-        if ((ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
-          {
-          free(ptask);
-          return;
-          }
-
-        if ((ptask->wt_parm1 = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-          {
-          free(ptask->wt_mutex);
-          free(ptask);
-
-          return;
-          }
-
-        handle_complete_second_time(ptask);
+        completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(0));
         }
       break;
 
@@ -3535,6 +3517,22 @@ int req_jobobit(
   return(PBSE_NONE);
   }  /* END req_jobobit() */
 
+void *remove_completed_jobs(
+
+  void *vp)
+
+  {
+  while (1)
+    {
+    // cleanup any completed jobs
+    completed_jobs_map.cleanup_completed_jobs();
+
+    // wait a bit before trying again
+    sleep(REMOVE_COMPLETED_JOBS_SLEEP_TIME);
+    }
+
+  return(NULL);
+  } /* END remove_completed_jobs() */
 
 /* END req_jobobit.c */
 

@@ -151,6 +151,7 @@
 #include "mutex_mgr.hpp"
 #include "job_route.h" /* job_route */
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -160,6 +161,7 @@
 #define MAXLINE 1024
 extern int LOGLEVEL;
 
+extern completed_jobs_map_class completed_jobs_map;
 
 int conn_qsub(char *, long, char *);
 
@@ -448,7 +450,7 @@ void handle_aborted_job(
 
     pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
-    set_task(WORK_Timed, time(NULL) + KeepSeconds, handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(NULL) + KeepSeconds);
     }
   } /* handle_aborted_job */
 
@@ -1306,7 +1308,7 @@ void *job_clone_wt(
 
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) 
+          if (prev_job_id != NULL) 
             free(prev_job_id);
           sem_wait(job_clone_semaphore);
           return(NULL);
@@ -1325,7 +1327,7 @@ void *job_clone_wt(
           clone_mgr.set_unlock_on_exit(false);
           }
 
-        if(prev_job_id != NULL) 
+        if (prev_job_id != NULL) 
           free(prev_job_id);
         sem_wait(job_clone_semaphore);
         return(NULL);
@@ -1341,7 +1343,7 @@ void *job_clone_wt(
         
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if(prev_job_id != NULL) 
+          if (prev_job_id != NULL) 
             free(prev_job_id);
           sem_wait(job_clone_semaphore);
           return(NULL);
@@ -1352,10 +1354,13 @@ void *job_clone_wt(
         continue;
         }
       
-      if(prev_job_id != NULL) free(prev_job_id);
+      if (prev_job_id != NULL)
+        free(prev_job_id);
+
       prev_job_id = NULL;
+
       alljobs.lock();
-      if(alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
+      if (alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
         {
         prev_job_id = strdup(pjobclone->ji_qs.ji_jobid);
         }
@@ -1377,7 +1382,9 @@ void *job_clone_wt(
       }
     }    /* END while (loop) */
       
-  if(prev_job_id != NULL) free(prev_job_id);
+  if (prev_job_id != NULL)
+    free(prev_job_id);
+
   prev_job_id = NULL;
 
   array_save(pa);
@@ -2455,6 +2462,25 @@ int split_job(
   } /* END split_job() */
 
 
+bool job_id_exists(
+
+  const std::string job_id_string)
+
+  {
+  bool rc = false;
+
+  alljobs.lock();
+
+  if (alljobs.find(job_id_string) != NULL)
+    {
+    rc = true;
+    }
+
+  alljobs.unlock();
+
+  return(rc);
+  }
+  
 
 /* END job_func.c */
 

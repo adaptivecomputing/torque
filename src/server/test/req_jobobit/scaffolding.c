@@ -20,6 +20,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "queue.h" /* pbs_queue */
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 
 const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
@@ -56,6 +57,7 @@ int usage;
 bool purged = false;
 bool completed = false;
 bool exited = false;
+completed_jobs_map_class completed_jobs_map;
 
 
 struct batch_request *alloc_br(int type)
@@ -340,3 +342,9 @@ const char *id_map::get_name(int id)
   }
 
 id_map job_mapper;
+
+completed_jobs_map_class::completed_jobs_map_class() {}
+completed_jobs_map_class::~completed_jobs_map_class() {}
+int completed_jobs_map_class::cleanup_completed_jobs() {return 0;}
+bool completed_jobs_map_class::add_job(char const *s, time_t t) {return true;}
+
