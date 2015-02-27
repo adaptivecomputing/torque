@@ -15,6 +15,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "threadpool.h"
+#include "completed_jobs_map.h"
 
 bool exit_called = false;
 hello_container failures;
@@ -518,3 +519,6 @@ void *remove_extra_recycle_jobs(void *)
 
 void clear_all_alps_reservations() {}
 
+completed_jobs_map_class::completed_jobs_map_class() {}
+completed_jobs_map_class::~completed_jobs_map_class() {}
+void *remove_completed_jobs(void *vp) {return(NULL);}

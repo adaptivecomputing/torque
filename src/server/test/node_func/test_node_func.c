@@ -385,7 +385,7 @@ START_TEST(effective_node_delete_test)
   node->nd_name = strdup("nodename");
   effective_node_delete(&node);
 
-  fail_unless(node == NULL, "unsuccessfull node delition %d", node);
+  fail_unless(node == NULL, "unsuccessful node deletion %d", node);
 
   }
 END_TEST

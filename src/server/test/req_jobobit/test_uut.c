@@ -11,6 +11,7 @@
 #include "sched_cmds.h"
 #include "server.h"
 #include "work_task.h"
+#include "completed_jobs_map.h"
 
 
 char *setup_from(job *pjob, const char *suffix);
@@ -39,6 +40,7 @@ extern pthread_mutex_t *svr_do_schedule_mutex;
 extern pthread_mutex_t *listener_command_mutex;
 extern int svr_do_schedule;
 extern int listener_command;
+extern completed_jobs_map_class completed_jobs_map;
 int alloc_br_null;
 extern struct server server;
 extern int bad_connect;

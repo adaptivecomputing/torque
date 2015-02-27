@@ -14,6 +14,7 @@
 #include "sched_cmds.h"
 #include "threadpool.h"
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -41,6 +42,8 @@ char *path_jobinfo_log;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 threadpool_t    *task_pool;
+
+completed_jobs_map_class completed_jobs_map;
 
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
@@ -353,3 +356,6 @@ void handle_complete_second_time(struct work_task *ptask)
   {
   }
 
+completed_jobs_map_class::completed_jobs_map_class() {}
+completed_jobs_map_class::~completed_jobs_map_class() {}
+bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}

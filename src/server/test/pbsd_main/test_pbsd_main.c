@@ -5,9 +5,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "completed_jobs_map.h"
 
 void parse_command_line(int argc, char *argv[]);
 extern bool auto_send_hierarchy;
+extern completed_jobs_map_class completed_jobs_map;
 
 START_TEST(test_parse_command_line)
   {

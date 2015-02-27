@@ -767,6 +767,7 @@ void  update_recycler_next_id();
 void  initialize_recycler();
 void  garbage_collect_recycling();
 void *remove_extra_recycle_jobs(void *);
+void *remove_completed_jobs(void *);
 
 #endif
 

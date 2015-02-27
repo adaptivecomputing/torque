@@ -143,6 +143,7 @@
 #include "job_route.h" /* queue_route */
 #include "exiting_jobs.h"
 #include "server_comm.h"
+#include "completed_jobs_map.h"
 
 #define TASK_CHECK_INTERVAL      10
 #define HELLO_WAIT_TIME          600
@@ -310,6 +311,7 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
+completed_jobs_map_class completed_jobs_map;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -1393,6 +1395,7 @@ void main_loop(void)
   start_routing_retry_thread();
   start_exiting_retry_thread();
   start_generic_thread(NULL, remove_extra_recycle_jobs);
+  start_generic_thread(NULL, remove_completed_jobs);
 
   while (state != SV_STATE_DOWN)
     {

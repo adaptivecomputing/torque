@@ -501,6 +501,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/svr_task/Makefile
     src/server/test/track_alps_reservations/Makefile
     src/server/test/user_info/Makefile
+    src/server/test/completed_jobs_map/Makefile
     src/test/Makefile
     src/tools/test/Makefile
     src/tools/test/chk_tree/Makefile

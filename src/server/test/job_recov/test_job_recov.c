@@ -10,11 +10,13 @@
 #include "pbs_job.h"
 #include "attribute.h"
 #include "resource.h"
+#include "completed_jobs_map.h"
 
 extern int set_nodes_attr(job *pjob);
 extern int svr_resc_size;
 extern attribute_def job_attr_def[];
 extern void free_server_attrs(tlist_head *att_head);
+extern completed_jobs_map_class completed_jobs_map;
 int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, size_t buflen, const char *aname);
 
 char  server_name[] = "lei.ac";
