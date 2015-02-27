@@ -135,6 +135,7 @@ int completed_jobs_map_class::cleanup_completed_jobs(
   time_t now;
   std::vector<std::string> to_remove;
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
+  int rc = PBSE_NONE;
 
   // lock the map
   pthread_mutex_lock(&completed_jobs_map_mutex);
@@ -164,14 +165,16 @@ int completed_jobs_map_class::cleanup_completed_jobs(
       // create a work task struct to be passed to handle_complete_second_time()
       if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
         {
-        return(-1);
+        rc = -1;
+        goto cleanup;
         }
 
       // copy the job id
       if ((pnew->wt_parm1 = (void *)strdup(it->first.c_str())) == NULL)
         {
         free(pnew);
-        return(-1);
+        rc = -1;
+        goto cleanup;
         }
 
       // create space for mutex
@@ -179,7 +182,8 @@ int completed_jobs_map_class::cleanup_completed_jobs(
         {
         free(pnew->wt_parm1);
         free(pnew);
-        return(-1);
+        rc = -1;
+        goto cleanup;
         }
 
       if (LOGLEVEL >= 10)
@@ -206,11 +210,13 @@ int completed_jobs_map_class::cleanup_completed_jobs(
     this->delete_job_unlocked(to_remove[i]);
     }
 
+cleanup:
+
   // unlock the map
   pthread_mutex_unlock(&completed_jobs_map_mutex);
 
- return(PBSE_NONE);
- }
+  return(rc);
+  }
 
 // print the map (mostly useful for debugging)
 void completed_jobs_map_class::print_map(
