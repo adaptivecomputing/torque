@@ -887,12 +887,7 @@ void translate_dependency_to_string(
         value += ":";
         value += pdjob->dc_child;
 
-        if (pdjob->dc_svr[0] != '\0')
-          {
-          value += "@";
-          value += pdjob->dc_svr;
-          }
-
+        // Don't write out the server as it can mess up high availability scenarios.
         }
       }
     }
