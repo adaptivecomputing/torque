@@ -2864,14 +2864,6 @@ int encode_depend(
         fast_strcat(&BPtr,":");
         cat_jobsvr(&BPtr,pdjb->dc_child);
 
-        if (*pdjb->dc_svr != '\0')
-          {
-          /* WARNING: do we need to escape colons here (we used to) */
-          fast_strcat(&BPtr,"@");
-
-          cat_jobsvr(&BPtr,pdjb->dc_svr);
-          }
-        
         pdjb = (struct depend_job *)GET_NEXT(pdjb->dc_link);
         } 
       }	
