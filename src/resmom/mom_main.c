@@ -2716,6 +2716,15 @@ int process_rm_cmd_request(
 
 
 
+/*
+ * process_layout_request()
+ *
+ * Creates and sends the reply for momctl -l
+ * NOTE: This does nothing if you don't have cgroups enabled
+ * @param chan - the tcp channel we should reply to
+ * @return PBSE_NONE on success or a dis_ error
+ */
+
 int process_layout_request(
 
   struct tcp_chan *chan)
@@ -2733,7 +2742,9 @@ int process_layout_request(
     return(ret);
     }
 
+#ifdef PENABLE_LINUX_CGROUPS
   this_node.displayAsString(output);
+#endif
     
   if ((ret = diswst(chan, output.str().c_str())) != DIS_SUCCESS)
     {
