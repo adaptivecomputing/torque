@@ -904,7 +904,6 @@ int create_alps_reservation(
     retry_count = 0;
   
     while ((retry_count++ < APBASIL_RETRIES) &&
-           (rc != apbasil_fail_permanent) &&
            (rc != PBSE_NONE))
       {
       rc = confirm_reservation(jobid, *reservation_id, pagg_id_value, apbasil_path, apbasil_protocol,

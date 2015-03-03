@@ -7,6 +7,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2753. Fix a memory leak in generating the authoritative okclients list.
   b - TRQ-2332. Fix a job dependency problem when the failover server comes up. This
       only affects users running high availability.
+  b - TRQ-3023. Fix a bug when ALPS incorrectly returns a permanent confirmation failure.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
