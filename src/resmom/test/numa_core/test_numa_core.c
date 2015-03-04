@@ -49,7 +49,8 @@ START_TEST(test_reserving_and_freeing)
 
   // unit test init gives us os indexes 0 and 8
   c.unit_test_init();
-  c.mark_as_busy();
+  c.mark_as_busy(0);
+  c.mark_as_busy(8);
 
   fail_unless(c.get_open_processing_unit() == -1);
   

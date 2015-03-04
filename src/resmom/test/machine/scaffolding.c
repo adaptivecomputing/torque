@@ -17,6 +17,9 @@ int called_place_task;
 
 char mom_host[1024];
 
+const int MEM_INDICES = 1;
+const int CPU_INDICES = 1;
+
 void log_err(int errnum, const char *routine, const char *text)
   {
   }
@@ -117,4 +120,6 @@ int req::get_num_tasks_for_host(
 
 allocation::allocation(const allocation &other) {}
 allocation::allocation() {}
+void allocation::place_indices_in_string(std::string &out, int which) {}
 
+void PCI_Device::displayAsString(std::stringstream &out) const {}
