@@ -20,11 +20,8 @@
 #include "machine.hpp"
 #include "pbs_error.h"
 #include "log.h"
-<<<<<<< HEAD
 #include "mom_server_lib.h"
-=======
 #include "complete_req.hpp"
->>>>>>> AC-8243. Initial pass at placing tasks according to resource request syntax 2.0
 
 using namespace std;
 
@@ -414,14 +411,13 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     this->totalMemory = mem;
     }
 
-<<<<<<< HEAD
   void Machine::insertNvidiaDevice(
 
     PCI_Device& device)
     {
     this->NVIDIA_device.push_back(device);
     }
-=======
+  
   // This is meant to only be used for unit tests
   void Machine::addSocket(
 
@@ -510,6 +506,4 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
       }
     } // END free_job_allocation()
 
->>>>>>> AC-8243. Initial pass at placing tasks according to resource request syntax 2.0
-
-#endif /* PENABLE_LINUX26_CPUSETS */
+#endif /* PENABLE_LINUX_CGROUPS */
