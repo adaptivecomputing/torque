@@ -48,7 +48,7 @@ START_TEST(test_translate_dependency_to_string)
   // make sure we don't segfault
   translate_dependency_to_string(NULL, value);
   translate_dependency_to_string(&dep_attr, value);
-  fail_unless(value == "afterok:1.napali@napali");
+  fail_unless(value == "afterok:1.napali");
   }
 END_TEST
 
