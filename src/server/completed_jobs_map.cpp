@@ -7,6 +7,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "work_task.h"
 #include "completed_jobs_map.h"
+#include "threadpool.h"
 
 // external functions called
 
@@ -190,7 +191,7 @@ int completed_jobs_map_class::cleanup_completed_jobs(
 
       // call with work task structure
       //   will remove job id from map
-      handle_complete_second_time(pnew);
+      enqueue_threadpool_request((void *(*)(void *))handle_complete_second_time, pnew, task_pool);
       }
     }
 
