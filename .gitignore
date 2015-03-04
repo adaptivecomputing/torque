@@ -371,6 +371,7 @@ src/resmom/linux/test/node_internals/test_node_internals
 src/resmom/linux/test/mom_mach/test_mom_mach
 src/resmom/linux/test/mom_start/test_mom_start
 src/resmom/linux/test/pe_input/test_pe_input
+src/resmom/test/allocation/test_allocation
 src/resmom/test/alps_reservations/test_alps_reservations
 src/resmom/test/catch_child/1.sysname.ac.JB
 src/resmom/test/catch_child/2.sysname.ac.JB

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "allocation.hpp"
 #include "numa_node.hpp"
 #include <check.h>
 
@@ -41,6 +42,9 @@ START_TEST(test_recover_reservation)
 
   fail_unless(a2.cpus == 0);
   fail_unless(a2.memory == 0);
+
+  allocation a3("3.napali");
+  fail_unless(!strcmp(a3.jobid, "3.napali"));
 
   }
 END_TEST
@@ -167,26 +171,6 @@ START_TEST(test_reserve)
   cpu_indices.clear();
   n.get_job_indices("4.napali", cpu_indices, true);
   fail_unless(cpu_indices[0] == 8);
-  }
-END_TEST
-
-
-START_TEST(test_allocation_constructors)
-  {
-  allocation a;
-
-  fail_unless(a.jobid[0] == '\0');
-  fail_unless(a.memory == 0);
-  fail_unless(a.cpus == 0);
-
-  strcpy(a.jobid, "1.napali");
-  a.memory = 1024 * 6;
-  a.cpus = 4;
-
-  allocation a2(a);
-  fail_unless(!strcmp(a2.jobid, "1.napali"));
-  fail_unless(a2.cpus == 4);
-  fail_unless(a2.memory == 1024 * 6);
   }
 END_TEST
 

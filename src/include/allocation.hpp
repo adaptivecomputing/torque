@@ -1,6 +1,5 @@
-
-#ifndef _COMPLETE_REQ_HPP
-#define _COMPLETE_REQ_HPP
+#ifndef ALLOCATION_HPP
+#define ALLOCATION_HPP
 
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
@@ -82,32 +81,30 @@
 */
 
 #include <vector>
-#include <string>
 
-#include "req.hpp"
+#include "pbs_ifl.h"
 
+extern const int MEM_INDICES;
+extern const int CPU_INDICES;
 
-class complete_req
+class allocation
   {
-    std::vector<req> reqs;
-
   public:
+  std::vector<int> cpu_indices;
+  std::vector<int> mem_indices;
+  unsigned long    memory;
+  int              cpus;
+  int              cores;
+  int              threads;
+  bool             cores_only;
+  char             jobid[PBS_MAXSVRJOBID];
 
-    complete_req();
-    complete_req(const complete_req &other);
-    complete_req &operator =(const complete_req &other);
-
-    void add_req(req &r);
-    void set_from_string(const std::string &obj_string);
-    int  set_value(int index, const char *name, const char *value);
-    void toString(std::string &output) const;
-    int  req_count() const;
-    void get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
-    unsigned long get_memory_for_this_host(const std::string &hostname) const;
-    unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
-    const req &get_req(int i) const;
+  allocation(const allocation &alloc);
+  allocation();
+  allocation(const char *jobid);
+  int  add_allocation(const allocation &other);
+  void place_indices_in_string(std::string &output, int which);
   };
 
-#endif
-
+#endif 
 

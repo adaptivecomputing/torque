@@ -7,6 +7,8 @@
 #include "pbs_error.h"
 #include <sstream>
 
+extern std::string my_placement_type;
+
 
 START_TEST(test_initializeChip)
   {
@@ -58,7 +60,7 @@ START_TEST(test_initializeChip)
 
 
 
-  rc = new_chip.getMemoryInBytes();
+  rc = new_chip.getMemory();
   fail_unless(rc != 0, "failed to get chip memory");
 
   rc = new_chip.getTotalCores();
@@ -85,10 +87,131 @@ START_TEST(test_displayAsString)
   std::stringstream out;
   Chip c;
 
-  c.setMemoryInBytes(2048);
+  c.setMemory(2);
   c.setId(0);
   c.displayAsString(out);
   fail_unless(out.str() == "    Chip 0 (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_how_many_tasks_fit)
+  {
+  req r;
+  r.set_value("lprocs", "2");
+  r.set_value("memory", "1kb");
+
+  Chip c;
+  c.setThreads(12);
+  c.setMemory(20);
+  c.setChipAvailable(true);
+
+  // test against threads
+  int tasks = c.how_many_tasks_fit(r);
+  fail_unless(tasks == 6, "%d tasks fit, expected 6", tasks);
+
+  // Now memory should be the limiting factor
+  c.setMemory(5);
+  tasks = c.how_many_tasks_fit(r);
+  fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
+
+  my_placement_type = use_cores;
+  // Cores are currently 0
+  tasks = c.how_many_tasks_fit(r);
+  fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
+
+  c.setCores(2);
+  tasks = c.how_many_tasks_fit(r);
+  fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
+  
+
+  }
+END_TEST
+
+
+START_TEST(test_place_and_free_task)
+  {
+  const char *jobid = "1.napali";
+  req r;
+  r.set_value("lprocs", "2");
+  r.set_value("memory", "1kb");
+
+  allocation a(jobid);
+
+  Chip c;
+  c.setThreads(24);
+  c.setCores(12);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  c.make_core(0);
+  c.make_core(1);
+  c.make_core(2);
+  c.make_core(3);
+  c.make_core(4);
+  c.make_core(5);
+  c.make_core(6);
+  c.make_core(7);
+  c.make_core(8);
+  c.make_core(9);
+  c.make_core(10);
+  c.make_core(11);
+ 
+  my_placement_type = use_cores;
+  // fill the node's memory
+  int tasks = c.place_task(jobid, r, a, 6);
+  fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
+
+  // Memory should be full now
+  tasks = c.place_task(jobid, r, a, 6);
+  fail_unless(tasks == 0, "Placed %d tasks, expected 0", tasks);
+
+  // make sure we can free and replace
+  c.free_task(jobid);
+  tasks = c.place_task(jobid, r, a, 6);
+  fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
+  c.free_task(jobid);
+  fail_unless(c.getAvailableCores() == 12);
+  fail_unless(c.getAvailableThreads() == 24);
+  
+  // Now place by thread
+  my_placement_type = "";
+  c.setMemory(40);
+
+  // Fill up the threads with multiple jobs
+  const char *jobid2 = "2.napali";
+  const char *jobid3 = "3.napali";
+  tasks = c.place_task(jobid, r, a, 6);
+  fail_unless(tasks == 6, "Expected 6 but placed %d", tasks);
+  tasks = c.place_task(jobid2, r, a, 3);
+  fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
+  tasks = c.place_task(jobid3, r, a, 3);
+  fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
+  
+  // Make sure we're full
+  fail_unless(c.getAvailableCores() == 0);
+  fail_unless(c.getAvailableThreads() == 0);
+  tasks = c.place_task(jobid3, r, a, 1);
+  fail_unless(tasks == 0);
+
+  // Make sure we free correctly
+  fail_unless(c.free_task(jobid3) == false);
+  fail_unless(c.getAvailableCores() == 3);
+  int threads = c.getAvailableThreads();
+  fail_unless(threads == 6, "Expected 6 threads but got %d", threads);
+
+  // Make sure a repeat free does nothing
+  fail_unless(c.free_task(jobid3) == false);
+  fail_unless(c.getAvailableCores() == 3);
+  fail_unless(c.getAvailableThreads() == 6);
+  
+  fail_unless(c.free_task(jobid2) == false);
+  fail_unless(c.getAvailableCores() == 6);
+  fail_unless(c.getAvailableThreads() == 12);
+  
+  // We should be free now
+  fail_unless(c.free_task(jobid) == true);
+  fail_unless(c.getAvailableCores() == 12);
+  fail_unless(c.getAvailableThreads() == 24);
   }
 END_TEST
 
@@ -98,10 +221,12 @@ Suite *numa_socket_suite(void)
   Suite *s = suite_create("numa_socket test suite methods");
   TCase *tc_core = tcase_create("test_initializeChip");
   tcase_add_test(tc_core, test_initializeChip);
+  tcase_add_test(tc_core, test_how_many_tasks_fit);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");
   tcase_add_test(tc_core, test_displayAsString);
+  tcase_add_test(tc_core, test_place_and_free_task);
   suite_add_tcase(s, tc_core);
   
   return(s);

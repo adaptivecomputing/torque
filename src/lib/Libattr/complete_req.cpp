@@ -179,7 +179,9 @@ void complete_req::get_values(
  * get_swap_memory_for_this_host()
  */
 
-unsigned long complete_req::get_swap_memory_for_this_host(const std::string &hostname) const
+unsigned long complete_req::get_swap_memory_for_this_host(
+    
+  const std::string &hostname) const
 
   {
   unsigned long mem = 0;
@@ -196,7 +198,9 @@ unsigned long complete_req::get_swap_memory_for_this_host(const std::string &hos
  * get_memory_for_this_host()
  */
 
-unsigned long complete_req::get_memory_for_this_host(const std::string &hostname) const
+unsigned long complete_req::get_memory_for_this_host(
+    
+  const std::string &hostname) const
 
   {
   unsigned long mem = 0;
@@ -206,3 +210,14 @@ unsigned long complete_req::get_memory_for_this_host(const std::string &hostname
 
   return(mem);
   } // END get_memory_for_host()
+
+
+
+const req &complete_req::get_req(
+
+  int i) const
+
+  {
+  return(this->reqs[i]);
+  } // END get_req()
+

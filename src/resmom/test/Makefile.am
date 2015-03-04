@@ -1,4 +1,9 @@
-CHECK_DIRS = catch_child checkpoint machine mom_comm mom_inter mom_job_func mom_main mom_process_request mom_req_quejob mom_server numa_chip numa_core numa_pci_device numa_socket parse_config pbs_demux prolog release_reservation requests start_exec tmsock_recov trq_cgroups
+CHECK_DIRS = allocation alps_reservations catch_child checkpoint cray_energy generate_alps_status \
+						 machine mom_comm mom_inter mom_job_func mom_main mom_process_request \
+						 mom_req_quejob mom_server numa_chip numa_core numa_pci_device numa_socket \
+						 parse_config pbs_demux prolog release_reservation requests start_exec \
+						 tmsock_recov trq_cgroups
+
 if MIC
 CHECK_DIRS += mic
 endif

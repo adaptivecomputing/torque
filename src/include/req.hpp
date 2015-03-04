@@ -98,6 +98,16 @@ extern const int PLACE_NUMA_CHIP;
 
 extern const int ALL_EXECUTION_SLOTS;
 
+extern const char *use_cores;
+extern const char *use_threads;
+extern const char *allow_threads;
+extern const char *use_fast_cores;
+extern const char *place_node;
+extern const char *place_socket;
+extern const char *place_numa;
+extern const char *place_core;
+extern const char *place_thread;
+
 // This class is to hold all of the information for a single req from a job
 // The concept of req(s) is only available under the new syntax
 class req
@@ -168,6 +178,7 @@ class req
     std::string   getHostlist() const;
     std::string   getFeatures() const;
     std::string   getThreadUsageString() const;
+    int           get_num_tasks_for_host(const std::string &host) const;
     unsigned long get_memory_for_host(const std::string &host) const;
     unsigned long get_swap_for_host(const std::string &host) const;
   };

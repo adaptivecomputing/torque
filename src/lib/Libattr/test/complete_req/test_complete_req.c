@@ -127,7 +127,7 @@ START_TEST(test_get_swap_memory_for_this_host)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn/0");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:1");
 
   c.add_req(r1);
 
@@ -150,7 +150,7 @@ START_TEST(test_get_memory_for_this_host)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn/0");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:1");
 
   c.add_req(r1);
 

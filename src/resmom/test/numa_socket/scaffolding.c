@@ -3,8 +3,14 @@
 #include "machine.hpp"
 #include "log.h"
 #include "pbs_error.h"
+#include "req.hpp"
+#include "allocation.hpp"
 
 int hardware_style;
+int tasks;
+int placed;
+int called_place;
+bool oscillate = false;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -95,10 +101,39 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
+int Chip::how_many_tasks_fit(req const &r) 
+  {
+  return(tasks);
+  }
+
+int Chip::place_task(const char *jobid, const req &r, allocation &a, int to_place)
+
+  {
+  called_place++;
+  return(placed);
+  }
+
+bool Chip::free_task(const char *jobid)
+  {
+  static int count = 0;
+
+  if (oscillate)
+    {
+    return(count++ % 2 == 0);
+    }
+  return(true);
+  }
+
 void Chip::displayAsString(std::stringstream &out) const {}
 
+allocation::allocation(const allocation &other) {}
+allocation::allocation(const char *jobid) {}
+int allocation::add_allocation(const allocation &other) 
+  
+  {
+  return(0);
+  }
 
+req::req() {}
 
-
-
-
+allocation::allocation() {}

@@ -2,21 +2,30 @@
 #include <check.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 #include "log.h"
 #include "hwloc.h"
 #include "pbs_error.h"
+#include "pbs_job.h"
+#include "complete_req.hpp"
 
 extern int hardware_style;
 
 int get_hardware_style(hwloc_topology_t topology);
 
+extern int my_req_count;
+extern int num_tasks_fit;
+extern int num_placed;
+extern int called_free_task;
+extern int called_place_task;
+extern int num_for_host;
 
 START_TEST(test_displayAsString)
   {
   Machine           new_machine;
   std::stringstream out;
 
-  new_machine.setMemoryInBytes(2048);
+  new_machine.setMemory(2);
   new_machine.displayAsString(out);
   fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
   }
@@ -82,11 +91,12 @@ START_TEST(test_initializeMachine)
   rc = new_machine.getAvailableChips();
   fail_unless(rc != 0, "Failed to get machine available of Chips");
 
+  /* these two are just pass through calls to the sockets
   rc = new_machine.getAvailableCores();
   fail_unless(rc != 0, "Failed to get machine available of Cores");
 
   rc = new_machine.getAvailableThreads();
-  fail_unless(rc != 0, "Failed to get machine available of threads");
+  fail_unless(rc != 0, "Failed to get machine available of threads"); */
 
   memory = new_machine.getTotalMemory();
   fail_unless(memory != 0, "Failed to get machine total memory");
@@ -96,8 +106,38 @@ START_TEST(test_initializeMachine)
 END_TEST
 
 
-START_TEST(test_two)
+START_TEST(test_place_and_free_job)
   {
+  std::string cpu;
+  std::string mem;
+  Machine m;
+  m.addSocket(2);
+  job pjob;
+  complete_req cr;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+
+  // Make the job fit on one socket so we call place once per task
+  called_place_task = 0;
+  my_req_count = 2;
+  num_for_host = 4;
+  num_tasks_fit = 4;
+  num_placed = 4;
+  m.place_job(&pjob, cpu, mem);
+  fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
+
+  // Make sure we call free tasks once per socket
+  called_free_task = 0;
+  m.free_job_allocation("1.napali");
+  fail_unless(called_free_task == 2);
+
+  // Get a job that is placed on multiple sockets
+  my_req_count = 1;
+  num_for_host = 8;
+  num_tasks_fit = 4;
+  num_placed = 4;
+  called_place_task = 0;
+  m.place_job(&pjob, cpu, mem);
+  fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
   }
 END_TEST
 
@@ -115,8 +155,8 @@ Suite *machine_suite(void)
   tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_place_and_free_job");
+  tcase_add_test(tc_core, test_place_and_free_job);
   suite_add_tcase(s, tc_core);
   
   return(s);

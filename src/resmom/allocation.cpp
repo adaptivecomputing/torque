@@ -1,7 +1,3 @@
-
-#ifndef _COMPLETE_REQ_HPP
-#define _COMPLETE_REQ_HPP
-
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -81,33 +77,84 @@
 * without reference to its choice of law rules.
 */
 
-#include <vector>
-#include <string>
+#include <string.h>
+#include <stdio.h>
+#include <sstream>
 
-#include "req.hpp"
+#include "allocation.hpp"
+#include "pbs_error.h"
 
+const int MEM_INDICES = 0;
+const int CPU_INDICES = 1;
 
-class complete_req
+allocation::allocation(
+
+  const allocation &alloc) : memory(alloc.memory), cpus(alloc.cpus), cpu_indices(alloc.cpu_indices),
+                             mem_indices(alloc.mem_indices), cores(alloc.cores),
+                             threads(alloc.threads)
+
   {
-    std::vector<req> reqs;
+  strcpy(this->jobid, alloc.jobid);
+  }
 
-  public:
+allocation::allocation() : memory(0), cpus(0), cpu_indices(), mem_indices(), cores(0), threads(0)
 
-    complete_req();
-    complete_req(const complete_req &other);
-    complete_req &operator =(const complete_req &other);
+  {
+  this->jobid[0] = '\0';
+  }
 
-    void add_req(req &r);
-    void set_from_string(const std::string &obj_string);
-    int  set_value(int index, const char *name, const char *value);
-    void toString(std::string &output) const;
-    int  req_count() const;
-    void get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
-    unsigned long get_memory_for_this_host(const std::string &hostname) const;
-    unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
-    const req &get_req(int i) const;
-  };
+allocation::allocation(
 
-#endif
+  const char *jobid) : memory(0), cpus(0), cpu_indices(), mem_indices(), cores(0), threads(0)
 
+  {
+  snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);
+  }
+
+int allocation::add_allocation(
+
+  const allocation &other)
+
+  {
+  for (unsigned int i = 0; i < other.cpu_indices.size(); i++)
+    this->cpu_indices.push_back(other.cpu_indices[i]);
+
+  this->cpus += other.cpus;
+  this->cores += other.cores;
+  this->threads += other.threads;
+
+  for (unsigned int i = 0; i < other.mem_indices.size(); i++)
+    this->mem_indices.push_back(other.mem_indices[i]);
+
+  this->memory += other.memory;
+
+  return(PBSE_NONE);
+  }
+
+
+
+void allocation::place_indices_in_string(
+
+  std::string &output,
+  int          which)
+
+  {
+  std::vector<int>  *v;
+  std::stringstream  s;
+
+  if (which == MEM_INDICES)
+    v = &this->mem_indices;
+  else
+    v = &this->cpu_indices;
+
+  for (unsigned int i = 0; i < v->size(); i++)
+    {
+    if (i != 0)
+      s << ",";
+
+    s << v->at(i);
+    }
+
+  output = s.str();
+  } // END place_indices_in_string()
 

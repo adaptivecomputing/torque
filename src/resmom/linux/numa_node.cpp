@@ -96,7 +96,6 @@ extern char cpuset_prefix[MAXPATHLEN];
 
 void get_cpu_list(const char *jobid, char *buf, int bufsize);
 #endif
-  
 
 
 
@@ -107,6 +106,7 @@ void get_cpu_list(const char *jobid, char *buf, int bufsize);
  * @pre-cond: str is a valid string pointer
  * @post-cond: internal variables representing cpus are populated
  */
+
 void numa_node::parse_cpu_string(
 
   std::string &line)
@@ -168,6 +168,8 @@ void numa_node::get_cpuinfo(
     parse_cpu_string(line);
     }
   }
+
+
 
 void numa_node::get_meminfo(
 
@@ -454,16 +456,3 @@ unsigned int numa_node::get_my_index() const
   return(this->my_index);
   }
 
-allocation::allocation(
-
-  const allocation &alloc) : memory(alloc.memory), cpus(alloc.cpus), cpu_indices(alloc.cpu_indices)
-
-  {
-  strcpy(this->jobid, alloc.jobid);
-  }
-
-allocation::allocation() : memory(0), cpus(0), cpu_indices()
-
-  {
-  this->jobid[0] = '\0';
-  }

@@ -1775,8 +1775,54 @@ int req::getIndex() const
   return(this->index);
   }
 
+
+
 /*
- * 
+ * get_num_tasks_for_host()
+ * Based on the hostlist, determines the number of tasks from this req assigned 
+ * to this host
+ * hostlist is in the format:
+ * hostname1:num_ppn+hostname2:num_ppn...
+ * We find the ratio of the number of tasks assigned to this host to the number of cores per task
+ * That raio is the number of tasks assigned to this host
+ *
+ * @param host - the hostname for which we're determining the number of tasks
+ * @return the number of tasks assigned to this host (can be 0)
+ */
+
+int req::get_num_tasks_for_host(
+
+  const std::string &host) const
+
+  {
+  int         task_count = 0;
+  std::size_t pos = this->hostlist.find(host);
+
+  if (pos != std::string::npos)
+    {
+    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
+        (!strncmp(this->placement_str.c_str(), "node", 4)))
+      task_count = 1;
+    else
+      {
+      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
+      char        *ppn_str = strdup(ppn_val.c_str());
+      int          num_ppn = strtol(ppn_str, NULL, 10);
+
+      task_count = num_ppn / this->execution_slots;
+      }
+    }
+
+  return(task_count);
+  } // END get_num_tasks_for_host()
+
+
+
+/*
+ * get_swap_for_host()
+ *
+ * @param host - the host whose swap we're calculating
+ * @return the number of kb of swap for this host
  */
 
 unsigned long req::get_swap_for_host(
@@ -1784,26 +1830,8 @@ unsigned long req::get_swap_for_host(
   const std::string &host) const
 
   {
-  // hostlist is in the format:
-  // hostname1:num_ppn+hostname2:num_ppn...
-  unsigned long swap = 0;
-  std::size_t pos = this->hostlist.find(host);
-
-  if (pos != std::string::npos)
-    {
-    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
-        (strncmp(this->placement_str.c_str(), "node", 4)))
-      swap = this->swap;
-    else
-      {
-      // skip the 'hostname:' portion of the string
-      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
-      char        *ppn_str = strdup(ppn_val.c_str());
-      int          num_ppn = strtol(ppn_str, NULL, 10);
-
-      swap = this->swap * (num_ppn / this->execution_slots);
-      }
-    }
+  int           num_tasks = this->get_num_tasks_for_host(host);
+  unsigned long swap = this->swap * num_tasks;
 
   return(swap);
   } // END get_swap_for_host()
@@ -1811,7 +1839,10 @@ unsigned long req::get_swap_for_host(
 
 
 /*
- * 
+ * get_memory_for_host()
+ *
+ * @param host - the host whose memory we're calculating
+ * @return the number of kb of memory for this host
  */
 
 unsigned long req::get_memory_for_host(
@@ -1819,29 +1850,10 @@ unsigned long req::get_memory_for_host(
   const std::string &host) const
 
   {
-  // hostlist is in the format:
-  // hostname1:num_ppn+hostname2:num_ppn...
-  unsigned long mem = 0;
-  std::size_t pos = this->hostlist.find(host);
-
-  if (pos != std::string::npos)
-    {
-    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
-        (strncmp(this->placement_str.c_str(), "node", 4)))
-      mem = this->mem;
-    else
-      {
-      // skip the 'hostname:' portion of the string
-      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
-      char        *ppn_str = strdup(ppn_val.c_str());
-      int          num_ppn = strtol(ppn_str, NULL, 10);
-
-      mem = this->mem * (num_ppn / this->execution_slots);
-      }
-    }
+  int           num_tasks = this->get_num_tasks_for_host(host);
+  unsigned long mem = this->mem * num_tasks;
 
   return(mem);
   } // END get_memory_for_host()
-
 
 

@@ -83,18 +83,7 @@
 #include <string>
 
 #include "pbs_ifl.h"
-
-class allocation
-  {
-  public:
-  std::vector<int> cpu_indices;
-  unsigned long    memory;
-  int              cpus;
-  char             jobid[PBS_MAXSVRJOBID];
-
-  allocation(const allocation &alloc);
-  allocation();
-  };
+#include "allocation.hpp"
 
 class numa_node
   {

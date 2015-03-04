@@ -42,6 +42,38 @@ START_TEST(test_displayAsString)
 END_TEST
 
 
+START_TEST(test_reserving_and_freeing)
+  {
+  Core c;
+  bool completely_free;
+
+  // unit test init gives us os indexes 0 and 8
+  c.unit_test_init();
+  c.mark_as_busy();
+
+  fail_unless(c.get_open_processing_unit() == -1);
+  
+  // make sure freeing an index we don't have does nothing
+  fail_unless(c.free_pu_index(1, completely_free) == false);
+  fail_unless(completely_free == false);
+  fail_unless(c.get_open_processing_unit() == -1);
+
+  // make sure an actual free works
+  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(completely_free == false);
+  fail_unless(c.get_open_processing_unit() == 0);
+  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(completely_free == false);
+  fail_unless(c.free_pu_index(8, completely_free) == true);
+  fail_unless(completely_free == true);
+  int index = c.get_open_processing_unit();
+  fail_unless(index != -1, "Open processing unit is %d, shouldn't be -1");
+  index = c.get_open_processing_unit();
+  fail_unless(index != -1, "Open processing unit is %d, shouldn't be -1");
+  }
+END_TEST
+
+
 Suite *numa_core_suite(void)
   {
   Suite *s = suite_create("numa_core test suite methods");
@@ -51,6 +83,7 @@ Suite *numa_core_suite(void)
   
   tc_core = tcase_create("test_displayAsString");
   tcase_add_test(tc_core, test_displayAsString);
+  tcase_add_test(tc_core, test_reserving_and_freeing);
   suite_add_tcase(s, tc_core);
   
   return(s);

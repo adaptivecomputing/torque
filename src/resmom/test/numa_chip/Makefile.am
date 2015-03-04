@@ -11,7 +11,8 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS) $(HWLOC_LIBS)
 
 check_PROGRAMS = test_numa_chip
 
-libtest_numa_chip_la_SOURCES = scaffolding.c $(PROG_ROOT)/numa_chip.cpp
+libtest_numa_chip_la_SOURCES = scaffolding.c $(PROG_ROOT)/numa_chip.cpp ${PROG_ROOT}/allocation.cpp \
+															 ${PROG_ROOT}/numa_core.cpp
 libtest_numa_chip_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
 
 test_numa_chip_SOURCES = test_numa_chip.c

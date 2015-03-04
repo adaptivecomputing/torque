@@ -20,9 +20,16 @@
 #include "machine.hpp"
 #include "pbs_error.h"
 #include "log.h"
+<<<<<<< HEAD
 #include "mom_server_lib.h"
+=======
+#include "complete_req.hpp"
+>>>>>>> AC-8243. Initial pass at placing tasks according to resource request syntax 2.0
 
 using namespace std;
+
+const int   ALL_TASKS = -1;
+extern char mom_host[];
 
 
 /* 26 August 2014
@@ -98,7 +105,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
     totalSockets = newMachine.totalSockets;
     sockets = newMachine.sockets;
-    totalMemoryInBytes = newMachine.totalMemoryInBytes;
+    totalMemory = newMachine.totalMemory;
     totalChips = newMachine.totalChips;
     totalCores = newMachine.totalCores;
     totalThreads = newMachine.totalThreads;
@@ -109,17 +116,10 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     return *this;
     }
 
-  Machine::Machine()
+  Machine::Machine() : totalSockets(0), totalMemory(0), totalChips(0), totalCores(0),
+                       totalThreads(0), availableSockets(0), availableChips(0),
+                       availableCores(0), availableThreads(0)
     { 
-    totalSockets = 0;
-    totalMemoryInBytes = 0;
-    totalChips = 0;
-    totalCores = 0;
-    totalThreads = 0;
-    availableSockets = 0;
-    availableChips = 0;
-    availableCores = 0;
-    availableThreads = 0;
     memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
     memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
     }
@@ -259,7 +259,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
       }
     
     /* We have the machine object. Fill in what we know */
-    totalMemoryInBytes = obj->memory.total_memory;
+    totalMemory = obj->memory.total_memory / 1024;
     machine_cpuset = hwloc_topology_get_allowed_cpuset(topology);
     machine_nodeset = hwloc_topology_get_allowed_nodeset(topology);
     /* initialize the machines cpuset and nodeset strings */
@@ -333,7 +333,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
   hwloc_uint64_t Machine::getTotalMemory()
     {
-    return(this->totalMemoryInBytes);
+    return(this->totalMemory);
     }
 
   int Machine::getNumberOfSockets()
@@ -356,7 +356,6 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     return(this->totalThreads);
     }
 
-
   int Machine::getAvailableSockets()
     {
     return(this->availableSockets);
@@ -364,17 +363,32 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
   int Machine::getAvailableChips()
     {
-    return(this->availableChips);
+    int available = 0;
+   
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      available += this->sockets[i].getAvailableChips();
+
+    return(available);
     }
 
   int Machine::getAvailableCores()
     {
-    return(this->availableCores);
+    int available = 0;
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      available += this->sockets[i].getAvailableCores();
+
+    return(available);
     }
 
   int Machine::getAvailableThreads()
     {
-    return(this->availableThreads);
+    int available = 0;
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      available += this->sockets[i].getAvailableThreads();
+
+    return(available);
     }
 
   void Machine::displayAsString(
@@ -382,28 +396,120 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     stringstream &out) const
 
     {
-    out << "Machine (" << (this->totalMemoryInBytes / 1024) << "KB)\n";
+    out << "Machine (" << this->totalMemory << "KB)\n";
+    
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].displayAsString(out);
+    
     for (unsigned int i = 0; i < this->NVIDIA_device.size(); i++)
       this->NVIDIA_device[i].displayAsString(out);
 
-    for (unsigned int i = 0; i < this->sockets.size(); i++)
-      this->sockets[i].displayAsString(out);
-
     }
     
-  void Machine::setMemoryInBytes(
+  void Machine::setMemory(
       
     long long mem)
 
     {
-    this->totalMemoryInBytes = mem;
+    this->totalMemory = mem;
     }
 
+<<<<<<< HEAD
   void Machine::insertNvidiaDevice(
 
     PCI_Device& device)
     {
     this->NVIDIA_device.push_back(device);
     }
+=======
+  // This is meant to only be used for unit tests
+  void Machine::addSocket(
+
+    int count)
+
+    {
+    for (int i = 0; i < count; i++)
+      {
+      Socket s;
+      this->sockets.push_back(s);
+      }
+    }
+
+
+
+  int Machine::place_job(
+
+    job    *pjob,
+    string &cpu_string,
+    string &mem_string)
+
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    int           num_reqs = cr->req_count();
+    vector<int>   partially_place;
+    allocation    a;
+
+    // See if the tasks fit completely on a socket, and if they do then place them there
+    for (int i = 0; i < num_reqs; i++)
+      {
+      const req &r = cr->get_req(i);
+      int        tasks_for_node = r.get_num_tasks_for_host(mom_host);
+      bool       placed = false;
+
+      for (unsigned int j = 0; j < this->sockets.size(); j++)
+        {
+        if (this->sockets[j].how_many_tasks_fit(r) >= tasks_for_node)
+          {
+          // place the job entirely on this socket
+          placed = true;
+          this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, tasks_for_node);
+          this->availableSockets--;
+          break;
+          }
+        }
+
+      if (placed == false)
+        {
+        // mark this as a task that must be partially placed
+        partially_place.push_back(i);
+        }
+      }
+
+    // If any tasks were marked to be placed partially in different sockets then 
+    // place them now
+    for (unsigned int i = 0; i < partially_place.size(); i++)
+      {
+      const req &r = cr->get_req(partially_place[i]);
+      int        remaining_tasks = r.get_num_tasks_for_host(mom_host);
+      
+      for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
+        {
+        int placed = this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, remaining_tasks);
+        remaining_tasks -= placed;
+        this->availableSockets--;
+        }
+      }
+
+    a.place_indices_in_string(mem_string, MEM_INDICES);
+    a.place_indices_in_string(cpu_string, CPU_INDICES);
+    
+    return(PBSE_NONE);
+    } // END place_job()
+
+
+
+  void Machine::free_job_allocation(
+
+    const char *jobid)
+
+    {
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      {
+      if (this->sockets[i].free_task(jobid) == true)
+        this->availableSockets++;
+      }
+    } // END free_job_allocation()
+
+>>>>>>> AC-8243. Initial pass at placing tasks according to resource request syntax 2.0
 
 #endif /* PENABLE_LINUX26_CPUSETS */

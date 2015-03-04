@@ -4,7 +4,9 @@
 #include "log.h"
 #include "pbs_error.h"
 
-int hardware_style;
+const char  *use_cores = "usecores";
+std::string  my_placement_type;
+int          hardware_style;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -42,32 +44,6 @@ PCI_Device::~PCI_Device()
   {
   }
 
-Core::~Core()
-  {
-  }
-
-Core::Core()
-  {
-  }
-
-int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
-    {
-    /* We now need to find all of the processing units associated with this core */
-    this->id = core_obj->logical_index;
-    this->core_cpuset = core_obj->allowed_cpuset;
-    this->core_nodeset = core_obj->allowed_nodeset;
-    hwloc_bitmap_list_snprintf(this->core_cpuset_string, MAX_CPUSET_SIZE, this->core_cpuset);
-    hwloc_bitmap_list_snprintf(this->core_nodeset_string, MAX_NODESET_SIZE, this->core_nodeset);
-    this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->core_cpuset, HWLOC_OBJ_PU);
-    return(PBSE_NONE);
-    }
-
-int Core::getNumberOfProcessingUnits()
-  {
-  return(1);
-  }
-
-void Core::displayAsString(std::stringstream &out) const {}
 void PCI_Device::displayAsString(std::stringstream &out) const {}
 
 int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
@@ -76,10 +52,89 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
+req::req() {}
+
+unsigned long req::getMemory() const
+  {
+  return(this->mem);
+  }
+
+std::string req::getPlacementType() const
+  {
+  return(my_placement_type);
+  }
 
 
+int req::getExecutionSlots() const
+  {
+  return(this->execution_slots);
+  }
 
+int req::set_value(const char *name, const char *value)
+  {
+  if (!strcmp(name, "lprocs"))
+    this->execution_slots = atoi(value);
+  else if (!strcmp(name, "memory"))
+    this->mem = atoi(value);
 
+  return(0);
+  }
 
+int is_whitespace(
 
+  char c)
 
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
