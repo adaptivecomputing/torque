@@ -399,6 +399,7 @@ src/server/test/array_func/test_array_func
 src/server/test/array_upgrade/test_array_upgrade
 src/server/test/attr_recov/test_attr_recov
 src/server/test/batch_request/test_batch_request
+src/server/test/completed_jobs_map/test_completed_jobs_map
 src/server/test/delete_all_tracker/test_delete_all_tracker
 src/server/test/dis_read/test_dis_read
 src/server/test/display_alps_status/test_display_alps_status
