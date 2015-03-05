@@ -1,9 +1,11 @@
 #include "license_pbs.h" /* See this file for software license */
+#include <pbs_config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream>
 #include <set>
@@ -16,11 +18,10 @@
 #include <fcntl.h>
 #include "log.h"
 #include "trq_cgroups.h"
+#include "machine.hpp"
 
 using namespace std;
 using namespace boost;
-
-#define PS_CMD "ps -eo pid,ppid,sess | grep "
 
 enum cgroup_system
   {
@@ -37,6 +38,8 @@ string cg_cpuset_path;
 string cg_cpuacct_path;
 string cg_memory_path;
 string cg_devices_path;
+
+extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */
@@ -340,19 +343,16 @@ int init_subsystems(string& sub_token, string& mount_point)
     }
   return(0);
   }
-  
-int trq_cg_initialize_hierarchy()
+
+int trq_cg_get_cgroup_paths_from_system()
   {
   char cmd[512];
   char reply[1024];
   FILE *fp;
   string std_reply;
   string subsystem;
-  int rc = PBSE_NONE;
 
-  trq_cg_init_subsys_online();
-
-  /* lssubsys -am will return all of the mounted subsystems.
+   /* lssubsys -am will return all of the mounted subsystems.
      If any are not present we need to know and we will mount 
      them */
   strcpy(cmd, "lssubsys -am");
@@ -419,6 +419,96 @@ int trq_cg_initialize_hierarchy()
     }
 
   pclose(fp);
+
+  return(PBSE_NONE);
+  }
+
+ 
+int trq_cg_get_cgroup_paths_from_file()
+  {
+  std::string cgroup_path;
+  cgroup_path = PBS_SERVER_HOME;
+  cgroup_path = cgroup_path + "/trq-cgroup-paths";
+
+  int rc;
+  std::ifstream iFile;
+  std::string   line;
+  struct stat   stat_buf;
+  typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> sep(" ");
+
+  rc = stat(cgroup_path.c_str(), &stat_buf);
+  if (rc != 0)
+    return(PBSE_CAN_NOT_OPEN_FILE);
+    
+  iFile.open(cgroup_path.c_str(), std::ifstream::in);
+
+  if (iFile.is_open())
+    {
+    while (getline(iFile, line))
+      {
+      tokenizer tokens(line, sep);
+      for (tokenizer::iterator tok = tokens.begin(); tok != tokens.end(); ++ tok)
+        {
+        string subsys;
+        string path;
+
+        subsys = *tok;
+        tok++;
+        path = *tok;
+
+        if (subsys.compare("cpu") == 0)
+          {
+          cg_cpu_path = path;
+          init_subsystems(subsys, path);
+          }
+        else if (subsys.compare("cpuset") == 0)
+          {
+          cg_cpuset_path = path;
+          init_subsystems(subsys, path);
+          }
+        else if (subsys.compare("cpuacct") == 0)
+          {
+          cg_cpuacct_path = path;
+          init_subsystems(subsys, path);
+          }
+        else if (subsys.compare("memory") == 0)
+          {
+          cg_memory_path = path;
+          init_subsystems(subsys, path);
+          }
+        else if (subsys.compare("devices") == 0)
+          {
+          cg_devices_path = path;
+          init_subsystems(subsys, path);
+          }
+
+          break;
+        }
+      }
+
+    iFile.close();
+    }
+  else
+    return(PBSE_CAN_NOT_OPEN_FILE);
+
+  return(PBSE_NONE);
+
+  }
+
+int trq_cg_initialize_hierarchy()
+  {
+ int rc = PBSE_NONE;
+
+  trq_cg_init_subsys_online();
+
+  rc = trq_cg_get_cgroup_paths_from_file();
+  if (rc != PBSE_NONE)
+    {
+    rc = trq_cg_get_cgroup_paths_from_system();
+    if (rc)
+      return(rc);
+    }
 
   /* check to see if any of our devices are not mounted */
   rc = check_mounted_subsystems();
@@ -781,9 +871,10 @@ int trq_cg_get_cpuset_and_mem(
   std::string &mem_string)
 
   {
-  cpuset_string = "1-2";
-  mem_string = "0";
-  return(PBSE_NONE);
+  int rc = PBSE_NONE;
+
+  rc = this_node.place_job(pjob, cpuset_string, mem_string);
+  return(rc);
   }
 
 

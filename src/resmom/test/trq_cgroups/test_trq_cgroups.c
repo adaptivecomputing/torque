@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fstream>
+#include <iostream>
 #include "trq_cgroups.h"
 #include <check.h>
 #include <string>
@@ -11,6 +13,7 @@
 
 void trq_cg_init_subsys_online();
 int init_subsystems(std::string& sub_token, std::string& mount_point); 
+extern int create_cgroup_hierarchy();
 
 START_TEST(test_trq_cg_init_subsys_online)
   {
@@ -22,10 +25,54 @@ START_TEST(test_trq_cg_initialize_hierarchy)
   {
   char buf[256];
   int rc;
+  std::string  cgroup_path;
+  std::string  tmp_cgroup_dir;
+  struct stat  stat_buf;
 
+  tmp_cgroup_dir = "/tmp/cgroup";
+  rmdir(tmp_cgroup_dir.c_str());
+  
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0, "Could not create cgroup hierarchy");
+
+  rc = trq_cg_get_cgroup_paths_from_file();
+  fail_unless(rc != 0, "trq_cg_get_cgroup_paths_from_file failed");
+
+
+  cgroup_path = PBS_SERVER_HOME;
+  cgroup_path = cgroup_path + "/trq-cgroup-paths";
+
+  rc = stat(cgroup_path.c_str(), &stat_buf);
+  if (rc != 0)
+    {
+    /* the trq-cgroup-paths file does not exist. create one */
+    std::ofstream cgroup_file(cgroup_path.c_str());
+
+    cgroup_file << "cpu /tmp/cgroup/cpu\n";
+    cgroup_file << "cpuset /tmp/cgroup/cpuset\n";
+    cgroup_file << "cpuacct /tmp/cgroup/cpuacct\n";
+    cgroup_file << "memory /tmp/cgroup/memory\n";
+    cgroup_file << "devices /tmp/cgroup/devices\n";
+
+    cgroup_file.close();
+
+    }
+    
+  /* test trq_cg_initialize_hierarchy when there is a configuration
+   * file present */
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
+  rc = remove(cgroup_path.c_str());
+  fail_unless(rc == 0, "remove didn't work");
+  
+
+  /* test with default cgroups */
   rc = trq_cg_initialize_hierarchy();
   sprintf(buf, "Failed to initialize hierarchy: %d\n", rc);
   fail_unless(rc==0, buf);
+
+
   }
 END_TEST
 

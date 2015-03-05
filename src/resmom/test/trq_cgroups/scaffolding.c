@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include <iostream>
-#include <string.h>
 #include "pbs_error.h"
 
 int  LOGLEVEL=6;
@@ -78,6 +76,27 @@ int create_cgroup_hierarchy()
       return(rc);
       }
     }
+
+  /* mount the cgroup for each of these */
+  rc = system("mount -t cgroup -o cpu test_cpu /tmp/cgroup/cpu");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("mount -t cgroup -o cpuset test_cpuset /tmp/cgroup/cpuset");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("mount -t cgroup -o cpuacct test_cpuacct /tmp/cgroup/cpuacct");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("mount -t cgroup -o memory test_memory /tmp/cgroup/memory");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("mount -t cgroup -o devices test_devices /tmp/cgroup/devices");
+  if (rc != -1)
+    rc = 0;
 
   return (rc);
   }

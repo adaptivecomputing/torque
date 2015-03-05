@@ -25,4 +25,5 @@ void *trq_cg_remove_process_from_accts(void *vp);
 int trq_cg_set_resident_memory_limit(pid_t pid, unsigned long memory_limit);
 int trq_cg_set_swap_memory_limit(pid_t pid, unsigned long memory_limit);
 int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid);
+int trq_cg_get_cgroup_paths_from_file();
 #endif /* _TRQ_CGROUPS_H_ */

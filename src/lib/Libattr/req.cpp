@@ -1633,7 +1633,7 @@ int req::set_value(
     this->nodes = strtol(value, NULL, 10);
   else if (!strncmp(name, "sockets", 7))
     this->socket = strtol(value, NULL, 10);
-  else if (!strncmp(name, "numa_chips", 10))
+  else if (!strncmp(name, "numachip", 10))
     this->numa_chip = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);

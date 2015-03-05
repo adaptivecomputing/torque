@@ -1,17 +1,16 @@
  
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags`
-AM_LIBS=`xml2-config --libs`
+AM_CFLAGS = -g -DTEST_FUNCTION -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags`
 
 lib_LTLIBRARIES = libtest_trq_cgroups.la
 
-AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(AM_LIBS)
+AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) 
 
 check_PROGRAMS = test_trq_cgroups
 
 libtest_trq_cgroups_la_SOURCES = scaffolding.c $(PROG_ROOT)/trq_cgroups.c
-libtest_trq_cgroups_la_LDFLAGS = @CHECK_LIBS@ $(AM_LIBS) -shared -lgcov
+libtest_trq_cgroups_la_LDFLAGS = @CHECK_LIBS@  -shared -lgcov
 
 test_trq_cgroups_SOURCES = test_trq_cgroups.c
 
