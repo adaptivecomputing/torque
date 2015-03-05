@@ -497,8 +497,6 @@ int svr_enquejob(
       alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
       alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
-
-    pjob->ji_has_been_removed = false;
     alljobs.unlock();
 
     if (has_sv_qs_mutex == FALSE)
