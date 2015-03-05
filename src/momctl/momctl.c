@@ -970,6 +970,8 @@ void MCShowUsage(
 
   fprintf(stderr, "            [ -h HOST[,HOST]... ] // HOSTLIST\n");
 
+  fprintf(stderr, "            [ -l ]                // PRINT MACHINE LAYOUT (CGROUPS ONLY)\n");
+
   fprintf(stderr, "            [ -p PORT ]           // PORT\n");
 
   fprintf(stderr, "            [ -q ATTR ]           // QUERY ATTRIBUTE\n");
