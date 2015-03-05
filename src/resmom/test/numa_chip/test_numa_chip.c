@@ -123,6 +123,12 @@ START_TEST(test_how_many_tasks_fit)
   c.setCores(2);
   tasks = c.how_many_tasks_fit(r);
   fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
+
+  // make sure that we can handle a request without memory
+  req r2;
+  r2.set_value("lprocs", "2");
+  c.setCores(10);
+  fail_unless(c.how_many_tasks_fit(r2) == 5);
   
 
   }
@@ -139,6 +145,7 @@ START_TEST(test_place_and_free_task)
   allocation a(jobid);
 
   Chip c;
+  c.setId(0);
   c.setThreads(24);
   c.setCores(12);
   c.setMemory(6);
@@ -160,6 +167,8 @@ START_TEST(test_place_and_free_task)
   // fill the node's memory
   int tasks = c.place_task(jobid, r, a, 6);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
+  fail_unless(a.mem_indices.size() > 0);
+  fail_unless(a.mem_indices[0] == 0);
 
   // Memory should be full now
   tasks = c.place_task(jobid, r, a, 6);

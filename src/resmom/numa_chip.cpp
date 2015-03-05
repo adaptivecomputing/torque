@@ -417,6 +417,14 @@ using namespace std;
   
 
 
+  /*
+   * how_many_tasks_fit()
+   *
+   * Determines how many tasks from req r fit on this chip
+   * @param r - the req we're examining
+   * @return the number of tasks that fit. This can be 0
+   */
+
   int Chip::how_many_tasks_fit(
 
     const req &r)
@@ -430,7 +438,13 @@ using namespace std;
     else
       cpu_tasks = this->availableThreads / r.getExecutionSlots();
 
-    mem_tasks = this->available_memory / r.getMemory();
+    long long memory = r.getMemory();
+
+    // Memory isn't required for submission
+    if (memory == 0)
+      return(cpu_tasks);
+
+    mem_tasks = this->available_memory / memory;
 
     if (mem_tasks > cpu_tasks)
       return(cpu_tasks);
