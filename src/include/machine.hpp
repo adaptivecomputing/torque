@@ -100,8 +100,6 @@ class Chip
   hwloc_uint64_t          memory;
   hwloc_uint64_t          available_memory;
   std::vector<Core>       cores;
-  std::vector<bool>       core_is_available;
-  std::vector<bool>       thread_is_available;
   std::vector<PCI_Device> devices;
   vector<allocation>      allocations;
 
