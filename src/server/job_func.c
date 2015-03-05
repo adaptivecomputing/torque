@@ -852,6 +852,8 @@ void job_free(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
+  remove_job(&alljobs, pj, true);
+
   /* move to the recycling structure - deleting right away can cause a race
    * condition where two threads are pending on the same job. Thread 1 gets 
    * the lock and then deletes the job, but thread 2 gets the job's lock as
@@ -1909,10 +1911,6 @@ int svr_job_purge(
     log_err(rc, __func__, "null input job pointer fail");
     return(rc);
     }
-
-  // Make sure that the job isn't in alljobs list
-  if (remove_job(&alljobs, pjob) == PBSE_JOBNOTFOUND)
-    return(PBSE_NONE);
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
  
