@@ -555,11 +555,7 @@ int insert_job(
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
     }
   else
-    {
     rc = PBSE_NONE;
-    if (aj == &alljobs)
-      pjob->ji_has_been_removed = false;
-    }
 
   aj->unlock();
 
@@ -623,11 +619,7 @@ int insert_job_after(
       log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
       }
     else
-      {
       rc = PBSE_NONE;
-      if (aj == &alljobs)
-        pjob->ji_has_been_removed = false;
-      }
     }
 
   aj->unlock();
@@ -686,11 +678,7 @@ int insert_job_after(
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
-    {
     rc = PBSE_NONE;
-    if (aj == &alljobs)
-      pjob->ji_has_been_removed = false;
-    }
 
   aj->unlock();
 
@@ -730,11 +718,7 @@ int insert_job_first(
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
     }
   else
-    {
     rc = PBSE_NONE;
-    if (aj == &alljobs)
-      pjob->ji_has_been_removed = false;
-    }
 
   aj->unlock();
 
@@ -810,7 +794,8 @@ int has_job(
 int  remove_job(
    
   all_jobs *aj,
-  job      *pjob)
+  job      *pjob,
+  bool      force_lock)
 
   {
   int rc = PBSE_NONE;
@@ -833,20 +818,23 @@ int  remove_job(
 
   if (aj->trylock())
     {
-    // Do not attempt to remove a job twice as it won't be found again
-    // once we've unlocked it, resulting in a memory leak.
-    if (pjob->ji_has_been_removed == true)
-      return(PBSE_NONE);
-
     char jobid[PBS_MAXSVRJOBID+1];
-    snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
+
+    if (force_lock == false)
+      snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
     aj->lock();
 
-    if ((pjob = find_job_by_array(aj, jobid, TRUE, true)) == NULL)
+    if (force_lock == true)
+      lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    else
       {
-      rc = PBSE_JOBNOTFOUND;
+      if ((pjob = find_job_by_array(aj, jobid, TRUE, true)) == NULL)
+        {
+        rc = PBSE_JOBNOTFOUND;
+        }
       }
     }
 
@@ -854,8 +842,6 @@ int  remove_job(
     {
     if (!aj->remove(pjob->ji_qs.ji_jobid))
       rc = THING_NOT_FOUND;
-    else if (aj == &alljobs)
-      pjob->ji_has_been_removed = true;
     }
 
   aj->unlock();

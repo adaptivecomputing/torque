@@ -680,9 +680,6 @@ struct job
   char              ji_being_recycled;
   time_t            ji_last_reported_time;
   time_t            ji_mod_time;       // the timestamp of when the state last changed
-  // This indicates that we've successfully removed the job from the alljobs container.
-  // This is used to prevent potential memory leaks.
-  bool              ji_has_been_removed;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
@@ -736,7 +733,7 @@ int  insert_job_after(all_jobs *,job *before,job *after);
 int  insert_job_after(all_jobs *, char *after_id, job *after);
 int  insert_job_first(all_jobs *,job *);
 int  get_jobs_index(all_jobs *, job *);
-int  remove_job(all_jobs *,job *);
+int  remove_job(all_jobs *, job *, bool force_lock=false);
 int  has_job(all_jobs *,job *);
 int  swap_jobs(all_jobs *,job *,job *);
 struct pbs_queue *get_jobs_queue(job **);
