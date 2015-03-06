@@ -14,13 +14,36 @@
 void trq_cg_init_subsys_online(bool val);
 int init_subsystems(std::string& sub_token, std::string& mount_point); 
 int cleanup_cgroup_hierarchy();
+int check_mounted_subsystems();
+
 extern int create_cgroup_hierarchy();
+
+
+
+START_TEST(test_check_mounted_subsystems)
+  {
+  int rc;
+
+  /* Test when the subsystems have not been initialized */
+  trq_cg_init_subsys_online(false);
+  rc = check_mounted_subsystems();
+  fail_unless(rc != 0);
+
+  /* subsystems initialized but nothing mounted */
+  trq_cg_init_subsys_online(true);
+  rc = check_mounted_subsystems();
+  fail_unless(rc == 0);
+
+  }
+END_TEST
+
 
 START_TEST(test_trq_cg_init_subsys_online)
   {
   trq_cg_init_subsys_online(false);
   }
 END_TEST
+
 
 START_TEST(test_trq_cg_initialize_hierarchy)
   {
@@ -201,10 +224,15 @@ END_TEST
 Suite *trq_cgroups_suite(void)
   {
   Suite *s = suite_create("trq_cgroups test suite methods");
-  TCase *tc_core = tcase_create("test_trq_cg_init_subsys_online");
+  TCase *tc_core = tcase_create("test_check_mounted_subsystems");
+  tcase_add_test(tc_core, test_check_mounted_subsystems);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_trq_cg_init_subsys_online");
   tcase_add_test(tc_core, test_trq_cg_init_subsys_online);
   suite_add_tcase(s, tc_core);
-  
+
+ 
   tc_core = tcase_create("test_trq_cg_initialize_hierarchy");
   tcase_add_test(tc_core, test_trq_cg_initialize_hierarchy);
   suite_add_tcase(s, tc_core);
