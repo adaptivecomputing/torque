@@ -187,9 +187,9 @@ Suite *numa_node_suite(void)
   tcase_add_test(tc_core, test_recover_reservation);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_allocation");
+  /*tc_core = tcase_create("test_allocation");
   tcase_add_test(tc_core, test_allocation_constructors);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
   
   return(s);
   }

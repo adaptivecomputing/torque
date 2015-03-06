@@ -81,6 +81,7 @@
 */
 
 #include <vector>
+#include <string>
 
 #include "pbs_ifl.h"
 
