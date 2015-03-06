@@ -3004,7 +3004,7 @@ int rm_request(
 #endif  /* NVIDIA_GPUS and NVML_API */
 
 #ifdef PENABLE_LINUX_CGROUPS
-      cleanup_torque_cgroups();
+      trq_cg_cleanup_torque_cgroups();
 #endif
 
       log_close(1);

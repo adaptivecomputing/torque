@@ -14,7 +14,7 @@ extern std::string cg_memory_path;
 extern std::string cg_devices_path;
 
 
-int cleanup_torque_cgroups();
+int trq_cg_cleanup_torque_cgroups();
 int trq_cg_get_cgroup_path(std::string path); 
 void trq_cg_init_subsys_online();
 int trq_cg_initialize_hierarchy();

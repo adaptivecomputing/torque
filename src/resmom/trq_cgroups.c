@@ -58,7 +58,7 @@ void trq_cg_init_subsys_online()
 
 /* We need to remove the torque cgroups when pbs_mom 
  * is unloaded. */
-int cleanup_torque_cgroups()
+int trq_cg_cleanup_torque_cgroups()
   {
   struct stat buf;
   string torque_path;

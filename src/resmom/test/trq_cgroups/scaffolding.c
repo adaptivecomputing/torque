@@ -11,6 +11,9 @@ Machine this_node;
 
 char mom_host[PBS_MAXHOSTNAME + 1];
 
+
+/* create a cgroup hierarchy where we know it will exist so we can control
+   where the files will go */
 int create_cgroup_hierarchy()
   {
   int rc = PBSE_NONE;
@@ -106,6 +109,38 @@ int create_cgroup_hierarchy()
   return (rc);
   }
       
+/* cleanup_cgroup_hierarchy()
+   Cleanup our test cgroup hierarchy. We don't want to leave a mess behind */
+int cleanup_cgroup_hierarchy()
+  {
+  int rc = PBSE_NONE;
+
+  /* unmount the cgroups first. We do not care about the return codes */
+   rc = system("umount test_cpu");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("umount test_cpuset");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("umount test_cpuacct");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("umount test_memory");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("umount test_devices");
+  if (rc != -1)
+    rc = 0;
+
+  rc = system("rm -rf /tmp/cgroup");
+
+  return (0);
+  }
+
 void log_event(
 
   int         eventtype,

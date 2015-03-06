@@ -13,6 +13,7 @@
 
 void trq_cg_init_subsys_online();
 int init_subsystems(std::string& sub_token, std::string& mount_point); 
+int cleanup_cgroup_hierarchy();
 extern int create_cgroup_hierarchy();
 
 START_TEST(test_trq_cg_init_subsys_online)
@@ -56,22 +57,27 @@ START_TEST(test_trq_cg_initialize_hierarchy)
 
     cgroup_file.close();
 
-    }
-    
-  /* test trq_cg_initialize_hierarchy when there is a configuration
-   * file present */
-  rc = trq_cg_initialize_hierarchy();
-  fail_unless(rc == 0);
+    /* test trq_cg_initialize_hierarchy when there is a configuration
+     * file present */
+    rc = trq_cg_initialize_hierarchy();
+    fail_unless(rc == 0);
 
-  rc = remove(cgroup_path.c_str());
-  fail_unless(rc == 0, "remove didn't work");
-  
+    rc = remove(cgroup_path.c_str());
+    fail_unless(rc == 0, "remove didn't work");
+ 
+    }
+  else
+    {
+    /* the file exists. Do not mess with it.
+       It was put there for a reason. */
+    rc = trq_cg_initialize_hierarchy();
+    fail_unless(rc == 0);
+    }
 
   /* test with default cgroups */
   rc = trq_cg_initialize_hierarchy();
   sprintf(buf, "Failed to initialize hierarchy: %d\n", rc);
   fail_unless(rc==0, buf);
-
 
   }
 END_TEST
@@ -177,7 +183,20 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
   }
 END_TEST
 
+START_TEST(test_trq_cg_cleanup_torque_cgroups)
+  {
+  int rc;
 
+  /* This is the /tmp/cgroup hierarchy we created
+     for these tests in "test_trq_cg_initialize_hierarchy". Cleanup it up */
+  cleanup_cgroup_hierarchy();
+
+  /* Cleanup the hierarchy from the mounted subsystem */
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+  }
+END_TEST
 
 
 Suite *trq_cgroups_suite(void)
@@ -202,7 +221,10 @@ Suite *trq_cgroups_suite(void)
   tc_core = tcase_create("test_trq_cg_set_swap_memory_limit");
   tcase_add_test(tc_core, test_trq_cg_set_swap_memory_limit);
   suite_add_tcase(s, tc_core);
-  
+
+  tc_core = tcase_create("test_trq_cg_cleanup_torque_cgroups");
+  tcase_add_test(tc_core, test_trq_cg_cleanup_torque_cgroups);
+  suite_add_tcase(s, tc_core);
  
   return(s);
   }

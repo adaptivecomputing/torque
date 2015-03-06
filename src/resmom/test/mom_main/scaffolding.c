@@ -807,7 +807,7 @@ int trq_cg_initialize_hierarchy()
   return(0);
   }
 
-int cleanup_torque_cgroups()
+int trq_cg_cleanup_torque_cgroups()
   {
   return(0);
   }
