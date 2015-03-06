@@ -873,7 +873,9 @@ int trq_cg_get_cpuset_and_mem(
   {
   int rc = PBSE_NONE;
 
+#ifdef PENABLE_LINUX_CGROUPS
   rc = this_node.place_job(pjob, cpuset_string, mem_string);
+#endif
   return(rc);
   }
 

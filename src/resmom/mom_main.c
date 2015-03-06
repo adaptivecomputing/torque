@@ -83,11 +83,10 @@
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
-#else
-#include <hwloc.h>
 #endif
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#include <hwloc.h>
 #endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
