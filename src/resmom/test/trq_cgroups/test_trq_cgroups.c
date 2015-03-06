@@ -79,6 +79,11 @@ START_TEST(test_trq_cg_initialize_hierarchy)
   sprintf(buf, "Failed to initialize hierarchy: %d\n", rc);
   fail_unless(rc==0, buf);
 
+  /* Cleanup the hierarchy from the mounted subsystem */
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+
   }
 END_TEST
 
@@ -185,15 +190,9 @@ END_TEST
 
 START_TEST(test_trq_cg_cleanup_torque_cgroups)
   {
-  int rc;
-
   /* This is the /tmp/cgroup hierarchy we created
      for these tests in "test_trq_cg_initialize_hierarchy". Cleanup it up */
   cleanup_cgroup_hierarchy();
-
-  /* Cleanup the hierarchy from the mounted subsystem */
-  rc = trq_cg_cleanup_torque_cgroups();
-  fail_unless(rc == 0);
 
   }
 END_TEST
