@@ -11,14 +11,14 @@
 
 #define LOGLEVEL   6
 
-void trq_cg_init_subsys_online();
+void trq_cg_init_subsys_online(bool val);
 int init_subsystems(std::string& sub_token, std::string& mount_point); 
 int cleanup_cgroup_hierarchy();
 extern int create_cgroup_hierarchy();
 
 START_TEST(test_trq_cg_init_subsys_online)
   {
-  trq_cg_init_subsys_online();
+  trq_cg_init_subsys_online(false);
   }
 END_TEST
 

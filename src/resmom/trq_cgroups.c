@@ -47,10 +47,10 @@ bool subsys_online[cg_subsys_count];
 
 /* initialize subsys_online to all false so we
    can know if any needed hierarcies are not mounted */
-void trq_cg_init_subsys_online()
+void trq_cg_init_subsys_online(bool val)
   {
   for (int i = cg_cpu; i < cg_subsys_count; i++)
-    subsys_online[i] = false;
+    subsys_online[i] = val;
   subsys_online[cg_subsys_count] = true;
 
   return;
@@ -500,7 +500,7 @@ int trq_cg_initialize_hierarchy()
   {
  int rc = PBSE_NONE;
 
-  trq_cg_init_subsys_online();
+  trq_cg_init_subsys_online(false);
 
   rc = trq_cg_get_cgroup_paths_from_file();
   if (rc != PBSE_NONE)

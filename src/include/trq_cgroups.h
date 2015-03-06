@@ -16,7 +16,7 @@ extern std::string cg_devices_path;
 
 int trq_cg_cleanup_torque_cgroups();
 int trq_cg_get_cgroup_path(std::string path); 
-void trq_cg_init_subsys_online();
+void trq_cg_init_subsys_online(bool val);
 int trq_cg_initialize_hierarchy();
 int trq_cg_create_cgroup(std::string&, pid_t);
 int trq_cg_add_process_to_cgroup_accts(pid_t);
