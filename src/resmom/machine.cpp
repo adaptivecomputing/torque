@@ -113,7 +113,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     return *this;
     }
 
-  Machine::Machine() : totalSockets(0), totalMemory(0), totalChips(0), totalCores(0),
+  Machine::Machine() : totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
                        totalThreads(0), availableSockets(0), availableChips(0),
                        availableCores(0), availableThreads(0)
     { 
@@ -154,6 +154,8 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     non_numa_socket.initializeNonNUMASocket(socket_obj, topology);
 
     this->sockets.push_back(non_numa_socket);
+
+    return(PBSE_NONE);
 
     }
 

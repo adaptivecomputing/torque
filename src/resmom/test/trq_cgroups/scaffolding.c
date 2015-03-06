@@ -3,8 +3,13 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include "pbs_error.h"
+#include "machine.hpp"
 
 int  LOGLEVEL=6;
+
+Machine this_node;
+
+char mom_host[PBS_MAXHOSTNAME + 1];
 
 int create_cgroup_hierarchy()
   {
@@ -119,3 +124,200 @@ void log_err(
   {
   return;
   }
+
+
+
+
+/* pbs_err_db generators
+ *
+ * @see pbs_error_db.h
+ *
+ * @note this constant should be const char*, but the current state of code
+ *       doesn't allow this
+ */
+/* this construct generates array of text representations for error constants */
+#define PbsErrClient(id, txt) txt,
+static char * pbs_err_client_txt[] =
+{
+#include "pbs_error_db.h"
+(char*)0
+};
+#undef PbsErrClient
+
+#define PbsErrRm(id, txt) txt,
+static char * pbs_err_rm_txt[] =
+{
+#include "pbs_error_db.h"
+(char*)0
+};
+#undef PbsErrRm
+
+
+/*
+ * pbse_to_txt() - return a text message for an PBS error number
+ * if it exists
+ */
+
+char *pbse_to_txt(
+
+  int err)  /* I */
+
+  {
+  if (err == 0)
+	  return pbs_err_client_txt[0];
+
+  if (err > PBSE_FLOOR && err < PBSE_CEILING)
+	  return pbs_err_client_txt[err - PBSE_FLOOR];
+
+  if (err > PBSE_RMFLOOR && err < PBSE_RMCEILING)
+	  return pbs_err_rm_txt[err - PBSE_RMFLOOR];
+
+  return (char*)0;
+  }  /* END pbse_to_txt() */
+
+
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+/*
+ * a threadsafe tokenizing function - this also alters the input string
+ * just like strtok does.
+ *
+ * @param str - a modified string pointer (advanced past the token)
+ * @param delims - the delimiters to look for
+ * @return - a pointer to the token
+ */
+
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+         (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  } /* END threadsafe_tokenizer() */
+
+
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
+
+
+
+#include "machine.cpp"
+#include "numa_pci_device.cpp"
+#include "numa_core.cpp"
+#include "numa_chip.cpp"
+#include "numa_socket.cpp"
+#include "allocation.cpp"
+#include "../lib/Libattr/complete_req.cpp"
+#include "../lib/Libattr/req.cpp"

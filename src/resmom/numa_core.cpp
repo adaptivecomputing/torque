@@ -18,7 +18,7 @@ using namespace std;
 #define AMD   2
 
 
-  Core::Core() : id(-1), totalThreads(1), indices(), free(true), is_index_busy()
+  Core::Core() : id(-1), totalThreads(1), free(true), indices(), is_index_busy()
     {
     memset(core_cpuset_string, 0, MAX_CPUSET_SIZE);
     memset(core_nodeset_string, 0, MAX_NODESET_SIZE);

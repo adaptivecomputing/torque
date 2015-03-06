@@ -89,15 +89,16 @@ const int CPU_INDICES = 1;
 
 allocation::allocation(
 
-  const allocation &alloc) : memory(alloc.memory), cpus(alloc.cpus), cpu_indices(alloc.cpu_indices),
-                             mem_indices(alloc.mem_indices), cores(alloc.cores),
+  const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
+                             memory(alloc.memory), cpus(alloc.cpus), 
+                             cores(alloc.cores),
                              threads(alloc.threads)
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
-allocation::allocation() : memory(0), cpus(0), cpu_indices(), mem_indices(), cores(0), threads(0)
+allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
 
   {
   this->jobid[0] = '\0';
@@ -105,7 +106,7 @@ allocation::allocation() : memory(0), cpus(0), cpu_indices(), mem_indices(), cor
 
 allocation::allocation(
 
-  const char *jobid) : memory(0), cpus(0), cpu_indices(), mem_indices(), cores(0), threads(0)
+  const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
 
   {
   snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);

@@ -507,7 +507,7 @@ using namespace std;
       if (a.cores_only == true)
         {
         // Get the core indices we will use
-        int j = 0;
+        unsigned int j = 0;
         for (int i = 0; i < execution_slots_per_task; i++)
           {
           while (j < this->cores.size())
@@ -534,7 +534,7 @@ using namespace std;
         // Place for being able to use threads
         int slots_left = execution_slots_per_task;
         // Get the core indices we will use
-        for (int j = 0; j < this->cores.size() && slots_left > 0; j++)
+        for (unsigned int j = 0; j < this->cores.size() && slots_left > 0; j++)
           {
           int index;
 
