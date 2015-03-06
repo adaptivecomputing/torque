@@ -4,7 +4,6 @@
 #include <sstream>
 #include "machine.hpp"
 #include <errno.h>
-#include <hwloc.h>
 #include "pbs_config.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -12,6 +11,7 @@
 using namespace std;
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include <hwloc.h>
 
   Socket::Socket()
     {
