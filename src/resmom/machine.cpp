@@ -1,10 +1,10 @@
 #include <string>
 #include <vector>
 #include <errno.h>
-#include <hwloc.h>
 #include "pbs_config.h"
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include <hwloc.h>
 
 #ifdef MIC
 #include <hwloc/intel-mic.h>

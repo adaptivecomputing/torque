@@ -2,11 +2,11 @@
 #include <string>
 #include <vector>
 #include <errno.h>
-#include <hwloc.h>
 #include "pbs_config.h"
 #include "machine.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include <hwloc.h>
 
 #ifdef MIC
 #include <hwloc/intel-mic.h>
