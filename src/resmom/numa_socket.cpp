@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include "machine.hpp"
 #include <errno.h>
 #include "pbs_config.h"
 #include "pbs_error.h"
@@ -11,6 +10,7 @@
 using namespace std;
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
 #include <hwloc.h>
 
   Socket::Socket()

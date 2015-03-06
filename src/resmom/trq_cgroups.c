@@ -18,7 +18,9 @@
 #include <fcntl.h>
 #include "log.h"
 #include "trq_cgroups.h"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 
 using namespace std;
 using namespace boost;
@@ -39,7 +41,9 @@ string cg_cpuacct_path;
 string cg_memory_path;
 string cg_devices_path;
 
+#ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
+#endif
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */

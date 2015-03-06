@@ -1,11 +1,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "machine.hpp"
 #include <errno.h>
 #include "pbs_config.h"
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
 #include <hwloc.h>
 
 #include "pbs_error.h"

@@ -3,9 +3,9 @@
 #include <vector>
 #include <errno.h>
 #include "pbs_config.h"
-#include "machine.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
 #include <hwloc.h>
 
 #ifdef MIC
