@@ -5,7 +5,7 @@ AM_CFLAGS = -g -DTEST_FUNCTION -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -I${PROG
 
 lib_LTLIBRARIES = libtest_trq_cgroups.la
 
-AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) 
+AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES) $(HWLOC_LIBS)
 
 check_PROGRAMS = test_trq_cgroups
 
