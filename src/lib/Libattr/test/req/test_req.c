@@ -92,7 +92,7 @@ START_TEST(test_get_set_values)
 
   req r2;
   r2.set_value("lprocs", "2");
-  r2.set_value("numa_chips", "1");
+  r2.set_value("numachip", "1");
   r2.set_value("maxtpn", "1");
   r2.set_value("placement_type", "core");
   r2.set_value("pack", "true");
