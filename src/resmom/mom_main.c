@@ -218,7 +218,9 @@ Machine          this_node;
 node_internals   internal_layout;
 #endif
 
+#if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
 hwloc_topology_t topology = NULL;       /* system topology */
+#endif
 
 
 /* externs */
