@@ -921,7 +921,7 @@ int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid)
   /* This is the fun part. How do we determine which cpus and memory a job should use */
   sprintf(cgroup_name, "%d", job_pid);
   cpuset_cpus = cg_cpuset_path + cgroup_name + "/cpuset.cpus";
-  fd = fopen(cpuset_cpus.c_str(), "r+");
+  fd = fopen(cpuset_cpus.c_str(), "w");
   if (fd == NULL)
     {
     sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());
@@ -941,7 +941,7 @@ int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid)
   fclose(fd);
   
   cpuset_mems = cg_cpuset_path + cgroup_name + "/cpuset.mems";
-  fd = fopen(cpuset_mems.c_str(), "r+"); 
+  fd = fopen(cpuset_mems.c_str(), "w"); 
    if (fd == NULL)
     {
     sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());

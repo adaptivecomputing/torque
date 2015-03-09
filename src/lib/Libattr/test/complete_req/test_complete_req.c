@@ -5,6 +5,8 @@
 #include "complete_req.hpp"
 #include "pbs_error.h"
 
+extern int called_log_event;
+
 
 START_TEST(test_set_get_value)
   {
@@ -127,7 +129,7 @@ START_TEST(test_get_swap_memory_for_this_host)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:1");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1");
 
   c.add_req(r1);
 
@@ -141,6 +143,32 @@ START_TEST(test_get_swap_memory_for_this_host)
   }
 END_TEST
 
+
+START_TEST(test_set_hostlists)
+  {
+  complete_req c;
+  req r1;
+  req r2;
+  c.add_req(r1);
+  c.add_req(r2);
+
+  // make sure we don't segfault
+  c.set_hostlists(NULL, NULL);
+
+  called_log_event = 0;
+  c.set_hostlists("1.napali", "napali:ppn=32");
+  fail_unless(called_log_event == 1);
+  c.set_hostlists("1.napali", "napali:ppn=32|waimea|lihue");
+  fail_unless(called_log_event == 2);
+  c.set_hostlists("1.napali", "napali:ppn=32|waimea:ppn=16");
+  const req &r = c.get_req(0);
+  fail_unless(r.getHostlist() == "napali:ppn=32", "it is '%s'", r.getHostlist().c_str());
+  const req &other = c.get_req(1);
+  fail_unless(other.getHostlist() == "waimea:ppn=16", "it is '%s'", other.getHostlist().c_str());
+  }
+END_TEST
+
+
 START_TEST(test_get_memory_for_this_host)
   {
   complete_req c;
@@ -150,7 +178,7 @@ START_TEST(test_get_memory_for_this_host)
   req r1;
   req r2;
 
-  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:1");
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1");
 
   c.add_req(r1);
 
@@ -174,6 +202,7 @@ Suite *complete_req_suite(void)
   
   tc_core = tcase_create("test_get_swap_memory_for_this_host");
   tcase_add_test(tc_core, test_get_swap_memory_for_this_host);
+  tcase_add_test(tc_core, test_set_hostlists);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_get_memory_for_this_host");

@@ -3,6 +3,8 @@
 
 #include "utils.h"
 
+int called_log_event;
+
 int is_whitespace(
 
   char c)
@@ -54,4 +56,15 @@ char *threadsafe_tokenizer(
 
   {
   return(NULL);
+  }
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text) 
+
+  {
+  called_log_event++;
   }

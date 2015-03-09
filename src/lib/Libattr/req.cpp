@@ -1782,7 +1782,7 @@ int req::getIndex() const
  * Based on the hostlist, determines the number of tasks from this req assigned 
  * to this host
  * hostlist is in the format:
- * hostname1:num_ppn+hostname2:num_ppn...
+ * hostname1[:ppn=num_ppn][+hostname2[:ppn=num_ppn][...]]
  * We find the ratio of the number of tasks assigned to this host to the number of cores per task
  * That raio is the number of tasks assigned to this host
  *
@@ -1797,15 +1797,20 @@ int req::get_num_tasks_for_host(
   {
   int         task_count = 0;
   std::size_t pos = this->hostlist.find(host);
+  int         offset = pos + host.size();
 
   if (pos != std::string::npos)
     {
     if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
         (!strncmp(this->placement_str.c_str(), "node", 4)))
       task_count = 1;
+    else if ((this->hostlist.size() <= offset) ||
+             (this->hostlist.at(offset) != ':'))
+      task_count = 1;
     else
       {
-      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 1);
+      // + 5 for ':ppn='
+      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 5);
       char        *ppn_str = strdup(ppn_val.c_str());
       int          num_ppn = strtol(ppn_str, NULL, 10);
 
@@ -1855,5 +1860,19 @@ unsigned long req::get_memory_for_host(
 
   return(mem);
   } // END get_memory_for_host()
+
+
+
+/*
+ * set_hostlist()
+ */
+
+void req::set_hostlist(
+
+  const char *hostlist)
+
+  {
+  this->hostlist = hostlist;
+  } // END set_hostlist()
 
 

@@ -1,9 +1,11 @@
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "complete_req.hpp"
 #include "pbs_error.h"
-
+#include "log.h"
 
 
 complete_req::complete_req() : reqs()
@@ -220,4 +222,63 @@ const req &complete_req::get_req(
   {
   return(this->reqs[i]);
   } // END get_req()
+
+
+
+void complete_req::set_hostlists(
+
+  const char *job_id,
+  const char *host_list)
+
+  {
+  if ((job_id == NULL) ||
+      (host_list == NULL))
+    return;
+
+  char *work_list = strdup(host_list);
+  int   i = 0;
+  char *bar = strchr(work_list, '|');
+  char *current = work_list;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  while (current != NULL)
+    {
+    if (i >= this->reqs.size())
+      {
+      // Moab seems to think there are more reqs than we do
+      snprintf(log_buf, sizeof(log_buf),
+                 "We received %d or more req assignments for job %s which has only %d reqs.",
+                 i, job_id, (int)this->reqs.size());
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+      break;
+      }
+
+    if (bar != NULL)
+      *bar = '\0';
+
+    this->reqs[i].set_hostlist(current);
+
+    // Advance the req to the next set of hosts
+    if (bar != NULL)
+      {
+      current = bar + 1;
+      bar = strchr(bar + 1, '|');
+      }
+    else
+      current = bar;
+
+    i++;
+    }
+
+  if (i < this->reqs.size())
+    {
+    // We think there are more reqs than Moab does
+    snprintf(log_buf, sizeof(log_buf),
+               "We only received %d or req assignments for job %s which has %d reqs.",
+               i, job_id, (int)this->reqs.size());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+    }
+
+  free(work_list);
+  } // END set_hostslists()
 

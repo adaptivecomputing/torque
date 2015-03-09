@@ -399,7 +399,7 @@ START_TEST(test_get_memory_for_host)
   r.set_value("swap", "1024kb");
   r.set_value("task_count", "5");
   r.set_value("thread_usage_policy", "use threads");
-  r.set_value("hostlist", "napali:32");
+  r.set_value("hostlist", "napali:ppn=32");
 
   mem = r.get_memory_for_host(host);
   fail_unless(mem != 0);
@@ -419,11 +419,16 @@ START_TEST(test_get_num_tasks_for_host)
   r.set_value("index", "0");
   r.set_value("lprocs", "2");
   r.set_value("task_count", "8");
-  r.set_value("hostlist", "napali:16");
+  r.set_value("hostlist", "napali:ppn=16");
   r.set_value("placement_type", "core");
   int tasks = r.get_num_tasks_for_host("napali");
 
   fail_unless(tasks == 8, "Expected 8, got %d", tasks);
+
+  r.set_value("lprocs", "1");
+  r.set_hostlist("napali");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 1, "Expected 1, got %d", tasks);
   }
 END_TEST
 
@@ -440,7 +445,7 @@ START_TEST(test_get_swap_for_host)
   r.set_value("swap", "1024kb");
   r.set_value("task_count", "5");
   r.set_value("thread_usage_policy", "use threads");
-  r.set_value("hostlist", "napali:32");
+  r.set_value("hostlist", "napali:ppn=32");
 
   mem = r.get_swap_for_host(host);
   fail_unless(mem != 0);

@@ -181,6 +181,7 @@ class req
     int           get_num_tasks_for_host(const std::string &host) const;
     unsigned long get_memory_for_host(const std::string &host) const;
     unsigned long get_swap_for_host(const std::string &host) const;
+    void          set_hostlist(const char *hostlist);
   };
 
 #endif /* _REQ_HPP */
