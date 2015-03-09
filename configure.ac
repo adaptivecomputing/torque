@@ -1102,6 +1102,7 @@ AC_ARG_WITH(hwloc-path, [
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
+
 dnl
 dnl enable Nvidia gpu support
 dnl
@@ -1185,7 +1186,7 @@ if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test
       # pkg_check_modules takes the first parameter "HWLOC" and provides an "HWLOC_LIBS" and "HWLOC_CFLAGS"
       # variable when the second parameter (the package and version we are looking for) resolves to true.
       PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.9],
-        [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
+        [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS"; CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS"; ],
         [ AC_MSG_ERROR([${CPUSET_DEPENDS_ON_HWLOC}${GPU_DETECTION_DEPENDS_ON_HWLOC}${CGROUP_DEPENDS_ON_HWLOC}
 $HWLOC_PKG_ERRORS
 
@@ -1212,6 +1213,12 @@ then configuring again.
     LIBS=$olibs
   fi
 fi 
+
+
+if test "x$HWLOC_CFLAGS" != "xnone"; then
+  CFLAGS="$CFLAGS $HWLOC_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS"
+fi
 
 
 dnl enable pbs_mom to use the cpuset API from libcpuset
