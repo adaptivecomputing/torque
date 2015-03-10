@@ -37,6 +37,10 @@ AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])
 
+dnl Enable silent compilation
+AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+
 AC_PROG_CXX
 m4_ifdef([AM_PROG_AR], [
     AM_PROG_AR
