@@ -1160,8 +1160,8 @@ static int get_script(
 
   if ((tmpfd = mkstemp(tmp_name)) < 0)
     {
-    fprintf(stderr, "qsub: could not create copy of script %s\n",
-            tmp_name);
+    fprintf(stderr, "qsub: could not create copy of script %s - %s\n",
+            tmp_name, strerror(errno));
 
     return(4);
     }
