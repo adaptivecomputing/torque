@@ -6518,6 +6518,10 @@ int start_exec(
 #endif
 #endif
 
+#ifdef PENABLE_LINUX_CGROUPS
+  trq_cg_reserve_cgroup(pjob);
+#endif
+
   /* if nodecount > 1, return once joins are sent, if nodecount == 1,
      return once job is started */
 

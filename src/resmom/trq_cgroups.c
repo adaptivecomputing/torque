@@ -888,6 +888,32 @@ int trq_cg_set_resident_memory_limit(
   }
 
 
+
+/*
+ * trq_cg_reserve_cgroup()
+ *
+ * This must happen before we fork so that the parent knows what cpus and mems
+ * the job is using
+ */
+
+int trq_cg_reserve_cgroup(
+
+  job *pjob)
+
+  {
+  int         rc = PBSE_NONE;
+  std::string cpus;
+  std::string mems;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  rc = this_node.place_job(pjob, cpus, mems);
+#endif
+
+  return(rc);
+  }
+
+
+
 int trq_cg_get_cpuset_and_mem(
   job *pjob, 
   std::string &cpuset_string, 
@@ -897,7 +923,7 @@ int trq_cg_get_cpuset_and_mem(
   int rc = PBSE_NONE;
 
 #ifdef PENABLE_LINUX_CGROUPS
-  rc = this_node.place_job(pjob, cpuset_string, mem_string);
+  rc = this_node.get_jobs_cpusets(pjob->ji_qs.ji_jobid, cpuset_string, mem_string);
 #endif
   return(rc);
   }

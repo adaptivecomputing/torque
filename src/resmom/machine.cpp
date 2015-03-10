@@ -490,22 +490,73 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
     a.place_indices_in_string(mem_string, MEM_INDICES);
     a.place_indices_in_string(cpu_string, CPU_INDICES);
+
+    this->allocations.push_back(a);
     
     return(PBSE_NONE);
     } // END place_job()
 
 
 
+  /*
+   * get_jobs_cpusets()
+   *
+   * Gets the cpusets corresponding to this job_id so that the child can place them
+   * @param job_id (I) - the id of the job
+   * @param cpus (O) - put the string representing the cpus here
+   * @param mems (O) - put the string representing the memory nodes here
+   * @return PBSE_NONE if we found the job, -1 otherwise
+   */
+
+  int Machine::get_jobs_cpusets(
+
+    const char *job_id,
+    string     &cpus,
+    string     &mems)
+
+    {
+    int rc = -1;
+
+    for (unsigned int i = 0; i < this->allocations.size(); i++)
+      {
+      if (!strcmp(this->allocations[i].jobid, job_id))
+        {
+        this->allocations[i].place_indices_in_string(mems, MEM_INDICES);
+        this->allocations[i].place_indices_in_string(cpus, CPU_INDICES);
+        rc = PBSE_NONE;
+        }
+      }
+
+    return(rc);
+    } // END get_jobs_cpusets()
+
+
+
   void Machine::free_job_allocation(
 
-    const char *jobid)
+    const char *job_id)
 
     {
     for (unsigned int i = 0; i < this->sockets.size(); i++)
       {
-      if (this->sockets[i].free_task(jobid) == true)
+      if (this->sockets[i].free_task(job_id) == true)
         this->availableSockets++;
       }
+
+    // Remove from my allocations
+    int index = -1;
+
+    for (unsigned int i = 0; i < this->allocations.size(); i++)
+      {
+      if (!strcmp(this->allocations[i].jobid, job_id))
+        {
+        index = i;
+        break;
+        }
+      }
+
+    if (index != -1)
+      this->allocations.erase(this->allocations.begin() + index);
     } // END free_job_allocation()
 
 #endif /* PENABLE_LINUX_CGROUPS */

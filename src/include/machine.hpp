@@ -228,7 +228,10 @@ class Machine
     void setMemory(long long mem); // used for unit tests
     void free_job_allocation(const char *jobid);
     void addSocket(int count); // used for unit tests
+    int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
   };
+
+extern Machine this_node;
 
 
 #endif  /* __MACHINE_HPP__ */

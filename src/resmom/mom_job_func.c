@@ -148,6 +148,7 @@
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
+#include "machine.hpp"
 #endif
 
 #ifndef TRUE
@@ -922,6 +923,8 @@ void mom_job_purge(
     sprintf(log_buffer, "removing cgroup of job %s. Process id %d", pjob->ji_qs.ji_jobid, *job_iter);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
+
+  this_node.free_job_allocation(pjob->ji_qs.ji_jobid);
 #endif
 
   //We had a request to change the frequency for the job and now that the job is done
