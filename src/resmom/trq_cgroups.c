@@ -571,7 +571,7 @@ int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_p
   rc = write(cgroup_fd, new_task_pid, strlen(new_task_pid));
   if (rc <= 0)
     {
-    sprintf(log_buf, "failed to add porcess %s to cgroup %s", cgroup_name, full_cgroup_path.c_str());
+    sprintf(log_buf, "failed to add porcess %s to cgroup %s: error: %d", cgroup_name, full_cgroup_path.c_str(), errno);
     log_err(-1, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }

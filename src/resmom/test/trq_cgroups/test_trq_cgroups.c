@@ -107,6 +107,8 @@ START_TEST(test_trq_cg_initialize_hierarchy)
   rc = trq_cg_cleanup_torque_cgroups();
   fail_unless(rc == 0);
 
+  cleanup_cgroup_hierarchy();
+
 
   }
 END_TEST
@@ -189,6 +191,7 @@ START_TEST(test_trq_cg_set_resident_memory_limit)
   rc = trq_cg_cleanup_torque_cgroups();
   fail_unless(rc == 0);
 
+  cleanup_cgroup_hierarchy();
 
   }
 END_TEST
@@ -228,6 +231,7 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
   rc = trq_cg_cleanup_torque_cgroups();
   fail_unless(rc == 0);
 
+  cleanup_cgroup_hierarchy();
   }
 END_TEST
 
@@ -258,6 +262,7 @@ START_TEST(test_trq_cg_initialize_cpuset_string)
   rc = trq_cg_cleanup_torque_cgroups();
   fail_unless(rc == 0);
 
+  cleanup_cgroup_hierarchy();
   }
 END_TEST
 
@@ -298,7 +303,7 @@ START_TEST(test_trq_cg_add_process_to_cgroup)
   rc = trq_cg_add_process_to_cgroup(cgroup_path, job_pid, new_pid);
   fail_unless(rc == 0);
 
-  waitpid(new_pid, &status, WNOHANG);
+  rc = waitpid(new_pid, &status, WNOHANG);
   sleep(2);
   /* We should be done now */
   /* Success case */
@@ -308,18 +313,108 @@ START_TEST(test_trq_cg_add_process_to_cgroup)
   rc = trq_cg_cleanup_torque_cgroups();
   fail_unless(rc == 0);
 
+  cleanup_cgroup_hierarchy();
+  }
+END_TEST
+
+START_TEST(test_trq_cg_add_pid_to_cgroup_tasks)
+  {
+  pid_t  job_pid;
+  int rc;
+  int status;
+  std::string  cgroup_path;
+
+  cgroup_path = "/tmp/cgroup/cpuacct/torque/";
+
+  job_pid = fork();
+  if (job_pid == 0)
+    {
+    sleep(1);
+    exit(1);
+    }
+ 
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
+  /* setup sucess case */
+  rc = trq_cg_create_cgroup(cgroup_path, job_pid);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_add_pid_to_cgroup_tasks(cgroup_path, job_pid);
+  fail_unless(rc == 0);
+
+  waitpid(job_pid, &status, WNOHANG);
+
+  /* We should be done now */
+  /* Success case */
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_pid);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+  cleanup_cgroup_hierarchy();
+  }
+END_TEST
+
+START_TEST(test_trq_cg_add_process_to_cgroup_accts)
+  {
+  pid_t  new_pid;
+  int  rc;
+  int status;
+  std::string cgroup_path("/tmp/cgroup");
+
+  new_pid = fork();
+  if (new_pid == 0)
+    {
+    sleep(1);
+    exit(1);
+    }
+
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
+
+  /* success case */
+  rc = trq_cg_add_process_to_cgroup_accts(new_pid);
+  fail_unless(rc == 0);
+
+  /* We should be done now */
+  waitpid(new_pid, &status, WNOHANG);
+  sleep(2);
+
+  /* Cleanup  */
+  cgroup_path = cgroup_path + "/cpuacct/torque/";
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, new_pid);
+  fail_unless(rc == 0);
+
+  cgroup_path =  "/tmp/cgroup//memory/torque/";
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, new_pid);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+  cleanup_cgroup_hierarchy();
   }
 END_TEST
 
 
-START_TEST(test_trq_cg_cleanup_torque_cgroups)
-  {
+
+//START_TEST(test_trq_cg_cleanup_torque_cgroups)
+//  {
   /* This is the /tmp/cgroup hierarchy we created
      for these tests in "test_trq_cg_initialize_hierarchy". Cleanup it up */
-  cleanup_cgroup_hierarchy();
-
-  }
-END_TEST
+//  cleanup_cgroup_hierarchy();
+//
+//  }
+//END_TEST
 
 
 Suite *trq_cgroups_suite(void)
@@ -358,9 +453,17 @@ Suite *trq_cgroups_suite(void)
   tcase_add_test(tc_core, test_trq_cg_add_process_to_cgroup);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_trq_cg_cleanup_torque_cgroups");
-  tcase_add_test(tc_core, test_trq_cg_cleanup_torque_cgroups);
+  tc_core = tcase_create("test_trq_cg_add_pid_to_cgroup_tasks");
+  tcase_add_test(tc_core, test_trq_cg_add_pid_to_cgroup_tasks);
   suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_trq_cg_add_process_to_cgroup_accts");
+  tcase_add_test(tc_core, test_trq_cg_add_process_to_cgroup_accts);
+  suite_add_tcase(s, tc_core);
+  
+  /*tc_core = tcase_create("test_trq_cg_cleanup_torque_cgroups");
+  tcase_add_test(tc_core, test_trq_cg_cleanup_torque_cgroups);
+  suite_add_tcase(s, tc_core);*/
   
   return(s);
   }

@@ -30,4 +30,6 @@ int trq_cg_initialize_cpuset_string(std::string file_name);
 int trq_cg_remove_process_from_cgroup(std::string& cgroup_path, pid_t job_pid);
 int trq_cg_add_process_to_cgroup(std::string& cgroup_path, pid_t job_pid, pid_t new_pid);
 int trq_cg_reserve_cgroup(job *pjob);
+int trq_cg_add_pid_to_cgroup_tasks(std::string& cgroup_path, pid_t job_pid);
+int trq_cg_add_process_to_cgroup_accts(pid_t job_pid);
 #endif /* _TRQ_CGROUPS_H_ */
