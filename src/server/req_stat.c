@@ -1066,7 +1066,8 @@ void stat_update(
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       unsigned long delta = time(NULL) - pjob->ji_last_reported_time;
       
-      if (delta > JOB_REPORTED_ABORT_DELTA)
+      if ((delta > JOB_REPORTED_ABORT_DELTA) &&
+          (pjob->ji_last_reported_time != 0))
         {
         snprintf(log_buf, sizeof(log_buf),
           "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
@@ -1082,10 +1083,13 @@ void stat_update(
         }
       else
         {
-        snprintf(log_buf, sizeof(log_buf),
-          "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
-          (int)delta);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        if (pjob->ji_last_reported_time != 0)
+          {
+          snprintf(log_buf, sizeof(log_buf),
+            "Unknown job message from mother superior appears to be in error, reported %d seconds ago",
+            (int)delta);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
         }
       }
     }

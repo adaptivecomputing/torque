@@ -29,6 +29,8 @@ int svr_totnodes = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int abort_called;
 
+time_t last_report = 0;
+
 struct batch_request *alloc_br(int type)
   {
   fprintf(stderr, "The call to alloc_br to be mocked!!\n");
@@ -143,11 +145,7 @@ job *next_job(struct all_jobs *aj, int *iter)
   exit(1);
   }
 
-void rel_resc(job *pjob)
-  {
-  fprintf(stderr, "The call to rel_resc to be mocked!!\n");
-  exit(1);
-  }
+void rel_resc(job *pjob) {}
 
 void delete_task(struct work_task *ptask)
   {
@@ -247,14 +245,21 @@ struct pbsnode *tfind_addr(u_long key, uint16_t port, char *pjob_id)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  job *pjob = NULL;
+
+  if (!strcmp(jobid, "1.napali"))
+    {
+    pjob = (job *)calloc(1, sizeof(job));
+    strcpy(pjob->ji_qs.ji_jobid, jobid);
+    pjob->ji_last_reported_time = last_report;
+    }
+
+  return(pjob);
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)

@@ -7,6 +7,7 @@
 
 
 extern int abort_called;
+extern time_t last_report;
 
 
 START_TEST(test_stat_update)
@@ -24,6 +25,25 @@ START_TEST(test_stat_update)
   // Make sure that the job isn't aborted.
   stat_update(&preq, &cntl);
   fail_unless(abort_called == 0);
+
+  preq.rq_reply.brp_choice = BATCH_REPLY_CHOICE_Text;
+  preq.rq_reply.brp_code = PBSE_UNKJOBID;
+  strcpy(preq.rq_ind.rq_status.rq_id, "1.napali");
+
+  // If we've never reported make sure we don't abort
+  last_report = 0;
+  stat_update(&preq, &cntl);
+  fail_unless(abort_called == 0);
+
+  // Make sure we won't abort if we're within the job reported abort delta
+  last_report = time(NULL) - (JOB_REPORTED_ABORT_DELTA / 2);
+  stat_update(&preq, &cntl);
+  fail_unless(abort_called == 0);
+
+  // Make sure we abort if we're past the delta
+  last_report = time(NULL) - (JOB_REPORTED_ABORT_DELTA + 1);
+  stat_update(&preq, &cntl);
+  fail_unless(abort_called == 1);
   }
 END_TEST
 
