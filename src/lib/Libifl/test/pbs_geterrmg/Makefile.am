@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libpbs_geterrmg.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_pbs_geterrmg
 
-libpbs_geterrmg_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_geterrmg.c
+libpbs_geterrmg_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/pbs_geterrmg.cpp
 libpbs_geterrmg_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_pbs_geterrmg_SOURCES = test_pbs_geterrmg.c
+test_pbs_geterrmg_SOURCES = test_pbs_geterrmg.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

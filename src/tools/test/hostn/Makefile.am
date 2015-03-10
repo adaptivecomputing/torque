@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libhostn.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_hostn
 
-libhostn_la_SOURCES = scaffolding.c ${PROG_ROOT}/hostn.c
+libhostn_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/hostn.cpp
 libhostn_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_hostn_SOURCES = test_hostn.c
+test_hostn_SOURCES = test_hostn.cpp
 
 check_SCRIPTS = coverage_run.sh
 

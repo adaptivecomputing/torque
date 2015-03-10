@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libdiswsl.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_diswsl
 
-libdiswsl_la_SOURCES = scaffolding.c ${PROG_ROOT}/diswsl.c ${PROG_ROOT}/discui_.c  ${PROG_ROOT}/discul_.c
+libdiswsl_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/diswsl.cpp ${PROG_ROOT}/discui_.cpp  ${PROG_ROOT}/discul_.cpp
 libdiswsl_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_diswsl_SOURCES = test_diswsl.c
+test_diswsl_SOURCES = test_diswsl.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

@@ -23,41 +23,46 @@ TCLQSTATCFLAGS = $(MY_TCL_INCS)
 endif
 qstat_LDADD = $(PBS_LIBS) $(TCLQSTATLIBS)
 qstat_CFLAGS = $(TCLQSTATCFLAGS)
+qstat_CPPFLAGS = $(AM_CXXFLAGS) $(TCLQSTATCFLAGS)
 
 qmgr_LDADD = $(PBS_LIBS) $(READLINE_LIBS)
 
 pbspoe_CFLAGS = -DPBSPD=\"$(bindir)/pbspd\"
+pbspoe_CPPFLAGS = $(AM_CXXFLAGS) -DPBSPD=\"$(bindir)/pbspd\"
+
 qsub_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
               -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+qsub_CPPFLAGS = $(AM_CXXFLAGS) -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
+              -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
-pbsdsh_SOURCES = pbsdsh.c
-pbsnodes_SOURCES = pbsnodes.c MXML.c
-pbspd_SOURCES = pbspd.c
-pbspoe_SOURCES = pbspoe.c
-qalter_SOURCES = qalter.c
-qdel_SOURCES = qdel.c common_cmds.c
-qdisable_SOURCES = qdisable.c
-qenable_SOURCES = qenable.c
-qhold_SOURCES = qhold.c
-qmgr_SOURCES = qmgr.c
-qmove_SOURCES = qmove.c
-qmsg_SOURCES = qmsg.c
-qorder_SOURCES = qorder.c
-qrerun_SOURCES = qrerun.c
-qrls_SOURCES = qrls.c
-qrun_SOURCES = qrun.c
-qselect_SOURCES = qselect.c
-qsig_SOURCES = qsig.c
-qstart_SOURCES = qstart.c
-qstat_SOURCES = qstat.c MXML.c
-qstop_SOURCES = qstop.c
-qsub_SOURCES = qsub.c qsub_functions.c common_cmds.c
+pbsdsh_SOURCES = pbsdsh.cpp
+pbsnodes_SOURCES = pbsnodes.cpp MXML.cpp
+pbspd_SOURCES = pbspd.cpp
+pbspoe_SOURCES = pbspoe.cpp
+qalter_SOURCES = qalter.cpp
+qdel_SOURCES = qdel.cpp common_cmds.cpp
+qdisable_SOURCES = qdisable.cpp
+qenable_SOURCES = qenable.cpp
+qhold_SOURCES = qhold.cpp
+qmgr_SOURCES = qmgr.cpp
+qmove_SOURCES = qmove.cpp
+qmsg_SOURCES = qmsg.cpp
+qorder_SOURCES = qorder.cpp
+qrerun_SOURCES = qrerun.cpp
+qrls_SOURCES = qrls.cpp
+qrun_SOURCES = qrun.cpp
+qselect_SOURCES = qselect.cpp
+qsig_SOURCES = qsig.cpp
+qstart_SOURCES = qstart.cpp
+qstat_SOURCES = qstat.cpp MXML.cpp
+qstop_SOURCES = qstop.cpp
+qsub_SOURCES = qsub.cpp qsub_functions.cpp common_cmds.cpp
 #qsub_LDFLAGS = -all-static
-qterm_SOURCES = qterm.c
-qchkpt_SOURCES = qchkpt.c
-qgpumode_SOURCES = qgpumode.c
-qgpureset_SOURCES = qgpureset.c
-pbs_track_SOURCES = pbs_track.c
+qterm_SOURCES = qterm.cpp
+qchkpt_SOURCES = qchkpt.cpp
+qgpumode_SOURCES = qgpumode.cpp
+qgpureset_SOURCES = qgpureset.cpp
+pbs_track_SOURCES = pbs_track.cpp
 
 CLEANFILES = $(dist_bin_SCRIPTS)
 CLEANFILES += *.gcda *.gcno *.gcov

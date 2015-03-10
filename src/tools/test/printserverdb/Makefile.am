@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 lib_LTLIBRARIES = libprintserverdb.la
 
@@ -10,10 +10,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_printserverdb
 
-libprintserverdb_la_SOURCES = scaffolding.c ${PROG_ROOT}/printserverdb.c
+libprintserverdb_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/printserverdb.cpp
 libprintserverdb_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_printserverdb_SOURCES = test_printserverdb.c
+test_printserverdb_SOURCES = test_printserverdb.cpp
 
 check_SCRIPTS = coverage_run.sh
 

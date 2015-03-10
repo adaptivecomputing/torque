@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+AM_CXXFLAGS = -I$(top_srcdir)/src/lib/Libdis -DIFF_PATH=\"$(IFF_PATH)\" -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 CLEANFILES = *.gcda *.gcno *.gcov
 
@@ -8,94 +8,94 @@ lib_LTLIBRARIES = libtorque.la
 
 libtorque_la_LDFLAGS = -version-info 2:0:0
 
-libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
-        ../Libdis/discui_.c ../Libdis/discul_.c \
-		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
-		    ../Libdis/disiui_.c ../Libdis/disp10d_.c \
-		    ../Libdis/disp10l_.c ../Libdis/disrcs.c \
-		    ../Libdis/disrd.c ../Libdis/disrf.c ../Libdis/disrfcs.c \
-		    ../Libdis/disrfst.c ../Libdis/disrl_.c ../Libdis/disrl.c \
-		    ../Libdis/disrsc.c ../Libdis/disrsi_.c \
-		    ../Libdis/disrsi.c ../Libdis/disrsl_.c \
-		    ../Libdis/disrsl.c ../Libdis/disrss.c ../Libdis/disrst.c \
-		    ../Libdis/disruc.c ../Libdis/disrui.c ../Libdis/disrul.c \
-		    ../Libdis/disrus.c ../Libdis/diswcs.c ../Libdis/diswf.c \
-		    ../Libdis/diswl_.c ../Libdis/diswsi.c ../Libdis/diswsl.c \
-		    ../Libdis/diswui_.c ../Libdis/diswui.c \
-		    ../Libdis/diswul.c \
-        ../Libutils/u_mutex_mgr.cpp \
-		    ../Libifl/dec_attrl.c ../Libifl/dec_attropl.c \
-		    ../Libifl/dec_Authen.c ../Libifl/dec_CpyFil.c \
-		    ../Libifl/dec_JobCred.c ../Libifl/dec_JobFile.c \
-		    ../Libifl/dec_JobId.c ../Libifl/dec_JobObit.c \
-		    ../Libifl/dec_Manage.c ../Libifl/dec_MoveJob.c \
-		    ../Libifl/dec_MsgJob.c ../Libifl/dec_QueueJob.c \
-		    ../Libifl/dec_Reg.c ../Libifl/dec_ReqExt.c \
-		    ../Libifl/dec_ReqHdr.c ../Libifl/dec_Resc.c \
-		    ../Libifl/dec_ReturnFile.c \
-		    ../Libifl/dec_rpyc.c ../Libifl/dec_rpys.c \
-		    ../Libifl/dec_RunJob.c ../Libifl/dec_Shut.c \
-		    ../Libifl/dec_Sig.c ../Libifl/dec_Status.c \
-		    ../Libifl/dec_svrattrl.c ../Libifl/dec_Track.c \
-		    ../Libifl/dec_Gpu.c \
-		    ../Libifl/enc_attrl.c ../Libifl/enc_attropl.c \
-				../Libifl/enc_attropl_hash.c \
-		    ../Libifl/enc_CpyFil.c ../Libifl/enc_JobCred.c \
-		    ../Libifl/enc_JobFile.c ../Libifl/enc_JobId.c \
-		    ../Libifl/enc_JobObit.c ../Libifl/enc_Manage.c \
-		    ../Libifl/enc_MoveJob.c ../Libifl/enc_MsgJob.c \
-		    ../Libifl/enc_QueueJob.c ../Libifl/enc_Reg.c \
-				../Libifl/enc_QueueJob_hash.c \
-		    ../Libifl/enc_reply.c ../Libifl/enc_ReturnFile.c \
-		    ../Libifl/enc_ReqExt.c ../Libifl/enc_Gpu.c \
-		    ../Libifl/enc_ReqHdr.c ../Libifl/enc_RunJob.c \
-		    ../Libifl/enc_Shut.c ../Libifl/enc_Sig.c \
-		    ../Libifl/enc_Status.c ../Libifl/enc_svrattrl.c \
-		    ../Libifl/enc_Track.c ../Libifl/get_svrport.c \
-             ../Libifl/enc_PowerState.c ../Libifl/dec_PowerState.c \
-		    ../Libifl/nonblock.c ../Libifl/PBS_attr.c \
-		    ../Libifl/pbsD_alterjo.c ../Libifl/pbsD_asyrun.c \
-		    ../Libifl/PBS_data.c ../Libifl/pbsD_connect.c \
-		    ../Libifl/pbsD_deljob.c ../Libifl/pbsD_holdjob.c  \
-		    ../Libifl/pbsD_chkptjob.c  ../Libifl/pbsD_locjob.c \
-		    ../Libifl/pbsD_gpuctrl.c ../Libifl/PBSD_gpuctrl2.c \
-		    ../Libifl/PBSD_manage2.c ../Libifl/pbsD_manager.c \
-		    ../Libifl/pbsD_movejob.c ../Libifl/PBSD_manager_caps.c \
-		    ../Libifl/PBSD_msg2.c ../Libifl/pbsD_msgjob.c \
-		    ../Libifl/pbsD_orderjo.c ../Libifl/PBSD_rdrpy.c \
-		    ../Libifl/pbsD_rerunjo.c ../Libifl/pbsD_resc.c \
-		    ../Libifl/pbsD_rlsjob.c ../Libifl/pbsD_runjob.c \
-		    ../Libifl/pbsD_selectj.c ../Libifl/PBSD_sig2.c \
-		    ../Libifl/pbsD_sigjob.c ../Libifl/pbsD_stagein.c \
-		    ../Libifl/pbsD_statjob.c ../Libifl/pbsD_statnode.c \
-		    ../Libifl/pbsD_statque.c ../Libifl/pbsD_statsrv.c \
-		    ../Libifl/PBSD_status2.c ../Libifl/PBSD_status.c \
-		    ../Libifl/pbsD_submit.c  ../Libifl/PBSD_submit_caps.c \
-		    ../Libifl/pbsD_submit_hash.c  \
-		    ../Libifl/pbsD_termin.c ../Libifl/pbs_geterrmg.c \
-		    ../Libifl/pbs_statfree.c \
-		    ../Libifl/tcp_dis.c ../Libifl/tm.c ../Libifl/list_link.c \
-                    ../Libifl/trq_auth.c  ../Libifl/torquecfg.c \
-		    ../Libcmds/ck_job_name.c ../Libcmds/cnt2server.c \
-		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
-                    ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
-		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
-                    ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
-		    ../Libcmds/parse_stage.c \
-                    ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
-		    ../Libcmds/set_attr.c ../Libcmds/set_resource.c \
-                    ../Libcmds/add_verify_resources.c \
-		    ../Liblog/chk_file_sec.c ../Liblog/log_event.c \
-		    ../Liblog/pbs_log.c ../Liblog/pbs_messages.c \
-                    ../Liblog/setup_env.c ../Libnet/conn_table.c \
-		    ../Libnet/get_hostaddr.c ../Libnet/get_hostname.c \
-		    ../Libnet/md5.c ../Libnet/net_common.c ../Libnet/net_client.c \
-                    ../Libnet/net_server.c ../Libnet/net_set_clse.c \
-                    ../Libnet/server_core.c \
-		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
-                    ../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
-                    ../Libutils/u_hash_map_structs.c \
-                    ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c
+libtorque_la_SOURCES = ../Libcsv/csv.cpp ../Libdis/dis.cpp \
+        ../Libdis/discui_.cpp ../Libdis/discul_.cpp \
+		    ../Libdis/disi10d_.cpp ../Libdis/disi10l_.cpp \
+		    ../Libdis/disiui_.cpp ../Libdis/disp10d_.cpp \
+		    ../Libdis/disp10l_.cpp ../Libdis/disrcs.cpp \
+		    ../Libdis/disrd.cpp ../Libdis/disrf.cpp ../Libdis/disrfcs.cpp \
+		    ../Libdis/disrfst.cpp ../Libdis/disrl_.cpp ../Libdis/disrl.cpp \
+		    ../Libdis/disrsc.cpp ../Libdis/disrsi_.cpp \
+		    ../Libdis/disrsi.cpp ../Libdis/disrsl_.cpp \
+		    ../Libdis/disrsl.cpp ../Libdis/disrss.cpp ../Libdis/disrst.cpp \
+		    ../Libdis/disruc.cpp ../Libdis/disrui.cpp ../Libdis/disrul.cpp \
+		    ../Libdis/disrus.cpp ../Libdis/diswcs.cpp ../Libdis/diswf.cpp \
+		    ../Libdis/diswl_.cpp ../Libdis/diswsi.cpp ../Libdis/diswsl.cpp \
+		    ../Libdis/diswui_.cpp ../Libdis/diswui.cpp \
+		    ../Libdis/diswul.cpp \
+		    ../Libutils/u_mutex_mgr.cpp \
+		    ../Libifl/dec_attrl.cpp ../Libifl/dec_attropl.cpp \
+		    ../Libifl/dec_Authen.cpp ../Libifl/dec_CpyFil.cpp \
+		    ../Libifl/dec_JobCred.cpp ../Libifl/dec_JobFile.cpp \
+		    ../Libifl/dec_JobId.cpp ../Libifl/dec_JobObit.cpp \
+		    ../Libifl/dec_Manage.cpp ../Libifl/dec_MoveJob.cpp \
+		    ../Libifl/dec_MsgJob.cpp ../Libifl/dec_QueueJob.cpp \
+		    ../Libifl/dec_Reg.cpp ../Libifl/dec_ReqExt.cpp \
+		    ../Libifl/dec_ReqHdr.cpp ../Libifl/dec_Resc.cpp \
+		    ../Libifl/dec_ReturnFile.cpp \
+		    ../Libifl/dec_rpyc.cpp ../Libifl/dec_rpys.cpp \
+		    ../Libifl/dec_RunJob.cpp ../Libifl/dec_Shut.cpp \
+		    ../Libifl/dec_Sig.cpp ../Libifl/dec_Status.cpp \
+		    ../Libifl/dec_svrattrl.cpp ../Libifl/dec_Track.cpp \
+		    ../Libifl/dec_Gpu.cpp \
+		    ../Libifl/enc_attrl.cpp ../Libifl/enc_attropl.cpp \
+				../Libifl/enc_attropl_hash.cpp \
+		    ../Libifl/enc_CpyFil.cpp ../Libifl/enc_JobCred.cpp \
+		    ../Libifl/enc_JobFile.cpp ../Libifl/enc_JobId.cpp \
+		    ../Libifl/enc_JobObit.cpp ../Libifl/enc_Manage.cpp \
+		    ../Libifl/enc_MoveJob.cpp ../Libifl/enc_MsgJob.cpp \
+		    ../Libifl/enc_QueueJob.cpp ../Libifl/enc_Reg.cpp \
+				../Libifl/enc_QueueJob_hash.cpp \
+		    ../Libifl/enc_reply.cpp ../Libifl/enc_ReturnFile.cpp \
+		    ../Libifl/enc_ReqExt.cpp ../Libifl/enc_Gpu.cpp \
+		    ../Libifl/enc_ReqHdr.cpp ../Libifl/enc_RunJob.cpp \
+		    ../Libifl/enc_Shut.cpp ../Libifl/enc_Sig.cpp \
+		    ../Libifl/enc_Status.cpp ../Libifl/enc_svrattrl.cpp \
+		    ../Libifl/enc_Track.cpp ../Libifl/get_svrport.cpp \
+             ../Libifl/enc_PowerState.cpp ../Libifl/dec_PowerState.cpp \
+		    ../Libifl/nonblock.cpp ../Libifl/PBS_attr.cpp \
+		    ../Libifl/pbsD_alterjo.cpp ../Libifl/pbsD_asyrun.cpp \
+		    ../Libifl/PBS_data.cpp ../Libifl/pbsD_connect.cpp \
+		    ../Libifl/pbsD_deljob.cpp ../Libifl/pbsD_holdjob.cpp  \
+		    ../Libifl/pbsD_chkptjob.cpp  ../Libifl/pbsD_locjob.cpp \
+		    ../Libifl/pbsD_gpuctrl.cpp ../Libifl/PBSD_gpuctrl2.cpp \
+		    ../Libifl/PBSD_manage2.cpp ../Libifl/pbsD_manager.cpp \
+		    ../Libifl/pbsD_movejob.cpp ../Libifl/PBSD_manager_caps.cpp \
+		    ../Libifl/PBSD_msg2.cpp ../Libifl/pbsD_msgjob.cpp \
+		    ../Libifl/pbsD_orderjo.cpp ../Libifl/PBSD_rdrpy.cpp \
+		    ../Libifl/pbsD_rerunjo.cpp ../Libifl/pbsD_resc.cpp \
+		    ../Libifl/pbsD_rlsjob.cpp ../Libifl/pbsD_runjob.cpp \
+		    ../Libifl/pbsD_selectj.cpp ../Libifl/PBSD_sig2.cpp \
+		    ../Libifl/pbsD_sigjob.cpp ../Libifl/pbsD_stagein.cpp \
+		    ../Libifl/pbsD_statjob.cpp ../Libifl/pbsD_statnode.cpp \
+		    ../Libifl/pbsD_statque.cpp ../Libifl/pbsD_statsrv.cpp \
+		    ../Libifl/PBSD_status2.cpp ../Libifl/PBSD_status.cpp \
+		    ../Libifl/pbsD_submit.cpp  ../Libifl/PBSD_submit_caps.cpp \
+		    ../Libifl/pbsD_submit_hash.cpp  \
+		    ../Libifl/pbsD_termin.cpp ../Libifl/pbs_geterrmg.cpp \
+		    ../Libifl/pbs_statfree.cpp \
+		    ../Libifl/tcp_dis.cpp ../Libifl/tm.cpp ../Libifl/list_link.cpp \
+                    ../Libifl/trq_auth.cpp  ../Libifl/torquecfg.cpp \
+		    ../Libcmds/ck_job_name.cpp ../Libcmds/cnt2server.cpp \
+		    ../Libcmds/cvtdate.cpp ../Libcmds/get_server.cpp \
+                    ../Libcmds/locate_job.cpp ../Libcmds/parse_at.cpp \
+		    ../Libcmds/parse_depend.cpp ../Libcmds/parse_destid.cpp \
+                    ../Libcmds/parse_equal.cpp ../Libcmds/parse_jobid.cpp \
+		    ../Libcmds/parse_stage.cpp \
+                    ../Libcmds/prepare_path.cpp ../Libcmds/prt_job_err.cpp \
+		    ../Libcmds/set_attr.cpp ../Libcmds/set_resource.cpp \
+                    ../Libcmds/add_verify_resources.cpp \
+		    ../Liblog/chk_file_sec.cpp ../Liblog/log_event.cpp \
+		    ../Liblog/pbs_log.cpp ../Liblog/pbs_messages.cpp \
+                    ../Liblog/setup_env.cpp ../Libnet/conn_table.cpp \
+		    ../Libnet/get_hostaddr.cpp ../Libnet/get_hostname.cpp \
+		    ../Libnet/md5.cpp ../Libnet/net_common.cpp ../Libnet/net_client.cpp \
+                    ../Libnet/net_server.cpp ../Libnet/net_set_clse.cpp \
+                    ../Libnet/server_core.cpp \
+		    ../Libnet/rm.cpp ../Libnet/port_forwarding.cpp \
+                    ../Libnet/net_cache.cpp ../Libutils/u_lock_ctl.cpp \
+                    ../Libutils/u_hash_map_structs.cpp \
+                    ../Libutils/u_threadpool.cpp ../Libutils/u_users.cpp ../Libutils/u_wrapper.cpp
 
 
 

@@ -9,7 +9,7 @@
 #include <pwd.h>
 #include "tcp.h"
 #include "libpbs.h" /* batch_reply */
-#include "../lib/Liblog/pbs_messages.c"
+#include "../lib/Liblog/pbs_messages.cpp"
 #include "dis.h"
 #include "net_connect.h" /* pbs_net_t */
 #include "lib_ifl.h"

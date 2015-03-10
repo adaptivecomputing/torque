@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libqmsg.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_qmsg
 
-libqmsg_la_SOURCES = scaffolding.c ${PROG_ROOT}/qmsg.c
+libqmsg_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/qmsg.cpp
 libqmsg_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_qmsg_SOURCES = test_qmsg.c
+test_qmsg_SOURCES = test_qmsg.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../test/coverage_run.sh
 

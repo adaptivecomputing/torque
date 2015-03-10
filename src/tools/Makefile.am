@@ -31,23 +31,27 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 tracejob_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+tracejob_CPPFLAGS = $(AM_CXXFLAGS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+printserverdb_CPPFLAGS = $(AM_CXXFLAGS) -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
-chk_tree_SOURCES = chk_tree.c
-hostn_SOURCES = hostn.c
-printjob_SOURCES = printjob.c
-printtracking_SOURCES = printtracking.c
-printserverdb_SOURCES = printserverdb.c
-tracejob_SOURCES = tracejob.c
+chk_tree_SOURCES = chk_tree.cpp
+hostn_SOURCES = hostn.cpp
+printjob_SOURCES = printjob.cpp
+printtracking_SOURCES = printtracking.cpp
+printserverdb_SOURCES = printserverdb.cpp
+tracejob_SOURCES = tracejob.cpp
 
 pbs_tclsh_LDADD = $(PBS_LIBS) $(MY_TCL_LIBS)
 pbs_tclsh_CFLAGS = $(MY_TCL_INCS)
-pbs_tclsh_SOURCES = pbsTclInit.c ../scheduler.tcl/pbs_tclWrap.c \
-		    ../scheduler.tcl/site_tclWrap.c
+pbs_tclsh_CPPFLAGS = $(AM_CXXFLAGS) $(MY_TCL_INCS)
+pbs_tclsh_SOURCES = pbsTclInit.cpp ../scheduler.tcl/pbs_tclWrap.cpp \
+		    ../scheduler.tcl/site_tclWrap.cpp
 
 pbs_wish_LDADD = $(PBS_LIBS) $(MY_TCLTK_LIBS)
 pbs_wish_CFLAGS = $(MY_TCLTK_INCS)
-pbs_wish_SOURCES = pbsTkInit.c ../scheduler.tcl/pbs_tclWrap.c \
-		   ../scheduler.tcl/site_tclWrap.c
+pbs_wish_CPPFLAGS = $(AM_CXXFLAGS) $(MY_TCLTK_INCS)
+pbs_wish_SOURCES = pbsTkInit.cpp ../scheduler.tcl/pbs_tclWrap.cpp \
+		   ../scheduler.tcl/site_tclWrap.cpp
 
 install_gui:
 	for dir in $(XPBSMON) ;do (cd $$dir && $(MAKE) install);done

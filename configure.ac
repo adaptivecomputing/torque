@@ -32,7 +32,7 @@ dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 AC_PREREQ(2.53)
 AC_INIT([torque], [5.1.1], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
-AC_CONFIG_SRCDIR([src/cmds/qrun.c])
+AC_CONFIG_SRCDIR([src/cmds/qrun.cpp])
 AC_CONFIG_AUX_DIR([buildutils])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([buildutils])

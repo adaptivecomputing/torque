@@ -19,15 +19,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/drmaa/src
+AM_CXXFLAGS = -I$(top_srcdir)/src/drmaa/src
 
 noinst_PROGRAMS = test example sleeper_job worker_job suicide_job exit_job
-test_SOURCES        = test.c ../src/drmaa.h
-example_SOURCES     = example.c ../src/drmaa.h
-sleeper_job_SOURCES = sleeper_job.c
-worker_job_SOURCES  = worker_job.c
-suicide_job_SOURCES = suicide_job.c
-exit_job_SOURCES    = exit_job.c
+test_SOURCES        = test.cpp ../src/drmaa.h
+example_SOURCES     = example.cpp ../src/drmaa.h
+sleeper_job_SOURCES = sleeper_job.cpp
+worker_job_SOURCES  = worker_job.cpp
+suicide_job_SOURCES = suicide_job.cpp
+exit_job_SOURCES    = exit_job.cpp
 test_LDADD          = @top_builddir@/src/drmaa/src/libdrmaa.la
 example_LDADD       = @top_builddir@/src/drmaa/src/libdrmaa.la
 

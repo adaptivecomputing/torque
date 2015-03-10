@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libdec_Shut.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_dec_Shut
 
-libdec_Shut_la_SOURCES = scaffolding.c ${PROG_ROOT}/dec_Shut.c
+libdec_Shut_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/dec_Shut.cpp
 libdec_Shut_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_dec_Shut_SOURCES = test_dec_Shut.c
+test_dec_Shut_SOURCES = test_dec_Shut.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

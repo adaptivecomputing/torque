@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libenc_Manage.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_enc_Manage
 
-libenc_Manage_la_SOURCES = scaffolding.c ${PROG_ROOT}/enc_Manage.c
+libenc_Manage_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/enc_Manage.cpp
 libenc_Manage_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_enc_Manage_SOURCES = test_enc_Manage.c
+test_enc_Manage_SOURCES = test_enc_Manage.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 
