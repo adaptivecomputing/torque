@@ -73,3 +73,13 @@ char *threadsafe_tokenizer(
   {
   return(NULL);
   }
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text)
+
+  {
+  }

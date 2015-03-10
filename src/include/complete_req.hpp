@@ -106,6 +106,7 @@ class complete_req
     unsigned long get_memory_for_this_host(const std::string &hostname) const;
     unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
     const req &get_req(int i) const;
+    void set_hostlists(const char *job_id, const char *host_list);
   };
 
 #endif
