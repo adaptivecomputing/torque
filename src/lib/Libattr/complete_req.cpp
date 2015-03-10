@@ -236,7 +236,7 @@ void complete_req::set_hostlists(
     return;
 
   char *work_list = strdup(host_list);
-  int   i = 0;
+  unsigned int   i = 0;
   char *bar = strchr(work_list, '|');
   char *current = work_list;
   char  log_buf[LOCAL_LOG_BUF_SIZE];

@@ -136,6 +136,20 @@ int trq_cg_cleanup_torque_cgroups()
   return(rc);
   }
 
+/*
+ * trq_cg_initialize_cpuset_string()
+ *
+ * Add job_pid to the tasks file of the cgroup
+ *
+ * The purpose of this function is to get the value stored in the 
+ * parent hierarcy for cpuset.cpus and cpuset.mems and then copy 
+ * those values into the torque cgroup file cpuset.cpus and cpuset.mems.
+ * This has to be done in order to enable cpusets for the lower cgroups.
+ * @param filename - this is either cpuset.cpus or cpuset.mems.
+ *
+ * @return PBSE_NONE on success
+ */
+
 
 int trq_cg_initialize_cpuset_string(const string file_name)
   {
@@ -149,7 +163,8 @@ int trq_cg_initialize_cpuset_string(const string file_name)
   /* the newly created torque dir needs to have the cpuset.cpus and cpuset.mems
      files set to the same value as the parent cpuset directory */
 
-  /* First take /torque off of the cg_cpuset_path string */
+  /* First take /torque off of the cg_cpuset_path string. This will
+     give us the root directory for the cgroup hierarchy */
   cpus_path = cg_cpuset_path;
   std::size_t found = cpus_path.rfind(key);
   if (found == std::string::npos)
@@ -159,6 +174,8 @@ int trq_cg_initialize_cpuset_string(const string file_name)
     return(PBSE_SYSTEM);
     }
 
+  /* open the parent cgroup file as given by file_name. This file is 
+     either cpuset.cpus or cpuset.mems */
   cpus_path.replace(found, key.length(), ""); 
   cpus_path = cpus_path + file_name;
   fd = fopen(cpus_path.c_str(), "r");
@@ -169,6 +186,7 @@ int trq_cg_initialize_cpuset_string(const string file_name)
     return(PBSE_SYSTEM);
     }
 
+  /* read in the string from the file */
   memset(buf, 0, 64);
   fread(buf, sizeof(buf), 1, fd);
   if (strlen(buf) < 1)
@@ -180,6 +198,7 @@ int trq_cg_initialize_cpuset_string(const string file_name)
 
   fclose(fd);
 
+  /* Now write the value we got from the parent cgroup file to the torque cgroup file */
   cpus_path = cg_cpuset_path + file_name;
   fd = fopen(cpus_path.c_str(), "r+");
   if (fd == NULL)

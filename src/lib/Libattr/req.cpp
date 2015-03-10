@@ -1797,7 +1797,7 @@ int req::get_num_tasks_for_host(
   {
   int         task_count = 0;
   std::size_t pos = this->hostlist.find(host);
-  int         offset = pos + host.size();
+  unsigned int         offset = pos + host.size();
 
   if (pos != std::string::npos)
     {
