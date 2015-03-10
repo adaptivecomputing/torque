@@ -675,7 +675,7 @@ int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
  * Remove the cgroup of the job_pid from the
  * cgroup_path given.
  */
-int trq_cg_remove_process_from_cgroup(string cgroup_path, pid_t job_pid)
+int trq_cg_remove_process_from_cgroup(string& cgroup_path, pid_t job_pid)
   {
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];

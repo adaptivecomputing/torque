@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <fstream>
 #include <iostream>
 #include "trq_cgroups.h"
@@ -155,11 +156,19 @@ START_TEST(test_trq_cg_set_resident_memory_limit)
   int rc;
   FILE *fd;
 
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
   cg_memory_path = "/tmp/cgroup/memory/";
 
+  /* cgroup does not exist */
   rc = trq_cg_set_resident_memory_limit(pid, mem);
   fail_unless(rc == PBSE_SYSTEM);
 
+  /* make the cgroup and try for success */
   cgroup_path = "/tmp/cgroup/";
   mkdir(cgroup_path.c_str(), 0755);
 
@@ -177,6 +186,9 @@ START_TEST(test_trq_cg_set_resident_memory_limit)
   remove(cg_memory_path.c_str());
   remove(cgroup_path.c_str());
 
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
 
   }
 END_TEST
@@ -188,6 +200,12 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
   std::string mem_path;
   int rc;
   FILE *fd;
+  
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
 
   cg_memory_path = "/tmp/cgroup/";
 
@@ -207,9 +225,92 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
   remove(mem_path.c_str());
   remove(cg_memory_path.c_str());
 
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
 
   }
 END_TEST
+
+
+START_TEST(test_trq_cg_initialize_cpuset_string)
+  {
+  int rc;
+  std::string mem_string("cpuset.mems");
+  std::string cpus_string("cpuset.cpus");
+
+  /* failure cases. cgroup does not exits */
+  rc = trq_cg_initialize_cpuset_string(mem_string);
+  fail_unless(rc != 0);
+
+  /* setup the sucess case */
+   rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
+ rc = trq_cg_initialize_cpuset_string(cpus_string);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_initialize_cpuset_string(mem_string);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+  }
+END_TEST
+
+
+START_TEST(test_trq_cg_add_process_to_cgroup)
+  {
+  pid_t  job_pid = 1234;
+  pid_t  new_pid;
+  int rc;
+  int status;
+  std::string  cgroup_path;
+
+  /* you can;t use random numbers to add to the
+   * tasks file of a cgroup. We need a real pid */
+  new_pid = fork();
+  if (new_pid == 0)
+    {
+    sleep(1);
+    exit(1);
+    }
+
+  cgroup_path = "/tmp/cgroup/cpuacct/torque/";
+
+  rc = create_cgroup_hierarchy();
+  fail_unless(rc == 0);
+  
+  rc = trq_cg_initialize_hierarchy();
+  fail_unless(rc == 0);
+
+  /* failure case */
+  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_pid, new_pid);
+  fail_unless(rc != 0);
+
+  /* setup sucess case */
+  rc = trq_cg_create_cgroup(cgroup_path, job_pid);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_pid, new_pid);
+  fail_unless(rc == 0);
+
+  waitpid(new_pid, &status, WNOHANG);
+  sleep(2);
+  /* We should be done now */
+  /* Success case */
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_pid);
+  fail_unless(rc == 0);
+
+  rc = trq_cg_cleanup_torque_cgroups();
+  fail_unless(rc == 0);
+
+  }
+END_TEST
+
 
 START_TEST(test_trq_cg_cleanup_torque_cgroups)
   {
@@ -249,10 +350,18 @@ Suite *trq_cgroups_suite(void)
   tcase_add_test(tc_core, test_trq_cg_set_swap_memory_limit);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_trq_cg_initialize_cpuset_string");
+  tcase_add_test(tc_core, test_trq_cg_initialize_cpuset_string);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_trq_cg_add_process_to_cgroup");
+  tcase_add_test(tc_core, test_trq_cg_add_process_to_cgroup);
+  suite_add_tcase(s, tc_core);
+  
   tc_core = tcase_create("test_trq_cg_cleanup_torque_cgroups");
   tcase_add_test(tc_core, test_trq_cg_cleanup_torque_cgroups);
   suite_add_tcase(s, tc_core);
- 
+  
   return(s);
   }
 
