@@ -20,6 +20,8 @@ int  remove_leading_hostname(char **jobpath);
 extern nodeboard node_boards[];
 #endif
 
+extern char mom_alias[];
+
 #define MAX_TEST_ENVP 150
 #define MAX_TEST_BLOCK 8096
 
@@ -331,10 +333,17 @@ START_TEST(test_get_indices_from_exec_str)
 
   fail_unless(get_indices_from_exec_str(NULL, NULL, 0) != PBSE_NONE);
 
+  strcpy(mom_alias, "slesmic");
+
   fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(!strcmp(buf, "1,0"));
+  
+  strcpy(mom_alias, "napali");
 
   fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(!strcmp(buf, "1,2,3"), buf);
+  
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   }
 END_TEST

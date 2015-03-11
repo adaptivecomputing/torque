@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2332. Fix a job dependency problem when the failover server comes up. This
       only affects users running high availability.
   b - TRQ-3023. Fix a bug when ALPS incorrectly returns a permanent confirmation failure.
+  b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
+      it will be set. 
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
@@ -18,12 +20,6 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       user jobs call setsid more than once.
   c - TRQ-2987. Fix a crash around job exits due to incorrect error code handling.
   b - TRQ-2841. Fix some ways that max_user_queuable can become incorrect
-
-5.0.1.h2
-  b - Reverted a change in 5.0.0 which made it so a user could not submit a
-      job from a node which had been allowed using the acl_hosts list. The
-      change to 5.0.0 made it so the ruserok call could not be made to check
-      for user authorization.
 
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
