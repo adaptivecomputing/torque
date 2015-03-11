@@ -546,7 +546,8 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     {
     for (unsigned int i = 0; i < this->sockets.size(); i++)
       {
-      if (this->sockets[i].free_task(job_id) == true)
+      if ((this->sockets[i].is_available() == false) &&
+          (this->sockets[i].free_task(job_id) == true))
         this->availableSockets++;
       }
 
