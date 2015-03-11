@@ -15,7 +15,7 @@ int my_req_count;
 int called_free_task;
 int called_place_task;
 
-char mom_host[1024];
+char mom_alias[1024];
 
 const int MEM_INDICES = 1;
 const int CPU_INDICES = 1;
@@ -92,6 +92,11 @@ int Socket::getAvailableThreads()
 int Socket::getAvailableCores()
   {
   return(0);
+  }
+
+bool Socket::is_available() const
+  {
+  return(false);
   }
 
 complete_req::complete_req() {}

@@ -75,7 +75,7 @@ int Chip::getAvailableCores()
   return(6);
   }
 
-bool  Chip::chipIsAvailable()
+bool  Chip::chipIsAvailable() const
   {
   return(true);
   }
