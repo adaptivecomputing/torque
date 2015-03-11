@@ -26,7 +26,7 @@
 using namespace std;
 
 const int   ALL_TASKS = -1;
-extern char mom_host[];
+extern char mom_alias[];
 
 
 /* 26 August 2014
@@ -451,7 +451,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     for (int i = 0; i < num_reqs; i++)
       {
       const req &r = cr->get_req(i);
-      int        tasks_for_node = r.get_num_tasks_for_host(mom_host);
+      int        tasks_for_node = r.get_num_tasks_for_host(mom_alias);
       bool       placed = false;
 
       for (unsigned int j = 0; j < this->sockets.size(); j++)
@@ -479,7 +479,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     for (unsigned int i = 0; i < partially_place.size(); i++)
       {
       const req &r = cr->get_req(partially_place[i]);
-      int        remaining_tasks = r.get_num_tasks_for_host(mom_host);
+      int        remaining_tasks = r.get_num_tasks_for_host(mom_alias);
       bool       change = false;
       
       for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
