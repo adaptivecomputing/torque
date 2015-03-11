@@ -13,7 +13,10 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   c - TRQ-3068. Fix a race condition where a job may be deleted but have it's pointer
       may still be in the alljobs container. (backported from 5.1.1)
   b - TRQ-2332. Fix a job dependency problem when the failover server comes up. This
-      only affects users running high availability.
+      only affects users running high availability. (backported from 5.1.1)
+  b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
+      it will be set. (backported from 5.1.1)
+ 
 
 5.0.1.h2
   b - Reverted a change in 5.0.0 which made it so a user could not submit a
