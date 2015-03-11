@@ -173,7 +173,7 @@ using namespace std;
     return(this->memory);
     }
 
-  bool Chip::chipIsAvailable()
+  bool Chip::chipIsAvailable() const
     {
     if ((this->availableThreads == this->totalThreads) &&
         (this->availableCores == this->totalCores))

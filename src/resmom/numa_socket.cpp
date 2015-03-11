@@ -321,4 +321,23 @@ using namespace std;
     } // END free_task()
 
 
+
+  bool Socket::is_available() const
+
+    {
+    bool available = true;
+
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      {
+      if (this->chips[i].chipIsAvailable() == false)
+        {
+        available = false;
+        break;
+        }
+      }
+
+    return(available);
+    } // END is_available()
+
+
 #endif /* PENABLE_LINUX_CGROUPS */  

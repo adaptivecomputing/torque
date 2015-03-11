@@ -115,7 +115,7 @@ class Chip
     int initializeChip(hwloc_obj_t obj, hwloc_topology_t);
     int initializeNonNUMAChip(hwloc_obj_t, hwloc_topology_t);
     int initializePCIDevices(hwloc_obj_t, hwloc_topology_t);
-    bool chipIsAvailable();
+    bool chipIsAvailable() const;
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
@@ -182,6 +182,7 @@ class Socket
     int  how_many_tasks_fit(const req &r);
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
     bool free_task(const char *jobid);
+    bool is_available() const;
   };
 
 

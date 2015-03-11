@@ -460,8 +460,9 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
           {
           // place the job entirely on this socket
           placed = true;
+          if (this->sockets[j].is_available() == true)
+            this->availableSockets--;
           this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, tasks_for_node);
-          this->availableSockets--;
           break;
           }
         }
@@ -479,12 +480,18 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
       {
       const req &r = cr->get_req(partially_place[i]);
       int        remaining_tasks = r.get_num_tasks_for_host(mom_host);
+      bool       change = false;
       
       for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
         {
+        if (this->sockets[j].is_available() == true)
+          change = true;
         int placed = this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, remaining_tasks);
-        remaining_tasks -= placed;
-        this->availableSockets--;
+        if (placed != 0)
+          {
+          remaining_tasks -= placed;
+          this->availableSockets--;
+          }
         }
       }
 
