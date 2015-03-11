@@ -509,7 +509,7 @@ job *svr_find_job(const char *jobid, int sub)
   return(NULL);
   }
 
-int remove_job(all_jobs *aj, job             *pjob)
+int remove_job(all_jobs *aj, job             *pjob, bool b)
   {
   return(0);
   }
