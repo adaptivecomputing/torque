@@ -232,6 +232,7 @@ extern unsigned int    pbs_rm_port;
 
 extern char            path_checkpoint[];
 extern char            jobstarter_exe_name[];
+extern char            mom_alias[];
 extern char            mom_host[];
 extern int             jobstarter_set;
 
@@ -1381,34 +1382,37 @@ int get_indices_from_exec_str(
       {
       numa_offset = 0;
 
-#ifdef NUMA_SUPPORT
-      dash1 = strrchr(tok, '-');
-
-      if (dash1 != NULL)
+      if (!strncmp(tok, mom_alias, strlen(mom_alias)))
         {
-        *dash1 = '\0';
-        dash2 = strrchr(tok, '-');
+#ifdef NUMA_SUPPORT
+        dash1 = strrchr(tok, '-');
 
-        if (dash2 != NULL)
+        if (dash1 != NULL)
           {
-          numa_index = strtol(dash2+1, NULL, 10);
+          *dash1 = '\0';
+          dash2 = strrchr(tok, '-');
 
-          if (numa_index < num_node_boards)
-            numa_offset = node_boards[numa_index].mic_start_index;
+          if (dash2 != NULL)
+            {
+            numa_index = strtol(dash2+1, NULL, 10);
+
+            if (numa_index < num_node_boards)
+              numa_offset = node_boards[numa_index].mic_start_index;
+            }
+
+          *dash1 = '-';
           }
-
-        *dash1 = '-';
-        }
 #endif
 
-      if ((slash = strchr(tok, '/')) != NULL)
-        {
-        index = strtol(slash+1, NULL, 10) + numa_offset;
+        if ((slash = strchr(tok, '/')) != NULL)
+          {
+          index = strtol(slash+1, NULL, 10) + numa_offset;
 
-        if (buf[0] != '\0')
-          snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
-        else
-          snprintf(buf, buf_size, "%d", index);
+          if (buf[0] != '\0')
+            snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
+          else
+            snprintf(buf, buf_size, "%d", index);
+          }
         }
 
       tok = strtok(NULL, "+");

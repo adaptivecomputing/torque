@@ -67,6 +67,7 @@ char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
 char log_buffer[LOG_BUF_SIZE];
+char mom_alias[1024];
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];

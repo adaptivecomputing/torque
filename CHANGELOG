@@ -13,6 +13,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
   b - TRQ-2332. Fix a job dependency problem when the failover server comes up. This
       only affects users running high availability. (backported from 5.1.1)
+  b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
+      it will be set. (backported from 5.1.1)
  
 
 4.2.9
