@@ -569,6 +569,15 @@ jump:
     change_restart_comment_if_needed(pjob);
     }
 
+  /* make a cleanup task if set */
+  get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
+  if (force_cancel > 0)
+    {
+    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+ 
+    set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
+    }
+
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /*
@@ -612,15 +621,6 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-
-  /* make a cleanup task if set */
-  get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
-  if (force_cancel > 0)
-    {
-    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
- 
-    set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
-    }
 
   /* if configured, and this job didn't have a slot limit hold, free a job
    * held with the slot limit hold */
