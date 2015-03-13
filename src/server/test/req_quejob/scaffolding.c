@@ -188,7 +188,7 @@ int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
   return(PBSE_NONE);
   }
 
-int remove_job(all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob, bool force_lock)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);

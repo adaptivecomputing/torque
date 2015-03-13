@@ -255,7 +255,7 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
 int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg) {return 0;}
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging) {return 0;}
 int setup_array_struct(job *pjob) {return 0;}
-int remove_job(all_jobs *aj, job *pjob) {return 0;}
+int remove_job(all_jobs *aj, job *pjob, bool force_lock) {return 0;}
 job *next_job(all_jobs *aj, all_jobs_iterator *iter) {return NULL;}
 int  can_queue_new_job(char *user_name, job *pjob) {return 0;}
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock) {return NULL;}
@@ -359,3 +359,4 @@ void handle_complete_second_time(struct work_task *ptask)
 completed_jobs_map_class::completed_jobs_map_class() {}
 completed_jobs_map_class::~completed_jobs_map_class() {}
 bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
+

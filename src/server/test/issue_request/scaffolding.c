@@ -506,3 +506,5 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
   
     return(preq_tmp);
   }
+
+int remove_job(all_jobs *aj, job *pjob, bool force_lock) {return 0;}
