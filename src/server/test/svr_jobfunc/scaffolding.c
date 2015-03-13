@@ -215,7 +215,7 @@ pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   return(NULL);
   }
 
-int remove_job(all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob, bool b)
   {
   return(PBSE_JOBNOTFOUND);
   }
