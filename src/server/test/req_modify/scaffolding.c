@@ -26,6 +26,8 @@ const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
+char *get_correct_jobname_return;
+
 struct batch_request *alloc_br(int type)
   {
   fprintf(stderr, "The call to alloc_br to be mocked!!\n");
@@ -47,12 +49,6 @@ struct batch_request *cpy_checkpoint(struct batch_request *preq, job *pjob, enum
 pbs_queue *get_jobs_queue(job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
-  exit(1);
-  }
-
-void reply_ack(struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to reply_ack to be mocked!!\n");
   exit(1);
   }
 
@@ -103,12 +99,6 @@ const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "prefix
 int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
   {
   fprintf(stderr, "The call to attr_atomic_set to be mocked!!\n");
-  exit(1);
-  }
-
-void *get_next(list_link pl, char *file, int line)
-  {
-  fprintf(stderr, "The call to get_next to be mocked!!\n");
   exit(1);
   }
 
@@ -204,12 +194,6 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   exit(1);
   }
 
-job *chk_job_request(char *jobid, struct batch_request *preq)
-  {
-  fprintf(stderr, "The call to chk_job_request to be mocked!!\n");
-  exit(1);
-  }
-
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
   {
   fprintf(stderr, "The call to reply_badattr to be mocked!!\n");
@@ -279,3 +263,23 @@ batch_request *duplicate_request(batch_request *preq, int type)
   {
   return(NULL);
   }
+
+char *get_correct_jobname(char const *p)
+  {
+  if (get_correct_jobname_return == NULL)
+    return(strdup(p));
+
+  return(get_correct_jobname_return);
+  }
+
+job *chk_job_request(char *p, batch_request *b)
+  {
+  job *jp;
+
+  jp = (job *)calloc(1, sizeof(job));
+  return(jp);
+  }
+
+void *get_next(list_link pl, char *file, int line) {return NULL;}
+
+void reply_ack(struct batch_request *preq) {}
