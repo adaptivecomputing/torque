@@ -50,7 +50,9 @@ if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
 fi
 
-AM_INIT_AUTOMAKE([-Wall -Wno-unsupported -Werror  foreign 1.9.6 color-tests ])
+m4_ifdef([HAVE_CHECK],
+  [AM_INIT_AUTOMAKE([-Wall -Werror -Wno-unsupported foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall -Werror -Wno-unsupported foreign 1.9.6])])
 
 AM_PROG_CC_C_O
 CC="$CXX"
