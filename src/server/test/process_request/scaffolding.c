@@ -328,7 +328,7 @@ void req_mvjobfile(struct batch_request *preq)
   exit(1);
   }
 
-int remove_job(all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob, bool b)
   {
   fprintf(stderr, "The call to remove_job needs to be mocked!!\n");
   exit(1);
