@@ -2146,6 +2146,13 @@ int req_commit(
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
             log_buf);
           }
+
+        if (!pj->ji_is_array_template)
+          {
+          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          }
+
         svr_job_purge(pj);
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
@@ -2163,6 +2170,12 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
       
+       if (!pj->ji_is_array_template)
+         {
+         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         }
+
       svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
