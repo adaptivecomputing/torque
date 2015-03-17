@@ -15,6 +15,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       only affects users running high availability. (backported from 5.1.1)
   b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
       it will be set. (backported from 5.1.1)
+  b - TRQ-3097. Fixed a problem where failed job submissions would count against
+      the max_user_queuable count and could not be cleared until pbs_server
+      was restarted.
+  b - TRQ-3087. Fixed a problem where completed jobs were counted against max_user_queuable
+      when restarting pbs_server. Also if the max_user_queuable was set on a
+      queue and the number of queued jobs and completed jobs were over the
+      maximum then the last jobs submitted would not get loaded.
  
 
 4.2.9
