@@ -193,6 +193,12 @@ int  increment_queued_jobs(
   user_info    *ui;
   unsigned      bit = COUNTED_GLOBALLY;
 
+
+  /* If pbs_server is restarting we may get jobs in a completed state.
+     we do not want to count these jobs as queued */
+  if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+    return(rc);
+
   if (uih != &users)
     bit = COUNTED_IN_QUEUE;
 
