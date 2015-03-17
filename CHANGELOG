@@ -20,6 +20,13 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       user jobs call setsid more than once.
   c - TRQ-2987. Fix a crash around job exits due to incorrect error code handling.
   b - TRQ-2841. Fix some ways that max_user_queuable can become incorrect
+  b - TRQ-3097. Fixed a problem where failed job submissions would count against
+      the max_user_queuable count and could not be cleared until pbs_server
+      was restarted.
+  b - TRQ-3087. Fixed a problem where completed jobs were counted against max_user_queuable
+      when restarting pbs_server. Also if the max_user_queuable was set on a
+      queue and the number of queued jobs and completed jobs were over the
+      maximum then the last jobs submitted would not get loaded.
 
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
