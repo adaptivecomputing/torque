@@ -13,6 +13,9 @@ test_uut
 .libs
 *.m4
 .settings
+*.trs
+*.log
+*.dirstamp
 autom4te.cache/
 buildutils/ar-lib
 buildutils/compile
