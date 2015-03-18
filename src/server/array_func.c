@@ -26,6 +26,8 @@
 #define O_SYNC O_FSYNC
 #endif /* !O_SYNC */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -826,12 +828,34 @@ int array_recov_binary(
   int   i;
   int   len;
   int   rc = -1;
+  struct stat s_buf;
   array_request_node *rn;
 
 
   fd = open(path, O_RDONLY, 0);
   if(fd < 0)
     {
+    snprintf(log_buf, buflen, "failed to open %s", path);
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  if (fstat(fd, &s_buf) < 0)
+    {
+    snprintf(log_buf, buflen, "failed to fstat %s", path);
+    log_err(errno, __func__, log_buf);
+
+    close(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  /* if we have a zero length file, do not proceed */
+  if (s_buf.st_size == 0)
+    {
+    snprintf(log_buf, buflen, "%s is empty", path);
+    log_err(-1, __func__, log_buf);
+
+    close(fd);
     return(PBSE_SYSTEM);
     }
 

@@ -5,6 +5,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       job from a node which had been allowed using the acl_hosts list. The
       change to 5.0.0 made it so the ruserok call could not be made to check
       for user authorization.
+5.0.1.h1
+  c - TRQ-2970. Fixed start up crash related to empty job array (.AR) files.
+  c - TRQ-2967. Fixed a crash.
 
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced

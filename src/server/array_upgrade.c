@@ -53,11 +53,11 @@ int array_upgrade(
     return -1;
     }
 
-  /* call the appropriate upgrader function, if we ever wish to depricate an old
+  /* call the appropriate upgrader function, if we ever wish to deprecate an old
      array struct version, then we should delete the case from this if else-if 
      block and delete its upgrader function */
 
-  /* version 1 is depricated, but this code is left commented out as an example 
+  /* version 1 is deprecated, but this code is left commented out as an example 
   if (version == 1)
     {
 
@@ -71,9 +71,9 @@ int array_upgrade(
        about the incompatibility and inability to upgrade, print a quick and 
        dirty error message and exit */
        
-    sprintf(log_buf, "WARNING, unable to upgrade job array\n"
+    sprintf(log_buf, "WARNING, unable to upgrade job array from version %d\n"
             "structs from versions prior to 2.5.0.\n"
-            "Please downgrade TORQUE and upgrade once no job arrays are queued\n");
+            "Please downgrade TORQUE and upgrade once no job arrays are queued\n", version);
     log_err(-1, "array_upgrade", log_buf);
     exit(1);
     }
@@ -95,7 +95,7 @@ int array_upgrade(
 
 
 /* here is an example that upgraded from ai_qs version 1 to version 2
-   This version of the struct has been depricated, but this code is left here
+   This version of the struct has been deprecated, but this code is left here
    as an example of an upgrade function */
    
 /*   
