@@ -34,6 +34,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when restarting pbs_server. Also if the max_user_queuable was set on a 
       queue and the number of queued jobs and completed jobs were over the 
       maximum then the last jobs submitted would not get loaded.
+  b - TRQ-3039. Fix a deadlock when deleting a job where other jobs have after any dependencies
+      on the first job. (backported from 5.1.1)
  
 
 5.0.1.h2
