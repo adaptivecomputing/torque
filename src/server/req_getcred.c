@@ -540,7 +540,7 @@ int get_encode_host(
   {
   struct in_addr      addr;
   struct sockaddr_in  s_addr;
-  char               *hostname;
+  const char         *hostname;
   munge_err_t         mret = EMUNGE_SNAFU;
 
   mret = munge_ctx_get(mctx, MUNGE_OPT_ADDR4, &addr);
