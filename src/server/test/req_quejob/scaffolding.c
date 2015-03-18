@@ -373,7 +373,7 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
   return(0);
   }
 
-int decrement_queued_jobs(user_info_holder *uih, char *a)
+int decrement_queued_jobs(user_info_holder *uih, char *a, job *pjob)
   {
   return(0);
   }
