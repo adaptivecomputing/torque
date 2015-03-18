@@ -10,6 +10,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3023. Fix a bug when ALPS incorrectly returns a permanent confirmation failure.
   b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
       it will be set. 
+  b - TRQ-3039. Fix a deadlock when deleting a job where other jobs have after any dependencies
+      on the first job.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
@@ -27,6 +29,14 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when restarting pbs_server. Also if the max_user_queuable was set on a
       queue and the number of queued jobs and completed jobs were over the
       maximum then the last jobs submitted would not get loaded.
+ 
+
+5.0.1.h2
+  b - Reverted a change in 5.0.0 which made it so a user could not submit a
+      job from a node which had been allowed using the acl_hosts list. The
+      change to 5.0.0 made it so the ruserok call could not be made to check
+      for user authorization.
+>>>>>>> f1dbf77... TRQ-3039. Fix a problem deleting jobs with afterany dependencies.
 
 5.0.1
   e - TRQ-2410. Improved qstat behavior in cases where bad job IDs were referenced
