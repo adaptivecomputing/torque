@@ -194,6 +194,11 @@ int  increment_queued_jobs(
   unsigned int  num_submitted = count_jobs_submitted(pjob);
   std::string   uname(user_name);
   
+  /* If pbs_server is restarting we may get jobs in a completed state.
+     we do not want to count these jobs as queued */
+  if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+    return(rc);
+ 
   remove_server_suffix(uname);
 
   uih->lock();
