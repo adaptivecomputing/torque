@@ -1985,7 +1985,6 @@ void set_depend_hold(
 
 
 
-
 /*
  * depend_clrrdy - clear state ready flags in job dependency pbs_attribute
  */
@@ -3370,39 +3369,47 @@ void removeAfterAnyDependency(const char *pJId,const char *targetJobID)
     if(pDepJob != NULL)
       {
       del_depend_job(pDepJob);
-      job_mutex.unlock();
       set_depend_hold(pLockedJob,pattr);
       }
     }
   }
 
 /*
- * If pJob has an BEFOREANY dependency, remove it.
- * pJob is passed in with the ji_mutex locked.
+ * removeBeforeAnyDependencies()
+ *
+ *
  */
-void removeBeforeAnyDependencies(const char *pJId)
+
+void removeBeforeAnyDependencies(
+    
+  const char *pJId)
+
   {
   job *pLockedJob = svr_find_job((char *)pJId,FALSE);
-  if(pLockedJob == NULL) return;
-  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
-  struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
-  if(pDep != NULL)
+  if (pLockedJob != NULL)
     {
-    struct depend_job *pDepJob = (struct depend_job *)GET_NEXT(pDep->dp_jobs);
-    while(pDepJob != NULL)
+    mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+    pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
+
+    struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
+    if (pDep != NULL)
       {
-      std::string depID(pDepJob->dc_child);
-      job_mutex.unlock();
-      removeAfterAnyDependency(depID.c_str(),pJId);
-      pLockedJob = svr_find_job((char *)pJId,FALSE);
-      if(pLockedJob == NULL) return;
-      job_mutex.mark_as_locked();
-      pDepJob = (struct depend_job *)GET_NEXT(pDepJob->dc_link);
+      struct depend_job *pDepJob = (struct depend_job *)GET_NEXT(pDep->dp_jobs);
+      while(pDepJob != NULL)
+        {
+        std::string depID(pDepJob->dc_child);
+        job_mutex.unlock();
+        removeAfterAnyDependency(depID.c_str(),pJId);
+        pLockedJob = svr_find_job((char *)pJId,FALSE);
+        if(pLockedJob == NULL) return;
+        job_mutex.mark_as_locked();
+        pDepJob = (struct depend_job *)GET_NEXT(pDepJob->dc_link);
+        }
       }
     }
-  }
+
+  } // END removeBeforeAnyDependencies()
 
 
 
