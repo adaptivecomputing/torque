@@ -368,7 +368,7 @@ int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
   return(0);
   }
 
-int  decrement_queued_jobs(user_info_holder *uih, char *user_name)
+int  decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob)
   {
   return(0);
   }
