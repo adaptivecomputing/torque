@@ -15,6 +15,7 @@ PBS_DAEMON="$SBIN_PATH/pbs_mom"
 PBS_HOME=@PBS_HOME@
 
 SUBSYS_LOCK="/var/lock/subsys/pbs_mom"
+MOM_LOCK="/var/spool/pbs/mom_priv/mom.lock"
 
 if [ -f /etc/sysconfig/pbs_mom ];then
 	. /etc/sysconfig/pbs_mom
@@ -28,12 +29,30 @@ else
 fi
 
 pidof_pbs_mom() {
-	pid=`pidof pbs_mom`
-	if [ $? -eq 0 ]; then
-		echo $pid
-	else
-		echo "-1"
-	fi
+    pids=`pidof pbs_mom`
+    if [ $? -ne 0 ]; then
+        echo "-1"
+        return 1
+    fi
+
+    lockfile_info=`stat -Lc "%d:%i" $MOM_LOCK 2>/dev/null`
+    if [ $? -ne 0 ]; then
+        echo "-1"
+        return 1
+    fi
+
+    for ((fd=3; fd <= 10; fd++)); do
+        for pid in $pids; do
+            fd_info=`stat -Lc "%d:%i" /proc/${pid}/fd/${fd} 2>/dev/null`
+            if [ x${fd_info} == x${lockfile_info} ]; then
+                echo $pid
+                return 0
+            fi
+        done
+    done
+
+    echo "-1"
+    return 1
 }
 
 kill_pbs_mom() {
@@ -51,7 +70,7 @@ kill_pbs_mom() {
 	done
 	return $retval
 }
-	
+
 # how were we called
 case "$1" in
 	start)
@@ -131,4 +150,3 @@ case "$1" in
 		exit 1
 esac
 exit $RET
-
