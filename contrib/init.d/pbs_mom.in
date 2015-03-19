@@ -37,11 +37,10 @@ pidof_pbs_mom() {
 
     lockfile_info=`stat -Lc "%d:%i" $MOM_LOCK 2>/dev/null`
     if [ $? -ne 0 ]; then
-        echo "-1"
         return 1
     fi
 
-    for ((fd=3; fd <= 10; fd++)); do
+    for fd in 5 4 3 `seq 6 10`; do
         for pid in $pids; do
             fd_info=`stat -Lc "%d:%i" /proc/${pid}/fd/${fd} 2>/dev/null`
             if [ x${fd_info} == x${lockfile_info} ]; then
@@ -51,14 +50,23 @@ pidof_pbs_mom() {
         done
     done
 
-    echo "-1"
+	for pid in $pids; do
+		for fd in `ls /proc/${pid}/fd/ | sort -n | tail -n +12`; do
+			fd_info=`stat -Lc "%d:%i" /proc/${pid}/fd/${fd} 2>/dev/null`
+            if [ x${fd_info} == x${lockfile_info} ]; then
+                echo $pid
+                return 0
+            fi
+		done
+	done
+
     return 1
 }
 
 kill_pbs_mom() {
 	pid=`pidof_pbs_mom`
 
-	if [ $pid -eq -1 ];then
+	if [ $? -ne 0 ]; then
 		return 0;
 	fi
 
@@ -80,8 +88,7 @@ case "$1" in
 		lock_present=$?
 
 		pid=`pidof_pbs_mom`
-
-		if [ $pid -ne -1 ]; then
+		if [ $? -eq 0 ]; then
 			if [ $lock_present -eq 0 ]; then
 			   echo -n "pbs_mom already running (pid $pid)"
 			else
@@ -122,6 +129,9 @@ case "$1" in
 		lock_present=$?
 
 		pid=`pidof_pbs_mom`
+		if [ $? -ne 0 ]; then
+			pid=-1
+		fi
 
 		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
 		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
@@ -136,8 +146,8 @@ case "$1" in
 	reload)
 		echo -n "Re-reading TORQUE Mom config file: "
 		pid=`pidof_pbs_mom`
-		if [ $pid -ne -1 ]; then
-			kill -HUP `pidof_pbs_mom`
+		if [ $? -eq 0 ]; then
+			kill -HUP $pid
 			RET=$?
 			[ $RET -eq 0 ] && success "HUP" || failure "HUP"
 		else
