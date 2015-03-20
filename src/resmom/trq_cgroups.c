@@ -620,7 +620,7 @@ int trq_cg_add_pid_to_cgroup_tasks(string& cgroup_path, pid_t job_pid)
   rc = write(cgroup_fd, cgroup_name, strlen(cgroup_name));
   if (rc <= 0)
     {
-    sprintf(log_buf, "failed to add process %s to cgroup: %d", cgroup_name, errno);
+    sprintf(log_buf, "failed to add process %s to cgroup: %d: %s", cgroup_name, errno, strerror(errno));
     log_err(-1, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
@@ -1005,6 +1005,8 @@ int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid)
     fclose(fd);
     return(PBSE_SYSTEM);
     }
+
+  fclose(fd);
 
   rc = trq_cg_add_pid_to_cgroup_tasks(cg_cpuset_path, job_pid);
   return(rc);
