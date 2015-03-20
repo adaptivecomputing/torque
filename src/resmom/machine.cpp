@@ -445,7 +445,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
     int           num_reqs = cr->req_count();
     vector<int>   partially_place;
-    allocation    a;
+    allocation    a(pjob->ji_qs.ji_jobid);
 
     // See if the tasks fit completely on a socket, and if they do then place them there
     for (int i = 0; i < num_reqs; i++)
@@ -453,6 +453,8 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
       const req &r = cr->get_req(i);
       int        tasks_for_node = r.get_num_tasks_for_host(mom_alias);
       bool       placed = false;
+
+      a.set_place_type(r.getPlacementType());
 
       for (unsigned int j = 0; j < this->sockets.size(); j++)
         {
@@ -497,7 +499,6 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
     a.place_indices_in_string(mem_string, MEM_INDICES);
     a.place_indices_in_string(cpu_string, CPU_INDICES);
-    strcpy(a.jobid, pjob->ji_qs.ji_jobid);
 
     this->allocations.push_back(a);
     

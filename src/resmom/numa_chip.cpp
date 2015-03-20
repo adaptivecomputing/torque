@@ -28,16 +28,11 @@ using namespace std;
 #define AMD   2
 
 
-  Chip::Chip()
+  Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), availableCores(0),
+                 chip_exclusive(false)
     {
-    totalThreads = 0;
-    totalCores = 0;
-    id = 0;
-    availableThreads = 0;
-    availableCores = 0;
     memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
     memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
-    chip_is_available = false;
     }
 
   Chip::~Chip()
@@ -83,7 +78,6 @@ using namespace std;
     hwloc_bitmap_list_snprintf(chip_cpuset_string, MAX_CPUSET_SIZE, this->chip_cpuset);
     hwloc_bitmap_list_snprintf(chip_nodeset_string, MAX_CPUSET_SIZE, this->chip_nodeset);
 
-    this->chip_is_available = true;
     if (this->totalCores == this->totalThreads)
       {
       this->isThreaded = false;
@@ -111,7 +105,6 @@ using namespace std;
     this->chip_nodeset = chip_obj->allowed_nodeset;
     hwloc_bitmap_list_snprintf(this->chip_cpuset_string, MAX_CPUSET_SIZE, this->chip_cpuset);
     hwloc_bitmap_list_snprintf(this->chip_nodeset_string, MAX_CPUSET_SIZE, this->chip_nodeset);
-    this->chip_is_available = true;
     this->totalCores = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->chip_cpuset, HWLOC_OBJ_CORE);
     this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->chip_cpuset, HWLOC_OBJ_PU);
     this->availableCores = this->totalCores;
@@ -386,7 +379,7 @@ using namespace std;
     bool available)
 
     {
-    this->chip_is_available = available;
+    this->chip_exclusive = !available;
     }
   
   void Chip::setId(
@@ -431,26 +424,112 @@ using namespace std;
 
     {
     int cpu_tasks;
-    int mem_tasks;
+    int mem_tasks = 0;
 
-    if (r.getPlacementType() == use_cores)
-      cpu_tasks = this->availableCores / r.getExecutionSlots();
-    else
-      cpu_tasks = this->availableThreads / r.getExecutionSlots();
+    if (this->chip_exclusive == false)
+      {
+      if (r.getPlacementType() == use_cores)
+        cpu_tasks = this->availableCores / r.getExecutionSlots();
+      else
+        cpu_tasks = this->availableThreads / r.getExecutionSlots();
 
-    long long memory = r.getMemory();
+      long long memory = r.getMemory();
 
-    // Memory isn't required for submission
-    if (memory == 0)
-      return(cpu_tasks);
+      // Memory isn't required for submission
+      if (memory == 0)
+        return(cpu_tasks);
 
-    mem_tasks = this->available_memory / memory;
+      mem_tasks = this->available_memory / memory;
 
-    if (mem_tasks > cpu_tasks)
-      return(cpu_tasks);
-    else
-      return(mem_tasks);
+      // return the lower of the two values
+      if (mem_tasks > cpu_tasks)
+        mem_tasks = cpu_tasks;
+      }
+      
+    return(mem_tasks);
     } // END how_many_tasks_fit()
+
+
+
+  /*
+   * place_task_by_cores()
+   *
+   * places the task, knowing that we must use only cores
+   *
+   * @param execution_slots_per_task - the number of cores to place for this task
+   * @param a - the allocation we're marking these used for
+   */
+
+  void Chip::place_task_by_cores(
+
+    int         execution_slots_per_task,
+    allocation &a)
+
+    {
+    // Get the core indices we will use
+    unsigned int j = 0;
+    for (int i = 0; i < execution_slots_per_task; i++)
+      {
+      while (j < this->cores.size())
+        {
+        if (this->cores[j].free == true)
+          {
+          this->cores[j].mark_as_busy(this->cores[j].id);
+          a.cpu_indices.push_back(this->cores[j].id);
+          a.cores++;
+          this->availableCores--;
+          this->availableThreads -= this->cores[j].totalThreads;
+          a.threads += this->cores[j].totalThreads;
+          j++;
+
+          break;
+          }
+        else
+          j++;
+        }
+      }
+    } // END place_task_by_cores()
+
+
+
+  /*
+   * place_task_by_threads()
+   *
+   * places the task, knowing that we can use threads
+   *
+   * @param execution_slots_per_task - the number of cores to place for this task
+   * @param a - the allocation we're marking these used for
+   */
+
+  void Chip::place_task_by_threads(
+
+    int         execution_slots_per_task,
+    allocation &a)
+
+    {
+    // Place for being able to use threads
+    int slots_left = execution_slots_per_task;
+    // Get the core indices we will use
+    for (unsigned int j = 0; j < this->cores.size() && slots_left > 0; j++)
+      {
+      int index;
+
+      if (this->cores[j].free == true)
+        {
+        this->availableCores--;
+        a.cores++;
+        }
+
+      while (((index = this->cores[j].get_open_processing_unit()) != -1) &&
+             (slots_left > 0))
+        {
+        this->availableThreads--;
+        slots_left--;
+        a.threads++;
+        a.cpu_indices.push_back(index);
+        }
+      }
+    } // END place_task_by_threads()
 
 
 
@@ -474,87 +553,47 @@ using namespace std;
 
     {
     allocation     a(jobid);
-    int            tasks_placed;
+    int            tasks_placed = 0;
     int            execution_slots_per_task = r.getExecutionSlots();
     hwloc_uint64_t mem_per_task = r.getMemory();
 
-    if (r.getPlacementType() == use_cores)
-      a.cores_only = true;
-    else
-      a.cores_only = false;
-
-    for (tasks_placed = 0; tasks_placed < to_place; tasks_placed++)
+    if (this->chip_exclusive == false)
       {
-      // Stop if we can't fit any more tasks on this chip
-      if (this->available_memory < mem_per_task)
-        break;
-
-      if (a.cores_only == true)
-        {
-        if (this->availableCores < execution_slots_per_task)
-          break;
-        }
+      if (r.getThreadUsageString() == use_cores)
+        a.cores_only = true;
       else
+        a.cores_only = false;
+
+      for (; tasks_placed < to_place; tasks_placed++)
         {
-        if (this->availableThreads < execution_slots_per_task)
+        // Stop if we can't fit any more tasks on this chip
+        if (this->available_memory < mem_per_task)
           break;
-        }
 
-      this->available_memory -= mem_per_task;
-      a.memory += mem_per_task;
-      a.cpus += execution_slots_per_task;
-      
-      if (a.cores_only == true)
-        {
-        // Get the core indices we will use
-        unsigned int j = 0;
-        for (int i = 0; i < execution_slots_per_task; i++)
+        if (a.cores_only == true)
           {
-          while (j < this->cores.size())
-            {
-            if (this->cores[j].free == true)
-              {
-              this->cores[j].mark_as_busy(this->cores[j].id);
-              a.cpu_indices.push_back(this->cores[j].id);
-              a.cores++;
-              this->availableCores--;
-              this->availableThreads -= this->cores[j].totalThreads;
-              a.threads += this->cores[j].totalThreads;
-              j++;
-
-              break;
-              }
-            else
-              j++;
-            }
+          if (this->availableCores < execution_slots_per_task)
+            break;
           }
-        }
-      else
-        {
-        // Place for being able to use threads
-        int slots_left = execution_slots_per_task;
-        // Get the core indices we will use
-        for (unsigned int j = 0; j < this->cores.size() && slots_left > 0; j++)
+        else
           {
-          int index;
-
-          if (this->cores[j].free == true)
-            {
-            this->availableCores--;
-            a.cores++;
-            }
-
-          while (((index = this->cores[j].get_open_processing_unit()) != -1) &&
-                 (slots_left > 0))
-            {
-            this->availableThreads--;
-            slots_left--;
-            a.threads++;
-            a.cpu_indices.push_back(index);
-            }
+          if (this->availableThreads < execution_slots_per_task)
+            break;
           }
+
+        this->available_memory -= mem_per_task;
+        a.memory += mem_per_task;
+        a.cpus += execution_slots_per_task;
+        
+        if (a.cores_only == true)
+          place_task_by_cores(execution_slots_per_task, a);
+        else
+          place_task_by_threads(execution_slots_per_task, a);
         }
-      }
+
+      if (master.place_type == exclusive_chip)
+        this->chip_exclusive = true;
+      } // if chip_exclusive == false
 
     if (tasks_placed > 0)
       {
@@ -615,7 +654,8 @@ using namespace std;
     const char *jobid)
 
     {
-    int to_remove = -1;
+    int  to_remove = -1;
+    bool totally_free = false;
 
     for (unsigned int i = 0; i < this->allocations.size(); i++)
       {
@@ -638,9 +678,12 @@ using namespace std;
 
     if ((this->availableThreads == this->totalThreads) &&
         (this->availableCores == this->totalCores))
-      return(true);
+      {
+      this->chip_exclusive = false;
+      totally_free = true;
+      }
 
-    return(false);
+    return(totally_free);
     } // END free_task()
 
 #endif /* PENABLE_LINUX_CGROUPS */  

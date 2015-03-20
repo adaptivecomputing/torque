@@ -4,6 +4,7 @@
 #include <string>
 
 #include "allocation.hpp"
+#include "req.hpp"
 
 START_TEST(test_allocation_constructors)
   {
@@ -54,6 +55,31 @@ START_TEST(test_add_allocation)
 END_TEST
 
 
+START_TEST(test_set_place_type)
+  {
+
+  allocation a;
+  fail_unless(a.place_type == exclusive_none);
+
+  a.set_place_type(place_node);
+  fail_unless(a.place_type == exclusive_node);
+
+  a.set_place_type(place_socket);
+  fail_unless(a.place_type == exclusive_socket);
+
+  a.set_place_type(place_numa);
+  fail_unless(a.place_type == exclusive_chip);
+
+  a.set_place_type(place_core);
+  fail_unless(a.place_type == exclusive_core);
+
+  a.set_place_type("bobo");
+  fail_unless(a.place_type == exclusive_none);
+
+  }
+END_TEST
+
+
 START_TEST(test_place_indices_in_string)
   {
   std::string cpuset;
@@ -81,8 +107,8 @@ Suite *allocation_suite(void)
   Suite *s = suite_create("allocation test suite methods");
   TCase *tc_core = tcase_create("test_allocation_constructors");
   tcase_add_test(tc_core, test_allocation_constructors);
-  suite_add_tcase(s, tc_core);
-  
+  tcase_add_test(tc_core, test_set_place_type);
+  suite_add_tcase(s, tc_core); 
   tc_core = tcase_create("test_add_allocation");
   tcase_add_test(tc_core, test_add_allocation);
   tcase_add_test(tc_core, test_place_indices_in_string);

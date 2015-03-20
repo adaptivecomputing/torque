@@ -13,12 +13,8 @@ using namespace std;
 #include "machine.hpp"
 #include <hwloc.h>
 
-  Socket::Socket()
+  Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
     {
-    id = 0;
-    memory = 0;
-    totalThreads = 0;
-    totalCores = 0;
     memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
     memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
     }
@@ -46,7 +42,6 @@ using namespace std;
     hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
     hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
 
-    this->socket_is_available = true;
     this->totalCores = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->socket_cpuset, HWLOC_OBJ_CORE);
     this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->socket_cpuset, HWLOC_OBJ_PU);
     this->availableCores = this->totalCores;
@@ -87,7 +82,6 @@ using namespace std;
     hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
     hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
 
-    this->socket_is_available = true;
     this->totalCores = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->socket_cpuset, HWLOC_OBJ_CORE);
     this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->socket_cpuset, HWLOC_OBJ_PU);
     this->availableCores = this->totalCores;
@@ -130,7 +124,6 @@ using namespace std;
     this->totalThreads = numaChip.getTotalThreads();
     this->availableCores = numaChip.getAvailableCores();
     this->availableThreads = numaChip.getAvailableThreads();
-    this->socket_is_available = true;
 
     get_machine_total_memory(topology, &this->memory);    
     this->available_memory = this->memory;
@@ -163,11 +156,14 @@ using namespace std;
     int available_chips = 0;
     std::vector<Chip>::iterator chip_iter;
 
-    for (chip_iter = this->chips.begin(); chip_iter < this->chips.end(); chip_iter++)
+    if (socket_exclusive == false)
       {
-      if (chip_iter->chipIsAvailable() == true)
+      for (chip_iter = this->chips.begin(); chip_iter < this->chips.end(); chip_iter++)
         {
-        available_chips++;
+        if (chip_iter->chipIsAvailable() == true)
+          {
+          available_chips++;
+          }
         }
       }
 
@@ -178,8 +174,11 @@ using namespace std;
     {
     int available = 0;
 
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      available += this->chips[i].getAvailableCores();
+    if (socket_exclusive == false)
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        available += this->chips[i].getAvailableCores();
+      }
 
     return(available);
     }
@@ -188,8 +187,11 @@ using namespace std;
     {
     int available = 0;
 
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      available += this->chips[i].getAvailableThreads();
+    if (socket_exclusive == false)
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        available += this->chips[i].getAvailableThreads();
+      }
 
     return(available);
     }
@@ -241,8 +243,11 @@ using namespace std;
     {
     int num_that_fit = 0;
 
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      num_that_fit += this->chips[i].how_many_tasks_fit(r);
+    if (socket_exclusive == false)
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        num_that_fit += this->chips[i].how_many_tasks_fit(r);
+      }
 
     return(num_that_fit);
     } // END how_many_tasks_fit()
@@ -271,25 +276,31 @@ using namespace std;
     int        tasks_to_place = to_place;
     allocation a(jobid);
 
-    // Attempt to fit all of tasks on a single numa chip if possible
-    for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
+    if (socket_exclusive == false)
       {
-      if (this->chips[i].how_many_tasks_fit(r) >= to_place)
-        tasks_to_place -= this->chips[i].place_task(jobid, r, a, to_place);
-      }
-
-    // place tasks if they didn't fit in a single numa chip
-    if (tasks_to_place > 0)
-      {
+      // Attempt to fit all of tasks on a single numa chip if possible
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
-        tasks_to_place -= this->chips[i].place_task(jobid, r, a, tasks_to_place);
+        {
+        if (this->chips[i].how_many_tasks_fit(r) >= to_place)
+          tasks_to_place -= this->chips[i].place_task(jobid, r, a, to_place);
+        }
+
+      // place tasks if they didn't fit in a single numa chip
+      if (tasks_to_place > 0)
+        {
+        for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
+          tasks_to_place -= this->chips[i].place_task(jobid, r, a, tasks_to_place);
+        }
+
+      this->availableCores -= a.cores;
+      this->availableThreads -= a.threads;
+      this->available_memory -= a.memory;
+
+      if (master.place_type == exclusive_socket)
+        this->socket_exclusive = true;
+
+      master.add_allocation(a);
       }
-
-    this->availableCores -= a.cores;
-    this->availableThreads -= a.threads;
-    this->available_memory -= a.memory;
-
-    master.add_allocation(a);
 
     return(to_place - tasks_to_place);
     } // END place_task
@@ -317,6 +328,9 @@ using namespace std;
         completely_free = false;
       }
 
+    if (completely_free)
+      socket_exclusive = false;
+
     return(completely_free);
     } // END free_task()
 
@@ -327,14 +341,19 @@ using namespace std;
     {
     bool available = true;
 
-    for (unsigned int i = 0; i < this->chips.size(); i++)
+    if (socket_exclusive == false)
       {
-      if (this->chips[i].chipIsAvailable() == false)
+      for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        available = false;
-        break;
+        if (this->chips[i].chipIsAvailable() == false)
+          {
+          available = false;
+          break;
+          }
         }
       }
+    else
+      available = false;
 
     return(available);
     } // END is_available()

@@ -122,9 +122,18 @@ int req::get_num_tasks_for_host(
   return(num_for_host);
   }
 
+std::string req::getPlacementType() const
+  {
+  return("");
+  }
 
+
+allocation::allocation(const char *jid)
+  {
+  }
 allocation::allocation(const allocation &other) {}
 allocation::allocation() {}
+void allocation::set_place_type(const std::string &place) {}
 void allocation::place_indices_in_string(std::string &out, int which) {}
 
 void PCI_Device::displayAsString(std::stringstream &out) const {}

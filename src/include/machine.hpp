@@ -91,7 +91,7 @@ class Chip
   int                     totalThreads;
   int                     availableCores;
   int                     availableThreads;
-  bool                    chip_is_available;
+  bool                    chip_exclusive;
   bool                    isThreaded;
   hwloc_const_cpuset_t    chip_cpuset;
   hwloc_const_nodeset_t   chip_nodeset;
@@ -135,6 +135,8 @@ class Chip
     void setChipAvailable(bool available);
     int  how_many_tasks_fit(const req &r);
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
+    void place_task_by_cores(int cores_to_place, allocation &a);
+    void place_task_by_threads(int threads_to_place, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index);
     void make_core(int id = 0); // used for unit tests
@@ -154,7 +156,7 @@ class Socket
   std::vector<Chip>     chips;
   char                  socket_cpuset_string[MAX_CPUSET_SIZE];
   char                  socket_nodeset_string[MAX_CPUSET_SIZE];
-  bool                  socket_is_available;
+  bool                  socket_exclusive;
   hwloc_const_cpuset_t  socket_cpuset;
   hwloc_const_nodeset_t socket_nodeset;
   vector<allocation>    allocations;

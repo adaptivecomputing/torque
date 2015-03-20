@@ -82,23 +82,31 @@
 #include <sstream>
 
 #include "allocation.hpp"
+#include "req.hpp"
 #include "pbs_error.h"
 
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
 
+const int exclusive_none = 0;
+const int exclusive_node = 1;
+const int exclusive_socket = 2;
+const int exclusive_chip = 3;
+const int exclusive_core = 4;
+
 allocation::allocation(
 
   const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
                              memory(alloc.memory), cpus(alloc.cpus), 
-                             cores(alloc.cores),
-                             threads(alloc.threads)
+                             cores(alloc.cores), threads(alloc.threads),
+                             place_type(alloc.place_type)
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
-allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
+allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
+                           place_type(exclusive_none)
 
   {
   this->jobid[0] = '\0';
@@ -106,7 +114,8 @@ allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cor
 
 allocation::allocation(
 
-  const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
+  const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
+                       place_type(exclusive_none)
 
   {
   snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);
@@ -159,3 +168,21 @@ void allocation::place_indices_in_string(
   output = s.str();
   } // END place_indices_in_string()
 
+
+
+void allocation::set_place_type(
+
+  const std::string &placement_str)
+
+  {
+  if (placement_str == place_node)
+    this->place_type = exclusive_node;
+  else if (placement_str == place_socket)
+    this->place_type = exclusive_socket;
+  else if (placement_str == place_numa)
+    this->place_type = exclusive_chip;
+  else if (placement_str == place_core)
+    this->place_type = exclusive_core;
+  else
+    this->place_type = exclusive_none;
+  }

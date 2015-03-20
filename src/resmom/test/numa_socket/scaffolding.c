@@ -12,6 +12,8 @@ int placed;
 int called_place;
 bool oscillate = false;
 
+const int exclusive_socket = 2;
+
 void log_err(int errnum, const char *routine, const char *text)
   {
   }
