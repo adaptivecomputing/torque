@@ -497,6 +497,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
 
     a.place_indices_in_string(mem_string, MEM_INDICES);
     a.place_indices_in_string(cpu_string, CPU_INDICES);
+    strcpy(a.jobid, pjob->ji_qs.ji_jobid);
 
     this->allocations.push_back(a);
     

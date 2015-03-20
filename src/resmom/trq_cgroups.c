@@ -525,9 +525,12 @@ int trq_cg_initialize_hierarchy()
 
   trq_cg_init_subsys_online(false);
 
+  /* Check to see if we have a user provided configuration file 
+     for cgroups */
   rc = trq_cg_get_cgroup_paths_from_file();
   if (rc != PBSE_NONE)
     {
+    /* No configuration file. Get the info from the system */
     rc = trq_cg_get_cgroup_paths_from_system();
     if (rc)
       return(rc);
