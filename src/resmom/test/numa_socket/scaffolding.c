@@ -11,6 +11,8 @@ int tasks;
 int placed;
 int called_place;
 bool oscillate = false;
+std::string my_placement_type;
+const char *place_socket = "socket";
 
 const int exclusive_socket = 2;
 
@@ -137,5 +139,10 @@ int allocation::add_allocation(const allocation &other)
   }
 
 req::req() {}
+std::string req::getPlacementType() const
+
+  {
+  return(my_placement_type);
+  }
 
 allocation::allocation() {}

@@ -8,6 +8,7 @@
 #include <sstream>
 
 extern std::string my_placement_type;
+extern std::string thread_type;
 
 
 START_TEST(test_initializeChip)
@@ -115,7 +116,7 @@ START_TEST(test_how_many_tasks_fit)
   tasks = c.how_many_tasks_fit(r);
   fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
 
-  my_placement_type = use_cores;
+  thread_type = use_cores;
   // Cores are currently 0
   tasks = c.how_many_tasks_fit(r);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
@@ -129,8 +130,45 @@ START_TEST(test_how_many_tasks_fit)
   r2.set_value("lprocs", "2");
   c.setCores(10);
   fail_unless(c.how_many_tasks_fit(r2) == 5);
-  
+  }
+END_TEST
 
+
+START_TEST(test_exclusive_place)
+  {
+  const char *jobid = "1.napali";
+  req r;
+  r.set_value("lprocs", "2");
+  r.set_value("memory", "1kb");
+
+  allocation a(jobid);
+  a.place_type = exclusive_chip;
+
+  Chip c;
+  c.setId(0);
+  c.setThreads(24);
+  c.setCores(12);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 12; i++)
+    c.make_core(i);
+
+  thread_type = use_cores;
+  fail_unless(c.how_many_tasks_fit(r) == 6);
+  my_placement_type = place_numa;
+  fail_unless(c.how_many_tasks_fit(r) == 1);
+  int tasks = c.place_task(jobid, r, a, 1);
+  fail_unless(tasks == 1);
+  my_placement_type.clear();
+  
+  tasks = c.place_task(jobid, r, a, 5);
+  fail_unless(c.how_many_tasks_fit(r) == 0);
+  fail_unless(tasks == 0);
+  c.free_task(jobid);
+  
+  fail_unless(c.how_many_tasks_fit(r) == 6);
+  tasks = c.place_task(jobid, r, a, 6);
+  fail_unless(tasks == 6);
   }
 END_TEST
 
@@ -150,20 +188,10 @@ START_TEST(test_place_and_free_task)
   c.setCores(12);
   c.setMemory(6);
   c.setChipAvailable(true);
-  c.make_core(0);
-  c.make_core(1);
-  c.make_core(2);
-  c.make_core(3);
-  c.make_core(4);
-  c.make_core(5);
-  c.make_core(6);
-  c.make_core(7);
-  c.make_core(8);
-  c.make_core(9);
-  c.make_core(10);
-  c.make_core(11);
+  for (int i = 0; i < 12; i++)
+    c.make_core(i);
  
-  my_placement_type = use_cores;
+  thread_type = use_cores;
   // fill the node's memory
   int tasks = c.place_task(jobid, r, a, 6);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
@@ -184,6 +212,7 @@ START_TEST(test_place_and_free_task)
   
   // Now place by thread
   my_placement_type = "";
+  thread_type = "";
   c.setMemory(40);
 
   // Fill up the threads with multiple jobs
@@ -236,6 +265,7 @@ Suite *numa_socket_suite(void)
   tc_core = tcase_create("test_displayAsString");
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_place_and_free_task);
+  tcase_add_test(tc_core, test_exclusive_place);
   suite_add_tcase(s, tc_core);
   
   return(s);

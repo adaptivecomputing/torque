@@ -2,15 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+
 #include "log.h"
 #include "hwloc.h"
 #include "pbs_error.h"
 #include "allocation.hpp"
+#include "req.hpp"
 
 extern int tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
+extern std::string my_placement_type;
 
 START_TEST(test_displayAsString)
   {
@@ -136,10 +139,17 @@ START_TEST(test_place_task)
 
   // This call should use both nodes so place should get called twice and one should be leftover
   called_place = 0;
+  a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
   fail_unless(s.place_task("1.napali", r, a, 3) == 2);
   fail_unless(called_place = 2);
+
+  fail_unless(s.is_available() == false);
+  oscillate = false;
+  fail_unless(s.free_task("1.napali") == true);
+  fail_unless(s.is_available() == true);
+
   }
 END_TEST
 
@@ -175,6 +185,8 @@ START_TEST(test_how_many_tasks_fit)
   fail_unless(s.how_many_tasks_fit(r) == 4);
   tasks = 4;
   fail_unless(s.how_many_tasks_fit(r) == 8);
+  my_placement_type = place_socket;
+  fail_unless(s.how_many_tasks_fit(r) == 1);
   }
 END_TEST
 

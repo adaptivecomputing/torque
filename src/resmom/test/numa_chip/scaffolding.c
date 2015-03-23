@@ -6,6 +6,7 @@
 
 const char  *use_cores = "usecores";
 std::string  my_placement_type;
+std::string  thread_type;
 int          hardware_style;
 
 const char *place_node = "node";
@@ -71,7 +72,7 @@ std::string req::getPlacementType() const
 
 std::string req::getThreadUsageString() const
   {
-  return(my_placement_type);
+  return(thread_type);
   }
 
 

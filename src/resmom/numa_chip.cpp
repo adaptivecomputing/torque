@@ -428,7 +428,7 @@ using namespace std;
 
     if (this->chip_exclusive == false)
       {
-      if (r.getPlacementType() == use_cores)
+      if (r.getThreadUsageString() == use_cores)
         cpu_tasks = this->availableCores / r.getExecutionSlots();
       else
         cpu_tasks = this->availableThreads / r.getExecutionSlots();
@@ -444,6 +444,10 @@ using namespace std;
       // return the lower of the two values
       if (mem_tasks > cpu_tasks)
         mem_tasks = cpu_tasks;
+
+      if ((mem_tasks > 1) && 
+          (r.getPlacementType() == place_numa))
+        mem_tasks = 1;
       }
       
     return(mem_tasks);

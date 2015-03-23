@@ -247,6 +247,10 @@ using namespace std;
       {
       for (unsigned int i = 0; i < this->chips.size(); i++)
         num_that_fit += this->chips[i].how_many_tasks_fit(r);
+
+      if ((num_that_fit > 1) &&
+          (r.getPlacementType() == place_socket))
+        num_that_fit = 1;
       }
 
     return(num_that_fit);
