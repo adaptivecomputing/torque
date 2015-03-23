@@ -1311,7 +1311,7 @@ char *capture_until_newline_and_advance(
  * [mem: <mem>kb]
  * [swap: <swap>kb]
  * [disk: <swap>kb]
- * [sockets: <sockets>]
+ * [socket: <sockets>]
  * [numa chips: <numa chips>]
  * [gpus: <gpus> [gpu mode: <gpu mode>]]
  * [mics: <mics>]
@@ -1631,7 +1631,7 @@ int req::set_value(
     this->disk = strtoll(value, NULL, 10);
   else if (!strncmp(name, "nodes", 5))
     this->nodes = strtol(value, NULL, 10);
-  else if (!strncmp(name, "sockets", 7))
+  else if (!strncmp(name, "socket", 7))
     this->socket = strtol(value, NULL, 10);
   else if (!strncmp(name, "numachip", 10))
     this->numa_chip = strtol(value, NULL, 10);
