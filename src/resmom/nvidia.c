@@ -1228,6 +1228,28 @@ void generate_server_gpustatus_nvml(
       continue;
       }
 
+    /* get the display mode */
+    /* Nvidia GeForce does not support display mode */
+    rc = nvmlDeviceGetDisplayMode(device_hndl, &display_mode);
+
+    if (rc == NVML_SUCCESS)
+      {
+      if (display_mode == NVML_FEATURE_ENABLED)
+        {
+        gpu_status.push_back("gpu_display=Enabled");
+        }
+      else
+        {
+        gpu_status.push_back("gpu_display=Disabled");
+        }
+      }
+    else
+      {
+      log_nvml_error (rc, NULL, __func__);
+       gpu_status.push_back("gpu_display=Unknown");
+      }
+
+
     /* get the PCI info */
     rc = nvmlDeviceGetPciInfo(device_hndl, &pci_info);
 
@@ -1259,22 +1281,6 @@ void generate_server_gpustatus_nvml(
       std::string s("gpu_product_name=");
       s += tmpbuf;
       gpu_status.push_back(s);
-      }
-    else
-      {
-      log_nvml_error (rc, NULL, __func__);
-      }
-
-    /* get the display mode */
-    rc = nvmlDeviceGetDisplayMode(device_hndl, &display_mode);
-
-    if (rc == NVML_SUCCESS)
-      {
-      gpu_status.push_back("gpu_display=Enabled");
-      }
-    else if (rc == NVML_ERROR_INVALID_ARGUMENT)
-      {
-      gpu_status.push_back("gpu_display=Disabled");
       }
     else
       {
