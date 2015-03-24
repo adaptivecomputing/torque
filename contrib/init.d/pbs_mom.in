@@ -15,11 +15,12 @@ PBS_DAEMON="$SBIN_PATH/pbs_mom"
 PBS_HOME=@PBS_HOME@
 
 SUBSYS_LOCK="/var/lock/subsys/pbs_mom"
-MOM_LOCK="/var/spool/pbs/mom_priv/mom.lock"
 
 if [ -f /etc/sysconfig/pbs_mom ];then
 	. /etc/sysconfig/pbs_mom
 fi
+
+MOM_LOCK="$PBS_HOME/mom_priv/mom.lock"
 
 if [ -z "$previous" ];then
    # being run manually, don't disturb jobs
@@ -40,13 +41,15 @@ pidof_pbs_mom() {
 
 	# now we are sure the $MOM_LOCK file exists
 	parent_mom_pid=`cat $MOM_LOCK 2>/dev/null`
-    pidof pbs_mom | egrep -e "(^| )${parent_mom_pid}( |$)"
+	pidof pbs_mom | egrep -e "(^| )${parent_mom_pid}( |$)"
 	if [ $? -ne 0 ]; then
 		return 1
 	fi
 
 	# the parent pbs_mom should have a lock on the $MOM_LOCK file, this is
-	# typically acquired early in the pbs_mom process
+	# typically acquired early in the pbs_mom process. With the current
+	# version of torque (4.2-dev), this is typically the sixth open file, 
+	# which is why we first look at file descriptor 5.
 	for fd in 5 4 3 `ls /proc/${parent_mom_pid}/fd/ | sort -n | tail -n +7`; do
 		fd_info=`stat -Lc "%d:%i" /proc/${parent_mom_pid}/fd/${fd} 2>/dev/null`
 		if [ x${fd_info} == x${lockfile_info} ]; then
