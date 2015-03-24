@@ -43,8 +43,11 @@ using namespace std;
 
     id = device_obj->logical_index;
     name = device_obj->name;
-    info_name = device_obj->infos->name;
-    info_value = device_obj->infos->value;
+    if (device_obj->infos != NULL)
+      {
+      info_name = device_obj->infos->name;
+      info_value = device_obj->infos->value;
+      }
 
 
 #ifdef MIC

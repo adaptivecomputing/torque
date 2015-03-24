@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <hwloc.h>
+#include <hwloc/nvml.h>
 
 #include "pbs_job.h"
 #include "req.hpp"
@@ -205,6 +206,7 @@ class Machine
   std::vector<Socket> sockets;
   std::vector<PCI_Device> NVIDIA_device;
   vector<allocation>  allocations;
+  hwloc_obj_t get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device);
 
   public:
     Machine& operator=(const Machine& newMachine);

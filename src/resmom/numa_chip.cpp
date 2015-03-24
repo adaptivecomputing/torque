@@ -175,101 +175,6 @@ using namespace std;
     return(false);
     }
 
-#ifdef NVIDIA_GPUS
-  #ifdef NVML_API
-  int Chip::initializeNVIDIADevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
-    {
-    nvmlReturn_t rc;
-
-    /* Initialize the NVML handle. 
-     *
-     * nvmlInit should be called once before invoking any other methods in the NVML library. 
-     * A reference count of the number of initializations is maintained. Shutdown only occurs 
-     * when the reference count reaches zero.
-     * */
-    rc = nvmlInit();
-    if (rc != NVML_SUCCESS && rc != NVML_ERROR_ALREADY_INITIALIZED)
-      {
-      log_nvml_error(rc, NULL, __func__);
-      return(PBSE_NONE);
-      }
-
-    unsigned int device_count = 0;
-
-    /* Get the device count. */
-    rc = nvmlDeviceGetCount(&device_count);
-    if (rc == NVML_SUCCESS)
-      {
-      nvmlDevice_t gpu;
-
-      /* Get the nvml device handle at each index */
-      for (unsigned int idx = 0; idx < device_count; idx++)
-        {
-        rc = nvmlDeviceGetHandleByIndex(idx, &gpu);
-  
-        if (rc != NVML_SUCCESS)
-          {
-          /* TODO: get gpuid from nvmlDevice_t struct */
-          log_nvml_error(rc, NULL, __func__);
-          }
-
-        /* Use the hwloc library to determine device locality */
-        hwloc_obj_t gpu_obj;
-        hwloc_obj_t ancestor_obj;
-        int is_in_tree;
-    
-        gpu_obj = hwloc_nvml_get_device_osdev(topology, gpu);
-        if (gpu_obj == NULL)
-          continue;
-    
-        if (chip_obj == NULL) 
-          { // this came from the Non NUMA
-          PCI_Device new_device;
-    
-          new_device.initializePCIDevice(gpu_obj, idx, topology);
-          this->devices.push_back(new_device);
-          }
-        else
-          {
-          /* TODO: test this block of code on a NUMA-capable server with the k40/k80 installed */
-          PCI_Device new_device;
-          ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_NODE, gpu_obj);
-          if (ancestor_obj != NULL)
-            {
-            if (ancestor_obj->logical_index == chip_obj->logical_index)
-              {
-              PCI_Device new_device;
-    
-              new_device.initializePCIDevice(gpu_obj, idx, topology);
-              this->devices.push_back(new_device);
-              }
-            }
-          }
-        }
-      }
-    else
-      {
-      log_nvml_error(rc, NULL, __func__);
-      }
-
-    /* Shutdown the NVML handle. 
-     *
-     * nvmlShutdown should be called after NVML work is done, once for each call to nvmlInit() 
-     * A reference count of the number of initializations is maintained. Shutdown only occurs when 
-     * the reference count reaches zero. For backwards compatibility, no error is reported if 
-     * nvmlShutdown() is called more times than nvmlInit().
-     * */
-    rc = nvmlShutdown();
-    if (rc != NVML_SUCCESS)
-      {
-      log_nvml_error(rc, NULL, __func__);
-      }
-
-    return(PBSE_NONE);
-    }
-  #endif
-#endif
-
 #ifdef MIC
   int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
     {
@@ -322,11 +227,6 @@ using namespace std;
     this->initializeMICDevices(chip_obj, topology);
 #endif
 
-#ifdef NVIDIA_GPUS
-  #ifdef NVML_API
-    this->initializeNVIDIADevices(chip_obj, topology);
-  #endif
-#endif
     return(PBSE_NONE);
 
     }

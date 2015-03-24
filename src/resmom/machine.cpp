@@ -127,6 +127,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     }
 
 
+
   int Machine::initializeNonNUMAMachine(hwloc_obj_t obj, hwloc_topology_t topology)
     {
     hwloc_obj_t prev = NULL;
@@ -160,7 +161,41 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
     }
 
 #ifdef NVIDIA_GPUS
-  int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+   hwloc_obj_t Machine::get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device)
+    {
+    hwloc_obj_t osdev;
+    nvmlReturn_t nvres;
+    nvmlPciInfo_t pci;
+
+    if (!hwloc_topology_is_thissystem(topology)) 
+      {
+      errno = EINVAL;
+      return NULL;
+      }
+
+      nvres = nvmlDeviceGetPciInfo(device, &pci);
+      if (NVML_SUCCESS != nvres)
+        return NULL;
+
+      osdev = NULL;
+      while ((osdev = hwloc_get_next_osdev(topology, osdev)) != NULL) 
+        {
+        hwloc_obj_t pcidev = osdev->parent;
+        if (strncmp(osdev->name, "card", 4))
+          continue;
+        if (pcidev
+            && pcidev->type == HWLOC_OBJ_PCI_DEVICE
+            && pcidev->attr->pcidev.domain == pci.domain
+            && pcidev->attr->pcidev.bus == pci.bus
+            && pcidev->attr->pcidev.dev == pci.device
+            && pcidev->attr->pcidev.func == 0)
+          return osdev;
+        }
+
+      return NULL;
+    }
+
+ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
     {
     nvmlReturn_t rc;
 
@@ -202,8 +237,14 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
         int is_in_tree;
     
         gpu_obj = hwloc_nvml_get_device_osdev(topology, gpu);
+
         if (gpu_obj == NULL)
-          continue;
+          {
+          /* This was not an nvml device. We will look for a "card" device (GeForce or Quadra) */
+          gpu_obj = this->get_non_nvml_device(topology, gpu);
+          if (gpu_obj == NULL)
+            continue;
+          }
           
         /* The ancestor was not a numa chip. Is it the machine? */
         ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_MACHINE, gpu_obj);
@@ -492,7 +533,8 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
         if (placed != 0)
           {
           remaining_tasks -= placed;
-          this->availableSockets--;
+          if (change == true)
+            this->availableSockets--;
           }
         }
       }
