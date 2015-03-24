@@ -151,7 +151,7 @@ END_TEST
 
 START_TEST(test_trq_cg_set_resident_memory_limit)
   {
-  pid_t pid = 1234;
+  const char *job_id = "1.napali";
   unsigned long mem = 1024*1024;
   std::string mem_path;
   std::string cgroup_path;
@@ -167,7 +167,7 @@ START_TEST(test_trq_cg_set_resident_memory_limit)
   cg_memory_path = "/tmp/cgroup/memory/";
 
   /* cgroup does not exist */
-  rc = trq_cg_set_resident_memory_limit(pid, mem);
+  rc = trq_cg_set_resident_memory_limit(job_id, mem);
   fail_unless(rc == PBSE_SYSTEM);
 
   /* make the cgroup and try for success */
@@ -180,7 +180,7 @@ START_TEST(test_trq_cg_set_resident_memory_limit)
   mem_path = mem_path + "/memory.limit_in_bytes";
   fd = fopen(mem_path.c_str(), "w");
   fclose(fd);
-  rc = trq_cg_set_resident_memory_limit(pid, mem);
+  rc = trq_cg_set_resident_memory_limit(job_id, mem);
   fail_unless(rc == PBSE_NONE);
   remove(mem_path.c_str());
   mem_path = cg_memory_path + "1234";
@@ -198,7 +198,7 @@ END_TEST
 
 START_TEST(test_trq_cg_set_swap_memory_limit)
   {
-  pid_t pid = 1234;
+  const char *job_id = "1.napali";
   unsigned long mem = 1024*1024;
   std::string mem_path;
   int rc;
@@ -212,7 +212,7 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
 
   cg_memory_path = "/tmp/cgroup/";
 
-  rc = trq_cg_set_swap_memory_limit(pid, mem);
+  rc = trq_cg_set_swap_memory_limit(job_id, mem);
   fail_unless(rc == PBSE_SYSTEM);
 
   mkdir(cg_memory_path.c_str(), 0755);
@@ -221,7 +221,7 @@ START_TEST(test_trq_cg_set_swap_memory_limit)
   mem_path = mem_path + "/memory.memsw.limit_in_bytes";
   fd = fopen(mem_path.c_str(), "w");
   fclose(fd);
-  rc = trq_cg_set_swap_memory_limit(pid, mem);
+  rc = trq_cg_set_swap_memory_limit(job_id, mem);
   fail_unless(rc == PBSE_NONE);
   remove(mem_path.c_str());
   mem_path = cg_memory_path + "1234";
@@ -269,7 +269,7 @@ END_TEST
 
 START_TEST(test_trq_cg_add_process_to_cgroup)
   {
-  pid_t  job_pid = 1234;
+  const char *job_id = "1.napali";
   pid_t  new_pid;
   int rc;
   int status;
@@ -293,21 +293,21 @@ START_TEST(test_trq_cg_add_process_to_cgroup)
   fail_unless(rc == 0);
 
   /* failure case */
-  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_pid, new_pid);
+  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_id, new_pid);
   fail_unless(rc != 0);
 
   /* setup sucess case */
-  rc = trq_cg_create_cgroup(cgroup_path, job_pid);
+  rc = trq_cg_create_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
-  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_pid, new_pid);
+  rc = trq_cg_add_process_to_cgroup(cgroup_path, job_id, new_pid);
   fail_unless(rc == 0);
 
   rc = waitpid(new_pid, &status, WNOHANG);
   sleep(2);
   /* We should be done now */
   /* Success case */
-  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_pid);
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
   rc = trq_cg_cleanup_torque_cgroups();
@@ -320,6 +320,7 @@ END_TEST
 START_TEST(test_trq_cg_add_pid_to_cgroup_tasks)
   {
   pid_t  job_pid;
+  const char *job_id = "1.napali";
   int rc;
   int status;
   std::string  cgroup_path;
@@ -340,17 +341,17 @@ START_TEST(test_trq_cg_add_pid_to_cgroup_tasks)
   fail_unless(rc == 0);
 
   /* setup sucess case */
-  rc = trq_cg_create_cgroup(cgroup_path, job_pid);
+  rc = trq_cg_create_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
-  rc = trq_cg_add_pid_to_cgroup_tasks(cgroup_path, job_pid);
+  rc = trq_cg_add_process_to_cgroup(job_id, job_pid);
   fail_unless(rc == 0);
 
   waitpid(job_pid, &status, WNOHANG);
 
   /* We should be done now */
   /* Success case */
-  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_pid);
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
   rc = trq_cg_cleanup_torque_cgroups();
@@ -366,6 +367,7 @@ START_TEST(test_trq_cg_add_process_to_cgroup_accts)
   int  rc;
   int status;
   std::string cgroup_path("/tmp/cgroup");
+  const char *job_id = "1.napali";
 
   new_pid = fork();
   if (new_pid == 0)
@@ -382,7 +384,7 @@ START_TEST(test_trq_cg_add_process_to_cgroup_accts)
 
 
   /* success case */
-  rc = trq_cg_add_process_to_cgroup_accts(new_pid);
+  rc = trq_cg_add_process_to_cgroup_accts(job_id, new_pid);
   fail_unless(rc == 0);
 
   /* We should be done now */
@@ -391,11 +393,11 @@ START_TEST(test_trq_cg_add_process_to_cgroup_accts)
 
   /* Cleanup  */
   cgroup_path = cgroup_path + "/cpuacct/torque/";
-  rc = trq_cg_remove_process_from_cgroup(cgroup_path, new_pid);
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
   cgroup_path =  "/tmp/cgroup//memory/torque/";
-  rc = trq_cg_remove_process_from_cgroup(cgroup_path, new_pid);
+  rc = trq_cg_remove_process_from_cgroup(cgroup_path, job_id);
   fail_unless(rc == 0);
 
   rc = trq_cg_cleanup_torque_cgroups();

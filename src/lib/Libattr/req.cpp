@@ -1782,7 +1782,9 @@ int req::getIndex() const
  * Based on the hostlist, determines the number of tasks from this req assigned 
  * to this host
  * hostlist is in the format:
- * hostname1[:ppn=num_ppn][+hostname2[:ppn=num_ppn][...]]
+ * hostname1/<index range[+hostname2/<index range>[...]]
+ * index range is in the format:
+ * digit[-digit][,digit][...]
  * We find the ratio of the number of tasks assigned to this host to the number of cores per task
  * That raio is the number of tasks assigned to this host
  *
@@ -1805,7 +1807,7 @@ int req::get_num_tasks_for_host(
         (!strncmp(this->placement_str.c_str(), "node", 4)))
       task_count = 1;
     else if ((this->hostlist.size() <= offset) ||
-             (this->hostlist.at(offset) != ':'))
+             (this->hostlist.at(offset) != '/'))
       task_count = 1;
     else
       {

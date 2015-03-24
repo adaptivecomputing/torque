@@ -135,6 +135,7 @@
 #include <string>
 #include <vector>
 #include "container.hpp"
+#include "trq_cgroups.h"
 
 
 #define IM_FINISHED                 1
@@ -2583,6 +2584,16 @@ int im_join_job_as_sister(
   
 #endif  /* ndef NUMA_SUPPORT */
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  trq_cg_reserve_cgroup(pjob);
+  
+  if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    }
+#endif
     
   ret = run_prologue_scripts(pjob);
   if (ret != PBSE_NONE)

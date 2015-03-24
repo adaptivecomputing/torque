@@ -523,6 +523,11 @@ int setup_gpus_for_job(
   job  *pjob) /* I */
 
   {
-    return(PBSE_NONE);
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_all_cgroups(job *pjob)
+  {
+  return(PBSE_NONE);
   }
 

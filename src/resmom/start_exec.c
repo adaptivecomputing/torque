@@ -358,7 +358,6 @@ extern int  use_nvidia_gpu;
 
 void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
-int trq_cg_add_process_to_cgroup_accts(pid_t job_pid);
 
 
 
@@ -4256,10 +4255,18 @@ int TMomFinalizeChild(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  /* Add this process to the cpuacct and memory subsystems */
   int rc;
 
-  rc = trq_cg_add_process_to_cgroup_accts(getpid());
+  // Create the cgroups for this job
+  if ((rc = trq_cg_create_all_cgroups(pjob)) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    exit(-1);
+    }
+
+  /* Add this process to the cpuacct and memory subsystems */
+  rc = trq_cg_add_process_to_cgroup_accts(pjob->ji_qs.ji_jobid, getpid());
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
@@ -4291,7 +4298,7 @@ int TMomFinalizeChild(
     mem_limit = cr->get_memory_for_this_host(string_hostname);
     if (mem_limit != 0)
       {
-      rc = trq_cg_set_resident_memory_limit(this_pid, mem_limit * KB);
+      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit * KB);
       if (rc != PBSE_NONE)
         {
         sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
@@ -4303,7 +4310,7 @@ int TMomFinalizeChild(
     swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
     if (swap_limit != 0)
       {
-      rc = trq_cg_set_swap_memory_limit(this_pid, swap_limit * KB);
+      rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit * KB);
       if (rc != PBSE_NONE)
         {
         sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
@@ -4312,7 +4319,12 @@ int TMomFinalizeChild(
         }
       }
 
-    rc = trq_cg_create_cpuset_cgroup(pjob, this_pid);
+    if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      exit(-1);
+      }
     }
 #endif
 
@@ -5352,20 +5364,8 @@ int start_process(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  int rc;
-  job_pid_set_t::iterator job_iter = pjob->ji_job_pid_set->begin();
-
-  rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, *job_iter, getpid());
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
-    log_err(rc, __func__, log_buffer);
-
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-    exit(1);
-    }
-
-  rc = trq_cg_add_process_to_cgroup(cg_memory_path, *job_iter, getpid());
+  int rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
+  
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);

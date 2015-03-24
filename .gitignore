@@ -412,6 +412,7 @@ src/resmom/test/prolog/test_prolog
 src/resmom/test/release_reservation/test_release_reservation
 src/resmom/test/requests/test_requests
 src/resmom/test/start_exec/test_start_exec
+src/resmom/test/trq_cgroups/test_trq_cgroups
 src/resmom/test/tmsock_recov/test_tmsock_recov
 src/server/test/accounting/test_accounting
 src/server/test/array_func/test_array_func
