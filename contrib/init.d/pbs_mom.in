@@ -47,9 +47,8 @@ pidof_pbs_mom() {
 	fi
 
 	# the parent pbs_mom should have a lock on the $MOM_LOCK file, this is
-	# typically acquired early in the pbs_mom process. With the current
-	# version of torque (4.2-dev), this is typically the sixth open file, 
-	# which is why we first look at file descriptor 5.
+	# typically acquired early in the pbs_mom process. This is typically 
+	# the sixth open file, which is why we first look at file descriptor 5.
 	for fd in 5 4 3 `ls /proc/${parent_mom_pid}/fd/ | sort -n | tail -n +7`; do
 		fd_info=`stat -Lc "%d:%i" /proc/${parent_mom_pid}/fd/${fd} 2>/dev/null`
 		if [ x${fd_info} == x${lockfile_info} ]; then
