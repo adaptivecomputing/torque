@@ -20,6 +20,8 @@ if [ -f /etc/sysconfig/pbs_mom ];then
 	. /etc/sysconfig/pbs_mom
 fi
 
+MOM_LOCK="$PBS_HOME/mom_priv/mom.lock"
+
 if [ -z "$previous" ];then
    # being run manually, don't disturb jobs
    args="$args -p"
@@ -28,18 +30,42 @@ else
 fi
 
 pidof_pbs_mom() {
-	pid=`pidof pbs_mom`
-	if [ $? -eq 0 ]; then
-		echo $pid
-	else
-		echo "-1"
+	# This function will echo the PID of the master pbs_mom process if such
+	# a process is running and then return 0. Otherwise it will echo nothing
+	# and return 1.
+
+	lockfile_info=`stat -Lc "%d:%i" $MOM_LOCK 2>/dev/null`
+	if [ $? -ne 0 ]; then
+		return 1
 	fi
+
+	# now we are sure the $MOM_LOCK file exists
+	parent_mom_pid=`cat $MOM_LOCK 2>/dev/null`
+	pidof pbs_mom | egrep -e "(^| )${parent_mom_pid}( |$)" >/dev/null 2>/dev/null
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+
+	# the parent pbs_mom should have a lock on the $MOM_LOCK file, this is
+	# typically acquired early in the pbs_mom process, so this loop typically
+    # stops at the sixth open file.
+	for fd in `ls /proc/${parent_mom_pid}/fd/ | sort -n`; do
+		fd_info=`stat -Lc "%d:%i" /proc/${parent_mom_pid}/fd/${fd} 2>/dev/null`
+		if [ x${fd_info} == x${lockfile_info} ]; then
+			echo $parent_mom_pid
+			return 0
+		fi
+	done
+
+	return 1
 }
 
 kill_pbs_mom() {
+	# This function will try to terminate the master pbs_mom process if such a
+	# process is running.
 	pid=`pidof_pbs_mom`
 
-	if [ $pid -eq -1 ];then
+	if [ $? -ne 0 ]; then
 		return 0;
 	fi
 
@@ -51,7 +77,7 @@ kill_pbs_mom() {
 	done
 	return $retval
 }
-	
+
 # how were we called
 case "$1" in
 	start)
@@ -61,8 +87,7 @@ case "$1" in
 		lock_present=$?
 
 		pid=`pidof_pbs_mom`
-
-		if [ $pid -ne -1 ]; then
+		if [ $? -eq 0 ]; then
 			if [ $lock_present -eq 0 ]; then
 			   echo -n "pbs_mom already running (pid $pid)"
 			else
@@ -90,7 +115,7 @@ case "$1" in
 		echo -n "Shutting down TORQUE Mom: "
 		# check if pbs_mom is running
 		pid=`pidof_pbs_mom`
-		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
+		[ $? -ne 0 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
 
 		kill_pbs_mom
 		RET=$?
@@ -103,6 +128,11 @@ case "$1" in
 		lock_present=$?
 
 		pid=`pidof_pbs_mom`
+		if [ $? -ne 0 ]; then
+			pid=-1
+		fi
+
+		echo "DEBUG: pid = $pid"
 
 		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
 		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
@@ -117,8 +147,8 @@ case "$1" in
 	reload)
 		echo -n "Re-reading TORQUE Mom config file: "
 		pid=`pidof_pbs_mom`
-		if [ $pid -ne -1 ]; then
-			kill -HUP `pidof_pbs_mom`
+		if [ $? -eq 0 ]; then
+			kill -HUP $pid
 			RET=$?
 			[ $RET -eq 0 ] && success "HUP" || failure "HUP"
 		else
@@ -131,4 +161,3 @@ case "$1" in
 		exit 1
 esac
 exit $RET
-
