@@ -1807,7 +1807,7 @@ int req::get_num_tasks_for_host(
         (!strncmp(this->placement_str.c_str(), "node", 4)))
       task_count = 1;
     else if ((this->hostlist.size() <= offset) ||
-             (this->hostlist.at(offset) != '/'))
+             (this->hostlist.at(offset) != ':'))
       task_count = 1;
     else
       {

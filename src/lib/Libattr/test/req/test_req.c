@@ -35,7 +35,7 @@ START_TEST(test_get_set_values)
   r.set_value("memory", "1024kb");
   r.set_value("swap", "1024kb");
   r.set_value("disk", "10000000kb");
-  r.set_value("sockets", "1");
+  r.set_value("socket", "1");
   r.set_value("gpus", "2");
   r.set_value("task_count", "5");
   r.set_value("gpu_mode", "exclusive_thread");
@@ -45,7 +45,7 @@ START_TEST(test_get_set_values)
   r.set_value("gres", "gresA");
   r.set_value("opsys", "ubuntu");
   r.set_value("arch", "64bit");
-  r.set_value("hostlist", "napali/0-31");
+  r.set_value("hostlist", "napali:ppn=32");
   r.set_value("features", "fast");
   r.set_value("single_job_access", "true");
 
@@ -70,7 +70,7 @@ START_TEST(test_get_set_values)
   fail_unless(names[13] == "arch.0");
   fail_unless(names[14] == "features.0", names[14].c_str());
   fail_unless(names[15] == "single_job_access.0");
-  fail_unless(names[16] == "hostlist.0", names[17].c_str());
+  fail_unless(names[16] == "hostlist.0", names[16].c_str());
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
@@ -88,7 +88,7 @@ START_TEST(test_get_set_values)
   fail_unless(values[13] == "64bit");
   fail_unless(values[14] == "fast");
   fail_unless(values[15] == "true");
-  fail_unless(values[16] == "napali/0-31");
+  fail_unless(values[16] == "napali:ppn=32");
 
   req r2;
   r2.set_value("lprocs", "2");
