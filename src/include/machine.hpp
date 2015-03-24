@@ -4,7 +4,11 @@
 #include <vector>
 #include <sstream>
 #include <hwloc.h>
+#ifdef NVIDIA_GPUS
+  #ifdef NVML_API
 #include <hwloc/nvml.h>
+  #endif
+#endif
 
 #include "pbs_job.h"
 #include "req.hpp"
@@ -206,7 +210,11 @@ class Machine
   std::vector<Socket> sockets;
   std::vector<PCI_Device> NVIDIA_device;
   vector<allocation>  allocations;
+#ifdef NVIDIA_GPUS
+  #ifdef NVML_API
   hwloc_obj_t get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device);
+  #endif
+#endif
 
   public:
     Machine& operator=(const Machine& newMachine);
