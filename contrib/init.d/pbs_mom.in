@@ -48,7 +48,7 @@ pidof_pbs_mom() {
 
 	# the parent pbs_mom should have a lock on the $MOM_LOCK file, this is
 	# typically acquired early in the pbs_mom process, so this loop typically
-    # stops at the sixth open file.
+	# stops at the sixth open file.
 	for fd in `ls /proc/${parent_mom_pid}/fd/ | sort -n`; do
 		fd_info=`stat -Lc "%d:%i" /proc/${parent_mom_pid}/fd/${fd} 2>/dev/null`
 		if [ x${fd_info} == x${lockfile_info} ]; then
