@@ -195,7 +195,6 @@ hwloc_obj_t Machine::get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t
   }
 
 
-#ifdef NVIDIA_GPUS
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
   nvmlReturn_t rc;
