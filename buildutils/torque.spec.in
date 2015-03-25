@@ -47,6 +47,7 @@
 %define ac_with_scp        --with-rcp=%{?with_scp:scp}%{!?with_scp:pbs_rcp}
 %define ac_with_spool      --%{?with_spool:en}%{!?with_spool:dis}able-spool
 %define ac_with_syslog     --%{?with_syslog:en}%{!?with_syslog:dis}able-syslog
+%define ac_trqauthd_sock_dir %{?trqauthd_sock_dir:%{trqauthd_sock_dir}}%{!?trqauthd_sock_dir:/tmp}
 
 ### Build Requirements
 %define breq_cpuset   %{?with_cpuset:hwloc-devel}
@@ -184,6 +185,7 @@ export CFLAGS CXXFLAGS
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} %{ac_with_debug} %{ac_with_libcpuset} \
     --with-sendmail=%{sendmail_path} %{ac_with_numa} %{ac_with_memacct} %{ac_with_top} \
+    --with-trqauthd-sock-dir=%{ac_trqauthd_sock_dir} \
     --disable-dependency-tracking %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} \
     --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} \
     --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
