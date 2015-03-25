@@ -173,6 +173,59 @@ START_TEST(test_exclusive_place)
 END_TEST
 
 
+START_TEST(test_partial_place)
+  {
+  Chip c;
+  c.setId(0);
+  c.setThreads(24);
+  c.setCores(12);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 12; i++)
+    c.make_core(i);
+
+  allocation remaining;
+  allocation master("1.napali");
+
+  remaining.cpus = 6;
+  remaining.memory = 2;
+
+  c.partially_place_task(remaining, master);
+  fail_unless(remaining.memory == 0);
+  fail_unless(remaining.cpus == 0);
+
+  // use the rest of the cpus
+  remaining.cpus = 28;
+  remaining.memory = 3;
+  allocation m2("2.napali");
+  c.partially_place_task(remaining, m2);
+  fail_unless(remaining.memory == 0);
+  fail_unless(remaining.cpus == 10);
+
+  allocation m3("3.napali");
+  remaining.cpus = 4;
+  remaining.memory = 6;
+
+  // Make sure we'll still use that memory even without cpus
+  c.partially_place_task(remaining, m3);
+  fail_unless(remaining.cpus == 4);
+  fail_unless(remaining.memory == 5);
+  
+  c.free_task("1.napali");
+  c.free_task("2.napali");
+  c.free_task("3.napali");
+
+  remaining.cores_only = true;
+  remaining.cpus = 13;
+  remaining.memory = 12;
+  c.partially_place_task(remaining, master);
+  fail_unless(remaining.cpus == 1, "cpus %d", remaining.cpus);
+  fail_unless(remaining.memory == 6);
+
+  }
+END_TEST
+
+
 START_TEST(test_place_and_free_task)
   {
   const char *jobid = "1.napali";
@@ -260,6 +313,7 @@ Suite *numa_socket_suite(void)
   TCase *tc_core = tcase_create("test_initializeChip");
   tcase_add_test(tc_core, test_initializeChip);
   tcase_add_test(tc_core, test_how_many_tasks_fit);
+  tcase_add_test(tc_core, test_partial_place);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");

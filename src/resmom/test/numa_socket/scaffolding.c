@@ -11,6 +11,8 @@ int tasks;
 int placed;
 int called_place;
 bool oscillate = false;
+bool avail_oscillate = false;
+int place_amount = 1;
 std::string my_placement_type;
 const char *place_socket = "socket";
 
@@ -64,6 +66,24 @@ Chip::~Chip()
   {
   }
 
+void Chip::partially_place_task(
+
+  allocation &remaining,
+  allocation &master)
+
+  {
+  if (place_amount == 1)
+    {
+    remaining.memory = 0;
+    remaining.cpus = 0;
+    }
+  else if (place_amount == 2)
+    {
+    remaining.memory /= 2;
+    remaining.cpus /= 2;
+    }
+  }
+
 int Chip::initializeNonNUMAChip(hwloc_obj_t obj, hwloc_topology_t topology)
   {
   return(PBSE_NONE);
@@ -74,27 +94,40 @@ int Chip::initializeChip(hwloc_obj_t obj, hwloc_topology_t topology)
   return(PBSE_NONE);
   }
 
-int Chip::getAvailableCores()
+hwloc_uint64_t Chip::getAvailableMemory() const
+  {
+  return(12);
+  }
+
+int Chip::getAvailableCores() const
   {
   return(6);
   }
 
 bool  Chip::chipIsAvailable() const
   {
-  return(true);
+  static bool result = false;
+  
+  if (avail_oscillate)
+    {
+    result = !result;
+    return(result);
+    }
+  else
+    return(true);
   }
 
-int Chip::getTotalCores()
+int Chip::getTotalCores() const
   {
   return(6);
   }
 
-int Chip::getAvailableThreads()
+int Chip::getAvailableThreads() const
   {
   return(6);
   }
 
-int Chip::getTotalThreads()
+int Chip::getTotalThreads() const
   {
   return(6);
   }
@@ -105,7 +138,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r) 
+int Chip::how_many_tasks_fit(req const &r) const
   {
   return(tasks);
   }

@@ -18,7 +18,11 @@ extern int num_tasks_fit;
 extern int num_placed;
 extern int called_free_task;
 extern int called_place_task;
+extern int called_partially_place;
+extern int called_fits_on_socket;
 extern int num_for_host;
+extern bool socket_fit;
+extern bool partially_placed;
 
 START_TEST(test_displayAsString)
   {
@@ -138,6 +142,28 @@ START_TEST(test_place_and_free_job)
   called_place_task = 0;
   m.place_job(&pjob, cpu, mem);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
+
+  num_tasks_fit = 0;
+  num_placed = 0;
+  my_req_count = 1;
+  num_for_host = 1;
+  socket_fit = true;
+  partially_placed = true;
+  called_partially_place = 0;
+  called_fits_on_socket = 0;
+  m.place_job(&pjob, cpu, mem);
+  fail_unless(called_partially_place == 1, "called %d", called_partially_place);
+  fail_unless(called_fits_on_socket == 1);
+  
+  socket_fit = false;
+  num_tasks_fit = 0;
+  num_placed = 0;
+  my_req_count = 1;
+  num_for_host = 1;
+
+  m.place_job(&pjob, cpu, mem);
+  fail_unless(called_partially_place == 2, "called %d", called_partially_place);
+  fail_unless(called_fits_on_socket == 3);
   }
 END_TEST
 

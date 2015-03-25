@@ -112,11 +112,12 @@ class Chip
     Chip();
     ~Chip();
     int getid();
-    int getTotalCores();
-    int getTotalThreads();
-    int getAvailableCores();
-    int getAvailableThreads();
-    int getMemory();
+    int getTotalCores() const;
+    int getTotalThreads() const;
+    int getAvailableCores() const;
+    int getAvailableThreads() const;
+    hwloc_uint64_t getAvailableMemory() const;
+    int getMemory() const;
     int initializeChip(hwloc_obj_t obj, hwloc_topology_t);
     int initializeNonNUMAChip(hwloc_obj_t, hwloc_topology_t);
     int initializePCIDevices(hwloc_obj_t, hwloc_topology_t);
@@ -138,13 +139,15 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    int  how_many_tasks_fit(const req &r);
+    int  how_many_tasks_fit(const req &r) const;
+    bool task_will_fit(hwloc_uint64_t mem_per_task, int es_per_task, bool cores_only) const;
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index);
     void make_core(int id = 0); // used for unit tests
+    void partially_place_task(allocation &remaining, allocation &master);
   };
 
 
@@ -172,12 +175,13 @@ class Socket
     int initializeSocket(hwloc_obj_t obj);
     int initializeIntelSocket(hwloc_obj_t obj, Chip &newChip);
     int initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t);
-    int getTotalChips();
-    int getTotalCores();
-    int getTotalThreads();
-    int getAvailableChips();
-    int getAvailableCores();
-    int getAvailableThreads();
+    int getTotalChips() const;
+    int getTotalCores() const;
+    int getTotalThreads() const;
+    int getAvailableChips() const;
+    int getAvailableCores() const;
+    int getAvailableThreads() const;
+    hwloc_uint64_t getAvailableMemory() const;
     int getid();
     hwloc_uint64_t getMemory();
     int initializeAMDSocket(hwloc_obj_t, hwloc_topology_t);
@@ -186,10 +190,12 @@ class Socket
     void displayAsString(stringstream &out) const;
     void setId(int id);
     void addChip(); // used for unit tests
-    int  how_many_tasks_fit(const req &r);
+    int  how_many_tasks_fit(const req &r) const;
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
     bool free_task(const char *jobid);
     bool is_available() const;
+    bool fits_on_socket(const allocation &remaining) const;
+    bool partially_place(allocation &remaining, allocation &a);
   };
 
 
@@ -242,6 +248,7 @@ class Machine
     void free_job_allocation(const char *jobid);
     void addSocket(int count); // used for unit tests
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
+    void place_remaining(vector<req> to_split, allocation &a);
   };
 
 extern Machine this_node;

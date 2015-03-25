@@ -25,6 +25,12 @@ START_TEST(test_allocation_constructors)
 
   allocation a3("1.napali");
   fail_unless(!strcmp(a3.jobid, "1.napali"));
+
+  req r;
+  allocation a4(r);
+  fail_unless(a4.memory == 1024, "mem = %d", a.memory);
+  fail_unless(a4.cpus == 2);
+  fail_unless(a4.cores_only == true);
   }
 END_TEST
 

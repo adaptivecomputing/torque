@@ -99,14 +99,14 @@ allocation::allocation(
   const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
                              memory(alloc.memory), cpus(alloc.cpus), 
                              cores(alloc.cores), threads(alloc.threads),
-                             place_type(alloc.place_type)
+                             place_type(alloc.place_type), cores_only(alloc.cores_only)
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
 allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
-                           place_type(exclusive_none)
+                           place_type(exclusive_none), cores_only(false)
 
   {
   this->jobid[0] = '\0';
@@ -114,8 +114,21 @@ allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cor
 
 allocation::allocation(
 
+  const req &r) : cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
+                  cores_only(false)
+
+  {
+  this->cpus = r.getExecutionSlots();
+  this->memory = r.getMemory();
+
+  if (r.getThreadUsageString() == use_cores)
+    this->cores_only = true;
+  }
+
+allocation::allocation(
+
   const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
-                       place_type(exclusive_none)
+                       place_type(exclusive_none), cores_only(false)
 
   {
   snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);

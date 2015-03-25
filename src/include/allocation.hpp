@@ -84,6 +84,7 @@
 #include <string>
 
 #include "pbs_ifl.h"
+#include "req.hpp"
 
 extern const int MEM_INDICES;
 extern const int CPU_INDICES;
@@ -108,6 +109,7 @@ class allocation
   char             jobid[PBS_MAXSVRJOBID];
 
   allocation(const allocation &alloc);
+  allocation(const req &r);
   allocation();
   allocation(const char *jobid);
   int  add_allocation(const allocation &other);
