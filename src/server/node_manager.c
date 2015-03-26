@@ -4045,7 +4045,7 @@ int place_subnodes_in_hostlist(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    rc = reserve_node(pnode, pjob, ProcBMStr);
+    rc = reserve_node(pnode, pjob, ProcBMStr, node_info);
 
     if (rc == PBSE_NONE)
       {
