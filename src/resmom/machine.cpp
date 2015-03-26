@@ -238,7 +238,12 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
   
       gpu_obj = hwloc_nvml_get_device_osdev(topology, gpu);
       if (gpu_obj == NULL)
+        {
+        /* This was not an nvml device. We will look for a "card" device (GeForce or Quadra) */
+        gpu_obj = this->get_non_nvml_device(topology, gpu);
+        if (gpu_obj == NULL)
         continue;
+        }
         
       /* The ancestor was not a numa chip. Is it the machine? */
       ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_MACHINE, gpu_obj);
