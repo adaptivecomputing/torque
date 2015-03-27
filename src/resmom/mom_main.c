@@ -203,7 +203,7 @@ time_t          last_log_check;
 std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
-mom_hierarchy_t  *mh;
+mom_hierarchy_t  *mh = NULL;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -4375,7 +4375,7 @@ bool verify_mom_hierarchy()
       for (unsigned int k = 0; k < nodes.size(); k++)
         {
         node_comm_t &nc = nodes[k];
-        if (!strcmp(nc.name, mom_alias))
+        if (nc.name == mom_alias)
           continue_on_path = false;
         else
           {
@@ -4393,10 +4393,10 @@ bool verify_mom_hierarchy()
           {
           node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name.c_str(), NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc.name,
+                              nc.name.c_str(),
                               addr_info,
                               ntohs(nc.sock_addr.sin_port),
                               path_index,

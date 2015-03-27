@@ -192,9 +192,11 @@ void mom_hierarchy_handler::make_default_hierarchy()
  * @post-cond: rm_port has the mom's rm port stored in it
  */
 
-void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
-                                                         int             level_index,
-                                                         unsigned short &rm_port)
+void mom_hierarchy_handler::check_if_in_nodes_file(
+    
+  const char     *hostname,
+  int             level_index,
+  unsigned short &rm_port)
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -203,18 +205,19 @@ void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
   struct addrinfo    *addr_info;
   struct sockaddr_in *sai;
   unsigned long       ipaddr;
+  char               *work_str = strdup(hostname);
 
-  if ((colon = strchr(hostname, ':')) != NULL)
+  if ((colon = strchr(work_str, ':')) != NULL)
     *colon = '\0';
 
-  if ((pnode = find_nodebyname(hostname)) == NULL)
+  if ((pnode = find_nodebyname(work_str)) == NULL)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Node %s found in mom_hierarchy but not found in nodes file. Adding",
-      hostname);
+      work_str);
     log_err(-1, __func__, log_buf);
 
-    if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
+    if (pbs_getaddrinfo(work_str, NULL, &addr_info) == 0)
       {
       sai = (struct sockaddr_in *)addr_info->ai_addr;
       ipaddr = ntohl(sai->sin_addr.s_addr);
@@ -222,20 +225,24 @@ void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
     else
       {
       log_err(errno, __func__, "getaddrinfo failed");
+      free(work_str);
       return;
       }
 
-    create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
-    pnode = find_nodebyname(hostname);
+    create_partial_pbs_node(work_str, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
+    pnode = find_nodebyname(work_str);
     if (pnode == NULL)
       {
       snprintf(log_buf, sizeof(log_buf),
         "Failed to add node %s to nodes file.",
-        hostname);
+        work_str);
       log_err(-1, __func__, log_buf);
+      free(work_str);
       return;
       }
     }
+
+  free(work_str);
 
   rm_port = pnode->nd_mom_rm_port;
 
@@ -273,7 +280,7 @@ void mom_hierarchy_handler::convert_level_to_send_format(mom_nodes    &nodes,
     if (level_string.str().size() != 0)
       level_string << ",";
 
-    check_if_in_nodes_file(nc.name, level_index, rm_port);
+    check_if_in_nodes_file(nc.name.c_str(), level_index, rm_port);
     level_string << nc.name;
 
     if (rm_port != PBS_MANAGER_SERVICE_PORT)
