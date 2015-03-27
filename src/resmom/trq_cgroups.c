@@ -217,7 +217,7 @@ int trq_cg_initialize_cpuset_string(
   fclose(fd);
 
   /* Now write the value we got from the parent cgroup file to the torque cgroup file */
-  cpus_path = cg_cpuset_path + file_name;
+  cpus_path = cg_cpuset_path + cg_prefix + file_name;
   fd = fopen(cpus_path.c_str(), "r+");
   if (fd == NULL)
     {
