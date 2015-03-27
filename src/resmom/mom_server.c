@@ -580,8 +580,8 @@ int mom_server_add(
 
 void mom_server_stream_error(
 
-  int   stream,
-  char *name,
+  int         stream,
+  const char *name,
   const char *id,
   const char *message)
 
@@ -641,8 +641,8 @@ int mom_server_flush_io(
 int is_compose(
 
   struct tcp_chan *chan,
-  char *server_name,
-  int   command)
+  const char      *server_name,
+  int              command)
 
   {
   int ret;
@@ -1091,7 +1091,7 @@ int write_update_header(
     
   struct tcp_chan *chan,
   const char *id,
-  char       *name)
+  const char *name)
 
   {
   int  ret;
@@ -1403,7 +1403,7 @@ void node_comm_error(
   const char *message)
  
   {
-  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
+  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name.c_str());
   log_err(-1, "Node communication process",log_buffer);
   
   close(nc->stream);
@@ -1428,7 +1428,7 @@ int write_status_strings(
   if (LOGLEVEL >= 9)
     {
     snprintf(log_buffer, sizeof(log_buffer),
-      "Attempting to send status update to mom %s", nc->name);
+      "Attempting to send status update to mom %s", nc->name.c_str());
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
  
@@ -1436,7 +1436,7 @@ int write_status_strings(
     {
     }
   /* write protocol */
-  else if ((rc = write_update_header(chan,__func__,nc->name)) != DIS_SUCCESS)
+  else if ((rc = write_update_header(chan,__func__,nc->name.c_str())) != DIS_SUCCESS)
     {
     }
   else if ((rc = write_my_server_status(chan,__func__, strings, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
@@ -1454,7 +1454,7 @@ int write_status_strings(
     if (LOGLEVEL >= 7)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully sent status update to mom %s", nc->name);
+        "Successfully sent status update to mom %s", nc->name.c_str());
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
       }
     }

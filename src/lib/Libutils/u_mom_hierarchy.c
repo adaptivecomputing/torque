@@ -108,30 +108,10 @@ extern int              LOGLEVEL;
 
 void free_mom_hierarchy(
 
-  mom_hierarchy_t *mh)
+  mom_hierarchy_t *param_mh)
 
   {
-
-  for(mom_paths::iterator paths_iter = mh->paths->begin();paths_iter != mh->paths->end();paths_iter++)
-    {
-    mom_levels *levels = *paths_iter;
-    /* free each level */
-    for(mom_levels::iterator levels_iter = levels->begin();levels_iter != levels->end();levels_iter++)
-      {
-      mom_nodes *nodes = *levels_iter;
-
-      /* free each node_comm_t */
-      for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
-        {
-        free(*nodes_iter);
-        }
-      delete nodes;
-      }
-
-    delete levels;
-    }
-  delete mh->paths;
-  free(mh);
+  free(param_mh);
   } /* END free_mom_hierarchy() */
 
 
@@ -163,16 +143,16 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 int add_network_entry(
 
   mom_hierarchy_t    *nt,
-  char               *name,
+  const char         *name,
   struct addrinfo    *addr_info,
   unsigned short      rm_port,
   int                 path,
   int                 level)
 
   {
-  node_comm_t     *nc = (node_comm_t *)calloc(1, sizeof(node_comm_t));
   mom_levels      *levels;
   mom_nodes       *node_comm_entries;
+  node_comm_t      nc;
 
   /* check if the path is already in the array */
   if (nt->paths->size() > (size_t)path)
@@ -212,17 +192,10 @@ int add_network_entry(
   nc->sock_addr.sin_family = AF_INET;
   nc->sock_addr.sin_port = htons(rm_port);
   nc->stream = -1;
-
-  if ((nc->name = (char *)calloc(1, strlen(name) + 1)) == NULL)
-    {
-    free(nc);
-    return(ENOMEM);
-    }
-  else
-    strcpy(nc->name,name);
+  nc.name = name;
 
   node_comm_entries->push_back(nc);
-    return(PBSE_NONE);
+  return(PBSE_NONE);
   } /* END add_network_entry() */
 
 
