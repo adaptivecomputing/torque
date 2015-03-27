@@ -1183,8 +1183,7 @@ unsigned long cput_sum(
 
   job_iter = pjob->ji_job_pid_set->begin();
 
-  sprintf(buf, "%d", *job_iter);
-  full_cgroup_path = cg_cpuacct_path + buf + "/cpuacct.usage";
+  full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
 
   fd = open(full_cgroup_path.c_str(), O_RDONLY);
   if (fd <= 0)
