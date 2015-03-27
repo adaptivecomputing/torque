@@ -35,7 +35,7 @@ int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topolog
   hwloc_obj_t prev = NULL;
 
   this->id = socket_obj->logical_index;
-  this->memory = socket_obj->memory.total_memory;
+  this->memory = socket_obj->memory.total_memory / 1024;
   this->available_memory = this->memory;
   this->socket_cpuset = socket_obj->allowed_cpuset; 
   this->socket_nodeset = socket_obj->allowed_nodeset;
@@ -75,7 +75,7 @@ int Socket::initializeIntelSocket(hwloc_obj_t socket_obj, hwloc_topology_t topol
   hwloc_obj_t prev = NULL;
 
   this->id = socket_obj->logical_index;
-  this->memory = socket_obj->memory.total_memory;
+  this->memory = socket_obj->memory.total_memory / 1024;
   this->available_memory = this->memory;
   this->socket_cpuset = socket_obj->allowed_cpuset; 
   this->socket_nodeset = socket_obj->allowed_nodeset;
@@ -125,7 +125,8 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   this->availableCores = numaChip.getAvailableCores();
   this->availableThreads = numaChip.getAvailableThreads();
 
-  get_machine_total_memory(topology, &this->memory);    
+  get_machine_total_memory(topology, &this->memory);
+  this->memory /= 1024; // make kb
   this->available_memory = this->memory;
   this->chips.push_back(numaChip);
   return(PBSE_NONE);

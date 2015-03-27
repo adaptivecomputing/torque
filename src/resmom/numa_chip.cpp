@@ -29,7 +29,7 @@ using namespace std;
 
 
 Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), availableCores(0),
-               chip_exclusive(false)
+               chip_exclusive(false), available_memory(0)
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -59,6 +59,8 @@ int Chip::initializeNonNUMAChip(hwloc_obj_t socket_obj, hwloc_topology_t topolog
     // Store the memory in kb
     this->memory = this->memory / 1024;
     }
+
+  this->available_memory = this->memory;
 
   while ((core_obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_CORE, prev)) != NULL)
     {
