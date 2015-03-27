@@ -2709,7 +2709,7 @@ int parse_nodes_file()
   FILE              *nin;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   extern char        server_name[];
-  long               cray_enabled;
+  long               cray_enabled = FALSE;
   char               line[MAXLINE << 4];
 
   extern resource_t  next_resource_tag;

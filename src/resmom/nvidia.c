@@ -1136,6 +1136,7 @@ void generate_server_gpustatus_nvml(
   snprintf(tmpbuf, 100, "timestamp=%s", ctime(&time_now));
 
   gpu_status.push_back(tmpbuf);
+  memset(&tmpbuf, 0, sizeof(tmpbuf));
 
   /* get the driver version to report */
   rc = nvmlSystemGetDriverVersion(tmpbuf, 1024);
