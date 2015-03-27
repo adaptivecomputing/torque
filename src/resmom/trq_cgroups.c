@@ -40,6 +40,7 @@ string cg_cpuset_path;
 string cg_cpuacct_path;
 string cg_memory_path;
 string cg_devices_path;
+string cg_prefix("cpuset.");
 
 const int CPUS = 0;
 const int MEMS = 1;
@@ -154,13 +155,17 @@ int trq_cg_cleanup_torque_cgroups()
  */
 
 
-int trq_cg_initialize_cpuset_string(const string file_name)
+int trq_cg_initialize_cpuset_string(
+    
+  const string file_name)
+
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   FILE  *fd;
   char   buf[64];
   size_t bytes_written;
   std::string cpus_path;
+  std::string base_path;
   std::string key ("/torque");
 
   /* the newly created torque dir needs to have the cpuset.cpus and cpuset.mems
@@ -168,25 +173,35 @@ int trq_cg_initialize_cpuset_string(const string file_name)
 
   /* First take /torque off of the cg_cpuset_path string. This will
      give us the root directory for the cgroup hierarchy */
-  cpus_path = cg_cpuset_path;
-  std::size_t found = cpus_path.rfind(key);
+  base_path = cg_cpuset_path;
+  std::size_t found = base_path.rfind(key);
   if (found == std::string::npos)
     {
-    sprintf(log_buf, "Could not find sub-string \"/torque\" in %s", cpus_path.c_str());
+    sprintf(log_buf, "Could not find sub-string \"/torque\" in %s", base_path.c_str());
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
 
   /* open the parent cgroup file as given by file_name. This file is 
      either cpuset.cpus or cpuset.mems */
-  cpus_path.replace(found, key.length(), ""); 
-  cpus_path = cpus_path + file_name;
+  base_path.replace(found, key.length(), ""); 
+  cpus_path = base_path + cg_prefix + file_name;
   fd = fopen(cpus_path.c_str(), "r");
   if (fd == NULL)
     {
-    sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    // Attempt to open the file without the 'cpuset.' prefix
+    cpus_path = base_path + file_name;
+    if ((fd = fopen(cpus_path.c_str(), "r")) == NULL)
+      {
+      sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+      return(PBSE_SYSTEM);
+      }
+    else
+      {
+      // It worked, so make the prefix non-existent
+      cg_prefix = "";
+      }
     }
 
   /* read in the string from the file */
@@ -212,7 +227,7 @@ int trq_cg_initialize_cpuset_string(const string file_name)
     }
 
   bytes_written = fwrite(buf, strlen(buf), 1, fd);
-  if(bytes_written < 1)
+  if (bytes_written < 1)
     {
     sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
@@ -222,7 +237,8 @@ int trq_cg_initialize_cpuset_string(const string file_name)
   fclose(fd);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_initialize_cpuset_string()
+
 
 
 /* We need to add a torque directory to each subsystem mount point
@@ -268,12 +284,12 @@ int init_torque_cgroups()
       return(rc);
       }
 
-    file_name = "cpuset.mems";
+    file_name = "mems";
     rc = trq_cg_initialize_cpuset_string(file_name);
     if (rc != PBSE_NONE)
       return(rc);
  
-    file_name = "cpuset.cpus";
+    file_name = "cpus";
     rc = trq_cg_initialize_cpuset_string(file_name);
     if (rc != PBSE_NONE)
       return(rc);
@@ -674,9 +690,9 @@ int trq_cg_populate_cgroup(
 
   path += job_id;
   if (which == CPUS)
-    path += "/cpuset.cpus";
+    path += "/" + cg_prefix + "cpus";
   else
-    path += "/cpuset.mems";
+    path += "/" + cg_prefix + "mems";
 
   if ((f = fopen(path.c_str(), "w")) == NULL)
     {
