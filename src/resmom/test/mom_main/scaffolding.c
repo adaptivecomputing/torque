@@ -237,7 +237,7 @@ int IamRoot()
   exit(1);
   }
 
-int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsigned short rm_port, int path, int level)
+int add_network_entry(mom_hierarchy_t *nt, const char *name, struct addrinfo *ai, unsigned short rm_port, int path, int level)
   {
   fprintf(stderr, "The call to add_network_entry needs to be mocked!!\n");
   exit(1);
