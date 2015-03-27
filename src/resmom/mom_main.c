@@ -4371,13 +4371,13 @@ bool verify_mom_hierarchy()
 
       for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
         {
-        node_comm_t *nc = *nodes_iter;
+        node_comm_t &nc = *nodes_iter;
         if (nc.name == mom_alias)
           continue_on_path = false;
         else
           {
-          unsigned short rm_port = ntohs(nc->sock_addr.sin_port);
-          unsigned long  ipaddr = ntohl(nc->sock_addr.sin_addr.s_addr);
+          unsigned short rm_port = ntohs(nc.sock_addr.sin_port);
+          unsigned long  ipaddr = ntohl(nc.sock_addr.sin_addr.s_addr);
           okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
           }
             
@@ -4388,14 +4388,14 @@ bool verify_mom_hierarchy()
         {
         for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
           {
-          node_comm_t *nc = *nodes_iter;
+          node_comm_t &nc = *nodes_iter;
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc->name.c_str(), NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name.c_str(), NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc->name.c_str(),
+                              nc.name.c_str(),
                               addr_info,
-                              ntohs(nc->sock_addr.sin_port),
+                              ntohs(nc.sock_addr.sin_port),
                               path_index,
                               level_index);
 

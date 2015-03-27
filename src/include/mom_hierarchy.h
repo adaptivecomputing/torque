@@ -134,7 +134,7 @@ class node_comm_t
   };
 
 
- typedef std::vector<node_comm_t *> mom_nodes;
+ typedef std::vector<node_comm_t> mom_nodes;
  typedef std::vector<mom_nodes *> mom_levels;
  typedef std::vector<mom_levels *> mom_paths;
 

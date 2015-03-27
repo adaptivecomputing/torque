@@ -557,7 +557,7 @@ int can_resolve_hostname(
 
 void check_if_in_nodes_file(
 
-  char           *hostname,
+  const char     *hostname,
   int             level_index,
   unsigned short &rm_port)
 
@@ -568,20 +568,21 @@ void check_if_in_nodes_file(
   struct addrinfo    *addr_info;
   struct sockaddr_in *sai;
   unsigned long       ipaddr;
+  char               *work_str = strdup(hostname);
 
-  if ((colon = strchr(hostname, ':')) != NULL)
+  if ((colon = strchr(work_str, ':')) != NULL)
     *colon = '\0';
   
-  if ((pnode = find_nodebyname(hostname)) == NULL)
+  if ((pnode = find_nodebyname(work_str)) == NULL)
     {
     snprintf(log_buf, sizeof(log_buf), 
       "Node %s found in mom_hierarchy but not found in nodes file. Adding",
-      hostname);
+      work_str);
     log_err(-1, __func__, log_buf);
 
-    if ((sai = get_cached_addrinfo(hostname)) == NULL)
+    if ((sai = get_cached_addrinfo(work_str)) == NULL)
       {
-      if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
+      if (pbs_getaddrinfo(work_str, NULL, &addr_info) == 0)
         {
         sai = (struct sockaddr_in *)addr_info->ai_addr;
         ipaddr = ntohl(sai->sin_addr.s_addr);
@@ -589,23 +590,27 @@ void check_if_in_nodes_file(
       else
         {
         log_err(errno, __func__, "getaddrinfo failed");
+        free(work_str);
         return;
         }
       }
     else
       ipaddr = ntohl(sai->sin_addr.s_addr);
 
-    create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
-    pnode = find_nodebyname(hostname);
+    create_partial_pbs_node(work_str, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
+    pnode = find_nodebyname(work_str);
     if (pnode == NULL)
       {
       snprintf(log_buf, sizeof(log_buf),
         "Failed to add node %s to nodes file.",
-        hostname);
+        work_str);
       log_err(-1, __func__, log_buf);
+      free(work_str);
       return;
       }
     }
+
+  free(work_str);
 
   rm_port = pnode->nd_mom_rm_port;
     
@@ -634,21 +639,20 @@ void convert_level_to_send_format(
   std::vector<std::string> &send_format)
 
   {
-  node_comm_t       *nc;
   std::stringstream  level_string;
 
   send_format.push_back("<sl>");
 
   for(mom_nodes::iterator nodes_iter = nodes->begin();nodes_iter != nodes->end();nodes_iter++)
     {
-    nc = *nodes_iter;
+    node_comm_t &nc = *nodes_iter;
     unsigned short rm_port = 0;
 
     if (level_string.str().size() != 0)
       level_string << ",";
   
-    check_if_in_nodes_file(nc->name, level_index, rm_port);
-    level_string << nc->name;
+    check_if_in_nodes_file(nc.name.c_str(), level_index, rm_port);
+    level_string << nc.name;
 
     if (rm_port != PBS_MANAGER_SERVICE_PORT)
       {

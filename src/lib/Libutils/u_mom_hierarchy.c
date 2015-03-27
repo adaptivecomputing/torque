@@ -164,8 +164,6 @@ int add_network_entry(
 
     if (levels == NULL)
       {
-      free(nc);
-
       return(-1);
       }
 
@@ -188,10 +186,10 @@ int add_network_entry(
 
   /* finally, insert the entry into the node_comm_entries */
   /* initialize the node comm entry */
-  nc->sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-  nc->sock_addr.sin_family = AF_INET;
-  nc->sock_addr.sin_port = htons(rm_port);
-  nc->stream = -1;
+  nc.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
+  nc.sock_addr.sin_family = AF_INET;
+  nc.sock_addr.sin_port = htons(rm_port);
+  nc.stream = -1;
   nc.name = name;
 
   node_comm_entries->push_back(nc);
@@ -211,15 +209,15 @@ int add_network_entry(
 
 int rm_establish_connection(
 
-  node_comm_t *nc)
+  node_comm_t &nc)
     
   {
-  nc->stream = tcp_connect_sockaddr((struct sockaddr *)&nc->sock_addr,sizeof(nc->sock_addr));
+  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr));
 
-  if (nc->stream < 0)
+  if (nc.stream < 0)
     {
-    nc->mtime = time(NULL);
-    nc->bad = TRUE;
+    nc.mtime = time(NULL);
+    nc.bad = TRUE;
     return(-1);
     }
   else
@@ -327,7 +325,6 @@ node_comm_t *force_path_update(
  
   mom_levels          *levels;
   mom_nodes           *node_comm_entries;
-  node_comm_t         *nc;
 
 
   if (nt->paths->size() > 1)
@@ -345,16 +342,16 @@ node_comm_t *force_path_update(
         
         for (node = 0; node < (int)node_comm_entries->size(); node++)
           {
-          nc = node_comm_entries->at(node);
+          node_comm_t &nc = node_comm_entries->at(node);
 
-          if ((nc->bad == TRUE) &&
-              (time_now - nc->mtime <= mom_hierarchy_retry_time))
+          if ((nc.bad == TRUE) &&
+              (time_now - nc.mtime <= mom_hierarchy_retry_time))
             continue;
 
           if (rm_establish_connection(nc) == PBSE_NONE)
             {
             /* SUCCESS, return the new node */
-            return(nc);
+            return(&nc);
             }
           else
             attempts++;
@@ -378,16 +375,16 @@ node_comm_t *force_path_update(
 
       for (node = 0; node < (int)node_comm_entries->size(); node++)
         {
-        nc = node_comm_entries->at(node);
+        node_comm_t &nc = node_comm_entries->at(node);
 
-        if ((nc->bad == TRUE) &&
-            (time_now - nc->mtime <= mom_hierarchy_retry_time))
+        if ((nc.bad == TRUE) &&
+            (time_now - nc.mtime <= mom_hierarchy_retry_time))
           continue;
 
         if (rm_establish_connection(nc) == PBSE_NONE)
           {
           /* SUCCESS, return the new node */
-          return(nc);
+          return(&nc);
           }
         } /* END for each node comm point */
       } /* END for each level */
@@ -408,10 +405,6 @@ node_comm_t *update_current_path(
   mom_hierarchy_t *nt)
 
   {
-  mom_levels      *levels;
-  mom_nodes       *node_comm_entries;
-  node_comm_t     *nc;
-
   /* check to make sure we're initialized */
   if (nt->paths->size() == 0)
     return(NULL);
@@ -422,24 +415,24 @@ node_comm_t *update_current_path(
       (nt->current_node  < 0))
     return(force_path_update(nt));
 
-  levels = nt->paths->at(nt->current_path);
-  node_comm_entries = levels->at(nt->current_level);
-  nc = node_comm_entries->at(nt->current_node);
+  mom_levels      *levels = nt->paths->at(nt->current_path);
+  mom_nodes       *node_comm_entries = levels->at(nt->current_level);
+  node_comm_t     &nc = node_comm_entries->at(nt->current_node);
 
-  if (nc->stream < 0)
+  if (nc.stream < 0)
     return(force_path_update(nt));
   else if ((nt->current_path  != 0) ||
            (nt->current_level != 0) ||
            (nt->current_node  != 0))
     {
-    if ((time(NULL) - nc->mtime) > mom_hierarchy_retry_time)
+    if ((time(NULL) - nc.mtime) > mom_hierarchy_retry_time)
       {
-      close(nc->stream);
+      close(nc.stream);
       return(force_path_update(nt));
       }
     }
 
-  return(nc);
+  return(&nc);
   } /* END update_current_path() */
 
 
