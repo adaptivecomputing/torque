@@ -10,6 +10,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3023. Fix a bug when ALPS incorrectly returns a permanent confirmation failure.
   b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
       it will be set. 
+  f - TRQ-2782. Distribute job files into subdirectories when server attribute
+      use_jobs_subdirs set to true. Default is false (do not distribute job files).
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
