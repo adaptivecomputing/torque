@@ -294,4 +294,4 @@ int unlock_ss()
     return(0);
     }
 
-
+std::string get_path_jobdata(const char *a, const char *b) {return ""; }

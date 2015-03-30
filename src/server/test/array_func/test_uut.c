@@ -11,9 +11,9 @@ int is_num(const char *);
 int array_request_token_count(const char *);
 int array_request_parse_token(char *, int *, int *);
 int num_array_jobs(const char *str);
-int array_recov_binary(char *path, job_array **new_pa, char *log_buf, size_t buflen);
+int array_recov_binary(const char *path, job_array **new_pa, char *log_buf, size_t buflen);
 int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
-
+extern std::string get_path_jobdata(const char *, const char *);
 const char *array_sample = "<array>\n</array>";
 extern char *path_arrays;
 

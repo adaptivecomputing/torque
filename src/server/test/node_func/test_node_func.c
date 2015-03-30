@@ -405,7 +405,7 @@ START_TEST(effective_node_delete_test)
   allnodes.insert(node, node->nd_name);
   
   effective_node_delete(&node);
-  fail_unless(node == NULL, "unsuccessfull node delition");
+  fail_unless(node == NULL, "unsuccessful node deletion");
 
   }
 END_TEST

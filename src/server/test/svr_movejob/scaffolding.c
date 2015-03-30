@@ -433,3 +433,8 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+std::string get_path_jobdata(const char *a, const char *b)
+  {
+  std::string ret_string = path_jobs;
+  return ret_string;
+  }

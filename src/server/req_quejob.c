@@ -610,7 +610,10 @@ int determine_job_file_name(
 
   do
     {
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, basename, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    std::string adjusted_path_jobs = get_path_jobdata(jobid.c_str(), path_jobs);
+
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(), basename, JOB_FILE_SUFFIX);
     fds = open(namebuf, O_CREAT | O_EXCL | O_WRONLY, 0600);
 
     if (fds < 0)
@@ -1616,6 +1619,7 @@ int req_jobscript(
   int   filemode = 0600;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
+  std::string adjusted_path_jobs;
 
   errno = 0;
 
@@ -1671,7 +1675,10 @@ int req_jobscript(
     return rc;
     }
 
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+  // get adjusted path_jobs path
+  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
     {
@@ -1889,6 +1896,7 @@ int req_rdytocommit(
   char  jobid[PBS_MAXSVRJOBID + 1];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
+  std::string adjusted_path_jobs;
 
   pj = locate_new_job(preq->rq_ind.rq_rdytocommit);
 
@@ -1948,7 +1956,10 @@ int req_rdytocommit(
     {
     pj->ji_is_array_template = TRUE;
 
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
 
@@ -2136,9 +2147,14 @@ int req_commit(
 
   if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
+    std::string adjusted_path_jobs;
+
     pj->ji_is_array_template = TRUE;
     
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
 

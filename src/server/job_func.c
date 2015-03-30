@@ -174,6 +174,7 @@ extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
 int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 void handle_complete_second_time(struct work_task *ptask);
+
 /* Local Private Functions */
 
 static void job_init_wattr(job *);
@@ -956,6 +957,7 @@ job *job_clone(
   int            i;
   int            slen;
   int            release_mutex = FALSE;
+  std::string	 adjusted_path_jobs;
 
   if (LOGLEVEL >= 7)
     {
@@ -1040,10 +1042,13 @@ job *job_clone(
 
   free(oldid);
 
+  // get the adjusted path_jobs
+  adjusted_path_jobs = get_path_jobdata(pnewjob->ji_qs.ji_jobid, path_jobs);
+
   do
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      path_jobs, basename, JOB_FILE_SUFFIX);
+      adjusted_path_jobs.c_str(), basename, JOB_FILE_SUFFIX);
 
     fds = open(namebuf, O_CREAT | O_EXCL | O_WRONLY, 0600);
 
@@ -1211,6 +1216,8 @@ void *job_clone_wt(
   int                 start;
   int                 end;
 
+  std::string	      adjusted_path_jobs;
+
   jobid = (char *)cloned_id;
 
   if (jobid == NULL)
@@ -1220,7 +1227,7 @@ void *job_clone_wt(
     }
 
   /* increment the job_clone_semaphore so people 
-     know we are makeing jobs for this array */
+     know we are making jobs for this array */
   rc = sem_post(job_clone_semaphore);
   if (rc)
     {
@@ -1247,8 +1254,12 @@ void *job_clone_wt(
 
   free(jobid);
 
-  snprintf(namebuf, sizeof(namebuf), "%s%s.AR",
-    path_jobs, template_job->ji_qs.ji_fileprefix);
+  // get the adjusted path_jobs path
+  adjusted_path_jobs = get_path_jobdata(template_job->ji_qs.ji_jobid, path_jobs);
+
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+    adjusted_path_jobs.c_str(), template_job->ji_qs.ji_fileprefix, ARRAY_FILE_SUFFIX);
+
   template_job_mgr.unlock();
 
   while ((rn = (array_request_node *)GET_NEXT(pa->request_tokens)) != NULL)
@@ -1786,6 +1797,7 @@ int record_jobinfo(
   size_t                  bytes_read = 0;
   extern pthread_mutex_t  job_log_mutex;
   long                    record_job_script = FALSE;
+  std::string		  adjusted_path_jobs;
   
   if (pjob == NULL)
     {
@@ -1846,9 +1858,12 @@ int record_jobinfo(
      * Write the contents of the script to our log file*/
     
     bf += "\t<job_script>";
-    
+
+    // get the adjusted path_jobs path  
+    adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+      adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
     
     if ((fd = open(namebuf, O_RDONLY)) >= 0)
       {
@@ -1911,6 +1926,7 @@ int svr_job_purge(
   int           do_delete_array = FALSE;
   job_array     *pa = NULL;
   char          array_id[PBS_MAXSVRJOBID+1];
+  std::string	adjusted_path_jobs;
   
   if (pjob == NULL)
     {
@@ -2036,13 +2052,18 @@ int svr_job_purge(
     pjob_mutex.set_unlock_on_exit(false); /* job_free will release lock */
     }
 
+  // get the adjusted path_jobs
+  //  using the preserved job id in job_id
+  adjusted_path_jobs = get_path_jobdata(job_id, path_jobs);
+
   /* pjob->ji_mutex is unlocked at this point */
   /* delete the script file */
   if ((job_has_arraystruct == FALSE) || 
       (job_is_array_template == TRUE))
     {
     /* delete script file */        
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, job_fileprefix, JOB_SCRIPT_SUFFIX);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+      job_fileprefix, JOB_SCRIPT_SUFFIX);
 
     if (unlink(namebuf) < 0)
       {
@@ -2112,12 +2133,12 @@ int svr_job_purge(
   if (job_is_array_template == TRUE)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", 
-      path_jobs, job_fileprefix, JOB_FILE_TMP_SUFFIX);
+      adjusted_path_jobs.c_str(), job_fileprefix, JOB_FILE_TMP_SUFFIX);
     }
   else
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", 
-      path_jobs, job_fileprefix, JOB_FILE_SUFFIX);
+      adjusted_path_jobs.c_str(), job_fileprefix, JOB_FILE_SUFFIX);
     }
 
   if (unlink(namebuf) < 0)
