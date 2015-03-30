@@ -863,7 +863,7 @@ void *trq_cg_remove_process_from_accts(
   {
   int   rc;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *job_id = (const char *)vp;
+  char *job_id = (char *)vp;
 
   /* remove job from the cpuacct cgroup */
   rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_id);
