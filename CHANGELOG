@@ -12,6 +12,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       it will be set. 
   b - TRQ-3039. Fix a deadlock when deleting a job where other jobs have after any dependencies
       on the first job.
+  f - TRQ-2782. Distribute job files into subdirectories when server attribute use_jobs_subdirs
+      set to true. Default is false (do not distribute job files).
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
