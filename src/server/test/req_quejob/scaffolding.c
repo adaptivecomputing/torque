@@ -441,3 +441,4 @@ void log_ext(int i, char const* s, char const* s2, int i2)
   {
   }
 
+std::string get_path_jobdata(const char *a, const char *b) {return "";}

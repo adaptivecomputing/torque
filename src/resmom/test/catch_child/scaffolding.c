@@ -1166,7 +1166,7 @@ void mom_server_all_update_stat(void)
   {
   }
 
-job *job_recov(char *filename)
+job *job_recov(const char *filename)
   {
   job *pjob = NULL;
   if (!((func_num == INIT_ABORT_JOBS) && (tc == 1)))

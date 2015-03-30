@@ -1167,6 +1167,10 @@ int job_save(
   const char   *tmp_ptr = NULL;
 
   time_t  time_now = time(NULL);
+#ifndef PBS_MOM
+  // get the adjusted path_jobs path
+  std::string   adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+#endif
 
 
 #ifdef PBS_MOM
@@ -1180,17 +1184,31 @@ int job_save(
 
   if (mom_port)
     {
+#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
+#else
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
+#endif
     }
   else
     {
+#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
+#else
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
+#endif
     }
 
   /* if ji_modified is set, ie an pbs_attribute changed, then update mtime */
@@ -1479,7 +1497,7 @@ int job_recov_binary(
 
 job *job_recov(
 
-  char *filename) /* I */   /* pathname to job save file */
+  const char *filename) /* I */   /* pathname to job save file */
 
   {
   job  *pj;

@@ -356,7 +356,7 @@ int setup_nodes(void)
   exit(1);
   }
 
-job *job_recov(char *filename)
+job *job_recov(const char *filename)
   {
   fprintf(stderr, "The call to job_recov needs to be mocked!!\n");
   exit(1);
@@ -410,7 +410,7 @@ int setup_env(const char *filen)
   exit(1);
   }
 
-int array_recov(char *path, job_array **pa)
+int array_recov(const char *path, job_array **pa)
   {
   fprintf(stderr, "The call to array_recov needs to be mocked!!\n");
   exit(1);
@@ -646,3 +646,5 @@ void rel_resc(job *pjob) {}
 void mom_hierarchy_handler::initialLoadHierarchy() {}
 
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
+
+int is_svr_attr_set(int i) {return 0;}

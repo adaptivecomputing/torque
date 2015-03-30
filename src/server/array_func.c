@@ -414,9 +414,16 @@ int array_save(
   {
   char namebuf[MAXPATHLEN];
   char log_buf[LOCAL_LOG_BUF_SIZE];
+#ifndef PBS_MOM
+  // get adjusted path_arrays path
+  std::string adjusted_path_arrays = get_path_jobdata(pa->ai_qs.parent_id, path_arrays);
 
   snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-    path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+    adjusted_path_arrays.c_str(), pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+#else
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+   path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+#endif
 
   /* error buf is filled in array_save_xml or its subroutines */
   if (array_save_xml((const job_array *)pa, namebuf, log_buf, sizeof(log_buf)) != PBSE_NONE)
@@ -479,9 +486,9 @@ void array_get_parent_id(
 
 int read_and_convert_259_array(
     
-  int        fd,
-  job_array *pa,
-  char      *path)
+  int         fd,
+  job_array  *pa,
+  const char *path)
 
   {
   char           log_buf[LOCAL_LOG_BUF_SIZE];
@@ -767,7 +774,7 @@ int parse_array_dom(
 
 int array_recov_xml(
 
-  char       *filename,    /* I */ /* File containing array information to read */
+  const char *filename,    /* I */ /* File containing array information to read */
   job_array **pa,          /* O */ /* Array Job to recover information from file */
   char       *log_buf,     /* O */ /* Error buffer */
   size_t      buflen)      /* I */ /* Error buffer length */
@@ -815,7 +822,7 @@ int array_recov_xml(
 
 int array_recov_binary(
 
-  char       *path,    /* I */ /* File containing array information to read */
+  const char *path,    /* I */ /* File containing array information to read */
   job_array **new_pa,  /* O */ /* Array Job to recover information from file */
   char       *log_buf, /* O */ /* Error buffer */
   size_t      buflen)  /* I */ /* Error buffer length */
@@ -989,8 +996,8 @@ void free_array_job_sub_struct(
    the servers list of arrays */
 int array_recov(
 
-  char       *path, 
-  job_array **new_pa)
+  const char  *path, 
+  job_array  **new_pa)
 
   {
   job_array *pa;
@@ -1060,6 +1067,9 @@ int array_delete(
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   array_request_node      *rn;
   struct array_depend     *pdep;
+#ifndef PBS_MOM
+  std::string              adjusted_path_arrays;
+#endif
 
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
@@ -1068,9 +1078,18 @@ int array_delete(
   unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
   free(pa->ai_mutex);
 
+#ifndef PBS_MOM
+  // get adjusted path_arrays path
+  adjusted_path_arrays = get_path_jobdata(pa->ai_qs.fileprefix, path_arrays);
+
+  /* delete the on disk copy of the struct */
+  snprintf(path, sizeof(path), "%s%s%s",
+    adjusted_path_arrays.c_str(), pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+#else
   /* delete the on disk copy of the struct */
   snprintf(path, sizeof(path), "%s%s%s",
     path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
+#endif
 
   if (unlink(path))
     {

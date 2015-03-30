@@ -1123,7 +1123,7 @@ job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob,
 #else
 extern job  *mom_find_job(const char *);
 #endif
-extern job  *job_recov(char *);
+extern job  *job_recov(const char *);
 extern int   job_save(job *, int, int);
 extern int   modify_job_attr(job *, svrattrl *, int, int *);
 extern const char *prefix_std_file(job *, std::string& , int);

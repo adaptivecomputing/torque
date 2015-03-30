@@ -258,6 +258,7 @@
 #define ATTR_dfltque     "default_queue"
 #define ATTR_dispsvrsuffix "display_job_server_suffix"
 #define ATTR_jobsuffixalias "job_suffix_alias"
+#define ATTR_usejobssubdirs "use_jobs_subdirs"
 #define ATTR_defnode     "default_node"
 #define ATTR_locsvrs     "location_servers"
 #define ATTR_logevents   "log_events"

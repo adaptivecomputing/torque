@@ -307,7 +307,8 @@ void disconnect_from_server();
   "resource_max - the maximum amount of resources that are on the system\n" \
   "scheduler_iteration - the amount of seconds between timed scheduler iterations\n" \
   "scheduling - when true the server should tell the scheduler to run\n" \
-  "system_cost - arbitirary value factored into resource costs\n" \
+  "system_cost - arbitrary value factored into resource costs\n" \
+  "use_jobs_subdirs - when true divide storage of jobs into subdirectories in $PBS_HOME/server_priv/{jobs,arrays}\n" \
    
 #define HELP_SERVERRO \
   "Server Read Only Attributes:\n" \

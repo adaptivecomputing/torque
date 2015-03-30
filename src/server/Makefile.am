@@ -29,7 +29,7 @@ AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIR
 AM_LIBS   =`xml2-config --libs`
 
 pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
-		     dis_read.c geteusernam.c \
+		     dis_read.c geteusernam.c get_path_jobdata.c \
 		     issue_request.c job_attr_def.c job_func.c job_recov.c \
 		     job_route.c node_attr_def.c node_func.c \
 		     node_manager.c pbsd_init.c pbsd_main.c \
