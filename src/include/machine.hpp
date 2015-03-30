@@ -139,7 +139,7 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    int  how_many_tasks_fit(const req &r) const;
+    int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(hwloc_uint64_t mem_per_task, int es_per_task, bool cores_only) const;
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
     void place_task_by_cores(int cores_to_place, allocation &a);
@@ -190,7 +190,7 @@ class Socket
     void displayAsString(stringstream &out) const;
     void setId(int id);
     void addChip(); // used for unit tests
-    int  how_many_tasks_fit(const req &r) const;
+    int  how_many_tasks_fit(const req &r, int place_type) const;
     int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
     bool free_task(const char *jobid);
     bool is_available() const;

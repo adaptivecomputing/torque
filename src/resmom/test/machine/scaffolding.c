@@ -94,7 +94,7 @@ int Socket::getAvailableChips() const
   return(1);
   }
 
-int Socket::how_many_tasks_fit(const req &r) const
+int Socket::how_many_tasks_fit(const req &r, int place_type) const
 
   {
   return(num_tasks_fit);

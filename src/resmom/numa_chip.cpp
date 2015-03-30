@@ -327,13 +327,16 @@ void Chip::make_core(
 
 int Chip::how_many_tasks_fit(
 
-  const req &r) const
+  const req &r,
+  int        place_type) const
 
   {
   int cpu_tasks;
   int mem_tasks = 0;
 
-  if (this->chip_exclusive == false)
+  if ((this->chip_exclusive == false) &&
+      ((place_type != exclusive_chip) ||
+       (this->chipIsAvailable()) == true))
     {
     if (r.getThreadUsageString() == use_cores)
       cpu_tasks = this->availableCores / r.getExecutionSlots();

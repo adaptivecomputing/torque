@@ -108,28 +108,28 @@ START_TEST(test_how_many_tasks_fit)
   c.setChipAvailable(true);
 
   // test against threads
-  int tasks = c.how_many_tasks_fit(r);
+  int tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 6, "%d tasks fit, expected 6", tasks);
 
   // Now memory should be the limiting factor
   c.setMemory(5);
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
 
   thread_type = use_cores;
   // Cores are currently 0
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
 
   c.setCores(2);
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
 
   // make sure that we can handle a request without memory
   req r2;
   r2.set_value("lprocs", "2");
   c.setCores(10);
-  fail_unless(c.how_many_tasks_fit(r2) == 5);
+  fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
   }
 END_TEST
 
@@ -154,19 +154,19 @@ START_TEST(test_exclusive_place)
     c.make_core(i);
 
   thread_type = use_cores;
-  fail_unless(c.how_many_tasks_fit(r) == 6);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   my_placement_type = place_numa;
-  fail_unless(c.how_many_tasks_fit(r) == 1);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 1);
   int tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
   my_placement_type.clear();
   
   tasks = c.place_task(jobid, r, a, 5);
-  fail_unless(c.how_many_tasks_fit(r) == 0);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0);
   fail_unless(tasks == 0);
   c.free_task(jobid);
   
-  fail_unless(c.how_many_tasks_fit(r) == 6);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   tasks = c.place_task(jobid, r, a, 6);
   fail_unless(tasks == 6);
   }

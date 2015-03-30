@@ -544,7 +544,7 @@ int Machine::place_job(
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
-      if (this->sockets[j].how_many_tasks_fit(r) >= tasks_for_node)
+      if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
         {
         // place the job entirely on this socket
         placed = true;
@@ -578,15 +578,9 @@ int Machine::place_job(
       int placed = this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, remaining_tasks);
       if (placed != 0)
         {
-        if (this->sockets[j].is_available() == true)
-          change = true;
-        int placed = this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, remaining_tasks);
-        if (placed != 0)
-          {
-          remaining_tasks -= placed;
-          if (change == true)
-            this->availableSockets--;
-          }
+        remaining_tasks -= placed;
+        if (change == true)
+          this->availableSockets--;
         }
       }
 

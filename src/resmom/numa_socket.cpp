@@ -257,15 +257,18 @@ void Socket::displayAsString(
 
 int Socket::how_many_tasks_fit(
 
-  const req &r) const
+  const req &r,
+  int        place_type) const
 
   {
   int num_that_fit = 0;
 
-  if (socket_exclusive == false)
+  if ((socket_exclusive == false) &&
+      ((place_type != exclusive_socket) ||
+       (this->is_available() == true)))
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
-      num_that_fit += this->chips[i].how_many_tasks_fit(r);
+      num_that_fit += this->chips[i].how_many_tasks_fit(r, place_type);
 
     if ((num_that_fit > 1) &&
         (r.getPlacementType() == place_socket))
@@ -307,7 +310,7 @@ int Socket::place_task(
       // Attempt to fit all of tasks on a single numa chip if possible
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
         {
-        if (this->chips[i].how_many_tasks_fit(r) >= to_place)
+        if (this->chips[i].how_many_tasks_fit(r, master.place_type) >= to_place)
           tasks_to_place -= this->chips[i].place_task(jobid, r, a, to_place);
         }
 
