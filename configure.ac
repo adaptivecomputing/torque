@@ -149,6 +149,24 @@ m4_ifdef([AM_SILENT_RULES],[
     AM_SILENT_RULES(no)
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
+    src/test/accounting/Makefile
+    src/test/array_func/Makefile
+    src/test/array_upgrade/Makefile
+    src/test/attr_recov/Makefile
+    src/test/batch_request/Makefile
+    src/test/delete_all_tracker/Makefile
+    src/test/dis_read/Makefile
+    src/test/display_alps_status/Makefile
+    src/test/execution_slot_tracker/Makefile
+    src/test/exiting_jobs/Makefile
+    src/test/geteusernam/Makefile
+    src/test/id_map/Makefile
+    src/test/issue_request/Makefile
+    src/test/job_func/Makefile
+    src/test/job_qs_upgrade/Makefile
+    src/test/job_recov/Makefile
+    src/test/job_recycler/Makefile
+    src/test/node_func/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -428,31 +446,13 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/linux/test/node_internals/Makefile
     src/resmom/linux/test/pe_input/Makefile
     src/server/test/Makefile
-    src/server/test/accounting/Makefile
-    src/server/test/array_func/Makefile
-    src/server/test/array_upgrade/Makefile
-    src/server/test/attr_recov/Makefile
-    src/server/test/batch_request/Makefile
-    src/server/test/delete_all_tracker/Makefile
-    src/server/test/dis_read/Makefile
-    src/server/test/display_alps_status/Makefile
-    src/server/test/id_map/Makefile
-    src/server/test/execution_slot_tracker/Makefile
-    src/server/test/exiting_jobs/Makefile
-    src/server/test/geteusernam/Makefile
     src/server/test/incoming_request/Makefile
-    src/server/test/issue_request/Makefile
     src/server/test/job_attr_def/Makefile
     src/server/test/job_container/Makefile
-    src/server/test/job_func/Makefile
-    src/server/test/job_qs_upgrade/Makefile
-    src/server/test/job_recov/Makefile
-    src/server/test/job_recycler/Makefile
     src/server/test/job_route/Makefile
     src/server/test/job_usage_info/Makefile
     src/server/test/login_nodes/Makefile
     src/server/test/mom_hierarchy_handler/Makefile
-    src/server/test/node_func/Makefile
     src/server/test/node_manager/Makefile
     src/server/test/pbsd_init/Makefile
     src/server/test/pbsd_main/Makefile

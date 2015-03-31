@@ -418,14 +418,14 @@ src/server/test/job_func/test_job_func
 src/server/test/job_func/test_record_jobinfo
 src/server/test/job_qs_upgrade/test_job_qs_upgrade
 src/server/test/job_recov/test_job_recov
-src/server/test/job_recov/unit_test_job1.JB
+src/test/job_recov/unit_test_job1.JB
 src/server/test/job_recycler/test_job_recycler
 src/server/test/job_route/test_job_route
 src/server/test/job_usage_info/test_job_usage_info
 src/server/test/login_nodes/test_login_nodes
 src/server/test/mom_hierarchy_handler/test_mom_hierarchy_handler
-src/server/test/node_func/nodes
-src/server/test/node_func/test_node_func
+src/test/node_func/nodes
+src/test/node_func/test_node_func
 src/server/test/node_manager/test_node_manager
 src/server/test/pbsd_init/test_pbsd_init
 src/server/test/pbsd_main/test_pbsd_main
