@@ -904,6 +904,15 @@ int array_recov_binary(
       }
     }
 
+  // make sure array_size is valid
+  if (pa->ai_qs.array_size <= 0)
+    {
+    snprintf(log_buf, buflen, 
+      "array size must be positive");
+    close(fd);
+    return PBSE_SYSTEM;
+    }
+
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
