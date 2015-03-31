@@ -1220,7 +1220,19 @@ int handle_array_recovery(
         rc = process_arrays_dirent(pdirent_sub->d_name, type);
         }
       closedir(dir_sub);
-      chdir(path_arrays);
+
+      if (chdir(path_arrays) != 0)
+        {
+        sprintf(log_buf, msg_init_chdir, path_arrays);
+
+        log_err(errno, __func__, log_buf);
+
+        sprintf(log_buf, "%s:2", __func__);
+        unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+        closedir(dir);
+        return(-1);
+        }
       }
     else
       {
@@ -1446,7 +1458,19 @@ int handle_job_recovery(
             }
 
           closedir(dir_sub);
-          chdir(path_arrays);
+
+          if (chdir(path_jobs) != 0)
+            {
+            sprintf(log_buf, msg_init_chdir, path_jobs);
+        
+            log_err(errno, __func__, log_buf);
+
+            sprintf(log_buf, "%s:1", __func__);
+            unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+            closedir(dir);
+            return(-1);
+            }
           }
         }
       else
