@@ -436,8 +436,8 @@ void Chip::place_task_by_threads(
       a.cores++;
       }
 
-    while (((index = this->cores[j].get_open_processing_unit()) != -1) &&
-           (slots_left > 0))
+    while ((slots_left > 0) && 
+           ((index = this->cores[j].get_open_processing_unit()) != -1))
       {
       this->availableThreads--;
       slots_left--;
