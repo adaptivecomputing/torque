@@ -718,6 +718,16 @@ int trq_cg_add_process_to_cgroup_accts(const char *job_id, int pid)
   return(PBSE_NONE);
   }
 
+int trq_cg_set_resident_memory_limit(const char *job_id, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(const char *job_id, unsigned long limit)
+  {
+  return(PBSE_NONE);
+  }
+
 int is_whitespace(
 
   char c)
