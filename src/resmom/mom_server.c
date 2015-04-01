@@ -2863,7 +2863,7 @@ void check_state(
           if (LOGLEVEL >= 1)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-            "Setting node to down. The node health script output the following message:\n%s\n",
+            "Setting node to down. The node health script output the following message: %s",
             tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }
@@ -2875,7 +2875,7 @@ void check_state(
           if (LOGLEVEL >= 3)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              "Node health script ran and says the node is healthy with this message: %s",
               tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }
