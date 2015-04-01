@@ -494,6 +494,9 @@ void Machine::place_remaining(
       allocation remaining(r);
       if (this->sockets[j].fits_on_socket(remaining))
         {
+        if (this->sockets[j].is_available() == true)
+          this->availableSockets--;
+
         this->sockets[j].partially_place(remaining, a);
         not_placed = false;
         break;
@@ -512,6 +515,9 @@ void Machine::place_remaining(
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
+      if (this->sockets[j].is_available() == true)
+        this->availableSockets--;
+
       if (this->sockets[j].partially_place(remaining, a) == true)
         break;
       }
@@ -539,6 +545,9 @@ int Machine::place_job(
     const req &r = cr->get_req(i);
     int        tasks_for_node = r.get_num_tasks_for_host(mom_alias);
     bool       placed = false;
+
+    if (tasks_for_node == 0)
+      continue;
 
     a.set_place_type(r.getPlacementType());
 
