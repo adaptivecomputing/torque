@@ -373,14 +373,14 @@ static pid_t fork_to_user(
 
   if (stat(hdir, &sb) != 0)
     {
-    sprintf(log_buffer, "invalid home directory '%s' specified, errno=%d (%s)",
+    sprintf(log_buffer, "Root cannot open home directory '%s' specified, errno=%d (%s) -- Ignore if root squashing is enabled",
             hdir,
             errno,
             strerror(errno));
 
     if (LOGLEVEL >= 2)
       {
-      log_err(errno, __func__, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }
 
     if (EMsg != NULL)
