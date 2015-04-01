@@ -1313,7 +1313,7 @@ int set_array_job_ids(
 
 int job_recov_xml(
 
-  char *filename,  /* I */   /* pathname to job save file */
+  const char *filename,  /* I */   /* pathname to job save file */
   job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
   char *log_buf,   /* O */   /* buffer to hold error message */
   size_t buf_len)  /* I */   /* len of the error buffer */
@@ -1366,7 +1366,7 @@ int job_recov_xml(
 
 int job_recov_binary(
 
-  char *filename,  /* I */   /* pathname to job save file */
+  const char *filename,  /* I */   /* pathname to job save file */
   job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
   char *log_buf,   /* O */   /* buffer to hold error message */
   size_t buf_len)  /* I */   /* len of the error buffer */
@@ -1407,7 +1407,7 @@ int job_recov_binary(
       filename);
     log_err(-1, __func__, log_buf);
 
-    if (job_qs_upgrade(pj, fds, filename, pj->ji_qs.qs_version) != 0)
+    if (job_qs_upgrade(pj, fds, (char *)filename, pj->ji_qs.qs_version) != 0)
       {
       snprintf(log_buf, buf_len, "unable to upgrade %s\n", filename);
       close(fds);
@@ -1418,7 +1418,7 @@ int job_recov_binary(
   /* Does file name match the internal name? */
   /* This detects ghost files */
 
-  pn = strrchr(filename, (int)'/') + 1;
+  pn = strrchr((char *)filename, (int)'/') + 1;
 
 #ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
@@ -1501,7 +1501,6 @@ job *job_recov(
 
   {
   job  *pj;
-  char  namebuf[MAXPATHLEN];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc;
 
@@ -1514,11 +1513,10 @@ job *job_recov(
     return(NULL);
     }
 
-  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename); /* job directory path, filename */
   size_t logBufLen = sizeof(log_buf);
 
-  if ((rc = job_recov_xml(namebuf, &pj, log_buf, logBufLen)) && rc == PBSE_INVALID_SYNTAX)
-    rc = job_recov_binary(namebuf, &pj, log_buf, logBufLen);
+  if ((rc = job_recov_xml(filename, &pj, log_buf, logBufLen)) && rc == PBSE_INVALID_SYNTAX)
+    rc = job_recov_binary(filename, &pj, log_buf, logBufLen);
 
   if (rc == PBSE_NONE)
     rc = set_array_job_ids(&pj, log_buf, logBufLen);

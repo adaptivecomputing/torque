@@ -648,3 +648,5 @@ void mom_hierarchy_handler::initialLoadHierarchy() {}
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
 int is_svr_attr_set(int i) {return 0;}
+
+std::string get_path_jobdata(const char *a, const char *b) {return "";}
