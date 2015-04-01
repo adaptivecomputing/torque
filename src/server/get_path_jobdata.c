@@ -36,15 +36,19 @@ std::string get_path_jobdata(
 
   {
   std::string ret_path("");
+  long        use_jobs_subdirs = FALSE;
 
   if ((jobid == NULL) || (basepath == NULL))
     return(ret_path);
 
   ret_path = basepath;
- 
+
+  // get use_jobs_subdirs value if set 
+  get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
   // if we are using divided subdirectories in server_priv/{jobs,arrays}
   //  then adjust path
-  if (is_svr_attr_set(SRV_ATR_use_jobs_subdirs) && isdigit(*jobid))
+  if ((use_jobs_subdirs == TRUE) && isdigit(*jobid))
     {
     char *p = (char *)jobid + 1;
 

@@ -1,9 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int global_is_svr_attr_set_rc = 0;
+bool get_svr_attr_l_valset = true;
+long get_svr_attr_l_val = 1;
 
-int is_svr_attr_set(int i)
+int get_svr_attr_l(
+
+  int i,
+  long *l)
+
   {
-  return(global_is_svr_attr_set_rc);
+  if (get_svr_attr_l_valset)
+     *l = get_svr_attr_l_val;
+
+  return(0);
   }

@@ -722,6 +722,7 @@ int initialize_paths()
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char         EMsg[1024];
+  long         use_jobs_subdirs = FALSE;
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
   if (path_priv == NULL)
@@ -814,8 +815,11 @@ int initialize_paths()
 
   rc  = chk_file_sec(path_jobs,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
+  // get the use_jobs_subdirs value if set
+  get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
   // check divided jobs subdirectories if needed
-  if (is_svr_attr_set(SRV_ATR_use_jobs_subdirs))
+  if (use_jobs_subdirs == TRUE)
     {
     int i;
 
@@ -831,7 +835,7 @@ int initialize_paths()
   rc  = chk_file_sec(path_arrays,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
   // check divided arrays subdirectories if needed
-  if (is_svr_attr_set(SRV_ATR_use_jobs_subdirs))
+  if (use_jobs_subdirs == TRUE)
     {
     int i;
 
@@ -1181,6 +1185,7 @@ int handle_array_recovery(
   DIR              *dir_sub;
   int               rc = PBSE_NONE;
   int               rc2 = PBSE_NONE;
+  long              use_jobs_subdirs = FALSE;
 
   if (chdir(path_arrays) != 0)
     {
@@ -1197,12 +1202,14 @@ int handle_array_recovery(
   if ((dir = opendir(".")) == NULL)
     return -1;
 
+  // get the value of use_jobs_subdirs if set
+  get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
   while ((pdirent = readdir(dir)) != NULL)
     {
     // if we are using divided subdirectories for arrays
     //   need to move into them
-    if (is_svr_attr_set(SRV_ATR_use_jobs_subdirs) &&
-        (strlen(pdirent->d_name) == 1) &&
+    if ((use_jobs_subdirs == TRUE) && (strlen(pdirent->d_name) == 1) &&
         isdigit(pdirent->d_name[0]))
       {
       if (chdir(pdirent->d_name) != 0)
@@ -1367,6 +1374,7 @@ int handle_job_recovery(
   job              *pjob;
   time_t            time_now = time(NULL);
   char              basen[MAXPATHLEN+1];
+  long              use_jobs_subdirs = FALSE;
 
   JobArray.clear();
   recovered_job_count = 0;
@@ -1409,12 +1417,14 @@ int handle_job_recovery(
     }
   else
     {
+    // get the value of use_jobs_subdirs if set
+    get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
     while ((pdirent = readdir(dir)) != NULL)
       {
       // if we are using divided subdirectories for jobs
       //   need to move into them
-      if (is_svr_attr_set(SRV_ATR_use_jobs_subdirs) &&
-          (strlen(pdirent->d_name) == 1) &&
+      if ((use_jobs_subdirs == TRUE) && (strlen(pdirent->d_name) == 1) &&
           isdigit(pdirent->d_name[0]))
         {
         if (chdir(pdirent->d_name) != 0)
@@ -1515,7 +1525,12 @@ int handle_job_recovery(
           (pjob->ji_arraystructid[0] == '\0') &&
           (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
         {
-        snprintf(basen, sizeof(basen), "%s%s", pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+        // get adjusted path_jobs
+        std::string adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+
+        // construct the full path to the job script
+        snprintf(basen, sizeof(basen), "%s%s%s", adjusted_path_jobs.c_str(), 
+          pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
         if (chk_save_file(basen) != 0)
           {
