@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libprinttracking.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_printtracking
 
-libprinttracking_la_SOURCES = scaffolding.c ${PROG_ROOT}/printtracking.c
+libprinttracking_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/printtracking.cpp
 libprinttracking_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_printtracking_SOURCES = test_printtracking.c
+test_printtracking_SOURCES = test_printtracking.cpp
 
 check_SCRIPTS = coverage_run.sh
 

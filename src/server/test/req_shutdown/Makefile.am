@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libreq_shutdown.la
 
@@ -8,11 +8,11 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_req_shutdown
 
-libreq_shutdown_la_SOURCES = scaffolding.c ${PROG_ROOT}/req_shutdown.c
+libreq_shutdown_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/req_shutdown.cpp
 libreq_shutdown_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_req_shutdown_LDADD = ../../../test/torque_test_lib/libtorque_test.la ../../../test/scaffold_fail/libscaffold_fail.la
-test_req_shutdown_SOURCES = test_req_shutdown.c
+test_req_shutdown_SOURCES = test_req_shutdown.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../test/coverage_run.sh
 

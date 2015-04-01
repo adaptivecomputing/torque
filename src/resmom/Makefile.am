@@ -12,20 +12,13 @@ CLEANFILES = *.gcda *.gcno *.gcov
 include_HEADERS = catch_child.h checkpoint.h mom_comm.h mom_main.h mom_process_request.h \
 		mom_server_lib.h mom_job_func.h cray_energy.h
 
-AM_CFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
+AM_CXXFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
 	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
 	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" \
 	       -DRCP_ARGS=\"$(RCP_ARGS)\" \
 	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
 	       `xml2-config --cflags`
 AM_LIBS   = `xml2-config --libs`
-
-AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@ -DPBS_MOM \
-	       -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" \
-	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" \
-	       -DRCP_ARGS=\"$(RCP_ARGS)\" \
-	       -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
-	       `xml2-config --cflags`
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
@@ -37,33 +30,33 @@ sbin_PROGRAMS = pbs_mom pbs_demux
 
 LDADD = @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS) $(ALPS_LIBS)
 
-pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
-		   mom_server.c prolog.c requests.c start_exec.c	\
-		   start_exec.h checkpoint.c tmsock_recov.c		\
-		   mom_req_quejob.c mom_job_func.c			\
-		   mom_process_request.c alps_reservations.c		\
-		   release_reservation.c generate_alps_status.c	\
-		   parse_config.c node_frequency.cpp cray_energy.c \
-		   ../server/attr_recov.c ../server/dis_read.c		\
-		   ../server/job_attr_def.c ../server/job_recov.c	\
-		   ../server/reply_send.c ../server/resc_def_all.c	\
-		   ../server/job_qs_upgrade.c
+pbs_mom_SOURCES = catch_child.cpp mom_comm.cpp mom_inter.cpp mom_main.cpp	\
+		   mom_server.cpp prolog.cpp requests.cpp start_exec.cpp	\
+		   start_exec.h checkpoint.cpp tmsock_recov.cpp		\
+		   mom_req_quejob.cpp mom_job_func.cpp			\
+		   mom_process_request.cpp alps_reservations.cpp		\
+		   release_reservation.cpp generate_alps_status.cpp	\
+		   parse_config.cpp node_frequency.cpp cray_energy.cpp \
+		   ../server/attr_recov.cpp ../server/dis_read.cpp		\
+		   ../server/job_attr_def.cpp ../server/job_recov.cpp	\
+		   ../server/reply_send.cpp ../server/resc_def_all.cpp	\
+		   ../server/job_qs_upgrade.cpp
 if BUILDCPA
-pbs_mom_SOURCES += cray_cpa.c
+pbs_mom_SOURCES += cray_cpa.cpp
 endif
 
 if MIC
-pbs_mom_SOURCES += mic.c
+pbs_mom_SOURCES += mic.cpp
 endif
 
 if NVIDIA
-pbs_mom_SOURCES += nvidia.c
+pbs_mom_SOURCES += nvidia.cpp
 endif
 
-pbs_demux_SOURCES = pbs_demux.c
+pbs_demux_SOURCES = pbs_demux.cpp
 # use LDADD here so that we don't have to link MOM with libcr
 pbs_demux_LDADD = $(BLCR_LDFLAGS) @PBS_MACH@/libmommach.a $(MOMLIBS) $(PBS_LIBS)
-pbs_demux_CPPFLAGS = $(BLCR_CPPFLAGS) $(AM_CPPFLAGS)
+pbs_demux_CPPFLAGS = $(BLCR_CPPFLAGS) $(AM_CXXFLAGS)
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

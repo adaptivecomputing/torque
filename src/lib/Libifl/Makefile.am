@@ -10,29 +10,29 @@ include_HEADERS = lib_ifl.h
 
 noinst_LIBRARIES = libifl.a
 
-libifl_a_SOURCES = PBSD_gpuctrl2.c PBSD_manage2.c PBSD_manager_caps.c\
-                   PBSD_msg2.c PBSD_rdrpy.c PBSD_sig2.c PBSD_status.c\
-                   PBSD_status2.c PBSD_submit_caps.c PBS_attr.c PBS_data.c\
-                   dec_Authen.c dec_CpyFil.c dec_Gpu.c dec_JobCred.c dec_JobFile.c\
-                   dec_JobId.c dec_JobObit.c dec_Manage.c dec_MoveJob.c dec_MsgJob.c\
-                   dec_QueueJob.c dec_Reg.c dec_ReqExt.c dec_ReqHdr.c dec_Resc.c\
-                   dec_ReturnFile.c dec_RunJob.c dec_Shut.c dec_Sig.c dec_Status.c\
-                   dec_Track.c dec_attrl.c dec_attropl.c dec_rpyc.c dec_rpys.c\
-                   dec_svrattrl.c enc_CpyFil.c enc_Gpu.c enc_JobCred.c enc_JobFile.c\
-                   enc_JobId.c enc_JobObit.c enc_Manage.c enc_MoveJob.c enc_MsgJob.c\
-                   enc_QueueJob.c enc_QueueJob_hash.c enc_Reg.c enc_ReqExt.c\
-                   enc_ReqHdr.c enc_ReturnFile.c enc_RunJob.c enc_Shut.c enc_Sig.c\
-                   enc_Status.c enc_Track.c enc_attrl.c enc_attropl.c\
-                   enc_attropl_hash.c enc_reply.c enc_svrattrl.c get_svrport.c\
-                   list_link.c nonblock.c pbsD_alterjo.c pbsD_asyrun.c pbsD_chkptjob.c\
-                   pbsD_connect.c pbsD_deljob.c pbsD_gpuctrl.c pbsD_holdjob.c\
-                   pbsD_locjob.c pbsD_manager.c pbsD_movejob.c pbsD_msgjob.c\
-                   pbsD_orderjo.c pbsD_rerunjo.c pbsD_resc.c pbsD_rlsjob.c\
-                   pbsD_runjob.c pbsD_selectj.c pbsD_sigjob.c pbsD_stagein.c\
-                   pbsD_statjob.c pbsD_statnode.c pbsD_statque.c pbsD_statsrv.c\
-                   pbsD_submit.c pbsD_submit_hash.c pbsD_termin.c pbs_geterrmg.c\
-                   pbs_statfree.c tcp_dis.c tm.c torquecfg.c trq_auth.c\
-                   enc_PowerState.c dec_PowerState.c
+libifl_a_SOURCES = PBSD_gpuctrl2.cpp PBSD_manage2.cpp PBSD_manager_caps.cpp\
+                   PBSD_msg2.cpp PBSD_rdrpy.cpp PBSD_sig2.cpp PBSD_status.cpp\
+                   PBSD_status2.cpp PBSD_submit_caps.cpp PBS_attr.cpp PBS_data.cpp\
+                   dec_Authen.cpp dec_CpyFil.cpp dec_Gpu.cpp dec_JobCred.cpp dec_JobFile.cpp\
+                   dec_JobId.cpp dec_JobObit.cpp dec_Manage.cpp dec_MoveJob.cpp dec_MsgJob.cpp\
+                   dec_QueueJob.cpp dec_Reg.cpp dec_ReqExt.cpp dec_ReqHdr.cpp dec_Resc.cpp\
+                   dec_ReturnFile.cpp dec_RunJob.cpp dec_Shut.cpp dec_Sig.cpp dec_Status.cpp\
+                   dec_Track.cpp dec_attrl.cpp dec_attropl.cpp dec_rpyc.cpp dec_rpys.cpp\
+                   dec_svrattrl.cpp enc_CpyFil.cpp enc_Gpu.cpp enc_JobCred.cpp enc_JobFile.cpp\
+                   enc_JobId.cpp enc_JobObit.cpp enc_Manage.cpp enc_MoveJob.cpp enc_MsgJob.cpp\
+                   enc_QueueJob.cpp enc_QueueJob_hash.cpp enc_Reg.cpp enc_ReqExt.cpp\
+                   enc_ReqHdr.cpp enc_ReturnFile.cpp enc_RunJob.cpp enc_Shut.cpp enc_Sig.cpp\
+                   enc_Status.cpp enc_Track.cpp enc_attrl.cpp enc_attropl.cpp\
+                   enc_attropl_hash.cpp enc_reply.cpp enc_svrattrl.cpp get_svrport.cpp\
+                   list_link.cpp nonblock.cpp pbsD_alterjo.cpp pbsD_asyrun.cpp pbsD_chkptjob.cpp\
+                   pbsD_connect.cpp pbsD_deljob.cpp pbsD_gpuctrl.cpp pbsD_holdjob.cpp\
+                   pbsD_locjob.cpp pbsD_manager.cpp pbsD_movejob.cpp pbsD_msgjob.cpp\
+                   pbsD_orderjo.cpp pbsD_rerunjo.cpp pbsD_resc.cpp pbsD_rlsjob.cpp\
+                   pbsD_runjob.cpp pbsD_selectj.cpp pbsD_sigjob.cpp pbsD_stagein.cpp\
+                   pbsD_statjob.cpp pbsD_statnode.cpp pbsD_statque.cpp pbsD_statsrv.cpp\
+                   pbsD_submit.cpp pbsD_submit_hash.cpp pbsD_termin.cpp pbs_geterrmg.cpp\
+                   pbs_statfree.cpp tcp_dis.cpp tm.cpp torquecfg.cpp trq_auth.cpp\
+                   enc_PowerState.cpp dec_PowerState.cpp
 
 if HAVE_CHECK
 check:

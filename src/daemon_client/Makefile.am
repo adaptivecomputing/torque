@@ -7,11 +7,11 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = trq_auth_daemon.h
 
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -Wall -pthread -ldl -lrt -lssl -lcrypto
+AM_CXXFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -Wall -pthread -ldl -lrt -lssl -lcrypto
 
 sbin_PROGRAMS = trqauthd
 
-trqauthd_SOURCES = trq_auth_daemon.c trq_main.c
+trqauthd_SOURCES = trq_auth_daemon.cpp trq_main.cpp
 trqauthd_LDFLAGS = -L../lib/Libpbs/.libs -ltorque
 
 if HAVE_CHECK

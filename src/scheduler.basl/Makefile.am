@@ -5,14 +5,14 @@ PBS_LIBS = ../lib/Libpbs/libtorque.la
 sbin_PROGRAMS = pbs_sched
 noinst_PROGRAMS = basl2c
 
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
+AM_CXXFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
 pbs_sched_LDADD = $(PBS_LIBS) $(SCHD_LIBS) pbs_sched.o
-pbs_sched_SOURCES = af.c af_cnode.c af_cnodemap.c af_config.c af_job.c \
-		    af_que.c af_resmom.c af_server.c af_system.c af.h
+pbs_sched_SOURCES = af.cpp af_cnode.cpp af_cnodemap.cpp af_config.cpp af_job.cpp \
+		    af_que.cpp af_resmom.cpp af_server.cpp af_system.cpp af.h
 
 basl2c_LDADD = $(SCHD_LIBS)
-basl2c_SOURCES = af.c Basl2c.c CodeGen.c List.c Node.c Semantic.c SymTab.c \
+basl2c_SOURCES = af.cpp Basl2c.cpp CodeGen.cpp List.cpp Node.cpp Semantic.cpp SymTab.cpp \
 		 Lexer.l Parser.y CodeGen.h
 
 EXTRA_DIST = Lexer.h List.h af_system.h Node.h ParLexGlob.h Semantic.h \
@@ -30,24 +30,24 @@ EXTRA_DIST = Lexer.h List.h af_system.h Node.h ParLexGlob.h Semantic.h \
 	     samples/nqs.basl
 
 dist-hook:
-	rm -f $(distdir)/Lexer.c $(distdir)/Parser.c
+	rm -f $(distdir)/Lexer.cpp $(distdir)/Parser.c
 
 AM_YFLAGS = -d
 
 pbs_sched.c: samples/$(SCHD_CODE) basl2c
 	./basl2c $(srcdir)/samples/$(SCHD_CODE)
 		
-Lexer.o: Lexer.c y.tab.h
+Lexer.o: Lexer.cpp y.tab.h
 	
 Lexer.c: Lexer.l
-	$(LEXCOMPILE) $< && mv $(LEX_OUTPUT_ROOT).c $@
+	$(LEXCOMPILE) $< && mv $(LEX_OUTPUT_ROOT).cpp $@
 
 y.tab.h: Parser.c
 
 Parser.c: Parser.y
-	$(YACCCOMPILE) $< && mv y.tab.c $@
+	$(YACCCOMPILE) $< && mv y.tab.cpp $@
 
-MOSTLYCLEANFILES = Parser.c y.tab.h Lexer.c pbs_sched.c
+MOSTLYCLEANFILES = Parser.cpp y.tab.h Lexer.cpp pbs_sched.c
 MOSTLYCLEANFILES += *.gcda *.gcno *.gcov
 
 install-exec-hook:

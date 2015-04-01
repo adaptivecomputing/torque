@@ -11,7 +11,7 @@ sbin_PROGRAMS = momctl
 
 LDADD = $(PBS_LIBS)
 
-momctl_SOURCES = momctl.c
+momctl_SOURCES = momctl.cpp
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

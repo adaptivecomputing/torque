@@ -24,7 +24,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PBS_LIBS = ../../lib/Libpbs/libtorque.la
 
-AM_CFLAGS  = @PTHREAD_CFLAGS@
+AM_CXXFLAGS  = @PTHREAD_CFLAGS@
 
 GPERF       = @GPERF@
 GPERFFLAGS  = -L C++ --struct-type --readonly-tables --includes 
@@ -32,26 +32,26 @@ GPERFFLAGS  = -L C++ --struct-type --readonly-tables --includes
 if DRMAA_BUILD
 lib_LTLIBRARIES     = libdrmaa.la
 libdrmaa_la_SOURCES = \
- attrib.c \
+ attrib.cpp \
  attrib.h \
- compat.c \
+ compat.cpp \
  compat.h \
  drmaa_attrib.gperf \
  drmaa_impl.h \
- error.c \
+ error.cpp \
  error.h \
- jobs.c \
+ jobs.cpp \
  jobs.h \
- lookup3.c \
+ lookup3.cpp \
  lookup3.h \
  pbs_attrib.gperf \
- session.c \
- submit.c \
- util.c \
- wait.c
+ session.cpp \
+ submit.cpp \
+ util.cpp \
+ wait.cpp
 include_HEADERS     = drmaa.h
-BUILT_SOURCES       = drmaa_attrib.c pbs_attrib.c
-EXTRA_DIST          = drmaa_attrib.c pbs_attrib.c
+BUILT_SOURCES       = drmaa_attrib.cpp pbs_attrib.cpp
+EXTRA_DIST          = drmaa_attrib.cpp pbs_attrib.cpp
 libdrmaa_la_LIBADD  = $(PBS_LIBS) @PTHREAD_LIBS@
 
 .gperf.c:

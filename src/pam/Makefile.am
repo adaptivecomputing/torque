@@ -9,7 +9,7 @@ pammoddir=@pammoddir@
 
 pammod_LTLIBRARIES = pam_pbssimpleauth.la
 
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" `xml2-config --cflags`
+AM_CXXFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" `xml2-config --cflags`
 
 EXTRA_DIST = README.pam
 

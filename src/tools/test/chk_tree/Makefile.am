@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libchk_tree.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_chk_tree
 
-libchk_tree_la_SOURCES = scaffolding.c ${PROG_ROOT}/chk_tree.c
+libchk_tree_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/chk_tree.cpp
 libchk_tree_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_chk_tree_SOURCES = test_chk_tree.c
+test_chk_tree_SOURCES = test_chk_tree.cpp
 
 check_SCRIPTS = coverage_run.sh
 

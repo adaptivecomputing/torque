@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage $(MY_TCL_INCS)
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage $(MY_TCL_INCS)
 
 lib_LTLIBRARIES = libpbsTclInit.la
 
@@ -10,10 +10,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} $(MY_TCL_LIBS)
 
 check_PROGRAMS = test_pbsTclInit
 
-libpbsTclInit_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsTclInit.c
+libpbsTclInit_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/pbsTclInit.cpp
 libpbsTclInit_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_pbsTclInit_SOURCES = test_pbsTclInit.c
+test_pbsTclInit_SOURCES = test_pbsTclInit.cpp
 
 check_SCRIPTS = coverage_run.sh
 

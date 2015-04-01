@@ -12,19 +12,19 @@ CONFIGFILE = $(schedprivdir)/config
 # File in which scheduler maintains decayed recent usage.
 DECAY_INFO_FILE = $(schedprivdir)/decay_usage
 
-AM_CPPFLAGS += -fullwarn -D_POSIX_C_SOURCE -DDEBUG \
+AM_CXXFLAGS = -fullwarn -D_POSIX_C_SOURCE -DDEBUG \
 	       -DCONFIGFILE=\"$(CONFIGFILE)\" \
 	       -DDECAY_INFO_FILE=\"$(DECAY_INFO_FILE)\"
 
 noinst_LTLIBRARIES = libfoo.la
 
-libfoo_la_SOURCES = acl_support.c allocations.c byte2val.c cleanup.c \
-		    comment.c dedicated.c dedqueue.c dyn_nodemask.c \
-		    evaluate_system.c file_chgs.c fragments.c getat.c \
-		    getconfig.c getjobs.c getqueues.c getrsrcs.c grminfo.c \
-		    how_many.c jobinfo.c misc.c movejob.c msgs.c overlaps.c \
-		    pack_queues.c pnp.c queue_limits.c rejectjob.c \
-		    resource_limits.c runjob.c schedinit.c schedule.c \
-		    sec2val.c time_limits.c user_limits.c usersort.c \
-		    val2bool.c val2byte.c val2sec.c \
+libfoo_la_SOURCES = acl_support.cpp allocations.cpp byte2val.cpp cleanup.cpp \
+		    comment.cpp dedicated.cpp dedqueue.cpp dyn_nodemask.cpp \
+		    evaluate_system.cpp file_chgs.cpp fragments.cpp getat.cpp \
+		    getconfig.cpp getjobs.cpp getqueues.cpp getrsrcs.cpp grminfo.cpp \
+		    how_many.cpp jobinfo.cpp misc.cpp movejob.cpp msgs.cpp overlaps.cpp \
+		    pack_queues.cpp pnp.cpp queue_limits.cpp rejectjob.cpp \
+		    resource_limits.cpp runjob.cpp schedinit.cpp schedule.cpp \
+		    sec2val.cpp time_limits.cpp user_limits.cpp usersort.cpp \
+		    val2bool.cpp val2byte.cpp val2sec.cpp \
 		    bitfield.h  gblxvars.h  msgs.h  toolkit.h

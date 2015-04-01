@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH}  -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" --coverage -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH}  -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" --coverage -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\"
 
 lib_LTLIBRARIES = libpbsD_connect.la
 
@@ -10,10 +10,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_pbsD_connect
 
-libpbsD_connect_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbsD_connect.c
+libpbsD_connect_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/pbsD_connect.cpp
 libpbsD_connect_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_pbsD_connect_SOURCES = test_pbsD_connect.c
+test_pbsD_connect_SOURCES = test_pbsD_connect.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

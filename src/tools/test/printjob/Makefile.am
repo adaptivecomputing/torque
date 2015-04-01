@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage $(MY_TCL_INCS)
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage $(MY_TCL_INCS)
 
 lib_LTLIBRARIES = libprintjob.la
 
@@ -10,10 +10,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES} $(MY_TCLTK_LIBS)
 
 check_PROGRAMS = test_printjob
 
-libprintjob_la_SOURCES = scaffolding.c ${PROG_ROOT}/printjob.c
+libprintjob_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/printjob.cpp
 libprintjob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_printjob_SOURCES = test_printjob.c
+test_printjob_SOURCES = test_printjob.cpp
 
 check_SCRIPTS = coverage_run.sh
 

@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libcsv.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_csv
 
-libcsv_la_SOURCES = scaffolding.c ${PROG_ROOT}/csv.c
+libcsv_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/csv.cpp
 libcsv_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_csv_SOURCES = test_csv.c
+test_csv_SOURCES = test_csv.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

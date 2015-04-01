@@ -2,22 +2,22 @@ include $(top_srcdir)/buildutils/config.mk
 
 noinst_LTLIBRARIES = libtorque_test.la
 
-libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.c \
+libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.cpp \
                             ../../lib/Libutils/u_mutex_mgr.cpp \
-                            ../../lib/Libattr/attr_func.c \
-                            ../../lib/Libattr/attr_fn_arst.c \
-                            ../../lib/Libattr/attr_fn_tv.c \
-                            ../../lib/Libattr/attr_fn_intr.c \
-                            ../../lib/Libattr/attr_fn_b.c \
-                            ../../lib/Libattr/attr_fn_c.c \
-                            ../../lib/Libattr/attr_fn_l.c \
-                            ../../lib/Libattr/attr_fn_ll.c \
-                            ../../lib/Libattr/attr_fn_hold.c \
-                            ../../lib/Libattr/attr_fn_str.c \
-                            ../../lib/Libattr/attr_fn_unkn.c \
-                            ../../lib/Libattr/attr_fn_nppcu.c \
-                            ../../lib/Libattr/attr_fn_freq.c \
-			    ../../lib/Libattr/attr_fn_resc.c \
+                            ../../lib/Libattr/attr_func.cpp \
+                            ../../lib/Libattr/attr_fn_arst.cpp \
+                            ../../lib/Libattr/attr_fn_tv.cpp \
+                            ../../lib/Libattr/attr_fn_intr.cpp \
+                            ../../lib/Libattr/attr_fn_b.cpp \
+                            ../../lib/Libattr/attr_fn_c.cpp \
+                            ../../lib/Libattr/attr_fn_l.cpp \
+                            ../../lib/Libattr/attr_fn_ll.cpp \
+                            ../../lib/Libattr/attr_fn_hold.cpp \
+                            ../../lib/Libattr/attr_fn_str.cpp \
+                            ../../lib/Libattr/attr_fn_unkn.cpp \
+                            ../../lib/Libattr/attr_fn_nppcu.cpp \
+                            ../../lib/Libattr/attr_fn_freq.cpp \
+			    ../../lib/Libattr/attr_fn_resc.cpp \
 			    ../../resmom/node_frequency.cpp \
 			    ../../resmom/linux/cpu_frequency.cpp \
 			    ../../resmom/linux/sys_file.cpp \
@@ -26,40 +26,40 @@ libtorque_test_la_SOURCES = ../../lib/Libifl/list_link.c \
 							../../server/execution_slot_tracker.cpp \
 							../../server/job_usage_info.cpp \
 							test_tcp_dis.cpp \
-							../../lib/Libdis/dis.c \
-							../../lib/Libdis/disi10l_.c \
-							../../lib/Libdis/disrcs.c \
-							../../lib/Libdis/disrfst.c \
-							../../lib/Libdis/disrsi_.c \
-							../../lib/Libdis/disrss.c \
-							../../lib/Libdis/disrul.c \
-							../../lib/Libdis/diswl_.c \
-							../../lib/Libdis/diswui.c \
-							../../lib/Libdis/discui_.c \
-							../../lib/Libdis/disiui_.c \
-							../../lib/Libdis/disrd.c \
-							../../lib/Libdis/disrl_.c \
-							../../lib/Libdis/disrsi.c \
-							../../lib/Libdis/disrst.c \
-							../../lib/Libdis/disrus.c \
-							../../lib/Libdis/diswsi.c \
-							../../lib/Libdis/diswul.c \
-							../../lib/Libdis/discul_.c \
-							../../lib/Libdis/disp10d_.c \
-							../../lib/Libdis/disrf.c \
-							../../lib/Libdis/disrl.c \
-							../../lib/Libdis/disrsl_.c \
-							../../lib/Libdis/disruc.c \
-							../../lib/Libdis/diswcs.c \
-							../../lib/Libdis/diswsl.c \
-							../../lib/Libdis/disi10d_.c \
-							../../lib/Libdis/disp10l_.c \
-							../../lib/Libdis/disrfcs.c \
-							../../lib/Libdis/disrsc.c \
-							../../lib/Libdis/disrsl.c \
-							../../lib/Libdis/disrui.c \
-							../../lib/Libdis/diswf.c \
-							../../lib/Libdis/diswui_.c
+							../../lib/Libdis/dis.cpp \
+							../../lib/Libdis/disi10l_.cpp \
+							../../lib/Libdis/disrcs.cpp \
+							../../lib/Libdis/disrfst.cpp \
+							../../lib/Libdis/disrsi_.cpp \
+							../../lib/Libdis/disrss.cpp \
+							../../lib/Libdis/disrul.cpp \
+							../../lib/Libdis/diswl_.cpp \
+							../../lib/Libdis/diswui.cpp \
+							../../lib/Libdis/discui_.cpp \
+							../../lib/Libdis/disiui_.cpp \
+							../../lib/Libdis/disrd.cpp \
+							../../lib/Libdis/disrl_.cpp \
+							../../lib/Libdis/disrsi.cpp \
+							../../lib/Libdis/disrst.cpp \
+							../../lib/Libdis/disrus.cpp \
+							../../lib/Libdis/diswsi.cpp \
+							../../lib/Libdis/diswul.cpp \
+							../../lib/Libdis/discul_.cpp \
+							../../lib/Libdis/disp10d_.cpp \
+							../../lib/Libdis/disrf.cpp \
+							../../lib/Libdis/disrl.cpp \
+							../../lib/Libdis/disrsl_.cpp \
+							../../lib/Libdis/disruc.cpp \
+							../../lib/Libdis/diswcs.cpp \
+							../../lib/Libdis/diswsl.cpp \
+							../../lib/Libdis/disi10d_.cpp \
+							../../lib/Libdis/disp10l_.cpp \
+							../../lib/Libdis/disrfcs.cpp \
+							../../lib/Libdis/disrsc.cpp \
+							../../lib/Libdis/disrsl.cpp \
+							../../lib/Libdis/disrui.cpp \
+							../../lib/Libdis/diswf.cpp \
+							../../lib/Libdis/diswui_.cpp
 							
 							
 libtorque_test_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov

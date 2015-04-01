@@ -14,9 +14,9 @@ CLEANFILES = *.gcda *.gcno *.gcov
 CLEANFILES += samples/@SCHD_CODE@/*.gcda samples/@SCHD_CODE@/*.gcno samples/@SCHD_CODE@/*.gcov
 
 pbs_sched_LDADD = samples/@SCHD_CODE@/libfoo.la $(PBS_LIBS) 
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
+AM_CXXFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\"
 
-pbs_sched_SOURCES = pbs_sched.c get_4byte.c
+pbs_sched_SOURCES = pbs_sched.cpp get_4byte.cpp
 
 install-exec-hook:
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qschedd$(program_suffix)$(EXEEXT)

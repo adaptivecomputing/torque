@@ -1,9 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
-
-AM_CPPFLAGS += -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
+AM_CXXFLAGS = -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
 noinst_LIBRARIES = libmommach.a
 
-libmommach_a_SOURCES = mom_mach.c mom_mach.h mom_start.c pe_input.c quota.h
+libmommach_a_SOURCES = mom_mach.cpp mom_mach.h mom_start.cpp pe_input.cpp quota.h
 

@@ -2,7 +2,7 @@ include $(top_srcdir)/buildutils/config.mk
 
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 lib_LTLIBRARIES = libtracejob.la
 
@@ -10,10 +10,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_tracejob
 
-libtracejob_la_SOURCES = scaffolding.c ${PROG_ROOT}/tracejob.c
+libtracejob_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/tracejob.cpp
 libtracejob_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_tracejob_SOURCES = test_tracejob.c
+test_tracejob_SOURCES = test_tracejob.cpp
 
 check_SCRIPTS = coverage_run.sh
 

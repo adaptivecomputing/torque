@@ -25,32 +25,32 @@ PBS_LIBS = ../lib/Libattr/libattr.a \
 sbin_PROGRAMS = pbs_server
 
 pbs_server_LDADD = $(PBS_LIBS) $(ALPS_LIBS)
-AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags`
+AM_CXXFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags`
 AM_LIBS   =`xml2-config --libs`
 
-pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
-		     dis_read.c geteusernam.c get_path_jobdata.c \
-		     issue_request.c job_attr_def.c job_func.c job_recov.c \
-		     job_route.c node_attr_def.c node_func.c \
-		     node_manager.c pbsd_init.c pbsd_main.c \
-		     process_request.c queue_attr_def.c queue_func.c \
-		     queue_recov.c reply_send.c req_delete.c \
-		     req_deletearray.c req_getcred.c req_gpuctrl.c \
-		     req_holdjob.c req_jobobit.c req_locate.c req_manager.c \
-		     req_message.c req_modify.c req_movejob.c req_quejob.c \
-		     req_register.c req_rerun.c req_rescq.c req_runjob.c \
-		     req_select.c req_shutdown.c req_signal.c req_stat.c \
-		     req_track.c resc_def_all.c run_sched.c stat_job.c \
-		     svr_attr_def.c svr_chk_owner.c svr_connect.c \
-		     svr_func.c svr_jobfunc.c svr_mail.c svr_movejob.c \
-		     svr_recov.c svr_resccost.c svr_task.c req_tokens.c \
-		     job_qs_upgrade.c req_holdarray.c svr_format_job.c \
-			 job_recycler.c queue_recycler.c process_alps_status.c \
-             display_alps_status.c login_nodes.c track_alps_reservations.c \
-             batch_request.c user_info.c job_container.c exiting_jobs.c \
-             receive_mom_communication.c process_mom_update.c execution_slot_tracker.cpp \
-             job_usage_info.cpp incoming_request.c delete_all_tracker.cpp id_map.cpp \
-             node_power_state.c req_modify_node.c mom_hierarchy_handler.cpp \
+pbs_server_SOURCES = accounting.cpp array_func.cpp array_upgrade.cpp attr_recov.cpp \
+		     dis_read.cpp geteusernam.cpp get_path_jobdata.cpp \
+		     issue_request.cpp job_attr_def.cpp job_func.cpp job_recov.cpp \
+		     job_route.cpp node_attr_def.cpp node_func.cpp \
+		     node_manager.cpp pbsd_init.cpp pbsd_main.cpp \
+		     process_request.cpp queue_attr_def.cpp queue_func.cpp \
+		     queue_recov.cpp reply_send.cpp req_delete.cpp \
+		     req_deletearray.cpp req_getcred.cpp req_gpuctrl.cpp \
+		     req_holdjob.cpp req_jobobit.cpp req_locate.cpp req_manager.cpp \
+		     req_message.cpp req_modify.cpp req_movejob.cpp req_quejob.cpp \
+		     req_register.cpp req_rerun.cpp req_rescq.cpp req_runjob.cpp \
+		     req_select.cpp req_shutdown.cpp req_signal.cpp req_stat.cpp \
+		     req_track.cpp resc_def_all.cpp run_sched.cpp stat_job.cpp \
+		     svr_attr_def.cpp svr_chk_owner.cpp svr_connect.cpp \
+		     svr_func.cpp svr_jobfunc.cpp svr_mail.cpp svr_movejob.cpp \
+		     svr_recov.cpp svr_resccost.cpp svr_task.cpp req_tokens.cpp \
+		     job_qs_upgrade.cpp req_holdarray.cpp svr_format_job.cpp \
+			 job_recycler.cpp queue_recycler.cpp process_alps_status.cpp \
+             display_alps_status.cpp login_nodes.cpp track_alps_reservations.cpp \
+             batch_request.cpp user_info.cpp job_container.cpp exiting_jobs.cpp \
+             receive_mom_communication.cpp process_mom_update.cpp execution_slot_tracker.cpp \
+             job_usage_info.cpp incoming_request.cpp delete_all_tracker.cpp id_map.cpp \
+             node_power_state.cpp req_modify_node.cpp mom_hierarchy_handler.cpp \
              completed_jobs_map.cpp
 
 install-exec-hook:

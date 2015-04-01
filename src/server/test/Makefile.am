@@ -1,12 +1,12 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libscaffolding_svr.la
 
 AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
-libscaffolding_svr_la_SOURCES = scaffolding_job_attr_def.c scaffolding_svr.c
+libscaffolding_svr_la_SOURCES = scaffolding_job_attr_def.cpp scaffolding_svr.cpp
 libscaffolding_svr_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 CLEANFILES = *.gcno *.gcda *.gcov core *.lo

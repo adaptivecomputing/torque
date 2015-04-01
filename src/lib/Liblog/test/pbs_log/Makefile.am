@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/${PBS_MACH} --coverage
 
 lib_LTLIBRARIES = libpbs_log.la
 
@@ -8,10 +8,10 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_pbs_log
 
-libpbs_log_la_SOURCES = scaffolding.c ${PROG_ROOT}/pbs_log.c
+libpbs_log_la_SOURCES = scaffolding.cpp ${PROG_ROOT}/pbs_log.cpp
 libpbs_log_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
-test_pbs_log_SOURCES = test_pbs_log.c
+test_pbs_log_SOURCES = test_pbs_log.cpp
 
 check_SCRIPTS = ${PROG_ROOT}/../../test/coverage_run.sh
 

@@ -5,13 +5,13 @@ CHECK_DIR = test
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/resmom/@PBS_MACH@
+AM_CXXFLAGS = -I$(top_srcdir)/src/resmom/@PBS_MACH@
 
 noinst_LIBRARIES = libsite.a
 
-libsite_a_SOURCES = site_allow_u.c site_alt_rte.c site_check_u.c \
-		     site_map_usr.c site_mom_chu.c site_mom_ckp.c \
-		     site_mom_jst.c
+libsite_a_SOURCES = site_allow_u.cpp site_alt_rte.cpp site_check_u.cpp \
+		     site_map_usr.cpp site_mom_chu.cpp site_mom_ckp.cpp \
+		     site_mom_jst.cpp
 
 if HAVE_CHECK
 check:
