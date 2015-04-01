@@ -160,7 +160,7 @@ typedef container::item_container<job_array *>::item_iterator all_arrays_iterato
 #define NUM_CLONED_TAG "number_cloned"
 #define NUM_STARTED_TAG "number_started"
 #define NUM_FAILED_TAG "number_failed"
-#define NUM_SUCCESSFULL_TAG "number_successfull"
+#define NUM_SUCCESSFUL_TAG "number_successful"
 #define OWNER_TAG "owner"
 #define PARENT_TAG "parent_id"
 #define ARRAY_FILEPREFIX_TAG "fileprefix"

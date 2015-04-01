@@ -343,7 +343,7 @@ int array_info_xml(
   add_integer_field_node(rnode, ai_qs->num_cloned, NUM_CLONED_TAG, &node_count);
   add_integer_field_node(rnode, ai_qs->num_started, NUM_STARTED_TAG, &node_count);
   add_integer_field_node(rnode, ai_qs->num_failed, NUM_FAILED_TAG, &node_count);
-  add_integer_field_node(rnode, ai_qs->num_successful, NUM_SUCCESSFULL_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_successful, NUM_SUCCESSFUL_TAG, &node_count);
   add_string_field_node(rnode, ai_qs->owner, OWNER_TAG, &node_count);
   add_string_field_node(rnode, ai_qs->parent_id, PARENT_TAG, &node_count);
   add_string_field_node(rnode, ai_qs->fileprefix, ARRAY_FILEPREFIX_TAG, &node_count);
@@ -623,8 +623,8 @@ int assign_array_info_fields(
   else if ((nameLen == strlen(SUBMIT_HOST_TAG)) &&
     (!(strcmp((char *)xml_node->name, SUBMIT_HOST_TAG)))) 
     snprintf(pa->ai_qs.submit_host, PBS_MAXSERVERNAME + 1, "%s", (const char *)content);
-  else if ((nameLen == strlen(NUM_SUCCESSFULL_TAG)) &&
-    (!(strcmp((char *)xml_node->name, NUM_SUCCESSFULL_TAG)))) 
+  else if ((nameLen == strlen(NUM_SUCCESSFUL_TAG)) &&
+    (!(strcmp((char *)xml_node->name, NUM_SUCCESSFUL_TAG)))) 
     pa->ai_qs.num_successful = atoi((const char *)content);
   else if ((nameLen == strlen(NUM_TOKENS_TAG)) &&
     (!(strcmp((char *)xml_node->name, NUM_TOKENS_TAG)))) 
