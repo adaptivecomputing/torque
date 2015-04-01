@@ -166,6 +166,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_qs_upgrade/Makefile
     src/test/job_recov/Makefile
     src/test/job_recycler/Makefile
+    src/test/job_route/Makefile
     src/test/node_func/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
@@ -449,7 +450,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/incoming_request/Makefile
     src/server/test/job_attr_def/Makefile
     src/server/test/job_container/Makefile
-    src/server/test/job_route/Makefile
     src/server/test/job_usage_info/Makefile
     src/server/test/login_nodes/Makefile
     src/server/test/mom_hierarchy_handler/Makefile
