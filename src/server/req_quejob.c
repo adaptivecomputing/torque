@@ -2009,7 +2009,6 @@ int set_interactive_job_roaming_policy(
   long            interactive_roaming = FALSE;
   long            cray_enabled = FALSE;
   struct pbsnode *pnode;
-  char           *submit_node_id;
   char           *dot;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             rc = PBSE_NONE;
@@ -2023,7 +2022,7 @@ int set_interactive_job_roaming_policy(
       {
       if (interactive_roaming == FALSE)
         {
-        submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+        char *submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
         if ((pnode = find_nodebyname(submit_node_id)) == NULL)
           {
           if ((dot = strchr(submit_node_id, '.')) != NULL)
@@ -2036,7 +2035,7 @@ int set_interactive_job_roaming_policy(
         if (pnode != NULL)
           {
           pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
+          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = strdup(pnode->nd_name);
           
           unlock_node(pnode, __func__, NULL, LOGLEVEL);
           }
