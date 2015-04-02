@@ -25,6 +25,9 @@ START_TEST(test_check_mounted_subsystems)
   {
   int rc;
 
+  if (geteuid() != 0)
+    return;
+
   /* Test when the subsystems have not been initialized */
   trq_cg_init_subsys_online(false);
   rc = check_mounted_subsystems();
@@ -41,6 +44,9 @@ END_TEST
 
 START_TEST(test_trq_cg_init_subsys_online)
   {
+  if (geteuid() != 0)
+    return;
+
   trq_cg_init_subsys_online(false);
   }
 END_TEST
@@ -48,6 +54,9 @@ END_TEST
 
 START_TEST(test_trq_cg_initialize_hierarchy)
   {
+  if (geteuid() != 0)
+    return;
+
   char buf[256];
   int rc;
   std::string  cgroup_path;
@@ -115,6 +124,9 @@ END_TEST
 
 START_TEST(test_init_subsystems)
   {
+  if (geteuid() != 0)
+    return;
+
   int  rc;
   std::string mount_point;
   std::string subsystem;
@@ -151,6 +163,9 @@ END_TEST
 
 START_TEST(test_trq_cg_set_resident_memory_limit)
   {
+  if (geteuid() != 0)
+    return;
+
   const char *job_id = "1.napali";
   unsigned long mem = 1024*1024;
   std::string mem_path;
@@ -198,6 +213,9 @@ END_TEST
 
 START_TEST(test_trq_cg_set_swap_memory_limit)
   {
+  if (geteuid() != 0)
+    return;
+
   const char *job_id = "1.napali";
   unsigned long mem = 1024*1024;
   std::string mem_path;
@@ -238,6 +256,9 @@ END_TEST
 
 START_TEST(test_trq_cg_initialize_cpuset_string)
   {
+  if (geteuid() != 0)
+    return;
+
   int rc;
   std::string mem_string("cpuset.mems");
   std::string cpus_string("cpuset.cpus");
@@ -269,6 +290,9 @@ END_TEST
 
 START_TEST(test_trq_cg_add_process_to_cgroup)
   {
+  if (geteuid() != 0)
+    return;
+
   const char *job_id = "1.napali";
   pid_t  new_pid;
   int rc;
@@ -319,6 +343,9 @@ END_TEST
 
 START_TEST(test_trq_cg_add_pid_to_cgroup_tasks)
   {
+  if (geteuid() != 0)
+    return;
+
   pid_t  job_pid;
   const char *job_id = "1.napali";
   int rc;
@@ -363,6 +390,9 @@ END_TEST
 
 START_TEST(test_trq_cg_add_process_to_cgroup_accts)
   {
+  if (geteuid() != 0)
+    return;
+
   pid_t  new_pid;
   int  rc;
   int status;
