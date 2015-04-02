@@ -4218,8 +4218,16 @@ void main_func(
        know what is taking so long */
     if (local_errno == PBSE_TIMEOUT)
       fprintf(stdout, "Connection to server timed out. Trying again");
+    else if ((local_errno != PBSE_STAGEIN) &&
+	           (local_errno != PBSE_NOCOPYFILE) &&
+	           (local_errno != PBSE_DISPROTO) &&
+	           (local_errno != PBSE_SERVER_BUSY))
+      {
+      retries = MAX_RETRIES;
+      }
 
-    }while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
+
+    } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
   if (local_errno != PBSE_NONE)
     {
@@ -4227,9 +4235,10 @@ void main_func(
       {
       errmsg = pbs_strerror(local_errno);
       }
-
+    
     if (errmsg != NULL)
       fprintf(stderr, "qsub: submit error (%s)\n", errmsg);
+    
     else
       fprintf(stderr, "qsub: Error (%d - %s) submitting job\n",
               local_errno, pbs_strerror(local_errno));
