@@ -1,5 +1,6 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
       thread exits.
@@ -25,6 +26,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       maximum then the last jobs submitted would not get loaded.
   b - TRQ-3039. Fix a deadlock when deleting a job where other jobs have after any dependencies
       on the first job. (backported from 5.1.1)
+  b - TRQ-3116. Make qsub only retry on transient errors. (backported from 5.1.1)
  
 
 5.0.1.h2
