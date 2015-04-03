@@ -65,3 +65,13 @@ std::string req::getThreadUsageString() const
   return("");
   }
 
+int req::getMics() const
+  {
+  return(0);
+  }
+
+int req::getGpus() const
+  {
+  return(0);
+  }
+
