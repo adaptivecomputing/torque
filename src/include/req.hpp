@@ -167,6 +167,8 @@ class req
     unsigned long getSwap() const;
     unsigned long getDisk() const;
     int           getMaxtpn() const;
+    int           getGpus() const;
+    int           getMics() const;
     std::string   getGpuMode() const;
     std::string   getGres() const;
     std::string   getOS() const;

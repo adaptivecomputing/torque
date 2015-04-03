@@ -29,3 +29,15 @@ std::string req::getThreadUsageString() const
   {
   return(use_cores);
   }
+
+int req::getMics() const
+
+  {
+  return(0);
+  }
+
+int req::getGpus() const
+
+  {
+  return(0);
+  }

@@ -253,7 +253,7 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
   
         new_device.initializePCIDevice(gpu_obj, idx, topology);
 
-        this->NVIDIA_device.push_back(new_device);
+        store_device_on_appropriate_chip(new_device);
         }
       }
     }
@@ -293,7 +293,6 @@ int Machine::initializeMachine(hwloc_topology_t topology)
   if (obj == NULL)
     {
     log_err(-1, __func__, "failed to get Machine object");
-    /*return(PBSE_SYSTEM);*/
     return(PBSE_SYSTEM);
     }
   
@@ -471,6 +470,15 @@ void Machine::addSocket(
     Socket s;
     this->sockets.push_back(s);
     }
+  }
+
+// This is meant to only be used for unit tests
+void Machine::setIsNuma(
+
+  bool is_numa)
+
+  {
+  this->isNUMA = is_numa;
   }
 
 
@@ -675,5 +683,26 @@ void Machine::free_job_allocation(
   if (index != -1)
     this->allocations.erase(this->allocations.begin() + index);
   } // END free_job_allocation()
+
+
+
+void Machine::store_device_on_appropriate_chip(
+    
+  PCI_Device &device)
+
+  {
+  if (this->isNUMA == false)
+    {
+    this->sockets[0].store_pci_device_appropriately(device, true);
+    }
+  else
+    {
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      {
+      if (this->sockets[i].store_pci_device_appropriately(device, false))
+        break;
+      }
+    }
+  }
 
 #endif /* PENABLE_LINUX_CGROUPS */

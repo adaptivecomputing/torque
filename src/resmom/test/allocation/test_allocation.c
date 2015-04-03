@@ -45,6 +45,8 @@ START_TEST(test_add_allocation)
   a.cpu_indices.push_back(1);
   a.memory = 3;
   a.mem_indices.push_back(0);
+  a.gpu_indices.push_back(0);
+  a.mic_indices.push_back(3);
 
   a2.cpus = 2;
   a2.cpu_indices.push_back(2);
@@ -57,6 +59,10 @@ START_TEST(test_add_allocation)
   fail_unless(a2.memory == 8);
   fail_unless(a2.mem_indices.size() == 2);
   fail_unless(a2.cpu_indices.size() == 4);
+  fail_unless(a2.gpu_indices.size() == 1);
+  fail_unless(a2.gpu_indices[0] == 0);
+  fail_unless(a2.mic_indices.size() == 1);
+  fail_unless(a2.mic_indices[0] == 3);
   }
 END_TEST
 

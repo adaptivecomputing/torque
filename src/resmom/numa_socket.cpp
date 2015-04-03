@@ -459,4 +459,25 @@ bool Socket::partially_place(
   }
 
 
+
+bool Socket::store_pci_device_appropriately(
+
+  PCI_Device &device,
+  bool        force)
+
+  {
+  bool stored = false;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    if (this->chips[i].store_pci_device_appropriately(device, force) == true)
+      {
+      stored = true;
+      break;
+      }
+    }
+
+  return(stored);
+  }
+
+
 #endif /* PENABLE_LINUX_CGROUPS */  

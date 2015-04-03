@@ -21,6 +21,7 @@ extern int called_place_task;
 extern int called_partially_place;
 extern int called_fits_on_socket;
 extern int num_for_host;
+extern int called_store_pci;
 extern bool socket_fit;
 extern bool partially_placed;
 
@@ -32,6 +33,28 @@ START_TEST(test_displayAsString)
   new_machine.setMemory(2);
   new_machine.displayAsString(out);
   fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_store_pci_device_on_appropriate_chip)
+  {
+  Machine m;
+  m.addSocket(2);
+
+  PCI_Device d;
+  called_store_pci = 0;
+
+  // Since this is non numa it should be forced to socket 0 
+  m.setIsNuma(false);
+  m.store_device_on_appropriate_chip(d);
+  fail_unless(called_store_pci == 1);
+ 
+  // Since this is numa it should place on the sockets until it returns true,
+  // which due to the scaffolding is never, so once per socket
+  m.setIsNuma(true);
+  m.store_device_on_appropriate_chip(d);
+  fail_unless(called_store_pci == 3);
   }
 END_TEST
 
@@ -183,6 +206,7 @@ Suite *machine_suite(void)
   
   tc_core = tcase_create("test_place_and_free_job");
   tcase_add_test(tc_core, test_place_and_free_job);
+  tcase_add_test(tc_core, test_store_pci_device_on_appropriate_chip);
   suite_add_tcase(s, tc_core);
   
   return(s);

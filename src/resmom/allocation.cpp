@@ -97,16 +97,19 @@ const int exclusive_core = 4;
 allocation::allocation(
 
   const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
+                             gpu_indices(alloc.gpu_indices), mic_indices(alloc.mic_indices),
                              memory(alloc.memory), cpus(alloc.cpus), 
                              cores(alloc.cores), threads(alloc.threads),
-                             place_type(alloc.place_type), cores_only(alloc.cores_only)
+                             place_type(alloc.place_type), cores_only(alloc.cores_only),
+                             gpus(alloc.gpus), mics(alloc.mics)
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
-allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
-                           place_type(exclusive_none), cores_only(false)
+allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+                           cpus(0), cores(0), threads(0), place_type(exclusive_none),
+                           cores_only(false), gpus(0), mics(0)
 
   {
   this->jobid[0] = '\0';
@@ -120,6 +123,8 @@ allocation::allocation(
   {
   this->cpus = r.getExecutionSlots();
   this->memory = r.getMemory();
+  this->gpus = r.getGpus();
+  this->mics = r.getMics();
 
   if (r.getThreadUsageString() == use_cores)
     this->cores_only = true;
@@ -127,8 +132,9 @@ allocation::allocation(
 
 allocation::allocation(
 
-  const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0),
-                       place_type(exclusive_none), cores_only(false)
+  const char *jobid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+                       cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
+                       gpus(0), mics(0)
 
   {
   snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);
@@ -150,6 +156,12 @@ int allocation::add_allocation(
     this->mem_indices.push_back(other.mem_indices[i]);
 
   this->memory += other.memory;
+
+  for (unsigned int i = 0; i < other.gpu_indices.size(); i++)
+    this->gpu_indices.push_back(other.gpu_indices[i]);
+
+  for (unsigned int i = 0; i < other.mic_indices.size(); i++)
+    this->mic_indices.push_back(other.mic_indices[i]);
 
   return(PBSE_NONE);
   }
@@ -199,3 +211,4 @@ void allocation::set_place_type(
   else
     this->place_type = exclusive_none;
   }
+

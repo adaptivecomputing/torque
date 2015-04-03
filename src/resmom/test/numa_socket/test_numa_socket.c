@@ -13,6 +13,7 @@ extern int tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
+extern int called_store_pci;
 extern bool avail_oscillate;
 extern int place_amount;
 extern std::string my_placement_type;
@@ -26,6 +27,22 @@ START_TEST(test_displayAsString)
 
   s.displayAsString(out);
   fail_unless(out.str() == "  Socket 0 (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_store_pci_device_appropriately)
+  {
+  PCI_Device d;
+  Socket s;
+  s.addChip();
+  s.addChip();
+
+  called_store_pci = 0;
+  fail_unless(s.store_pci_device_appropriately(d, false) == false);
+  fail_unless(called_store_pci == 2);
+  fail_unless(s.store_pci_device_appropriately(d, true) == true);
+  fail_unless(called_store_pci == 3);
   }
 END_TEST
 
@@ -243,6 +260,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
+  tcase_add_test(tc_core, test_store_pci_device_appropriately);
   suite_add_tcase(s, tc_core);
   
   return(s);

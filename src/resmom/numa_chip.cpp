@@ -21,6 +21,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "mom_server_lib.h" /* log_nvml_error */
+#include "utils.h"
 
 using namespace std;
 
@@ -29,6 +30,7 @@ using namespace std;
 
 
 Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), availableCores(0),
+               total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
                chip_exclusive(false), available_memory(0)
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -138,9 +140,9 @@ int Chip::initializeChip(hwloc_obj_t chip_obj, hwloc_topology_t topology)
     prev = core_obj;
     }
 
- this->initializePCIDevices(chip_obj, topology);
+  this->initializePCIDevices(chip_obj, topology);
 
- return(PBSE_NONE);
+  return(PBSE_NONE);
   }
 
 int Chip::getTotalCores() const
@@ -166,6 +168,16 @@ int Chip::getAvailableThreads() const
 hwloc_uint64_t Chip::getAvailableMemory() const
   {
   return(this->available_memory);
+  }
+
+int Chip::get_available_mics() const
+  {
+  return(this->available_mics);
+  }
+
+int Chip::get_available_gpus() const
+  {
+  return(this->available_gpus);
   }
 
 int Chip::getMemory() const
@@ -218,6 +230,8 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
 
           new_device.initializePCIDevice(mic_obj, idx, topology);
           this->devices.push_back(new_device);
+          this->total_mics++;
+          this->available_mics++;
           }
         }
       }
@@ -317,6 +331,17 @@ void Chip::make_core(
 
 
 
+// This is used only for unit tests
+void Chip::set_cpuset(
+    
+  const char *cpuset_string)
+
+  {
+  snprintf(this->chip_cpuset_string, sizeof(this->chip_cpuset_string), "%s", cpuset_string);
+  }
+
+
+
 /*
  * how_many_tasks_fit()
  *
@@ -332,6 +357,8 @@ int Chip::how_many_tasks_fit(
 
   {
   int cpu_tasks;
+  int gpu_tasks;
+  int mic_tasks;
   int mem_tasks = 0;
 
   if ((this->chip_exclusive == false) &&
@@ -346,18 +373,37 @@ int Chip::how_many_tasks_fit(
     long long memory = r.getMemory();
 
     // Memory isn't required for submission
-    if (memory == 0)
-      return(cpu_tasks);
+    if (memory != 0)
+      {
+      mem_tasks = this->available_memory / memory;
 
-    mem_tasks = this->available_memory / memory;
-
-    // return the lower of the two values
-    if (mem_tasks > cpu_tasks)
+      // return the lower of the two values
+      if (mem_tasks > cpu_tasks)
+        mem_tasks = cpu_tasks;
+      }
+    else
       mem_tasks = cpu_tasks;
 
+    int gpus = r.getGpus();
+    if (gpus > 0)
+      {
+      gpu_tasks = this->available_gpus / gpus;
+      if (mem_tasks > gpu_tasks)
+        mem_tasks = gpu_tasks;
+      }
+
+    int mics = r.getMics();
+    if (mics > 0)
+      {
+      mic_tasks = this->available_mics / mics;
+      if (mem_tasks > mics)
+        mem_tasks = mic_tasks;
+      }
+     
     if ((mem_tasks > 1) && 
         (r.getPlacementType() == place_numa))
       mem_tasks = 1;
+
     }
     
   return(mem_tasks);
@@ -465,14 +511,19 @@ void Chip::place_task_by_threads(
 
 bool Chip::task_will_fit(
 
-  hwloc_uint64_t mem_per_task,
-  int            execution_slots_per_task,
-  bool           cores_only) const
+  const req &r) const
 
   {
-  bool fits = false;
+  bool           fits = false;
+  int            execution_slots_per_task = r.getExecutionSlots();
+  hwloc_uint64_t mem_per_task = r.getMemory();
+  int            gpus_per_task = r.getGpus();
+  int            mics_per_task = r.getMics();
+  bool           cores_only = (r.getThreadUsageString() == use_cores);
 
-  if (this->available_memory >= mem_per_task)
+  if ((this->available_memory >= mem_per_task) &&
+      (this->available_gpus >= gpus_per_task) &&
+      (this->available_mics >= mics_per_task))
     {
     if (cores_only == true)
       {
@@ -527,7 +578,7 @@ int Chip::place_task(
 
       for (; tasks_placed < to_place; tasks_placed++)
         {
-        if (task_will_fit(mem_per_task, execution_slots_per_task, a.cores_only) == false)
+        if (task_will_fit(r) == false)
           break;
 
         this->available_memory -= mem_per_task;
@@ -538,6 +589,10 @@ int Chip::place_task(
           place_task_by_cores(execution_slots_per_task, a);
         else
           place_task_by_threads(execution_slots_per_task, a);
+
+        allocation remaining(r);
+
+        place_accelerators(remaining, a);
         }
 
       if (master.place_type == exclusive_chip)
@@ -555,6 +610,111 @@ int Chip::place_task(
 
   return(tasks_placed);
   } // END place_task()
+
+
+
+int Chip::reserve_accelerator(
+
+  int type)
+
+  {
+  int index = -1;
+
+  for (unsigned int i = 0; i < this->devices.size(); i++)
+    {
+    if ((type == this->devices[i].get_type()) &&
+        (this->devices[i].is_busy() == false))
+      {
+      this->devices[i].set_state(true);
+      if (type == MIC)
+        this->available_mics--;
+      else
+        this->available_gpus--;
+
+      index = this->devices[i].get_id();
+      break;
+      }
+    }
+
+  return(index);
+  } // END reserve_accelerator()
+
+
+
+/*
+ * place_accelerators()
+ *
+ */
+
+void Chip::place_accelerators(
+
+  allocation &remaining,
+  allocation &a)
+
+  {
+  int i;
+
+  for (i = 0; i < remaining.gpus; i++)
+    {
+    int index = this->reserve_accelerator(GPU);
+
+    if (index < 0)
+      break;
+
+    a.gpu_indices.push_back(index);
+    }
+
+  remaining.gpus -= i;
+
+  for (i = 0; i < remaining.mics; i++)
+    {
+    int index = this->reserve_accelerator(MIC);
+
+    if (index < 0)
+      break;
+
+    a.mic_indices.push_back(index);
+    }
+
+  remaining.mics -= i;
+  } // END place_accelerators()
+
+
+
+void Chip::free_accelerator(
+
+  int index,
+  int type)
+
+  {
+  for (unsigned int i = 0; i < this->devices.size(); i++)
+    {
+    if ((this->devices[i].get_type() == type) &&
+        (this->devices[i].get_id() == index))
+      {
+      this->devices[i].set_state(false);
+      if (type == MIC)
+        this->available_mics++;
+      else
+        this->available_gpus++;
+      }
+    }
+  } // END free_accelerator()
+
+
+
+void Chip::free_accelerators(
+
+  allocation &a)
+
+  {
+  for (unsigned int i = 0; i < a.gpu_indices.size(); i++)
+    this->free_accelerator(a.gpu_indices[i], GPU);
+
+  for (unsigned int i = 0; i < a.mic_indices.size(); i++)
+    this->free_accelerator(a.mic_indices[i], MIC);
+
+  } // END free_accelerators()
 
 
 
@@ -592,11 +752,17 @@ void Chip::partially_place_task(
     place_task_by_cores(remaining.cpus, a);
   else
     place_task_by_threads(remaining.cpus, a);
+
+  place_accelerators(remaining, a);
   
   if ((a.cpus > 0) ||
-      (a.memory > 0))
+      (a.memory > 0) ||
+      (a.gpu_indices.size() > 0) ||
+      (a.mic_indices.size() > 0))
     {
-    a.mem_indices.push_back(this->id);
+    if (a.memory > 0)
+      a.mem_indices.push_back(this->id);
+
     this->allocations.push_back(a);
     master.add_allocation(a);
     }
@@ -667,6 +833,8 @@ bool Chip::free_task(
       // Now mark the individual cores as available
       for (unsigned int j = 0; j < this->allocations[i].cpu_indices.size(); j++)
         free_cpu_index(this->allocations[i].cpu_indices[j]);
+
+      free_accelerators(this->allocations[i]);
       
       break;
       }
@@ -684,5 +852,78 @@ bool Chip::free_task(
 
   return(totally_free);
   } // END free_task()
+
+
+
+bool Chip::store_pci_device_appropriately(
+
+  PCI_Device &device,
+  bool        force)
+
+  {
+  bool stored = false;
+
+  if (force == true)
+    {
+    this->devices.push_back(device);
+    stored = true;
+    }
+  else
+    {
+    std::string device_cpuset(device.get_cpuset());
+
+    if (cpusets_overlap(device_cpuset) == true)
+      {
+      this->devices.push_back(device);
+      stored = true;
+      }
+    }
+
+  if (stored)
+    {
+    // Increase our count of these devices
+    if (device.get_type() == MIC)
+      {
+      this->total_mics++;
+      this->available_mics++;
+      }
+    else
+      {
+      this->total_gpus++;
+      this->available_gpus++;
+      }
+    }
+
+  return(stored);
+  }
+
+
+
+bool Chip::cpusets_overlap(
+
+  const std::string &other) const
+
+  {
+  std::vector<int> one;
+  std::vector<int> two;
+  bool             overlap = false;
+
+  translate_range_string_to_vector(this->chip_cpuset_string, one);
+  translate_range_string_to_vector(other.c_str(), two);
+
+  for (unsigned int i = 0; i < one.size() && overlap == false; i++)
+    {
+    for (unsigned int j = 0; j < two.size(); j++)
+      {
+      if (one[i] == two[j])
+        {
+        overlap = true;
+        break;
+        }
+      }
+    }
+
+  return(overlap);
+  }
 
 #endif /* PENABLE_LINUX_CGROUPS */  

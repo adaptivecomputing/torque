@@ -1781,6 +1781,18 @@ int req::getIndex() const
   return(this->index);
   }
 
+int req::getGpus() const
+
+  {
+  return(this->gpus);
+  }
+
+int req::getMics() const
+
+  {
+  return(this->mics);
+  }
+
 
 
 /*
