@@ -26,7 +26,7 @@ using namespace std;
 #define INTEL 1
 #define AMD   2
 
-const int MIC = 0;
+const int MIC_TYPE = 0;
 const int GPU = 1;
 
 PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1)
@@ -40,6 +40,7 @@ PCI_Device::PCI_Device(
                              info_value(other.info_value), type(other.type)
 
   {
+  this->nearest_cpuset = hwloc_bitmap_alloc();
   memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   }
@@ -53,6 +54,7 @@ PCI_Device &PCI_Device::operator =(
   this->id = other.id;
   this->info_name = other.info_name;
   this->info_value = other.info_value;
+  this->nearest_cpuset = hwloc_bitmap_alloc();
   memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   this->type = other.type;
@@ -96,7 +98,7 @@ int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topol
     }
   hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
 
-  this->type = MIC;
+  this->type = MIC_TYPE;
 #endif
 #ifdef NVIDIA_GPUS
   int rc;

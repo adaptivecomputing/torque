@@ -626,7 +626,7 @@ int Chip::reserve_accelerator(
         (this->devices[i].is_busy() == false))
       {
       this->devices[i].set_state(true);
-      if (type == MIC)
+      if (type == MIC_TYPE)
         this->available_mics--;
       else
         this->available_gpus--;
@@ -668,7 +668,7 @@ void Chip::place_accelerators(
 
   for (i = 0; i < remaining.mics; i++)
     {
-    int index = this->reserve_accelerator(MIC);
+    int index = this->reserve_accelerator(MIC_TYPE);
 
     if (index < 0)
       break;
@@ -693,7 +693,7 @@ void Chip::free_accelerator(
         (this->devices[i].get_id() == index))
       {
       this->devices[i].set_state(false);
-      if (type == MIC)
+      if (type == MIC_TYPE)
         this->available_mics++;
       else
         this->available_gpus++;
@@ -712,7 +712,7 @@ void Chip::free_accelerators(
     this->free_accelerator(a.gpu_indices[i], GPU);
 
   for (unsigned int i = 0; i < a.mic_indices.size(); i++)
-    this->free_accelerator(a.mic_indices[i], MIC);
+    this->free_accelerator(a.mic_indices[i], MIC_TYPE);
 
   } // END free_accelerators()
 
@@ -882,7 +882,7 @@ bool Chip::store_pci_device_appropriately(
   if (stored)
     {
     // Increase our count of these devices
-    if (device.get_type() == MIC)
+    if (device.get_type() == MIC_TYPE)
       {
       this->total_mics++;
       this->available_mics++;

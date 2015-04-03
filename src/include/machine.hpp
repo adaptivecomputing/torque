@@ -26,7 +26,7 @@ extern const int ALL_TASKS;
 #define AMD      2
 #define NON_NUMA 3
 
-extern const int MIC;
+extern const int MIC_TYPE;
 extern const int GPU;
 
 using namespace std;
