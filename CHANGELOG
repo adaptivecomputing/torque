@@ -29,6 +29,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3116. Make qsub only retry on transient errors. (backported from 5.1.1)
   b - TRQ-3122. Fix a problem with login_property not working correctly (cray only, backported
       from 5.1.1).
+  b - TRQ-3114. Fix an issue where an asynchronously started job is stuck with a 
+      substate of starting after a failed job start (backported from 5.1.1).
  
 
 5.0.1.h2
