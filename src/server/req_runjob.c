@@ -1193,8 +1193,6 @@ int send_job_to_mom(
 
   {
   job             *pjob = *pjob_ptr;
-  int              old_state;
-  int              old_subst;
   long             job_timeout = 0;
   long             tcp_timeout = 0;
   unsigned long    job_momaddr = -1;
@@ -1211,9 +1209,6 @@ int send_job_to_mom(
     {
     return(PBSE_BAD_PARAMETER);
     }
-
-  old_state = pjob->ji_qs.ji_state;
-  old_subst = pjob->ji_qs.ji_substate;
 
   svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_PRERUN, FALSE);
 
@@ -1282,12 +1277,6 @@ int send_job_to_mom(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
-      
-      /* Do not restore the status to running again
-      ** since it's not able to run the job on the MOM
-      */
-      if (old_state != JOB_STATE_RUNNING)
-        svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
 
     if (mail_text != NULL)
