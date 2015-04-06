@@ -241,6 +241,9 @@
 #define ATTR_keepcompleted "keep_completed"
 #define ATTR_disallowedtypes "disallowed_types"
 #define ATTR_is_transit  "is_transit"
+#define ATTR_req_infomax "req_information_max"
+#define ATTR_req_infomin  "req_information_min"
+#define ATTR_req_infodefault "req_information_default"
 
 /* additional server attributes names */
 

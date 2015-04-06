@@ -143,6 +143,8 @@
 #include "svr_jobfunc.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
+#include "complete_req.hpp"
+#include "attr_req_info.hpp"
 #include <string>
 #include <vector>
 
@@ -2375,6 +2377,55 @@ static int check_queue_user_ACL(
   return(return_code);
   }
 
+
+    
+int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
+  {
+  int rc = PBSE_NONE;
+
+   /* Check for -L queue limits */
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+     int req_count;
+    std::vector<std::string> names, values;
+
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    req_count = cr->req_count();
+    if (req_count <= 0)
+      {
+      return(PBSE_NONE);
+      }
+
+    cr->get_values(names, values);
+
+     if ((pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET) &&
+          (pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr != NULL))
+      {
+      attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr;
+
+      rc = ari->check_max_values(names, values);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+      }
+
+     if ((pque->qu_attr[QA_ATR_ReqInformationMin].at_flags & ATR_VFLAG_SET) &&
+          (pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr != NULL))
+      {
+      attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr;
+
+      rc = ari->check_min_values(names, values);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+      }
+    }
+
+  return(rc);
+ }
+
 static int check_queue_job_limit(
 
     struct job       *const pjob,
@@ -2464,6 +2515,7 @@ static int check_queue_job_limit(
       }
     }
 
+  return_code = check_for_complete_req_and_limits(pque, pjob);
   return(return_code);
   }
 

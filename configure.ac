@@ -192,6 +192,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_fn_b/Makefile
     src/lib/Libattr/test/attr_fn_c/Makefile
     src/lib/Libattr/test/attr_fn_complete_req/Makefile
+    src/lib/Libattr/test/attr_fn_attr_req_info/Makefile
     src/lib/Libattr/test/attr_fn_hold/Makefile
     src/lib/Libattr/test/attr_fn_intr/Makefile
     src/lib/Libattr/test/attr_fn_l/Makefile
@@ -208,6 +209,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_node_func/Makefile
     src/lib/Libattr/test/req/Makefile
     src/lib/Libattr/test/complete_req/Makefile
+    src/lib/Libattr/test/attr_req_info/Makefile
     src/lib/Libcmds/test/Makefile
     src/lib/Libcmds/test/add_verify_resources/Makefile
     src/lib/Libcmds/test/ck_job_name/Makefile

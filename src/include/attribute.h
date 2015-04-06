@@ -250,20 +250,21 @@ typedef struct attribute_def attribute_def;
 
 /* Defines for type of Attribute based on data type    */
 
-#define ATR_TYPE_LONG    1 /* Long integer, also Boolean */
-#define ATR_TYPE_CHAR    2 /* single character */
-#define ATR_TYPE_STR     3 /* string, null terminated */
-#define ATR_TYPE_ARST    4 /* Array of strings (char **) */
-#define ATR_TYPE_SIZE    5 /* size (integer + suffix) */
-#define ATR_TYPE_RESC    6 /* list type: resources only */
-#define ATR_TYPE_LIST    7 /* list type:  dependencies, unkn, etc */
-#define ATR_TYPE_ACL     8 /* Access Control Lists */
-#define ATR_TYPE_LL      9 /* Long (64 bit) integer */
-#define ATR_TYPE_SHORT   10 /* short integer    */
-#define ATR_TYPE_JINFOP  13 /* struct jobinfo*  */
-#define ATR_TYPE_TV      14 /* struct timeval */
-#define ATR_TYPE_FREQ    15 /* CPU frequency */
-#define ATR_TYPE_REQ     16 /* job req information */
+#define ATR_TYPE_LONG          1 /* Long integer, also Boolean */
+#define ATR_TYPE_CHAR          2 /* single character */
+#define ATR_TYPE_STR           3 /* string, null terminated */
+#define ATR_TYPE_ARST          4 /* Array of strings (char **) */
+#define ATR_TYPE_SIZE          5 /* size (integer + suffix) */
+#define ATR_TYPE_RESC          6 /* list type: resources only */
+#define ATR_TYPE_LIST          7 /* list type:  dependencies, unkn, etc */
+#define ATR_TYPE_ACL           8 /* Access Control Lists */
+#define ATR_TYPE_LL            9 /* Long (64 bit) integer */
+#define ATR_TYPE_SHORT         10 /* short integer    */
+#define ATR_TYPE_JINFOP        13 /* struct jobinfo*  */
+#define ATR_TYPE_TV            14 /* struct timeval */
+#define ATR_TYPE_FREQ          15 /* CPU frequency */
+#define ATR_TYPE_REQ           16 /* job req information */
+#define ATR_TYPE_ATTR_REQ_INFO 17 /* queue and server req_information types */
 
 /* Defines for  Flag field in attribute_def         */
 
@@ -396,6 +397,9 @@ int  decode_nppcu(pbs_attribute *patr, const char *name, const char *rescn, cons
 int  decode_frequency(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 int  decode_complete_req(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
+int  decode_attr_req_info(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
+
+
  
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
@@ -451,6 +455,7 @@ extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_o
 extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 extern int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 extern int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
+int  set_attr_req_info(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 
 enum compare_types { LESS, EQUAL, GREATER, NOT_COMPARED };
 
@@ -480,6 +485,7 @@ void free_resc(pbs_attribute *);
 void free_depend(pbs_attribute *);
 void free_unkn(pbs_attribute *);
 void free_complete_req(pbs_attribute *);
+void free_attr_req_info(pbs_attribute *patr);
 int   parse_equal_string(char *, char **, char **);
 char *parse_comma_string(char *,char **);
 
@@ -497,6 +503,7 @@ int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, si
 int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
 int   write_buffer(char *,int,int);
 
+int      encode_attr_req_info( pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 int      encode_power_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 int      encode_props(pbs_attribute*, tlist_head*, const char*, const char*, int, int);
