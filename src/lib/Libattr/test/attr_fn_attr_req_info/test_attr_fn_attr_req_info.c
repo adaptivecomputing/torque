@@ -37,7 +37,9 @@ START_TEST(test_decode_encode_attr_req_info)
   const char    *values[] = { "5", "1000000kb", "200000kb"};
 
   memset(&pattr_max, 0, sizeof(pattr_max));
-  memset(&pattr_min, 0, sizeof(pattr_max));
+  memset(&pattr_min, 0, sizeof(pattr_min));
+  memset(&pattr_default, 0, sizeof(pattr_default));
+
 
   // null should fail
   fail_unless(decode_attr_req_info(NULL, NULL, NULL, NULL, 1) == PBSE_BAD_PARAMETER);
@@ -93,38 +95,75 @@ END_TEST
 
 START_TEST(test_set_attr_req_info)
   {
-  pbs_attribute  pattr;
-  pbs_attribute  pattr2;
+  pbs_attribute  pattr_max;
+  pbs_attribute  pattr_min;
+  pbs_attribute  pattr_default;
+  pbs_attribute  new_pattr;
 
-  memset(&pattr, 0, sizeof(pattr));
-  memset(&pattr2, 0, sizeof(pattr2));
-  fail_unless(decode_attr_req_info(&pattr, NULL, "lprocs", "2", 1) == PBSE_BAD_PARAMETER);
-  fail_unless(decode_attr_req_info(&pattr, "req_information_min", "lprocs", "4", 1) == PBSE_NONE);
+  const char    *resc_names[] = {"lprocs", "memory", "swap"};
+  const char    *values[] = { "5", "1000000kb", "200000kb"};
 
-  // DECR is unsupported
-  fail_unless(set_attr_req_info(&pattr2, &pattr, DECR) == PBSE_INTERNAL);
+  memset(&pattr_max, 0, sizeof(pattr_max));
+  memset(&pattr_min, 0, sizeof(pattr_min));
+  memset(&pattr_default, 0, sizeof(pattr_default));
+  memset(&new_pattr, 0, sizeof(new_pattr));
+  if (new_pattr.at_val.at_ptr == 0)
+    {;}
+  //
+  // these should work
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[0], values[0], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
 
-  // INCR is not supported
-  fail_unless(set_attr_req_info(&pattr2, &pattr, INCR) == PBSE_INTERNAL);
+  attr_req_info *cr = (attr_req_info *)pattr_max.at_val.at_ptr;
+  fail_unless(cr != NULL);
 
-  attr_req_info *cr2 = (attr_req_info *)pattr2.at_val.at_ptr;
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[1], values[1], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
 
-  fail_unless(decode_attr_req_info(&pattr2, "req_information_max", "lprocs", "5", 1) == PBSE_NONE);
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[2], values[2], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
 
-  // make sure they're different now
-  cr2 = (attr_req_info *)pattr2.at_val.at_ptr;
-  fail_unless(cr2 != NULL);
-  fail_unless(set_attr_req_info(&pattr2, &pattr, SET) == PBSE_NONE);
-  
-  // they should be the same again
-  cr2 = (attr_req_info *)pattr2.at_val.at_ptr;
-  fail_unless(cr2 != NULL);
+  /* Thest the minimum decode */
+  fail_unless(decode_attr_req_info(&pattr_min, "req_information_min", "lprocs", "2", 1) == PBSE_NONE);
+  fail_unless((pattr_min.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_min.at_val.at_ptr != 0);
+  /* Thest the default  decode */
+  fail_unless(decode_attr_req_info(&pattr_default, "req_information_default", "lprocs", "2", 1) == PBSE_NONE);
+  fail_unless((pattr_default.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_default.at_val.at_ptr != 0);
 
-  fail_unless(set_attr_req_info(NULL, &pattr, SET) == PBSE_BAD_PARAMETER);
-  fail_unless(set_attr_req_info(&pattr2, &pattr, UNSET) == PBSE_NONE);
-  fail_unless(pattr2.at_val.at_ptr == NULL);
-  fail_unless((pattr2.at_flags & ATR_VFLAG_SET) == 0);
-  }
+  /* Test some error cases */
+  fail_unless(set_attr_req_info(NULL, &new_pattr, SET) == PBSE_BAD_PARAMETER);
+  fail_unless(set_attr_req_info(&pattr_max, NULL, SET) == PBSE_BAD_PARAMETER);
+
+  /* test the success case */
+  fail_unless(set_attr_req_info(&new_pattr, &pattr_max, SET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr != NULL);
+
+  int value, orig_value;
+  attr_req_info *ari = (attr_req_info *)new_pattr.at_val.at_ptr;
+  fail_unless(ari->get_signed_max_limit_value(resc_names[0], value) == PBSE_NONE);
+  orig_value = atoi(values[0]);
+  fail_unless(orig_value == value);
+
+  fail_unless(set_attr_req_info(&new_pattr, NULL, UNSET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr == NULL);
+
+  fail_unless(set_attr_req_info(&new_pattr, &pattr_min, SET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr != NULL);
+
+  fail_unless(set_attr_req_info(&new_pattr, NULL, UNSET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr == NULL);
+
+  fail_unless(set_attr_req_info(&new_pattr, &pattr_default, SET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr != NULL);
+
+  fail_unless(set_attr_req_info(&new_pattr, NULL, UNSET) == PBSE_NONE);
+  fail_unless(new_pattr.at_val.at_ptr == NULL);
+ }
 END_TEST
 
 
@@ -134,13 +173,15 @@ Suite *attr_fn_attr_req_info(void)
   Suite *s = suite_create("attr_fn_attr_req_info test suite methods");
   TCase *tc_core = tcase_create("test_free_attr_req_info");
   tcase_add_test(tc_core, test_free_attr_req_info);
-  tcase_add_test(tc_core, test_set_attr_req_info);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_decode_encode_attr_req_info");
   tcase_add_test(tc_core, test_decode_encode_attr_req_info);
   suite_add_tcase(s, tc_core);
   
+  tc_core = tcase_create("test_set_attr_req_info");
+  tcase_add_test(tc_core, test_set_attr_req_info);
+  suite_add_tcase(s, tc_core);
   return(s);
   }
 
