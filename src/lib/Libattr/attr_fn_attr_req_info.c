@@ -275,16 +275,16 @@ int set_attr_req_info(
     return(PBSE_NONE);
     }
 
-  if (new_attr->at_val.at_ptr == NULL)
-    {
-    new_attr->at_flags &= ~ATR_VFLAG_SET;
-    return(PBSE_NONE);
-    }
-
   switch (op)
     {
     case SET:
       {
+      if (new_attr->at_val.at_ptr == NULL)
+        {
+        new_attr->at_flags &= ~ATR_VFLAG_SET;
+        return(PBSE_NONE);
+        }
+
 
       if (attr->at_flags & ATR_VFLAG_SET)
         {
