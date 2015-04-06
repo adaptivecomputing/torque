@@ -108,28 +108,36 @@ START_TEST(test_how_many_tasks_fit)
   c.setChipAvailable(true);
 
   // test against threads
-  int tasks = c.how_many_tasks_fit(r);
+  int tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 6, "%d tasks fit, expected 6", tasks);
 
   // Now memory should be the limiting factor
   c.setMemory(5);
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
 
   thread_type = use_cores;
   // Cores are currently 0
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
 
   c.setCores(2);
-  tasks = c.how_many_tasks_fit(r);
+  tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
 
   // make sure that we can handle a request without memory
   req r2;
   r2.set_value("lprocs", "2");
   c.setCores(10);
-  fail_unless(c.how_many_tasks_fit(r2) == 5);
+  fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
+
+  // make sure we account for gpus and mics
+  r2.set_value("gpus", "1");
+  fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
+  r2.set_value("gpus", "0");
+  fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
+  r2.set_value("mics", "1");
+  fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
   }
 END_TEST
 
@@ -154,19 +162,19 @@ START_TEST(test_exclusive_place)
     c.make_core(i);
 
   thread_type = use_cores;
-  fail_unless(c.how_many_tasks_fit(r) == 6);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   my_placement_type = place_numa;
-  fail_unless(c.how_many_tasks_fit(r) == 1);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 1);
   int tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
   my_placement_type.clear();
   
   tasks = c.place_task(jobid, r, a, 5);
-  fail_unless(c.how_many_tasks_fit(r) == 0);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0);
   fail_unless(tasks == 0);
   c.free_task(jobid);
   
-  fail_unless(c.how_many_tasks_fit(r) == 6);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   tasks = c.place_task(jobid, r, a, 6);
   fail_unless(tasks == 6);
   }
@@ -222,6 +230,63 @@ START_TEST(test_partial_place)
   fail_unless(remaining.cpus == 1, "cpus %d", remaining.cpus);
   fail_unless(remaining.memory == 6);
 
+  }
+END_TEST
+
+
+START_TEST(test_reserve_accelerators)
+  {
+  Chip c;
+  c.setId(0);
+  c.setThreads(24);
+  c.setCores(12);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 12; i++)
+    c.make_core(i);
+
+  for (int i = 0; i < 2; i++)
+    {
+    PCI_Device d;
+    fail_unless(c.store_pci_device_appropriately(d, true) == true);
+    }
+
+  fail_unless(c.get_available_mics() == 1);
+  fail_unless(c.get_available_gpus() == 1);
+
+  c.set_cpuset("0");
+
+  for (int i = 0; i < 2; i++)
+    {
+    PCI_Device d;
+    fail_unless(c.store_pci_device_appropriately(d, false) == true);
+    }
+
+  fail_unless(c.get_available_mics() == 2);
+  fail_unless(c.get_available_gpus() == 2);
+
+  // Make sure a non-matching cpuset doesn't store the pci devices
+  c.set_cpuset("1");
+  for (int i = 0; i < 2; i++)
+    {
+    PCI_Device d;
+    c.store_pci_device_appropriately(d, false);
+    }
+  fail_unless(c.get_available_mics() == 2);
+  fail_unless(c.get_available_gpus() == 2);
+
+  allocation remaining;
+  allocation a;
+
+  remaining.mics = 2;
+  remaining.gpus = 2;
+
+  c.place_accelerators(remaining, a);
+  fail_unless(c.get_available_mics() == 0);
+  fail_unless(c.get_available_gpus() == 0);
+  c.free_accelerators(a);
+  fail_unless(c.get_available_mics() == 2);
+  fail_unless(c.get_available_gpus() == 2);
   }
 END_TEST
 
@@ -314,6 +379,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_initializeChip);
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
+  tcase_add_test(tc_core, test_reserve_accelerators);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");

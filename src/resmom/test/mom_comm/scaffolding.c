@@ -531,3 +531,7 @@ int trq_cg_create_all_cgroups(job *pjob)
   return(PBSE_NONE);
   }
 
+int trq_cg_reserve_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }

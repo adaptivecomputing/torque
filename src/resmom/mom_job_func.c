@@ -914,7 +914,7 @@ void mom_job_purge(
 
 #ifdef PENABLE_LINUX_CGROUPS
   /* We need to remove the cgroup hierarchy for this job */
-  enqueue_threadpool_request( trq_cg_remove_process_from_accts, pjob->ji_qs.ji_jobid, request_pool);
+  enqueue_threadpool_request(trq_cg_remove_process_from_accts, strdup(pjob->ji_qs.ji_jobid), request_pool);
   if (LOGLEVEL >=6)
     {
     sprintf(log_buffer, "removing cgroup of job %s.", pjob->ji_qs.ji_jobid);

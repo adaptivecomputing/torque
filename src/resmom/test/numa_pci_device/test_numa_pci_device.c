@@ -17,8 +17,16 @@ START_TEST(test_displayAsString)
 END_TEST
 
 
-START_TEST(test_two)
+START_TEST(test_basics)
   {
+  PCI_Device p;
+  p.setId(1);
+
+  fail_unless(p.get_id() == 1);
+  fail_unless(p.get_type() == -1);
+  fail_unless(p.is_busy() == false);
+  p.set_state(true);
+  fail_unless(p.is_busy() == true);
   }
 END_TEST
 
@@ -30,8 +38,8 @@ Suite *numa_pci_device_suite(void)
   tcase_add_test(tc_core, test_displayAsString);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_basics");
+  tcase_add_test(tc_core, test_basics);
   suite_add_tcase(s, tc_core);
   
   return(s);

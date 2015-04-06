@@ -3,9 +3,18 @@
   
 #include "numa_node.hpp"
 #include "mom_memory.h"
+#include "req.hpp"
 
 int MOMConfigUseSMT;
 char cpulist[1024];
+
+const char *use_cores = "usecores";
+
+const char *place_node = "node";
+const char *place_socket = "socket";
+const char *place_numa = "numachip";
+const char *place_core = "core";
+const char *place_thread = "thread";
 
 proc_mem_t *get_proc_mem_from_path(const char *path)
   {
@@ -40,4 +49,29 @@ int is_whitespace(
   else
     return(FALSE);
   } /* END is_whitespace */
+
+int req::getExecutionSlots() const
+  {
+  return(0);
+  }
+
+unsigned long req::getMemory() const
+  {
+  return(0);
+  }
+
+std::string req::getThreadUsageString() const
+  {
+  return("");
+  }
+
+int req::getMics() const
+  {
+  return(0);
+  }
+
+int req::getGpus() const
+  {
+  return(0);
+  }
 

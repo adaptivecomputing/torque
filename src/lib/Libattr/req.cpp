@@ -1632,9 +1632,15 @@ int req::set_value(
   else if (!strncmp(name, "nodes", 5))
     this->nodes = strtol(value, NULL, 10);
   else if (!strncmp(name, "socket", 7))
+    {
     this->socket = strtol(value, NULL, 10);
+    this->placement_str = place_socket;
+    }
   else if (!strncmp(name, "numachip", 10))
+    {
     this->numa_chip = strtol(value, NULL, 10);
+    this->placement_str = place_numa;
+    }
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpu_mode", 8))
@@ -1773,6 +1779,18 @@ int req::getIndex() const
 
   {
   return(this->index);
+  }
+
+int req::getGpus() const
+
+  {
+  return(this->gpus);
+  }
+
+int req::getMics() const
+
+  {
+  return(this->mics);
   }
 
 

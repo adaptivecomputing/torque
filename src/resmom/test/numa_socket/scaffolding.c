@@ -10,6 +10,7 @@ int hardware_style;
 int tasks;
 int placed;
 int called_place;
+int called_store_pci;
 bool oscillate = false;
 bool avail_oscillate = false;
 int place_amount = 1;
@@ -50,8 +51,14 @@ int get_hardware_style(hwloc_topology_t topology)
     return(INTEL);
   }
 
+PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device()
   {
+  }
+PCI_Device::PCI_Device(const PCI_Device &other) {}
+PCI_Device &PCI_Device::operator=(const PCI_Device &other)
+  {
+  return(*this);
   }
 
 Core::~Core()
@@ -138,7 +145,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r) const
+int Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }
@@ -162,6 +169,12 @@ bool Chip::free_task(const char *jobid)
   }
 
 void Chip::displayAsString(std::stringstream &out) const {}
+
+bool Chip::store_pci_device_appropriately(PCI_Device &d, bool force)
+  {
+  called_store_pci++;
+  return(force);
+  }
 
 allocation::allocation(const allocation &other) {}
 allocation::allocation(const char *jobid) {}

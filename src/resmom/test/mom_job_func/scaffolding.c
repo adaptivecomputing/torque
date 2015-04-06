@@ -12,6 +12,7 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
 #include "threadpool.h"
+#include "machine.hpp"
 
 threadpool_t *request_pool;
 int is_login_node = 0;
@@ -157,3 +158,20 @@ void log_event(
   {
   return;
   }
+
+void Machine::free_job_allocation(const char *job_id)
+  {
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+PCI_Device::~PCI_Device() {}
+
+Socket::~Socket() {}
+
+Chip::~Chip() {}
+
+Core::~Core() {}
+
+Machine          this_node;

@@ -100,6 +100,8 @@ class allocation
   public:
   std::vector<int> cpu_indices;
   std::vector<int> mem_indices;
+  std::vector<int> gpu_indices;
+  std::vector<int> mic_indices;
   unsigned long    memory;
   int              cpus;
   int              cores;
@@ -107,6 +109,8 @@ class allocation
   int              place_type;
   bool             cores_only;
   char             jobid[PBS_MAXSVRJOBID];
+  int              gpus;
+  int              mics;
 
   allocation(const allocation &alloc);
   allocation(const req &r);

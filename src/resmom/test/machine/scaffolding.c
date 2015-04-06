@@ -16,6 +16,7 @@ int called_free_task;
 int called_place_task;
 int called_partially_place;
 int called_fits_on_socket;
+int called_store_pci;
 bool socket_fit;
 bool partially_placed;
 
@@ -51,15 +52,17 @@ int Socket::initializeIntelSocket(hwloc_obj_t obj, hwloc_topology_t topology)
   return(PBSE_NONE);
   }
 
+bool Socket::store_pci_device_appropriately(PCI_Device &d, bool force)
+  {
+  called_store_pci++;
+  return(false);
+  }
+
 Core::~Core()
   {
   }
 
 Chip::~Chip()
-  {
-  }
-
-PCI_Device::~PCI_Device()
   {
   }
 
@@ -94,7 +97,7 @@ int Socket::getAvailableChips() const
   return(1);
   }
 
-int Socket::how_many_tasks_fit(const req &r) const
+int Socket::how_many_tasks_fit(const req &r, int place_type) const
 
   {
   return(num_tasks_fit);
@@ -160,4 +163,12 @@ allocation::allocation(const req &r) {}
 void allocation::set_place_type(const std::string &place) {}
 void allocation::place_indices_in_string(std::string &out, int which) {}
 
+PCI_Device::~PCI_Device() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::PCI_Device(const PCI_Device &other) {}
+
 void PCI_Device::displayAsString(std::stringstream &out) const {}
+PCI_Device &PCI_Device::operator=(const PCI_Device &other)
+  {
+  return(*this);
+  }

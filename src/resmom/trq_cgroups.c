@@ -861,9 +861,9 @@ void *trq_cg_remove_process_from_accts(
   void *vp)
 
   {
-  int         rc;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-  const char *job_id = (const char *)vp;
+  int   rc;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *job_id = (char *)vp;
 
   /* remove job from the cpuacct cgroup */
   rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_id);
@@ -888,6 +888,8 @@ void *trq_cg_remove_process_from_accts(
     sprintf(log_buf, "Failed to remove cgroup memory: process %s", job_id);
     log_err(-1, __func__, log_buf);
     }
+
+  free(job_id);
 
   return(PBSE_NONE);
   } // END trq_cg_remove_process_from_accts()

@@ -9,6 +9,9 @@ std::string  my_placement_type;
 std::string  thread_type;
 int          hardware_style;
 
+const int    MIC = 0;
+const int    GPU = 1;
+
 const char *place_node = "node";
 const char *place_socket = "socket";
 const char *place_numa = "numachip";
@@ -46,11 +49,68 @@ int get_hardware_style(hwloc_topology_t topology)
     return(INTEL);
   }
 
-PCI_Device::~PCI_Device()
+PCI_Device::PCI_Device() 
   {
+  static int pci_count = 0;
+
+  pci_count++;
+  if (pci_count % 2)
+    this->type = MIC;
+  else
+    this->type = GPU;
+
+  this->id = pci_count;
+  this->busy = false;
+  strcpy(this->cpuset_string, "0");
+  }
+
+PCI_Device::~PCI_Device() {}
+
+PCI_Device::PCI_Device(const PCI_Device &other) 
+  
+  {
+  this->type = other.type;
+  this->id = other.id;
+  this->busy = other.busy;
+  strcpy(this->cpuset_string, other.cpuset_string);
   }
 
 void PCI_Device::displayAsString(std::stringstream &out) const {}
+
+int PCI_Device::get_type() const
+
+  {
+  return(this->type);
+  }
+
+PCI_Device &PCI_Device::operator=(const PCI_Device &other)
+  {
+  this->type = other.type;
+  this->id = other.id;
+  this->busy = other.busy;
+  strcpy(this->cpuset_string, other.cpuset_string);
+  return(*this);
+  }
+
+const char *PCI_Device::get_cpuset() const
+  {
+  return(this->cpuset_string);
+  }
+
+void PCI_Device::set_state(bool in_use)
+  {
+  this->busy = in_use;
+  }
+
+int PCI_Device::get_id() const
+  {
+  return(this->id);
+  }
+
+bool PCI_Device::is_busy() const
+  {
+  return(this->busy);
+  }
 
 int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   {
@@ -58,7 +118,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-req::req() : mem(0) {}
+req::req() : mem(0), gpus(0), mics(0) {}
 
 unsigned long req::getMemory() const
   {
@@ -87,8 +147,22 @@ int req::set_value(const char *name, const char *value)
     this->execution_slots = atoi(value);
   else if (!strcmp(name, "memory"))
     this->mem = atoi(value);
+  else if (!strcmp(name, "gpus"))
+    this->gpus = atoi(value);
+  else if (!strcmp(name, "mics"))
+    this->mics = atoi(value);
 
   return(0);
+  }
+
+int req::getMics() const
+  {
+  return(this->mics);
+  }
+ 
+int req::getGpus() const
+  {
+  return(this->gpus);
   }
 
 int is_whitespace(
