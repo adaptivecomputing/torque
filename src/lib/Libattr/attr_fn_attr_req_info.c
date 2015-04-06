@@ -117,7 +117,7 @@ int  decode_attr_req_info(
   {
   int rc = PBSE_NONE;
 
-  if ((val == NULL) || (name == NULL) || (rescn == NULL))
+  if ((patr == NULL) || (val == NULL) || (name == NULL) || (rescn == NULL))
     return(PBSE_BAD_PARAMETER);
 
   attr_req_info *cr;
@@ -261,9 +261,12 @@ int set_attr_req_info(
 
   {
 
-  if ((attr == NULL) ||
-      (new_attr == NULL))
+  if (attr == NULL) 
     return(PBSE_BAD_PARAMETER);
+
+  if ((op != UNSET) && (attr == NULL))
+    return(PBSE_BAD_PARAMETER);
+
 
   if ((attr->at_flags & ATR_VFLAG_SET)
       && (attr->at_val.at_ptr == NULL))
