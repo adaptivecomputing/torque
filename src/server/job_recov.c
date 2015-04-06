@@ -1418,7 +1418,19 @@ int job_recov_binary(
   /* Does file name match the internal name? */
   /* This detects ghost files */
 
-  pn = strrchr((char *)filename, (int)'/') + 1;
+  // see if filename has a leading path
+  pn = strrchr((char *)filename, (int)'/');
+
+  if (pn == NULL)
+    {
+    // file name had no leading path so just point to beginning of string
+    pn = (char *)filename;
+    }
+  else
+    {
+    // file name had a leading path so skip over it
+    pn++;
+    }
 
 #ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
