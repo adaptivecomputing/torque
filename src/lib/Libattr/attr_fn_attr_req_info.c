@@ -117,7 +117,7 @@ int  decode_attr_req_info(
   {
   int rc = PBSE_NONE;
 
-  if (val == NULL)
+  if ((val == NULL) || (name == NULL) || (rescn == NULL))
     return(PBSE_BAD_PARAMETER);
 
   attr_req_info *cr;
