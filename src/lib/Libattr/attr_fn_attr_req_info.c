@@ -180,6 +180,9 @@ int encode_attr_req_info(
       (attr->at_val.at_ptr == NULL))
     return(PBSE_NONE);
 
+  if (atname == NULL)
+    return(PBSE_BAD_PARAMETER);
+
 
   std::vector<std::string> names;
   std::vector<std::string> values;
