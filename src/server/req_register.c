@@ -2870,13 +2870,6 @@ int encode_depend(
 
         fast_strcat(&BPtr,":");
         cat_jobsvr(&BPtr,pdjb->dc_child);
-
-        if (*pdjb->dc_svr != '\0')
-          {
-          fast_strcat(&BPtr,"@");
-
-          cat_jobsvr(&BPtr,pdjb->dc_svr);
-          }
         } 
       }	
     
