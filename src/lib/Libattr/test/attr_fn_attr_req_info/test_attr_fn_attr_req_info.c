@@ -21,7 +21,6 @@ START_TEST(test_free_attr_req_info)
   fail_unless(pattr.at_val.at_ptr == NULL);
   fail_unless(pattr.at_flags == 0);
 
-  delete cr;
   }
 END_TEST
 
@@ -29,43 +28,65 @@ END_TEST
 
 START_TEST(test_decode_encode_attr_req_info)
   {
-  pbs_attribute  pattr;
-  const char    *resc_names[] = {"lprocs", "memory"};
-  const char    *values[] = { "5", "1000000kb"};
+  pbs_attribute  pattr_max;
+  pbs_attribute  pattr_min;
+  pbs_attribute  pattr_default;
+  tlist_head     phead;
 
-  memset(&pattr, 0, sizeof(pattr));
+  const char    *resc_names[] = {"lprocs", "memory", "swap"};
+  const char    *values[] = { "5", "1000000kb", "200000kb"};
+
+  memset(&pattr_max, 0, sizeof(pattr_max));
+  memset(&pattr_min, 0, sizeof(pattr_max));
 
   // null should fail
-  fail_unless(decode_attr_req_info(&pattr, NULL, NULL, NULL, 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(NULL, NULL, NULL, NULL, 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr_max, NULL, NULL, NULL, 1) == PBSE_BAD_PARAMETER);
   // null resource name should fail
-  fail_unless(decode_attr_req_info(&pattr, NULL, NULL, "bob", 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr_max, NULL, NULL, "bob", 1) == PBSE_BAD_PARAMETER);
   // random words should fail
-  fail_unless(decode_attr_req_info(&pattr, NULL, "hippo", "bob", 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr_max, NULL, "hippo", "bob", 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr_max, "fred", NULL, "bob", 1) == PBSE_BAD_PARAMETER);
 
   // should still be NULL
-  fail_unless(pattr.at_val.at_ptr == NULL);
+  fail_unless(pattr_max.at_val.at_ptr == NULL);
 
   // these should work
-  fail_unless(decode_attr_req_info(&pattr, NULL, resc_names[0], values[0], 1) == PBSE_NONE);
-  fail_unless((pattr.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[0], values[0], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
 
-  attr_req_info *cr = (attr_req_info *)pattr.at_val.at_ptr;
+  attr_req_info *cr = (attr_req_info *)pattr_max.at_val.at_ptr;
   fail_unless(cr != NULL);
 
-  cr = (attr_req_info *)pattr.at_val.at_ptr;
-  fail_unless(cr != NULL);
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[1], values[1], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
 
+  fail_unless(decode_attr_req_info(&pattr_max, "req_information_max", resc_names[2], values[2], 1) == PBSE_NONE);
+  fail_unless((pattr_max.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_max.at_val.at_ptr != 0);
+
+  /* Thest the minimum decode */
+  fail_unless(decode_attr_req_info(&pattr_min, "req_information_min", "lprocs", "2", 1) == PBSE_NONE);
+  fail_unless((pattr_min.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_min.at_val.at_ptr != 0);
+  /* Thest the default  decode */
+  fail_unless(decode_attr_req_info(&pattr_default, "req_information_default", "lprocs", "2", 1) == PBSE_NONE);
+  fail_unless((pattr_default.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pattr_default.at_val.at_ptr != 0);
+
+
+
+  /* We can pass a null pbs_attribute into ecnode_attr_req_info and return PBSE_NONE */
   fail_unless(encode_attr_req_info(NULL, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
-  extern int called_encode;
-  called_encode = 0;
-  fail_unless(encode_attr_req_info(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
+  /* name, rescn, and val need to be set in order for this to work */
+  fail_unless(encode_attr_req_info(&pattr_max, NULL, NULL, NULL, 0, 0) == PBSE_BAD_PARAMETER);
+  fail_unless(encode_attr_req_info(&pattr_max, &phead, "george", "lprocs", ATR_ENCODE_CLIENT, ATR_DFLAG_RDACC) == PBSE_BAD_PARAMETER);
 
-  // we set 2 attributes + there are 2 that should go by default
-  fail_unless(called_encode == 4, "encoded %d", called_encode);
-  pattr.at_val.at_ptr = NULL;
-  fail_unless(encode_attr_req_info(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
-  // make sure we didn't encode anything new
-  fail_unless(called_encode == 4);
+  fail_unless(encode_attr_req_info(&pattr_max, &phead, "req_information_max", "lprocs", ATR_ENCODE_CLIENT, ATR_DFLAG_RDACC) == PBSE_NONE);
+  fail_unless(encode_attr_req_info(&pattr_min, &phead, "req_information_min", "lprocs", ATR_ENCODE_CLIENT, ATR_DFLAG_RDACC) == PBSE_NONE);
+  fail_unless(encode_attr_req_info(&pattr_default, &phead, "req_information_default", "lprocs", ATR_ENCODE_CLIENT, ATR_DFLAG_RDACC) == PBSE_NONE);
   }
 END_TEST
 
@@ -77,20 +98,18 @@ START_TEST(test_set_attr_req_info)
 
   memset(&pattr, 0, sizeof(pattr));
   memset(&pattr2, 0, sizeof(pattr2));
-  fail_unless(decode_attr_req_info(&pattr, NULL, "lprocs", "4", 1) == PBSE_NONE);
+  fail_unless(decode_attr_req_info(&pattr, NULL, "lprocs", "2", 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr, "req_information_min", "lprocs", "4", 1) == PBSE_NONE);
 
   // DECR is unsupported
   fail_unless(set_attr_req_info(&pattr2, &pattr, DECR) == PBSE_INTERNAL);
 
-  // INCR should work for an empty destination attribute
-  fail_unless(set_attr_req_info(&pattr2, &pattr, INCR) == PBSE_NONE);
-
-  // INCR is only allowed if the destination attribute has no value
+  // INCR is not supported
   fail_unless(set_attr_req_info(&pattr2, &pattr, INCR) == PBSE_INTERNAL);
-  
+
   attr_req_info *cr2 = (attr_req_info *)pattr2.at_val.at_ptr;
 
-  fail_unless(decode_attr_req_info(&pattr2, NULL, "lprocs", "5", 1) == PBSE_NONE);
+  fail_unless(decode_attr_req_info(&pattr2, "req_information_max", "lprocs", "5", 1) == PBSE_NONE);
 
   // make sure they're different now
   cr2 = (attr_req_info *)pattr2.at_val.at_ptr;
