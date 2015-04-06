@@ -264,7 +264,7 @@ int set_attr_req_info(
   if (attr == NULL) 
     return(PBSE_BAD_PARAMETER);
 
-  if ((op != UNSET) && (attr == NULL))
+  if ((op != UNSET) && (new_attr == NULL))
     return(PBSE_BAD_PARAMETER);
 
 
