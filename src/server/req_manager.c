@@ -483,11 +483,12 @@ static int mgr_set_attr(
         {
         list_move(&pnew->at_val.at_list, &pold->at_val.at_list);
         }
-
-      if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
+      else if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
         {
         pold->at_val.at_ptr = pnew->at_val.at_ptr;
         }
+      else
+        *pold = *pnew;
 
       pold->at_flags = pnew->at_flags; /* includes MODIFY */
       }
