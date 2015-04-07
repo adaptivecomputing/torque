@@ -7,6 +7,8 @@
 #include "attribute.h"
 #include "pbs_error.h"
 
+int overwrite_attr_req_info(pbs_attribute *, pbs_attribute *);
+
 START_TEST(test_free_attr_req_info)
   {
   pbs_attribute  pattr;
@@ -49,6 +51,7 @@ START_TEST(test_decode_encode_attr_req_info)
   // random words should fail
   fail_unless(decode_attr_req_info(&pattr_max, NULL, "hippo", "bob", 1) == PBSE_BAD_PARAMETER);
   fail_unless(decode_attr_req_info(&pattr_max, "fred", NULL, "bob", 1) == PBSE_BAD_PARAMETER);
+  fail_unless(decode_attr_req_info(&pattr_max, "fred", "bill", "bob", 1) == PBSE_BAD_PARAMETER);
 
   // should still be NULL
   fail_unless(pattr_max.at_val.at_ptr == NULL);
@@ -139,6 +142,8 @@ START_TEST(test_set_attr_req_info)
   fail_unless(set_attr_req_info(NULL, &new_pattr, SET) == PBSE_BAD_PARAMETER);
   fail_unless(set_attr_req_info(&pattr_max, NULL, SET) == PBSE_BAD_PARAMETER);
 
+  fail_unless(set_attr_req_info(&pattr_max, &new_pattr, INCR) == PBSE_INTERNAL);
+
   /* test the success case */
   fail_unless(set_attr_req_info(&new_pattr, &pattr_max, SET) == PBSE_NONE);
   fail_unless(new_pattr.at_val.at_ptr != NULL);
@@ -163,7 +168,40 @@ START_TEST(test_set_attr_req_info)
 
   fail_unless(set_attr_req_info(&new_pattr, NULL, UNSET) == PBSE_NONE);
   fail_unless(new_pattr.at_val.at_ptr == NULL);
+
+  /* Failure case. attr flag set but at_ptr NULL */
+  memset(&pattr_max, 0, sizeof(pattr_max));
+  pattr_max.at_flags = ATR_VFLAG_SET;
+  fail_unless(set_attr_req_info(&pattr_max, &new_pattr, SET) == PBSE_NONE);
+  fail_unless(pattr_max.at_flags == 0);
+
+  memset(&pattr_max, 0, sizeof(pattr_max));
+  memset(&new_pattr, 0, sizeof(pattr_max));
+  new_pattr.at_flags = ATR_VFLAG_SET;
+  fail_unless(set_attr_req_info(&pattr_max, &new_pattr, SET) == PBSE_NONE);
+  fail_unless(new_pattr.at_flags == 0);
+  
  }
+END_TEST
+
+START_TEST(test_overwrite_attr_req_info)
+  {
+  pbs_attribute  old_attr;
+  pbs_attribute  new_attr;
+
+  memset(&old_attr, 0, sizeof(old_attr));
+  memset(&new_attr, 0, sizeof(new_attr));
+
+  fail_unless(decode_attr_req_info(&new_attr, "req_information_max", "lprocs", "4",  1) == PBSE_NONE);
+  overwrite_attr_req_info(&old_attr, &new_attr);
+  fail_unless(old_attr.at_flags != 0);
+  fail_unless(old_attr.at_val.at_ptr != NULL);
+  /* do it again */
+  overwrite_attr_req_info(&old_attr, &new_attr);
+  fail_unless(old_attr.at_flags != 0);
+  fail_unless(old_attr.at_val.at_ptr != NULL);
+
+  }
 END_TEST
 
 
@@ -177,6 +215,10 @@ Suite *attr_fn_attr_req_info(void)
   
   tc_core = tcase_create("test_decode_encode_attr_req_info");
   tcase_add_test(tc_core, test_decode_encode_attr_req_info);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_overwrite_attr_req_info");
+  tcase_add_test(tc_core, test_overwrite_attr_req_info);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_set_attr_req_info");
