@@ -157,7 +157,7 @@ int Socket::getAvailableChips() const
   int available_chips = 0;
   std::vector<Chip>::iterator chip_iter;
 
-  if (socket_exclusive == false)
+  if (this->socket_exclusive == false)
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
       {
@@ -175,7 +175,7 @@ int Socket::getAvailableCores() const
   {
   int available = 0;
 
-  if (socket_exclusive == false)
+  if (this->socket_exclusive == false)
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
       available += this->chips[i].getAvailableCores();
@@ -188,7 +188,7 @@ int Socket::getAvailableThreads() const
   {
   int available = 0;
 
-  if (socket_exclusive == false)
+  if (this->socket_exclusive == false)
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
       available += this->chips[i].getAvailableThreads();
@@ -202,7 +202,7 @@ hwloc_uint64_t Socket::getAvailableMemory() const
   {
   hwloc_uint64_t available = 0;
 
-  if (socket_exclusive == false)
+  if (this->socket_exclusive == false)
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
       available += this->chips[i].getAvailableMemory();
@@ -263,7 +263,7 @@ int Socket::how_many_tasks_fit(
   {
   int num_that_fit = 0;
 
-  if ((socket_exclusive == false) &&
+  if ((this->socket_exclusive == false) &&
       ((place_type != exclusive_socket) ||
        (this->is_available() == true)))
     {
@@ -302,10 +302,12 @@ int Socket::place_task(
   int        tasks_to_place = to_place;
   allocation a(jobid);
 
+  a.place_type = master.place_type;
+
   if ((master.place_type != exclusive_socket) ||
       (this->is_available() == true))
     {
-    if (socket_exclusive == false)
+    if (this->socket_exclusive == false)
       {
       // Attempt to fit all of tasks on a single numa chip if possible
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
@@ -359,7 +361,7 @@ bool Socket::free_task(
     }
 
   if (completely_free)
-    socket_exclusive = false;
+    this->socket_exclusive = false;
 
   return(completely_free);
   } // END free_task()
@@ -378,7 +380,7 @@ bool Socket::is_available() const
   {
   bool available = true;
 
-  if (socket_exclusive == false)
+  if (this->socket_exclusive == false)
     {
     for (unsigned int i = 0; i < this->chips.size(); i++)
       {
