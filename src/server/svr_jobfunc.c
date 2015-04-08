@@ -147,6 +147,7 @@
 #include "attr_req_info.hpp"
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "user_info.h" /* remove_server_suffix() */
 
@@ -3203,40 +3204,64 @@ void set_deflt_resc(
 
   if (dflt->at_flags & ATR_VFLAG_SET)
     {
-    /* for each resource in the default value list */
 
-    prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
-
-    while (prescdt != NULL)
+    if (dflt->at_type == ATR_TYPE_REQ)
       {
-      if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
+      /* for each resource in the default value list */
+
+      prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
+
+      while (prescdt != NULL)
         {
-        /* see if the job already has that resource */
-
-        prescjb = find_resc_entry(jb, prescdt->rs_defin);
-
-        if ((prescjb == NULL) ||
-            ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+        if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
           {
-          /* resource does not exist or value is not set */
+          /* see if the job already has that resource */
 
-          if (prescjb == NULL)
-            prescjb = add_resource_entry(jb, prescdt->rs_defin);
+          prescjb = find_resc_entry(jb, prescdt->rs_defin);
 
-          if (prescjb != NULL)
+          if ((prescjb == NULL) ||
+              ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
             {
-            if (prescdt->rs_defin->rs_set(
-                  &prescjb->rs_value,
-                  &prescdt->rs_value,
-                  SET) == 0)
+            /* resource does not exist or value is not set */
+
+            if (prescjb == NULL)
+              prescjb = add_resource_entry(jb, prescdt->rs_defin);
+
+            if (prescjb != NULL)
               {
-              prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
+              if (prescdt->rs_defin->rs_set(
+                    &prescjb->rs_value,
+                    &prescdt->rs_value,
+                    SET) == 0)
+                {
+                prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
+                }
               }
             }
           }
-        }
 
-      prescdt = (resource *)GET_NEXT(prescdt->rs_link);
+        prescdt = (resource *)GET_NEXT(prescdt->rs_link);
+        }
+      }
+    else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
+      {
+      std::vector<std::string> req_names, req_values;
+      std::vector<std::string> default_names, default_values;
+      complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
+      attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
+      int req_count;
+
+      cr->get_values(req_names, req_values);
+      req_count = cr->req_count();
+      ari->check_default_values(req_names, req_values, default_names, default_values);
+
+      for (unsigned int i = 0; i < default_names.size(); i++)
+        {
+        for (unsigned int j = 0; j < (unsigned int)req_count; j++)
+          {
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          }
+        }
       }
     }
 
@@ -3341,6 +3366,7 @@ void set_resc_deflt(
 
   {
   pbs_attribute *ja;
+  pbs_attribute *L_ja;  /* for new complete req options */
 
   pbs_queue     *pque;
   attribute_def *pdef;
@@ -3348,9 +3374,15 @@ void set_resc_deflt(
   int            rc;
 
   if (ji_wattr != NULL)
+    {
     ja = &ji_wattr[JOB_ATR_resource];
+    L_ja = &ji_wattr[JOB_ATR_req_information];
+    }
   else
+    {
     ja = &pjob->ji_wattr[JOB_ATR_resource];
+    L_ja = &pjob->ji_wattr[JOB_ATR_req_information];
+    }
 
 
   if (LOGLEVEL >= 10)
@@ -3372,6 +3404,7 @@ void set_resc_deflt(
   if (pque != NULL)
     {
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
     
     pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
@@ -3381,6 +3414,7 @@ void set_resc_deflt(
 #ifdef RESOURCEMAXDEFAULT
     /* apply queue max limits first since they take precedence */
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
     
     /* server max limits will only be applied to attributes which have
        not yet been set */

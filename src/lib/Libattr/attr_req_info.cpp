@@ -9,11 +9,11 @@
 #include "attr_req_info.hpp"
 
 const char *LPROCS     = "lprocs";
-const char *NODES      = "nodes";
-const char *SOCKETS    = "sockets";
-const char *NUMA_CHIPS = "numa_chips";
-const char *CORES      = "cores";
-const char *THREADS    = "threads";
+const char *NODES      = "node";
+const char *SOCKETS    = "socket";
+const char *NUMA_CHIPS = "numachip";
+const char *CORES      = "core";
+const char *THREADS    = "thread";
 const char *MEMORY     = "memory";
 const char *SWAP       = "swap";
 const char *DISK       = "disk";
@@ -655,7 +655,7 @@ int attr_req_info::check_max_values(
   unsigned int unsigned_value;
 
 
-  for (int i = 0; i < names.size(); i++)
+  for (unsigned int i = 0; i < names.size(); i++)
     {
     signed_value = 0;
     unsigned_value = 0;
@@ -671,7 +671,6 @@ int attr_req_info::check_max_values(
         }
       }
         
-    unsigned int uval;
     ret = this->get_unsigned_max_limit_value(names[i].c_str(), unsigned_value);
     if ((ret == PBSE_NONE) && (unsigned_value != 0))
       {
@@ -700,7 +699,7 @@ int attr_req_info::check_min_values(
   unsigned int unsigned_value;
 
 
-  for (int i = 0; i < names.size(); i++)
+  for (unsigned int i = 0; i < names.size(); i++)
     {
     signed_value = 0;
     unsigned_value = 0;
@@ -716,7 +715,6 @@ int attr_req_info::check_min_values(
         }
       }
         
-    unsigned int uval;
     ret = this->get_unsigned_min_limit_value(names[i].c_str(), unsigned_value);
     if ((ret == PBSE_NONE) && (unsigned_value != 0))
       {
@@ -733,3 +731,64 @@ int attr_req_info::check_min_values(
  
   return(PBSE_NONE);
   }
+
+
+/* 
+ * check_default_values
+ *
+ * compares the value name and value to currently set default limits.
+ * If the limits exist return PBSE_NONE if the value is >= limit.
+ * Otherwise return PBSE_EXLIMIT indicating the value is less than
+ * the default limit.
+ *
+ * @param name - name of resource limit to check
+ * @param value - string representation of the value
+ * @param signed_val - value of current signed limit value of the name resoruce if set returned
+ * @param unsigned_val - value of current unsigned limit of the name resource if set.
+ */
+int attr_req_info::check_default_values(
+
+  std::vector<std::string>& names,
+  std::vector<std::string>& values,
+  std::vector<std::string>& names_to_add,
+  std::vector<std::string>& values_to_add)
+
+  {
+  std::vector<std::string> default_names;
+  std::vector<std::string> default_values;
+
+  /* Get all of the default values that have been set on the queue */
+  this->get_default_values(default_names, default_values);
+
+  /* iterate over each default value that is set in the queue and 
+   * see if there is a match in the users req
+   */
+  for (unsigned int i = 0; i < default_names.size(); i++)
+    {
+    bool found;
+
+    found = false;
+    for (unsigned int j = 0; j < names.size(); j++)
+      {
+      std::string dflt_name = default_names[i].c_str();
+      std::string req_name = names[j].c_str();
+
+      if (!strncmp(dflt_name.c_str(), req_name.c_str(), strlen(dflt_name.c_str())))
+        {
+        found = true;
+        break;
+        }
+
+      }
+    if (found == false)
+      {
+      names_to_add.push_back(default_names[i]);
+      values_to_add.push_back(default_values[i]);
+      }
+    }
+
+ 
+  return(PBSE_NONE);
+  }
+
+

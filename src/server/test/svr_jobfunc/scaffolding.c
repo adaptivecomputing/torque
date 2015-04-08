@@ -12,6 +12,8 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
 #include "pbs_nodes.h"
+#include "complete_req.hpp"
+#include "attr_req_info.hpp"
 
 
 bool exit_called = false;
@@ -459,3 +461,40 @@ char *csv_nth(const char *csv_str, int n)
   exit(1);
   }
 
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+#include "../../../lib/Libattr/req.cpp"
+#include "../../../lib/Libattr/complete_req.cpp"
+#include "../../../lib/Libattr/attr_req_info.cpp"

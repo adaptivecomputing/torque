@@ -59,6 +59,7 @@ class attr_req_info
   int get_default_values(std::vector<std::string>& names, std::vector<std::string>& values);
   int check_max_values(std::vector<std::string>& names, std::vector<std::string>& values);
   int check_min_values(std::vector<std::string>& names, std::vector<std::string>& values);
+  int check_default_values(std::vector<std::string>&, std::vector<std::string>&, std::vector<std::string>&, std::vector<std::string>&);
   };
 
 #endif /* ifndef __ATTR_REQ_INFO__ */
