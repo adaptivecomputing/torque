@@ -242,7 +242,7 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval) {}
 int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status){}
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status){}
 int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 void issue_track(job *pjob) {}
 int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
