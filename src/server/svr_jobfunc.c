@@ -3251,6 +3251,8 @@ void set_deflt_resc(
       attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
       int req_count;
 
+      if (cr == NULL)
+        return;
       cr->get_values(req_names, req_values);
       req_count = cr->req_count();
       ari->check_default_values(req_names, req_values, default_names, default_values);
