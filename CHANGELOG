@@ -16,6 +16,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3122. Fix a problem with login_property not working correctly (cray only).
   b - TRQ-3114. Fix an issue where an asynchronously started job is stuck with a 
       substate of starting after a failed job start.
+  b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main

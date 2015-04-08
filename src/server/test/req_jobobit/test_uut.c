@@ -472,6 +472,23 @@ START_TEST(handle_terminating_array_subjob_test)
 END_TEST
 
 
+START_TEST(handle_rerunning_array_subjob_test)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+  strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
+  strcpy(pjob->ji_arraystructid, "1[].napali");
+  
+  double_bad = 1;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+
+  double_bad = 0;
+  bad_job = 0;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE);
+
+  bad_job = 1;
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  }
+END_TEST
 
 
 START_TEST(handle_terminating_job_test)
@@ -589,6 +606,7 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, add_comment_to_parent_test);
   tcase_add_test(tc_core, end_of_job_accounting_test);
   tcase_add_test(tc_core, handle_terminating_array_subjob_test);
+  tcase_add_test(tc_core, handle_rerunning_array_subjob_test);
   tcase_add_test(tc_core, handle_terminating_job_test);
   tcase_add_test(tc_core, handle_stageout_test);
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
