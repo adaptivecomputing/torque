@@ -9,7 +9,7 @@ std::string  my_placement_type;
 std::string  thread_type;
 int          hardware_style;
 
-const int    MIC = 0;
+const int    MIC_TYPE = 0;
 const int    GPU = 1;
 
 const char *place_node = "node";
@@ -55,7 +55,7 @@ PCI_Device::PCI_Device()
 
   pci_count++;
   if (pci_count % 2)
-    this->type = MIC;
+    this->type = MIC_TYPE;
   else
     this->type = GPU;
 

@@ -157,12 +157,18 @@ int Chip::getTotalThreads() const
 
 int Chip::getAvailableCores() const
   {
-  return(this->availableCores);
+  if (this->chip_exclusive == true)
+    return(0);
+  else
+    return(this->availableCores);
   }
 
 int Chip::getAvailableThreads() const
   {
-  return(this->availableThreads);
+  if (this->chip_exclusive == true)
+    return(0);
+  else
+    return(this->availableThreads);
   }
 
 hwloc_uint64_t Chip::getAvailableMemory() const
