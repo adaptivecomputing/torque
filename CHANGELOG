@@ -31,6 +31,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       from 5.1.1).
   b - TRQ-3114. Fix an issue where an asynchronously started job is stuck with a 
       substate of starting after a failed job start (backported from 5.1.1).
+  b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
+      (backported from 5.1.1)
  
 
 5.0.1.h2
