@@ -705,7 +705,7 @@ jump:
 
             job_mutex.unlock();
             update_array_values(pa,job_state,aeTerminate,
-              (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
+              dup_job_id.c_str(), job_atr_hold, job_exit_status);
 
             if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
               job_mutex.mark_as_locked();
