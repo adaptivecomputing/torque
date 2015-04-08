@@ -10,6 +10,29 @@ int array_request_token_count(const char *);
 int array_request_parse_token(char *, int *, int *);
 int num_array_jobs(const char *str);
 int array_recov(char *path, job_array **new_pa);
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status);
+
+const char *array_sample = "<array>\n</array>";
+extern char *path_arrays;
+
+
+START_TEST(update_array_values_test)
+  {
+  job_array  *pa = (job_array *)calloc(1, sizeof(job_array));
+  const char *job_id = "1[0].napali";
+
+  pa->ai_qs.num_jobs = 10;
+
+  update_array_values(pa, JOB_STATE_TRANSIT, aeQueue, job_id, -1, -1);
+  update_array_values(pa, JOB_STATE_QUEUED, aeRun, job_id, -1, -1);
+  fail_unless(pa->ai_qs.jobs_running == 1);
+  fail_unless(pa->ai_qs.num_started == 1);
+ 
+  update_array_values(pa, JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
+  fail_unless(pa->ai_qs.jobs_running == 0);
+  fail_unless(pa->ai_qs.num_started == 0);
+  }
+END_TEST
 
 
 START_TEST(set_slot_limit_test)
@@ -184,7 +207,8 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("array_recov_test");
   tcase_add_test(tc_core, array_recov_test);
-  suite_add_tcase(s, tc_core);
+  tcase_add_test(tc_core, update_array_values_test);
+  suite_add_tcase(s,tc_core);
 
   return s;
   }

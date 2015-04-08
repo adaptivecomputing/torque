@@ -325,4 +325,4 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 
 void account_jobend(job *pjob, std::string &used) {}
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status) {}
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}

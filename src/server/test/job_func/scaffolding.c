@@ -254,7 +254,7 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, int prev_index, bool reservatio
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
+void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status)
   {
   fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
   exit(1);
