@@ -144,6 +144,7 @@ int  decode_attr_req_info(
   else
     {
     delete cr;
+    patr->at_val.at_ptr = NULL;
     return(PBSE_BAD_PARAMETER);
     }
 
