@@ -2084,7 +2084,7 @@ void update_array_values(
   job_array            *pa,        /* I */
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
-  char                 *job_id,
+  const char           *job_id,
   long                  job_atr_hold,
   int                   job_exit_status)
 
@@ -2186,6 +2186,17 @@ void update_array_values(
         }
 
       break;
+
+    case aeRerun:
+
+      if (old_state == JOB_STATE_RUNNING)
+        {
+        if (pa->ai_qs.jobs_running > 0)
+          pa->ai_qs.jobs_running--;
+
+        if (pa->ai_qs.num_started > 0)
+          pa->ai_qs.num_started--;
+        }
 
     default:
 

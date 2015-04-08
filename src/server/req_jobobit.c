@@ -2948,7 +2948,6 @@ int end_of_job_accounting(
 
 
 
-
 int handle_terminating_array_subjob(
 
   job *pjob)
@@ -2990,6 +2989,50 @@ int handle_terminating_array_subjob(
   return(PBSE_NONE);
   } /* END handle_terminating_array_subjob() */
 
+
+
+/*
+ * handle_rerunning_array_subjob()
+ *
+ * @param pjob - the job that is being rerun
+ * @return PBSE_NONE on SUCCESS or PBSE_UNKJOBID if the job disappears
+ */
+
+int handle_rerunning_array_subjob(
+
+  job *pjob)
+
+  {
+  job_array *pa;
+
+  // Adjust the array counts
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    pa = get_jobs_array(&pjob);
+    
+    if (pjob == NULL)
+      return(PBSE_UNKJOBID);
+
+    if (pa != NULL)
+      {
+      char job_id[PBS_MAXSVRJOBID+1];
+
+      snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+
+      update_array_values(pa, JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
+      
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      pjob = svr_find_job(job_id, TRUE);
+
+      if (pjob == NULL)
+        return(PBSE_UNKJOBID);
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END handle_rerunning_array_subjob()
 
 
 
@@ -3232,7 +3275,7 @@ int req_jobobit(
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t                time_now = time(NULL);
   pbs_net_t             mom_addr;
-  int                   rerunning_job = FALSE;
+  bool                  rerunning_job = false;
   int                   have_resc_used = FALSE;
 
   /* This will be needed later for logging after preq is freed. */
@@ -3470,7 +3513,14 @@ int req_jobobit(
     }
   else
     {
-    rerunning_job = TRUE;
+    rerunning_job = true;
+
+    if ((rc = handle_rerunning_array_subjob(pjob)) == PBSE_UNKJOBID)
+      {
+      job_mutex.set_unlock_on_exit(false);
+        
+      return(rc);
+      }
 
     /* if this is a heterogeneous sub-job, handle it appropriately */
     if (pjob->ji_parent_job != NULL)
@@ -3503,7 +3553,7 @@ int req_jobobit(
       "req_jobobit completed");
     }
 
-  if (rerunning_job == FALSE)
+  if (rerunning_job == false)
     {
     if (LOGLEVEL >= 7)
       {

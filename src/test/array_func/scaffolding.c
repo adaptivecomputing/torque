@@ -108,8 +108,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
 
 bool set_array_depend_holds(job_array *pa)
   {
-  fprintf(stderr, "The call to set_array_depend_holds needs to be mocked!!\n");
-  exit(1);
+  return(false);
   }
 
 int array_upgrade(job_array *pa, int fds, int version, int *old_version)
@@ -217,7 +216,9 @@ int is_svr_attr_set(int attr_index)
 
 job *svr_find_job(const char *name, int get_subjob)
   {
-  return(NULL);
+  job *pjob = (job *)calloc(1, sizeof(job));
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  return(pjob);
   }
 
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
