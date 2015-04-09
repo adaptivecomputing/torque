@@ -17,8 +17,8 @@ START_TEST(test_req_signaljob_relaying_msg)
   snprintf(request.rq_ind.rq_signal.rq_jid, PBS_MAXSVRJOBID, "%lu", (unsigned long)&myjob);
   memset(scaff_buffer, 0, 1024);
   req_signaljob(&request);
-  fail_unless(strcmp("relaying signal request to mom 10.1.4.4",
-    scaff_buffer) == 0, "Error message was not constructed as expected");
+  const char *err = "relaying signal request to mom";
+  fail_unless(strncmp(err, scaff_buffer, strlen(err)) == 0, "Error message was not constructed as expected");
   }
 END_TEST
 

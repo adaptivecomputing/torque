@@ -173,6 +173,34 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/pbsd_main/Makefile
     src/test/process_request/Makefile
     src/test/queue_func/Makefile
+    src/test/queue_recov/Makefile
+    src/test/reply_send/Makefile
+    src/test/req_delete/Makefile
+    src/test/req_deletearray/Makefile
+    src/test/req_getcred/Makefile
+    src/test/req_gpuctrl/Makefile
+    src/test/req_holdarray/Makefile
+    src/test/req_holdjob/Makefile
+    src/test/req_jobobit/Makefile
+    src/test/req_locate/Makefile
+    src/test/req_manager/Makefile
+    src/test/req_message/Makefile
+    src/test/req_modify/Makefile
+    src/test/req_movejob/Makefile
+    src/test/req_quejob/Makefile
+    src/test/req_register/Makefile
+    src/test/req_rerun/Makefile
+    src/test/req_rescq/Makefile
+    src/test/req_runjob/Makefile
+    src/test/req_select/Makefile
+    src/test/req_shutdown/Makefile
+    src/test/req_signal/Makefile
+    src/test/req_stat/Makefile
+    src/test/req_tokens/Makefile
+    src/test/req_track/Makefile
+    src/test/resc_def_all/Makefile
+    src/test/run_sched/Makefile
+    src/test/stat_job/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -460,36 +488,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/mom_hierarchy_handler/Makefile
     src/server/test/process_alps_status/Makefile
     src/server/test/process_mom_update/Makefile
-    src/server/test/queue_recov/Makefile
     src/server/test/queue_recycler/Makefile
     src/server/test/receive_mom_communication/Makefile
-    src/server/test/reply_send/Makefile
-    src/server/test/req_delete/Makefile
-    src/server/test/req_deletearray/Makefile
-    src/server/test/req_getcred/Makefile
-    src/server/test/req_gpuctrl/Makefile
-    src/server/test/req_holdarray/Makefile
-    src/server/test/req_holdjob/Makefile
-    src/server/test/req_jobobit/Makefile
-    src/server/test/req_locate/Makefile
-    src/server/test/req_manager/Makefile
-    src/server/test/req_message/Makefile
-    src/server/test/req_modify/Makefile
-    src/server/test/req_movejob/Makefile
-    src/server/test/req_quejob/Makefile
-    src/server/test/req_register/Makefile
-    src/server/test/req_rerun/Makefile
-    src/server/test/req_rescq/Makefile
-    src/server/test/req_runjob/Makefile
-    src/server/test/req_select/Makefile
-    src/server/test/req_shutdown/Makefile
-    src/server/test/req_signal/Makefile
-    src/server/test/req_stat/Makefile
-    src/server/test/req_tokens/Makefile
-    src/server/test/req_track/Makefile
-    src/server/test/resc_def_all/Makefile
-    src/server/test/run_sched/Makefile
-    src/server/test/stat_job/Makefile
     src/server/test/svr_chk_owner/Makefile
     src/server/test/svr_connect/Makefile
     src/server/test/svr_format_job/Makefile

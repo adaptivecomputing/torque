@@ -125,3 +125,8 @@ bool log_available(int eventtype)
   return true;
   }
 
+char * netaddr_long(long ap, char *out)
+  {
+  return(NULL);
+  }
+
