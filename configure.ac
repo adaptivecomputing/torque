@@ -168,6 +168,11 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_recycler/Makefile
     src/test/job_route/Makefile
     src/test/node_func/Makefile
+    src/test/node_manager/Makefile
+    src/test/pbsd_init/Makefile
+    src/test/pbsd_main/Makefile
+    src/test/process_request/Makefile
+    src/test/queue_func/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -453,13 +458,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/job_usage_info/Makefile
     src/server/test/login_nodes/Makefile
     src/server/test/mom_hierarchy_handler/Makefile
-    src/server/test/node_manager/Makefile
-    src/server/test/pbsd_init/Makefile
-    src/server/test/pbsd_main/Makefile
     src/server/test/process_alps_status/Makefile
     src/server/test/process_mom_update/Makefile
-    src/server/test/process_request/Makefile
-    src/server/test/queue_func/Makefile
     src/server/test/queue_recov/Makefile
     src/server/test/queue_recycler/Makefile
     src/server/test/receive_mom_communication/Makefile
