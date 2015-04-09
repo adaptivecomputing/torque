@@ -1515,6 +1515,9 @@ job *job_recov(
   job  *pj;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc;
+#ifdef PBS_MOM
+  char namebuf[MAXPATHLEN];
+#endif
 
   pj = job_alloc(); /* allocate & initialize job structure space */
 
@@ -1526,12 +1529,22 @@ job *job_recov(
     }
 
   size_t logBufLen = sizeof(log_buf);
-
-  if ((rc = job_recov_xml(filename, &pj, log_buf, logBufLen)) && rc == PBSE_INVALID_SYNTAX)
+#ifdef PBS_MOM
+  // job directory path, filename
+  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename);
+  
+  if ((rc = job_recov_xml(namebuf, &pj, log_buf, logBufLen)) &&
+      (rc == PBSE_INVALID_SYNTAX))
+    rc = job_recov_binary(namebuf, &pj, log_buf, logBufLen);
+#else
+  if ((rc = job_recov_xml(filename, &pj, log_buf, logBufLen)) &&
+      (rc == PBSE_INVALID_SYNTAX))
     rc = job_recov_binary(filename, &pj, log_buf, logBufLen);
 
   if (rc == PBSE_NONE)
     rc = set_array_job_ids(&pj, log_buf, logBufLen);
+#endif
+
 
   if (rc != PBSE_NONE) 
     {
