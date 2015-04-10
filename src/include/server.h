@@ -212,6 +212,7 @@ enum srv_atr
   
   SRV_ATR_CopyOnRerun,
   SRV_ATR_JobExclusiveOnUse,
+  SRV_ATR_DisableAutoRequeue,
 
   /* This must be last */
   SRV_ATR_LAST

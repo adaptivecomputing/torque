@@ -357,8 +357,9 @@
 #define ATTR_NODE_acl              "acl"
 #define ATTR_NODE_requestid        "requestid"
 
-#define ATTR_copy_on_rerun         "copy_on_rerun"
-#define ATTR_job_exclusive_on_use   "job_exclusive_on_use"
+#define ATTR_copy_on_rerun             "copy_on_rerun"
+#define ATTR_job_exclusive_on_use      "job_exclusive_on_use"
+#define ATTR_disable_automatic_requeue "disable_automatic_requeue"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

@@ -3080,12 +3080,13 @@ int handle_terminating_job(
 
 int update_substate_from_exit_status(
 
-  job *pjob,
-  int *alreadymailed,
+  job        *pjob,
+  int        *alreadymailed,
   const char *text)
 
   {
   long  automatic_requeue = -1000;
+  long  disable_requeue = FALSE;
   int   exitstatus = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
   int   rc = PBSE_NONE;
@@ -3097,6 +3098,7 @@ int update_substate_from_exit_status(
     {
     /* Was there a special exit status from MOM ? */
     get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
+    get_svr_attr_l(SRV_ATR_DisableAutoRequeue, &disable_requeue);
     
     if (exitstatus == automatic_requeue)
       {
@@ -3165,17 +3167,19 @@ int update_substate_from_exit_status(
         case JOB_EXEC_RETRY:
 
           /* MOM rejected job, but said retry it */
-
-          if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+          if (disable_requeue == FALSE)
             {
-            /* has run before, treat this as another rerun */
-            *alreadymailed = setrerun(pjob,text);
-            }
-          else
-            {
-            /* have mom remove job files, not saving them, and requeue job */
-            /* transient failure detected */
-            pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+            if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+              {
+              /* has run before, treat this as another rerun */
+              *alreadymailed = setrerun(pjob,text);
+              }
+            else
+              {
+              /* have mom remove job files, not saving them, and requeue job */
+              /* transient failure detected */
+              pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+              }
             }
 
           break;
