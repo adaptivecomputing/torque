@@ -53,6 +53,7 @@ extern int usage;
 extern bool completed;
 extern bool exited;
 extern bool purged;
+extern long disable_requeue;
 
 
 void init_server()
@@ -546,6 +547,15 @@ START_TEST(update_substate_from_exit_status_test)
   pjob->ji_qs.ji_svrflags = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+  
+  // make sure disabling auto requeuing works
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
+  disable_requeue = 1;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  disable_requeue = 0;
+
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;

@@ -57,6 +57,7 @@ int usage;
 bool purged = false;
 bool completed = false;
 bool exited = false;
+long disable_requeue = 0;
 completed_jobs_map_class completed_jobs_map;
 
 
@@ -238,10 +239,15 @@ void get_jobowner(char *from, char *to)
 
 int get_svr_attr_l(int index, long *l)
   {
-  if (cray_enabled)
-    *l = 1;
-  else if (usage)
-    *l = 0x0010;
+  if (index == SRV_ATR_DisableAutoRequeue)
+    *l = disable_requeue;
+  else
+    {
+    if (cray_enabled)
+      *l = 1;
+    else if (usage)
+      *l = 0x0010;
+    }
 
   return(0);
   }

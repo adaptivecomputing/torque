@@ -33,6 +33,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       substate of starting after a failed job start (backported from 5.1.1).
   b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
       (backported from 5.1.1)
+  e - TRQ-3095. Add the server setting disable_automatic_requeue to stop jobs from being
+      requeued if they experience a transient failure on the mom. (backported from 5.1.1)
  
 
 5.0.1.h2
