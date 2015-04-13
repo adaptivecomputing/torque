@@ -154,27 +154,39 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/array_upgrade/Makefile
     src/test/attr_recov/Makefile
     src/test/batch_request/Makefile
+    src/test/completed_jobs_map/Makefile
     src/test/delete_all_tracker/Makefile
     src/test/dis_read/Makefile
     src/test/display_alps_status/Makefile
     src/test/execution_slot_tracker/Makefile
     src/test/exiting_jobs/Makefile
     src/test/geteusernam/Makefile
+    src/test/get_path_jobdata/Makefile
     src/test/id_map/Makefile
+    src/test/incoming_request/Makefile
     src/test/issue_request/Makefile
+    src/test/job_attr_def/Makefile
+    src/test/job_container/Makefile
     src/test/job_func/Makefile
     src/test/job_qs_upgrade/Makefile
     src/test/job_recov/Makefile
     src/test/job_recycler/Makefile
     src/test/job_route/Makefile
+    src/test/job_usage_info/Makefile
+    src/test/login_nodes/Makefile
+    src/test/mom_hierarchy_handler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
     src/test/pbsd_init/Makefile
     src/test/pbsd_main/Makefile
+    src/test/process_alps_status/Makefile
+    src/test/process_mom_update/Makefile
     src/test/process_request/Makefile
     src/test/queue_func/Makefile
     src/test/queue_recov/Makefile
+    src/test/queue_recycler/Makefile
     src/test/reply_send/Makefile
+    src/test/receive_mom_communication/Makefile
     src/test/req_delete/Makefile
     src/test/req_deletearray/Makefile
     src/test/req_getcred/Makefile
@@ -201,6 +213,18 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/resc_def_all/Makefile
     src/test/run_sched/Makefile
     src/test/stat_job/Makefile
+    src/test/svr_chk_owner/Makefile
+    src/test/svr_connect/Makefile
+    src/test/svr_format_job/Makefile
+    src/test/svr_func/Makefile
+    src/test/svr_jobfunc/Makefile
+    src/test/svr_mail/Makefile
+    src/test/svr_movejob/Makefile
+    src/test/svr_recov/Makefile
+    src/test/svr_resccost/Makefile
+    src/test/svr_task/Makefile
+    src/test/track_alps_reservations/Makefile
+    src/test/user_info/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -479,31 +503,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/linux/test/numa_node/Makefile
     src/resmom/linux/test/node_internals/Makefile
     src/resmom/linux/test/pe_input/Makefile
-    src/server/test/Makefile
-    src/server/test/incoming_request/Makefile
-    src/server/test/job_attr_def/Makefile
-    src/server/test/job_container/Makefile
-    src/server/test/job_usage_info/Makefile
-    src/server/test/login_nodes/Makefile
-    src/server/test/mom_hierarchy_handler/Makefile
-    src/server/test/process_alps_status/Makefile
-    src/server/test/process_mom_update/Makefile
-    src/server/test/queue_recycler/Makefile
-    src/server/test/receive_mom_communication/Makefile
-    src/server/test/svr_chk_owner/Makefile
-    src/server/test/svr_connect/Makefile
-    src/server/test/svr_format_job/Makefile
-    src/server/test/svr_func/Makefile
-    src/server/test/svr_jobfunc/Makefile
-    src/server/test/svr_mail/Makefile
-    src/server/test/svr_movejob/Makefile
-    src/server/test/svr_recov/Makefile
-    src/server/test/svr_resccost/Makefile
-    src/server/test/svr_task/Makefile
-    src/server/test/track_alps_reservations/Makefile
-    src/server/test/user_info/Makefile
-    src/server/test/completed_jobs_map/Makefile
-    src/server/test/get_path_jobdata/Makefile
     src/test/Makefile
     src/tools/test/Makefile
     src/tools/test/chk_tree/Makefile
