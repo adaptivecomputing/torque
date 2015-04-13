@@ -225,6 +225,19 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/svr_task/Makefile
     src/test/track_alps_reservations/Makefile
     src/test/user_info/Makefile
+    src/test/u_MXML/Makefile
+    src/test/u_groups/Makefile
+    src/test/u_hash_map_structs/Makefile
+    src/test/u_lock_ctl/Makefile
+    src/test/u_misc/Makefile
+    src/test/u_mom_hierarchy/Makefile
+    src/test/u_mu/Makefile
+    src/test/u_mutex_mgr/Makefile
+    src/test/u_putenv/Makefile
+    src/test/u_threadpool/Makefile
+    src/test/u_tree/Makefile
+    src/test/u_users/Makefile
+    src/test/u_xml/Makefile
     src/cmds/test/Makefile
     src/cmds/test/MXML/Makefile
     src/cmds/test/common_cmds/Makefile
@@ -455,20 +468,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libsite/test/site_mom_chu/Makefile
     src/lib/Libsite/test/site_mom_ckp/Makefile
     src/lib/Libsite/test/site_mom_jst/Makefile
-    src/lib/Libutils/test/Makefile
-    src/lib/Libutils/test/u_MXML/Makefile
-    src/lib/Libutils/test/u_groups/Makefile
-    src/lib/Libutils/test/u_hash_map_structs/Makefile
-    src/lib/Libutils/test/u_lock_ctl/Makefile
-    src/lib/Libutils/test/u_misc/Makefile
-    src/lib/Libutils/test/u_mom_hierarchy/Makefile
-    src/lib/Libutils/test/u_mu/Makefile
-    src/lib/Libutils/test/u_mutex_mgr/Makefile
-    src/lib/Libutils/test/u_putenv/Makefile
-    src/lib/Libutils/test/u_threadpool/Makefile
-    src/lib/Libutils/test/u_tree/Makefile
-    src/lib/Libutils/test/u_users/Makefile
-    src/lib/Libutils/test/u_xml/Makefile
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile

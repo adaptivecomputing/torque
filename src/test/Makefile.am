@@ -15,8 +15,11 @@ SERVER_UT_DIRS = accounting array_func array_upgrade attr_recov batch_request co
 								 svr_movejob svr_recov svr_resccost svr_task track_alps_reservations \
 								 user_info 
 
+LIBUTILS_UT_DIRS = u_MXML u_groups u_hash_map_structs u_lock_ctl u_misc u_mom_hierarchy u_mu \
+									 u_mutex_mgr u_putenv u_threadpool u_tree u_users u_xml
 
-CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS}
+
+CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS}
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
