@@ -396,6 +396,18 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/pbs_log/Makefile
     src/test/pbs_messages/Makefile
     src/test/setup_env/Makefile
+    src/test/conn_table/Makefile
+    src/test/get_hostaddr/Makefile
+    src/test/get_hostname/Makefile
+    src/test/md5/Makefile
+    src/test/net_client/Makefile
+    src/test/net_common/Makefile
+    src/test/net_server/Makefile
+    src/test/net_cache/Makefile
+    src/test/net_set_clse/Makefile
+    src/test/port_forwarding/Makefile
+    src/test/rm/Makefile
+    src/test/server_core/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -442,19 +454,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Libnet/test/Makefile
-    src/lib/Libnet/test/conn_table/Makefile
-    src/lib/Libnet/test/get_hostaddr/Makefile
-    src/lib/Libnet/test/get_hostname/Makefile
-    src/lib/Libnet/test/md5/Makefile
-    src/lib/Libnet/test/net_client/Makefile
-    src/lib/Libnet/test/net_common/Makefile
-    src/lib/Libnet/test/net_server/Makefile
-    src/lib/Libnet/test/net_cache/Makefile
-    src/lib/Libnet/test/net_set_clse/Makefile
-    src/lib/Libnet/test/port_forwarding/Makefile
-    src/lib/Libnet/test/rm/Makefile
-    src/lib/Libnet/test/server_core/Makefile
     src/lib/Libsite/test/Makefile
     src/lib/Libsite/test/site_allow_u/Makefile
     src/lib/Libsite/test/site_alt_rte/Makefile
