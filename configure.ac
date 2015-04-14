@@ -408,6 +408,13 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/port_forwarding/Makefile
     src/test/rm/Makefile
     src/test/server_core/Makefile
+    src/test/site_allow_u/Makefile
+    src/test/site_alt_rte/Makefile
+    src/test/site_check_u/Makefile
+    src/test/site_map_usr/Makefile
+    src/test/site_mom_chu/Makefile
+    src/test/site_mom_ckp/Makefile
+    src/test/site_mom_jst/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -454,14 +461,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Libsite/test/Makefile
-    src/lib/Libsite/test/site_allow_u/Makefile
-    src/lib/Libsite/test/site_alt_rte/Makefile
-    src/lib/Libsite/test/site_check_u/Makefile
-    src/lib/Libsite/test/site_map_usr/Makefile
-    src/lib/Libsite/test/site_mom_chu/Makefile
-    src/lib/Libsite/test/site_mom_ckp/Makefile
-    src/lib/Libsite/test/site_mom_jst/Makefile
     src/lib/test/Makefile
     src/momctl/test/Makefile
     src/momctl/test/momctl/Makefile

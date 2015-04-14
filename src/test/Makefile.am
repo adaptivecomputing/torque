@@ -54,6 +54,9 @@ LIBLOG_UT_DIRS = chk_file_sec log_event pbs_log pbs_messages setup_env
 LIBNET_UT_DIRS = conn_table get_hostaddr get_hostname md5 net_client net_common net_server \
 								 net_set_clse port_forwarding rm server_core net_cache
 
+LIBSITE_UT_DIRS = site_allow_u site_alt_rte site_check_u site_map_usr site_mom_chu site_mom_ckp \
+									site_mom_jst
+
 CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
 						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS}
