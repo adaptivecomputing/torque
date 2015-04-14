@@ -49,10 +49,12 @@ LIBIFL_UT_DIRS = PBSD_gpuctrl2 PBSD_manage2 PBSD_manager_caps PBSD_msg2 PBSD_rdr
 								 pbsD_statque pbsD_statsrv pbsD_submit pbsD_submit_hash pbsD_termin pbs_geterrmg \
 								 pbs_statfree tcp_dis tm torquecfg trq_auth
 
+LIBLOG_UT_DIRS = chk_file_sec log_event pbs_log pbs_messages setup_env
+
 
 CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
-						 ${LIBIFL_UT_DIRS}
+						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS}
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)

@@ -391,6 +391,11 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/tm/Makefile
     src/test/torquecfg/Makefile
     src/test/trq_auth/Makefile
+    src/test/chk_file_sec/Makefile
+    src/test/log_event/Makefile
+    src/test/pbs_log/Makefile
+    src/test/pbs_messages/Makefile
+    src/test/setup_env/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -437,12 +442,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Liblog/test/Makefile
-    src/lib/Liblog/test/chk_file_sec/Makefile
-    src/lib/Liblog/test/log_event/Makefile
-    src/lib/Liblog/test/pbs_log/Makefile
-    src/lib/Liblog/test/pbs_messages/Makefile
-    src/lib/Liblog/test/setup_env/Makefile
     src/lib/Libnet/test/Makefile
     src/lib/Libnet/test/conn_table/Makefile
     src/lib/Libnet/test/get_hostaddr/Makefile
