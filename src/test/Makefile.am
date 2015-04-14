@@ -27,15 +27,32 @@ LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server
 									parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
 									prepare_path prt_job_err set_attr set_resource
 
+LIBCSV_UT_DIRS = csv
+
 LIBDIS_UT_DIRS = discui_ discul_ disi10d_ disi10l_ disiui_ disp10d_ disp10l_ disrcs disrd disrf \
 								 disrfcs disrfst disrl disrl_ disrsc disrsi disrsi_ disrsl disrsl_ disrss disrst \
 								 disruc disrui disrul disrus diswcs diswf diswl_ diswsi diswsl diswui diswui_ diswul
 
-LIBCSV_UT_DIRS = csv
+LIBIFL_UT_DIRS = PBSD_gpuctrl2 PBSD_manage2 PBSD_manager_caps PBSD_msg2 PBSD_rdrpy PBSD_sig2 \
+								 PBSD_status PBSD_status2 PBSD_submit_caps PBS_attr dec_Authen dec_CpyFil dec_Gpu \
+								 dec_JobCred dec_JobFile dec_JobId dec_JobObit dec_Manage dec_MoveJob dec_MsgJob \
+								 dec_QueueJob dec_Reg dec_ReqExt dec_ReqHdr dec_Resc dec_ReturnFile dec_RunJob \
+								 dec_Shut dec_Sig dec_Status dec_Track dec_attrl dec_attropl dec_rpyc dec_rpys \
+								 dec_svrattrl enc_CpyFil enc_Gpu enc_JobCred enc_JobFile enc_JobId enc_JobObit \
+								 enc_Manage enc_MoveJob enc_MsgJob enc_QueueJob enc_QueueJob_hash enc_Reg \
+								 enc_ReqExt enc_ReqHdr enc_ReturnFile enc_RunJob enc_Shut enc_Sig enc_Status \
+								 enc_Track enc_attrl enc_attropl enc_attropl_hash enc_reply enc_svrattrl \
+								 get_svrport list_link nonblock pbsD_alterjo pbsD_asyrun pbsD_chkptjob \
+								 pbsD_connect pbsD_deljob pbsD_gpuctrl pbsD_holdjob pbsD_locjob pbsD_manager \
+								 pbsD_movejob pbsD_msgjob pbsD_orderjo pbsD_rerunjo pbsD_resc pbsD_rlsjob \
+								 pbsD_runjob pbsD_selectj pbsD_sigjob pbsD_stagein pbsD_statjob pbsD_statnode \
+								 pbsD_statque pbsD_statsrv pbsD_submit pbsD_submit_hash pbsD_termin pbs_geterrmg \
+								 pbs_statfree tcp_dis tm torquecfg trq_auth
 
 
 CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
-						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} 
+						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
+						 ${LIBIFL_UT_DIRS}
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
