@@ -27,9 +27,15 @@ LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server
 									parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
 									prepare_path prt_job_err set_attr set_resource
 
+LIBDIS_UT_DIRS = discui_ discul_ disi10d_ disi10l_ disiui_ disp10d_ disp10l_ disrcs disrd disrf \
+								 disrfcs disrfst disrl disrl_ disrsc disrsi disrsi_ disrsl disrsl_ disrss disrst \
+								 disruc disrui disrul disrus diswcs diswf diswl_ diswsi diswsl diswui diswui_ diswul
 
-CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} ${LIBATTR_UT_DIRS} \
-						 ${LIBCMDS_UT_DIRS}
+LIBCSV_UT_DIRS = csv
+
+
+CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
+						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} 
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)

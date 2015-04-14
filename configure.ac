@@ -261,6 +261,40 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/prt_job_err/Makefile
     src/test/set_attr/Makefile
     src/test/set_resource/Makefile
+    src/test/csv/Makefile
+    src/test/discui_/Makefile
+    src/test/discul_/Makefile
+    src/test/disi10d_/Makefile
+    src/test/disi10l_/Makefile
+    src/test/disiui_/Makefile
+    src/test/disp10d_/Makefile
+    src/test/disp10l_/Makefile
+    src/test/disrcs/Makefile
+    src/test/disrd/Makefile
+    src/test/disrf/Makefile
+    src/test/disrfcs/Makefile
+    src/test/disrfst/Makefile
+    src/test/disrl/Makefile
+    src/test/disrl_/Makefile
+    src/test/disrsc/Makefile
+    src/test/disrsi/Makefile
+    src/test/disrsi_/Makefile
+    src/test/disrsl/Makefile
+    src/test/disrsl_/Makefile
+    src/test/disrss/Makefile
+    src/test/disrst/Makefile
+    src/test/disruc/Makefile
+    src/test/disrui/Makefile
+    src/test/disrul/Makefile
+    src/test/disrus/Makefile
+    src/test/diswcs/Makefile
+    src/test/diswf/Makefile
+    src/test/diswl_/Makefile
+    src/test/diswsi/Makefile
+    src/test/diswsl/Makefile
+    src/test/diswui/Makefile
+    src/test/diswui_/Makefile
+    src/test/diswul/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -307,42 +341,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Libcsv/test/Makefile
-    src/lib/Libcsv/test/csv/Makefile
-    src/lib/Libdis/test/Makefile
-    src/lib/Libdis/test/discui_/Makefile
-    src/lib/Libdis/test/discul_/Makefile
-    src/lib/Libdis/test/disi10d_/Makefile
-    src/lib/Libdis/test/disi10l_/Makefile
-    src/lib/Libdis/test/disiui_/Makefile
-    src/lib/Libdis/test/disp10d_/Makefile
-    src/lib/Libdis/test/disp10l_/Makefile
-    src/lib/Libdis/test/disrcs/Makefile
-    src/lib/Libdis/test/disrd/Makefile
-    src/lib/Libdis/test/disrf/Makefile
-    src/lib/Libdis/test/disrfcs/Makefile
-    src/lib/Libdis/test/disrfst/Makefile
-    src/lib/Libdis/test/disrl/Makefile
-    src/lib/Libdis/test/disrl_/Makefile
-    src/lib/Libdis/test/disrsc/Makefile
-    src/lib/Libdis/test/disrsi/Makefile
-    src/lib/Libdis/test/disrsi_/Makefile
-    src/lib/Libdis/test/disrsl/Makefile
-    src/lib/Libdis/test/disrsl_/Makefile
-    src/lib/Libdis/test/disrss/Makefile
-    src/lib/Libdis/test/disrst/Makefile
-    src/lib/Libdis/test/disruc/Makefile
-    src/lib/Libdis/test/disrui/Makefile
-    src/lib/Libdis/test/disrul/Makefile
-    src/lib/Libdis/test/disrus/Makefile
-    src/lib/Libdis/test/diswcs/Makefile
-    src/lib/Libdis/test/diswf/Makefile
-    src/lib/Libdis/test/diswl_/Makefile
-    src/lib/Libdis/test/diswsi/Makefile
-    src/lib/Libdis/test/diswsl/Makefile
-    src/lib/Libdis/test/diswui/Makefile
-    src/lib/Libdis/test/diswui_/Makefile
-    src/lib/Libdis/test/diswul/Makefile
     src/lib/Liblog/test/Makefile
     src/lib/Liblog/test/chk_file_sec/Makefile
     src/lib/Liblog/test/log_event/Makefile
