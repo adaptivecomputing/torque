@@ -225,6 +225,26 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/svr_task/Makefile
     src/test/track_alps_reservations/Makefile
     src/test/user_info/Makefile
+    src/test/attr_atomic/Makefile
+    src/test/attr_fn_acl/Makefile
+    src/test/attr_fn_arst/Makefile
+    src/test/attr_fn_b/Makefile
+    src/test/attr_fn_c/Makefile
+    src/test/attr_fn_freq/Makefile
+    src/test/attr_fn_hold/Makefile
+    src/test/attr_fn_intr/Makefile
+    src/test/attr_fn_l/Makefile
+    src/test/attr_fn_ll/Makefile
+    src/test/attr_fn_nppcu/Makefile
+    src/test/attr_fn_resc/Makefile
+    src/test/attr_fn_size/Makefile
+    src/test/attr_fn_str/Makefile
+    src/test/attr_fn_time/Makefile
+    src/test/attr_fn_tokens/Makefile
+    src/test/attr_fn_tv/Makefile
+    src/test/attr_fn_unkn/Makefile
+    src/test/attr_func/Makefile
+    src/test/attr_node_func/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -271,26 +291,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Libattr/test/Makefile
-    src/lib/Libattr/test/attr_atomic/Makefile
-    src/lib/Libattr/test/attr_fn_acl/Makefile
-    src/lib/Libattr/test/attr_fn_arst/Makefile
-    src/lib/Libattr/test/attr_fn_b/Makefile
-    src/lib/Libattr/test/attr_fn_c/Makefile
-    src/lib/Libattr/test/attr_fn_hold/Makefile
-    src/lib/Libattr/test/attr_fn_intr/Makefile
-    src/lib/Libattr/test/attr_fn_l/Makefile
-    src/lib/Libattr/test/attr_fn_ll/Makefile
-    src/lib/Libattr/test/attr_fn_nppcu/Makefile
-    src/lib/Libattr/test/attr_fn_resc/Makefile
-    src/lib/Libattr/test/attr_fn_size/Makefile
-    src/lib/Libattr/test/attr_fn_str/Makefile
-    src/lib/Libattr/test/attr_fn_time/Makefile
-    src/lib/Libattr/test/attr_fn_tokens/Makefile
-    src/lib/Libattr/test/attr_fn_tv/Makefile
-    src/lib/Libattr/test/attr_fn_unkn/Makefile
-    src/lib/Libattr/test/attr_func/Makefile
-    src/lib/Libattr/test/attr_node_func/Makefile
     src/lib/Libcmds/test/Makefile
     src/lib/Libcmds/test/add_verify_resources/Makefile
     src/lib/Libcmds/test/ck_job_name/Makefile
