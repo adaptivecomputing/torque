@@ -245,6 +245,22 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/attr_fn_unkn/Makefile
     src/test/attr_func/Makefile
     src/test/attr_node_func/Makefile
+    src/test/add_verify_resources/Makefile
+    src/test/ck_job_name/Makefile
+    src/test/cnt2server/Makefile
+    src/test/cvtdate/Makefile
+    src/test/get_server/Makefile
+    src/test/locate_job/Makefile
+    src/test/parse_at/Makefile
+    src/test/parse_depend/Makefile
+    src/test/parse_destid/Makefile
+    src/test/parse_equal/Makefile
+    src/test/parse_jobid/Makefile
+    src/test/parse_stage/Makefile
+    src/test/prepare_path/Makefile
+    src/test/prt_job_err/Makefile
+    src/test/set_attr/Makefile
+    src/test/set_resource/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -291,23 +307,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/Libcmds/test/Makefile
-    src/lib/Libcmds/test/add_verify_resources/Makefile
-    src/lib/Libcmds/test/ck_job_name/Makefile
-    src/lib/Libcmds/test/cnt2server/Makefile
-    src/lib/Libcmds/test/cvtdate/Makefile
-    src/lib/Libcmds/test/get_server/Makefile
-    src/lib/Libcmds/test/locate_job/Makefile
-    src/lib/Libcmds/test/parse_at/Makefile
-    src/lib/Libcmds/test/parse_depend/Makefile
-    src/lib/Libcmds/test/parse_destid/Makefile
-    src/lib/Libcmds/test/parse_equal/Makefile
-    src/lib/Libcmds/test/parse_jobid/Makefile
-    src/lib/Libcmds/test/parse_stage/Makefile
-    src/lib/Libcmds/test/prepare_path/Makefile
-    src/lib/Libcmds/test/prt_job_err/Makefile
-    src/lib/Libcmds/test/set_attr/Makefile
-    src/lib/Libcmds/test/set_resource/Makefile
     src/lib/Libcsv/test/Makefile
     src/lib/Libcsv/test/csv/Makefile
     src/lib/Libdis/test/Makefile

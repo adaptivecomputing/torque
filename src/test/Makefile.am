@@ -23,8 +23,13 @@ LIBATTR_UT_DIRS = attr_atomic attr_fn_acl attr_fn_arst attr_fn_b attr_fn_c attr_
 									attr_fn_resc attr_fn_size attr_fn_str attr_fn_time attr_fn_tokens attr_fn_tv \
 									attr_fn_unkn attr_func attr_node_func
 
+LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server locate_job \
+									parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
+									prepare_path prt_job_err set_attr set_resource
 
-CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} ${LIBATTR_UT_DIRS}
+
+CHECK_DIRS = scaffold_fail torque_test_lib ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} ${LIBATTR_UT_DIRS} \
+						 ${LIBCMDS_UT_DIRS}
 
 $(CHECK_DIRS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
