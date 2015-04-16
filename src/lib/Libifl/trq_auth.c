@@ -1103,7 +1103,9 @@ void *process_svr_conn(
     
     if (error_string.size() == 0)
       {
-      error_string = pbse_to_txt(rc);
+      char *err = pbse_to_txt(rc);
+      if (err != NULL)
+        error_string = err;
       }
 
     msg_len += error_string.size();
