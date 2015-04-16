@@ -7,6 +7,7 @@
 #include <set>
 #include <sys/types.h>
 #include <signal.h>
+#include <limits.h>
 
 #include "pbs_error.h"
 #include "pbs_nodes.h"
@@ -15,6 +16,7 @@
 void job_nodes(job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
+int get_num_nodes_ppn(const char*, int*, int*);
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -402,6 +404,63 @@ START_TEST(test_check_pwd_adaptive_user)
   }
 END_TEST
 
+START_TEST(test_get_num_nodes_ppn)
+  {
+  int num_nodes = 0;
+  int num_ppn = 0;
+  char maxstr[1024];
+
+  // invalid parameter tests
+  
+  fail_unless(get_num_nodes_ppn(NULL, &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn("20", NULL, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn("20", &num_nodes, NULL) != PBSE_NONE);
+
+  // overflow tests
+ 
+  // overflow in node count 
+  snprintf(maxstr, sizeof(maxstr), "%llu", (long long unsigned)LONG_MAX+1ULL);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  // clear errno
+  errno = 0;
+
+  // overflow in ppn
+  snprintf(maxstr, sizeof(maxstr), "1:ppn=%llu", (long long unsigned)LONG_MAX+1ULL);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  // clear errno
+  errno = 0;
+
+  // overflow in extra node count
+  snprintf(maxstr, sizeof(maxstr), "1:ppn=2+%llu", (long long unsigned)LONG_MAX+1ULL);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  // clear errno
+  errno = 0;
+
+  // invalid hostname tests
+
+  fail_unless(get_num_nodes_ppn("!:ppn=10", &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn("20:ppn=10+*", &num_nodes, &num_ppn) != PBSE_NONE);
+
+  // valid tests
+
+  fail_unless((get_num_nodes_ppn("a", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 1) && (num_ppn == 1));
+  fail_unless((get_num_nodes_ppn("20:ppn=10", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 20) && (num_ppn == 10));
+  fail_unless((get_num_nodes_ppn("myhost:ppn=24", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 1) && (num_ppn == 24));
+  fail_unless((get_num_nodes_ppn("myhost:ppn=24+myhost2+myhost3", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 3) && (num_ppn == 24));
+  fail_unless((get_num_nodes_ppn("myhost:ppn=24+100+200", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 301) && (num_ppn == 24));
+  fail_unless((get_num_nodes_ppn("500:ppn=48+100+200", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 800) && (num_ppn == 48));
+  fail_unless((get_num_nodes_ppn("500:ppn=48+100+200+myhost", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 801) && (num_ppn == 48));
+  fail_unless((get_num_nodes_ppn("500:ppn=29+myhost1+100+200+myhost2", &num_nodes, &num_ppn) == PBSE_NONE) &&
+    (num_nodes == 802) && (num_ppn == 29));
+  }
+END_TEST
 
 Suite *start_exec_suite(void)
   {
@@ -442,6 +501,10 @@ Suite *start_exec_suite(void)
   tcase_add_test(tc_core, no_hang_test);
   tcase_add_test(tc_core, exec_bail_test);
   tcase_add_test(tc_core, remove_leading_hostname_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_num_nodes_ppn");
+  tcase_add_test(tc_core, test_get_num_nodes_ppn);
   suite_add_tcase(s, tc_core);
 
   return s;
