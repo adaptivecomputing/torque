@@ -313,14 +313,28 @@ int Socket::place_task(
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
         {
         if (this->chips[i].how_many_tasks_fit(r, master.place_type) >= to_place)
-          tasks_to_place -= this->chips[i].place_task(jobid, r, a, to_place);
+          {
+          int placed = this->chips[i].place_task(jobid, r, a, to_place);
+          tasks_to_place -= placed;
+
+          if ((placed != 0) &&
+              (master.place_type == exclusive_socket))
+            break;
+          }
         }
 
       // place tasks if they didn't fit in a single numa chip
       if (tasks_to_place > 0)
         {
         for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
-          tasks_to_place -= this->chips[i].place_task(jobid, r, a, tasks_to_place);
+          {
+          int placed = this->chips[i].place_task(jobid, r, a, tasks_to_place);
+          tasks_to_place -= placed;
+          
+          if ((placed != 0) &&
+              (master.place_type == exclusive_socket))
+            break;
+          }
         }
 
       if (to_place != tasks_to_place)

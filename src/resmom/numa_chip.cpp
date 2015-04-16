@@ -367,6 +367,11 @@ int Chip::how_many_tasks_fit(
   int mic_tasks;
   int mem_tasks = 0;
 
+  // Consider exclusive socket and node the same as exclusive chip for our purposes
+  if ((place_type == exclusive_socket) ||
+      (place_type == exclusive_node))
+    place_type = exclusive_chip;
+
   if ((this->chip_exclusive == false) &&
       ((place_type != exclusive_chip) ||
        (this->chipIsAvailable()) == true))
@@ -405,11 +410,10 @@ int Chip::how_many_tasks_fit(
       if (mem_tasks > mics)
         mem_tasks = mic_tasks;
       }
-     
-    if ((mem_tasks > 1) && 
-        (r.getPlacementType() == place_numa))
+    
+    if ((place_type == exclusive_chip) &&
+        (mem_tasks > 1))
       mem_tasks = 1;
-
     }
     
   return(mem_tasks);
@@ -571,8 +575,15 @@ int Chip::place_task(
   int            tasks_placed = 0;
   int            execution_slots_per_task = r.getExecutionSlots();
   hwloc_uint64_t mem_per_task = r.getMemory();
+  int            practical_place = master.place_type;
 
-  if ((master.place_type != exclusive_chip) ||
+  // Practically, we should treat place=node, place=socket, and
+  // place=numachip as the same
+  if ((practical_place == exclusive_socket) ||
+      (practical_place == exclusive_node))
+    practical_place = exclusive_chip;
+
+  if ((practical_place != exclusive_chip) ||
       (this->chipIsAvailable() == true))
     {
     if (this->chip_exclusive == false)
@@ -599,9 +610,15 @@ int Chip::place_task(
         allocation remaining(r);
 
         place_accelerators(remaining, a);
+
+        if (practical_place == exclusive_chip)
+          {
+          tasks_placed++;
+          break;
+          }
         }
 
-      if (master.place_type == exclusive_chip)
+      if (practical_place == exclusive_chip)
         this->chip_exclusive = true;
       } // if chip_exclusive == false
 
