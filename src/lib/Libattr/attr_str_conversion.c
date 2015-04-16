@@ -256,7 +256,7 @@ int attr_to_str(
 
     case ATR_TYPE_SIZE:
 
-      size_to_str(current->rs_value.at_val.at_size, local_buf, sizeof(local_buf));
+      size_to_str(attr.at_val.at_size, local_buf, sizeof(local_buf));
       ds += local_buf;
 
       break;
