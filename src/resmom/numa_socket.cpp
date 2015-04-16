@@ -323,14 +323,17 @@ int Socket::place_task(
           tasks_to_place -= this->chips[i].place_task(jobid, r, a, tasks_to_place);
         }
 
-      this->availableCores -= a.cores;
-      this->availableThreads -= a.threads;
-      this->available_memory -= a.memory;
+      if (to_place != tasks_to_place)
+        {
+        this->availableCores -= a.cores;
+        this->availableThreads -= a.threads;
+        this->available_memory -= a.memory;
 
-      if (master.place_type == exclusive_socket)
-        this->socket_exclusive = true;
+        if (master.place_type == exclusive_socket)
+          this->socket_exclusive = true;
 
-      master.add_allocation(a);
+        master.add_allocation(a);
+        }
       }
     }
 
