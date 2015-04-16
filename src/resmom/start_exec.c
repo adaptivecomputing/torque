@@ -1404,6 +1404,118 @@ int get_indices_from_exec_str(
   } /* END get_indices_from_exec_str() */
 
 
+/*
+ * get_num_nodes_ppn
+ *
+ * parses a "nodes" resource string
+ *
+ * the "nodes" resource string is in the format:
+ * <count>|<hostname>[:ppn=<pcount>][+ ...]
+ * e.g.: 20:ppn=10+redwood:ppn=5+timber
+ *
+ * note that the ppn count (if provided) is only taken from the
+ * first token (as separated by '+')
+ *
+ * @param res_str - the string we're parsing
+ * @param num_nodes - the node count calculated from res_str (if no errors)
+ * @param num_ppn - the ppn count calculated from res_str (if no errors)
+ *
+ * Returns: PBSE_NONE if no error and num_nodes and num_ppn may be modified
+ *          1 if error; num_nodes and num_ppn are not modified
+ */
+
+int get_num_nodes_ppn(
+
+  const char *res_str,
+  int        *num_nodes,
+  int        *num_ppn)
+
+  {
+  const char *ppn_str = "ppn=";
+  unsigned long n;
+  char *tmp;
+  char *other_reqs;
+  int node_count = 1;
+  int ppn_count = 1;
+
+  // make sure all parameters point to something
+  if ((res_str == NULL) || (*res_str == '\0') ||
+      (num_nodes == NULL) || (num_ppn == NULL))
+    return(1);
+
+  // get node count
+  if ((n = strtol(res_str, NULL, 10)) > 0)
+    {
+    // overflow?
+    if (errno == ERANGE)
+      return(1);
+
+    // have count
+    node_count = n;
+    }
+  else if (!isalpha(*res_str))
+    {
+    // didn't have a hostname so flag unknown usage
+    return(1);
+    }
+
+  // try to find ppn string on first token
+  if ((tmp = strstr((char *)res_str, ppn_str)) != NULL)
+    {
+    tmp += strlen(ppn_str);
+        
+    if ((n = strtol(tmp, NULL, 10)) > 0)
+      {
+      // overflow?
+      if (errno == ERANGE)
+        return(1);
+
+      ppn_count = n;
+      }
+    else
+      {
+      // unknown usage
+      return(1);
+      }
+    }
+  
+  other_reqs = (char *)res_str;
+ 
+  // process rest of resource string counting only nodes (not ppns)
+  while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+    {
+    // skip '+'
+    other_reqs++;
+  
+    // do we have a node count?
+    if ((n = strtol(other_reqs, &other_reqs, 10)) > 0)
+      {
+      // overflow?
+      if (errno == ERANGE)
+        return(1);
+
+      // have a node count so increment by the count
+      node_count += n;
+      }
+    else if (isalpha(*other_reqs))
+      {
+      // have a single hostname (not a node count) so just increment by 1
+      node_count++;
+      }
+    else
+      {
+      // unknown usage
+      return(1);
+      }
+    }
+
+    // return the final counts
+    *num_nodes = node_count;
+    *num_ppn = ppn_count;
+
+    return(PBSE_NONE);
+  }
+
 
 /* Sets up env for a user process, used by TMomFinalizeJob1, start_process,
  * and file copies */
@@ -1659,33 +1771,7 @@ int InitUserEnv(
   presc = find_resc_entry(pattr,prd);
 
   if (presc != NULL)
-    {
-    const char *ppn_str = "ppn=";
-    char       *tmp;
-    char       *other_reqs;
-    
-    if (presc->rs_value.at_val.at_str != NULL)
-      {
-      num_nodes = strtol(presc->rs_value.at_val.at_str, NULL, 10);
-      if (num_nodes != 0)
-        {
-        if ((tmp = strstr(presc->rs_value.at_val.at_str,ppn_str)) != NULL)
-          {
-          tmp += strlen(ppn_str);
-          
-          num_ppn = strtol(tmp, NULL, 10);
-          }
-
-        other_reqs = presc->rs_value.at_val.at_str;
-
-        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
-          {
-          other_reqs += 1;
-          num_nodes += strtol(other_reqs, &other_reqs, 10);
-          }
-        }
-      }
-    }
+    get_num_nodes_ppn(presc->rs_value.at_val.at_str, &num_nodes, &num_ppn);
 
   /* these values have been initialized to 1, and will always be in the
    * environment */
