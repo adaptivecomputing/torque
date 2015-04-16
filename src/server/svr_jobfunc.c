@@ -380,10 +380,10 @@ int insert_into_alljobs_by_rank(
 
 int svr_enquejob(
 
-  job *pjob,            /* I */
-  int  has_sv_qs_mutex, /* I */
-  char  *prev_job_id,  /* I */
-  bool have_reservation)
+  job        *pjob,            /* I */
+  int         has_sv_qs_mutex, /* I */
+  const char *prev_job_id,  /* I */
+  bool        have_reservation)
 
   {
   pbs_attribute *pattrjb;
@@ -493,7 +493,8 @@ int svr_enquejob(
   if (!pjob->ji_is_array_template)
     {
     alljobs.lock();
-    if (prev_job_id == NULL)
+    if ((prev_job_id == NULL) ||
+        (strlen(prev_job_id) == 0))
       alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
       alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
