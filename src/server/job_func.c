@@ -1202,7 +1202,7 @@ void *job_clone_wt(
   char               *jobid;
   int                 i;
   int                 rc;
-  char                *prev_job_id = NULL;
+  std::string         prev_job_id;
   int                 actual_job_count = 0;
   int                 newstate;
   int                 newsub;
@@ -1309,7 +1309,7 @@ void *job_clone_wt(
 
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id, false)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false)))
         {
         /* XXX need more robust error handling */
         clone_mgr.set_unlock_on_exit(false);
@@ -1321,8 +1321,6 @@ void *job_clone_wt(
 
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if (prev_job_id != NULL) 
-            free(prev_job_id);
           sem_wait(job_clone_semaphore);
           return(NULL);
           }
@@ -1340,8 +1338,6 @@ void *job_clone_wt(
           clone_mgr.set_unlock_on_exit(false);
           }
 
-        if (prev_job_id != NULL) 
-          free(prev_job_id);
         sem_wait(job_clone_semaphore);
         return(NULL);
         }
@@ -1356,8 +1352,6 @@ void *job_clone_wt(
         
         if ((pa = get_array(arrayid)) == NULL)
           {
-          if (prev_job_id != NULL) 
-            free(prev_job_id);
           sem_wait(job_clone_semaphore);
           return(NULL);
           }
@@ -1367,25 +1361,11 @@ void *job_clone_wt(
         continue;
         }
       
-      if (prev_job_id != NULL)
-        free(prev_job_id);
-
-      prev_job_id = NULL;
-
-      alljobs.lock();
-      if (alljobs.find(pjobclone->ji_qs.ji_jobid) != NULL)
-        {
-        prev_job_id = strdup(pjobclone->ji_qs.ji_jobid);
-        }
-      alljobs.unlock();
+      prev_job_id = pjobclone->ji_qs.ji_jobid;
       
       pa->ai_qs.num_cloned++;
       
       rn->start++;
-      
-      /* index below 0 means the job no longer exists */
-      if (prev_job_id == NULL)
-        clone_mgr.set_unlock_on_exit(false);
       }  /* END for (i) */
 
     if (rn->start > rn->end)
@@ -1395,11 +1375,6 @@ void *job_clone_wt(
       }
     }    /* END while (loop) */
       
-  if (prev_job_id != NULL)
-    free(prev_job_id);
-
-  prev_job_id = NULL;
-
   array_save(pa);
 
   /* scan over all the jobs in the array and unset the hold */

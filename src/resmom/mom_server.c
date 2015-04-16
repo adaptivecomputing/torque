@@ -2849,13 +2849,14 @@ void check_state(
 #if MOMCHECKLOCALSPOOL
     {
     char *sizestr;
-    u_Long freespace;
+    u_Long freespace = 0;
     extern char *size_fs(char *);  /* FIXME: put this in a header file */
 
     /* size_fs() is arch-specific method in mom_mach.c */
     sizestr = size_fs(path_spool);  /* returns "free:total" */
 
-    freespace = atoL(sizestr);
+    if (sizestr != NULL)
+      freespace = atoL(sizestr);
 
     if (freespace < TMINSPOOLBLOCKS)
       {

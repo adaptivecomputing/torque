@@ -1132,7 +1132,7 @@ extern int   set_jobexid(job *, pbs_attribute *, char *);
 extern int   site_check_user_map(job *, char *, char *, int);
 int  svr_dequejob(job *, int);
 int initialize_ruserok_mutex();
-extern int   svr_enquejob(job *, int, char *, bool);
+extern int   svr_enquejob(job *, int, const char *, bool);
 void         svr_evaljobstate(job &, int &, int &, int);
 extern void  svr_mailowner(job *, int, int, const char *);
 extern void  svr_mailowner_with_message(job *, int, int, const char *, const char *);
