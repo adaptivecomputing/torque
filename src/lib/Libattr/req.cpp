@@ -6,7 +6,6 @@
 #include "pbs_error.h"
 #include "utils.h"
 
-
 // define the class constants
 const int USE_CORES = 0;
 const int USE_THREADS = 1;
@@ -39,6 +38,66 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
 
   {
   }
+
+
+
+req::req(
+
+  char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
+                    numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
+                    thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
+                    placement_str(), gpu_mode(), task_count(1), pack(false),
+                    single_job_access(false), index(0), features()
+
+  {
+  char *ptr = work_str;
+  int   node_count = strtol(ptr, &ptr, 10);
+  int   ppn_len = strlen(":ppn=");
+  int   mic_len = strlen(":mics=");
+  int   gpu_len = strlen(":gpus=");
+  int   ppn = 1;
+  int   mic = 0;
+  int   gpu = 0;
+
+  // Handle a node name
+  if (node_count == 0)
+    {
+    node_count = 1;
+    ptr = strchr(ptr, ':');
+    }
+
+  while ((ptr != NULL) &&
+         (*ptr != '\0'))
+    {
+    if (!strncmp(ptr, ":ppn=", ppn_len))
+      {
+      ptr += ppn_len;
+      ppn = strtol(ptr, &ptr, 10);
+      }
+    else if (!strncmp(ptr, ":mics=", mic_len))
+      {
+      ptr += mic_len;
+      mic = strtol(ptr, &ptr, 10);
+      }
+    else if (!strncmp(ptr, ":gpus=", gpu_len))
+      {
+      ptr += gpu_len;
+      gpu = strtol(ptr, &ptr, 10);
+      }
+    else
+      {
+      // Feature. Advance to the next ':'
+      ptr = strchr(ptr + 1, ':');
+      }
+    }
+
+  this->task_count = node_count;
+  this->execution_slots = ppn;
+  this->gpus = gpu;
+  this->mics = mic;
+  } // END Constructor from resource list
+
+
     
 req::req(
     
@@ -1894,5 +1953,29 @@ void req::set_hostlist(
   {
   this->hostlist = hostlist;
   } // END set_hostlist()
+    
+void req::set_memory(
+    
+  unsigned long mem)
+
+  {
+  this->mem = mem;
+  }
+
+void req::set_execution_slots(
+    
+  int execution_slots)
+
+  {
+  this->execution_slots = execution_slots;
+  }
+
+void req::set_task_count(
+    
+  int task_count)
+
+  {
+  this->task_count = task_count;
+  }
 
 

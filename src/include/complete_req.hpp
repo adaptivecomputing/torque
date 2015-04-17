@@ -94,6 +94,7 @@ class complete_req
   public:
 
     complete_req();
+    complete_req(tlist_head &at_list);
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
@@ -107,6 +108,7 @@ class complete_req
     unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
     const req &get_req(int i) const;
     void set_hostlists(const char *job_id, const char *host_list);
+    void set_value_from_nodes(const char *node_val);
   };
 
 #endif

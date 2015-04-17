@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "utils.h"
+#include "resource.h"
 
 int called_log_event;
 
@@ -67,4 +68,81 @@ void log_event(
 
   {
   called_log_event++;
+  }
+
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
+  {
+  static int gn_count = 0;
+  static struct resource_def rd;
+
+  resource *r = (resource *)calloc(1, sizeof(resource));
+  r->rs_defin = &rd;
+
+  switch (gn_count)
+    {
+    case 0:
+
+      rd.rs_name = strdup("nodes");
+      r->rs_value.at_val.at_str = strdup("1:ppn=2+2:gpus=1");
+
+      break;
+    
+    case 1:
+
+      rd.rs_name = strdup("mem");
+      r->rs_value.at_val.at_size.atsv_num = 40;
+      r->rs_value.at_val.at_size.atsv_shift = 20;
+      
+      break;
+
+    case 2:
+
+      r = NULL;
+      break;
+
+    case 3: 
+
+      rd.rs_name = strdup("size");
+      r->rs_value.at_val.at_long = 20;
+      break;
+
+    case 4:
+
+      rd.rs_name = strdup("mem");
+      r->rs_value.at_val.at_size.atsv_num = 40;
+
+      break;
+
+    case 5:
+
+      r = NULL;
+      break;
+
+    case 6:
+      
+      rd.rs_name = strdup("ncpus");
+      r->rs_value.at_val.at_long = 16;
+      break;
+
+    case 7:
+
+      rd.rs_name = strdup("mem");
+      r->rs_value.at_val.at_size.atsv_num = 40;
+
+      break;
+
+    default:
+
+      r = NULL;
+      break;
+    }
+
+  gn_count++;
+
+  return(r);
   }

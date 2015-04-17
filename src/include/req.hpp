@@ -144,6 +144,7 @@ class req
 
   public:
     req();
+    req(char *node_val);
     req(const req &other);
     req(const std::string &resource_request);
     req &operator =(const req &other);
@@ -184,6 +185,9 @@ class req
     unsigned long get_memory_for_host(const std::string &host) const;
     unsigned long get_swap_for_host(const std::string &host) const;
     void          set_hostlist(const char *hostlist);
+    void          set_memory(unsigned long mem);
+    void          set_execution_slots(int execution_slots);
+    void          set_task_count(int task_count);
   };
 
 #endif /* _REQ_HPP */
