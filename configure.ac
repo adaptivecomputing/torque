@@ -428,36 +428,35 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/u_tree/Makefile
     src/test/u_users/Makefile
     src/test/u_xml/Makefile
-    src/cmds/test/Makefile
-    src/cmds/test/MXML/Makefile
-    src/cmds/test/common_cmds/Makefile
-    src/cmds/test/pbs_track/Makefile
-    src/cmds/test/pbsdsh/Makefile
-    src/cmds/test/pbsnodes/Makefile
-    src/cmds/test/pbspd/Makefile
-    src/cmds/test/pbspoe/Makefile
-    src/cmds/test/qalter/Makefile
-    src/cmds/test/qchkpt/Makefile
-    src/cmds/test/qdel/Makefile
-    src/cmds/test/qdisable/Makefile
-    src/cmds/test/qenable/Makefile
-    src/cmds/test/qgpumode/Makefile
-    src/cmds/test/qgpureset/Makefile
-    src/cmds/test/qhold/Makefile
-    src/cmds/test/qmgr/Makefile
-    src/cmds/test/qmove/Makefile
-    src/cmds/test/qmsg/Makefile
-    src/cmds/test/qorder/Makefile
-    src/cmds/test/qrerun/Makefile
-    src/cmds/test/qrls/Makefile
-    src/cmds/test/qrun/Makefile
-    src/cmds/test/qselect/Makefile
-    src/cmds/test/qsig/Makefile
-    src/cmds/test/qstart/Makefile
-    src/cmds/test/qstat/Makefile
-    src/cmds/test/qstop/Makefile
-    src/cmds/test/qsub_functions/Makefile
-    src/cmds/test/qterm/Makefile
+    src/test/MXML/Makefile
+    src/test/common_cmds/Makefile
+    src/test/pbs_track/Makefile
+    src/test/pbsdsh/Makefile
+    src/test/pbsnodes/Makefile
+    src/test/pbspd/Makefile
+    src/test/pbspoe/Makefile
+    src/test/qalter/Makefile
+    src/test/qchkpt/Makefile
+    src/test/qdel/Makefile
+    src/test/qdisable/Makefile
+    src/test/qenable/Makefile
+    src/test/qgpumode/Makefile
+    src/test/qgpureset/Makefile
+    src/test/qhold/Makefile
+    src/test/qmgr/Makefile
+    src/test/qmove/Makefile
+    src/test/qmsg/Makefile
+    src/test/qorder/Makefile
+    src/test/qrerun/Makefile
+    src/test/qrls/Makefile
+    src/test/qrun/Makefile
+    src/test/qselect/Makefile
+    src/test/qsig/Makefile
+    src/test/qstart/Makefile
+    src/test/qstat/Makefile
+    src/test/qstop/Makefile
+    src/test/qsub_functions/Makefile
+    src/test/qterm/Makefile
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
