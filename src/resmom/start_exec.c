@@ -4262,6 +4262,7 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
     exit(-1);
     }
 
@@ -4271,6 +4272,7 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
     exit(-1);
     }
 
@@ -4289,6 +4291,7 @@ int TMomFinalizeChild(
       {
       sprintf(log_buffer, "failed to get host name: %d", errno);
       log_ext(-1, __func__, log_buffer, LOG_ERR);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
       exit(-1);
       }
 
@@ -4303,6 +4306,7 @@ int TMomFinalizeChild(
         {
         sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
         log_ext(-1, __func__, log_buffer, LOG_ERR);
+        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
         exit(-1);
         }
       }
@@ -4315,6 +4319,7 @@ int TMomFinalizeChild(
         {
         sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
         log_ext(-1, __func__, log_buffer, LOG_ERR);
+        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
         exit(-1);
         }
       }
@@ -4323,6 +4328,7 @@ int TMomFinalizeChild(
       {
       sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
       log_ext(-1, __func__, log_buffer, LOG_ERR);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, &sjr);
       exit(-1);
       }
     }
