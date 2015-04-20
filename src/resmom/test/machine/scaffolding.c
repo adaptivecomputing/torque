@@ -132,6 +132,12 @@ const req &complete_req::get_req(int index) const
   return(r);
   }
 
+void complete_req::set_hostlists(const char *job_id, const char *hostlists)
+  {
+  }
+
+complete_req::complete_req(list_link &l) {}
+
 req::req() {}
 req::req(const req &other) {}
 

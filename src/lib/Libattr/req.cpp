@@ -46,9 +46,9 @@ req::req(
   char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
                     numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
                     thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
-                    placement_str(), gpu_mode(), task_count(1), pack(false),
-                    single_job_access(false), index(0), features()
-
+                    features(), placement_str(), gpu_mode(), task_count(1), pack(false),
+                    single_job_access(false), index(0)
+  
   {
   char *ptr = work_str;
   int   node_count = strtol(ptr, &ptr, 10);

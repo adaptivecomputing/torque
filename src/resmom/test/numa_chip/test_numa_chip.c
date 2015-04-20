@@ -164,11 +164,13 @@ START_TEST(test_exclusive_place)
   thread_type = use_cores;
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   my_placement_type = place_numa;
-  fail_unless(c.how_many_tasks_fit(r, 0) == 1);
+  int num_fit = c.how_many_tasks_fit(r, exclusive_chip);
+  fail_unless(num_fit == 1, "Expected 1, got %d", num_fit);
   int tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
   my_placement_type.clear();
   
+  a.place_type = exclusive_none;
   tasks = c.place_task(jobid, r, a, 5);
   fail_unless(c.how_many_tasks_fit(r, 0) == 0);
   fail_unless(tasks == 0);
