@@ -618,7 +618,8 @@ int Chip::place_task(
           }
         }
 
-      if (practical_place == exclusive_chip)
+      if ((practical_place == exclusive_chip) &&
+          (tasks_placed > 0))
         this->chip_exclusive = true;
       } // if chip_exclusive == false
 
@@ -783,8 +784,7 @@ void Chip::partially_place_task(
       (a.gpu_indices.size() > 0) ||
       (a.mic_indices.size() > 0))
     {
-    if (a.memory > 0)
-      a.mem_indices.push_back(this->id);
+    a.mem_indices.push_back(this->id);
 
     this->allocations.push_back(a);
     master.add_allocation(a);
@@ -792,6 +792,12 @@ void Chip::partially_place_task(
 
   remaining.cpus -= a.cpus;
   master.add_allocation(a);
+  
+  // Practically, we should treat place=node, place=socket, and
+  // place=numachip as the same
+  if ((master.place_type == exclusive_socket) ||
+      (master.place_type == exclusive_node))
+    this->chip_exclusive = true;
   } // END partially_place_task()
 
 
