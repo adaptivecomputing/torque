@@ -1884,15 +1884,40 @@ int req::get_num_tasks_for_host(
         (!strncmp(this->placement_str.c_str(), "node", 4)))
       task_count = 1;
     else if ((this->hostlist.size() <= offset) ||
-             (this->hostlist.at(offset) != ':'))
+             ((this->hostlist.at(offset) != ':') &&
+              (this->hostlist.at(offset) != '/')))
       task_count = 1;
     else
       {
-      // + 5 for ':ppn='
-      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 5);
-      char        *ppn_str = strdup(ppn_val.c_str());
-      int          num_ppn = strtol(ppn_str, NULL, 10);
+      int num_ppn = 0;
 
+      // handle both :ppn=X and /range
+      // + 5 for ':ppn='
+      if (this->hostlist.at(pos + offset) == '/')
+        {
+        char             *range_str = strdup(this->hostlist.substr(pos + offset +1).c_str());
+        char             *ptr;
+        std::vector<int>  indices;
+
+        // truncate any further entries 
+        if ((ptr = strchr(range_str, '+')) != NULL)
+          *ptr = '\0';
+
+        translate_range_string_to_vector(range_str, indices);
+        num_ppn = indices.size();
+
+        free(range_str);
+        }
+      else
+        {
+        std::string  ppn_val = this->hostlist.substr(pos + offset + 5);
+        char        *ppn_str = strdup(ppn_val.c_str());
+        
+        num_ppn = strtol(ppn_str, NULL, 10);
+
+        free(ppn_str);
+        }
+        
       task_count = num_ppn / this->execution_slots;
       }
     }

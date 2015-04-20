@@ -454,6 +454,16 @@ START_TEST(test_get_num_tasks_for_host)
   r.set_hostlist("napali");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 1, "Expected 1, got %d", tasks);
+  
+  r.set_value("hostlist", "napali/0-15");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 16, "Expected 16, got %d", tasks);
+  
+  r.set_value("hostlist", "napali/0-15+wailua/0-15");
+  r.set_value("lprocs", "4");
+  r.set_value("task_count", "8");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 4, "Expected 4, got %d", tasks);
   }
 END_TEST
 

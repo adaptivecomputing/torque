@@ -544,7 +544,9 @@ int Machine::place_job(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     // Initialize a complete_req from the -l resource request
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     }
 
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
