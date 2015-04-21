@@ -464,6 +464,12 @@ START_TEST(test_get_num_tasks_for_host)
   r.set_value("task_count", "8");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
+  
+  r.set_value("hostlist", "waimea/0-16+napali/0-15");
+  r.set_value("lprocs", "4");
+  r.set_value("task_count", "8");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 4, "Expected 4, got %d", tasks);
   }
 END_TEST
 

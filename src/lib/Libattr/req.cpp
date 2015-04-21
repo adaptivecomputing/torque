@@ -1893,9 +1893,9 @@ int req::get_num_tasks_for_host(
 
       // handle both :ppn=X and /range
       // + 5 for ':ppn='
-      if (this->hostlist.at(pos + offset) == '/')
+      if (this->hostlist.at(offset) == '/')
         {
-        char             *range_str = strdup(this->hostlist.substr(pos + offset +1).c_str());
+        char             *range_str = strdup(this->hostlist.substr(offset + 1).c_str());
         char             *ptr;
         std::vector<int>  indices;
 
@@ -1910,7 +1910,7 @@ int req::get_num_tasks_for_host(
         }
       else
         {
-        std::string  ppn_val = this->hostlist.substr(pos + offset + 5);
+        std::string  ppn_val = this->hostlist.substr(offset + 5);
         char        *ppn_str = strdup(ppn_val.c_str());
         
         num_ppn = strtol(ppn_str, NULL, 10);
