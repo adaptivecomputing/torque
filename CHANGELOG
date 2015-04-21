@@ -19,7 +19,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
   e - TRQ-3095. Add the server setting disable_automatic_requeue to stop jobs from being
       requeued if they experience a transient failure on the mom.
-  e - TRQ-2307. Fix probelms where mom restarts intermittently fail. (backported from 5.1.1)
+  e - TRQ-2307. Fix probelms where mom restarts intermittently fail.
+  b - TRQ-2946. Make qmgr able to handle Cray numeric node ids.
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main

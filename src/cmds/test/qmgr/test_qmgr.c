@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include "pbs_error.h"
+
+int check_list(int type, const char *list);
+
 void free_attrib(
 
   struct attropl **attribute)
@@ -25,6 +27,20 @@ void free_attrib(
     free(p);
     *attribute = NULL;
   }
+
+
+START_TEST(test_check_list)
+  {
+  // Server cannot be numeric
+  fail_unless(check_list(MGR_OBJ_SERVER, "12") != 0);
+  // Cray nodes can be numeric, so allow those
+  fail_unless(check_list(MGR_OBJ_NODE, "12") == 0);
+  // all alpha characters should work for both
+  fail_unless(check_list(MGR_OBJ_NODE, "napali") == 0);
+  fail_unless(check_list(MGR_OBJ_SERVER, "napali") == 0);
+  }
+END_TEST
+
 
 START_TEST(test_res_max_nodes)
   {
@@ -189,6 +205,7 @@ Suite *qmgr_suite(void)
 
   tc_core = tcase_create("test_res_min_procct");
   tcase_add_test(tc_core, test_res_min_procct);
+  tcase_add_test(tc_core, test_check_list);
   suite_add_tcase(s, tc_core);
 
   return s;
