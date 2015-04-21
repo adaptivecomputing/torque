@@ -4518,12 +4518,11 @@ int setup_program_environment(void)
 #endif
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
-#ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
-#endif
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
+  int           network_retries = 0;
 
   /* must be started with real and effective uid of 0 */
   if (IamRoot() == 0)
@@ -4735,21 +4734,31 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
 
-  if(multi_mom)
+  if (multi_mom)
     {
-	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
     }
   else
     {
-	nd_frequency.get_base_frequencies(mom_home);
+    nd_frequency.get_base_frequencies(mom_home);
     }
 
-  /* initialize the network interface */
-
-  if (init_network(pbs_mom_port, mom_process_request) != 0)
+  // initialize the network interface - try up to 4 times so restarts are successful
+  while (((rc = init_network(pbs_mom_port, mom_process_request)) != 0) &&
+         (network_retries < 3))
     {
     c = errno;
 
+    if (c != EADDRINUSE)
+      break;
+
+    sleep(1);
+
+    network_retries++;
+    }
+
+  if (rc != PBSE_NONE)
+    {
     sprintf(log_buffer, "server port = %u, errno = %d (%s)",
       pbs_mom_port,
       c,
