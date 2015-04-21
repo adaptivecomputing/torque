@@ -161,8 +161,9 @@ START_TEST(test_place_task)
   a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
-  fail_unless(s.place_task("1.napali", r, a, 3) == 2);
-  fail_unless(called_place = 2);
+  int num = s.place_task("1.napali", r, a, 3);
+  fail_unless(num == 1, "Expected 2, got %d", num);
+  fail_unless(called_place = 1);
 
   fail_unless(s.is_available() == false);
   oscillate = false;
