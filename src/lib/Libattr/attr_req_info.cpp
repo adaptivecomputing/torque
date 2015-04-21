@@ -746,7 +746,7 @@ int attr_req_info::check_min_values(
  * @param signed_val - value of current signed limit value of the name resoruce if set returned
  * @param unsigned_val - value of current unsigned limit of the name resource if set.
  */
-int attr_req_info::check_default_values(
+int attr_req_info::add_default_values(
 
   std::vector<std::string>& names,
   std::vector<std::string>& values,

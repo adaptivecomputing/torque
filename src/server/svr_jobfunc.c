@@ -2379,7 +2379,16 @@ static int check_queue_user_ACL(
   }
 
 
-    
+/*
+ * check_for_complete_req_and_limits
+ *
+ * Check to see if the job req will fit within the limits of the queue. 
+ * 
+ * @param pque  - pointer to queue
+ * @param pjob  - pointer to current job 
+ *
+ */
+
 int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
   {
   int rc = PBSE_NONE;
@@ -2387,7 +2396,7 @@ int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
    /* Check for -L queue limits */
   if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
     {
-     int req_count;
+    int req_count;
     std::vector<std::string> names, values;
 
     complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
@@ -2397,10 +2406,12 @@ int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
       return(PBSE_NONE);
       }
 
-    cr->get_values(names, values);
 
-     if ((pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET) &&
-          (pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr != NULL))
+    cr->get_values(names, values); 
+
+
+    if ((pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr != NULL))
       {
       attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr;
 
@@ -2411,9 +2422,9 @@ int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
         }
       }
 
-     if ((pque->qu_attr[QA_ATR_ReqInformationMin].at_flags & ATR_VFLAG_SET) &&
-          (pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr != NULL))
-      {
+    if ((pque->qu_attr[QA_ATR_ReqInformationMin].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr != NULL))
+      { 
       attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr;
 
       rc = ari->check_min_values(names, values);
@@ -2587,7 +2598,14 @@ static int are_job_resources_in_limits_of_queue(
   initialize_procct(pjob);
     
   check_limits = chk_resc_limits(&pjob->ji_wattr[JOB_ATR_resource], pque, EMsg);
-
+  if (check_limits != 0)
+    {
+    /* FAILURE */
+    remove_procct(pjob);
+    return(check_limits);
+    }
+ 
+  check_limits = check_for_complete_req_and_limits(pque, pjob);
   if (check_limits != 0)
     {
     /* FAILURE */
@@ -3255,7 +3273,7 @@ void set_deflt_resc(
         return;
       cr->get_values(req_names, req_values);
       req_count = cr->req_count();
-      ari->check_default_values(req_names, req_values, default_names, default_values);
+      ari->add_default_values(req_names, req_values, default_names, default_values);
 
       for (unsigned int i = 0; i < default_names.size(); i++)
         {

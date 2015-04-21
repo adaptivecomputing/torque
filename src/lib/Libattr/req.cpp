@@ -1728,6 +1728,10 @@ int req::set_value(
     this->pack = true;
   else if (!strncmp(name, "hostlist", 8))
     this->hostlist = value;
+  else if (!strncmp(name, "core", 4))
+    this->cores = strtol(value, NULL, 10);
+   else if (!strncmp(name, "thread", 6))
+    this->threads = strtol(value, NULL, 10);
   else
     return(PBSE_BAD_PARAMETER);
 

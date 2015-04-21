@@ -321,6 +321,86 @@ START_TEST(test_set_limit_values)
 END_TEST
 
 
+START_TEST(test_check_limit_values)
+  {
+  std::vector<std::string> names, values;
+  attr_req_info ari;
+  int ret;
+
+  /* set the min limits first */
+  ret = ari.set_min_limit_value("lprocs", "2");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("memory", "4000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("swap", "4000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("disk", "4000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("nodes", "2");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("sockets", "2");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("numa_chips", "2");
+  fail_unless(ret == 0);
+
+  names.push_back("lprocs");
+  values.push_back("1");
+  ret = ari.check_min_values(names, values);
+  fail_unless(ret== PBSE_EXLIMIT);
+
+  names.clear();
+  values.clear();
+
+  names.push_back("lprocs");
+  values.push_back("3");
+  ret = ari.check_min_values(names, values);
+  fail_unless(ret== PBSE_NONE);
+
+
+  ret = ari.set_min_limit_value("cores", "2");
+  fail_unless(ret == 0);
+
+  ret = ari.set_min_limit_value("threads", "2");
+  fail_unless(ret == 0);
+
+  /* set max limits */
+  ret = ari.set_max_limit_value("lprocs", "3");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("memory", "6000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("swap", "8000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("disk", "10000Kb");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("nodes", "4");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("sockets", "4");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("numa_chips", "4");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("cores", "8");
+  fail_unless(ret == 0);
+
+  ret = ari.set_max_limit_value("threads", "16");
+  fail_unless(ret == 0);
+
+
+ }
+END_TEST
+
 
 Suite *complete_req_suite(void)
   {
@@ -333,6 +413,11 @@ Suite *complete_req_suite(void)
   tc_core = tcase_create("test_set_limit_values");
   tcase_add_test(tc_core, test_set_limit_values);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_check_limit_values");
+  tcase_add_test(tc_core, test_check_limit_values);
+  suite_add_tcase(s, tc_core);
+
   return(s);
   }
 
