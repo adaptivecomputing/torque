@@ -410,7 +410,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_lprocs != 0)
     {
-    sprintf(buf, "lprocs");
+    sprintf(buf, "%s", LPROCS );
     names.push_back(buf);
     sprintf(buf, "%d", max_lprocs);
     values.push_back(buf);
@@ -418,7 +418,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_mem != 0)
     {
-    sprintf(buf, "memory");
+    sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
     sprintf(buf, "%ukb", max_mem);
     values.push_back(buf);
@@ -426,7 +426,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_swap != 0)
     {
-    sprintf(buf, "swap");
+    sprintf(buf, "%s", SWAP);
     names.push_back(buf);
     sprintf(buf, "%ukb", max_swap);
     values.push_back(buf);
@@ -434,7 +434,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_disk != 0)
     {
-    sprintf(buf, "disk");
+    sprintf(buf, "%s", DISK);
     names.push_back(buf);
     sprintf(buf, "%ukb", max_disk);
     values.push_back(buf);
@@ -442,7 +442,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_nodes != 0)
     {
-    sprintf(buf, "nodes");
+    sprintf(buf, "%s", NODES);
     names.push_back(buf);
     sprintf(buf, "%d", max_nodes);
     values.push_back(buf);
@@ -450,7 +450,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_sockets != 0)
     {
-    sprintf(buf, "sockets");
+    sprintf(buf, "%s", SOCKETS);
     names.push_back(buf);
     sprintf(buf, "%d", max_sockets);
     values.push_back(buf);
@@ -458,7 +458,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_numa_chips != 0)
     {
-    sprintf(buf, "numa_chips");
+    sprintf(buf, "%s", NUMA_CHIPS);
     names.push_back(buf);
     sprintf(buf, "%d", max_numa_chips);
     values.push_back(buf);
@@ -466,7 +466,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_cores != 0)
     {
-    sprintf(buf, "cores");
+    sprintf(buf,"%s", CORES);
     names.push_back(buf);
     sprintf(buf, "%d", max_cores);
     values.push_back(buf);
@@ -474,7 +474,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_threads != 0)
     {
-    sprintf(buf, "threads");
+    sprintf(buf, "%s", THREADS);
     names.push_back(buf);
     sprintf(buf, "%d", max_threads);
     values.push_back(buf);
@@ -489,7 +489,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_lprocs != 0)
     {
-    sprintf(buf, "lprocs");
+    sprintf(buf, "%s", LPROCS);
     names.push_back(buf);
     sprintf(buf, "%d", min_lprocs);
     values.push_back(buf);
@@ -497,7 +497,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_mem != 0)
     {
-    sprintf(buf, "memory");
+    sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
     sprintf(buf, "%ukb", min_mem);
     values.push_back(buf);
@@ -505,7 +505,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_swap != 0)
     {
-    sprintf(buf, "swap");
+    sprintf(buf, "%s", SWAP);
     names.push_back(buf);
     sprintf(buf, "%ukb", min_swap);
     values.push_back(buf);
@@ -513,7 +513,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_disk != 0)
     {
-    sprintf(buf, "disk");
+    sprintf(buf, "%s", DISK);
     names.push_back(buf);
     sprintf(buf, "%ukb", min_disk);
     values.push_back(buf);
@@ -521,7 +521,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_nodes != 0)
     {
-    sprintf(buf, "nodes");
+    sprintf(buf, "%s", NODES);
     names.push_back(buf);
     sprintf(buf, "%d", min_nodes);
     values.push_back(buf);
@@ -529,7 +529,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_sockets != 0)
     {
-    sprintf(buf, "sockets");
+    sprintf(buf, "%s", SOCKETS);
     names.push_back(buf);
     sprintf(buf, "%d", min_sockets);
     values.push_back(buf);
@@ -537,7 +537,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_numa_chips != 0)
     {
-    sprintf(buf, "numa_chips");
+    sprintf(buf, "%s", NUMA_CHIPS);
     names.push_back(buf);
     sprintf(buf, "%d", min_numa_chips);
     values.push_back(buf);
@@ -546,7 +546,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_cores != 0)
     {
-    sprintf(buf, "cores");
+    sprintf(buf, "%s", CORES);
     names.push_back(buf);
     sprintf(buf, "%d", min_cores);
     values.push_back(buf);
@@ -554,7 +554,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_threads != 0)
     {
-    sprintf(buf, "threads");
+    sprintf(buf, "%s", THREADS);
     names.push_back(buf);
     sprintf(buf, "%d", min_threads);
     values.push_back(buf);
@@ -570,7 +570,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_lprocs != 0)
     {
-    sprintf(buf, "lprocs");
+    sprintf(buf, "%s", LPROCS);
     names.push_back(buf);
     sprintf(buf, "%d", default_lprocs);
     values.push_back(buf);
@@ -578,7 +578,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_mem != 0)
     {
-    sprintf(buf, "memory");
+    sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
     sprintf(buf, "%ukb", default_mem);
     values.push_back(buf);
@@ -586,7 +586,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_swap != 0)
     {
-    sprintf(buf, "swap");
+    sprintf(buf, "%s", SWAP);
     names.push_back(buf);
     sprintf(buf, "%ukb", default_swap);
     values.push_back(buf);
@@ -594,7 +594,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_disk != 0)
     {
-    sprintf(buf, "disk");
+    sprintf(buf, "%s", DISK);
     names.push_back(buf);
     sprintf(buf, "%ukb", default_disk);
     values.push_back(buf);
@@ -602,7 +602,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_nodes != 0)
     {
-    sprintf(buf, "nodes");
+    sprintf(buf, "%s", NODES);
     names.push_back(buf);
     sprintf(buf, "%d", default_nodes);
     values.push_back(buf);
@@ -610,7 +610,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_sockets != 0)
     {
-    sprintf(buf, "sockets");
+    sprintf(buf, "%s", SOCKETS);
     names.push_back(buf);
     sprintf(buf, "%d", default_sockets);
     values.push_back(buf);
@@ -618,7 +618,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_numa_chips != 0)
     {
-    sprintf(buf, "numa_chips");
+    sprintf(buf, "%s", NUMA_CHIPS);
     names.push_back(buf);
     sprintf(buf, "%d", default_numa_chips);
     values.push_back(buf);
@@ -626,7 +626,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_cores != 0)
     {
-    sprintf(buf, "cores");
+    sprintf(buf, "%s", CORES);
     names.push_back(buf);
     sprintf(buf, "%d", default_cores);
     values.push_back(buf);
@@ -634,7 +634,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_threads != 0)
     {
-    sprintf(buf, "threads");
+    sprintf(buf, "%s", THREADS);
     names.push_back(buf);
     sprintf(buf, "%d", default_threads);
     values.push_back(buf);
