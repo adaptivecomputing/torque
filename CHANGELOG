@@ -22,9 +22,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-2307. Fix probelms where mom restarts intermittently fail.
   b - TRQ-2946. Make qmgr able to handle Cray numeric node ids.
   b - TRQ-2790. Make offlining cray compute nodes persist across restarts. 
-
-5.0.3
-  e - TRQ-3104. Add millisecond precision to the Torque log file (backported from 5.1.1)
+  e - TRQ-3104. Add millisecond precision to the Torque log file
 
 
 5.0.2
