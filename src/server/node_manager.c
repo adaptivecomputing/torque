@@ -1284,22 +1284,18 @@ void check_nodes(
 
 
 
-
-
-
-
 void *write_node_state_work(
 
   void *vp)
 
   {
-  struct pbsnode *np;
+  struct pbsnode *np = NULL;
   static char    *fmt = (char *)"%s %d\n";
   static FILE    *nstatef = NULL;
-  all_nodes_iterator *iter = NULL;
-
+  long            cray_enabled = FALSE;
   int             savemask;
 
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   pthread_mutex_lock(node_state_mutex);
 
   if (LOGLEVEL >= 5)
@@ -1342,19 +1338,38 @@ void *write_node_state_work(
   ** The only state that carries forward is if the
   ** node has been marked offline.
   */
-
-  while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+  if (cray_enabled == TRUE)
     {
-    if (np->nd_state & INUSE_OFFLINE)
+    node_iterator   iter;
+    reinitialize_node_iterator(&iter);
+
+    while ((np = next_node(&allnodes, np, &iter)) != NULL)
       {
-      fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
-      }
+      if (np->nd_state & INUSE_OFFLINE)
+        {
+        fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
+        }
 
-    unlock_node(np, __func__, NULL, LOGLEVEL);
-    } /* END for each node */
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      } /* END for each node */
+    }
+  else
+    {
+    all_nodes_iterator *iter = NULL;
 
-  if (iter != NULL)
-    delete iter;
+    while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      {
+      if (np->nd_state & INUSE_OFFLINE)
+        {
+        fprintf(nstatef, fmt, np->nd_name, np->nd_state & savemask);
+        }
+
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      } /* END for each node */
+
+    if (iter != NULL)
+      delete iter;
+    }
 
   if (fflush(nstatef) != 0)
     {
@@ -1368,6 +1383,7 @@ void *write_node_state_work(
 
   return(NULL);
   } /* END write_node_state_work() */
+
 
 
 void *write_node_power_state_work(
