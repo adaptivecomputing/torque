@@ -771,6 +771,7 @@ void log_record(
 
   struct tm *ptm;
   struct tm  tmpPtm;
+  struct timeval mytime;
   int    rc = 0;
   FILE  *savlog;
   char  *start = NULL, *end = NULL;
@@ -804,6 +805,12 @@ void log_record(
   now = time((time_t *)0); /* get time for message */
 
   ptm = localtime_r(&now,&tmpPtm);
+  
+  /* mytime used to calculate milliseconds */
+  
+  gettimeofday(&mytime, NULL);
+  
+  int milliseconds = mytime.tv_usec/1000;
 
   /* Do we need to switch the log? */
 
@@ -848,13 +855,14 @@ void log_record(
       if (eventclass != PBS_EVENTCLASS_TRQAUTHD)
         {
         rc = fprintf(logfile,
-              "%02d/%02d/%04d %02d:%02d:%02d;%04x;%10.10s.%d;%s;%s;%s%.*s\n",
+              "%02d/%02d/%04d %02d:%02d:%02d.%03d;%02d;%10.10s.%d;%s;%s;%s%.*s\n",
               ptm->tm_mon + 1,
               ptm->tm_mday,
               ptm->tm_year + 1900,
               ptm->tm_hour,
               ptm->tm_min,
               ptm->tm_sec,
+			        milliseconds,
               (eventtype & ~PBSEVENT_FORCE),
               msg_daemonname,
               thr_id,
