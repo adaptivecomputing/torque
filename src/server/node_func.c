@@ -2431,27 +2431,24 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      all_nodes_iterator *iter = NULL;
-
-      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
         {
-        if (strcmp(np->nd_name, line) == 0)
+        if (isdigit(line[0]))
           {
-          np->nd_state = num;
-
-          /* exclusive bits are calculated later in set_old_nodes() */
-          np->nd_state &= ~INUSE_JOB;
-
-          unlock_node(np, __func__, "match", LOGLEVEL);
-
-          break;
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
           }
-
-        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
 
-      if (iter != NULL)
-        delete iter;
+      if (np != NULL)
+        {
+        // Update the state accordingly
+        np->nd_state = num;
+
+        /* exclusive bits are calculated later in set_old_nodes() */
+        np->nd_state &= ~INUSE_JOB;
+        unlock_node(np, __func__, "no match", LOGLEVEL);
+        }
       }
 
     fclose(nin);
@@ -2465,28 +2462,25 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      all_nodes_iterator *iter = NULL;
-
-      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
         {
-        if (strcmp(np->nd_name, line) == 0)
+        if (isdigit(line[0]))
           {
-          np->nd_power_state = num;
-
-          unlock_node(np, __func__, "match", LOGLEVEL);
-
-          break;
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
           }
-
-        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
 
-      if (iter != NULL)
-        delete iter;
+      if (np != NULL)
+        {
+        np->nd_power_state = num;
+
+        unlock_node(np, __func__, "match", LOGLEVEL);
+        }
       }
 
     fclose(nin);
-  }
+    }
 
   /* initialize note attributes */
   nin = fopen(path_nodenote, "r");
@@ -2498,7 +2492,16 @@ int setup_nodes(void)
                   line,
                   note) == 2)
       {
-      if ((np = find_nodebyname(line)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
+        {
+        if (isdigit(line[0]))
+          {
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
+          }
+        }
+
+      if (np != NULL)
         {
         np->nd_note = strdup(note);
         
