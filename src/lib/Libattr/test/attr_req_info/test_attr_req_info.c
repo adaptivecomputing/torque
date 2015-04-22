@@ -40,7 +40,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_min_limit_value("numa_chips", val); 
+  ret = ari.get_signed_min_limit_value("numachips", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -52,6 +52,9 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
+  ret = ari.get_signed_min_limit_value("junk", val); 
+  fail_unless(ret == PBSE_BAD_PARAMETER);
+
   /* test max values */
   ret = ari.get_signed_max_limit_value("lprocs", val); 
   fail_unless(ret == PBSE_NONE);
@@ -77,7 +80,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_max_limit_value("numa_chips", val); 
+  ret = ari.get_signed_max_limit_value("numachip", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -88,6 +91,9 @@ START_TEST(test_constructor)
   ret = ari.get_signed_max_limit_value("threads", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
+
+  ret = ari.get_signed_max_limit_value("junk", val); 
+  fail_unless(ret == PBSE_BAD_PARAMETER);
 
   /* test default values */
   ret = ari.get_signed_default_limit_value("lprocs", val); 
@@ -106,6 +112,9 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
+  ret = ari.get_unsigned_default_limit_value("junk", uval); 
+  fail_unless(ret == PBSE_BAD_PARAMETER);
+  
   ret = ari.get_signed_default_limit_value("nodes", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
@@ -114,7 +123,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_default_limit_value("numa_chips", val); 
+  ret = ari.get_signed_default_limit_value("numachips", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -126,6 +135,9 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
+  ret = ari.get_signed_default_limit_value("junk", val); 
+  fail_unless(ret == PBSE_BAD_PARAMETER);
+
   }
 END_TEST
 
@@ -166,9 +178,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_min_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_min_limit_value("numa_chips", "2");
+  ret = ari.set_min_limit_value("numachip", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_min_limit_value("numa_chips", val);
+  ret = ari.get_signed_min_limit_value("numachip", val);
   fail_unless(val == 2);
 
   ret = ari.set_min_limit_value("cores", "2");
@@ -180,6 +192,9 @@ START_TEST(test_set_limit_values)
   fail_unless(ret == 0);
   ret = ari.get_signed_min_limit_value("threads", val);
   fail_unless(val == 2);
+
+  ret = ari.set_min_limit_value("junk", "2");
+  fail_unless(ret == PBSE_BAD_PARAMETER);
 
   /* Test max values */
   ret = ari.set_max_limit_value("lprocs", "2");
@@ -212,9 +227,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_max_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_max_limit_value("numa_chips", "2");
+  ret = ari.set_max_limit_value("numachip", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_max_limit_value("numa_chips", val);
+  ret = ari.get_signed_max_limit_value("numachip", val);
   fail_unless(val == 2);
 
   ret = ari.set_max_limit_value("cores", "2");
@@ -226,6 +241,9 @@ START_TEST(test_set_limit_values)
   fail_unless(ret == 0);
   ret = ari.get_signed_max_limit_value("threads", val);
   fail_unless(val == 2);
+
+  ret = ari.set_max_limit_value("junk", "2");
+  fail_unless(ret == PBSE_BAD_PARAMETER);
 
   /* Test default values */
   ret = ari.set_default_limit_value("lprocs", "2");
@@ -258,9 +276,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_default_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_default_limit_value("numa_chips", "2");
+  ret = ari.set_default_limit_value("numachip", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_default_limit_value("numa_chips", val);
+  ret = ari.get_signed_default_limit_value("numachip", val);
   fail_unless(val == 2);
 
   ret = ari.set_default_limit_value("cores", "2");
@@ -272,6 +290,9 @@ START_TEST(test_set_limit_values)
   fail_unless(ret == 0);
   ret = ari.get_signed_default_limit_value("threads", val);
   fail_unless(val == 2);
+
+  ret = ari.set_default_limit_value("junk", "2");
+  fail_unless(ret == PBSE_BAD_PARAMETER);
 
   std::vector<std::string> names;
   std::vector<std::string> values;
@@ -324,78 +345,31 @@ END_TEST
 START_TEST(test_check_limit_values)
   {
   std::vector<std::string> names, values;
+  std::vector<std::string> all_names, all_values;
   attr_req_info ari;
   int ret;
 
-  /* set the min limits first */
-  ret = ari.set_min_limit_value("lprocs", "2");
-  fail_unless(ret == 0);
+  ret = ari.set_default_limit_value("memory", "30000Kb");
+  fail_unless(ret==0);
 
-  ret = ari.set_min_limit_value("memory", "4000Kb");
-  fail_unless(ret == 0);
+  ret = ari.set_default_limit_value("core", "4");
+  fail_unless(ret==0);
 
-  ret = ari.set_min_limit_value("swap", "4000Kb");
-  fail_unless(ret == 0);
-
-  ret = ari.set_min_limit_value("disk", "4000Kb");
-  fail_unless(ret == 0);
-
-  ret = ari.set_min_limit_value("nodes", "2");
-  fail_unless(ret == 0);
-
-  ret = ari.set_min_limit_value("sockets", "2");
-  fail_unless(ret == 0);
-
-  ret = ari.set_min_limit_value("numa_chips", "2");
-  fail_unless(ret == 0);
+  names.push_back("memory");
+  values.push_back("40000Kb");
 
   names.push_back("lprocs");
-  values.push_back("1");
-  ret = ari.check_min_values(names, values);
-  fail_unless(ret== PBSE_EXLIMIT);
+  values.push_back("4");
 
-  names.clear();
-  values.clear();
-
-  names.push_back("lprocs");
-  values.push_back("3");
-  ret = ari.check_min_values(names, values);
-  fail_unless(ret== PBSE_NONE);
-
-
-  ret = ari.set_min_limit_value("cores", "2");
+  ret = ari.add_default_values(names, values, all_names, all_values);
   fail_unless(ret == 0);
 
-  ret = ari.set_min_limit_value("threads", "2");
-  fail_unless(ret == 0);
+  for (unsigned int i = 0; i < all_names.size(); i++)
+    {
+    fail_unless(!strcmp(all_names[i].c_str(), "core"));
+    }
+  
 
-  /* set max limits */
-  ret = ari.set_max_limit_value("lprocs", "3");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("memory", "6000Kb");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("swap", "8000Kb");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("disk", "10000Kb");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("nodes", "4");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("sockets", "4");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("numa_chips", "4");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("cores", "8");
-  fail_unless(ret == 0);
-
-  ret = ari.set_max_limit_value("threads", "16");
-  fail_unless(ret == 0);
 
 
  }
