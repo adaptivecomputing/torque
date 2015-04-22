@@ -26,6 +26,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       requeued if they experience a transient failure on the mom.
   e - TRQ-2307. Fix probelms where mom restarts intermittently fail.
   b - TRQ-2946. Make qmgr able to handle Cray numeric node ids.
+  b - TRQ-2790. Make offlining cray compute nodes persist across restarts. 
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
