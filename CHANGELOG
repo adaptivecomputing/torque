@@ -1,6 +1,10 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
+5.0.3
+  e - TRQ-3104. Add millisecond precision to the Torque log file (backported from 5.1.1)
+
+
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
       thread exits.
