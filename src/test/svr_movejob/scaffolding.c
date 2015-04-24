@@ -439,14 +439,4 @@ std::string get_path_jobdata(const char *a, const char *b)
   return ret_string;
   }
 
-int svr_enquejob(
-
-  job        *pjob,            /* I */
-  int         has_sv_qs_mutex, /* I */
-  const char *prev_job_id,  /* I */
-  bool        have_reservation)
-
-  {
-  return(0);
-  }
 
