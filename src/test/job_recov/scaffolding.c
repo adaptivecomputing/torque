@@ -361,3 +361,14 @@ completed_jobs_map_class::~completed_jobs_map_class() {}
 bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+int svr_enquejob(
+
+  job        *pjob,            /* I */
+  int         has_sv_qs_mutex, /* I */
+  const char *prev_job_id,  /* I */
+  bool        have_reservation)
+
+  {
+  return(0);
+  }
