@@ -108,3 +108,15 @@ bool have_reservation(job *pjob, struct pbs_queue *pque)
   {
   return(true);
   }
+
+int svr_enquejob(
+
+  job        *pjob,            /* I */
+  int         has_sv_qs_mutex, /* I */
+  const char *prev_job_id,  /* I */
+  bool        have_reservation)
+  
+  {
+  return(0);
+  }
+

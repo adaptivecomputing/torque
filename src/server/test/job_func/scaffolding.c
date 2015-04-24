@@ -609,3 +609,19 @@ id_map job_mapper;
 void handle_complete_second_time(struct work_task *ptask)
   {
   }
+
+completed_jobs_map_class::completed_jobs_map_class() {}
+completed_jobs_map_class::~completed_jobs_map_class() {}
+bool completed_jobs_map_class::add_job(char const* s, time_t t)
+  {
+  add_job_called = true;
+
+  return false;
+  }
+
+std::string get_path_jobdata(const char *a, const char *b) {return ""; }
+
+int svr_enquejob(job *pjob, int x, const char *queue, bool flag)
+  {
+  return(0);
+  }
