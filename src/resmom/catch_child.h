@@ -20,6 +20,8 @@ void *preobit_reply(void *new_sock);
 
 void *obit_reply(void *new_sock);
 
+void *obit_reply_thread(void *new_sock);
+
 int has_exec_host_and_port(job *pjob);
 
 void init_abort_jobs(int recover);

@@ -27,8 +27,10 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "credential.h"
-#include "batch_request.h"
 #include "net_connect.h"
+#include "threadpool.h"
+#include "batch_request.h"
+#include "mutex_mgr.hpp"
 #include "svrfunc.h"
 #include "mom_mach.h"
 #include "mom_func.h"
@@ -55,6 +57,7 @@
 
 /* External Globals */
 
+extern struct connection svr_conn[];
 extern char  *path_epilog;
 extern char  *path_epiloguser;
 extern char  *path_epilogp;
@@ -1209,6 +1212,25 @@ int post_epilogue(
 
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
+
+  /* To speed things up we will schedule a thread to handle the obit_reply
+     since pbs_mom sometimes gets backed up and it can take a while
+     before it can process the obit_reply in the main_loop. This allows
+     pbs_mom to get the reply as soon as pbs_server sends it */
+  int *args = NULL;
+
+  args = (int *)calloc(2, sizeof(long));
+  if (args == NULL)
+    {
+    sprintf(log_buffer, "failed to allocate space for args");
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
+  else
+    {
+    args[0] = sock;
+    enqueue_threadpool_request(obit_reply_thread, args, request_pool);
+    }
+
   return(0);
   } /* END post_epilogue() */
 
@@ -1331,6 +1353,27 @@ void *obit_reply(
   struct tcp_chan      *chan = NULL;
   int                   count = 0;
   bool                  not_deleted = false;
+  int                   rc;
+
+  
+  rc = pthread_mutex_trylock(svr_conn[sock].cn_mutex);
+  if (rc != 0)
+    {
+    /* Another thread already has the lock and is doing this work. 
+       just exit */
+    return(NULL);
+    }
+
+  mutex_mgr conn_mutex(svr_conn[sock].cn_mutex, true); 
+
+  /* See if the obit_reply is already done for this connection */
+    if ((svr_conn[sock].cn_active == Idle) ||
+        (svr_conn[sock].cn_active == ObitDone))
+    {
+    /* Someone has already handled the obit reply */
+    return(NULL);
+    }
+
 
   /* read and decode the reply */
 
@@ -1555,6 +1598,10 @@ void *obit_reply(
 
   free_br(preq);
 
+  svr_conn[sock].cn_active = ObitDone;
+
+  conn_mutex.unlock();
+
   pbs_disconnect_socket(sock);
   /* pbs_disconnect_socket has closed our socket but we have some connection table
      cleanup to do. We can't call close_conn because our file descriptor is 
@@ -1562,6 +1609,8 @@ void *obit_reply(
   /* Note that if we ever mult-thread the mom this will need to be done
      with a lock on the svr_conn table */
   clear_conn(sock, false);
+
+
 
   if (not_deleted == false)
     {
@@ -1575,6 +1624,335 @@ void *obit_reply(
 
   return(NULL);
   }  /* END obit_reply() */
+
+/*
+ * obit_reply_thread
+ *
+ * This function does the same thing as obit_reply except this is 
+ * run on its own thread so it does not have to be taken care of 
+ * serially in the mom main_loop. Because the obit reply sent from
+ * the mom to the server happens on the same socket obit_reply
+ * must wait its turn before it gets serviced. But the obit_reply_thread
+ * is able to read the socket as soon as the thread is active and handle
+ * the reply. Even so, it is possible the obit_reply may happen first. So 
+ * this routine and obit_reply have been modified to reflect that they could
+ * happen simultaneously. The connection table is locked at the beginning
+ * of each function to guarantee serialization. The second process to come in
+ * detects the obit_reply is already being processed by a failed trylock
+ * or the cn_active flag of the svr_conn structure getting set to Idle or
+ * ObitDone.
+ *
+ * obit_reply_thread differs from obit_reply because it must free the 
+ * argument new_sock whereas in obit_reply this argument is a stack variable.
+ *
+ * This function is a message handler that is hooked to a server connection.
+ * The connection is established in post_epilogue().
+ *
+ * A socket connection to the server is opened, a job obituary notice
+ * message is sent to the server, and then at some later time, the server
+ * sends back a reply and we end up here.
+ *
+ * On success, this routine sets the job's substate to EXITED
+ *
+ * @see post_epilogue() - registers obit_reply via add_conn()
+ */
+
+void *obit_reply_thread(
+
+  void *new_sock)  /* I */
+
+  {
+  int                   irtn;
+  job                  *nxjob;
+  job                  *pjob;
+  pbs_attribute        *pattr;
+  unsigned int          momport = 0;
+  char                  tmp_line[MAXLINE];
+
+  struct batch_request *preq;
+  int                   x; /* dummy */
+  int                   sock = *(int *)new_sock;
+  struct tcp_chan      *chan = NULL;
+  int                   count = 0;
+  bool                  not_deleted = false;
+  int                   rc;
+
+  
+  rc = pthread_mutex_trylock(svr_conn[sock].cn_mutex);
+  if (rc != 0)
+    {
+    /* Another thread already has the lock and is doing this work. 
+       just exit */
+    free(new_sock);
+    return(NULL);
+    }
+
+  mutex_mgr conn_mutex(svr_conn[sock].cn_mutex, true); 
+
+  /* See if the obit_reply is already done for this connection */
+    if ((svr_conn[sock].cn_active == Idle) ||
+        (svr_conn[sock].cn_active == ObitDone))
+    {
+    /* Someone has already handled the obit reply */
+    free(new_sock);
+    return(NULL);
+    }
+
+
+  /* read and decode the reply */
+
+  if ((preq = alloc_br(PBS_BATCH_JobObit)) == NULL)
+    {
+    free(new_sock);
+    return(NULL);
+    }
+
+  CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    free_br(preq);
+    free(new_sock);
+    return(NULL);
+    }
+
+  /* make sure errno isn't stale */
+  errno = 0;
+
+  while ((irtn = DIS_reply_read(chan, &preq->rq_reply)) &&
+         (errno == EINTR) &&
+         (count < DIS_REPLY_READ_RETRY))
+    count++;
+
+  DIS_tcp_cleanup(chan);
+
+  if (irtn != 0)
+    {
+    /* NOTE:  irtn is of type DIS_* in include/dis.h, see dis_emsg[] */
+
+    sprintf(log_buffer, "DIS_reply_read failed, rc=%d sock=%d",
+            irtn,
+            sock);
+
+    log_err(errno, __func__, log_buffer);
+
+    preq->rq_reply.brp_code = -1;
+    }
+
+  /* find the job associated with the reply by the socket number */
+  /* saved in the job structure, ji_momhandle */
+
+  pjob = (job *)GET_NEXT(svr_alljobs);
+
+  while (pjob != NULL)
+    {
+    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+        (pjob->ji_momhandle == sock))
+      {
+
+      switch (preq->rq_reply.brp_code)
+        {
+
+        case PBSE_NONE:
+
+          /* normal ack, mark job as exited */
+          pjob->ji_qs.ji_destin[0] = '\0';
+
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+          if (multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+
+          job_save(pjob, SAVEJOB_QUICK, momport);
+
+          if (LOGLEVEL >= 4)
+            {
+            log_event(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
+            }
+
+          break;
+
+        case PBSE_ALRDYEXIT:
+
+          /* have already told the server before recovery */
+          /* the server will contact us to continue       */
+
+          if (LOGLEVEL >= 7)
+            {
+            log_record(
+              PBSEVENT_ERROR,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "setting already exited job substate to EXITED");
+            }
+          
+          pjob->ji_qs.ji_destin[0] = '\0';
+
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+          if (multi_mom)
+            {
+            momport = pbs_rm_port;
+            }
+
+          job_save(pjob, SAVEJOB_QUICK, momport);
+
+          break;
+
+        case PBSE_CLEANEDOUT:
+
+          /* all jobs discarded by server, discard job */
+
+          pattr = &pjob->ji_wattr[JOB_ATR_interactive];
+
+          if (((pattr->at_flags & ATR_VFLAG_SET) == 0) ||
+              (pattr->at_val.at_long == 0))
+            {
+            /* do this if not interactive */
+
+            job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+            job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+            job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
+            }
+
+          mom_deljob(pjob);
+
+          break;
+          
+        case PBSE_SERVER_BUSY:
+
+          not_deleted = true;
+
+          break;
+
+
+        case - 1:
+
+          /* FIXME - causes epilogue to be run twice! */
+      
+          pjob->ji_qs.ji_destin[0] = '\0';
+
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+          exiting_tasks = 1;
+
+          break;
+
+        default:
+
+          {
+
+          switch (preq->rq_reply.brp_code)
+            {
+
+            case PBSE_BADSTATE:
+
+              sprintf(tmp_line, "server rejected job obit - unexpected job state");
+
+              break;
+
+            case PBSE_SYSTEM:
+
+              sprintf(tmp_line, "server rejected job obit - server not ready for job completion");
+
+              break;
+
+            default:
+
+              sprintf(tmp_line, "server rejected job obit - %d",
+                      preq->rq_reply.brp_code);
+
+              break;
+            }  /* END switch (preq->rq_reply.brp_code) */
+
+          log_ext(-1,__func__,tmp_line,LOG_ALERT);
+
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+          }  /* END BLOCK */
+
+        mom_deljob(pjob);
+
+        break;
+        }  /* END switch (preq->rq_reply.brp_code) */
+
+      break;
+      }    /* END if (...) */
+    else
+      {
+      if (pjob->ji_momhandle == sock)
+        {
+        if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
+          {
+          sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+          /* This means the server has no idea what this job is
+           * and it should be deleted!!! */
+          mom_deljob(pjob);
+          }
+        else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
+          {
+          sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+          }
+        /* Commenting for now. The mom's are way to chatty right now */
+/*        else
+          {
+          sprintf(tmp_line, "Current state is: %d code (%d) sock (%d) - unknown Job state/request",
+              pjob->ji_qs.ji_substate, preq->rq_reply.brp_code, sock);
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid, tmp_line);
+          }
+          */
+        }
+      }
+
+    pjob = nxjob;
+    }  /* END while (pjob != NULL) */
+
+  if (pjob == NULL)
+    {
+    log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_REQUEST, __func__, "Job not found for obit reply");
+    }
+
+  free_br(preq);
+
+  svr_conn[sock].cn_active = ObitDone;
+
+  conn_mutex.unlock();
+
+  pbs_disconnect_socket(sock);
+  /* pbs_disconnect_socket has closed our socket but we have some connection table
+     cleanup to do. We can't call close_conn because our file descriptor is 
+     already closed */
+  /* Note that if we ever mult-thread the mom this will need to be done
+     with a lock on the svr_conn table */
+  clear_conn(sock, false);
+
+
+
+  if (not_deleted == false)
+    {
+    if (PBSNodeCheckEpilog)
+      {
+      check_state(1);
+
+      mom_server_all_update_stat();
+      }
+    }
+
+  free(new_sock);
+  return(NULL);
+  }  /* END obit_reply_thread() */
 
 
 

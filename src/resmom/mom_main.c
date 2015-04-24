@@ -5222,6 +5222,7 @@ int setup_program_environment(void)
     }  /* END if (ptr != NULL) */
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+  start_request_pool(request_pool);
 
   requested_cluster_addrs = 0;
 

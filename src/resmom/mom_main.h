@@ -16,7 +16,7 @@
 #define MAX_LOCK_FILE_NAME_LEN    15
 #define MAX_RESEND_JOBS           512
 #define DUMMY_JOB_PTR             1
-#define MOM_THREADS               2
+#define MOM_THREADS               20
 #define THREAD_INFINITE          -1
 
 #ifndef MAX_LINE

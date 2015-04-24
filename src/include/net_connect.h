@@ -188,6 +188,7 @@ enum conn_type
   ToServerASN,
   ToServerDIS,
   TaskManagerDIS,
+  ObitDone,
   Idle
   };
 
