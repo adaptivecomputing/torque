@@ -46,7 +46,7 @@ extern char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;
-extern unsigned int pe_alarm_time;
+extern long pe_alarm_time;
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 struct config standard_config[2];
 struct config dependent_config[2];

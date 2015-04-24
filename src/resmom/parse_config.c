@@ -162,7 +162,7 @@ int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
 double           wallfactor = 1.00;
 struct cphosts  *pcphosts = NULL;
-unsigned int     pe_alarm_time = PBS_PROLOG_TIME;
+long             pe_alarm_time = PBS_PROLOG_TIME;
 char             DEFAULT_UMASK[1024];
 char             PRE_EXEC[1024];
 int              src_login_batch = TRUE;
@@ -1951,18 +1951,18 @@ unsigned long prologalarm(
   const char *value)  /* I */
 
   {
-  int i;
+  long i;
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
 
-  i = (int)atoi(value);
+  i = strtol(value, NULL, 10);
 
   if (i <= 0)
     {
     return(0); /* error */
     }
 
-  pe_alarm_time = (unsigned int)i;
+  pe_alarm_time = (long)i;
 
   return(1);
   }  /* END prologalarm() */

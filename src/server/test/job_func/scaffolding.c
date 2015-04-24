@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <string>
+#include <semaphore.h>
 
 #include "pbs_ifl.h" /* MAXPATHLEN, PBS_MAXSERVERNAME */
 #include "server.h" /* server, NO_BUFFER_SPACE */
@@ -23,6 +24,7 @@ int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
 
+extern sem_t *job_clone_semaphore;
 bool exit_called = false;
 
 int valbuf_size = 0;
