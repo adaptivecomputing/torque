@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "pbs_error.h"
 
+extern sem_t *job_clone_semaphore;
 extern attribute_def job_attr_def[];
 int hostname_in_externals(char *, char *);
 int fix_cray_exec_hosts(job *);

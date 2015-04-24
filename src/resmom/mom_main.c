@@ -312,7 +312,7 @@ char           *path_log;
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
-long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
+long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
 char                   *ret_string;
@@ -5494,11 +5494,11 @@ int TMOMScanForStarting(void)
 
         STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
 
-        if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
+        if ((STime > 0) && ((time_now - STime) > pe_alarm_time))
           {
           sprintf(log_buffer, "job %s child not started after %ld seconds, server will retry",
             pjob->ji_qs.ji_jobid,
-            TJobStartTimeout);
+            pe_alarm_time);
 
           log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
@@ -5933,19 +5933,13 @@ void check_exiting_jobs()
   job                      *pjob;
   time_t                    time_now = time(NULL);
   std::vector<std::string>  to_remove;
-  unsigned int              obit_retry_time;
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if (pe_alarm_time < TJobStartTimeout)
-      obit_retry_time = pe_alarm_time;
-    else
-      obit_retry_time = TJobStartTimeout;
-
-    if (time_now - eji.obit_sent < obit_retry_time)
+    if ((time_now - eji.obit_sent) < pe_alarm_time)
       {
       /* insert this back at the front */
       exiting_job_list.insert(exiting_job_list.begin(), eji);
