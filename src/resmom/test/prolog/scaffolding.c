@@ -28,7 +28,7 @@ char log_buffer[LOG_BUF_SIZE];
 int MOMPrologTimeoutCount;
 uid_t pbsuser;
 gid_t pbsgroup;
-unsigned int     pe_alarm_time = PBS_PROLOG_TIME;
+long     pe_alarm_time = PBS_PROLOG_TIME;
 char *path_epilogp;
 long TJobStartTimeout = 300;
 

@@ -816,16 +816,10 @@ int run_pelog(
        start time)
     */
 
-    /* The prolog cannot take longer than the TJobStartTimeout */
-    unsigned int real_alarm_time = pe_alarm_time;
-    unsigned int job_start_timeout = (unsigned int)TJobStartTimeout;
-    if(job_start_timeout > 10) //Kill the prolog at least ten seconds before the timeout.
+    long real_alarm_time = pe_alarm_time;
+    if(real_alarm_time > 10) //Kill the prolog at least ten seconds before the timeout.
       {
-      job_start_timeout -= 10;
-      }
-    if(real_alarm_time > job_start_timeout)
-      {
-      real_alarm_time = job_start_timeout;
+      real_alarm_time -= 10;
       }
     alarm(real_alarm_time);
 
