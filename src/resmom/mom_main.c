@@ -5767,6 +5767,7 @@ void check_exiting_jobs()
   job                      *pjob;
   time_t                    time_now = time(NULL);
   std::vector<std::string>  to_remove;
+  unsigned int              obit_retry_time;
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
