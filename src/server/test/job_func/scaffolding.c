@@ -620,3 +620,8 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 
   return false;
   }
+
+int svr_enquejob(job *pjob, int x, const char *queue, bool flag)
+  {
+  return(0);
+  }

@@ -673,3 +673,14 @@ int id_map::get_new_id(const char *id)
   {
   return(-1);
   }
+
+int svr_enquejob(
+
+  job        *pjob,            /* I */
+  int         has_sv_qs_mutex, /* I */
+  const char *prev_job_id,  /* I */
+  bool        have_reservation)
+
+  {
+  return(0);
+  }
