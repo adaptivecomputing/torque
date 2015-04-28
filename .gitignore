@@ -16,12 +16,6 @@ test_uut
 *.trs
 *.tmp
 .settings
-*.log
-<<<<<<< HEAD
-*.trs
-=======
-*.dirstamp
->>>>>>> c64ac4e... Restored the m4_ifdef statement to run the AM_INIT_AUTOMAKE
 autom4te.cache/
 buildutils/ar-lib
 buildutils/compile
