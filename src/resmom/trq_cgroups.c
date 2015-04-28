@@ -40,6 +40,10 @@ string cg_cpuset_path;
 string cg_cpuacct_path;
 string cg_memory_path;
 string cg_devices_path;
+string cg_prefix("cpuset.");
+
+const int CPUS = 0;
+const int MEMS = 1;
 
 #ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
@@ -151,13 +155,17 @@ int trq_cg_cleanup_torque_cgroups()
  */
 
 
-int trq_cg_initialize_cpuset_string(const string file_name)
+int trq_cg_initialize_cpuset_string(
+    
+  const string file_name)
+
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   FILE  *fd;
   char   buf[64];
   size_t bytes_written;
   std::string cpus_path;
+  std::string base_path;
   std::string key ("/torque");
 
   /* the newly created torque dir needs to have the cpuset.cpus and cpuset.mems
@@ -165,25 +173,35 @@ int trq_cg_initialize_cpuset_string(const string file_name)
 
   /* First take /torque off of the cg_cpuset_path string. This will
      give us the root directory for the cgroup hierarchy */
-  cpus_path = cg_cpuset_path;
-  std::size_t found = cpus_path.rfind(key);
+  base_path = cg_cpuset_path;
+  std::size_t found = base_path.rfind(key);
   if (found == std::string::npos)
     {
-    sprintf(log_buf, "Could not find sub-string \"/torque\" in %s", cpus_path.c_str());
+    sprintf(log_buf, "Could not find sub-string \"/torque\" in %s", base_path.c_str());
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
 
   /* open the parent cgroup file as given by file_name. This file is 
      either cpuset.cpus or cpuset.mems */
-  cpus_path.replace(found, key.length(), ""); 
-  cpus_path = cpus_path + file_name;
+  base_path.replace(found, key.length(), ""); 
+  cpus_path = base_path + cg_prefix + file_name;
   fd = fopen(cpus_path.c_str(), "r");
   if (fd == NULL)
     {
-    sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    // Attempt to open the file without the 'cpuset.' prefix
+    cpus_path = base_path + file_name;
+    if ((fd = fopen(cpus_path.c_str(), "r")) == NULL)
+      {
+      sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+      return(PBSE_SYSTEM);
+      }
+    else
+      {
+      // It worked, so make the prefix non-existent
+      cg_prefix = "";
+      }
     }
 
   /* read in the string from the file */
@@ -199,7 +217,7 @@ int trq_cg_initialize_cpuset_string(const string file_name)
   fclose(fd);
 
   /* Now write the value we got from the parent cgroup file to the torque cgroup file */
-  cpus_path = cg_cpuset_path + file_name;
+  cpus_path = cg_cpuset_path + cg_prefix + file_name;
   fd = fopen(cpus_path.c_str(), "r+");
   if (fd == NULL)
     {
@@ -209,7 +227,7 @@ int trq_cg_initialize_cpuset_string(const string file_name)
     }
 
   bytes_written = fwrite(buf, strlen(buf), 1, fd);
-  if(bytes_written < 1)
+  if (bytes_written < 1)
     {
     sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
@@ -219,7 +237,8 @@ int trq_cg_initialize_cpuset_string(const string file_name)
   fclose(fd);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_initialize_cpuset_string()
+
 
 
 /* We need to add a torque directory to each subsystem mount point
@@ -265,12 +284,12 @@ int init_torque_cgroups()
       return(rc);
       }
 
-    file_name = "cpuset.mems";
+    file_name = "mems";
     rc = trq_cg_initialize_cpuset_string(file_name);
     if (rc != PBSE_NONE)
       return(rc);
  
-    file_name = "cpuset.cpus";
+    file_name = "cpus";
     rc = trq_cg_initialize_cpuset_string(file_name);
     if (rc != PBSE_NONE)
       return(rc);
@@ -525,9 +544,12 @@ int trq_cg_initialize_hierarchy()
 
   trq_cg_init_subsys_online(false);
 
+  /* Check to see if we have a user provided configuration file 
+     for cgroups */
   rc = trq_cg_get_cgroup_paths_from_file();
   if (rc != PBSE_NONE)
     {
+    /* No configuration file. Get the info from the system */
     rc = trq_cg_get_cgroup_paths_from_system();
     if (rc)
       return(rc);
@@ -546,24 +568,28 @@ int trq_cg_initialize_hierarchy()
   return(PBSE_NONE);
   }
 
-int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_pid)
+int trq_cg_add_process_to_cgroup(
+    
+  string     &cgroup_path,
+  const char *job_id,
+  pid_t       new_pid)
+
   {
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   int cgroup_fd;
-  char cgroup_name[256];
   char new_task_pid[256];
   string full_cgroup_path;
   string cgroup_task_path;
 
   sprintf(new_task_pid, "%d", new_pid);
-  sprintf(cgroup_name, "%d", job_pid);
-  full_cgroup_path = cgroup_path + cgroup_name + "/tasks";
+  full_cgroup_path = cgroup_path + job_id + "/tasks";
 
   cgroup_fd = open(full_cgroup_path.c_str(), O_WRONLY);
   if (cgroup_fd < 0)
     {
-    sprintf(log_buf, "failed to open %s for writing: %s", full_cgroup_path.c_str(), strerror(errno));
+    sprintf(log_buf, "failed to open %s for writing: %s",
+      full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
@@ -571,7 +597,8 @@ int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_p
   rc = write(cgroup_fd, new_task_pid, strlen(new_task_pid));
   if (rc <= 0)
     {
-    sprintf(log_buf, "failed to add porcess %s to cgroup %s: error: %d", cgroup_name, full_cgroup_path.c_str(), errno);
+    sprintf(log_buf, "failed to add process %s to cgroup %s: error: %d",
+      new_task_pid, full_cgroup_path.c_str(), errno);
     log_err(-1, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
@@ -579,70 +606,46 @@ int trq_cg_add_process_to_cgroup(string& cgroup_path, pid_t job_pid, pid_t new_p
   close(cgroup_fd);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_add_process_to_cgroup()
 
 
-/*
- * trq_cg_add_pid_to_cgroup_tasks()
- *
- * Add job_pid to the tasks file of the cgroup
- *
- * @param cgroup_path - directory path to the cgroup hierarchy
- * @param job_pid  -  The process id of the cgroup
- *
- * @return PBSE_NONE on success
- */
 
-int trq_cg_add_pid_to_cgroup_tasks(string& cgroup_path, pid_t job_pid)
+int trq_cg_add_process_to_all_cgroups(
+
+  const char *job_id,
+  pid_t       job_pid)
+
   {
   int rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  int cgroup_fd;
-  char cgroup_name[256];
-  string full_cgroup_path;
-  string cgroup_task_path;
-
-  sprintf(cgroup_name, "%d", job_pid);
-  full_cgroup_path = cgroup_path  + cgroup_name;
-
-  cgroup_task_path = full_cgroup_path + "/tasks";
-  cgroup_fd = open(cgroup_task_path.c_str(), O_WRONLY);
-  if (cgroup_fd < 0)
+  if ((rc = trq_cg_add_process_to_cgroup(cg_cpuset_path, job_id, job_pid)) == PBSE_NONE)
     {
-    sprintf(log_buf, "failed to open %s for writing: %s", cgroup_task_path.c_str(), strerror(errno));
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM); 
+    if ((rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, job_id, job_pid)) == PBSE_NONE)
+      {
+      rc = trq_cg_add_process_to_cgroup(cg_memory_path, job_id, job_pid);
+      }
     }
 
-  rc = write(cgroup_fd, cgroup_name, strlen(cgroup_name));
-  if (rc <= 0)
-    {
-    sprintf(log_buf, "failed to add process %s to cgroup: %d", cgroup_name, errno);
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
-
-  close(cgroup_fd);
-
-  return(PBSE_NONE);
-
-  }
+  return(rc);
+  } // END trq_cg_add_process_to_all_cgroups()
 
 
-int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
+
+int trq_cg_create_cgroup(
+    
+  string     &cgroup_path,
+  const char *job_id)
+
   {
-  int rc = PBSE_NONE;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  char cgroup_name[256];
-  string full_cgroup_path;
-  string cgroup_task_path;
+  int    rc = PBSE_NONE;
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  string full_cgroup_path(cgroup_path);
 
-  sprintf(cgroup_name, "%d", job_pid);
-  full_cgroup_path = cgroup_path  + cgroup_name;
+  full_cgroup_path += job_id;
 
   /* create a cgroup with the pid as the directory name under the cpuacct subsystem */
   rc = mkdir(full_cgroup_path.c_str(), 0x644);
-  if (rc != 0)
+  if ((rc != 0) &&
+      (errno != EEXIST))
     {
     sprintf(log_buf, "failed to make directory %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, log_buf);
@@ -658,35 +661,144 @@ int trq_cg_create_cgroup(string& cgroup_path, pid_t job_pid)
     }
 
   return(rc);
+  } // END trq_cg_create_cgroup()
 
+
+
+/*
+ * trq_cg_populate_cgroup()
+ *
+ * Populates a cgroup with the indices specified in the string used
+ * @param which - either CPUS or MEMS
+ * @param job_id - the id of the job for which we're creating the cpuset
+ * @param used - a string containing the indices to write to the file
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_populate_cgroup(
+
+  int         which,
+  const char *job_id,
+  string     &used)
+
+  {
+  FILE   *f;
+  string  path(cg_cpuset_path);
+  int     rc = PBSE_NONE;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  size_t  bytes_written;
+
+  path += job_id;
+  if (which == CPUS)
+    path += "/" + cg_prefix + "cpus";
+  else
+    path += "/" + cg_prefix + "mems";
+
+  if ((f = fopen(path.c_str(), "w")) == NULL)
+    {
+    sprintf(log_buf, "failed to open %s", path.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  if ((bytes_written = fwrite(used.c_str(), used.size(), 1, f)) < 1)
+    {
+    sprintf(log_buf, "failed to write cpuset for job %s", job_id);
+    log_err(errno, __func__, log_buf);
+    rc = PBSE_SYSTEM;
+    }
+
+  fclose(f);
+
+  return(rc);
+  } // END trq_cg_populate_cgroup()
+
+
+
+int trq_cg_get_cpuset_and_mem(
+
+  job         *pjob, 
+  std::string &cpuset_string, 
+  std::string &mem_string)
+
+  {
+  int rc = PBSE_NONE;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  rc = this_node.get_jobs_cpusets(pjob->ji_qs.ji_jobid, cpuset_string, mem_string);
+#endif
+  return(rc);
   }
+
+
+
+/*
+ * trq_cg_create_all_cgroups()
+ *
+ * Creates all of the cgroups for a job
+ * @param pjob - the job whose cgroups we're creating
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_create_all_cgroups(
+
+  job    *pjob)
+
+  {
+  int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob->ji_qs.ji_jobid);
+
+  if (rc == PBSE_NONE)
+    {
+    rc = trq_cg_create_cgroup(cg_memory_path, pjob->ji_qs.ji_jobid);
+
+    if (rc == PBSE_NONE)
+      {
+      std::string  cpus_used;
+      std::string  mems_used;
+      rc = trq_cg_create_cgroup(cg_cpuset_path, pjob->ji_qs.ji_jobid);
+      
+      // Get the cpu and memory indices used by this job
+      rc = trq_cg_get_cpuset_and_mem(pjob, cpus_used, mems_used);
+      if (rc == PBSE_NONE)
+        {
+        rc = trq_cg_populate_cgroup(CPUS, pjob->ji_qs.ji_jobid, cpus_used);
+
+        if (rc == PBSE_NONE)
+          rc = trq_cg_populate_cgroup(MEMS, pjob->ji_qs.ji_jobid, mems_used);
+        }
+      }
+    }
+
+  return(rc);
+  } // END trq_cg_create_all_cgroups()
+
+
+
+int trq_cg_add_process_to_cgroup(
+
+  const char *job_id,
+  pid_t       job_pid)
+
+  {
+  return(trq_cg_add_process_to_cgroup(cg_cpuset_path, job_id, job_pid));
+  } // END trq_cg_add_process_to_cgroup()
+
+
 
 /* Add a process to the cpuacct and memory subsystems 
  */
-int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
+int trq_cg_add_process_to_cgroup_accts(
+    
+  const char *job_id,
+  pid_t       job_pid)
+
   {
-  int rc;
+  int rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, job_id, job_pid);
 
-  /* create a directory for this process in the cpuacct/torque hierarchy */
-  rc = trq_cg_create_cgroup(cg_cpuacct_path, job_pid);
-  if (rc != PBSE_NONE)
-    return(rc);
+  if (rc == PBSE_NONE)
+    rc = trq_cg_add_process_to_cgroup(cg_memory_path, job_id, job_pid); 
 
-  rc = trq_cg_add_pid_to_cgroup_tasks(cg_cpuacct_path, job_pid);
-  if (rc != PBSE_NONE)
-    return(rc);
-
-
-  /* create a directory for this process in the memory/torque hierarchy */
-  rc = trq_cg_create_cgroup(cg_memory_path, job_pid);
-  if (rc != PBSE_NONE)
-    return(rc);
-
-  rc = trq_cg_add_pid_to_cgroup_tasks(cg_memory_path, job_pid);
-  if (rc != PBSE_NONE)
-    return(rc);
-
-  return(PBSE_NONE);
+  return(rc);
   }
 
 
@@ -694,15 +806,17 @@ int trq_cg_add_process_to_cgroup_accts(pid_t job_pid)
  * Remove the cgroup of the job_pid from the
  * cgroup_path given.
  */
-int trq_cg_remove_process_from_cgroup(string& cgroup_path, pid_t job_pid)
+int trq_cg_remove_process_from_cgroup(
+    
+  string     &cgroup_path,
+  const char *job_id)
+
   {
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
-  char cgroup_name[256];
   string cgroup_path_name;
 
-  sprintf(cgroup_name, "%d", job_pid);
-  cgroup_path_name = cgroup_path + cgroup_name;
+  cgroup_path_name = cgroup_path + job_id;
 
   /* TODO: We are waiting for cgroups to be done.
      How long should we wait? */
@@ -732,52 +846,55 @@ int trq_cg_remove_process_from_cgroup(string& cgroup_path, pid_t job_pid)
     else
       rc = PBSE_NONE;
 
-    }while(rc != PBSE_NONE);
+    } while(rc != PBSE_NONE);
 
   return(rc);
+  } // END trq_cg_remove_process_from_cgroup()
 
 
-  }
 
 /* trq_cg_remove_process_from_accts: Remove the hierarchies for
    this jobs process from the cgroups directory. That is remove
    this job from its accounting cgroups */
-void *trq_cg_remove_process_from_accts(void *vp)
-  {
-  int rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  pid_t *pid = (pid_t *)vp;
-  pid_t job_pid = *pid;
+void *trq_cg_remove_process_from_accts(
+    
+  void *vp)
 
+  {
+  int   rc;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *job_id = (char *)vp;
 
   /* remove job from the cpuacct cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_pid);
+  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_id);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "Failed to remove cgroup cpuacct: process %d", job_pid);
+    sprintf(log_buf, "Failed to remove cgroup cpuacct: process %s", job_id);
     log_err(-1, __func__, log_buf);
     }
 
   /* remove job from the memory cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, job_pid);
+  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, job_id);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "Failed to remove cgroup memory: process %d", job_pid);
+    sprintf(log_buf, "Failed to remove cgroup memory: process %s", job_id);
     log_err(-1, __func__, log_buf);
     }
 
   /* remove job from the cpuset cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_cpuset_path, job_pid);
+  rc = trq_cg_remove_process_from_cgroup(cg_cpuset_path, job_id);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "Failed to remove cgroup memory: process %d", job_pid);
+    sprintf(log_buf, "Failed to remove cgroup memory: process %s", job_id);
     log_err(-1, __func__, log_buf);
     }
 
-
+  free(job_id);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_remove_process_from_accts()
+
+
 
 /*
  * trq_cg_set_swap_memory_limit()
@@ -792,12 +909,11 @@ void *trq_cg_remove_process_from_accts(void *vp)
 
 int trq_cg_set_swap_memory_limit(
   
-  pid_t pid, 
-  unsigned long memory_limit)
+  const char    *job_id,
+  unsigned long  memory_limit)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
-  char   cgroup_name[256];
   char   mem_limit_string[64];
   string oom_control_name;
   FILE   *fd;
@@ -805,8 +921,7 @@ int trq_cg_set_swap_memory_limit(
   
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
-  sprintf(cgroup_name, "%d", pid);
-  oom_control_name = cg_memory_path + cgroup_name + "/memory.memsw.limit_in_bytes";
+  oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
   fd = fopen(oom_control_name.c_str(), "r+");
@@ -830,8 +945,9 @@ int trq_cg_set_swap_memory_limit(
   fclose(fd);
 
   return(PBSE_NONE);
+  } // END trq_cg_set_swap_memory_limit()
 
-  }
+
 
 /*
  * trq_cg_set_resident_memory_limit()
@@ -846,12 +962,11 @@ int trq_cg_set_swap_memory_limit(
 
 int trq_cg_set_resident_memory_limit(
   
-  pid_t pid, 
-  unsigned long memory_limit)
+  const char    *job_id, 
+  unsigned long  memory_limit)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
-  char   cgroup_name[256];
   char   mem_limit_string[64];
   string oom_control_name;
   FILE   *fd;
@@ -859,8 +974,7 @@ int trq_cg_set_resident_memory_limit(
   
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
-  sprintf(cgroup_name, "%d", pid);
-  oom_control_name = cg_memory_path + cgroup_name + "/memory.limit_in_bytes";
+  oom_control_name = cg_memory_path + job_id + "/memory.limit_in_bytes";
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
   fd = fopen(oom_control_name.c_str(), "r+");
@@ -884,8 +998,7 @@ int trq_cg_set_resident_memory_limit(
   fclose(fd);
 
   return(PBSE_NONE);
-
-  }
+  } // END trq_cg_set_resident_memory_limit()
 
 
 
@@ -912,98 +1025,4 @@ int trq_cg_reserve_cgroup(
   return(rc);
   }
 
-
-
-int trq_cg_get_cpuset_and_mem(
-  job *pjob, 
-  std::string &cpuset_string, 
-  std::string &mem_string)
-
-  {
-  int rc = PBSE_NONE;
-
-#ifdef PENABLE_LINUX_CGROUPS
-  rc = this_node.get_jobs_cpusets(pjob->ji_qs.ji_jobid, cpuset_string, mem_string);
-#endif
-  return(rc);
-  }
-
-
-/*
- * trq_cg_create_cpuset_cgroup()
- *
- * creates a cgroup for the current process, gets the 
- * cpuset and memory requested and adds them to
- * the cpuset.cpus and cpuset.mems files for the cgroup.
- *
- * @param pjob    -  job structure of the process
- * @param job_pid -  The process id of this job
- *
- * @return PBSE_NONE on success
- */
-
-int trq_cg_create_cpuset_cgroup(job *pjob, pid_t job_pid)
-  {
-  int rc = PBSE_NONE;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  char cgroup_name[256];
-  std::string cpus_used;
-  std::string mems_used;
-  std::string cpuset_cpus;
-  std::string cpuset_mems;
-  FILE *fd;
-  size_t bytes_written;
-
-  rc = trq_cg_get_cpuset_and_mem(pjob, cpus_used, mems_used);
-  if (rc != PBSE_NONE)
-    return(rc);
-
-  rc = trq_cg_create_cgroup(cg_cpuset_path, job_pid);
-  if (rc != PBSE_NONE)
-    return(rc);
-
-
-  /* This is the fun part. How do we determine which cpus and memory a job should use */
-  sprintf(cgroup_name, "%d", job_pid);
-  cpuset_cpus = cg_cpuset_path + cgroup_name + "/cpuset.cpus";
-  fd = fopen(cpuset_cpus.c_str(), "w");
-  if (fd == NULL)
-    {
-    sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
-  bytes_written = fwrite(cpus_used.c_str(), cpus_used.size(), 1, fd);
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cpuset for job %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buf);
-    fclose(fd);
-    return(PBSE_SYSTEM);
-    }
-
-  fclose(fd);
-  
-  cpuset_mems = cg_cpuset_path + cgroup_name + "/cpuset.mems";
-  fd = fopen(cpuset_mems.c_str(), "w"); 
-   if (fd == NULL)
-    {
-    sprintf(log_buf, "failed to open %s", cpuset_cpus.c_str());
-    log_err(-1, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
-   bytes_written = fwrite(mems_used.c_str(), mems_used.size(), 1, fd);
-   if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cpu mems for job %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buf);
-    fclose(fd);
-    return(PBSE_SYSTEM);
-    }
-
-  rc = trq_cg_add_pid_to_cgroup_tasks(cg_cpuset_path, job_pid);
-  return(rc);
-  }
 

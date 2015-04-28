@@ -33,7 +33,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [master], [torqueusers@supercluster.org])
+AC_INIT([torque], [feature/numa], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -53,7 +53,9 @@ if test "x$MAKE" = "xerror" ;then
   AC_MSG_ERROR([cannot find a make command])
 fi
 
-AM_INIT_AUTOMAKE([-Wall -Werror -Wno-unsupported foreign 1.9.6 color-tests])
+m4_ifdef([HAVE_CHECK],
+  [AM_INIT_AUTOMAKE([-Wall -Werror -Wno-unsupported foreign 1.9.6 color-tests])],
+  [AM_INIT_AUTOMAKE([-Wall -Werror -Wno-unsupported foreign 1.9.6])])
 
 AM_PROG_CC_C_O
 CC="$CXX"
@@ -190,6 +192,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_fn_b/Makefile
     src/lib/Libattr/test/attr_fn_c/Makefile
     src/lib/Libattr/test/attr_fn_complete_req/Makefile
+    src/lib/Libattr/test/attr_fn_attr_req_info/Makefile
     src/lib/Libattr/test/attr_fn_hold/Makefile
     src/lib/Libattr/test/attr_fn_intr/Makefile
     src/lib/Libattr/test/attr_fn_l/Makefile
@@ -206,6 +209,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/lib/Libattr/test/attr_node_func/Makefile
     src/lib/Libattr/test/req/Makefile
     src/lib/Libattr/test/complete_req/Makefile
+    src/lib/Libattr/test/attr_req_info/Makefile
     src/lib/Libcmds/test/Makefile
     src/lib/Libcmds/test/add_verify_resources/Makefile
     src/lib/Libcmds/test/ck_job_name/Makefile

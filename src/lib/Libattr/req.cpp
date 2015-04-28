@@ -6,7 +6,6 @@
 #include "pbs_error.h"
 #include "utils.h"
 
-
 // define the class constants
 const int USE_CORES = 0;
 const int USE_THREADS = 1;
@@ -39,6 +38,66 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
 
   {
   }
+
+
+
+req::req(
+
+  char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
+                    numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
+                    thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
+                    features(), placement_str(), gpu_mode(), task_count(1), pack(false),
+                    single_job_access(false), index(0)
+  
+  {
+  char *ptr = work_str;
+  int   node_count = strtol(ptr, &ptr, 10);
+  int   ppn_len = strlen(":ppn=");
+  int   mic_len = strlen(":mics=");
+  int   gpu_len = strlen(":gpus=");
+  int   ppn = 1;
+  int   mic = 0;
+  int   gpu = 0;
+
+  // Handle a node name
+  if (node_count == 0)
+    {
+    node_count = 1;
+    ptr = strchr(ptr, ':');
+    }
+
+  while ((ptr != NULL) &&
+         (*ptr != '\0'))
+    {
+    if (!strncmp(ptr, ":ppn=", ppn_len))
+      {
+      ptr += ppn_len;
+      ppn = strtol(ptr, &ptr, 10);
+      }
+    else if (!strncmp(ptr, ":mics=", mic_len))
+      {
+      ptr += mic_len;
+      mic = strtol(ptr, &ptr, 10);
+      }
+    else if (!strncmp(ptr, ":gpus=", gpu_len))
+      {
+      ptr += gpu_len;
+      gpu = strtol(ptr, &ptr, 10);
+      }
+    else
+      {
+      // Feature. Advance to the next ':'
+      ptr = strchr(ptr + 1, ':');
+      }
+    }
+
+  this->task_count = node_count;
+  this->execution_slots = ppn;
+  this->gpus = gpu;
+  this->mics = mic;
+  } // END Constructor from resource list
+
+
     
 req::req(
     
@@ -1311,7 +1370,7 @@ char *capture_until_newline_and_advance(
  * [mem: <mem>kb]
  * [swap: <swap>kb]
  * [disk: <swap>kb]
- * [sockets: <sockets>]
+ * [socket: <sockets>]
  * [numa chips: <numa chips>]
  * [gpus: <gpus> [gpu mode: <gpu mode>]]
  * [mics: <mics>]
@@ -1631,10 +1690,16 @@ int req::set_value(
     this->disk = strtoll(value, NULL, 10);
   else if (!strncmp(name, "nodes", 5))
     this->nodes = strtol(value, NULL, 10);
-  else if (!strncmp(name, "sockets", 7))
+  else if (!strncmp(name, "socket", 7))
+    {
     this->socket = strtol(value, NULL, 10);
+    this->placement_str = place_socket;
+    }
   else if (!strncmp(name, "numachip", 10))
+    {
     this->numa_chip = strtol(value, NULL, 10);
+    this->placement_str = place_numa;
+    }
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpu_mode", 8))
@@ -1663,6 +1728,10 @@ int req::set_value(
     this->pack = true;
   else if (!strncmp(name, "hostlist", 8))
     this->hostlist = value;
+  else if (!strncmp(name, "core", 4))
+    this->cores = strtol(value, NULL, 10);
+   else if (!strncmp(name, "thread", 6))
+    this->threads = strtol(value, NULL, 10);
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -1775,6 +1844,18 @@ int req::getIndex() const
   return(this->index);
   }
 
+int req::getGpus() const
+
+  {
+  return(this->gpus);
+  }
+
+int req::getMics() const
+
+  {
+  return(this->mics);
+  }
+
 
 
 /*
@@ -1782,7 +1863,9 @@ int req::getIndex() const
  * Based on the hostlist, determines the number of tasks from this req assigned 
  * to this host
  * hostlist is in the format:
- * hostname1[:ppn=num_ppn][+hostname2[:ppn=num_ppn][...]]
+ * hostname1/<index range[+hostname2/<index range>[...]]
+ * index range is in the format:
+ * digit[-digit][,digit][...]
  * We find the ratio of the number of tasks assigned to this host to the number of cores per task
  * That raio is the number of tasks assigned to this host
  *
@@ -1805,15 +1888,40 @@ int req::get_num_tasks_for_host(
         (!strncmp(this->placement_str.c_str(), "node", 4)))
       task_count = 1;
     else if ((this->hostlist.size() <= offset) ||
-             (this->hostlist.at(offset) != ':'))
+             ((this->hostlist.at(offset) != ':') &&
+              (this->hostlist.at(offset) != '/')))
       task_count = 1;
     else
       {
-      // + 5 for ':ppn='
-      std::string  ppn_val = this->hostlist.substr(pos + host.size() + 5);
-      char        *ppn_str = strdup(ppn_val.c_str());
-      int          num_ppn = strtol(ppn_str, NULL, 10);
+      int num_ppn = 0;
 
+      // handle both :ppn=X and /range
+      // + 5 for ':ppn='
+      if (this->hostlist.at(offset) == '/')
+        {
+        char             *range_str = strdup(this->hostlist.substr(offset + 1).c_str());
+        char             *ptr;
+        std::vector<int>  indices;
+
+        // truncate any further entries 
+        if ((ptr = strchr(range_str, '+')) != NULL)
+          *ptr = '\0';
+
+        translate_range_string_to_vector(range_str, indices);
+        num_ppn = indices.size();
+
+        free(range_str);
+        }
+      else
+        {
+        std::string  ppn_val = this->hostlist.substr(offset + 5);
+        char        *ppn_str = strdup(ppn_val.c_str());
+        
+        num_ppn = strtol(ppn_str, NULL, 10);
+
+        free(ppn_str);
+        }
+        
       task_count = num_ppn / this->execution_slots;
       }
     }
@@ -1874,5 +1982,29 @@ void req::set_hostlist(
   {
   this->hostlist = hostlist;
   } // END set_hostlist()
+    
+void req::set_memory(
+    
+  unsigned long mem)
+
+  {
+  this->mem = mem;
+  }
+
+void req::set_execution_slots(
+    
+  int execution_slots)
+
+  {
+  this->execution_slots = execution_slots;
+  }
+
+void req::set_task_count(
+    
+  int task_count)
+
+  {
+  this->task_count = task_count;
+  }
 
 

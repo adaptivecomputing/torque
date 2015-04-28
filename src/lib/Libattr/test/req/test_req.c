@@ -26,6 +26,25 @@ START_TEST(test_append_gres)
 END_TEST
 
 
+START_TEST(test_string_constructor)
+  {
+  req r1(strdup("6:ppn=2:bigmem"));
+  fail_unless(r1.getTaskCount() == 6);
+  fail_unless(r1.getExecutionSlots() == 2);
+
+  req r2(strdup("3:ppn=4:bigmem:mics=1"));
+  fail_unless(r2.getTaskCount() == 3);
+  fail_unless(r2.getExecutionSlots() == 4);
+  fail_unless(r2.getMics() == 1);
+
+  req r3(strdup("2:ppn=8:fast:gpus=2"));
+  fail_unless(r3.getTaskCount() == 2);
+  fail_unless(r3.getExecutionSlots() == 8);
+  fail_unless(r3.getGpus() == 2);
+  }
+END_TEST
+
+
 START_TEST(test_get_set_values)
   {
   req r;
@@ -35,7 +54,7 @@ START_TEST(test_get_set_values)
   r.set_value("memory", "1024kb");
   r.set_value("swap", "1024kb");
   r.set_value("disk", "10000000kb");
-  r.set_value("sockets", "1");
+  r.set_value("socket", "1");
   r.set_value("gpus", "2");
   r.set_value("task_count", "5");
   r.set_value("gpu_mode", "exclusive_thread");
@@ -45,7 +64,7 @@ START_TEST(test_get_set_values)
   r.set_value("gres", "gresA");
   r.set_value("opsys", "ubuntu");
   r.set_value("arch", "64bit");
-  r.set_value("hostlist", "napali/0-31");
+  r.set_value("hostlist", "napali:ppn=32");
   r.set_value("features", "fast");
   r.set_value("single_job_access", "true");
 
@@ -70,7 +89,7 @@ START_TEST(test_get_set_values)
   fail_unless(names[13] == "arch.0");
   fail_unless(names[14] == "features.0", names[14].c_str());
   fail_unless(names[15] == "single_job_access.0");
-  fail_unless(names[16] == "hostlist.0", names[17].c_str());
+  fail_unless(names[16] == "hostlist.0", names[16].c_str());
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
@@ -88,7 +107,7 @@ START_TEST(test_get_set_values)
   fail_unless(values[13] == "64bit");
   fail_unless(values[14] == "fast");
   fail_unless(values[15] == "true");
-  fail_unless(values[16] == "napali/0-31");
+  fail_unless(values[16] == "napali:ppn=32");
 
   req r2;
   r2.set_value("lprocs", "2");
@@ -177,7 +196,8 @@ START_TEST(test_constructors)
   fail_unless(r.getMemory() == 0);
   fail_unless(r.getExecutionSlots() == 1, "slots: %d", r.getExecutionSlots());
 
-  req r2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
+  std::string req2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
+  req r2(req2);
   fail_unless(r2.getTaskCount() == 5, "task count is %d", r2.getTaskCount());
   fail_unless(r2.getPlacementType() == "socket=2", "value %s", r2.getPlacementType().c_str());
   fail_unless(r2.getNodeAccessPolicy().size() == 0);
@@ -200,17 +220,21 @@ START_TEST(test_constructors)
   fail_unless(copy_r2.getMemory() == 12 * 1024 * 1024);
   fail_unless(copy_r2.getExecutionSlots() == 4);
   fail_unless(copy_r2.getFeatures() == "fast", "features '%s'", copy_r2.getFeatures().c_str());
-  
-  req r3("5:lprocs=4:memory=12gb:place=node:mics=1:feature=fast");
+ 
+  std::string req3("5:lprocs=4:memory=12gb:place=node:mics=1:feature=fast");
+  req r3(req3);
   fail_unless(r3.getPlacementType() == "node");
 
-  req r4("5:lprocs=4:memory=12gb:place=numachip=1:mics=1:feature=fast");
+  std::string req4("5:lprocs=4:memory=12gb:place=numachip=1:mics=1:feature=fast");
+  req r4(req4);
   fail_unless(r4.getPlacementType() == "numachip=1", r4.getPlacementType().c_str());
-  
-  req r5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
+ 
+  std::string req5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
+  req r5(req5);
   fail_unless(r5.getThreadUsageString() == "usecores", "thread usage '%s'", r5.getThreadUsageString().c_str());
 
-  req r6("5:lprocs=4:place=thread=4");
+  std::string req6("5:lprocs=4:place=thread=4");
+  req r6(req6);
   fail_unless(r6.getThreadUsageString() == "usethreads", "thread usage '%s'", r6.getThreadUsageString().c_str());
 
   // make sure miss-spellings are caught
@@ -230,7 +254,8 @@ START_TEST(test_constructors)
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE);
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE);
 
-  req r7("2:place=numachip");
+  std::string req7("2:place=numachip");
+  req r7(req7);
   r7.set_index(0);
 
   std::vector<std::string> names;
@@ -244,7 +269,8 @@ START_TEST(test_constructors)
   fail_unless(values[1] == "1");
   fail_unless(values[2] == "1");
 
-  req r8("2:place=core");
+  std::string req8("2:place=core");
+  req r8(req8);
   r8.set_index(0);
 
   names.clear();
@@ -257,7 +283,6 @@ START_TEST(test_constructors)
   fail_unless(values[0] == "2");
   fail_unless(values[1] == "1");
   fail_unless(values[2] == "1");
- 
   }
 END_TEST
 
@@ -429,6 +454,22 @@ START_TEST(test_get_num_tasks_for_host)
   r.set_hostlist("napali");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 1, "Expected 1, got %d", tasks);
+  
+  r.set_value("hostlist", "napali/0-15");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 16, "Expected 16, got %d", tasks);
+  
+  r.set_value("hostlist", "napali/0-15+wailua/0-15");
+  r.set_value("lprocs", "4");
+  r.set_value("task_count", "8");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 4, "Expected 4, got %d", tasks);
+  
+  r.set_value("hostlist", "waimea/0-16+napali/0-15");
+  r.set_value("lprocs", "4");
+  r.set_value("task_count", "8");
+  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(tasks == 4, "Expected 4, got %d", tasks);
   }
 END_TEST
 
@@ -467,6 +508,7 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_equals_operator);
   tcase_add_test(tc_core, test_append_gres);
   tcase_add_test(tc_core, test_get_num_tasks_for_host);
+  tcase_add_test(tc_core, test_string_constructor);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_set_from_string");

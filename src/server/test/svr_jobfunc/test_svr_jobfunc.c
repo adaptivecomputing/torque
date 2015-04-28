@@ -11,6 +11,8 @@
 #include "pbs_error.h"
 #include "resource.h"
 #include "work_task.h"
+#include "complete_req.hpp"
+#include "attr_req_info.hpp"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);

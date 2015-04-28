@@ -10,7 +10,14 @@ int hardware_style;
 int tasks;
 int placed;
 int called_place;
+int called_store_pci;
 bool oscillate = false;
+bool avail_oscillate = false;
+int place_amount = 1;
+std::string my_placement_type;
+const char *place_socket = "socket";
+
+const int exclusive_socket = 2;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -44,8 +51,14 @@ int get_hardware_style(hwloc_topology_t topology)
     return(INTEL);
   }
 
+PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device()
   {
+  }
+PCI_Device::PCI_Device(const PCI_Device &other) {}
+PCI_Device &PCI_Device::operator=(const PCI_Device &other)
+  {
+  return(*this);
   }
 
 Core::~Core()
@@ -60,6 +73,24 @@ Chip::~Chip()
   {
   }
 
+void Chip::partially_place_task(
+
+  allocation &remaining,
+  allocation &master)
+
+  {
+  if (place_amount == 1)
+    {
+    remaining.memory = 0;
+    remaining.cpus = 0;
+    }
+  else if (place_amount == 2)
+    {
+    remaining.memory /= 2;
+    remaining.cpus /= 2;
+    }
+  }
+
 int Chip::initializeNonNUMAChip(hwloc_obj_t obj, hwloc_topology_t topology)
   {
   return(PBSE_NONE);
@@ -70,27 +101,40 @@ int Chip::initializeChip(hwloc_obj_t obj, hwloc_topology_t topology)
   return(PBSE_NONE);
   }
 
-int Chip::getAvailableCores()
+hwloc_uint64_t Chip::getAvailableMemory() const
+  {
+  return(12);
+  }
+
+int Chip::getAvailableCores() const
   {
   return(6);
   }
 
 bool  Chip::chipIsAvailable() const
   {
-  return(true);
+  static bool result = false;
+  
+  if (avail_oscillate)
+    {
+    result = !result;
+    return(result);
+    }
+  else
+    return(true);
   }
 
-int Chip::getTotalCores()
+int Chip::getTotalCores() const
   {
   return(6);
   }
 
-int Chip::getAvailableThreads()
+int Chip::getAvailableThreads() const
   {
   return(6);
   }
 
-int Chip::getTotalThreads()
+int Chip::getTotalThreads() const
   {
   return(6);
   }
@@ -101,7 +145,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r) 
+int Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }
@@ -126,6 +170,12 @@ bool Chip::free_task(const char *jobid)
 
 void Chip::displayAsString(std::stringstream &out) const {}
 
+bool Chip::store_pci_device_appropriately(PCI_Device &d, bool force)
+  {
+  called_store_pci++;
+  return(force);
+  }
+
 allocation::allocation(const allocation &other) {}
 allocation::allocation(const char *jobid) {}
 int allocation::add_allocation(const allocation &other) 
@@ -135,5 +185,10 @@ int allocation::add_allocation(const allocation &other)
   }
 
 req::req() {}
+std::string req::getPlacementType() const
+
+  {
+  return(my_placement_type);
+  }
 
 allocation::allocation() {}

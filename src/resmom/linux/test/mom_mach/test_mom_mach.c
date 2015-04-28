@@ -1,12 +1,13 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "mom_mach.h"
-#include "test_mom_mach.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 #include <map>
 #include <set>
 
+#include "pbs_config.h"
+#include "mom_mach.h"
+#include "test_mom_mach.h"
 #include "pbs_job.h"
 #include "pbs_error.h"
 

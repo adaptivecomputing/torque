@@ -4,6 +4,7 @@
 #include <string>
 
 #include "allocation.hpp"
+#include "req.hpp"
 
 START_TEST(test_allocation_constructors)
   {
@@ -24,6 +25,12 @@ START_TEST(test_allocation_constructors)
 
   allocation a3("1.napali");
   fail_unless(!strcmp(a3.jobid, "1.napali"));
+
+  req r;
+  allocation a4(r);
+  fail_unless(a4.memory == 1024, "mem = %d", a.memory);
+  fail_unless(a4.cpus == 2);
+  fail_unless(a4.cores_only == true);
   }
 END_TEST
 
@@ -38,6 +45,8 @@ START_TEST(test_add_allocation)
   a.cpu_indices.push_back(1);
   a.memory = 3;
   a.mem_indices.push_back(0);
+  a.gpu_indices.push_back(0);
+  a.mic_indices.push_back(3);
 
   a2.cpus = 2;
   a2.cpu_indices.push_back(2);
@@ -50,6 +59,35 @@ START_TEST(test_add_allocation)
   fail_unless(a2.memory == 8);
   fail_unless(a2.mem_indices.size() == 2);
   fail_unless(a2.cpu_indices.size() == 4);
+  fail_unless(a2.gpu_indices.size() == 1);
+  fail_unless(a2.gpu_indices[0] == 0);
+  fail_unless(a2.mic_indices.size() == 1);
+  fail_unless(a2.mic_indices[0] == 3);
+  }
+END_TEST
+
+
+START_TEST(test_set_place_type)
+  {
+
+  allocation a;
+  fail_unless(a.place_type == exclusive_none);
+
+  a.set_place_type(place_node);
+  fail_unless(a.place_type == exclusive_node);
+
+  a.set_place_type(place_socket);
+  fail_unless(a.place_type == exclusive_socket);
+
+  a.set_place_type(place_numa);
+  fail_unless(a.place_type == exclusive_chip);
+
+  a.set_place_type(place_core);
+  fail_unless(a.place_type == exclusive_core);
+
+  a.set_place_type("bobo");
+  fail_unless(a.place_type == exclusive_none);
+
   }
 END_TEST
 
@@ -81,8 +119,8 @@ Suite *allocation_suite(void)
   Suite *s = suite_create("allocation test suite methods");
   TCase *tc_core = tcase_create("test_allocation_constructors");
   tcase_add_test(tc_core, test_allocation_constructors);
-  suite_add_tcase(s, tc_core);
-  
+  tcase_add_test(tc_core, test_set_place_type);
+  suite_add_tcase(s, tc_core); 
   tc_core = tcase_create("test_add_allocation");
   tcase_add_test(tc_core, test_add_allocation);
   tcase_add_test(tc_core, test_place_indices_in_string);

@@ -84,27 +84,41 @@
 #include <string>
 
 #include "pbs_ifl.h"
+#include "req.hpp"
 
 extern const int MEM_INDICES;
 extern const int CPU_INDICES;
+
+extern const int exclusive_node;
+extern const int exclusive_socket;
+extern const int exclusive_chip;
+extern const int exclusive_core;
+extern const int exclusive_none;
 
 class allocation
   {
   public:
   std::vector<int> cpu_indices;
   std::vector<int> mem_indices;
+  std::vector<int> gpu_indices;
+  std::vector<int> mic_indices;
   unsigned long    memory;
   int              cpus;
   int              cores;
   int              threads;
+  int              place_type;
   bool             cores_only;
   char             jobid[PBS_MAXSVRJOBID];
+  int              gpus;
+  int              mics;
 
   allocation(const allocation &alloc);
+  allocation(const req &r);
   allocation();
   allocation(const char *jobid);
   int  add_allocation(const allocation &other);
   void place_indices_in_string(std::string &output, int which);
+  void set_place_type(const std::string &place);
   };
 
 #endif 

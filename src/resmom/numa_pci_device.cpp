@@ -26,35 +26,100 @@ using namespace std;
 #define INTEL 1
 #define AMD   2
 
-  PCI_Device::PCI_Device()
-    {
-    id = -1;
-    memset(cpuset_string, 0, MAX_CPUSET_SIZE);
-    }
+const int MIC_TYPE = 0;
+const int GPU = 1;
 
-   PCI_Device::~PCI_Device()
-    {
-    id = -1;
-    memset(cpuset_string, 0, MAX_CPUSET_SIZE);
-    }
+PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1)
+  {
+  memset(cpuset_string, 0, MAX_CPUSET_SIZE);
+  }
 
-  int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
-    {
+PCI_Device::PCI_Device(
+    
+  const PCI_Device &other) : name(other.name), id(other.id), info_name(other.info_name),
+                             info_value(other.info_value), type(other.type)
 
-    id = device_obj->logical_index;
-    name = device_obj->name;
+  {
+  this->nearest_cpuset = hwloc_bitmap_alloc();
+  memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+  memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
+  }
+
+PCI_Device &PCI_Device::operator =(
+
+  const PCI_Device &other)
+
+  {
+  this->name = other.name;
+  this->id = other.id;
+  this->info_name = other.info_name;
+  this->info_value = other.info_value;
+  this->nearest_cpuset = hwloc_bitmap_alloc();
+  memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+  memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
+  this->type = other.type;
+
+  return(*this);
+  }
+
+PCI_Device::~PCI_Device()
+  {
+  id = -1;
+  memset(cpuset_string, 0, MAX_CPUSET_SIZE);
+  }
+
+int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
+  {
+
+  id = device_obj->logical_index;
+  name = device_obj->name;
+  if (device_obj->infos != NULL)
+    {
     info_name = device_obj->infos->name;
     info_value = device_obj->infos->value;
+    }
 
 
 #ifdef MIC
-    int rc;
+  int rc;
 
+  nearest_cpuset = hwloc_bitmap_alloc();
+  if (nearest_cpuset == NULL)
+    return(PBSE_MEM_MALLOC);
+
+  rc = hwloc_intel_mic_get_device_cpuset(topology, idx, nearest_cpuset);
+  if (rc != 0)
+    {
+    string  buf;
+
+    buf = "could not get cpuset of ";
+    buf = buf + name.c_str();
+    log_err(-1, __func__, buf.c_str());
+    }
+  hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
+
+  this->type = MIC_TYPE;
+#endif
+#ifdef NVIDIA_GPUS
+  int rc;
+  nvmlDevice_t  gpu_device;
+  
+  rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
+  if (rc != NVML_SUCCESS)
+    {
+    string buf;
+
+    buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
+    buf = buf + name.c_str();
+    log_err(-1, __func__, buf.c_str());
+    }
+  else
+    {
     nearest_cpuset = hwloc_bitmap_alloc();
     if (nearest_cpuset == NULL)
       return(PBSE_MEM_MALLOC);
 
-    rc = hwloc_intel_mic_get_device_cpuset(topology, idx, nearest_cpuset);
+    rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
     if (rc != 0)
       {
       string  buf;
@@ -64,65 +129,69 @@ using namespace std;
       log_err(-1, __func__, buf.c_str());
       }
     hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
-#endif
-#ifdef NVIDIA_GPUS
-    int rc;
-    nvmlDevice_t  gpu_device;
-    
-    rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
-    if (rc != NVML_SUCCESS)
-      {
-      string buf;
+    }
 
-      buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
-      buf = buf + name.c_str();
-      log_err(-1, __func__, buf.c_str());
-      }
-    else
-      {
-      nearest_cpuset = hwloc_bitmap_alloc();
-      if (nearest_cpuset == NULL)
-        return(PBSE_MEM_MALLOC);
-
-      rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
-      if (rc != 0)
-        {
-        string  buf;
-
-        buf = "could not get cpuset of ";
-        buf = buf + name.c_str();
-        log_err(-1, __func__, buf.c_str());
-        }
-      hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
-      }
+  this->type = GPU;
 
 #endif
 
-    return(PBSE_NONE);
-    }
- 
-  void PCI_Device::displayAsString(
+  return(PBSE_NONE);
+  }
 
-    stringstream &out) const
+void PCI_Device::displayAsString(
 
-    {
-    out << "      pci " << this->id << " " << this->name << "\n";
-    } // end displayasstring()
+  stringstream &out) const
+
+  {
+  out << "      pci " << this->id << " " << this->name << "\n";
+  } // end displayasstring()
+  
+void PCI_Device::setName(
     
-  void PCI_Device::setName(
-      
-    const string &name)
+  const string &name)
 
-    {
-    this->name = name;
-    }
+  {
+  this->name = name;
+  }
 
-  void PCI_Device::setId(
-    
-    int id)
+void PCI_Device::setId(
+  
+  int id)
 
-    {
-    this->id = id;
-    }
+  {
+  this->id = id;
+  }
+
+const char *PCI_Device::get_cpuset() const
+
+  {
+  return(this->cpuset_string);
+  }
+
+int PCI_Device::get_type() const
+
+  {
+  return(this->type);
+  }
+
+bool PCI_Device::is_busy() const
+
+  {
+  return(this->busy);
+  }
+
+void PCI_Device::set_state(
+
+  bool in_use)
+
+  {
+  this->busy = in_use;
+  }
+
+int PCI_Device::get_id() const
+
+  {
+  return(this->id);
+  }
 
 #endif /* PENABLE_LINUX_CGROUPS */   

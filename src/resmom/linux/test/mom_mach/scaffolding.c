@@ -4,6 +4,7 @@
 #include <pwd.h> /* struct passwd */
 #include <string>
 
+#include "pbs_config.h"
 #include "../../../mom_main.h" /* MAX_LINE */
 #include "resource.h" /* resource_def, resource */
 #include "list_link.h" /* tlist_head, list_link, pidl */
@@ -12,7 +13,6 @@
 #include "resmon.h" /* rm_attribute */
 #include "pbs_job.h" /* task */
 #include "pbs_nodes.h"
-#include "pbs_config.h"
 #include "node_frequency.hpp"
 
 

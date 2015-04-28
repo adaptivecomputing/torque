@@ -151,7 +151,7 @@ extern int              MOMConfigDownOnError;
 extern int              MOMConfigRestart;
 extern double           wallfactor;
 extern struct cphosts  *pcphosts;
-extern unsigned int     pe_alarm_time;
+extern long             pe_alarm_time;
 extern char             DEFAULT_UMASK[1024];
 extern char             PRE_EXEC[1024];
 extern int              src_login_batch;

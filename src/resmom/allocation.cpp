@@ -82,23 +82,34 @@
 #include <sstream>
 
 #include "allocation.hpp"
+#include "req.hpp"
 #include "pbs_error.h"
 
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
 
+const int exclusive_none = 0;
+const int exclusive_node = 1;
+const int exclusive_socket = 2;
+const int exclusive_chip = 3;
+const int exclusive_core = 4;
+
 allocation::allocation(
 
   const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
+                             gpu_indices(alloc.gpu_indices), mic_indices(alloc.mic_indices),
                              memory(alloc.memory), cpus(alloc.cpus), 
-                             cores(alloc.cores),
-                             threads(alloc.threads)
+                             cores(alloc.cores), threads(alloc.threads),
+                             place_type(alloc.place_type), cores_only(alloc.cores_only),
+                             gpus(alloc.gpus), mics(alloc.mics)
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
-allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
+allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+                           cpus(0), cores(0), threads(0), place_type(exclusive_none),
+                           cores_only(false), gpus(0), mics(0)
 
   {
   this->jobid[0] = '\0';
@@ -106,7 +117,24 @@ allocation::allocation() : cpu_indices(), mem_indices(), memory(0), cpus(0), cor
 
 allocation::allocation(
 
-  const char *jobid) : cpu_indices(), mem_indices(), memory(0), cpus(0), cores(0), threads(0)
+  const req &r) : cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
+                  cores_only(false)
+
+  {
+  this->cpus = r.getExecutionSlots();
+  this->memory = r.getMemory();
+  this->gpus = r.getGpus();
+  this->mics = r.getMics();
+
+  if (r.getThreadUsageString() == use_cores)
+    this->cores_only = true;
+  }
+
+allocation::allocation(
+
+  const char *jobid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+                       cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
+                       gpus(0), mics(0)
 
   {
   snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);
@@ -128,6 +156,12 @@ int allocation::add_allocation(
     this->mem_indices.push_back(other.mem_indices[i]);
 
   this->memory += other.memory;
+
+  for (unsigned int i = 0; i < other.gpu_indices.size(); i++)
+    this->gpu_indices.push_back(other.gpu_indices[i]);
+
+  for (unsigned int i = 0; i < other.mic_indices.size(); i++)
+    this->mic_indices.push_back(other.mic_indices[i]);
 
   return(PBSE_NONE);
   }
@@ -158,4 +192,23 @@ void allocation::place_indices_in_string(
 
   output = s.str();
   } // END place_indices_in_string()
+
+
+
+void allocation::set_place_type(
+
+  const std::string &placement_str)
+
+  {
+  if (placement_str == place_node)
+    this->place_type = exclusive_node;
+  else if (placement_str == place_socket)
+    this->place_type = exclusive_socket;
+  else if (placement_str == place_numa)
+    this->place_type = exclusive_chip;
+  else if (placement_str == place_core)
+    this->place_type = exclusive_core;
+  else
+    this->place_type = exclusive_none;
+  }
 

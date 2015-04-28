@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 
+#include "pbs_config.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "mom_func.h"

@@ -48,7 +48,7 @@ job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   exit(1);
   }
 
-int remove_job(all_jobs *aj, job *pjob)
+int remove_job(all_jobs *aj, job *pjob, bool b)
   {
   fprintf(stderr, "The call to remove_job to be mocked!!\n");
   exit(1);

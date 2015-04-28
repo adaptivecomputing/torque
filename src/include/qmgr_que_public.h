@@ -133,3 +133,7 @@ ATTR_rerunnable,
 ATTR_is_transit,
 ATTR_featreqd,
 ATTR_req_login_property,
+ATTR_req_infomax,
+ATTR_req_infomin,
+ATTR_req_infodefault, 
+

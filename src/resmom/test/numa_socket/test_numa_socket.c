@@ -2,15 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+
 #include "log.h"
 #include "hwloc.h"
 #include "pbs_error.h"
 #include "allocation.hpp"
+#include "req.hpp"
 
 extern int tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
+extern int called_store_pci;
+extern bool avail_oscillate;
+extern int place_amount;
+extern std::string my_placement_type;
 
 START_TEST(test_displayAsString)
   {
@@ -21,6 +27,22 @@ START_TEST(test_displayAsString)
 
   s.displayAsString(out);
   fail_unless(out.str() == "  Socket 0 (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_store_pci_device_appropriately)
+  {
+  PCI_Device d;
+  Socket s;
+  s.addChip();
+  s.addChip();
+
+  called_store_pci = 0;
+  fail_unless(s.store_pci_device_appropriately(d, false) == false);
+  fail_unless(called_store_pci == 2);
+  fail_unless(s.store_pci_device_appropriately(d, true) == true);
+  fail_unless(called_store_pci == 3);
   }
 END_TEST
 
@@ -136,10 +158,55 @@ START_TEST(test_place_task)
 
   // This call should use both nodes so place should get called twice and one should be leftover
   called_place = 0;
+  a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
-  fail_unless(s.place_task("1.napali", r, a, 3) == 2);
-  fail_unless(called_place = 2);
+  int num = s.place_task("1.napali", r, a, 3);
+  fail_unless(num == 1, "Expected 2, got %d", num);
+  fail_unless(called_place = 1);
+
+  fail_unless(s.is_available() == false);
+  oscillate = false;
+  fail_unless(s.free_task("1.napali") == true);
+  fail_unless(s.is_available() == true);
+
+  // set the chips to alternate saying available or unavailable
+  avail_oscillate = true;
+  fail_unless(s.is_available() == false);
+  }
+END_TEST
+
+
+START_TEST(test_partial_place)
+  {
+  Socket s;
+  req r;
+  allocation remaining;
+  s.addChip();
+  s.addChip();
+
+  remaining.cores_only = true;
+  remaining.memory = 1;
+  remaining.cpus = 1;
+
+  fail_unless(s.fits_on_socket(remaining) == true);
+  remaining.cores_only = false;
+  fail_unless(s.fits_on_socket(remaining) == true);
+  remaining.memory = 1024;
+  fail_unless(s.fits_on_socket(remaining) == false);
+
+  // Tell it to fully place the job
+  place_amount = 1;
+  remaining.cpus = 8;
+  remaining.memory = 1024;
+  allocation master;
+  fail_unless(s.partially_place(remaining, master) == true);
+
+  // Tell it to partially place the job
+  place_amount = 2;
+  remaining.cpus = 8;
+  remaining.memory = 1024;
+  fail_unless(s.partially_place(remaining, master) == false);
   }
 END_TEST
 
@@ -172,9 +239,11 @@ START_TEST(test_how_many_tasks_fit)
 
   // should get the number of chips * tasks for how many fit
   tasks = 2;
-  fail_unless(s.how_many_tasks_fit(r) == 4);
+  fail_unless(s.how_many_tasks_fit(r, 0) == 4);
   tasks = 4;
-  fail_unless(s.how_many_tasks_fit(r) == 8);
+  fail_unless(s.how_many_tasks_fit(r, 0) == 8);
+  my_placement_type = place_socket;
+  fail_unless(s.how_many_tasks_fit(r, 0) == 1);
   }
 END_TEST
 
@@ -191,6 +260,8 @@ Suite *numa_socket_suite(void)
   tc_core = tcase_create("test_displayAsString");
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_how_many_tasks_fit);
+  tcase_add_test(tc_core, test_partial_place);
+  tcase_add_test(tc_core, test_store_pci_device_appropriately);
   suite_add_tcase(s, tc_core);
   
   return(s);

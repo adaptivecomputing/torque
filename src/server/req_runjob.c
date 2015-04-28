@@ -2254,15 +2254,6 @@ int assign_hosts(
 
     if (set_exec_host != 0)
       {
-      std::string hostlist_attr = "hostlist.0";
-
-      job_attr_def[JOB_ATR_req_information].at_decode(
-          &pjob->ji_wattr[JOB_ATR_req_information],
-          NULL,
-          hostlist_attr.c_str(),
-          hosttoalloc,
-          0);
-
       job_attr_def[JOB_ATR_exec_host].at_free(
         &pjob->ji_wattr[JOB_ATR_exec_host]);
 

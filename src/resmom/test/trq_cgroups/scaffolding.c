@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <string>
 #include "pbs_error.h"
 #include "machine.hpp"
 
@@ -347,12 +348,31 @@ void translate_range_string_to_vector(
   } /* END translate_range_string_to_vector() */
 
 
+Chip::Chip() {}
+Chip::~Chip() {}
 
-#include "machine.cpp"
-#include "numa_pci_device.cpp"
-#include "numa_core.cpp"
-#include "numa_chip.cpp"
-#include "numa_socket.cpp"
-#include "allocation.cpp"
-#include "../lib/Libattr/complete_req.cpp"
-#include "../lib/Libattr/req.cpp"
+Core::~Core() {}
+
+PCI_Device::~PCI_Device() {}
+
+Socket::~Socket () {}
+
+Machine::~Machine() {}
+
+int Machine::place_job(job *pjob, std::string &cpus, std::string &mems)
+  {
+  return(0);
+  }
+
+int Machine::get_jobs_cpusets(
+
+  const char *job_id,
+  string     &cpus,
+  string     &mems)
+
+  {
+  return(0);
+  }
+
+Machine::Machine() {}
+

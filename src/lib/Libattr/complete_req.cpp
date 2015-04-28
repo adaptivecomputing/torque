@@ -6,11 +6,124 @@
 #include "complete_req.hpp"
 #include "pbs_error.h"
 #include "log.h"
+#include "resource.h"
 
 
 complete_req::complete_req() : reqs()
   {
   }
+
+
+
+void complete_req::set_value_from_nodes(
+
+  const char *node_val)
+
+  {
+  char *work_str = strdup(node_val);
+  char *ptr = work_str;
+
+  while (ptr != NULL)
+    {
+    char *next = strchr(ptr, '+');
+
+    if (next != NULL)
+      {
+      *next = '\0';
+      next++;
+      }
+
+    req r(ptr);
+    this->add_req(r);
+
+    ptr = next;
+    }
+
+  free(work_str);
+  } // END set_value_from_nodes()
+
+
+
+complete_req::complete_req(
+
+  tlist_head &resources) : reqs()
+
+  {
+  resource      *pr = (resource *)GET_NEXT(resources);
+  int            task_count = 0;
+  int            execution_slots = 0;
+  unsigned long  mem = 0;
+
+  while (pr != NULL)
+    {
+    if (!strcmp(pr->rs_defin->rs_name, "nodes"))
+      {
+      this->set_value_from_nodes(pr->rs_value.at_val.at_str);
+      }
+    else if ((!strcmp(pr->rs_defin->rs_name, "procs")) ||
+             (!strcmp(pr->rs_defin->rs_name, "size")))
+      {
+      task_count = pr->rs_value.at_val.at_long;
+      execution_slots = 1;
+      }
+    else if (!strcmp(pr->rs_defin->rs_name, "ncpus"))
+      {
+      task_count = 1;
+      execution_slots = pr->rs_value.at_val.at_long;
+      }
+    else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "mem")))
+      {
+      mem = pr->rs_value.at_val.at_size.atsv_num;
+      int shift = pr->rs_value.at_val.at_size.atsv_shift;
+
+      // Convert to kb
+      while (shift > 10)
+        {
+        mem *= 1024;
+        shift -= 10;
+        }
+      }
+
+    pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+ 
+  if (this->reqs.size() == 0)
+    {
+    // Handle the case where no -lnodes request was made
+    // Distribute the memory across the tasks as -l memory is per job
+    if (task_count > 1)
+      mem /= task_count;
+    
+    req r;
+    if (task_count != 0)
+      r.set_task_count(task_count);
+
+    r.set_memory(mem);
+
+    if (execution_slots != 0)
+      r.set_execution_slots(execution_slots);
+
+    this->add_req(r);
+    }
+  else if (mem != 0)
+    {
+    // Handle the case where a -lnodes request was made
+    int           total_tasks = 0;
+    unsigned long mem_per_task;
+    for (unsigned int i = 0; i < this->reqs.size(); i++)
+      total_tasks += this->reqs[i].getTaskCount();
+
+    mem_per_task = mem / total_tasks;
+
+    for (unsigned int i = 0; i < this->reqs.size(); i++)
+      {
+      req &r = this->reqs[i];
+      r.set_memory(mem_per_task);
+      }
+    }
+  } // END constructor from resource list
 
 
 

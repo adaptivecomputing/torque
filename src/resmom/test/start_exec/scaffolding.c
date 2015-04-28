@@ -693,6 +693,41 @@ int trq_cg_create_cpuset_cgroup(job*, int)
   return(PBSE_NONE);
   }
 
+int trq_cg_add_process_to_all_cgroups(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_reserve_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_all_cgroups(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup_accts(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_resident_memory_limit(const char *job_id, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(const char *job_id, unsigned long limit)
+  {
+  return(PBSE_NONE);
+  }
+
 int is_whitespace(
 
   char c)
