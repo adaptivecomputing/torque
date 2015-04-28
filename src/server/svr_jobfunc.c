@@ -3223,7 +3223,7 @@ void set_deflt_resc(
   if (dflt->at_flags & ATR_VFLAG_SET)
     {
 
-    if (dflt->at_type == ATR_TYPE_REQ)
+    if ((dflt->at_type == ATR_TYPE_REQ) || (dflt->at_type == ATR_TYPE_RESC))
       {
       /* for each resource in the default value list */
 

@@ -734,17 +734,19 @@ int attr_req_info::check_min_values(
 
 
 /* 
- * check_default_values
+ * add_defalut_values
  *
- * compares the value name and value to currently set default limits.
- * If the limits exist return PBSE_NONE if the value is >= limit.
- * Otherwise return PBSE_EXLIMIT indicating the value is less than
- * the default limit.
+ * This function takes a vector of strings which are names and values
+ * of resources in the request. It then checks if any default values
+ * have been set which are not in the list and adds them to the name_to_add
+ * and values_to_add vectors 
  *
- * @param name - name of resource limit to check
- * @param value - string representation of the value
- * @param signed_val - value of current signed limit value of the name resoruce if set returned
- * @param unsigned_val - value of current unsigned limit of the name resource if set.
+ * @param names  -  vector of strings with resource names that are part of a request
+ * @param values -  vector of strings which are the values for values in the names parameter
+ * @param names_to_add - a vector of strings containing the names of default values which were not 
+                         in the user's request.
+ * @param values_to_add - a vector of strings containing the values of default values which were
+                          not set in the user's request.
  */
 int attr_req_info::add_default_values(
 
