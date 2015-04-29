@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <hwloc.h>
 
 
 START_TEST(test_displayAsString)
