@@ -6,6 +6,7 @@
 #include "batch_request.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <semaphore.h>
 #include "pbs_error.h"
 
 extern sem_t *job_clone_semaphore;
