@@ -1676,6 +1676,8 @@ int handle_complete_first_time(
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
+  std::string  jid;
+  time_t       time_to_remove;
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1748,7 +1750,8 @@ int handle_complete_first_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds);
+    jid = pjob->ji_qs.ji_jobid;
+    time_to_remove = pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds;
     }
   else
     {
@@ -1767,7 +1770,8 @@ int handle_complete_first_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + KeepSeconds);
+    jid = pjob->ji_qs.ji_jobid;
+    time_to_remove = time_now + KeepSeconds;
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1787,6 +1791,9 @@ int handle_complete_first_time(
     }
 
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+    
+  if (jid.size() != 0)
+    completed_jobs_map.add_job(jid.c_str(), time_to_remove);
   
   return(FALSE);
   } /* END handle_complete_first_time() */
