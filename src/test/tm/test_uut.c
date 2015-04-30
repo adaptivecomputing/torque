@@ -31,7 +31,7 @@ int fake_tm_init(
   nevent = new_event();
 
   add_event(nevent, TM_ERROR_NODE, TM_INIT, (void *)roots);
-  tm_poll(TM_NULL_EVENT, &revent, 1, &nerr);
+  tm_poll(TM_NULL_EVENT, &revent, TM_POLL_WAIT, &nerr);
   return(0);
   }
 
