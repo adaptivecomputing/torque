@@ -509,81 +509,77 @@ int check_nvidia_setup()
  * Function to collect nvidia-smi data
  */
 
-static char *gpus(
+static char *gpus(dynamic_string *result)
 
-  char *buffer,
-  int   buffer_size)
-
-  {
+{
   FILE *fd;
-  char *ptr; /* pointer to the current place to copy data into munge_buf */
-  int  bytes_read;
-  int  total_bytes_read = 0;
-  char buf[RETURN_STRING_SIZE];
+  int bytes_read;
+  int total_bytes_read = 0;
+  char buf[RETURN_STRING_SIZE] = {0,};
   char cmdbuf[101];
 
   if (!check_nvidia_setup())
-    {
+  {
     return (FALSE);
-    }
+  }
 
   if (MOMNvidiaDriverVersion >= 270)
-    {
+  {
     sprintf(cmdbuf, "nvidia-smi -q -x 2>&1");
-    }
+  }
   else /* 260 driver */
-    {
+  {
     sprintf(cmdbuf, "nvidia-smi -a -x 2>&1");
-    }
+  }
 
   if (LOGLEVEL >= 7)
-    {
-    sprintf(log_buffer,"%s: GPU cmd issued: %s\n", __func__, cmdbuf);
+  {
+    sprintf(log_buffer, "%s: GPU cmd issued: %s\n", __func__, cmdbuf);
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-    }
+  }
 
-	if ((fd = popen(cmdbuf, "r")) != NULL)
-		{
-    memset(buffer, 0, buffer_size);
-    ptr = buffer;
+  if ((fd = popen(cmdbuf, "r")) != NULL)
+  {
     do
-      {
+    {
       bytes_read = fread(buf, sizeof(char), MUNGE_SIZE, fd);
       if (bytes_read > 0)
-        {
+      {
         total_bytes_read += bytes_read;
-        memcpy(ptr, buf, bytes_read);
-        ptr += bytes_read;
-        }
-      } while(bytes_read > 0);
+        buf[bytes_read] = 0; //make sure null terminated
+        copy_to_end_of_dynamic_string(result, buf);
+      }
+    } while (bytes_read > 0);
 
     pclose(fd);
-    
+
     if (bytes_read == -1)
-      {
+    {
       /* read failed */
       if (LOGLEVEL >= 0)
-        {
-        sprintf(log_buffer, "error reading popen pipe");
-        
-        log_err(PBSE_RMSYSTEM, __func__, log_buffer);
-        }
-      return(NULL);
-      }
-    }
-  else
-    {
-    if (LOGLEVEL >= 0)
       {
-      sprintf(log_buffer, "error %d (%s) on popen", errno, strerror(errno));
+        sprintf(log_buffer, "error reading popen pipe");
+
+        log_err(PBSE_RMSYSTEM, __func__, log_buffer);
+      }
+      return (NULL);
+    }
+  }
+  else
+  {
+    if (LOGLEVEL >= 0)
+    {
+      sprintf(log_buffer, "error %d (%s) on popen", errno,
+          strerror(errno));
 
       log_err(PBSE_RMSYSTEM, __func__, log_buffer);
-      }
-    return(NULL);
     }
-
-  return(buffer);
+    return (NULL);
   }
+
+  return get_string(result);
+}
+
 
 
 /*
@@ -1398,7 +1394,6 @@ void generate_server_gpustatus_smi(
    * we hope we don't get more than 32 gpus on a node so we guess at how much
    * data might get returned from nvidia-smi. xml inflates return data.
    */
-  char gpu_string[MAX_GPUS * 3000];
   int  gpu_modes[MAX_GPUS];
   int     have_modes = FALSE;
   int     gpuid = -1;
@@ -1406,10 +1401,14 @@ void generate_server_gpustatus_smi(
   char   *Tail;
   char    Emsg[MAXLINE];
 
-  dataptr = gpus(gpu_string, sizeof(gpu_string));
+  //dkoes - with the latest drivers we are closer to 12000 bytes per a GPU
+  //use a dynamic string to future-proof against even more verbose drivers
+  dynamic_string *gpu_string = get_dynamic_string(MAX_GPUS * 12000,"");
+  dataptr = gpus(gpu_string);
 
   if (dataptr == NULL)
     {
+    free_dynamic_string(gpu_string);
     return;
     }
 
@@ -1423,6 +1422,7 @@ void generate_server_gpustatus_smi(
     }
   else
     {
+    free_dynamic_string(gpu_string);
     return;
     }
 
@@ -1437,6 +1437,7 @@ void generate_server_gpustatus_smi(
     {
     /* cannot determine driver version */
     copy_to_end_of_dynamic_string(gpu_status, "driver_ver=UNKNOWN");
+    free_dynamic_string(gpu_string);
     return;
     }
 
@@ -1849,7 +1850,7 @@ void generate_server_gpustatus_smi(
       }
     
     }
-
+  free_dynamic_string(gpu_string);
   return;
   }
 
