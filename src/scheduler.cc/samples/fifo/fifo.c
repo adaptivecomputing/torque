@@ -506,6 +506,8 @@ int scheduling_cycle(
       jinfo->name,
       "Considering job to run");
 
+    update_job_neednodes(sd, jinfo); /*dkoes - add any needed prop to neednodes */
+
     if ((ret = is_ok_to_run_job(sd, sinfo, jinfo->queue, jinfo)) == SUCCESS)
       {
       run_update_job(sd, sinfo, jinfo->queue, jinfo);

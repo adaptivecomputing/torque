@@ -103,9 +103,11 @@
  */
 int cmp_queue_prio_dsc(const void *q1, const void *q2)
   {
-  if ((*(queue_info **) q1) -> priority < (*(queue_info **) q2) -> priority)
+  queue_info *Q1 = *(queue_info **) q1;
+  queue_info *Q2 = *(queue_info **) q2;
+  if (Q1->priority < Q2->priority)
     return 1;
-  else if ((*(queue_info **) q1) -> priority > (*(queue_info **) q2) -> priority)
+  else if (Q1->priority > Q2->priority)
     return -1;
   else
     return 0;
@@ -123,7 +125,7 @@ int cmp_queue_prio_asc(const void *q1, const void *q2)
   else if ((*(queue_info **) q1) -> priority > (*(queue_info **) q2) -> priority)
     return 1;
   else
-    return -1;
+    return 0;
   }
 
 /*
@@ -281,7 +283,7 @@ int cmp_job_mem_dsc(const void *j1, const void *j2)
 /*
  *
  *      cmp_job_prio_asc - sort jobs by ascending priority
- *
+ * 
  */
 int cmp_job_prio_asc(const void *j1, const void *j2)
   {
