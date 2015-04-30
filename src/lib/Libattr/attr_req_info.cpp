@@ -709,7 +709,7 @@ int attr_req_info::check_min_values(
       int val;
 
       val = atoi(values[i].c_str());
-      if (val < signed_value)
+      if ((val != 0) && (val < signed_value))
         {
         return(PBSE_EXLIMIT);
         }
@@ -722,7 +722,7 @@ int attr_req_info::check_min_values(
       std::stringstream s(values[i].c_str());
 
       s >> uval;
-      if (uval < unsigned_value)
+      if ((uval != 0) && (uval < unsigned_value))
         {
         return(PBSE_EXLIMIT);
         }
