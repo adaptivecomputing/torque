@@ -1413,7 +1413,7 @@ void generate_server_gpustatus_smi(
     }
 
   /* move past the php code*/
-  if ((dataptr = strstr(gpu_string, "<timestamp>")) != NULL)
+  if ((dataptr = strstr(dataptr, "<timestamp>")) != NULL)
     {
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     copy_to_end_of_dynamic_string(gpu_status, "timestamp=");
@@ -1426,7 +1426,7 @@ void generate_server_gpustatus_smi(
     return;
     }
 
-  if ((dataptr = strstr(gpu_string, "<driver_version>")) != NULL)
+  if ((dataptr = strstr(dataptr, "<driver_version>")) != NULL)
     {
     MXMLFromString(&EP, dataptr, &Tail, Emsg, sizeof(Emsg));
     copy_to_end_of_dynamic_string(gpu_status, "driver_ver=");
