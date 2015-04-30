@@ -775,8 +775,17 @@ int attr_req_info::add_default_values(
       std::string dflt_name = default_names[i].c_str();
       std::string req_name = names[j].c_str();
 
-      if (!strncmp(dflt_name.c_str(), req_name.c_str(), strlen(dflt_name.c_str())))
+      if (!strcmp(dflt_name.c_str(), req_name.c_str()))
         {
+        if (!strcmp(dflt_name.c_str(), LPROCS))
+          {
+          /* lprocs is a special case. We always get at least one lprocs. If set to one
+             assume user did not request lprocs */
+          if (!strcmp(values[j].c_str(), "1"))
+            {
+            continue;
+            }
+          }
         found = true;
         break;
         }
