@@ -1403,7 +1403,7 @@ void generate_server_gpustatus_smi(
 
   //dkoes - with the latest drivers we are closer to 12000 bytes per a GPU
   //use a dynamic string to future-proof against even more verbose drivers
-  dynamic_string *gpu_string = get_dynamic_string(MAX_GPUS * 12000,"");
+  dynamic_string *gpu_string = get_dynamic_string(MAX_GPUS * 12000,NULL);
   dataptr = gpus(gpu_string);
 
   if (dataptr == NULL)
