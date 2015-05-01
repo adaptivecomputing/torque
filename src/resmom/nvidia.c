@@ -547,7 +547,7 @@ static char *gpus(dynamic_string *result)
       {
         total_bytes_read += bytes_read;
         buf[bytes_read] = 0; //make sure null terminated
-        copy_to_end_of_dynamic_string(result, buf);
+        append_dynamic_string(result, buf);      
       }
     } while (bytes_read > 0);
 
