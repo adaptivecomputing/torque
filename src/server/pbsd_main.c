@@ -266,7 +266,7 @@ int                     route_retry_interval = 10; /* time in seconds to check r
 char                    Torque_Info_Version[] = PACKAGE_VERSION;
 char                    Torque_Info_Version_Revision[] = GIT_HASH;
 char                    Torque_Info_Component[] = "pbs_server";
-char                    Torque_Info_SysVersion[BUF_SIZE];
+char                    Torque_Info_SysVersion[MAX_LINE];
 
 /* HA global data items */
 long                    HALockCheckTime = 0;
