@@ -316,7 +316,7 @@ int remtree(
       {
       if (pdir->d_name[0] == '.' && (pdir->d_name[1] == '\0' ||
          (pdir->d_name[1] == '.' && pdir->d_name[2] == '\0')))
-      continue;
+        continue;
 
       snprintf(namebuf + len, sizeof(namebuf) - len, "%s", pdir->d_name);
 
