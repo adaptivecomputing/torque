@@ -317,7 +317,7 @@ int attr_req_info::get_signed_min_limit_value(
 unsigned int attr_req_info::get_unsigned_min_limit_value(
 
   const char *rescn,
-  unsigned int& value)
+  unsigned long& value)
 
   {
   if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
@@ -377,7 +377,7 @@ int attr_req_info::get_signed_max_limit_value(
 unsigned int attr_req_info::get_unsigned_max_limit_value(
 
   const char *rescn,
-  unsigned int& value)
+  unsigned long& value)
 
   {
   if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
@@ -437,7 +437,7 @@ int attr_req_info::get_signed_default_limit_value(
 unsigned int attr_req_info::get_unsigned_default_limit_value(
 
   const char *rescn,
-  unsigned int& value)
+  unsigned long& value)
 
   {
   if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
@@ -706,8 +706,8 @@ int attr_req_info::check_max_values(
 
   {
   int ret;
-  int          signed_value;
-  unsigned int unsigned_value;
+  int           signed_value;
+  unsigned long unsigned_value;
 
 
   for (unsigned int i = 0; i < names.size(); i++)
@@ -729,10 +729,15 @@ int attr_req_info::check_max_values(
     ret = this->get_unsigned_max_limit_value(names[i].c_str(), unsigned_value);
     if ((ret == PBSE_NONE) && (unsigned_value != 0))
       {
-      unsigned int uval;
-      std::stringstream s(values[i].c_str());
+      struct size_value user_val;
+      unsigned long uval;
 
-      s >> uval;
+      ret = to_size(values[i].c_str(), &user_val); 
+      if (ret != PBSE_NONE)
+        return(ret);
+
+      uval = user_val.atsv_num << user_val.atsv_shift;
+
       if (uval > unsigned_value)
         {
         return(PBSE_EXLIMIT);
@@ -750,8 +755,8 @@ int attr_req_info::check_min_values(
 
   {
   int ret;
-  int          signed_value;
-  unsigned int unsigned_value;
+  int           signed_value;
+  unsigned long unsigned_value;
 
 
   for (unsigned int i = 0; i < names.size(); i++)
@@ -773,10 +778,15 @@ int attr_req_info::check_min_values(
     ret = this->get_unsigned_min_limit_value(names[i].c_str(), unsigned_value);
     if ((ret == PBSE_NONE) && (unsigned_value != 0))
       {
-      unsigned int uval;
-      std::stringstream s(values[i].c_str());
+      unsigned long uval;
+      struct size_value user_value;
 
-      s >> uval;
+      ret = to_size(values[i].c_str(), &user_value);
+      if (ret != PBSE_NONE)
+        return(ret);
+
+      uval = user_value.atsv_num << user_value.atsv_shift;
+
       if ((uval != 0) && (uval < unsigned_value))
         {
         return(PBSE_EXLIMIT);

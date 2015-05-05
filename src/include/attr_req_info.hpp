@@ -61,9 +61,9 @@ class attr_req_info
   int get_signed_min_limit_value(const char *rescn, int& value);
   int get_signed_max_limit_value(const char *rescn, int& value);
   int get_signed_default_limit_value(const char *rescn, int& value);
-  unsigned int get_unsigned_min_limit_value(const char *rescn, unsigned int& value);
-  unsigned int get_unsigned_max_limit_value(const char *rescn, unsigned int& value);
-  unsigned int get_unsigned_default_limit_value(const char *rescn, unsigned int& value);
+  unsigned int get_unsigned_min_limit_value(const char *rescn, unsigned long& value);
+  unsigned int get_unsigned_max_limit_value(const char *rescn, unsigned long& value);
+  unsigned int get_unsigned_default_limit_value(const char *rescn, unsigned long& value);
   int get_min_values(std::vector<std::string>& names, std::vector<std::string>& values);
   int get_max_values(std::vector<std::string>& names, std::vector<std::string>& values);
   int get_default_values(std::vector<std::string>& names, std::vector<std::string>& values);
