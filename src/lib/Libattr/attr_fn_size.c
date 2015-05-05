@@ -440,27 +440,27 @@ void create_size_string(
   switch (values.atsv_shift)
     {
     case 10:
-      strcpy(size_abbrev, "Kb");
+      strcpy(size_abbrev, "kb");
       break;
 
     case 20:
-      strcpy(size_abbrev, "Mb");
+      strcpy(size_abbrev, "mb");
       break;
 
     case 30:
-      strcpy(size_abbrev, "Gb");
+      strcpy(size_abbrev, "gb");
       break;
 
     case 40:
-      strcpy(size_abbrev, "Tb");
+      strcpy(size_abbrev, "tb");
       break;
 
     case 50:
-      strcpy(size_abbrev, "Pb");
+      strcpy(size_abbrev, "pb");
       break;
 
     case 60:
-      strcpy(size_abbrev, "Eb");
+      strcpy(size_abbrev, "eb");
       break;
     }
 
