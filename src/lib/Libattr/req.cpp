@@ -1688,7 +1688,7 @@ int req::set_value(
     this->swap = strtoll(value, NULL, 10);
   else if (!strncmp(name, "disk", 4))
     this->disk = strtoll(value, NULL, 10);
-  else if (!strncmp(name, "nodes", 5))
+  else if (!strcmp(name, "node"))
     this->nodes = strtol(value, NULL, 10);
   else if (!strncmp(name, "socket", 7))
     {
@@ -1728,9 +1728,9 @@ int req::set_value(
     this->pack = true;
   else if (!strncmp(name, "hostlist", 8))
     this->hostlist = value;
-  else if (!strncmp(name, "core", 4))
+  else if (!strcmp(name, "core"))
     this->cores = strtol(value, NULL, 10);
-   else if (!strncmp(name, "thread", 6))
+   else if (!strcmp(name, "thread"))
     this->threads = strtol(value, NULL, 10);
   else
     return(PBSE_BAD_PARAMETER);
