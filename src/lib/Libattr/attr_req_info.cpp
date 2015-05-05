@@ -7,6 +7,8 @@
 
 #include "pbs_error.h"
 #include "attr_req_info.hpp"
+#include "attr_fn_size.h"
+#include "attribute.h"
 
 const char *LPROCS     = "lprocs";
 const char *NODES      = "node";
@@ -33,6 +35,12 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   max_cores = newattr_req_info.max_cores;
   max_numa_chips = newattr_req_info.max_numa_chips;
   max_threads = newattr_req_info.max_threads;
+  max_mem_value.atsv_num = newattr_req_info.max_mem_value.atsv_num;
+  max_mem_value.atsv_shift = newattr_req_info.max_mem_value.atsv_shift;
+  max_swap_value.atsv_num = newattr_req_info.max_swap_value.atsv_num;
+  max_swap_value.atsv_shift = newattr_req_info.max_swap_value.atsv_shift;
+  max_disk_value.atsv_num = newattr_req_info.max_disk_value.atsv_num;
+  max_disk_value.atsv_shift = newattr_req_info.max_disk_value.atsv_shift;
 
   min_lprocs = newattr_req_info.min_lprocs;
   min_mem = newattr_req_info.min_mem;
@@ -43,6 +51,13 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   min_cores = newattr_req_info.min_cores;
   min_numa_chips = newattr_req_info.min_numa_chips;
   min_threads = newattr_req_info.min_threads;
+  min_mem_value.atsv_num = newattr_req_info.min_mem_value.atsv_num;
+  min_mem_value.atsv_shift = newattr_req_info.min_mem_value.atsv_shift;
+  min_swap_value.atsv_num = newattr_req_info.min_swap_value.atsv_num;
+  min_swap_value.atsv_shift = newattr_req_info.min_swap_value.atsv_shift;
+  min_disk_value.atsv_num = newattr_req_info.min_disk_value.atsv_num;
+  min_disk_value.atsv_shift = newattr_req_info.min_disk_value.atsv_shift;
+
 
   default_lprocs = newattr_req_info.default_lprocs;
   default_mem = newattr_req_info.default_mem;
@@ -53,6 +68,13 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   default_cores = newattr_req_info.default_cores;
   default_numa_chips = newattr_req_info.default_numa_chips;
   default_threads = newattr_req_info.default_threads;
+  default_mem_value.atsv_num = newattr_req_info.default_mem_value.atsv_num;
+  default_mem_value.atsv_shift = newattr_req_info.default_mem_value.atsv_shift;
+  default_swap_value.atsv_num = newattr_req_info.default_swap_value.atsv_num;
+  default_swap_value.atsv_shift = newattr_req_info.default_swap_value.atsv_shift;
+  default_disk_value.atsv_num = newattr_req_info.default_disk_value.atsv_num;
+  default_disk_value.atsv_shift = newattr_req_info.default_disk_value.atsv_shift;
+
 
   return *this; 
   }
@@ -77,6 +99,8 @@ int attr_req_info::set_min_limit_value(
   const char *val)
 
   {
+  int ret;
+
   /* Just go through the list of keywords and set the appropriate value */
   if (!strncmp(rescn, LPROCS, strlen(LPROCS)))
     {
@@ -84,15 +108,24 @@ int attr_req_info::set_min_limit_value(
     }
   else if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
     {
-    min_mem = strtoul(val, NULL, 0);
+    ret = to_size(val, &min_mem_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    min_mem = min_mem_value.atsv_num << min_mem_value.atsv_shift;
     }
   else if (!strncmp(rescn, SWAP, strlen(SWAP)))
     {
-    min_swap = strtoul(val, NULL, 0);
+    ret = to_size(val, &min_swap_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    min_swap = min_swap_value.atsv_num << min_swap_value.atsv_shift;
     }
   else if (!strncmp(rescn, DISK, strlen(DISK)))
     {
-    min_disk = strtoul(val, NULL, 0);
+    ret = to_size(val, &min_disk_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    min_disk = min_disk_value.atsv_num << min_disk_value.atsv_shift;
     }
   else if (!strncmp(rescn, NODES, strlen(NODES)))
     {
@@ -128,6 +161,8 @@ int attr_req_info::set_min_limit_value(
   const char *val)
 
   {
+  int ret;
+
   /* Just go through the list of keywords and set the appropriate value */
    if (!strncmp(rescn, LPROCS, strlen(LPROCS)))
     {
@@ -135,15 +170,24 @@ int attr_req_info::set_min_limit_value(
     }
   else if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
     {
-    max_mem = strtoul(val, NULL, 0);
+    ret = to_size(val, &max_mem_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    max_mem = max_mem_value.atsv_num << max_mem_value.atsv_shift;
     }
   else if (!strncmp(rescn, SWAP, strlen(SWAP)))
     {
-    max_swap = strtoul(val, NULL, 0);
+    ret = to_size(val, &max_swap_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    max_swap = max_swap_value.atsv_num << max_swap_value.atsv_shift;
     }
   else if (!strncmp(rescn, DISK, strlen(DISK)))
     {
-    max_disk = strtoul(val, NULL, 0);
+    ret = to_size(val, &max_disk_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    max_disk = max_disk_value.atsv_num << max_disk_value.atsv_shift;
     }
   else if (!strncmp(rescn, NODES, strlen(NODES)))
     {
@@ -178,6 +222,8 @@ int attr_req_info::set_min_limit_value(
   const char *val)
 
   {
+  int ret;
+
   /* Just go through the list of keywords and set the appropriate value */
   if (!strncmp(rescn, LPROCS, strlen(LPROCS)))
     {
@@ -185,15 +231,24 @@ int attr_req_info::set_min_limit_value(
     }
   else if (!strncmp(rescn, MEMORY, strlen(MEMORY)))
     {
-    default_mem = strtoul(val, NULL, 0);
+    ret = to_size(val, &default_mem_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    default_mem = default_mem_value.atsv_num << default_mem_value.atsv_shift;
     }
   else if (!strncmp(rescn, SWAP, strlen(SWAP)))
     {
-    default_swap = strtoul(val, NULL, 0);
+    ret = to_size(val, &default_swap_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    default_swap = default_swap_value.atsv_num << default_swap_value.atsv_shift;
     }
   else if (!strncmp(rescn, DISK, strlen(DISK)))
     {
-    default_disk = strtoul(val, NULL, 0);
+    ret = to_size(val, &default_disk_value);
+    if (ret != PBSE_NONE)
+      return(ret);
+    default_disk = default_disk_value.atsv_num << default_disk_value.atsv_shift;
     }
   else if (!strncmp(rescn, NODES, strlen(NODES)))
     {
@@ -420,7 +475,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
-    sprintf(buf, "%ukb", max_mem);
+    create_size_string(buf, max_mem_value);
     values.push_back(buf);
     }
 
@@ -428,7 +483,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", SWAP);
     names.push_back(buf);
-    sprintf(buf, "%ukb", max_swap);
+    create_size_string(buf, max_swap_value);
     values.push_back(buf);
     }
 
@@ -436,7 +491,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", DISK);
     names.push_back(buf);
-    sprintf(buf, "%ukb", max_disk);
+    create_size_string(buf, max_disk_value);
     values.push_back(buf);
     }
 
@@ -499,7 +554,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
-    sprintf(buf, "%ukb", min_mem);
+    create_size_string(buf, min_mem_value);
     values.push_back(buf);
     }
 
@@ -507,7 +562,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", SWAP);
     names.push_back(buf);
-    sprintf(buf, "%ukb", min_swap);
+    create_size_string(buf, min_swap_value);
     values.push_back(buf);
     }
 
@@ -515,7 +570,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
     {
     sprintf(buf, "%s", DISK);
     names.push_back(buf);
-    sprintf(buf, "%ukb", min_disk);
+    create_size_string(buf, min_disk_value);
     values.push_back(buf);
     }
 
@@ -580,7 +635,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
     {
     sprintf(buf, "%s", MEMORY);
     names.push_back(buf);
-    sprintf(buf, "%ukb", default_mem);
+    create_size_string(buf, default_mem_value);
     values.push_back(buf);
     }
 
@@ -588,7 +643,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
     {
     sprintf(buf, "%s", SWAP);
     names.push_back(buf);
-    sprintf(buf, "%ukb", default_swap);
+    create_size_string(buf, default_swap_value);
     values.push_back(buf);
     }
 
@@ -596,7 +651,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
     {
     sprintf(buf, "%s", DISK);
     names.push_back(buf);
-    sprintf(buf, "%ukb", default_disk);
+    create_size_string(buf, default_disk_value);
     values.push_back(buf);
     }
 

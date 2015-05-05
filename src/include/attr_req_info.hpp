@@ -4,42 +4,52 @@
 #include "license_pbs.h"
 #include <vector>
 #include <string>
+#include "attribute.h"
 
 class attr_req_info
   {
     /* queue and server resource limits */
     /* QA_ATR_ReqInformationMax */
     int max_lprocs;
-    unsigned int max_mem;
-    unsigned int max_swap;
-    unsigned int max_disk;
+    unsigned long max_mem;
+    unsigned long max_swap;
+    unsigned long max_disk;
     int max_nodes;
     int max_sockets;
     int max_cores;
     int max_numa_chips;
     int max_threads;
+    struct size_value max_mem_value;
+    struct size_value max_swap_value;
+    struct size_value max_disk_value;
 
     /* QA_ATR_ReqInformationMin */
     int min_lprocs;
-    unsigned int min_mem;
-    unsigned int min_swap;
-    unsigned int min_disk;
+    unsigned long min_mem;
+    unsigned long min_swap;
+    unsigned long min_disk;
     int min_nodes;
     int min_sockets;
     int min_cores;
     int min_numa_chips;
     int min_threads;
+    struct size_value min_mem_value;
+    struct size_value min_swap_value;
+    struct size_value min_disk_value;
 
     /* QA_ATR_ReqInformationDefault */
     int default_lprocs;
-    unsigned int default_mem;
-    unsigned int default_swap;
-    unsigned int default_disk;
+    unsigned long default_mem;
+    unsigned long default_swap;
+    unsigned long default_disk;
     int default_nodes;
     int default_sockets;
     int default_cores;
     int default_numa_chips;
     int default_threads;
+    struct size_value default_mem_value;
+    struct size_value default_swap_value;
+    struct size_value default_disk_value;
 
   public:
   attr_req_info& operator=(const attr_req_info& newattr_req_info);

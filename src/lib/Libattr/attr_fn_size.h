@@ -14,7 +14,9 @@ int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with);
 
 int normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta, struct size_value *tb);
 
-int to_size(char *val, struct size_value *psize); 
+int to_size(const char *val, struct size_value *psize); 
 
 void from_size(struct size_value *psize, char *cvnbuf); 
+
+void create_size_string(char *buf, struct size_value values);
 
