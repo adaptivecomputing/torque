@@ -407,7 +407,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/pam/test/Makefile
     src/pam/test/pam_pbssimpleauth/Makefile
     src/resmom/test/Makefile
-    src/resmom/test/allocation/Makefile
+    src/test/allocation/Makefile
     src/resmom/test/alps_reservations/Makefile
     src/resmom/test/catch_child/Makefile
     src/resmom/test/checkpoint/Makefile

@@ -43,7 +43,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_req_quejob.c mom_job_func.c trq_cgroups.c			\
 		   mom_process_request.c alps_reservations.c		\
 		   release_reservation.c generate_alps_status.c	\
-		   parse_config.c node_frequency.cpp cray_energy.c allocation.cpp \
+		   parse_config.c node_frequency.cpp cray_energy.c \
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\
