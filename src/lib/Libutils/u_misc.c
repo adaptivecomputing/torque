@@ -229,6 +229,101 @@ void save_args(int argc, char **argv)
 
 
 
+/*
+ * add_range_to_string()
+ *
+ * Adds a range specified by begin and end to range_string
+ *
+ * @param range_string (O) - the string we're adding a range to
+ * @param begin (I) - the first int in the range
+ * @param end (I) - the last int in the range
+ */
+
+void add_range_to_string(
+
+  std::string &range_string,
+  int          begin,
+  int          end)
+
+  {
+  char buf[MAXLINE];
+
+  if (begin == end)
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d", begin);
+    else
+      sprintf(buf, ",%d", begin);
+    }
+  else
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d-%d", begin, end);
+    else
+      sprintf(buf, ",%d-%d", begin, end);
+    }
+
+  range_string += buf;
+  } // END add_range_to_string()
+
+
+
+/*
+ * translate_vector_to_range_string()
+ *
+ * Takes the indices specified in indices and places them in a range string that holds the
+ * form of %d[[-%d][,%d[-%d]]...]
+ *
+ * @param range_string (O) - the resulting string
+ * @param indices (I) - the indices to place in the string
+ */
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  // range_string starts empty
+  range_string.clear();
+
+  if (indices.size() == 0)
+    return;
+
+  int first = indices[0];
+  int prev = first;
+
+  for (unsigned int i = 1; i < indices.size(); i++)
+    {
+    if (indices[i] == prev + 1)
+      {
+      // Still in a consecutive range
+      prev = indices[i];
+      }
+    else
+      {
+      add_range_to_string(range_string, first, prev);
+
+      first = prev = indices[i];
+      }
+    }
+
+  // output final piece
+  add_range_to_string(range_string, first, prev);
+  } // END translate_vector_to_range_string()
+
+
+
+/*
+ * translate_range_string_to_vector()
+ *
+ * Takes a range string in the form of %d[[-%d][,%d[-%d]]...] and places each individual
+ * int in a vector of ints.
+ *
+ * @param range_string (I) - the string specifying the range
+ * @param indices (O) - the vector populated from range_string
+ */
+
 void translate_range_string_to_vector(
 
   const char       *range_string,

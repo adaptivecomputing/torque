@@ -28,6 +28,8 @@ START_TEST(test_basics)
   fail_unless(p.is_busy() == false);
   p.set_state(true);
   fail_unless(p.is_busy() == true);
+  p.set_type(GPU);
+  fail_unless(p.get_type() == GPU);
   }
 END_TEST
 

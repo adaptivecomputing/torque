@@ -29,7 +29,7 @@ using namespace std;
 const int MIC_TYPE = 0;
 const int GPU = 1;
 
-PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1)
+PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1), busy(false)
   {
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
@@ -186,6 +186,14 @@ void PCI_Device::set_state(
 
   {
   this->busy = in_use;
+  }
+
+void PCI_Device::set_type(
+
+  int type)
+
+  {
+  this->type = type;
   }
 
 int PCI_Device::get_id() const

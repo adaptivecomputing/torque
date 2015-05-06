@@ -64,6 +64,16 @@ PCI_Device::PCI_Device()
   strcpy(this->cpuset_string, "0");
   }
 
+void PCI_Device::set_type(int type)
+  {
+  this->type = type;
+  }
+
+void PCI_Device::setId(int id)
+  {
+  this->id = id;
+  }
+
 PCI_Device::~PCI_Device() {}
 
 PCI_Device::PCI_Device(const PCI_Device &other) 
@@ -223,3 +233,68 @@ void translate_range_string_to_vector(
 
   free(str);
   } /* END translate_range_string_to_vector() */
+
+
+
+void add_range_to_string(
+
+  std::string &range_string,
+  int          begin,
+  int          end)
+
+  {
+  char buf[MAXLINE];
+
+  if (begin == end)
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d", begin);
+    else
+      sprintf(buf, ",%d", begin);
+    }
+  else
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d-%d", begin, end);
+    else
+      sprintf(buf, ",%d-%d", begin, end);
+    }
+
+  range_string += buf;
+  } // END add_range_to_string()
+
+
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  // range_string starts empty
+  range_string.clear();
+
+  if (indices.size() == 0)
+    return;
+
+  int first = indices[0];
+  int prev = first;
+
+  for (unsigned int i = 1; i < indices.size(); i++)
+    {
+    if (indices[i] == prev + 1)
+      {
+      // Still in a consecutive range
+      prev = indices[i];
+      }
+    else
+      {
+      add_range_to_string(range_string, first, prev);
+
+      first = prev = indices[i];
+      }
+    }
+
+  // output final piece
+  add_range_to_string(range_string, first, prev);
+  } // END translate_vector_to_range_string()

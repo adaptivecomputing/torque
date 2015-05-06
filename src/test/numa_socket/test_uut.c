@@ -16,7 +16,36 @@ extern int oscillate;
 extern int called_store_pci;
 extern bool avail_oscillate;
 extern int place_amount;
+extern int json_chip;
 extern std::string my_placement_type;
+
+
+START_TEST(test_json_constructor)
+  {
+  const char *j1 = "\"socket\":{\"os_index\":12,\"numachip\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
+  const char *j2 = "\"socket\":{\"os_index\":0,\"numachip\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numachip\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}";
+  const char *j3 = "\"socket\":{\"os_index\":2,\"numachip\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
+  std::stringstream out;
+
+  Socket s1(j1);
+  fail_unless(json_chip == 2, "%d times", json_chip);
+  s1.displayAsJson(out);
+  fail_unless(out.str() == "\"socket\":{\"os_index\":12,,}", out.str().c_str());
+
+  out.str("");
+  Socket s2(j2);
+  fail_unless(json_chip == 4, "%d times", json_chip);
+  s2.displayAsJson(out);
+  fail_unless(out.str() == "\"socket\":{\"os_index\":0,,}", out.str().c_str());
+
+  out.str("");
+  Socket s3(j3);
+  fail_unless(json_chip == 5, "%d times", json_chip);
+  s3.displayAsJson(out);
+  fail_unless(out.str() == "\"socket\":{\"os_index\":2,}", out.str().c_str());
+  }
+END_TEST
+
 
 START_TEST(test_displayAsString)
   {
@@ -255,6 +284,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_initializeSocket);
   tcase_add_test(tc_core, test_place_task);
   tcase_add_test(tc_core, test_free_task);
+  tcase_add_test(tc_core, test_json_constructor);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");

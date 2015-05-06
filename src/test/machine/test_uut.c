@@ -22,6 +22,7 @@ extern int called_partially_place;
 extern int called_fits_on_socket;
 extern int num_for_host;
 extern int called_store_pci;
+extern int json_socket;
 extern bool socket_fit;
 extern bool partially_placed;
 
@@ -33,6 +34,26 @@ START_TEST(test_displayAsString)
   new_machine.setMemory(2);
   new_machine.displayAsString(out);
   fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_json_constructor)
+  {
+  const char *j1 = "\"node\":{\"socket\":{\"os_index\":12,\"numachip\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}},\"socket\":{\"os_index\":13,\"numachip\":{\"os_index\":26,\"cores\":52-53,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":26,\"cores\":54-55,\"threads\":\"\",\"mem\"=1}}}";
+  const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numachip\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numachip\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
+  std::stringstream out;
+
+  Machine m1(j1);
+  fail_unless(json_socket == 2, "%d times", json_socket);
+  m1.displayAsJson(out);
+  fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
+
+  out.str("");
+  Machine m2(j2);
+  fail_unless(json_socket == 3, "%d times", json_socket);
+  m2.displayAsJson(out);
+  fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
   }
 END_TEST
 
@@ -202,6 +223,7 @@ Suite *machine_suite(void)
   tc_core = tcase_create("test_initializeMachine");
   tcase_add_test(tc_core, test_initializeMachine);
   tcase_add_test(tc_core, test_displayAsString);
+  tcase_add_test(tc_core, test_json_constructor);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_place_and_free_job");

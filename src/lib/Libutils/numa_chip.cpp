@@ -37,6 +37,207 @@ Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), avail
   memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
   }
 
+
+
+void capture_until_close_quote(
+
+  char        **start,
+  std::string  &storage)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, '"');
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the close quote
+    }
+  }
+
+
+
+void Chip::parse_values_from_json_string(
+
+  const std::string &json_layout,
+  std::string       &cores,
+  std::string       &threads,
+  std::string       &gpus,
+  std::string       &mics)
+
+  {
+  char        *work_str = strdup(json_layout.c_str());
+  char        *ptr = strstr(work_str, "os_index\":");
+  char        *val = work_str;
+  char        *close_quote;
+
+  if (ptr != NULL)
+    {
+    val = ptr + strlen("os_index\":");
+    this->id = strtol(val, &val, 10);
+    }
+
+  if ((ptr = strstr(val, "cores\":")) != NULL)
+    {
+    val = ptr + strlen("cores\":") + 1; // add 1 for the open quote
+    capture_until_close_quote(&val, cores);
+    }
+
+  if ((ptr = strstr(val, "threads\":")) != NULL)
+    {
+    val = ptr + strlen("threads\":") + 1; // add 1 for the open quote
+    capture_until_close_quote(&val, threads);
+    }
+
+  if ((ptr = strstr(val, "mem\":")) != NULL)
+    {
+    val = ptr + strlen("mem\":");
+    this->memory = strtol(val, &val, 10);
+    this->available_memory = this->memory;
+    }
+
+  if ((ptr = strstr(val, "gpus\":")) != NULL)
+    {
+    val = ptr + strlen("gpus\":") + 1;
+    capture_until_close_quote(&val, gpus);
+    }
+
+  if ((ptr = strstr(val, "mics\":")) != NULL)
+    {
+    val = ptr + strlen("mics\":") + 1;
+    capture_until_close_quote(&val, mics);
+    }
+
+  free(work_str);
+  } // END parse_values_from_json_string()
+
+
+
+void Chip::initialize_cores_from_strings(
+
+  std::string &cores_str,
+  std::string &threads_str)
+
+  {
+  std::vector<int> core_indices;
+  std::vector<int> thread_indices;
+  int              ratio;
+
+  translate_range_string_to_vector(cores_str.c_str(), core_indices);
+  translate_range_string_to_vector(threads_str.c_str(), thread_indices);
+
+  ratio = thread_indices.size() / core_indices.size();
+  unsigned int j = 0;
+
+  for (unsigned int i = 0; i < core_indices.size(); i++)
+    {
+    Core c;
+
+    c.add_processing_unit(CORE, core_indices[i]);
+    this->totalThreads++;
+
+    for (int t = 0; t < ratio; t++)
+      {
+      c.add_processing_unit(THREAD, thread_indices[j++]);
+      this->totalThreads++;
+      }
+
+    this->cores.push_back(c);
+    }
+  
+  this->totalCores = this->cores.size();
+  this->availableCores = this->totalCores;
+  this->availableThreads = this->totalThreads;
+  } // END initialize_cores_from_strings()
+
+
+
+void Chip::initialize_accelerators_from_strings(
+
+  std::string &gpus,
+  std::string &mics)
+
+  {
+  std::vector<int> gpu_indices;
+  std::vector<int> mic_indices;
+
+  translate_range_string_to_vector(gpus.c_str(), gpu_indices);
+  translate_range_string_to_vector(mics.c_str(), mic_indices);
+
+  for (unsigned int i = 0; i < gpu_indices.size(); i++)
+    {
+    PCI_Device p;
+    p.set_type(GPU);
+    p.setId(gpu_indices[i]);
+    this->total_gpus++;
+    this->devices.push_back(p);
+    }
+
+  for (unsigned int i = 0; i < mic_indices.size(); i++)
+    {
+    PCI_Device p;
+    p.set_type(MIC_TYPE);
+    p.setId(mic_indices[i]);
+    this->total_mics++;
+    this->devices.push_back(p);
+    }
+
+  this->available_gpus = this->total_gpus;
+  this->available_mics = this->total_mics;
+  } // END initialize_accelerators_from_strings()
+
+
+
+/*
+ * Creates a numa chip from this json 
+ *
+ * "numachip" : {
+ *   "os_index" : <index>,
+ *   "cores" : <core range string>,
+ *   "threads" : <thread range string>,
+ *   "mem" : <memory in kb>,
+ *   "gpus" : <gpu range string>,
+ *   "mics" : <mic range string>
+ *   }
+ *
+ * mics and gpus are optional and only present if they actually exist on the node
+ */
+
+Chip::Chip(
+   
+  const std::string &json_layout) : totalThreads(0), totalCores(0), id(0), availableThreads(0),
+                                    availableCores(0), total_gpus(0), available_gpus(0),
+                                    total_mics(0), available_mics(0), chip_exclusive(false),
+                                    available_memory(0)
+
+  {
+  memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
+
+  if (json_layout.size() == 0)
+    return;
+
+  std::string cores;
+  std::string threads;
+  std::string gpus;
+  std::string mics;
+
+  parse_values_from_json_string(json_layout, cores, threads, gpus, mics);
+
+  initialize_cores_from_strings(cores, threads);
+  
+  initialize_accelerators_from_strings(gpus, mics);
+  } // End JSON constructor
+
+
+
 Chip::~Chip()
   {
   id = -1;
@@ -186,7 +387,12 @@ int Chip::get_available_gpus() const
   return(this->available_gpus);
   }
 
-int Chip::getMemory() const
+int Chip::get_id() const
+  {
+  return(this->id);
+  }
+
+hwloc_uint64_t Chip::getMemory() const
   {
   return(this->memory);
   }
@@ -257,6 +463,63 @@ int Chip::initializePCIDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
 
   return(PBSE_NONE);
   }
+
+
+void Chip::displayAsJson(
+
+  stringstream &out) const
+
+  {
+  std::vector<int> core_indices;
+  std::vector<int> thread_indices;
+  std::vector<int> mic_indices;
+  std::vector<int> gpu_indices;
+  std::string      core_range;
+  std::string      thread_range;
+  std::string      mic_range;
+  std::string      gpu_range;
+
+  for (unsigned int i = 0; i < this->cores.size(); i++)
+    {
+    for (unsigned int j = 0; j < this->cores[i].indices.size(); j++)
+      {
+      if (this->cores[i].indices[j] != this->cores[i].id)
+        thread_indices.push_back(this->cores[i].indices[j]);
+      else
+        core_indices.push_back(this->cores[i].indices[j]);
+      }
+    }
+
+  translate_vector_to_range_string(core_range, core_indices);
+  translate_vector_to_range_string(thread_range, thread_indices);
+
+  // Get a list of my accelerators, if any
+  for (unsigned int i = 0; i < this->devices.size(); i++)
+    {
+    if (this->devices[i].get_type() == MIC_TYPE)
+      mic_indices.push_back(this->devices[i].get_id());
+    else
+      gpu_indices.push_back(this->devices[i].get_id());
+    }
+  
+  translate_vector_to_range_string(gpu_range, gpu_indices);
+  translate_vector_to_range_string(mic_range, mic_indices);
+
+  // Format the output as json
+  out << "\"numachip\":{\"os_index\":" << this->id << ",\"cores\":\"" << core_range;
+  out << "\",\"threads\":\"" << thread_range << "\",\"mem\":" << this->memory;
+
+  if (gpu_range.size() != 0)
+    out << ",\"gpus\":\"" << gpu_range << "\"";
+
+  if (mic_range.size() != 0)
+    out << ",\"mics\":\"" << mic_range << "\"";
+
+  // close the json
+  out << "}";
+  } // END displayAsJson()
+
+
 
 void Chip::displayAsString(
 

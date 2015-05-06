@@ -19,6 +19,60 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
   }
 
+
+
+/*
+ * Builds a copy of the machine's layout in from json which has no whitespace but 
+ * if it did it'd look like:
+ *
+ * "socket" : {
+ *   "os_index" : <index>,
+ *   "numachip" : {
+ *     "os_index" : <index>,
+ *     "cores" : <core range string>,
+ *     "threads" : <thread range string>,
+ *     "mem" : <memory in kb>,
+ *     "gpus" : <gpu range string>,
+ *     "mics" : <mic range string>
+ *     }
+ *   [, "numachip" ... ]
+ * }
+ *
+ * mics and gpus are optional and only present if they actually exist on the node
+ *
+ */
+
+Socket::Socket(
+
+  const std::string &json_layout)
+
+  {
+  const char *chip_str = "\"numachip\":{";
+  const char *os_str = "\"os_index\":";
+  std::size_t chip_begin = json_layout.find(chip_str);
+  std::size_t os_begin = json_layout.find(os_str);
+
+  if ((os_begin == std::string::npos) ||
+      (os_begin > chip_begin))
+    return;
+  else
+    {
+    std::string os = json_layout.substr(os_begin + strlen(os_str));
+    this->id = strtol(os.c_str(), NULL, 10);
+    }
+
+  while (chip_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(chip_str, chip_begin + 1);
+    std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
+
+    Chip c(one_chip);
+    this->chips.push_back(c);
+
+    chip_begin = next;
+    }
+  }
+
 Socket::~Socket()
   {
   id = -1;
@@ -244,6 +298,24 @@ void Socket::displayAsString(
   for (unsigned int i = 0; i < this->chips.size(); i++)
     this->chips[i].displayAsString(out);
   } // END displayAsString()
+
+
+
+void Socket::displayAsJson(
+
+  stringstream &out) const
+
+  {
+  out << "\"socket\":{\"os_index\":" << this->id;
+
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    out << ",";
+    this->chips[i].displayAsJson(out);
+    }
+
+  out << "}";
+  } // END displayAsJson()
 
 
 

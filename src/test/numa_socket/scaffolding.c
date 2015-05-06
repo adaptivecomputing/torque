@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sstream>
 #include "machine.hpp"
 #include "log.h"
 #include "pbs_error.h"
@@ -14,6 +15,7 @@ int called_store_pci;
 bool oscillate = false;
 bool avail_oscillate = false;
 int place_amount = 1;
+int json_chip;
 std::string my_placement_type;
 const char *place_socket = "socket";
 
@@ -65,11 +67,23 @@ Core::~Core()
   {
   }
 
+Chip::Chip(const std::string &json_layout)
+  {
+  json_chip++;
+  }
+
 Chip::Chip()
   {
   }
 
 Chip::~Chip()
+  {
+  }
+
+void Chip::displayAsJson(
+
+  std::stringstream &out) const
+
   {
   }
 

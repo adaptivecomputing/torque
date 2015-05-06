@@ -10,6 +10,44 @@
 extern std::string my_placement_type;
 extern std::string thread_type;
 
+START_TEST(test_json_constructor)
+  {
+  const char *j1 ="\"numachip\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
+  const char *j2 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":32,\"gpus\":\"0-3\"}";
+  const char *j3 ="\"numachip\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
+  std::stringstream o1;
+  std::stringstream o2;
+  std::stringstream o3;
+  
+  Chip c1(j1);
+  fail_unless(c1.get_id() == 1);
+  fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
+  fail_unless(c1.getTotalThreads() == 8);
+  fail_unless(c1.get_available_mics() == 2, "%d mics", c1.get_available_mics());
+  fail_unless(c1.get_available_gpus() == 0);
+  c1.displayAsJson(o1);
+  fail_unless(o1.str() == j1, o1.str().c_str());
+
+  Chip c2(j2);
+  fail_unless(c2.get_id() == 0);
+  fail_unless(c2.getTotalCores() == 8);
+  fail_unless(c2.getTotalThreads() == 16);
+  fail_unless(c2.get_available_mics() == 0);
+  fail_unless(c2.get_available_gpus() == 4);
+  c2.displayAsJson(o2);
+  fail_unless(o2.str() == j2, o2.str().c_str());
+
+  Chip c3(j3);
+  fail_unless(c3.get_id() == 12);
+  fail_unless(c3.getTotalCores() == 6);
+  fail_unless(c3.getTotalThreads() == 6);
+  fail_unless(c3.get_available_mics() == 2);
+  fail_unless(c3.get_available_gpus() == 2);
+  c3.displayAsJson(o3);
+  fail_unless(o3.str() == j3, o3.str().c_str());
+  }
+END_TEST
+
 
 START_TEST(test_initializeChip)
   {
@@ -388,6 +426,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_place_and_free_task);
   tcase_add_test(tc_core, test_exclusive_place);
+  tcase_add_test(tc_core, test_json_constructor);
   suite_add_tcase(s, tc_core);
   
   return(s);

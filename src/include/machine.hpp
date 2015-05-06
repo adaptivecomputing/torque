@@ -28,6 +28,8 @@ extern const int ALL_TASKS;
 
 extern const int MIC_TYPE;
 extern const int GPU;
+extern const int CORE;
+extern const int THREAD;
 
 using namespace std;
 
@@ -59,6 +61,7 @@ class PCI_Device
     int  get_type() const;
     int  get_id() const;
     bool is_busy() const;
+    void set_type(int type);
     void set_state(bool in_use);
   };
 
@@ -86,16 +89,19 @@ class Core
 
   public:
     Core();
+    Core(const std::string &layout);
     ~Core();
-    int getid();
+    int get_id() const;
     int getNumberOfProcessingUnits();
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
     std::vector<int> getPU();
     void displayAsString(stringstream &out) const;
     void mark_as_busy(int index);
     int  get_open_processing_unit();
+    int  add_processing_unit(int which, int os_index);
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
+    void append_indices(std::vector<int> core_indices, int which) const;
   };
 
 
@@ -125,23 +131,28 @@ class Chip
 
   public:
     Chip();
+    Chip(const std::string &layout);
     ~Chip();
-    int getid();
+    int get_id() const;
     int getTotalCores() const;
     int getTotalThreads() const;
     int getAvailableCores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
-    int getMemory() const;
+    hwloc_uint64_t getMemory() const;
     int get_available_gpus() const;
     int get_available_mics() const;
     int initializeChip(hwloc_obj_t obj, hwloc_topology_t);
     int initializeNonNUMAChip(hwloc_obj_t, hwloc_topology_t);
     int initializePCIDevices(hwloc_obj_t, hwloc_topology_t);
+    void initialize_cores_from_strings(std::string &cores, std::string &threads);
+    void initialize_accelerators_from_strings(std::string &gpus, std::string &mics);
     bool chipIsAvailable() const;
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
+    void parse_values_from_json_string(const std::string &json_layout, std::string &cores,
+         std::string &threads, std::string &gpus, std::string &mics);
 
 #ifdef NVIDIA_GPUS
   #ifdef NVML_API
@@ -151,6 +162,7 @@ class Chip
 
     std::vector<Core> getCores();
     void displayAsString(stringstream &out) const;
+    void displayAsJson(stringstream &out) const;
     void setMemory(hwloc_uint64_t mem);
     void setId(int id);
     void setCores(int cores); // used for unit tests
@@ -195,6 +207,7 @@ class Socket
 
   public:
     Socket();
+    Socket(const std::string &layout);
     ~Socket();
     int initializeSocket(hwloc_obj_t obj);
     int initializeIntelSocket(hwloc_obj_t obj, Chip &newChip);
@@ -212,6 +225,7 @@ class Socket
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
     void displayAsString(stringstream &out) const;
+    void displayAsJson(stringstream &out) const;
     void setId(int id);
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
@@ -249,6 +263,7 @@ class Machine
 
   public:
     Machine& operator=(const Machine& newMachine);
+    Machine(const std::string &layout);
     Machine();
     ~Machine();
     int getNumberOfSockets();
@@ -267,6 +282,7 @@ class Machine
     int getAvailableThreads();
     bool isNUMA;
     void displayAsString(stringstream &out) const;
+    void displayAsJson(stringstream &out) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
     int  place_job(job *pjob, string &cpu_string, string &mem_string);

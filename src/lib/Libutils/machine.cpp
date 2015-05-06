@@ -114,6 +114,54 @@ Machine& Machine::operator= (const Machine& newMachine)
   return *this;
   }
 
+
+
+/*
+ * Builds a copy of the machine's layout in from json which has no whitespace but 
+ * if it did it'd look like:
+ *
+ * {"node" : {
+ *   "socket" : {
+ *     "os_index" : <index>,
+ *     "numachip" : {
+ *       "os_index" : <index>,
+ *       "cores" : <core range string>,
+ *       "threads" : <thread range string>,
+ *       "mem" : <memory in kb>,
+ *       "gpus" : <gpu range string>,
+ *       "mics" : <mic range string>
+ *       }
+ *     [, "numachip" ... ]
+ *     }
+ *   [, "socket" ...]
+ *   }
+ * }
+ *
+ * mics and gpus are optional and only present if they actually exist on the node
+ *
+ */
+
+Machine::Machine(const std::string &json_layout) : totalMemory(0), totalSockets(0), totalChips(0),
+                                                   totalCores(0), totalThreads(0), 
+                                                   availableSockets(0), availableChips(0),
+                                                   availableCores(0), availableThreads(0)
+
+  {
+  const char *socket_str = "\"socket\":{";
+  std::size_t socket_begin = json_layout.find(socket_str);
+
+  while (socket_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
+    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
+
+    Socket s(one_socket);
+    this->sockets.push_back(s);
+
+    socket_begin = next;
+    }
+  }
+
 Machine::Machine() : totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
                      totalThreads(0), availableSockets(0), availableChips(0),
                      availableCores(0), availableThreads(0)
@@ -429,6 +477,27 @@ int Machine::getAvailableThreads()
   return(available);
   }
 
+
+
+void Machine::displayAsJson(
+    
+  stringstream &out) const
+
+  {
+  out << "{\"node\":{";
+
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    {
+    if (i > 0)
+      out << ",";
+    this->sockets[i].displayAsJson(out);
+    }
+
+  out << "}}";
+  }
+
+
+
 void Machine::displayAsString(
     
   stringstream &out) const
@@ -441,7 +510,6 @@ void Machine::displayAsString(
   
   for (unsigned int i = 0; i < this->NVIDIA_device.size(); i++)
     this->NVIDIA_device[i].displayAsString(out);
-
   }
   
 void Machine::setMemory(

@@ -159,6 +159,7 @@ extern int write_buffer (char *,int,int);
 /* misc functions */
 extern void save_args(int, char **);
 extern char *find_command(char *, char *);
+void         translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices);
 void         translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 
 /* utility functions in u_mu.c */

@@ -17,6 +17,7 @@ int called_place_task;
 int called_partially_place;
 int called_fits_on_socket;
 int called_store_pci;
+int json_socket;
 bool socket_fit;
 bool partially_placed;
 
@@ -27,6 +28,11 @@ const int CPU_INDICES = 1;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
+  }
+
+Socket::Socket(const std::string &json_layout)
+  {
+  json_socket++;
   }
 
 Socket::Socket()
@@ -117,6 +123,8 @@ bool Socket::is_available() const
   {
   return(false);
   }
+
+void Socket::displayAsJson(std::stringstream &out) const {}
 
 complete_req::complete_req() {}
 
