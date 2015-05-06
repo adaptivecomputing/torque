@@ -452,6 +452,7 @@ int PBSShowUsage(
   fprintf(stderr, "  -L <PATH> \\\\ Logfile\n");
   fprintf(stderr, "  -l <PORT> \\\\ Listener Port\n");
   fprintf(stderr, "  -M <PORT> \\\\ MOM Port\n");
+  fprintf(stderr, "  -n        \\\\ Only send the hierarchy on request\n");
   fprintf(stderr, "  -p <PORT> \\\\ Server Port\n");
   fprintf(stderr, "  -R <PORT> \\\\ RM Port\n");
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");
