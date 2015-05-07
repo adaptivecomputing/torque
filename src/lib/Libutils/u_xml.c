@@ -112,6 +112,17 @@ int get_parent_and_child(
   char *child_end;
   int   reached_space = FALSE;
 
+  // Stop looking at NULL or an empty string
+  if (start == NULL)
+    return(-1);
+  else
+    {
+    *end = trim(start);
+    start = *end;
+    if (*start == '\0')
+      return(-1);
+    }
+
   if (ptr == NULL)
     {
     log_err(-1, __func__ ,"No parent tag found\n");
