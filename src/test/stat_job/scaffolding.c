@@ -48,3 +48,11 @@ int get_svr_attr_l(int index, long *l)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+int remove_procct(
+
+  job *pjob)
+
+  {
+  return(0);
+  }
