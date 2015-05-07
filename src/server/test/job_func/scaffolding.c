@@ -622,3 +622,4 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
   }
 
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
+

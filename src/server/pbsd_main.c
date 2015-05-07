@@ -274,7 +274,7 @@ int                     route_retry_interval = 10; /* time in seconds to check r
 char                    Torque_Info_Version[] = PACKAGE_VERSION;
 char                    Torque_Info_Version_Revision[] = GIT_HASH;
 char                    Torque_Info_Component[] = "pbs_server";
-char                    Torque_Info_SysVersion[BUF_SIZE];
+char                    Torque_Info_SysVersion[MAX_LINE];
 
 /* HA global data items */
 long                    HALockCheckTime = 0;
@@ -458,6 +458,7 @@ int PBSShowUsage(
   fprintf(stderr, "  -L <PATH> \\\\ Logfile\n");
   fprintf(stderr, "  -l <PORT> \\\\ Listener Port\n");
   fprintf(stderr, "  -M <PORT> \\\\ MOM Port\n");
+  fprintf(stderr, "  -n        \\\\ Only send the hierarchy on request\n");
   fprintf(stderr, "  -p <PORT> \\\\ Server Port\n");
   fprintf(stderr, "  -R <PORT> \\\\ RM Port\n");
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");

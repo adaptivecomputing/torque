@@ -512,3 +512,4 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
   }
+

@@ -55,8 +55,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_job_id, bool reservation)
   {
-  fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 int swap_jobs(all_jobs *aj, job *job1, job *job2)
@@ -108,3 +107,5 @@ bool have_reservation(job *pjob, struct pbs_queue *pque)
   {
   return(true);
   }
+
+
