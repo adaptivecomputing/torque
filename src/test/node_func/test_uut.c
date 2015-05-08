@@ -1117,8 +1117,17 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("write_compute_node_properties_test");
   tcase_add_test(tc_core, write_compute_node_properties_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("add_node_attribute_to_list_test");
   tcase_add_test(tc_core, add_node_attribute_to_list_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("add_node_property_test");
   tcase_add_test(tc_core, add_node_property_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("record_node_property_list_test");
   tcase_add_test(tc_core, record_node_property_list_test);
   suite_add_tcase(s, tc_core);
 
