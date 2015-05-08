@@ -740,6 +740,7 @@ int process_status_info(
       process_mic_status(current, i, status_info);
       str = status_info[i].c_str();
       }
+#ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
       if (current->nd_layout == NULL)
@@ -749,6 +750,7 @@ int process_status_info(
 
       continue;
       }
+#endif
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */
