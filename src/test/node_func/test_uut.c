@@ -1133,8 +1133,17 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("parse_node_token_test");
   tcase_add_test(tc_core, parse_node_token_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("handle_cray_specific_node_values_test");
   tcase_add_test(tc_core, handle_cray_specific_node_values_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("parse_node_name_test");
   tcase_add_test(tc_core, parse_node_name_test);
   suite_add_tcase(s, tc_core);
 
