@@ -142,7 +142,6 @@ START_TEST(test_get_set_values)
   req r3;
   r3.set_value("task_count", "1");
   r3.set_value("placement_type", "place node");
-  r3.set_value("nodes", "2");
   r3.set_value("lprocs", "all");
 
   names.clear();
@@ -151,10 +150,8 @@ START_TEST(test_get_set_values)
   r3.get_values(names, values);
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
-  fail_unless(names[2] == "node.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "all");
-  fail_unless(values[2] == "2");
   }
 END_TEST
 
@@ -447,29 +444,33 @@ START_TEST(test_get_num_tasks_for_host)
   r.set_value("hostlist", "napali:ppn=16");
   r.set_value("placement_type", "core");
   int tasks = r.get_num_tasks_for_host("napali");
-
   fail_unless(tasks == 8, "Expected 8, got %d", tasks);
+  fail_unless(r.get_num_tasks_for_host(16) == 8);
 
   r.set_value("lprocs", "1");
   r.set_hostlist("napali");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 1, "Expected 1, got %d", tasks);
+  fail_unless(r.get_num_tasks_for_host(1) == 1);
   
   r.set_value("hostlist", "napali/0-15");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 16, "Expected 16, got %d", tasks);
+  fail_unless(r.get_num_tasks_for_host(16) == 16);
   
   r.set_value("hostlist", "napali/0-15+wailua/0-15");
   r.set_value("lprocs", "4");
   r.set_value("task_count", "8");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
+  fail_unless(r.get_num_tasks_for_host(16) == 4);
   
   r.set_value("hostlist", "waimea/0-16+napali/0-15");
   r.set_value("lprocs", "4");
   r.set_value("task_count", "8");
   tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
+  fail_unless(r.get_num_tasks_for_host(16) == 4);
   }
 END_TEST
 

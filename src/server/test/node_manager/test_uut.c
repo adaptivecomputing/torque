@@ -42,6 +42,30 @@ extern std::vector<int> jobsKilled;
 extern int str_to_attr_count;
 extern int decode_resc_count;
 
+#ifdef PENABLE_LINUX_CGROUPS
+void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
+START_TEST(test_save_cpus_and_memory_cpusets)
+  {
+  job         *pjob = (job *)calloc(1, sizeof(job));
+  std::string  cpus("0-3");
+  std::string  mems("0");
+
+  save_cpus_and_memory_cpusets(pjob, "napali", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0"));
+  
+  save_cpus_and_memory_cpusets(pjob, "wailua", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0"));
+  
+  save_cpus_and_memory_cpusets(pjob, "waimea", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3+waimea:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0+waimea:0"));
+
+  }
+END_TEST
+#endif
+
 
 START_TEST(test_add_remove_mic_jobs)
   {
@@ -633,6 +657,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
 
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  pnode->nd_name = strdup("napali");
   for (int i = 0; i < 9; i++)
     pnode->nd_slots.add_execution_slot();
 
@@ -709,6 +734,9 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("sync_node_jobs_with_moms_test");
   tcase_add_test(tc_core, sync_node_jobs_with_moms_test);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, test_save_cpus_and_memory_cpusets);
+#endif
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");

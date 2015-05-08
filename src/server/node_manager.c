@@ -4034,6 +4034,59 @@ int place_mics_in_hostlist(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * save_cpus_and_memory_cpusets()
+ *
+ * Adds the cpus and mems to the job's list
+ */
+
+void save_cpus_and_memory_cpusets(
+
+  job         *pjob,
+  const char  *node_name,
+  std::string &cpus,
+  std::string &mems)
+
+  {
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+    formatted += ":" + cpus;
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
+    all_cpus += "+";
+    all_cpus += node_name;
+    all_cpus += ":" + cpus;
+    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
+    }
+  
+  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+    formatted += ":" + mems;
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
+    all_mems += "+";
+    all_mems += node_name;
+    all_mems += ":" + mems;
+    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
+    }
+
+  } // END save_cpus_and_memory_cpusets()
+#endif
+
+
 
 /*
  * checks the subnodes of pnode and places them in the host list
@@ -4070,6 +4123,14 @@ int place_subnodes_in_hostlist(
   if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info.est) == PBSE_NONE)
     {
     /* SUCCESS */
+#ifdef PENABLE_LINUX_CGROUPS
+    std::string cpus;
+    std::string mems;
+
+    pnode->nd_layout->place_job(pjob, cpus, mems, naji->ppn_needed);
+    save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
+#endif
+
     pnode->nd_np_to_be_used -= naji->ppn_needed;
     naji->ppn_needed = 0;
 
@@ -5387,6 +5448,11 @@ int remove_job_from_node(
       i--; /* the array has shrunk by 1 so we need to reduce i by one */
       }
     }
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pnode->nd_layout != NULL)
+    pnode->nd_layout->free_job_allocation(job_mapper.get_name(internal_job_id));
+#endif
   
   return(PBSE_NONE);
   } /* END remove_job_from_node() */

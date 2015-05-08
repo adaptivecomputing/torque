@@ -1257,6 +1257,34 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
 
+#ifdef PENABLE_LINUX_CGROUPS
+  // JOB_ATR_cpuset_string
+  {(char *)ATTR_cpustr,   /* "cpuset_string" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
+
+  // JOB_ATR_memset_string
+  {(char *)ATTR_memstr,   /* "memset_string" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
+#endif
+
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",
     decode_unkn,

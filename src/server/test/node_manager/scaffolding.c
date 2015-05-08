@@ -19,6 +19,7 @@
 #include "work_task.h" /* work_task, work_type */
 #include "threadpool.h"
 #include "id_map.hpp"
+#include "machine.hpp"
 
 
 int str_to_attr_count;
@@ -626,6 +627,21 @@ microsecond_timer::~microsecond_timer() {}
 #endif
 
 ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+void Machine::free_job_allocation(const char *jobid)
+  {
+  }
+
+int Machine::place_job(
+
+  job    *pjob,
+  string &cpu_string,
+  string &mem_string,
+  int     num_ppn)
+
   {
   return(0);
   }

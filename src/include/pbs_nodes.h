@@ -97,6 +97,7 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#include "machine.hpp"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -355,15 +356,9 @@ struct pbsnode
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
 
   /* numa hardware configuration information */
-  int nd_available_sockets;
-  int nd_available_chips;
-  int nd_available_cores;
-  int nd_available_threads;
-  int nd_total_sockets;
-  int nd_total_chips;
-  int nd_total_cores;
-  int nd_total_threads;
-
+#ifdef PENABLE_LINUX_CGROUPS
+  Machine *nd_layout;
+#endif
  };
 
 typedef container::item_container<struct pbsnode *>                all_nodes;

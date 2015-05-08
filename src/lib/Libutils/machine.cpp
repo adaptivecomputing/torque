@@ -27,7 +27,6 @@
 using namespace std;
 
 const int   ALL_TASKS = -1;
-extern char mom_alias[];
 
 
 /* 26 August 2014
@@ -157,9 +156,15 @@ Machine::Machine(const std::string &json_layout) : totalMemory(0), totalSockets(
 
     Socket s(one_socket);
     this->sockets.push_back(s);
+    this->totalSockets++;
 
     socket_begin = next;
     }
+
+  this->availableSockets = this->totalSockets;
+  this->totalChips = this->getAvailableChips();
+  this->totalCores = this->getAvailableCores();
+  this->totalThreads = this->getAvailableThreads();
   }
 
 Machine::Machine() : totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
@@ -422,7 +427,7 @@ hwloc_uint64_t Machine::getTotalMemory()
   return(this->totalMemory);
   }
 
-int Machine::getNumberOfSockets()
+int Machine::getTotalSockets()
   {
   return(this->totalSockets);
   }
@@ -606,7 +611,8 @@ int Machine::place_job(
 
   job    *pjob,
   string &cpu_string,
-  string &mem_string)
+  string &mem_string,
+  int     num_ppn)
 
   {
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
@@ -627,7 +633,7 @@ int Machine::place_job(
   for (int i = 0; i < num_reqs; i++)
     {
     const req &r = cr->get_req(i);
-    int        tasks_for_node = r.get_num_tasks_for_host(mom_alias);
+    int        tasks_for_node = r.get_num_tasks_for_host(num_ppn);
     bool       placed = false;
 
     if (tasks_for_node == 0)
@@ -660,7 +666,7 @@ int Machine::place_job(
   for (unsigned int i = 0; i < partially_place.size(); i++)
     {
     const req &r = cr->get_req(partially_place[i]);
-    int        remaining_tasks = r.get_num_tasks_for_host(mom_alias);
+    int        remaining_tasks = r.get_num_tasks_for_host(num_ppn);
     bool       change = false;
     bool       not_placed = true;
     

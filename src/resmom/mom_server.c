@@ -684,36 +684,19 @@ int is_compose(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+void gen_layout(
 
+  const char               *name,
+  std::vector<std::string> &status)
 
-
-/**
- *  generate_server_status
- *
- *  This should update the PBS server with the status information
- *  that the resource manager should need.  This should allow for
- *  less trouble on the part of the resource manager.  It can get
- *  this information from the server rather than going to each mom.
- *
- *  This was originally part of is_update_stat, a very complicated
- * routine.  I have broken this into pieces so that the special cases
- * a each in a specific routine.  The routine gen_gen is the one
- * for the general case.
- *
- *  The old is_update_stat used to write directly to a DIS stream.
- * Now we generate the strings in to a buffer, each string terminated
- * with a NULL and a double NULL at the end.
- *
- * Warning: Because of the complexity of the old is_update_stat, it
- * was very hard to break out the special cases.  I actually had to
- * go back and look at older code before there were multiple server
- * arrays to try and figure out what should be happening.
- *
- * If there is some trouble with some status getting back to the
- * pbs_server, this is the place to look.
- */
-
-
+  {
+  std::stringstream layout;
+  layout << name << "=";
+  this_node.displayAsJson(layout);
+  status.push_back(layout.str());
+  } // END gen_layout()
+#endif
 
 
 
@@ -766,8 +749,6 @@ void gen_size(
 
 
 
-
-
 void gen_arch(
 
   const char               *name,
@@ -791,8 +772,6 @@ void gen_arch(
 
 
 
-
-
 void gen_opsys(
 
   const char               *name,
@@ -813,8 +792,6 @@ void gen_opsys(
 
   return;
   }
-
-
 
 
 
@@ -906,6 +883,8 @@ void gen_gen(
 
   return;
   }   /* END gen_gen() */
+
+
 
 void gen_macaddr(
 
@@ -1000,7 +979,7 @@ void gen_macaddr(
   s += "=";
   s += mac_addr;
   status.push_back(s);
-  }
+  } // END gen_macaddr()
 
 
 
@@ -1035,15 +1014,38 @@ stat_record stats[] = {
   {"varattr",     gen_gen},
   {"cpuclock",    gen_gen},
   {"macaddr",     gen_macaddr},
+#ifdef PENABLE_LINUX_CGROUPS
+  {"layout",      gen_layout},
+#endif
   {NULL,          NULL}
   };
-
 
 
 
 /**
  * generate_server_status
  *
+ *  This should update the PBS server with the status information
+ *  that the resource manager should need.  This should allow for
+ *  less trouble on the part of the resource manager.  It can get
+ *  this information from the server rather than going to each mom.
+ *
+ *  This was originally part of is_update_stat, a very complicated
+ * routine.  I have broken this into pieces so that the special cases
+ * a each in a specific routine.  The routine gen_gen is the one
+ * for the general case.
+ *
+ *  The old is_update_stat used to write directly to a DIS stream.
+ * Now we generate the strings in to a buffer, each string terminated
+ * with a NULL and a double NULL at the end.
+ *
+ * Warning: Because of the complexity of the old is_update_stat, it
+ * was very hard to break out the special cases.  I actually had to
+ * go back and look at older code before there were multiple server
+ * arrays to try and figure out what should be happening.
+ *
+ * If there is some trouble with some status getting back to the
+ * pbs_server, this is the place to look.
  */
 
 void generate_server_status(
@@ -1094,46 +1096,7 @@ int should_request_cluster_addrs()
   return(should);
   } /* END should_request_cluster_addrs() */
 
-int write_numa_info( 
 
-  struct tcp_chan *chan)
-
-  {
-  int ret = PBSE_NONE;
-
-#ifdef PENABLE_LINUX_CGROUPS
-  /* This is the numa configuration for this node */
-  if ((ret = diswsi(chan, this_node.getAvailableSockets())) == DIS_SUCCESS)
-    {
-    if ((ret = diswsi(chan, this_node.getAvailableChips())) == DIS_SUCCESS)
-      {
-      if ((ret = diswsi(chan, this_node.getAvailableCores())) == DIS_SUCCESS)
-        {
-        if ((ret = diswsi(chan, this_node.getAvailableThreads())) == DIS_SUCCESS)
-          {
-          if ((ret = diswsi(chan, this_node.getNumberOfSockets())) == DIS_SUCCESS)
-            {
-            if ((ret = diswsi(chan, this_node.getTotalChips())) == DIS_SUCCESS)
-              {
-              if ((ret = diswsi(chan, this_node.getTotalCores())) == DIS_SUCCESS)
-                {
-                if ((ret = diswsi(chan, this_node.getTotalThreads())) == DIS_SUCCESS)
-                  {
-                  return(ret);
-                  }
-                }
-              }
-            }
-          } 
-        }
-      }
-    }
-  return(ret);
-#else
-  /* If we are not doing cpusets don't do anything */
-  return(ret);
-#endif
-  }
 
 /* 
  * writes the header for a server status update
@@ -1161,22 +1124,19 @@ int write_update_header(
       {
       if ((ret = diswus(chan, pbs_rm_port)) == DIS_SUCCESS)
         {
-        if ((ret = write_numa_info(chan)) == DIS_SUCCESS)
+        if (is_reporter_mom == FALSE)
           {
-          if (is_reporter_mom == FALSE)
+          /* write this node's name first - alps handles this separately */
+          snprintf(buf,sizeof(buf),"node=%s",mom_alias);
+          
+          if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
+            mom_server_stream_error(chan->sock, name, id, "writing status string");
+          else if (should_request_cluster_addrs() == TRUE)
             {
-            /* write this node's name first - alps handles this separately */
-            snprintf(buf,sizeof(buf),"node=%s",mom_alias);
-            
-            if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
+            if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
               mom_server_stream_error(chan->sock, name, id, "writing status string");
-            else if (should_request_cluster_addrs() == TRUE)
-              {
-              if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
-                mom_server_stream_error(chan->sock, name, id, "writing status string");
-              else
-                requested_cluster_addrs = time_now;
-              }
+            else
+              requested_cluster_addrs = time_now;
             }
           }
         }

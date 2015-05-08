@@ -20,7 +20,7 @@
 #include "id_map.hpp"
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
-
+#include "machine.hpp"
 
 
 int svr_tsnodes = 0; 
@@ -439,5 +439,46 @@ void free_br(struct batch_request *preq)
   }
 
 void mom_hierarchy_handler::reloadHierarchy()
-{
-}
+  {
+  }
+
+int Machine::getAvailableSockets()
+  {
+  return(0);
+  }
+
+int Machine::getTotalThreads()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableChips()
+  {
+  return(0);
+  }
+
+int Machine::getTotalCores()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableCores()
+  {
+  return(0);
+  }
+
+int Machine::getAvailableThreads()
+  {
+  return(0);
+  }
+
+int Machine::getTotalSockets()
+  {
+  return(0);
+  }
+
+int Machine::getTotalChips()
+  {
+  return(0);
+  }
+

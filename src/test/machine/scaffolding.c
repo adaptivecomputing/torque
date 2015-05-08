@@ -156,7 +156,7 @@ req &req::operator =(const req &other)
 
 int req::get_num_tasks_for_host(
 
-  const std::string &hostname) const
+  int num_ppn) const
 
   {
   return(num_for_host);

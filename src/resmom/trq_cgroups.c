@@ -25,6 +25,8 @@
 using namespace std;
 using namespace boost;
 
+extern char mom_alias[];
+
 enum cgroup_system
   {
   cg_cpu,
@@ -715,6 +717,37 @@ int trq_cg_populate_cgroup(
 
 
 
+/*
+ * find_range_in_cpuset_string()
+ *
+ * Parses a string in the format:
+ *
+ * host1:<range>[+host2:range[...]]
+ * and grabs range to place in the cpuset
+ */
+
+int find_range_in_cpuset_string(
+
+  std::string &source,
+  std::string &output)
+
+  {
+  std::size_t pos = source.find(mom_alias);
+  std::size_t end;
+
+  if (pos == std::string::npos)
+    return(-1);
+
+  pos += strlen(mom_alias) + 1; // add 1 to pass the ':'
+  end = source.find("+", pos);
+
+  output = source.substr(pos, end - pos);
+
+  return(PBSE_NONE);
+  } // END find_range_in_cpuset_string()
+
+
+
 int trq_cg_get_cpuset_and_mem(
 
   job         *pjob, 
@@ -725,10 +758,23 @@ int trq_cg_get_cpuset_and_mem(
   int rc = PBSE_NONE;
 
 #ifdef PENABLE_LINUX_CGROUPS
-  rc = this_node.get_jobs_cpusets(pjob->ji_qs.ji_jobid, cpuset_string, mem_string);
+  if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
+      (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+    return(-1);
+
+  std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+
+  if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+    return(-1);
+
+  std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+  
+  if (find_range_in_cpuset_string(mems, mem_string) != 0)
+    return(-1);
 #endif
+
   return(rc);
-  }
+  } // END trq_cg_get_cpuset_and_mem()
 
 
 
@@ -1001,28 +1047,5 @@ int trq_cg_set_resident_memory_limit(
   } // END trq_cg_set_resident_memory_limit()
 
 
-
-/*
- * trq_cg_reserve_cgroup()
- *
- * This must happen before we fork so that the parent knows what cpus and mems
- * the job is using
- */
-
-int trq_cg_reserve_cgroup(
-
-  job *pjob)
-
-  {
-  int         rc = PBSE_NONE;
-  std::string cpus;
-  std::string mems;
-
-#ifdef PENABLE_LINUX_CGROUPS
-  rc = this_node.place_job(pjob, cpus, mems);
-#endif
-
-  return(rc);
-  }
 
 

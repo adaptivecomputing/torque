@@ -48,12 +48,14 @@ START_TEST(test_json_constructor)
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out);
   fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
+  fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
   Machine m2(j2);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out);
   fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
+  fail_unless(m2.getTotalSockets() == 1);
   }
 END_TEST
 
@@ -121,7 +123,7 @@ START_TEST(test_initializeMachine)
   rc = new_machine.initializeMachine(topology);
   fail_unless(rc == PBSE_NONE, "machine initialization failed");
 
-  rc = new_machine.getNumberOfSockets();
+  rc = new_machine.getTotalSockets();
   fail_unless(rc != 0, "Failed to get machine number of sockets");
 
   rc = new_machine.getTotalChips();
@@ -170,7 +172,7 @@ START_TEST(test_place_and_free_job)
   num_for_host = 4;
   num_tasks_fit = 4;
   num_placed = 4;
-  m.place_job(&pjob, cpu, mem);
+  m.place_job(&pjob, cpu, mem, 0);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   // Make sure we call free tasks once per socket
@@ -184,7 +186,7 @@ START_TEST(test_place_and_free_job)
   num_tasks_fit = 4;
   num_placed = 4;
   called_place_task = 0;
-  m.place_job(&pjob, cpu, mem);
+  m.place_job(&pjob, cpu, mem, 0);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   num_tasks_fit = 0;
@@ -195,7 +197,7 @@ START_TEST(test_place_and_free_job)
   partially_placed = true;
   called_partially_place = 0;
   called_fits_on_socket = 0;
-  m.place_job(&pjob, cpu, mem);
+  m.place_job(&pjob, cpu, mem, 0);
   fail_unless(called_partially_place == 1, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 1);
   
@@ -205,7 +207,7 @@ START_TEST(test_place_and_free_job)
   my_req_count = 1;
   num_for_host = 1;
 
-  m.place_job(&pjob, cpu, mem);
+  m.place_job(&pjob, cpu, mem, 0);
   fail_unless(called_partially_place == 2, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 3);
   }

@@ -20,7 +20,8 @@ using namespace std;
 const int CORE = 0;
 const int THREAD = 1;
 
-Core::Core() : id(-1), totalThreads(0), free(true), indices(), is_index_busy()
+Core::Core() : id(-1), totalThreads(0), free(true), indices(), is_index_busy(),
+               processing_units_open(0)
   {
   memset(core_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(core_nodeset_string, 0, MAX_NODESET_SIZE);

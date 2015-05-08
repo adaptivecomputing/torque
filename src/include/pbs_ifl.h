@@ -374,7 +374,9 @@
 #define ATTR_NODE_requestid        "requestid"
 
 #define ATTR_copy_on_rerun         "copy_on_rerun"
-#define ATTR_job_exclusive_on_use   "job_exclusive_on_use"
+#define ATTR_job_exclusive_on_use  "job_exclusive_on_use"
+#define ATTR_cpustr                "cpuset_string"
+#define ATTR_memstr                "memset_string"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

@@ -22,4 +22,4 @@ check_SCRIPTS = ../coverage_run.sh
 
 TESTS = ${check_PROGRAMS} ${check_SCRIPTS} 
 
-CLEANFILES = coverage_run.sh *.gcno *.gcda *.gcov core *.lo
+CLEANFILES = *.gcno *.gcda *.gcov core *.lo

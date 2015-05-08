@@ -266,13 +266,13 @@ class Machine
     Machine(const std::string &layout);
     Machine();
     ~Machine();
-    int getNumberOfSockets();
     Socket getSocket();
     int initializeMachine(hwloc_topology_t topology);
     int initializeNonNUMAMachine(hwloc_obj_t obj, hwloc_topology_t topology);
     int initializeNVIDIADevices(hwloc_obj_t obj, hwloc_topology_t topology);
-    int getTotalChips();
     hwloc_uint64_t getTotalMemory();
+    int getTotalSockets();
+    int getTotalChips();
     int getTotalCores();
     int getTotalThreads();
     int getAvailableSockets();
@@ -285,7 +285,7 @@ class Machine
     void displayAsJson(stringstream &out) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
-    int  place_job(job *pjob, string &cpu_string, string &mem_string);
+    int  place_job(job *pjob, string &cpu_string, string &mem_string, int num_ppn);
     void setMemory(long long mem); // used for unit tests
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests

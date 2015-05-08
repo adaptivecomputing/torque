@@ -1931,6 +1931,24 @@ int req::get_num_tasks_for_host(
 
 
 
+int req::get_num_tasks_for_host(
+
+  int num_ppn) const
+
+  {
+  int         task_count = 0;
+
+  if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
+      (!strncmp(this->placement_str.c_str(), "node", 4)))
+    task_count = 1;
+  else
+    task_count = num_ppn / this->execution_slots;
+
+  return(task_count);
+  } // END get_num_tasks_for_host()
+
+
+
 /*
  * get_swap_for_host()
  *

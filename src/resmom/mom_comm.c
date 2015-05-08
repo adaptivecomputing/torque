@@ -2586,8 +2586,6 @@ int im_join_job_as_sister(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  trq_cg_reserve_cgroup(pjob);
-  
   if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
