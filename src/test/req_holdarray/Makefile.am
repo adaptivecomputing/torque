@@ -1,4 +1,4 @@
 
 include ../Makefile_Server.ut
 
-libuut_la_SOURCES =  ${PROG_ROOT}/req_holdjob.c
+libuut_la_SOURCES =  ${PROG_ROOT}/req_holdarray.c
