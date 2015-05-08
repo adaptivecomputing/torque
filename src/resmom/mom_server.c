@@ -1732,9 +1732,17 @@ void mom_server_all_update_stat(void)
         }
 
       if (buf[0] != '0')
-          num_stat_update_failures++;
+        num_stat_update_failures++;
       else
-          num_stat_update_failures = 0;
+        {
+        num_stat_update_failures = 0;
+        for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+          {
+          if (mom_servers[sindex].pbs_servername[0] == '\0')
+            continue;
+          mom_servers[sindex].MOMLastSendToServerTime = time_now;
+          }
+        }
 
       return;
       }
