@@ -133,7 +133,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[BUF_SIZE];
+char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
@@ -5537,11 +5537,20 @@ void examine_all_running_jobs(void)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
-        if (pjob->ji_examined <= 10)
-          {
-          pjob->ji_examined++;
-          }
+        long STime;
+        long real_alarm_time;
+
+        /* TJobStartTimeout is set to the default prologue/epilogue
+           timeout. (PBS_PROLOG_TIME). We will wait a minimum 
+           of TJobStartTimeout and longer if pe_alarm_time (set by $prologalarm)
+           is greater than the TJobStartTimeout */
+        if (pe_alarm_time > TJobStartTimeout)
+          real_alarm_time = pe_alarm_time;
         else
+          real_alarm_time = TJobStartTimeout;
+        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
+        time_now = time((time_t *)0);
+        if ((STime > 0) && ((time_now - STime) > real_alarm_time))
           {
           sprintf(log_buffer, "job %s already examined. substate=%d",
                   pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);

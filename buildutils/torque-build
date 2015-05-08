@@ -235,8 +235,8 @@ if [ ${unit_tests} -ne 0 ]
 then
     make -j${parallel}
     chmod +x src/test/test_scripts/*
-    make check 2>&1 | tee log.txt
-    cat log.txt | ./parse_cov_results.py
+    make check -j${parallel}
+    make check -j${parallel} | ./parse_cov_results.py
 fi
 
 distdir="torque-${version}-${release_number}"

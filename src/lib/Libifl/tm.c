@@ -132,7 +132,7 @@
 
 /*
 ** Allocate some string space to hold the values passed in the
-** enviornment from MOM.
+** environment from MOM.
 */
 static char  *tm_jobid = NULL;
 static int  tm_jobid_len = 0;
@@ -748,7 +748,7 @@ int tm_init(
 
   while (TRUE)
     {
-    if ((err = tm_poll(TM_NULL_EVENT, &revent, 1, &nerr)) != TM_SUCCESS)
+    if ((err = tm_poll(TM_NULL_EVENT, &revent, TM_POLL_WAIT, &nerr)) != TM_SUCCESS)
       return err;
     if (event_count == 0)
       break;
@@ -1424,7 +1424,9 @@ tm_register(tm_whattodo_t *what, tm_event_t *event)
 **
 ** result_event is set to the completed event or the null event.
 **
-** If wait is non_zero, wait for "poll_event" to be completed.
+** If wait is TM_POLL_WAIT (or a non-zero value for compatibility),
+**   wait for "poll_event" to be completed.
+** If wait is TM_POLL_NOWAIT, do not wait for "poll_event" to be completed.
 **
 ** If an error ocurs, set tm_errno non-zero.
 */
@@ -1504,7 +1506,7 @@ int tm_poll(
   ** Setup tcp dis routines with a wait value appropriate for
   ** the value of wait the user set.
   */
-  pbs_tcp_timeout = wait ? FOREVER : 1;
+  pbs_tcp_timeout = (wait == TM_POLL_NOWAIT) ? 1 : FOREVER;
 
   prot = disrsi(static_chan, &ret);
 
