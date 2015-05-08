@@ -84,3 +84,19 @@ void log_event(
   {
   }
 
+int to_size(
+
+  const char        *val,   /* I */
+  struct size_value *psize) /* O */
+
+  {
+  return(0);
+  }
+
+void create_size_string(
+
+  char *buf, 
+  struct size_value values)
+
+  {
+  }
