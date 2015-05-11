@@ -427,6 +427,8 @@ Machine::~Machine()
   {
   }
 
+void Machine::displayAsJson(std::stringstream &out) const {}
+
 Socket::Socket()
   {
   }
@@ -444,46 +446,6 @@ Core::~Core(){}
 PCI_Device::PCI_Device(){}
 PCI_Device::~PCI_Device(){}
 
-
-int Machine::getNumberOfSockets()
-  {
-  return(0);
-  }
-
-int Machine::getAvailableSockets()
-  {
-  return(0);
-  }
-
-int Machine::getTotalThreads()
-  {
-  return(0);
-  }
-
-int Machine::getAvailableChips()
-  {
-  return(0);
-  }
-
-int Machine::getTotalCores()
-  {
-  return(0);
-  }
-
-int Machine::getAvailableCores()
-  {
-  return(0);
-  }
-
-int Machine::getAvailableThreads()
-  {
-  return(0);
-  }
-
-int Machine::getTotalChips()
-  {
-  return(0);
-  }
 
 time_t get_stat_update_interval()
 

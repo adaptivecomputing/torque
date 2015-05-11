@@ -37,7 +37,7 @@
 threadpool_t *task_pool;
 bool exit_called = false;
 char log_buffer[LOG_BUF_SIZE];
-int count;
+int mgr_count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_nodes allnodes;
 struct node_state
@@ -316,9 +316,9 @@ int mgr_set_node_attr(
                              this func at this time*/
 
   {
-  count++;
+  mgr_count++;
 
-  if (count < 2)
+  if (mgr_count < 2)
     return(0);
   else
     return(1);

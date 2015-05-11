@@ -25,7 +25,7 @@ char buf[4096];
 const char *alps_status[] = {"node=1", "CPROC=12", "state=UP", "reservation_id=12", "<cray_gpu_status>", "gpu_id=0", "clock_mhz=2600", "gpu_id=1", "clock_mhz=2600", "</cray_gpu_status>", NULL};
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
-extern int count;
+extern int mgr_count;
 
 START_TEST(record_reservation_test)
   {
@@ -169,12 +169,12 @@ START_TEST(determine_node_from_str_test)
   parent.nd_name = strdup("george");
   parent.alps_subnodes = new all_nodes();
 
-  count = 0; // set so that create_alps_subnode doesn't fail
+  mgr_count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str1, &parent, &parent);
   fail_unless(new_node != NULL, "new node is NULL?");
   fail_unless(new_node->nd_lastupdate != 0, "update time not set");
 
-  count = 0; // set so that create_alps_subnode doesn't fail
+  mgr_count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str2, &parent, &parent);
   fail_unless(new_node == &parent, "advanced current when current should've remained the same");
 

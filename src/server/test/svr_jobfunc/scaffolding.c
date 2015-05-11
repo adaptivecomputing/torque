@@ -539,6 +539,23 @@ void translate_range_string_to_vector(
   free(str);
   } /* END translate_range_string_to_vector() */
 
+void create_size_string(
+
+  char *buf, 
+  struct size_value values)
+
+  {
+  }
+
+int to_size(
+
+  const char        *val,   /* I */
+  struct size_value *psize) /* O */
+
+  {
+  return(0);
+  }
+
 
 #include "../../../lib/Libattr/req.cpp"
 #include "../../../lib/Libattr/complete_req.cpp"

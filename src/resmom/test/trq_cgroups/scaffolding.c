@@ -10,7 +10,7 @@ int  LOGLEVEL=6;
 
 Machine this_node;
 
-char mom_host[PBS_MAXHOSTNAME + 1];
+char mom_alias[PBS_MAXHOSTNAME + 1];
 
 
 /* create a cgroup hierarchy where we know it will exist so we can control
@@ -358,21 +358,6 @@ PCI_Device::~PCI_Device() {}
 Socket::~Socket () {}
 
 Machine::~Machine() {}
-
-int Machine::place_job(job *pjob, std::string &cpus, std::string &mems)
-  {
-  return(0);
-  }
-
-int Machine::get_jobs_cpusets(
-
-  const char *job_id,
-  string     &cpus,
-  string     &mems)
-
-  {
-  return(0);
-  }
 
 Machine::Machine() {}
 
