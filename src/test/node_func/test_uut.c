@@ -213,7 +213,9 @@ START_TEST(add_node_attribute_to_list_test)
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(attrname.c_str() != NULL);
   fail_unless(strcmp(attrname.c_str(), "acl") == 0);
+  fail_unless(attrval.c_str() != NULL);
   fail_unless(strcmp(attrval.c_str(), "bob,tom") == 0);
   }
 END_TEST
