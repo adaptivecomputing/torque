@@ -15,6 +15,8 @@
 #ifdef NVML_API
 #include <hwloc/nvml.h>
 #include <nvml.h>
+
+void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 #endif
 #endif
 
