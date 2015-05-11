@@ -184,7 +184,6 @@ START_TEST(find_node_in_allnodes_test)
 
   result = find_node_in_allnodes(&allnodes, (char *)"nodename");
   fail_unless(result == NULL, "find unexpected node fail");
-
 /* TODO: think about apropriate mocking for the test below
   insert_node(&allnodes, &test_node);
   result = find_node_in_allnodes(&allnodes, "test_node");
@@ -256,7 +255,6 @@ START_TEST(find_nodebyname_test)
   pnode = find_nodebyname("george");
   fail_unless(pnode == NULL, "george found but doesn't exist");
   alps_reporter = NULL;
-
   }
 END_TEST
 
@@ -391,11 +389,11 @@ START_TEST(effective_node_delete_test)
   allnodes.clear();
   allnodes.unlock();
 
-  /*accidental null pointer delete call*/
+  //accidental null pointer delete call
   effective_node_delete(NULL);
   effective_node_delete(&node);
 
-  /* pthread_mutex_init(allnodes.allnodes_mutex, NULL); */
+  // pthread_mutex_init(allnodes.allnodes_mutex, NULL); 
   node = (struct pbsnode *)malloc(sizeof(struct pbsnode));
   initialize_pbsnode(node, NULL, NULL, 0, FALSE);
   effective_node_delete(&node);
@@ -403,7 +401,6 @@ START_TEST(effective_node_delete_test)
   effective_node_delete(&node);
 
   fail_unless(node == NULL, "unsuccessfull node deletion %d", node);
-
   }
 END_TEST
 
@@ -481,7 +478,7 @@ START_TEST(copy_properties_test)
   result = copy_properties(&destanation_node, NULL);
   fail_unless(result != PBSE_NONE, "NULL source pointer input fail");
 
-  /*TODO: fill in source node*/
+  // TODO: fill in source node
   result = copy_properties(&destanation_node, &source_node);
   fail_unless(result == PBSE_NONE, "copy_properties return fail");
   }

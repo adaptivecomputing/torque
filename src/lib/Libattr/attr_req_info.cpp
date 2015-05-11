@@ -7,7 +7,6 @@
 
 #include "pbs_error.h"
 #include "attr_req_info.hpp"
-#include "attr_fn_size.h"
 #include "attribute.h"
 
 const char *LPROCS     = "lprocs";
