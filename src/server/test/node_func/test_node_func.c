@@ -1,3 +1,4 @@
+#include "pbs_config.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <sstream>
 #include <fstream>
