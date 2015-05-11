@@ -21,7 +21,6 @@
 #include "machine.hpp"
 #include "pbs_error.h"
 #include "log.h"
-#include "mom_server_lib.h"
 #include "complete_req.hpp"
 
 using namespace std;

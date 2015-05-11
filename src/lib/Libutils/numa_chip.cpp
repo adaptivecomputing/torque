@@ -20,7 +20,6 @@
 
 #include "pbs_error.h"
 #include "log.h"
-#include "mom_server_lib.h" /* log_nvml_error */
 #include "utils.h"
 
 using namespace std;
