@@ -164,6 +164,7 @@ src/lib/Libattr/test/attr_fn_intr/test_attr_fn_intr
 src/lib/Libattr/test/attr_fn_l/test_attr_fn_l
 src/lib/Libattr/test/attr_fn_ll/test_attr_fn_ll
 src/lib/Libattr/test/attr_fn_resc/test_attr_fn_resc
+src/lib/Libattr/test/attr_fn_attr_req_info/test_attr_fn_attr_req_info
 src/lib/Libattr/test/attr_fn_size/test_attr_fn_size
 src/lib/Libattr/test/attr_fn_str/test_attr_fn_str
 src/lib/Libattr/test/attr_fn_time/test_attr_fn_time
