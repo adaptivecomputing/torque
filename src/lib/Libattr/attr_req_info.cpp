@@ -9,7 +9,6 @@
 #include "attr_req_info.hpp"
 #include "attr_fn_size.h"
 #include "attribute.h"
-#include "attr_fn_size.h"
 
 const char *LPROCS     = "lprocs";
 const char *NODES      = "node";
