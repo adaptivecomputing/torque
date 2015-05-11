@@ -120,8 +120,8 @@ START_TEST(record_node_property_list_test)
   fail_unless(attrval.size() == 0);
 
   fail_unless(record_node_property_list(props, &th) == PBSE_NONE);
-  fail_unless(attrname == ATTR_NODE_properties);
-  fail_unless(attrval == props);
+  fail_unless(strcmp(attrname.c_str(), ATTR_NODE_properties) == 0);
+  fail_unless(strcmp(attrval.c_str(), props.c_str()) == 0);
 
   }
 END_TEST
@@ -185,15 +185,18 @@ START_TEST(add_node_attribute_to_list_test)
   char  line[1024];
   char *ptr;
   tlist_head th;
+  int ret;
 
   CLEAR_HEAD(th);
 
   // this should work and create the attribute np with the value of 100
   snprintf(line, sizeof(line), "100");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("np"), &ptr, &th, 1) == PBSE_NONE);
-  fail_unless(attrname == "np");
-  fail_unless(attrval == "100");
+
+  ret = add_node_attribute_to_list(strdup("np"), &ptr, &th, 1);
+  fail_unless(ret == PBSE_NONE);
+  fail_unless(strcmp(attrname.c_str(), "np") == 0);
+  fail_unless(strcmp(attrval.c_str(), "100") == 0);
 
   // this is invalid syntax
   snprintf(line, sizeof(line), "100=");
@@ -204,14 +207,14 @@ START_TEST(add_node_attribute_to_list_test)
   snprintf(line, sizeof(line), "100");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE);
-  fail_unless(attrname == "TTL");
-  fail_unless(attrval == "100");
+  fail_unless(strcmp(attrname.c_str(), "TTL") == 0);
+  fail_unless(strcmp(attrval.c_str(), "100") == 0);
 
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
-  fail_unless(attrname == "acl");
-  fail_unless(attrval == "bob,tom");
+  fail_unless(strcmp(attrname.c_str(), "acl") == 0);
+  fail_unless(strcmp(attrval.c_str(), "bob,tom") == 0);
   }
 END_TEST
 
