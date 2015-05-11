@@ -197,24 +197,24 @@ START_TEST(test_mom_server_all_update_stat_clear_force)
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(!ForceServerUpdate);
+  fail_unless(ForceServerUpdate == false);
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = false;
   mom_server_all_update_stat();
-  fail_unless(!ForceServerUpdate);
+  fail_unless(ForceServerUpdate == false);
 
   is_reporter_mom = false;
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(!ForceServerUpdate);
+  fail_unless(ForceServerUpdate == false);
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(!ForceServerUpdate);
+  fail_unless(ForceServerUpdate == false);
   }
 END_TEST
 
