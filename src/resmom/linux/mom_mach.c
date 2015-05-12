@@ -2846,7 +2846,7 @@ int kill_task(
 					ptask->ti_job->ji_qs.ji_jobid,
 					log_buffer);
 				  }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
-				else
+				else if (sig == SIGKILL)
 				  {
 				  /* kill process hard */
 

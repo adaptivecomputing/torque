@@ -8675,15 +8675,6 @@ void examine_all_polled_jobs(void)
       continue;
       }
 
-    if (c & JOB_SVFLG_OVERLMT1)
-      {
-      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-      continue;
-      }
-
     if (c & JOB_SVFLG_JOB_ABORTED)
       {
       kill_job(pjob, SIGTERM, __func__, "job has been aborted");
@@ -8719,7 +8710,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
       }
     }    /* END for (pjob) */
 
