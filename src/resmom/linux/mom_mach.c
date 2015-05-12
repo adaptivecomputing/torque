@@ -2847,7 +2847,7 @@ int kill_task(
                 
                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_qs.ti_parentjobid, log_buffer);
                 }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
-              else
+              else if (sig == SIGKILL)
                 {
                 /* kill process hard */
                 
