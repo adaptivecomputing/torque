@@ -64,13 +64,23 @@ extern int cray_enabled;
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
 
+svrattrl *s = NULL;
+
+void attrlist_free()
+  {
+  if (s != NULL)
+    {
+    free(s);
+    s = NULL;
+    }
+  }
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {
   int namesize = 0;
   if (aname != NULL)
     namesize = strlen(aname) + 1;
-  svrattrl *s = (svrattrl *)calloc(1, sizeof(svrattrl) + namesize + vsize);
+  s = (svrattrl *)calloc(1, sizeof(svrattrl) + namesize + vsize);
   s->al_name = (char *)s + sizeof(svrattrl);
   s->al_value = s->al_name + namesize;
 

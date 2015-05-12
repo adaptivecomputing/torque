@@ -29,8 +29,12 @@ int record_node_property_list(std::string const &propstr, tlist_head *atrlist_pt
 void handle_cray_specific_node_values(char *nodename, bool cray_enabled, bool is_alps_reporter, bool is_alps_starter, bool is_alps_compute, svrattrl *pal);
 char *parse_node_name(char **ptr, int &err, int linenum, bool cray_enabled);
 
+void attrlist_free();
+
 extern std::string attrname;
 extern std::string attrval;
+
+
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -118,10 +122,16 @@ START_TEST(record_node_property_list_test)
   fail_unless(record_node_property_list(empty, &th) == PBSE_NONE);
   fail_unless(attrname.size() == 0);
   fail_unless(attrval.size() == 0);
+  attrlist_free();
+  attrname.clear();
+  attrval.clear();
 
   fail_unless(record_node_property_list(props, &th) == PBSE_NONE);
-  /*fail_unless(strcmp(attrname.c_str(), ATTR_NODE_properties) == 0);
-  fail_unless(strcmp(attrval.c_str(), props.c_str()) == 0);*/
+  fail_unless(attrname == ATTR_NODE_properties);
+  fail_unless(attrval == props);
+  attrlist_free();
+  attrname.clear();
+  attrval.clear();
 
   }
 END_TEST
@@ -197,6 +207,9 @@ START_TEST(add_node_attribute_to_list_test)
   fail_unless(ret == PBSE_NONE);
   fail_unless(strcmp(attrname.c_str(), "np") == 0);
   fail_unless(strcmp(attrval.c_str(), "100") == 0);
+  attrlist_free();
+  attrname.clear();
+  attrval.clear();
 
   // this is invalid syntax
   snprintf(line, sizeof(line), "100=");
@@ -209,12 +222,18 @@ START_TEST(add_node_attribute_to_list_test)
   fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE);
   fail_unless(strcmp(attrname.c_str(), "TTL") == 0);
   fail_unless(strcmp(attrval.c_str(), "100") == 0);
+  attrlist_free();
+  attrname.clear();
+  attrval.clear();
 
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
-/*  fail_unless(strcmp(attrname.c_str(), "acl") == 0);
-  fail_unless(strcmp(attrval.c_str(), "bob,tom") == 0);*/
+  fail_unless(strcmp(attrname.c_str(), "acl") == 0);
+  fail_unless(strcmp(attrval.c_str(), "bob,tom") == 0);
+  attrlist_free();
+  attrname.clear();
+  attrval.clear();
   }
 END_TEST
 
