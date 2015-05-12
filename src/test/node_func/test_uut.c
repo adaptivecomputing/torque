@@ -220,8 +220,8 @@ START_TEST(add_node_attribute_to_list_test)
   snprintf(line, sizeof(line), "100");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE);
-  fail_unless(strcmp(attrname.c_str(), "TTL") == 0);
-  fail_unless(strcmp(attrval.c_str(), "100") == 0);
+  fail_unless(attrname == "TTL");
+  fail_unless(attrval == "100");
   attrlist_free();
   attrname.clear();
   attrval.clear();
@@ -229,8 +229,8 @@ START_TEST(add_node_attribute_to_list_test)
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
   fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
-  fail_unless(strcmp(attrname.c_str(), "acl") == 0);
-  fail_unless(strcmp(attrval.c_str(), "bob,tom") == 0);
+  fail_unless(attrname == "acl");
+  fail_unless(attrval == "bob,tom");
   attrlist_free();
   attrname.clear();
   attrval.clear();
