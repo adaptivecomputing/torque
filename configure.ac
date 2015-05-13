@@ -1212,9 +1212,7 @@ then configuring again.
         [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
     fi
 
-    olibs=$LIBS
     LIBS="$LIBS $HWLOC_LIBS";
-    LIBS=$olibs
   fi
 fi 
 
