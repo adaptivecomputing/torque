@@ -103,6 +103,7 @@
 #include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <pthread.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -1162,6 +1163,8 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
   const char   *tmp_ptr = NULL;
@@ -1237,13 +1240,14 @@ int job_save(
     }
   else /* saveJobToXML failed */
     {
-    log_event(
-    PBSEVENT_ERROR | PBSEVENT_SECURITY,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    (char *)"call to saveJobToXML in job_save failed");
+    log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+      "call to saveJobToXML in job_save failed");
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
     return -1;
     }
+
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+
   return(PBSE_NONE);
   }  /* END job_save() */
 
