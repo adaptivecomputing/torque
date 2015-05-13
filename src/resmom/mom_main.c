@@ -133,7 +133,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[BUF_SIZE];
+char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
@@ -5462,14 +5462,6 @@ void examine_all_polled_jobs(void)
       continue;
       }
 
-    if (c & JOB_SVFLG_OVERLMT1)
-      {
-      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-      continue;
-      }
 
     if (c & JOB_SVFLG_JOB_ABORTED)
       {
@@ -5506,7 +5498,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
       }
     }    /* END for (pjob) */
 

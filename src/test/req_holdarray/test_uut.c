@@ -6,15 +6,17 @@
 #include "pbs_error.h"
 START_TEST(test_one)
   {
+  int x = 2;
 
-
+  fail_unless(x==2);
   }
 END_TEST
 
 START_TEST(test_two)
   {
+  int x = 2;
 
-
+  fail_unless(x==2);
   }
 END_TEST
 

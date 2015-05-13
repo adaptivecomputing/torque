@@ -1021,7 +1021,7 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, addr_ok_test);
   suite_add_tcase(s, tc_core);
 
-  /*tc_core = tcase_create("find_node_in_allnodes_test");
+  tc_core = tcase_create("find_node_in_allnodes_test");
   tcase_add_test(tc_core, find_node_in_allnodes_test);
   suite_add_tcase(s, tc_core);
 
@@ -1087,9 +1087,9 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("node_np_action_test");
   tcase_add_test(tc_core, node_np_action_test);
-  suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("node_mom_port_action_test");
+  /*tc_core = tcase_create("node_mom_port_action_test");
   tcase_add_test(tc_core, node_mom_port_action_test);
   suite_add_tcase(s, tc_core);
 
@@ -1167,7 +1167,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("parse_node_name_test");
   tcase_add_test(tc_core, parse_node_name_test);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
 
 #if 0
   /* Will uncoment this test once we use the real, append_link, etc */

@@ -175,4 +175,10 @@ typedef unsigned int tm_task_id;
 #define TM_ADOPT_ALTID    113    /* tm_adopt request with alternative management system task id */
 #define TM_ADOPT_JOBID    114     /* tm_adopt with jobid */
 
+/*
+ * Timeout parameter for tm_poll()
+ */
+#define TM_POLL_WAIT   1
+#define TM_POLL_NOWAIT 0
+
 #endif /* _TM__H */

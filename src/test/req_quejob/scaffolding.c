@@ -166,8 +166,7 @@ int job_route(job *jobp)
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
   {
-  fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
@@ -442,11 +441,3 @@ void log_ext(int i, char const* s, char const* s2, int i2)
   }
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
-int svr_enquejob(
-
-  job        *pjob,            /* I */
-  int         has_sv_qs_mutex, /* I */
-  const char *prev_job_id,  /* I */
-  bool        have_reservation)
-
-  { return (0); }
