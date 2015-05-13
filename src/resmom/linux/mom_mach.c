@@ -2898,12 +2898,6 @@ int kill_task(
             continue;
             }  /* END if (ps->pid == mompid) */
           
-          if ((sig == SIGKILL) || 
-              (sig == SIGTERM))
-            {
-            ++ctThisIteration; //Only count for killing don't count for any other signal.
-            }
-    
           if (sig == SIGKILL)
             {
             sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
@@ -2966,7 +2960,7 @@ int kill_task(
                 
                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_qs.ti_parentjobid, log_buffer);
                 }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
-              else if (sig == SIGKILL)
+              else
                 {
                 /* kill process hard */
                 
@@ -3001,7 +2995,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations <= 5) && (loopCt++ < 20));
+    } while ((ctCleanIterations == 0) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */
