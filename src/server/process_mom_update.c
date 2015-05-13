@@ -482,6 +482,102 @@ void update_job_data(
 
 
 
+/*
+ * set_note_error()
+ *
+ * Adds the error reported to this node's note
+ *
+ * @param np - the node who is getting this error message.
+ * @param str - the error message
+ * @return PBSE_NONE on success
+ */
+
+int set_note_error(
+
+  struct pbsnode *np,
+  const char     *str)
+
+  {
+  std::string message;
+  std::string errmsg = std::string(str).substr(8, std::string::npos);
+  std::string oldnote = "";
+
+  // If a note already exists, append the error; otherwise, create a new note
+  if (np->nd_note != NULL)
+    {
+    oldnote = np->nd_note;
+
+    // If this evaluates to true, we know that the error message has already been added to the note
+    if (oldnote.find(errmsg) != std::string::npos)
+      {
+      return(PBSE_NONE);
+      }
+
+    message = oldnote + " - " + errmsg;
+    free(np->nd_note);
+    }
+  else
+    message = std::string(str).substr(8, std::string::npos);
+
+  np->nd_note = strdup(message.c_str());
+
+  return(PBSE_NONE);
+  }  /* END set_note() */
+
+
+
+/*
+ * restore_note()
+ * Attempts to remove the error note from this node
+ *
+ * @param np - the node whose error message we're potentially removing 
+ */
+
+int restore_note(
+
+  struct pbsnode *np)
+
+  {
+  std::string message;
+  std::string oldnote;
+  std::size_t found;
+
+  // If a note exists, strip it of any error message
+  if (np->nd_note != NULL)
+    {
+    oldnote = np->nd_note;
+
+    found = oldnote.find(" - ERROR");
+
+    if (found == std::string::npos)
+      {
+      found = oldnote.find("ERROR");
+
+      if (found == std::string::npos)
+        {
+        return(PBSE_NONE);
+        }
+      }
+
+    // If the note would be empty after removing the error message,
+    // simply remove the entire note
+    if (found == 0)
+      {
+      free(np->nd_note);
+      np->nd_note = NULL;
+      }
+    else
+      {
+      message = oldnote.substr(0, found);
+      free(np->nd_note);
+      np->nd_note = strdup(message.c_str());
+      }
+    }
+
+  return(PBSE_NONE);
+  }  /* END restore_note() */
+
+
 
 int process_uname_str(
 
@@ -539,10 +635,20 @@ int process_state_str(
     }
   else if (!strncmp(str, "state=busy", 10))
     {
+    if (np->nd_state == INUSE_DOWN)
+      {
+      restore_note(np);
+      }
+
     update_node_state(np, INUSE_BUSY);
     }
   else if (!strncmp(str, "state=free", 10))
     {
+    if (np->nd_state == INUSE_DOWN)
+      {
+      restore_note(np);
+      }
+
     update_node_state(np, INUSE_FREE);
     }
   else
@@ -727,6 +833,7 @@ int process_status_info(
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
+        set_note_error(current, str);
         }
       }
     else if ((mom_job_sync == TRUE) &&

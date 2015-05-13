@@ -4,6 +4,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 4.2.11
   b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
       (backported from 5.1.1)
+  e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
+      output. (backported from 5.1.1)
 
 
 4.2.10
