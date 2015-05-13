@@ -28,6 +28,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-2946. Make qmgr able to handle Cray numeric node ids.
   b - TRQ-2790. Make offlining cray compute nodes persist across restarts. 
   e - TRQ-3104. Add millisecond precision to the Torque log file
+  e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
+      output.
 
 
 5.0.2
