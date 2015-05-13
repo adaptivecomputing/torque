@@ -441,3 +441,7 @@ void log_ext(int i, char const* s, char const* s2, int i2)
   {
   }
 
+int svr_enquejob(job *pjob, int has_mutex, const char *prev_job_id, bool have_reservation)
+  {
+  return(PBSE_NONE);
+  }

@@ -619,3 +619,8 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 
   return false;
   }
+
+int svr_enquejob(job *pjob, int has_mutex, const char *prev_job_id, bool have_reservation)
+  {
+  return(PBSE_NONE);
+  }

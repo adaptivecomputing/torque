@@ -432,3 +432,8 @@ int csv_length(const char *csv_str)
   fprintf(stderr, "The call to csv_length to be mocked!!\n");
   exit(1);
   }
+
+int svr_enquejob(job *pjob, int has_mutex, const char *prev_job_id, bool have_reservation)
+  {
+  return(PBSE_NONE);
+  }
