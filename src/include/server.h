@@ -98,6 +98,7 @@
 #include "server_limits.h"
 #include "attribute.h" /* attribute_def */
 
+#define DEFAULT_KILL_DELAY 2
 #define NO_BUFFER_SPACE -2
 #define NO_ATTR_DATA    1
 #define ATTR_NOT_FOUND  -2
