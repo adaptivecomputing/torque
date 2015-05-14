@@ -83,7 +83,7 @@ pbs_server \- start a pbs batch server
 .SH SYNOPSIS
 pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-f] [\-h] [\-l port\^]
 [\-p\ port\^] [\-t type\^] [\-v] [\^\-A\ acctfile\^] [\^\-D] [\-H\ hostname\^]
-[\^\-L\ logfile\^] [\-M\ mom_port\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
+[\^\-L\ logfile\^] [\-M\ mom_port\^] [\-n\ don't send hierarchy\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
 [\-\-about] [\-\-ha] [\-\-help] [\-\-version]
 .SH DESCRIPTION
 The
@@ -106,16 +106,10 @@ If the log file cannot be opened, the diagnostic message is written
 to the system console.
 .SH OPTIONS
 .IP "\-a active" 15
-Specifies if scheduling is active or not.  This sets the server attribute
-.At scheduling .
-If the option argument
-is "true" ("True", "t", "T", or "1"), the server is \fBactive\fP and the PBS
-job scheduler will be called.
-If the argument is "false" ("False", "f", "F", or "0), the server is \fBidle\fP,
-and the scheduler will not be called and no jobs will be run.
-If this option is not specified, the server will retain the prior value of the 
-.At scheduling
-attribute.
+Specifies if scheduling is active or not.  This sets the server attribute scheduling. If the option argument
+is "true" ("True", "t", "T", or "1"), the server is \fBactive\fP and the PBS job scheduler will be called.
+If the argument is "false" ("False", "f", "F", or "0), the server is \fBidle\fP, and the scheduler will not be called and no jobs will be run.
+If this option is not specified, the server will retain the prior value of the scheduling attribute.
 .IP "\-c" 15
 Wait 10 minutes before contacting moms. Any mom reporting in does not get pinged
 if starting
@@ -207,6 +201,8 @@ the job executor, MOM.  The option argument,
 is one of the forms: host_name, [:]port_number, or host_name:port_number.
 If host_name not specified, the local host is assumed.   If port_number is not
 specified, the default port is assumed.  See the \-M option for pbs_mom(8).
+.IP "\-n don't send heirarchy"
+Directs pbs_server to not send the hierarchy to all the MOMs on startup. Instead, the hierarchy is only sent if a MOM requests it. This flag works only in conjunction with the local MOM hierarchy feature.
 .IP "\-R mom_RPPport"
 Specifies the port number on which the the server should query the up/down
 status of Mom.    See the \-R option for pbs_mom(8).
