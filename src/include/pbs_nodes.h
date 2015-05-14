@@ -97,7 +97,9 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
