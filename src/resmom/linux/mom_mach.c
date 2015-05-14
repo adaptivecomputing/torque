@@ -2906,9 +2906,22 @@ int kill_task(
             log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
             
             if (pg == 0)
-              kill(ps->pid, SIGTERM);
+              {
+              /* make sure we only send a SIGTERM one time */
+              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                {
+                kill(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
             else
-              killpg(ps->pid, SIGTERM);
+              {
+              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                {
+                killpg(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
             
             for (i = 0;i < 20;i++)
               {
@@ -2971,9 +2984,30 @@ int kill_task(
                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                 
                 if (pg == 0)
-                  kill(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    }
+                  /* make sure we only send a SIGTERM one time */
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
                 else
-                  killpg(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    }
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
                 }
               }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
             }      /* END if (i >= 20) */
