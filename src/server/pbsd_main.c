@@ -1360,7 +1360,6 @@ void main_loop(void)
 
     hierarchy_handler.checkAndSendHierarchy();
 
-    if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
       enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
