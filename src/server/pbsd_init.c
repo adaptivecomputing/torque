@@ -200,7 +200,6 @@ extern char *path_nodenote_new;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 
-
 extern int                      queue_rank;
 extern char                     server_name[];
 extern tlist_head               svr_newnodes;
@@ -232,6 +231,7 @@ extern pthread_mutex_t         *reroute_job_mutex;
 id_map                          node_mapper;
 
 extern int a_opt_init;
+extern int paused;
 
 extern int LOGLEVEL;
 extern char *plogenv;
@@ -259,17 +259,18 @@ void  catch_abort(int);
 void  change_logs();
 void  change_logs_handler(int);
 void  change_log_level(int);
+void  unpause_server(int);
 int   chk_save_file(const char *);
 int   pbsd_init_job(job *, int);
 int   pbsd_init_reque(job *, int);
 void  resume_net_move(struct work_task *);
 void  rm_files(char *);
 void  stop_me(int);
-void change_logs_handler(int sig);
+void  change_logs_handler(int sig);
 int   process_jobs_dirent(const char *);
 int   process_arrays_dirent(const char *, int);
-long jobid_to_long(std::string);
-bool is_array_job(std::string);
+long  jobid_to_long(std::string);
+bool  is_array_job(std::string);
 
 /* private data */
 
@@ -585,6 +586,16 @@ int setup_limits()
 
 
 
+void unpause_server(
+
+  int sig)
+
+  {
+  start_request_pool(task_pool);
+  start_request_pool(async_pool);
+  }
+
+
 
 int setup_signal_handling()
 
@@ -705,10 +716,18 @@ int setup_signal_handling()
 
     return(2);
     }
+  
+  act.sa_handler = unpause_server;
+  
+  if (sigaction(SIGIO, &act, &oact) != 0)
+    {
+    log_err(errno, __func__, "sigaction for SIGIO");
+    
+    return(2);
+    } 
 
   return(PBSE_NONE);
   } /* END setup_signal_handling() */
-
 
 
 
@@ -1999,10 +2018,16 @@ int pbsd_init(
 
 
     /* allow the threadpool to start processing */
-    start_request_pool(request_pool);
-    start_request_pool(task_pool);
-    start_request_pool(async_pool);
-
+    if (paused == TRUE)
+      start_request_pool(request_pool);
+    
+    else
+      {
+      start_request_pool(request_pool);
+      start_request_pool(task_pool);
+      start_request_pool(async_pool);
+      }
+    
     /* SUCCESS */
     return(PBSE_NONE);
     }
