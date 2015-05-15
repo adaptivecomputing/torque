@@ -1,8 +1,11 @@
 #include <pbs_config.h>
-#include "machine.hpp"
 #include "log.h"
 #include "pbs_error_db.h"
 #include "pbs_error.h"
+
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#endif
 
 #ifdef MIC
 #include <hwloc/intel-mic.h>
