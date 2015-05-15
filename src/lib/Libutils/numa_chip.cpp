@@ -30,7 +30,7 @@ using namespace std;
 
 Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), availableCores(0),
                total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
-               chip_exclusive(false), available_memory(0)
+               chip_exclusive(false), available_memory(0), cores(), devices(), allocations()
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);

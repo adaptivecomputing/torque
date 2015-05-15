@@ -8792,6 +8792,7 @@ int read_status_strings(
   {
   int             rc;
   char           *str;
+  unsigned int   unusedval;
   received_node  *rn = NULL;
  
   if (chan == NULL) 
@@ -8799,12 +8800,12 @@ int read_status_strings(
     return DIS_INVALID;
     }
   /* was mom_port but storage unnecessary */ 
-  disrsi(chan,&rc);
+  unusedval = disrsi(chan,&rc);
 
   if (rc == DIS_SUCCESS)
     {
     /* was rm_port but no longer needed to be stored */   
-    disrsi(chan,&rc);
+    unusedval = disrsi(chan,&rc);
     }
 
   if (rc != DIS_SUCCESS)

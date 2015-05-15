@@ -40,8 +40,14 @@ PCI_Device::PCI_Device(
                              info_value(other.info_value), type(other.type)
 
   {
-  this->nearest_cpuset = hwloc_bitmap_alloc();
-  memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+  if (other.nearest_cpuset != NULL)
+    {
+    this->nearest_cpuset = hwloc_bitmap_alloc();
+    memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+    }
+  else
+    this->nearest_cpuset = NULL;
+
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   }
 

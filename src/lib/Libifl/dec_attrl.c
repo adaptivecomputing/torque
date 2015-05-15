@@ -130,7 +130,7 @@ int decode_DIS_attrl(
   for (i = 0; i < numpat; ++i)
     {
 
-    disrui(chan, &rc); /* name_len is unusued here */
+    hasresc = disrui(chan, &rc); /* name_len is unusued here */
 
     if (rc) break;
 
@@ -167,7 +167,7 @@ int decode_DIS_attrl(
     if (rc) break;
 
     /* discard the op field */
-    disrui(chan, &rc);
+    hasresc = disrui(chan, &rc);
 
     if (rc) break;
 
