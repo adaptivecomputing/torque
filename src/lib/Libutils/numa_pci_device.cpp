@@ -81,58 +81,11 @@ int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topol
 
 
 #ifdef MIC
-  int rc;
-
-  nearest_cpuset = hwloc_bitmap_alloc();
-  if (nearest_cpuset == NULL)
-    return(PBSE_MEM_MALLOC);
-
-  rc = hwloc_intel_mic_get_device_cpuset(topology, idx, nearest_cpuset);
-  if (rc != 0)
-    {
-    string  buf;
-
-    buf = "could not get cpuset of ";
-    buf = buf + name.c_str();
-    log_err(-1, __func__, buf.c_str());
-    }
-  hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
-
-  this->type = MIC_TYPE;
+  this->initializeMic(idx, topology);
 #endif
+
 #ifdef NVIDIA_GPUS
-  int rc;
-  nvmlDevice_t  gpu_device;
-  
-  rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
-  if (rc != NVML_SUCCESS)
-    {
-    string buf;
-
-    buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
-    buf = buf + name.c_str();
-    log_err(-1, __func__, buf.c_str());
-    }
-  else
-    {
-    nearest_cpuset = hwloc_bitmap_alloc();
-    if (nearest_cpuset == NULL)
-      return(PBSE_MEM_MALLOC);
-
-    rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
-    if (rc != 0)
-      {
-      string  buf;
-
-      buf = "could not get cpuset of ";
-      buf = buf + name.c_str();
-      log_err(-1, __func__, buf.c_str());
-      }
-    hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
-    }
-
-  this->type = GPU;
-
+  this->initializeGpu(idx, topology);
 #endif
 
   return(PBSE_NONE);

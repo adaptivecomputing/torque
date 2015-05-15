@@ -406,50 +406,6 @@ bool Chip::chipIsAvailable() const
   return(false);
   }
 
-#ifdef MIC
-int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
-  {
-  /* Get any Intel MIC devices */
-  /* start at indes 0 and go until hwloc_intel_mic_get_device_osdev_by_index
-     returns NULL */
-  for (int idx = 0; ; idx++)
-    {
-    hwloc_obj_t mic_obj;
-    hwloc_obj_t ancestor_obj;
-    int is_in_tree;
-
-    mic_obj = hwloc_intel_mic_get_device_osdev_by_index(topology, idx);
-    if (mic_obj == NULL)
-      break;
-
-    if (chip_obj == NULL) 
-      { /* this came from the Non NUMA */
-      PCI_Device new_device;
-
-      new_device.initializePCIDevice(mic_obj, idx, topology);
-      this->devices.push_back(new_device);
-      }
-    else
-      {
-      PCI_Device new_device;
-      ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_NODE, mic_obj);
-      if (ancestor_obj != NULL)
-        {
-        if (ancestor_obj->logical_index == chip_obj->logical_index)
-          {
-          PCI_Device new_device;
-
-          new_device.initializePCIDevice(mic_obj, idx, topology);
-          this->devices.push_back(new_device);
-          this->total_mics++;
-          this->available_mics++;
-          }
-        }
-      }
-    }
-  return(PBSE_NONE);
-  }
-#endif
 
 
 int Chip::initializePCIDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)

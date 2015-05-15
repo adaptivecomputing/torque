@@ -44,10 +44,11 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   mom_process_request.c alps_reservations.c		\
 		   release_reservation.c generate_alps_status.c	\
 		   parse_config.c node_frequency.cpp cray_energy.c \
+			 accelerators_numa.cpp \
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\
-		   ../server/job_qs_upgrade.c
+		   ../server/job_qs_upgrade.c 
 if BUILDCPA
 pbs_mom_SOURCES += cray_cpa.c
 endif
