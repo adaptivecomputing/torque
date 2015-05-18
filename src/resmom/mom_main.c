@@ -6605,7 +6605,8 @@ int kill_job(
 
   while (ptask != NULL)
     {
-    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+    if ((ptask->ti_qs.ti_status == TI_STATE_RUNNING) ||
+       (ptask->ti_qs.ti_status == TI_STATE_SIGTERM))
       {
       if (LOGLEVEL >= 4)
         {
