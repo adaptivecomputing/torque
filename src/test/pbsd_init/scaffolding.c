@@ -22,6 +22,7 @@
 #include "mom_hierarchy_handler.h"
 
 threadpool_t *task_pool;
+int paused;
 int scheduler_sock=0;
 int scheduler_jobct = 0;
 bool auto_send_hierarchy = true;

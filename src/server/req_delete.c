@@ -1439,7 +1439,7 @@ void post_delete_mom1(
       pthread_mutex_lock(server.sv_attr_mutex);
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
-                             2);
+                             DEFAULT_KILL_DELAY);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else if (pjob == NULL)

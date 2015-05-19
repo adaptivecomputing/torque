@@ -886,7 +886,8 @@ typedef struct job_file_delete_info
 #define TI_STATE_EMBRYO  0
 #define TI_STATE_RUNNING 1    /* includes suspended jobs */
 #define TI_STATE_EXITED  2  /* ti_exitstat valid */
-#define TI_STATE_DEAD    3
+#define TI_STATE_DEAD    3 
+#define TI_STATE_SIGTERM 4
 
 
 /*
