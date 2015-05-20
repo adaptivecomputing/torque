@@ -65,7 +65,7 @@ enum MOMCmdEnum CmdIndex = momNONE;
 /* prototypes */
 
 void MCShowUsage(const char *);
-int do_mom(char *, int, int, bool);
+int do_mom(char *, int, int);
 
 /* END prototypes */
 
@@ -85,7 +85,7 @@ int perform_communications_with_retry(
 
   while (retries < 5)
     {
-    rc = do_mom(hostname, MOMPort, CmdIndex, (retries == 4));
+    rc = do_mom(hostname, MOMPort, CmdIndex);
     if (rc >= 0)
       break;
 
@@ -653,8 +653,7 @@ int do_mom(
 
   char *HPtr,
   int   MOMPort,
-  int   CmdIndex,
-  bool  final_retry)
+  int   CmdIndex)
 
   {
   int socket;
@@ -665,14 +664,13 @@ int do_mom(
   if ((socket = openrm(HPtr, MOMPort)) < 0)
     {
     /* FAILURE */
+
     extern char TRMEMsg[];
-    if (final_retry)
-      {
-      fprintf(stderr, "cannot connect to MOM on node '%s', errno=%d (%s)\n",
-        HPtr,
-        errno,
-        strerror(errno));
-      }
+
+    fprintf(stderr, "cannot connect to MOM on node '%s', errno=%d (%s)\n",
+      HPtr,
+      errno,
+      strerror(errno));
 
     if (TRMEMsg[0] != '\0')
       {
