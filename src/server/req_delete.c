@@ -432,6 +432,7 @@ int execute_job_delete(
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
   long              array_compatible = FALSE;
+  long              status_cancel_queue = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
 
@@ -571,6 +572,7 @@ jump:
 
   /* make a cleanup task if set */
   get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &status_cancel_queue);
   if (force_cancel > 0)
     {
     char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
@@ -621,6 +623,19 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
+  else if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
+           (status_cancel_queue != 0))
+    {
+    /*
+     * If a task is not running yet and is still on the queue, we
+     * need to set an exit status
+     */
+
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    }
 
   /* if configured, and this job didn't have a slot limit hold, free a job
    * held with the slot limit hold */

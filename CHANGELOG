@@ -5,6 +5,9 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-3104. Add millisecond precision to the Torque log file (backported from 5.1.1)
   e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
       output.
+  e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
+      canceled jobs to have the same exit code regardless of the state they were in
+      when they were canceled.
 
 
 5.0.2
