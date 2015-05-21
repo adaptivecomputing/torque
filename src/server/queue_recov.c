@@ -231,6 +231,8 @@ pbs_queue *que_recov_xml(
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
 
+  memset(&buf, 0, sizeof(buf));
+
   pq = que_alloc(filename, TRUE);  /* allocate & init queue structure space */
 
   if (pq == NULL)
