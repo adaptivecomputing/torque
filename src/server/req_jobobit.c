@@ -3281,6 +3281,7 @@ int req_jobobit(
   pbs_net_t             mom_addr;
   bool                  rerunning_job = false;
   int                   have_resc_used = FALSE;
+  long                  status_cancel_queue = FALSE;
 
   /* This will be needed later for logging after preq is freed. */
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);
@@ -3399,12 +3400,30 @@ int req_jobobit(
    * cannot be used after the call to reply_ack();
    */
 
-  exitstatus = preq->rq_ind.rq_jobobit.rq_status;
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &status_cancel_queue);
 
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
+  /*
+   * Check whether the server parameter ATTR_exitcodecancelqueuedjob has been
+   * set. If so, override the exit status with the user supplied value.
+   */
+  if (status_cancel_queue == 0)
+    {
+    exitstatus = preq->rq_ind.rq_jobobit.rq_status;
 
-  pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
-  pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    }
+
+
 
   if ((exitstatus != JOB_EXEC_RETRY) &&
       (pjob->ji_parent_job != NULL))
