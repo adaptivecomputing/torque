@@ -3441,6 +3441,7 @@ int req_jobobit(
   else
     {
     pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+    exitstatus = status_cancel_queue;
 
     pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
