@@ -108,6 +108,7 @@ class Core
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
     void append_indices(std::vector<int> core_indices, int which) const;
+    bool reserve_processing_unit(int index);
   };
 
 
@@ -168,7 +169,8 @@ class Chip
 
     std::vector<Core> getCores();
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out) const;
+    void displayAsJson(stringstream &out, bool include_jobs) const;
+    void displayAllocationsAsJson(stringstream &out) const;
     void setMemory(hwloc_uint64_t mem);
     void setId(int id);
     void setCores(int cores); // used for unit tests
@@ -190,6 +192,11 @@ class Chip
     int  reserve_accelerator(int type);
     void free_accelerators(allocation &a);
     void free_accelerator(int index, int type);
+    void initialize_allocations(char *allocations);
+    void initialize_allocation(char *allocation);
+    void adjust_open_resources();
+    void reserve_allocation_resources(allocation &a);
+    void aggregate_allocations(vector<allocation> &master_list);
   };
 
 
@@ -231,7 +238,7 @@ class Socket
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out) const;
+    void displayAsJson(stringstream &out, bool include_jobs) const;
     void setId(int id);
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
@@ -241,6 +248,7 @@ class Socket
     bool fits_on_socket(const allocation &remaining) const;
     bool partially_place(allocation &remaining, allocation &a);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
+    void update_internal_counts(vector<allocation> &allocs);
   };
 
 
@@ -288,7 +296,7 @@ class Machine
     int getAvailableThreads();
     bool isNUMA;
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out) const;
+    void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, int num_ppn);
@@ -298,6 +306,7 @@ class Machine
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
     void place_remaining(vector<req> to_split, allocation &a);
+    void update_internal_counts();
   };
 
 extern Machine this_node;

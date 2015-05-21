@@ -53,6 +53,12 @@ int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
   }
 
 
+
+/*
+ * mark_as_busy()
+ *
+ */
+
 void Core::mark_as_busy(
     
   int index)
@@ -68,6 +74,39 @@ void Core::mark_as_busy(
       }
     }
   }
+
+
+
+/*
+ * reserve_processing_unit()
+ *
+ * Reserves the specified index if it is part of this core
+ * @param index - the index of the processing unit
+ * @return true if the index was reserved, false otherwise
+ */
+
+bool Core::reserve_processing_unit(
+
+  int index)
+
+  {
+  bool match = false;
+
+  for (unsigned int i = 0; i < this->indices.size(); i++)
+    {
+    if (this->indices[i] == index)
+      {
+      this->is_index_busy[i] = true;
+      this->free = false;
+      this->processing_units_open--;
+      match = true;
+      break;
+      }
+    }
+
+  return(match);
+  } // END reserve_processing_unit()
+
 
 
 int Core::get_open_processing_unit()

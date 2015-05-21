@@ -76,6 +76,26 @@ START_TEST(test_reserving_and_freeing)
 END_TEST
 
 
+START_TEST(test_recovering_allocations)
+  {
+  Core c;
+  bool completely_free = false;
+
+  // unit test init gives us os indexes 0 and 8
+  c.unit_test_init();
+  fail_unless(c.reserve_processing_unit(0) == true);
+  fail_unless(c.reserve_processing_unit(8) == true);
+  fail_unless(c.reserve_processing_unit(1) == false);
+  fail_unless(c.reserve_processing_unit(9) == false);
+  fail_unless(c.get_open_processing_unit() == -1);
+  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(completely_free == false);
+  fail_unless(c.free_pu_index(8, completely_free) == true);
+  fail_unless(completely_free == true);
+  }
+END_TEST
+
+
 START_TEST(test_add_processing_unit)
   {
   Core c;
@@ -113,6 +133,7 @@ Suite *numa_core_suite(void)
   tc_core = tcase_create("test_displayAsString");
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_reserving_and_freeing);
+  tcase_add_test(tc_core, test_recovering_allocations);
   suite_add_tcase(s, tc_core);
   
   return(s);

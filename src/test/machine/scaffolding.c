@@ -124,7 +124,7 @@ bool Socket::is_available() const
   return(false);
   }
 
-void Socket::displayAsJson(std::stringstream &out) const {}
+void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
 
 complete_req::complete_req() {}
 

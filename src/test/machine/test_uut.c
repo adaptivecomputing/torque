@@ -46,14 +46,14 @@ START_TEST(test_json_constructor)
 
   Machine m1(j1);
   fail_unless(json_socket == 2, "%d times", json_socket);
-  m1.displayAsJson(out);
+  m1.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
   fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
   Machine m2(j2);
   fail_unless(json_socket == 3, "%d times", json_socket);
-  m2.displayAsJson(out);
+  m2.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
   fail_unless(m2.getTotalSockets() == 1);
   }

@@ -82,7 +82,8 @@ Chip::~Chip()
 
 void Chip::displayAsJson(
 
-  std::stringstream &out) const
+  std::stringstream &out,
+  bool               jobs) const
 
   {
   }

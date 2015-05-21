@@ -29,19 +29,19 @@ START_TEST(test_json_constructor)
 
   Socket s1(j1);
   fail_unless(json_chip == 2, "%d times", json_chip);
-  s1.displayAsJson(out);
+  s1.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":12,,}", out.str().c_str());
 
   out.str("");
   Socket s2(j2);
   fail_unless(json_chip == 4, "%d times", json_chip);
-  s2.displayAsJson(out);
+  s2.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":0,,}", out.str().c_str());
 
   out.str("");
   Socket s3(j3);
   fail_unless(json_chip == 5, "%d times", json_chip);
-  s3.displayAsJson(out);
+  s3.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":2,}", out.str().c_str());
   }
 END_TEST
