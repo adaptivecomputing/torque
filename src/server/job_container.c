@@ -514,6 +514,13 @@ job *svr_find_job_by_id(
   {
   const char *job_id = job_mapper.get_name(internal_job_id);
 
+  if (job_id == NULL)
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+    snprintf(log_buf, sizeof(log_buf), "Id %d doesn't match any internal job", internal_job_id);
+    log_err(-1, __func__, log_buf);
+    }
+
   return(svr_find_job(job_id, TRUE));
   }
 

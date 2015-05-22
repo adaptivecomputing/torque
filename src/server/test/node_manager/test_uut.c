@@ -18,7 +18,7 @@ struct server server;
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 int   node_in_exechostlist(char *, char *);
 char *get_next_exec_host(char **);
-int   job_should_be_killed(int, struct pbsnode *);
+int   job_should_be_killed(std::string &, int, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
@@ -453,6 +453,7 @@ START_TEST(job_should_be_killed_test)
   {
   struct pbsnode pnode;
   struct jobinfo jinfo;
+  std::string    job_id;
 
   memset(&pnode, 0, sizeof(pnode));
   memset(&jinfo, 0, sizeof(jinfo));
@@ -460,11 +461,11 @@ START_TEST(job_should_be_killed_test)
   pnode.nd_name = (char *)"tom";
   jinfo.internal_job_id = 1;
 
-  fail_unless(job_should_be_killed(2, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(3, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(4, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(1, &pnode) == false, "false positive");
-  fail_unless(job_should_be_killed(5, &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(job_id, 2, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 3, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 4, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 1, &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(job_id, 5, &pnode) == false, "false positive");
   }
 END_TEST
 
