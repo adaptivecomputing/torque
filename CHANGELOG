@@ -32,6 +32,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-3104. Add millisecond precision to the Torque log file
   e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
       output.
+  b - TRQ-3166. Add another safety check before killing stray jobs.
 
 
 5.0.2
