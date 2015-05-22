@@ -525,10 +525,10 @@ void Machine::place_remaining(
 
 int Machine::place_job(
 
-  job    *pjob,
-  string &cpu_string,
-  string &mem_string,
-  int     num_ppn)
+  job        *pjob,
+  string     &cpu_string,
+  string     &mem_string,
+  const char *hostname)
 
   {
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
@@ -549,7 +549,7 @@ int Machine::place_job(
   for (int i = 0; i < num_reqs; i++)
     {
     const req &r = cr->get_req(i);
-    int        tasks_for_node = r.get_num_tasks_for_host(num_ppn);
+    int        tasks_for_node = r.get_num_tasks_for_host(hostname);
     bool       placed = false;
 
     if (tasks_for_node == 0)
@@ -582,7 +582,7 @@ int Machine::place_job(
   for (unsigned int i = 0; i < partially_place.size(); i++)
     {
     const req &r = cr->get_req(partially_place[i]);
-    int        remaining_tasks = r.get_num_tasks_for_host(num_ppn);
+    int        remaining_tasks = r.get_num_tasks_for_host(hostname);
     bool       change = false;
     bool       not_placed = true;
     

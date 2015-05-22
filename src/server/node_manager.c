@@ -4187,7 +4187,7 @@ int place_subnodes_in_hostlist(
     std::string       cpus;
     std::string       mems;
 
-    pnode->nd_layout->place_job(pjob, cpus, mems, naji->ppn_needed);
+    pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
     save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
     save_node_usage(pnode);
 #endif
@@ -4727,6 +4727,37 @@ int add_multi_reqs_to_job(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * set_req_exec_info()
+ *
+ * @param pjob - the job we're setting req_exec_info() for
+ */
+
+void set_req_exec_info(
+
+  job        *pjob,
+  const char *host_list)
+
+  {
+  complete_req *cr;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+    {
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    }
+  else
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+    
+  cr->set_hostlists(pjob->ji_qs.ji_jobid, host_list);
+  } // END set_req_exec_info()
+#endif
+
+
+
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -4789,13 +4820,17 @@ int set_nodes(
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  set_req_exec_info(pjob, spec);
+#endif
+
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
   naji->node_id = -1;
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
   bool job_is_exclusive = false;
-  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
     job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */

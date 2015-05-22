@@ -299,7 +299,7 @@ class Machine
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
-    int  place_job(job *pjob, string &cpu_string, string &mem_string, int num_ppn);
+    int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
     void setMemory(long long mem); // used for unit tests
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
