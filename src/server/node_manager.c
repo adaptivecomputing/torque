@@ -620,7 +620,6 @@ bool job_already_being_killed(
 
 
 
-
 /*
  * If a job is not supposed to be on a node and we have
  * not sent a kill to that job in the last 5 minutes
@@ -628,7 +627,8 @@ bool job_already_being_killed(
  */
 
 bool job_should_be_killed(
-    
+
+  std::string    &job_id,    
   int             internal_job_id,
   struct pbsnode *pnode)
 
@@ -641,7 +641,8 @@ bool job_should_be_killed(
     {
     /* must lock the job before the node */
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
-    pjob = svr_find_job_by_id(internal_job_id);
+    if ((pjob = svr_find_job_by_id(internal_job_id)) == NULL)
+      pjob = svr_find_job(job_id.c_str(), TRUE);
     lock_node(pnode, __func__, NULL, LOGLEVEL);
     
     if (pjob != NULL)
@@ -673,6 +674,7 @@ bool job_should_be_killed(
 
   return(should_kill_job);
   } /* END job_should_be_killed() */
+
 
 
 void *finish_job(
@@ -964,7 +966,7 @@ void *sync_node_jobs(
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
-    if (job_should_be_killed(internal_job_id, np))
+    if (job_should_be_killed(job_id, internal_job_id, np))
       {
       if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
         {
