@@ -265,8 +265,8 @@ int wait_for_task(
 
     sigprocmask(SIG_UNBLOCK, &allsigs, NULL);
 
-    // check to see if an event has completed
-    rc = tm_poll(TM_NULL_EVENT, &eventpolled, TM_POLL_NOWAIT, &tm_errno);
+    // check to see if event has completed
+    rc = tm_poll(TM_NULL_EVENT, &eventpolled, TM_POLL_WAIT, &tm_errno);
 
     sigprocmask(SIG_BLOCK, &allsigs, NULL);
 
