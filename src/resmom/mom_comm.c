@@ -7851,7 +7851,11 @@ static int adoptSession(
   {
   job *pjob = NULL;
   task *ptask = NULL;
-  unsigned short momport = 0;
+  unsigned short  momport = 0;
+  bool            multi = false;
+  char           *ptr;
+  char            jobid_copy[PBS_MAXSVRJOBID+1];
+  int             len;
 
 #ifdef PENABLE_LINUX26_CPUSETS
   unsigned int len;
@@ -7860,6 +7864,15 @@ static int adoptSession(
   char  cpuset_path[MAXPATHLEN];
   char  pid_str[MAXPATHLEN];
 #endif
+
+  ptr = strrchr(jobid, '.');
+  if (strchr(jobid, '.') != ptr)
+    {
+    multi = true;
+    snprintf(jobid_copy, sizeof(jobid_copy), "%s", jobid);
+    jobid_copy[ptr - jobid] = '\0';
+    len = strlen(jobid_copy);
+    }
 
   /* extern  int next_sample_time; */
   /* extern  time_t time_resc_updated; */
@@ -7890,6 +7903,12 @@ static int adoptSession(
             
           *dot = '.';
           }
+        }
+      // Correct for long versus short names
+      else if (multi)
+        {
+        if (!strncmp(jobid_copy, pjob->ji_qs.ji_jobid, len))
+          break;
         }
       }
     else
