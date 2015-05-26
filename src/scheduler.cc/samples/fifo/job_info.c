@@ -91,7 +91,7 @@
 #include "fairshare.h"
 #include "node_info.h"
 #include "../lib/Libifl/lib_ifl.h"
-
+#include "log.h"
 
 /*
  *
@@ -717,6 +717,54 @@ int update_job_comment(int pbs_sd, job_info *jinfo, const char *comment)
 
   return 1;
   }
+
+
+/* dkoes - if queue has neednodes set, append this to the job's need node attribute */
+int update_job_neednodes(int pbs_sd, job_info *jinfo)
+{
+
+  char str[UDC_CLONEBUFSIZ + 1] =
+  { 0, };
+
+  resource_req *resreq_need, *resreq_nodes;
+
+  int local_errno = 0;
+
+  if (jinfo == NULL)
+    return 1;
+
+  /*first check to see if job's queue has need nodes */
+  if (!jinfo->queue)
+    return 1;
+  if (jinfo->queue->need == NULL)
+    return 1;
+
+  char *need = jinfo->queue->need;
+  resreq_need = find_alloc_resource_req((char*)"neednodes", jinfo->resreq);
+  resreq_nodes = find_alloc_resource_req((char*)"nodes", jinfo->resreq);
+
+  //append need to nodes
+  if (strlen(resreq_nodes->res_str) + strlen(need) + 1 >= UDC_CLONEBUFSIZ)
+    return 1; //avoid buffer overflows by punting
+
+  strcpy(str, resreq_nodes->res_str);
+  strcat(str, ":");
+  strcat(str, need);
+
+  if (strcmp(str, resreq_need->res_str)) /* doesn't already have it appended */
+  {
+    struct attrl attr =
+        {
+        NULL, (char *) ATTR_l, (char*)"neednodes", str, SET
+        };
+
+    pbs_alterjob_err(pbs_sd, jinfo->name, &attr, NULL, &local_errno);
+
+    return 0;
+  }
+
+  return 1;
+}
 
 /*
  *
