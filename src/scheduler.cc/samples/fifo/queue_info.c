@@ -336,7 +336,14 @@ queue_info *query_queue_info(struct batch_status *queue, server_info *sinfo)
       if (resp != NULL)
         resp -> assigned = count;
       }
-
+    else if (!strcmp(attrp -> name, ATTR_rescdflt)) /* resources_default */
+     {
+         /* dkoes - implement resources_default.neednodes = <queue_name> for
+          assigning nodes to queues */
+        if(!strcmp(attrp -> resource, "neednodes")) {
+          qinfo->need = string_dup(attrp->value);
+        }
+     }
     attrp = attrp -> next;
     }
 
@@ -381,6 +388,8 @@ queue_info *new_queue_info()
   qinfo -> name   = NULL;
 
   qinfo -> qres   = NULL;
+
+  qinfo -> need = NULL; 
 
   qinfo -> jobs   = NULL;
 
@@ -517,6 +526,9 @@ void free_queue_info(queue_info *qinfo)
 
   if (qinfo -> qres != NULL)
     free_resource_list(qinfo -> qres);
+
+  if (qinfo -> need != NULL)
+    free(qinfo -> need);
 
   if (qinfo -> running_jobs != NULL)
     free(qinfo -> running_jobs);

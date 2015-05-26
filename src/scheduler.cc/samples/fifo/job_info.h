@@ -151,6 +151,11 @@ void update_job_on_run(int pbs_sd, job_info *jinfo);
 int update_job_comment(int pbs_sd, job_info *jinfo, const char *comment);
 
 /*
+ *      update_job_neednodes - update a jobs neednodes attribute based on queue
+ */
+int update_job_neednodes(int pbs_sd, job_info *jinfo);
+
+/*
  *      update_jobs_cant_run - update an array of jobs which can not run
  */
 void update_jobs_cant_run(int pbs_sd, job_info **jinfo_arr, job_info *start,

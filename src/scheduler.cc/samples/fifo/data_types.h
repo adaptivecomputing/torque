@@ -202,6 +202,7 @@ unsigned dedtime_queue:
   int priority;   /* priority of queue */
 
   struct resource *qres; /* list of resources on the queue */
+  char *need; /* neednodes value */
   job_info **jobs;  /* array of jobs that reside in queue */
   job_info **running_jobs; /* array of jobs in the running state */
   };
