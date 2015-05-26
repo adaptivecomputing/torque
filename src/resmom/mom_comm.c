@@ -8703,7 +8703,7 @@ void empty_received_nodes()
   received_node *rn;
 
   while ((rn = received_statuses.pop()) != NULL)
-    free(rn);
+    delete rn;
   } // END empty_received_nodes()
 
 
@@ -8728,7 +8728,7 @@ received_node *get_received_node_entry(
   
   if (rn == NULL)
     {
-    rn = (received_node *)calloc(1, sizeof(received_node));
+    rn = new received_node();
     
     if (rn == NULL)
       {
@@ -8737,7 +8737,7 @@ received_node *get_received_node_entry(
       }
     
     /* initialize the received node struct */
-    snprintf(rn->hostname, sizeof(rn->hostname), "%s", hostname);
+    rn->hostname = hostname;
     
     rn->hellos_sent = 0;
 
@@ -8752,9 +8752,9 @@ received_node *get_received_node_entry(
 
     /* add the new node to the received status list */
     received_statuses.lock();
-    if (!received_statuses.insert(rn, rn->hostname))
+    if (!received_statuses.insert(rn, rn->hostname.c_str()))
       {
-      free(rn);
+      delete rn;
       rn = NULL;
       log_err(ENOMEM, __func__, 
         "No memory to resize the received_statuses array...SYSTEM FAILURE\n");
