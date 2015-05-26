@@ -1171,9 +1171,11 @@ if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test
   fi
 
   if test "${enable_nvidia}" = "yes"; then
-    # The carriage return is siginifican. Do not delete it
+    # The carriage return is siginificant. Do not delete it
     GPU_DETECTION_DEPENDS_ON_HWLOC="GPU detection requires the hwloc development package
 "
+  AC_CHECK_LIB([nvidia-ml], [nvmlDeviceGetHandlebyIndex],,
+     [AC_MSG_ERROR([libnvidia does not look like >= 4.1])])
   fi
 
   if test "${build_linux_cgroups}" = "yes"; then
