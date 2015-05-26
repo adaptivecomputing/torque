@@ -1,0 +1,161 @@
+#!/usr/bin/python
+
+################################################################################
+#
+# use_jobs_subdirs_setup - utility to create directories and move files
+#
+#   Copyright (C) 2010-2014 by Adaptive Computing Enterprises, Inc.
+#   All Rights Reserved.
+#
+# This script may be used to move existing job files when the pbs_server
+# attribute, use_jobs_subdirs, has been set to true.
+# 
+# Suggested procedure for moving existing job files when using the
+# use_jobs_subdirs pbs_server attribute (see documentation for
+# more information about this attribute):
+#
+#  1. Shut down the server
+#  2. Set the attribute in the server:
+#      qmgr -c "set server use_jobs_subdirs = true"
+#  3. Run this script
+#      use_jobs_subdirs_setup -m
+#  4. Restart the server
+#
+# Note that this only needs to be run one time. If the batch system is empty,
+# there is no need to use this script.
+#
+# Run use_jobs_subdirs_setup -h for a brief help message
+#
+################################################################################
+
+import os
+import shutil
+import glob
+import sys
+import getopt
+
+
+# Checks to see if the user has directories '0' - '9'
+# within default location for /jobs directory
+# and creates them if they are not there
+def create_direc(pbsvar):
+    mypath = pbsvar + "/server_priv/jobs"
+    os.chdir(pbsvar + "/server_priv/jobs")
+    stat_info = os.stat(mypath)
+    for x in range(0, 10):
+        if (False == os.path.isdir(str(x))):
+            os.mkdir(str(x))
+            os.chown(mypath + "/" + str(x), stat_info.st_uid, stat_info.st_gid)
+    mypath = pbsvar + "/server_priv/arrays"
+    os.chdir(pbsvar + "/server_priv/arrays")
+    stat_info = os.stat(mypath)
+    for x in range(0, 10):
+        if (False == os.path.isdir(str(x))):
+            os.mkdir(str(x))
+            os.chown(mypath + "/" + str(x), stat_info.st_uid, stat_info.st_gid)
+    print("Directories Created Successfully")
+    return
+# end create_direc()
+
+
+# uses the 'myfilename' param to find the number directly
+# before the first period to know which
+# directory to put job file in
+def get_file_num(myfilename):
+    mylist = list(myfilename)
+    i = 0
+    for letter in mylist:
+        if (letter == '.'):
+            mychar = mylist[i - 1]
+            return mychar
+        i = i + 1
+# end get_file_num()
+
+
+# moves all files from Path mypath
+# to subdirectories within original directory
+def move_file(pbsvar):
+    os.chdir(pbsvar + "/server_priv/jobs/")
+    mypath = pbsvar + "/server_priv/jobs/"
+    for name in glob.glob("*.BD"):
+        shutil.move(mypath + name, mypath + get_file_num(name))
+    for name in glob.glob("*.JB"):
+        shutil.move(mypath + name, mypath + get_file_num(name))
+    for name in glob.glob("*.SC"):
+        shutil.move(mypath + name, mypath + get_file_num(name))
+    for name in glob.glob("*.TA"):
+        shutil.move(mypath + name, mypath + get_file_num(name))
+    os.chdir(pbsvar + "/server_priv/arrays")
+    mypath = pbsvar + "/server_priv/arrays/"
+    for name in glob.glob("*.AR"):
+        shutil.move(mypath + name, mypath + get_file_num(name))
+    print("Files Moved into Folders")
+    return
+# end move_file()
+
+
+# start usage()
+def usage():
+    sys.stderr.write("usage: " + os.path.basename(__file__ + " -c | -m\n"))
+    sys.stderr.write("   -c to create directories\n")
+    sys.stderr.write("   -m to create directories and move files\n")
+    sys.stderr.write("   -h for help\n")
+
+
+# start main()
+def main(pbsvar):
+
+    err = "ERROR: Option Not Recognized"
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "cmh")
+    except getopt.GetoptError:
+        sys.stderr.write(err + "\n")
+        usage()
+        sys.exit(2)
+
+    opt_createdirs = False
+    opt_mvfiles = False
+
+    for o, a in opts:
+        if o == "-c":
+            opt_createdirs = True
+        elif o == "-m":
+            opt_createdirs = True
+            opt_mvfiles = True
+        elif o == "-h":
+            usage()
+            sys.exit(3)
+        else:
+            assert False, "unhandled option"
+
+    if True == opt_createdirs:
+        create_direc(pbsvar)
+    if True == opt_mvfiles:
+        move_file(pbsvar)
+    if (False == opt_createdirs and False == opt_mvfiles):
+        usage()
+        sys.exit(2)
+
+    return
+# end main()
+
+
+# Start script
+is_admin = os.getuid() == 0
+
+# Checks to see if user has root privs
+# if not they get kicked out
+if (False == is_admin):
+    sys.stderr.write("Error: Must be run with root privileges!!\n")
+    sys.exit(1)
+
+PBS_HOME = os.environ.get('PBS_HOME', '/var/spool/torque')
+
+if (False == os.path.exists(PBS_HOME)):
+    sys.stderr.write("ERROR: Path to PBS HOME does not exist\n")
+    sys.exit(1)
+
+main(PBS_HOME)
+sys.exit(0)
+# end of script
