@@ -24,6 +24,7 @@ void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 #include "pbs_error.h"
 #include "log.h"
 #include "complete_req.hpp"
+#include "utils.h"
 
 using namespace std;
 
@@ -117,6 +118,42 @@ Machine& Machine::operator= (const Machine& newMachine)
 
 
 /*
+ * update_internal_counts()
+ *
+ * Populates my allocations vector and gets sockets to update it's counts
+ */
+
+void Machine::update_internal_counts()
+
+  {
+  std::vector<allocation> allocs;
+
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    this->sockets[i].update_internal_counts(allocs);
+
+  for (unsigned int i = 0; i < allocs.size(); i++)
+    this->allocations.push_back(allocs[i]);
+
+  this->availableSockets = 0;
+  this->totalChips = 0;
+  this->totalCores = 0;
+  this->totalThreads = 0;
+
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    {
+    if (this->sockets[i].is_available())
+      this->availableSockets++;
+
+    this->totalChips += this->sockets[i].getTotalChips();
+    this->totalCores += this->sockets[i].getTotalCores();
+    this->totalThreads += this->sockets[i].getTotalThreads();
+    }
+
+  } // END update_internal_counts()
+
+
+
+/*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
  *
@@ -162,10 +199,7 @@ Machine::Machine(const std::string &json_layout) : totalMemory(0), totalSockets(
     socket_begin = next;
     }
 
-  this->availableSockets = this->totalSockets;
-  this->totalChips = this->getAvailableChips();
-  this->totalCores = this->getAvailableCores();
-  this->totalThreads = this->getAvailableThreads();
+  update_internal_counts();
   }
 
 Machine::Machine() : totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
@@ -367,7 +401,8 @@ int Machine::getAvailableThreads()
 
 void Machine::displayAsJson(
     
-  stringstream &out) const
+  stringstream &out,
+  bool          include_jobs) const
 
   {
   out << "{\"node\":{";
@@ -376,7 +411,7 @@ void Machine::displayAsJson(
     {
     if (i > 0)
       out << ",";
-    this->sockets[i].displayAsJson(out);
+    this->sockets[i].displayAsJson(out, include_jobs);
     }
 
   out << "}}";
@@ -490,10 +525,10 @@ void Machine::place_remaining(
 
 int Machine::place_job(
 
-  job    *pjob,
-  string &cpu_string,
-  string &mem_string,
-  int     num_ppn)
+  job        *pjob,
+  string     &cpu_string,
+  string     &mem_string,
+  const char *hostname)
 
   {
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
@@ -514,7 +549,7 @@ int Machine::place_job(
   for (int i = 0; i < num_reqs; i++)
     {
     const req &r = cr->get_req(i);
-    int        tasks_for_node = r.get_num_tasks_for_host(num_ppn);
+    int        tasks_for_node = r.get_num_tasks_for_host(hostname);
     bool       placed = false;
 
     if (tasks_for_node == 0)
@@ -547,7 +582,7 @@ int Machine::place_job(
   for (unsigned int i = 0; i < partially_place.size(); i++)
     {
     const req &r = cr->get_req(partially_place[i]);
-    int        remaining_tasks = r.get_num_tasks_for_host(num_ppn);
+    int        remaining_tasks = r.get_num_tasks_for_host(hostname);
     bool       change = false;
     bool       not_placed = true;
     

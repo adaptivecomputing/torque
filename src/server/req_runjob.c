@@ -1886,29 +1886,6 @@ job *chk_job_torun(
 
 
 
-/*
- * set_req_exec_info()
- *
- * @param pjob - the job we're setting req_exec_info() for
- */
-
-void set_req_exec_info(
-
-  job        *pjob,
-  const char *host_list)
-
-  {
-#ifdef PENABLE_LINUX_CGROUPS
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
-    {
-    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    cr->set_hostlists(pjob->ji_qs.ji_jobid, host_list);
-    }
-#endif
-  } // END set_req_exec_info()
-
-
-
 /* 
  * set_job_exec_info - The first host in list is the host
  * of Mother Superior. Find the mom manager and service ports
@@ -2243,8 +2220,6 @@ int assign_hosts(
     rc = set_nodes(pjob, (char *)hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
     
     set_exec_host = 1; /* maybe new VPs, must set */
-
-    set_req_exec_info(pjob, hosttoalloc);
     
     hosttoalloc = list;
     }

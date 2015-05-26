@@ -427,7 +427,7 @@ Machine::~Machine()
   {
   }
 
-void Machine::displayAsJson(std::stringstream &out) const {}
+void Machine::displayAsJson(std::stringstream &out, bool jobs) const {}
 
 Socket::Socket()
   {

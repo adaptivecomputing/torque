@@ -693,7 +693,7 @@ void gen_layout(
   {
   std::stringstream layout;
   layout << name << "=";
-  this_node.displayAsJson(layout);
+  this_node.displayAsJson(layout, false);
   status.push_back(layout.str());
   } // END gen_layout()
 #endif

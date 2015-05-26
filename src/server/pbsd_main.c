@@ -238,6 +238,7 @@ char                   *path_svrdb_new;
 char                   *path_svrlog;
 char                   *path_track;
 char                   *path_nodes;
+char                   *path_node_usage;
 char                   *path_mom_hierarchy;
 char                   *path_nodes_new;
 char                   *path_nodestate;

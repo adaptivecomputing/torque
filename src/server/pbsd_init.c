@@ -191,6 +191,7 @@ extern char *path_svrdb_new;
 extern char *path_svrlog;
 extern char *path_track;
 extern char *path_nodes;
+extern char *path_node_usage;
 extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
@@ -701,6 +702,7 @@ int initialize_paths()
   path_jobinfo_log   = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
   path_track         = build_path(path_priv, PBS_TRACKING, NULL);
   path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
+  path_node_usage    = build_path(path_priv, NODE_USAGE, suffix_slash);
   path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
   path_nodepowerstate = build_path(path_priv, NODE_POWER_STATE,  NULL);
@@ -975,6 +977,110 @@ int setup_server_attrs(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+void load_node_usage(
+
+  pbsnode    *pnode,
+  const char *node_name)
+
+  {
+  std::string layout;
+  int         fds = open(node_name, O_RDONLY, 0);
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        buf[LOCAL_LOG_BUF_SIZE];
+  char       *read_ptr = buf;
+
+  if (fds < 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't open %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    return;
+    }
+
+  memset(buf, 0, sizeof(buf));
+
+  while (read_ac_socket(fds, read_ptr, sizeof(buf)) > 0)
+    {
+    layout += buf;
+    memset(buf, 0, sizeof(buf));
+    }
+
+  if (layout.size() > 0)
+    {
+    if (pnode->nd_layout != NULL)
+      delete pnode->nd_layout;
+
+    pnode->nd_layout = new Machine(layout);
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't read data from %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    }
+
+  close(fds);
+  } // END load_node_usage()
+
+
+
+int load_node_usages()
+  {
+  DIR              *dir;
+  struct dirent    *pdirent;
+  pbsnode          *pnode;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (chdir(path_node_usage) != 0)
+    {
+    sprintf(log_buf, msg_init_chdir, path_node_usage);
+
+    log_err(errno, __func__, log_buf);
+
+    return(-1);
+    }
+  
+  dir = opendir(".");
+
+  if (dir == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Couldn't open %s for recover node usage states.",
+      path_node_usage);
+    log_err(errno, __func__, log_buf);
+
+    sprintf(log_buf, "%s:1", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+    return(-1);
+    }
+
+  while ((pdirent = readdir(dir)) != NULL)
+    {
+    if ((pdirent->d_name[0] == '\0') ||
+        (!strcmp(pdirent->d_name, "..")) ||
+        (!strcmp(pdirent->d_name, ".")))
+      {
+      /* invalid name returned */
+      continue;
+      }
+
+    if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
+      {
+      mutex_mgr   nd_mutex(pnode->nd_mutex, true);
+      load_node_usage(pnode, pdirent->d_name);
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END load_nd_usages()
+#endif
+
+
+
 int initialize_nodes()
 
   {
@@ -982,6 +1088,10 @@ int initialize_nodes()
     {
     return(-1);
     }
+
+#ifdef PENABLE_LINUX_CGROUPS
+  load_node_usages();
+#endif
 
   add_server_names_to_acl_hosts();
   update_default_np();
@@ -1487,7 +1597,6 @@ int handle_job_recovery(
 
   return(rc);
   } /* END handle_job_recovery() */
-
 
 
 

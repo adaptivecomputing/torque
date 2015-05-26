@@ -134,6 +134,9 @@
 #include "mutex_mgr.hpp"
 #include "timer.hpp"
 #include "id_map.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "complete_req.hpp"
+#endif
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -167,6 +170,7 @@ extern int              ctnodes(char *);
 
 extern char            *path_home;
 extern char            *path_nodes;
+extern char            *path_node_usage;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;
 extern char            *path_nodepowerstate;
@@ -4084,6 +4088,62 @@ void save_cpus_and_memory_cpusets(
     }
 
   } // END save_cpus_and_memory_cpusets()
+
+
+
+/*
+ * save_node_usage()
+ *
+ * Saves this node's usage in a file with the path path_node_usage/node_name
+ *
+ * @param pnode - the node whose usage state should be saved
+ */
+
+void save_node_usage(
+
+  pbsnode *pnode)
+
+  {
+  std::stringstream  node_state;
+  std::string        path(path_node_usage);
+  std::string        tmp_path;
+  FILE              *f = NULL;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+
+  path += "/";
+  path += pnode->nd_name;
+  tmp_path = path + ".tmp";
+
+  pnode->nd_layout->displayAsJson(node_state, true);
+
+  if ((f = fopen(tmp_path.c_str(), "w+")) != NULL)
+    {
+    fprintf(f, "%s", node_state.str().c_str());
+    fclose(f);
+    
+    unlink(path.c_str());
+
+    if (link(tmp_path.c_str(), path.c_str()) == -1)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Couldn't replace %s with new file %s in trying to save %s's state",
+        path.c_str(), tmp_path.c_str(), pnode->nd_name);
+      log_err(errno, __func__, log_buf);
+      }
+    else
+      {
+      // Delete the temporary file on success
+      unlink(tmp_path.c_str());
+      }
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Couldn't create new file to save %s's node state",
+      pnode->nd_name);
+    log_err(errno, __func__, log_buf);
+    }
+  } // END save_node_usage()
 #endif
 
 
@@ -4124,11 +4184,12 @@ int place_subnodes_in_hostlist(
     {
     /* SUCCESS */
 #ifdef PENABLE_LINUX_CGROUPS
-    std::string cpus;
-    std::string mems;
+    std::string       cpus;
+    std::string       mems;
 
-    pnode->nd_layout->place_job(pjob, cpus, mems, naji->ppn_needed);
+    pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
     save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
+    save_node_usage(pnode);
 #endif
 
     pnode->nd_np_to_be_used -= naji->ppn_needed;
@@ -4666,6 +4727,37 @@ int add_multi_reqs_to_job(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * set_req_exec_info()
+ *
+ * @param pjob - the job we're setting req_exec_info() for
+ */
+
+void set_req_exec_info(
+
+  job        *pjob,
+  const char *host_list)
+
+  {
+  complete_req *cr;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+    {
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    }
+  else
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+    
+  cr->set_hostlists(pjob->ji_qs.ji_jobid, host_list);
+  } // END set_req_exec_info()
+#endif
+
+
+
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -4728,13 +4820,17 @@ int set_nodes(
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  set_req_exec_info(pjob, spec);
+#endif
+
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
   naji->node_id = -1;
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
   bool job_is_exclusive = false;
-  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
     job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */
@@ -5451,7 +5547,10 @@ int remove_job_from_node(
 
 #ifdef PENABLE_LINUX_CGROUPS
   if (pnode->nd_layout != NULL)
+    {
     pnode->nd_layout->free_job_allocation(job_mapper.get_name(internal_job_id));
+    save_node_usage(pnode);
+    }
 #endif
   
   return(PBSE_NONE);
@@ -5660,8 +5759,6 @@ int set_one_old(
 
   return(rc);
   }  /* END set_one_old() */
-
-
 
 
 

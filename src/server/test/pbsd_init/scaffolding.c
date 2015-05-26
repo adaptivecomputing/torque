@@ -21,6 +21,7 @@
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
 
+char *path_node_usage;
 threadpool_t *task_pool;
 int scheduler_sock=0;
 int scheduler_jobct = 0;

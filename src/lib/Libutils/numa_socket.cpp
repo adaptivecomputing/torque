@@ -193,12 +193,24 @@ hwloc_uint64_t Socket::getMemory()
 
 int Socket::getTotalCores() const
   {
-  return(this->totalCores);
+  int total = 0;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    total += this->chips[i].getTotalCores();
+    }
+
+  return(total);
   }
 
 int Socket::getTotalThreads() const
   {
-  return(this->totalThreads);
+  int total = 0;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    total += this->chips[i].getTotalThreads();
+    }
+
+  return(total);
   }
 
 int Socket::getTotalChips() const
@@ -303,7 +315,8 @@ void Socket::displayAsString(
 
 void Socket::displayAsJson(
 
-  stringstream &out) const
+  stringstream &out,
+  bool          include_jobs) const
 
   {
   out << "\"socket\":{\"os_index\":" << this->id;
@@ -311,11 +324,22 @@ void Socket::displayAsJson(
   for (unsigned int i = 0; i < this->chips.size(); i++)
     {
     out << ",";
-    this->chips[i].displayAsJson(out);
+    this->chips[i].displayAsJson(out, include_jobs);
     }
 
   out << "}";
   } // END displayAsJson()
+
+
+
+void Socket::update_internal_counts(
+
+  std::vector<allocation> &allocs)
+
+  {
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    this->chips[i].aggregate_allocations(allocs);
+  }
 
 
 
