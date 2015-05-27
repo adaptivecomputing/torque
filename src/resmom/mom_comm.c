@@ -7842,7 +7842,7 @@ static int adoptSession(
   bool            multi = false;
   char           *ptr;
   char            jobid_copy[PBS_MAXSVRJOBID+1];
-  int             len;
+  int             other_id_len;
 
 #ifdef PENABLE_LINUX26_CPUSETS
   unsigned int len;
@@ -7858,7 +7858,7 @@ static int adoptSession(
     multi = true;
     snprintf(jobid_copy, sizeof(jobid_copy), "%s", jobid);
     jobid_copy[ptr - jobid] = '\0';
-    len = strlen(jobid_copy);
+    other_id_len = strlen(jobid_copy);
     }
 
   /* extern  int next_sample_time; */
@@ -7894,7 +7894,7 @@ static int adoptSession(
       // Correct for long versus short names
       else if (multi)
         {
-        if (!strncmp(jobid_copy, pjob->ji_qs.ji_jobid, len))
+        if (!strncmp(jobid_copy, pjob->ji_qs.ji_jobid, other_id_len))
           break;
         }
       }
