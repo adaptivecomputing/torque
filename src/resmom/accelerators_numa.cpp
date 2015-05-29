@@ -200,8 +200,6 @@ void PCI_Device::initializeMic(
   int rc;
 
   nearest_cpuset = hwloc_bitmap_alloc();
-  if (nearest_cpuset == NULL)
-    return(PBSE_MEM_MALLOC);
 
   rc = hwloc_intel_mic_get_device_cpuset(topology, idx, nearest_cpuset);
   if (rc != 0)
