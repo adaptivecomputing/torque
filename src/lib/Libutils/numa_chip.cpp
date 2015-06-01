@@ -870,7 +870,7 @@ void Chip::make_core(
   c.totalThreads = 2;
   c.free = true;
   c.indices.push_back(id);
-  c.indices.push_back(id + 12);
+  c.indices.push_back(id + 16);
   c.is_index_busy.push_back(false);
   c.is_index_busy.push_back(false);
   c.processing_units_open = 2;
@@ -1315,7 +1315,10 @@ void Chip::partially_place_task(
     }
 
   if (remaining.cores_only == true)
+    {
     place_task_by_cores(remaining.cpus, a);
+    a.cores_only = true;
+    }
   else
     place_task_by_threads(remaining.cpus, a);
 

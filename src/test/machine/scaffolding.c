@@ -98,6 +98,11 @@ int Socket::place_task(const char *jobid, const req &r, allocation &a, int to_pl
   return(num_placed);
   }
 
+int Socket::getTotalChips() const
+  {
+  return(1);
+  }
+
 int Socket::getAvailableChips() const
   {
   return(1);
@@ -113,6 +118,18 @@ int Socket::getAvailableThreads() const
   {
   return(1);
   }
+
+int Socket::getTotalThreads() const
+  {
+  return(1);
+  }
+
+int Socket::getTotalCores() const
+  {
+  return(1);
+  }
+
+void Socket::update_internal_counts(vector<allocation> &allocs) {}
 
 int Socket::getAvailableCores() const
   {
@@ -156,7 +173,7 @@ req &req::operator =(const req &other)
 
 int req::get_num_tasks_for_host(
 
-  int num_ppn) const
+  const std::string &name) const
 
   {
   return(num_for_host);

@@ -17,6 +17,7 @@ START_TEST(test_json_constructor)
   const char *j3 ="\"numachip\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
   const char *j4 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
   const char *j5 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
+
   std::stringstream o1;
   std::stringstream o2;
   std::stringstream o3;
@@ -215,11 +216,11 @@ START_TEST(test_exclusive_place)
 
   Chip c;
   c.setId(0);
-  c.setThreads(24);
-  c.setCores(12);
+  c.setThreads(32);
+  c.setCores(16);
   c.setMemory(6);
   c.setChipAvailable(true);
-  for (int i = 0; i < 12; i++)
+  for (int i = 0; i < 16; i++)
     c.make_core(i);
 
   thread_type = use_cores;
@@ -231,7 +232,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1);
   std::stringstream out;
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
   my_placement_type.clear();
   
   a.place_type = exclusive_none;
@@ -244,19 +245,57 @@ START_TEST(test_exclusive_place)
   tasks = c.place_task(jobid, r, a, 6);
   out.str("");
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
   fail_unless(tasks == 6);
 
   Chip c2(out.str());
   std::stringstream o2;
   c2.displayAsJson(o2, true);
   fail_unless(o2.str() == out.str(), o2.str().c_str());
-  fail_unless(c2.getTotalCores() == 12, "%d total cores", c2.getTotalCores());
-  fail_unless(c2.getAvailableCores() == 0, "%d cores available", c2.getAvailableCores());
-  fail_unless(c2.getTotalThreads() == 24, "%d total threads", c2.getTotalThreads());
+  fail_unless(c2.getTotalCores() == 16, "%d total cores", c2.getTotalCores());
+  fail_unless(c2.getAvailableCores() == 4, "%d cores available", c2.getAvailableCores());
+  fail_unless(c2.getTotalThreads() == 32, "%d total threads", c2.getTotalThreads());
   fail_unless(c2.getMemory() == 6, "%d total memory", (int)c2.getMemory());
   fail_unless(c2.getAvailableMemory() == 0);
-  fail_unless(c2.getAvailableThreads() == 0);
+  fail_unless(c2.getAvailableThreads() == 8, "%d available", c2.getAvailableThreads());
+
+  Chip c3;
+  c3.setId(0);
+  c3.setThreads(32);
+  c3.setCores(16);
+  c3.setMemory(32);
+  c3.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c3.make_core(i);
+  
+  req r2;
+  r2.set_value("lprocs", "32");
+  thread_type.clear();
+  tasks = c3.place_task(jobid, r2, a, 1);
+  fail_unless(tasks == 1, "%d tasks", tasks);
+  out.str("");
+  c3.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
+
+  Chip c4;
+  c4.setId(0);
+  c4.setThreads(16);
+  c4.setCores(8);
+  c4.setMemory(16);
+  c4.setChipAvailable(true);
+  for (int i = 0; i < 8; i++)
+    c4.make_core(i);
+  thread_type = use_cores;
+
+  req r3;
+  r3.set_value("lprocs", "16");
+  allocation remaining(r3);
+  allocation master("2.napali");
+
+  c4.partially_place_task(remaining, master);
+  out.str("");
+  c4.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
   }
 END_TEST
 
