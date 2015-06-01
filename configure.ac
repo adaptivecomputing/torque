@@ -1174,6 +1174,10 @@ if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test
     # The carriage return is siginificant. Do not delete it
     GPU_DETECTION_DEPENDS_ON_HWLOC="GPU detection requires the hwloc development package
 "
+  # In order to get AC_CHECK_LIB to pick up the nvml library
+  # if it is not in the default location we need to add 
+  # the value of nvmllib set in --with-nvml-lib to LDFLAGS
+  LDFLAGS="$LDFLAGS -L$nvmllib"
   AC_CHECK_LIB([nvidia-ml], [nvmlDeviceGetHandleByIndex],,
      [AC_MSG_ERROR([libnvidia does not look like >= 4.1])])
   fi
