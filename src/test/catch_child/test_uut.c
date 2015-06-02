@@ -18,6 +18,8 @@ extern int server_down;
 extern int exiting_tasks;
 extern int  DIS_reply_read_count;
 extern int  tc;
+extern int  called_open_socket;
+extern int  called_fork_me;
 extern bool eintr_test;
 
 
@@ -178,6 +180,19 @@ START_TEST(test_mother_superior_cleanup)
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+
+  called_open_socket = 0;
+  pjob->ji_numnodes = 2;
+  pjob->ji_hosts[1].hn_sister = SISTER_KILLDONE;
+  pjob->ji_flags = MOM_EPILOGUE_RUN;
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  fail_unless(called_open_socket == 1);
+  
+  called_fork_me = 0;
+  pjob->ji_flags = 0;
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  fail_unless(called_open_socket == 1);
+  fail_unless(called_fork_me == 1);
   }
 END_TEST
 
