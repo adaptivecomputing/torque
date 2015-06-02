@@ -1663,6 +1663,95 @@ int handle_complete_subjob(
 
 
 
+/*
+ * get_used()
+ *
+ * Examines JOB_ATR_resc_used to get the final resources used for the accounting file
+ *
+ * @param pjob - the job for which we're logging usage
+ * @param acct_data - the string we output into
+ *
+ * @return PBSE_NONE on success
+ */
+
+int get_used(
+
+  job         *pjob,
+  std::string &acct_data)
+
+  {
+  resource      *pr = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
+  attribute_def  at_def;
+  const char     empty[] = "0";
+
+  while (pr != NULL)
+    {
+    acct_data += " resources_used.";
+    acct_data += pr->rs_defin->rs_name;
+    acct_data += "=";
+
+    at_def.at_type = pr->rs_value.at_type;
+    if (attr_to_str(acct_data, &at_def, pr->rs_value, false) == NO_ATTR_DATA)
+      acct_data += empty;
+
+    pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+
+  return(PBSE_NONE);
+  } // END get_used()
+
+
+
+/*
+ * end_of_job_accounting()
+ *
+ * Records the end of job information for pjob
+ * 
+ * @param pjob      - the job for which we're recording accounting information
+ * @param acct_data - the output string
+ * @param accttail  - the position in acct_data before usage information is added
+ * @return PBSE_NONE on success
+ */
+
+int end_of_job_accounting(
+
+  job         *pjob,
+  std::string &acct_data,
+  size_t       accttail)
+
+  {
+  long  events = 0;
+
+  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
+  get_used(pjob, acct_data);
+
+  /* record accounting and maybe in log */
+  account_jobend(pjob, acct_data);
+
+  get_svr_attr_l(SRV_ATR_log_events, &events);
+  if (events & PBSEVENT_JOB_USAGE)
+    {
+    /* log events set to record usage */
+    log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      acct_data.c_str());
+    }
+  else
+    {
+    /* no usage in log, truncate message */
+    std::string noacctail = acct_data.substr(0, accttail - 1);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
+    }
+
+  return(PBSE_NONE);
+  } /* END end_of_job_accounting() */
+
+
+
+/*
+ * handle_complete_first_time()
+ */
 
 int handle_complete_first_time(
 
@@ -1676,6 +1765,9 @@ int handle_complete_first_time(
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
+  char         acctbuf[RESC_USED_BUF];
+  std::string  acct_data;
+  size_t       accttail;
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1725,6 +1817,15 @@ int handle_complete_first_time(
     if (KeepSeconds <= 0)
       KeepSeconds = JOBMUSTREPORTDEFAULTKEEP;
     }
+
+  /*
+   * After the job is officially considered completed, print information on the
+   * completed job to the accounting log.
+   */
+  accttail = acct_data.length();
+  sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+  acct_data = acctbuf;
+  end_of_job_accounting(pjob, acct_data, accttail);
 
   if (KeepSeconds <= 0)
     {
@@ -1867,8 +1968,6 @@ void handle_complete_second_time(
 
   return;
   } /* END handle_complete_second_time() */
-
-
 
 
 
@@ -2041,11 +2140,14 @@ void on_job_exit(
         handle_complete_subjob(pjob);
         }
       else if (type == WORK_Immed) /* WORK_Immed == PBSE_NONE.... */
+        {
         handle_complete_first_time(pjob);
+        }
       else
         {
         completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(0));
         }
+
       break;
 
     default:
@@ -2546,7 +2648,6 @@ void wait_for_send(
 
 
 
-
 int setrerun(
 
   job *pjob,
@@ -2570,7 +2671,6 @@ int setrerun(
 
   return(1);
   }  /* END setrerun() */
-
 
 
 
@@ -2910,41 +3010,6 @@ int handle_rerunning_heterogeneous_jobs(
   
   return(rc);
   } /* END handle_rerunning_heterogeneous_jobs() */
-
-
-
-
-int end_of_job_accounting(
-
-  job         *pjob,
-  std::string &acct_data,
-  size_t       accttail)
-
-  {
-  long  events = 0;
-
-  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
-  /* record accounting and maybe in log */
-  account_jobend(pjob, acct_data);
-
-  get_svr_attr_l(SRV_ATR_log_events, &events);
-  if (events & PBSEVENT_JOB_USAGE)
-    {
-    /* log events set to record usage */
-    log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      acct_data.c_str());
-    }
-  else
-    {
-    /* no usage in log, truncate message */
-    std::string noacctail = acct_data.substr(0, accttail - 1);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
-    }
-
-  return(PBSE_NONE);
-  } /* END end_of_job_accounting() */
 
 
 
@@ -3424,8 +3489,6 @@ int req_jobobit(
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
     }
 
-
-
   if ((exitstatus != JOB_EXEC_RETRY) &&
       (pjob->ji_parent_job != NULL))
     {
@@ -3530,8 +3593,8 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    end_of_job_accounting(pjob, acct_data, accttail);
     
+
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);
     }
