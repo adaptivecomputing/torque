@@ -215,6 +215,8 @@ enum srv_atr
   SRV_ATR_JobExclusiveOnUse,
   SRV_ATR_DisableAutoRequeue,
   SRV_ATR_ExitCodeCanceledJob,
+  SRV_ATR_TimeoutForJobDelete,
+  SRV_ATR_TimeoutForJobRequeue,
 
   /* This must be last */
   SRV_ATR_LAST
