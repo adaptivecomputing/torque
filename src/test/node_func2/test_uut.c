@@ -1126,7 +1126,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("remove_node_test");
   tcase_add_test(tc_core, remove_node_test);
-  /*suite_add_tcase(s, tc_core);*/
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("next_host_test");
   tcase_add_test(tc_core, next_host_test);
