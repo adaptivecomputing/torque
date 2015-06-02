@@ -232,7 +232,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1);
   std::stringstream out;
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
   my_placement_type.clear();
   
   a.place_type = exclusive_none;
@@ -296,6 +296,19 @@ START_TEST(test_exclusive_place)
   out.str("");
   c4.displayAsJson(out, true);
   fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+
+  // Make sure exclusive socket works across restarts
+  a.place_type = exclusive_socket;
+  c.free_task(jobid);
+  tasks = c.place_task(jobid, r, a, 1);
+  fail_unless(tasks == 1);
+  out.str("");
+  c.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
+
+  Chip copy_exclusive_socket(out.str());
+  fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
+  fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
   }
 END_TEST
 

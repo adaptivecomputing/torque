@@ -1119,6 +1119,8 @@ int Chip::place_task(
   hwloc_uint64_t mem_per_task = r.getMemory();
   int            practical_place = master.place_type;
 
+  a.place_type = master.place_type;
+
   // Practically, we should treat place=node, place=socket, and
   // place=numachip as the same
   if ((practical_place == exclusive_socket) ||
