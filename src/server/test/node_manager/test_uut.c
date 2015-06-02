@@ -375,6 +375,7 @@ START_TEST(remove_job_from_node_test)
   {
   job_usage_info jui(1);
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  pnode->nd_name = strdup("napali");
 
   for (int i = 0; i < 10; i++)
     pnode->nd_slots.add_execution_slot();
@@ -427,6 +428,8 @@ START_TEST(sync_node_jobs_with_moms_test)
   {
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
   extern bool     job_mode;
+
+  pnode->nd_name = strdup("napali");
 
   job_mode = true;
   for (int i = 0; i < 9; i++)

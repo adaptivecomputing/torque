@@ -20,8 +20,10 @@
 #include "threadpool.h"
 #include "id_map.hpp"
 #include "machine.hpp"
+#include "complete_req.hpp"
 
 
+char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
 int str_to_attr_count;
 int decode_resc_count;
 int SvrNodeCt = 0; 
@@ -631,16 +633,22 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   return(0);
   }
 
+void complete_req::set_hostlists(const char *job_id, const char *hostname) {}
+
+complete_req::complete_req(list_link &resource_list) {}
+
 void Machine::free_job_allocation(const char *jobid)
   {
   }
 
+void Machine::displayAsJson(stringstream &out, bool include_jobs) const {}
+
 int Machine::place_job(
 
-  job    *pjob,
-  string &cpu_string,
-  string &mem_string,
-  int     num_ppn)
+  job        *pjob,
+  string     &cpu_string,
+  string     &mem_string,
+  const char *hostname)
 
   {
   return(0);

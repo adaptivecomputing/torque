@@ -80,6 +80,8 @@ Chip::~Chip()
   {
   }
 
+void Chip::aggregate_allocations(std::vector<allocation> &master_list) {}
+
 void Chip::displayAsJson(
 
   std::stringstream &out,

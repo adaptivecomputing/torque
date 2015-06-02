@@ -172,7 +172,7 @@ START_TEST(test_place_and_free_job)
   num_for_host = 4;
   num_tasks_fit = 4;
   num_placed = 4;
-  m.place_job(&pjob, cpu, mem, 0);
+  m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   // Make sure we call free tasks once per socket
@@ -186,7 +186,7 @@ START_TEST(test_place_and_free_job)
   num_tasks_fit = 4;
   num_placed = 4;
   called_place_task = 0;
-  m.place_job(&pjob, cpu, mem, 0);
+  m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   num_tasks_fit = 0;
@@ -197,7 +197,7 @@ START_TEST(test_place_and_free_job)
   partially_placed = true;
   called_partially_place = 0;
   called_fits_on_socket = 0;
-  m.place_job(&pjob, cpu, mem, 0);
+  m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_partially_place == 1, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 1);
   
@@ -207,7 +207,7 @@ START_TEST(test_place_and_free_job)
   my_req_count = 1;
   num_for_host = 1;
 
-  m.place_job(&pjob, cpu, mem, 0);
+  m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_partially_place == 2, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 3);
   }
