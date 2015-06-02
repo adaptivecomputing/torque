@@ -21,6 +21,8 @@
 #include "mom_job_cleanup.h"
 
 int server_down;
+int called_open_socket = 0;
+int called_fork_me = 0;
 
 std::vector<exiting_job_info> exiting_job_list;
 
@@ -804,6 +806,7 @@ int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_kil
 
 int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
   {
+  called_open_socket++;
   int sock = 1;
   if (func_num == POST_EPILOGUE)
     {
@@ -1113,6 +1116,8 @@ int job_unlink_file(job *pjob, const char *name)
 
 pid_t fork_me(int conn)
   {
+  called_fork_me++;
+
   int rc = 0;
   if (func_num == PREOBIT_REPLY)
     {
