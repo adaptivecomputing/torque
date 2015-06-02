@@ -5774,7 +5774,6 @@ void check_jobs_in_mom_wait()
 
 
 
-
 void check_exiting_jobs()
 
   {
