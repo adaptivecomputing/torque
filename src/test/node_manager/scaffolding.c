@@ -437,6 +437,9 @@ char *threadsafe_tokenizer(char **str, const char *delims)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (index == SRV_ATR_CrayEnabled)
+    *l = 1;
+
   return(0);
   }
 

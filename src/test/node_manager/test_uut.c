@@ -16,7 +16,7 @@ const char *l11 =    "l11";
 struct server server;
 
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
-int   node_in_exechostlist(char *, char *);
+bool  node_in_exechostlist(const char *, char *, const char *);
 char *get_next_exec_host(char **);
 int   job_should_be_killed(std::string &, int, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
@@ -482,18 +482,24 @@ START_TEST(node_in_exechostlist_test)
   char *node4 = (char *)"tommy";
   char *node5 = (char *)"tom1";
 
-  fail_unless(node_in_exechostlist(node1, eh1) == TRUE, "blah1");
-  fail_unless(node_in_exechostlist(node2, eh1) == TRUE, "blah2");
-  fail_unless(node_in_exechostlist(node3, eh1) == FALSE, "blah3");
-  fail_unless(node_in_exechostlist(node4, eh1) == FALSE, "blah4");
-  fail_unless(node_in_exechostlist(node5, eh1) == FALSE, "blah5");
+  fail_unless(node_in_exechostlist(node1, eh1, NULL) == true, "blah1");
+  fail_unless(node_in_exechostlist(node2, eh1, NULL) == true, "blah2");
+  fail_unless(node_in_exechostlist(node3, eh1, NULL) == false, "blah3");
+  fail_unless(node_in_exechostlist(node4, eh1, NULL) == false, "blah4");
+  fail_unless(node_in_exechostlist(node5, eh1, NULL) == false, "blah5");
   
-  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
-  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
-  fail_unless(node_in_exechostlist(node2, eh2) == FALSE, "blah7");
-  fail_unless(node_in_exechostlist(node3, eh2) == TRUE, "blah8");
-  fail_unless(node_in_exechostlist(node4, eh2) == TRUE, "blah9");
-  fail_unless(node_in_exechostlist(node5, eh2) == TRUE, "blah10");
+  fail_unless(node_in_exechostlist(node1, eh2, NULL) == false, "blah6");
+  fail_unless(node_in_exechostlist(node1, eh2, NULL) == false, "blah6");
+  fail_unless(node_in_exechostlist(node2, eh2, NULL) == false, "blah7");
+  fail_unless(node_in_exechostlist(node3, eh2, NULL) == true, "blah8");
+  fail_unless(node_in_exechostlist(node4, eh2, NULL) == true, "blah9");
+  fail_unless(node_in_exechostlist(node5, eh2, NULL) == true, "blah10");
+  
+  // Test the login node piece working
+  fail_unless(node_in_exechostlist(node1, eh2, node1) == true);
+  fail_unless(node_in_exechostlist(node3, eh1, node3) == true);
+  fail_unless(node_in_exechostlist(node3, eh1, node1) == false);
+  fail_unless(node_in_exechostlist(node4, eh1, node3) == false);
   }
 END_TEST
 
