@@ -233,6 +233,12 @@ int add_mic_status(
     return(PBSE_NONE);
 #endif
 
+  for (unsigned int i = 0; i < MAX_ENGINES; i++)
+    {
+    memset(engine[i], 0, sizeof(COIENGINE));
+    memset(mic_stat[i], 0, sizeof(COIENGINE));
+    }
+
   if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
     {
     log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
