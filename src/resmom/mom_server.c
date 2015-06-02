@@ -588,8 +588,8 @@ int mom_server_add(
 
 void mom_server_stream_error(
 
-  int   stream,
-  char *name,
+  int         stream,
+  const char *name,
   const char *id,
   const char *message)
 
@@ -649,8 +649,8 @@ int mom_server_flush_io(
 int is_compose(
 
   struct tcp_chan *chan,
-  char *server_name,
-  int   command)
+  const char      *server_name,
+  int              command)
 
   {
   int ret;
@@ -1112,7 +1112,7 @@ int write_update_header(
     
   struct tcp_chan *chan,
   const char *id,
-  char       *name)
+  const char *name)
 
   {
   int  ret;
@@ -1424,7 +1424,7 @@ void node_comm_error(
   const char *message)
  
   {
-  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
+  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name.c_str());
   log_err(-1, "Node communication process",log_buffer);
   
   close(nc->stream);
@@ -1449,7 +1449,7 @@ int write_status_strings(
   if (LOGLEVEL >= 9)
     {
     snprintf(log_buffer, sizeof(log_buffer),
-      "Attempting to send status update to mom %s", nc->name);
+      "Attempting to send status update to mom %s", nc->name.c_str());
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
  
@@ -1457,7 +1457,7 @@ int write_status_strings(
     {
     }
   /* write protocol */
-  else if ((rc = write_update_header(chan,__func__,nc->name)) != DIS_SUCCESS)
+  else if ((rc = write_update_header(chan,__func__,nc->name.c_str())) != DIS_SUCCESS)
     {
     }
   else if ((rc = write_my_server_status(chan,__func__, strings, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
@@ -1475,7 +1475,7 @@ int write_status_strings(
     if (LOGLEVEL >= 7)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully sent status update to mom %s", nc->name);
+        "Successfully sent status update to mom %s", nc->name.c_str());
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
       }
     }
@@ -1748,9 +1748,17 @@ void mom_server_all_update_stat(void)
         }
 
       if (buf[0] != '0')
-          num_stat_update_failures++;
+        num_stat_update_failures++;
       else
-          num_stat_update_failures = 0;
+        {
+        num_stat_update_failures = 0;
+        for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+          {
+          if (mom_servers[sindex].pbs_servername[0] == '\0')
+            continue;
+          mom_servers[sindex].MOMLastSendToServerTime = time_now;
+          }
+        }
 
       return;
       }
@@ -2865,13 +2873,14 @@ void check_state(
 #if MOMCHECKLOCALSPOOL
     {
     char *sizestr;
-    u_Long freespace;
+    u_Long freespace = 0;
     extern char *size_fs(char *);  /* FIXME: put this in a header file */
 
     /* size_fs() is arch-specific method in mom_mach.c */
     sizestr = size_fs(path_spool);  /* returns "free:total" */
 
-    freespace = atoL(sizestr);
+    if (sizestr != NULL)
+      freespace = atoL(sizestr);
 
     if (freespace < TMINSPOOLBLOCKS)
       {
@@ -2916,7 +2925,7 @@ void check_state(
           if (LOGLEVEL >= 1)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-            "Setting node to down. The node health script output the following message:\n%s\n",
+            "Setting node to down. The node health script output the following message: %s",
             tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }
@@ -2928,7 +2937,7 @@ void check_state(
           if (LOGLEVEL >= 3)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              "Node health script ran and says the node is healthy with this message: %s",
               tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }

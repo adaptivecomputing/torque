@@ -1,7 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 CLEANFILES = *.gcda *.gcno *.gcov
 
 DIST_SUBDIRS=
@@ -14,7 +12,7 @@ include_HEADERS = array_func.h issue_request.h job_func.h node_func.h node_manag
                   req_rescq.h req_runjob.h req_select.h req_shutdown.h req_signal.h\
                   req_stat.h req_track.h req_modify_node.h svr_connect.h svr_jobfunc.h\
                   queue_recycler.h svr_movejob.h svr_func.h ji_mutex.h job_route.h\
-                  job_recov.h mom_hierarchy_handler.h 
+                  job_recov.h mom_hierarchy_handler.h completed_jobs_map.h
 
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
@@ -29,7 +27,7 @@ AM_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIR
 AM_LIBS   =`xml2-config --libs`
 
 pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
-		     dis_read.c geteusernam.c \
+		     dis_read.c geteusernam.c get_path_jobdata.c \
 		     issue_request.c job_attr_def.c job_func.c job_recov.c \
 		     job_route.c node_attr_def.c node_func.c \
 		     node_manager.c pbsd_init.c pbsd_main.c \
@@ -50,7 +48,8 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
              batch_request.c user_info.c job_container.c exiting_jobs.c \
              receive_mom_communication.c process_mom_update.c execution_slot_tracker.cpp \
              job_usage_info.cpp incoming_request.c delete_all_tracker.cpp id_map.cpp \
-             node_power_state.c req_modify_node.c mom_hierarchy_handler.cpp
+             node_power_state.c req_modify_node.c mom_hierarchy_handler.cpp \
+             completed_jobs_map.cpp
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :
@@ -63,11 +62,3 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

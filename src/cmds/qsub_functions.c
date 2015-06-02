@@ -1212,8 +1212,8 @@ static int get_script(
 
   if ((tmpfd = mkstemp(tmp_name)) < 0)
     {
-    fprintf(stderr, "qsub: could not create copy of script %s\n",
-            tmp_name);
+    fprintf(stderr, "qsub: could not create copy of script %s - %s\n",
+            tmp_name, strerror(errno));
 
     return(4);
     }
@@ -4483,18 +4483,18 @@ void main_func(
                   &new_jobname,
                   &errmsg);
 
-    if (retry_submit_error(local_errno))
+    /* If we get a timeout the server is busy. Let the user 
+       know what is taking so long */
+    if (local_errno == PBSE_TIMEOUT)
+      fprintf(stdout, "Connection to server timed out. Trying again");
+    else if ((local_errno != PBSE_STAGEIN) &&
+	           (local_errno != PBSE_NOCOPYFILE) &&
+	           (local_errno != PBSE_DISPROTO) &&
+	           (local_errno != PBSE_SERVER_BUSY))
       {
-      if (local_errno != PBSE_NONE)
-        sleep(1);
-
-      /* If we get a timeout the server is busy. Let the user 
-         know what is taking so long */
-      if (local_errno == PBSE_TIMEOUT)
-        fprintf(stdout, "Connection to server timed out. Trying again");
+      retries = MAX_RETRIES;
       }
-    else
-      break;
+
 
     } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
 
@@ -4504,9 +4504,10 @@ void main_func(
       {
       errmsg = pbs_strerror(local_errno);
       }
-
+    
     if (errmsg != NULL)
       fprintf(stderr, "qsub: submit error (%s)\n", errmsg);
+    
     else
       fprintf(stderr, "qsub: Error (%d - %s) submitting job\n",
               local_errno, pbs_strerror(local_errno));

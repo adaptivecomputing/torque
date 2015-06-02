@@ -257,7 +257,7 @@ int attr_to_str(
 
     case ATR_TYPE_SIZE:
 
-      sprintf(local_buf,"%lu",attr.at_val.at_size.atsv_num);
+      size_to_str(attr.at_val.at_size, local_buf, sizeof(local_buf));
       ds += local_buf;
 
       break;
@@ -327,7 +327,8 @@ int attr_to_str(
             ds += current->rs_defin->rs_name;
             ds += ">";
 
-            sprintf(local_buf,"%lu",current->rs_value.at_val.at_size.atsv_num);
+            size_to_str(current->rs_value.at_val.at_size, local_buf, sizeof(local_buf));
+
             ds += local_buf;
 
             ds += "</";

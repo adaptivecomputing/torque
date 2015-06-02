@@ -214,7 +214,7 @@ void delay_and_send_sig_kill(
 
     delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                            &server.sv_attr[SRV_ATR_KillDelay],
-                           0);
+                           DEFAULT_KILL_DELAY);
     }
   else
     {
@@ -296,9 +296,8 @@ void post_rerun(
 
   if (preq->rq_reply.brp_code != 0)
     {
-    sprintf(log_buf, "rerun signal reject by mom: %d", preq->rq_reply.brp_code);
-
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_signal.rq_jid,log_buf);
+    sprintf(log_buf, "rerun signal reject by mom: %s - %d", preq->rq_ind.rq_signal.rq_jid, preq->rq_reply.brp_code);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
     if ((pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE)))
       {
@@ -497,6 +496,8 @@ int req_rerunjob(
       return(PBSE_UNKQUE);
       }
     
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+
     if(delay != 0)
       {
       static const char *rerun = "rerun";

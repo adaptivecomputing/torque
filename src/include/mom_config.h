@@ -189,6 +189,7 @@ unsigned long setdownonerror(const char *value);
 unsigned long setenablemomrestart(const char *value);
 unsigned long setrcpcmd(const char *value);
 unsigned long setjobdirectorysticky(const char *value);
+unsigned long setcudavisibledevices(const char *value);
 
 #ifdef PENABLE_LINUX26_CPUSETS
 unsigned long setmempressthr(const char *);

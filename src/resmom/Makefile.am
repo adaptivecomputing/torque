@@ -1,6 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
 SUBDIRS = @PBS_MACH@
 
 DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
@@ -77,11 +76,3 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

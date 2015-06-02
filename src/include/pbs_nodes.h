@@ -270,12 +270,13 @@ typedef struct nodeboard_t
 #define SEND_HELLO 11
 
 /* container for holding communication information */
-typedef struct received_node
+class received_node
   {
-  char            hostname[PBS_MAXNODENAME];
+  public:
+  std::string              hostname;
   std::vector<std::string> statuses;
   int                      hellos_sent;
-  } received_node;
+  };
 
 
 struct pbsnode

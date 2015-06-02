@@ -160,6 +160,7 @@ char           **maskclient = NULL; /* wildcard connections */
 char             MOMConfigVersion[64];
 int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
+int              MOMCudaVisibleDevices     = 1;
 double           wallfactor = 1.00;
 struct cphosts  *pcphosts = NULL;
 long             pe_alarm_time = PBS_PROLOG_TIME;
@@ -290,6 +291,8 @@ unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
+unsigned long setcudavisibledevices(const char *);
+unsigned long setcudavisibledevices(const char *);
 
 struct specials special[] = {
   { "alloc_par_cmd",       setallocparcmd },
@@ -370,6 +373,7 @@ struct specials special[] = {
   { "resend_join_job_wait_time", setresendjoinjobwaittime},
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { "jobdirectory_sticky", setjobdirectorysticky},
+  { "cuda_visible_devices", setcudavisibledevices},
   { NULL,                  NULL }
   };
 
@@ -3189,5 +3193,20 @@ const char *validuser(
 
   return("no");
   }    /* END validuser() */
+
+u_long setcudavisibledevices(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, "cudavisibledevices", value);
+
+  if ((enable = setbool(value)) != -1)
+    MOMCudaVisibleDevices = enable;
+
+  return(1);
+  }  /* END setcudavisibledevices() */
 
 

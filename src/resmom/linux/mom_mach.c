@@ -2962,12 +2962,6 @@ int kill_task(
             continue;
             }  /* END if (ps->pid == mompid) */
           
-          if ((sig == SIGKILL) || 
-              (sig == SIGTERM))
-            {
-            ++ctThisIteration; //Only count for killing don't count for any other signal.
-            }
-    
           if (sig == SIGKILL)
             {
             sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
@@ -2976,9 +2970,22 @@ int kill_task(
             log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
             
             if (pg == 0)
-              kill(ps->pid, SIGTERM);
+              {
+              /* make sure we only send a SIGTERM one time */
+              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                {
+                kill(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
             else
-              killpg(ps->pid, SIGTERM);
+              {
+              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                {
+                killpg(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
             
             for (i = 0;i < 20;i++)
               {
@@ -3041,9 +3048,30 @@ int kill_task(
                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                 
                 if (pg == 0)
-                  kill(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    }
+                  /* make sure we only send a SIGTERM one time */
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
                 else
-                  killpg(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    }
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
                 }
               }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
             }      /* END if (i >= 20) */
@@ -3065,7 +3093,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations <= 5) && (loopCt++ < 20));
+    } while ((ctCleanIterations == 0) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */

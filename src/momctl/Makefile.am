@@ -1,7 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 
@@ -20,11 +18,3 @@ install-exec-hook:
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

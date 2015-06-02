@@ -30,7 +30,8 @@
 enum ArrayEventsEnum {
   aeQueue = 0,
   aeRun,
-  aeTerminate
+  aeTerminate,
+  aeRerun
 }; /* END ArrayEventsEnum */
 
 typedef struct
@@ -160,7 +161,7 @@ typedef container::item_container<job_array *>::item_iterator all_arrays_iterato
 #define NUM_CLONED_TAG "number_cloned"
 #define NUM_STARTED_TAG "number_started"
 #define NUM_FAILED_TAG "number_failed"
-#define NUM_SUCCESSFULL_TAG "number_successfull"
+#define NUM_SUCCESSFUL_TAG "number_successful"
 #define OWNER_TAG "owner"
 #define PARENT_TAG "parent_id"
 #define ARRAY_FILEPREFIX_TAG "fileprefix"
@@ -179,7 +180,7 @@ int  array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
 
 job_array *get_array(char *id);
-int array_recov(char *path, job_array **pa);
+int array_recov(const char *path, job_array **pa);
 
 int delete_array_range(job_array *pa, char *range);
 int delete_whole_array(job_array *pa);
@@ -191,7 +192,7 @@ void hold_job(pbs_attribute *,void *);
 int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int);
 int modify_job(void **,svrattrl *,struct batch_request *,int, int);
 
-void update_array_values(job_array *,int,enum ArrayEventsEnum, char *job_id, long job_atr_hold, int job_exit_status);
+void update_array_values(job_array *,int,enum ArrayEventsEnum, const char *job_id, long job_atr_hold, int job_exit_status);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
 bool set_array_depend_holds(job_array *);

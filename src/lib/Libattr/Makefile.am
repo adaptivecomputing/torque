@@ -2,8 +2,6 @@ include $(top_srcdir)/buildutils/config.mk
 
 DIST_SUBDIRS =
 
-CHECK_DIR = test
-
 CLEANFILES = *.gcda *.gcno *.gcov
 
 include_HEADERS = attr_node_func.h
@@ -18,11 +16,4 @@ libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \
 	       attr_str_conversion.c attr_fn_freq.c req.cpp complete_req.cpp \
 				 attr_fn_complete_req.c attr_fn_attr_req_info.c attr_req_info.cpp
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

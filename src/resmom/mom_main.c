@@ -138,7 +138,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[BUF_SIZE];
+char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
@@ -207,7 +207,7 @@ time_t          last_log_check;
 std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
-mom_hierarchy_t  *mh;
+mom_hierarchy_t  *mh = NULL;
 
 #ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
@@ -238,6 +238,10 @@ int             MOMPrologFailureCount;
 
 char            MOMUNameMissing[64];
 
+extern int      MOMConfigDownOnError;
+extern int      MOMConfigRestart;
+extern int      MOMCudaVisibleDevices; /* on by default starting in 4.2.8 */
+extern int      MOMConfigRReconfig;
 long            system_ncpus = 0;
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
@@ -306,7 +310,6 @@ static int recover_set = FALSE;
 
 static int      call_hup = 0;
 char           *path_log;
-
 
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
@@ -2425,6 +2428,21 @@ void set_report_mom_rolling_restart(
   } /* END set_report_mom_rolling_restart() */
 
 
+void set_report_mom_cuda_visible_devices(
+    
+    std::stringstream &output, 
+    char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcudavisibledevices(curr + 1);
+    }
+
+  output << "cuda_visible_devices=" << MOMCudaVisibleDevices;
+  } /* END set_report_mom_cuda_visible_devices() */
+
+
 
 void set_report_rcpcmd(
 
@@ -2683,6 +2701,10 @@ int process_rm_cmd_request(
       else if (!strncasecmp(name, "diag", strlen("diag")))
         {
         ret = process_diag_request(output, name);
+        }
+       else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
+        {
+        set_report_mom_cuda_visible_devices(output, curr);
         }
       else
         {
@@ -3461,7 +3483,8 @@ int kill_job(
 
   while (ptask != NULL)
     {
-    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+    if ((ptask->ti_qs.ti_status == TI_STATE_RUNNING) ||
+       (ptask->ti_qs.ti_status == TI_STATE_SIGTERM))
       {
       if (LOGLEVEL >= 4)
         {
@@ -4122,9 +4145,6 @@ void parse_command_line(
 
       case '-':
 
-        if (optarg == NULL)
-          break;
-
         if (!strcmp(optarg, "about"))
           {
           printf("package:     %s\n", PACKAGE_STRING);
@@ -4428,7 +4448,7 @@ bool verify_mom_hierarchy()
       for (unsigned int k = 0; k < nodes.size(); k++)
         {
         node_comm_t &nc = nodes[k];
-        if (!strcmp(nc.name, mom_alias))
+        if (nc.name == mom_alias)
           continue_on_path = false;
         else
           {
@@ -4446,10 +4466,10 @@ bool verify_mom_hierarchy()
           {
           node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name.c_str(), NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc.name,
+                              nc.name.c_str(),
                               addr_info,
                               ntohs(nc.sock_addr.sin_port),
                               path_index,
@@ -4663,12 +4683,11 @@ int setup_program_environment(void)
 #endif
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
-#ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
-#endif
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
+  int           network_retries = 0;
 
   /* must be started with real and effective uid of 0 */
   if (IamRoot() == 0)
@@ -4880,21 +4899,31 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
 
-  if(multi_mom)
+  if (multi_mom)
     {
-	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
     }
   else
     {
-	nd_frequency.get_base_frequencies(mom_home);
+    nd_frequency.get_base_frequencies(mom_home);
     }
 
-  /* initialize the network interface */
-
-  if (init_network(pbs_mom_port, mom_process_request) != 0)
+  // initialize the network interface - try up to 4 times so restarts are successful
+  while (((rc = init_network(pbs_mom_port, mom_process_request)) != 0) &&
+         (network_retries < 3))
     {
     c = errno;
 
+    if (c != EADDRINUSE)
+      break;
+
+    sleep(1);
+
+    network_retries++;
+    }
+
+  if (rc != PBSE_NONE)
+    {
     sprintf(log_buffer, "server port = %u, errno = %d (%s)",
       pbs_mom_port,
       c,
@@ -5600,14 +5629,6 @@ void examine_all_polled_jobs(void)
       continue;
       }
 
-    if (c & JOB_SVFLG_OVERLMT1)
-      {
-      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-      continue;
-      }
 
     if (c & JOB_SVFLG_JOB_ABORTED)
       {
@@ -5644,7 +5665,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
       }
     }    /* END for (pjob) */
 
@@ -5918,6 +5939,7 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+
 //If we have a job that's exiting we should call scan for exiting.
 bool call_scan_for_exiting()
   {
@@ -5935,6 +5957,8 @@ bool call_scan_for_exiting()
     }
   return false;
   }
+
+
 
 void check_exiting_jobs()
 
@@ -7118,6 +7142,8 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+
 
 /* END mom_main.c */
 

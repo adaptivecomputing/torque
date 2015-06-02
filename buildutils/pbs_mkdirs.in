@@ -269,7 +269,10 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/checkpoint 1777 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/jobs 750 || return 1
-	install_dir $PBS_SERVER_HOME/server_priv/node_usage 750 || return 1
+        # make the numbered directories (used if use_jobs_subdirs server parameter set)
+        for i in {0..9}; do
+	  install_dir $PBS_SERVER_HOME/server_priv/jobs/$i 750 || return 1
+        done
 	install_dir $PBS_SERVER_HOME/server_priv/hostlist 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/queues 750 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/acl_svr 750 || return 1
@@ -284,6 +287,10 @@ mk_server_dirs()
 	install_dir $PBS_SERVER_HOME/sched_priv/accounting 755 || return 1
 	install_dir $PBS_SERVER_HOME/sched_logs 755 || return 1
 	install_dir $PBS_SERVER_HOME/server_priv/arrays 750 || return 1
+        # make the numbered directories (used if use_jobs_subdirs server parameter set)
+        for i in {0..9}; do
+	  install_dir $PBS_SERVER_HOME/server_priv/arrays/$i 750 || return 1
+        done
 	install_dir $PBS_SERVER_HOME/server_priv/credentials 750 || return 1
 
 	test -f $PBS_ENVIRON || check_env || return 1

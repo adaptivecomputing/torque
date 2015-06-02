@@ -757,6 +757,9 @@ resource *find_resc_entry(
   {
   resource *pr;
 
+  if (pattr == NULL)
+    return(NULL);
+
   pr = (resource *)GET_NEXT(pattr->at_val.at_list);
 
   while (pr != NULL)

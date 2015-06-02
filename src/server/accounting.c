@@ -568,8 +568,6 @@ void account_jobend(
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
   long                walltime_val = 0;
-#else
-  time_t              time_now = time(NULL);
 #endif
 
   if ((acct_job(pjob, ds)) != PBSE_NONE)
@@ -620,7 +618,7 @@ void account_jobend(
     }
   sprintf(local_buf, "end=%ld ", (long)pjob->ji_qs.ji_stime + walltime_val);
 #else
-  sprintf(local_buf, "end=%ld ", (long)time_now);
+  sprintf(local_buf, "end=%ld ", (long)pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
 #endif /* USESAVEDRESOURCES */
 
   ds += local_buf;

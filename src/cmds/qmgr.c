@@ -821,10 +821,12 @@ void blanks(
 
 int check_list(
 
-  char *list)
+  int         type,
+  const char *list)
 
   {
-  char *foreptr, *backptr;
+  const char *foreptr;
+  const char *backptr;
 
   backptr = list;
 
@@ -836,9 +838,22 @@ int check_list(
      * if all objects of the same type are wanted
      */
 
-    if (!isalpha(*backptr) && (*backptr != '@') && (*backptr != ':'))
+    if (type != MGR_OBJ_NODE)
       {
-      return(backptr - list ? backptr - list : 1);
+      if (!isalpha(*backptr) && (*backptr != '@') && (*backptr != ':'))
+        {
+        return(backptr - list ? backptr - list : 1);
+        }
+      }
+    else
+      {
+      if ((!isalpha(*backptr)) &&
+          (!isdigit(*backptr)) &&
+          (*backptr != '@') &&
+          (*backptr != ':'))
+        {
+        return(backptr - list ? backptr - list : 1);
+        }
       }
 
     while ((*foreptr != ',') && (*foreptr != '@') && !EOL(*foreptr))
@@ -883,7 +898,7 @@ int check_list(
 
   /* SUCCESS */
 
-  return(0);
+  return(PBSE_NONE);
   }  /* END check_list() */
 
 
@@ -2378,7 +2393,7 @@ int parse(
         }
       else
         {
-        error = check_list(req[IND_NAME]);
+        error = check_list(*type, req[IND_NAME]);
 
         if (error != 0)
           {

@@ -201,7 +201,10 @@ typedef enum
 /* Global Variables */
 extern node_internals internal_layout;
 
-
+extern int            MOMCudaVisibleDevices;
+extern int            exec_with_exec;
+extern int            attempttomakedir;
+extern int            spoolasfinalname;
 extern int            num_var_env;
 extern char         **environ;
 extern int            exiting_tasks;
@@ -222,6 +225,14 @@ extern u_long         localaddr;
 
 extern int            multi_mom;
 extern unsigned int   pbs_rm_port;
+extern int            LOGLEVEL;
+extern int            EXTPWDRETRY;
+extern long           TJobStartBlockTime;
+
+extern char           jobstarter_exe_name[];
+extern char           mom_alias[];
+extern char           mom_host[];
+extern int            jobstarter_set;
 
 extern char           path_checkpoint[];
 
@@ -1356,34 +1367,37 @@ int get_indices_from_exec_str(
       {
       numa_offset = 0;
 
-#ifdef NUMA_SUPPORT
-      dash1 = strrchr(tok, '-');
-
-      if (dash1 != NULL)
+      if (!strncmp(tok, mom_alias, strlen(mom_alias)))
         {
-        *dash1 = '\0';
-        dash2 = strrchr(tok, '-');
+#ifdef NUMA_SUPPORT
+        dash1 = strrchr(tok, '-');
 
-        if (dash2 != NULL)
+        if (dash1 != NULL)
           {
-          numa_index = strtol(dash2+1, NULL, 10);
+          *dash1 = '\0';
+          dash2 = strrchr(tok, '-');
 
-          if (numa_index < num_node_boards)
-            numa_offset = node_boards[numa_index].mic_start_index;
+          if (dash2 != NULL)
+            {
+            numa_index = strtol(dash2+1, NULL, 10);
+
+            if (numa_index < num_node_boards)
+              numa_offset = node_boards[numa_index].mic_start_index;
+            }
+
+          *dash1 = '-';
           }
-
-        *dash1 = '-';
-        }
 #endif
 
-      if ((slash = strchr(tok, '/')) != NULL)
-        {
-        index = strtol(slash+1, NULL, 10) + numa_offset;
+        if ((slash = strchr(tok, '/')) != NULL)
+          {
+          index = strtol(slash+1, NULL, 10) + numa_offset;
 
-        if (buf[0] != '\0')
-          snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
-        else
-          snprintf(buf, buf_size, "%d", index);
+          if (buf[0] != '\0')
+            snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
+          else
+            snprintf(buf, buf_size, "%d", index);
+          }
         }
 
       tok = strtok(NULL, "+");
@@ -1395,6 +1409,118 @@ int get_indices_from_exec_str(
   return(PBSE_NONE);
   } /* END get_indices_from_exec_str() */
 
+
+/*
+ * get_num_nodes_ppn
+ *
+ * parses a "nodes" resource string
+ *
+ * the "nodes" resource string is in the format:
+ * <count>|<hostname>[:ppn=<pcount>][+ ...]
+ * e.g.: 20:ppn=10+redwood:ppn=5+timber
+ *
+ * note that the ppn count (if provided) is only taken from the
+ * first token (as separated by '+')
+ *
+ * @param res_str - the string we're parsing
+ * @param num_nodes - the node count calculated from res_str (if no errors)
+ * @param num_ppn - the ppn count calculated from res_str (if no errors)
+ *
+ * Returns: PBSE_NONE if no error and num_nodes and num_ppn may be modified
+ *          1 if error; num_nodes and num_ppn are not modified
+ */
+
+int get_num_nodes_ppn(
+
+  const char *res_str,
+  int        *num_nodes,
+  int        *num_ppn)
+
+  {
+  const char *ppn_str = "ppn=";
+  unsigned long n;
+  char *tmp;
+  char *other_reqs;
+  int node_count = 1;
+  int ppn_count = 1;
+
+  // make sure all parameters point to something
+  if ((res_str == NULL) || (*res_str == '\0') ||
+      (num_nodes == NULL) || (num_ppn == NULL))
+    return(1);
+
+  // get node count
+  if ((n = strtol(res_str, NULL, 10)) > 0)
+    {
+    // overflow?
+    if (errno == ERANGE)
+      return(1);
+
+    // have count
+    node_count = n;
+    }
+  else if (!isalpha(*res_str))
+    {
+    // didn't have a hostname so flag unknown usage
+    return(1);
+    }
+
+  // try to find ppn string on first token
+  if ((tmp = strstr((char *)res_str, ppn_str)) != NULL)
+    {
+    tmp += strlen(ppn_str);
+        
+    if ((n = strtol(tmp, NULL, 10)) > 0)
+      {
+      // overflow?
+      if (errno == ERANGE)
+        return(1);
+
+      ppn_count = n;
+      }
+    else
+      {
+      // unknown usage
+      return(1);
+      }
+    }
+  
+  other_reqs = (char *)res_str;
+ 
+  // process rest of resource string counting only nodes (not ppns)
+  while ((other_reqs = strchr(other_reqs, '+')) != NULL)
+    {
+    // skip '+'
+    other_reqs++;
+  
+    // do we have a node count?
+    if ((n = strtol(other_reqs, &other_reqs, 10)) > 0)
+      {
+      // overflow?
+      if (errno == ERANGE)
+        return(1);
+
+      // have a node count so increment by the count
+      node_count += n;
+      }
+    else if (isalpha(*other_reqs))
+      {
+      // have a single hostname (not a node count) so just increment by 1
+      node_count++;
+      }
+    else
+      {
+      // unknown usage
+      return(1);
+      }
+    }
+
+    // return the final counts
+    *num_nodes = node_count;
+    *num_ppn = ppn_count;
+
+    return(PBSE_NONE);
+  }
 
 
 /* Sets up env for a user process, used by TMomFinalizeJob1, start_process,
@@ -1608,8 +1734,11 @@ int InitUserEnv(
 
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL)
     {
-    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
-    bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
+    if (MOMCudaVisibleDevices)
+      {
+      get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
+      bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
+      }
     }
 
   // add the hostname to the environment
@@ -1642,39 +1771,13 @@ int InitUserEnv(
     bld_env_variables(&vtable, variables_else[tveNumNodes], buf);
     }
 
-  /* PBS_NUM_NODES and PBS_NPPN */
+  /* PBS_NUM_NODES and PBS_NUM_PPN */
   prd = find_resc_def(svr_resc_def,"nodes",svr_resc_size);
 
   presc = find_resc_entry(pattr,prd);
 
   if (presc != NULL)
-    {
-    const char *ppn_str = "ppn=";
-    char       *tmp;
-    char       *other_reqs;
-    
-    if (presc->rs_value.at_val.at_str != NULL)
-      {
-      num_nodes = strtol(presc->rs_value.at_val.at_str, NULL, 10);
-      if (num_nodes != 0)
-        {
-        if ((tmp = strstr(presc->rs_value.at_val.at_str,ppn_str)) != NULL)
-          {
-          tmp += strlen(ppn_str);
-          
-          num_ppn = strtol(tmp, NULL, 10);
-          }
-
-        other_reqs = presc->rs_value.at_val.at_str;
-
-        while ((other_reqs = strchr(other_reqs, '+')) != NULL)
-          {
-          other_reqs += 1;
-          num_nodes += strtol(other_reqs, &other_reqs, 10);
-          }
-        }
-      }
-    }
+    get_num_nodes_ppn(presc->rs_value.at_val.at_str, &num_nodes, &num_ppn);
 
   /* these values have been initialized to 1, and will always be in the
    * environment */

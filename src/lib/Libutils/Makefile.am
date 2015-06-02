@@ -1,7 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 
@@ -18,11 +16,3 @@ libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c \
 										 machine.cpp numa_chip.cpp numa_core.cpp numa_pci_device.cpp \
 										 numa_socket.cpp allocation.cpp
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

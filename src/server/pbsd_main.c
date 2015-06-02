@@ -147,6 +147,7 @@
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
 #include "track_alps_reservations.h"
+#include "completed_jobs_map.h"
 
 
 #define TASK_CHECK_INTERVAL      10
@@ -198,7 +199,7 @@ extern int             run_change_logs;
 
 /* External Functions */
 
-extern int    recov_svr_attr (int);
+extern int   recov_svr_attr (int);
 extern void  change_logs_handler(int);
 extern void  change_logs();
 
@@ -221,6 +222,7 @@ int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
 int                     high_availability_mode = FALSE;
+int                     paused;
 char                   *acct_file = NULL;
 char                   *log_file  = NULL;
 char                   *job_log_file = NULL;
@@ -274,7 +276,7 @@ int                     route_retry_interval = 10; /* time in seconds to check r
 char                    Torque_Info_Version[] = PACKAGE_VERSION;
 char                    Torque_Info_Version_Revision[] = GIT_HASH;
 char                    Torque_Info_Component[] = "pbs_server";
-char                    Torque_Info_SysVersion[BUF_SIZE];
+char                    Torque_Info_SysVersion[MAX_LINE];
 
 /* HA global data items */
 long                    HALockCheckTime = 0;
@@ -396,6 +398,7 @@ static void need_y_response(
   }  /* END need_y_response() */
  
 
+completed_jobs_map_class completed_jobs_map;
 
 void clear_listeners(void)   /* I */
 
@@ -457,7 +460,9 @@ int PBSShowUsage(
   fprintf(stderr, "  -L <PATH> \\\\ Logfile\n");
   fprintf(stderr, "  -l <PORT> \\\\ Listener Port\n");
   fprintf(stderr, "  -M <PORT> \\\\ MOM Port\n");
+  fprintf(stderr, "  -n        \\\\ Only send the hierarchy on request\n");
   fprintf(stderr, "  -p <PORT> \\\\ Server Port\n");
+  fprintf(stderr, "  -P        \\\\ Pause or Unpause server\n");
   fprintf(stderr, "  -R <PORT> \\\\ RM Port\n");
   fprintf(stderr, "  -S <PORT> \\\\ Scheduler Port\n");
   fprintf(stderr, "  -t <TYPE> \\\\ Startup Type (create)\n");
@@ -503,7 +508,7 @@ void parse_command_line(
 
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:np:R:S:t:uv-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:nPp:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -746,7 +751,15 @@ void parse_command_line(
           }
 
         break;
-
+        
+      case 'P':    
+    	  
+        paused = TRUE;
+        
+        fprintf(stderr, "Server paused\n");
+        
+        break;
+        
       case 't':
         if (strcmp(optarg, "create") == 0)
           {
@@ -1335,6 +1348,7 @@ void main_loop(void)
   start_routing_retry_thread();
   start_exiting_retry_thread();
   start_generic_thread(NULL, remove_extra_recycle_jobs);
+  start_generic_thread(NULL, remove_completed_jobs);
 
   while (state != SV_STATE_DOWN)
     {
@@ -1357,7 +1371,6 @@ void main_loop(void)
 
     hierarchy_handler.checkAndSendHierarchy();
 
-    if (time_now - last_task_check_time > TASK_CHECK_INTERVAL)
       enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
