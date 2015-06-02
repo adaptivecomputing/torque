@@ -3553,7 +3553,6 @@ int req_jobobit(
     mailbuf[0] = '\0';
     }
 
-  size_t accttail = acct_data.length();
   have_resc_used = get_used(patlist, acct_data);
 
 #ifdef USESAVEDRESOURCES
