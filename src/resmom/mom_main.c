@@ -5776,6 +5776,7 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+
 //If we have a job that's exiting we should call scan for exiting.
 bool call_scan_for_exiting()
   {
@@ -5793,6 +5794,8 @@ bool call_scan_for_exiting()
     }
   return false;
   }
+
+
 
 void check_exiting_jobs()
 
