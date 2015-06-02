@@ -465,18 +465,29 @@ int is_job_on_node(
  * List format is similiar to: gpuati+gpu/1+gpunvidia/4+gpu/5
  */
 
-int node_in_exechostlist(
+bool node_in_exechostlist(
     
-  char *node_name,
-  char *node_ehl)
+  const char *node_name,
+  char       *node_ehl,
+  const char *login_node_name)
 
   {
-  int   rc = FALSE;
+  bool  found = false;
   char *cur_pos = node_ehl;
   char *new_pos = cur_pos;
   int   name_len = strlen(node_name);
+  long  cray_enabled = FALSE;
 
-  while (1)
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if (cray_enabled == TRUE)
+    {
+    if ((login_node_name != NULL) &&
+        (!strcmp(login_node_name, node_name)))
+      found = true;
+    }
+
+  while (found == false)
     {
     if ((new_pos = strstr(cur_pos, node_name)) == NULL)
       break;
@@ -486,7 +497,7 @@ int node_in_exechostlist(
           (*(new_pos+name_len) == '+') ||
           (*(new_pos+name_len) == '/'))
         {
-        rc = TRUE;
+        found = true;
         break;
         }
       }
@@ -496,7 +507,7 @@ int node_in_exechostlist(
           (*(new_pos+name_len) == '+') ||
           (*(new_pos+name_len) == '/'))
         {
-        rc = TRUE;
+        found = true;
         break;
         }
       }
@@ -504,7 +515,7 @@ int node_in_exechostlist(
     cur_pos = new_pos+1;
     }
 
-  return(rc);
+  return(found);
   } /* END node_in_exechostlist() */
 
 
@@ -653,7 +664,9 @@ bool job_should_be_killed(
         {
         should_be_on_node = false;
         }
-      else if (node_in_exechostlist(pnode->nd_name, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str) == FALSE)
+      else if (node_in_exechostlist(pnode->nd_name,
+                                    pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
+                                    pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str) == false)
         {
         should_be_on_node = false;
         }
@@ -3598,7 +3611,7 @@ int reserve_node(
     /* failure */
     return(-1);
     }
-    
+  
   job_usage_info jui(pjob->ji_internal_id);
     
   jui.est = node_info.est;
