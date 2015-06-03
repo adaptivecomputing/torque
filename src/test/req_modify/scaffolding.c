@@ -285,6 +285,5 @@ job *chk_job_request(char *p, batch_request *b)
   return(jp);
   }
 
-void *get_next(list_link pl, char *file, int line) {return NULL;}
 
 void reply_ack(struct batch_request *preq) {}
