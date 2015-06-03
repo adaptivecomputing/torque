@@ -20,6 +20,7 @@
 #include "user_info.h"
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
+#include "machine.hpp"
 
 char *path_node_usage;
 threadpool_t *task_pool;
@@ -652,3 +653,64 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 int is_svr_attr_set(int i) {return 0;}
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  return;
+  }
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  return;
+  }
+
+#include "../../lib/Libutils/machine.cpp"
+#include "../../lib/Libutils/numa_pci_device.cpp"
+#include "../../lib/Libutils/numa_socket.cpp"
+#include "../../lib/Libutils/numa_chip.cpp"
+#include "../../lib/Libutils/numa_core.cpp"
+#include "../../lib/Libutils/allocation.cpp"
+#include "../../lib/Libattr/req.cpp"
+#include "../../lib/Libattr/complete_req.cpp"
