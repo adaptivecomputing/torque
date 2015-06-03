@@ -223,7 +223,7 @@ int add_mic_status(
   {
   COIENGINE                engine[MAX_ENGINES];
   uint32_t                 num_engines = 0;
-  uint32_t                 i;
+  uint32_t                 i = 0;
 
   struct COI_ENGINE_INFO   mic_stat[MAX_ENGINES];
 

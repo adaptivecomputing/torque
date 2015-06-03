@@ -44,7 +44,7 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
 
 Socket::Socket(
 
-  const std::string &json_layout)
+  const std::string &json_layout) : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
 
   {
   const char *chip_str = "\"numachip\":{";

@@ -1169,6 +1169,8 @@ int load_node_usages()
       }
     }
 
+  closedir(dir);
+
   return(PBSE_NONE);
   } // END load_nd_usages()
 #endif
