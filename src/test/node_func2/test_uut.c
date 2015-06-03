@@ -1048,8 +1048,8 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, initialize_pbsnode_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("effective_node_delete_test");
-  tcase_add_test(tc_core, effective_node_delete_test);
+  /*tc_core = tcase_create("effective_node_delete_test");
+  tcase_add_test(tc_core, effective_node_delete_test);*/
   /*suite_add_tcase(s, tc_core);*/
 
   tc_core = tcase_create("update_nodes_file_test");
@@ -1076,9 +1076,9 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, copy_properties_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("create_pbs_node_test");
+  /*tc_core = tcase_create("create_pbs_node_test");
   tcase_add_test(tc_core, create_pbs_node_test);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
 
   tc_core = tcase_create("setup_nodes_test");
   tcase_add_test(tc_core, setup_nodes_test);

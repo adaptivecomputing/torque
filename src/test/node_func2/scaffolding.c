@@ -464,3 +464,56 @@ void free_br(struct batch_request *preq)
 void mom_hierarchy_handler::reloadHierarchy()
 {
 }
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices)
+  {
+  return;
+  }
+
+void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
+  {
+  return;
+  }
+
+ 
+#include "../../lib/Libutils/machine.cpp"
+#include "../../lib/Libutils/numa_chip.cpp"
+#include "../../lib/Libutils/numa_core.cpp"
+#include "../../lib/Libutils/numa_socket.cpp"
+#include "../../lib/Libutils/numa_pci_device.cpp"
+#include "../../lib/Libutils/allocation.cpp"
+#include "../../lib/Libattr/req.cpp"
+#include "../../lib/Libattr/complete_req.cpp"
+

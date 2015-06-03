@@ -6,7 +6,7 @@ SERVER_UT_DIRS = accounting array_func array_upgrade attr_recov batch_request co
 								 delete_all_tracker dis_read display_alps_status execution_slot_tracker \
 								 exiting_jobs geteusernam get_path_jobdata id_map incoming_request \
 								 issue_request job_attr_def job_container job_func job_qs_upgrade job_recov \
-								 job_recycler job_usage_info login_nodes mom_hierarchy_handler node_func \
+								 job_recycler job_usage_info login_nodes mom_hierarchy_handler node_func node_func2\
 								 node_manager pbsd_init pbsd_main process_alps_status process_mom_update \
 								 process_request queue_func queue_recov queue_recycler receive_mom_communication \
 								 reply_send req_delete req_deletearray req_getcred req_gpuctrl req_holdarray \
