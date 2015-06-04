@@ -63,7 +63,6 @@ int qdel_main(
   int purge_completed = FALSE;
   int located = FALSE;
   char *pc;
-  bool hasbracket = false;
   bool isarray = false;
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
@@ -270,8 +269,6 @@ int qdel_main(
      if (job_id[i] == '[' || job_id[i] == ']')
        { 
        isarray = true;
-       
-       hasbracket = true;
        
        brackcount++;
        }
