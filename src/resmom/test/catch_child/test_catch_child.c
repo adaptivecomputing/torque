@@ -3,6 +3,7 @@
 #include <errno.h>
 #include "pbs_job.h"
 #include "test_catch_child.h"
+#include "mom_job_cleanup.h"
 
 
 void catch_child(int sig);
@@ -20,6 +21,7 @@ extern int  tc;
 extern int  called_open_socket;
 extern int  called_fork_me;
 extern bool eintr_test;
+extern std::vector<exiting_job_info> exiting_job_list;
 
 START_TEST(obit_reply_test)
   {
@@ -105,6 +107,7 @@ END_TEST
 START_TEST(test_mother_superior_cleanup)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
+  sprintf(pjob->ji_qs.ji_jobid, "1.napali");
   int  found_one = 1;
 
   fail_unless(mother_superior_cleanup(pjob, 10, &found_one) == false);
@@ -112,12 +115,13 @@ START_TEST(test_mother_superior_cleanup)
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
 
-  called_open_socket = 0;
+  exiting_job_list.clear();
   pjob->ji_numnodes = 2;
   pjob->ji_hosts[1].hn_sister = SISTER_KILLDONE;
   pjob->ji_flags = MOM_EPILOGUE_RUN;
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
-  fail_unless(called_open_socket == 1);
+  fail_unless(exiting_job_list.size() == 1);
+  fail_unless(exiting_job_list[0].jobid == "1.napali");
   
   called_fork_me = 0;
   pjob->ji_flags = 0;
