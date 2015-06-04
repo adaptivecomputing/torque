@@ -856,8 +856,20 @@ bool mother_superior_cleanup(
       }
     else
       {
-      exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
-      post_epilogue(pjob, 0);
+      bool found = false;
+
+      // Make sure the job is in the exiting jobs list
+      for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+        {
+        if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+          {
+          found = true;
+          break;
+          }
+        }
+
+      if (found == false)
+        exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
       }
     }
 
@@ -1221,8 +1233,6 @@ int post_epilogue(
 
 
 
-
-
 /**
  * preobit_preparation
  *
@@ -1300,8 +1310,6 @@ void preobit_preparation(
 
   exit(0);
   }  /* END preobit_preparation() */
-
-
 
 
 
