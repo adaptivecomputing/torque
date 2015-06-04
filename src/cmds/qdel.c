@@ -211,7 +211,7 @@ int main(
 
    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
    
-   for (int i = 0; i < strlen(job_id); i++)
+   for (unsigned int i = 0; i < strlen(job_id); i++)
      {
 	   
      if (job_id[i] == '[' || job_id[i] == ']')
