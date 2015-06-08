@@ -162,6 +162,8 @@ int qdel_main(
 
       case 't':
 
+        isarray = true;
+
         if (extend[0] != '\0')
           {
           errflg++;
@@ -272,15 +274,11 @@ int qdel_main(
        
        brackcount++;
        }
-     
-     if (job_id[i] == 't')
-       {
-       isarray = TRUE; 
-       }
     	 
      }
    
-   if (isarray == TRUE && brackcount != 2)
+   if ((isarray == true) &&
+       (brackcount != 2))
      {
      fprintf(stderr, "qdel: illegally formed array identifier: %s\n",
          job_id);
