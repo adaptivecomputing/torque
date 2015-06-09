@@ -225,7 +225,7 @@ int main(
      }
    
    if ((isarray == true) &&
-       (brackcount != 2))
+       (brackcount % 2 != 0))
      {
      fprintf(stderr, "qdel: illegally formed array identifier: %s\n",
          job_id);
