@@ -12,11 +12,11 @@ extern std::string thread_type;
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 ="\"numachip\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
-  const char *j2 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":32,\"gpus\":\"0-3\"}";
-  const char *j3 ="\"numachip\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
-  const char *j4 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
-  const char *j5 ="\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
+  const char *j1 ="\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
+  const char *j2 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":32,\"gpus\":\"0-3\"}";
+  const char *j3 ="\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
+  const char *j4 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
+  const char *j5 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
 
   std::stringstream o1;
   std::stringstream o2;
@@ -225,14 +225,14 @@ START_TEST(test_exclusive_place)
 
   thread_type = use_cores;
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
-  my_placement_type = place_numa;
+  my_placement_type = place_numa_node;
   int num_fit = c.how_many_tasks_fit(r, exclusive_chip);
   fail_unless(num_fit == 1, "Expected 1, got %d", num_fit);
   int tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
   std::stringstream out;
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
   my_placement_type.clear();
   
   a.place_type = exclusive_none;
@@ -245,7 +245,7 @@ START_TEST(test_exclusive_place)
   tasks = c.place_task(jobid, r, a, 6);
   out.str("");
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
   fail_unless(tasks == 6);
 
   Chip c2(out.str());
@@ -275,7 +275,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1, "%d tasks", tasks);
   out.str("");
   c3.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
 
   Chip c4;
   c4.setId(0);
@@ -295,7 +295,7 @@ START_TEST(test_exclusive_place)
   c4.partially_place_task(remaining, master);
   out.str("");
   c4.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
 
   // Make sure exclusive socket works across restarts
   a.place_type = exclusive_socket;
@@ -304,7 +304,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1);
   out.str("");
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numachip\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
 
   Chip copy_exclusive_socket(out.str());
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);

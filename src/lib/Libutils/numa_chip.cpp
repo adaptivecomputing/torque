@@ -442,7 +442,7 @@ void Chip::initialize_accelerators_from_strings(
 /*
  * Creates a numa chip from this json 
  *
- * "numachip" : {
+ * "numanode" : {
  *   "os_index" : <index>,
  *   "cores" : <core range string>,
  *   "threads" : <thread range string>,
@@ -756,7 +756,7 @@ void Chip::displayAsJson(
   translate_vector_to_range_string(mic_range, mic_indices);
 
   // Format the output as json
-  out << "\"numachip\":{\"os_index\":" << this->id << ",\"cores\":\"" << core_range;
+  out << "\"numanode\":{\"os_index\":" << this->id << ",\"cores\":\"" << core_range;
   out << "\",\"threads\":\"" << thread_range << "\",\"mem\":" << this->memory;
 
   if (gpu_range.size() != 0)
@@ -1122,7 +1122,7 @@ int Chip::place_task(
   a.place_type = master.place_type;
 
   // Practically, we should treat place=node, place=socket, and
-  // place=numachip as the same
+  // place=numanode as the same
   if ((practical_place == exclusive_socket) ||
       (practical_place == exclusive_node))
     practical_place = exclusive_chip;
@@ -1341,7 +1341,7 @@ void Chip::partially_place_task(
   master.add_allocation(a);
   
   // Practically, we should treat place=node, place=socket, and
-  // place=numachip as the same
+  // place=numanode as the same
   if ((master.place_type == exclusive_socket) ||
       (master.place_type == exclusive_node))
     this->chip_exclusive = true;

@@ -385,8 +385,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_total_chips */
-	{ (char *)ATTR_NODE_total_chips,  /* "total_chips" */
+ 	/* ND_ATR_total_numa_nodes */
+	{ (char *)ATTR_NODE_total_numa_nodes,  /* "total_numa_nodes" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -433,8 +433,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_available_chips */
-	{ (char *)ATTR_NODE_available_chips,  /* "available_chips" */
+ 	/* ND_ATR_available_numa_nodes */
+	{ (char *)ATTR_NODE_available_numa_nodes,  /* "available_numa_nodes" */
 	  decode_l,
 	  encode_l,
 	  set_l,

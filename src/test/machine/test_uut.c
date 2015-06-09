@@ -40,8 +40,8 @@ END_TEST
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"node\":{\"socket\":{\"os_index\":12,\"numachip\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}},\"socket\":{\"os_index\":13,\"numachip\":{\"os_index\":26,\"cores\":52-53,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":26,\"cores\":54-55,\"threads\":\"\",\"mem\"=1}}}";
-  const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numachip\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numachip\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
+  const char *j1 = "\"node\":{\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}},\"socket\":{\"os_index\":13,\"numanode\":{\"os_index\":26,\"cores\":52-53,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":26,\"cores\":54-55,\"threads\":\"\",\"mem\"=1}}}";
+  const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
   std::stringstream out;
 
   Machine m1(j1);

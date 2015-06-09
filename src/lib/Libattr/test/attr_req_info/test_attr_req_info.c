@@ -40,7 +40,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_min_limit_value("numachips", val); 
+  ret = ari.get_signed_min_limit_value("numanodes", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -80,7 +80,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_max_limit_value("numachip", val); 
+  ret = ari.get_signed_max_limit_value("numanode", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -123,7 +123,7 @@ START_TEST(test_constructor)
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
-  ret = ari.get_signed_default_limit_value("numachips", val); 
+  ret = ari.get_signed_default_limit_value("numanodes", val); 
   fail_unless(ret == PBSE_NONE);
   fail_unless(val == 0);
   
@@ -178,9 +178,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_min_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_min_limit_value("numachip", "2");
+  ret = ari.set_min_limit_value("numanode", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_min_limit_value("numachip", val);
+  ret = ari.get_signed_min_limit_value("numanode", val);
   fail_unless(val == 2);
 
   ret = ari.set_min_limit_value("cores", "2");
@@ -227,9 +227,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_max_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_max_limit_value("numachip", "2");
+  ret = ari.set_max_limit_value("numanode", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_max_limit_value("numachip", val);
+  ret = ari.get_signed_max_limit_value("numanode", val);
   fail_unless(val == 2);
 
   ret = ari.set_max_limit_value("cores", "2");
@@ -276,9 +276,9 @@ START_TEST(test_set_limit_values)
   ret = ari.get_signed_default_limit_value("sockets", val);
   fail_unless(val == 2);
 
-  ret = ari.set_default_limit_value("numachip", "2");
+  ret = ari.set_default_limit_value("numanode", "2");
   fail_unless(ret == 0);
-  ret = ari.get_signed_default_limit_value("numachip", val);
+  ret = ari.get_signed_default_limit_value("numanode", val);
   fail_unless(val == 2);
 
   ret = ari.set_default_limit_value("cores", "2");

@@ -632,7 +632,7 @@ int status_nodeattrib(
       else
         atemp[i].at_val.at_long = pnode->nd_layout->getTotalSockets();
       }
-    else if (i == ND_ATR_total_chips)
+    else if (i == ND_ATR_total_numa_nodes)
       {
       if (pnode->nd_layout == NULL)
         atemp[i].at_val.at_long = 0;
@@ -660,7 +660,7 @@ int status_nodeattrib(
        else
          atemp[i].at_val.at_long = pnode->nd_layout->getAvailableSockets();
        }
-    else if (i == ND_ATR_available_chips)
+    else if (i == ND_ATR_available_numa_nodes)
        {
        if (pnode->nd_layout == NULL)
          atemp[i].at_val.at_long = 0;

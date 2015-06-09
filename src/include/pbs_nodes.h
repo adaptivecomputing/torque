@@ -555,11 +555,11 @@ enum nodeattr
   ND_ATR_requestid,
 #ifdef PENABLE_LINUX_CGROUPS
   ND_ATR_total_sockets,
-  ND_ATR_total_chips,
+  ND_ATR_total_numa_nodes,
   ND_ATR_total_cores,
   ND_ATR_total_threads,
   ND_ATR_available_sockets,
-  ND_ATR_available_chips,
+  ND_ATR_available_numa_nodes,
   ND_ATR_available_cores,
   ND_ATR_available_threads,
 #endif

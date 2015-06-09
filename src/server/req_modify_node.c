@@ -270,11 +270,11 @@ int mgr_modify_node(
         case ND_ATR_micstatus:
 #ifdef PENABLE_LINUX_CGROUPS
         case ND_ATR_total_sockets:
-        case ND_ATR_total_chips:
+        case ND_ATR_total_numa_nodes:
         case ND_ATR_total_cores:
         case ND_ATR_total_threads:
         case ND_ATR_available_sockets:
-        case ND_ATR_available_chips:
+        case ND_ATR_available_numa_nodes:
         case ND_ATR_available_cores:
         case ND_ATR_available_threads:
 #endif

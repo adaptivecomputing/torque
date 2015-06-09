@@ -12,7 +12,7 @@ const char *use_cores = "usecores";
 
 const char *place_node = "node";
 const char *place_socket = "socket";
-const char *place_numa = "numachip";
+const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
 

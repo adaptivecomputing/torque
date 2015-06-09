@@ -12,7 +12,7 @@
 const char *LPROCS     = "lprocs";
 const char *NODES      = "node";
 const char *SOCKETS    = "socket";
-const char *NUMA_CHIPS = "numachip";
+const char *NUMA_NODE = "numanode";
 const char *CORES      = "core";
 const char *THREADS    = "thread";
 const char *MEMORY     = "memory";
@@ -32,7 +32,7 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   max_nodes = newattr_req_info.max_nodes;
   max_sockets = newattr_req_info.max_sockets;
   max_cores = newattr_req_info.max_cores;
-  max_numa_chips = newattr_req_info.max_numa_chips;
+  max_numa_nodes = newattr_req_info.max_numa_nodes;
   max_threads = newattr_req_info.max_threads;
   max_mem_value.atsv_num = newattr_req_info.max_mem_value.atsv_num;
   max_mem_value.atsv_shift = newattr_req_info.max_mem_value.atsv_shift;
@@ -48,7 +48,7 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   min_nodes = newattr_req_info.min_nodes;
   min_sockets = newattr_req_info.min_sockets;
   min_cores = newattr_req_info.min_cores;
-  min_numa_chips = newattr_req_info.min_numa_chips;
+  min_numa_nodes = newattr_req_info.min_numa_nodes;
   min_threads = newattr_req_info.min_threads;
   min_mem_value.atsv_num = newattr_req_info.min_mem_value.atsv_num;
   min_mem_value.atsv_shift = newattr_req_info.min_mem_value.atsv_shift;
@@ -65,7 +65,7 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   default_nodes = newattr_req_info.default_nodes;
   default_sockets = newattr_req_info.default_sockets;
   default_cores = newattr_req_info.default_cores;
-  default_numa_chips = newattr_req_info.default_numa_chips;
+  default_numa_nodes = newattr_req_info.default_numa_nodes;
   default_threads = newattr_req_info.default_threads;
   default_mem_value.atsv_num = newattr_req_info.default_mem_value.atsv_num;
   default_mem_value.atsv_shift = newattr_req_info.default_mem_value.atsv_shift;
@@ -79,11 +79,11 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   }
 
 attr_req_info::attr_req_info() : max_lprocs(0), max_mem(0), max_swap(0), max_disk(0), max_nodes(0),
-                                 max_sockets(0), max_cores(0), max_numa_chips(0), max_threads(0),
+                                 max_sockets(0), max_cores(0), max_numa_nodes(0), max_threads(0),
                                  min_lprocs(0), min_mem(0), min_swap(0), min_disk(0), min_nodes(0),
-                                 min_sockets(0), min_cores(0), min_numa_chips(0), min_threads(0),
+                                 min_sockets(0), min_cores(0), min_numa_nodes(0), min_threads(0),
                                  default_lprocs(0), default_mem(0), default_swap(0), default_disk(0), default_nodes(0),
-                                 default_sockets(0), default_cores(0), default_numa_chips(0), default_threads(0)
+                                 default_sockets(0), default_cores(0), default_numa_nodes(0), default_threads(0)
    {
    }
 
@@ -138,9 +138,9 @@ int attr_req_info::set_min_limit_value(
     {
     min_cores = atoi(val);
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    min_numa_chips = atoi(val);
+    min_numa_nodes = atoi(val);
     }
   else if (!strncmp(rescn, THREADS, strlen(THREADS)))
     {
@@ -200,9 +200,9 @@ int attr_req_info::set_min_limit_value(
     {
     max_cores = atoi(val);
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    max_numa_chips = atoi(val);
+    max_numa_nodes = atoi(val);
     }
   else if (!strncmp(rescn, THREADS, strlen(THREADS)))
     {
@@ -261,9 +261,9 @@ int attr_req_info::set_min_limit_value(
     {
     default_cores = atoi(val);
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    default_numa_chips = atoi(val);
+    default_numa_nodes = atoi(val);
     }
   else if (!strncmp(rescn, THREADS, strlen(THREADS)))
     {
@@ -295,9 +295,9 @@ int attr_req_info::get_signed_min_limit_value(
     {
     value = min_sockets;
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    value = min_numa_chips;
+    value = min_numa_nodes;
     }
   else if (!strncmp(rescn, CORES, strlen(CORES)))
     {
@@ -355,9 +355,9 @@ int attr_req_info::get_signed_max_limit_value(
     {
     value = max_sockets;
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    value = max_numa_chips;
+    value = max_numa_nodes;
     }
   else if (!strncmp(rescn, CORES, strlen(CORES)))
     {
@@ -415,9 +415,9 @@ int attr_req_info::get_signed_default_limit_value(
     {
     value = default_sockets;
     }
-  else if (!strncmp(rescn, NUMA_CHIPS, strlen(NUMA_CHIPS)))
+  else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
-    value = default_numa_chips;
+    value = default_numa_nodes;
     }
   else if (!strncmp(rescn, CORES, strlen(CORES)))
     {
@@ -510,11 +510,11 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
     values.push_back(buf);
     }
 
-  if (max_numa_chips != 0)
+  if (max_numa_nodes != 0)
     {
-    sprintf(buf, "%s", NUMA_CHIPS);
+    sprintf(buf, "%s", NUMA_NODE);
     names.push_back(buf);
-    sprintf(buf, "%d", max_numa_chips);
+    sprintf(buf, "%d", max_numa_nodes);
     values.push_back(buf);
     }
 
@@ -589,11 +589,11 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
     values.push_back(buf);
     }
 
-  if (min_numa_chips != 0)
+  if (min_numa_nodes != 0)
     {
-    sprintf(buf, "%s", NUMA_CHIPS);
+    sprintf(buf, "%s", NUMA_NODE);
     names.push_back(buf);
-    sprintf(buf, "%d", min_numa_chips);
+    sprintf(buf, "%d", min_numa_nodes);
     values.push_back(buf);
     }
 
@@ -670,11 +670,11 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
     values.push_back(buf);
     }
 
-  if (default_numa_chips != 0)
+  if (default_numa_nodes != 0)
     {
-    sprintf(buf, "%s", NUMA_CHIPS);
+    sprintf(buf, "%s", NUMA_NODE);
     names.push_back(buf);
-    sprintf(buf, "%d", default_numa_chips);
+    sprintf(buf, "%d", default_numa_nodes);
     values.push_back(buf);
     }
 

@@ -79,7 +79,7 @@ START_TEST(test_set_place_type)
   a.set_place_type(place_socket);
   fail_unless(a.place_type == exclusive_socket);
 
-  a.set_place_type(place_numa);
+  a.set_place_type(place_numa_node);
   fail_unless(a.place_type == exclusive_chip);
 
   a.set_place_type(place_core);

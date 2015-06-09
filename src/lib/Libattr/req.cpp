@@ -27,12 +27,12 @@ const char *allow_threads = "allowthreads";
 const char *use_fast_cores = "usefastcores";
 const char *place_node = "node";
 const char *place_socket = "socket";
-const char *place_numa = "numachip";
+const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
-             socket(0), numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
+             socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
              thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), placement_str(), 
              gpu_mode(), task_count(1), pack(false), single_job_access(false), index(0) 
 
@@ -44,7 +44,7 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
 req::req(
 
   char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
-                    numa_chip(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
+                    numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
                     thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
                     features(), placement_str(), gpu_mode(), task_count(1), pack(false),
                     single_job_access(false), index(0)
@@ -107,7 +107,7 @@ req::req(
                       disk(other.disk), 
                       nodes(other.nodes), 
                       socket(other.socket), 
-                      numa_chip(other.numa_chip), 
+                      numa_nodes(other.numa_nodes), 
                       cores(other.cores), 
                       threads(other.threads), 
                       thread_usage_policy(other.thread_usage_policy),
@@ -166,7 +166,7 @@ int parse_positive_integer(
  *
  * parses the place value and updates req values appropriately.
  * the place value is in the format:
- * place={node|socket|numachip|core|thread}[=#]
+ * place={node|socket|numanode|core|thread}[=#]
  *
  * @param value - the string in the above format
  * @return PBSE_NONE as long as value is in the proper format,
@@ -205,12 +205,12 @@ int req::set_place_value(
     else
       this->socket = 1;
     }
-  else if (!strcmp(work_str, place_numa))
+  else if (!strcmp(work_str, place_numa_node))
     {
     if (numeric_value != NULL)
-      rc = parse_positive_integer(numeric_value, this->numa_chip);
+      rc = parse_positive_integer(numeric_value, this->numa_nodes);
     else
-      this->numa_chip = 1;
+      this->numa_nodes = 1;
     }
   else if (!strcmp(work_str, place_core))
     {
@@ -695,7 +695,7 @@ bool is_present_twice(
  *
  * Discovers if the submission string has duplicate entries, which
  * is not allowed
- * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numanode|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
  * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
  *
@@ -803,7 +803,7 @@ int req::submission_string_precheck(
  *
  * initializes req from a string in the format:
  *
- * tasks=#[:lprocs=#|all][:memory=#][:disk=#][:place={node|socket|numachip|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:disk=#][:place={node|socket|numanode|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
  * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx][reqattr=<reqattr_val>]
  *
@@ -897,7 +897,7 @@ int req::set_from_submission_string(
  *
  * The qsub request comes in the format:
  *
- * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numachip|core|thread}[=#]]
+ * tasks=#[:lprocs=#|all][:memory=#][:place={node|socket|numanode|core|thread}[=#]]
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
  * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx]
  *
@@ -910,7 +910,7 @@ int req::set_from_submission_string(
 req::req(
 
    const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
-                                         nodes(0), socket(0), numa_chip(0),
+                                         nodes(0), socket(0), numa_nodes(0),
                                          cores(0), threads(0), thread_usage_str(allow_threads),
                                          maxtpn(0), gres(), placement_str(), gpu_mode(), 
                                          task_count(1), single_job_access(false) 
@@ -944,7 +944,7 @@ req &req::operator =(
   this->disk = other.disk;
   this->nodes = other.nodes;
   this->socket = other.socket;
-  this->numa_chip = other.numa_chip;
+  this->numa_nodes = other.numa_nodes;
   this->thread_usage_policy = other.thread_usage_policy;
   this->thread_usage_str = other.thread_usage_str;
   this->gpus = other.gpus;
@@ -1032,9 +1032,9 @@ void req::toString(
     str += buf;
     }
 
-  if (this->numa_chip != 0)
+  if (this->numa_nodes != 0)
     {
-    snprintf(buf, sizeof(buf), "      numachip: %d\n", this->numa_chip);
+    snprintf(buf, sizeof(buf), "      numanode: %d\n", this->numa_nodes);
     str += buf;
     }
 
@@ -1217,11 +1217,11 @@ void req::get_values(
     values.push_back(buf);
     }
 
-  if (this->numa_chip != 0)
+  if (this->numa_nodes != 0)
     {
-    snprintf(buf, sizeof(buf), "numachip.%d", this->index);
+    snprintf(buf, sizeof(buf), "numanode.%d", this->index);
     names.push_back(buf);
-    snprintf(buf, sizeof(buf), "%d", this->numa_chip);
+    snprintf(buf, sizeof(buf), "%d", this->numa_nodes);
     values.push_back(buf);
     }
 
@@ -1472,10 +1472,10 @@ void req::set_from_string(
     move_past_whitespace(&current);
     }
 
-  if (!strncmp(current, "numachip", 8))
+  if (!strncmp(current, "numanode", 8))
     {
-    current += 10; // move past 'numachip: '
-    this->numa_chip = strtol(current, &current, 10);
+    current += 10; // move past 'numanode: '
+    this->numa_nodes = strtol(current, &current, 10);
 
     move_past_whitespace(&current);
     }
@@ -1695,10 +1695,10 @@ int req::set_value(
     this->socket = strtol(value, NULL, 10);
     this->placement_str = place_socket;
     }
-  else if (!strncmp(name, "numachip", 10))
+  else if (!strncmp(name, "numanode", 10))
     {
-    this->numa_chip = strtol(value, NULL, 10);
-    this->placement_str = place_numa;
+    this->numa_nodes = strtol(value, NULL, 10);
+    this->placement_str = place_numa_node;
     }
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);

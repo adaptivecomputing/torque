@@ -111,7 +111,7 @@ START_TEST(test_get_set_values)
 
   req r2;
   r2.set_value("lprocs", "2");
-  r2.set_value("numachip", "1");
+  r2.set_value("numanode", "1");
   r2.set_value("maxtpn", "1");
   r2.set_value("placement_type", "core");
   r2.set_value("pack", "true");
@@ -123,7 +123,7 @@ START_TEST(test_get_set_values)
 
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
-  fail_unless(names[2] == "numachip.0");
+  fail_unless(names[2] == "numanode.0");
   fail_unless(names[3] == "maxtpn.0");
   fail_unless(names[4] == "thread_usage_policy.0");
   fail_unless(names[5] == "pack.0");
@@ -222,9 +222,9 @@ START_TEST(test_constructors)
   req r3(req3);
   fail_unless(r3.getPlacementType() == "node");
 
-  std::string req4("5:lprocs=4:memory=12gb:place=numachip=1:mics=1:feature=fast");
+  std::string req4("5:lprocs=4:memory=12gb:place=numanode=1:mics=1:feature=fast");
   req r4(req4);
-  fail_unless(r4.getPlacementType() == "numachip=1", r4.getPlacementType().c_str());
+  fail_unless(r4.getPlacementType() == "numanode=1", r4.getPlacementType().c_str());
  
   std::string req5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
   req r5(req5);
@@ -251,7 +251,7 @@ START_TEST(test_constructors)
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE);
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE);
 
-  std::string req7("2:place=numachip");
+  std::string req7("2:place=numanode");
   req r7(req7);
   r7.set_index(0);
 
@@ -261,7 +261,7 @@ START_TEST(test_constructors)
 
   fail_unless(names[0] == "task_count.0", names[0].c_str());
   fail_unless(names[1] == "lprocs.0", names[1].c_str());
-  fail_unless(names[2] == "numachip.0", names[2].c_str());
+  fail_unless(names[2] == "numanode.0", names[2].c_str());
   fail_unless(values[0] == "2");
   fail_unless(values[1] == "1");
   fail_unless(values[2] == "1");
@@ -351,7 +351,7 @@ START_TEST(test_set_from_string)
   fail_unless(out.find("max tpn: 2") != std::string::npos);
   fail_unless(out.find("reqattr: matlab>=5") != std::string::npos);
 
-  r.set_from_string("req[0]\ntask count: 10\nlprocs: all\nmem: 10000kb\nswap: 1024kb\ndisk: 10000000kb\nsocket: 1\nnumachip: 2\ngpus: 1\nmics: 1\nthread usage policy: usecores\nplacement type: place socket\ngres: matlab=1\nos: ubuntu\narch: 64\nhostlist: napali/0-31\nfeatures: fast\nsingle job access\npack");
+  r.set_from_string("req[0]\ntask count: 10\nlprocs: all\nmem: 10000kb\nswap: 1024kb\ndisk: 10000000kb\nsocket: 1\nnumanode: 2\ngpus: 1\nmics: 1\nthread usage policy: usecores\nplacement type: place socket\ngres: matlab=1\nos: ubuntu\narch: 64\nhostlist: napali/0-31\nfeatures: fast\nsingle job access\npack");
 
   fail_unless(r.getThreadUsageString() == "usecores", r.getThreadUsageString().c_str());
   fail_unless(r.getFeatures() == "fast");
@@ -374,7 +374,7 @@ START_TEST(test_set_from_string)
   fail_unless(out.find("swap: 1024kb") != std::string::npos);
   fail_unless(out.find("disk: 10000000kb") != std::string::npos);
   fail_unless(out.find("socket: 1") != std::string::npos);
-  fail_unless(out.find("numachip: 2") != std::string::npos);
+  fail_unless(out.find("numanode: 2") != std::string::npos);
   fail_unless(out.find("gpus: 1") != std::string::npos);
   fail_unless(out.find("mics: 1") != std::string::npos);
   fail_unless(out.find("thread usage policy: usecores") != std::string::npos);

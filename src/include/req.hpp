@@ -104,7 +104,7 @@ extern const char *allow_threads;
 extern const char *use_fast_cores;
 extern const char *place_node;
 extern const char *place_socket;
-extern const char *place_numa;
+extern const char *place_numa_node;
 extern const char *place_core;
 extern const char *place_thread;
 
@@ -118,7 +118,7 @@ class req
     unsigned long     disk;
     int               nodes;
     int               socket;
-    int               numa_chip;
+    int               numa_nodes;
     int               cores;
     int               threads;
     int               thread_usage_policy;

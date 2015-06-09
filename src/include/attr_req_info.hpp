@@ -17,7 +17,7 @@ class attr_req_info
     int max_nodes;
     int max_sockets;
     int max_cores;
-    int max_numa_chips;
+    int max_numa_nodes;
     int max_threads;
     struct size_value max_mem_value;
     struct size_value max_swap_value;
@@ -31,7 +31,7 @@ class attr_req_info
     int min_nodes;
     int min_sockets;
     int min_cores;
-    int min_numa_chips;
+    int min_numa_nodes;
     int min_threads;
     struct size_value min_mem_value;
     struct size_value min_swap_value;
@@ -45,7 +45,7 @@ class attr_req_info
     int default_nodes;
     int default_sockets;
     int default_cores;
-    int default_numa_chips;
+    int default_numa_nodes;
     int default_threads;
     struct size_value default_mem_value;
     struct size_value default_swap_value;

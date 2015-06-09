@@ -22,9 +22,9 @@ extern std::string my_placement_type;
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"socket\":{\"os_index\":12,\"numachip\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numachip\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
-  const char *j2 = "\"socket\":{\"os_index\":0,\"numachip\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numachip\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}";
-  const char *j3 = "\"socket\":{\"os_index\":2,\"numachip\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
+  const char *j1 = "\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
+  const char *j2 = "\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}";
+  const char *j3 = "\"socket\":{\"os_index\":2,\"numanode\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
   std::stringstream out;
 
   Socket s1(j1);

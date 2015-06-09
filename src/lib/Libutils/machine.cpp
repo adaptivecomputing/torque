@@ -160,7 +160,7 @@ void Machine::update_internal_counts()
  * {"node" : {
  *   "socket" : {
  *     "os_index" : <index>,
- *     "numachip" : {
+ *     "numanode" : {
  *       "os_index" : <index>,
  *       "cores" : <core range string>,
  *       "threads" : <thread range string>,
@@ -168,7 +168,7 @@ void Machine::update_internal_counts()
  *       "gpus" : <gpu range string>,
  *       "mics" : <mic range string>
  *       }
- *     [, "numachip" ... ]
+ *     [, "numanode" ... ]
  *     }
  *   [, "socket" ...]
  *   }
@@ -222,7 +222,7 @@ int Machine::initializeNonNUMAMachine(hwloc_obj_t obj, hwloc_topology_t topology
   hwloc_obj_t socket_obj;
 
   isNUMA = false;
-  /* because we do not have NUMA hardware set socket to 1 and numa_chip to 1 */
+  /* because we do not have NUMA hardware set socket to 1 and numa_node to 1 */
   totalSockets = 1;
   totalChips = 1;
   availableSockets = 1;

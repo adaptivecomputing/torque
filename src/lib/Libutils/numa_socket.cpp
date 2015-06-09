@@ -27,7 +27,7 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
  *
  * "socket" : {
  *   "os_index" : <index>,
- *   "numachip" : {
+ *   "numanode" : {
  *     "os_index" : <index>,
  *     "cores" : <core range string>,
  *     "threads" : <thread range string>,
@@ -35,7 +35,7 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
  *     "gpus" : <gpu range string>,
  *     "mics" : <mic range string>
  *     }
- *   [, "numachip" ... ]
+ *   [, "numanode" ... ]
  * }
  *
  * mics and gpus are optional and only present if they actually exist on the node
@@ -47,7 +47,7 @@ Socket::Socket(
   const std::string &json_layout) : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
 
   {
-  const char *chip_str = "\"numachip\":{";
+  const char *chip_str = "\"numanode\":{";
   const char *os_str = "\"os_index\":";
   std::size_t chip_begin = json_layout.find(chip_str);
   std::size_t os_begin = json_layout.find(os_str);
@@ -220,7 +220,7 @@ int Socket::getTotalChips() const
 
 int Socket::getAvailableChips() const
   {
-  int available_chips = 0;
+  int available_numa_nodes = 0;
   std::vector<Chip>::iterator chip_iter;
 
   if (this->socket_exclusive == false)
@@ -229,12 +229,12 @@ int Socket::getAvailableChips() const
       {
       if (this->chips[i].chipIsAvailable() == true)
         {
-        available_chips++;
+        available_numa_nodes++;
         }
       }
     }
 
-  return(available_chips);
+  return(available_numa_nodes);
   }
 
 int Socket::getAvailableCores() const
