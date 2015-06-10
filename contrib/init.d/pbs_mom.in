@@ -132,7 +132,7 @@ case "$1" in
 			pid=-1
 		fi
 
-		echo "DEBUG: pid = $pid"
+		#echo "DEBUG: pid = $pid"
 
 		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
 		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
