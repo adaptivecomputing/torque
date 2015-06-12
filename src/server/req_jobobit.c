@@ -2185,11 +2185,11 @@ void *on_job_exit_task(
 
   if (jobid != NULL)
     {
-  if (LOGLEVEL >= 10)
-    {
-    snprintf(log_buf, sizeof(log_buf), "%s", jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "log_buf");
-    }
+    if (LOGLEVEL >= 10)
+      {
+      snprintf(log_buf, sizeof(log_buf), "%s", jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "log_buf");
+      }
 
     on_job_exit(NULL, jobid);
     }

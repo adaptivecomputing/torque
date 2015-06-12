@@ -372,6 +372,8 @@ int handle_requeue_all(
     requeue_job_without_contacting_mom(*pjob);
     }
 
+  delete iter;
+
   reply_ack(preq);
 
   return(PBSE_NONE);

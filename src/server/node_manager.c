@@ -900,6 +900,8 @@ void *sync_node_jobs(
 
   raw_input = sji->input;
 
+  free(sji);
+
   /* raw_input's format is:
    *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
   if ((jobstring_in = strchr(raw_input, ':')) != NULL)
@@ -912,7 +914,6 @@ void *sync_node_jobs(
     {
     /* bad input */
     free(raw_input);
-    free(sji);
 
     return(NULL);
     }
@@ -920,7 +921,6 @@ void *sync_node_jobs(
   if ((np = find_nodebyname(node_id)) == NULL)
     {
     free(raw_input);
-    free(sji);
 
     return(NULL);
     }
@@ -952,7 +952,6 @@ void *sync_node_jobs(
       if ((np = find_nodebyname(node_id)) == NULL)
         {
         free(raw_input);
-        free(sji);
 
         if (jobs_in_mom)
           free(jobs_in_mom);
@@ -996,8 +995,6 @@ void *sync_node_jobs(
 
   /* SUCCESS */
   free(raw_input);
-
-  free(sji);
 
   if (jobs_in_mom)
     {
@@ -5014,6 +5011,11 @@ int procs_requested(
             free_prop(prop);
           return(-1);
           }
+        else if (prop != NULL)
+          {
+          free_prop(prop);
+          prop = NULL;
+          }
         }
       }
     else
@@ -5028,6 +5030,11 @@ int procs_requested(
           free_prop(prop);
 
         return(-1);
+        }
+      else if (prop != NULL)
+        {
+        free_prop(prop);
+        prop = NULL;
         }
       }
     total_procs += num_procs * num_nodes;

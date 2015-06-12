@@ -1771,6 +1771,12 @@ void mgr_node_set(
         }
       }  /* END for each node */
 
+    if (iter.node_index != NULL)
+      delete iter.node_index;
+
+    if (iter.alps_index != NULL)
+      delete iter.alps_index;
+
     } /* END multiple node case */
   else
     {

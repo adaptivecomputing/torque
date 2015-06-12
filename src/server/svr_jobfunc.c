@@ -3582,8 +3582,11 @@ static void correct_ct()
       
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
-    
+
+    delete job_iter;
     } /* END for each queue */
+
+  delete queue_iter;
   
   sprintf(log_buf, "%s:2", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
