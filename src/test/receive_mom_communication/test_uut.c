@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include "mom_update.h"
+#include "pbs_ifl.h"
+
+char server_name[PBS_MAXSERVERNAME+1] = "pv-knielson-dt";
 
 
 START_TEST(test_one)
