@@ -2858,12 +2858,12 @@ bool should_send_final_signal(
     for (int i = 0; i < 20; i++)
       {
       /* check if process is gone */
-      if ((ps = get_proc_stat(ps->pid)) == NULL)
+      if ((ps = get_proc_stat(pid)) == NULL)
         return(false);
       else
         {
         sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
-          __func__, ps->pid, ps->state, SIGTERM);
+          __func__, pid, ps->state, SIGTERM);
 
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
 
@@ -2873,7 +2873,7 @@ bool should_send_final_signal(
         }
       
       /* try to kill again */
-      if (kill(ps->pid, 0) == -1)
+      if (kill(pid, 0) == -1)
         return(false);
       }  /* END for (i = 0) */
     }    /* END if (sig == SIGKILL) */
