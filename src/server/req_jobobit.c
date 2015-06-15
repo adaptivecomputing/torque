@@ -1355,10 +1355,6 @@ handle_stageout_cleanup:
 
   if (preq != NULL)
     {
-    if (preq->rq_extra != NULL)
-      {
-      free(preq->rq_extra);
-      }
     free_br(preq);
     }
   

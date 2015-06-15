@@ -449,9 +449,7 @@ void post_checkpointsend(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
-
-  free(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra, FALSE);
 
   if (pjob != NULL)
     {
@@ -543,7 +541,6 @@ int svr_send_checkpoint(
 
   struct batch_request *momreq = 0;
   int                   rc;
-  char                 *tmp_jobid = NULL;
   char                  jobid[PBS_MAXSVRJOBID + 1];
   job                  *pjob = *pjob_ptr;
 
@@ -560,14 +557,7 @@ int svr_send_checkpoint(
     }
 
   /* save job id for post_checkpointsend */
-
-  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-    {
-    free_br(momreq);
-    return(PBSE_SYSTEM);
-    }
-
-  momreq->rq_extra = tmp_jobid;
+  momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -600,7 +590,6 @@ int svr_send_checkpoint(
   else
     {
     free_br(momreq);
-    free(tmp_jobid);
     }
 
   return(rc);
@@ -691,9 +680,7 @@ void post_stagein(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
-
-  free(preq->rq_extra);
+  pjob = svr_find_job(preq->rq_extra, FALSE);
 
   if (pjob != NULL)
     {
@@ -796,7 +783,6 @@ int svr_stagein(
   job                  *pjob = *pjob_ptr;
   struct batch_request *momreq = 0;
   int                   rc;
-  char                 *tmp_jobid = NULL;
   char                  jobid[PBS_MAXSVRJOBID + 1];
 
   momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
@@ -814,14 +800,7 @@ int svr_stagein(
   /* have files to stage in */
 
   /* save job id for post_stagein */
-
-  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-    {
-    free_br(momreq);
-    return(PBSE_SYSTEM);
-    }
-
-  momreq->rq_extra = tmp_jobid;
+  momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -869,7 +848,6 @@ int svr_stagein(
   else
     {
     free_br(momreq);
-    free(tmp_jobid);
     }
 
   return(rc);
