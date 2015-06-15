@@ -449,7 +449,7 @@ void post_checkpointsend(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra, FALSE);
+  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
 
   if (pjob != NULL)
     {
@@ -680,7 +680,7 @@ void post_stagein(
     return;
 
   code = preq->rq_reply.brp_code;
-  pjob = svr_find_job(preq->rq_extra, FALSE);
+  pjob = svr_find_job((char *)preq->rq_extra, FALSE);
 
   if (pjob != NULL)
     {
