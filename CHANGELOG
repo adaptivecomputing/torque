@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 6.0.0
   b - TRQ-3117. Fix a misspelling in the number_successful tag (was number_successfull)
+  e - TRQ-3131. Add capability to pass environment variables to pbsdsh. 
 
 
 5.1.2
