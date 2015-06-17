@@ -2512,10 +2512,6 @@ int manager_oper_chk(
         err = PBSE_BADACLHOST;
         }
       }
-    else
-      {
-      err = PBSE_NONE;
-      }
     }
 
   return(err);
