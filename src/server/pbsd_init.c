@@ -719,7 +719,6 @@ int mk_subdirs(
 
   {
   int         j;
-  struct stat statbuf;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (paths == NULL)
@@ -733,24 +732,25 @@ int mk_subdirs(
       {
       char buf[1024];
 
-      // build the complete path and see if it exists
+      // build the complete path
       snprintf(buf, sizeof(buf), "%s%d/", paths[j], i);
-      if ((lstat(buf, &statbuf) != 0) && (errno == ENOENT))
-        {
-        // try to make the directory
-        if (mkdir(buf, 0770) != 0)
-          {
-          snprintf(log_buf, sizeof(log_buf), "%s cannot create directory, errno=%d, %s",
-             buf,
-             errno,
-             strerror(errno));
-          log_err(-1, __func__, log_buf);
-          return(3);
-          }
 
+      // try to make the directory
+      if (mkdir(buf, 0770) == 0)
+        {
         // success - add log message
         snprintf(log_buf, sizeof(log_buf), "created missing directory %s", buf);
         log_ext(0, __func__, log_buf, LOG_INFO);
+        }
+      else if (errno != EEXIST)
+        {
+        // fail only if directory (or file) named by buf does not exist
+        snprintf(log_buf, sizeof(log_buf), "%s cannot create directory, errno=%d, %s",
+           buf,
+           errno,
+           strerror(errno));
+        log_err(-1, __func__, log_buf);
+        return(3);
         }
       }
     }
