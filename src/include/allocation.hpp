@@ -84,7 +84,6 @@
 #include <string>
 
 #include "pbs_ifl.h"
-#include "req.hpp"
 
 extern const int MEM_INDICES;
 extern const int CPU_INDICES;
@@ -94,6 +93,9 @@ extern const int exclusive_socket;
 extern const int exclusive_chip;
 extern const int exclusive_core;
 extern const int exclusive_none;
+
+// forward declare req
+class req;
 
 class allocation
   {
@@ -119,6 +121,8 @@ class allocation
   int  add_allocation(const allocation &other);
   void place_indices_in_string(std::string &output, int which);
   void set_place_type(const std::string &place);
+  void write_task_information(std::string &task_info) const;
+  void initialize_from_string(const std::string &task_info);
   };
 
 #endif 

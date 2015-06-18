@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "req.hpp"
+#include "array.h"
 
 const char *place_node = "node";
 const char *place_socket = "socket";
@@ -41,3 +42,18 @@ int req::getGpus() const
   {
   return(0);
   }
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */

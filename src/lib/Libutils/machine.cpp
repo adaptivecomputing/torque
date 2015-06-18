@@ -472,53 +472,81 @@ void Machine::setIsNuma(
 
 
 
+/*
+ * place_remaining()
+ *
+ * Places any tasks remaining - these tasks don't fit within a single numa node
+ *
+ * @param r - the req we're placing
+ * @param master - the recording allocation for the entire job
+ * @param remaining_tasks - the number of tasks remaining to be placed for this req
+ */
+
 void Machine::place_remaining(
 
-  vector<req>  to_split,
-  allocation  &a)
+  req         &r,
+  allocation  &master,
+  int          remaining_tasks)
 
   {
-  vector<int>   very_spread;
-
   // This will take care of any that still fit within a socket
-  for (unsigned int i = 0; i < to_split.size(); i++)
+  while (remaining_tasks > 0)
     {
-    const req &r = to_split[i];
-    bool       not_placed = true;
+    bool fit_somewhere = false;
+    allocation remaining(r);
+    allocation task_alloc(master.jobid);
 
+    task_alloc.cores_only = master.cores_only;
+      
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
-      allocation remaining(r);
-      if (this->sockets[j].fits_on_socket(remaining))
-        {
-        if (this->sockets[j].is_available() == true)
-          this->availableSockets--;
+      if (this->sockets[j].fits_on_socket(remaining) == false)
+        continue;
 
-        this->sockets[j].partially_place(remaining, a);
-        not_placed = false;
-        break;
-        }
+      if (this->sockets[j].is_available() == true)
+        this->availableSockets--;
+
+      this->sockets[j].partially_place(remaining, task_alloc);
+      r.record_allocation(task_alloc);
+      master.add_allocation(task_alloc);
+      fit_somewhere = true;
+      break;
       }
 
-    if (not_placed == true)
-      very_spread.push_back(i);
+    // Exit the loop if the task doesn't fit on any socket individually
+    if (fit_somewhere == false)
+      break;
+
+    remaining_tasks--;
     }
 
   // Finally, place any that don't fit on a socket
-  for (unsigned int i = 0; i < very_spread.size(); i++)
+  while (remaining_tasks > 0)
     {
-    const req  &r = to_split[very_spread[i]];
-    allocation  remaining(r);
+    bool fit_somewhere = false;
+    allocation remaining(r);
+    allocation task_alloc(master.jobid);
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
       if (this->sockets[j].is_available() == true)
         this->availableSockets--;
 
-      if (this->sockets[j].partially_place(remaining, a) == true)
+      if (this->sockets[j].partially_place(remaining, task_alloc) == true)
+        {
+        fit_somewhere = true;
+        r.record_allocation(task_alloc);
+        master.add_allocation(task_alloc);
         break;
+        }
       }
+
+    if (fit_somewhere == false)
+      break;
+
+    remaining_tasks--;
     }
+
   } // END place_remaining()
 
 
@@ -548,9 +576,9 @@ int Machine::place_job(
   // See if the tasks fit completely on a socket, and if they do then place them there
   for (int i = 0; i < num_reqs; i++)
     {
-    const req &r = cr->get_req(i);
-    int        tasks_for_node = r.get_num_tasks_for_host(hostname);
-    bool       placed = false;
+    req  &r = cr->get_req(i);
+    int   tasks_for_node = r.get_num_tasks_for_host(hostname);
+    bool  placed = false;
 
     if (tasks_for_node == 0)
       continue;
@@ -561,7 +589,7 @@ int Machine::place_job(
       {
       if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
         {
-        // place the job entirely on this socket
+        // place the req entirely on this socket
         placed = true;
         if (this->sockets[j].is_available() == true)
           this->availableSockets--;
@@ -581,10 +609,10 @@ int Machine::place_job(
   // place them now
   for (unsigned int i = 0; i < partially_place.size(); i++)
     {
-    const req &r = cr->get_req(partially_place[i]);
-    int        remaining_tasks = r.get_num_tasks_for_host(hostname);
-    bool       change = false;
-    bool       not_placed = true;
+    req  &r = cr->get_req(partially_place[i]);
+    int   remaining_tasks = r.get_num_tasks_for_host(hostname);
+    bool  change = false;
+    bool  not_placed = true;
     
     for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
       {
@@ -601,14 +629,12 @@ int Machine::place_job(
 
     if (remaining_tasks > 0)
       {
+      // At this point, all of the tasks that fit within 1 numa node have been placed.
+      // Now place any leftover tasks
       for (int i = 0; i < remaining_tasks; i++)
-        to_split.push_back(r);
+        place_remaining(r, a, remaining_tasks);
       }
     }
-
-  // At this point, all of the reqs that fit within 1 numa node have been placed.
-  // Now place any leftover tasks
-  place_remaining(to_split, a);
 
   a.place_indices_in_string(mem_string, MEM_INDICES);
   a.place_indices_in_string(cpu_string, CPU_INDICES);

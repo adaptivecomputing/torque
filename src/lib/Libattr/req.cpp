@@ -1331,6 +1331,15 @@ void req::get_values(
     names.push_back(buf);
     values.push_back(this->hostlist);
     }
+
+  for (unsigned int i = 0; i < this->task_allocations.size(); i++)
+    {
+    snprintf(buf, sizeof(buf), "task_usage.%d.task.%d", this->index, i);
+    std::string task_info;
+    this->task_allocations[i].write_task_information(task_info);
+    names.push_back(buf);
+    values.push_back(task_info);
+    }
   } // END get_values() 
 
 
@@ -1730,8 +1739,14 @@ int req::set_value(
     this->hostlist = value;
   else if (!strcmp(name, "core"))
     this->cores = strtol(value, NULL, 10);
-   else if (!strcmp(name, "thread"))
+  else if (!strcmp(name, "thread"))
     this->threads = strtol(value, NULL, 10);
+  else if (!strncmp(name, "task_usage", 10))
+    {
+    allocation a;
+    a.initialize_from_string(value);
+    this->task_allocations.push_back(a);
+    }
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -1986,6 +2001,24 @@ unsigned long req::get_memory_for_host(
 
   return(mem);
   } // END get_memory_for_host()
+
+
+
+void req::record_allocation(
+
+  const allocation &a)
+
+  {
+  this->task_allocations.push_back(a);
+  } // END record_allocation()
+
+
+
+void req::clear_allocations()
+
+  {
+  this->task_allocations.clear();
+  } // END clear_allocations()
 
 
 

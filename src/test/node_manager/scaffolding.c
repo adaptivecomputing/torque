@@ -638,6 +638,8 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 
 void complete_req::set_hostlists(const char *job_id, const char *hostname) {}
 
+void complete_req::clear_allocations() {}
+
 complete_req::complete_req(list_link &resource_list) {}
 
 void Machine::free_job_allocation(const char *jobid)

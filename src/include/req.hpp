@@ -85,6 +85,7 @@
 #include <vector>
 
 #include "list_link.h"
+#include "allocation.hpp"
 
 extern const int USE_CORES;
 extern const int USE_THREADS;
@@ -141,6 +142,7 @@ class req
     // these are not set by user request
     int               index;
     std::string       hostlist;   // set when the job is run
+    std::vector<allocation> task_allocations;
 
   public:
     req();
@@ -189,6 +191,8 @@ class req
     void          set_memory(unsigned long mem);
     void          set_execution_slots(int execution_slots);
     void          set_task_count(int task_count);
+    void          record_allocation(const allocation &a);
+    void          clear_allocations();
   };
 
 #endif /* _REQ_HPP */

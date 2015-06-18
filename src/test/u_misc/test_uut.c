@@ -1,11 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "utils.h"
 #include <check.h>
 #include <vector>
 #include <string>
 
-void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices);
-void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices);
+
+
+START_TEST(test_capture_until_close_character)
+  {
+  char *str = strdup("bob:(tim is bob)");
+  char *start = strchr(str, '(');
+  char *ptr = NULL;
+  std::string storage;
+
+  start++;
+
+  capture_until_close_character(&ptr, storage, '"');
+  fail_unless(storage.size() == 0);
+  capture_until_close_character(&start, storage, '"');
+  fail_unless(storage.size() == 0);
+  capture_until_close_character(&start, storage, ')');
+  fail_unless(storage == "tim is bob");
+  }
+END_TEST
 
 
 START_TEST(test_translate_vector_to_range_string)
@@ -88,16 +106,6 @@ START_TEST(test_translate_range_string_to_vector)
 END_TEST
 
 
-
-
-START_TEST(test_two)
-  {
-  }
-END_TEST
-
-
-
-
 Suite *u_misc_suite(void)
   {
   Suite *s = suite_create("u_misc test suite methods");
@@ -106,8 +114,8 @@ Suite *u_misc_suite(void)
   tcase_add_test(tc_core, test_translate_vector_to_range_string);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_capture");
+  tcase_add_test(tc_core, test_capture_until_close_character);
   suite_add_tcase(s, tc_core);
   
   return(s);

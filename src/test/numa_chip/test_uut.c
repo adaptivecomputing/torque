@@ -7,6 +7,8 @@
 #include "pbs_error.h"
 #include <sstream>
 
+extern int recorded;
+
 extern std::string my_placement_type;
 extern std::string thread_type;
 
@@ -228,17 +230,22 @@ START_TEST(test_exclusive_place)
   my_placement_type = place_numa_node;
   int num_fit = c.how_many_tasks_fit(r, exclusive_chip);
   fail_unless(num_fit == 1, "Expected 1, got %d", num_fit);
+  recorded = 0;
   int tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
+  fail_unless(recorded == 1);
+  
   std::stringstream out;
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
   my_placement_type.clear();
   
   a.place_type = exclusive_none;
+  recorded = 0;
   tasks = c.place_task(jobid, r, a, 5);
   fail_unless(c.how_many_tasks_fit(r, 0) == 0);
   fail_unless(tasks == 0);
+  fail_unless(recorded == 0);
   c.free_task(jobid);
   
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
@@ -247,6 +254,7 @@ START_TEST(test_exclusive_place)
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
   fail_unless(tasks == 6);
+  fail_unless(recorded == 6);
 
   Chip c2(out.str());
   std::stringstream o2;
@@ -271,8 +279,10 @@ START_TEST(test_exclusive_place)
   req r2;
   r2.set_value("lprocs", "32");
   thread_type.clear();
+  recorded = 0;
   tasks = c3.place_task(jobid, r2, a, 1);
   fail_unless(tasks == 1, "%d tasks", tasks);
+  fail_unless(recorded == 1);
   out.str("");
   c3.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
@@ -292,16 +302,21 @@ START_TEST(test_exclusive_place)
   allocation remaining(r3);
   allocation master("2.napali");
 
+  recorded = 0;
   c4.partially_place_task(remaining, master);
   out.str("");
   c4.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  // The reservations are recorded differently for partial placing
+  fail_unless(recorded == 0, "actual %d", recorded);
 
   // Make sure exclusive socket works across restarts
   a.place_type = exclusive_socket;
   c.free_task(jobid);
+  recorded = 0;
   tasks = c.place_task(jobid, r, a, 1);
   fail_unless(tasks == 1);
+  fail_unless(recorded == 1);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());

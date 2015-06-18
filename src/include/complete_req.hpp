@@ -98,17 +98,18 @@ class complete_req
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
-    void add_req(req &r);
-    void set_from_string(const std::string &obj_string);
-    int  set_value(int index, const char *name, const char *value);
-    void toString(std::string &output) const;
-    int  req_count() const;
-    void get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
-    unsigned long get_memory_for_this_host(const std::string &hostname) const;
-    unsigned long get_swap_memory_for_this_host(const std::string &hostname) const;
-    const req &get_req(int i) const;
-    void set_hostlists(const char *job_id, const char *host_list);
-    void set_value_from_nodes(const char *node_val);
+    void           add_req(req &r);
+    void           set_from_string(const std::string &obj_string);
+    int            set_value(int index, const char *name, const char *value);
+    void           toString(std::string &output) const;
+    int            req_count() const;
+    void           get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
+    unsigned long  get_memory_for_this_host(const std::string &hostname) const;
+    unsigned long  get_swap_memory_for_this_host(const std::string &hostname) const;
+    req           &get_req(int i);
+    void           set_hostlists(const char *job_id, const char *host_list);
+    void           set_value_from_nodes(const char *node_val);
+    void           clear_allocations();
   };
 
 #endif

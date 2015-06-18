@@ -97,7 +97,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libutils/u_hash_map_structs.c \
         ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c \
         ../Libattr/req.cpp ../Libattr/complete_req.cpp ../Libutils/u_mu.c \
-				../Libutils/u_misc.c
+				../Libutils/u_misc.c ../Libutils/allocation.cpp
 
 
 

@@ -39,36 +39,6 @@ Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), avail
 
 
 /*
- * capture_until_close_character()
- */
-
-void capture_until_close_character(
-
-  char        **start,
-  std::string  &storage,
-  char          end)
-
-  {
-  if ((start == NULL) ||
-      (*start == NULL))
-    return;
-
-  char *val = *start;
-  char *ptr = strchr(val, end);
-
-  // Make sure we found a close quote and this wasn't an empty string
-  if ((ptr != NULL) &&
-      (ptr != val))
-    {
-    storage = val;
-    storage.erase(ptr - val);
-    *start = ptr + 1; // add 1 to move past the character
-    }
-  } // capture_until_close_character()
-
-
-
-/*
  * parse_values_from_json_string()
  */
 
@@ -1108,7 +1078,7 @@ bool Chip::task_will_fit(
 int Chip::place_task(
 
   const char *jobid,
-  const req  &r,
+  req        &r,
   allocation &master,
   int         to_place)
 
@@ -1142,18 +1112,25 @@ int Chip::place_task(
         if (task_will_fit(r) == false)
           break;
 
+        allocation task_alloc(jobid);
+        task_alloc.cores_only = a.cores_only;
+
         this->available_memory -= mem_per_task;
-        a.memory += mem_per_task;
-        a.cpus += execution_slots_per_task;
+        task_alloc.memory += mem_per_task;
+        task_alloc.cpus += execution_slots_per_task;
         
-        if (a.cores_only == true)
-          place_task_by_cores(execution_slots_per_task, a);
+        if (task_alloc.cores_only == true)
+          place_task_by_cores(execution_slots_per_task, task_alloc);
         else
-          place_task_by_threads(execution_slots_per_task, a);
+          place_task_by_threads(execution_slots_per_task, task_alloc);
 
         allocation remaining(r);
 
-        place_accelerators(remaining, a);
+        place_accelerators(remaining, task_alloc);
+        task_alloc.mem_indices.push_back(this->id);
+
+        r.record_allocation(task_alloc);
+        a.add_allocation(task_alloc);
 
         if (practical_place == exclusive_chip)
           {
@@ -1170,7 +1147,6 @@ int Chip::place_task(
     if (tasks_placed > 0)
       {
       // Add this as a memory node
-      a.mem_indices.push_back(this->id);
       this->allocations.push_back(a);
       master.add_allocation(a);
       }
@@ -1180,6 +1156,14 @@ int Chip::place_task(
   } // END place_task()
 
 
+
+/*
+ * reserve_accelerator()
+ *
+ * Reserves a an accelerator with the specified type
+ * @param type - either GPU or MIC for now
+ * @return the os index of the accelerator that was reserved or -1 if none was found
+ */
 
 int Chip::reserve_accelerator(
 
@@ -1212,6 +1196,9 @@ int Chip::reserve_accelerator(
 /*
  * place_accelerators()
  *
+ * places as many accelerators from remaining as possible, decrements remaining and increments a
+ * @param remaining - an allocation specifying what accelerators need to be reserved
+ * @param a - the recording allocation where the indices should be stored
  */
 
 void Chip::place_accelerators(
@@ -1249,6 +1236,14 @@ void Chip::place_accelerators(
 
 
 
+/*
+ * free_accelerator()
+ * 
+ * frees the specified accelerator
+ * @param index - the os index of the accelerator
+ * @param type - the type of accelerator
+ */
+
 void Chip::free_accelerator(
 
   int index,
@@ -1270,6 +1265,13 @@ void Chip::free_accelerator(
   } // END free_accelerator()
 
 
+
+/*
+ * free_accelerators()
+ *
+ * frees the accelerators reserved by allocation a
+ * @param a - the allocation specifying which accelerators are reserved
+ */
 
 void Chip::free_accelerators(
 
@@ -1332,14 +1334,12 @@ void Chip::partially_place_task(
       (a.mic_indices.size() > 0))
     {
     a.mem_indices.push_back(this->id);
+    remaining.cpus -= a.cpus;
 
     this->allocations.push_back(a);
     master.add_allocation(a);
     }
 
-  remaining.cpus -= a.cpus;
-  master.add_allocation(a);
-  
   // Practically, we should treat place=node, place=socket, and
   // place=numanode as the same
   if ((master.place_type == exclusive_socket) ||
@@ -1431,6 +1431,15 @@ bool Chip::free_task(
 
 
 
+/*
+ * store_pci_device_appropriately()
+ *
+ * Stores device in this numa node if the cpuset overlaps or if forced
+ * @param device - the device to be optionally stored on this numa node
+ * @param force - if true, the device will automatically be considered part of this numa node
+ * @return true if the device was stored on this numa node
+ */
+
 bool Chip::store_pci_device_appropriately(
 
   PCI_Device &device,
@@ -1471,9 +1480,17 @@ bool Chip::store_pci_device_appropriately(
     }
 
   return(stored);
-  }
+  } // END store_pci_device_appropriately() 
 
 
+
+/*
+ * cpusets_overlap()
+ *
+ * Tests if the specified cpuset string overlaps with the cpuset for this numa node
+ * @param other - a range string specifying the other cpuset
+ * @return true if the cpuset for this numa node overlaps with the specified cpuset
+ */
 
 bool Chip::cpusets_overlap(
 
@@ -1500,7 +1517,7 @@ bool Chip::cpusets_overlap(
     }
 
   return(overlap);
-  }
+  } // END cpusets_overlap()
 
 
 #endif /* PENABLE_LINUX_CGROUPS */  

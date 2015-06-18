@@ -167,7 +167,7 @@ int Chip::how_many_tasks_fit(req const &r, int place_type) const
   return(tasks);
   }
 
-int Chip::place_task(const char *jobid, const req &r, allocation &a, int to_place)
+int Chip::place_task(const char *jobid, req &r, allocation &a, int to_place)
 
   {
   called_place++;

@@ -143,6 +143,15 @@ START_TEST(test_get_set_values)
   r3.set_value("task_count", "1");
   r3.set_value("placement_type", "place node");
   r3.set_value("lprocs", "all");
+  allocation a;
+  a.cores = 8;
+  a.threads = 16;
+  for (int i = 0; i < 16; i++)
+    a.cpu_indices.push_back(i);
+
+  a.mem_indices.push_back(0);
+  a.mem_indices.push_back(1);
+  r3.record_allocation(a);
 
   names.clear();
   values.clear();
@@ -150,8 +159,41 @@ START_TEST(test_get_set_values)
   r3.get_values(names, values);
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
+  fail_unless(names[3] == "task_usage.0.task.0", names[3].c_str());
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "all");
+  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16", values[3].c_str());
+
+  req clone;
+  std::vector<std::string> names_clone;
+  std::vector<std::string> values_clone;
+
+  for (unsigned int i = 0; i < names.size(); i++)
+    clone.set_value(names[i].c_str(), values[i].c_str());
+  clone.get_values(names_clone, values_clone);
+  
+  for (unsigned int i = 0; i < names.size(); i++)
+    {
+    fail_unless(names[i] == names_clone[i]);
+    fail_unless(values[i] == values_clone[i]);
+    }
+  
+  fail_unless(names.size() == names_clone.size());
+  fail_unless(values.size() == values_clone.size());
+
+  // Test removing and recording allocations
+  allocation save;
+  save.initialize_from_string(values[3]);
+  names.clear();
+  values.clear();
+  r3.clear_allocations();
+  r3.get_values(names, values);
+  fail_unless(values[3] != "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16", values[3].c_str());
+  names.clear();
+  values.clear();
+  r3.record_allocation(save);
+  r3.get_values(names, values);
+  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16", values[3].c_str());
   }
 END_TEST
 

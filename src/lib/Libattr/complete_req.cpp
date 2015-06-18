@@ -328,9 +328,9 @@ unsigned long complete_req::get_memory_for_this_host(
 
 
 
-const req &complete_req::get_req(
+req &complete_req::get_req(
 
-  int i) const
+  int i)
 
   {
   return(this->reqs[i]);
@@ -394,4 +394,13 @@ void complete_req::set_hostlists(
 
   free(work_list);
   } // END set_hostslists()
+
+
+
+void complete_req::clear_allocations()
+
+  {
+  for (unsigned int i = 0; i < this->reqs.size(); i++)
+    this->reqs[i].clear_allocations();
+  } // END clear_allocations()
 

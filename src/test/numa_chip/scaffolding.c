@@ -8,6 +8,7 @@ const char  *use_cores = "usecores";
 std::string  my_placement_type;
 std::string  thread_type;
 int          hardware_style;
+int          recorded = 0;
 
 const int    MIC_TYPE = 0;
 const int    GPU = 1;
@@ -175,6 +176,11 @@ int req::getGpus() const
   return(this->gpus);
   }
 
+void req::record_allocation(const allocation &a)
+  {
+  recorded++;
+  }
+
 int is_whitespace(
 
   char c)
@@ -190,111 +196,3 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
-void translate_range_string_to_vector(
-
-  const char       *range_string,
-  std::vector<int> &indices)
-
-  {
-  char *str = strdup(range_string);
-  char *ptr = str;
-  int   prev;
-  int   curr;
-
-  while (*ptr != '\0')
-    {
-    prev = strtol(ptr, &ptr, 10);
-    
-    if (*ptr == '-')
-      {
-      ptr++;
-      curr = strtol(ptr, &ptr, 10);
-
-      while (prev <= curr)
-        {
-        indices.push_back(prev);
-
-        prev++;
-        }
-
-      if ((*ptr == ',') ||
-          (is_whitespace(*ptr)))
-        ptr++;
-      }
-    else
-      {
-      indices.push_back(prev);
-
-      if ((*ptr == ',') ||
-          (is_whitespace(*ptr)))
-        ptr++;
-      }
-    }
-
-  free(str);
-  } /* END translate_range_string_to_vector() */
-
-
-
-void add_range_to_string(
-
-  std::string &range_string,
-  int          begin,
-  int          end)
-
-  {
-  char buf[MAXLINE];
-
-  if (begin == end)
-    {
-    if (range_string.size() == 0)
-      sprintf(buf, "%d", begin);
-    else
-      sprintf(buf, ",%d", begin);
-    }
-  else
-    {
-    if (range_string.size() == 0)
-      sprintf(buf, "%d-%d", begin, end);
-    else
-      sprintf(buf, ",%d-%d", begin, end);
-    }
-
-  range_string += buf;
-  } // END add_range_to_string()
-
-
-
-void translate_vector_to_range_string(
-
-  std::string            &range_string,
-  const std::vector<int> &indices)
-
-  {
-  // range_string starts empty
-  range_string.clear();
-
-  if (indices.size() == 0)
-    return;
-
-  int first = indices[0];
-  int prev = first;
-
-  for (unsigned int i = 1; i < indices.size(); i++)
-    {
-    if (indices[i] == prev + 1)
-      {
-      // Still in a consecutive range
-      prev = indices[i];
-      }
-    else
-      {
-      add_range_to_string(range_string, first, prev);
-
-      first = prev = indices[i];
-      }
-    }
-
-  // output final piece
-  add_range_to_string(range_string, first, prev);
-  } // END translate_vector_to_range_string()

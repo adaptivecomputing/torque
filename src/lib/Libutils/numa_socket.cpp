@@ -390,7 +390,7 @@ int Socket::how_many_tasks_fit(
 int Socket::place_task(
 
   const char *jobid,
-  const req  &r,
+  req        &r,
   allocation &master,
   int         to_place)
 

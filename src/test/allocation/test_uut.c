@@ -6,6 +6,47 @@
 #include "allocation.hpp"
 #include "req.hpp"
 
+
+START_TEST(test_write_task_information)
+  {
+  allocation a;
+
+  a.cores = 2;
+  a.threads = 4;
+  a.cpu_indices.push_back(0);
+  a.cpu_indices.push_back(1);
+  a.cpu_indices.push_back(8);
+  a.cpu_indices.push_back(9);
+  a.mem_indices.push_back(0);
+
+  std::string task_info;
+  a.write_task_information(task_info);
+  fail_unless(task_info == "\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4",
+              task_info.c_str());
+
+  allocation a2;
+  a2.initialize_from_string(task_info);
+  a2.write_task_information(task_info);
+  fail_unless(task_info == "\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4",
+              task_info.c_str());
+
+
+  a.threads = 2;
+  a.cpu_indices.clear();
+  a.cpu_indices.push_back(0);
+  a.cpu_indices.push_back(1);
+  a.write_task_information(task_info);
+  fail_unless(task_info == "\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2");
+
+  allocation a3;
+  a3.initialize_from_string(task_info);
+  a3.write_task_information(task_info);
+  fail_unless(task_info == "\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2",
+              task_info.c_str());
+  }
+END_TEST
+
+
 START_TEST(test_allocation_constructors)
   {
   allocation a;
@@ -53,6 +94,8 @@ START_TEST(test_add_allocation)
   a2.cpu_indices.push_back(3);
   a2.memory = 5;
   a2.mem_indices.push_back(1);
+  // Make sure we won't repeat mem indices
+  a2.mem_indices.push_back(0);
 
   a2.add_allocation(a);
   fail_unless(a2.cpus == 4);
@@ -124,6 +167,7 @@ Suite *allocation_suite(void)
   tc_core = tcase_create("test_add_allocation");
   tcase_add_test(tc_core, test_add_allocation);
   tcase_add_test(tc_core, test_place_indices_in_string);
+  tcase_add_test(tc_core, test_write_task_information);
   suite_add_tcase(s, tc_core);
   
   return(s);

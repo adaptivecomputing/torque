@@ -84,6 +84,7 @@
 #include "allocation.hpp"
 #include "req.hpp"
 #include "pbs_error.h"
+#include "utils.h"
 
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
@@ -152,8 +153,23 @@ int allocation::add_allocation(
   this->cores += other.cores;
   this->threads += other.threads;
 
+  // Make sure mem indices are unique
   for (unsigned int i = 0; i < other.mem_indices.size(); i++)
-    this->mem_indices.push_back(other.mem_indices[i]);
+    {
+    bool found = false;
+
+    for (unsigned int j = 0; j < this->mem_indices.size(); j++)
+      {
+      if (this->mem_indices[j] == other.mem_indices[i])
+        {
+        found = true;
+        break;
+        }
+      }
+
+    if (found == false)
+      this->mem_indices.push_back(other.mem_indices[i]);
+    }
 
   this->memory += other.memory;
 
@@ -210,5 +226,75 @@ void allocation::set_place_type(
     this->place_type = exclusive_core;
   else
     this->place_type = exclusive_none;
-  }
+  } // END set_place_type()
+
+
+
+/*
+ * write_task_information()
+ *
+ * Output the information for this task's usage to the string
+ *
+ * @param task_info - the output string of the task information
+ */
+
+void allocation::write_task_information(
+
+  std::string &task_info) const
+
+  {
+  std::string cpus;
+  std::string mems;
+  char        buf[100];
+
+  translate_vector_to_range_string(cpus, this->cpu_indices);
+  translate_vector_to_range_string(mems, this->mem_indices);
+  task_info = "\"cpu_list\":\"" + cpus;
+  task_info += "\",\"mem_list\":\"" + mems;
+  snprintf(buf, sizeof(buf), "\",\"cores\":%d", this->cores);
+  task_info += buf;
+  snprintf(buf, sizeof(buf), ",\"threads\":%d", this->threads);
+  task_info += buf;
+  } // END write_task_information()
+
+
+
+void allocation::initialize_from_string(
+
+  const std::string &task_info)
+
+  {
+  std::string  cpus;
+  std::string  mems;
+  char        *work_str = strdup(task_info.c_str());
+  char        *val = work_str;
+  char        *ptr = strstr(work_str, "cpu_list\":");
+  std::string  storage;
+
+  if (ptr != NULL)
+    {
+    val = ptr + strlen("cpu_list\":") + 1; // add 1 for the open quote
+    capture_until_close_character(&val, storage, '"');
+    translate_range_string_to_vector(storage.c_str(), this->cpu_indices);
+    }
+
+  if ((ptr = strstr(val, "mem_list\":")) != NULL)
+    {
+    val = ptr + strlen("mem_list\":") + 1; // add 1 for the open quote
+    capture_until_close_character(&val, storage, '"');
+    translate_range_string_to_vector(storage.c_str(), this->mem_indices);
+    }
+
+  if ((ptr = strstr(val, "cores\":")) != NULL)
+    {
+    val = ptr + strlen("cores\":");
+    this->cores = strtol(val, &val, 10);
+    }
+
+  if ((ptr = strstr(val, "threads\":")) != NULL)
+    {
+    val = ptr + strlen("threads\":");
+    this->threads = strtol(val, &val, 10);
+    }
+  } // END initialize_from_string()
 

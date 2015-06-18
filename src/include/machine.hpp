@@ -178,7 +178,7 @@ class Chip
     void setChipAvailable(bool available);
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(const req &r) const;
-    int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
+    int  place_task(const char *jobid, req &r, allocation &a, int to_place);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
     bool free_task(const char *jobid);
@@ -242,7 +242,7 @@ class Socket
     void setId(int id);
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
-    int  place_task(const char *jobid, const req &r, allocation &a, int to_place);
+    int  place_task(const char *jobid, req &r, allocation &a, int to_place);
     bool free_task(const char *jobid);
     bool is_available() const;
     bool fits_on_socket(const allocation &remaining) const;
@@ -305,7 +305,7 @@ class Machine
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
-    void place_remaining(vector<req> to_split, allocation &a);
+    void place_remaining(req &to_split, allocation &master, int remaining_tasks);
     void update_internal_counts();
   };
 

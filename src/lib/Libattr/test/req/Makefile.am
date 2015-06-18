@@ -10,7 +10,8 @@ AM_LDFLAGS = @CHECK_LIBS@ $(lib_LTLIBRARIES)
 
 check_PROGRAMS = test_req
 
-libtest_req_la_SOURCES = scaffolding.c $(PROG_ROOT)/req.cpp
+libtest_req_la_SOURCES = scaffolding.c $(PROG_ROOT)/req.cpp $(PROG_ROOT)/../Libutils/allocation.cpp \
+												 $(PROG_ROOT)/../Libutils/u_misc.c
 libtest_req_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_req_SOURCES = test_req.c

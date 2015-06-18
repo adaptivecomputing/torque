@@ -229,6 +229,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/svr_task/Makefile
     src/test/track_alps_reservations/Makefile
     src/test/user_info/Makefile
+    src/lib/Libattr/test/req/Makefile
+    src/lib/Libattr/test/complete_req/Makefile
+    src/lib/Libattr/test/attr_fn_complete_req/Makefile
     src/test/attr_atomic/Makefile
     src/test/attr_fn_acl/Makefile
     src/test/attr_fn_arst/Makefile

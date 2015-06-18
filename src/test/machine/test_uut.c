@@ -209,7 +209,7 @@ START_TEST(test_place_and_free_job)
 
   m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_partially_place == 2, "called %d", called_partially_place);
-  fail_unless(called_fits_on_socket == 3);
+  fail_unless(called_fits_on_socket == 3, "called %d times", called_fits_on_socket);
   }
 END_TEST
 

@@ -5647,6 +5647,14 @@ void free_nodes(
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
 
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    cr->clear_allocations();
+    }
+#endif
+
   return;
   }  /* END free_nodes() */
 
