@@ -5,6 +5,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
       canceled jobs to have the same exit code regardless of the state they were in
       when they were canceled.
+  b - TRQ-3185. Create subdirs when server attribute use_job_subdirs set.
 
 
 5.1.1
