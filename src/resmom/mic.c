@@ -233,11 +233,8 @@ int add_mic_status(
     return(PBSE_NONE);
 #endif
 
-  for (unsigned int i = 0; i < MAX_ENGINES; i++)
-    {
-    memset(engine[i], 0, sizeof(COIENGINE));
-    memset(mic_stat[i], 0, sizeof(COIENGINE));
-    }
+  memset(&engine, 0, sizeof(engine));
+  memset(&mic_stat, 0, sizeof(mic_stat));
 
   if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
     {
