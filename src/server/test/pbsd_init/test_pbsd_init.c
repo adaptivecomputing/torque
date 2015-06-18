@@ -3,11 +3,39 @@
 #include "test_pbsd_init.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <log.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+int mk_subdirs(char **);
+
+extern char global_log_ext_msg[LOCAL_LOG_BUF_SIZE];
+
+START_TEST(test_mk_subdirs)
   {
+  char *paths[3] = { NULL };
 
+  // null path - expect failure
+  fail_unless(mk_subdirs(NULL) != PBSE_NONE);
+  fail_unless(global_log_ext_msg[0] == '\0');
 
+  // no paths defined - expect success
+  fail_unless(mk_subdirs(paths) == PBSE_NONE);
+  fail_unless(global_log_ext_msg[0] == '\0');
+
+  // path defined - expect success
+  fail_unless((paths[0] = strdup("./subdir")) != NULL);
+  fail_unless(mk_subdirs(paths) == PBSE_NONE);
+  fail_unless(strncmp("created", global_log_ext_msg, strlen("created")) == 0);
+
+  // path defined - expect success (no log msg since already created)
+  global_log_ext_msg[0] = '\0';
+  fail_unless((paths[0] = strdup("./subdir")) != NULL);
+  fail_unless(mk_subdirs(paths) == PBSE_NONE);
+  fail_unless(global_log_ext_msg[0] == '\0');
+
+  // clean up
+  fail_unless(system("rmdir ./subdir*") == 0);
   }
 END_TEST
 
@@ -21,8 +49,8 @@ END_TEST
 Suite *pbsd_init_suite(void)
   {
   Suite *s = suite_create("pbsd_init_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_mk_subdirs");
+  tcase_add_test(tc_core, test_mk_subdirs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

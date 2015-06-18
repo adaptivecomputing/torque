@@ -709,8 +709,53 @@ int setup_signal_handling()
   return(PBSE_NONE);
   } /* END setup_signal_handling() */
 
+// check divided jobs and arrays subdirectories for existence
+// Note: These are normally constructed during installation. See
+// mk_server_dirs() in buildutils/pbs_mkdirs.in.
 
+int mk_subdirs(
 
+  char **paths)
+
+  {
+  int         j;
+  struct stat statbuf;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (paths == NULL)
+    return(-1);
+
+  for (j = 0; paths[j] != NULL; j++)
+    {
+    int i;
+
+    for (i = 0; i <= 9; i++)
+      {
+      char buf[1024];
+
+      // build the complete path and see if it exists
+      snprintf(buf, sizeof(buf), "%s%d/", paths[j], i);
+      if ((lstat(buf, &statbuf) != 0) && (errno == ENOENT))
+        {
+        // try to make the directory
+        if (mkdir(buf, 0770) != 0)
+          {
+          snprintf(log_buf, sizeof(log_buf), "%s cannot create directory, errno=%d, %s",
+             buf,
+             errno,
+             strerror(errno));
+          log_err(-1, __func__, log_buf);
+          return(3);
+          }
+
+        // success - add log message
+        snprintf(log_buf, sizeof(log_buf), "created missing directory %s", buf);
+        log_ext(0, __func__, log_buf, LOG_INFO);
+        }
+      }
+    }
+  return(PBSE_NONE);
+  }
 
 int initialize_paths()
 
@@ -720,18 +765,21 @@ int initialize_paths()
   const char        *new_tag = ".new";
   struct stat  statbuf;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  long         use_jobs_subdirs = FALSE;
+  char        *paths[3] = { NULL };
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char         EMsg[1024];
-  long         use_jobs_subdirs = FALSE;
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
   if (path_priv == NULL)
     path_priv        = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
 
   path_arrays        = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
+  paths[0]           = path_arrays;
   path_spool         = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
   path_queues        = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
   path_jobs          = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
+  paths[1]           = path_jobs;
   path_credentials   = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
   path_acct          = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
@@ -767,7 +815,7 @@ int initialize_paths()
   path_checkpoint    = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 #endif
 
-  /* check existance amd make sure it is a directory */
+  /* check existence amd make sure it is a directory */
 
   if (stat(path_checkpoint, &statbuf) < 0)
     {
@@ -811,42 +859,38 @@ int initialize_paths()
       }
     }
 
-#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-
-  rc  = chk_file_sec(path_jobs,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-
   // get the use_jobs_subdirs value if set
   get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
+  // check divided jobs and arrays subdirectories for existence
+  if (use_jobs_subdirs == TRUE)
+    {
+    mk_subdirs(paths);
+    }
+
+#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
   // check divided jobs subdirectories if needed
   if (use_jobs_subdirs == TRUE)
     {
-    int i;
+    int j;
 
-    for (i = 0; i <= 9; i++)
+    for (j = 0; paths[j] != NULL; j++)
       {
-      char buf[1024];
+      int i;
 
-      snprintf(buf, sizeof(buf), "%s%d/", path_jobs, i);
-      rc  |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+      rc |= chk_file_sec(paths[j],  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+
+      for (i = 0; i <= 9; i++)
+        {
+        char buf[1024];
+
+        snprintf(buf, sizeof(buf), "%s%d/", paths[j], i);
+        rc |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+        }
       }
     }
 
-  rc  = chk_file_sec(path_arrays,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-
-  // check divided arrays subdirectories if needed
-  if (use_jobs_subdirs == TRUE)
-    {
-    int i;
-
-    for (i = 0; i <= 9; i++)
-      {
-      char buf[1024];
-
-      snprintf(buf, sizeof(buf), "%s%d/", path_arrays, i);
-      rc  |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-      }
-    }
   rc |= chk_file_sec(path_queues, 1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
