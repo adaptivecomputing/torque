@@ -2730,216 +2730,6 @@ int mom_set_use(
 
 
 
-/*
- * should_kill_process()
- *
- * Returns different codes to indicate whether or not a process should be killed
- * @param pid    - the process id in question
- * @param mompid - the pid of the mom process
- * @param task  - the task
- * @param num_found - incremented if we found a process that is part of this task
- * @param kill_later - incremented if this process must be killed later
- * @return true or false if the process should be killed
- */
-
-bool should_kill_process(
-
-  pid_t  pid,
-  pid_t  mompid,
-  task  *ptask,
-  int    sig,
-  int   &num_found,
-  int   &kill_later)
-
-  {
-  if (pid == mompid)
-    {
-    kill_later++;
-    
-    if (LOGLEVEL >= 3)
-      {
-      sprintf(log_buffer,
-        "Waiting to kill process %d because child task still has MOM's session id",
-        pid);
-      
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-      }
-
-    return(false);
-    }
-
-  proc_stat_t *ps = get_proc_stat(pid);
-
-  if (ps == NULL)
-    {
-    if ((errno != ENOENT) && 
-        (LOGLEVEL > 1))
-      {
-      sprintf(log_buffer, "%d: Couldn't stat proc directory", pid);
-
-      log_err(errno, __func__, log_buffer);
-      }
-
-    return(false);
-    }
-  
-  // Only kill processes that match our session
-  if (ptask->ti_qs.ti_sid != ps->session)
-    return(false);
-  
-  // Don't kill zombies as it's pid is 0 and that will kill all processes
-  if ((ps->state == 'Z') ||
-      (ps->pid == 0))
-    {
-    num_found++;
-    if (LOGLEVEL > 5)
-      {
-      sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
-        __func__, ps->pid, ps->state, sig);
-      
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-      }
-
-    return(false);
-    }
-
-  return(true);
-  } // END should_kill_process()
-
-
-
-/*
- * should_send_final_signal()
- *
- * Sends an initial signal - if necessary - and then indicates whether or not
- * a final signal should be sent. If sig isn't SIGKILL, it only returns true. For
- * SIGKILL, it sends a SIGTERM and sees if the process goes away from that or not.
- *
- * @param pid - the pid in question
- * @param ptask - the task that pid is a part of
- * @param sig - the signal to send
- * @return true if the process still exists
- */
-bool should_send_final_signal(
-    
-  pid_t  pid,
-  task  *ptask,
-  int    sig,
-  int    pg)
-
-  {
-  if (sig == SIGKILL)
-    {
-    sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
-      __func__, pid, ptask->ti_qs.ti_task, SIGTERM);
-    
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-    
-    if (pg == 0)
-      {
-      /* make sure we only send a SIGTERM one time */
-      if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
-        {
-        kill(pid, SIGTERM);
-        ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
-        }
-      }
-    else
-      {
-      if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
-        {
-        killpg(pid, SIGTERM);
-        ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
-        }
-      }
-  
-    proc_stat_t *ps;
-    
-    for (int i = 0; i < 20; i++)
-      {
-      /* check if process is gone */
-      if ((ps = get_proc_stat(pid)) == NULL)
-        return(false);
-      else
-        {
-        sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
-          __func__, pid, ps->state, SIGTERM);
-
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-
-        // Don't SIGKILL a zombie
-        if (ps->state == 'Z')
-          return(false);
-        }
-      
-      /* try to kill again */
-      if (kill(pid, 0) == -1)
-        return(false);
-      }  /* END for (i = 0) */
-    }    /* END if (sig == SIGKILL) */
-
-  return(true);
-  } // END should_send_final_signal()
-
-
-
-void send_final_signal(
-    
-  pid_t  pid,
-  task  *ptask,
-  int    sig,
-  int    pg)
-
-  {
-  proc_stat_t *ps;
-
-  /* update proc info from /proc/<PID>/stat */
-  if ((ps = get_proc_stat(pid)) != NULL)
-    {
-    if (ps->state == 'Z')
-      {
-      sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
-        __func__, ps->pid, ps->state, sig);
-      
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_qs.ti_parentjobid, log_buffer);
-      }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
-    else
-      {
-      /* send final signal */
-      sprintf(log_buffer, "%s: killing pid %d task %d with sig %d",
-        __func__, ps->pid, ptask->ti_qs.ti_task, sig);
-      
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-      
-      if (pg == 0)
-        {
-        if (sig != SIGTERM)
-          {
-          kill(ps->pid, sig);
-          }
-        /* make sure we only send a SIGTERM one time */
-        else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
-          {
-          kill(ps->pid, sig);
-          ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
-          }
-        }
-      else
-        {
-        if (sig != SIGTERM)
-          {
-          killpg(ps->pid, sig);
-          }
-        else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
-          {
-          killpg(ps->pid, sig);
-          ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
-          }
-        }
-      }
-    }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
-  } // END send_final_signal()
-
 
 
 /**
@@ -2975,9 +2765,11 @@ int kill_task(
   pid_t          pid;
 
   proc_stat_t   *ps;
-  int            sesid = ptask->ti_qs.ti_sid;
-  int            rc;
-  pid_t          mompid = getpid();
+  int            sesid;
+  pid_t          mompid;
+
+  sesid = ptask->ti_qs.ti_sid;
+  mompid = getpid();
 
   if (LOGLEVEL >= 5)
     {
@@ -3056,24 +2848,179 @@ int kill_task(
         continue;
         }
       
-      if (should_kill_process(pid, mompid, ptask, sig, ctThisIteration, NumProcessesFound) == false)
-        continue;
-
-      if ((sig == SIGKILL) ||
-          (sig == SIGTERM))
-        ctThisIteration++;
-
-      if (should_send_final_signal(pid, ptask, sig, pg) == true)
-        send_final_signal(pid, ptask, sig, pg);
+      if ((sesid == ps->session) ||
+          (ProcIsChild(procfs,pid,ptask->ti_qs.ti_parentjobid) == TRUE))
+        
+        {
+        NumProcessesFound++;
+        
+        if ((ps->state == 'Z') ||
+            (ps->pid == 0))
+          {
+          /*
+           * Killing a zombie is sure death! Its pid is zero,
+           * which to kill(2) means 'every process in the process
+           * group of the current process'.
+           */
+          
+          sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
+            __func__, ps->pid, ps->state, sig);
+          
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
+          }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
+        else
+          {
+          int i = 0;
+          
+          if (ps->pid == mompid)
+            {
+            /*
+             * there is a race condition with newly started jobs that
+             * can be killed before they've established their own
+             * session id.  This means the child tasks still have MOM's
+             * session id.  We check this to make sure MOM doesn't kill
+             * herself.
+             */
+    
+            if (LOGLEVEL >= 3)
+              {
+              sprintf(log_buffer, "%s: not killing process %d. Avoid sending signal because child task still has MOM's session id", __func__, ps->pid);
+              
+              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
+              }
+            
+            if ((sig == SIGKILL) ||
+                (sig == SIGTERM))
+              {
+              ++ctThisIteration; //Ultimately this is  task that will need to be killed.
+              }
+            
+            continue;
+            }  /* END if (ps->pid == mompid) */
+          
+          if (sig == SIGKILL)
+            {
+            sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
+              __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
+            
+            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
+            
+            if (pg == 0)
+              {
+              /* make sure we only send a SIGTERM one time per process */
+              if ((ptask->ti_qs.ti_status != TI_STATE_SIGTERM) || (ps->state != 'Z'))
+                {
+                kill(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
+            else
+              {
+              if ((ptask->ti_qs.ti_status != TI_STATE_SIGTERM) || (ps->state != 'Z'))
+                {
+                killpg(ps->pid, SIGTERM);
+                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                }
+              }
+            
+            for (i = 0;i < 20;i++)
+              {
+              /* check if process is gone */
+              if ((ps = get_proc_stat(ps->pid)) == NULL)
+                {
+                break;
+                }
+              else
+                {
+                sprintf(log_buffer, "%s: process (pid=%d/state=%c) after sig %d",
+                  __func__, ps->pid, ps->state, SIGTERM);
       
-      ct++;
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
+      
+                if (ps->state == 'Z')
+                  break;
+                }
+              
+              /* try to kill again */
+              if (kill(ps->pid, 0) == -1)
+                break;
+              
+              }  /* END for (i = 0) */
+            }    /* END if (sig == SIGKILL) */
+          else
+            {
+            i = 20;
+            }
+          
+          if (i >= 20)
+            {
+            /* NOTE: handle race-condition where process goes zombie as a result
+             * of previous SIGTERM */
+            
+            /* update proc info from /proc/<PID>/stat */
+            if ((ps = get_proc_stat(ps->pid)) != NULL)
+              {
+              if (ps->state == 'Z')
+                {
+                /*
+                 * Killing a zombie is sure death! Its pid is zero,
+                 * which to kill(2) means 'every process in the process
+                 * group of the current process'.
+                 */
+      
+                sprintf(log_buffer, "%s: not killing process (pid=%d/state=%c) with sig %d",
+                  __func__, ps->pid, ps->state, sig);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,	ptask->ti_qs.ti_parentjobid, log_buffer);
+                }  /* END if ((ps->state == 'Z') || (ps->pid == 0)) */
+              else
+                {
+                /* kill process hard */
+                
+                /* why is this not killing with SIGKILL? */
+                sprintf(log_buffer, "%s: killing pid %d task %d with sig %d",
+                  __func__, ps->pid, ptask->ti_qs.ti_task, sig);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
+                
+                if (pg == 0)
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    }
+                  /* make sure we only send a SIGTERM one time */
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
+                else
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    }
+                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    }
+                  }
+                }
+              }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
+            }      /* END if (i >= 20) */
+          
+          ++ct;
+          }  /* END else ((ps->state == 'Z') || (ps->pid == 0)) */
+        }    /* END if (sesid == ps->session) */
       }      /* END while (...) != NULL) */
 
 #ifdef PENABLE_LINUX26_CPUSETS
     free_pidlist(pids);
     pids = NULL;
 #endif
-
     if (ctThisIteration == 0)
       {
       ctCleanIterations++;
@@ -3082,7 +3029,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations <= 5) && (loopCt++ < 20));
+    } while ((ctCleanIterations == 0) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */
