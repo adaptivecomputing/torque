@@ -729,4 +729,15 @@ void Machine::store_device_on_appropriate_chip(
     }
   }
 
+
+
+void Machine::populate_job_ids(
+
+  std::vector<std::string> &job_ids) const
+
+  {
+  for (unsigned int i = 0; i < this->allocations.size(); i++)
+    job_ids.push_back(this->allocations[i].jobid);
+  } // END populate_job_ids()
+
 #endif /* PENABLE_LINUX_CGROUPS */

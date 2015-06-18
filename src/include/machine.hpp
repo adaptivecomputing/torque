@@ -307,6 +307,7 @@ class Machine
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
     void place_remaining(req &to_split, allocation &master, int remaining_tasks);
     void update_internal_counts();
+    void populate_job_ids(std::vector<std::string> &job_ids) const;
   };
 
 extern Machine this_node;

@@ -189,8 +189,12 @@ void req::record_allocation(allocation const &a) {}
 
 allocation::allocation(const char *jid)
   {
+  strcpy(this->jobid, jid);
   }
-allocation::allocation(const allocation &other) {}
+allocation::allocation(const allocation &other) 
+  {
+  strcpy(this->jobid, other.jobid);
+  }
 allocation::allocation() {}
 allocation::allocation(const req &r) {}
 void allocation::set_place_type(const std::string &place) {}

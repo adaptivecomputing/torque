@@ -1072,6 +1072,43 @@ int setup_server_attrs(
 
 
 #ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ * remove_invalid_allocations()
+ *
+ * Checks the 
+ */
+void remove_invalid_allocations(
+
+  pbsnode *pnode)
+
+  {
+
+  if (pnode->nd_layout != NULL)
+    {
+    std::vector<std::string> job_ids;
+
+    pnode->nd_layout->populate_job_ids(job_ids);
+
+    for (unsigned int i = 0; i < job_ids.size(); i++)
+      {
+      if (job_id_exists(job_ids[i]) == false)
+        pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
+      }
+    }
+  } // END remove_invalid_allocations()
+
+
+
+/*
+ * load_node_usage()
+ *
+ * Loads pnode's usage information from file
+ *
+ * @param pnode - the node whose usage information we're loading
+ * @param node_name - the name of pnode
+ */
+
 void load_node_usage(
 
   pbsnode    *pnode,
@@ -1117,9 +1154,18 @@ void load_node_usage(
     }
 
   close(fds);
+
+  remove_invalid_allocations(pnode);
   } // END load_node_usage()
 
 
+
+/*
+ * load_node_usages()
+ *
+ * Loads the current usage information for any and all nodes
+ * @return PBSE_NONE on success, or -1 if the directory doesn't exist or cannot be opened
+ */
 
 int load_node_usages()
   {
@@ -1172,7 +1218,7 @@ int load_node_usages()
   closedir(dir);
 
   return(PBSE_NONE);
-  } // END load_nd_usages()
+  } // END load_node_usages()
 #endif
 
 
@@ -1184,10 +1230,6 @@ int initialize_nodes()
     {
     return(-1);
     }
-
-#ifdef PENABLE_LINUX_CGROUPS
-  load_node_usages();
-#endif
 
   add_server_names_to_acl_hosts();
   update_default_np();
@@ -2105,6 +2147,10 @@ int pbsd_init(
       return(ret);
 
     handle_job_and_array_recovery(type);
+
+#ifdef PENABLE_LINUX_CGROUPS
+    load_node_usages();
+#endif
 
     /* Put us back in the Server's Private directory */
     if (chdir(path_priv) != 0)

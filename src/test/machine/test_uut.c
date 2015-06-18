@@ -8,6 +8,7 @@
 #include "pbs_error.h"
 #include "pbs_job.h"
 #include "complete_req.hpp"
+#include "pbs_config.h"
 
 extern int hardware_style;
 
@@ -165,6 +166,7 @@ START_TEST(test_place_and_free_job)
   job pjob;
   complete_req cr;
   pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
   // Make the job fit on one socket so we call place once per task
   called_place_task = 0;
@@ -174,6 +176,11 @@ START_TEST(test_place_and_free_job)
   num_placed = 4;
   m.place_job(&pjob, cpu, mem, "napali");
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
+
+  std::vector<std::string> job_ids;
+  m.populate_job_ids(job_ids);
+  fail_unless(job_ids.size() == 1);
+  fail_unless(job_ids[0] == "1.napali", "id: '%s'", job_ids[0].c_str());
 
   // Make sure we call free tasks once per socket
   called_free_task = 0;
