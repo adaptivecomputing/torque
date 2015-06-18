@@ -6,6 +6,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       canceled jobs to have the same exit code regardless of the state they were in
       when they were canceled.
   b - TRQ-3185. Create subdirs when server attribute use_job_subdirs set.
+  e - TRQ-2836. Make node health check run on sister nodes when configured for job
+      start and job end as well.
 
 
 5.1.1
