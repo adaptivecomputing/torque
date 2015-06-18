@@ -526,7 +526,8 @@ void add_procs_and_nodes_used(
       std::vector<int> indices;
 
       // remove the /<index>
-      host.erase(slash);
+      if (slash != std::string::npos)
+        host.erase(slash);
 
       translate_range_string_to_vector(range.c_str(), indices);
       total_execution_slots += indices.size();
