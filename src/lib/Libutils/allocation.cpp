@@ -296,5 +296,7 @@ void allocation::initialize_from_string(
     val = ptr + strlen("threads\":");
     this->threads = strtol(val, &val, 10);
     }
+
+  free(work_str);
   } // END initialize_from_string()
 

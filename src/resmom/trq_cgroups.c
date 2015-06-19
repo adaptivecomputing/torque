@@ -228,7 +228,7 @@ int trq_cg_initialize_cpuset_string(
     return(PBSE_SYSTEM);
     }
 
-  bytes_written = fwrite(buf, strlen(buf), 1, fd);
+  bytes_written = fwrite(buf, sizeof(char), strlen(buf), fd);
   if (bytes_written < 1)
     {
     sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
@@ -592,7 +592,7 @@ int trq_cg_add_process_to_cgroup(
     {
     sprintf(log_buf, "failed to open %s for writing: %s",
       full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
 
@@ -601,7 +601,7 @@ int trq_cg_add_process_to_cgroup(
     {
     sprintf(log_buf, "failed to add process %s to cgroup %s: error: %d",
       new_task_pid, full_cgroup_path.c_str(), errno);
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
 
@@ -650,7 +650,7 @@ int trq_cg_create_cgroup(
       (errno != EEXIST))
     {
     sprintf(log_buf, "failed to make directory %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
 
@@ -658,7 +658,7 @@ int trq_cg_create_cgroup(
   if (rc != 0)
     {
     sprintf(log_buf, "failed to change mode for  %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM); 
     }
 
@@ -703,7 +703,7 @@ int trq_cg_populate_cgroup(
     return(PBSE_SYSTEM);
     }
 
-  if ((bytes_written = fwrite(used.c_str(), used.size(), 1, f)) < 1)
+  if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
     {
     sprintf(log_buf, "failed to write cpuset for job %s", job_id);
     log_err(errno, __func__, log_buf);
@@ -885,7 +885,7 @@ int trq_cg_remove_process_from_cgroup(
       else
         {
         sprintf(log_buf, "failed to remove %s from cgroups: %d ", cgroup_path_name.c_str(), errno);
-        log_err(-1, __func__, log_buf);
+        log_err(errno, __func__, log_buf);
         break;
         }
       }
@@ -962,7 +962,7 @@ int trq_cg_set_swap_memory_limit(
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
-  FILE   *fd;
+  FILE   *f;
   size_t  bytes_written;
   
   /* Create a string with a path to the 
@@ -970,25 +970,25 @@ int trq_cg_set_swap_memory_limit(
   oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
-  fd = fopen(oom_control_name.c_str(), "r+");
-  if (fd == NULL)
+  f = fopen(oom_control_name.c_str(), "r+");
+  if (f == NULL)
     {
     sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
 
   sprintf(mem_limit_string, "%ld", memory_limit);
-  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string) -1, strlen(mem_limit_string) -1, fd);
+  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
+    
+  fclose(f);
+
   if (bytes_written < 1)
     {
     sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(-1, __func__, log_buf);
-    fclose(fd);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
-
-  fclose(fd);
 
   return(PBSE_NONE);
   } // END trq_cg_set_swap_memory_limit()
@@ -1027,16 +1027,16 @@ int trq_cg_set_resident_memory_limit(
   if (fd == NULL)
     {
     sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
 
   sprintf(mem_limit_string, "%ld", memory_limit);
-  bytes_written = fwrite(mem_limit_string, strlen(mem_limit_string), 1, fd);
+  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), fd);
   if (bytes_written < 1)
     {
     sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     fclose(fd);
     return(PBSE_SYSTEM);
     }
