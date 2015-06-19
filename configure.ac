@@ -458,43 +458,41 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/qstop/Makefile
     src/test/qsub_functions/Makefile
     src/test/qterm/Makefile
+    src/test/momctl/Makefile
     src/daemon_client/test/Makefile
     src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
     src/lib/test/Makefile
-    src/momctl/test/Makefile
-    src/momctl/test/momctl/Makefile
     src/pam/test/Makefile
     src/pam/test/pam_pbssimpleauth/Makefile
-    src/resmom/test/Makefile
-    src/resmom/test/alps_reservations/Makefile
-    src/resmom/test/catch_child/Makefile
-    src/resmom/test/checkpoint/Makefile
-    src/resmom/test/cray_cpa/Makefile
-    src/resmom/test/cray_energy/Makefile
-    src/resmom/test/generate_alps_status/Makefile
-    src/resmom/test/mom_job_func/Makefile
-    src/resmom/test/mom_comm/Makefile
-    src/resmom/test/mom_inter/Makefile
-    src/resmom/test/mom_main/Makefile
-    src/resmom/test/mom_server/Makefile
-    src/resmom/test/mom_process_request/Makefile
-    src/resmom/test/mom_req_quejob/Makefile
-    src/resmom/test/parse_config/Makefile
-    src/resmom/test/pbs_demux/Makefile
-    src/resmom/test/prolog/Makefile
-    src/resmom/test/release_reservation/Makefile
-    src/resmom/test/requests/Makefile
-    src/resmom/test/start_exec/Makefile
-    src/resmom/test/tmsock_recov/Makefile
+    src/test/alps_reservations/Makefile
+    src/test/catch_child/Makefile
+    src/test/checkpoint/Makefile
+    src/test/cray_cpa/Makefile
+    src/test/cray_energy/Makefile
+    src/test/generate_alps_status/Makefile
+    src/test/mom_job_func/Makefile
+    src/test/mom_comm/Makefile
+    src/test/mom_inter/Makefile
+    src/test/mom_main/Makefile
+    src/test/mom_server/Makefile
+    src/test/mom_process_request/Makefile
+    src/test/mom_req_quejob/Makefile
+    src/test/parse_config/Makefile
+    src/test/pbs_demux/Makefile
+    src/test/prolog/Makefile
+    src/test/release_reservation/Makefile
+    src/test/requests/Makefile
+    src/test/start_exec/Makefile
+    src/test/tmsock_recov/Makefile
     src/resmom/linux/test/Makefile
     src/resmom/linux/test/cpuset/Makefile
-    src/resmom/linux/test/mom_mach/Makefile
+    src/test/mom_mach/Makefile
     src/resmom/linux/test/sys_file/Makefile
-    src/resmom/linux/test/mom_start/Makefile
+    src/test/mom_start/Makefile
     src/resmom/linux/test/numa_node/Makefile
     src/resmom/linux/test/node_internals/Makefile
-    src/resmom/linux/test/pe_input/Makefile
+    src/test/pe_input/Makefile
     src/test/Makefile
     src/tools/test/Makefile
     src/tools/test/chk_tree/Makefile

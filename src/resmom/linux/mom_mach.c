@@ -2907,8 +2907,8 @@ int kill_task(
             
             if (pg == 0)
               {
-              /* make sure we only send a SIGTERM one time */
-              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+              /* make sure we only send a SIGTERM one time per process */
+              if ((ptask->ti_qs.ti_status != TI_STATE_SIGTERM) || (ps->state != 'Z'))
                 {
                 kill(ps->pid, SIGTERM);
                 ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
@@ -2916,7 +2916,7 @@ int kill_task(
               }
             else
               {
-              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+              if ((ptask->ti_qs.ti_status != TI_STATE_SIGTERM) || (ps->state != 'Z'))
                 {
                 killpg(ps->pid, SIGTERM);
                 ptask->ti_qs.ti_status = TI_STATE_SIGTERM;

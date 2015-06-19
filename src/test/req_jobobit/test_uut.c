@@ -34,6 +34,7 @@ int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
 int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
 int handle_stageout(job *pjob, int type, batch_request *preq);
 int handle_stagedel(job *pjob,int type,batch_request *preq);
+int get_used(job *pjob, std::string &data);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -54,6 +55,8 @@ extern bool completed;
 extern bool exited;
 extern bool purged;
 extern long disable_requeue;
+extern int  attr_count;
+extern int  next_count;
 
 
 void init_server()
@@ -61,6 +64,20 @@ void init_server()
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
+
+
+START_TEST(get_used_test)
+  {
+  std::string data;
+  job         pjob;
+
+  attr_count = 0;
+  next_count = 0;
+
+  fail_unless(get_used(&pjob, data) == PBSE_NONE);
+  fail_unless(data == " resources_used.cput=100 resources_used.mem=4096mb resources_used.vmem=8192mb", "'%s'", data.c_str());
+  }
+END_TEST
 
 
 START_TEST(handle_stagedel_test)
@@ -621,6 +638,7 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, handle_stageout_test);
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
   tcase_add_test(tc_core, handle_stagedel_test);
+  tcase_add_test(tc_core, get_used_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

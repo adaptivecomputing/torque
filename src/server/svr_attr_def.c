@@ -1445,4 +1445,40 @@ attribute_def svr_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_SERVER},
 
+  /* SRV_ATR_ExitCodeCanceledJob */
+   {(char *)ATTR_exitcodecanceledjob, /* "exit_code_canceled_job" */
+    decode_l,
+    encode_l,
+     set_l,
+     comp_l,
+     free_null,
+     NULL_FUNC,
+     MGR_ONLY_SET,
+     ATR_TYPE_LONG,
+     PARENT_TYPE_SERVER},
+
+    /* SRV_ATR_TimeoutForJobDelete */
+    {(char *)ATTR_timeoutforjobdelete, /* "timeout_for_job_delete" */
+     decode_l,
+     encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      MGR_ONLY_SET,
+      ATR_TYPE_LONG,
+      PARENT_TYPE_SERVER},
+
+    /* SRV_ATR_TimeoutForJobRequeue */
+    {(char *)ATTR_timeoutforjobrequeue, /* "timeout_for_job_requeue" */
+     decode_l,
+     encode_l,
+      set_l,
+      comp_l,
+      free_null,
+      NULL_FUNC,
+      MGR_ONLY_SET,
+      ATR_TYPE_LONG,
+      PARENT_TYPE_SERVER},
+
   };

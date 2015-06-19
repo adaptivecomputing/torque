@@ -61,16 +61,20 @@ CMDS_UT_DIRS = MXML common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qc
 							 qenable qgpumode qgpureset qhold qmgr qmove qmsg qorder qrerun qrls qrun qselect \
 							 qsig qstart qstat qstop qsub_functions qterm
 
+MISC_UT_DIRS = momctl
+
 CHECK_LIBS = scaffold_fail torque_test_lib 
 
 CHECK_DIRS = ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
-						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS}
+						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS}
 
 $(CHECK_LIBS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-$(CHECK_DIRS):: $(CHECK_LIBS)
+FORCE:
+
+$(CHECK_DIRS):: $(CHECK_LIBS) FORCE
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-check: $(CHECK_DIRS) $(PARALLEL_CHECK_DIRS)
+check: $(CHECK_DIRS)

@@ -1423,6 +1423,12 @@ void recompute_ntype_cnts(void)
       delete iter.node_index;
       iter.node_index = NULL;
       }
+
+    if (iter.alps_index != NULL)
+      {
+      delete iter.alps_index;
+      iter.alps_index = NULL;
+      }
     }
   } /* END recompute_ntype_cnts() */
 

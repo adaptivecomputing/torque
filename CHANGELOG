@@ -2,6 +2,17 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 6.0.0
   b - TRQ-3117. Fix a misspelling in the number_successful tag (was number_successfull)
+  e - TRQ-3131. Add capability to pass environment variables to pbsdsh. 
+  b - TRQ-3185. Create subdirs when server attribute use_job_subdirs set.
+
+
+5.1.2
+  e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
+      canceled jobs to have the same exit code regardless of the state they were in
+      when they were canceled.
+  e - TRQ-2836. Make node health check run on sister nodes when configured for job
+      start and job end as well.
+
 
 5.1.1
   b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
@@ -30,6 +41,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-3104. Add millisecond precision to the Torque log file
   e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
       output.
+  b - TRQ-3166. Add another safety check before killing stray jobs.
 
 
 5.0.2

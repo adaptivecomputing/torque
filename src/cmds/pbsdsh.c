@@ -265,8 +265,8 @@ int wait_for_task(
 
     sigprocmask(SIG_UNBLOCK, &allsigs, NULL);
 
-    // check to see if an event has completed
-    rc = tm_poll(TM_NULL_EVENT, &eventpolled, TM_POLL_NOWAIT, &tm_errno);
+    // check to see if event has completed
+    rc = tm_poll(TM_NULL_EVENT, &eventpolled, TM_POLL_WAIT, &tm_errno);
 
     sigprocmask(SIG_BLOCK, &allsigs, NULL);
 
@@ -678,13 +678,244 @@ int build_listener(
   return (s);
   }
 
+/**
+ * Copy/set selected environment variables
+ *
+ * @see main() - parent
+ * @param var_list_string string containing comma separated list of environment variable names
+ * @param envp_out array of strings containing environment variables
+ * @param envp_out_size maximum number of entries allowed in envp_out
+ * @param envp_out_index index of first free position in envp_out
+ * @param already_have_env whole environment already copied?
+ * @param err_msg if not null, holds error string on return (if error)
+ * @param err_msg_size length of err_msg buf
+ * @return success (0) or failure (1)
+ *
+ * Notes:
+ * No attempt is made to free allocated memory from strdup's upon error exit.
+ * Multiple copies of an environment variable name can exist in outp_out. The last
+ * one in envp_out is the one that prevails when the final environment is set in
+ * tm_spawn.
+ *
+ */
 
+int getvars_from_string(
+
+  const char *var_list_string,
+  char **envp_out,
+  int envp_out_size,
+  int *envp_out_index,
+  bool already_have_env,
+  char *err_msg,
+  int err_msg_size)
+
+  {
+  char *str;
+  char *tok;
+  // variables separated by comma within var_list_string
+  const char *list_delim = ",";
+
+  // check for valid parameters
+
+  if (var_list_string == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "var_list_string is NULL in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+
+  if (envp_out == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "envp_out is NULL in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+  
+  if (envp_out_index == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "envp_out_index is NULL in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+  
+  // duplicate optarg since strtok() modifies it
+  if ((str = strdup(var_list_string)) == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "strdup() failed in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+  
+  // process each token
+  tok = strtok(str, list_delim); 
+  while ((tok != NULL) && (*envp_out_index < envp_out_size))
+    {
+    char *val;
+    char *p;
+
+    // did user specify name=?
+    if ((p = strchr(tok, '=')) != NULL)
+      {
+      // add it to the new environment array
+      envp_out[(*envp_out_index)++] = strdup(tok);
+      }
+    // copy only defined environment variables that have not aleady been copied
+    else if ((val = getenv(tok)) != NULL)
+      {
+      if (!already_have_env)
+        {
+        std::string namevalue;
+
+        // construct name=value in namevalue
+        namevalue = tok;
+        namevalue += "=";
+        namevalue += val;
+
+        // add it to the new environment array
+        envp_out[(*envp_out_index)++] = strdup(namevalue.c_str());
+        }
+      }
+    // new null valued variable
+    else
+      {
+      std::string namevalue;
+
+      // construct name=value in namevalue
+      namevalue = tok;
+      namevalue += "=";
+
+      // add it to the new environment array
+      envp_out[(*envp_out_index)++] = strdup(namevalue.c_str());
+      }
+
+    // get the next token 
+    tok = strtok(NULL, list_delim); 
+    }
+
+  // free the optarg dup'ed memory
+  free(str);
+
+  // did we run out of space?
+  if (*envp_out_index >= envp_out_size)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "%s: not enough space to hold variables",
+            __func__);
+      }
+    return(1);
+    }
+
+  return(0);
+  }
+
+/**
+ * Copy all environment variables
+ *
+ * @see main() - parent
+ * @param envp_in array of strings containing environment variables (source)
+ * @param envp_out array of strings containing environment variables (destination)
+ * @param envp_out_size maximum number of entries allowed in envp_out
+ * @param envp_out_index index of first free position in envp_out
+ * @param err_msg if not null, holds error string on return (if error)
+ * @param err_msg_size length of err_msg buf
+ * @return success (0) or failure (1)
+ *
+ * Notes:
+ * Multiple copies of an environment variable name can exist in outp_out. The last
+ * one in envp_out is the one that prevails when the final environment is set in
+ * tm_spawn.
+ */
+
+int getallvars_from_env(
+
+  const char **envp_in,
+  char **envp_out,
+  int envp_out_size,
+  int *envp_out_index,
+  char *err_msg,
+  int err_msg_size)
+
+  {
+  char **p;
+
+  // check for valid parameters
+ 
+  if (envp_in == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "envp_in is NULL in %s",
+             __func__);
+      }
+
+    return(1);
+    }
+
+  if (envp_out == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "envp_out is NULL in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+  
+  if (envp_out_index == NULL)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "envp_out_index is NULL in %s",
+            __func__);
+      }
+
+    return(1);
+    }
+
+  // copy the environment
+  for (p = (char **)envp_in; (*p != NULL) && (*envp_out_index < envp_out_size); p++)
+    {
+    envp_out[(*envp_out_index)++] = *p;
+    }
+
+  // did we run out of space?
+  if (*envp_out_index >= envp_out_size)
+    {
+    if (err_msg != NULL)
+      {
+      snprintf(err_msg, err_msg_size, "not enough space to hold variables in %s",
+            __func__);
+      }
+    return(1);
+    }
+
+  return(0);
+  }
 
 
 int main(
 
   int   argc,
-  char *argv[])
+  char *argv[],
+  char *envp[])
 
   {
   int c;
@@ -703,15 +934,20 @@ int main(
   char *targethost = NULL;
   char *allnodes;
 
+  bool have_E = false;
+
   struct sigaction act;
 
+  // list of environment variables passed to tm_spawn()
   char **ioenv;
+  int env_count = 0;
+  int env_index = 0;
+  char **p;
+
+  char err_msg_buf[1024];
 
   extern int   optind;
   extern char *optarg;
-
-  int posixly_correct_set_by_caller = 0;
-  char *envstr;
 
   id = (char *)calloc(60, sizeof(char));
 
@@ -729,19 +965,28 @@ int main(
           ? getenv("PBS_TASKNUM")
           : "");
 
+  // get count of environment variables
+  for (p = envp; *p != NULL; p++)
+    env_count++;
+
+  // double space to make sure we have plenty of slots
+  env_count *= 2;
+
+  if ((ioenv = (char **)calloc(env_count, sizeof(char *))) == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    fprintf(stderr,"%s: memory alloc of ioenv failed\n",
+      id);
+
+    return(1);
+    }
+
 #ifdef __GNUC__
-  /* If it's already set, we won't unset it later */
-
-  if (getenv("POSIXLY_CORRECT") != NULL)
-    posixly_correct_set_by_caller = 1;
-
-  envstr = strdup("POSIXLY_CORRECT=1");
-
-  putenv(envstr);
-
+  while ((c = getopt(argc, argv, "+c:e:n:h:osuvE")) != EOF)
+#else
+  while ((c = getopt(argc, argv,  "c:e:n:h:osuvE")) != EOF)
 #endif
-
-  while ((c = getopt(argc, argv, "c:n:h:osuv")) != EOF)
     {
     switch (c)
       {
@@ -753,6 +998,42 @@ int main(
         if (ncopies <= 0)
           {
           err = TRUE;
+          }
+
+        break;
+
+      case 'e':
+
+        // pull in selected environment variables and ones set by caller
+        //  reserve 3 slots in ioenv
+        //  Note: For common variable names specified both by -e and read by -E processing:
+        //    If -E processed first, -e set values will prevail in the final environment.
+        if ((rc = getvars_from_string(optarg, ioenv, env_count - 3, &env_index,
+                    have_E, err_msg_buf, sizeof(err_msg_buf))) != 0)
+          {
+          fprintf(stderr, "%s: %s\n", id, err_msg_buf);
+          exit(rc);
+          }
+
+        break;
+
+      case 'E':
+
+        if (! have_E)
+          {
+          // pull in all environment variables once
+          //  reserve 3 slots in ioenv
+          //  Note: For common variable names specified both by -e and read by -E processing:
+          //    If -e processed first, -E read values will prevail in the final environment.
+          if ((rc = getallvars_from_env((const char **)envp, ioenv, env_count - 3,
+                      &env_index, err_msg_buf, sizeof(err_msg_buf))) != 0)
+            {
+            fprintf(stderr, "%s: %s\n", id, err_msg_buf);
+            exit(rc);
+            }
+
+          // set the flag that we've seen this option
+          have_E = true;
           }
 
         break;
@@ -776,7 +1057,7 @@ int main(
 
       case 'o':
 
-        // redirect tasks' stdout and stderr to this proc's stdout and sterr streams
+        // redirect tasks' stdout and stderr to this proc's stdout and stderr streams
         // instead of job's streams
         grabstdoe = TRUE;
 
@@ -809,18 +1090,26 @@ int main(
 
     }    /* END while ((c = getopt()) != EOF) */
 
-  if (err || ((onenode >= 0) && (ncopies >= 1)))
+  if (err || ((onenode >= 0) && (ncopies >= 1)) ||
+      (optind == argc))
     {
-    fprintf(stderr, "Usage: %s [-c copies][-o][-s][-u][-v] program [args]...]\n",
+    if (optind == argc)
+      fprintf(stderr, "%s: must specify a program\n", id);
+
+    fprintf(stderr, "Usage: %s [-c copies][-e name[=[value]][,...]][-E][-o][-s][-u][-v] program [args]...]\n",
       argv[0]);
 
-    fprintf(stderr, "       %s [-n nodenumber][-o][-s][-u][-v] program [args]...\n",
+    fprintf(stderr, "       %s [-n nodenumber][-e name[=[value]][,...]][-E][-o][-s][-u][-v] program [args]...\n",
       argv[0]);
 
-    fprintf(stderr, "       %s [-h hostname][-o][-v] program [args]...\n",
+    fprintf(stderr, "       %s [-h hostname][-e name[=[value]][,...]][-E][-o][-v] program [args]...\n",
       argv[0]);
 
     fprintf(stderr, "Where -c copies =  run  copy of \"args\" on the first \"copies\" nodes,\n");
+    fprintf(stderr, "      -e list = comma separated list of variables to pass to spawned task(s),\n");
+    fprintf(stderr, "                if variable given without value, value will be read from\n");
+    fprintf(stderr, "                environment if it exists otherwise it will be empty,\n");
+    fprintf(stderr, "      -E = pass all environment variables to spawned task(s),\n");
     fprintf(stderr, "      -n nodenumber = run a copy of \"args\" on the \"nodenumber\"-th node,\n");
     fprintf(stderr, "      -o = direct tasks' stdout and stderr to the corresponding streams of pbsdsh\n");
     fprintf(stderr, "           Otherwise, tasks' stdout and/or stderr go to the job,\n");
@@ -831,16 +1120,6 @@ int main(
 
     exit(1);
     }
-
-#ifdef __GNUC__
-  if (!posixly_correct_set_by_caller)
-    {
-    putenv((char *)"POSIXLY_CORRECT");
-    free(envstr);
-    }
-
-#endif
-
 
   if (getenv("PBS_ENVIRONMENT") == NULL)
     {
@@ -1016,18 +1295,6 @@ int main(
     stop  = numnodes;
     }
 
-  // allocate space for 3 pointers in task environment: 1 each for stdout and sterr
-  // if needed and a null one to terminate the list
-  if ((ioenv = (char **)calloc(3, sizeof(char *))) == NULL)
-    {
-    /* FAILURE - cannot alloc memory */
-
-    fprintf(stderr,"%s: memory alloc of ioenv failed\n",
-      id);
-
-    return(1);
-    }
-
   if (grabstdoe)
     {
     // get listening sockets for tasks' stdout and stderr
@@ -1052,31 +1319,31 @@ int main(
       }
 
     // put the stdout listening port into task environment string
-    if ((*ioenv = (char *)calloc(50, sizeof(char))) == NULL)
+    if ((ioenv[env_index] = (char *)calloc(50, sizeof(char))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
 
-      fprintf(stderr,"%s: memory alloc of *ioenv failed\n",
-        id);
+      fprintf(stderr,"%s: memory alloc for element %d of ioenv failed\n",
+        id, env_index);
 
       return(1);
       }
 
-    snprintf(*ioenv,49,"TM_STDOUT_PORT=%d", 
+    snprintf(ioenv[env_index++], 49, "TM_STDOUT_PORT=%d", 
       stdoutport);
 
     // put the stderr listening port into task environment string
-    if ((*(ioenv+1) = (char *)calloc(50, sizeof(char))) == NULL)
+    if ((ioenv[env_index] = (char *)calloc(50, sizeof(char))) == NULL)
       {
       /* FAILURE - cannot alloc memory */
 
-      fprintf(stderr,"%s: memory alloc of *(ioenv+1) failed\n",
-        id);
+      fprintf(stderr,"%s: memory alloc for element %d of ioenv failed\n",
+        id, env_index);
 
       return(1);
       }
 
-    snprintf(*(ioenv+1),49,"TM_STDERR_PORT=%d", 
+    snprintf(ioenv[env_index++], 49, "TM_STDERR_PORT=%d", 
       stderrport);
     }
 

@@ -262,7 +262,7 @@ void send_sig_kill(
 
   free(job_id);
 
-  if (issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
+  if (issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL) == 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
     pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
@@ -371,6 +371,8 @@ int handle_requeue_all(
     mutex_mgr job_mutex(pjob->ji_mutex, true);
     requeue_job_without_contacting_mom(*pjob);
     }
+
+  delete iter;
 
   reply_ack(preq);
 

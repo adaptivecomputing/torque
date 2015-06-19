@@ -16,9 +16,9 @@ const char *l11 =    "l11";
 struct server server;
 
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
-int   node_in_exechostlist(char *, char *);
+bool  node_in_exechostlist(const char *, char *, const char *);
 char *get_next_exec_host(char **);
-int   job_should_be_killed(int, struct pbsnode *);
+int   job_should_be_killed(std::string &, int, struct pbsnode *);
 int   check_for_node_type(complete_spec_data *, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
@@ -453,6 +453,7 @@ START_TEST(job_should_be_killed_test)
   {
   struct pbsnode pnode;
   struct jobinfo jinfo;
+  std::string    job_id;
 
   memset(&pnode, 0, sizeof(pnode));
   memset(&jinfo, 0, sizeof(jinfo));
@@ -460,11 +461,11 @@ START_TEST(job_should_be_killed_test)
   pnode.nd_name = (char *)"tom";
   jinfo.internal_job_id = 1;
 
-  fail_unless(job_should_be_killed(2, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(3, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(4, &pnode) == true, "non-existent job shouldn't be on node");
-  fail_unless(job_should_be_killed(1, &pnode) == false, "false positive");
-  fail_unless(job_should_be_killed(5, &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(job_id, 2, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 3, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 4, &pnode) == true, "non-existent job shouldn't be on node");
+  fail_unless(job_should_be_killed(job_id, 1, &pnode) == false, "false positive");
+  fail_unless(job_should_be_killed(job_id, 5, &pnode) == false, "false positive");
   }
 END_TEST
 
@@ -481,18 +482,24 @@ START_TEST(node_in_exechostlist_test)
   char *node4 = (char *)"tommy";
   char *node5 = (char *)"tom1";
 
-  fail_unless(node_in_exechostlist(node1, eh1) == TRUE, "blah1");
-  fail_unless(node_in_exechostlist(node2, eh1) == TRUE, "blah2");
-  fail_unless(node_in_exechostlist(node3, eh1) == FALSE, "blah3");
-  fail_unless(node_in_exechostlist(node4, eh1) == FALSE, "blah4");
-  fail_unless(node_in_exechostlist(node5, eh1) == FALSE, "blah5");
+  fail_unless(node_in_exechostlist(node1, eh1, NULL) == true, "blah1");
+  fail_unless(node_in_exechostlist(node2, eh1, NULL) == true, "blah2");
+  fail_unless(node_in_exechostlist(node3, eh1, NULL) == false, "blah3");
+  fail_unless(node_in_exechostlist(node4, eh1, NULL) == false, "blah4");
+  fail_unless(node_in_exechostlist(node5, eh1, NULL) == false, "blah5");
   
-  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
-  fail_unless(node_in_exechostlist(node1, eh2) == FALSE, "blah6");
-  fail_unless(node_in_exechostlist(node2, eh2) == FALSE, "blah7");
-  fail_unless(node_in_exechostlist(node3, eh2) == TRUE, "blah8");
-  fail_unless(node_in_exechostlist(node4, eh2) == TRUE, "blah9");
-  fail_unless(node_in_exechostlist(node5, eh2) == TRUE, "blah10");
+  fail_unless(node_in_exechostlist(node1, eh2, NULL) == false, "blah6");
+  fail_unless(node_in_exechostlist(node1, eh2, NULL) == false, "blah6");
+  fail_unless(node_in_exechostlist(node2, eh2, NULL) == false, "blah7");
+  fail_unless(node_in_exechostlist(node3, eh2, NULL) == true, "blah8");
+  fail_unless(node_in_exechostlist(node4, eh2, NULL) == true, "blah9");
+  fail_unless(node_in_exechostlist(node5, eh2, NULL) == true, "blah10");
+  
+  // Test the login node piece working
+  fail_unless(node_in_exechostlist(node1, eh2, node1) == true);
+  fail_unless(node_in_exechostlist(node3, eh1, node3) == true);
+  fail_unless(node_in_exechostlist(node3, eh1, node1) == false);
+  fail_unless(node_in_exechostlist(node4, eh1, node3) == false);
   }
 END_TEST
 

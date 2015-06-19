@@ -295,7 +295,7 @@ struct pbsnode *get_numa_from_str(
 struct pbsnode *get_node_from_str(
 
   const char     *str,     /* I */
-  char           *orig_id, /* I */
+  const char     *orig_id, /* I */
   struct pbsnode *np)      /* M */
 
   {
@@ -744,11 +744,11 @@ int save_node_status(
 
 int process_status_info(
 
-  char                     *nd_name,
+  const char               *nd_name,
   std::vector<std::string> &status_info)
 
   {
-  char           *name = nd_name;
+  const char     *name = nd_name;
   struct pbsnode *current;
   long            mom_job_sync = FALSE;
   long            auto_np = FALSE;

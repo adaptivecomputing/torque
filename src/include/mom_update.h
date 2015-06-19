@@ -81,4 +81,4 @@
 #include <vector>
 
 
-int process_status_info(char *nd_name, std::vector<std::string> &status_info);
+int process_status_info(const char *nd_name, std::vector<std::string> &status_info);
