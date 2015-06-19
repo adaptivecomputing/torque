@@ -3029,7 +3029,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations == 0) && (loopCt++ < 20));
+    } while ((ctCleanIterations <= 3) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */
