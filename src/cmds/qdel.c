@@ -48,6 +48,28 @@ void process_config_file(
   } /* END process_config_file */
 
 
+
+bool is_array(
+
+  char *job_id)
+
+  {
+  char *bracket_ptr;
+
+  if ((bracket_ptr = strchr(job_id,'[')) != NULL)
+    {
+    /* Make sure the next character is ']' */
+    if (*(++bracket_ptr) == ']')
+      {
+      return(true);
+      }
+    }
+    
+  return(false);
+  } /* END is_array() */
+
+
+
 /* qdel */
 
 int qdel_main(
@@ -63,7 +85,7 @@ int qdel_main(
   int purge_completed = FALSE;
   int located = FALSE;
   char *pc;
-  bool isarray = false;
+  bool  dash_t = false;
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
 
@@ -88,9 +110,6 @@ int qdel_main(
     }
 
   extend[0] = '\0';
-  
-  int brackcount;
-  // brackcount used to check for brackets in case of -t
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -162,7 +181,7 @@ int qdel_main(
 
       case 't':
 
-        isarray = true;
+        dash_t = true;
 
         if (extend[0] != '\0')
           {
@@ -265,26 +284,14 @@ int qdel_main(
 
    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
    
-   for (unsigned int i = 0; i < strlen(job_id); i++)
+   if ((dash_t == true) && 
+       is_array(job_id) == false)
      {
-	   
-     if (job_id[i] == '[' || job_id[i] == ']')
-       { 
-       isarray = true;
-       
-       brackcount++;
-       }
-    	 
-     }
-   
-   if ((isarray == true) &&
-       (brackcount % 2 != 0))
-     {
-     fprintf(stderr, "qdel: illegally formed array identifier: %s\n",
-         job_id);
-     
+     fprintf(stderr, "qdel: Error: job id '%s' isn't a job array but -t was specified.\n",
+       job_id);
+
      any_failed = 1;
-     
+
      exit(any_failed);
      }
    
