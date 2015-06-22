@@ -234,3 +234,23 @@ void completed_jobs_map_class::print_map(
       }
     }
   }
+
+
+
+void add_to_completed_jobs(
+    
+  work_task *ptask)
+
+  {
+  extern completed_jobs_map_class completed_jobs_map;
+  char *jobid = (char *)ptask->wt_parm1;
+
+  if (jobid != NULL)
+    {
+    long delay = ptask->wt_event;
+    completed_jobs_map.add_job(jobid, time(NULL) + delay);
+    free(jobid);
+    }
+
+  } // END add_to_completed_jobs()
+
