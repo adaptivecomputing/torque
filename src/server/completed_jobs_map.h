@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+#include "work_task.h"
+
 class completed_jobs_map_class {
     std::map< std::string, time_t > completed_jobs_map;
     pthread_mutex_t completed_jobs_map_mutex;
@@ -18,5 +20,7 @@ class completed_jobs_map_class {
     int cleanup_completed_jobs(void);
     void print_map(void);
 };
+
+void add_to_completed_jobs(work_task *wt);
 
 #endif
