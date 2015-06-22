@@ -3407,8 +3407,7 @@ int kill_job(
 
   while (ptask != NULL)
     {
-    if ((ptask->ti_qs.ti_status == TI_STATE_RUNNING) ||
-       (ptask->ti_qs.ti_status == TI_STATE_SIGTERM))
+    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
         {
@@ -3419,7 +3418,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(ptask, sig, 0);
+      ct += kill_task(pjob, ptask, sig, 0);
       }
 
     ptask = (task *)GET_NEXT(ptask->ti_jobtask);
