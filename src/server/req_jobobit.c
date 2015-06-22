@@ -1845,7 +1845,8 @@ int handle_complete_first_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds);
+    set_task(WORK_Immed, pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long, add_to_completed_jobs,
+             strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -1864,7 +1865,7 @@ int handle_complete_first_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + KeepSeconds);
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1942,7 +1943,8 @@ void handle_complete_second_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + JOBMUSTREPORTDEFAULTKEEP);
+    set_task(WORK_Immed, JOBMUSTREPORTDEFAULTKEEP, add_to_completed_jobs,
+             strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -2141,7 +2143,7 @@ void on_job_exit(
         }
       else
         {
-        completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(0));
+        set_task(WORK_Immed, 0, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
         }
 
       break;
