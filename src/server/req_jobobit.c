@@ -1845,8 +1845,7 @@ int handle_complete_first_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    set_task(WORK_Immed, pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long, add_to_completed_jobs,
-             strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
