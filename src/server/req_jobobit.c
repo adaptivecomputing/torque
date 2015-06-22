@@ -1761,7 +1761,6 @@ int handle_complete_first_time(
   int          rc = PBSE_NONE;
   pbs_queue   *pque;
   int          KeepSeconds = 0;
-  time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
@@ -1852,7 +1851,7 @@ int handle_complete_first_time(
 
     // add job id and clean up time for processing by cleanup task
     jid = pjob->ji_qs.ji_jobid;
-    time_to_remove = pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds;
+    time_to_remove = KeepSeconds;
     set_task(WORK_Immed, time_to_remove, add_to_completed_jobs, strdup(jid.c_str()), FALSE);
     }
   else
@@ -1873,7 +1872,7 @@ int handle_complete_first_time(
 
     // add job id and clean up time for processing by cleanup task
     jid = pjob->ji_qs.ji_jobid;
-    time_to_remove = time_now + KeepSeconds;
+    time_to_remove = KeepSeconds;
     set_task(WORK_Immed, time_to_remove, add_to_completed_jobs, strdup(jid.c_str()), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
