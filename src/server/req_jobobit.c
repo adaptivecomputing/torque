@@ -1761,7 +1761,6 @@ int handle_complete_first_time(
   int          rc = PBSE_NONE;
   pbs_queue   *pque;
   int          KeepSeconds = 0;
-  time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
@@ -1902,7 +1901,6 @@ void handle_complete_second_time(
 
   {
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
-  time_t       time_now = time(NULL);
   char        *job_id = (char *)ptask->wt_parm1;
   job         *pjob;
 

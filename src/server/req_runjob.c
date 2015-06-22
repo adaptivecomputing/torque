@@ -313,7 +313,6 @@ int req_runjob(
   job                  *pjob;
   int                   rc = PBSE_NONE;
   int                   setneednodes;
-  int                  *rc_ptr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
