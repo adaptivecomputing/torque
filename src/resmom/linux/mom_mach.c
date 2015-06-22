@@ -2905,7 +2905,7 @@ int kill_task(
               {
               /* make sure we only send a SIGTERM one time per process */
               if ((ps->state != 'Z') &&
-                  (pjob->ji_sigtermed_processes.find(pid) == pjob->ji_sigtermed_processes.end()))
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
                 {
                 sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
@@ -2914,13 +2914,13 @@ int kill_task(
                     ptask->ti_qs.ti_parentjobid, log_buffer);
             
                 kill(ps->pid, SIGTERM);
-                pjob->ji_sigtermed_processes.insert(ps->pid);
+                pjob->ji_sigtermed_processes->insert(ps->pid);
                 }
               }
             else
               {
               if ((ps->state != 'Z') &&
-                  (pjob->ji_sigtermed_processes.find(pid) == pjob->ji_sigtermed_processes.end()))
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
                 {
                 sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
@@ -2929,7 +2929,7 @@ int kill_task(
                     ptask->ti_qs.ti_parentjobid, log_buffer);
             
                 killpg(ps->pid, SIGTERM);
-                pjob->ji_sigtermed_processes.insert(ps->pid);
+                pjob->ji_sigtermed_processes->insert(ps->pid);
                 }
               }
             
@@ -3000,10 +3000,10 @@ int kill_task(
                     kill(ps->pid, sig);
                     }
                   /* make sure we only send a SIGTERM one time */
-                  else if (pjob->ji_sigtermed_processes.find(ps->pid) == pjob->ji_sigtermed_processes.end())
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
                     killpg(ps->pid, SIGTERM);
-                    pjob->ji_sigtermed_processes.insert(ps->pid);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
                   }
                 else
@@ -3012,10 +3012,10 @@ int kill_task(
                     {
                     killpg(ps->pid, sig);
                     }
-                  else if (pjob->ji_sigtermed_processes.find(ps->pid) == pjob->ji_sigtermed_processes.end())
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
                     killpg(ps->pid, SIGTERM);
-                    pjob->ji_sigtermed_processes.insert(ps->pid);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
                   }
                 }
