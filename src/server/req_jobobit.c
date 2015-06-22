@@ -1853,6 +1853,7 @@ int handle_complete_first_time(
     // add job id and clean up time for processing by cleanup task
     jid = pjob->ji_qs.ji_jobid;
     time_to_remove = pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds;
+    set_task(WORK_Immed, time_to_remove, add_to_completed_jobs, strdup(jid.c_str()), FALSE);
     }
   else
     {
@@ -1873,6 +1874,7 @@ int handle_complete_first_time(
     // add job id and clean up time for processing by cleanup task
     jid = pjob->ji_qs.ji_jobid;
     time_to_remove = time_now + KeepSeconds;
+    set_task(WORK_Immed, time_to_remove, add_to_completed_jobs, strdup(jid.c_str()), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1893,9 +1895,6 @@ int handle_complete_first_time(
 
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     
-  if (jid.size() != 0)
-    completed_jobs_map.add_job(jid.c_str(), time_to_remove);
-  
   return(FALSE);
   } /* END handle_complete_first_time() */
 
@@ -1909,7 +1908,6 @@ void handle_complete_second_time(
 
   {
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
-  time_t       time_now = time(NULL);
   char        *job_id = (char *)ptask->wt_parm1;
   job         *pjob;
 
@@ -1953,7 +1951,8 @@ void handle_complete_second_time(
       }
 
     // add job id and clean up time for processing by cleanup task
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + JOBMUSTREPORTDEFAULTKEEP);
+    set_task(WORK_Immed, JOBMUSTREPORTDEFAULTKEEP, add_to_completed_jobs,
+             strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -2152,7 +2151,7 @@ void on_job_exit(
         }
       else
         {
-        completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(0));
+        set_task(WORK_Immed, 0, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
         }
 
       break;

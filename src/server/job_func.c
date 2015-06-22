@@ -442,7 +442,7 @@ void handle_aborted_job(
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
     pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
-    completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time(NULL) + KeepSeconds);
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
     *job_ptr = pjob;
     }
   } /* handle_aborted_job */
