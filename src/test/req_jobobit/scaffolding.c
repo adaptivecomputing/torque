@@ -443,3 +443,4 @@ void *get_next(
   return(r);
   }
 
+void add_to_completed_jobs(work_task *ptask) {}
