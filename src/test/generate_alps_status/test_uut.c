@@ -101,19 +101,22 @@ START_TEST(parse_alps13_output_test)
 
   if ((fp = fopen(ALPS_13_INPUT_FILE, "r")) == NULL)
     ck_abort_msg("Couldn't open ALPS 13 input file %s", ALPS_13_INPUT_FILE);
+  else
+    {
 
-  while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
-    output += linebuf;
+    while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
+      output += linebuf;
 
-  fclose(fp);
+    fclose(fp);
+    
+    rc = parse_alps_output(output, status);
+    fail_unless(rc == 0, "Couldn't parse ALPS 1.3 output contained in file %s", ALPS_13_INPUT_FILE);
 
-  rc = parse_alps_output(output, status);
-  fail_unless(rc == 0, "Couldn't parse ALPS 1.3 output contained in file %s", ALPS_13_INPUT_FILE);
-
-  fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the 1.3 status");
-  fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the 1.3 status");
-  fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the 1.3 status");
-  fail_unless(search_dynamic_string_status(status, (char *)"CCU") == 1, "Couldn't find CCU in the 1.3 status");
+    fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the 1.3 status");
+    fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the 1.3 status");
+    fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the 1.3 status");
+    fail_unless(search_dynamic_string_status(status, (char *)"CCU") == 1, "Couldn't find CCU in the 1.3 status");
+    }
 
   }
 END_TEST
@@ -122,7 +125,7 @@ START_TEST(full_generate_test)
   {
   std::vector<std::string> status;
   int             rc;
-  char           *path = (char *)"../../../test/test_scripts/get_inventory.sh";
+  char           *path = (char *)"../test_scripts/get_inventory.sh";
   char           *protocol = (char *)"1.0";
 
   rc = generate_alps_status(status, path, protocol);
@@ -141,7 +144,7 @@ START_TEST(label_generate_test)
   {
   std::vector<std::string> status;
   int             rc;
-  char           *path = (char *)"../../../test/test_scripts/label_inventory.sh";
+  char           *path = (char *)"../test_scripts/label_inventory.sh";
   char           *protocol = (char *)"1.0";
   
   rc = generate_alps_status(status, path, protocol);
