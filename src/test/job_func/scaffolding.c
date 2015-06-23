@@ -156,6 +156,7 @@ void free_br(struct batch_request *preq)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
+  add_job_called = true;
   return NULL;
   }
 
