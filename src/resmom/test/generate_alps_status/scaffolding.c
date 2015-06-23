@@ -26,6 +26,16 @@ void log_event(
   log_event_called = 1;
   }
 
+void log_record(
+
+  int         eventtype,  /* I */
+  int         objclass,   /* I */
+  const char *objname,    /* I */
+  const char *text)       /* I */
+
+  {
+  }
+
 
 /*
  * status stings are in the format str1\0str2\0...strn\0
