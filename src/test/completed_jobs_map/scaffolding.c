@@ -4,6 +4,9 @@
 #include "job_func.h"
 #include "work_task.h"
 #include "threadpool.h"
+#include "completed_jobs_map.h"
+
+completed_jobs_map_class completed_jobs_map;
 
 extern bool job_id_exists_rc;
 int LOGLEVEL = 10;
