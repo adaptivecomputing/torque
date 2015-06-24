@@ -31,4 +31,5 @@ int trq_cg_add_process_to_cgroup_accts(const char *job_id, pid_t job_pid);
 int trq_cg_create_all_cgroups(job *pjob);
 int trq_cg_add_process_to_cgroup(const char *job_id, pid_t job_pid);
 int trq_cg_add_process_to_all_cgroups(const char *job_id, pid_t job_pid);
+void trq_cg_delete_job_cgroups(const char *job_id);
 #endif /* _TRQ_CGROUPS_H_ */

@@ -69,6 +69,8 @@ void trq_cg_init_subsys_online(bool val)
   return;
   }
 
+
+
 /* We need to remove the torque cgroups when pbs_mom 
  * is unloaded. */
 int trq_cg_cleanup_torque_cgroups()
@@ -81,6 +83,7 @@ int trq_cg_cleanup_torque_cgroups()
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
+
     /* directory exists. Remove it */
     rc = rmdir(torque_path.c_str());
     if (rc != 0)
@@ -326,8 +329,13 @@ int init_torque_cgroups()
   }
 
 
-
-
+/* 
+ * check_mounted_subsystems()
+ *
+ * checks to see if cgroup subdirectories are mounted. 
+ * fails if they are not.
+ *
+ */
 int check_mounted_subsystems()
   {
 
@@ -1390,5 +1398,141 @@ int trq_cg_set_resident_memory_limit(
   } // END trq_cg_set_resident_memory_limit()
 
 
+/*
+ * trq_cg_remove_task_dirs
+ *
+ * Removes all task directories from a cgroup
+ *
+ * @param torque_path - path to directory of jobs cgroup
+ *
+ */
+
+void trq_cg_remove_task_dirs(
+    
+    const string torque_path)
+
+  {
+  int rc = PBSE_NONE;
+  char req_and_task[256];
+  string req_and_task_path;
+  struct stat buf;
+
+  /* remove tasks directories first */
+  for (unsigned int req_index = 0; ; req_index++)
+    {
+
+    sprintf(req_and_task, "/R%u.t0", req_index);
+    req_and_task_path = torque_path + req_and_task;
+    rc = stat(req_and_task_path.c_str(), &buf);
+    if (rc != 0)
+      {
+      /* no more reqs to remove */
+      break;
+      }
+
+    for (unsigned int task_index = 0; ;task_index++)
+      {
+      sprintf(req_and_task, "/R%u.t%u", req_index, task_index);
+      req_and_task_path = torque_path + req_and_task;
+      rc = stat(req_and_task_path.c_str(), &buf);
+      if (rc != 0)
+        {
+        /* no more tasks to remove */
+        break;
+        }
+
+      rc = rmdir(req_and_task_path.c_str());
+      if (rc != 0)
+        {
+        fprintf(stderr, "could not remove %s from cgroups\n", req_and_task_path.c_str());
+        }
+      }
+    } 
+  }
+
+
+/* trq_cg_delete_job_cgroups()
+ *
+ * removes all of the cgroup directories for this job
+ *
+ * @param - job_id The id of the job for which to remove cgroups
+ *
+ */
+
+void trq_cg_delete_job_cgroups(const char *job_id)
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  string cgroup_path;
+  struct stat buf;
+  int         rc;
+
+  cgroup_path = cg_cpu_path + job_id;
+  rc = stat(cgroup_path.c_str(), &buf);
+  if (rc == 0)
+    {
+    trq_cg_remove_task_dirs(cgroup_path);
+    rc = rmdir(cgroup_path.c_str());
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
+      log_err(errno, __func__, log_buf);
+      }    
+    }
+
+  cgroup_path = cg_cpuacct_path + job_id;
+  rc = stat(cgroup_path.c_str(), &buf);
+  if (rc == 0)
+    {
+    trq_cg_remove_task_dirs(cgroup_path);
+    rc = rmdir(cgroup_path.c_str());
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
+      log_err(errno, __func__, log_buf);
+      }    
+    }
+  
+  cgroup_path = cg_cpuset_path + job_id;
+  rc = stat(cgroup_path.c_str(), &buf);
+  if (rc == 0)
+    {
+    trq_cg_remove_task_dirs(cgroup_path);
+    rc = rmdir(cgroup_path.c_str());
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
+      log_err(errno, __func__, log_buf);
+      }    
+    }
+
+  cgroup_path = cg_memory_path + job_id;
+  rc = stat(cgroup_path.c_str(), &buf);
+  if (rc == 0)
+    {
+    trq_cg_remove_task_dirs(cgroup_path);
+    rc = rmdir(cgroup_path.c_str());
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
+      log_err(errno, __func__, log_buf);
+      }    
+    }
+
+  cgroup_path = cg_devices_path + job_id;
+  rc = stat(cgroup_path.c_str(), &buf);
+  if (rc == 0)
+    {
+    trq_cg_remove_task_dirs(cgroup_path);
+    rc = rmdir(cgroup_path.c_str());
+    if (rc != 0)
+      {
+      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
+      log_err(errno, __func__, log_buf);
+      }    
+    }
+
+
+
+  }
 
 

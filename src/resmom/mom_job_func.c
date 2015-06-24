@@ -685,6 +685,10 @@ void *delete_job_files(
   delete_cpuset(jfdi->jobid, true);
 #endif /* PENABLE_LINUX26_CPUSETS */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  trq_cg_delete_job_cgroups(jfdi->jobid);
+#endif
+
   /* delete the node file and gpu file */
   sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
   unlink(namebuf);
