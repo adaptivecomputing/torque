@@ -265,8 +265,8 @@ int wait_for_task(
 
     sigprocmask(SIG_UNBLOCK, &allsigs, NULL);
 
-    // wait for an event to complete
-    rc = tm_poll(TM_NULL_EVENT, &eventpolled, 1, &tm_errno);
+    // check to see if event has completed
+    rc = tm_poll(TM_NULL_EVENT, &eventpolled, TM_POLL_WAIT, &tm_errno);
 
     sigprocmask(SIG_BLOCK, &allsigs, NULL);
 
@@ -1018,7 +1018,7 @@ int main(
 
   // allocate space for 3 pointers in task environment: 1 each for stdout and sterr
   // if needed and a null one to terminate the list
-  if ((ioenv = (char **)calloc(3, sizeof(char **))) == NULL)
+  if ((ioenv = (char **)calloc(3, sizeof(char *))) == NULL)
     {
     /* FAILURE - cannot alloc memory */
 

@@ -55,7 +55,8 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/README.pestat \
 	contrib/README.qpeek \
 	contrib/showjobs \
-	contrib/diag/tdiag.sh
+	contrib/diag/tdiag.sh \
+	contrib/use_jobs_subdirs_setup
 
 bin_SCRIPTS = pbs-config
 

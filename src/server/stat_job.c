@@ -105,6 +105,7 @@
 #include "resource.h"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "log.h"
+#include "job_route.h" /* remove_procct */
 
 extern int     svr_authorize_jobreq(struct batch_request *, job *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
@@ -140,6 +141,10 @@ int status_job(
   int                IsOwner = 0;
   long               query_others = 0;
   long               condensed_timeout = JOB_CONDENSED_TIMEOUT;
+
+  /* Make sure procct is removed from the job 
+     resource attributes */
+  remove_procct(pjob);
 
   /* see if the client is authorized to status this job */
   if (svr_authorize_jobreq(preq, pjob) == 0)

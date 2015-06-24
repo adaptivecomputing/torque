@@ -1174,9 +1174,7 @@ int get_child_exit_status(
   {
   struct sigaction  act;
   struct sigaction  oldact;
-  unsigned int      real_alarm_time = pe_alarm_time;
-  /* The prolog cannot take longer than the TJobStartTimeout */
-  unsigned int      job_start_timeout = (unsigned int)TJobStartTimeout;
+  long              real_alarm_time = pe_alarm_time;
   int               waitst;
   int               KillSent = FALSE;
   
@@ -1187,14 +1185,9 @@ int get_child_exit_status(
 
   sigaction(SIGALRM, &act, &oldact);
 
-  if (job_start_timeout > 10) //Kill the prolog at least ten seconds before the timeout.
+  if (real_alarm_time > 10) //Kill the prolog at least ten seconds before the timeout.
     {
-    job_start_timeout -= 10;
-    }
-
-  if (real_alarm_time > job_start_timeout)
-    {
-    real_alarm_time = job_start_timeout;
+    real_alarm_time -= 10;
     }
 
   alarm(real_alarm_time);

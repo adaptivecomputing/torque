@@ -274,6 +274,8 @@ int svr_recov_xml(
   char *begin;
   char *end;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  memset(&buffer, 0, sizeof(buffer));
 
   sdb = open(svrfile, O_RDONLY, 0);
 

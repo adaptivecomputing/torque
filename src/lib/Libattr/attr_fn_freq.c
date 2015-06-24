@@ -396,14 +396,8 @@ int to_frequency(
     pfreq->frequency_type = Conservative;
     return 0;
     }
-  /********* Don't allow userspace policy 
-  if(!strcasecmp(val,"UserSpace"))
-    {
-    pfreq->frequency_type = UserSpace;
-    return 0;
-    }
-  ************************/
-  return PBSE_BADATVAL;
+
+  return(PBSE_BADATVAL);
   }
 
 /*

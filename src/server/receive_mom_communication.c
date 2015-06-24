@@ -147,7 +147,7 @@ void get_status_info(
 
 int is_reporter_node(
 
-  char *node_id)
+  const char *node_id)
 
   {
   struct pbsnode *pnode = find_nodebyname(node_id);
@@ -167,7 +167,7 @@ int is_reporter_node(
 
 int is_stat_get(
 
-  char            *node_name,
+  const char      *node_name,
   struct tcp_chan *chan)
 
   {
@@ -295,7 +295,6 @@ void *svr_is_request(
   unsigned long       tmpaddr;
   struct sockaddr_in  addr;
   struct pbsnode     *node = NULL;
-  char               *node_name = NULL;
   char                log_buf[LOCAL_LOG_BUF_SIZE+1];
   char                msg_buf[80];
   char                tmp[80];
@@ -490,6 +489,9 @@ void *svr_is_request(
 
     case IS_STATUS:
 
+      {
+      std::string node_name = node->nd_name;
+     
       if (LOGLEVEL >= 2)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -498,13 +500,11 @@ void *svr_is_request(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
-      if ((node_name = strdup(node->nd_name)) == NULL)
-        goto err;
       node_mutex.unlock();
 
-      ret = is_stat_get(node_name, chan);
+      ret = is_stat_get(node_name.c_str(), chan);
 
-      node = find_nodebyname(node_name);
+      node = find_nodebyname(node_name.c_str());
 
       if (node != NULL)
         {
@@ -528,17 +528,16 @@ void *svr_is_request(
         if (LOGLEVEL >= 1)
           {
           snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-              "IS_STATUS error %d on node %s", ret, node_name);
+              "IS_STATUS error %d on node %s", ret, node_name.c_str());
 
           log_err(ret, __func__, log_buf);
           }
-        free(node_name);
 
         goto err;
         }
-      free(node_name);
 
       break;
+      }
 
     default:
 

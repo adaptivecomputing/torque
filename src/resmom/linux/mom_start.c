@@ -458,7 +458,7 @@ void scan_for_terminated(void) /* linux */
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
-    kill_task(ptask, SIGKILL, 0);
+    kill_task(pjob, ptask, SIGKILL, 0);
 
     ptask->ti_qs.ti_exitstat = exiteval;
 

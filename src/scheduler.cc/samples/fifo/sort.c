@@ -78,6 +78,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "data_types.h"
 #include "sort.h"
 #include "job_info.h"
@@ -364,4 +365,35 @@ int cmp_sort(const void *v1, const void *v2)
     return -1;
   else
     return cstat.sort_by -> cmp_func(v1, v2);
+  }
+
+
+/*
+ * fifo_sort - entrypoint into strict fifo job sort used by qsort
+ *
+ */
+int fifo_sort(const void *v1, const void *v2)
+  {
+
+  /* sort first by queue time and if they are the same, sort by
+     job id */
+  long val1, val2;
+  char *endpointer;
+
+  if ((*(job_info **)v1)->qtime < ((*(job_info **)v2)->qtime))
+    return(-1);
+  else if ((*(job_info **)v1)->qtime > ((*(job_info **)v2)->qtime))
+    return(1);
+  else
+    {
+    val1 = strtoll((*(job_info **)v1) -> name, &endpointer, 10);
+    val2 = strtoll((*(job_info **)v2) -> name, &endpointer, 10);
+  
+    if (val1 < val2)
+      return(-1);
+    else if (val1 > val2)
+      return(1);
+    else
+      return(0);
+    }
   }

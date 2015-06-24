@@ -844,39 +844,58 @@ bool mother_superior_cleanup(
       __func__,
       "calling mom_open_socket_to_jobs_server");
     }
-    /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
-    bool sisters_done = false;
 
-    /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
-    time_now = time(NULL);
-    if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+  /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
+  bool sisters_done = false;
+
+  /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
+  time_now = time(NULL);
+  if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+    {
+    sisters_done = true;
+    }
+  else
+    {
+    if (pjob->ji_numnodes > 1)
       {
-      sisters_done = true;
+      sisters_done = are_all_sisters_done(pjob);
       }
     else
-      {
-      if (pjob->ji_numnodes > 1)
-        {
-        sisters_done = are_all_sisters_done(pjob);
-        }
-      else
-        sisters_done = true;
-      }
+      sisters_done = true;
+    }
 
-    /* epilogues are now run by preobit reply, which happens after the fork */
+  /* epilogues are now run by preobit reply, which happens after the fork */
 
-    if ((sisters_done == true) && ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0))
+  if (sisters_done == true) 
+    {
+    if ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0)
       {
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
       pjob->ji_flags |= MOM_EPILOGUE_RUN;
 
       preobit_preparation(pjob);
-
       }
+    else
+      {
+      bool found = false;
+
+      // Make sure the job is in the exiting jobs list
+      for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+        {
+        if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+          {
+          found = true;
+          break;
+          }
+        }
+
+      if (found == false)
+        exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
+      }
+    }
 
   return(false);
   } /* END mother_superior_cleanup() */
-
 
 
 
@@ -1235,8 +1254,6 @@ int post_epilogue(
 
 
 
-
-
 /**
  * preobit_preparation
  *
@@ -1314,8 +1331,6 @@ void preobit_preparation(
 
   exit(0);
   }  /* END preobit_preparation() */
-
-
 
 
 

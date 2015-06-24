@@ -1136,6 +1136,12 @@ void free_br(
     preq->rq_extend = NULL;
     }
 
+  if (preq->rq_extra)
+    {
+    free(preq->rq_extra);
+    preq->rq_extra = NULL;
+    }
+
   switch (preq->rq_type)
     {
     case PBS_BATCH_QueueJob:

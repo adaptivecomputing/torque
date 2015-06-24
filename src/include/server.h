@@ -98,6 +98,7 @@
 #include "server_limits.h"
 #include "attribute.h" /* attribute_def */
 
+#define DEFAULT_KILL_DELAY 2
 #define NO_BUFFER_SPACE -2
 #define NO_ATTR_DATA    1
 #define ATTR_NOT_FOUND  -2
@@ -176,6 +177,7 @@ enum srv_atr
   SRV_ATR_checkpoint_dir,
   SRV_ATR_display_job_server_suffix,
   SRV_ATR_job_suffix_alias,
+  SRV_ATR_use_jobs_subdirs,
   SRV_ATR_MailSubjectFmt,
   SRV_ATR_MailBodyFmt,
   SRV_ATR_NPDefault,
@@ -211,6 +213,10 @@ enum srv_atr
   
   SRV_ATR_CopyOnRerun,
   SRV_ATR_JobExclusiveOnUse,
+  SRV_ATR_DisableAutoRequeue,
+  SRV_ATR_ExitCodeCanceledJob,
+  SRV_ATR_TimeoutForJobDelete,
+  SRV_ATR_TimeoutForJobRequeue,
 
   /* This must be last */
   SRV_ATR_LAST
