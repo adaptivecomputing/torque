@@ -18,7 +18,7 @@ int trq_cg_cleanup_torque_cgroups();
 int trq_cg_get_cgroup_path(std::string path); 
 void trq_cg_init_subsys_online(bool val);
 int trq_cg_initialize_hierarchy();
-int trq_cg_create_cgroup(std::string &, const char *job_id);
+int trq_cg_create_cgroup(std::string &, job *);
 void *trq_cg_remove_process_from_accts(void *vp);
 int trq_cg_set_resident_memory_limit(const char *job_id, unsigned long memory_limit);
 int trq_cg_set_swap_memory_limit(const char *job_id, unsigned long memory_limit);

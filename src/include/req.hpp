@@ -185,6 +185,7 @@ class req
     std::string   getThreadUsageString() const;
     int           get_num_tasks_for_host(int num_ppn) const;
     int           get_num_tasks_for_host(const std::string &host) const;
+    int           get_task_allocation(unsigned int index, allocation &task_allocation);
     unsigned long get_memory_for_host(const std::string &host) const;
     unsigned long get_swap_for_host(const std::string &host) const;
     void          set_hostlist(const char *hostlist);

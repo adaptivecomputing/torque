@@ -541,6 +541,34 @@ START_TEST(test_get_swap_for_host)
   }
 END_TEST
 
+START_TEST(test_get_task_allocation)
+  {
+  int rc;
+  req r3;
+  allocation a1;
+
+  r3.set_value("task_count", "1");
+  r3.set_value("placement_type", "place node");
+  r3.set_value("lprocs", "all");
+  allocation a;
+  a.cores = 8;
+  a.threads = 16;
+  for (int i = 0; i < 16; i++)
+    a.cpu_indices.push_back(i);
+
+  a.mem_indices.push_back(0);
+  a.mem_indices.push_back(1);
+  r3.record_allocation(a);
+
+  rc = r3.get_task_allocation(0, a1);
+  fail_unless(rc==0);
+
+  fail_unless(a1.cores==8);
+  fail_unless(a1.threads==16);
+  fail_unless(a1.cpu_indices[1] == 1);
+  fail_unless(a1.mem_indices[1] == 1);
+  }
+END_TEST
 
 
 Suite *req_suite(void)
@@ -553,7 +581,7 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_num_tasks_for_host);
   tcase_add_test(tc_core, test_string_constructor);
   suite_add_tcase(s, tc_core);
-  
+
   tc_core = tcase_create("test_set_from_string");
   tcase_add_test(tc_core, test_set_from_string);
   tcase_add_test(tc_core, test_set_attribute);
@@ -561,6 +589,7 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_set_values);
   tcase_add_test(tc_core, test_get_memory_for_host);
   tcase_add_test(tc_core, test_get_swap_for_host);
+  tcase_add_test(tc_core, test_get_task_allocation);
   suite_add_tcase(s, tc_core);
   
   return(s);

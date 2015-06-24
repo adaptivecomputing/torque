@@ -20,11 +20,13 @@
 #include "trq_cgroups.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#include "complete_req.hpp"
 #endif
 
 using namespace std;
 using namespace boost;
 
+#define MAX_JOBID_LENGTH    1024
 extern char mom_alias[];
 
 enum cgroup_system
@@ -36,6 +38,7 @@ enum cgroup_system
   cg_devices,
   cg_subsys_count
   };
+
 
 string cg_cpu_path;
 string cg_cpuset_path;
@@ -580,7 +583,7 @@ int trq_cg_add_process_to_cgroup(
   int rc;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   int cgroup_fd;
-  char new_task_pid[256];
+  char new_task_pid[MAX_JOBID_LENGTH];
   string full_cgroup_path;
   string cgroup_task_path;
 
@@ -631,20 +634,115 @@ int trq_cg_add_process_to_all_cgroups(
   } // END trq_cg_add_process_to_all_cgroups()
 
 
+/* 
+ * trq_cg_create_task_cgroups
+ *
+ * Detect if this is a -L resource request. If so
+ * create a cgroup directory for each task in each 
+ * reqeust.
+ *
+ * @param  cgroup_path - directory from where cgroup is made.
+ * @param  job         - job structure
+ */
+
+int trq_cg_create_task_cgroups(
+  string cgroup_path, 
+  job   *pjob)
+
+  {
+  int            rc;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr;
+
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+
+  if (pattr == NULL)
+    {
+    return(PBSE_NONE);
+    }
+
+  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    /* This is not a -L request. Just return */
+    return(PBSE_NONE);
+    }
+
+  char   this_hostname[PBS_MAXHOSTNAME];
+
+  gethostname(this_hostname, PBS_MAXHOSTNAME);
+  complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+  
+
+  for (unsigned int i = 0; i < cr->req_count(); i++)
+    {
+    int    task_count;
+
+    req *each_req = &cr->get_req(i);
+    task_count = each_req->get_num_tasks_for_host(this_hostname);
+
+    for (unsigned int y = 0; y < task_count; y++)
+      {
+      allocation al;
+      string   req_task_path;
+      char     req_task_number[MAX_JOBID_LENGTH];
+
+      rc = each_req->get_task_allocation(y, al);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+      sprintf(req_task_number, "/R%u.t%u", i, y);
+      req_task_path = cgroup_path + req_task_number;
+      /* create a cgroup with the job_id.Ri.ty where i and y are the
+         req and task reference */
+      rc = mkdir(req_task_path.c_str(), 0x644);
+      if ((rc != 0) &&
+          (errno != EEXIST))
+        {
+        sprintf(log_buf, "failed to make directory %s for cgroup: %s", req_task_path.c_str(), strerror(errno));
+        log_err(errno, __func__, log_buf);
+        return(PBSE_SYSTEM); 
+        }
+
+      rc = chmod(req_task_path.c_str(), 0x666);
+      if (rc != 0)
+        {
+        sprintf(log_buf, "failed to change mode for  %s for cgroup: %s", req_task_path.c_str(), strerror(errno));
+        log_err(errno, __func__, log_buf);
+        return(PBSE_SYSTEM); 
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  }
+
+/*
+ * trq_cg_create_cgroup
+ *
+ * Create cgroup at path indicated by cgroup_path. Check to see
+ * if the job request uses -L. If so create sub-cgroups for
+ * each task requested by -L resource request. Otherwise just 
+ * create the cgroup at cgroup_path.
+ *
+ * @param cgroup_path - Path where cgroup will be created.
+ * @param job         - job structure
+ */
 
 int trq_cg_create_cgroup(
     
   string     &cgroup_path,
-  const char *job_id)
+  job        *pjob)
 
   {
-  int    rc = PBSE_NONE;
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  string full_cgroup_path(cgroup_path);
+  int           rc = PBSE_NONE;
+  const char   *job_id = pjob->ji_qs.ji_jobid;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  string        full_cgroup_path(cgroup_path);
 
   full_cgroup_path += job_id;
 
-  /* create a cgroup with the pid as the directory name under the cpuacct subsystem */
+  /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
   rc = mkdir(full_cgroup_path.c_str(), 0x644);
   if ((rc != 0) &&
       (errno != EEXIST))
@@ -662,10 +760,249 @@ int trq_cg_create_cgroup(
     return(PBSE_SYSTEM); 
     }
 
+  /* create task sub-cgroups if -L resource request */
+  rc = trq_cg_create_task_cgroups(full_cgroup_path, pjob);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buf, "failed to create task cgroups: %d", rc);
+    log_err(errno, __func__, log_buf);
+    }
+
+
   return(rc);
   } // END trq_cg_create_cgroup()
 
 
+/*
+ * trq_cg_get_task_set_string
+ *
+ * creates a set string which can be used where ever
+ * a comma delimited set string can be used.
+ *
+ * @param indices - vector of integers
+ * @param set_string - returns a comma delimited string of integers 
+ *
+ */
+
+int trq_cg_get_task_set_string(
+    
+  std::vector<int> indices, 
+  std::string &set_string)
+
+  {
+  unsigned int set_size;
+  char  task_element[256];
+
+  /* Figure out the cpuset string */
+  set_size = indices.size();
+
+  set_string.clear();
+
+  if (set_size != 0)
+    {
+    /* add the first element outside the loop because all
+       other elements will be comma separated */
+    sprintf(task_element, "%d", indices[0]);
+    for (unsigned int i = 1; i < set_size; i++)
+      {
+      char next_element[20];
+
+      sprintf(next_element, ",%d", indices[i]);
+      strcat(task_element, next_element);
+      }
+
+    set_string = task_element;
+    }
+
+
+
+  return(PBSE_NONE);
+  }
+
+
+/* 
+ * trq_cg_write_task_memset_string
+ *
+ * Write the memset string for the task to cpuset.cpus
+ *
+ * @param cpuset_path - directory path to cpuset cgroup
+ * @param req_num  - The request for this task
+ * @param task_num - Task index
+ * @param job_id   - Id of the job
+ * @param allocation - object with the task cpuset information 
+ *
+ */
+
+int trq_cg_write_task_memset_string(
+    
+  string       cpuset_path,
+  unsigned int req_num, 
+  unsigned int task_num, 
+  const char *job_id, 
+  allocation &al)
+
+  {
+  int      rc = PBSE_NONE;
+  string   req_memset_task_path;
+  string   memset_string;
+  char     req_task_number[256];
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
+  size_t   bytes_written;
+  FILE  *f;
+
+  sprintf(req_task_number, "%s/R%u.t%u/cpuset.mems", job_id, req_num, task_num);
+  req_memset_task_path = cpuset_path + req_task_number;
+
+  if ((f = fopen(req_memset_task_path.c_str(), "w")) == NULL)
+    {
+    sprintf(log_buf, "failed to open %s", req_memset_task_path.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  rc = trq_cg_get_task_set_string(al.mem_indices, memset_string);
+  if (rc == PBSE_NONE)
+    {
+    bytes_written = fwrite(memset_string.c_str(), sizeof(char), memset_string.size(), f);
+    if (bytes_written < 1)
+      {
+      sprintf(log_buf, "failed to write task memset for job %s, %s", job_id, req_memset_task_path.c_str());
+      log_err(errno, __func__, log_buf);
+      rc = PBSE_SYSTEM;
+      }
+    }
+
+  fclose(f);
+
+  return(rc);
+  }   
+ 
+
+
+/* 
+ * trq_cg_write_task_cpuset_string
+ *
+ * Write the cpuset string for the task to cpuset.cpus
+ *
+ * @param cpuset_path - directory path to cpuset cgroup
+ * @param req_num  - The request for this task
+ * @param task_num - Task index
+ * @param job_id   - Id of the job
+ * @param allocation - object with the task cpuset information 
+ *
+ */
+
+int trq_cg_write_task_cpuset_string(
+    
+  string       cpuset_path,
+  unsigned int req_num, 
+  unsigned int task_num, 
+  const char *job_id, 
+  allocation &al)
+
+  {
+  int      rc = PBSE_NONE;
+  string   req_cpuset_task_path;
+  string   cpuset_string;
+  char     req_task_number[256];
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
+  size_t   bytes_written;
+  FILE    *f;
+
+  sprintf(req_task_number, "%s/R%u.t%u/cpuset.cpus", job_id, req_num, task_num);
+  req_cpuset_task_path = cpuset_path + req_task_number;
+
+  if ((f = fopen(req_cpuset_task_path.c_str(), "w")) == NULL)
+    {
+    sprintf(log_buf, "failed to open %s", req_cpuset_task_path.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  rc = trq_cg_get_task_set_string(al.cpu_indices, cpuset_string);
+  if (rc == PBSE_NONE)
+    {
+    bytes_written = fwrite(cpuset_string.c_str(), sizeof(char), cpuset_string.size(), f);
+    if (bytes_written < 1)
+      {
+      sprintf(log_buf, "failed to write task cpuset for job %s, %s", job_id, req_cpuset_task_path.c_str());
+      log_err(errno, __func__, log_buf);
+      rc = PBSE_SYSTEM;
+      }
+    }
+
+  fclose(f);
+
+  return(rc);
+  }   
+ 
+/*
+ * trq_cg_populate_task_cgroups()
+ *
+ * add cpuset or memory to tasks of jobs.
+ *
+ * @param which - perform task on memory or cpus
+ * @param pjob  - The job structure we are working on.
+ *
+ */
+
+int trq_cg_populate_task_cgroups(
+
+  string cpuset_path,
+  job   *pjob)
+
+  {
+  int            rc;
+  char          *job_id = pjob->ji_qs.ji_jobid;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr;
+
+  /* See if the JOB_ATR_req_information is set. If not
+     This was not a -L request */
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+
+  if (pattr == NULL)
+    {
+    return(PBSE_NONE);
+    }
+
+  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
+    {
+    /* This is not a -L request. Just return */
+    return(PBSE_NONE);
+    }
+
+  char   this_hostname[PBS_MAXHOSTNAME];
+
+  gethostname(this_hostname, PBS_MAXHOSTNAME);
+  complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+  
+
+  for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
+    {
+    int    task_count;
+
+    req *each_req = &cr->get_req(req_index);
+    task_count = each_req->get_num_tasks_for_host(this_hostname);
+
+    for (unsigned int task_index = 0; task_index < task_count; task_index++)
+      {
+      allocation al;
+
+      rc = each_req->get_task_allocation(task_index, al);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+
+      trq_cg_write_task_cpuset_string(cpuset_path, req_index, task_index, job_id, al);
+      trq_cg_write_task_memset_string(cpuset_path, req_index, task_index, job_id, al);
+
+      }
+    }
+ 
+  return(PBSE_NONE);
+  }
 
 /*
  * trq_cg_populate_cgroup()
@@ -680,7 +1017,7 @@ int trq_cg_create_cgroup(
 int trq_cg_populate_cgroup(
 
   int         which,
-  const char *job_id,
+  job        *pjob,
   string     &used)
 
   {
@@ -689,6 +1026,7 @@ int trq_cg_populate_cgroup(
   int     rc = PBSE_NONE;
   char    log_buf[LOCAL_LOG_BUF_SIZE];
   size_t  bytes_written;
+  const char *job_id = pjob->ji_qs.ji_jobid;
 
   path += job_id;
   if (which == CPUS)
@@ -791,26 +1129,31 @@ int trq_cg_create_all_cgroups(
   job    *pjob)
 
   {
-  int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob->ji_qs.ji_jobid);
+  complete_req *cr;
+
+  int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob);
 
   if (rc == PBSE_NONE)
     {
-    rc = trq_cg_create_cgroup(cg_memory_path, pjob->ji_qs.ji_jobid);
+    rc = trq_cg_create_cgroup(cg_memory_path, pjob);
 
     if (rc == PBSE_NONE)
       {
       std::string  cpus_used;
       std::string  mems_used;
-      rc = trq_cg_create_cgroup(cg_cpuset_path, pjob->ji_qs.ji_jobid);
+      rc = trq_cg_create_cgroup(cg_cpuset_path, pjob);
       
       // Get the cpu and memory indices used by this job
       rc = trq_cg_get_cpuset_and_mem(pjob, cpus_used, mems_used);
       if (rc == PBSE_NONE)
         {
-        rc = trq_cg_populate_cgroup(CPUS, pjob->ji_qs.ji_jobid, cpus_used);
+        rc = trq_cg_populate_cgroup(CPUS, pjob, cpus_used);
 
         if (rc == PBSE_NONE)
-          rc = trq_cg_populate_cgroup(MEMS, pjob->ji_qs.ji_jobid, mems_used);
+          rc = trq_cg_populate_cgroup(MEMS, pjob, mems_used);
+
+        if (rc == PBSE_NONE)
+          rc = trq_cg_populate_task_cgroups(cg_cpuset_path, pjob);
         }
       }
     }

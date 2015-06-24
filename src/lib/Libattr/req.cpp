@@ -1962,6 +1962,34 @@ int req::get_num_tasks_for_host(
   return(task_count);
   } // END get_num_tasks_for_host()
 
+/*
+ * get_task_allocation()
+ *
+ * Get the allocation specified by the index
+ *
+ * @param index - the index of the allocation_task to return
+ * @param task_allocation - allocation to be returned
+ *
+ */
+
+int req::get_task_allocation(
+
+  unsigned int  index,
+  allocation &task_allocation)
+
+  {
+  unsigned int size = this->task_allocations.size();
+
+  if (index >= size)
+    {
+    return(PBSE_IVALREQ);
+    }
+
+  task_allocation = this->task_allocations[index];
+
+  return(PBSE_NONE);
+  }
+
 
 
 /*
