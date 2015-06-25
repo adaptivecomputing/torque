@@ -690,7 +690,7 @@ dnl  compile in debug code?
 dnl
 AC_MSG_CHECKING([whether to turn on the compilation of DEBUG code])
 AC_ARG_ENABLE(debug,
-    [  --enable-debug          turn on the compilation of DEBUG code],
+    [  --enable-debug          turn on the compilation of DEBUG code (for debugging symbols, use --with-debug)],
     enable_debug=$enableval, enable_debug=no)
 AC_MSG_RESULT($enable_debug)
 if test "x$enable_debug" = "xyes" ; then
