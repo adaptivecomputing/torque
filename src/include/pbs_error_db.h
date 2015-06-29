@@ -282,6 +282,7 @@ PbsErrClient(PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY, (char *)"Nodes may not 
 PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The updated okclients list hasn't been sent out to the cluster yet. The node(s) will automatically update to free once this is done and the mom has reported in.")
 PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
+PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

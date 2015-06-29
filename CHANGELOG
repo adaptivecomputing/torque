@@ -8,6 +8,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   b - TRQ-3185. Create subdirs when server attribute use_job_subdirs set.
   e - TRQ-2836. Make node health check run on sister nodes when configured for job
       start and job end as well.
+  e - TRQ-2843. Add the qmgr setting dont_write_nodes_file to make it so that nodes
+      cannot be edited dynamically
 
 
 5.1.1
