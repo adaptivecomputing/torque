@@ -91,8 +91,8 @@ int parse_commandline_opts(
       ((tmpJobID[0] == '\0') && (tmpAdopteeID.size() == 0)) ||
       ((tmpAdopteeID.size() > 0) && (tmpJobID[0] == '\0')))
     {
-    fprintf(stdout, "NumErrs %d tmpJobID[0] %d tmpAdopteeID.size() %d\n", NumErrs, tmpJobID[0], tmpAdopteeID.size());
-    fprintf(stdout, "argc %d argv[0] %s argv[1] %s argv[2] $s", argc, argv[0], argv[1], argv[2]);
+    fprintf(stdout, "NumErrs %d tmpJobID[0] %d tmpAdopteeID.size() %d\n", NumErrs, tmpJobID[0], (int)tmpAdopteeID.size());
+    fprintf(stdout, "argc %d argv[0] %s argv[1] %s argv[2] %s", argc, argv[0], argv[1], argv[2]);
     static char Usage[] = "USAGE: pbs_track -j <JOBID> [-b] -- a.out arg1 arg2 ... argN\n" \
                           " OR    pbs_track -j <JOBID> -a <PID>\n";
     fprintf(stderr, "%s", Usage);
