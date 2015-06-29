@@ -1218,11 +1218,16 @@ int update_nodes_file(
   struct pbsnode *held)
 
   {
-  struct pbsnode  *np;
-  int              j;
+  struct pbsnode     *np;
+  int                 j;
   all_nodes_iterator *iter = NULL;
-  FILE            *nin;
-  long             cray_enabled = FALSE;
+  FILE               *nin;
+  long                cray_enabled = FALSE;
+  long                dont_update_file = FALSE;
+    
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_file);
+  if (dont_update_file == TRUE)
+    return(PBSE_NONE);
 
   if (LOGLEVEL >= 2)
     {
