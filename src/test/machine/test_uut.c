@@ -21,11 +21,59 @@ extern int called_free_task;
 extern int called_place_task;
 extern int called_partially_place;
 extern int called_fits_on_socket;
+extern int called_spread_place;
 extern int num_for_host;
 extern int called_store_pci;
 extern int json_socket;
+extern int sockets;
+extern int numa_node_count;
 extern bool socket_fit;
 extern bool partially_placed;
+extern bool spreaded;
+
+
+START_TEST(test_spread_place)
+  {
+  Machine m;
+  job     pjob;
+  std::string cpu;
+  std::string mem;
+  complete_req cr;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+
+  m.addSocket(2);
+
+  sockets = 1;
+  numa_node_count = 0;
+  called_spread_place = 0;
+  num_for_host = 1;
+  spreaded = true;
+
+  // Make sure we call spread place once for each successfully placed task
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(called_spread_place == 1);
+
+  num_for_host = 3;
+  called_spread_place = 0;
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(called_spread_place == 3);
+
+  // Now we're multiple instead of one so it should multiply the calls
+  sockets = 0;
+  numa_node_count = 2;
+  num_for_host = 2;
+  called_spread_place = 0;
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(called_spread_place == 4, "called %d times", called_spread_place);
+  
+  sockets = 2;
+  numa_node_count = 0;
+  num_for_host = 3;
+  called_spread_place = 0;
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(called_spread_place == 6);
+  }
+END_TEST
 
 START_TEST(test_displayAsString)
   {
@@ -238,6 +286,7 @@ Suite *machine_suite(void)
   tc_core = tcase_create("test_place_and_free_job");
   tcase_add_test(tc_core, test_place_and_free_job);
   tcase_add_test(tc_core, test_store_pci_device_on_appropriate_chip);
+  tcase_add_test(tc_core, test_spread_place);
   suite_add_tcase(s, tc_core);
   
   return(s);

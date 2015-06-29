@@ -14,10 +14,38 @@ extern int placed;
 extern int called_place;
 extern int oscillate;
 extern int called_store_pci;
+extern int called_spread_place;
 extern bool avail_oscillate;
 extern int place_amount;
 extern int json_chip;
 extern std::string my_placement_type;
+
+
+START_TEST(test_spread_place)
+  {
+  Socket s;
+  req        r;
+  allocation a;
+  int        remaining = 0;
+  s.addChip();
+  s.addChip();
+
+  called_spread_place = 0;
+  fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
+  fail_unless(called_spread_place == 2);
+  
+  fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
+  fail_unless(called_spread_place == 2);
+
+  oscillate = false;
+  s.free_task("1.napali");
+  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  fail_unless(called_spread_place == 3);
+  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  fail_unless(called_spread_place == 4);
+
+  }
+END_TEST
 
 
 START_TEST(test_json_constructor)
@@ -292,6 +320,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
   tcase_add_test(tc_core, test_store_pci_device_appropriately);
+  tcase_add_test(tc_core, test_spread_place);
   suite_add_tcase(s, tc_core);
   
   return(s);

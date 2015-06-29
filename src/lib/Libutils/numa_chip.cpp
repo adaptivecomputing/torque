@@ -861,6 +861,36 @@ void Chip::set_cpuset(
 
 
 /*
+ * aggregate_allocation()
+ *
+ * Adds a to my list of allocations if one isn't already present for its jobid, or adds a 
+ * to the existing allocation if one is present
+ */
+
+void Chip::aggregate_allocation(
+
+  allocation &a)
+
+  {
+  bool found = false;
+
+  for (unsigned int i = 0; i < this->allocations.size(); i++)
+    {
+    if (!strcmp(this->allocations[i].jobid, a.jobid))
+      {
+      this->allocations[i].add_allocation(a);
+      found = true;
+      break;
+      }
+    }
+
+  if (found == false)
+    this->allocations.push_back(a);
+  } // END aggregate_allocation()
+
+
+
+/*
  * how_many_tasks_fit()
  *
  * Determines how many tasks from req r fit on this chip
@@ -954,16 +984,9 @@ void Chip::place_task_by_cores(
     {
     while (j < this->cores.size())
       {
-      if (this->cores[j].free == true)
+      if (this->reserve_core(j, a) == true)
         {
-        this->cores[j].mark_as_busy(this->cores[j].id);
-        a.cpu_indices.push_back(this->cores[j].id);
-        a.cores++;
-        this->availableCores--;
-        this->availableThreads -= this->cores[j].totalThreads;
-        a.threads += this->cores[j].totalThreads;
         j++;
-
         break;
         }
       else
@@ -971,7 +994,6 @@ void Chip::place_task_by_cores(
       }
     }
 
-  a.cpus += a.cores;
   } // END place_task_by_cores()
 
 
@@ -1004,17 +1026,12 @@ void Chip::place_task_by_threads(
       a.cores++;
       }
 
-    while ((slots_left > 0) && 
-           ((index = this->cores[j].get_open_processing_unit()) != -1))
+    while ((slots_left > 0) &&
+           (this->reserve_thread(j, a) == true))
       {
-      this->availableThreads--;
       slots_left--;
-      a.threads++;
-      a.cpu_indices.push_back(index);
       }
     }
-
-  a.cpus += a.threads;
   } // END place_task_by_threads()
 
 
@@ -1061,6 +1078,168 @@ bool Chip::task_will_fit(
 
   return(fits);
   } // END task_will_fit()
+
+
+
+/*
+ * reserve_core()
+ *
+ * Reserves the core at index core index if possible
+ * @param core_index - the index of the core we wish to reserve
+ * @param a - the allocation where we should record our reservation
+ * @return true if a core was reserved, false otherwise
+ */
+
+bool Chip::reserve_core(
+
+  int         core_index,
+  allocation &a)
+
+  {
+  if (this->cores[core_index].is_free())
+    {
+    int os_index = this->cores[core_index].get_id();
+    this->cores[core_index].mark_as_busy(os_index);
+    this->availableCores--;
+    this->availableThreads -= this->cores[core_index].totalThreads;
+    a.cpu_indices.push_back(os_index);
+    a.cpus++;
+    a.cores++;
+    a.threads += this->cores[core_index].totalThreads;
+    return(true);
+    }
+
+  return(false);
+  } // END reserve_core()
+
+
+
+/*
+ * reserve_thread()
+ *
+ * Reserves a thread inside core with index core_index if possible
+ * @param core_index - the index of the core whose thread we wish to reserve
+ * @param a - the allocation where we should record our reservation
+ * @return true if a thread was reserved, false otherwise.
+ */
+
+bool Chip::reserve_thread(
+
+  int         core_index,
+  allocation &a)
+
+  {
+  int index = this->cores[core_index].get_open_processing_unit();
+
+  if (index >= 0)
+    {
+    a.threads++;
+    a.cpus++;
+    a.cpu_indices.push_back(index);
+    this->availableThreads--;
+    return(true);
+    }
+
+  return(false);
+  } // END reserve_thread()
+
+
+
+/*
+ * spread_place()
+ *
+ * Places a task from req r on this chip and spread it appropriately
+ *
+ * @param r - the req whose task we're placing
+ * @param master - the master allocation for this job
+ * @param execution_slots_per - the number of execution slots to reserve from this chip
+ * @param execution_slots_remainder - a number of extra execution slots to grab - get one 
+ * and decrement if > 0
+ * @return true if the task was placed, false otherwise.
+ */
+
+bool Chip::spread_place(
+
+  req        &r,
+  allocation &master,
+  int         execution_slots_per,
+  int        &execution_slots_remainder)
+
+  {
+  bool task_placed = false;
+
+  if (this->chipIsAvailable() == true)
+    {
+    allocation a(master.jobid);
+    int        placed = 0;
+
+    a.place_type = exclusive_chip;
+
+    if (this->totalCores > execution_slots_per)
+      {
+      // Spread over just the cores
+      int step = this->totalCores / execution_slots_per;
+
+      for (unsigned int i = 0; placed < execution_slots_per; i+= step)
+        {
+        this->reserve_core(i, a);
+        placed++;
+        }
+
+      if (execution_slots_remainder > 0)
+        {
+        for (unsigned int i = this->cores.size() - 1; i >= 0; i--)
+          {
+          if (this->reserve_core(i, a) == true)
+            {
+            execution_slots_remainder--;
+            break;
+            }
+          }
+        }
+      }
+    else
+      {
+      // Spread over the cores and the threads - this option doesn't really make any
+      // sense but I suppose we have to code for it
+      int per_core = execution_slots_per / this->totalCores;
+      int remainder = execution_slots_per % this->totalCores;
+
+      // Place one extra if we still have a remainder
+      if (execution_slots_remainder > 0)
+        placed--;
+
+      for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
+        {
+        for (int j = 0; j < per_core; j++)
+          {
+          if (this->reserve_thread(i, a) == true)
+            placed++;
+          }
+        }
+
+      while (remainder > 0)
+        {
+        for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
+          {
+          if (this->reserve_thread(i, a) == true)
+            placed++;
+          }
+        }
+      }
+
+    a.mem_indices.push_back(this->id);
+    execution_slots_remainder--;
+
+    task_placed = true;
+    this->chip_exclusive = true;
+    this->aggregate_allocation(a);
+    r.record_allocation(a);
+    master.add_allocation(a);
+    }
+
+  return(task_placed);
+  } // spread_place()
 
 
 

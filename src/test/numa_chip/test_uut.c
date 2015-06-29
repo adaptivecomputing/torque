@@ -12,6 +12,45 @@ extern int recorded;
 extern std::string my_placement_type;
 extern std::string thread_type;
 
+
+START_TEST(test_spread_place)
+  {
+  const char        *jobid = "1.napali";
+  req                r;
+  std::stringstream  out;
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  int                remaining = 0;
+
+  fail_unless(c.spread_place(r, a, 4, remaining) == true);
+  out.str("");
+  c.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,4,8,12\",\"mem\":0,\"exclusive\":3,\"cores_only\":0}}", out.str().c_str());
+
+  fail_unless(c.reserve_core(0, a) == false);
+  remaining = 1;
+  fail_unless(c.spread_place(r, a, 4, remaining) == false);
+  c.free_task(jobid);
+  
+  fail_unless(c.spread_place(r, a, 4, remaining) == true);
+  fail_unless(c.reserve_core(0, a) == false);
+  fail_unless(c.reserve_core(4, a) == false);
+  fail_unless(c.reserve_core(8, a) == false);
+  fail_unless(c.reserve_core(12, a) == false);
+  fail_unless(c.reserve_core(15, a) == false);
+  }
+END_TEST
+
+
 START_TEST(test_json_constructor)
   {
   const char *j1 ="\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
@@ -324,6 +363,22 @@ START_TEST(test_exclusive_place)
   Chip copy_exclusive_socket(out.str());
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
   fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
+
+  allocation to_add("1.napali");
+  to_add.cpu_indices.push_back(2);
+  to_add.cpu_indices.push_back(3);
+  c.aggregate_allocation(to_add);
+  out.str("");
+  c.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
+
+  allocation one_more("2.napali");
+  one_more.cpu_indices.push_back(9);
+  one_more.mem_indices.push_back(2);
+  c.aggregate_allocation(one_more);
+  out.str("");
+  c.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":1,\"exclusive\":2,\"cores_only\":1},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"9\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
   }
 END_TEST
 
@@ -527,6 +582,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
   tcase_add_test(tc_core, test_reserve_accelerators);
+  tcase_add_test(tc_core, test_spread_place);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");

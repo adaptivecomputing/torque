@@ -168,6 +168,8 @@ class req
     int           getExecutionSlots() const;
     unsigned long getMemory() const;
     unsigned long getSwap() const;
+    int           get_sockets() const;
+    int           get_numa_nodes() const;
     unsigned long getDisk() const;
     int           getMaxtpn() const;
     int           getGpus() const;

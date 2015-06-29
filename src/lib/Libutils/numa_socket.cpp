@@ -377,6 +377,59 @@ int Socket::how_many_tasks_fit(
 
 
 /*
+ * spread_place()
+ *
+ * @param r - the req we're placing
+ * @param master - the master allocation for the whole job
+ * @param execution_slots_per - the number of execution slots to reserve for the socket
+ * @param execution_slots_remainder - extra execution slots that need to be acquired
+ */
+
+bool Socket::spread_place(
+
+  req        &r,
+  allocation &master,
+  int         execution_slots_per,
+  int        &execution_slots_remainder,
+  bool        chip)
+
+  {
+  bool placed = false;
+  int  count  = 1;
+  int  per_numa = execution_slots_per;
+
+  // We must either be completely free or be placing on just one chip
+  if ((this->is_available() == true) ||
+      (chip == true))
+    {
+    if (chip == false)
+      {
+      // If we're placing at the socket level, divide execution_slots_per by the number 
+      // of chips and place multiple times
+      per_numa /= this->chips.size();
+      count = this->chips.size();
+      
+      this->socket_exclusive = true;
+      }
+
+    for (int c = 0; c < count; c++)
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        {
+        if (this->chips[i].spread_place(r, master, per_numa, execution_slots_remainder))
+          break;
+        }
+      }
+
+    placed = true;
+    }
+
+  return(placed);
+  } // END spread_place()
+
+
+
+/*
  * place_task()
  *
  * Places as many tasks as available, up to to_place, on this socket.

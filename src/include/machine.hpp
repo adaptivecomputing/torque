@@ -105,6 +105,7 @@ class Core
     void mark_as_busy(int index);
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
+    bool is_free() const;
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
     void append_indices(std::vector<int> core_indices, int which) const;
@@ -178,6 +179,7 @@ class Chip
     void setChipAvailable(bool available);
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(const req &r) const;
+    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     int  place_task(const char *jobid, req &r, allocation &a, int to_place);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
@@ -194,9 +196,12 @@ class Chip
     void free_accelerator(int index, int type);
     void initialize_allocations(char *allocations);
     void initialize_allocation(char *allocation);
+    void aggregate_allocation(allocation &a);
     void adjust_open_resources();
     void reserve_allocation_resources(allocation &a);
     void aggregate_allocations(vector<allocation> &master_list);
+    bool reserve_core(int core_index, allocation &a);
+    bool reserve_thread(int core_index, allocation &a);
   };
 
 
@@ -242,6 +247,7 @@ class Socket
     void setId(int id);
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
+    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
     int  place_task(const char *jobid, req &r, allocation &a, int to_place);
     bool free_task(const char *jobid);
     bool is_available() const;
@@ -299,6 +305,7 @@ class Machine
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
+    int  spread_place(req &r, allocation &master, int tasks_for_node);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
     void setMemory(long long mem); // used for unit tests
     void addSocket(int count); // used for unit tests

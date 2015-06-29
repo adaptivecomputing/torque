@@ -71,6 +71,8 @@ START_TEST(test_get_set_values)
   std::vector<std::string> names;
   std::vector<std::string> values;
 
+  fail_unless(r.get_sockets() == 1);
+
   r.get_values(names, values);
 
   fail_unless(names[0] == "task_count.0");
@@ -118,6 +120,8 @@ START_TEST(test_get_set_values)
 
   names.clear();
   values.clear();
+
+  fail_unless(r2.get_numa_nodes() == 1);
 
   r2.get_values(names, values);
 

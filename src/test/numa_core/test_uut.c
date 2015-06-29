@@ -90,8 +90,10 @@ START_TEST(test_recovering_allocations)
   fail_unless(c.get_open_processing_unit() == -1);
   fail_unless(c.free_pu_index(0, completely_free) == true);
   fail_unless(completely_free == false);
+  fail_unless(c.is_free() == false);
   fail_unless(c.free_pu_index(8, completely_free) == true);
   fail_unless(completely_free == true);
+  fail_unless(c.is_free() == true);
   }
 END_TEST
 

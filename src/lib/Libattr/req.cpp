@@ -2086,4 +2086,15 @@ void req::set_task_count(
   this->task_count = task_count;
   }
 
+int req::get_sockets() const
+
+  {
+  return(this->socket);
+  }
+
+int req::get_numa_nodes() const
+
+  {
+  return(this->numa_nodes);
+  }
 

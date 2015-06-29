@@ -520,7 +520,7 @@ void Machine::place_remaining(
     remaining_tasks--;
     }
 
-  // Finally, place any that don't fit on a socket
+  // Finally, place any that don't fit on a single socket
   while (remaining_tasks > 0)
     {
     bool fit_somewhere = false;
@@ -550,6 +550,70 @@ void Machine::place_remaining(
   } // END place_remaining()
 
 
+
+/*
+ * spread_place()
+ *
+ * Places r tasks_for_node times, spreading it appropriately
+ *
+ * @param r - the req we're placing
+ * @param master - the master allocation
+ * @param tasks_for_node - the number of times we should place r
+ * @return PBSE_NONE on success
+ */
+
+int Machine::spread_place(
+
+  req        &r,
+  allocation &master,
+  int         tasks_for_node)
+
+  {
+  bool chips = false;
+  int  quantity = r.get_sockets();
+  int  tasks_placed = 0;
+
+  if (quantity == 0)
+    {
+    chips = true;
+    quantity = r.get_numa_nodes();
+    }
+
+  // Spread the placement evenly across the number of sockets or numa nodes
+  int execution_slots_per = r.getExecutionSlots() / quantity;
+  int execution_slots_remainder = r.getExecutionSlots() % quantity;
+
+  for (int i = 0; i < tasks_for_node; i++)
+    {
+    for (int j = 0; j < quantity; j++)
+      {
+      for (unsigned int s = 0; s < this->sockets.size(); s++)
+        {
+        if (this->sockets[s].spread_place(r, master, execution_slots_per,
+                                          execution_slots_remainder, chips))
+          {
+          tasks_placed++;
+          this->availableSockets--;
+          break;
+          }
+        }
+      }
+    }
+
+  return(tasks_placed);
+  } // END spread_place()
+
+
+
+/*
+ * place_job()
+ *
+ * @param pjob - 
+ * @param cpu_string - 
+ * @param mem_string -
+ * @param hostname - 
+ * @return PBSE_NONE on success
+ */
 
 int Machine::place_job(
 
@@ -582,26 +646,34 @@ int Machine::place_job(
 
     if (tasks_for_node == 0)
       continue;
-
+      
     a.set_place_type(r.getPlacementType());
 
-    for (unsigned int j = 0; j < this->sockets.size(); j++)
+    if ((r.get_sockets() > 0) ||
+        (r.get_numa_nodes() > 0))
       {
-      if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
-        {
-        // place the req entirely on this socket
-        placed = true;
-        if (this->sockets[j].is_available() == true)
-          this->availableSockets--;
-        this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, tasks_for_node);
-        break;
-        }
+      spread_place(r, a, tasks_for_node);
       }
-
-    if (placed == false)
+    else
       {
-      // mark this as a task that must be partially placed
-      partially_place.push_back(i);
+      for (unsigned int j = 0; j < this->sockets.size(); j++)
+        {
+        if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
+          {
+          // place the req entirely on this socket
+          placed = true;
+          if (this->sockets[j].is_available() == true)
+            this->availableSockets--;
+          this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, tasks_for_node);
+          break;
+          }
+        }
+
+      if (placed == false)
+        {
+        // mark this as a task that must be partially placed
+        partially_place.push_back(i);
+        }
       }
     }
 

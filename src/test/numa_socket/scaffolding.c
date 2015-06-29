@@ -12,6 +12,7 @@ int tasks;
 int placed;
 int called_place;
 int called_store_pci;
+int called_spread_place;
 bool oscillate = false;
 bool avail_oscillate = false;
 int place_amount = 1;
@@ -88,6 +89,18 @@ void Chip::displayAsJson(
   bool               jobs) const
 
   {
+  }
+
+bool Chip::spread_place(
+
+  req        &r,
+  allocation &master,
+  int         execution_slots_per,
+  int        &remaining)
+
+  {
+  called_spread_place++;
+  return(true);
   }
 
 void Chip::partially_place_task(

@@ -17,9 +17,13 @@ int called_place_task;
 int called_partially_place;
 int called_fits_on_socket;
 int called_store_pci;
+int called_spread_place;
 int json_socket;
+int sockets;
+int numa_node_count;
 bool socket_fit;
 bool partially_placed;
+bool spreaded;
 
 char mom_alias[1024];
 
@@ -62,6 +66,20 @@ bool Socket::store_pci_device_appropriately(PCI_Device &d, bool force)
   {
   called_store_pci++;
   return(false);
+  }
+
+bool Socket::spread_place(
+    
+  req        &r,
+  allocation &master,
+  int         execution_slots_per,
+  int        &execution_slots_remainder,
+  bool        chips)
+
+  {
+  called_spread_place++;
+
+  return(spreaded);
   }
 
 Core::~Core()
@@ -165,6 +183,21 @@ complete_req::complete_req(list_link &l) {}
 
 req::req() {}
 req::req(const req &other) {}
+
+int req::getExecutionSlots() const
+  {
+  return(4);
+  }
+
+int req::get_sockets() const
+  {
+  return(sockets);
+  }
+
+int req::get_numa_nodes() const
+  {
+  return(numa_node_count);
+  }
 
 req &req::operator =(const req &other)
   {

@@ -331,6 +331,11 @@ void translate_range_string_to_vector(const char *range_string, std::vector<int>
   return;
   }
 
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end) {}
 
 id_map::id_map(){}
 

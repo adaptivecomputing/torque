@@ -237,4 +237,11 @@ void Core::unit_test_init()
   }
 
 
+bool Core::is_free() const
+
+  {
+  return(this->free);
+  }
+
+
 #endif /* PENABLE_LINUX_CGROUPS */  
