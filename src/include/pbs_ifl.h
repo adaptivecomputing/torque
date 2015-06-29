@@ -363,6 +363,7 @@
 #define ATTR_exitcodecanceledjob       "exit_code_canceled_job"
 #define ATTR_timeoutforjobdelete       "timeout_for_job_delete"
 #define ATTR_timeoutforjobrequeue      "timeout_for_job_requeue"
+#define ATTR_dontwritenodesfile        "dont_write_nodes_file"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
