@@ -28,7 +28,7 @@ int parse_commandline_opts(
   int          argc,
   char       **argv,
   std::string &tmpAdopteeID,
-  char        *tmpJobID,
+  std::string &tmpJobID,
   int         &DoBackground)
   {
   int ArgIndex;
@@ -69,7 +69,7 @@ int parse_commandline_opts(
 
       case 'j':
 
-        snprintf(tmpJobID, sizeof(tmpJobID), "%s", optarg);
+        tmpJobID = optarg;
 
         break;
 
@@ -88,10 +88,10 @@ int parse_commandline_opts(
    */
   if ((NumErrs > 0) ||
       ((optind >= argc) && (tmpAdopteeID.size() == 0)) ||
-      ((tmpJobID[0] == '\0') && (tmpAdopteeID.size() == 0)) ||
-      ((tmpAdopteeID.size() > 0) && (tmpJobID[0] == '\0')))
+      ((tmpJobID.size() == 0) && (tmpAdopteeID.size() == 0)) ||
+      ((tmpAdopteeID.size() > 0) && (tmpJobID.size() == '\0')))
     {
-    fprintf(stdout, "NumErrs %d tmpJobID[0] %d tmpAdopteeID.size() %d\n", NumErrs, tmpJobID[0], (int)tmpAdopteeID.size());
+    fprintf(stdout, "NumErrs %d tmpJobID len %d tmpAdopteeID len %d\n", NumErrs, (int)tmpJobID.size(), (int)tmpAdopteeID.size());
     fprintf(stdout, "argc %d argv[0] %s argv[1] %s argv[2] %s", argc, argv[0], argv[1], argv[2]);
     static char Usage[] = "USAGE: pbs_track -j <JOBID> [-b] -- a.out arg1 arg2 ... argN\n" \
                           " OR    pbs_track -j <JOBID> -a <PID>\n";
@@ -297,15 +297,13 @@ int main(
   int   rc;
   int   this_pid;
 
-  char tmpJobID[PBS_MAXCLTJOBID];        /* from the command line */
+  std::string tmpJobID;        /* from the command line */
   std::string tmpAdopteeID;
 
   char JobID[PBS_MAXCLTJOBID];  /* modified job ID for MOM/server consumption */
   char ServerName[MAXSERVERNAME];
 
   int  DoBackground = 0;
-
-  tmpJobID[0] = '\0';
 
   /* USAGE: pbs_track [-j <JOBID>] -- a.out arg1 arg2 ... argN
    *  OR    pbs_track -j <JOBID> -a <PID>\n
@@ -321,11 +319,11 @@ int main(
    */
   if (getenv(NO_SERVER_SUFFIX) != NULL)
     {
-    snprintf(JobID, sizeof(JobID), "%s", tmpJobID);
+    snprintf(JobID, sizeof(JobID), "%s", tmpJobID.c_str());
     }
   else
     {
-    if (get_server(tmpJobID, JobID, sizeof(JobID), ServerName, sizeof(ServerName)))
+    if (get_server(tmpJobID.c_str(), JobID, sizeof(JobID), ServerName, sizeof(ServerName)))
       {
       fprintf(stderr, "pbs_track: illegally formed job identifier: '%s'\n", JobID);
       exit(1);
