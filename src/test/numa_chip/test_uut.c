@@ -42,11 +42,23 @@ START_TEST(test_spread_place)
   c.free_task(jobid);
   
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
+  fail_unless(remaining == 0, "remaining = %d", remaining);
   fail_unless(c.reserve_core(0, a) == false);
   fail_unless(c.reserve_core(4, a) == false);
   fail_unless(c.reserve_core(8, a) == false);
   fail_unless(c.reserve_core(12, a) == false);
   fail_unless(c.reserve_core(15, a) == false);
+
+  c.free_task(jobid);
+  remaining = 1;
+  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  fail_unless(c.reserve_core(15, a) == false);
+  fail_unless(remaining == 0);
+  
+  c.free_task(jobid);
+  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  fail_unless(c.getAvailableCores() == 0);
+  fail_unless(c.getAvailableThreads() == 0);
   }
 END_TEST
 

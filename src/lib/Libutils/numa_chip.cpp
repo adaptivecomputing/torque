@@ -1178,7 +1178,9 @@ bool Chip::spread_place(
     if (this->totalCores > execution_slots_per)
       {
       // Spread over just the cores
-      int step = this->totalCores / execution_slots_per;
+      int step = 1;
+      if (execution_slots_per > 0)
+       step = this->totalCores / execution_slots_per;
 
       for (unsigned int i = 0; placed < execution_slots_per; i+= step)
         {
@@ -1207,7 +1209,10 @@ bool Chip::spread_place(
 
       // Place one extra if we still have a remainder
       if (execution_slots_remainder > 0)
+        {
         placed--;
+        execution_slots_remainder--;
+        }
 
       for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
         {
@@ -1229,7 +1234,6 @@ bool Chip::spread_place(
       }
 
     a.mem_indices.push_back(this->id);
-    execution_slots_remainder--;
 
     task_placed = true;
     this->chip_exclusive = true;
