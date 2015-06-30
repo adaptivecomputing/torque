@@ -589,7 +589,7 @@ int Machine::spread_place(
       {
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
-        bool was_available = this->sockets[j].is_available();
+        bool was_available = this->sockets[s].is_available();
 
         if (this->sockets[s].spread_place(r, master, execution_slots_per,
                                           execution_slots_remainder, chips))
