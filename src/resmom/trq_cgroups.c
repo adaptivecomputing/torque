@@ -662,6 +662,7 @@ int trq_cg_create_task_cgroups(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr;
 
+#ifdef PENABLE_LINUX_CGROUPS
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
 
   if (pattr == NULL)
@@ -721,6 +722,7 @@ int trq_cg_create_task_cgroups(
         }
       }
     }
+#endif
 
   return(PBSE_NONE);
   }
@@ -828,6 +830,7 @@ int trq_cg_get_task_set_string(
   }
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 /* 
  * trq_cg_write_task_memset_string
  *
@@ -884,7 +887,7 @@ int trq_cg_write_task_memset_string(
 
   return(rc);
   }   
- 
+
 
 
 /* 
@@ -943,7 +946,10 @@ int trq_cg_write_task_cpuset_string(
 
   return(rc);
   }   
- 
+#endif
+
+
+
 /*
  * trq_cg_populate_task_cgroups()
  *
@@ -965,6 +971,7 @@ int trq_cg_populate_task_cgroups(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr;
 
+#ifdef PENABLE_LINUX_CGROUPS
   /* See if the JOB_ATR_req_information is set. If not
      This was not a -L request */
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1008,6 +1015,7 @@ int trq_cg_populate_task_cgroups(
 
       }
     }
+#endif
  
   return(PBSE_NONE);
   }
@@ -1137,8 +1145,6 @@ int trq_cg_create_all_cgroups(
   job    *pjob)
 
   {
-  complete_req *cr;
-
   int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob);
 
   if (rc == PBSE_NONE)
