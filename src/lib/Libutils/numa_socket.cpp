@@ -402,6 +402,8 @@ bool Socket::spread_place(
   if ((this->is_available() == true) ||
       (chip == true))
     {
+    allocation task_alloc(master.jobid);
+
     if (chip == false)
       {
       // If we're placing at the socket level, divide execution_slots_per by the number 
@@ -416,9 +418,23 @@ bool Socket::spread_place(
       {
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        if (this->chips[i].spread_place(r, master, per_numa, execution_slots_remainder))
-          break;
+        if (chip == true)
+          {
+          if (this->chips[i].spread_place(r, master, per_numa, execution_slots_remainder, chip))
+            break;
+          }
+        else
+          {
+          if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder, chip))
+            break;
+          }
         }
+      }
+
+    if (chip == false)
+      {
+      master.add_allocation(task_alloc);
+      r.record_allocation(task_alloc);
       }
 
     placed = true;

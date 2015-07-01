@@ -179,7 +179,7 @@ class Chip
     void setChipAvailable(bool available);
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(const req &r) const;
-    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
+    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chip);
     int  place_task(const char *jobid, req &r, allocation &a, int to_place);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);

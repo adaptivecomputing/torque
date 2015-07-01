@@ -1163,7 +1163,8 @@ bool Chip::spread_place(
   req        &r,
   allocation &master,
   int         execution_slots_per,
-  int        &execution_slots_remainder)
+  int        &execution_slots_remainder,
+  bool        chip)
 
   {
   bool task_placed = false;
@@ -1238,7 +1239,8 @@ bool Chip::spread_place(
     task_placed = true;
     this->chip_exclusive = true;
     this->aggregate_allocation(a);
-    r.record_allocation(a);
+    if (chip == true)
+      r.record_allocation(a);
     master.add_allocation(a);
     }
 
