@@ -1151,7 +1151,7 @@ bool Chip::reserve_thread(
  * Places a task from req r on this chip and spread it appropriately
  *
  * @param r - the req whose task we're placing
- * @param master - the master allocation for this job
+ * @param task_alloc - the allocation for this task
  * @param execution_slots_per - the number of execution slots to reserve from this chip
  * @param execution_slots_remainder - a number of extra execution slots to grab - get one 
  * and decrement if > 0
@@ -1161,20 +1161,19 @@ bool Chip::reserve_thread(
 bool Chip::spread_place(
 
   req        &r,
-  allocation &master,
+  allocation &task_alloc,
   int         execution_slots_per,
-  int        &execution_slots_remainder,
-  bool        chip)
+  int        &execution_slots_remainder)
 
   {
   bool task_placed = false;
 
   if (this->chipIsAvailable() == true)
     {
-    allocation a(master.jobid);
+    allocation from_this_chip(task_alloc.jobid);
     int        placed = 0;
 
-    a.place_type = exclusive_chip;
+    from_this_chip.place_type = exclusive_chip;
 
     if (this->totalCores > execution_slots_per)
       {
@@ -1185,7 +1184,7 @@ bool Chip::spread_place(
 
       for (unsigned int i = 0; placed < execution_slots_per; i+= step)
         {
-        this->reserve_core(i, a);
+        this->reserve_core(i, from_this_chip);
         placed++;
         }
 
@@ -1193,7 +1192,7 @@ bool Chip::spread_place(
         {
         for (unsigned int i = this->cores.size() - 1; i >= 0; i--)
           {
-          if (this->reserve_core(i, a) == true)
+          if (this->reserve_core(i, from_this_chip) == true)
             {
             execution_slots_remainder--;
             break;
@@ -1219,7 +1218,7 @@ bool Chip::spread_place(
         {
         for (int j = 0; j < per_core; j++)
           {
-          if (this->reserve_thread(i, a) == true)
+          if (this->reserve_thread(i, from_this_chip) == true)
             placed++;
           }
         }
@@ -1228,20 +1227,18 @@ bool Chip::spread_place(
         {
         for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
           {
-          if (this->reserve_thread(i, a) == true)
+          if (this->reserve_thread(i, from_this_chip) == true)
             placed++;
           }
         }
       }
 
-    a.mem_indices.push_back(this->id);
+    from_this_chip.mem_indices.push_back(this->id);
 
     task_placed = true;
     this->chip_exclusive = true;
-    this->aggregate_allocation(a);
-    if (chip == true)
-      r.record_allocation(a);
-    master.add_allocation(a);
+    this->aggregate_allocation(from_this_chip);
+    task_alloc.add_allocation(from_this_chip);
     }
 
   return(task_placed);

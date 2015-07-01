@@ -388,7 +388,7 @@ int Socket::how_many_tasks_fit(
 bool Socket::spread_place(
 
   req        &r,
-  allocation &master,
+  allocation &task_alloc,
   int         execution_slots_per,
   int        &execution_slots_remainder,
   bool        chip)
@@ -397,17 +397,17 @@ bool Socket::spread_place(
   bool placed = false;
   int  count  = 1;
   int  per_numa = execution_slots_per;
+  int per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
   if ((this->is_available() == true) ||
       (chip == true))
     {
-    allocation task_alloc(master.jobid);
-
     if (chip == false)
       {
       // If we're placing at the socket level, divide execution_slots_per by the number 
       // of chips and place multiple times
+      per_numa_remainder = per_numa % this->chips.size();
       per_numa /= this->chips.size();
       count = this->chips.size();
       
@@ -418,23 +418,18 @@ bool Socket::spread_place(
       {
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        if (chip == true)
+        if (per_numa_remainder > 0)
           {
-          if (this->chips[i].spread_place(r, master, per_numa, execution_slots_remainder, chip))
+          if (this->chips[i].spread_place(r, task_alloc, per_numa + 1, execution_slots_remainder))
+            {
+            per_numa_remainder--;
             break;
+            }
           }
         else
-          {
-          if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder, chip))
+          if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder))
             break;
-          }
         }
-      }
-
-    if (chip == false)
-      {
-      master.add_allocation(task_alloc);
-      r.record_allocation(task_alloc);
       }
 
     placed = true;

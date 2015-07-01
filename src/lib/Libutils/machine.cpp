@@ -585,13 +585,15 @@ int Machine::spread_place(
 
   for (int i = 0; i < tasks_for_node; i++)
     {
+    allocation task_alloc(master.jobid);
+
     for (int j = 0; j < quantity; j++)
       {
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
         bool was_available = this->sockets[s].is_available();
 
-        if (this->sockets[s].spread_place(r, master, execution_slots_per,
+        if (this->sockets[s].spread_place(r, task_alloc, execution_slots_per,
                                           execution_slots_remainder, chips))
           {
           tasks_placed++;
@@ -601,6 +603,9 @@ int Machine::spread_place(
           }
         }
       }
+
+    r.record_allocation(task_alloc);
+    master.add_allocation(task_alloc);
     }
 
   return(tasks_placed);
