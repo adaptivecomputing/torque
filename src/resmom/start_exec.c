@@ -4969,6 +4969,31 @@ int TMomFinalizeJob3(
   } /* END TMomFinalizeJob3() */
 
 
+int get_process_rank(
+  
+  int &rank)
+
+  {
+  int j;
+
+  for (j = 0; j < vtable.v_used; j++)
+    {
+    if (!strncmp(vtable.v_envp[j], "PBS_VNODENUM=", strlen("PBS_VNODENUM=")))
+      {
+      char *rank_ptr;
+
+      rank_ptr = strchr(vtable.v_envp[j], '=');
+      if (rank_ptr != NULL)
+        {
+        rank_ptr++;
+
+        rank = atoi(rank_ptr);
+        return(PBSE_NONE);
+        }
+      }
+    }
+  return(PBSE_NO_PROCESS_RANK);
+  }
 
 
 /**
@@ -5230,6 +5255,8 @@ int start_process(
     
     /* put the new pid in the global_job_sid_set set */
     global_job_sid_set.insert(pid);
+
+    /* we now need to add the task to the cgroup */
     
     ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
@@ -5473,15 +5500,56 @@ int start_process(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  int rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
-  
+  int rank;
+  int rc = PBSE_NO_PROCESS_RANK;
+  pbs_attribute *pattr;
+  pid_t new_pid = getpid();
+
+  /* if JOB_ATR_req_information is set then this was a -L request */
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+    {
+    rc = get_process_rank(rank);
+    if (rc == PBSE_NONE)
+      {
+      unsigned int req_index;
+      unsigned int task_index;
+
+      complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+
+      rc = cr->get_req_and_task_index(rank, req_index, task_index);
+      if (rc == PBSE_NONE)
+        {
+        rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+        if (rc == PBSE_NONE)
+          {
+          rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+          if (rc == PBSE_NONE)
+            {
+            rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            }
+          }
+        }
+      }
+    }
+
+  /* if rc is not PBSE_NONE just add the process id to the main cgroup. We sill not
+     fail the job. This will work for -l requests as well */
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
-    log_err(rc, __func__, log_buffer);
+    rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, new_pid);
+  
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
+      log_err(rc, __func__, log_buffer);
 
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-    exit(1);
+      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+      exit(1);
+      }
     }
 #endif
 

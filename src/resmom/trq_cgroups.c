@@ -581,6 +581,63 @@ int trq_cg_initialize_hierarchy()
   return(PBSE_NONE);
   }
 
+/*
+ * trq_cg_add_process_to_task_cgroup
+ * 
+ * Add the new process to its task cgroup
+ *
+ * @param cgroup_path  - path to cgroup directory
+ * @param job_id       - id of job
+ * @param new_pid      - process if of new task
+ *
+ */
+
+int MAX_PID_LEN = 32;
+
+int trq_cg_add_process_to_task_cgroup(
+    string     &cgroup_path, 
+    const char *job_id, 
+    const unsigned int req_index,
+    const unsigned int task_index,
+    pid_t       new_pid)
+
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   req_task_number[MAX_JOBID_LENGTH];
+  char   new_task_pid[MAX_PID_LEN];
+  string req_task_path;
+  size_t bytes_written;
+  int    fd;
+
+
+  sprintf(req_task_number, "/R%u.t%u/tasks", req_index, task_index);
+  req_task_path = cgroup_path + job_id + req_task_number;
+
+  fd = open(req_task_path.c_str(), O_WRONLY);
+  if (fd < 0)
+    {
+    sprintf(log_buf, "failed to open %s for writing: %s", req_task_path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  sprintf(new_task_pid, "%d", new_pid);
+  bytes_written = write(fd, new_task_pid, strlen(new_task_pid));
+  if(bytes_written <= 0)
+    {
+    sprintf(log_buf, "failed to add process %s to cgroup %s: %s",
+        new_task_pid, req_task_path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buf);
+    close(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  close(fd);
+
+  return(PBSE_NONE);
+  }
+
+
 int trq_cg_add_process_to_cgroup(
     
   string     &cgroup_path,
@@ -681,27 +738,28 @@ int trq_cg_create_task_cgroups(
   complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
   
 
-  for (unsigned int i = 0; i < cr->req_count(); i++)
+  for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
     int    task_count;
 
-    req *each_req = &cr->get_req(i);
-    task_count = each_req->get_num_tasks_for_host(this_hostname);
+    req &each_req = cr->get_req(req_index);
+    task_count = each_req.get_num_tasks_for_host(this_hostname);
 
-    for (unsigned int y = 0; y < task_count; y++)
+    for (unsigned int task_index = 0; task_index < task_count; task_index++)
       {
       allocation al;
       string   req_task_path;
       char     req_task_number[MAX_JOBID_LENGTH];
 
-      rc = each_req->get_task_allocation(y, al);
+      rc = each_req.get_task_allocation(task_index, al);
       if (rc != PBSE_NONE)
         {
         return(rc);
         }
-      sprintf(req_task_number, "/R%u.t%u", i, y);
+
+      sprintf(req_task_number, "/R%u.t%u", req_index, task_index);
       req_task_path = cgroup_path + req_task_number;
-      /* create a cgroup with the job_id.Ri.ty where i and y are the
+      /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
          req and task reference */
       rc = mkdir(req_task_path.c_str(), 0x644);
       if ((rc != 0) &&
@@ -990,14 +1048,14 @@ int trq_cg_populate_task_cgroups(
     {
     int    task_count;
 
-    req *each_req = &cr->get_req(req_index);
-    task_count = each_req->get_num_tasks_for_host(this_hostname);
+    req &each_req = cr->get_req(req_index);
+    task_count = each_req.get_num_tasks_for_host(this_hostname);
 
     for (unsigned int task_index = 0; task_index < task_count; task_index++)
       {
       allocation al;
 
-      rc = each_req->get_task_allocation(task_index, al);
+      rc = each_req.get_task_allocation(task_index, al);
       if (rc != PBSE_NONE)
         {
         return(rc);

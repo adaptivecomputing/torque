@@ -234,7 +234,52 @@ int complete_req::req_count() const
   return(this->reqs.size());
   } // END req_count()
 
+/*
+ * set_value()
+ *
+ * Sets a value for a compound req attribute name such as task_usage.0.task.1
+ *
+ * @param name - the name of the value to be set
+ * @param value - the value to be set
+ * @return PBSE_NONE if the name is valid and the index is >= 0, PBSE_BAD_PARAMETER otherwise
+ *
+ */
 
+
+int complete_req::set_value(
+
+  char *name,
+  const char *value)
+  
+  {
+  char *dot1;
+  char *dot2;
+  unsigned int   req_index;
+  unsigned int   task_index;
+
+  dot1 = strchr(name, '.');
+  dot2 = strrchr(name, '.');
+
+  if ((dot1 == NULL) || (dot2 == NULL))
+    {
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  req_index = strtol(dot1 + 1, NULL, 10);
+  *dot1 = '\0';
+  task_index = strtol(dot2 + 1, NULL, 10);
+  *dot2 = '\0';
+
+  while (this->reqs.size() <= req_index)
+    {
+    req r;
+    r.set_index(this->reqs.size());
+    this->reqs.push_back(r);
+    }
+
+  return(this->reqs[req_index].set_value(name, value, task_index));
+ 
+  }
 
 /*
  * set_value()
@@ -337,6 +382,52 @@ req &complete_req::get_req(
   } // END get_req()
 
 
+/*
+ * get_req_and_task_index
+ *
+ * get the req and task for the rank given. Used to find the cgroup
+ * for a given process.
+ *
+ * @param rank  -  id given by tm_spawn when starting a new process
+ * @param req_index - request index for the rank given.
+ * @param task_index - task index for the rank given.
+ *
+ */
+
+int complete_req::get_req_and_task_index(
+
+  const int rank, 
+  unsigned int &req_index, 
+  unsigned int &task_index)
+
+  {
+  int tasks_counted = 0;
+
+  for (unsigned int req_count = 0; req_count < this->req_count(); req_count++)
+    {
+    for (unsigned int task_count = 0; task_count < this->reqs[req_count].getTaskCount(); task_count++)
+      {
+      int rc;
+      allocation al;
+      rc = this->reqs[req_count].get_task_allocation(task_count, al);
+      if (rc != PBSE_NONE)
+        continue;
+
+      for (unsigned int cpus_per_task = 0; cpus_per_task < al.cpu_indices.size(); cpus_per_task++)
+        {
+        if (tasks_counted == rank)
+          {
+          req_index = req_count;
+          task_index = task_count;
+          return(PBSE_NONE);
+          }
+        tasks_counted++;
+        }
+      }
+    }
+
+  return(PBSE_NO_PROCESS_RANK);
+  }
 
 void complete_req::set_hostlists(
 

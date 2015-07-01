@@ -167,14 +167,22 @@ int  decode_complete_req(
       }
 
     char *attr_name = strdup(rescn);
-    char *dot = strchr(attr_name, '.');
+    char *dot;
     int   rc = PBSE_BAD_PARAMETER;
     
-    if (dot != NULL)
+    if (!strncmp(attr_name, "task_usage", strlen("task_usage")))
       {
-      int index = strtol(dot + 1, NULL, 10);
-      *dot = '\0';
-      rc = cr->set_value(index, attr_name, val);
+      rc = cr->set_value(attr_name, val);
+      }
+    else
+      {
+      dot = strchr(attr_name, '.');
+      if (dot != NULL)
+        {
+        int index = strtol(dot + 1, NULL, 10);
+        *dot = '\0';
+        rc = cr->set_value(index, attr_name, val);
+        }
       }
 
     free(attr_name);

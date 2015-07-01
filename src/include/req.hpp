@@ -159,6 +159,7 @@ class req
     int           set_from_submission_string(char *submission_str, std::string &error);
     void          set_index(int index);
     int           set_value(const char *name, const char *value);
+    int           set_value(const char *name, const char *value, unsigned int task_index);
     int           submission_string_precheck(char *str, std::string &error);
     bool          submission_string_has_duplicates(char *str, std::string &error);
     bool          has_conflicting_values(std::string &error);

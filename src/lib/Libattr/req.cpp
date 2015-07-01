@@ -127,7 +127,8 @@ req::req(
                       pack(other.pack), 
                       single_job_access(other.single_job_access),
                       index(other.index),
-                      hostlist(other.hostlist)
+                      hostlist(other.hostlist),
+                      task_allocations(other.task_allocations)
 
   {
   }
@@ -1407,6 +1408,8 @@ void req::set_from_string(
   if (current == NULL)
     return;
 
+  current++;
+
   this->index = strtol(current, &current, 10);
 
   // read the task count
@@ -1741,19 +1744,52 @@ int req::set_value(
     this->cores = strtol(value, NULL, 10);
   else if (!strcmp(name, "thread"))
     this->threads = strtol(value, NULL, 10);
-  else if (!strncmp(name, "task_usage", 10))
-    {
-    allocation a;
-    a.initialize_from_string(value);
-    this->task_allocations.push_back(a);
-    }
   else
     return(PBSE_BAD_PARAMETER);
 
   return(PBSE_NONE);
   } // END set_value()
 
+/*
+ * set_value()
+ *
+ * Sets a value on this class identified by name
+ * @param name - the name of the value to be set
+ * @param value - the value
+ * @return PBSE_NONE if the name is valid or PBSE_BAD_PARAMETER for an invalid name
+ */
 
+int req::set_value(
+
+  const char  *name,
+  const char  *value,
+  unsigned int task_index)
+
+  {
+
+  if (!strcmp(name, "task_usage"))
+    {
+    int rc;
+    allocation a;
+
+    rc = this->get_task_allocation(task_index, a);
+    if (rc != PBSE_NONE)
+      {
+      a.initialize_from_string(value);
+      this->task_allocations.push_back(a);
+      }
+    else
+      {
+      a.initialize_from_string(value);
+      }
+    }
+  else
+    return(PBSE_BAD_PARAMETER);
+
+  return(PBSE_NONE);
+
+  }
+ 
 
 int req::getExecutionSlots() const
 
