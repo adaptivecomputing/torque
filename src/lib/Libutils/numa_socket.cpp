@@ -397,7 +397,7 @@ bool Socket::spread_place(
   bool placed = false;
   int  count  = 1;
   int  per_numa = execution_slots_per;
-  int per_numa_remainder = 0;
+  int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
   if ((this->is_available() == true) ||
@@ -422,17 +422,19 @@ bool Socket::spread_place(
           {
           if (this->chips[i].spread_place(r, task_alloc, per_numa + 1, execution_slots_remainder))
             {
+            placed = true;
             per_numa_remainder--;
             break;
             }
           }
         else
           if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder))
+            {
+            placed = true;
             break;
+            }
         }
       }
-
-    placed = true;
     }
 
   return(placed);
