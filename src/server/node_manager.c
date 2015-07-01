@@ -5653,6 +5653,20 @@ void free_nodes(
     complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
     cr->clear_allocations();
     }
+
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags &= ~ATR_VFLAG_SET;
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_memset_string].at_flags &= ~ATR_VFLAG_SET;
+    }
 #endif
 
   return;
