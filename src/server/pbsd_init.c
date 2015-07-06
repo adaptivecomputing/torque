@@ -1176,11 +1176,26 @@ int load_node_usages()
 
   if (chdir(path_node_usage) != 0)
     {
-    sprintf(log_buf, msg_init_chdir, path_node_usage);
+    if (errno == ENOENT)
+      {
+      int old_errno = errno;
 
-    log_err(errno, __func__, log_buf);
+      errno = 0;
 
-    return(-1);
+      if (mkdir(path_node_usage, 0750) != 0)
+        {
+        errno = old_errno;
+        }
+      }
+
+    if (errno != 0)
+      {
+      sprintf(log_buf, msg_init_chdir, path_node_usage);
+
+      log_err(errno, __func__, log_buf);
+
+      return(-1);
+      }
     }
   
   dir = opendir(".");
@@ -2149,7 +2164,10 @@ int pbsd_init(
     handle_job_and_array_recovery(type);
 
 #ifdef PENABLE_LINUX_CGROUPS
-    load_node_usages();
+    if ((ret = load_node_usages()) != PBSE_NONE)
+      {
+      return(ret);
+      }
 #endif
 
     /* Put us back in the Server's Private directory */
