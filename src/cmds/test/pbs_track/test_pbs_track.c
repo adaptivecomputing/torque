@@ -169,7 +169,6 @@ END_TEST
 START_TEST(adopt_process)
   {
   int rc;
-  int pid;
 
   rc = adopt_process(strdup("1"), "3544");
   fail_unless(rc == 1, "handle_adopt_results adopted with an invalid job ", rc);
@@ -215,7 +214,7 @@ START_TEST(fork_process)
   rc = TM_SUCCESS;
   DoBackground = 1;
   pid = 1;
-  JobID = "1.localhost";
+  JobID = strdup("1.localhost");
   optind = 1;
   argv[1] = strdup("echo");
   argv[2] = strdup("nonsense");
