@@ -113,8 +113,9 @@ int parse_commandline_opts(
  */
 int adopt_process(
 
-  char        *JobID,
-  std::string  tmpAdopteeID)
+  char              *JobID,
+  const std::string &tmpAdopteeID)
+
   {
   int   rc;
   int   adoptee_pid;
