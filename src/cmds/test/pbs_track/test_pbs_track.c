@@ -10,19 +10,17 @@
 
 #include "pbs_error.h"
 
-int adopt_process(char* JobID, std::string tmpAdopteeID);
-int parse_commandline_opts(int argc, char **argv, std::string &tmpAdopteeID, char* tmpJobID, int &DoBackground);
+int adopt_process(char* JobID, const std::string &tmpAdopteeID);
+int parse_commandline_opts(int argc, char **argv, std::string &tmpAdopteeID, std::string &tmpJobID, int &DoBackground);
 int fork_process(int argc, char **argv, int DoBackground, int &pid, char *JobID, char **Args);
 int handle_adoption_results(int rc, int DoBackground, int this_pid, char *JobID, std::string tmpAdopteeID, char **Args);
 
 
-void reset(std::string &tmpAdopteeID, char *tmpJobID, int &DoBackground)
+void reset(std::string &tmpAdopteeID, int &DoBackground)
   {
   tmpAdopteeID.clear();
-  delete [] tmpJobID;
 
   tmpAdopteeID = std::string();
-  tmpJobID = new char[10];
   DoBackground = 0;
   optind = 1;
   }
@@ -30,7 +28,7 @@ void reset(std::string &tmpAdopteeID, char *tmpJobID, int &DoBackground)
 START_TEST(parse_commandline_opts)
   {
   std::string tmpAdopteeID;
-  char       *tmpJobID = new char[10];
+  std::string tmpJobID;
   int         DoBackground = 0;
   int         rc;
   int         argc = 1;
@@ -41,20 +39,20 @@ START_TEST(parse_commandline_opts)
   for(int i = 0; i < 10; i++)
       argv[i] = NULL;
 
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == 2, "parse_commandline_opts failed with no options ", rc);
 
   argv[1] = (char *)malloc(10);
   strcpy(argv[1], "-j");
   argc = 2;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(0 == PBSE_NONE, "parse_commandline_opts failed with only -j option  ", rc);
 
   strcpy(argv[1], "-a");
   argc = 2;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == 2, "parse_commandline_opts failed with only -a option  ", rc);
 
@@ -62,7 +60,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[1], "-j");
   strcpy(argv[2], "28");
   argc = 3;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc != PBSE_NONE, "parse_commandline_opts failed with -j option and job ", rc);
 
@@ -71,7 +69,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[2], "28");
   strcpy(argv[3], "sleep");
   argc = 4;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -j option and job ", rc);
 
@@ -79,7 +77,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[2], "28");
   strcpy(argv[3], "-b");
   argc = 4;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc != PBSE_NONE, "parse_commandline_opts failed with -j and -b options and job ", rc);
 
@@ -89,7 +87,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[3], "-b");
   strcpy(argv[4], "sleep");
   argc = 5;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -j and -b options and job ", rc);
 
@@ -98,7 +96,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[3], "-a");
   strcpy(argv[4], "aefaef");
   argc = 5;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -j and -a options and job and pid %d", rc);
 
@@ -109,7 +107,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[4], "-a");
   strcpy(argv[5], "aefaef");
   argc = 6;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == 2, "parse_commandline_opts failed with -j, -a and -b options and job and pid ", rc);
 
@@ -119,7 +117,7 @@ START_TEST(parse_commandline_opts)
   strcpy(argv[4], "aefaef");
   strcpy(argv[5], "-b");
   argc = 6;
-  reset(tmpAdopteeID, tmpJobID, DoBackground);
+  reset(tmpAdopteeID, DoBackground);
   rc = parse_commandline_opts(argc, argv, tmpAdopteeID, tmpJobID, DoBackground);
   fail_unless(rc == 2, "parse_commandline_opts failed with -j, -a and -b options and job and pid ", rc);
   }
@@ -137,7 +135,7 @@ START_TEST(handle_adoption_results)
   rc = TM_SUCCESS;
   DoBackground = 0;
   pid = 0;
-  JobID = "10.localhost";
+  JobID = strdup("10.localhost");
   tmpAdopteeID = "1000";
 
   rc = handle_adoption_results(rc, DoBackground, pid, JobID, tmpAdopteeID, Args);
@@ -160,9 +158,9 @@ START_TEST(handle_adoption_results)
   fail_unless(rc == -1, "handle_adopt_results failed with an unrecognized error ", rc);
 
   rc = TM_SUCCESS;
-  Args[0] = "ThisIsNotARealCommand";
+  Args[0] = strdup("ThisIsNotARealCommand");
   tmpAdopteeID.clear();
-  fprintf(stderr, "size %d", tmpAdopteeID.size());
+  fprintf(stderr, "size %d", (int)tmpAdopteeID.size());
   rc = handle_adoption_results(rc, DoBackground, pid, JobID, tmpAdopteeID, Args);
   fail_unless(rc != PBSE_NONE, "handle_adopt_results failed to execute arguments ", rc);
   }
@@ -173,22 +171,22 @@ START_TEST(adopt_process)
   int rc;
   int pid;
 
-  rc = adopt_process("1", "3544");
+  rc = adopt_process(strdup("1"), "3544");
   fail_unless(rc == 1, "handle_adopt_results adopted with an invalid job ", rc);
 
-  rc = adopt_process("1.localhost", "100");
+  rc = adopt_process(strdup("1.localhost"), "100");
   fail_unless(rc == TM_EPERM, "handle_adopt_results adopted with wrong permissions ", rc);
 
-  rc = adopt_process("1.localhost", "100sdfsdf");
+  rc = adopt_process(strdup("1.localhost"), "100sdfsdf");
   fail_unless(rc == PBSE_RMBADPARAM, "handle_adopt_results adopted with invalid pid ", rc);
 
-  rc = adopt_process("1.localhost", "->(100");
+  rc = adopt_process(strdup("1.localhost"), "->(100");
   fail_unless(rc == PBSE_RMBADPARAM, "handle_adopt_results adopted with invalid pid ", rc);
 
-  rc = adopt_process("1.localhost", "10a\';DROP TABLE users;");
+  rc = adopt_process(strdup("1.localhost"), "10a\';DROP TABLE users;");
   fail_unless(rc == PBSE_RMBADPARAM, "handle_adopt_results adopted with invalid pid ", rc);
 
-  rc = adopt_process("2.localhost", "12345");
+  rc = adopt_process(strdup("2.localhost"), "12345");
   fail_unless(rc == PBSE_NONE, "handle_adopt_results failed to adopt valid process ", rc);
   }
 END_TEST
@@ -206,10 +204,10 @@ START_TEST(fork_process)
   rc = TM_SUCCESS;
   DoBackground = 0;
   pid = 1;
-  JobID = "1.localhost";
+  JobID = strdup("1.localhost");
   optind = 1;
-  argv[1] = "echo";
-  argv[2] = "nonsense";
+  argv[1] = strdup("echo");
+  argv[2] = strdup("nonsense");
 
   rc = fork_process(5, argv, DoBackground, pid, JobID, Args);
   fail_unless(rc == PBSE_NONE, "handle_adopt_results failed with TM_SUCCESS ", rc);
@@ -219,8 +217,8 @@ START_TEST(fork_process)
   pid = 1;
   JobID = "1.localhost";
   optind = 1;
-  argv[1] = "echo";
-  argv[2] = "nonsense";
+  argv[1] = strdup("echo");
+  argv[2] = strdup("nonsense");
 
   rc = fork_process(5, argv, DoBackground, pid, JobID, Args);
   if (pid == 0) {
