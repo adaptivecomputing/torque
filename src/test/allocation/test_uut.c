@@ -149,7 +149,7 @@ START_TEST(test_place_indices_in_string)
   a.mem_indices.push_back(4);
 
   a.place_indices_in_string(cpuset, CPU_INDICES);
-  fail_unless(cpuset == "0,1,2,3,4", cpuset.c_str());
+  fail_unless(cpuset == "0-4", cpuset.c_str());
   cpuset.clear();
   a.place_indices_in_string(cpuset, MEM_INDICES);
   fail_unless(cpuset == "0,2,4", cpuset.c_str());

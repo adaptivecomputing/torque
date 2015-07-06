@@ -190,23 +190,10 @@ void allocation::place_indices_in_string(
   int          which)
 
   {
-  std::vector<int>  *v;
-  std::stringstream  s;
-
   if (which == MEM_INDICES)
-    v = &this->mem_indices;
+    translate_vector_to_range_string(output, this->mem_indices);
   else
-    v = &this->cpu_indices;
-
-  for (unsigned int i = 0; i < v->size(); i++)
-    {
-    if (i != 0)
-      s << ",";
-
-    s << v->at(i);
-    }
-
-  output = s.str();
+    translate_vector_to_range_string(output, this->cpu_indices);
   } // END place_indices_in_string()
 
 
