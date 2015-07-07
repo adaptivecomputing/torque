@@ -715,6 +715,10 @@ START_TEST(delete_dependency_job_test)
 
   fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_IVALREQ);
   strcpy(preq.rq_ind.rq_register.rq_child, job2);
+  pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
+  fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE);
+  fail_unless(pjob != NULL);
+  pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE);
   fail_unless(pjob == NULL);
   }

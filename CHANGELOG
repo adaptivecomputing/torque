@@ -15,6 +15,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   e - TRQ-2843. Add the qmgr setting dont_write_nodes_file to make it so that nodes
       cannot be edited dynamically
   f - TRQ-2897. Add the ability to adopt running processes into a job with pbs_track.
+  b - TRQ-3189. Never delete a running job because of a dependency.
 
 
 5.1.1
