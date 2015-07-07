@@ -10,6 +10,11 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       when they were canceled.
   e - TRQ-2836. Make node health check run on sister nodes when configured for job
       start and job end as well. (backported from 5.1.2)
+  e - TRQ-2843. Add the qmgr setting dont_write_nodes_file to make it so that nodes
+      cannot be edited dynamically
+  f - TRQ-2897. Add the ability to adopt running processes into a job with pbs_track.
+  b - TRQ-3189. Never delete a running job because of a dependency. (backported from 5.1.2)
+
 
 
 5.0.2
