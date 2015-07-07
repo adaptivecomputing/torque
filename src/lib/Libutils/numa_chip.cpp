@@ -175,7 +175,7 @@ void Chip::initialize_allocation(
     {
     val = ptr + 8; // move past "jobid\":\""
     capture_until_close_character(&val, tmp_val, '"');
-    strcpy(a.jobid, tmp_val.c_str());
+    a.jobid = tmp_val;
     }
 
   ptr = strstr(val, "cpus\":");
@@ -771,7 +771,7 @@ void Chip::aggregate_allocations(
 
     for (unsigned int j = 0; j < master_list.size(); j++)
       {
-      if (!strcmp(this->allocations[i].jobid, master_list[j].jobid))
+      if (this->allocations[i].jobid == master_list[j].jobid)
         {
         master_list[j].add_allocation(this->allocations[i]);
         match = true;
@@ -876,7 +876,7 @@ void Chip::aggregate_allocation(
 
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(this->allocations[i].jobid, a.jobid))
+    if (this->allocations[i].jobid == a.jobid)
       {
       this->allocations[i].add_allocation(a);
       found = true;
@@ -1170,7 +1170,7 @@ bool Chip::spread_place(
 
   if (this->chipIsAvailable() == true)
     {
-    allocation from_this_chip(task_alloc.jobid);
+    allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
 
     from_this_chip.place_type = exclusive_chip;
@@ -1259,13 +1259,13 @@ bool Chip::spread_place(
 
 int Chip::place_task(
 
-  const char *jobid,
   req        &r,
   allocation &master,
-  int         to_place)
+  int         to_place,
+  const char *hostname)
 
   {
-  allocation     a(jobid);
+  allocation     a(master.jobid.c_str());
   int            tasks_placed = 0;
   int            execution_slots_per_task = r.getExecutionSlots();
   hwloc_uint64_t mem_per_task = r.getMemory();
@@ -1294,7 +1294,7 @@ int Chip::place_task(
         if (task_will_fit(r) == false)
           break;
 
-        allocation task_alloc(jobid);
+        allocation task_alloc(master.jobid.c_str());
         task_alloc.cores_only = a.cores_only;
 
         this->available_memory -= mem_per_task;
@@ -1311,6 +1311,7 @@ int Chip::place_task(
         place_accelerators(remaining, task_alloc);
         task_alloc.mem_indices.push_back(this->id);
 
+        task_alloc.set_host(hostname);
         r.record_allocation(task_alloc);
         a.add_allocation(task_alloc);
 
@@ -1484,7 +1485,7 @@ void Chip::partially_place_task(
   allocation &master)
 
   {
-  allocation     a(master.jobid);
+  allocation     a(master.jobid.c_str());
 
   // handle memory
   if (remaining.memory > this->available_memory)
@@ -1582,7 +1583,7 @@ bool Chip::free_task(
 
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(this->allocations[i].jobid, jobid))
+    if (this->allocations[i].jobid == jobid)
       {
       to_remove = i;
       this->availableThreads += this->allocations[i].threads;

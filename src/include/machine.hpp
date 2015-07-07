@@ -180,7 +180,7 @@ class Chip
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(const req &r) const;
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
-    int  place_task(const char *jobid, req &r, allocation &a, int to_place);
+    int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
     bool free_task(const char *jobid);
@@ -248,7 +248,7 @@ class Socket
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
-    int  place_task(const char *jobid, req &r, allocation &a, int to_place);
+    int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;
     bool fits_on_socket(const allocation &remaining) const;
@@ -305,14 +305,14 @@ class Machine
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
-    int  spread_place(req &r, allocation &master, int tasks_for_node);
+    int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
     void setMemory(long long mem); // used for unit tests
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
-    void place_remaining(req &to_split, allocation &master, int remaining_tasks);
+    void place_remaining(req &to_split, allocation &master, int remaining_tasks, const char *hostname);
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
   };

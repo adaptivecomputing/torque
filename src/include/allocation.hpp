@@ -110,7 +110,8 @@ class allocation
   int              threads;
   int              place_type;
   bool             cores_only;
-  char             jobid[PBS_MAXSVRJOBID];
+  std::string      jobid;
+  std::string      hostname;
   int              gpus;
   int              mics;
 
@@ -123,6 +124,7 @@ class allocation
   void set_place_type(const std::string &place);
   void write_task_information(std::string &task_info) const;
   void initialize_from_string(const std::string &task_info);
+  void set_host(const char *hostname);
   };
 
 #endif 

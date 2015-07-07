@@ -486,7 +486,8 @@ void Machine::place_remaining(
 
   req         &r,
   allocation  &master,
-  int          remaining_tasks)
+  int          remaining_tasks,
+  const char  *hostname)
 
   {
   // This will take care of any that still fit within a socket
@@ -494,7 +495,7 @@ void Machine::place_remaining(
     {
     bool fit_somewhere = false;
     allocation remaining(r);
-    allocation task_alloc(master.jobid);
+    allocation task_alloc(master.jobid.c_str());
 
     task_alloc.cores_only = master.cores_only;
       
@@ -507,6 +508,8 @@ void Machine::place_remaining(
         this->availableSockets--;
 
       this->sockets[j].partially_place(remaining, task_alloc);
+
+      task_alloc.set_host(hostname);
       r.record_allocation(task_alloc);
       master.add_allocation(task_alloc);
       fit_somewhere = true;
@@ -525,7 +528,7 @@ void Machine::place_remaining(
     {
     bool fit_somewhere = false;
     allocation remaining(r);
-    allocation task_alloc(master.jobid);
+    allocation task_alloc(master.jobid.c_str());
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
@@ -535,6 +538,8 @@ void Machine::place_remaining(
       if (this->sockets[j].partially_place(remaining, task_alloc) == true)
         {
         fit_somewhere = true;
+
+        task_alloc.set_host(hostname);
         r.record_allocation(task_alloc);
         master.add_allocation(task_alloc);
         break;
@@ -566,7 +571,8 @@ int Machine::spread_place(
 
   req        &r,
   allocation &master,
-  int         tasks_for_node)
+  int         tasks_for_node,
+  const char *hostname)
 
   {
   bool chips = false;
@@ -585,7 +591,7 @@ int Machine::spread_place(
 
   for (int i = 0; i < tasks_for_node; i++)
     {
-    allocation task_alloc(master.jobid);
+    allocation task_alloc(master.jobid.c_str());
 
     for (int j = 0; j < quantity; j++)
       {
@@ -604,6 +610,7 @@ int Machine::spread_place(
         }
       }
 
+    task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);
     master.add_allocation(task_alloc);
     }
@@ -660,7 +667,7 @@ int Machine::place_job(
     if ((r.get_sockets() > 0) ||
         (r.get_numa_nodes() > 0))
       {
-      spread_place(r, a, tasks_for_node);
+      spread_place(r, a, tasks_for_node, hostname);
       }
     else
       {
@@ -672,7 +679,7 @@ int Machine::place_job(
           placed = true;
           if (this->sockets[j].is_available() == true)
             this->availableSockets--;
-          this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, tasks_for_node);
+          this->sockets[j].place_task(r, a, tasks_for_node, hostname);
           break;
           }
         }
@@ -698,7 +705,7 @@ int Machine::place_job(
       {
       if (this->sockets[j].is_available() == true)
         change = true;
-      int placed = this->sockets[j].place_task(pjob->ji_qs.ji_jobid, r, a, remaining_tasks);
+      int placed = this->sockets[j].place_task(r, a, remaining_tasks, hostname);
       if (placed != 0)
         {
         remaining_tasks -= placed;
@@ -712,7 +719,7 @@ int Machine::place_job(
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
       for (int i = 0; i < remaining_tasks; i++)
-        place_remaining(r, a, remaining_tasks);
+        place_remaining(r, a, remaining_tasks, hostname);
       }
     }
 
@@ -747,7 +754,7 @@ int Machine::get_jobs_cpusets(
 
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(this->allocations[i].jobid, job_id))
+    if (this->allocations[i].jobid == job_id)
       {
       this->allocations[i].place_indices_in_string(mems, MEM_INDICES);
       this->allocations[i].place_indices_in_string(cpus, CPU_INDICES);
@@ -777,7 +784,7 @@ void Machine::free_job_allocation(
 
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(this->allocations[i].jobid, job_id))
+    if (this->allocations[i].jobid == job_id)
       {
       index = i;
       break;

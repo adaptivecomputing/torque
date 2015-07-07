@@ -260,6 +260,7 @@ END_TEST
 START_TEST(test_exclusive_place)
   {
   const char *jobid = "1.napali";
+  const char *host = "napali";
   req r;
   r.set_value("lprocs", "2");
   r.set_value("memory", "1kb");
@@ -282,7 +283,7 @@ START_TEST(test_exclusive_place)
   int num_fit = c.how_many_tasks_fit(r, exclusive_chip);
   fail_unless(num_fit == 1, "Expected 1, got %d", num_fit);
   recorded = 0;
-  int tasks = c.place_task(jobid, r, a, 1);
+  int tasks = c.place_task(r, a, 1, host);
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
   
@@ -293,14 +294,14 @@ START_TEST(test_exclusive_place)
   
   a.place_type = exclusive_none;
   recorded = 0;
-  tasks = c.place_task(jobid, r, a, 5);
+  tasks = c.place_task(r, a, 5, host);
   fail_unless(c.how_many_tasks_fit(r, 0) == 0);
   fail_unless(tasks == 0);
   fail_unless(recorded == 0);
   c.free_task(jobid);
   
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
-  tasks = c.place_task(jobid, r, a, 6);
+  tasks = c.place_task(r, a, 6, host);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
@@ -331,7 +332,7 @@ START_TEST(test_exclusive_place)
   r2.set_value("lprocs", "32");
   thread_type.clear();
   recorded = 0;
-  tasks = c3.place_task(jobid, r2, a, 1);
+  tasks = c3.place_task(r2, a, 1, host);
   fail_unless(tasks == 1, "%d tasks", tasks);
   fail_unless(recorded == 1);
   out.str("");
@@ -365,7 +366,7 @@ START_TEST(test_exclusive_place)
   a.place_type = exclusive_socket;
   c.free_task(jobid);
   recorded = 0;
-  tasks = c.place_task(jobid, r, a, 1);
+  tasks = c.place_task(r, a, 1, host);
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
   out.str("");
@@ -508,6 +509,7 @@ END_TEST
 START_TEST(test_place_and_free_task)
   {
   const char *jobid = "1.napali";
+  const char *host = "napali";
   req r;
   r.set_value("lprocs", "2");
   r.set_value("memory", "1kb");
@@ -525,18 +527,18 @@ START_TEST(test_place_and_free_task)
  
   thread_type = use_cores;
   // fill the node's memory
-  int tasks = c.place_task(jobid, r, a, 6);
+  int tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
   fail_unless(a.mem_indices.size() > 0);
   fail_unless(a.mem_indices[0] == 0);
 
   // Memory should be full now
-  tasks = c.place_task(jobid, r, a, 6);
+  tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 0, "Placed %d tasks, expected 0", tasks);
 
   // make sure we can free and replace
   c.free_task(jobid);
-  tasks = c.place_task(jobid, r, a, 6);
+  tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
   c.free_task(jobid);
   fail_unless(c.getAvailableCores() == 12);
@@ -550,17 +552,20 @@ START_TEST(test_place_and_free_task)
   // Fill up the threads with multiple jobs
   const char *jobid2 = "2.napali";
   const char *jobid3 = "3.napali";
-  tasks = c.place_task(jobid, r, a, 6);
+  a.jobid = jobid;
+  tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Expected 6 but placed %d", tasks);
-  tasks = c.place_task(jobid2, r, a, 3);
+  a.jobid = jobid2;
+  tasks = c.place_task(r, a, 3, host);
   fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
-  tasks = c.place_task(jobid3, r, a, 3);
+  a.jobid = jobid3;
+  tasks = c.place_task(r, a, 3, host);
   fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
   
   // Make sure we're full
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
-  tasks = c.place_task(jobid3, r, a, 1);
+  tasks = c.place_task(r, a, 1, host);
   fail_unless(tasks == 0);
 
   // Make sure we free correctly

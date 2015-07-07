@@ -102,24 +102,23 @@ allocation::allocation(
                              memory(alloc.memory), cpus(alloc.cpus), 
                              cores(alloc.cores), threads(alloc.threads),
                              place_type(alloc.place_type), cores_only(alloc.cores_only),
+                             jobid(alloc.jobid), hostname(alloc.hostname),
                              gpus(alloc.gpus), mics(alloc.mics)
 
   {
-  strcpy(this->jobid, alloc.jobid);
   }
 
 allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                            cpus(0), cores(0), threads(0), place_type(exclusive_none),
-                           cores_only(false), gpus(0), mics(0)
+                           cores_only(false), jobid(), hostname(), gpus(0), mics(0)
 
   {
-  this->jobid[0] = '\0';
   }
 
 allocation::allocation(
 
   const req &r) : cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
-                  cores_only(false)
+                  cores_only(false), jobid(), hostname()
 
   {
   this->cpus = r.getExecutionSlots();
@@ -133,12 +132,11 @@ allocation::allocation(
 
 allocation::allocation(
 
-  const char *jobid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+  const char *jid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                        cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
-                       gpus(0), mics(0)
+                       jobid(jid), hostname(), gpus(0), mics(0)
 
   {
-  snprintf(this->jobid, sizeof(this->jobid), "%s", jobid);
   }
 
 int allocation::add_allocation(
@@ -242,6 +240,7 @@ void allocation::write_task_information(
   task_info += buf;
   snprintf(buf, sizeof(buf), ",\"threads\":%d", this->threads);
   task_info += buf;
+  task_info += ",\"host\":\"" + this->hostname + "\"";
   } // END write_task_information()
 
 
@@ -284,6 +283,22 @@ void allocation::initialize_from_string(
     this->threads = strtol(val, &val, 10);
     }
 
+  if ((ptr = strstr(val, "host\":")) != NULL)
+    {
+    val = ptr + strlen("host\":") + 1;
+    capture_until_close_character(&val, storage, '"');
+    this->hostname = storage;
+    }
+
   free(work_str);
   } // END initialize_from_string()
 
+
+
+void allocation::set_host(
+
+  const char *hostname)
+
+  {
+  this->hostname = hostname;
+  }

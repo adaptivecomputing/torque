@@ -446,23 +446,23 @@ bool Socket::spread_place(
  * place_task()
  *
  * Places as many tasks as available, up to to_place, on this socket.
- * @param jobid - the job whose tasks we're placing
  * @param r - the req we're pulling tasks from
  * @param master - the allocation for the entire job
  * @param to_place - the maximum number of tasks that should be placed
+ * @param hostname - the name of the host where we're placing
  * @return the number of tasks placed
  */
 
 int Socket::place_task(
 
-  const char *jobid,
   req        &r,
   allocation &master,
-  int         to_place)
+  int         to_place,
+  const char *hostname)
 
   {
   int        tasks_to_place = to_place;
-  allocation a(jobid);
+  allocation a(master.jobid.c_str());
 
   a.place_type = master.place_type;
 
@@ -476,7 +476,7 @@ int Socket::place_task(
         {
         if (this->chips[i].how_many_tasks_fit(r, master.place_type) >= to_place)
           {
-          int placed = this->chips[i].place_task(jobid, r, a, to_place);
+          int placed = this->chips[i].place_task(r, a, to_place, hostname);
           tasks_to_place -= placed;
 
           if ((placed != 0) &&
@@ -490,7 +490,7 @@ int Socket::place_task(
         {
         for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
           {
-          int placed = this->chips[i].place_task(jobid, r, a, tasks_to_place);
+          int placed = this->chips[i].place_task(r, a, tasks_to_place, hostname);
           tasks_to_place -= placed;
           
           if ((placed != 0) &&
@@ -637,7 +637,7 @@ bool Socket::partially_place(
     }
 
   return(fully_placed);
-  }
+  } // END partially_place()
 
 
 

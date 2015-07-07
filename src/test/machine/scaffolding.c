@@ -110,7 +110,7 @@ bool Socket::partially_place(allocation &remaining, allocation &master)
   return(partially_placed);
   }
 
-int Socket::place_task(const char *jobid, req &r, allocation &a, int to_place)
+int Socket::place_task(req &r, allocation &a, int to_place, const char *hostname)
   {
   called_place_task++;
   return(num_placed);
@@ -222,17 +222,21 @@ void req::record_allocation(allocation const &a) {}
 
 allocation::allocation(const char *jid)
   {
-  strcpy(this->jobid, jid);
+  this->jobid = jid;
   }
 allocation::allocation(const allocation &other) 
   {
-  strcpy(this->jobid, other.jobid);
+  this->jobid = other.jobid;
   }
 allocation::allocation() {}
 allocation::allocation(const req &r) {}
 void allocation::set_place_type(const std::string &place) {}
 void allocation::place_indices_in_string(std::string &out, int which) {}
 int allocation::add_allocation(allocation const &a) {}
+void allocation::set_host(const char *hostname)
+  {
+  this->hostname = hostname;
+  }
 
 PCI_Device::~PCI_Device() {}
 PCI_Device::PCI_Device() {}

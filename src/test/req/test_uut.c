@@ -150,6 +150,7 @@ START_TEST(test_get_set_values)
   allocation a;
   a.cores = 8;
   a.threads = 16;
+  a.hostname = "napali";
   for (int i = 0; i < 16; i++)
     a.cpu_indices.push_back(i);
 
@@ -166,20 +167,22 @@ START_TEST(test_get_set_values)
   fail_unless(names[3] == "task_usage.0.task.0", names[3].c_str());
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "all");
-  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16", values[3].c_str());
+  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"", values[3].c_str());
 
   req clone;
   std::vector<std::string> names_clone;
   std::vector<std::string> values_clone;
 
-  for (unsigned int i = 0; i < names.size(); i++)
+  for (unsigned int i = 0; i < names.size() - 1; i++)
     clone.set_value(names[i].c_str(), values[i].c_str());
+  clone.set_value("task_usage", values[names.size() - 1].c_str(), 0);
+
   clone.get_values(names_clone, values_clone);
   
   for (unsigned int i = 0; i < names.size(); i++)
     {
     fail_unless(names[i] == names_clone[i]);
-    fail_unless(values[i] == values_clone[i]);
+    fail_unless(values[i] == values_clone[i], "%s != %s", values[i].c_str(), values_clone[i].c_str());
     }
   
   fail_unless(names.size() == names_clone.size());
@@ -197,7 +200,7 @@ START_TEST(test_get_set_values)
   values.clear();
   r3.record_allocation(save);
   r3.get_values(names, values);
-  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16", values[3].c_str());
+  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"", values[3].c_str());
   }
 END_TEST
 

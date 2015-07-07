@@ -209,7 +209,7 @@ START_TEST(test_place_task)
   // These should all fit on the first chip, so chip.place_task() should only be called once
   tasks = 4;
   placed = 3;
-  int rc = s.place_task("1.napali", r, a, 3);
+  int rc = s.place_task(r, a, 3, "napali");
   fail_unless(rc == 3);
   fail_unless(called_place = 1);
 
@@ -218,7 +218,7 @@ START_TEST(test_place_task)
   a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
-  int num = s.place_task("1.napali", r, a, 3);
+  int num = s.place_task(r, a, 3, "napali");
   fail_unless(num == 1, "Expected 2, got %d", num);
   fail_unless(called_place = 1);
 

@@ -284,7 +284,7 @@ void numa_node::reserve(
   allocation    &alloc)
 
   {
-  snprintf(alloc.jobid, sizeof(alloc.jobid), "%s", jobid);
+  alloc.jobid = jobid;
   
   for (unsigned int i = 0; i < this->cpu_indices.size() && alloc.cpus < num_cpus; i++)
     {
@@ -334,7 +334,7 @@ void numa_node::recover_reservation(
   std::vector<int> indices;
   bool             matches_this_numa_node = false;
 
-  snprintf(alloc.jobid, sizeof(alloc.jobid), "%s", jobid);
+  alloc.jobid = jobid;
 
 #ifdef PENABLE_LINUX26_CPUSETS
   get_cpu_list(jobid, cpuset_buf, sizeof(cpuset_buf));
@@ -380,7 +380,7 @@ void numa_node::remove_job(
   {
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(jobid, this->allocations[i].jobid))
+    if (this->allocations[i].jobid == jobid)
       {
       allocation a = this->allocations[i];
       this->available_cpus   += a.cpus;
@@ -413,7 +413,7 @@ void numa_node::get_job_indices(
   {
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
-    if (!strcmp(jobid, this->allocations[i].jobid))
+    if (this->allocations[i].jobid == jobid)
       {
       if (cpus)
         {
