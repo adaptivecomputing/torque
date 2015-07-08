@@ -25,6 +25,7 @@
 %define _infodir               %{_prefix}/info
 %define _mandir                %{_prefix}/man
 %define _initrddir             %{_sysconfdir}/init.d
+%define _systemddir            /usr/lib/systemd/system
 
 # Autoconf variables, which are not set in /usr/lib/rpm/macros.
 # Set according to the standard found here:

@@ -1,7 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
 ACLOCAL_AMFLAGS = -I buildutils
-SUBDIRS = src doc contrib/blcr contrib/init.d
+SUBDIRS = src doc contrib/blcr contrib/init.d contrib/systemd
 
 EXTRA_DIST = acinclude.m4 \
   CHANGELOG \
