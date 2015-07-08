@@ -15,6 +15,7 @@
 #include "pbs_nodes.h"
 #include "node_frequency.hpp"
 
+extern std::string cg_memory_path;
 
 std::string cg_cpuacct_path;
 char log_buffer[LOG_BUF_SIZE];
@@ -55,6 +56,16 @@ int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
+
+int trq_cg_get_task_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  allocation         &al)
+  {
+  return(0);
+  }
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -185,5 +196,100 @@ bool node_frequency::get_frequency_string(std::string& str,bool full)
  return(false);
  }
 
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+
 node_frequency nd_frequency;
 void from_frequency(struct cpu_frequency_value *pfreq, char *cvnbuf) {}
+
+void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices)
+  {
+  return;
+  }
+
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+                          
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+       ptr++;
+     }
+   else
+     {
+     indices.push_back(prev);
+
+     if ((*ptr == ',') ||
+         (is_whitespace(*ptr)))
+       ptr++;
+     }
+   }
+
+   free(str);
+   } /* END translate_range_string_to_vector() */
+
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end) {}
+
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libattr/complete_req.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"

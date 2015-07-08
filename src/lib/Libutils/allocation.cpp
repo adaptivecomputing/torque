@@ -103,14 +103,16 @@ allocation::allocation(
                              cores(alloc.cores), threads(alloc.threads),
                              place_type(alloc.place_type), cores_only(alloc.cores_only),
                              jobid(alloc.jobid), hostname(alloc.hostname),
-                             gpus(alloc.gpus), mics(alloc.mics)
+                             gpus(alloc.gpus), mics(alloc.mics), task_cput_used(alloc.task_cput_used),
+                             task_memory_used(alloc.task_memory_used)
 
   {
   }
 
 allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                            cpus(0), cores(0), threads(0), place_type(exclusive_none),
-                           cores_only(false), jobid(), hostname(), gpus(0), mics(0)
+                           cores_only(false), jobid(), hostname(), gpus(0), mics(0), task_cput_used(0),
+                           task_memory_used(0)
 
   {
   }
@@ -118,7 +120,7 @@ allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indi
 allocation::allocation(
 
   const req &r) : cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
-                  cores_only(false), jobid(), hostname()
+                  cores_only(false), jobid(), hostname(), task_cput_used(0), task_memory_used(0)
 
   {
   this->cpus = r.getExecutionSlots();
@@ -230,12 +232,22 @@ void allocation::write_task_information(
   {
   std::string cpus;
   std::string mems;
-  char        buf[100];
+  char        buf[256];
 
   translate_vector_to_range_string(cpus, this->cpu_indices);
   translate_vector_to_range_string(mems, this->mem_indices);
   task_info = "\"cpu_list\":\"" + cpus;
   task_info += "\",\"mem_list\":\"" + mems;
+  if (this->task_cput_used != 0)
+    {
+    snprintf(buf, sizeof(buf), "\",\"cpu time used\":%lu", this->task_cput_used);
+    task_info += buf;
+    }
+  if (this->task_memory_used != 0)
+    {
+    snprintf(buf, sizeof(buf), "\",\"memory used\":%llu", this->task_memory_used);
+    task_info += buf;
+    }
   snprintf(buf, sizeof(buf), "\",\"cores\":%d", this->cores);
   task_info += buf;
   snprintf(buf, sizeof(buf), ",\"threads\":%d", this->threads);

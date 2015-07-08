@@ -2769,6 +2769,8 @@ void im_kill_job_as_sister(
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
   pjob->ji_obit = event;
+
+  mom_set_use(pjob);
   
   if (multi_mom)
     {

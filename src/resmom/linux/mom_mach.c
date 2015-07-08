@@ -69,6 +69,8 @@
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
+#include "complete_req.hpp"
+#include "req.hpp"
 #endif
 
 
@@ -1173,58 +1175,105 @@ unsigned long cput_sum(
     job *pjob)
 
   {
-  ulong        cputime; 
+  ulong        cputime = 0; 
   std::string  full_cgroup_path;
   int          fd;
   int          rc;
   char         buf[LOCAL_BUF_SIZE];
   unsigned long long nano_seconds;
-  std::set<pid_t>::iterator  job_iter;
 
-  job_iter = pjob->ji_job_pid_set->begin();
+  pbs_attribute *pattr;
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) == 1)
+    {
+    char   this_hostname[256];
+    unsigned int    req_index;
+    int    rc;
+    const char  *job_id = pjob->ji_qs.ji_jobid;
 
-  full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
+    rc = gethostname(this_hostname, 256);
+    if (rc != 0)
+      {
+      sprintf(buf, "failed to get hostname: %s", strerror(errno));
+      log_err(-1, __func__, buf);
+      return(0);
+      }
 
-  fd = open(full_cgroup_path.c_str(), O_RDONLY);
-  if (fd <= 0)
+    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
+    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      return(cputime);
+      }
+
+    req host_req = cr->get_req(req_index);
+
+    for (unsigned int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
+      {
+      allocation al; 
+      
+      rc = host_req.get_task_allocation(task_index, al);
+      if (rc != PBSE_NONE)
+        {
+        continue;
+        }
+
+      rc = trq_cg_get_task_stats(job_id, req_index, task_index, al);
+      if (rc != PBSE_NONE)
+        continue;
+
+      cputime += al.task_cput_used/NANO_SECONDS;
+      }
+    pjob->ji_flags &= ~MOM_NO_PROC;
+    }
+
+    /* This is not a -L request */
+
+    full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
+
+    fd = open(full_cgroup_path.c_str(), O_RDONLY);
+    if (fd <= 0)
     {
     sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
     return(0);
     }
 
-  rc = read(fd, buf, LOCAL_BUF_SIZE);
-  if (rc == 0)
+    rc = read(fd, buf, LOCAL_BUF_SIZE);
+    if (rc == 0)
     {
     /* Something is not right. We should not have 0 bytes returned */
     cputime = 0;
     }
-  else if (rc == -1)
+    else if (rc == -1)
     {
     sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
     close(fd);
     return(0);
     }
-  else
+    else
     {
     /* successful read. Should be a number in nano-seconds */
 
     nano_seconds = atol(buf);
     }
 
-  /* convert the nano seconds to seconds */
-  cputime = nano_seconds/NANO_SECONDS;
+    /* convert the nano seconds to seconds */
+    cputime = nano_seconds/NANO_SECONDS;
 
-  pjob->ji_flags &= ~MOM_NO_PROC;
+    pjob->ji_flags &= ~MOM_NO_PROC;
 
-  close(fd);
+    close(fd);
+    
 
   return(cputime);
   
   }
 
-#endif /* #ifndes PENABLE_LINUX_CGROUPS */
+#endif /* #ifndef PENABLE_LINUX_CGROUPS */
 
 
 /*
@@ -1364,6 +1413,7 @@ unsigned long long mem_sum(
 
 
 
+#ifndef PENABLE_LINUX_CGROUPS
 /*
  * Internal session memory usage function.
  *
@@ -1470,6 +1520,98 @@ unsigned long long resi_sum(
 
   return(resisize);
   }  /* END resi_sum() */
+
+#else
+
+unsigned long long resi_sum(
+
+  job *pjob)
+
+  {
+  unsigned long long resisize = 0;
+  std::string  full_cgroup_path;
+  char         buf[LOCAL_BUF_SIZE];
+  int          fd;
+  int          rc;
+
+  pbs_attribute *pattr;
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+    {
+    char         this_hostname[256];
+    int          rc;
+    unsigned int req_index;
+
+    rc = gethostname(this_hostname, 256);
+    if (rc != 0)
+      {
+      sprintf(buf, "failed to get hostname: %s", strerror(errno));
+      log_err(-1, __func__, buf);
+      return(0);
+      }
+
+    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
+    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      return(resisize);
+      }
+
+    req host_req = cr->get_req(req_index);
+
+    for (int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
+      {
+      allocation al; 
+      
+      rc = host_req.get_task_allocation(task_index, al);
+      if (rc != PBSE_NONE)
+        {
+        continue;
+        }
+
+      rc = trq_cg_get_task_stats(pjob->ji_qs.ji_jobid, req_index, task_index, al);
+      if (rc != PBSE_NONE)
+        continue;
+
+      resisize += al.task_memory_used;
+      }
+    }
+
+  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.max_usage_in_bytes";
+
+  fd = open(full_cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_BUF_SIZE);
+  if (rc == 0)
+    {
+    /* Something is not right. We should not have 0 bytes returned */
+    resisize = 0;
+    }
+  else if (rc == -1)
+    {
+    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    close(fd);
+    return(0);
+    }
+  else
+    {
+    resisize = strtoull(buf, NULL, 10);
+    }
+
+  close(fd);
+
+  return(resisize);
+  }
+#endif
 
 
 

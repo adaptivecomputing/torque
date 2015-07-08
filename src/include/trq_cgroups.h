@@ -6,6 +6,7 @@
 #include <vector>
 #include "pbs_job.h"
 #include "log.h"
+#include "allocation.hpp"
 
 extern std::string cg_cpu_path;
 extern std::string cg_cpuset_path;
@@ -33,5 +34,6 @@ int trq_cg_add_process_to_cgroup(const char *job_id, pid_t job_pid);
 int trq_cg_add_process_to_all_cgroups(const char *job_id, pid_t job_pid);
 int trq_cg_add_process_to_task_cgroup(std::string &cgroup_path, const char *job_id, 
                  const unsigned int req_index, const unsigned int task_index, pid_t new_pid);
+int trq_cg_get_task_stats(const char *job_id, const unsigned int req_index, const unsigned int task_index, allocation &al);
 void trq_cg_delete_job_cgroups(const char *job_id);
 #endif /* _TRQ_CGROUPS_H_ */

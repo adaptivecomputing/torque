@@ -11,6 +11,8 @@
 #include "pbs_job.h"
 #include "pbs_error.h"
 
+std::string cg_memory_path;
+
 int get_job_sid_from_pid(int);
 int injob(job*, int);
 unsigned long cput_sum(job*);
@@ -144,6 +146,7 @@ START_TEST(test_injob)
   }
 END_TEST
 
+#ifndef PENABLE_LINUX_CGROUPS
 START_TEST(test_cput_sum)
   {
   job *pjob;
@@ -201,6 +204,8 @@ START_TEST(test_cput_sum)
   fail_unless((pjob->ji_flags & MOM_NO_PROC) == 0);
   }
 END_TEST
+
+#endif
 
 START_TEST(test_overmem_proc)
   {
@@ -321,6 +326,7 @@ START_TEST(test_overcpu_proc)
   }
 END_TEST
 
+#ifndef PENABLE_LINUX_CGROUPS
 START_TEST(test_resi_sum)
   {
   job *pjob;
@@ -379,6 +385,7 @@ START_TEST(test_resi_sum)
   /* todo: test when USELIBMEMACCT set */
   }
 END_TEST
+#endif
 
 START_TEST(test_mem_sum)
   {
@@ -446,12 +453,14 @@ Suite *mom_mach_suite(void)
   tcase_add_test(tc_core, test_injob);
   suite_add_tcase(s, tc_core);
 
+#ifndef PENABLE_LINUX_CGROUPS
   /* for NUMA cput_sum uses cgroups. We need to 
      change the unit test for this function
      to create a mock cgroup file */
   tc_core = tcase_create("test_cput_sum");
   tcase_add_test(tc_core, test_cput_sum);
   /*suite_add_tcase(s, tc_core);*/
+#endif
 
   tc_core = tcase_create("test_overmem_proc");
   tcase_add_test(tc_core, test_overmem_proc);
@@ -461,9 +470,11 @@ Suite *mom_mach_suite(void)
   tcase_add_test(tc_core, test_overcpu_proc);
   suite_add_tcase(s, tc_core);
 
+#ifndef PENABLE_LINUX_CGROUPS
   tc_core = tcase_create("test_resi_sum");
   tcase_add_test(tc_core, test_resi_sum);
   suite_add_tcase(s, tc_core);
+#endif 
 
   tc_core = tcase_create("test_mem_sum");
   tcase_add_test(tc_core, test_mem_sum);

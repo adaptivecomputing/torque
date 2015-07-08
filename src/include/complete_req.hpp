@@ -108,6 +108,7 @@ class complete_req
     unsigned long  get_memory_for_this_host(const std::string &hostname) const;
     unsigned long  get_swap_memory_for_this_host(const std::string &hostname) const;
     req           &get_req(int i);
+    int            get_req_index_for_host(const char *host, unsigned int &req_index);
     int            get_req_and_task_index(const int rank, unsigned int &req_index, unsigned int &task_index);
     void           set_hostlists(const char *job_id, const char *host_list);
     void           set_value_from_nodes(const char *node_val);

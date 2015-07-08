@@ -382,6 +382,55 @@ req &complete_req::get_req(
   } // END get_req()
 
 
+/* get_req_index_for_host
+ * 
+ * This method is used to get the index of a request
+ * when a job is completed. It relies on the hostlist
+ * to be set.
+ *
+ * @param host - The host name for which the req index is to be returned
+ * @param req_index - The request index of the host.
+ *
+ */
+
+int complete_req::get_req_index_for_host(
+
+  const char   *host,
+  unsigned int &req_index)
+
+  {
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  std::vector<req>::iterator it = this->reqs.begin();
+
+  for (unsigned int i = 0; it != this->reqs.end(); i++, it++)
+    {
+    req current_req = this->get_req(i);
+
+    std::string req_hostlist = current_req.getHostlist();
+    char hostlist[256];
+    char *tok_ptr;
+
+    strcpy(hostlist, req_hostlist.c_str());
+    tok_ptr = strchr(hostlist, ':');
+    if (tok_ptr != NULL)
+      *tok_ptr = '\0';
+
+    if (!strcmp(hostlist, host))
+      {
+      req_index = i;
+      return(PBSE_NONE);
+      }
+    }
+
+  sprintf(log_buf, "A req for host %s not found", host);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+  return(PBSE_REQ_NOT_FOUND);
+
+  }
+
+
+
+
 /*
  * get_req_and_task_index
  *

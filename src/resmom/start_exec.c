@@ -5541,7 +5541,6 @@ int start_process(
   if (rc != PBSE_NONE)
     {
     rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, new_pid);
-  
     if (rc != PBSE_NONE)
       {
       sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);

@@ -5651,7 +5651,13 @@ void free_nodes(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
     {
     complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    cr->clear_allocations();
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3)) 
+      {
+      cr->clear_allocations();
+      }
     }
 
   if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)

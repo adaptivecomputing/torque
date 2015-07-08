@@ -114,6 +114,8 @@ class allocation
   std::string      hostname;
   int              gpus;
   int              mics;
+  unsigned long    task_cput_used;
+  unsigned long long task_memory_used;
 
   allocation(const allocation &alloc);
   allocation(const req &r);

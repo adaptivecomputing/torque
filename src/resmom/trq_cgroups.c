@@ -638,6 +638,118 @@ int trq_cg_add_process_to_task_cgroup(
   }
 
 
+/* 
+ * trq_cg_get_task_stats
+ *
+ * Get get the resident memory and cpu time
+ * for the task and record it in the allocation
+ * object.
+ *
+ * @param cgroup_path - path to this jobs cgroup
+ * @param job_id      - id of job
+ * @param req_index   - req number
+ * @param task_index  - task index of req
+ * @param al          - allocation object of task
+ *
+ */
+
+int trq_cg_get_task_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  allocation         &al)
+
+  {
+  char               req_and_task[256];
+  char               buf[LOCAL_LOG_BUF_SIZE];
+  int                fd;
+  int                rc;
+  unsigned long      cput_used;
+  unsigned long long mem_used;
+
+  /* get memory first */
+  sprintf(req_and_task, "/%s/R%u.t%u/memory.max_usage_in_bytes", job_id, req_index, task_index);
+
+  string  cgroup_path = cg_memory_path + req_and_task;
+
+  fd = open(cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
+  if (rc == 0)
+    {
+    /* something is not right. We should have some memory used */
+    sprintf(buf, "max_usage_in_bytes is 0. Something is not right: %s", cgroup_path.c_str());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    mem_used = 0;
+    }
+  else if (rc == -1)
+    {
+    sprintf(buf, "read failed getting memory used for %s - %s", cgroup_path.c_str(), strerror(errno));
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    al.task_memory_used = 0;
+    close(fd);
+    return(PBSE_SYSTEM);
+    }
+  else
+    {
+    mem_used = strtoull(buf, NULL, 10);
+    }
+
+  close(fd);
+  al.task_memory_used = mem_used;
+
+  /* now get cpu time used */
+  sprintf(req_and_task, "/%s/R%u.t%u/cpuacct.usage", job_id, req_index, task_index);
+
+  cgroup_path = cg_cpuacct_path + req_and_task;
+
+  fd = open(cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
+  if (rc == 0)
+    {
+    /* something is not right. We should have some memory used */
+    sprintf(buf, "max_usage_in_bytes is 0. Something is not right: %s", cgroup_path.c_str());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    cput_used = 0;
+    }
+  else if (rc == -1)
+    {
+    sprintf(buf, "read failed getting memory used for %s - %s", cgroup_path.c_str(), strerror(errno));
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    al.task_cput_used = 0;
+    close(fd);
+    return(PBSE_SYSTEM);
+    }
+  else
+    {
+    cput_used = strtoul(buf, NULL, 10);
+    }
+
+  close(fd);
+  al.task_cput_used = cput_used;
+
+
+  return(PBSE_NONE);
+
+  }
+
+
+
+
 int trq_cg_add_process_to_cgroup(
     
   string     &cgroup_path,

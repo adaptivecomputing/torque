@@ -212,6 +212,36 @@ START_TEST(test_get_memory_for_this_host)
   }
 END_TEST
 
+START_TEST(test_get_req_index_for_host)
+  {
+  complete_req c;
+  std::string hostname = "kmn";
+  unsigned int req_index;
+  int rc;
+
+  req r1;
+  req r2;
+
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1");
+  c.add_req(r1);
+
+  r2.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n mem: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: pv-knielson-dt:ppn=1");
+  c.add_req(r2);
+
+  rc = c.get_req_index_for_host(hostname.c_str(), req_index);
+  fail_unless(req_index == 0);
+  fail_unless(rc==PBSE_NONE);
+
+  rc = c.get_req_index_for_host("pv-knielson-dt", req_index);
+  fail_unless(req_index == 1);
+  fail_unless(rc==PBSE_NONE);
+
+  rc = c.get_req_index_for_host("george", req_index);
+  fail_unless(rc == PBSE_REQ_NOT_FOUND);
+  }
+END_TEST
+
+
 
 Suite *complete_req_suite(void)
   {
