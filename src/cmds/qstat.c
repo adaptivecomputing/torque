@@ -1643,7 +1643,10 @@ void print_req_information(
   if ((right_dot = strrchr(req_information_attr->resource, '.')) != NULL)
     task_index = strtol(right_dot + 1, NULL, 10);
 
-  sprintf(name, "%s.task_usage.%d.task.%d", ATTR_req_information, req_index, task_index);
+  if (JE == NULL)
+    sprintf(name, "%s.task_usage.%d.task.%d", ATTR_req_information, req_index, task_index);
+  else
+    sprintf(name, "task_usage.%d.task.%d", req_index, task_index);
         
   translate_vector_to_range_string(out, a.cpu_indices);
   if (JE == NULL)
