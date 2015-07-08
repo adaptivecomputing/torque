@@ -1696,7 +1696,7 @@ void print_req_information(
       add_xml_resource(RE, "memory_used", buf);
     }
     
-  sprintf(buf, "%d", a.cpus);
+  sprintf(buf, "%d", a.cores);
   if (JE == NULL)
     {
     prt_attr(name, "cores", buf);
