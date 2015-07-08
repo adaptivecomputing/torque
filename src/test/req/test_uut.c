@@ -167,7 +167,7 @@ START_TEST(test_get_set_values)
   fail_unless(names[3] == "task_usage.0.task.0", names[3].c_str());
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "all");
-  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"", values[3].c_str());
+  fail_unless(values[3] == "{\"task\":{\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"}}", values[3].c_str());
 
   req clone;
   std::vector<std::string> names_clone;
@@ -200,7 +200,7 @@ START_TEST(test_get_set_values)
   values.clear();
   r3.record_allocation(save);
   r3.get_values(names, values);
-  fail_unless(values[3] == "\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"", values[3].c_str());
+  fail_unless(values[3] == "{\"task\":{\"cpu_list\":\"0-15\",\"mem_list\":\"0-1\",\"cores\":8,\"threads\":16,\"host\":\"napali\"}}", values[3].c_str());
   }
 END_TEST
 

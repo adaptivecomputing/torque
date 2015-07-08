@@ -236,7 +236,7 @@ void allocation::write_task_information(
 
   translate_vector_to_range_string(cpus, this->cpu_indices);
   translate_vector_to_range_string(mems, this->mem_indices);
-  task_info = "\"cpu_list\":\"" + cpus;
+  task_info = "{\"task\":{\"cpu_list\":\"" + cpus;
   task_info += "\",\"mem_list\":\"" + mems;
   if (this->task_cput_used != 0)
     {
@@ -252,7 +252,7 @@ void allocation::write_task_information(
   task_info += buf;
   snprintf(buf, sizeof(buf), ",\"threads\":%d", this->threads);
   task_info += buf;
-  task_info += ",\"host\":\"" + this->hostname + "\"";
+  task_info += ",\"host\":\"" + this->hostname + "\"}}";
   } // END write_task_information()
 
 
@@ -298,6 +298,7 @@ void allocation::initialize_from_string(
   if ((ptr = strstr(val, "host\":")) != NULL)
     {
     val = ptr + strlen("host\":") + 1;
+    storage.clear();
     capture_until_close_character(&val, storage, '"');
     this->hostname = storage;
     }

@@ -21,13 +21,13 @@ START_TEST(test_write_task_information)
 
   std::string task_info;
   a.write_task_information(task_info);
-  fail_unless(task_info == "\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4",
+  fail_unless(task_info == "{\"task\":{\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4,\"host\":\"\"}}",
               task_info.c_str());
 
   allocation a2;
   a2.initialize_from_string(task_info);
   a2.write_task_information(task_info);
-  fail_unless(task_info == "\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4",
+  fail_unless(task_info == "{\"task\":{\"cpu_list\":\"0-1,8-9\",\"mem_list\":\"0\",\"cores\":2,\"threads\":4,\"host\":\"\"}}",
               task_info.c_str());
 
 
@@ -36,12 +36,12 @@ START_TEST(test_write_task_information)
   a.cpu_indices.push_back(0);
   a.cpu_indices.push_back(1);
   a.write_task_information(task_info);
-  fail_unless(task_info == "\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2");
+  fail_unless(task_info == "{\"task\":{\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2,\"host\":\"\"}}");
 
   allocation a3;
   a3.initialize_from_string(task_info);
   a3.write_task_information(task_info);
-  fail_unless(task_info == "\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2",
+  fail_unless(task_info == "{\"task\":{\"cpu_list\":\"0-1\",\"mem_list\":\"0\",\"cores\":2,\"threads\":2,\"host\":\"\"}}",
               task_info.c_str());
   }
 END_TEST
@@ -51,21 +51,21 @@ START_TEST(test_allocation_constructors)
   {
   allocation a;
 
-  fail_unless(a.jobid[0] == '\0');
+  fail_unless(a.jobid.size() == 0);
   fail_unless(a.memory == 0);
   fail_unless(a.cpus == 0);
 
-  strcpy(a.jobid, "1.napali");
+  a.jobid = "1.napali";
   a.memory = 1024 * 6;
   a.cpus = 4;
 
   allocation a2(a);
-  fail_unless(!strcmp(a2.jobid, "1.napali"));
+  fail_unless(a2.jobid == "1.napali");
   fail_unless(a2.cpus == 4);
   fail_unless(a2.memory == 1024 * 6);
 
   allocation a3("1.napali");
-  fail_unless(!strcmp(a3.jobid, "1.napali"));
+  fail_unless(a3.jobid == "1.napali");
 
   req r;
   allocation a4(r);
