@@ -2952,6 +2952,7 @@ int mom_set_use(
 
 int kill_task(
 
+  job  *pjob,   /* I */
   task *ptask,  /* I */
   int   sig,    /* I */
   int   pg)     /* I (1=signal process group, 0=signal master process only) */
@@ -3106,26 +3107,35 @@ int kill_task(
           
           if (sig == SIGKILL)
             {
-            sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
-              __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
-            
-            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-            
             if (pg == 0)
               {
-              /* make sure we only send a SIGTERM one time */
-              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+              /* make sure we only send a SIGTERM one time per process */
+              if ((ps->state != 'Z') &&
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
                 {
+                sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
+                  __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                    ptask->ti_qs.ti_parentjobid, log_buffer);
+            
                 kill(ps->pid, SIGTERM);
-                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                pjob->ji_sigtermed_processes->insert(ps->pid);
                 }
               }
             else
               {
-              if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+              if ((ps->state != 'Z') &&
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
                 {
+                sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
+                  __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                    ptask->ti_qs.ti_parentjobid, log_buffer);
+            
                 killpg(ps->pid, SIGTERM);
-                ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                pjob->ji_sigtermed_processes->insert(ps->pid);
                 }
               }
             
@@ -3196,10 +3206,10 @@ int kill_task(
                     kill(ps->pid, sig);
                     }
                   /* make sure we only send a SIGTERM one time */
-                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
-                    kill(ps->pid, sig);
-                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    killpg(ps->pid, SIGTERM);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
                   }
                 else
@@ -3208,10 +3218,10 @@ int kill_task(
                     {
                     killpg(ps->pid, sig);
                     }
-                  else if (ptask->ti_qs.ti_status != TI_STATE_SIGTERM)
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
-                    killpg(ps->pid, sig);
-                    ptask->ti_qs.ti_status = TI_STATE_SIGTERM;
+                    killpg(ps->pid, SIGTERM);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
                   }
                 }
@@ -3235,7 +3245,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations == 0) && (loopCt++ < 20));
+    } while ((ctCleanIterations <= 3) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */

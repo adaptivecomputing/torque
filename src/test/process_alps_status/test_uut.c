@@ -6,6 +6,7 @@
 #include <vector>
 #include "pbs_nodes.h"
 #include "alps_constants.h"
+#include "alps_functions.h"
 #include <check.h>
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
@@ -16,7 +17,6 @@ struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
 struct pbsnode *find_alpsnode_by_name(struct pbsnode *parent, const char *node_id);
 struct pbsnode *determine_node_from_str(const char *str, struct pbsnode *parent, struct pbsnode *current);
 int check_if_orphaned(void *str);
-int process_alps_status(char *, std::vector<std::string>&);
 int process_reservation_id(struct pbsnode *pnode, const char *rsv_id_str);
 int record_reservation(struct pbsnode *pnode, const char *rsv_id);
 

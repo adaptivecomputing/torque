@@ -1774,6 +1774,12 @@ void mgr_node_set(
         }
       }  /* END for each node */
 
+    if (iter.node_index != NULL)
+      delete iter.node_index;
+
+    if (iter.alps_index != NULL)
+      delete iter.alps_index;
+
     } /* END multiple node case */
   else
     {
@@ -1939,8 +1945,7 @@ static bool wait_for_job_state(int jobid,int newState,int timeout)
   return false; //We timed out trying to delete the job from the MOM.
   }
 
-#define TIMEOUT_FOR_JOB_DELETE 120
-#define TIMEOUT_FOR_JOB_REQUEUE 120
+
 
 static bool requeue_or_delete_jobs(
     
@@ -1949,7 +1954,9 @@ static bool requeue_or_delete_jobs(
 
   {
   std::vector<int> jids;
-  bool requeue_rc = true;
+  bool             requeue_rc = true;
+  long             delete_timeout = TIMEOUT_FOR_JOB_DEL_REQ;
+  long             requeue_timeout = TIMEOUT_FOR_JOB_DEL_REQ;
 
   for(std::vector<job_usage_info>::iterator i = pnode->nd_job_usages.begin();i != pnode->nd_job_usages.end();i++)
     {
@@ -1988,7 +1995,9 @@ static bool requeue_or_delete_jobs(
         rc = req_deletejob(brDelete);
         if(rc == PBSE_NONE)
           {
-          if(!wait_for_job_state(*jid,JOB_STATE_COMPLETE,TIMEOUT_FOR_JOB_DELETE))
+          get_svr_attr_l(SRV_ATR_TimeoutForJobDelete, &delete_timeout);
+
+          if(!wait_for_job_state(*jid,JOB_STATE_COMPLETE,delete_timeout))
             {
             set_task(WORK_Immed, 0, ensure_deleted, dup_jobid, FALSE);
             dup_jobid = NULL;
@@ -1999,7 +2008,9 @@ static bool requeue_or_delete_jobs(
       else
         {
         free_br(brDelete);
-        if(!wait_for_job_state(*jid,JOB_STATE_QUEUED,TIMEOUT_FOR_JOB_REQUEUE))
+        get_svr_attr_l(SRV_ATR_TimeoutForJobRequeue, &requeue_timeout);
+
+        if(!wait_for_job_state(*jid,JOB_STATE_QUEUED,requeue_timeout))
           {
           set_task(WORK_Immed, 0, ensure_deleted, dup_jobid, FALSE);
           dup_jobid = NULL;
@@ -2015,6 +2026,8 @@ static bool requeue_or_delete_jobs(
     }
   return requeue_rc;
   }
+
+
 
 /*
  * mgr_node_delete - mark a node (or all nodes) in the server's node list

@@ -1277,9 +1277,6 @@ int write_cached_statuses(
     } /* END iterate over received statuses */
 
   delete iter;
-  
-  if (ret == DIS_SUCCESS)
-    updates_waiting_to_send = 0;
 
   received_statuses.unlock();
   return(ret);
@@ -1725,6 +1722,7 @@ void mom_server_all_update_stat(void)
       ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
+      updates_waiting_to_send = 0;
     
       received_node                                             *rn;
       received_statuses.lock();

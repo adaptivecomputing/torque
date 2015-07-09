@@ -132,10 +132,10 @@ case "$1" in
 			pid=-1
 		fi
 
-		echo "DEBUG: pid = $pid"
+		#echo "DEBUG: pid = $pid"
 
-		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 1
-		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 0
+		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 2
+		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 3
 		[ $pid -ne -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
 		[ $pid -ne -1 ] && echo -n "pbs_mom running but subsys not locked" && failure && echo && exit 1
 		;;

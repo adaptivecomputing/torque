@@ -993,6 +993,13 @@ int setup_server_attrs(
   server.sv_attr[SRV_ATR_nppcu].at_val.at_long = APBASIL_DEFAULT_NPPCU_VALUE;
   server.sv_attr[SRV_ATR_nppcu].at_flags = ATR_VFLAG_SET;
 
+  /* Set default timeout times on requeue or delete of a job */
+  server.sv_attr[SRV_ATR_TimeoutForJobDelete].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
+  server.sv_attr[SRV_ATR_TimeoutForJobDelete].at_flags = ATR_VFLAG_SET;
+
+  server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
+  server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
+
   /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);
 

@@ -507,6 +507,8 @@ job *job_alloc(void)
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
 
+  pj->ji_sigtermed_processes = new std::set<int>();
+
   /* set the working attributes to "unspecified" */
   job_init_wattr(pj);
 
@@ -563,6 +565,7 @@ void mom_job_free(
     }
 
   delete pj->ji_job_pid_set;
+  delete pj->ji_sigtermed_processes;
 
   /* now free the main structure */
   free(pj);

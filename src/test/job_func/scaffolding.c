@@ -156,6 +156,7 @@ void free_br(struct batch_request *preq)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
+  add_job_called = true;
   return NULL;
   }
 
@@ -672,3 +673,4 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
+void add_to_completed_jobs(work_task *ptask) {}

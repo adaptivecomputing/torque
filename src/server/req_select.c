@@ -552,6 +552,8 @@ nextjob:
   else
     reply_send_svr(preq);
 
+  delete iter;
+
   return;
   }  /* END sel_step3() */
 

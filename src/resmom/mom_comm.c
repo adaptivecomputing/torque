@@ -3219,7 +3219,7 @@ int im_signal_task(
         ptask != NULL;
         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
       {
-      kill_task(ptask, sig, 0);
+      kill_task(pjob, ptask, sig, 0);
       }
    
     /* if STOPing all tasks, we're obviously suspending the job */
@@ -3247,7 +3247,7 @@ int im_signal_task(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
     if ((ptask = task_find(pjob, taskid)))
-        kill_task(ptask, sig, 0);
+        kill_task(pjob, ptask, sig, 0);
     }
 
   if ((socket = get_reply_stream(pjob)) < 0)
@@ -6927,7 +6927,7 @@ int tm_signal_request(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
   
-  kill_task(ptask, signum, 0);
+  kill_task(pjob, ptask, signum, 0);
   
   *ret = tm_reply(chan, TM_OKAY, event);
  

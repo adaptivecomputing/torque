@@ -568,7 +568,7 @@ int process_reservation_id(
 
 int process_alps_status(
 
-  char                     *nd_name,
+  const char               *nd_name,
   std::vector<std::string> &status_info)
 
   {
