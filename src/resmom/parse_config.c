@@ -2296,7 +2296,7 @@ void reset_config_vars()
   mask_num = 0;
   mask_max = 0;
   maskclient = NULL; /* wildcard connections */
-  MOMConfigVersion[64];
+  memset(MOMConfigVersion, 0, sizeof(MOMConfigVersion));
   MOMConfigDownOnError = 0;
   MOMConfigRestart = 0;
   MOMCudaVisibleDevices = 1;
