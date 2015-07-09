@@ -1,0 +1,3 @@
+<path>
+  <level>napali,waimea</level>
+</path>

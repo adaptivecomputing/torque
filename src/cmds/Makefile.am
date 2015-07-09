@@ -1,7 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 DIST_SUBDIRS=
 
 include_HEADERS = common_cmds.h pbsnodes.h qsub_functions.h
@@ -80,11 +78,3 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
 	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-.PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif

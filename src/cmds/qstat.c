@@ -784,7 +784,7 @@ static void altdsp_statjob(
 
   int   usecput;
   static char  pfs[SIZEL];
-  static char  rqmem[SIZEL];
+  static char  rqmem[SIZEL + 10];
   static char  srfsbig[SIZEL];
   static char  srfsfast[SIZEL];
   static char  tmpNodeCt[SIZEL];
@@ -803,15 +803,15 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("\n                                                          Req'd  Req'd       Elap");
-      printf("\nJob ID                  Username    Queue    NDS   TSK    Memory Time      S Time       BIG  FAST   PFS");
-      printf("\n----   ---------------- ----------- -------- ----- ------ ------ --------- - --------- ----- ----- -----\n");
+      printf("\n                                                          Req'd     Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    NDS   TSK    Memory    Time      S Time       BIG  FAST   PFS");
+      printf("\n----   ---------------- ----------- -------- ----- ------ --------- --------- - --------- ----- ----- -----\n");
       }
     else
       {
-      printf("\n                                                                                  Req'd    Req'd       Elap");
-      printf("\nJob ID                  Username    Queue    Jobname          SessID  NDS   TSK   Memory   Time    S   Time");
-      printf("\n----------------------- ----------- -------- ---------------- ------ ----- ------ ------ --------- - ---------\n");
+      printf("\n                                                                                  Req'd       Req'd       Elap");
+      printf("\nJob ID                  Username    Queue    Jobname          SessID  NDS   TSK   Memory      Time    S   Time");
+      printf("\n----------------------- ----------- -------- ---------------- ------ ----- ------ --------- --------- - ---------\n");
       }
     }
 
@@ -1003,7 +1003,7 @@ static void altdsp_statjob(
       }
 
     if ((*jstate != 'Q') && (*jstate != 'C') && (*jstate != 'H'))
-      {
+      { 
       elap_time = req_walltime - rem_walltime;
       time_to_string(elap_time_string, elap_time);
       }
@@ -1019,7 +1019,7 @@ static void altdsp_statjob(
 
     if (alt_opt & ALT_DISPLAY_R)
       {
-      printf("%5.5s %*.*s %6.6s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
+      printf("%5.5s %*.*s %9.9s %9.9s %1.1s %9.9s %5.5s %5.5s %5.5s",
              nodect,
              tasksize,
              tasksize,
@@ -1035,7 +1035,7 @@ static void altdsp_statjob(
     else
       {
       /* inject precision into the format string */
-      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%6.6s %%9.9s %%1.1s %%9.9s",
+      snprintf(format_string, sizeof(format_string), "%%-%d.%ds %%6.6s %%5.5s %%*.*s %%9.9s %%9.9s %%1.1s %%9.9s",
                PBS_NAMELEN, PBS_NAMELEN);
 
       printf(format_string,

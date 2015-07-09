@@ -432,6 +432,7 @@ int execute_job_delete(
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
   long              array_compatible = FALSE;
+  long              status_cancel_queue = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
 
@@ -569,6 +570,16 @@ jump:
     change_restart_comment_if_needed(pjob);
     }
 
+  /* make a cleanup task if set */
+  get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &status_cancel_queue);
+  if (force_cancel > 0)
+    {
+    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+ 
+    set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
+    }
+
   if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
     {
     /*
@@ -585,13 +596,16 @@ jump:
 
     setup_apply_job_delete_nanny(pjob, time_now);
 
+    // mark this job as being in the middle of getting deleted
+    pjob->ji_being_deleted = true;
+
     /*
      * Send signal request to MOM.  The server will automagically
      * pick up and "finish" off the client request when MOM replies.
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1,strdup(del), strdup(preq->rq_id))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id))))
       {
       /* cant send to MOM */
 
@@ -609,14 +623,18 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-
-  /* make a cleanup task if set */
-  get_svr_attr_l(SRV_ATR_JobForceCancelTime, &force_cancel);
-  if (force_cancel > 0)
+  else if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
+           (status_cancel_queue != 0))
     {
-    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
- 
-    set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
+    /*
+     * If a task is not running yet and is still on the queue, we
+     * need to set an exit status
+     */
+
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
     }
 
   /* if configured, and this job didn't have a slot limit hold, free a job
@@ -1436,7 +1454,7 @@ void post_delete_mom1(
       pthread_mutex_lock(server.sv_attr_mutex);
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
-                             2);
+                             DEFAULT_KILL_DELAY);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else if (pjob == NULL)

@@ -57,7 +57,7 @@ PbsErrClient(PBSE_REGROUTE,          (char *)"Dependent parent job currently in 
 /* unknown signal name */
 PbsErrClient(PBSE_UNKSIG,            (char *)"Unknown/illegal signal name")
 /* bad attribute value */
-PbsErrClient(PBSE_BADATVAL,          (char *)"Illegal attribute or resource value for ")
+PbsErrClient(PBSE_BADATVAL,          (char *)"Illegal attribute or resource value for")
 /* Cannot modify attrib in run state */
 PbsErrClient(PBSE_MODATRRUN,         (char *)"Cannot modify attribute while job running ")
 /* request invalid for job state */

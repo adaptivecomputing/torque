@@ -1,6 +1,44 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
-5.1
+6.0.0
+  b - TRQ-3117. Fix a misspelling in the number_successful tag (was number_successfull)
+
+
+5.1.2
+  e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
+      canceled jobs to have the same exit code regardless of the state they were in
+      when they were canceled.
+
+
+5.1.1
+  b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
+  c - TRQ-3068. Fix a race condition where a job may be deleted but have it's pointer
+      may still be in the alljobs container.
+  b - TRQ-2753. Fix a memory leak in generating the authoritative okclients list.
+  b - TRQ-2332. Fix a job dependency problem when the failover server comes up. This
+      only affects users running high availability.
+  b - TRQ-3023. Fix a bug when ALPS incorrectly returns a permanent confirmation failure.
+  b - TRQ-2833. Set CUDA_VISIBLE_DEVICES to only the indices for this host when
+      it will be set. 
+  b - TRQ-3039. Fix a deadlock when deleting a job where other jobs have after any dependencies
+      on the first job.
+  f - TRQ-2782. Distribute job files into subdirectories when server attribute use_jobs_subdirs
+      set to true. Default is false (do not distribute job files).
+  b - TRQ-3116. Make qsub only retry on transient errors.
+  b - TRQ-3122. Fix a problem with login_property not working correctly (cray only).
+  b - TRQ-3114. Fix an issue where an asynchronously started job is stuck with a 
+      substate of starting after a failed job start.
+  b - TRQ-3110. Handle slot limits correctly when jobs are preempted.
+  e - TRQ-3095. Add the server setting disable_automatic_requeue to stop jobs from being
+      requeued if they experience a transient failure on the mom.
+  e - TRQ-2307. Fix probelms where mom restarts intermittently fail.
+  b - TRQ-2946. Make qmgr able to handle Cray numeric node ids.
+  b - TRQ-2790. Make offlining cray compute nodes persist across restarts. 
+  e - TRQ-3104. Add millisecond precision to the Torque log file
+  e - TRQ-2881. Add node health check error messages to a node's notes and therefore pbsnodes
+      output.
+  b - TRQ-3166. Add another safety check before killing stray jobs.
+
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
@@ -10,6 +48,15 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
       starting in 4.2.6. Also, pbs_mom now correctly accounts for job resources when
       user jobs call setsid more than once.
   c - TRQ-2987. Fix a crash around job exits due to incorrect error code handling.
+  b - TRQ-2841. Fix some ways that max_user_queuable can become incorrect
+  b - TRQ-3097. Fixed a problem where failed job submissions would count against
+      the max_user_queuable count and could not be cleared until pbs_server
+      was restarted.
+  b - TRQ-3087. Fixed a problem where completed jobs were counted against max_user_queuable
+      when restarting pbs_server. Also if the max_user_queuable was set on a
+      queue and the number of queued jobs and completed jobs were over the
+      maximum then the last jobs submitted would not get loaded.
+ 
 
 5.0.1.h2
   b - Reverted a change in 5.0.0 which made it so a user could not submit a

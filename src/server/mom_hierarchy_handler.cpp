@@ -78,6 +78,7 @@
 #include "../lib/Libnet/lib_net.h"
 #include "node_manager.h"
 #include "threadpool.h"
+#include "id_map.hpp"
 
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
@@ -90,14 +91,18 @@ extern char *path_mom_hierarchy;
 class sendNodeHolder
   {
 public:
-  int id;
+  int                id;
   unsigned short int level;
+  unsigned short     port;
   sendNodeHolder(struct pbsnode *node)
     {
-    id = node->nd_id;
+    id    = node->nd_id;
     level = node->nd_hierarchy_level;
+    port  = node->nd_mom_rm_port;
     }
   };
+
+
 
 //This method keeps the allnodes array locked until all nodes have been traversed.
 // DO NOT use this if you are doing anything with the node that will take an undetermined
@@ -120,6 +125,8 @@ pbsnode *mom_hierarchy_handler::nextNode(all_nodes_iterator **iter)
   return pNode;
   }
 
+
+
 void mom_hierarchy_handler::make_default_hierarchy()
 
   {
@@ -139,8 +146,6 @@ void mom_hierarchy_handler::make_default_hierarchy()
     {
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, "Creating default hierarchy.");
     }
-
-
 
   while ((pnode = nextNode(&iter)) != NULL)
     {
@@ -187,9 +192,11 @@ void mom_hierarchy_handler::make_default_hierarchy()
  * @post-cond: rm_port has the mom's rm port stored in it
  */
 
-void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
-                                                         int             level_index,
-                                                         unsigned short &rm_port)
+void mom_hierarchy_handler::check_if_in_nodes_file(
+    
+  const char     *hostname,
+  int             level_index,
+  unsigned short &rm_port)
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -198,18 +205,19 @@ void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
   struct addrinfo    *addr_info;
   struct sockaddr_in *sai;
   unsigned long       ipaddr;
+  char               *work_str = strdup(hostname);
 
-  if ((colon = strchr(hostname, ':')) != NULL)
+  if ((colon = strchr(work_str, ':')) != NULL)
     *colon = '\0';
 
-  if ((pnode = find_nodebyname(hostname)) == NULL)
+  if ((pnode = find_nodebyname(work_str)) == NULL)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Node %s found in mom_hierarchy but not found in nodes file. Adding",
-      hostname);
+      work_str);
     log_err(-1, __func__, log_buf);
 
-    if (pbs_getaddrinfo(hostname, NULL, &addr_info) == 0)
+    if (pbs_getaddrinfo(work_str, NULL, &addr_info) == 0)
       {
       sai = (struct sockaddr_in *)addr_info->ai_addr;
       ipaddr = ntohl(sai->sin_addr.s_addr);
@@ -217,20 +225,24 @@ void mom_hierarchy_handler::check_if_in_nodes_file(char            *hostname,
     else
       {
       log_err(errno, __func__, "getaddrinfo failed");
+      free(work_str);
       return;
       }
 
-    create_partial_pbs_node(hostname, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
-    pnode = find_nodebyname(hostname);
+    create_partial_pbs_node(work_str, ipaddr, ATR_DFLAG_MGRD | ATR_DFLAG_MGWR);
+    pnode = find_nodebyname(work_str);
     if (pnode == NULL)
       {
       snprintf(log_buf, sizeof(log_buf),
         "Failed to add node %s to nodes file.",
-        hostname);
+        work_str);
       log_err(-1, __func__, log_buf);
+      free(work_str);
       return;
       }
     }
+
+  free(work_str);
 
   rm_port = pnode->nd_mom_rm_port;
 
@@ -268,7 +280,7 @@ void mom_hierarchy_handler::convert_level_to_send_format(mom_nodes    &nodes,
     if (level_string.str().size() != 0)
       level_string << ",";
 
-    check_if_in_nodes_file(nc.name, level_index, rm_port);
+    check_if_in_nodes_file(nc.name.c_str(), level_index, rm_port);
     level_string << nc.name;
 
     if (rm_port != PBS_MANAGER_SERVICE_PORT)
@@ -485,12 +497,14 @@ void *sendHierarchyThreadTaskWrapper(void *vp)
   }
 
 
+
 void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
   {
-  sendNodeHolder  *pNodeHolder = (sendNodeHolder *)vp;
+  sendNodeHolder *pNodeHolder = (sendNodeHolder *)vp;
   struct pbsnode *pnode = NULL;
   char            log_buf[LOCAL_LOG_BUF_SIZE+1];
   unsigned short  port;
+  const char     *name;
 
   if (pNodeHolder == NULL)
     {
@@ -498,45 +512,45 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
     return(NULL);
     }
 
-  pnode = find_nodebyid(pNodeHolder->id);
-
-  if (pnode != NULL)
+  name = node_mapper.get_name(pNodeHolder->id);
+  port = pNodeHolder->port;
+  time_t timeSent = time(NULL); //Record the time now to avoid a race condition.
+    
+  if (sendHierarchyToNode(name, port) == PBSE_NONE)
     {
-    char nodename[MAXLINE];
-    snprintf(nodename, sizeof(nodename), "%s", pnode->nd_name);
-    port = pnode->nd_mom_rm_port;
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
-
-    time_t timeSent = time(NULL); //Record the time now to avoid a race condition.
-    if (sendHierarchyToNode(nodename, port) == PBSE_NONE)
+    pnode = find_nodebyname(name);
+    if (pnode != NULL)
       {
-      pnode = find_nodebyid(pNodeHolder->id);
-      if (pnode != NULL)
-        {
-        pnode->nd_lastHierarchySent = timeSent;
-        unlock_node(pnode, __func__, NULL, LOGLEVEL);
-        }
-      if (LOGLEVEL >= 3)
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "Successfully sent hierarchy to %s", nodename);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-        }
+      pnode->nd_lastHierarchySent = timeSent;
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      }
+      
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Successfully sent hierarchy to %s", name);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       }
     }
+
   delete pNodeHolder;
+
+  // Update book-keeping
   pthread_mutex_lock(&hierarchy_mutex);
-  if(sendingThreadCount > 0)
+  if (sendingThreadCount > 0)
     {
     sendingThreadCount--;
     }
   pthread_mutex_unlock(&hierarchy_mutex);
+
   return(NULL);
   } /* END send_hierarchy_threadtask() */
 
 
+
 int mom_hierarchy_handler::sendHierarchyToNode(
-  char           *name,
+
+  const char     *name,
   unsigned short  port)
 
   {
@@ -586,10 +600,7 @@ int mom_hierarchy_handler::sendHierarchyToNode(
     std::vector<std::string> tmpHolder;
 
     pthread_mutex_lock(&hierarchy_mutex);
-    for (unsigned int i = 0; i < hierarchy_xml.size(); i++)
-      {
-      tmpHolder.push_back(hierarchy_xml[i]);
-      }
+    tmpHolder = hierarchy_xml;
     pthread_mutex_unlock(&hierarchy_mutex);
 
     for (unsigned int i = 0; i < tmpHolder.size(); i++)
@@ -630,14 +641,21 @@ int mom_hierarchy_handler::sendHierarchyToNode(
   return(ret);
   } /* END send_hierarchy() */
 
-void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
+
+
+void mom_hierarchy_handler::sendHierarchyToANode(
+    
+  struct pbsnode *node)
+
   {
   node->nd_lastHierarchySent = 0; //Make sure we send this out.
   sendNodeHolder *pNodeHolder = new sendNodeHolder(node);
+
   pthread_mutex_lock(&hierarchy_mutex);
   sendingThreadCount++;
   pthread_mutex_unlock(&hierarchy_mutex);
-  if(enqueue_threadpool_request(sendHierarchyThreadTaskWrapper,(void *)pNodeHolder,async_pool))
+
+  if (enqueue_threadpool_request(sendHierarchyThreadTaskWrapper, (void *)pNodeHolder, task_pool))
     {
     pthread_mutex_lock(&hierarchy_mutex);
     sendingThreadCount--;
@@ -645,28 +663,39 @@ void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
     pthread_mutex_unlock(&hierarchy_mutex);
     return; //We failed to create the thread but we have marked the node to send the update out to.
     }
-  }
+  } // END sendHierarchyToANode()
 
-bool sortFunc(sendNodeHolder *a,sendNodeHolder *b)
+
+
+bool sortFunc(
+    
+  sendNodeHolder *a,
+  sendNodeHolder *b)
+
   {
   return a->level < b->level;
   }
 
+
+
 void mom_hierarchy_handler::checkAndSendHierarchy(void)
   {
   time_t now = time(NULL);
-  if(sendOnDemand) return; //Don't send if we are only sending on demand.
-  if(nextSendTime > now) return; //Don't send if its not time to send.
-  if(sendingThreadCount != 0) return; //Don't send if we are still sending from last time.
+  if ((sendOnDemand) || // Don't send if we are only sending on demand.
+      (nextSendTime > now) || // Don't send if its not time to send.
+      (sendingThreadCount != 0)) // Don't send if we are still sending from last time.
+    return; 
 
-  std::vector<sendNodeHolder *> nodesToSend;
-  all_nodes_iterator *iter = NULL;
-  struct pbsnode    *pnode;
-  bool hierarchyNotSentFlagSet = false;
+  std::vector<sendNodeHolder *>  nodesToSend;
+  all_nodes_iterator          *iter = NULL;
+  struct pbsnode              *pnode;
+  bool                         hierarchyNotSentFlagSet = false;
+
   while ((pnode = nextNode(&iter)) != NULL)
     {
-    if(pnode->nd_lastHierarchySent < lastReloadTime)
+    if (pnode->nd_lastHierarchySent < lastReloadTime)
       {
+      // This new'd object is deleted in sendHierarchyThreadTask
       nodesToSend.push_back(new sendNodeHolder(pnode));
       }
     else if(pnode->nd_state&INUSE_NOHIERARCHY)
@@ -675,15 +704,16 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       }
     unlock_node(pnode, __func__, NULL, LOGLEVEL);
     }
-  if(nodesToSend.size() != 0)
+
+  if (nodesToSend.size() != 0)
     {
     std::sort(nodesToSend.begin(),nodesToSend.end(),sortFunc);
-    for(std::vector<sendNodeHolder *>::iterator i = nodesToSend.begin();i != nodesToSend.end();i++)
+    for (std::vector<sendNodeHolder *>::iterator i = nodesToSend.begin();i != nodesToSend.end();i++)
       {
       pthread_mutex_lock(&hierarchy_mutex);
       sendingThreadCount++;
       pthread_mutex_unlock(&hierarchy_mutex);
-      if(enqueue_threadpool_request(sendHierarchyThreadTaskWrapper,(void *)*i,async_pool))
+      if (enqueue_threadpool_request(sendHierarchyThreadTaskWrapper, (void *)*i, task_pool))
         {
         pthread_mutex_lock(&hierarchy_mutex);
         sendingThreadCount--;
@@ -693,12 +723,12 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
     }
   else
     {
-      if(hierarchyNotSentFlagSet)
+    if (hierarchyNotSentFlagSet)
       {
       //If we are here then all nodes have an up to date and correct hierarchy so clear all flags.
       while ((pnode = nextNode(&iter)) != NULL)
         {
-        if(pnode->nd_state&INUSE_NOHIERARCHY)
+        if (pnode->nd_state&INUSE_NOHIERARCHY)
           {
           pnode->nd_state = INUSE_FREE; //This was created as a dynamic node and
                                         //it now has a good ok host list so mark
@@ -707,8 +737,9 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
         unlock_node(pnode, __func__, NULL, LOGLEVEL);
         }
       }
-      pthread_mutex_lock(&hierarchy_mutex);
-      nextSendTime = time(NULL) + MOM_CHECK_SEND_INTERVAL;
-      pthread_mutex_unlock(&hierarchy_mutex);
+
+    pthread_mutex_lock(&hierarchy_mutex);
+    nextSendTime = time(NULL) + MOM_CHECK_SEND_INTERVAL;
+    pthread_mutex_unlock(&hierarchy_mutex);
     }
-  }
+  } // END checkAndSendHierarchy()

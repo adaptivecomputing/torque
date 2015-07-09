@@ -65,7 +65,8 @@ int array_upgrade(
 
     }
    */
-  if (version < 3)
+  if ((version > 0) && 
+      (version < 3))
     {
     /* these versions are deprecated, documentation includes a warning
        about the incompatibility and inability to upgrade, print a quick and 
@@ -86,6 +87,15 @@ int array_upgrade(
          3 arrays. */
       return 0;
       }
+
+    /*
+     * If the version number is unrecognized, something is probably wrong with the file. Let the user
+     * know and ignore the array, but don't halt the server.
+     */
+    sprintf(log_buf,
+      "WARNING, unable to upgrade job array from version %d. Job array files most likely corrupted.\n"
+      "Please examine the files at %s for file integrity\n", version, path_arrays);
+    log_err(-1, "array_upgrade", log_buf);
     return 1;
     }
   }

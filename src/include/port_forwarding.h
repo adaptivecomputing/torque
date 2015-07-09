@@ -1,7 +1,7 @@
 #ifndef PORT_FORWARDING_H
 #define PORT_FORWARDING_H 1
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 8192
 #define NUM_SOCKS 100
 #define MAX_DISPLAYS 500
 #define X11OFFSET 50

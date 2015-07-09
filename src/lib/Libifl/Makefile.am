@@ -1,7 +1,5 @@
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 CPPFLAGS = @CPPFLAGS@ -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
@@ -34,11 +32,3 @@ libifl_a_SOURCES = PBSD_gpuctrl2.c PBSD_manage2.c PBSD_manager_caps.c\
                    pbs_statfree.c tcp_dis.c tm.c torquecfg.c trq_auth.c\
                    enc_PowerState.c dec_PowerState.c
 
-if HAVE_CHECK
-check:
-	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
-
-PHONY: cleancheck
-cleancheck:
-	cd test && $(MAKE) cleancheck
-endif
