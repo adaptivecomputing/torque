@@ -2234,6 +2234,94 @@ void add_static(
 
 
 
+/*
+ * reset_config() - reset all config variables to defaults
+ *
+ * When pbs_mom receives a HUP signal, the configuration file
+ * needs to be reloaded. In order for that to be successful,
+ * all the global variables need to be reset to their default state.
+ */
+void reset_config_vars()
+  {
+  thread_unlink_calls = FALSE;
+  /* by default, enforce these policies */
+  ignwalltime = 0;
+  ignmem = 0;
+  igncput = 0;
+  ignvmem = 0;
+  /* end policies */
+  spoolasfinalname = 0;
+  maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
+  apbasil_path     = NULL;
+  apbasil_protocol = NULL;
+  reject_job_submit = 0;
+  attempttomakedir = 0;
+  reduceprologchecks = 0;
+  CheckPollTime = CHECK_POLL_TIME;
+  cputfactor = 1.00;
+  ideal_load_val = -1.0;
+  exec_with_exec = 0;
+  ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+  max_load_val = -1.0;
+  auto_ideal_load = NULL;
+  auto_max_load   = NULL;
+  AllocParCmd = NULL;  /* (alloc) */
+  PBSNodeCheckPath[0] = '\0';
+  PBSNodeCheckProlog = 0;
+  PBSNodeCheckEpilog = 0;
+  PBSNodeCheckInterval = 1;
+  job_oom_score_adjust = 0;  /* no oom score adjust by default */
+  mom_oom_immunize = 1;  /* make pbs_mom processes immune? no by default */
+  log_file_max_size = 0;
+  log_file_roll_depth = 1;
+  LOGKEEPDAYS = 0; /* days each log file should be kept before deleting */
+  EXTPWDRETRY = 3; /* # of times to try external pwd check */
+  nodefile_suffix = NULL;    /* suffix to append to each host listed in job host file */
+  submithost_suffix = NULL;  /* suffix to append to submithost for interactive jobs */
+  mom_host[0] = '\0';
+  hostname_specified = 0;
+  MOMConfigRReconfig = 0;
+  TNoSpoolDirList[0] = '\0';
+  is_reporter_mom = FALSE;
+  is_login_node = FALSE;
+  job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
+  jobstarter_exe_name[0] = '\0';
+  jobstarter_set = 0;
+  server_alias = NULL;
+  TRemChkptDirList[0] = '\0';
+  tmpdir_basename[0] = '\0';  /* for $TMPDIR */
+  rcp_path[0] = '\0';
+  rcp_args[0] = '\0';
+  xauth_path[0] = '\0';
+  mask_num = 0;
+  mask_max = 0;
+  maskclient = NULL; /* wildcard connections */
+  MOMConfigVersion[64];
+  MOMConfigDownOnError = 0;
+  MOMConfigRestart = 0;
+  MOMCudaVisibleDevices = 1;
+  wallfactor = 1.00;
+  pcphosts = NULL;
+  pe_alarm_time = PBS_PROLOG_TIME;
+  DEFAULT_UMASK[0] = '\0';
+  PRE_EXEC[0] = '\0';
+  src_login_batch = TRUE;
+  src_login_interactive = TRUE;
+  TJobStartBlockTime = 5; /* seconds to wait for job to launch before backgrounding */
+  strncpy(config_file, "config", sizeof(config_file));
+  config_file_specified = 0;
+  config_array = NULL;
+  #ifdef PENABLE_LINUX26_CPUSETS
+  MOMConfigUseSMT = 1; /* 0: off, 1: on */
+  memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
+  memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
+  #endif
+  max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
+  resend_join_job_wait_time = RESEND_WAIT_TIME;
+  mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
+  }
+
+
 
 /*
 ** Open and read the config file.  Save information in a linked
