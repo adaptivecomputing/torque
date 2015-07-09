@@ -1247,6 +1247,7 @@ void process_hup(void)
   memory_pressure_duration  = 0;
 #endif
   clear_servers();
+  reset_config_vars();
   read_config(NULL);
   check_log();
   cleanup();
