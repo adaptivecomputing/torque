@@ -1005,10 +1005,6 @@ long count_proc(
   char *spec;
   char *spec_ptr;
 
-  // if we get a null param spec, just return 0 procs
-  if (param_spec == NULL)
-    return(0);
-
   if ((spec = strdup(param_spec)) == NULL)
     return(-1);
 
