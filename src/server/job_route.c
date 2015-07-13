@@ -732,7 +732,7 @@ int initialize_procct(
       }
 
     /* Finally the moment of truth. We have the nodes and procs resources. Add them
-       to the procct resoruce*/
+       to the procct resource */
     procctp->rs_value.at_val.at_long = 0;
     if(pnodesp != NULL)
       {

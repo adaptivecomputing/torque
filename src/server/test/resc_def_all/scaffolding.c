@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <string.h>
 
 #include "server.h" /* server */
 #include "resource.h" /* resource, resource_def */
@@ -212,12 +213,6 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
   return(0);
   }
 
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  fprintf(stderr, "The call to threadsafe_tokenizer needs to be mocked!!\n");
-  exit(1);
-  }
-
 void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
@@ -243,4 +238,46 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+char *threadsafe_tokenizer(
 
+  char **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  char *current_char;
+  char *start;
+
+  if ((str == NULL) ||
+      (*str == NULL))
+    return(NULL);
+
+  /* save start position */
+  start = *str;
+
+  /* return NULL at the end of the string */
+  if (*start == '\0')
+    return(NULL);
+
+  /* begin at the start */
+  current_char = start;
+
+  /* advance to the end of the string or until you find a delimiter */
+  while ((*current_char != '\0') &&
+      (!strchr(delims, *current_char)))
+    current_char++;
+
+  /* advance str */
+  if (*current_char != '\0')
+    {
+    /* not at the end of the string */
+    *str = current_char + 1;
+    *current_char = '\0';
+    }
+  else
+    {
+    /* at the end of the string */
+    *str = current_char;
+    }
+
+  return(start);
+  } /* END threadsafe_tokenizer() */
