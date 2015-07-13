@@ -18,7 +18,7 @@ ExecStart=@sbindir@/pbs_mom -d /var/spool/torque
 ExecStop=/bin/bash -c " \
   for i in {1..5}; do \
     kill -0 $MAINPID &>/dev/null || exit 0; \
-    @sbindir@/momctl -s && exit $?; \
+    @sbindir@/momctl -s && exit; \
     sleep 1; \
   done \
 "
