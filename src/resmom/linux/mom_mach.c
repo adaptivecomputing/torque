@@ -1180,7 +1180,6 @@ unsigned long cput_sum(
   int          fd;
   int          rc;
   char         buf[LOCAL_BUF_SIZE];
-  unsigned long long nano_seconds;
 
   pbs_attribute *pattr;
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1224,7 +1223,6 @@ unsigned long cput_sum(
       if (rc != PBSE_NONE)
         continue;
 
-      cputime += al.task_cput_used/NANO_SECONDS;
       }
     pjob->ji_flags &= ~MOM_NO_PROC;
     }
@@ -1242,27 +1240,24 @@ unsigned long cput_sum(
     }
 
     rc = read(fd, buf, LOCAL_BUF_SIZE);
-    if (rc == 0)
-    {
-    /* Something is not right. We should not have 0 bytes returned */
-    cputime = 0;
-    }
-    else if (rc == -1)
+    if (rc == -1)
     {
     sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
     close(fd);
     return(0);
     }
-    else
+    else if (rc != 0) /* if rc is 0 something is not right but it is not a critical error. Don't do anything */
     {
+    ulong nano_seconds;
     /* successful read. Should be a number in nano-seconds */
 
     nano_seconds = atol(buf);
+    cputime += nano_seconds;
     }
 
     /* convert the nano seconds to seconds */
-    cputime = nano_seconds/NANO_SECONDS;
+    cputime = cputime/NANO_SECONDS;
 
     pjob->ji_flags &= ~MOM_NO_PROC;
 
@@ -1590,21 +1585,18 @@ unsigned long long resi_sum(
     }
 
   rc = read(fd, buf, LOCAL_BUF_SIZE);
-  if (rc == 0)
-    {
-    /* Something is not right. We should not have 0 bytes returned */
-    resisize = 0;
-    }
-  else if (rc == -1)
+  if (rc == -1)
     {
     sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
     close(fd);
     return(0);
     }
-  else
+  else if (rc != 0) /* if rc is 0 something is not right but not a critical error. Don't do anything */
     {
-    resisize = strtoull(buf, NULL, 10);
+    unsigned long long mem_read;
+    mem_read = strtoull(buf, NULL, 10);
+    resisize += mem_read;
     }
 
   close(fd);
