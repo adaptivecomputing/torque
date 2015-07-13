@@ -29,7 +29,8 @@ using namespace std;
 const int MIC_TYPE = 0;
 const int GPU = 1;
 
-PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1), busy(false)
+PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1), busy(false),
+                           nearest_cpuset(NULL)
   {
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
@@ -60,8 +61,13 @@ PCI_Device &PCI_Device::operator =(
   this->id = other.id;
   this->info_name = other.info_name;
   this->info_value = other.info_value;
-  this->nearest_cpuset = hwloc_bitmap_alloc();
-  memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+
+  if (other.nearest_cpuset != NULL)
+    {
+    this->nearest_cpuset = hwloc_bitmap_alloc();
+    memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
+    }
+
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   this->type = other.type;
 
