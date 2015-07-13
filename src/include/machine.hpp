@@ -126,7 +126,6 @@ class Chip
   int                     total_mics;
   int                     available_mics;
   bool                    chip_exclusive;
-  bool                    isThreaded;
   hwloc_const_cpuset_t    chip_cpuset;
   hwloc_const_nodeset_t   chip_nodeset;
   char                    chip_cpuset_string[MAX_CPUSET_SIZE];

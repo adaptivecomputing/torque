@@ -135,8 +135,8 @@ allocation::allocation(
 allocation::allocation(
 
   const char *jid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
-                       cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
-                       jobid(jid), hostname(), gpus(0), mics(0)
+                     cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
+                     jobid(jid), hostname(), gpus(0), mics(0), task_cput_used(0), task_memory_used(0)
 
   {
   }
