@@ -1,7 +1,7 @@
-noinst_SCRIPTS = pbs_server.service pbs_mom.service pbs_mom_stop pbs_sched.service trqauthd.service
+noinst_SCRIPTS = pbs_server.service pbs_mom.service pbs_sched.service trqauthd.service
 
-CLEANFILES = pbs_server.service pbs_mom.service pbs_mom_stop pbs_sched.service trqauthd.service
-EXTRA_DIST = pbs_server.service.in pbs_mom.service.in pbs_mom_stop.in pbs_sched.service.in trqauthd.service.in
+CLEANFILES = pbs_server.service pbs_mom.service pbs_sched.service trqauthd.service
+EXTRA_DIST = pbs_server.service.in pbs_mom.service.in pbs_sched.service.in trqauthd.service.in
 
 edit_systemd_scripts = sed \
     -e "s|@sbindir[@]|$(sbindir)|g" \
@@ -16,17 +16,7 @@ pbs_server.service pbs_mom.service pbs_sched.service trqauthd.service: Makefile
 	chmod a-w $@.tmp
 	mv $@.tmp $@
 
-pbs_mom_stop: Makefile
-	rm -f $@ $@.tmp
-	my_srcdir=''; \
-	  test -f ./$@.in || my_srcdir=$(srcdir)/; \
-	  $(edit_systemd_scripts) $${my_srcdir}$@.in >$@.tmp
-	chmod +x $@.tmp
-	chmod a-w $@.tmp
-	mv $@.tmp $@
-
 pbs_server.service: $(srcdir)/pbs_server.service.in
 pbs_mom.service: $(srcdir)/pbs_mom.service.in
-pbs_mom_stop: $(srcdir)/pbs_mom_stop.in
 trqauthd.service: $(srcdir)/trqauthd.service.in
 pbs_sched.service: $(srcdir)/pbs_sched.service.in

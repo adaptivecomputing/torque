@@ -564,15 +564,6 @@ do
              -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' \
             contrib/systemd/$UNITFILE > %{buildroot}%{_unitdir}/$UNITFILE
 done
-%{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_appstatedir}|' \
-         -e 's|^SYSCONF_PATH=.*|SYSCONF_PATH=%{torque_sysconfdir}|' \
-         -e 's|^APPSTATE_PATH=.*|APPSTATE_PATH=%{torque_appstatedir}|' \
-         -e 's|^LOG_PATH=.*|LOG_PATH=%{torque_logdir}|' \
-         -e 's|^SPOOL_PATH=.*|SPOOL_PATH=%{torque_spooldir}|' \
-         -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
-         -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' \
-        contrib/systemd/pbs_mom_stop > %{_sbindir}/pbs_mom_stop
-%{__chmod} 0755 %{_sbindir}/pbs_mom_stop
 
 %{__install} torque.setup %{buildroot}%{_sbindir}
 
@@ -818,7 +809,6 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_add_back_up_file %{_unitdir}/pbs_mom.service %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/pbs_demux %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/pbs_mom %{mom_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{_sbindir}/pbs_mom_stop %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/momctl %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/qnoded %{mom_sub}-${TIMESTAMP}}
 %if %{with pam}

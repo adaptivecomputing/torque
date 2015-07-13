@@ -216,11 +216,6 @@ for UNITFILE in pbs_mom.service pbs_sched.service pbs_server.service trqauthd.se
              -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/$UNITFILE \
         > $RPM_BUILD_ROOT%{_unitdir}/$UNITFILE
 done
-%{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
-         -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
-         -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/pbs_mom_stop \
-    > $RPM_BUILD_ROOT%{_sbindir}/pbs_mom_stop
-%{__chmod} 0755 $RPM_BUILD_ROOT%{_sbindir}/$pbs_mom_stop
 
 # Configuration
 echo %{torque_server} > $RPM_BUILD_ROOT%{torque_home}/server_priv/nodes
@@ -434,7 +429,6 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{torque_home}/mom_priv/config
 %{_initrddir}/pbs_mom
 %{_unitdir}/pbs_mom.service
-%{_sbindir}/pbs_mom_stop
 %{_sbindir}/momctl
 %{_sbindir}/pbs_demux
 %{_sbindir}/pbs_mom
