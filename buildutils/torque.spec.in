@@ -208,6 +208,20 @@ for PROG in pbs_mom pbs_sched pbs_server trqauthd ; do
     %{__chmod} 0755 $RPM_BUILD_ROOT%{_initrddir}/$PROG
 done
 
+# systemd unit files
+%{__mkdir_p} $RPM_BUILD_ROOT%{_unitdir}
+for UNITFILE in pbs_mom.service pbs_sched.service pbs_server.service trqauthd.service ; do
+    %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
+             -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
+             -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/$UNITFILE \
+        > $RPM_BUILD_ROOT%{_unitdir}/$UNITFILE
+done
+%{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
+         -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
+         -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/pbs_mom_stop \
+    > $RPM_BUILD_ROOT%{_sbindir}/pbs_mom_stop
+%{__chmod} 0755 $RPM_BUILD_ROOT%{_sbindir}/$pbs_mom_stop
+
 # Configuration
 echo %{torque_server} > $RPM_BUILD_ROOT%{torque_home}/server_priv/nodes
 echo '$pbsserver %{torque_server}' > $RPM_BUILD_ROOT%{torque_home}/mom_priv/config
@@ -356,6 +370,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{torque_home}/pbs_environment
 %config(noreplace) %{torque_home}/server_name
 %{_initrddir}/trqauthd
+%{_unitdir}/trqauthd.service
 %{_bindir}/chk_tree
 %{_bindir}/hostn
 %{_bindir}/nqs2pbs
@@ -382,6 +397,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %dir %{torque_home}/server_priv
 %config(noreplace) %{torque_home}/server_priv/nodes
 %{_initrddir}/pbs_server
+%{_unitdir}/pbs_server.service
 %{_sbindir}/momctl
 %{_sbindir}/pbs_server
 %{_sbindir}/qserverd
@@ -409,6 +425,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %{_sbindir}/pbs_sched
 %{_sbindir}/qschedd
 %{_initrddir}/pbs_sched
+%{_unitdir}/pbs_sched.service
 %{torque_home}/sched_logs
 
 %files client
@@ -416,6 +433,8 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %dir %{torque_home}/mom_priv
 %config(noreplace) %{torque_home}/mom_priv/config
 %{_initrddir}/pbs_mom
+%{_unitdir}/pbs_mom.service
+%{_sbindir}/pbs_mom_stop
 %{_sbindir}/momctl
 %{_sbindir}/pbs_demux
 %{_sbindir}/pbs_mom
