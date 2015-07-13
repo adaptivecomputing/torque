@@ -28,9 +28,11 @@ using namespace std;
 #define AMD   2
 
 
-Chip::Chip() : totalThreads(0), totalCores(0), id(0), availableThreads(0), availableCores(0),
+Chip::Chip() : id(0), totalCores(0), totalThreads(0), availableCores(0), availableThreads(0),
                total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
-               chip_exclusive(false), available_memory(0), cores(), devices(), allocations()
+               chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
+               allocations()
+
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -433,10 +435,11 @@ void Chip::initialize_accelerators_from_strings(
 
 Chip::Chip(
    
-  const std::string &json_layout) : totalThreads(0), totalCores(0), id(0), availableThreads(0),
-                                    availableCores(0), total_gpus(0), available_gpus(0),
+  const std::string &json_layout) : id(0), totalCores(0), totalThreads(0), availableCores(0),
+                                    availableThreads(0), total_gpus(0), available_gpus(0),
                                     total_mics(0), available_mics(0), chip_exclusive(false),
-                                    available_memory(1)
+                                    memory(0), available_memory(0), cores(), devices(),
+                                    allocations()
 
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -505,15 +508,6 @@ int Chip::initializeNonNUMAChip(hwloc_obj_t socket_obj, hwloc_topology_t topolog
   this->chip_nodeset = hwloc_topology_get_allowed_nodeset(topology);
   hwloc_bitmap_list_snprintf(chip_cpuset_string, MAX_CPUSET_SIZE, this->chip_cpuset);
   hwloc_bitmap_list_snprintf(chip_nodeset_string, MAX_CPUSET_SIZE, this->chip_nodeset);
-
-  if (this->totalCores == this->totalThreads)
-    {
-    this->isThreaded = false;
-    }
-  else
-    {
-    this->isThreaded = true;
-    }
  
   this->initializePCIDevices(NULL, topology);
   
@@ -537,15 +531,6 @@ int Chip::initializeChip(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   this->totalThreads = hwloc_get_nbobjs_inside_cpuset_by_type(topology, this->chip_cpuset, HWLOC_OBJ_PU);
   this->availableCores = this->totalCores;
   this->availableThreads = this->totalThreads;
-
-  if (this->totalCores == this->totalThreads)
-    {
-    this->isThreaded = false;
-    }
-  else
-    {
-    this->isThreaded = true;
-    }
 
   /* Find all the cores that belong to this numa chip */
   prev = NULL;
