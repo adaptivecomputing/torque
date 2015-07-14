@@ -1058,7 +1058,7 @@ AC_ARG_WITH(boost-path, [
  [CPPFLAGS="$CPPFLAGS -I${withval}"])
 
 AC_MSG_CHECKING([whether boost is installed])
-AC_PREPROC_IFELSE([#include <boost/version.hpp>], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
+AC_PREPROC_IFELSE([AC_LANG_PROGRAM([#include <boost/version.hpp>])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
 
 This can be solved by one of the two following methods:
 
@@ -2357,6 +2357,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  Makefile
 	  contrib/blcr/Makefile
 	  contrib/init.d/Makefile
+	  contrib/systemd/Makefile
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile
