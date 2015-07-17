@@ -174,5 +174,7 @@ int multi_sort(const void *j1, const void *j2);
  */
 int cmp_sort(const void *v1, const void *v2);
 
+int fifo_sort(const void *v1, const void *v2);
+
 
 #endif

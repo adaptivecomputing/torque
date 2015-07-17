@@ -610,7 +610,10 @@ int determine_job_file_name(
 
   do
     {
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, basename, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    std::string adjusted_path_jobs = get_path_jobdata(jobid.c_str(), path_jobs);
+
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(), basename, JOB_FILE_SUFFIX);
     fds = open(namebuf, O_CREAT | O_EXCL | O_WRONLY, 0600);
 
     if (fds < 0)
@@ -1452,10 +1455,6 @@ int req_quejob(
     
     return(PBSE_MAXQUED);
     }
-  else
-    {
-    increment_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-    }
 
   /*
    * See if the job is qualified to go into the requested queue.
@@ -1497,7 +1496,6 @@ int req_quejob(
   if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
     {
     que_mgr.unlock();
-    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
@@ -1551,7 +1549,7 @@ int req_quejob(
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
-    decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
     return(rc);
@@ -1621,6 +1619,7 @@ int req_jobscript(
   int   filemode = 0600;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
+  std::string adjusted_path_jobs;
 
   errno = 0;
 
@@ -1676,7 +1675,10 @@ int req_jobscript(
     return rc;
     }
 
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+  // get adjusted path_jobs path
+  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
   if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
     {
@@ -1894,6 +1896,7 @@ int req_rdytocommit(
   char  jobid[PBS_MAXSVRJOBID + 1];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
+  std::string adjusted_path_jobs;
 
   pj = locate_new_job(preq->rq_ind.rq_rdytocommit);
 
@@ -1953,7 +1956,10 @@ int req_rdytocommit(
     {
     pj->ji_is_array_template = TRUE;
 
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
 
@@ -2003,7 +2009,6 @@ int set_interactive_job_roaming_policy(
   long            interactive_roaming = FALSE;
   long            cray_enabled = FALSE;
   struct pbsnode *pnode;
-  char           *submit_node_id;
   char           *dot;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             rc = PBSE_NONE;
@@ -2017,7 +2022,7 @@ int set_interactive_job_roaming_policy(
       {
       if (interactive_roaming == FALSE)
         {
-        submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+        char *submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
         if ((pnode = find_nodebyname(submit_node_id)) == NULL)
           {
           if ((dot = strchr(submit_node_id, '.')) != NULL)
@@ -2030,7 +2035,7 @@ int set_interactive_job_roaming_policy(
         if (pnode != NULL)
           {
           pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = submit_node_id;
+          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = strdup(pnode->nd_name);
           
           unlock_node(pnode, __func__, NULL, LOGLEVEL);
           }
@@ -2141,9 +2146,14 @@ int req_commit(
 
   if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
+    std::string adjusted_path_jobs;
+
     pj->ji_is_array_template = TRUE;
     
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s", path_jobs, pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    // get adjusted path_jobs path
+    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
 
@@ -2244,7 +2254,6 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
 
-      decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
       svr_job_purge(pj);
       }
     else
@@ -2282,7 +2291,13 @@ int req_commit(
           log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
             log_buf);
           }
-        decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+
+        if (!pj->ji_is_array_template)
+          {
+          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          }
+
         svr_job_purge(pj);
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
@@ -2300,7 +2315,12 @@ int req_commit(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
         }
       
-      decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+       if (!pj->ji_is_array_template)
+         {
+         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         }
+
       svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);

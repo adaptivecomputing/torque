@@ -1,9 +1,0 @@
-CHECK_DIRS = site_allow_u site_alt_rte site_check_u site_map_usr site_mom_chu site_mom_ckp site_mom_jst
-
-$(CHECK_DIRS)::
-	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-check: $(CHECK_DIRS)
-	
-cleancheck:
-	@for dir in $(CHECK_DIRS); do (cd $$dir && $(MAKE) clean); done

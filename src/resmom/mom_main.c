@@ -117,7 +117,6 @@
 #define DEFAULT_JOB_EXIT_WAIT_TIME 600
 #define MAX_JOIN_WAIT_TIME          600
 #define RESEND_WAIT_TIME            300
-#define OBIT_STATE_RETRY_TIME       30
 
 /* Global Data Items */
 
@@ -134,7 +133,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[BUF_SIZE];
+char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
@@ -203,7 +202,7 @@ time_t          last_log_check;
 std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
-mom_hierarchy_t  *mh;
+mom_hierarchy_t  *mh = NULL;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -227,6 +226,10 @@ int             MOMPrologFailureCount;
 
 char            MOMUNameMissing[64];
 
+extern int      MOMConfigDownOnError;
+extern int      MOMConfigRestart;
+extern int      MOMCudaVisibleDevices; /* on by default starting in 4.2.8 */
+extern int      MOMConfigRReconfig;
 long            system_ncpus = 0;
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
@@ -297,11 +300,10 @@ static int      call_hup = 0;
 char           *path_log;
 
 
-
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
-long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
+long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
 char                   *ret_string;
@@ -2414,6 +2416,21 @@ void set_report_mom_rolling_restart(
   } /* END set_report_mom_rolling_restart() */
 
 
+void set_report_mom_cuda_visible_devices(
+    
+    std::stringstream &output, 
+    char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcudavisibledevices(curr + 1);
+    }
+
+  output << "cuda_visible_devices=" << MOMCudaVisibleDevices;
+  } /* END set_report_mom_cuda_visible_devices() */
+
+
 
 void set_report_rcpcmd(
 
@@ -2672,6 +2689,10 @@ int process_rm_cmd_request(
       else if (!strncasecmp(name, "diag", strlen("diag")))
         {
         ret = process_diag_request(output, name);
+        }
+       else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
+        {
+        set_report_mom_cuda_visible_devices(output, curr);
         }
       else
         {
@@ -3397,7 +3418,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(ptask, sig, 0);
+      ct += kill_task(pjob, ptask, sig, 0);
       }
 
     ptask = (task *)GET_NEXT(ptask->ti_jobtask);
@@ -4047,9 +4068,6 @@ void parse_command_line(
 
       case '-':
 
-        if (optarg == NULL)
-          break;
-
         if (!strcmp(optarg, "about"))
           {
           printf("package:     %s\n", PACKAGE_STRING);
@@ -4353,7 +4371,7 @@ bool verify_mom_hierarchy()
       for (unsigned int k = 0; k < nodes.size(); k++)
         {
         node_comm_t &nc = nodes[k];
-        if (!strcmp(nc.name, mom_alias))
+        if (nc.name == mom_alias)
           continue_on_path = false;
         else
           {
@@ -4371,10 +4389,10 @@ bool verify_mom_hierarchy()
           {
           node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name.c_str(), NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc.name,
+                              nc.name.c_str(),
                               addr_info,
                               ntohs(nc.sock_addr.sin_port),
                               path_index,
@@ -4499,12 +4517,11 @@ int setup_program_environment(void)
 #endif
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
-#ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
-#endif
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
+  int           network_retries = 0;
 
   /* must be started with real and effective uid of 0 */
   if (IamRoot() == 0)
@@ -4716,21 +4733,31 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
 
-  if(multi_mom)
+  if (multi_mom)
     {
-	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
     }
   else
     {
-	nd_frequency.get_base_frequencies(mom_home);
+    nd_frequency.get_base_frequencies(mom_home);
     }
 
-  /* initialize the network interface */
-
-  if (init_network(pbs_mom_port, mom_process_request) != 0)
+  // initialize the network interface - try up to 4 times so restarts are successful
+  while (((rc = init_network(pbs_mom_port, mom_process_request)) != 0) &&
+         (network_retries < 3))
     {
     c = errno;
 
+    if (c != EADDRINUSE)
+      break;
+
+    sleep(1);
+
+    network_retries++;
+    }
+
+  if (rc != PBSE_NONE)
+    {
     sprintf(log_buffer, "server port = %u, errno = %d (%s)",
       pbs_mom_port,
       c,
@@ -5329,11 +5356,11 @@ int TMOMScanForStarting(void)
 
         STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
 
-        if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
+        if ((STime > 0) && ((time_now - STime) > pe_alarm_time))
           {
           sprintf(log_buffer, "job %s child not started after %ld seconds, server will retry",
             pjob->ji_qs.ji_jobid,
-            TJobStartTimeout);
+            pe_alarm_time);
 
           log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
@@ -5435,14 +5462,6 @@ void examine_all_polled_jobs(void)
       continue;
       }
 
-    if (c & JOB_SVFLG_OVERLMT1)
-      {
-      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-      continue;
-      }
 
     if (c & JOB_SVFLG_JOB_ABORTED)
       {
@@ -5479,7 +5498,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
       }
     }    /* END for (pjob) */
 
@@ -5510,11 +5529,20 @@ void examine_all_running_jobs(void)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
-        if (pjob->ji_examined <= 10)
-          {
-          pjob->ji_examined++;
-          }
+        long STime;
+        long real_alarm_time;
+
+        /* TJobStartTimeout is set to the default prologue/epilogue
+           timeout. (PBS_PROLOG_TIME). We will wait a minimum 
+           of TJobStartTimeout and longer if pe_alarm_time (set by $prologalarm)
+           is greater than the TJobStartTimeout */
+        if (pe_alarm_time > TJobStartTimeout)
+          real_alarm_time = pe_alarm_time;
         else
+          real_alarm_time = TJobStartTimeout;
+        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
+        time_now = time((time_t *)0);
+        if ((STime > 0) && ((time_now - STime) > real_alarm_time))
           {
           sprintf(log_buffer, "job %s already examined. substate=%d",
                   pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);
@@ -5744,6 +5772,7 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
+
 //If we have a job that's exiting we should call scan for exiting.
 bool call_scan_for_exiting()
   {
@@ -5762,6 +5791,8 @@ bool call_scan_for_exiting()
   return false;
   }
 
+
+
 void check_exiting_jobs()
 
   {
@@ -5774,7 +5805,7 @@ void check_exiting_jobs()
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if (time_now - eji.obit_sent < OBIT_STATE_RETRY_TIME)
+    if ((time_now - eji.obit_sent) < pe_alarm_time)
       {
       /* insert this back at the front */
       exiting_job_list.insert(exiting_job_list.begin(), eji);
@@ -6942,6 +6973,8 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+
 
 /* END mom_main.c */
 

@@ -108,11 +108,10 @@ extern int              LOGLEVEL;
 
 void free_mom_hierarchy(
 
-  mom_hierarchy_t *mh)
+  mom_hierarchy_t *param_mh)
 
   {
-  mh->paths.clear();
-  free(mh);
+  free(param_mh);
   } /* END free_mom_hierarchy() */
 
 
@@ -136,7 +135,7 @@ mom_hierarchy_t *initialize_mom_hierarchy()
 int add_network_entry(
 
   mom_hierarchy_t    *nt,
-  char               *name,
+  const char         *name,
   struct addrinfo    *addr_info,
   unsigned short      rm_port,
   int                 path,
@@ -144,8 +143,6 @@ int add_network_entry(
 
   {
   node_comm_t      nc;
-
-  memset(&nc, 0, sizeof(nc));
 
   /* check if the path is already in the array */
   while (nt->paths.size() <= (size_t)path)
@@ -175,13 +172,7 @@ int add_network_entry(
   nc.sock_addr.sin_family = AF_INET;
   nc.sock_addr.sin_port = htons(rm_port);
   nc.stream = -1;
-
-  if ((nc.name = (char *)calloc(1, strlen(name) + 1)) == NULL)
-    {
-    return(ENOMEM);
-    }
-  else
-    strcpy(nc.name,name);
+  nc.name = name;
 
   node_comm_entries.push_back(nc);
   
