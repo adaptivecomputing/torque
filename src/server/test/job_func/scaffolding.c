@@ -624,3 +624,8 @@ int svr_enquejob(job *pjob, int has_mutex, const char *prev_job_id, bool have_re
   {
   return(PBSE_NONE);
   }
+
+void add_to_completed_jobs(work_task *ptask)
+  {
+  return;
+  }

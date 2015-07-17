@@ -353,4 +353,4 @@ completed_jobs_map_class::completed_jobs_map_class() {}
 completed_jobs_map_class::~completed_jobs_map_class() {}
 int completed_jobs_map_class::cleanup_completed_jobs() {return 0;}
 bool completed_jobs_map_class::add_job(char const *s, time_t t) {return true;}
-
+void add_to_completed_jobs(work_task* wt) {}

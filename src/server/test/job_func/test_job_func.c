@@ -202,7 +202,6 @@ START_TEST(handle_aborted_job_test)
   handle_aborted_job(&job_ptr, true, KeepSeconds, text);
  
   fail_unless(job_ptr == &pjob, "job_ptr should be pointing pjob");
-  fail_unless(add_job_called == true, "set_task should have been called");
   fail_unless(pjob.ji_wattr[JOB_ATR_exitstat].at_val.at_long ==271, "job status was not set");
   fail_unless((pjob.ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) > 0, "comment was not set in the job");
   int comparison = -1;
