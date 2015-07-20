@@ -1,5 +1,9 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+5.0.2.h1
+  b - TRQ-3196 - Make sure count_proc() returns 0 on NULL argument.
+  b - TRQ-3226 - Fix a deadlock around the completed_jobs_map code (backported
+      from 5.0-dev).
 
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
