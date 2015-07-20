@@ -1168,7 +1168,6 @@ unsigned long cput_sum(
 
 #else
 #define LOCAL_BUF_SIZE 256
-#define NANO_SECONDS 1000000000
 
 unsigned long cput_sum(
 
@@ -1211,17 +1210,13 @@ unsigned long cput_sum(
 
     for (unsigned int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
       {
-      allocation al; 
-      
-      rc = host_req.get_task_allocation(task_index, al);
-      if (rc != PBSE_NONE)
-        {
-        continue;
-        }
+      unsigned long cput_used;
 
-      rc = trq_cg_get_task_stats(job_id, req_index, task_index, al);
+      rc = trq_cg_get_task_cput_stats(job_id, req_index, task_index, cput_used);
       if (rc != PBSE_NONE)
         continue;
+
+      cr->set_task_cput_used(req_index, task_index, cput_used/NANO_SECONDS);
 
       }
     pjob->ji_flags &= ~MOM_NO_PROC;
@@ -1555,22 +1550,17 @@ unsigned long long resi_sum(
       }
 
     req host_req = cr->get_req(req_index);
-
     for (int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
       {
-      allocation al; 
-      
-      rc = host_req.get_task_allocation(task_index, al);
-      if (rc != PBSE_NONE)
-        {
-        continue;
-        }
+      unsigned long long mem_used;
 
-      rc = trq_cg_get_task_stats(pjob->ji_qs.ji_jobid, req_index, task_index, al);
+      mem_used = 0;
+      rc = trq_cg_get_task_memory_stats(pjob->ji_qs.ji_jobid, req_index, task_index, mem_used);
       if (rc != PBSE_NONE)
         continue;
 
-      resisize += al.task_memory_used;
+      cr->set_task_memory_used(req_index, task_index, mem_used);
+      resisize += mem_used;
       }
     }
 

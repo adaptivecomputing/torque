@@ -161,6 +161,25 @@ int parse_positive_integer(
   } // END parse_positive_integer()
 
 
+int req::set_cput_used(int task_index, const unsigned long cput_used)
+  {
+  if (this->task_allocations.size() < task_index)
+    return(PBSE_BAD_PARAMETER);
+
+  this->task_allocations[task_index].set_cput_used(cput_used);
+  return(PBSE_NONE);
+  }
+
+
+int req::set_memory_used(int task_index, const unsigned long long mem_used)
+  {
+  if (this->task_allocations.size() < task_index)
+    return(PBSE_BAD_PARAMETER);
+
+  this->task_allocations[task_index].set_memory_used(mem_used);
+  return(PBSE_NONE);
+  }
+
 
 /*
  * set_place_value()
@@ -1770,17 +1789,30 @@ int req::set_value(
   if (!strcmp(name, "task_usage"))
     {
     int rc;
-    allocation a;
+    unsigned int allocations_size = this->task_allocations.size();
 
-    rc = this->get_task_allocation(task_index, a);
-    if (rc != PBSE_NONE)
+    if (allocations_size <= task_index)
       {
-      a.initialize_from_string(value);
-      this->task_allocations.push_back(a);
+      /* There are fewer tasks than task_index. Add empty
+         tasks until we get to task_index */
+         
+      for (unsigned int i = allocations_size; i < task_index; i++)
+        {
+        allocation a;
+
+        rc = this->get_task_allocation(task_index, a);
+        if (rc != PBSE_NONE)
+          {
+          this->task_allocations.push_back(a);
+          }
+        }
+        allocation a;
+        a.initialize_from_string(value);
+        this->task_allocations.push_back(a);
       }
     else
       {
-      a.initialize_from_string(value);
+      this->task_allocations[task_index].initialize_from_string(value);
       }
     }
   else

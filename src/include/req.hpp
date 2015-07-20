@@ -191,6 +191,8 @@ class req
     int           get_task_allocation(unsigned int index, allocation &task_allocation);
     unsigned long get_memory_for_host(const std::string &host) const;
     unsigned long get_swap_for_host(const std::string &host) const;
+    int           set_cput_used(int task_index, const unsigned long cput_used);
+    int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);
     void          set_memory(unsigned long mem);
     void          set_execution_slots(int execution_slots);

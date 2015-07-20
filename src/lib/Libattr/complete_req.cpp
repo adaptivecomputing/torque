@@ -234,6 +234,54 @@ int complete_req::req_count() const
   return(this->reqs.size());
   } // END req_count()
 
+
+/*
+ * set_task_memory_used()
+ *
+ * Sets the memory used for a specific task
+ *
+ * @param req_index - index of req where task memory is to be set
+ * @param task_indx - index of task inside of req to be set
+ * @ mem_used       - Memory used by task
+ *
+ */
+
+int complete_req::set_task_memory_used(
+  int req_index, 
+  int task_index, 
+  const unsigned long long mem_used)
+
+  {
+  if (this->reqs.size() < req_index)
+    return(PBSE_BAD_PARAMETER);
+
+  return(this->reqs[req_index].set_memory_used(task_index, mem_used));
+  }
+
+/*
+ * set_task_cput_used()
+ *
+ * Sets the cput used for a specific task
+ *
+ * @param req_index - index of req where task cpu time is to be set
+ * @param task_indx - index of task inside of req to be set
+ * @ cput_used       - cpu time used by task
+ *
+ */
+
+int complete_req::set_task_cput_used(
+  int req_index, 
+  int task_index, 
+  const unsigned long cput_used)
+
+  {
+  if (this->reqs.size() < req_index)
+    return(PBSE_BAD_PARAMETER);
+
+  return(this->reqs[req_index].set_cput_used(task_index, cput_used));
+  }
+
+
 /*
  * set_value()
  *
@@ -248,17 +296,19 @@ int complete_req::req_count() const
 
 int complete_req::set_value(
 
-  char *name,
+  const char *name,
   const char *value)
   
   {
+  int   rc = PBSE_NONE;
+  char *attr_name = strdup(name);
   char *dot1;
   char *dot2;
   unsigned int   req_index;
   unsigned int   task_index;
 
-  dot1 = strchr(name, '.');
-  dot2 = strrchr(name, '.');
+  dot1 = strchr(attr_name, '.');
+  dot2 = strrchr(attr_name, '.');
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
@@ -277,7 +327,11 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[req_index].set_value(name, value, task_index));
+  rc = this->reqs[req_index].set_value(attr_name, value, task_index);
+
+  free(attr_name);
+
+  return(rc);
  
   }
 

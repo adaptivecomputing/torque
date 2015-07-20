@@ -163,7 +163,6 @@ int  decode_complete_req(
       {
       cr = new complete_req();
       patr->at_val.at_ptr = cr;
-      patr->at_flags |= ATR_VFLAG_SET;
       }
 
     char *attr_name = strdup(rescn);
@@ -193,6 +192,7 @@ int  decode_complete_req(
       return(PBSE_BAD_PARAMETER);
       }
 
+    patr->at_flags |= ATR_VFLAG_SET;
     return(rc);
     }
   } // END decode_complete_req()
@@ -271,18 +271,42 @@ void overwrite_complete_req(
   pbs_attribute *new_attr)
 
   {
+  complete_req *cr;
   complete_req *to_copy = (complete_req *)new_attr->at_val.at_ptr;
 
   if (attr->at_val.at_ptr == NULL)
     {
-    attr->at_val.at_ptr = new complete_req(*to_copy);
+    cr = new complete_req();
+    attr->at_val.at_ptr = cr;
+    }
+  else
+    cr = (complete_req *)attr->at_val.at_ptr;
+
+
+  std::vector<std::string> names;
+  std::vector<std::string> values;
+  to_copy->get_values(names, values);
+
+  for (unsigned int i = 0; i < names.size(); i++)
+  {
+  if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
+    {
+    cr->set_value(names[i].c_str(), values[i].c_str());
     }
   else
     {
-    complete_req *cr = (complete_req *)attr->at_val.at_ptr;
-    *cr = *to_copy;
-    attr->at_val.at_ptr = cr;
+    char  *attr_name = strdup(names[i].c_str());
+    char  *dot;
+
+    dot = strchr(attr_name, '.');
+    if (dot != NULL)
+      {
+      int index = strtol(dot + 1, NULL, 10);
+      *dot = '\0';
+      cr->set_value(index, attr_name, values[i].c_str());
+      }
     }
+  }
 
   attr->at_flags |= ATR_VFLAG_SET;
   } // END overwrite_complete_req
@@ -322,13 +346,18 @@ int set_complete_req(
     case SET:
 
       overwrite_complete_req(attr, new_attr);
+      attr->at_flags |= ATR_VFLAG_SET;
 
       break;
 
     case UNSET:
 
       free_complete_req(attr);
+      attr->at_flags &= !ATR_VFLAG_SET;
 
+      break;
+
+    case MERGE:
       break;
 
     default:

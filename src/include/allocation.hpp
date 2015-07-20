@@ -122,6 +122,8 @@ class allocation
   allocation();
   allocation(const char *jobid);
   int  add_allocation(const allocation &other);
+  void set_cput_used(const unsigned long cput_used);
+  void set_memory_used(const unsigned long long mem_used);
   void place_indices_in_string(std::string &output, int which);
   void set_place_type(const std::string &place);
   void write_task_information(std::string &task_info) const;

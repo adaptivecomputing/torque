@@ -1215,6 +1215,8 @@ int post_epilogue(
 
   encode_flagged_attrs(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
+  encode_complete_req(&pjob->ji_wattr[JOB_ATR_req_information], &preq->rq_ind.rq_jobobit.rq_attr, ATTR_req_information, NULL, 0, 0);
+
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     }

@@ -376,6 +376,8 @@ int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                 int unkn, int privil, int *badattr);
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
+void overwrite_complete_req(pbs_attribute *attr, pbs_attribute *new_attr);
+
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_c(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_l(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);

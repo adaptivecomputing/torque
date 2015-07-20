@@ -240,12 +240,13 @@ void allocation::write_task_information(
   task_info += "\",\"mem_list\":\"" + mems;
   if (this->task_cput_used != 0)
     {
-    snprintf(buf, sizeof(buf), "\",\"cpu time used\":%lu", this->task_cput_used);
+    unsigned long cput_used = this->task_cput_used;
+    snprintf(buf, sizeof(buf), "\",\"cpu_time_used\":%lu", cput_used);
     task_info += buf;
     }
   if (this->task_memory_used != 0)
     {
-    snprintf(buf, sizeof(buf), "\",\"memory used\":%llu", this->task_memory_used);
+    snprintf(buf, sizeof(buf), "\",\"memory_used\":%llu", this->task_memory_used);
     task_info += buf;
     }
   snprintf(buf, sizeof(buf), "\",\"cores\":%d", this->cores);
@@ -269,6 +270,7 @@ void allocation::initialize_from_string(
   char        *ptr = strstr(work_str, "cpu_list\":");
   std::string  storage;
 
+/* The order these are evaluated makes a difference */
   if (ptr != NULL)
     {
     val = ptr + strlen("cpu_list\":") + 1; // add 1 for the open quote
@@ -282,6 +284,18 @@ void allocation::initialize_from_string(
     capture_until_close_character(&val, storage, '"');
     translate_range_string_to_vector(storage.c_str(), this->mem_indices);
     }
+  
+  if ((ptr = strstr(val, "cpu_time_used\":")) != NULL)
+    {
+    val = ptr + strlen("cpu_time_used\":");
+    this->task_cput_used = strtol(val, &val, 10);
+    }
+
+  if ((ptr = strstr(val, "memory_used\":")) != NULL)
+    {
+    val = ptr + strlen("memory_used\":");
+    this->task_memory_used = strtoll(val, &val, 10);
+    }
 
   if ((ptr = strstr(val, "cores\":")) != NULL)
     {
@@ -294,6 +308,7 @@ void allocation::initialize_from_string(
     val = ptr + strlen("threads\":");
     this->threads = strtol(val, &val, 10);
     }
+
 
   if ((ptr = strstr(val, "host\":")) != NULL)
     {
@@ -315,3 +330,20 @@ void allocation::set_host(
   {
   this->hostname = hostname;
   }
+
+void allocation::set_memory_used(
+
+  const unsigned long long mem_used)
+
+  {
+  this->task_memory_used = mem_used;
+  }
+
+void allocation::set_cput_used(
+
+  const unsigned long cput_used)
+
+  {
+  this->task_cput_used = cput_used;
+  }
+

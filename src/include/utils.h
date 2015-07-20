@@ -131,6 +131,8 @@
 #define APOS_ESCAPED     "&apos;"
 #define APOS_ESCAPED_LEN 6
 
+const unsigned long NANO_SECONDS = 1000000000;
+
 extern char **ArgV;
 extern int ArgC;
 extern char *OriginalPath;

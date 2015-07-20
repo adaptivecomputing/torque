@@ -1114,6 +1114,13 @@ int modify_job_attr(
          perm,         /* I */
          bad);         /* O */
 
+  /* if req_information has been changed move it over to pattr */
+  if ((rc == 0) &&
+      (newattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+    {
+    overwrite_complete_req(&pattr[JOB_ATR_req_information], &newattr[JOB_ATR_req_information]);
+    }
+
   /* if resource limits are being changed ... */
 
   if ((rc == 0) &&
