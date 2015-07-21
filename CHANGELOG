@@ -17,6 +17,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
   f - TRQ-2897. Add the ability to adopt running processes into a job with pbs_track.
   b - TRQ-3189. Never delete a running job because of a dependency.
 
+5.1.1.2
+  e - TRQ-3197. Add support for RHEL7 and SLES12.
 
 5.1.1
   b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
