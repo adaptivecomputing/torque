@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread */
@@ -14,8 +15,10 @@
 #include "pbs_nodes.h"
 #include "complete_req.hpp"
 #include "attr_req_info.hpp"
+#include "machine.hpp"
 
-
+all_nodes               allnodes;
+bool possible = false;
 bool exit_called = false;
 extern int svr_resc_size;
 all_queues svr_queues;
@@ -554,6 +557,55 @@ int to_size(
 
   {
   return(0);
+  }
+
+Machine::Machine() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+Socket::Socket() {}
+Socket::~Socket() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+
+void reinitialize_node_iterator(
+
+  node_iterator *iter)
+
+  {
+  if (iter != NULL)
+    {
+    iter->node_index = NULL;
+    iter->numa_index = -1;
+    iter->alps_index = NULL;
+    }
+  } /* END reinitialize_node_iterator() */
+
+bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const
+  {
+  return(possible);
+  }
+
+struct pbsnode *next_node(
+    
+  all_nodes     *an,
+  pbsnode       *pnode,
+  node_iterator *ni)
+
+  {
+  static int next_node_count = 0;
+  static pbsnode *pn = (pbsnode *)calloc(1, sizeof(pbsnode));
+
+  if (pn->nd_layout == NULL)
+    {
+    pn->nd_layout = new Machine();
+    }
+
+  if (next_node_count++ % 2 == 0)
+    return(pn);
+  else
+    return(NULL);
   }
 
 

@@ -145,6 +145,7 @@
 #include "mutex_mgr.hpp"
 #include "complete_req.hpp"
 #include "attr_req_info.hpp"
+#include "pbs_nodes.h"
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -2591,6 +2592,93 @@ static int check_local_route(
   return(return_code);
   }
 
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+bool do_nodes_exist(
+
+  int sockets,
+  int numa_nodes,
+  int cores,
+  int threads)
+
+  {
+  node_iterator   iter;
+  struct pbsnode *pnode = NULL;
+  bool            possible = false;
+  
+  reinitialize_node_iterator(&iter);
+
+  /* iterate over all nodes */
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    {
+    pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
+
+    if ((sockets == 0) &&
+        (numa_nodes == 0) &&
+        (cores == 0) &&
+        (threads == 0))
+      {
+      possible = true;
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
+      }
+    }
+  
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
+  return(possible);
+  } // END do_nodes_exist()
+#endif
+
+
+
+int numa_task_exceeds_resources(
+
+  job  *pjob,
+  char *EMsg)
+
+  {
+  int rc = PBSE_NONE;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+    int num_reqs = cr->req_count();
+
+    for (int i = 0; i < num_reqs; i++)
+      {
+      req &r = cr->get_req(i);
+
+      int cores = r.get_cores();
+      int threads = r.get_threads();
+      int numa_nodes = r.get_numa_nodes();
+      int sockets = r.get_sockets();
+
+      if (do_nodes_exist(sockets, numa_nodes, cores, threads) == false)
+        {
+        rc = -1;
+        break;
+        }
+      }
+    }
+#endif
+
+  if (rc != PBSE_NONE)
+    {
+    if ((EMsg != NULL) &&
+        (EMsg[0] == '\0'))
+      strcpy(EMsg, "Cannot locate feasible nodes (nodes file is empty, or no nodes have the requested numa configuration - check sockets, numa nodes, cores, and threads.)");
+    }
+
+  return(rc);
+  } // END numa_task_exceeds_resources()
+
+
+
 static int are_job_resources_in_limits_of_queue(
 
   struct job       *const pjob,
@@ -2602,6 +2690,13 @@ static int are_job_resources_in_limits_of_queue(
   int check_limits;
 
   initialize_procct(pjob);
+
+  if ((check_limits = numa_task_exceeds_resources(pjob, EMsg)) != PBSE_NONE)
+    {
+    /* FAILURE */
+    remove_procct(pjob);
+    return(check_limits);
+    }
     
   check_limits = chk_resc_limits(&pjob->ji_wattr[JOB_ATR_resource], pque, EMsg);
   if (check_limits != 0)

@@ -620,6 +620,8 @@ int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
+void             reinitialize_node_iterator(node_iterator *);
+
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             effective_node_delete(struct pbsnode *);
@@ -637,7 +639,6 @@ int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrat
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
-void             reinitialize_node_iterator(node_iterator *);
 
 #endif /* BATCH_REQUEST_H */
 

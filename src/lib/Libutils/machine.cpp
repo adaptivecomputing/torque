@@ -458,6 +458,7 @@ void Machine::addSocket(
     {
     Socket s;
     this->sockets.push_back(s);
+    this->totalSockets++;
     }
   }
 
@@ -826,5 +827,42 @@ void Machine::populate_job_ids(
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     job_ids.push_back(this->allocations[i].jobid);
   } // END populate_job_ids()
+
+
+
+bool Machine::check_if_possible(
+
+  int &sockets,
+  int &numa_nodes,
+  int &cores,
+  int &threads) const
+
+  {
+  bool possible = true;
+
+  if (this->totalSockets >= sockets)
+    sockets = 0;
+  else
+    possible = false;
+
+  if (this->totalChips >= numa_nodes)
+    numa_nodes = 0;
+  else
+    possible = false;
+
+  if (this->totalCores >= cores)
+    cores = 0;
+  else
+    possible = false;
+
+  if (this->totalThreads >= threads)
+    threads = 0;
+  else
+    possible = false;
+
+  return(possible);
+  } // END check_if_possible()
+
+
 
 #endif /* PENABLE_LINUX_CGROUPS */

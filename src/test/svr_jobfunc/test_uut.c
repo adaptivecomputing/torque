@@ -25,6 +25,8 @@ extern job napali_job;
 extern attribute_def job_attr_def[];
 extern std::string set_resource;
 
+extern bool possible;
+
 void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value)
   {
   resource *rsc = (resource *)calloc(1, sizeof(resource));
@@ -35,6 +37,18 @@ void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *v
   pattr->at_val.at_str = (char *)strdup(value);
   append_link(&pattr->at_val.at_list, &rsc->rs_link, rsc);
   }
+
+
+START_TEST(test_numa_task_exceeds_resources)
+  {
+  job          *pjob = (job *)calloc(1, sizeof(job));
+  req           r;
+
+  possible = true;
+  complete_req  cr;
+  pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  }
+END_TEST
 
 
 START_TEST(has_conflicting_resource_requeusts_test)
@@ -683,6 +697,7 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("set_resc_deflt_test");
   tcase_add_test(tc_core, set_resc_deflt_test);
+  tcase_add_test(tc_core, test_numa_task_exceeds_resources);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("set_chkpt_deflt_test");

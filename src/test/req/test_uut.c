@@ -11,6 +11,22 @@ extern bool good_err;
 int parse_positive_integer(const char *str, int &parsed);
 
 
+START_TEST(test_get_cores_threads)
+  {
+  req r;
+
+  r.set_value("lprocs", "2");
+
+  fail_unless(r.get_threads() == 2);
+  fail_unless(r.get_cores() == 0);
+
+  r.set_value("placement_type", "core");
+  fail_unless(r.get_threads() == 2);
+  fail_unless(r.get_cores() == 2);
+  }
+END_TEST
+
+
 START_TEST(test_append_gres)
   {
   req r;
@@ -128,15 +144,15 @@ START_TEST(test_get_set_values)
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
   fail_unless(names[2] == "numanode.0");
-  fail_unless(names[3] == "maxtpn.0");
-  fail_unless(names[4] == "thread_usage_policy.0");
-  fail_unless(names[5] == "pack.0");
+  fail_unless(names[4] == "maxtpn.0");
+  fail_unless(names[5] == "thread_usage_policy.0");
+  fail_unless(names[6] == "pack.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
-  fail_unless(values[3] == "1");
-  fail_unless(values[4] == "allowthreads", values[4].c_str());
-  fail_unless(values[5] == "true");
+  fail_unless(values[4] == "1");
+  fail_unless(values[5] == "usecores", values[5].c_str());
+  fail_unless(values[6] == "true");
 
   fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
 
@@ -587,6 +603,7 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_append_gres);
   tcase_add_test(tc_core, test_get_num_tasks_for_host);
   tcase_add_test(tc_core, test_string_constructor);
+  tcase_add_test(tc_core, test_get_cores_threads);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_set_from_string");

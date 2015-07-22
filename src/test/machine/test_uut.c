@@ -32,6 +32,32 @@ extern bool partially_placed;
 extern bool spreaded;
 
 
+START_TEST(test_check_if_possible)
+  {
+  Machine m;
+  m.addSocket(2);
+
+  int sockets = 3;
+  int numanodes = 0;
+  int cores = -1;
+  int threads = -1;
+
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false);
+
+  numanodes = 1;
+  cores = 3;
+  threads = 3;
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false);
+
+  sockets = 2;
+  numanodes = 0;
+  cores = -1;
+  threads = -1;
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == true);
+  }
+END_TEST
+
+
 START_TEST(test_spread_place)
   {
   Machine m;
@@ -281,6 +307,7 @@ Suite *machine_suite(void)
   tcase_add_test(tc_core, test_initializeMachine);
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_check_if_possible);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_place_and_free_job");

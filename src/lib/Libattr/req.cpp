@@ -1742,7 +1742,9 @@ int req::set_value(
   else if (!strncmp(name, "thread_usage_policy", 19))
     this->thread_usage_str = value;
   else if (!strncmp(name, "placement_type", 14))
-    this->placement_str = value;
+    {
+    this->set_place_value(value);
+    }
   else if (!strncmp(name, "reqattr", 7))
     this->req_attr = value;
   else if (!strncmp(name, "gres", 4))
@@ -2165,4 +2167,24 @@ int req::get_numa_nodes() const
   {
   return(this->numa_nodes);
   }
+
+int req::get_cores() const
+
+  {
+  int core_count = this->cores;
+
+  if ((this->thread_usage_policy == USE_CORES) &&
+      (this->execution_slots > this->cores))
+    core_count = this->execution_slots;
+
+  return(core_count);
+  } // END get_cores()
+
+
+
+int req::get_threads() const
+
+  {
+  return(this->execution_slots);
+  } // END get_threads()
 

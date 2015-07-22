@@ -314,6 +314,7 @@ class Machine
     void place_remaining(req &to_split, allocation &master, int remaining_tasks, const char *hostname);
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
+    bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
   };
 
 extern Machine this_node;
