@@ -646,6 +646,10 @@ int validate_user(
   char       *msg)
 
   {
+#ifdef sun
+    sprintf(msg, "%s: linux specific code not supported on solaris", __func__);
+    return PBSE_NOSUP;
+#else
   struct ucred   cr;
   socklen_t      cr_size;
   struct passwd *user_pwd;
@@ -687,6 +691,7 @@ int validate_user(
     }
 
   return(PBSE_NONE);
+#endif
   }
 
 
@@ -815,7 +820,11 @@ void send_svr_disconnect(int sock, const char *user_name)
   len += user_ll;
   len += 1;
   len += user_len;
+#ifdef sun
+  len += sysconf(_SC_LOGIN_NAME_MAX) + 1; /* the truly portable way */
+#else
   len += LOGIN_NAME_MAX + 1;
+#endif
 
   resp_msg = (char *)calloc(1, len);
   sprintf(resp_msg, "+2+22+59%d+%d%s", user_ll, user_len, user_name);
