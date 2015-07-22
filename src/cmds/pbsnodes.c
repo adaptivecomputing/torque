@@ -959,9 +959,13 @@ int main(
 
       // Concatinate the current note with the new note
       note_to = new_note;
+#ifdef __sun
+      strcat(note_to, current_note);
+      strcat(note_to, note);
+#else
       note_to = stpcpy (note_to, current_note);
       note_to = stpcpy (note_to, note);
-
+#endif
       set_note(con, *pa, new_note);
 
       if (strlen(new_note) > MAX_NOTE)
