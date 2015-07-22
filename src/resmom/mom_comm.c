@@ -1166,12 +1166,12 @@ hnodent *find_node(
   unsigned long       node_ipaddr;
 
   struct sockaddr_in *connecting_addr;
-  struct sockaddr     s_addr;
+  struct sockaddr     the_sockaddr;
   struct sockaddr     connecting_stack_addr;
 
   vnodent            *vp;
   hnodent            *hp;
-  socklen_t           len = sizeof(s_addr);
+  socklen_t           len = sizeof(the_sockaddr);
 
   if (getpeername(stream, &connecting_stack_addr, &len) != 0)
     {
