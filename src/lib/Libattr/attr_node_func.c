@@ -791,6 +791,7 @@ int decode_utc(
     int            perm)    /* only used for resources */
 
   {
+#ifndef sun
   if(!strcmp(val,"0") || (*val == '\0'))
     {
     return decode_str(pattr,name,rescn,"",perm);
@@ -848,6 +849,7 @@ int decode_utc(
     {
     return(PBSE_BAD_UTC_RANGE);
     }
+#endif
   return decode_str(pattr,name,rescn,val,perm);
   }
 
