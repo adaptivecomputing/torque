@@ -100,6 +100,9 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef sun
+#include <strings.h>
+#endif
 #include <pthread.h>
 #include "libpbs.h"
 #include "server_limits.h"

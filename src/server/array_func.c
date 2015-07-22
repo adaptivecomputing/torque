@@ -16,6 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef sun
+#include <strings.h>
+#endif
 #include <fcntl.h>
 #include <limits.h> /* INT_MAX */
 
