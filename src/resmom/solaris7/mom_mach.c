@@ -2238,7 +2238,9 @@ proc_stat_t *get_proc_stat(
   int okay = 1;
   static proc_stat_t ps;
 
-  okay = (snprintf(path, sizeof(path), "/proc/%d/status", getpid()) < sizeof(path));
+  in = NULL;
+  if(okay)
+    okay = (snprintf(path, sizeof(path), "/proc/%d/status", getpid()) < sizeof(path));
   if(okay)
     okay = (in = fopen(path, "r")) != NULL;
   if(okay)
@@ -2246,7 +2248,9 @@ proc_stat_t *get_proc_stat(
   if(in)
     fclose(in);
 
-  okay = (snprintf(path, sizeof(path), "/proc/%d/psinfo", getpid()) < sizeof(path));
+  in = NULL;
+  if(okay)
+    okay = (snprintf(path, sizeof(path), "/proc/%d/psinfo", getpid()) < sizeof(path));
   if(okay)
     okay = (in = fopen(path, "r")) != NULL;
   if(okay)
