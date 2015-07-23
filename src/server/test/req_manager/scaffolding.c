@@ -422,3 +422,5 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 void mom_hierarchy_handler::reloadHierarchy()
 {
 }
+
+int get_svr_attr_l(int index, long *l) {return 0;}
