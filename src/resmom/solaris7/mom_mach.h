@@ -85,6 +85,10 @@
 #ifndef MOM_MACH
 #define MOM_MACH "solaris7"
 
+#include "../../lib/Liblog/pbs_log.h"
+#include "../../lib/Liblog/log_event.h"
+#include "pbs_job.h" /* job */
+
 #define SET_LIMIT_SET   1
 #define SET_LIMIT_ALTER 0
 #define PBS_CHECKPOINT_MIGRATE 0
@@ -110,6 +114,8 @@ struct startjob_rtn
   {
   int   sj_code;  /* error code */
   pid_t sj_session; /* session */
+  int   sj_jobid;
+  int   sj_rsvid;
   };
 
 extern int mom_set_limits(job *pjob, int); /* Set job's limits */
@@ -125,5 +131,36 @@ extern int mach_checkpoint(struct task *, char *path, int abt);
 /* do the checkpoint */
 extern long mach_restart(struct task *, char *path); /* Restart checkpointed task */
 extern int mom_close_poll();           /* Terminate poll ability */
+
+typedef struct proc_stat
+{
+  pid_t              session    ; /* session id */
+  char               state      ; /* single character RSDZWT, see below */
+  unsigned long      utime      ; /* utime this process */
+  unsigned long      stime      ; /* stime this process */
+  unsigned long      cutime     ; /* sum of children's utime */
+  unsigned long      cstime     ; /* sum of children's stime */
+  pid_t              pid        ; /* process id */
+  pid_t              ppid       ; /* process id */
+  pid_t              pgrp       ; /* process group */
+  const char*        name       ; /* name of exec'd command */
+  unsigned long long vsize      ; /* virtual memory size for proc */
+  unsigned long long rss        ; /* resident set size */
+  unsigned long      start_time ; /* start time of this process */
+  unsigned           flags      ; /* the flags of the process */
+  unsigned           uid        ; /* uid of the process owner */
+  int                processor  ; /* CPU number last executed on */
+
+  /* R=Running
+   * S=Sleeping
+   * D=Sleeping (uninterruptable)
+   * Z=Zombie
+   * W=Paging
+   * T=Traced or stopped on signal
+   */
+
+
+} proc_stat_t;
+
 
 #endif /* MOM_MACH */

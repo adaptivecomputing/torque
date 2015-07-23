@@ -125,6 +125,8 @@
 #include "../rm_dep.h"
 #include "mom_func.h"
 
+#include "../lib/Libifl/lib_ifl.h"
+
 /*
 ** System dependent code to gather information for the resource
 ** monitor for a Sun Solaris machine
@@ -174,16 +176,14 @@ extern  int     ignmem;
 /*
 ** local functions and data
 */
-static char *resi(struct rm_attribute *attrib);
-static char *physmem(struct rm_attribute *attrib);
-static char *ncpus(struct rm_attribute *attrib);
-static char *walltime(struct rm_attribute *attrib);
-static char *platform(struct rm_attribute *attrib);
-extern char *nullproc(struct rm_attribute *attrib);
-extern char     *loadave(struct rm_attribute *attrib);
+static const char *resi(struct rm_attribute *attrib);
+static const char *physmem(struct rm_attribute *attrib);
+static const char *ncpus(struct rm_attribute *attrib);
+static const char *walltime(struct rm_attribute *attrib);
+static const char *platform(struct rm_attribute *attrib);
 
-char  procfs[] = "/proc";
-char  procfmts[] = "/proc/%s/psinfo";
+const char  procfs[] = "/proc";
+const char  procfmts[] = "/proc/%s/psinfo";
 DIR  *pdir;
 extern char *ret_string;
 extern  int ret_size;
@@ -202,7 +202,7 @@ extern time_t   time_now;
 
 extern char extra_parm[];
 extern char no_parm[];
-char  no_count[] = "count not found";
+const char  no_count[] = "count not found";
 
 /*
 ** local resource array
@@ -235,7 +235,7 @@ dep_main_loop_cycle(void)
 void
 dep_initialize(void)
   {
-  char *id = "dep_initialize";
+  const char *id = "dep_initialize";
 
   page_size = sysconf(_SC_PAGESIZE);
 
@@ -251,7 +251,7 @@ dep_initialize(void)
 void
 dep_cleanup(void)
   {
-  char *id = "dep_cleanup";
+  const char *id = "dep_cleanup";
 
   log_record(PBSEVENT_SYSTEM, 0, id, "dependent cleanup");
 
@@ -329,9 +329,7 @@ mm_gettime(resource *pres, unsigned long *ret)
 
 static
 int
-injob(pjob, sid)
-job  *pjob;
-pid_t sid;
+injob(job *pjob, pid_t sid)
   {
   task *ptask;
 
@@ -359,7 +357,7 @@ pid_t sid;
 static unsigned long
 cput_sum(job *pjob)
   {
-  char   *id = "cput_sum";
+  const char   *id = "cput_sum";
   ulong    cputime, addtime;
   int    i;
   int    nps = 0;
@@ -408,7 +406,7 @@ cput_sum(job *pjob)
 static int
 overcput_proc(job *pjob, unsigned long limit)
   {
-  char  *id = "overcput_proc";
+  const char  *id = "overcput_proc";
   ulong  cputime;
   int  i;
   psinfo_t *pi;
@@ -439,7 +437,7 @@ overcput_proc(job *pjob, unsigned long limit)
 static unsigned long
 mem_sum(job *pjob)
   {
-  char  *id = "mem_sum";
+  const char  *id = "mem_sum";
   ulong  memsize;
   int  i;
   psinfo_t *pi;
@@ -467,7 +465,7 @@ mem_sum(job *pjob)
 static unsigned long
 resi_sum(job *pjob)
   {
-  char  *id = "resi_sum";
+  const char  *id = "resi_sum";
   ulong  resisize;
   int  i;
   psinfo_t *pi;
@@ -493,7 +491,7 @@ extern char *msg_momsetlim;
  * Internal error routine
  */
 int
-error(char *string, int value)
+error(const char *string, int value)
   {
   char  *message;
 
@@ -539,8 +537,8 @@ mom_set_limits(
   int set_mode /* SET_LIMIT_SET or SET_LIMIT_ALTER */
 )
   {
-  char  *id = "mom_set_limits";
-  char  *pname;
+  const char  *id = "mom_set_limits";
+  const char  *pname;
   int  retval;
   unsigned long value; /* place in which to build resource value */
   resource *pres;
@@ -727,8 +725,8 @@ mom_set_limits(
 int
 mom_do_poll(job *pjob)
   {
-  char  *id = "mom_do_poll";
-  char  *pname;
+  const char  *id = "mom_do_poll";
+  const char  *pname;
   resource *pres;
 
   DBPRT(("%s: entered\n", id))
@@ -764,7 +762,7 @@ mom_do_poll(job *pjob)
 int
 mom_open_poll(void)
   {
-  char  *id = "mom_open_poll";
+  const char  *id = "mom_open_poll";
 
   DBPRT(("%s: entered\n", id))
   proc_info = (psinfo_t *)calloc(sizeof(psinfo_t), TBL_INC);
@@ -786,7 +784,7 @@ mom_open_poll(void)
 int
 mom_get_sample(void)
   {
-  static char   id[] = "mom_get_sample";
+  static const char   id[] = "mom_get_sample";
   int    fd;
 
   struct dirent  *dent;
@@ -844,8 +842,8 @@ mom_get_sample(void)
 int
 mom_over_limit(job *pjob)
   {
-  char  *id = "mom_over_limit";
-  char  *pname;
+  const char  *id = "mom_over_limit";
+  const char  *pname;
   int  retval;
   unsigned long value, num;
   resource *pres;
@@ -946,9 +944,9 @@ mom_over_limit(job *pjob)
 int
 mom_set_use(job *pjob)
   {
-  char   *id = "mom_set_use";
+  const char   *id = "mom_set_use";
   resource  *pres;
-  attribute  *at;
+  pbs_attribute  *at;
   resource_def  *rd;
   unsigned long  *lp, lnum;
 
@@ -1033,8 +1031,7 @@ mom_set_use(job *pjob)
  * The PBS_PROC_* macros are defined in resmom/.../mom_mach.h
  * to refer to the correct machine dependent table.
  */
-static int bld_ptree(sid)
-pid_t sid;
+static int bld_ptree(pid_t sid)
   {
 
   int i, j;
@@ -1105,8 +1102,7 @@ pid_t sid;
  * pid: pid
  * return: index to the table for pid
  */
-static int pid_to_idx(pid)
-pid_t  pid;
+static int pid_to_idx(pid_t pid)
   {
   int i;
 
@@ -1155,7 +1151,7 @@ static void kill_ptree(int idx, int flag, int sig)
 int
 kill_task(task *ptask, int sig, int pg)
   {
-  char  *id = "kill_task";
+  const char  *id = "kill_task";
   int  ct = 0;
   int  i, sesid;
   psinfo_t *pi;
@@ -1189,7 +1185,7 @@ kill_task(task *ptask, int sig, int pg)
 int
 mom_close_poll(void)
   {
-  char *id = "mom_close_poll";
+  const char *id = "mom_close_poll";
 
   DBPRT(("%s: entered\n", id))
 
@@ -1249,7 +1245,7 @@ int
 getprocs(void)
   {
   static unsigned int lastproc = 0;
-  static char  id[] = "getprocs";
+  static const char  id[] = "getprocs";
 
   if (lastproc == reqnum)  /* don't need new proc table */
     return 1;
@@ -1263,10 +1259,9 @@ getprocs(void)
   }
 
 char *
-cput_job(jobid)
-pid_t jobid;
+cput_job(pid_t jobid)
   {
-  char   *id = "cput_job";
+  const char   *id = "cput_job";
   int   found = 0;
   int   i;
   double   cputime, addtime;
@@ -1310,10 +1305,9 @@ pid_t jobid;
   }
 
 char *
-cput_proc(pid)
-pid_t pid;
+cput_proc(pid_t pid)
   {
-  char   *id = "cput_pid";
+  const char   *id = "cput_pid";
   double   cputime;
   int   i;
   psinfo_t  *pi;
@@ -1345,10 +1339,10 @@ pid_t pid;
   }
 
 
-char *
+const char *
 cput(struct rm_attribute *attrib)
   {
-  char   *id = "cput";
+  const char   *id = "cput";
   int   value;
 
   if (attrib == NULL)
@@ -1385,10 +1379,9 @@ cput(struct rm_attribute *attrib)
   }
 
 char *
-mem_job(jobid)
-pid_t jobid;
+mem_job(pid_t jobid)
   {
-  char   *id = "mem_job";
+  const char   *id = "mem_job";
   size_t   memsize;
   int   i;
   int   found = 0;
@@ -1429,10 +1422,9 @@ pid_t jobid;
   }
 
 char *
-mem_proc(pid)
-pid_t pid;
+mem_proc(pid_t pid)
   {
-  char   *id = "mem_proc";
+  const char   *id = "mem_proc";
   psinfo_t  *pi;
   int   i;
 
@@ -1461,10 +1453,10 @@ pid_t pid;
   return ret_string;
   }
 
-char *
+const char *
 mem(struct rm_attribute *attrib)
   {
-  char   *id = "mem";
+  const char   *id = "mem";
   int   value;
 
   if (attrib == NULL)
@@ -1501,10 +1493,9 @@ mem(struct rm_attribute *attrib)
   }
 
 static char *
-resi_job(jobid)
-pid_t jobid;
+resi_job(pid_t jobid)
   {
-  char   *id = "resi_job";
+  const char   *id = "resi_job";
   int   resisize;
   int   i;
   int   found = 0;
@@ -1542,10 +1533,9 @@ pid_t jobid;
   }
 
 static char *
-resi_proc(pid)
-pid_t pid;
+resi_proc(pid_t pid)
   {
-  char   *id = "resi_proc";
+  const char   *id = "resi_proc";
   psinfo_t  *pi;
   int   i;
 
@@ -1574,10 +1564,10 @@ pid_t pid;
   return ret_string;
   }
 
-static char *
+static const char *
 resi(struct rm_attribute *attrib)
   {
-  char   *id = "resi";
+  const char   *id = "resi";
   int   value;
 
   if (attrib == NULL)
@@ -1613,10 +1603,10 @@ resi(struct rm_attribute *attrib)
     }
   }
 
-char *
+const char *
 sessions(struct rm_attribute *attrib)
   {
-  char   *id = "sessions";
+  const char   *id = "sessions";
   int   i, j;
   psinfo_t  *pi;
   char   *fmt;
@@ -1708,10 +1698,10 @@ sessions(struct rm_attribute *attrib)
   return ret_string;
   }
 
-char *
+const char *
 nsessions(struct rm_attribute *attrib)
   {
-  char *result, *ch;
+  const char *result, *ch;
   int num = 1;
 
   if ((result = sessions(attrib)) == NULL)
@@ -1728,10 +1718,10 @@ nsessions(struct rm_attribute *attrib)
   return ret_string;
   }
 
-char *
+const char *
 pids(struct rm_attribute *attrib)
   {
-  char  *id = "pids";
+  const char  *id = "pids";
   pid_t  jobid;
   int  i, j;
   psinfo_t *pi;
@@ -1805,10 +1795,10 @@ pids(struct rm_attribute *attrib)
   return ret_string;
   }
 
-char *
+const char *
 nusers(struct rm_attribute *attrib)
   {
-  char   *id = "nusers";
+  const char   *id = "nusers";
   int   i, j;
   psinfo_t  *pi;
   int   nuids = 0;
@@ -1880,10 +1870,10 @@ nusers(struct rm_attribute *attrib)
   return ret_string;
   }
 
-static char *
+static const char *
 ncpus(struct rm_attribute *attrib)
   {
-  char  *id = "ncpus";
+  const char  *id = "ncpus";
 
   if (attrib)
     {
@@ -1901,12 +1891,12 @@ ncpus(struct rm_attribute *attrib)
 
 
 
-static char *physmem(
+static const char *physmem(
 
   struct rm_attribute *attrib)
 
   {
-  char *id = "physmem";
+  const char *id = "physmem";
   unsigned long long pmem;
 
   if (attrib != NULL)
@@ -1934,7 +1924,7 @@ static char *physmem(
 char *
 size_fs(char *param)
   {
-  char  *id = "size_fs";
+  const char  *id = "size_fs";
   FILE  *mf;
 
   struct mntent *mp;
@@ -1966,7 +1956,7 @@ size_fs(char *param)
 char *
 size_file(char *param)
   {
-  char  *id = "size_file";
+  const char  *id = "size_file";
 
   struct stat sbuf;
 
@@ -1991,10 +1981,10 @@ size_file(char *param)
   return ret_string;
   }
 
-char *
+const char *
 size(struct rm_attribute *attrib)
   {
-  char *id = "size";
+  const char *id = "size";
   char *param;
 
   if (attrib == NULL)
@@ -2027,7 +2017,7 @@ size(struct rm_attribute *attrib)
 time_t maxtm;
 
 void
-setmax(char *dev)
+setmax(const char *dev)
   {
 
   struct stat sb;
@@ -2041,10 +2031,10 @@ setmax(char *dev)
   return;
   }
 
-char *
+const char *
 idletime(struct rm_attribute *attrib)
   {
-  char *id = "idletime";
+  const char *id = "idletime";
   DIR *dp;
 
   struct dirent *de;
@@ -2094,10 +2084,10 @@ idletime(struct rm_attribute *attrib)
 
 
 
-static char *
+static const char *
 walltime(struct rm_attribute *attrib)
   {
-  char   *id = "walltime";
+  const char   *id = "walltime";
   int   i;
   int   value, job, found = 0;
   time_t   now, start;
@@ -2184,7 +2174,7 @@ walltime(struct rm_attribute *attrib)
 int
 get_la(double *rv)
   {
-  char *id = "get_la";
+  const char *id = "get_la";
   double la[3];
 
   if (getloadavg(la, 3) == -1)
@@ -2198,10 +2188,10 @@ get_la(double *rv)
   return 0;
   }
 
-static char *
+static const char *
 platform(struct rm_attribute *attrib)
   {
-  char *id = "platform";
+  const char *id = "platform";
   int    err;
 
   if (attrib)
@@ -2235,3 +2225,61 @@ void scan_non_child_tasks(void)
   }  /* END scan_non_child_tasks() */
 
 
+
+proc_stat_t *get_proc_stat(
+
+  int pid)  /* I */
+
+  {
+  char path[128];
+  pstatus_t sol_pstatus;
+  psinfo_t  sol_psinfo;
+  FILE *in;
+  int okay = 1;
+  static proc_stat_t ps;
+
+  okay = (snprintf(path, sizeof(path), "/proc/%d/status", getpid()) < sizeof(path));
+  if(okay)
+    okay = (in = fopen(path, "r")) != NULL;
+  if(okay)
+    okay = (fread(&sol_pstatus, sizeof(sol_pstatus), 1, in) == 1);
+  if(in)
+    fclose(in);
+
+  okay = (snprintf(path, sizeof(path), "/proc/%d/psinfo", getpid()) < sizeof(path));
+  if(okay)
+    okay = (in = fopen(path, "r")) != NULL;
+  if(okay)
+    okay = (fread(&sol_psinfo, sizeof(sol_psinfo), 1, in) == 1);
+  if(in)
+    fclose(in);
+
+  if(!okay)
+    return NULL;
+
+  ps.session 	= sol_pstatus.pr_sid;
+  ps.state 	= 'R';		/* assume running */
+  ps.utime 	= sol_pstatus.pr_utime.tv_sec;
+  ps.stime 	= sol_pstatus.pr_stime.tv_sec;
+  ps.cutime 	= sol_pstatus.pr_cutime.tv_sec;
+  ps.cstime 	= sol_pstatus.pr_cstime.tv_sec;
+  ps.pid 	= sol_pstatus.pr_pid;
+  ps.ppid 	= sol_pstatus.pr_ppid;
+  ps.pgrp 	= sol_pstatus.pr_pgid;
+  ps.name 	= "(not-implemented)";
+  ps.vsize 	= sol_psinfo.pr_size;
+  ps.rss 	= sol_psinfo.pr_rssize;
+  ps.start_time = sol_psinfo.pr_start.tv_sec;
+  ps.flags 	= 0;
+  ps.uid 	= sol_psinfo.pr_uid;
+  ps.processor 	= 0;
+
+  if(sol_psinfo.pr_wstat != 0)
+    ps.state = 'Z';
+  else if(sol_pstatus.pr_flags & (PR_ASLEEP))
+    ps.state = 'S';
+  else if(sol_pstatus.pr_flags & (PR_STOPPED|PR_ISTOP|PR_DSTOP))
+    ps.state = 'T';
+
+  return &ps;
+}
