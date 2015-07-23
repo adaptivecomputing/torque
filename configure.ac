@@ -770,12 +770,14 @@ AC_CHECK_LIB(crypto, BN_init,
 dnl
 dnl we need libxml2
 dnl 
-xmlLib=`xml2-config --libs | sed 's/-L@<:@^@<:@:space:@:>@@:>@* //g;s/-l//'`
+xmlLib=`xml2-config --libs | sed 's/^\(.*\)-l\(xml@<:@^ @:>@*\)\(.*\)$/\2/'`
+xmlOthers=`xml2-config --libs | sed 's/^\(.*\)-l\(xml@<:@^ @:>@*\)\(.*\)$/\1 \3/'`
 
 dnl skip the first two chars because its -l<libname>
 AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [],
-  [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
+  [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ],
+  ${xmlOthers})
 
 
 
@@ -2180,7 +2182,11 @@ AC_C_CHAR_UNSIGNED
 
 AC_CHECK_TYPE([socklen_t],
   [AC_DEFINE_UNQUOTED([torque_socklen_t],[socklen_t],[type to use in place of socklen_t])],
-  [TAC_SOCKLEN_EQUIV([torque_socklen_t])])
+  [TAC_SOCKLEN_EQUIV([torque_socklen_t])],
+  [AC_INCLUDES_DEFAULT
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif])
 
 TAC_PAM_GET_USER_2ND_ARG
 if test "$tac_pam_get_user_2nd_arg" = "none" && test "$pammoddir" != "disabled" ;then
