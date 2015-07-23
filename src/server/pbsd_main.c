@@ -2837,7 +2837,7 @@ static void lock_out_ha()
 static int daemonize_server(
 
   int  DoBackground,  /* I */
-  int *sid)           /* O */
+  pid_t *sid)           /* O */
 
   {
   int    pid;
