@@ -137,8 +137,8 @@ set_globid(job *pjob, struct startjob_rtn *sjr)
   {
   extern char noglobid[];
 
-  if (pjob->ji_globid == NULL)
-    pjob->ji_globid = strdup(noglobid);
+  if (pjob->ji_globid[0] == '\0')
+    snprintf(pjob->ji_globid, sizeof(pjob->ji_globid), "%s", noglobid);
   }
 
 /*
