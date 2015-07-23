@@ -638,6 +638,10 @@ int build_active_server_response(
 
 
 
+#ifdef sun
+#include <ucred.h>
+#endif
+
 int validate_user(
  
   int         sock,
@@ -646,13 +650,39 @@ int validate_user(
   char       *msg)
 
   {
+    struct passwd *user_pwd;
 #ifdef sun
-    sprintf(msg, "%s: linux specific code not supported on solaris", __func__);
-    return PBSE_NOSUP;
+    ucred_t *uchandle = 0;
+    struct {
+      pid_t pid;                    /* PID of sending process.  */
+      uid_t uid;                    /* UID of sending process.  */
+      gid_t gid;                    /* GID of sending process.  */
+    } cr;
+
+    if (msg == NULL)
+      return(PBSE_BAD_PARAMETER);
+
+    if (user_name == NULL)
+      {
+	sprintf(msg, "%s: user_name is NULL", __func__);
+	return(PBSE_BAD_PARAMETER);
+      }
+  
+    if(getpeerucred(sock, &uchandle) != 0 || uchandle == 0)
+      {
+	sprintf(msg, "getpeerucred failed: %d", errno);
+	return(PBSE_SOCKET_FAULT);
+      }
+
+    cr.pid = ucred_getpid(uchandle);
+    cr.uid = ucred_getruid(uchandle);
+    cr.gid = ucred_getrgid(uchandle);
+
+    ucred_free(uchandle);
+
 #else
   struct ucred   cr;
   socklen_t      cr_size;
-  struct passwd *user_pwd;
 
   if (msg == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -669,6 +699,7 @@ int validate_user(
     sprintf(msg, "getsockopt for SO_PEERDRED failed: %d", errno);
     return(PBSE_SOCKET_FAULT);
     }
+#endif
 
   user_pwd = get_password_entry_by_uid(cr.uid);
    
@@ -691,7 +722,6 @@ int validate_user(
     }
 
   return(PBSE_NONE);
-#endif
   }
 
 
