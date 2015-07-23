@@ -275,14 +275,16 @@ void allocation::initialize_from_string(
     {
     val = ptr + strlen("cpu_list\":") + 1; // add 1 for the open quote
     capture_until_close_character(&val, storage, '"');
-    translate_range_string_to_vector(storage.c_str(), this->cpu_indices);
+    if (this->cpu_indices.size() == 0)
+      translate_range_string_to_vector(storage.c_str(), this->cpu_indices);
     }
 
   if ((ptr = strstr(val, "mem_list\":")) != NULL)
     {
     val = ptr + strlen("mem_list\":") + 1; // add 1 for the open quote
     capture_until_close_character(&val, storage, '"');
-    translate_range_string_to_vector(storage.c_str(), this->mem_indices);
+    if (this->mem_indices.size() == 0)
+      translate_range_string_to_vector(storage.c_str(), this->mem_indices);
     }
   
   if ((ptr = strstr(val, "cpu_time_used\":")) != NULL)
