@@ -1298,6 +1298,8 @@ int pbs_original_connect(
              (conn_retries < MAX_RETRIES))
         {
         rc = socket_wait_for_write(sock);
+	if(rc == PBSE_NONE)
+	  break;
 
         if (rc == PERMANENT_SOCKET_FAIL)
           {
