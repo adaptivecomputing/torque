@@ -613,12 +613,7 @@ hwloc_uint64_t Chip::getMemory() const
 
 bool Chip::chipIsAvailable() const
   {
-  if ((this->availableThreads == this->totalThreads) &&
-      (this->availableCores == this->totalCores) &&
-      (this->available_memory == this->memory))
-    return(true);
-
-  return(false);
+  return(!this->chip_exclusive);
   }
 
 
@@ -1005,12 +1000,6 @@ void Chip::place_task_by_threads(
     {
     int index;
 
-    if (this->cores[j].free == true)
-      {
-      this->availableCores--;
-      a.cores++;
-      }
-
     while ((slots_left > 0) &&
            (this->reserve_thread(j, a) == true))
       {
@@ -1166,6 +1155,8 @@ bool Chip::spread_place(
       int step = 1;
       if (execution_slots_per > 0)
        step = this->totalCores / execution_slots_per;
+
+      from_this_chip.cores_only = true;
 
       for (unsigned int i = 0; placed < execution_slots_per; i+= step)
         {
@@ -1526,7 +1517,8 @@ void Chip::partially_place_task(
 
 void Chip::free_cpu_index(
 
-  int index)
+  int  index,
+  bool increment_available_cores)
 
   {
   bool core_is_now_free = false;
@@ -1537,10 +1529,8 @@ void Chip::free_cpu_index(
 
     if (this->cores[i].free_pu_index(index, core_is_now_free) == true)
       {
-      if (core_is_now_free == true)
-        {
+      if (increment_available_cores == true)
         this->availableCores++;
-        }
 
       return;
       }
@@ -1576,7 +1566,7 @@ bool Chip::free_task(
 
       // Now mark the individual cores as available
       for (unsigned int j = 0; j < this->allocations[i].cpu_indices.size(); j++)
-        free_cpu_index(this->allocations[i].cpu_indices[j]);
+        free_cpu_index(this->allocations[i].cpu_indices[j], this->allocations[i].cores_only);
 
       free_accelerators(this->allocations[i]);
       

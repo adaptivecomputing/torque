@@ -21,6 +21,7 @@ int called_spread_place;
 int json_socket;
 int sockets;
 int numa_node_count;
+const int exclusive_socket = 2;
 bool socket_fit;
 bool partially_placed;
 bool spreaded;

@@ -183,7 +183,7 @@ class Chip
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
     bool free_task(const char *jobid);
-    void free_cpu_index(int index);
+    void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
     void set_cpuset(const char *cpuset); // used for unit tests
     void partially_place_task(allocation &remaining, allocation &master);

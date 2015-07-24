@@ -34,7 +34,7 @@ START_TEST(test_spread_place)
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
   out.str("");
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,4,8,12\",\"mem\":0,\"exclusive\":3,\"cores_only\":0}}", out.str().c_str());
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,4,8,12\",\"mem\":0,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
 
   fail_unless(c.reserve_core(0, a) == false);
   remaining = 1;
@@ -563,29 +563,29 @@ START_TEST(test_place_and_free_task)
   fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
   
   // Make sure we're full
-  fail_unless(c.getAvailableCores() == 0);
+  fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   fail_unless(c.getAvailableThreads() == 0);
   tasks = c.place_task(r, a, 1, host);
   fail_unless(tasks == 0);
 
   // Make sure we free correctly
   fail_unless(c.free_task(jobid3) == false);
-  fail_unless(c.getAvailableCores() == 3);
+  fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   int threads = c.getAvailableThreads();
   fail_unless(threads == 6, "Expected 6 threads but got %d", threads);
 
   // Make sure a repeat free does nothing
   fail_unless(c.free_task(jobid3) == false);
-  fail_unless(c.getAvailableCores() == 3);
+  fail_unless(c.getAvailableCores() == 12);
   fail_unless(c.getAvailableThreads() == 6);
   
   fail_unless(c.free_task(jobid2) == false);
-  fail_unless(c.getAvailableCores() == 6);
+  fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   fail_unless(c.getAvailableThreads() == 12);
   
   // We should be free now
   fail_unless(c.free_task(jobid) == true);
-  fail_unless(c.getAvailableCores() == 12);
+  fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   fail_unless(c.getAvailableThreads() == 24);
   }
 END_TEST

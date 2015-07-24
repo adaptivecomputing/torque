@@ -11,6 +11,11 @@ const char *place_core = "core";
 
 const char *use_cores = "usecores";
 
+std::string req::getPlacementType() const
+  {
+  return("");
+  }
+
 req::req() {}
 
 unsigned long req::getMemory() const

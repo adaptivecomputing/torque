@@ -505,7 +505,7 @@ void Machine::place_remaining(
       if (this->sockets[j].fits_on_socket(remaining) == false)
         continue;
 
-      if (this->sockets[j].is_available() == true)
+      if (remaining.place_type == exclusive_socket)
         this->availableSockets--;
 
       this->sockets[j].partially_place(remaining, task_alloc);
@@ -593,18 +593,18 @@ int Machine::spread_place(
   for (int i = 0; i < tasks_for_node; i++)
     {
     allocation task_alloc(master.jobid.c_str());
+    task_alloc.set_place_type(r.getPlacementType());
 
     for (int j = 0; j < quantity; j++)
       {
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
-        bool was_available = this->sockets[s].is_available();
-
         if (this->sockets[s].spread_place(r, task_alloc, execution_slots_per,
                                           execution_slots_remainder, chips))
           {
           tasks_placed++;
-          if (was_available)
+
+          if (task_alloc.place_type == exclusive_socket)
             this->availableSockets--;
           break;
           }
@@ -678,9 +678,11 @@ int Machine::place_job(
           {
           // place the req entirely on this socket
           placed = true;
-          if (this->sockets[j].is_available() == true)
+          if (a.place_type == exclusive_socket)
             this->availableSockets--;
+
           this->sockets[j].place_task(r, a, tasks_for_node, hostname);
+
           break;
           }
         }
@@ -702,15 +704,16 @@ int Machine::place_job(
     bool  change = false;
     bool  not_placed = true;
     
+    a.set_place_type(r.getPlacementType());
+    
     for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
       {
-      if (this->sockets[j].is_available() == true)
-        change = true;
       int placed = this->sockets[j].place_task(r, a, remaining_tasks, hostname);
       if (placed != 0)
         {
         remaining_tasks -= placed;
-        if (change == true)
+        
+        if (a.place_type == exclusive_socket)
           this->availableSockets--;
         }
       }

@@ -130,6 +130,8 @@ allocation::allocation(
 
   if (r.getThreadUsageString() == use_cores)
     this->cores_only = true;
+
+  this->set_place_type(r.getPlacementType());
   }
 
 allocation::allocation(
