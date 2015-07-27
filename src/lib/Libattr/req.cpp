@@ -1363,6 +1363,42 @@ void req::get_values(
   } // END get_values() 
 
 
+void req::get_task_stats(
+
+  int &count,
+  int req_count,
+  std::vector<int> &req_index,
+  std::vector<int> &task_index,
+  std::vector<unsigned long> &cput_used,
+  std::vector<unsigned long long> &mem_used)
+
+  {
+  int allocation_count = this->task_allocations.size();
+  int num_tasks = 0;
+
+  if (allocation_count == 0)
+    {
+    count = 0;
+    return;
+    }
+
+  for (unsigned int task_count = 0; task_count < allocation_count; task_count++)
+    {
+    unsigned long cputime_used;
+    unsigned long long memory_used;
+
+    this->task_allocations[task_count].get_stats_used(cputime_used, memory_used);   
+
+    req_index.push_back(req_count);
+    task_index.push_back(task_count);
+    cput_used.push_back(cputime_used);
+    mem_used.push_back(memory_used);
+    num_tasks++;
+    }
+
+  count = num_tasks;
+  }
+
 
 char *capture_until_newline_and_advance(
 
@@ -2188,3 +2224,15 @@ int req::get_threads() const
   return(this->execution_slots);
   } // END get_threads()
 
+void req::set_task_usage_stats(
+
+  int task_index, 
+  unsigned long cput_used, 
+  unsigned long long mem_used)
+
+  {
+  if (task_index > this->getTaskCount())
+    return;
+
+  this->task_allocations[task_index].set_task_usage_stats(cput_used, mem_used);
+  }

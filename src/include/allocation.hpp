@@ -129,6 +129,8 @@ class allocation
   void write_task_information(std::string &task_info) const;
   void initialize_from_string(const std::string &task_info);
   void set_host(const char *hostname);
+  void get_stats_used(unsigned long &cput_used, unsigned long long &mem_used);
+  void set_task_usage_stats(unsigned long cput_used, unsigned long long mem_used);
   };
 
 #endif 

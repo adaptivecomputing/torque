@@ -40,6 +40,9 @@
 #include "mom_job_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
 #include "cray_energy.h"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "complete_req.hpp"
+#endif
 #ifdef ENABLE_CPA
 #include "pbs_cpa.h"
 #endif
@@ -2130,8 +2133,47 @@ int send_job_obit_to_ms(
               {
               if (mom_radix >= 2)
                 rc = diswsi(chan, pjob->ji_nodeid);
+/* We currently don't read off the joules we are
+   sending so do not send them.
               if (rc == DIS_SUCCESS)
-                rc = diswul(chan, joules);
+                rc = diswul(chan, joules);*/
+
+#ifdef PENABLE_LINUX_CGROUPS
+              int count;
+              std::vector<unsigned long> task_cput_used;
+              std::vector<unsigned long long> task_mem_used;
+              std::vector<int> req_index;
+              std::vector<int> task_index;
+              complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+              cr->get_task_stats(count, req_index, task_index, task_cput_used, task_mem_used);
+
+              if (rc == DIS_SUCCESS)
+                rc = diswsi(chan, count);
+
+              if (count != 0)
+                {
+                if (rc == DIS_SUCCESS)
+                  {
+                  for (unsigned int stat_count = 0; stat_count < count; stat_count++)
+                    {
+                    rc = diswsi(chan, req_index[stat_count]);
+
+                    if (rc == DIS_SUCCESS)
+                      rc = diswsi(chan, task_index[stat_count]);
+
+                    if (rc == DIS_SUCCESS)
+                      rc = diswul(chan, task_cput_used[stat_count]);
+
+                    if (rc == DIS_SUCCESS)
+                      rc = diswul(chan, task_mem_used[stat_count]);
+
+                    if (rc != DIS_SUCCESS)
+                      break;
+                    }
+                  }
+                }
+#endif
+
 
               if (rc == DIS_SUCCESS)
                 rc = DIS_tcp_wflush(chan);

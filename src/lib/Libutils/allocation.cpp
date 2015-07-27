@@ -351,3 +351,22 @@ void allocation::set_cput_used(
   this->task_cput_used = cput_used;
   }
 
+void allocation::get_stats_used(
+
+  unsigned long &cput_used, 
+  unsigned long long &memory_used)
+
+  {
+  cput_used = this->task_cput_used;
+  memory_used = this->task_memory_used;
+  }
+
+void allocation::set_task_usage_stats(
+
+  unsigned long      cput_used,
+  unsigned long long mem_used)
+
+  {
+  this->set_cput_used(cput_used);
+  this->set_memory_used(mem_used);
+  }

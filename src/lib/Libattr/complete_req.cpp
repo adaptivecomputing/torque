@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 
+#include "pbs_ifl.h"
 #include "complete_req.hpp"
 #include "pbs_error.h"
 #include "log.h"
@@ -597,4 +600,52 @@ void complete_req::clear_allocations()
   for (unsigned int i = 0; i < this->reqs.size(); i++)
     this->reqs[i].clear_allocations();
   } // END clear_allocations()
+
+int complete_req::get_task_stats(
+  int &count, 
+  std::vector<int> &req_index, 
+  std::vector<int> &task_index, 
+  std::vector<unsigned long> &cput_used, 
+  std::vector<unsigned long long> &mem_used)
+
+  {
+  int rc = PBSE_NONE;
+  char   this_hostname[PBS_MAXHOSTNAME];
+  char   buf[LOCAL_LOG_BUF_SIZE];
+  unsigned int    request_index;
+
+  rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+  if (rc != 0)
+    {
+    sprintf(buf, "failed to get hostname: %s", strerror(errno));
+    log_err(-1, __func__, buf);
+    return(rc);
+    }
+
+  rc = this->get_req_index_for_host(this_hostname, request_index);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(buf, "Could not find req for host %s", this_hostname);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return(rc);
+    }
+
+  this->reqs[request_index].get_task_stats(count, request_index, req_index, task_index, cput_used, mem_used);
+
+  return(rc);
+  }
+
+void complete_req::set_task_usage_stats(
+  int req_index, 
+  int task_index, 
+  unsigned long cput_used, 
+  unsigned long long mem_used)
+
+  {
+  if (req_index > this->req_count())
+    return;
+
+  this->reqs[req_index].set_task_usage_stats(task_index, cput_used, mem_used);
+
+  }
 

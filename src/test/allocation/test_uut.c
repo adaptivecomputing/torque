@@ -156,6 +156,29 @@ START_TEST(test_place_indices_in_string)
   }
 END_TEST
 
+START_TEST(test_task_usage_stats)
+  {
+  allocation a;
+  unsigned long cput_used;
+  unsigned long long mem_used;
+
+  a.cores = 2;
+  a.threads = 4;
+  a.cpu_indices.push_back(0);
+  a.cpu_indices.push_back(1);
+  a.cpu_indices.push_back(8);
+  a.cpu_indices.push_back(9);
+  a.mem_indices.push_back(0);
+
+  a.set_task_usage_stats(21, 123456789);
+  a.get_stats_used(cput_used, mem_used);
+
+  fail_unless(cput_used == 21);
+  fail_unless(mem_used == 123456789);
+
+  }
+END_TEST
+
 
 Suite *allocation_suite(void)
   {
@@ -168,6 +191,7 @@ Suite *allocation_suite(void)
   tcase_add_test(tc_core, test_add_allocation);
   tcase_add_test(tc_core, test_place_indices_in_string);
   tcase_add_test(tc_core, test_write_task_information);
+  tcase_add_test(tc_core, test_task_usage_stats);
   suite_add_tcase(s, tc_core);
   
   return(s);

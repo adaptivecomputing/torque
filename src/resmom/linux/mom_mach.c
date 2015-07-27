@@ -1184,12 +1184,12 @@ unsigned long cput_sum(
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
   if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) == 1)
     {
-    char   this_hostname[256];
+    char   this_hostname[PBS_MAXHOSTNAME];
     unsigned int    req_index;
     int    rc;
     const char  *job_id = pjob->ji_qs.ji_jobid;
 
-    rc = gethostname(this_hostname, 256);
+    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
     if (rc != 0)
       {
       sprintf(buf, "failed to get hostname: %s", strerror(errno));
