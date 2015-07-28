@@ -7,6 +7,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.1.2
+  b - TRQ-3235. Fix problem when path to error, output or execution environment
+      contains one or more spaces.
   e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
       canceled jobs to have the same exit code regardless of the state they were in
       when they were canceled.
