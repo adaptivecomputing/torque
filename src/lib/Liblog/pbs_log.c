@@ -149,7 +149,7 @@ static int      syslogopen = 0;
 
 #ifdef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-#elif defined(sun)
+#elif defined(PTHREAD_MUTEX_RECURSIVE)
 pthread_mutex_t log_mutex = 
   {{0, 0, 0, PTHREAD_MUTEX_RECURSIVE, _MUTEX_MAGIC}, {{{0}}}, 0};
 #endif
