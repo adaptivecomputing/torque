@@ -3234,9 +3234,28 @@ static int sys_copy(
   return(rc);
   }  /* END sys_copy() */
 
+// replace characters in a string
+//  char_from replaced with char_to
+void string_replchar(
 
+  const char *str,
+  char        char_from,
+  char        char_to)
 
+  {
+  char *p;
 
+  if (str == NULL)
+    return;
+
+  p = (char *)str;
+  while (*p)
+    {
+    if (*p == char_from)
+      *p = char_to;
+    p++;
+    }
+  }
 
 /*
  * req_cpyfile - process the Copy Files request from the server to dispose
@@ -3788,6 +3807,10 @@ void req_cpyfile(
 
     /* Expand and verify arg3 (destination path) */
 
+    // translate spaces so wordexp() won't split things up
+    //  on a path containing them
+    string_replchar(arg3, ' ', '\001');
+
     switch (wordexp(arg3, &arg3exp, WRDE_NOCMD | WRDE_UNDEF))
       {
 
@@ -3797,7 +3820,10 @@ void req_cpyfile(
 
         if (arg3exp.we_wordc == 1)
           {
-          strcpy(arg3, arg3exp.we_wordv[0]);
+          snprintf(arg3, MAXPATHLEN+1, "%s", arg3exp.we_wordv[0]);
+
+          // restore spaces (if any)
+          string_replchar(arg3, '\001', ' ');
 
           wordfree(&arg3exp);
 
