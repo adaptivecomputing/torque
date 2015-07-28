@@ -9,7 +9,7 @@
 
 #include <string.h> /* memset */
 #include <sys/ioctl.h> /* ioctl, FIONREAD */
-#ifdef sun
+#ifdef HAVE_SYS_FILIO_H
 #include <sys/filio.h> /* FIONREAD for solaris is here */
 #endif
 #include <signal.h> /* Signals SIGPIPE, etc */
