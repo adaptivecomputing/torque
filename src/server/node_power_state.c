@@ -186,7 +186,7 @@ int set_node_power_state(
 
   if (newState == POWER_STATE_RUNNING)
     {
-#ifdef linux
+#ifdef SOCK_PACKET
     static std::string interface;
     static unsigned char mac_addr[6];
     if (interface.length() == 0)
