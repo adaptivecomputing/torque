@@ -839,7 +839,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h limits.h malloc.h netdb.h \
                   sys/vfs.h sys/statfs.h sys/statvfs.h sys/ucred.h sys/un.h sys/uio.h \
                   syslog.h readline/readline.h \
                   termios.h err.h sys/poll.h pam/pam_modules.h security/pam_appl.h \
-                  mach/shared_region.h sys/filio.h])
+                  mach/shared_region.h sys/filio.h execinfo.h])
 
 # On Solaris, pam_modules.h requires pam_appl.h
 AC_CHECK_HEADERS([security/pam_modules.h], [], [],

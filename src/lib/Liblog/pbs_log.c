@@ -118,7 +118,7 @@
 #include <syslog.h>
 #endif
 
-#ifdef linux
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h> /* backtrace information */
 #endif
 #include<arpa/inet.h>
@@ -1464,7 +1464,7 @@ void print_trace(
   int socknum)
 
   {
-#ifndef sun
+#ifdef HAVE_EXECINFO_H
   void  *array[10];
   int    size;
   char **meth_names;
