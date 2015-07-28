@@ -638,7 +638,7 @@ int build_active_server_response(
 
 
 
-#ifdef sun
+#ifdef HAVE_UCRED_H
 #include <ucred.h>
 #endif
 
@@ -651,7 +651,7 @@ int validate_user(
 
   {
     struct passwd *user_pwd;
-#ifdef sun
+#if HAVE_UCRED_H
     ucred_t *uchandle = 0;
     struct {
       pid_t pid;                    /* PID of sending process.  */
