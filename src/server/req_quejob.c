@@ -100,7 +100,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
-#ifdef sun
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 #include <pthread.h>
