@@ -778,8 +778,10 @@ void Machine::free_job_allocation(
   {
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
-    if ((this->sockets[i].is_available() == false) &&
-        (this->sockets[i].free_task(job_id) == true))
+    bool previously_used = this->sockets[i].is_available() == false;
+
+    if ((this->sockets[i].free_task(job_id) == true) &&
+        (previously_used == true))
       this->availableSockets++;
     }
 
