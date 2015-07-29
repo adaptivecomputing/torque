@@ -278,7 +278,7 @@ int complete_req::set_task_cput_used(
   const unsigned long cput_used)
 
   {
-  if (this->reqs.size() < req_index)
+  if ((this->reqs.size() == 0) || (this->reqs.size() < req_index))
     return(PBSE_BAD_PARAMETER);
 
   return(this->reqs[req_index].set_cput_used(task_index, cput_used));

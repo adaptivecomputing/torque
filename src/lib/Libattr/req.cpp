@@ -163,7 +163,7 @@ int parse_positive_integer(
 
 int req::set_cput_used(int task_index, const unsigned long cput_used)
   {
-  if (this->task_allocations.size() < task_index)
+  if ((this->task_allocations.size() == 0) || (this->task_allocations.size() < task_index))
     return(PBSE_BAD_PARAMETER);
 
   this->task_allocations[task_index].set_cput_used(cput_used);

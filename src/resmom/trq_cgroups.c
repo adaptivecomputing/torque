@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include "log.h"
 #include "trq_cgroups.h"
 #ifdef PENABLE_LINUX_CGROUPS
@@ -676,7 +677,7 @@ int trq_cg_get_task_memory_stats(
     {
     sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
-    return(0);
+    return(PBSE_SYSTEM);
     }
 
   rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
@@ -744,7 +745,7 @@ int trq_cg_get_task_cput_stats(
     {
     sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
     log_err(-1, __func__, buf);
-    return(0);
+    return(PBSE_SYSTEM);
     }
 
   rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
@@ -1017,6 +1018,11 @@ int trq_cg_get_task_set_string(
       }
 
     set_string = task_element;
+    }
+  else
+    {
+    /* no set given */
+    return(PBSE_INDICES_EMPTY);
     }
 
 
@@ -1613,42 +1619,21 @@ void trq_cg_remove_task_dirs(
     const string torque_path)
 
   {
-  int rc = PBSE_NONE;
-  char req_and_task[256];
-  string req_and_task_path;
-  struct stat buf;
+  DIR *pdir = NULL;
+  struct dirent *dent;
 
-  /* remove tasks directories first */
-  for (unsigned int req_index = 0; ; req_index++)
+  pdir = opendir(torque_path.c_str());
+
+  rewinddir(pdir);
+
+  while((dent = readdir(pdir)) != NULL)
     {
-
-    sprintf(req_and_task, "/R%u.t0", req_index);
-    req_and_task_path = torque_path + req_and_task;
-    rc = stat(req_and_task_path.c_str(), &buf);
-    if (rc != 0)
+    if (dent->d_name[0] == 'R')
       {
-      /* no more reqs to remove */
-      break;
+      std::string dir_name = torque_path + "/" + dent->d_name;
+      rmdir(dir_name.c_str());
       }
-
-    for (unsigned int task_index = 0; ;task_index++)
-      {
-      sprintf(req_and_task, "/R%u.t%u", req_index, task_index);
-      req_and_task_path = torque_path + req_and_task;
-      rc = stat(req_and_task_path.c_str(), &buf);
-      if (rc != 0)
-        {
-        /* no more tasks to remove */
-        break;
-        }
-
-      rc = rmdir(req_and_task_path.c_str());
-      if (rc != 0)
-        {
-        fprintf(stderr, "could not remove %s from cgroups\n", req_and_task_path.c_str());
-        }
-      }
-    } 
+    }
   }
 
 

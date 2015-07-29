@@ -287,6 +287,7 @@ PbsErrClient(PBSE_RESC_CONFLICT, (char *)"This job's resource request conflicts 
 PbsErrClient(PBSE_UNALTERABLE_ATTR, (char *)"The requested attribute cannot be altered after submission.")
 PbsErrClient(PBSE_NO_PROCESS_RANK, (char *)"A process rank was not given. will add process to job cgroup.")
 PbsErrClient(PBSE_REQ_NOT_FOUND, (char *)"A req for this host was not found")
+PbsErrClient(PBSE_INDICES_EMPTY, (char *)"The cpuset or memset indices are not set")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
