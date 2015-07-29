@@ -791,16 +791,17 @@ int decode_utc(
     int            perm)    /* only used for resources */
 
   {
-#ifndef sun
   if(!strcmp(val,"0") || (*val == '\0'))
     {
     return decode_str(pattr,name,rescn,"",perm);
     }
   struct tm tm;
   bool offsetGiven = true;
+  long offset = 0;
   memset(&tm,0,sizeof(struct tm));
   tm.tm_isdst = -1; //This tells mktime to calculate the GMT offset and
                     //take daylight savings time into account.
+#ifdef HAVE_TM_GMTOFF
   //Look for the format yyyy-mm-ddThh:mm:ss-hh or
   //                    yyyy-mm-ddThh:mm:ss-hhmm
   char *end = strptime(val,"%Y-%m-%dT%H:%M:%S%z",&tm);
@@ -823,12 +824,56 @@ int decode_utc(
       return(PBSE_BAD_UTC_FORMAT);
       }
     }
-  long offset = 0;
   if (offsetGiven)
     {
     offset = tm.tm_gmtoff; //Save the offset, mktime puts in its own.
     }
+#else
+  //Look for the format yyyy-mm-ddThh:mm:ss-hh or
+  //                    yyyy-mm-ddThh:mm:ss-hhmm or
+  //                    yyyy-mm-ddThh:mm:ssZ
+  char *end = strptime(val,"%Y-%m-%dT%H:%M:%S",&tm);
+  if(end == NULL)
+    return(PBSE_BAD_UTC_FORMAT);
+
+  if(strcmp(end, "Z") == 0)
+    {
+      /* the time was explicitly given as UTC */
+    }
+  else if(*end != '\0')
+    {
+      char sign = *end++;
+      char *beg = end;
+
+      if(sign != '+' && sign != '-')
+	return(PBSE_BAD_UTC_FORMAT);
+      
+      offset = strtol(beg, &end, 10);
+      if(*end != '\0')
+	return(PBSE_BAD_UTC_FORMAT);
+
+      /* handle the case where we're just given "hh" */
+      if(offset < 100)
+	offset *= 100;
+
+      if(offset > 1200 || offset%100 > 59)
+	return(PBSE_BAD_UTC_FORMAT);
+
+      /* convert to seconds */
+      offset = (offset/100)*3600 + (offset%100)*60;
+    }
+  else /* *end == '\0' */
+    {
+      offsetGiven = false;
+    }
+  #endif
+
   time_t givenEpoch = mktime(&tm);
+#ifdef HAVE_TM_GMTOFF
+  givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+#elif HAVE_TIMEZONE
+  givenEpoch += timezone;     //Take away the calculated offset using the global
+#endif
   if (offsetGiven)
     {
     /* This is to take care of the case where the time may be entered in one time zone but the machine running
@@ -838,18 +883,13 @@ int decode_utc(
        Time entered 2014-08-20T00:00:00-04
        Machine on west coast will see that as 2014-08-19T20:00:00-08
        */
-    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
     givenEpoch -= offset;       //Add in the passed in offset.
-    }
-  else
-    {
-    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
     }
   if(givenEpoch <= time(NULL))
     {
     return(PBSE_BAD_UTC_RANGE);
     }
-#endif
+
   return decode_str(pattr,name,rescn,val,perm);
   }
 

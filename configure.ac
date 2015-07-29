@@ -2193,6 +2193,9 @@ if test "$tac_pam_get_user_2nd_arg" = "none" && test "$pammoddir" != "disabled" 
   AC_MSG_ERROR([Unable to compile PAM bits, missing pam-devel?])
 fi
 
+dnl check if we have tm_gmtoff in struct tm
+GC_TIMEZONE
+
 dnl
 dnl  ######################################################################
 dnl  Check for functions
