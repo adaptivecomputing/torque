@@ -681,13 +681,11 @@ void Chip::displayAsJson(
 
   for (unsigned int i = 0; i < this->cores.size(); i++)
     {
-    for (unsigned int j = 0; j < this->cores[i].indices.size(); j++)
-      {
-      if (this->cores[i].indices[j] != this->cores[i].id)
-        thread_indices.push_back(this->cores[i].indices[j]);
-      else
-        core_indices.push_back(this->cores[i].indices[j]);
-      }
+    // Index 0 is the core id, the others are threads
+    core_indices.push_back(this->cores[i].indices[0]);
+
+    for (unsigned int j = 1; j < this->cores[i].indices.size(); j++)
+      thread_indices.push_back(this->cores[i].indices[j]);
     }
 
   translate_vector_to_range_string(core_range, core_indices);
