@@ -2206,7 +2206,8 @@ AC_CHECK_FUNCS(seteuid setresuid,break)
 AC_CHECK_FUNCS(setegid setresgid,break)
 
 
-AC_CHECK_FUNCS([gettimeofday rresvport bindresvport wordexp poll getaddrinfo])
+AC_CHECK_FUNCS([gettimeofday rresvport bindresvport wordexp poll getaddrinfo stpcpy])
+
 
 AC_FUNC_GETGROUPS
 
