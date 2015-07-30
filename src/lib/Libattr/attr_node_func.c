@@ -826,7 +826,7 @@ int decode_utc(
     }
   if (offsetGiven)
     {
-    offset = tm.tm_gmtoff; //Save the offset, mktime puts in its own.
+    offset = tm.TM_GMTOFF; //Save the offset, mktime puts in its own.
     }
 #else
   //Look for the format yyyy-mm-ddThh:mm:ss-hh or
@@ -870,7 +870,7 @@ int decode_utc(
 
   time_t givenEpoch = mktime(&tm);
 #ifdef HAVE_TM_GMTOFF
-  givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+  givenEpoch += tm.TM_GMTOFF; //Take away the calculated offset.
 #elif HAVE_TIMEZONE
   givenEpoch += timezone;     //Take away the calculated offset using the global
 #endif
