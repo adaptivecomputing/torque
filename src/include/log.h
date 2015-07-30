@@ -200,6 +200,10 @@ int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int ful
 #define PBSEVENT_SYSLOG 0x0400   /* pass this event to the syslog as well (if defined) */
 #define PBSEVENT_FORCE  0x8000  /* set to force a message     */
 
+/* Logging Masks */
+
+#define PBSEVENT_MASK  0x07ff
+
 /* Event Object Classes, see array class_names[] in ../lib/Liblog/pbs_log.c   */
 
 #define PBS_EVENTCLASS_SERVER 1 /* The server itself */
@@ -210,10 +214,6 @@ int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int ful
 #define PBS_EVENTCLASS_ACCT 6 /* Accounting info */
 #define PBS_EVENTCLASS_NODE 7 /* Nodes           */
 #define PBS_EVENTCLASS_TRQAUTHD 8 /* trqauthd */
-
-/* Logging Masks */
-
-#define PBSEVENT_MASK  0x01ff
 
 /* definition's for pbs_log.c's log_remove_old() function */
 #define MAX_PATH_LEN    1024  /* maximum possible length of any path */
