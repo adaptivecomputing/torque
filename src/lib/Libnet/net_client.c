@@ -275,6 +275,7 @@ int client_to_svr(
   struct sockaddr_in remote;
   int                sock;
   unsigned short     tryport = 777;
+  int                rc;
 
 #ifndef NOPRIVPORTS
   int                errorsock;
@@ -480,6 +481,17 @@ jump_to_check:
 #endif     /* !NOPRIVPORTS */
 
     }      /* END if (local_port != FALSE) */
+  else
+    {
+    rc = bind(sock, (const struct sockaddr *)&local, sizeof(local));
+    if (rc != 0)
+      {
+      sprintf(EMsg, "could not bind local socket: %s", strerror(errno));
+      close(sock);
+      return(-1);
+      }
+
+    }
   
   /* bind successful!!! */
   
@@ -525,7 +537,7 @@ jump_to_check:
 
       if (EMsg != NULL)
         sprintf(EMsg, "cannot connect to port %d in %s - connection refused.\n Check if trqauthd should be running\n",
-          tryport,
+          port,
           id);
       
       close(sock);
@@ -585,7 +597,7 @@ jump_to_check:
               err_buf[0] = '\0';
 
             sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
-              tryport,
+              port,
               id,
               errno,
               err_buf);
