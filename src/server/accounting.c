@@ -568,8 +568,6 @@ void account_jobend(
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
   long                walltime_val = 0;
-#else
-  time_t              time_now = time(NULL);
 #endif
 
   if ((acct_job(pjob, ds)) != PBSE_NONE)

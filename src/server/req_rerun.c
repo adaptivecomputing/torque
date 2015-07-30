@@ -214,7 +214,7 @@ void delay_and_send_sig_kill(
 
     delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                            &server.sv_attr[SRV_ATR_KillDelay],
-                           DEFAULT_KILL_DELAY);
+                           0);
     }
   else
     {
