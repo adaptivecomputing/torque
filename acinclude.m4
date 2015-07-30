@@ -272,7 +272,6 @@ AC_DEFUN([GC_TIMEZONE], [
                                 ],
                                [struct tm t;
                                 t.tm_gmtoff = 0;
-                                exit(0);
                                 ],
                                gq_cv_have_tm_gmtoff=yes
                         )
@@ -285,7 +284,6 @@ AC_DEFUN([GC_TIMEZONE], [
                                 ],
                                [struct tm t;
                                 t.__tm_gmtoff = 0;
-                                exit(0);
                                 ],
                                gq_cv_have___tm_gmtoff=yes
                         )
