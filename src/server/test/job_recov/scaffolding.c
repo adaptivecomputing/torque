@@ -370,3 +370,5 @@ int svr_enquejob(
   {
   return(0);
   }
+
+void add_to_completed_jobs(work_task *wt) {}

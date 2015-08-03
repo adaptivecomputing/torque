@@ -625,3 +625,5 @@ int svr_enquejob(job *pjob, int x, const char *queue, bool flag)
   {
   return(0);
   }
+
+void add_to_completed_jobs(work_task *ptask) {}
