@@ -5193,6 +5193,9 @@ int setup_program_environment(void)
 
   initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
 
+  /* allow the threadpool to start processing */
+  start_request_pool(request_pool);
+
   requested_cluster_addrs = 0;
 
   srand(get_random_number());
