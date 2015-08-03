@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.1.2
+  b - TRQ-3232 Start threadpool at pbs_mom start.
   b - TRQ-2675. Fix small errors in suse init.d scripts.
   b - TRQ-3235. Fix problem when path to error, output or execution environment
       contains one or more spaces.
