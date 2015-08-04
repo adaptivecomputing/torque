@@ -50,6 +50,10 @@ contrib/init.d/suse.pbs_mom
 contrib/init.d/suse.pbs_sched
 contrib/init.d/suse.pbs_server
 contrib/init.d/suse.trqauthd
+contrib/systemd/pbs_mom.service
+contrib/systemd/pbs_sched.service
+contrib/systemd/pbs_server.service
+contrib/systemd/trqauthd.service
 coverages.csv
 current_hash
 *.1
