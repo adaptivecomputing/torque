@@ -516,9 +516,11 @@ void add_procs_and_nodes_used(
       {
       std::size_t plus = nodelist.find("+", pos);
       std::string host(nodelist.substr(pos, plus - pos));
+      size_t pos_slash;
 
-      // remove the /<index>
-      host.erase(host.find("/"));
+      // remove the /<index> if it exists
+      if ((pos_slash = host.find("/")) != std::string::npos)
+        host.erase(pos_slash);
       total_execution_slots++;
 
       if (last_host != host)
