@@ -152,7 +152,6 @@ extern unsigned int  pbs_rm_port;
 extern unsigned int  pbs_tm_port;
 extern tlist_head    svr_newjobs;
 extern tlist_head    mom_polljobs; /* must have resource limits polled */
-extern tlist_head    svr_alljobs; /* all jobs under MOM's control */
 extern int           termin_child;
 extern time_t        time_now;
 extern AvlTree       okclients;
@@ -1932,10 +1931,7 @@ int contact_sisters(
 
   /* We have to put this job into the proper queues. These queues are filled
 	 in req_quejob and req_commit on Mother Superior for non-job_radix jobs */
-  append_link(&svr_newjobs, &pjob->ji_alljobs, pjob); /* from req_quejob */
-
-  delete_link(&pjob->ji_alljobs); /* from req_commit */
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob); /* from req_commit */
+  alljobs_list.push_back(pjob);
 
   /* initialize the nodes for every sister in this job
      only the first mom_radix+1 entries will be used
@@ -2728,7 +2724,7 @@ int im_join_job_as_sister(
   if (mom_do_poll(pjob))
     append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
   
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
+  alljobs_list.push_back(pjob);
   
   /* establish a connection and write the reply back */
   if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
@@ -6187,11 +6183,12 @@ void tm_eof(
   /*
   ** Search though all the jobs looking for this fd.
   */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-    pjob != NULL;
-    pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
       ptask != NULL;
       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
@@ -7911,11 +7908,11 @@ static int adoptSession(
   /* extern  time_t time_resc_updated; */
 
   /* Find the job that has this job/alt id */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
 
     if (command == TM_ADOPT_JOBID)
       {

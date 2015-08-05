@@ -198,7 +198,6 @@ extern char        *path_log;
 extern tlist_head   mom_varattrs; /* variable attributes */
 extern AvlTree      okclients;  /* accept connections from */
 extern int          mom_server_count;
-extern tlist_head   svr_alljobs; /* all jobs under MOM's control */
 extern time_t       time_now;
 extern int          internal_state;
 extern int          MOMJobDirStickySet;
@@ -2866,7 +2865,7 @@ const char *getjoblist(
   // reset the job list
   list.clear();
 
-  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+  if (alljobs_list.size() == 0)
     {
     /* no jobs - return space character */
 
@@ -2883,8 +2882,12 @@ const char *getjoblist(
   sprintf(mom_check_name + strlen(mom_check_name),"-%d/",numa_index);
 #endif
 
-  for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
 #ifdef NUMA_SUPPORT
     /* skip over jobs that aren't on this node */
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,mom_check_name) == NULL)

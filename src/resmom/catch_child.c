@@ -61,7 +61,6 @@ extern char  *path_epilogp;
 extern char  *path_epiloguserp;
 extern char  *path_jobs;
 extern unsigned int default_server_port;
-extern tlist_head svr_alljobs;
 extern tlist_head mom_polljobs;
 extern int  exiting_tasks;
 extern char  *msg_daemonname;
@@ -1017,9 +1016,11 @@ void scan_for_exiting(void)
 
   /* do not change this from the nextjob formal. In some cases pjob has
    * been freed by the time that the loop comes around */
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if (eligible_for_exiting_check(pjob) == false)
       continue;
@@ -1407,11 +1408,11 @@ void *obit_reply(
   /* find the job associated with the reply by the socket number */
   /* saved in the job structure, ji_momhandle */
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pjob != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
         (pjob->ji_momhandle == sock))
@@ -1737,7 +1738,7 @@ void init_abort_jobs(
 
     set_globid(pj, NULL);
 
-    append_link(&svr_alljobs, &pj->ji_alljobs, pj);
+    alljobs_list.push_back(pj);
 
     job_nodes(*pj);
 

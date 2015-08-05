@@ -18,6 +18,7 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+std::list<job *> alljobs_list;
 int PBSNodeCheckEpilog;
 int PBSNodeCheckProlog;
 int internal_state;
@@ -177,7 +178,7 @@ unsigned disrui(struct tcp_chan *chan, int *retval)
   return(0);
   }
 
-int kill_task(struct task *task, int sig, int pg)
+int kill_task(job *pjob, struct task *task, int sig, int pg)
   {
   return(0);
   }

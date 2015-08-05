@@ -6,6 +6,7 @@
 #include "pbs_config.h"
 #include "mom_main.h"
 #include "mom_config.h"
+#include "mom_func.h"
 #include "pbs_error.h"
 #include "test_mom_main.h"
 
@@ -29,7 +30,6 @@ time_t calculate_select_timeout();
 extern int  exiting_tasks;
 
 bool call_scan_for_exiting();
-extern tlist_head svr_alljobs;
 
 START_TEST(test_read_mom_hierarchy)
   {
@@ -54,32 +54,17 @@ START_TEST(test_call_scan_for_exiting)
 
   exiting_tasks = false;
 
-  job job1;
-  job job2;
-  job job3;
+  job *job1 = (job *)calloc(1, sizeof(job));
+  job *job2 = (job *)calloc(1, sizeof(job));
+  job *job3 = (job *)calloc(1, sizeof(job));
 
-  memset(&job1,0,sizeof(job1));
-  memset(&job2,0,sizeof(job2));
-  memset(&job3,0,sizeof(job3));
-  svr_alljobs.ll_prior = &job3.ji_alljobs;
-  svr_alljobs.ll_next = &job1.ji_alljobs;
-  svr_alljobs.ll_struct = NULL;
-
-  job1.ji_alljobs.ll_prior = &svr_alljobs;
-  job1.ji_alljobs.ll_next = &job2.ji_alljobs;
-  job1.ji_alljobs.ll_struct = &job1;
-
-  job2.ji_alljobs.ll_prior = &job1.ji_alljobs;
-  job2.ji_alljobs.ll_next = &job3.ji_alljobs;
-  job2.ji_alljobs.ll_struct = &job2;
-
-  job3.ji_alljobs.ll_prior = &job2.ji_alljobs;
-  job3.ji_alljobs.ll_next = &svr_alljobs;
-  job3.ji_alljobs.ll_struct = &job3;
+  alljobs_list.push_back(job1);
+  alljobs_list.push_back(job2);
+  alljobs_list.push_back(job3);
 
   fail_unless(call_scan_for_exiting() == false);
 
-  job2.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  job2->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
   fail_unless(call_scan_for_exiting() == true);
   }

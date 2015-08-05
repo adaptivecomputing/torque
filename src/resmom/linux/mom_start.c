@@ -103,7 +103,6 @@
 /* Global Variables */
 
 extern int  exiting_tasks;
-extern tlist_head svr_alljobs;
 extern int  termin_child;
 
 extern int      multi_mom;
@@ -244,15 +243,17 @@ void scan_for_terminated(void) /* linux */
 
   if (mom_get_sample() == PBSE_NONE)
     {
-    pjob = (job *)GET_PRIOR(svr_alljobs);
+    std::list<job *>::reverse_iterator iter;
 
-    while (pjob != NULL)
+    // get a list of jobs in start time order, first to last
+    for (iter = alljobs_list.rbegin(); iter != alljobs_list.rend(); iter++)
       {
-      if (pjob->ji_stats_done == true || pjob->ji_qs.ji_state < JOB_STATE_RUNNING)
-        {                                                                                                                                    
-        pjob = (job *)GET_PRIOR(pjob->ji_alljobs);                                                                                           
-        continue;                                                                                                                            
-        }  
+      pjob = *iter;
+
+      if ((pjob->ji_stats_done == true) || 
+          (pjob->ji_qs.ji_state < JOB_STATE_RUNNING))
+        continue;
+
 #ifdef USESAVEDRESOURCES
       ptask = (task *)GET_NEXT(pjob->ji_tasks);
 
@@ -290,8 +291,6 @@ void scan_for_terminated(void) /* linux */
       mom_set_use(pjob);
 
 #endif /* USESAVEDRESOURCES */
-
-      pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
       }
     }
 
@@ -301,10 +300,13 @@ void scan_for_terminated(void) /* linux */
 
   while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0)
     {
-    pjob = (job *)GET_PRIOR(svr_alljobs);
+    std::list<job *>::reverse_iterator iter;
 
-    while (pjob != NULL)
+    // get a list of jobs in start time order, first to last
+    for (iter = alljobs_list.rbegin(); iter != alljobs_list.rend(); iter++)
       {
+      pjob = *iter;
+
       /*
        * see if process was a child doing a special
        * function for MOM
@@ -375,7 +377,6 @@ void scan_for_terminated(void) /* linux */
         break;
         }
 
-      pjob = (job *)GET_PRIOR(pjob->ji_alljobs);
       }  /* END while (pjob != NULL) */
 
     if (WIFEXITED(statloc))
