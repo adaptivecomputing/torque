@@ -1,6 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 5.1.1.2
+  b - TRQ-3242. Fix problem where resource string argument to prologue
+      script getting garbled.
   e - TRQ-3197. Add support for RHEL7 and SLES12.
 
 5.1.1
