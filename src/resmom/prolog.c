@@ -595,7 +595,7 @@ void setup_pelog_arguments(
     {
     /* prologue */
 
-    arg[5] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
+    arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
     arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
     arg[8] = NULL;
