@@ -689,7 +689,14 @@ void *delete_job_files(
 #endif /* PENABLE_LINUX26_CPUSETS */
 
 #ifdef PENABLE_LINUX_CGROUPS
+  /* We need to remove the cgroup hierarchy for this job */
   trq_cg_delete_job_cgroups(jfdi->jobid);
+
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buffer, "removed cgroup of job %s.", jfdi->jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
 #endif
 
   /* delete the node file and gpu file */
@@ -918,18 +925,6 @@ void mom_job_purge(
   unload_sp_switch(pjob);
 
 #endif   /* IBM SP */
-
-#ifdef PENABLE_LINUX_CGROUPS
-  /* We need to remove the cgroup hierarchy for this job */
-  enqueue_threadpool_request(trq_cg_remove_process_from_accts, strdup(pjob->ji_qs.ji_jobid), request_pool);
-  if (LOGLEVEL >=6)
-    {
-    sprintf(log_buffer, "removing cgroup of job %s.", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    }
-
-  this_node.free_job_allocation(pjob->ji_qs.ji_jobid);
-#endif
 
   //We had a request to change the frequency for the job and now that the job is done
   //we want to change the frequency back.

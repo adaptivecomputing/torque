@@ -1056,8 +1056,8 @@ void generate_server_status(
   int   i;
   std::stringstream ss;
 
-  /* identify which vnode this is */
 #ifdef NUMA_SUPPORT
+  /* identify which vnode this is */
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
@@ -1077,6 +1077,7 @@ void generate_server_status(
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */
+
 
 
 int should_request_cluster_addrs()
@@ -1148,7 +1149,6 @@ int write_update_header(
 
 
 
-
 int write_my_server_status(
  
   struct tcp_chan          *chan,
@@ -1166,16 +1166,16 @@ int write_my_server_status(
   /* put each string into the message. */
   for (unsigned int i = 0; i < strings.size(); i++)
     {
+    const char *str_to_write = strings[i].c_str();
+
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"%s: sending to server \"%s\"",
+      sprintf(log_buffer,"%s: sending to server \"%s\", i = %u size = %d",
         id,
-        strings[i].c_str());
+        str_to_write, i, (int)strings.size());
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
-
-    const char *str_to_write = strings[i].c_str();
     
     if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
       {
@@ -1194,7 +1194,7 @@ int write_my_server_status(
           nc = (node_comm_t *)dest;
           nc->stream = chan->sock;
           
-          node_comm_error(nc,"Error writing strings to");
+          node_comm_error(nc, "Error writing strings to");
           
           break;
         } /* END switch (mode) */

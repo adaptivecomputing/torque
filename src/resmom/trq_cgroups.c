@@ -218,8 +218,10 @@ int trq_cg_initialize_cpuset_string(
   fread(buf, sizeof(buf), 1, fd);
   if (strlen(buf) < 1)
     {
-    sprintf(log_buf, "Could not read %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
+    sprintf(log_buf, "Could not read %s while initializing cpuset cgroups: error %d",
+      cpus_path.c_str(), errno);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    fclose(fd);
     return(PBSE_SYSTEM);
     }
 
@@ -240,6 +242,7 @@ int trq_cg_initialize_cpuset_string(
     {
     sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    fclose(fd);
     return(PBSE_SYSTEM);
     }
 
@@ -327,7 +330,8 @@ int init_torque_cgroups()
 
   return(PBSE_NONE);
 
-  }
+  } // END init_torque_cgroups()
+
 
 
 /* 
@@ -337,6 +341,7 @@ int init_torque_cgroups()
  * fails if they are not.
  *
  */
+
 int check_mounted_subsystems()
   {
 
@@ -367,11 +372,16 @@ int check_mounted_subsystems()
     }
 
   return(PBSE_NONE);
-  }
+  } // END check_mounted_subsystems()
 
-int init_subsystems(string& sub_token, string& mount_point)
+
+
+int init_subsystems(
+    
+  string &sub_token,
+  string &mount_point)
+
   {
-
   if (sub_token.compare("cpu") == 0)
     {
     cg_cpu_path = mount_point + "/torque/";
@@ -398,9 +408,13 @@ int init_subsystems(string& sub_token, string& mount_point)
     subsys_online[cg_devices] = true;
     }
   return(0);
-  }
+  } // END init_subsystems()
+
+
+
 
 int trq_cg_get_cgroup_paths_from_system()
+
   {
   char cmd[512];
   char reply[1024];
@@ -477,10 +491,12 @@ int trq_cg_get_cgroup_paths_from_system()
   pclose(fp);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_get_cgroup_paths_from_system()
+
 
  
 int trq_cg_get_cgroup_paths_from_file()
+  
   {
   std::string cgroup_path;
   cgroup_path = PBS_SERVER_HOME;
@@ -550,7 +566,9 @@ int trq_cg_get_cgroup_paths_from_file()
 
   return(PBSE_NONE);
 
-  }
+  } // END trq_cg_get_cgroup_paths_from_file()
+
+
 
 int trq_cg_initialize_hierarchy()
   {
@@ -580,7 +598,48 @@ int trq_cg_initialize_hierarchy()
     return(rc);
 
   return(PBSE_NONE);
-  }
+  } // END trq_cg_initialize_hierarchy()
+
+
+
+int trq_cg_add_process_to_cgroup_path(
+    
+  string     &cgroup_path,
+  pid_t       new_pid)
+
+  {
+  int  rc;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  int  cgroup_fd;
+  char new_task_pid[MAX_JOBID_LENGTH];
+
+  sprintf(new_task_pid, "%d", new_pid);
+
+  cgroup_fd = open(cgroup_path.c_str(), O_WRONLY);
+  if (cgroup_fd < 0)
+    {
+    sprintf(log_buf, "failed to open %s for writing: %s",
+      cgroup_path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  rc = write(cgroup_fd, new_task_pid, strlen(new_task_pid));
+  
+  close(cgroup_fd);
+
+  if (rc <= 0)
+    {
+    sprintf(log_buf, "failed to add process %s to cgroup %s: error: %d",
+      new_task_pid, cgroup_path.c_str(), errno);
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM); 
+    }
+
+  return(PBSE_NONE);
+  } // END trq_cg_add_process_to_cgroup()
+
+
 
 /*
  * trq_cg_add_process_to_task_cgroup
@@ -596,47 +655,63 @@ int trq_cg_initialize_hierarchy()
 int MAX_PID_LEN = 32;
 
 int trq_cg_add_process_to_task_cgroup(
-    string     &cgroup_path, 
-    const char *job_id, 
-    const unsigned int req_index,
-    const unsigned int task_index,
-    pid_t       new_pid)
+
+  string     &cgroup_path, 
+  const char *job_id, 
+  const unsigned int req_index,
+  const unsigned int task_index,
+  pid_t       new_pid)
 
   {
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   req_task_number[MAX_JOBID_LENGTH];
-  char   new_task_pid[MAX_PID_LEN];
   string req_task_path;
-  size_t bytes_written;
   int    fd;
-
 
   sprintf(req_task_number, "/R%u.t%u/tasks", req_index, task_index);
   req_task_path = cgroup_path + job_id + req_task_number;
 
-  fd = open(req_task_path.c_str(), O_WRONLY);
-  if (fd < 0)
-    {
-    sprintf(log_buf, "failed to open %s for writing: %s", req_task_path.c_str(), strerror(errno));
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
+  return(trq_cg_add_process_to_cgroup_path(req_task_path, new_pid));
+  } // END trq_cg_add_process_to_task_cgroup()
 
-  sprintf(new_task_pid, "%d", new_pid);
-  bytes_written = write(fd, new_task_pid, strlen(new_task_pid));
-  if(bytes_written <= 0)
+
+
+unsigned long long trq_cg_read_numeric_value(
+
+  string &path,
+  bool   &error)
+
+  {
+  int                fd = open(path.c_str(), O_RDONLY);
+  unsigned long long val = 0;
+  char               buf[LOCAL_LOG_BUF_SIZE];
+
+  error = false;
+
+  if (fd <= 0)
     {
-    sprintf(log_buf, "failed to add process %s to cgroup %s: %s",
-        new_task_pid, req_task_path.c_str(), strerror(errno));
-    log_err(errno, __func__, log_buf);
+    sprintf(log_buffer, "failed to open %s: %s", path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buffer);
+    error = true;
+    }
+  else
+    {
+    int rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
+
     close(fd);
-    return(PBSE_SYSTEM);
+
+    if (rc == -1)
+      {
+      sprintf(buf, "read failed getting value from %s - %s", path.c_str(), strerror(errno));
+      log_err(errno, __func__, buf);
+      error = true;
+      }
+    else if (rc != 0)
+      val = strtoull(buf, NULL, 10);
     }
 
-  close(fd);
+  return(val);
+  } // END trq_cg_read_numeric_value()
 
-  return(PBSE_NONE);
-  }
 
 
 /* 
@@ -671,41 +746,24 @@ int trq_cg_get_task_memory_stats(
   sprintf(req_and_task, "/%s/R%u.t%u/memory.max_usage_in_bytes", job_id, req_index, task_index);
 
   string  cgroup_path = cg_memory_path + req_and_task;
+  bool    error;
 
-  fd = open(cgroup_path.c_str(), O_RDONLY);
-  if (fd <= 0)
+  mem_used = trq_cg_read_numeric_value(cgroup_path, error);
+  
+  if (mem_used == 0)
     {
-    sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
-    return(PBSE_SYSTEM);
-    }
-
-  rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
-  if (rc == 0)
-    {
-    /* something is not right. We should have some memory used */
-    sprintf(buf, "max_usage_in_bytes is 0. Something is not right: %s", cgroup_path.c_str());
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
-    mem_used = 0;
-    }
-  else if (rc == -1)
-    {
-    sprintf(buf, "read failed getting memory used for %s - %s", cgroup_path.c_str(), strerror(errno));
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
-    mem_used = 0;
-    close(fd);
-    return(PBSE_SYSTEM);
-    }
-  else
-    {
-    mem_used = strtoull(buf, NULL, 10);
+    sprintf(log_buffer, "peak memory usage read from '%s' is 0, something appears to be incorrect.",
+      cgroup_path.c_str());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  close(fd);
+  if (error)
+    rc = PBSE_SYSTEM;
 
   return(PBSE_NONE);
+  } // END trq_cg_get_task_memory_stats()
 
-  }
+
 
 /* 
  * trq_cg_get_task_cput_stats
@@ -730,50 +788,32 @@ int trq_cg_get_task_cput_stats(
   unsigned long      &cput_used)
 
   {
-  char               req_and_task[256];
-  char               buf[LOCAL_LOG_BUF_SIZE];
-  int                fd;
-  int                rc;
+  char   req_and_task[256];
+  char   buf[LOCAL_LOG_BUF_SIZE];
+  int    fd;
+  int    rc;
+  bool   error = PBSE_NONE;
 
   /* get cpu time used */
   sprintf(req_and_task, "/%s/R%u.t%u/cpuacct.usage", job_id, req_index, task_index);
 
   string cgroup_path = cg_cpuacct_path + req_and_task;
 
-  fd = open(cgroup_path.c_str(), O_RDONLY);
-  if (fd <= 0)
+  cput_used = trq_cg_read_numeric_value(cgroup_path, error);
+
+  if (cput_used == 0)
     {
-    sprintf(buf, "failed to open %s: %s", cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
-    return(PBSE_SYSTEM);
+    sprintf(log_buffer, "cpu time read from '%s' is 0, something appears to be incorrect.",
+      cgroup_path.c_str());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
-  if (rc == 0)
-    {
-    /* something is not right. We should have some memory used */
-    sprintf(buf, "max_usage_in_bytes is 0. Something is not right: %s", cgroup_path.c_str());
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
-    cput_used = 0;
-    }
-  else if (rc == -1)
-    {
-    sprintf(buf, "read failed getting memory used for %s - %s", cgroup_path.c_str(), strerror(errno));
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
-    cput_used = 0;
-    close(fd);
-    return(PBSE_SYSTEM);
-    }
-  else
-    {
-    cput_used = strtoul(buf, NULL, 10);
-    }
+  if (error)
+    rc = PBSE_SYSTEM;
+  
+  return(rc);
+  } // END trq_cg_get_task_cput_stats()
 
-  close(fd);
-
-  return(PBSE_NONE);
-
-  }
 
 
 int trq_cg_add_process_to_cgroup(
@@ -783,37 +823,9 @@ int trq_cg_add_process_to_cgroup(
   pid_t       new_pid)
 
   {
-  int rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  int cgroup_fd;
-  char new_task_pid[MAX_JOBID_LENGTH];
-  string full_cgroup_path;
-  string cgroup_task_path;
+  string full_cgroup_path = cgroup_path + job_id + "/tasks";
 
-  sprintf(new_task_pid, "%d", new_pid);
-  full_cgroup_path = cgroup_path + job_id + "/tasks";
-
-  cgroup_fd = open(full_cgroup_path.c_str(), O_WRONLY);
-  if (cgroup_fd < 0)
-    {
-    sprintf(log_buf, "failed to open %s for writing: %s",
-      full_cgroup_path.c_str(), strerror(errno));
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
-
-  rc = write(cgroup_fd, new_task_pid, strlen(new_task_pid));
-  if (rc <= 0)
-    {
-    sprintf(log_buf, "failed to add process %s to cgroup %s: error: %d",
-      new_task_pid, full_cgroup_path.c_str(), errno);
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
-
-  close(cgroup_fd);
-
-  return(PBSE_NONE);
+  return(trq_cg_add_process_to_cgroup_path(full_cgroup_path, new_pid));
   } // END trq_cg_add_process_to_cgroup()
 
 
@@ -837,6 +849,7 @@ int trq_cg_add_process_to_all_cgroups(
   } // END trq_cg_add_process_to_all_cgroups()
 
 
+
 /* 
  * trq_cg_create_task_cgroups
  *
@@ -849,8 +862,9 @@ int trq_cg_add_process_to_all_cgroups(
  */
 
 int trq_cg_create_task_cgroups(
-  string cgroup_path, 
-  job   *pjob)
+
+  string  cgroup_path, 
+  job    *pjob)
 
   {
   int            rc;
@@ -875,7 +889,6 @@ int trq_cg_create_task_cgroups(
 
   gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-  
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -904,7 +917,8 @@ int trq_cg_create_task_cgroups(
       if ((rc != 0) &&
           (errno != EEXIST))
         {
-        sprintf(log_buf, "failed to make directory %s for cgroup: %s", req_task_path.c_str(), strerror(errno));
+        sprintf(log_buf, "failed to make directory %s for cgroup: %s",
+          req_task_path.c_str(), strerror(errno));
         log_err(errno, __func__, log_buf);
         return(PBSE_SYSTEM); 
         }
@@ -922,6 +936,8 @@ int trq_cg_create_task_cgroups(
 
   return(PBSE_NONE);
   }
+
+
 
 /*
  * trq_cg_create_cgroup
@@ -1060,7 +1076,7 @@ int trq_cg_write_task_memset_string(
   char     req_task_number[256];
   char     log_buf[LOCAL_LOG_BUF_SIZE];
   size_t   bytes_written;
-  FILE  *f;
+  FILE    *f;
 
   sprintf(req_task_number, "%s/R%u.t%u/cpuset.mems", job_id, req_num, task_num);
   req_memset_task_path = cpuset_path + req_task_number;
@@ -1406,99 +1422,6 @@ int trq_cg_add_process_to_cgroup_accts(
   }
 
 
-/* trq_cg_remove_process_from_cgroup
- * Remove the cgroup of the job_pid from the
- * cgroup_path given.
- */
-int trq_cg_remove_process_from_cgroup(
-    
-  string     &cgroup_path,
-  const char *job_id)
-
-  {
-  int rc;
-  char log_buf[LOCAL_LOG_BUF_SIZE];
-  string cgroup_path_name;
-
-  cgroup_path_name = cgroup_path + job_id;
-
-  /* TODO: We are waiting for cgroups to be done.
-     How long should we wait? */
-  do
-    {
-    rc = rmdir(cgroup_path_name.c_str());
-
-    if (rc < 0 )
-      {
-      if (errno == EBUSY)
-        {
-        /* cgroups are still cleaning up. try again later. */
-        if (LOGLEVEL >= 8)
-          {
-          sprintf(log_buf, "cgroup not finished %s from cgroups: %d ", cgroup_path_name.c_str(), errno);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-          }
-        sleep(1);
-        }
-      else
-        {
-        sprintf(log_buf, "failed to remove %s from cgroups: %d ", cgroup_path_name.c_str(), errno);
-        log_err(errno, __func__, log_buf);
-        break;
-        }
-      }
-    else
-      rc = PBSE_NONE;
-
-    } while(rc != PBSE_NONE);
-
-  return(rc);
-  } // END trq_cg_remove_process_from_cgroup()
-
-
-
-/* trq_cg_remove_process_from_accts: Remove the hierarchies for
-   this jobs process from the cgroups directory. That is remove
-   this job from its accounting cgroups */
-void *trq_cg_remove_process_from_accts(
-    
-  void *vp)
-
-  {
-  int   rc;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  char *job_id = (char *)vp;
-
-  /* remove job from the cpuacct cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_cpuacct_path, job_id);
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buf, "Failed to remove cgroup cpuacct: process %s", job_id);
-    log_err(-1, __func__, log_buf);
-    }
-
-  /* remove job from the memory cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_memory_path, job_id);
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buf, "Failed to remove cgroup memory: process %s", job_id);
-    log_err(-1, __func__, log_buf);
-    }
-
-  /* remove job from the cpuset cgroup */
-  rc = trq_cg_remove_process_from_cgroup(cg_cpuset_path, job_id);
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buf, "Failed to remove cgroup memory: process %s", job_id);
-    log_err(-1, __func__, log_buf);
-    }
-
-  free(job_id);
-
-  return(PBSE_NONE);
-  } // END trq_cg_remove_process_from_accts()
-
-
 
 /*
  * trq_cg_set_swap_memory_limit()
@@ -1605,6 +1528,7 @@ int trq_cg_set_resident_memory_limit(
   } // END trq_cg_set_resident_memory_limit()
 
 
+
 /*
  * trq_cg_remove_task_dirs
  *
@@ -1616,36 +1540,102 @@ int trq_cg_set_resident_memory_limit(
 
 void trq_cg_remove_task_dirs(
     
-    const string torque_path)
+  const string &torque_path)
 
   {
   DIR *pdir = NULL;
   struct dirent *dent;
 
-  pdir = opendir(torque_path.c_str());
-
-  rewinddir(pdir);
-
-  while((dent = readdir(pdir)) != NULL)
+  if ((pdir = opendir(torque_path.c_str())) != NULL)
     {
-    if (dent->d_name[0] == 'R')
+    rewinddir(pdir);
+
+    while ((dent = readdir(pdir)) != NULL)
       {
-      std::string dir_name = torque_path + "/" + dent->d_name;
-      rmdir(dir_name.c_str());
+      if (dent->d_name[0] == 'R')
+        {
+        std::string dir_name = torque_path + "/" + dent->d_name;
+        rmdir(dir_name.c_str());
+        }
       }
+
+    closedir(pdir);
     }
-  }
+  else
+    {
+    sprintf(log_buffer, "Couldn't open directory '%s' for removal", torque_path.c_str());
+    log_err(errno, __func__, log_buffer);
+    }
+
+  } // END trq_cg_remove_task_dirs()
 
 
-/* trq_cg_delete_job_cgroups()
+
+/*
+ * trq_cg_delete_cgroup_path()
+ *
+ * cgroup_path - the path to the cgroup which should be deleted
+ */
+
+void trq_cg_delete_cgroup_path(
+
+  const string &cgroup_path)
+
+  {
+#define MAX_CGROUP_DELETE_RETRIES 10
+  int retries = 0;
+  trq_cg_remove_task_dirs(cgroup_path);
+  int rc;
+  
+  do
+    {
+    rc = rmdir(cgroup_path.c_str());
+
+    if (rc < 0 )
+      {
+      if (errno == EBUSY)
+        {
+        /* cgroups are still cleaning up. try again later. */
+        if (LOGLEVEL >= 8)
+          {
+          sprintf(log_buffer, "cgroup not finished %s from cgroups: %d ", cgroup_path.c_str(), errno);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+          }
+
+        retries++;
+
+        sleep(1);
+        }
+      else if (errno != ENOENT)
+        {
+        sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());
+        log_err(errno, __func__, log_buffer);
+        break;
+        }
+      else
+        break;
+      }
+    else
+      rc = PBSE_NONE;
+
+    } while ((rc != PBSE_NONE) && (retries < MAX_CGROUP_DELETE_RETRIES));
+
+  } // END trq_cg_delete_cgroup_path()
+
+
+
+/*
+ * trq_cg_delete_job_cgroups()
  *
  * removes all of the cgroup directories for this job
  *
  * @param - job_id The id of the job for which to remove cgroups
- *
  */
 
-void trq_cg_delete_job_cgroups(const char *job_id)
+void trq_cg_delete_job_cgroups(
+    
+  const char *job_id)
+
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   string cgroup_path;
@@ -1653,72 +1643,20 @@ void trq_cg_delete_job_cgroups(const char *job_id)
   int         rc;
 
   cgroup_path = cg_cpu_path + job_id;
-  rc = stat(cgroup_path.c_str(), &buf);
-  if (rc == 0)
-    {
-    trq_cg_remove_task_dirs(cgroup_path);
-    rc = rmdir(cgroup_path.c_str());
-    if (rc != 0)
-      {
-      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
-      log_err(errno, __func__, log_buf);
-      }    
-    }
+  trq_cg_delete_cgroup_path(cgroup_path);
 
   cgroup_path = cg_cpuacct_path + job_id;
-  rc = stat(cgroup_path.c_str(), &buf);
-  if (rc == 0)
-    {
-    trq_cg_remove_task_dirs(cgroup_path);
-    rc = rmdir(cgroup_path.c_str());
-    if (rc != 0)
-      {
-      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
-      log_err(errno, __func__, log_buf);
-      }    
-    }
+  trq_cg_delete_cgroup_path(cgroup_path);
   
   cgroup_path = cg_cpuset_path + job_id;
-  rc = stat(cgroup_path.c_str(), &buf);
-  if (rc == 0)
-    {
-    trq_cg_remove_task_dirs(cgroup_path);
-    rc = rmdir(cgroup_path.c_str());
-    if (rc != 0)
-      {
-      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
-      log_err(errno, __func__, log_buf);
-      }    
-    }
+  trq_cg_delete_cgroup_path(cgroup_path);
 
   cgroup_path = cg_memory_path + job_id;
-  rc = stat(cgroup_path.c_str(), &buf);
-  if (rc == 0)
-    {
-    trq_cg_remove_task_dirs(cgroup_path);
-    rc = rmdir(cgroup_path.c_str());
-    if (rc != 0)
-      {
-      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
-      log_err(errno, __func__, log_buf);
-      }    
-    }
+  trq_cg_delete_cgroup_path(cgroup_path);
 
   cgroup_path = cg_devices_path + job_id;
-  rc = stat(cgroup_path.c_str(), &buf);
-  if (rc == 0)
-    {
-    trq_cg_remove_task_dirs(cgroup_path);
-    rc = rmdir(cgroup_path.c_str());
-    if (rc != 0)
-      {
-      sprintf(log_buf, "failed to remove cgroup %s", cgroup_path.c_str());
-      log_err(errno, __func__, log_buf);
-      }    
-    }
+  trq_cg_delete_cgroup_path(cgroup_path);
 
-
-
-  }
+  } // END trq_cg_delete_job_cgroups()
 
 

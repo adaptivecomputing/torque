@@ -214,8 +214,6 @@ int add_single_mic_info(
 
 
 
-
-
 int add_mic_status(
 
   std::vector<std::string> &status)
