@@ -1082,8 +1082,8 @@ int run_pelog(
               pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
 
       arg[5] = sid;
-      arg[6] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
-      arg[7] = resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used));
+      arg[6] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
+      arg[7] = strdup(resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used)));
       arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
       arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
       arg[10] = exit_stat;
@@ -1095,7 +1095,7 @@ int run_pelog(
       {
       /* prolog */
 
-      arg[5] = resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list));
+      arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
       arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
       arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
       arg[8] = NULL;

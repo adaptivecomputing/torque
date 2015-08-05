@@ -2,6 +2,8 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.0.3
+  b - TRQ-3242. Fix problem where resource string argument to prologue
+      script getting garbled.
   b - TRQ-3232. Start threadpool at pbs_mom start.
   b - TRQ-2675. Fix small errors in suse init.d scripts.
   e - TRQ-3104. Add millisecond precision to the Torque log file (backported from 5.1.1)
