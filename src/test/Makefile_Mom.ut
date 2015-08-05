@@ -3,7 +3,8 @@ PROG_ROOT = ../../resmom
 AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/linux/ -I${PROG_ROOT}/../include/ \
 		  --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" \
 	       -DRCP_PATH=\"$(program_prefix)$(RCP_PATH)$(program_suffix)\" `xml2-config --cflags` \
-	       -DRCP_ARGS=\"$(RCP_ARGS)\" -DPBS_MOM
+				 -DDEMUX=\"$(program_prefix)$(DEMUX_PATH)$(program_suffix)\" -DRCP_ARGS=\"$(RCP_ARGS)\" \
+				 -DPBS_MOM
 AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/linux/ -I$(PROG_ROOT)/../include \
 							--coverage `xml2-config --cflags` -DPBS_MOM
 AM_LIBS=`xml2-config --libs`

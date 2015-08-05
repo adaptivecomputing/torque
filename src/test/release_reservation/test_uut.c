@@ -5,7 +5,7 @@
 #include "alps_constants.h"
 
 char *apbasil_protocol = (char *)"1.0";
-char *release_path = (char *)"../../../test/test_scripts/release_reservation.sh test_input.txt";
+char *release_path = (char *)"../test_scripts/release_reservation.sh test_input.txt";
 char *input_file = (char *)"test_input.txt";
 
 int destroy_alps_reservation(char *, char *, char *, int);
