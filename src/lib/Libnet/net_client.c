@@ -486,7 +486,9 @@ jump_to_check:
     rc = bind(sock, (const struct sockaddr *)&local, sizeof(local));
     if (rc != 0)
       {
-      sprintf(EMsg, "could not bind local socket: %s", strerror(errno));
+      if (EMsg != NULL)
+        sprintf(EMsg, "could not bind local socket: %s", strerror(errno));
+
       close(sock);
       return(-1);
       }
