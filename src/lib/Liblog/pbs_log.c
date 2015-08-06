@@ -118,7 +118,9 @@
 #include <syslog.h>
 #endif
 
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h> /* backtrace information */
+#endif
 #include<arpa/inet.h>
 #include<netdb.h>
 
@@ -145,7 +147,12 @@ static volatile int  log_opened = 0;
 static int      syslogopen = 0;
 #endif /* SYSLOG */
 
+#ifdef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+#elif defined(PTHREAD_MUTEX_RECURSIVE)
+pthread_mutex_t log_mutex = 
+  {{0, 0, 0, PTHREAD_MUTEX_RECURSIVE, _MUTEX_MAGIC}, {{{0}}}, 0};
+#endif
 
 /* variables for job logging */
 static int      job_log_auto_switch = 0;
@@ -778,8 +785,10 @@ void log_record(
   int eventclass = 0;
   char time_formatted_str[64];
 
+#ifdef SYS_gettid
   thr_id = syscall(SYS_gettid);
   pthread_mutex_lock(&log_mutex);
+#endif
 
 #if SYSLOG
   if (eventtype & PBSEVENT_SYSLOG)
@@ -1455,6 +1464,7 @@ void print_trace(
   int socknum)
 
   {
+#ifdef HAVE_EXECINFO_H
   void  *array[10];
   int    size;
   char **meth_names;
@@ -1472,6 +1482,7 @@ void print_trace(
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, meth_names[cntr]);
     }
   free(meth_names);
+#endif
   }
 
 

@@ -829,6 +829,9 @@ int trq_set_preferred_network_interface(
   struct sockaddr *preferred_addr)
 
   {
+#if !defined(SIOCGIFCONF) || !defined(SIOCGIFADDR)
+  return(PBSE_SYSTEM);
+#else
 	struct ifreq *ifr;
   struct ifreq *ifend;
 	struct ifreq  ifreqx;
@@ -883,6 +886,7 @@ int trq_set_preferred_network_interface(
   close(sockfd);
 
   return(PBSE_NONE);
+#endif
   } /* END trq_set_preferred_network_interface() */
 
 
@@ -1294,6 +1298,8 @@ int pbs_original_connect(
              (conn_retries < MAX_RETRIES))
         {
         rc = socket_wait_for_write(sock);
+	if(rc == PBSE_NONE)
+	  break;
 
         if (rc == PERMANENT_SOCKET_FAIL)
           {
@@ -1538,15 +1544,15 @@ void print_server_port_to_stderr(
 
   {
   int             rc = PBSE_NONE;
-  char           *s_addr = NULL;
+  char           *the_sockaddr = NULL;
   unsigned short  af_family;
   struct in_addr  hostaddr;
   char           *ip_addr = NULL;
   int             s_len = 0;
 
-  if ((rc = get_hostaddr_hostent_af(&rc, s_name, &af_family, &s_addr, &s_len)) == PBSE_NONE)
+  if ((rc = get_hostaddr_hostent_af(&rc, s_name, &af_family, &the_sockaddr, &s_len)) == PBSE_NONE)
     {
-    memcpy((void *)&hostaddr, (void *)s_addr, s_len);
+    memcpy((void *)&hostaddr, (void *)the_sockaddr, s_len);
     ip_addr = inet_ntoa(hostaddr);
     fprintf(stderr, "Unable to communicate with %s(%s)\n", s_name, ip_addr);
     }
@@ -1561,8 +1567,8 @@ void print_server_port_to_stderr(
         s_name, rc, err_msg);
     }
 
-  if (s_addr != NULL)
-    free(s_addr);
+  if (the_sockaddr != NULL)
+    free(the_sockaddr);
   }
 
 /**

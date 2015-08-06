@@ -185,13 +185,13 @@ int process_pbs_server_port(
 
     default:
       {
-      struct sockaddr     s_addr;
+      struct sockaddr     the_sockaddr;
       struct sockaddr_in *addr;
-      socklen_t           len = sizeof(s_addr);
+      socklen_t           len = sizeof(the_sockaddr);
 
-      if (getpeername(sock, &s_addr, &len) == 0)
+      if (getpeername(sock, &the_sockaddr, &len) == 0)
         {
-        addr = (struct sockaddr_in *)&s_addr;
+        addr = (struct sockaddr_in *)&the_sockaddr;
         
         if (protocol_type == 0)
           {

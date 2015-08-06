@@ -61,8 +61,18 @@ int start_domainsocket_listener(const char *socket_name, void *(*process_meth)(v
 int start_listener_addrinfo(char *host_name, int server_port, void *(*process_meth)(void *));
 
 /* from file net_client.c */
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(sun)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int bindresvport(int sd, struct sockaddr_in *sin);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 int get_max_num_descriptors(void);
 int get_fdset_size(void);

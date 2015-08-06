@@ -3354,7 +3354,7 @@ int main(
     have_args = true;
     }
 
-  for (;optind <= argc;optind++)
+  for (;optind < argc;optind++)
     {
     located = FALSE;
 

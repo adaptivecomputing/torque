@@ -89,6 +89,8 @@
 #include "portability.h"
 #include "server_limits.h"
 #include "net_connect.h"
+#include "../Libnet/lib_net.h"
+
 #include "mcom.h"
 #include "log.h"
 
@@ -98,13 +100,6 @@
 
 #ifdef _AIX
 #include <arpa/aixrcmds.h>
-#endif
-
-#ifdef __APPLE__
-/* this is a hack for the missing bindresvport declaration on OS X
-   the function works fine but its use will generate a compiler warning
-   if -Wall is used with gcc */
-int bindresvport(int sd, struct sockaddr_in *sin);
 #endif
 
 /**

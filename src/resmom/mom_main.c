@@ -3159,12 +3159,12 @@ int do_tcp(
 
       {
       struct sockaddr_in *addr = NULL;
-      struct sockaddr     s_addr;
-      unsigned int        len = sizeof(s_addr);
+      struct sockaddr     the_sockaddr;
+      unsigned int        len = sizeof(the_sockaddr);
       
-      if (getpeername(chan->sock, &s_addr, &len) == 0)
+      if (getpeername(chan->sock, &the_sockaddr, &len) == 0)
         {
-        addr = (struct sockaddr_in *)&s_addr;
+        addr = (struct sockaddr_in *)&the_sockaddr;
         DBPRT(("%s: unknown request %d from %s",
           __func__, proto, netaddr(addr)))
         }
