@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.1.2
+  b - TRQ-2788. Allow jobs submitted on hold to be moved through a routing queue.
   b - TRQ-3242. Fix problem where resource string argument to prologue
       script getting garbled.
   b - TRQ-3232 Start threadpool at pbs_mom start.
