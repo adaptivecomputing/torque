@@ -220,7 +220,7 @@ void scan_for_terminated(void) /* linux */
   {
   int           exiteval = 0;
   pid_t         pid;
-  job          *pjob;
+  job          *pjob = NULL;
   task         *ptask = NULL;
   int           statloc;
   unsigned int  momport = 0;
