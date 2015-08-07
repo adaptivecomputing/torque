@@ -1356,8 +1356,8 @@ void *obit_reply(
 
   {
   int                   irtn;
-  job                  *nxjob;
-  job                  *pjob;
+  job                  *nxjob = NULL;
+  job                  *pjob = NULL;
   pbs_attribute        *pattr;
   unsigned int          momport = 0;
   char                  tmp_line[MAXLINE];
