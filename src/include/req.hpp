@@ -140,8 +140,8 @@ class req
     bool              pack;
     bool              single_job_access;
     // these are not set by user request
-    int               index;
-    std::string       hostlist;   // set when the job is run
+    int                     index;
+    std::vector<std::string>     hostlist;   // set when the job is run
     std::vector<allocation> task_allocations;
 
   public:
@@ -151,6 +151,7 @@ class req
     req(const std::string &resource_request);
     req &operator =(const req &other);
 
+    void          insert_hostname(const char *hostlist_name);
     int           set_place_value(const char *value);
     int           set_value_from_string(char *str);
     int           set_attribute(const char *str);
@@ -185,7 +186,7 @@ class req
     std::string   getReqAttr() const;
     int           getTaskCount() const;
     int           getIndex() const;
-    std::string   getHostlist() const;
+    int           getHostlist(std::vector<std::string> &list) const;
     std::string   getFeatures() const;
     std::string   getThreadUsageString() const;
     int           get_num_tasks_for_host(int num_ppn) const;
@@ -195,6 +196,7 @@ class req
     unsigned long get_swap_for_host(const std::string &host) const;
     void          get_task_stats(int &count, int req_count, std::vector<int> &req_index, std::vector<int> &task_index, 
                      std::vector<unsigned long> &cput_used, std::vector<unsigned long long> &mem_used);
+    void          get_execution_slots(int &execution_slots);
     int           set_cput_used(int task_index, const unsigned long cput_used);
     int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);

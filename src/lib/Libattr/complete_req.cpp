@@ -461,21 +461,28 @@ int complete_req::get_req_index_for_host(
 
   for (unsigned int i = 0; it != this->reqs.end(); i++, it++)
     {
+    int rc;
     req current_req = this->get_req(i);
-
-    std::string req_hostlist = current_req.getHostlist();
-    char hostlist[256];
+    std::vector<std::string> req_hostlist;
+    char hostlist[PBS_MAXHOSTNAME];
     char *tok_ptr;
 
-    strcpy(hostlist, req_hostlist.c_str());
-    tok_ptr = strchr(hostlist, ':');
-    if (tok_ptr != NULL)
-      *tok_ptr = '\0';
+    rc = current_req.getHostlist(req_hostlist);
+    if (rc == PBSE_EMPTY)
+      continue;
 
-    if (!strcmp(hostlist, host))
+    for (unsigned int i = 0; i < req_hostlist.size(); i++)
       {
-      req_index = i;
-      return(PBSE_NONE);
+      strcpy(hostlist, req_hostlist[i].c_str());
+      tok_ptr = strchr(hostlist, ':');
+      if (tok_ptr != NULL)
+        *tok_ptr = '\0';
+
+      if (!strcmp(hostlist, host))
+        {
+        req_index = i;
+        return(PBSE_NONE);
+        }
       }
     }
 
@@ -553,6 +560,10 @@ void complete_req::set_hostlists(
 
   while (current != NULL)
     {
+    int   ppn = 0;     /* total ppn used so far per req */
+    int   req_ppn = 0; /* the total requested ppn per req */
+    int   task_count = 0;
+    int   execution_slots = 0;
     if (i >= this->reqs.size())
       {
       // Moab seems to think there are more reqs than we do
@@ -563,19 +574,53 @@ void complete_req::set_hostlists(
       break;
       }
 
-    if (bar != NULL)
-      *bar = '\0';
-
-    this->reqs[i].set_hostlist(current);
-
-    // Advance the req to the next set of hosts
-    if (bar != NULL)
+    /* determine the number of requested ppn for this task.
+       This will help us determine if the current
+       req spans multiple nodes */
+       
+    task_count = this->reqs[i].getTaskCount();
+    this->reqs[i].get_execution_slots(execution_slots);
+    req_ppn = task_count * execution_slots;
+    
+    do
       {
-      current = bar + 1;
-      bar = strchr(bar + 1, '|');
-      }
-    else
-      current = bar;
+      if (bar != NULL)
+        *bar = '\0';
+
+      char *ppn_ptr = strchr(current, ':');
+
+      if (ppn_ptr != NULL)
+        {
+        /* We want to get the ppn=x part of the hostlist */
+        /* make sure we have ppn=x */
+        ppn_ptr = strstr(ppn_ptr, "ppn=");
+        if (ppn_ptr == NULL)
+          {
+          ppn += 1;
+          }
+        else
+          {
+          /* Now get the ppn value */
+          ppn_ptr = strchr(ppn_ptr, '=');
+          ppn_ptr++;
+          ppn += atoi(ppn_ptr);
+          }
+        }
+
+      this->reqs[i].set_hostlist(current);
+
+      // Advance the req to the next set of hosts
+      if (bar != NULL)
+        {
+        current = bar + 1;
+        bar = strchr(bar + 1, '|');
+        }
+      else
+        {
+        current = bar;
+        }
+      }while((ppn < req_ppn) && (current != NULL));
+
 
     i++;
     }

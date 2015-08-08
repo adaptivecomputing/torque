@@ -132,6 +132,28 @@ req::req(
 
   {
   }
+/*
+ * insert_hostname()
+ *
+ * insert hostlist_name into req. But first check that it is
+ * not already in the list 
+ *
+ * @param hostlist_name - Name to be added to req
+ *
+ */
+void req::insert_hostname(
+
+  const char *hostlist_name)
+
+  {
+  std::vector<std::string>::iterator it;
+  it  = std::find(this->hostlist.begin(), this->hostlist.end(), hostlist_name);
+
+  /* If it is hostlist.end() or this->hostlist.size() is 0 then then entry
+     is not in the list. Add it */
+  if ((this->hostlist.size() == 0) || (it == this->hostlist.end()))
+    this->hostlist.push_back(hostlist_name);
+  }
 
 
 /*
@@ -173,7 +195,9 @@ int req::set_cput_used(int task_index, const unsigned long cput_used)
 
 int req::set_memory_used(int task_index, const unsigned long long mem_used)
   {
-  if (this->task_allocations.size() < task_index)
+  unsigned int alloc_size = this->task_allocations.size();
+
+  if ((alloc_size == 0) || (alloc_size <= task_index))
     return(PBSE_BAD_PARAMETER);
 
   this->task_allocations[task_index].set_memory_used(mem_used);
@@ -1136,9 +1160,12 @@ void req::toString(
 
   if (this->hostlist.size() != 0)
     {
-    str += "      hostlist: ";
-    str += this->hostlist;
-    str += '\n';
+    for (unsigned int i = 0; i < this->hostlist.size(); i++)
+      {
+      str += "      hostlist: ";
+      str += this->hostlist[i];
+      str += '\n';
+      }
     }
 
   if (this->features.size() != 0)
@@ -1347,9 +1374,12 @@ void req::get_values(
 
   if (this->hostlist.size() != 0)
     {
-    snprintf(buf, sizeof(buf), "hostlist.%d", this->index);
-    names.push_back(buf);
-    values.push_back(this->hostlist);
+    for (unsigned int i = 0; i < this->hostlist.size(); i++)
+      {
+      snprintf(buf, sizeof(buf), "hostlist.%d", this->index);
+      names.push_back(buf);
+      values.push_back(this->hostlist[i]);
+      }
     }
 
   for (unsigned int i = 0; i < this->task_allocations.size(); i++)
@@ -1685,7 +1715,8 @@ void req::set_from_string(
       current++;
       move_past_whitespace(&current);
     }
-    this->hostlist = tmp;
+
+    this->insert_hostname(tmp);
 
     }
 
@@ -1796,7 +1827,7 @@ int req::set_value(
   else if (!strncmp(name, "pack", 4))
     this->pack = true;
   else if (!strncmp(name, "hostlist", 8))
-    this->hostlist = value;
+    this->insert_hostname(value);
   else if (!strcmp(name, "core"))
     this->cores = strtol(value, NULL, 10);
   else if (!strcmp(name, "thread"))
@@ -1915,10 +1946,17 @@ int req::getTaskCount() const
   return(this->task_count);
   }
 
-std::string req::getHostlist() const
-
+int req::getHostlist(std::vector<std::string> &list) const
   {
-  return(this->hostlist);
+  int rc = PBSE_EMPTY;
+
+  list.clear();
+  for (unsigned int i = 0; i < this->hostlist.size(); i ++)
+    {
+    list.push_back(this->hostlist[i]);
+    rc = PBSE_NONE;
+    }
+  return(rc);
   }
 
 std::string req::getFeatures() const
@@ -1999,56 +2037,71 @@ int req::get_num_tasks_for_host(
   const std::string &host) const
 
   {
-  int         task_count = 0;
-  std::size_t pos = this->hostlist.find(host);
-  unsigned int         offset = pos + host.size();
+  int  task_count = 0;
+  unsigned int  host_count = this->hostlist.size();
 
-  if (pos != std::string::npos)
+  if (host_count == 0)
+    return(0); /* No host name, no tasks */
+
+  /* Check to see if this host exists in the req */
+  for (unsigned int i = 0; i < this->hostlist.size(); i++)
     {
-    if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
-        (!strncmp(this->placement_str.c_str(), "node", 4)))
-      task_count = 1;
-    else if ((this->hostlist.size() <= offset) ||
-             ((this->hostlist.at(offset) != ':') &&
-              (this->hostlist.at(offset) != '/')))
-      task_count = 1;
-    else
+    size_t pos = this->hostlist[i].find(host);
+
+    if (pos != std::string::npos)
       {
-      int num_ppn = 0;
+      unsigned int offset = pos + host.size();
 
-      // handle both :ppn=X and /range
-      // + 5 for ':ppn='
-      if (this->hostlist.at(offset) == '/')
+      if ((this->execution_slots == ALL_EXECUTION_SLOTS) ||
+          (!strncmp(this->placement_str.c_str(), "node", 4)))
+        task_count = 1;
+      else if ((this->hostlist[i].size() <= offset) ||
+              ((this->hostlist[i].at(offset) != ':') &&
+              (this->hostlist[i].at(offset) != '/')))
         {
-        char             *range_str = strdup(this->hostlist.substr(offset + 1).c_str());
-        char             *ptr;
-        std::vector<int>  indices;
-
-        // truncate any further entries 
-        if ((ptr = strchr(range_str, '+')) != NULL)
-          *ptr = '\0';
-
-        translate_range_string_to_vector(range_str, indices);
-        num_ppn = indices.size();
-
-        free(range_str);
+        task_count = 1;
         }
       else
         {
-        std::string  ppn_val = this->hostlist.substr(offset + 5);
-        char        *ppn_str = strdup(ppn_val.c_str());
-        
-        num_ppn = strtol(ppn_str, NULL, 10);
+        int num_ppn = 0;
 
-        free(ppn_str);
+        // handle both :ppn=X and /range
+        // + 5 for ':ppn='
+        if (this->hostlist[i].at(offset) == '/')
+          {
+          char             *range_str = strdup(this->hostlist[i].substr(offset + 1).c_str());
+          char             *ptr;
+          std::vector<int>  indices;
+
+          // truncate any further entries 
+          if ((ptr = strchr(range_str, '+')) != NULL)
+            *ptr = '\0';
+
+          translate_range_string_to_vector(range_str, indices);
+          num_ppn = indices.size();
+
+          free(range_str);
+          }
+        else
+          {
+          std::string  ppn_val = this->hostlist[i].substr(offset + 5);
+          char        *ppn_str = strdup(ppn_val.c_str());
+          
+          num_ppn = strtol(ppn_str, NULL, 10);
+
+          free(ppn_str);
+          }
+          
+        task_count = num_ppn / this->execution_slots;
+ 
         }
-        
-      task_count = num_ppn / this->execution_slots;
       }
     }
 
   return(task_count);
   } // END get_num_tasks_for_host()
+
+
 
 
 
@@ -2067,6 +2120,7 @@ int req::get_num_tasks_for_host(
 
   return(task_count);
   } // END get_num_tasks_for_host()
+
 
 /*
  * get_task_allocation()
@@ -2165,7 +2219,7 @@ void req::set_hostlist(
   const char *hostlist)
 
   {
-  this->hostlist = hostlist;
+  this->insert_hostname(hostlist);
   } // END set_hostlist()
     
 void req::set_memory(
@@ -2175,6 +2229,15 @@ void req::set_memory(
   {
   this->mem = mem;
   }
+
+void req::get_execution_slots(
+    
+  int &execution_slots)
+
+  {
+  execution_slots = this->execution_slots;
+  }
+
 
 void req::set_execution_slots(
     
