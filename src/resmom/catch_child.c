@@ -971,7 +971,7 @@ void scan_for_exiting(void)
 
   {
   job          *nextjob;
-  job          *pjob;
+  job          *pjob = NULL;
   int           found_one = 0;
 
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
