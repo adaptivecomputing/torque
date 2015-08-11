@@ -1356,7 +1356,6 @@ void *obit_reply(
 
   {
   int                   irtn;
-  job                  *nxjob = NULL;
   job                  *pjob = NULL;
   pbs_attribute        *pattr;
   unsigned int          momport = 0;
@@ -1581,8 +1580,6 @@ void *obit_reply(
           */
         }
       }
-
-    pjob = nxjob;
     }  /* END while (pjob != NULL) */
 
   if (pjob == NULL)
