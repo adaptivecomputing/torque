@@ -34,8 +34,47 @@ Chip::Chip() : id(0), totalCores(0), totalThreads(0), availableCores(0), availab
                allocations()
 
   {
-  memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
-  memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
+  memset(chip_cpuset_string, 0, sizeof(chip_cpuset_string));
+  memset(chip_nodeset_string, 0, sizeof(chip_nodeset_string));
+  }
+    
+Chip::Chip(
+    
+  const Chip &other) : id(other.id), totalCores(other.totalCores), totalThreads(other.totalThreads),
+                       availableCores(other.availableCores), availableThreads(other.availableThreads),
+                       total_gpus(other.total_gpus), available_gpus(other.available_gpus),
+                       total_mics(other.total_mics), available_mics(other.available_mics),
+                       chip_exclusive(other.chip_exclusive), memory(other.memory),
+                       available_memory(other.available_memory), cores(other.cores),
+                       devices(other.devices), allocations(other.allocations)
+
+  {
+  // Don't copy the hwloc_const_* types as they aren't needed
+
+  memcpy(chip_cpuset_string, other.chip_cpuset_string, sizeof(chip_cpuset_string));
+  memcpy(chip_nodeset_string, other.chip_nodeset_string, sizeof(chip_nodeset_string));
+  }
+
+Chip &Chip::operator =(
+    
+  const Chip &other)
+
+  {
+  this->id = other.id;
+  this->totalCores = other.totalCores;
+  this->totalThreads = other.totalThreads;
+  this->availableCores = other.availableCores;
+  this->availableThreads = other.availableThreads;
+  this->total_gpus = other.total_gpus;
+  this->available_gpus = other.available_gpus;
+  this->total_mics = other.total_mics;
+  this->available_mics = other.available_mics;
+  this->chip_exclusive = other.chip_exclusive;
+  this->memory = other.memory;
+  this->available_memory = other.available_memory;
+  this->cores = other.cores;
+  this->devices = other.devices;
+  this->allocations = other.allocations;
   }
 
 

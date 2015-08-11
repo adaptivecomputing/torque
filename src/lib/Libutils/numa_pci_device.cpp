@@ -38,7 +38,7 @@ PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1), 
 PCI_Device::PCI_Device(
     
   const PCI_Device &other) : name(other.name), id(other.id), info_name(other.info_name),
-                             info_value(other.info_value), type(other.type)
+                             info_value(other.info_value), type(other.type), busy(other.busy)
 
   {
   if (other.nearest_cpuset != NULL)

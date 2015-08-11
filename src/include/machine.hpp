@@ -139,6 +139,8 @@ class Chip
   public:
     Chip();
     Chip(const std::string &layout);
+    Chip(const Chip &other);
+    Chip &operator=(const Chip &other);
     ~Chip();
     int get_id() const;
     int getTotalCores() const;
