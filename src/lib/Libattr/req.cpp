@@ -182,6 +182,24 @@ int parse_positive_integer(
   return(PBSE_NONE);
   } // END parse_positive_integer()
 
+/*
+ * get_task_host_name
+ *
+ * Get the host name of the task index for this req.
+ *
+ * @param task_host - host name of task returned
+ * @param task_index - task index for host
+ *
+ */
+
+void req::get_task_host_name(
+
+  std::string &task_host,
+  unsigned int task_index)
+
+  {
+  this->task_allocations[task_index].get_task_host_name(task_host);
+  }
 
 int req::set_cput_used(int task_index, const unsigned long cput_used)
   {

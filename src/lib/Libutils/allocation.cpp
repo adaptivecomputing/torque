@@ -370,3 +370,18 @@ void allocation::set_task_usage_stats(
   this->set_cput_used(cput_used);
   this->set_memory_used(mem_used);
   }
+
+/* get_task_host_name()
+ *
+ * Return a copy of the host name for this task
+ *
+ * @param host - name of the host where this task should reside
+ */
+
+void allocation::get_task_host_name(
+
+  std::string &host)
+
+  {
+  host = this->hostname;
+  }

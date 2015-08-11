@@ -892,12 +892,12 @@ int trq_cg_create_task_cgroups(
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
-    int    task_count;
+    unsigned int total_tasks;
 
     req &each_req = cr->get_req(req_index);
-    task_count = each_req.get_num_tasks_for_host(this_hostname);
+    total_tasks = each_req.getTaskCount();
 
-    for (unsigned int task_index = 0; task_index < task_count; task_index++)
+    for (unsigned int task_index = 0; task_index < total_tasks; task_index++)
       {
       allocation al;
       string   req_task_path;
@@ -909,6 +909,16 @@ int trq_cg_create_task_cgroups(
         return(rc);
         }
 
+      std::string task_host;
+      each_req.get_task_host_name(task_host, task_index);
+
+      if (strcmp(task_host.c_str(), this_hostname))
+        {
+        /* this task does not belong to this host. Go to the next one */
+        continue;
+        }
+
+      /* This task belongs on this host. Add the task cgroup */
       sprintf(req_task_number, "/R%u.t%u", req_index, task_index);
       req_task_path = cgroup_path + req_task_number;
       /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
@@ -1227,6 +1237,17 @@ int trq_cg_populate_task_cgroups(
         return(rc);
         }
 
+      /* Make sure the task is for this host */
+      std::string task_host;
+      each_req.get_task_host_name(task_host, task_index);
+
+      if (strcmp(task_host.c_str(), this_hostname))
+        {
+        /* this task does not belong to this host. Go to the next one */
+        continue;
+        }
+
+      /* This task belongs on this host. */
       trq_cg_write_task_cpuset_string(cpuset_path, req_index, task_index, job_id, al);
       trq_cg_write_task_memset_string(cpuset_path, req_index, task_index, job_id, al);
 

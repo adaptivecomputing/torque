@@ -197,6 +197,7 @@ class req
     void          get_task_stats(int &count, int req_count, std::vector<int> &req_index, std::vector<int> &task_index, 
                      std::vector<unsigned long> &cput_used, std::vector<unsigned long long> &mem_used);
     void          get_execution_slots(int &execution_slots);
+    void          get_task_host_name(std::string &host, unsigned int task_index);
     int           set_cput_used(int task_index, const unsigned long cput_used);
     int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);

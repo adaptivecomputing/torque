@@ -131,6 +131,7 @@ class allocation
   void set_host(const char *hostname);
   void get_stats_used(unsigned long &cput_used, unsigned long long &mem_used);
   void set_task_usage_stats(unsigned long cput_used, unsigned long long mem_used);
+  void get_task_host_name(std::string &host);
   };
 
 #endif 

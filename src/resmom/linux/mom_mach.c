@@ -1211,6 +1211,14 @@ unsigned long cput_sum(
     for (unsigned int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
       {
       unsigned long cput_used;
+      std::string   task_host;
+
+      host_req.get_task_host_name(task_host, task_index);
+      if (strcmp(task_host.c_str(), this_hostname))
+        {
+        /* names don't match. Got to next task */
+        continue;
+        }
 
       rc = trq_cg_get_task_cput_stats(job_id, req_index, task_index, cput_used);
       if (rc != PBSE_NONE)
@@ -1553,6 +1561,14 @@ unsigned long long resi_sum(
     for (int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
       {
       unsigned long long mem_used;
+      std::string   task_host;
+
+      host_req.get_task_host_name(task_host, task_index);
+      if (strcmp(task_host.c_str(), this_hostname))
+        {
+        /* names don't match. Got to next task */
+        continue;
+        }
 
       mem_used = 0;
       rc = trq_cg_get_task_memory_stats(pjob->ji_qs.ji_jobid, req_index, task_index, mem_used);

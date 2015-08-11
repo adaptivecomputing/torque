@@ -458,6 +458,8 @@ int complete_req::get_req_index_for_host(
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   std::vector<req>::iterator it = this->reqs.begin();
+  
+  req_index = 0; /* initialize */
 
   for (unsigned int i = 0; it != this->reqs.end(); i++, it++)
     {
@@ -469,7 +471,10 @@ int complete_req::get_req_index_for_host(
 
     rc = current_req.getHostlist(req_hostlist);
     if (rc == PBSE_EMPTY)
+      {
+      req_index++;
       continue;
+      }
 
     for (unsigned int i = 0; i < req_hostlist.size(); i++)
       {
@@ -480,10 +485,10 @@ int complete_req::get_req_index_for_host(
 
       if (!strcmp(hostlist, host))
         {
-        req_index = i;
         return(PBSE_NONE);
         }
       }
+    req_index++;
     }
 
   sprintf(log_buf, "A req for host %s not found", host);
