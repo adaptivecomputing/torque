@@ -15,7 +15,6 @@ extern int called_place;
 extern int oscillate;
 extern int called_store_pci;
 extern int called_spread_place;
-extern bool avail_oscillate;
 extern int place_amount;
 extern int json_chip;
 extern std::string my_placement_type;
@@ -227,9 +226,6 @@ START_TEST(test_place_task)
   fail_unless(s.free_task("1.napali") == true);
   fail_unless(s.is_available() == true);
 
-  // set the chips to alternate saying available or unavailable
-  avail_oscillate = true;
-  fail_unless(s.is_available() == false);
   }
 END_TEST
 

@@ -75,6 +75,8 @@ Chip &Chip::operator =(
   this->cores = other.cores;
   this->devices = other.devices;
   this->allocations = other.allocations;
+
+  return(*this);
   }
 
 

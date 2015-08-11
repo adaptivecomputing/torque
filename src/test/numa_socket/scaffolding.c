@@ -73,6 +73,15 @@ Chip::Chip(const std::string &json_layout)
   json_chip++;
   }
 
+Chip::Chip(const Chip &other)
+  {
+  }
+
+Chip &Chip::operator =(const Chip &other)
+  {
+  return(*this);
+  }
+
 Chip::Chip()
   {
   }
