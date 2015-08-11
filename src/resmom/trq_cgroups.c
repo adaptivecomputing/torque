@@ -791,7 +791,7 @@ int trq_cg_get_task_cput_stats(
   char   req_and_task[256];
   char   buf[LOCAL_LOG_BUF_SIZE];
   int    fd;
-  int    rc;
+  int    rc = PBSE_NONE;
   bool   error = PBSE_NONE;
 
   /* get cpu time used */

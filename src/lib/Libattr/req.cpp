@@ -1413,20 +1413,20 @@ void req::get_values(
 
 void req::get_task_stats(
 
-  int &count,
-  int req_count,
-  std::vector<int> &req_index,
-  std::vector<int> &task_index,
-  std::vector<unsigned long> &cput_used,
+  std::vector<int>                &task_index,
+  std::vector<unsigned long>      &cput_used,
   std::vector<unsigned long long> &mem_used)
 
   {
   int allocation_count = this->task_allocations.size();
   int num_tasks = 0;
 
+  task_index.clear();
+  cput_used.clear();
+  mem_used.clear();
+
   if (allocation_count == 0)
     {
-    count = 0;
     return;
     }
 
@@ -1437,15 +1437,14 @@ void req::get_task_stats(
 
     this->task_allocations[task_count].get_stats_used(cputime_used, memory_used);   
 
-    req_index.push_back(req_count);
     task_index.push_back(task_count);
     cput_used.push_back(cputime_used);
     mem_used.push_back(memory_used);
     num_tasks++;
     }
 
-  count = num_tasks;
-  }
+  } // END get_task_stats()
+
 
 
 char *capture_until_newline_and_advance(

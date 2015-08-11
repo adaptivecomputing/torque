@@ -651,18 +651,19 @@ void complete_req::clear_allocations()
     this->reqs[i].clear_allocations();
   } // END clear_allocations()
 
+
+
 int complete_req::get_task_stats(
-  int &count, 
-  std::vector<int> &req_index, 
-  std::vector<int> &task_index, 
-  std::vector<unsigned long> &cput_used, 
+
+  unsigned int                    &req_index, 
+  std::vector<int>                &task_index, 
+  std::vector<unsigned long>      &cput_used, 
   std::vector<unsigned long long> &mem_used)
 
   {
   int rc = PBSE_NONE;
   char   this_hostname[PBS_MAXHOSTNAME];
   char   buf[LOCAL_LOG_BUF_SIZE];
-  unsigned int    request_index;
 
   rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
   if (rc != 0)
@@ -672,7 +673,7 @@ int complete_req::get_task_stats(
     return(rc);
     }
 
-  rc = this->get_req_index_for_host(this_hostname, request_index);
+  rc = this->get_req_index_for_host(this_hostname, req_index);
   if (rc != PBSE_NONE)
     {
     sprintf(buf, "Could not find req for host %s", this_hostname);
@@ -680,15 +681,18 @@ int complete_req::get_task_stats(
     return(rc);
     }
 
-  this->reqs[request_index].get_task_stats(count, request_index, req_index, task_index, cput_used, mem_used);
+  this->reqs[req_index].get_task_stats(task_index, cput_used, mem_used);
 
   return(rc);
   }
 
+
+
 void complete_req::set_task_usage_stats(
-  int req_index, 
-  int task_index, 
-  unsigned long cput_used, 
+
+  int                req_index, 
+  int                task_index, 
+  unsigned long      cput_used, 
   unsigned long long mem_used)
 
   {

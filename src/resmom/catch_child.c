@@ -2139,24 +2139,24 @@ int send_job_obit_to_ms(
                 rc = diswul(chan, joules);*/
 
 #ifdef PENABLE_LINUX_CGROUPS
-              int count;
-              std::vector<unsigned long> task_cput_used;
+              std::vector<unsigned long>      task_cput_used;
               std::vector<unsigned long long> task_mem_used;
-              std::vector<int> req_index;
-              std::vector<int> task_index;
+              std::vector<int>                task_index;
+              unsigned int                    req_index;
+
               complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-              cr->get_task_stats(count, req_index, task_index, task_cput_used, task_mem_used);
+              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used);
 
               if (rc == DIS_SUCCESS)
-                rc = diswsi(chan, count);
+                rc = diswsi(chan, task_index.size());
 
-              if (count != 0)
+              if (task_index.size() != 0)
                 {
                 if (rc == DIS_SUCCESS)
                   {
-                  for (unsigned int stat_count = 0; stat_count < count; stat_count++)
+                  for (unsigned int stat_count = 0; stat_count < task_index.size(); stat_count++)
                     {
-                    rc = diswsi(chan, req_index[stat_count]);
+                    rc = diswsi(chan, req_index);
 
                     if (rc == DIS_SUCCESS)
                       rc = diswsi(chan, task_index[stat_count]);
