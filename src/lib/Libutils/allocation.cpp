@@ -207,9 +207,9 @@ void allocation::set_place_type(
   {
   if (placement_str == place_node)
     this->place_type = exclusive_node;
-  else if (placement_str == place_socket)
+  else if (placement_str.find(place_socket) == 0)
     this->place_type = exclusive_socket;
-  else if (placement_str == place_numa_node)
+  else if (placement_str.find(place_numa_node) == 0)
     this->place_type = exclusive_chip;
   else if (placement_str == place_core)
     this->place_type = exclusive_core;

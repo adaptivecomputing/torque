@@ -131,6 +131,11 @@ START_TEST(test_set_place_type)
   a.set_place_type("bobo");
   fail_unless(a.place_type == exclusive_none);
 
+  a.set_place_type("socket=2");
+  fail_unless(a.place_type == exclusive_socket);
+
+  a.set_place_type("numanode=2");
+  fail_unless(a.place_type == exclusive_chip);
   }
 END_TEST
 
