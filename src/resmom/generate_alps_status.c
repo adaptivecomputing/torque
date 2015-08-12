@@ -483,9 +483,9 @@ int process_node(
 
   if (rsv_id != NULL)
     {
-    /* don't write the reservation id if we're in interactive mode */
+    /* only write the reservation id if we're in batch mode (or role was not supplied) */
     if ((role_value == NULL) ||
-        (strcmp(role_value, interactive_caps)))
+        (!strcmp(role_value, batch_caps)))
       {
       std::string str("reservation_id=");
       str += rsv_id;
@@ -508,9 +508,9 @@ int process_node(
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
     
 
-
+    /* state is down if we're not in batch mode */
     if ((role_value != NULL) &&
-        (!strcmp(role_value, interactive_caps)))
+        (strcmp(role_value, batch_caps)))
       {
       node_state = "DOWN";
       str += "DOWN";
