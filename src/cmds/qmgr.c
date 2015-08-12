@@ -54,6 +54,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #ifdef HAVE_READLINE
 /* some versions have a buggy readline header */
@@ -335,7 +336,7 @@ int attributes(
   char *c;            /* Pointer into the attrs text */
   char *start;        /* Pointer to the start of a word */
   char q;             /* Quote character */
-  int ltxt;           /* Length of a word */
+  int ltxt;           /* Length of a word*/
 
   struct attropl *paol;
 
@@ -1970,6 +1971,7 @@ int get_request(
 
         rp++;
         lp++;
+
         break;
 
         /* Move the character */
@@ -2265,8 +2267,6 @@ int is_valid_qsyntax_number(
 
 
 
-
-
 /*
  *  parse - parse the qmgr request
  *
@@ -2310,6 +2310,7 @@ int parse(
   int         len;      /* ammount parsed by parse_request */
   int         i;        /* loop var */
   static char req[MAX_REQ_WORDS][MAX_REQ_WORD_LEN] = { {'\0'} };
+  char        final_request[MAX_LINE_LEN];
   char *c;
 
   /* clear old data in req */
@@ -2318,6 +2319,36 @@ int parse(
     req[i][0] = '\0';
 
   /* parse the request into parts */
+
+  if ((strcmp(request, "p s loglevel") == 0) ||
+	    (strcmp(request, "print server loglevel") == 0) ||
+	    (strcmp(request, "print s loglevel") == 0) ||
+	    (strcmp(request, "p server loglevel") == 0))
+  {
+  snprintf(final_request, sizeof(final_request), "p s log_level");
+
+  request = final_request;
+  }
+
+  else if (strstr(request, "s s loglevel") != NULL ||
+	       strstr(request, "set server loglevel") != NULL ||
+	       strstr(request, "set s loglevel") != NULL ||
+	       strstr(request, "s server loglevel") != NULL)
+  {
+
+  std::string myrequest = request;
+  int where_is_char = myrequest.find("loglevel");
+  std::string str1 = myrequest.substr(0, where_is_char - 1);
+  where_is_char = myrequest.find('=');
+  int end_of_request = myrequest.length() - 1;
+  std::string str2 = myrequest.substr(where_is_char, end_of_request);
+
+  // 0 - pch to final request, then log_level, then everything after loglevel
+  snprintf(final_request, sizeof(final_request), "%s log_level %s", str1.c_str(), str2.c_str());
+
+  request = final_request;
+  }
+
 
   len = parse_request(request, req);
 
