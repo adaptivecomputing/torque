@@ -855,7 +855,7 @@ int main(
     {
     if (!quiet)
       {
-      fprintf(stderr, "usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-q] [-m standby|suspend|sleep|hibernate|shutdown] node ...\n",
+      fprintf(stderr, "usage:\t%s [-{c|d|l|o|p|r}] [-s server] [-n] [-N \"note\"] [-A \"appendnote\"] [-q] [-m standby|suspend|sleep|hibernate|shutdown] node ...\n",
               progname);
 
       fprintf(stderr, "\t%s [-{a|x}] [-s server] [-q] [node]\n",
