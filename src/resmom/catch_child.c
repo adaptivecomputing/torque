@@ -1568,7 +1568,7 @@ void *obit_reply(
     {
     pj = *iter;
 
-    if (pjob->ji_momhandle == sock)
+    if (pj->ji_momhandle == sock)
       {
       pjob = pj;
       break;
