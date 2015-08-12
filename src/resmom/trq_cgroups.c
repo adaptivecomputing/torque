@@ -268,7 +268,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+    rc = mkdir( torque_path.c_str(), 0755);
     if (rc != 0)
       return(rc);
     } 
@@ -278,7 +278,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+    rc = mkdir( torque_path.c_str(), 0755);
     if (rc != 0)
       return(rc);
     } 
@@ -288,7 +288,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
      /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+    rc = mkdir( torque_path.c_str(), 0755);
     if (rc != 0)
       {
       sprintf(log_buf, "Could not create %s for cgroups: error %d", torque_path.c_str(), errno);
@@ -313,7 +313,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+    rc = mkdir( torque_path.c_str(), 0755);
     if (rc != 0)
       return(rc);
     } 
@@ -323,7 +323,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+    rc = mkdir( torque_path.c_str(), 0755);
     if (rc != 0)
       return(rc);
     } 
@@ -923,7 +923,7 @@ int trq_cg_create_task_cgroups(
       req_task_path = cgroup_path + req_task_number;
       /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
          req and task reference */
-      rc = mkdir(req_task_path.c_str(), 0644);
+      rc = mkdir(req_task_path.c_str(), 0755);
       if ((rc != 0) &&
           (errno != EEXIST))
         {
@@ -933,13 +933,6 @@ int trq_cg_create_task_cgroups(
         return(PBSE_SYSTEM); 
         }
 
-      rc = chmod(req_task_path.c_str(), 0x666);
-      if (rc != 0)
-        {
-        sprintf(log_buf, "failed to change mode for  %s for cgroup: %s", req_task_path.c_str(), strerror(errno));
-        log_err(errno, __func__, log_buf);
-        return(PBSE_SYSTEM); 
-        }
       }
     }
 #endif
@@ -975,7 +968,7 @@ int trq_cg_create_cgroup(
   full_cgroup_path += job_id;
 
   /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
-  rc = mkdir(full_cgroup_path.c_str(), 0644);
+  rc = mkdir(full_cgroup_path.c_str(), 0755);
   if ((rc != 0) &&
       (errno != EEXIST))
     {
@@ -984,13 +977,7 @@ int trq_cg_create_cgroup(
     return(PBSE_SYSTEM); 
     }
 
-  rc = chmod(full_cgroup_path.c_str(), 0x666);
-  if (rc != 0)
-    {
-    sprintf(log_buf, "failed to change mode for  %s for cgroup: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM); 
-    }
+
 
   /* create task sub-cgroups if -L resource request */
   rc = trq_cg_create_task_cgroups(full_cgroup_path, pjob);
@@ -1225,7 +1212,7 @@ int trq_cg_populate_task_cgroups(
     int    task_count;
 
     req &each_req = cr->get_req(req_index);
-    task_count = each_req.get_num_tasks_for_host(this_hostname);
+    task_count = each_req.getTaskCount();
 
     for (unsigned int task_index = 0; task_index < task_count; task_index++)
       {

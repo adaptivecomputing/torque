@@ -1418,8 +1418,11 @@ void req::get_task_stats(
   std::vector<unsigned long long> &mem_used)
 
   {
+  char this_hostname[PBS_MAXHOSTNAME];
+  char buf[LOCAL_LOG_BUF_SIZE];
   int allocation_count = this->task_allocations.size();
   int num_tasks = 0;
+  int rc;
 
   task_index.clear();
   cput_used.clear();
@@ -1430,10 +1433,27 @@ void req::get_task_stats(
     return;
     }
 
+  /* see if this task belongs to this host */
+  rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+  if (rc != 0)
+    {
+    sprintf(buf, "failed to get hostname: %s", strerror(errno));
+    log_err(-1, __func__, buf);
+    return;
+    }
+
   for (unsigned int task_count = 0; task_count < allocation_count; task_count++)
     {
     unsigned long cputime_used;
     unsigned long long memory_used;
+    std::string task_host;
+
+    this->get_task_host_name(task_host, task_count);
+    if (strcmp(task_host.c_str(), this_hostname))
+      {
+      /* names don't match. Get the next one */
+      continue;
+      }
 
     this->task_allocations[task_count].get_stats_used(cputime_used, memory_used);   
 
