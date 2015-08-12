@@ -236,6 +236,7 @@ int req::set_memory_used(int task_index, const unsigned long long mem_used)
  * parses the place value and updates req values appropriately.
  * the place value is in the format:
  * place={node|socket|numanode|core|thread}[=#]
+ * NOTE: core and thread cannot have an =# specification
  *
  * @param value - the string in the above format
  * @return PBSE_NONE as long as value is in the proper format,
@@ -285,9 +286,7 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       {
-      int count;
-      rc = parse_positive_integer(numeric_value, count);
-      this->cores = count;
+      rc = PBSE_CORE_PLACE;
       }
     else
       this->cores = 1;
@@ -299,9 +298,7 @@ int req::set_place_value(
     {
     if (numeric_value != NULL)
       {
-      int count;
-      rc = parse_positive_integer(numeric_value, count);
-      this->threads = count;
+      rc = PBSE_CORE_PLACE;
       }
     else
       this->threads = 1;
