@@ -98,4 +98,11 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
+void log_err(
 
+  int         errnum,  /* I (errno or PBSErrno) */
+  const char *routine, /* I */
+  const char *text)    /* I */
+
+  {
+  }

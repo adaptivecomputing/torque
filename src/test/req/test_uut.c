@@ -251,8 +251,10 @@ END_TEST
 START_TEST(test_constructors)
   {
   req r;
+  std::vector<std::string> l;
 
-  fail_unless(r.getHostlist().size() == 0);
+  fail_unless(r.getHostlist(l) == PBSE_EMPTY);
+  fail_unless(l.size() == 0);
   fail_unless(r.getTaskCount() == 1);
   fail_unless(r.getPlacementType() == "");
   fail_unless(r.getNodeAccessPolicy().size() == 0, r.getNodeAccessPolicy().c_str());
@@ -296,11 +298,11 @@ START_TEST(test_constructors)
   req r4(req4);
   fail_unless(r4.getPlacementType() == "numanode=1", r4.getPlacementType().c_str());
  
-  std::string req5("5:lprocs=4:memory=12gb:place=core=4:mics=1:feature=fast");
+  std::string req5("5:lprocs=4:memory=12gb:place=core:mics=1:feature=fast");
   req r5(req5);
   fail_unless(r5.getThreadUsageString() == "usecores", "thread usage '%s'", r5.getThreadUsageString().c_str());
 
-  std::string req6("5:lprocs=4:place=thread=4");
+  std::string req6("5:lprocs=4:place=thread");
   req r6(req6);
   fail_unless(r6.getThreadUsageString() == "usethreads", "thread usage '%s'", r6.getThreadUsageString().c_str());
 
@@ -430,7 +432,9 @@ START_TEST(test_set_from_string)
   fail_unless(r.getSwap() == 1024);
   fail_unless(r.getDisk() == 10000000);
   fail_unless(r.getTaskCount() == 10);
-  fail_unless(r.getHostlist() == "napali/0-31");
+  std::vector<std::string> l;
+  fail_unless(r.getHostlist(l) == 0);
+  fail_unless(l[0] == "napali/0-31");
   fail_unless(r.getPlacementType() == "place socket");
   fail_unless(r.getOS() == "ubuntu");
 
