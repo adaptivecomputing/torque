@@ -557,23 +557,7 @@ bool Socket::free_task(
 bool Socket::is_available() const
 
   {
-  bool available = true;
-
-  if (this->socket_exclusive == false)
-    {
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      {
-      if (this->chips[i].chipIsAvailable() == false)
-        {
-        available = false;
-        break;
-        }
-      }
-    }
-  else
-    available = false;
-
-  return(available);
+  return(!this->socket_exclusive);
   } // END is_available()
 
 
