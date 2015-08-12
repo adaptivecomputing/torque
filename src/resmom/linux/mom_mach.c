@@ -1206,9 +1206,9 @@ unsigned long cput_sum(
       return(cputime);
       }
 
-    req host_req = cr->get_req(req_index);
+    req &host_req = cr->get_req(req_index);
 
-    for (unsigned int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
+    for (unsigned int task_index = 0; task_index < host_req.get_req_allocation_count(); task_index++)
       {
       unsigned long cput_used;
       std::string   task_host;
@@ -1557,8 +1557,8 @@ unsigned long long resi_sum(
       return(resisize);
       }
 
-    req host_req = cr->get_req(req_index);
-    for (int task_index = 0; task_index < host_req.getTaskCount(); task_index++)
+    req &host_req = cr->get_req(req_index);
+    for (unsigned int task_index = 0; task_index < host_req.get_req_allocation_count(); task_index++)
       {
       unsigned long long mem_used;
       std::string   task_host;

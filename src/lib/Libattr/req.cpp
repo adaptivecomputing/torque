@@ -201,6 +201,13 @@ void req::get_task_host_name(
   this->task_allocations[task_index].get_task_host_name(task_host);
   }
 
+int req::get_req_allocation_count()
+
+  {
+  return(this->task_allocations.size());
+  }
+
+
 int req::set_cput_used(int task_index, const unsigned long cput_used)
   {
   if ((this->task_allocations.size() == 0) || (this->task_allocations.size() < task_index))
