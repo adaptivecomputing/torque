@@ -216,7 +216,7 @@ int insert_alps_reservation(
 
 int already_recorded(
 
-  char *rsv_id)
+  const char *rsv_id)
 
   {
   int               recorded = FALSE;
