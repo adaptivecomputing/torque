@@ -421,8 +421,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_available_sockets */
-	{ (char *)ATTR_NODE_available_sockets,  /* "available_sockets" */
+ 	/* ND_ATR_dedicated_sockets */
+	{ (char *)ATTR_NODE_dedicated_sockets,  /* "dedicated_sockets" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -433,8 +433,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_available_numa_nodes */
-	{ (char *)ATTR_NODE_available_numa_nodes,  /* "available_numa_nodes" */
+ 	/* ND_ATR_dedicated_numa_nodes */
+	{ (char *)ATTR_NODE_dedicated_numa_nodes,  /* "dedicated_numa_nodes" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -445,8 +445,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_available_cores */
-	{ (char *)ATTR_NODE_available_cores,  /* "available_cores" */
+ 	/* ND_ATR_dedicated_cores */
+	{ (char *)ATTR_NODE_dedicated_cores,  /* "dedicated_cores" */
 	  decode_l,
 	  encode_l,
 	  set_l,
@@ -457,8 +457,8 @@ attribute_def node_attr_def[] =
 	  ATR_TYPE_LONG,
 	  PARENT_TYPE_NODE,
 	},
- 	/* ND_ATR_available_threads */
-	{ (char *)ATTR_NODE_available_threads,  /* "available_threads" */
+ 	/* ND_ATR_dedicated_threads */
+	{ (char *)ATTR_NODE_dedicated_threads,  /* "dedicated_threads" */
 	  decode_l,
 	  encode_l,
 	  set_l,

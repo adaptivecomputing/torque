@@ -491,42 +491,42 @@ void mom_hierarchy_handler::reloadHierarchy()
   {
   }
 
-int Machine::getAvailableSockets()
+int Machine::getDedicatedSockets() const
   {
   return(0);
   }
 
-int Machine::getTotalThreads()
+int Machine::getTotalThreads() const
   {
   return(0);
   }
 
-int Machine::getAvailableChips()
+int Machine::getDedicatedChips() const
   {
   return(0);
   }
 
-int Machine::getTotalCores()
+int Machine::getTotalCores() const
   {
   return(0);
   }
 
-int Machine::getAvailableCores()
+int Machine::getDedicatedCores() const
   {
   return(0);
   }
 
-int Machine::getAvailableThreads()
+int Machine::getDedicatedThreads() const
   {
   return(0);
   }
 
-int Machine::getTotalSockets()
+int Machine::getTotalSockets() const
   {
   return(0);
   }
 
-int Machine::getTotalChips()
+int Machine::getTotalChips() const
   {
   return(0);
   }
