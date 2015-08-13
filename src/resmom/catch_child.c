@@ -1016,9 +1016,10 @@ void scan_for_exiting(void)
 
   /* do not change this from the nextjob formal. In some cases pjob has
    * been freed by the time that the loop comes around */
+  std::list<job *>copy_alljobs(alljobs_list);
   std::list<job *>::iterator iter;
 
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  for (iter = copy_alljobs.begin(); iter != copy_alljobs.end(); iter++)
     {
     pjob = *iter;
 
