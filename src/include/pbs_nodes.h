@@ -558,10 +558,10 @@ enum nodeattr
   ND_ATR_total_numa_nodes,
   ND_ATR_total_cores,
   ND_ATR_total_threads,
-  ND_ATR_available_sockets,
-  ND_ATR_available_numa_nodes,
-  ND_ATR_available_cores,
-  ND_ATR_available_threads,
+  ND_ATR_dedicated_sockets,
+  ND_ATR_dedicated_numa_nodes,
+  ND_ATR_dedicated_cores,
+  ND_ATR_dedicated_threads,
 #endif
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */

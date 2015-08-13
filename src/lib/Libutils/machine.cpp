@@ -337,37 +337,42 @@ int Machine::initializeMachine(hwloc_topology_t topology)
   return(PBSE_NONE);
   }
 
-hwloc_uint64_t Machine::getTotalMemory()
+hwloc_uint64_t Machine::getTotalMemory() const
   {
   return(this->totalMemory);
   }
 
-int Machine::getTotalSockets()
+int Machine::getTotalSockets() const
   {
   return(this->totalSockets);
   }
 
-int Machine::getTotalChips()
+int Machine::getTotalChips() const
   {
   return(this->totalChips);
   }
 
-int Machine::getTotalCores()
+int Machine::getTotalCores() const
   {
   return(this->totalCores);
   }
 
-int Machine::getTotalThreads()
+int Machine::getTotalThreads() const
   {
   return(this->totalThreads);
   }
 
-int Machine::getAvailableSockets()
+int Machine::getAvailableSockets() const
   {
   return(this->availableSockets);
   }
 
-int Machine::getAvailableChips()
+int Machine::getDedicatedSockets() const
+  {
+  return(this->totalSockets - this->availableSockets);
+  }
+
+int Machine::getAvailableChips() const
   {
   int available = 0;
  
@@ -377,7 +382,12 @@ int Machine::getAvailableChips()
   return(available);
   }
 
-int Machine::getAvailableCores()
+int Machine::getDedicatedChips() const
+  {
+  return(this->totalChips - this->getAvailableChips());
+  }
+
+int Machine::getAvailableCores() const
   {
   int available = 0;
 
@@ -387,7 +397,12 @@ int Machine::getAvailableCores()
   return(available);
   }
 
-int Machine::getAvailableThreads()
+int Machine::getDedicatedCores() const
+  {
+  return(this->totalCores - this->getAvailableCores());
+  }
+
+int Machine::getAvailableThreads() const
   {
   int available = 0;
 
@@ -397,7 +412,10 @@ int Machine::getAvailableThreads()
   return(available);
   }
 
-
+int Machine::getDedicatedThreads() const
+  {
+  return(this->totalThreads - this->getAvailableThreads());
+  }
 
 void Machine::displayAsJson(
     

@@ -288,3 +288,8 @@ job *chk_job_request(char *p, batch_request *b)
 void overwrite_complete_req( pbs_attribute *attr, pbs_attribute *new_attr) {}
 
 void reply_ack(struct batch_request *preq) {}
+
+void overwrite_complete_req(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr) {}

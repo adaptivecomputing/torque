@@ -273,10 +273,10 @@ int mgr_modify_node(
         case ND_ATR_total_numa_nodes:
         case ND_ATR_total_cores:
         case ND_ATR_total_threads:
-        case ND_ATR_available_sockets:
-        case ND_ATR_available_numa_nodes:
-        case ND_ATR_available_cores:
-        case ND_ATR_available_threads:
+        case ND_ATR_dedicated_sockets:
+        case ND_ATR_dedicated_numa_nodes:
+        case ND_ATR_dedicated_cores:
+        case ND_ATR_dedicated_threads:
 #endif
         default:
           rc = PBSE_IVALREQ;

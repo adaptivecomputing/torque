@@ -653,33 +653,33 @@ int status_nodeattrib(
       else
         atemp[i].at_val.at_long = pnode->nd_layout->getTotalThreads();
       }
-    else if (i == ND_ATR_available_sockets)
+    else if (i == ND_ATR_dedicated_sockets)
        {
        if (pnode->nd_layout == NULL)
          atemp[i].at_val.at_long = 0;
        else
-         atemp[i].at_val.at_long = pnode->nd_layout->getAvailableSockets();
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedSockets();
        }
-    else if (i == ND_ATR_available_numa_nodes)
+    else if (i == ND_ATR_dedicated_numa_nodes)
        {
        if (pnode->nd_layout == NULL)
          atemp[i].at_val.at_long = 0;
        else
-         atemp[i].at_val.at_long = pnode->nd_layout->getAvailableChips();
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedChips();
        }
-    else if (i == ND_ATR_available_cores)
+    else if (i == ND_ATR_dedicated_cores)
        {
        if (pnode->nd_layout == NULL)
          atemp[i].at_val.at_long = 0;
        else
-         atemp[i].at_val.at_long = pnode->nd_layout->getAvailableCores();
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedCores();
        }
-    else if (i == ND_ATR_available_threads)
+    else if (i == ND_ATR_dedicated_threads)
        {
        if (pnode->nd_layout == NULL)
          atemp[i].at_val.at_long = 0;
        else
-         atemp[i].at_val.at_long = pnode->nd_layout->getAvailableThreads();
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedThreads();
        }
 #endif
     else if (i == ND_ATR_gpus)

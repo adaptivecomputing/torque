@@ -361,10 +361,10 @@
 #define ATTR_NODE_total_numa_nodes     "total_numa_nodes"
 #define ATTR_NODE_total_cores          "total_cores"
 #define ATTR_NODE_total_threads        "total_threads"
-#define ATTR_NODE_available_sockets    "available_sockets"
-#define ATTR_NODE_available_numa_nodes "available_numa_nodes"
-#define ATTR_NODE_available_cores      "available_cores"
-#define ATTR_NODE_available_threads    "available_threads"
+#define ATTR_NODE_dedicated_sockets    "dedicated_sockets"
+#define ATTR_NODE_dedicated_numa_nodes "dedicated_numa_nodes"
+#define ATTR_NODE_dedicated_cores      "dedicated_cores"
+#define ATTR_NODE_dedicated_threads    "dedicated_threads"
 #endif
 
 #define ATTR_job_full_report_time     "job_full_report_time"
