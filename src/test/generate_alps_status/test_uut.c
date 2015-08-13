@@ -39,6 +39,14 @@ char *sample_start22 = (char *)"clock_mhz='2100'/> <Processor ordinal='17' archi
 char *sample_start23 = (char *)"architecture='x86_64' clock_mhz='2100'/> <Processor ordinal='22' architecture='x86_64' clock_mhz='2100'/> <Processor ordinal='23' architecture='x86_64' clock_mhz='2100'/> </ProcessorArray> <MemoryArray> <Memory type='OS' page_size_kb='4' page_count='8192000'/> </MemoryArray> <LabelArray> ";
 char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' disposition='ATTRACT'/> </LabelArray> </Node> </NodeArray> <ReservationArray> <Reservation reservation_id='1772' user_name='pgarias' account_name='DEFAULT'/> <Reservation reservation_id='2549' user_name='daryal' account_name='DEFAULT'/> <Reservation reservation_id='2869' user_name='zachary' account_name='DEFAULT'/> </ReservationArray> </Inventory> </ResponseData> </BasilResponse> ";
 
+char *sample_norole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_norole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_batrole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_batrole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_introle_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='INTERACTIVE' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_introle_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='INTERACTIVE' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_unkrole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='UNKNOWN' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_unkrole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='UNKNOWN' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
 
 int search_dynamic_string_status(std::vector<std::string> &status, char *str);
 int generate_alps_status(std::vector<std::string> &status, const char *path, const char *protocol);
@@ -84,6 +92,109 @@ START_TEST(parse_alps_output_test)
   fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the status");
 
+  // role is not specified, reservation id set
+
+  output.clear();
+  status.clear();
+
+  output = sample_norole_withres;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+
+  // role is not specified, reservation id not set
+
+  output.clear();
+  status.clear();
+
+  output = sample_norole_nores;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=UP") == 1, "Couldn't find state in the status");
+
+  // role is BATCH, reservation id set
+
+  output.clear();
+  status.clear();
+
+  output = sample_batrole_withres;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+
+  // role is BATCH, reservation id not set
+
+  output.clear();
+  status.clear();
+
+  output = sample_batrole_nores;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=UP") == 1, "Couldn't find state in the status");
+ 
+  // role is interactive, reservation id set
+
+  output.clear();
+  status.clear();
+
+  output = sample_introle_withres;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+
+  // role is interactive, reservation id not set
+
+  output.clear();
+  status.clear();
+
+  output = sample_introle_nores;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN") == 1, "Couldn't find state in the status");
+
+  // role is unknown, reservation id set
+
+  output.clear();
+  status.clear();
+
+  output = sample_unkrole_withres;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+
+  // role is unknown, reservation id not set
+
+  output.clear();
+  status.clear();
+
+  output = sample_unkrole_nores;
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN") == 1, "Couldn't find state in the status");
   } 
 END_TEST 
 

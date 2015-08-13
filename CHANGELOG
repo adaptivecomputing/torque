@@ -1,6 +1,7 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 6.0.0
+  b - TRQ-3245. Enable reporter mom to correctly handle UNKNOWN role.
   b - TRQ-3242. Fix problem where resource string argument to prologue
       script getting garbled.
   b - TRQ-3232 Start threadpool at pbs_mom start.
