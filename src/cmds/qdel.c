@@ -86,7 +86,7 @@ int qdel_main(
   int located = FALSE;
   char *pc;
   bool  dash_t = false; /* for array submission job handling */
-  int  past_failure; /* for multiple job submission error message tracking */
+  int  past_failure = 0; /* for multiple job submission error message tracking */
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
 
