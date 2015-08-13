@@ -181,6 +181,7 @@ class Chip
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool task_will_fit(const req &r) const;
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
+    void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_place, allocation &a);
     void place_task_by_threads(int threads_to_place, allocation &a);
@@ -248,6 +249,7 @@ class Socket
     void setId(int id);
     void addChip(); // used for unit tests
     int  how_many_tasks_fit(const req &r, int place_type) const;
+    void place_all_execution_slots(req &r, allocation &task_alloc);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
@@ -306,6 +308,7 @@ class Machine
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
+    void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
     void setMemory(long long mem); // used for unit tests

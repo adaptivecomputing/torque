@@ -27,6 +27,8 @@ extern int called_store_pci;
 extern int json_socket;
 extern int sockets;
 extern int numa_node_count;
+extern int exec_slots;
+extern int placed_all;
 extern bool socket_fit;
 extern bool partially_placed;
 extern bool spreaded;
@@ -54,6 +56,26 @@ START_TEST(test_check_if_possible)
   cores = -1;
   threads = -1;
   fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == true);
+  }
+END_TEST
+
+
+START_TEST(test_place_all_execution_slots)
+  {
+  Machine m;
+  job     pjob;
+  std::string cpu;
+  std::string mem;
+  complete_req cr;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+
+  m.addSocket(2);
+  sockets = 0;
+  numa_node_count = 0;
+  placed_all = 0;
+  exec_slots = -1;
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(placed_all == 2);
   }
 END_TEST
 
@@ -314,6 +336,7 @@ Suite *machine_suite(void)
   tcase_add_test(tc_core, test_place_and_free_job);
   tcase_add_test(tc_core, test_store_pci_device_on_appropriate_chip);
   tcase_add_test(tc_core, test_spread_place);
+  tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   
   return(s);

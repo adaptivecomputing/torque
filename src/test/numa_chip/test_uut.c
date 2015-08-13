@@ -13,6 +13,35 @@ extern std::string my_placement_type;
 extern std::string thread_type;
 
 
+START_TEST(test_place_all_execution_slots)
+  {
+  const char        *jobid = "1.napali";
+  req                r;
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  a.cores_only = true;
+  c.place_all_execution_slots(r, a);
+  fail_unless(a.cores == 16);
+  fail_unless(a.threads == 32);
+  c.free_task(jobid);
+
+  allocation         a2(jobid);
+  c.place_all_execution_slots(r, a2);
+  fail_unless(a2.cores == 0);
+  fail_unless(a2.threads == 32);
+  }
+END_TEST
+
+
 START_TEST(test_spread_place)
   {
   const char        *jobid = "1.napali";
@@ -607,6 +636,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_and_free_task);
   tcase_add_test(tc_core, test_exclusive_place);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   
   return(s);

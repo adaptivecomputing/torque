@@ -17,7 +17,23 @@ extern int called_store_pci;
 extern int called_spread_place;
 extern int place_amount;
 extern int json_chip;
+extern int placed_all;
 extern std::string my_placement_type;
+
+
+START_TEST(test_place_all_execution_slots)
+  {
+  Socket s;
+  req        r;
+  allocation a;
+  s.addChip();
+  s.addChip();
+
+  placed_all = 0;
+  s.place_all_execution_slots(r, a);
+  fail_unless(placed_all == 2);
+  }
+END_TEST
 
 
 START_TEST(test_spread_place)
@@ -309,6 +325,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_task);
   tcase_add_test(tc_core, test_free_task);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");

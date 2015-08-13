@@ -196,7 +196,7 @@ class req
     unsigned long get_swap_for_host(const std::string &host) const;
     void          get_task_stats(std::vector<int> &task_index, std::vector<unsigned long> &cput_used,
                                  std::vector<unsigned long long> &mem_used);
-    void          get_execution_slots(int &execution_slots);
+    int           get_execution_slots() const;
     void          get_task_host_name(std::string &host, unsigned int task_index);
     int           get_req_allocation_count();
     int           set_cput_used(int task_index, const unsigned long cput_used);

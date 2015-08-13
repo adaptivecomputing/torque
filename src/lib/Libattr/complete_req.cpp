@@ -584,7 +584,7 @@ void complete_req::set_hostlists(
        req spans multiple nodes */
        
     task_count = this->reqs[i].getTaskCount();
-    this->reqs[i].get_execution_slots(execution_slots);
+    execution_slots = this->reqs[i].get_execution_slots();
     req_ppn = task_count * execution_slots;
     
     do

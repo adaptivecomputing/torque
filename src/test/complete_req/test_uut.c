@@ -178,13 +178,14 @@ START_TEST(test_set_hostlists)
   called_log_event = 0;
   c.set_hostlists("1.napali", "napali:ppn=32");
   fail_unless(called_log_event == 1);
-  c.set_hostlists("1.napali", "napali:ppn=32|waimea|lihue");
-  fail_unless(called_log_event == 2);
   c.set_hostlists("1.napali", "napali:ppn=32|waimea:ppn=16");
   const req &r = c.get_req(0);
-  fail_unless(r.getHostlist() == "napali:ppn=32", "it is '%s'", r.getHostlist().c_str());
+  std::vector<std::string> list;
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list[0] == "napali:ppn=32", list[0].c_str());
   const req &other = c.get_req(1);
-  fail_unless(other.getHostlist() == "waimea:ppn=16", "it is '%s'", other.getHostlist().c_str());
+  fail_unless(other.getHostlist(list) == 0);
+  fail_unless(list[0] == "waimea:ppn=16", "it is '%s'", list[0].c_str());
   }
 END_TEST
 

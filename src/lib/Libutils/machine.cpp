@@ -472,6 +472,26 @@ void Machine::setIsNuma(
   }
 
 
+void Machine::place_all_execution_slots(
+  
+  req        &r,
+  allocation &master,
+  const char *hostname)
+
+  {
+  allocation task_alloc(master.jobid.c_str());
+
+  task_alloc.set_host(hostname);
+  task_alloc.cores_only = (r.getThreadUsageString() == use_cores);
+    
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    this->sockets[i].place_all_execution_slots(r, task_alloc);
+
+  r.record_allocation(task_alloc);
+  master.add_allocation(task_alloc);
+  } // END place_all_execution_slots()
+
+
 
 /*
  * place_remaining()
@@ -669,6 +689,10 @@ int Machine::place_job(
         (r.get_numa_nodes() > 0))
       {
       spread_place(r, a, tasks_for_node, hostname);
+      }
+    else if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
+      {
+      place_all_execution_slots(r, a, hostname);
       }
     else
       {

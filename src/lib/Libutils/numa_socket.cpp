@@ -377,6 +377,24 @@ int Socket::how_many_tasks_fit(
 
 
 /*
+ * place_all_execution_slots()
+ *
+ */
+
+void Socket::place_all_execution_slots(
+    
+  req        &r,
+  allocation &task_alloc)
+  
+  {
+
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    this->chips[i].place_all_execution_slots(r, task_alloc);
+
+  } // END place_all_execution_slots()
+
+
+/*
  * spread_place()
  *
  * @param r - the req we're placing

@@ -1987,7 +1987,10 @@ int req::getTaskCount() const
   return(this->task_count);
   }
 
-int req::getHostlist(std::vector<std::string> &list) const
+int req::getHostlist(
+    
+  std::vector<std::string> &list) const
+
   {
   int rc = PBSE_EMPTY;
 
@@ -2271,12 +2274,10 @@ void req::set_memory(
   this->mem = mem;
   }
 
-void req::get_execution_slots(
-    
-  int &execution_slots)
+int req::get_execution_slots() const
 
   {
-  execution_slots = this->execution_slots;
+  return(this->execution_slots);
   }
 
 

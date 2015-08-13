@@ -1487,6 +1487,35 @@ void Chip::free_accelerators(
 
 
 /*
+ * place_all_execution_slots()
+ */
+
+void Chip::place_all_execution_slots(
+
+  req        &r,
+  allocation &master)
+
+  {
+  // Currently we regenerate the list of accelerators to place for each numa node because
+  // we're just going to give every accelerator to this job.
+  allocation remaining(r);
+  allocation a(master.jobid.c_str());
+  place_accelerators(remaining, a);
+  a.cores_only = master.cores_only;
+
+  if (a.cores_only == true)
+    place_task_by_cores(this->totalCores, a);
+  else
+    place_task_by_threads(this->totalThreads, a);
+  
+  a.mem_indices.push_back(this->id);
+  this->allocations.push_back(a);
+  master.add_allocation(a);
+  } // END place_all_execution_slots()
+
+
+
+/*
  * partially_place_task()
  *
  * Places whatever can be placed from the task specified by remaining onto this chip

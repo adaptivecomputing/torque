@@ -17,6 +17,7 @@ bool oscillate = false;
 bool avail_oscillate = false;
 int place_amount = 1;
 int json_chip;
+int placed_all;
 std::string my_placement_type;
 const char *place_socket = "socket";
 
@@ -213,6 +214,11 @@ bool Chip::store_pci_device_appropriately(PCI_Device &d, bool force)
   {
   called_store_pci++;
   return(force);
+  }
+
+void Chip::place_all_execution_slots(req &r, allocation &task_alloc)
+  {
+  placed_all++;
   }
 
 allocation::allocation(const allocation &other) {}

@@ -21,6 +21,8 @@ int called_spread_place;
 int json_socket;
 int sockets;
 int numa_node_count;
+int exec_slots;
+int placed_all;
 const int exclusive_socket = 2;
 bool socket_fit;
 bool partially_placed;
@@ -30,6 +32,8 @@ char mom_alias[1024];
 
 const int MEM_INDICES = 1;
 const int CPU_INDICES = 1;
+const char *use_cores = "usecores";
+const int ALL_EXECUTION_SLOTS = -1;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -69,6 +73,11 @@ bool Socket::store_pci_device_appropriately(PCI_Device &d, bool force)
   return(false);
   }
 
+void Socket::place_all_execution_slots(req &r, allocation &task_alloc)
+  {
+  placed_all++;
+  }
+
 bool Socket::spread_place(
     
   req        &r,
@@ -89,6 +98,13 @@ Core::~Core()
 
 Chip::~Chip()
   {
+  }
+
+Chip::Chip(const Chip &other) {}
+
+Chip &Chip::operator =(const Chip &other)
+  {
+  return(*this);
   }
 
 void Socket::displayAsString(std::stringstream &output) const {}
@@ -220,6 +236,15 @@ std::string req::getPlacementType() const
 
 void req::record_allocation(allocation const &a) {}
 
+int req::get_execution_slots() const
+  {
+  return(exec_slots);
+  }
+
+std::string req::getThreadUsageString() const
+  {
+  return(this->thread_usage_str);
+  }
 
 allocation::allocation(const char *jid)
   {
@@ -248,3 +273,5 @@ PCI_Device &PCI_Device::operator=(const PCI_Device &other)
   {
   return(*this);
   }
+
+
