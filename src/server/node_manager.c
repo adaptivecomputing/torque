@@ -4215,7 +4215,10 @@ int place_subnodes_in_hostlist(
     std::string       cpus;
     std::string       mems;
 
-    pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
+    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
+    if (rc != PBSE_NONE)
+      return(rc);
+
     save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
     save_node_usage(pnode);
 #endif
@@ -4575,8 +4578,11 @@ int build_hostlist_nodes_req(
         }
       else
         {
+        int rc = PBSE_NONE;
+
         job_reservation_info host_single;
-        if (place_subnodes_in_hostlist(pjob, pnode, current, host_single, ProcBMStr) == PBSE_NONE)
+        rc = place_subnodes_in_hostlist(pjob, pnode, current, host_single, ProcBMStr);
+        if (rc == PBSE_NONE)
           {
           host_info.push_back(host_single);
           place_gpus_in_hostlist(pnode, pjob, current, gpu_list);

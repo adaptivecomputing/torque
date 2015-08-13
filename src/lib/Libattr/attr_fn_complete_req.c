@@ -280,7 +280,10 @@ void overwrite_complete_req(
     attr->at_val.at_ptr = cr;
     }
   else
+    {
     cr = (complete_req *)attr->at_val.at_ptr;
+    cr->clear_reqs();
+    }
 
 
   std::vector<std::string> names;

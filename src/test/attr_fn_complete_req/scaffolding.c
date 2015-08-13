@@ -4,6 +4,7 @@
 
 #include "utils.h"
 #include "attribute.h"
+#include "complete_req.hpp"
 
 int         called_encode;
 
@@ -96,5 +97,54 @@ void *get_next(
   return(NULL);
   }
 
+void overwrite_complete_req(
 
+  pbs_attribute *attr,
+  pbs_attribute *new_attr)
+
+  {
+  complete_req *cr;
+  complete_req *to_copy = (complete_req *)new_attr->at_val.at_ptr;
+
+  if (attr->at_val.at_ptr == NULL)
+    {
+    cr = new complete_req();
+    attr->at_val.at_ptr = cr;
+    }
+  else
+    {
+    cr = (complete_req *)attr->at_val.at_ptr;
+    cr->clear_reqs();
+    }
+
+
+  std::vector<std::string> names;
+  std::vector<std::string> values;
+  to_copy->get_values(names, values);
+
+  for (unsigned int i = 0; i < names.size(); i++)
+  {
+  if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
+    {
+    cr->set_value(names[i].c_str(), values[i].c_str());
+    }
+  else
+    {
+    char  *attr_name = strdup(names[i].c_str());
+    char  *dot;
+
+    dot = strchr(attr_name, '.');
+    if (dot != NULL)
+      {
+      int index = strtol(dot + 1, NULL, 10);
+      *dot = '\0';
+      cr->set_value(index, attr_name, values[i].c_str());
+      }
+    }
+  }
+
+  attr->at_flags |= ATR_VFLAG_SET;
+  } // END overwrite_complete_req
+
+void log_err(int errnum, const char *routine, const char *text) {}
 

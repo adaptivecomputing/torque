@@ -115,6 +115,7 @@ class complete_req
     int            set_task_memory_used(int req_index, int task_index, const unsigned long long mem_used);
     int            set_task_cput_used(int req_index, int task_index, const unsigned long cput_used);
     void           clear_allocations();
+    void           clear_reqs();
     int            get_task_stats(unsigned int &req_index, std::vector<int> &task_index,
                                   std::vector<unsigned long> &cput_used,
                                   std::vector<unsigned long long> &mem_used);

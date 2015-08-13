@@ -44,7 +44,7 @@ START_TEST(test_recover_reservation)
   fail_unless(a2.memory == 0);
 
   allocation a3("3.napali");
-  fail_unless(!strcmp(a3.jobid, "3.napali"));
+  fail_unless(!strcmp(a3.jobid.c_str(), "3.napali"));
 
   }
 END_TEST

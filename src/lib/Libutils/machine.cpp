@@ -636,7 +636,10 @@ int Machine::spread_place(
     master.add_allocation(task_alloc);
     }
 
-  return(tasks_placed);
+  if (tasks_placed != tasks_for_node)
+    return(PBSE_IVALREQ);
+
+  return(PBSE_NONE);
   } // END spread_place()
 
 
@@ -688,7 +691,11 @@ int Machine::place_job(
     if ((r.get_sockets() > 0) ||
         (r.get_numa_nodes() > 0))
       {
-      spread_place(r, a, tasks_for_node, hostname);
+      int rc;
+
+      rc = spread_place(r, a, tasks_for_node, hostname);
+      if (rc != PBSE_NONE)
+        return(rc);
       }
     else if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
       {

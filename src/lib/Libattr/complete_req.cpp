@@ -652,6 +652,11 @@ void complete_req::clear_allocations()
   } // END clear_allocations()
 
 
+void complete_req::clear_reqs()
+
+  {
+  this->reqs.clear();
+  }
 
 int complete_req::get_task_stats(
 
