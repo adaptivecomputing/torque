@@ -31,6 +31,14 @@ char *sample_start22 = (char *)"clock_mhz='2100'/> <Processor ordinal='17' archi
 char *sample_start23 = (char *)"architecture='x86_64' clock_mhz='2100'/> <Processor ordinal='22' architecture='x86_64' clock_mhz='2100'/> <Processor ordinal='23' architecture='x86_64' clock_mhz='2100'/> </ProcessorArray> <MemoryArray> <Memory type='OS' page_size_kb='4' page_count='8192000'/> </MemoryArray> <LabelArray> ";
 char *sample_start24 = (char *)"<Label name='MOAB:FEATURE=regmem' type='SOFT' disposition='ATTRACT'/> </LabelArray> </Node> </NodeArray> <ReservationArray> <Reservation reservation_id='1772' user_name='pgarias' account_name='DEFAULT'/> <Reservation reservation_id='2549' user_name='daryal' account_name='DEFAULT'/> <Reservation reservation_id='2869' user_name='zachary' account_name='DEFAULT'/> </ReservationArray> </Inventory> </ResponseData> </BasilResponse> ";
 
+char *sample_norole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_norole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_batrole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_batrole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='BATCH' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_introle_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='INTERACTIVE' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_introle_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='INTERACTIVE' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_unkrole_withres = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='UNKNOWN' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> <ProcessorAllocation reservation_id='2869'/> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
+char *sample_unkrole_nores = (char *)"<BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='QUERY'> <Inventory> <NodeArray> <Node node_id='6142' name='c3-0c0s0n0' architecture='XT' role='UNKNOWN' state='UP'> <ProcessorArray> <Processor ordinal='0' architecture='x86_64' clock_mhz='2100'> </Processor> </ProcessorArray> </Node> </NodeArray> </Inventory> </ResponseData> </BasilResponse> ";
 
 int search_dynamic_string_status(dynamic_string *status, char *str, unsigned int *offset);
 int generate_alps_status(dynamic_string *status, const char *path, const char *protocol);
@@ -75,8 +83,112 @@ START_TEST(parse_alps_output_test)
   fail_unless(search_dynamic_string_status(status, (char *)"6144", NULL) == 1, "Couldn't find node 6144 in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"CPROC", NULL) == 1, "Couldn't find CPROC in the status");
   fail_unless(search_dynamic_string_status(status, (char *)"APROC", NULL) == 1, "Couldn't find APROC in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=UP", NULL) == 1, "Couldn't find state=UP in the status");
 
-  } 
+  // role is not specified, reservation id set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_norole_withres);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 1, "Couldn't find reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY", NULL) == 1, "Couldn't find state in the status");
+
+  // role is not specified, reservation id not set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_norole_nores);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=UP", NULL) == 1, "Couldn't find state in the status");
+
+  // role is BATCH, reservation id set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_batrole_withres);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 1, "Couldn't find reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY", NULL) == 1, "Couldn't find state in the status");
+
+  // role is BATCH, reservation id not set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_batrole_nores);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=UP", NULL) == 1, "Couldn't find state in the status");
+ 
+  // role is interactive, reservation id set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_introle_withres);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY", NULL) == 1, "Couldn't find state in the status");
+
+  // role is interactive, reservation id not set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_introle_nores);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN", NULL) == 1, "Couldn't find state in the status");
+
+  // role is unknown, reservation id set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_unkrole_withres);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY", NULL) == 1, "Couldn't find state in the status");
+
+  // role is unknown, reservation id not set
+
+  clear_dynamic_string(output);
+  clear_dynamic_string(status);
+
+  append_dynamic_string(output, sample_unkrole_nores);
+
+  rc = parse_alps_output(output, status);
+  fail_unless(rc == 0, "Couldn't parse alps output");
+
+  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=", NULL) == 0, "Found reservation in the status");
+  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN", NULL) == 1, "Couldn't find state in the status");
+ } 
 END_TEST 
 
 START_TEST(parse_alps13_output_test)

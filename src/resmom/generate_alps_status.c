@@ -461,9 +461,9 @@ int process_node(
 
   if (rsv_id != NULL)
     {
-    /* don't write the reservation id if we're in interactive mode */
+    /* only write the reservation id if we're in batch mode (or role was not supplied) */
     if ((role_value == NULL) ||
-        (strcmp(role_value, interactive_caps)))
+        (!strcmp(role_value, batch_caps)))
       {
       copy_to_end_of_dynamic_string(status, "reservation_id=");
       append_dynamic_string(status, rsv_id);
@@ -482,9 +482,10 @@ int process_node(
     /* no reservation, evaluate the state normally */
     copy_to_end_of_dynamic_string(status, "state=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
-    
+   
+    /* state is down if we're not in batch mode */
     if ((role_value != NULL) &&
-        (!strcmp(role_value, interactive_caps)))
+        (strcmp(role_value, batch_caps)))
       {
       append_dynamic_string(status, "DOWN");
       

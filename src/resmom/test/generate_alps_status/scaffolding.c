@@ -252,4 +252,8 @@ int find_error_type(
   return(0);
   }
 
-void clear_dynamic_string(dynamic_string *ds) {}
+void clear_dynamic_string(dynamic_string *ds)
+ {
+ ds->used = 0;
+ memset(ds->str, 0, ds->size);
+ }
