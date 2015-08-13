@@ -1,5 +1,8 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+4.2.10.h1
+  b - TRQ-3245. Enable reporter mom to correctly handle UNKNOWN role.
+
 4.2.10
   b - TRQ-2841. Fix some ways that max_user_queuable can become incorrect
   b - TRQ-2966. Improved job rerun speed which had been significantly slowed down
