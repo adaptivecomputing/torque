@@ -4471,7 +4471,7 @@ void recover_internal_layout()
   // get a list of jobs in start time order, first to last
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    pjob = *iter;
+    job *pjob = *iter;
 
     if (job_list.empty() == true)
       job_list.push_back(pjob);
