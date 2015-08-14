@@ -630,24 +630,33 @@ int Machine::spread_place(
 
   for (int i = 0; i < tasks_for_node; i++)
     {
+    bool partial_place = false;
     allocation task_alloc(master.jobid.c_str());
     task_alloc.set_place_type(r.getPlacementType());
 
     for (int j = 0; j < quantity; j++)
       {
+
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
         if (this->sockets[s].spread_place(r, task_alloc, execution_slots_per,
                                           execution_slots_remainder, chips))
           {
-          tasks_placed++;
+          partial_place = true;
 
           if (task_alloc.place_type == exclusive_socket)
             this->availableSockets--;
+
           break;
           }
         }
+
+      if (partial_place == false)
+        break;
       }
+
+    if (partial_place == true)
+      tasks_placed++;
 
     task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);

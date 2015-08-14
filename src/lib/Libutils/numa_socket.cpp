@@ -446,11 +446,13 @@ bool Socket::spread_place(
             }
           }
         else
+          {
           if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder))
             {
             placed = true;
             break;
             }
+          }
         }
       }
     }
