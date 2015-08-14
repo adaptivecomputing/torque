@@ -503,7 +503,12 @@ void Machine::place_all_execution_slots(
   task_alloc.cores_only = (r.getThreadUsageString() == use_cores);
     
   for (unsigned int i = 0; i < this->sockets.size(); i++)
+    {
     this->sockets[i].place_all_execution_slots(r, task_alloc);
+    this->availableSockets--;
+    }
+
+  task_alloc.place_type = exclusive_node;
 
   r.record_allocation(task_alloc);
   master.add_allocation(task_alloc);

@@ -387,11 +387,12 @@ void Socket::place_all_execution_slots(
   allocation &task_alloc)
   
   {
+  this->socket_exclusive = true;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)
     this->chips[i].place_all_execution_slots(r, task_alloc);
-
   } // END place_all_execution_slots()
+
 
 
 /*

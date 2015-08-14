@@ -1502,6 +1502,7 @@ void Chip::place_all_execution_slots(
   allocation a(master.jobid.c_str());
   place_accelerators(remaining, a);
   a.cores_only = master.cores_only;
+  this->chip_exclusive = true;
 
   if (a.cores_only == true)
     place_task_by_cores(this->totalCores, a);
