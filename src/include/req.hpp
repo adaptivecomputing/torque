@@ -202,6 +202,7 @@ class req
     int           set_cput_used(int task_index, const unsigned long cput_used);
     int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);
+    void          update_hostlist(const std::string &host_spec);
     void          set_memory(unsigned long mem);
     void          set_execution_slots(int execution_slots);
     void          set_task_count(int task_count);

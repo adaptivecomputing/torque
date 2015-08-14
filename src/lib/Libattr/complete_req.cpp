@@ -547,6 +547,27 @@ int complete_req::get_req_and_task_index(
   return(PBSE_NO_PROCESS_RANK);
   }
 
+
+
+int complete_req::update_hostlist(
+    
+  const std::string &host_spec,
+  int                req_index)
+
+  {
+  if ((req_index < 0) ||
+      (req_index >= this->reqs.size()))
+    {
+    return(-1);
+    }
+
+  this->reqs[req_index].update_hostlist(host_spec);
+  
+  return(PBSE_NONE);
+  } // END update_hostlist()
+
+
+
 void complete_req::set_hostlists(
 
   const char *job_id,

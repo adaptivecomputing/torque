@@ -2430,6 +2430,7 @@ int save_node_for_adding(
         to_add = NULL;
         break;
         }
+
       cur_naji = old_next;
       old_next = cur_naji->next;
       }
@@ -2824,9 +2825,9 @@ void record_fitting_node(
     {
     if ((job_type == JOB_TYPE_heterogeneous) &&
         (node_is_external(pnode) == TRUE))
-      save_node_for_adding(naji, pnode, req, first_node_id, TRUE, i+1);
+      save_node_for_adding(naji, pnode, req, first_node_id, TRUE, req->req_id);
     else
-      save_node_for_adding(naji, pnode, req, first_node_id, FALSE, i+1);
+      save_node_for_adding(naji, pnode, req, first_node_id, FALSE, req->req_id);
 
     if ((num_alps_reqs > 0) &&
         (ard_array != NULL) &&
@@ -4172,6 +4173,50 @@ void save_node_usage(
     log_err(errno, __func__, log_buf);
     }
   } // END save_node_usage()
+
+
+
+void update_req_hostlist(
+    
+  job        *pjob,
+  const char *host_name,
+  int         req_index,
+  int         ppn_needed)
+
+  {
+  long cray_enabled = FALSE;
+  complete_req *cr;
+  char          host_spec[MAXLINE];
+ 
+  snprintf(host_spec, sizeof(host_spec), "%s:ppn=%d", host_name, ppn_needed);
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+    {
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    }
+  else
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+  
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if (cray_enabled == TRUE)
+    {
+    // In cray enabled mode, only create this information for the login node
+    // which will have req_index 0.
+    if (req_index == 0)
+      {
+      cr->update_hostlist(host_spec, req_index);
+      }
+    }
+  else
+    {
+    cr->update_hostlist(host_spec, req_index);
+    }
+
+  } // END update_req_hostlist()
 #endif
 
 
@@ -4214,6 +4259,8 @@ int place_subnodes_in_hostlist(
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
+
+    update_req_hostlist(pjob, pnode->nd_name, naji->req_rank, naji->ppn_needed);
 
     rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
     if (rc != PBSE_NONE)
@@ -4761,37 +4808,6 @@ int add_multi_reqs_to_job(
 
 
 
-#ifdef PENABLE_LINUX_CGROUPS
-/*
- * set_req_exec_info()
- *
- * @param pjob - the job we're setting req_exec_info() for
- */
-
-void set_req_exec_info(
-
-  job        *pjob,
-  const char *host_list)
-
-  {
-  complete_req *cr;
-
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
-    {
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-    }
-  else
-    {
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    }
-    
-  cr->set_hostlists(pjob->ji_qs.ji_jobid, host_list);
-  } // END set_req_exec_info()
-#endif
-
-
-
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -4853,10 +4869,6 @@ int set_nodes(
 #ifdef GEOMETRY_REQUESTS
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
-
-#ifdef PENABLE_LINUX_CGROUPS
-  set_req_exec_info(pjob, spec);
-#endif
 
   naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
   naji->node_id = -1;

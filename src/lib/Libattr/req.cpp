@@ -2265,6 +2265,16 @@ void req::set_hostlist(
   {
   this->insert_hostname(hostlist);
   } // END set_hostlist()
+
+
+void req::update_hostlist(
+
+  const std::string &host_spec)
+
+  {
+  this->hostlist.push_back(host_spec);
+  } // END update_hostlist()
+
     
 void req::set_memory(
     

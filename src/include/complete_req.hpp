@@ -110,6 +110,7 @@ class complete_req
     req           &get_req(int i);
     int            get_req_index_for_host(const char *host, unsigned int &req_index);
     int            get_req_and_task_index(const int rank, unsigned int &req_index, unsigned int &task_index);
+    int            update_hostlist(const std::string &host_spec, int req_index);
     void           set_hostlists(const char *job_id, const char *host_list);
     void           set_value_from_nodes(const char *node_val);
     int            set_task_memory_used(int req_index, int task_index, const unsigned long long mem_used);

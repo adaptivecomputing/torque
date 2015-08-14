@@ -508,6 +508,28 @@ START_TEST(test_get_memory_for_host)
 END_TEST
 
 
+START_TEST(test_update_hostlist)
+  {
+  req r;
+  std::vector<std::string> list;
+
+  r.update_hostlist("napali");
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list.size() == 1);
+  fail_unless(list[0] == "napali");
+
+  list.clear();
+  r.update_hostlist("waimea");
+  r.update_hostlist("lihue");
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list.size() == 3);
+  fail_unless(list[0] == "napali");
+  fail_unless(list[1] == "waimea");
+  fail_unless(list[2] == "lihue");
+  }
+END_TEST
+
+
 START_TEST(test_get_num_tasks_for_host)
   {
   req r;
@@ -623,6 +645,7 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_memory_for_host);
   tcase_add_test(tc_core, test_get_swap_for_host);
   tcase_add_test(tc_core, test_get_task_allocation);
+  tcase_add_test(tc_core, test_update_hostlist);
   suite_add_tcase(s, tc_core);
   
   return(s);

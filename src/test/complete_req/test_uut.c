@@ -164,6 +164,34 @@ START_TEST(test_get_swap_memory_for_this_host)
 END_TEST
 
 
+START_TEST(test_update_hostlist)
+  {
+  complete_req c;
+  req r1;
+  req r2;
+  c.add_req(r1);
+
+  fail_unless(c.update_hostlist("napali:ppn=6", 1) != PBSE_NONE);
+  fail_unless(c.update_hostlist("napali:ppn=6", 0) == PBSE_NONE);
+
+  c.add_req(r2);
+
+  fail_unless(c.update_hostlist("waimea:ppn=4", -1) != PBSE_NONE);
+  fail_unless(c.update_hostlist("waimea:ppn=4", 2) != PBSE_NONE);
+  fail_unless(c.update_hostlist("waimea:ppn=4", 1) == PBSE_NONE);
+
+  std::vector<std::string> list;
+  req &r = c.get_req(0);
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list[0] == "napali:ppn=6");
+  list.clear();
+  r = c.get_req(1);
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list[0] == "waimea:ppn=4");
+  }
+END_TEST
+
+
 START_TEST(test_set_hostlists)
   {
   complete_req c;
@@ -263,6 +291,7 @@ Suite *complete_req_suite(void)
   tc_core = tcase_create("test_to_string");
   tcase_add_test(tc_core, test_to_string);
   tcase_add_test(tc_core, test_set_get_value);
+  tcase_add_test(tc_core, test_update_hostlist);
   suite_add_tcase(s, tc_core);
   
   return(s);
