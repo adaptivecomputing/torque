@@ -680,6 +680,8 @@ int Machine::place_job(
   const char *hostname)
 
   {
+  int rc = PBSE_NONE;
+
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     // Initialize a complete_req from the -l resource request
@@ -709,7 +711,6 @@ int Machine::place_job(
     if ((r.get_sockets() > 0) ||
         (r.get_numa_nodes() > 0))
       {
-      int rc;
 
       rc = spread_place(r, a, tasks_for_node, hostname);
       if (rc != PBSE_NONE)
@@ -730,7 +731,9 @@ int Machine::place_job(
           if (a.place_type == exclusive_socket)
             this->availableSockets--;
 
-          this->sockets[j].place_task(r, a, tasks_for_node, hostname);
+          rc = this->sockets[j].place_task(r, a, tasks_for_node, hostname);
+          if (rc != PBSE_NONE)
+            return(rc);
 
           break;
           }
