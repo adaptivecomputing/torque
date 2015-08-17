@@ -1188,7 +1188,7 @@ bool Chip::spread_place(
 
     from_this_chip.place_type = exclusive_chip;
 
-    if (this->totalCores > execution_slots_per)
+    if (this->totalCores >= execution_slots_per)
       {
       // Spread over just the cores
       int step = 1;
