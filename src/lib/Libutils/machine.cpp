@@ -745,9 +745,9 @@ int Machine::place_job(
           if (a.place_type == exclusive_socket)
             this->availableSockets--;
 
-          rc = this->sockets[j].place_task(r, a, tasks_for_node, hostname);
-          if (rc != PBSE_NONE)
-            return(rc);
+          // Placing 0 tasks is an error
+          if (this->sockets[j].place_task(r, a, tasks_for_node, hostname) == 0)
+            return(-1);
 
           break;
           }
