@@ -32,6 +32,7 @@ extern int placed_all;
 extern bool socket_fit;
 extern bool partially_placed;
 extern bool spreaded;
+extern int  my_placement_type;
 
 
 START_TEST(test_check_if_possible)
@@ -92,6 +93,7 @@ START_TEST(test_spread_place)
   m.addSocket(2);
 
   sockets = 1;
+  my_placement_type = 2;
   numa_node_count = 0;
   called_spread_place = 0;
   num_for_host = 1;
@@ -99,7 +101,7 @@ START_TEST(test_spread_place)
 
   // Make sure we call spread place once for each successfully placed task
   m.place_job(&pjob, cpu, mem, "napali");
-  fail_unless(called_spread_place == 1);
+  fail_unless(called_spread_place == 1, "called %d", called_spread_place);
 
   num_for_host = 3;
   called_spread_place = 0;
@@ -108,6 +110,7 @@ START_TEST(test_spread_place)
 
   // Now we're multiple instead of one so it should multiply the calls
   sockets = 0;
+  my_placement_type = 3;
   numa_node_count = 2;
   num_for_host = 2;
   called_spread_place = 0;
@@ -115,6 +118,7 @@ START_TEST(test_spread_place)
   fail_unless(called_spread_place == 4, "called %d times", called_spread_place);
   
   sockets = 2;
+  my_placement_type = 2;
   numa_node_count = 0;
   num_for_host = 3;
   called_spread_place = 0;
