@@ -8,7 +8,11 @@ MODULE moab
 /* core defines */
 
 #ifndef NULL
+# ifdef __cplusplus
+#  include <cstddef>
+# else
 #  define NULL (void *)0
+# endif
 #endif /* NULL */
 
 #ifndef MIN
