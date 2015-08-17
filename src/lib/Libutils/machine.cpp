@@ -576,7 +576,7 @@ void Machine::place_remaining(
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
-      if (this->sockets[j].is_available() == true)
+      if (remaining.place_type == exclusive_socket)
         this->availableSockets--;
 
       if (this->sockets[j].partially_place(remaining, task_alloc) == true)
