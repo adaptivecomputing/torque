@@ -66,7 +66,7 @@ extern int dummySocket;
 extern int dummySocketAfterRetries;
 extern int connectAddrRetries;
 
-int socket_connect_addr(int *local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, std::string &err_msg)
+int socket_connect_addr(int &local_socket, struct sockaddr *remote, size_t remote_size, int is_privileged, std::string &err_msg)
   {
   if(connectAddrRetries-- <= 0)
     {
