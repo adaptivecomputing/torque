@@ -179,6 +179,7 @@ class Chip
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
     int  how_many_tasks_fit(const req &r, int place_type) const;
+    bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r) const;
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     void place_all_execution_slots(req &r, allocation &task_alloc);

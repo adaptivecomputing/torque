@@ -338,7 +338,12 @@ void Socket::update_internal_counts(
 
   {
   for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
     this->chips[i].aggregate_allocations(allocs);
+
+    if (this->chips[i].has_socket_exclusive_allocation())
+      this->socket_exclusive = true;
+    }
   }
 
 

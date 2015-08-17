@@ -1186,7 +1186,7 @@ bool Chip::spread_place(
     allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
 
-    from_this_chip.place_type = exclusive_chip;
+    from_this_chip.place_type = task_alloc.place_type;
 
     if (this->totalCores >= execution_slots_per)
       {
@@ -1745,6 +1745,27 @@ bool Chip::cpusets_overlap(
 
   return(overlap);
   } // END cpusets_overlap()
+
+
+
+/*
+ * has_socket_exclusive_allocation()
+ *
+ * @return true if this chip has an allocation that is socket exclusive
+ */
+
+bool Chip::has_socket_exclusive_allocation() const
+
+  {
+  for (unsigned int i = 0; i < this->allocations.size(); i++)
+    {
+    if ((this->allocations[i].place_type == exclusive_socket) ||
+        (this->allocations[i].place_type == exclusive_node))
+      return(true);
+    }
+
+  return(false);
+  } // END has_socket_exclusive_allocation()
 
 
 #endif /* PENABLE_LINUX_CGROUPS */  

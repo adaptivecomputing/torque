@@ -59,6 +59,7 @@ START_TEST(test_spread_place)
     c.make_core(i);
 
   int                remaining = 0;
+  a.place_type = exclusive_chip;
 
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
   out.str("");
@@ -68,6 +69,7 @@ START_TEST(test_spread_place)
   fail_unless(c.reserve_core(0, a) == false);
   remaining = 1;
   fail_unless(c.spread_place(r, a, 4, remaining) == false);
+  fail_unless(c.has_socket_exclusive_allocation() == false);
   c.free_task(jobid);
   
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
@@ -85,9 +87,11 @@ START_TEST(test_spread_place)
   fail_unless(remaining == 0);
   
   c.free_task(jobid);
+  a.place_type = exclusive_socket;
   fail_unless(c.spread_place(r, a, 0, remaining) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
+  fail_unless(c.has_socket_exclusive_allocation() == true);
   }
 END_TEST
 

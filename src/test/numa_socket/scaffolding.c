@@ -15,6 +15,7 @@ int called_store_pci;
 int called_spread_place;
 bool oscillate = false;
 bool avail_oscillate = false;
+bool make_socket_exclusive = true;
 int place_amount = 1;
 int json_chip;
 int placed_all;
@@ -219,6 +220,11 @@ bool Chip::store_pci_device_appropriately(PCI_Device &d, bool force)
 void Chip::place_all_execution_slots(req &r, allocation &task_alloc)
   {
   placed_all++;
+  }
+
+bool Chip::has_socket_exclusive_allocation() const
+  {
+  return(make_socket_exclusive);
   }
 
 allocation::allocation(const allocation &other) {}
