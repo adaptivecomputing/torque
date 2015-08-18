@@ -2000,7 +2000,6 @@ void set_depend_hold(
 
 
 
-
 /*
  * depend_clrrdy - clear state ready flags in job dependency pbs_attribute
  */
@@ -2871,13 +2870,6 @@ int encode_depend(
 
         fast_strcat(&BPtr,":");
         cat_jobsvr(&BPtr,pdjb->dc_child);
-
-        if (*pdjb->dc_svr != '\0')
-          {
-          fast_strcat(&BPtr,"@");
-
-          cat_jobsvr(&BPtr,pdjb->dc_svr);
-          }
         } 
       }	
     
@@ -3407,40 +3399,50 @@ void removeAfterAnyDependency(
     if (pDepJob != NULL)
       {
       del_depend_job(pDep, pDepJob);
-      job_mutex.unlock();
       set_depend_hold(pLockedJob,pattr);
       }
     }
   }
 
 /*
- * If pJob has an BEFOREANY dependency, remove it.
- * pJob is passed in with the ji_mutex locked.
+ * removeBeforeAnyDependencies()
+ *
+ *
  */
-void removeBeforeAnyDependencies(const char *pJId)
+
+void removeBeforeAnyDependencies(
+    
+  const char *pJId)
+
   {
-  job *pLockedJob = svr_find_job((char *)pJId,FALSE);
-  if(pLockedJob == NULL) return;
-  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
+  job *pLockedJob = svr_find_job(pJId,FALSE);
 
-  struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
-  if(pDep != NULL)
+  if (pLockedJob != NULL)
     {
+    mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+    pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
-    unsigned int dp_jobs_size = pDep->dp_jobs.size();
-    for (unsigned int i = 0; i < dp_jobs_size; i++)
+    struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
+    if (pDep != NULL)
       {
-      struct depend_job *pDepJob = pDep->dp_jobs[i];
-      std::string depID(pDepJob->dc_child);
-      job_mutex.unlock();
-      removeAfterAnyDependency(depID.c_str(),pJId);
-      pLockedJob = svr_find_job((char *)pJId,FALSE);
-      if(pLockedJob == NULL) return;
-      job_mutex.mark_as_locked();
+
+      unsigned int dp_jobs_size = pDep->dp_jobs.size();
+      for (unsigned int i = 0; i < dp_jobs_size; i++)
+        {
+        struct depend_job *pDepJob = pDep->dp_jobs[i];
+        std::string depID(pDepJob->dc_child);
+        job_mutex.unlock();
+        removeAfterAnyDependency(depID.c_str(),pJId);
+        pLockedJob = svr_find_job(pJId,FALSE);
+        if (pLockedJob == NULL)
+          return;
+
+        job_mutex.mark_as_locked();
+        }
       }
     }
-  }
+
+  } // END removeBeforeAnyDependencies()
 
 
 

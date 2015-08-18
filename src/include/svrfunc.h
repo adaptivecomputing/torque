@@ -3,6 +3,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h"
+#include "get_path_jobdata.h"
 
 /*
  * misc server function prototypes

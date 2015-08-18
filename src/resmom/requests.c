@@ -373,14 +373,14 @@ static pid_t fork_to_user(
 
   if (stat(hdir, &sb) != 0)
     {
-    sprintf(log_buffer, "invalid home directory '%s' specified, errno=%d (%s)",
+    sprintf(log_buffer, "Root cannot open home directory '%s' specified, errno=%d (%s) -- Ignore if root squashing is enabled",
             hdir,
             errno,
             strerror(errno));
 
     if (LOGLEVEL >= 2)
       {
-      log_err(errno, __func__, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }
 
     if (EMsg != NULL)
@@ -1926,9 +1926,9 @@ static void resume_suspend(
     {
     task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
     if(tmpTask != NULL)
-      kill_task(tmpTask, SIGTSTP, 0);
+      kill_task(pjob, tmpTask, SIGTSTP, 0);
 
-    MUSleep(50000);
+    sleep(5);
     }
 
   for (tp = (task *)GET_NEXT(pjob->ji_tasks);
@@ -1943,7 +1943,7 @@ static void resume_suspend(
            tp->ti_qs.ti_task,
            tp->ti_qs.ti_parentnode));
 
-    stat = kill_task(tp, signum, 0);
+    stat = kill_task(pjob, tp, signum, 0);
 
     if (stat < 0)
       {
@@ -1997,7 +1997,7 @@ static void resume_suspend(
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      kill_task(tp, signum, 0);
+      kill_task(pjob, tp, signum, 0);
       }
 
     if (pjob->ji_numnodes > 1)

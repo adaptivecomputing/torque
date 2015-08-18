@@ -262,7 +262,7 @@ void send_sig_kill(
 
   free(job_id);
 
-  if (issue_signal(&pjob, "SIGKILL", post_rerun, extra,NULL) == 0)
+  if (issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL) == 0)
     {
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
     pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
@@ -296,9 +296,8 @@ void post_rerun(
 
   if (preq->rq_reply.brp_code != 0)
     {
-    sprintf(log_buf, "rerun signal reject by mom: %d", preq->rq_reply.brp_code);
-
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_signal.rq_jid,log_buf);
+    sprintf(log_buf, "rerun signal reject by mom: %s - %d", preq->rq_ind.rq_signal.rq_jid, preq->rq_reply.brp_code);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
     if ((pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE)))
       {
@@ -372,6 +371,8 @@ int handle_requeue_all(
     mutex_mgr job_mutex(pjob->ji_mutex, true);
     requeue_job_without_contacting_mom(*pjob);
     }
+
+  delete iter;
 
   reply_ack(preq);
 
@@ -497,6 +498,8 @@ int req_rerunjob(
       return(PBSE_UNKQUE);
       }
     
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+
     if(delay != 0)
       {
       static const char *rerun = "rerun";

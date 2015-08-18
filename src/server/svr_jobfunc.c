@@ -380,10 +380,10 @@ int insert_into_alljobs_by_rank(
 
 int svr_enquejob(
 
-  job *pjob,            /* I */
-  int  has_sv_qs_mutex, /* I */
-  char  *prev_job_id,  /* I */
-  bool have_reservation)
+  job        *pjob,            /* I */
+  int         has_sv_qs_mutex, /* I */
+  const char *prev_job_id,  /* I */
+  bool        have_reservation)
 
   {
   pbs_attribute *pattrjb;
@@ -493,7 +493,8 @@ int svr_enquejob(
   if (!pjob->ji_is_array_template)
     {
     alljobs.lock();
-    if (prev_job_id == NULL)
+    if ((prev_job_id == NULL) ||
+        (strlen(prev_job_id) == 0))
       alljobs.insert(pjob,pjob->ji_qs.ji_jobid);
     else
       alljobs.insert_after(prev_job_id,pjob,pjob->ji_qs.ji_jobid);
@@ -556,6 +557,7 @@ int svr_enquejob(
       }
 
     increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+    increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
 
   if ((pjob->ji_is_array_template) ||
@@ -736,13 +738,17 @@ int svr_dequejob(
   if (pque != NULL)
     {
     /* At this point unless the job is in state of JOB_STATE_COMPLETE we need to decrement the queue count */
-    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) || (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
+    if ((pque->qu_qs.qu_type == QTYPE_RoutePush) ||
+        (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
-      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+      if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+
+      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
       if (rc != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "failed to decrement user job count: %s. %s", 
-            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pbse_to_txt(rc));
+          pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pbse_to_txt(rc));
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
         }
       }
@@ -1182,7 +1188,7 @@ int svr_setjobstate(
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
             }
 
-          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
           }
 
         if (pque != NULL)
@@ -1203,7 +1209,7 @@ int svr_setjobstate(
                 sprintf(log_buf, "jobs queued job id %s for queue %s", jid.c_str(), pque->qu_qs.qu_name);
                 log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
                 }
-              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
               }
             }
 
@@ -1883,7 +1889,7 @@ int chk_svr_resc_limit(
               (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long))
             {
             if ((EMsg != NULL) && (EMsg[0] == '\0'))
-              strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty or all systems are busy)");
+              strcpy(EMsg, "cannot locate feasible nodes (nodes file is empty, all systems are busy, or no nodes have the requested feature)");
           
             comp_resc_lt++;
             }
@@ -3576,8 +3582,11 @@ static void correct_ct()
       
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
-    
+
+    delete job_iter;
     } /* END for each queue */
+
+  delete queue_iter;
   
   sprintf(log_buf, "%s:2", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);

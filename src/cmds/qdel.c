@@ -63,6 +63,7 @@ int qdel_main(
   int purge_completed = FALSE;
   int located = FALSE;
   char *pc;
+  bool isarray = false;
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
 
@@ -87,6 +88,9 @@ int qdel_main(
     }
 
   extend[0] = '\0';
+  
+  int brackcount;
+  // brackcount used to check for brackets in case of -t
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -158,13 +162,15 @@ int qdel_main(
 
       case 't':
 
+        isarray = true;
+
         if (extend[0] != '\0')
           {
           errflg++;
 
           break;
           }
-
+        
         pc = optarg;
 
         if (strlen(pc) == 0)
@@ -221,7 +227,7 @@ int qdel_main(
         break;
 
       default:
-
+    	
         errflg++;
 
         break;
@@ -233,7 +239,7 @@ int qdel_main(
     snprintf(server_out, sizeof(server_out), "%s", pbs_default());
     goto cnt;
     }
-
+  
   if ((errflg != 0) || (optind >= argc))
     {
     static char usage[] = "usage: qdel [{ -a | -c | -p | -t | -W delay | -m message}] [-b retry_seconds] [<JOBID>[<JOBID>]|'all'|'ALL']...\n";
@@ -249,7 +255,7 @@ int qdel_main(
     {
     cnt2server_conf(client_retry); /* set number of seconds to retry */
     }
-
+  
   for (;optind < argc;optind++)
     {
     int connect;
@@ -257,17 +263,40 @@ int qdel_main(
 
     /* check to see if user specified 'all' to delete all jobs */
 
-    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
+   snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
+   
+   for (unsigned int i = 0; i < strlen(job_id); i++)
+     {
+	   
+     if (job_id[i] == '[' || job_id[i] == ']')
+       { 
+       isarray = true;
+       
+       brackcount++;
+       }
+    	 
+     }
+   
+   if ((isarray == true) &&
+       (brackcount % 2 != 0))
+     {
+     fprintf(stderr, "qdel: illegally formed array identifier: %s\n",
+         job_id);
+     
+     any_failed = 1;
+     
+     exit(any_failed);
+     }
+   
+   if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+     {
+     fprintf(stderr, "qdel: illegally formed job identifier: %s\n",
+             job_id);
+      
+     any_failed = 1;
 
-    if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
-      {
-      fprintf(stderr, "qdel: illegally formed job identifier: %s\n",
-              job_id);
-
-      any_failed = 1;
-
-      continue;
-      }
+     exit(any_failed);
+     }
 
 cnt:
 
@@ -321,6 +350,12 @@ cnt:
         }
         
       prt_job_err((char *)"qdel", connect, job_id_out);
+      }
+    
+    if (!located && any_failed != 0)
+      {
+      fprintf(stderr, "qdel: nonexistent job id: %s\n", job_id);
+      // need to change to PBSE_ERROR.db
       }
 
     pbs_disconnect(connect);

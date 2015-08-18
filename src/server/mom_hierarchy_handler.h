@@ -37,16 +37,12 @@ private:
 
 
   void make_default_hierarchy();
-  void check_if_in_nodes_file(char           *hostname,
-                                 int             level_index,
-                                 unsigned short &rm_port);
-  void convert_level_to_send_format(mom_nodes &nodes,
-                                        int       level_index);
+  void check_if_in_nodes_file(const char *hostname, int level_index, unsigned short &rm_port);
+  void convert_level_to_send_format(mom_nodes &nodes, int level_index);
   void convert_path_to_send_format(mom_levels &levels);
   void add_missing_nodes(void);
   void convert_mom_hierarchy_to_send_format(void);
-  int sendHierarchyToNode(char             *name,
-                             unsigned short  port);
+  int sendHierarchyToNode(const char *name, unsigned short port);
   void loadHierarchy(void);
   pbsnode *nextNode(all_nodes_iterator **iter);
 

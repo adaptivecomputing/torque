@@ -1,0 +1,26 @@
+PROG_ROOT = ../../momctl
+
+AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I${PROG_ROOT}/../include/ --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags`
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags`
+AM_LIBS=`xml2-config --libs`
+
+lib_LTLIBRARIES = libuut.la libscaffolding.la
+
+AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
+
+check_PROGRAMS = test_uut
+
+libscaffolding_la_SOURCES = scaffolding.c
+libscaffolding_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+
+libuut_la_SOURCES = ${PROG_ROOT}/momctl.c
+libuut_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
+
+test_uut_LDADD = ../torque_test_lib/libtorque_test.la ../scaffold_fail/libscaffold_fail.la
+test_uut_SOURCES = test_uut.c 
+
+check_SCRIPTS = ../coverage_run.sh
+
+TESTS = ${check_PROGRAMS} ${check_SCRIPTS} 
+
+CLEANFILES = coverage_run.sh *.gcno *.gcda *.gcov core *.lo
