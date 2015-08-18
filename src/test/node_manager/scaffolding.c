@@ -616,6 +616,47 @@ id_map::~id_map()
   {
   }
 
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  } // END translate_vector_to_range_string()
+  
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  } /* END translate_range_string_to_vector() */
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+  
 
 id_map node_mapper;
 id_map job_mapper;
@@ -636,12 +677,6 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   return(0);
   }
 
-void complete_req::set_hostlists(const char *job_id, const char *hostname) {}
-
-void complete_req::clear_allocations() {}
-
-complete_req::complete_req(list_link &resource_list) {}
-
 void Machine::free_job_allocation(const char *jobid)
   {
   }
@@ -659,3 +694,6 @@ int Machine::place_job(
   return(0);
   }
 
+#include "../../src/lib/Libattr/complete_req.cpp"
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"
