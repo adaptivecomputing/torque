@@ -8,6 +8,7 @@
 #include "pbs_error.h"
 #include "attr_req_info.hpp"
 #include "attribute.h"
+#include "req.hpp"
 
 const char *LPROCS     = "lprocs";
 const char *NODES      = "node";
@@ -717,12 +718,32 @@ int attr_req_info::check_max_values(
   int ret;
   int           signed_value;
   unsigned long unsigned_value;
+  int           lprocs = 1;
 
 
   for (unsigned int i = 0; i < names.size(); i++)
     {
     signed_value = 0;
     unsigned_value = 0;
+    
+    if (names[i].find("lprocs") == 0)
+      lprocs = strtol(values[i].c_str(), NULL, 10);
+    else if (names[i].find("thread_usage_policy") == 0)
+      {
+      if (values[i] == use_cores)
+        {
+        if ((this->max_cores > 0) &&
+            (this->max_cores < lprocs))
+          return(PBSE_EXLIMIT);
+        }
+
+      if ((this->max_threads > 0) &&
+          (this->max_threads < lprocs))
+        return(PBSE_EXLIMIT);
+
+      lprocs = 1;
+      }
+
     ret = this->get_signed_max_limit_value(names[i].c_str(), signed_value);
     if ((ret == PBSE_NONE) && (signed_value != 0))
       {
@@ -768,21 +789,43 @@ int attr_req_info::check_min_values(
   int ret;
   int           signed_value;
   unsigned long unsigned_value;
-
+  int           lprocs = 1;
 
   for (unsigned int i = 0; i < names.size(); i++)
     {
     signed_value = 0;
     unsigned_value = 0;
+
+    if (names[i].find("lprocs") == 0)
+      lprocs = strtol(values[i].c_str(), NULL, 10);
+    else if (names[i].find("thread_usage_policy") == 0)
+      {
+      if (values[i] == use_cores)
+        {
+        if ((this->min_cores > 0) &&
+            (this->min_cores > lprocs))
+          return(PBSE_MINLIMIT);
+        }
+      else if (this->min_cores > 0)
+        return(PBSE_MINLIMIT);
+
+      if ((this->min_threads > 0) &&
+          (this->min_threads > lprocs))
+        return(PBSE_MINLIMIT);
+
+      lprocs = 1;
+      }
+
     ret = this->get_signed_min_limit_value(names[i].c_str(), signed_value);
-    if ((ret == PBSE_NONE) && (signed_value != 0))
+    if ((ret == PBSE_NONE) &&
+        (signed_value != 0))
       {
       int val;
 
       val = atoi(values[i].c_str());
       if ((val != 0) && (val < signed_value))
         {
-        return(PBSE_EXLIMIT);
+        return(PBSE_MINLIMIT);
         }
       }
         
@@ -800,13 +843,14 @@ int attr_req_info::check_min_values(
 
       if ((uval != 0) && (uval < unsigned_value))
         {
-        return(PBSE_EXLIMIT);
+        return(PBSE_MINLIMIT);
         }
       }
     }
  
   return(PBSE_NONE);
-  }
+  } // END check_min_values()
+
 
 
 /* 

@@ -290,6 +290,7 @@ PbsErrClient(PBSE_REQ_NOT_FOUND, (char *)"A req for this host was not found")
 PbsErrClient(PBSE_INDICES_EMPTY, (char *)"The cpuset or memset indices are not set")
 PbsErrClient(PBSE_EMPTY, (char *)"The container is empty")
 PbsErrClient(PBSE_CORE_PLACE, (char *)"Core and thread do not support a value assignment for place")
+PbsErrClient(PBSE_MINLIMIT, (char *)"Request doesn't meet minimum limit")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
