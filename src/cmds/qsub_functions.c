@@ -121,7 +121,8 @@ char *x11_get_proto(
     fprintf(stderr, "qsub: DISPLAY not set\n");
     return(NULL);
     }
-  if((display = strdup(tmp)) == NULL)
+
+  if ((display = strdup(tmp)) == NULL)
     {
     return(NULL);
     }

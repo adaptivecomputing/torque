@@ -778,6 +778,7 @@ bool req::submission_string_has_duplicates(
   {
   if ((is_present_twice(str, "lprocs", error)) ||
       (is_present_twice(str, "memory", error)) ||
+      (is_present_twice(str, "swap", error)) ||
       (is_present_twice(str, "disk", error)) ||
       (is_present_twice(str, "place", error)) ||
       (is_present_twice(str, "pack", error)) ||
@@ -786,8 +787,7 @@ bool req::submission_string_has_duplicates(
       (is_present_twice(str, "mics", error)) ||
       (is_present_twice(str, "gres", error)) ||
       (is_present_twice(str, "feature", error)) ||
-      (is_present_twice(str, "opsys", error)) ||
-      (is_present_twice(str, "reqattr", error)))
+      (is_present_twice(str, "opsys", error)))
     {
     return(true);
     }

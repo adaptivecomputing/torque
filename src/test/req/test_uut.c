@@ -116,7 +116,7 @@ START_TEST(test_get_set_values)
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
-  fail_unless(values[2] == "1024kb");
+  fail_unless(values[2] == "1048576kb", "value: %s", values[2].c_str());
   fail_unless(values[3] == "1024kb");
   fail_unless(values[4] == "10000000kb");
   fail_unless(values[5] == "1");
@@ -233,6 +233,8 @@ START_TEST(test_submission_string_has_duplicates)
   char *err_str1 = strdup("4:lprocs=2:lprocs=all");
   char *err_str2 = strdup("3:usecores:usefastcores");
   char *err_str3 = strdup("2:shared:shared");
+  char *err_str4 = strdup("2:swap=8gb:swap=4gb");
+  char *non_err_str1 = strdup("2:reqattr=matlab>7:reqattr=<9");
 
   std::string error;
   req         r;
@@ -242,6 +244,8 @@ START_TEST(test_submission_string_has_duplicates)
   fail_unless(r.submission_string_has_duplicates(err_str1, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str2, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str3, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str4, error) == true);
+  fail_unless(r.submission_string_has_duplicates(non_err_str1, error) == false);
   fail_unless(r.submission_string_precheck(strdup("5:lprocs=4+2:lprocs=2"), error) != PBSE_NONE);
   fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE);
   }
