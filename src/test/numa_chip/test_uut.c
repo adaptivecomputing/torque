@@ -141,7 +141,8 @@ START_TEST(test_json_constructor)
   fail_unless(c4.getTotalThreads() == 32);
   fail_unless(c4.getMemory() == 1024);
   fail_unless(c4.getAvailableMemory() == 1024);
-  fail_unless(c4.getAvailableCores() == 0, "%d available cores", c4.getAvailableCores());
+  // Should be 4 because no one is specifically requesting cores
+  fail_unless(c4.getAvailableCores() == 4, "%d available cores", c4.getAvailableCores());
   fail_unless(c4.getAvailableThreads() == 0);
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
@@ -151,6 +152,7 @@ START_TEST(test_json_constructor)
   fail_unless(c5.getTotalCores() == 16);
   fail_unless(c5.getTotalThreads() == 32);
   fail_unless(c5.getMemory() == 1024);
+  // Should be 0 because we're exlcusive chip
   fail_unless(c5.getAvailableCores() == 0, "%d available cores", c5.getAvailableCores());
   fail_unless(c5.getAvailableThreads() == 0);
   fail_unless(c5.get_available_mics() == 0, "%d available mics", c5.get_available_mics());

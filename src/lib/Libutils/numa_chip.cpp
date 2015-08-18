@@ -326,10 +326,8 @@ void Chip::reserve_allocation_resources(
   // reserve each cpu
   for (unsigned int j = 0; j < a.cpu_indices.size(); j++)
     {
-    bool was_free = false;
     for (unsigned int c = 0; c < this->cores.size(); c++)
       {
-      was_free = this->cores[c].free;
       if (this->cores[c].reserve_processing_unit(a.cpu_indices[j]) == true)
         {
         if (a.cores_only == true)
@@ -342,12 +340,6 @@ void Chip::reserve_allocation_resources(
           }
         else
           {
-          if (was_free)
-            {
-            this->availableCores--;
-            a.cores++;
-            }
-          
           this->availableThreads--;
           a.threads++;
           }
