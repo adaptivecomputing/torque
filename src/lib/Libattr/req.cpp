@@ -1810,6 +1810,8 @@ int req::set_value(
   const char *value)
 
   {
+  int rc = PBSE_NONE;
+
   if (!strncmp(name, "index", 5))
     this->index = strtol(value, NULL, 10);
   else if (!strncmp(name, "task_count", 10))
@@ -1822,11 +1824,20 @@ int req::set_value(
       this->execution_slots = strtol(value, NULL, 10);
     }
   else if (!strncmp(name, "memory", 6))
-    this->mem = strtoll(value, NULL, 10);
+    {
+    if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
+      return(rc);
+    }
   else if (!strncmp(name, "swap", 4))
-    this->swap = strtoll(value, NULL, 10);
+    {
+    if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
+      return(rc);
+    }
   else if (!strncmp(name, "disk", 4))
-    this->disk = strtoll(value, NULL, 10);
+    {
+    if ((rc = read_mem_value(value, this->disk)) != PBSE_NONE)
+      return(rc);
+    }
   else if (!strcmp(name, "node"))
     this->nodes = strtol(value, NULL, 10);
   else if (!strncmp(name, "socket", 7))
@@ -1878,6 +1889,8 @@ int req::set_value(
 
   return(PBSE_NONE);
   } // END set_value()
+
+
 
 /*
  * set_value()

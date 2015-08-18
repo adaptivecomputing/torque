@@ -154,7 +154,7 @@ int attr_req_info::set_min_limit_value(
   }
 
 
- int attr_req_info::set_max_limit_value(
+int attr_req_info::set_max_limit_value(
 
   const char *rescn,
   const char *val)
@@ -213,9 +213,11 @@ int attr_req_info::set_min_limit_value(
 
   return(PBSE_NONE);
 
-   }
+  } // END set_max_limit_value()
 
- int attr_req_info::set_default_limit_value(
+
+
+int attr_req_info::set_default_limit_value(
 
   const char *rescn,
   const char *val)
@@ -274,7 +276,8 @@ int attr_req_info::set_min_limit_value(
 
   return(PBSE_NONE);
 
-   }
+  } // END set_default_limit_value()
+
 
 
 int attr_req_info::get_signed_min_limit_value(
@@ -311,7 +314,9 @@ int attr_req_info::get_signed_min_limit_value(
     return (PBSE_BAD_PARAMETER);
 
   return(PBSE_NONE);
-  }
+  } // END get_signed_min_limit_value()
+
+
 
 unsigned int attr_req_info::get_unsigned_min_limit_value(
 
@@ -336,6 +341,8 @@ unsigned int attr_req_info::get_unsigned_min_limit_value(
 
   return(PBSE_NONE);
   }
+
+
 
 int attr_req_info::get_signed_max_limit_value(
 
@@ -372,6 +379,8 @@ int attr_req_info::get_signed_max_limit_value(
 
   return(PBSE_NONE);
   }
+
+
 
 unsigned int attr_req_info::get_unsigned_max_limit_value(
 
@@ -618,6 +627,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
   }
 
 
+
 int attr_req_info::get_default_values(std::vector<std::string>& names, std::vector<std::string>& values)
   {
   char buf[100];
@@ -747,6 +757,8 @@ int attr_req_info::check_max_values(
   return(PBSE_NONE);
   }
 
+
+
 int attr_req_info::check_min_values(
 
   std::vector<std::string>& names, 
@@ -864,6 +876,6 @@ int attr_req_info::add_default_values(
 
  
   return(PBSE_NONE);
-  }
+  } // END add_default_values()
 
 

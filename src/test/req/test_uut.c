@@ -72,7 +72,7 @@ START_TEST(test_get_set_values)
 
   r.set_value("index", "0");
   r.set_value("lprocs", "all");
-  r.set_value("memory", "1024kb");
+  r.set_value("memory", "1024mb");
   r.set_value("swap", "1024kb");
   r.set_value("disk", "10000000kb");
   r.set_value("socket", "1");

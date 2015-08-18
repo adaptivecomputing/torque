@@ -2443,7 +2443,9 @@ int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
     }
 
   return(rc);
- }
+  } // END check_for_complete_req_and_limits()
+
+
 
 static int check_queue_job_limit(
 
