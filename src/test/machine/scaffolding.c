@@ -24,9 +24,12 @@ int numa_node_count;
 int exec_slots;
 int placed_all;
 const int exclusive_socket = 2;
+const int exclusive_node = 1;
+const int exclusive_chip = 3;
 bool socket_fit;
 bool partially_placed;
 bool spreaded;
+int my_placement_type;
 
 char mom_alias[1024];
 
@@ -256,7 +259,12 @@ allocation::allocation(const allocation &other)
   }
 allocation::allocation() {}
 allocation::allocation(const req &r) {}
-void allocation::set_place_type(const std::string &place) {}
+
+void allocation::set_place_type(const std::string &place)
+  {
+  this->place_type = my_placement_type;
+  }
+
 void allocation::place_indices_in_string(std::string &out, int which) {}
 int allocation::add_allocation(allocation const &a) {}
 void allocation::set_host(const char *hostname)

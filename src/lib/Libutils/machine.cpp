@@ -576,7 +576,7 @@ void Machine::place_remaining(
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
-      if (this->sockets[j].is_available() == true)
+      if (remaining.place_type == exclusive_socket)
         this->availableSockets--;
 
       if (this->sockets[j].partially_place(remaining, task_alloc) == true)
@@ -628,6 +628,13 @@ int Machine::spread_place(
     chips = true;
     quantity = r.get_numa_nodes();
     }
+ 
+  // Handle the case for place=node
+  if (quantity == 0)
+    {
+    quantity = this->sockets.size();
+    chips = false;
+    }
 
   // Spread the placement evenly across the number of sockets or numa nodes
   int execution_slots_per = r.getExecutionSlots() / quantity;
@@ -649,7 +656,8 @@ int Machine::spread_place(
           {
           partial_place = true;
 
-          if (task_alloc.place_type == exclusive_socket)
+          if ((task_alloc.place_type == exclusive_socket) ||
+              (task_alloc.place_type == exclusive_node))
             this->availableSockets--;
 
           break;
@@ -722,17 +730,16 @@ int Machine::place_job(
       
     a.set_place_type(r.getPlacementType());
 
-    if ((r.get_sockets() > 0) ||
-        (r.get_numa_nodes() > 0))
-      {
-
-      rc = spread_place(r, a, tasks_for_node, hostname);
-      if (rc != PBSE_NONE)
-        return(rc);
-      }
-    else if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
+    if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
       {
       place_all_execution_slots(r, a, hostname);
+      }
+    else if ((a.place_type == exclusive_node) ||
+             (a.place_type == exclusive_socket) ||
+             (a.place_type == exclusive_chip))
+      {
+      if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
+        return(rc);
       }
     else
       {
