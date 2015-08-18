@@ -241,6 +241,7 @@
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
 #include "mom_config.h"
+#include "mom_func.h"
 #include <string>
 #include <vector>
 #include "container.hpp"
@@ -283,7 +284,6 @@ extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
 extern int                 verbositylevel;
 extern AvlTree             okclients;
-extern tlist_head          svr_alljobs;
 extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
@@ -304,8 +304,6 @@ extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
-extern char *dependent(const char *res, struct rm_attribute *attr);
-extern char *reqgres(struct rm_attribute *);
 extern void send_update_soon();
 
 #ifdef NVIDIA_GPUS
@@ -730,10 +728,10 @@ void gen_size(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
+  struct config       *ap;
 
   struct rm_attribute *attr;
-  char *value;
+  const char          *value;
 
   ap = rm_search(config_array, name);
 
@@ -834,7 +832,7 @@ void gen_gres(
   std::vector<std::string> &status)
 
   {
-  char  *value;
+  const char *value;
 
   value = reqgres(NULL);
 
@@ -855,9 +853,9 @@ void gen_gen(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
-  char  *value;
-  char  *ptr;
+  struct config *ap;
+  const char    *value;
+  char          *ptr;
 
   ap = rm_search(config_array,name);
 
@@ -2753,10 +2751,13 @@ void check_busy(
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
-    if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+    std::list<job *>::iterator iter;
+
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
-      for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-        numvnodes += pjob->ji_numvnod;
+      pjob = *iter;
+
+      numvnodes += pjob->ji_numvnod;
       }
 
     mymax_load = compute_load_threshold(auto_max_load, numvnodes, max_load_val);

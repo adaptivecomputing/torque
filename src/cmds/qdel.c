@@ -85,7 +85,8 @@ int qdel_main(
   int purge_completed = FALSE;
   int located = FALSE;
   char *pc;
-  bool  dash_t = false;
+  bool  dash_t = false; /* for array submission job handling */
+  int  past_failure = 0; /* for multiple job submission error message tracking */
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
 
@@ -338,6 +339,9 @@ cnt:
         }
       } while ((++retries < MAX_RETRIES) && (any_failed == PBSE_TIMEOUT));
 
+    if (past_failure == 0)
+      past_failure = any_failed;
+
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
       {
@@ -362,11 +366,14 @@ cnt:
     if (!located && any_failed != 0)
       {
       fprintf(stderr, "qdel: nonexistent job id: %s\n", job_id);
-      // need to change to PBSE_ERROR.db
       }
 
     pbs_disconnect(connect);
     }
+
+  if ((past_failure != PBSE_NONE) &&
+      (any_failed == PBSE_NONE))
+    any_failed = past_failure;
 
   exit(any_failed);
   } /* END qdel_main() */

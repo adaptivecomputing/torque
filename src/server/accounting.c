@@ -1,3 +1,4 @@
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -522,14 +523,20 @@ void add_procs_and_nodes_used(
       std::size_t      plus = nodelist.find("+", pos);
       std::string      host(nodelist.substr(pos, plus - pos));
       std::size_t      slash = host.find("/");
-      std::string      range(host.substr(slash + 1));
+      std::string      range;
       std::vector<int> indices;
 
-      // remove the /<index>
-      host.erase(slash);
+      // remove the /<index> if it exists
+      if (slash != std::string::npos)
+        {
+        range = host.substr(slash + 1);
+        host.erase(slash);
 
-      translate_range_string_to_vector(range.c_str(), indices);
-      total_execution_slots += indices.size();
+        translate_range_string_to_vector(range.c_str(), indices);
+        total_execution_slots += indices.size();
+        }
+      else
+        total_execution_slots += 1;
 
       if (last_host != host)
         {

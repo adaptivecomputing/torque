@@ -916,7 +916,7 @@ int authorize_socket(
         usleep(10000);
         continue;
         }
-      else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
+      else if ((rc = socket_connect(svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
         {
         /* for now we only need ssh_key and sign_key as dummys */
         char *ssh_key = NULL;

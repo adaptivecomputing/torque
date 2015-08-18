@@ -81,6 +81,7 @@
 
 #include "libpbs.h"
 #include <set>
+#include <list>
 
 #ifndef MOM_MACH
 #include "mom_mach.h"
@@ -286,5 +287,8 @@ extern char *std_file_name(job *, enum job_file, int *);
 #ifdef BATCH_REQUEST_H
 extern int   start_checkpoint(job *, int, struct batch_request *);
 #endif /* BATCH_REQUEST_H */
+
+extern std::list<job *> alljobs_list;
+void remove_from_job_list(job *pjob);
 
 #endif /* _MOM_FUNC_H */

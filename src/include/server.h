@@ -217,6 +217,7 @@ enum srv_atr
   SRV_ATR_ExitCodeCanceledJob,
   SRV_ATR_TimeoutForJobDelete,
   SRV_ATR_TimeoutForJobRequeue,
+  SRV_ATR_DontWriteNodesFile,
 
   /* This must be last */
   SRV_ATR_LAST

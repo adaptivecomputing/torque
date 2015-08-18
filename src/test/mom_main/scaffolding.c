@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <netdb.h> /* hostent */
 #include <sstream>
+#include <list>
 
 #include "mom_func.h" /* sig_tbl */
 #include "pbs_job.h" /* job, pjobexec_t, task, pjobexec_t */
@@ -36,9 +37,11 @@ extern mom_hierarchy_t *mh;
 
 
 extern mom_hierarchy_t *mh;
-
+std::list<job *> alljobs_list;
+int              job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 mom_server     mom_servers[PBS_MAXSERVER];
 int mom_server_count = 0;
+int MOMCudaVisibleDevices;
 const char *msg_daemonname = "unset";
 struct sig_tbl sig_tbl[2];
 char pbs_current_user[PBS_MAXUSER];
@@ -46,7 +49,7 @@ extern char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;
-extern long pe_alarm_time;
+long pe_alarm_time;
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 struct config standard_config[2];
 struct config dependent_config[2];
@@ -59,44 +62,87 @@ time_t wait_time = 10;
 boost::ptr_vector<std::string> mom_status;
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 char log_buffer[LOG_BUF_SIZE];
-extern int job_exit_wait_time;
-extern char      config_file[];
-extern char      xauth_path[];
-extern int       MOMConfigRReconfig;
-extern long      TJobStartBlockTime; /* seconds to wait for job to launch before backgrounding */
-extern int       ServerStatUpdateInterval;
-extern int       ignmem;
-extern int       igncput;
-extern int       PBSNodeCheckInterval;
-extern int       hostname_specified;
-extern char      rcp_path[];
+char      config_file[_POSIX_PATH_MAX];
+char      xauth_path[1024];
+int       MOMConfigRReconfig;
+long      TJobStartBlockTime; /* seconds to wait for job to launch before backgrounding */
+int       ServerStatUpdateInterval;
+int       ignmem;
+int       igncput;
+int       PBSNodeCheckInterval;
+int       hostname_specified;
+char      rcp_path[MAXPATHLEN];
 extern char      tmpdir_basename[];  /* for $TMPDIR */
-extern float     max_load_val;
-extern int       MOMConfigDownOnError;
-extern int       mask_num;
+float     max_load_val;
+int       MOMConfigDownOnError;
+int       mask_num;
 extern char      PBSNodeMsgBuf[];
-extern int       MOMConfigRestart;
+int       MOMConfigRestart;
 attribute_def    job_attr_def[1];
-extern int       LOGKEEPDAYS;
-extern long      log_file_roll_depth;
-extern char      extra_parm[];
-extern struct config   *config_array;
-extern char    **maskclient; /* wildcard connections */
-extern char      PBSNodeCheckPath[];
-extern int       CheckPollTime;
-extern char      rcp_args[];
-extern long      log_file_max_size;
-extern char      mom_host[];
-extern int       rm_errno;
-extern int       config_file_specified;
-extern char      MOMConfigVersion[];
-extern struct    config common_config[];
+int       LOGKEEPDAYS;
+long      log_file_roll_depth;
+char             extra_parm[] = "extra parameter(s)";
+struct config   *config_array = NULL;
+char           **maskclient = NULL; /* wildcard connections */
+char             PBSNodeCheckPath[MAXLINE];
+int       CheckPollTime;
+char             rcp_args[MAXPATHLEN];
+long      log_file_max_size;
+char             mom_host[PBS_MAXHOSTNAME + 1];
+int       rm_errno;
+int       config_file_specified;
+char             MOMConfigVersion[64];
+struct config common_config[] = {};
 char           **ArgV;
 char            *OriginalPath;
-extern int       resend_join_job_wait_time;
-extern int       max_join_job_wait_time;
+int       resend_join_job_wait_time;
+int       max_join_job_wait_time;
 bool   parsing_hierarchy = false;
-extern bool received_cluster_addrs;
+bool received_cluster_addrs;
+
+int setbool(
+
+  const char *value) /* I */
+
+  {
+  int enable = -1;
+
+  if (value != NULL)
+    {
+
+    switch (value[0])
+      {
+
+      case 't':
+      case 'T':
+      case 'y':
+      case 'Y':
+      case '1':
+        enable = 1;
+        break;
+
+      case 'f':
+      case 'F':
+      case 'n':
+      case 'N':
+      case '0':
+        enable = 0;
+        break;
+
+      case 'o':
+      case 'O':
+        if ((strcasecmp(value,"on") == 0))
+          enable = 1;
+        else if ((strcasecmp(value,"off") == 0))
+          enable = 0;
+        break;
+
+      }
+
+    }
+
+  return(enable);
+  }
 
 void save_args(int argc, char **argv) {}
 
@@ -357,7 +403,7 @@ void net_close(int but)
   exit(1);
   }
 
-int kill_task(task *ptask, int sig, int pg)
+int kill_task(job *pjob, task *ptask, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   exit(1);
@@ -869,3 +915,110 @@ time_t get_stat_update_interval()
   }
 
 void empty_received_nodes() {}
+
+void start_request_pool(threadpool_t *tp) {}
+
+unsigned long setenablemomrestart(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+u_long setrcpcmd(
+
+  const char *Value)  /* I */
+
+  {
+  return(0);
+  }
+
+unsigned long jobstartblocktime(
+
+  const char *value)  /* I */
+  
+  {
+  return(0);
+  }
+
+char *tokcpy(
+
+  char *str,
+  char *tok)
+
+  {
+  return(NULL);
+  }
+
+unsigned long setloglevel(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+unsigned long setstatusupdatetime(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+u_long setjobdirectorysticky(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    MOMJobDirStickySet = enable;
+
+  return(1);
+  }
+
+void reset_config_vars() {}
+
+u_long addclient(
+
+  const char *name)  /* I */
+
+  {
+  return(0);
+  }
+
+u_long setcudavisibledevices(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+unsigned long setdownonerror(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+unsigned long setcheckpolltime(
+
+  const char *value)  /* I */
+
+  {
+  return(0);
+  }
+
+int read_config(
+
+  char *file)  /* I */
+
+  {
+  return(0);
+  }
+

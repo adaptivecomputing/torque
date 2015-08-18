@@ -1,18 +1,31 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 6.0.0
+  b - TRQ-3245. Enable reporter mom to correctly handle UNKNOWN role.
+  b - TRQ-3242. Fix problem where resource string argument to prologue
+      script getting garbled.
+  b - TRQ-3232 Start threadpool at pbs_mom start.
   b - TRQ-3117. Fix a misspelling in the number_successful tag (was number_successfull)
   e - TRQ-3131. Add capability to pass environment variables to pbsdsh. 
   b - TRQ-3185. Create subdirs when server attribute use_job_subdirs set.
 
 
 5.1.2
+  b - TRQ-2675. Fix small errors in suse init.d scripts.
+  b - TRQ-3235. Fix problem when path to error, output or execution environment
+      contains one or more spaces.
   e - TRQ-3098. Add the ability to set a parameter exit_code_canceled_job to force all
       canceled jobs to have the same exit code regardless of the state they were in
       when they were canceled.
   e - TRQ-2836. Make node health check run on sister nodes when configured for job
       start and job end as well.
+  e - TRQ-2843. Add the qmgr setting dont_write_nodes_file to make it so that nodes
+      cannot be edited dynamically
+  f - TRQ-2897. Add the ability to adopt running processes into a job with pbs_track.
+  b - TRQ-3189. Never delete a running job because of a dependency.
 
+5.1.1.2
+  e - TRQ-3197. Add support for RHEL7 and SLES12.
 
 5.1.1
   b - TRQ-2947. Fix a race condition on deleting jobs which are failing to start.
