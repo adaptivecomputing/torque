@@ -1686,7 +1686,11 @@ void print_req_information(
     
   if (a.task_memory_used != 0)
     {
-    sprintf(buf, "%llu", a.task_memory_used);
+    unsigned long long mem_used;
+
+    mem_used = a.task_memory_used/1024;
+
+    sprintf(buf, "%llukb", mem_used);
 
     if (JE == NULL)
       {
