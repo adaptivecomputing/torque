@@ -319,7 +319,8 @@ void allocation::initialize_from_string(
     val = ptr + strlen("host\":") + 1;
     storage.clear();
     capture_until_close_character(&val, storage, '"');
-    this->hostname = storage;
+    if (storage.size() != 0)
+      this->hostname = storage;
     }
 
   free(work_str);
