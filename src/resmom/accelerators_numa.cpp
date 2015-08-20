@@ -5,7 +5,6 @@
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
-#endif
 
 #ifdef MIC
 #include <hwloc/intel-mic.h>
@@ -261,3 +260,4 @@ void PCI_Device::initializeGpu(
   }
 #endif
 
+#endif
