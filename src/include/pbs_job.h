@@ -388,8 +388,10 @@ enum job_atr
 #include "site_job_attr_enum.h"
 
   JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
+#ifdef PENABLE_LINUX_CGROUPS
   JOB_ATR_cpuset_string,
   JOB_ATR_memset_string,
+#endif
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
