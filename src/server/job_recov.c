@@ -935,7 +935,7 @@ int add_encoded_attributes(
           translate_dependency_to_string(pattr + i, value);
         else
 #endif
-          attr_to_str(value, job_attr_def + i, pattr[i], false);
+          attr_to_str(value, job_attr_def + i, pattr[i], true);
 
         if (value.size() == 0)
           continue;
