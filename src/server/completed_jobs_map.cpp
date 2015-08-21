@@ -230,7 +230,7 @@ void completed_jobs_map_class::print_map(
       it != completed_jobs_map.end();
       ++it)
       {
-      printf("%20s %d\n", it->first.c_str(), it->second);
+      printf("%20s %d\n", it->first.c_str(), (int)it->second);
       }
     }
   }
