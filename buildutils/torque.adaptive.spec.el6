@@ -9,7 +9,7 @@
 # Autoconf variables
 # These are set in /usr/lib/rpm/macros, but are explicitly defined here
 # For consistency between distributions.
-%define _prefix                /usr
+%define _prefix                /usr/local
 %define _exec_prefix           %{_prefix}
 %define _bindir                %{_exec_prefix}/bin
 %define _sbindir               %{_exec_prefix}/sbin
