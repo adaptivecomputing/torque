@@ -2423,7 +2423,7 @@ int save_node_for_adding(
     old_next = cur_naji->next;
     while (old_next != NULL)
       {
-      if (to_add->req_rank <= old_next->req_rank)
+      if (to_add->req_rank < old_next->req_rank)
         {
         cur_naji->next = to_add;
         to_add->next = old_next;
@@ -2434,6 +2434,7 @@ int save_node_for_adding(
       cur_naji = old_next;
       old_next = cur_naji->next;
       }
+
     if (to_add != NULL)
       {
       cur_naji->next = to_add;
