@@ -9,7 +9,7 @@ User=root
 
 LimitNOFILE=32768
 LimitMEMLOCK=infinity
-LimitSTACK=8192
+LimitSTACK=12288
 
 KillMode=process
 
