@@ -5386,8 +5386,11 @@ int setup_program_environment(void)
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
 
-  initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
-  start_request_pool(request_pool);
+  if (thread_unlink_calls == true)
+    {
+    initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+    start_request_pool(request_pool);
+    }
 
   requested_cluster_addrs = 0;
 
@@ -5395,6 +5398,8 @@ int setup_program_environment(void)
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
+
+
 
 /*
  * TMOMJobGetStartInfo

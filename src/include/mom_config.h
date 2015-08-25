@@ -95,7 +95,7 @@
 
 
 
-extern int              thread_unlink_calls;
+extern bool             thread_unlink_calls;
 extern int              ignwalltime;
 extern int              ignmem;
 extern int              igncput;
