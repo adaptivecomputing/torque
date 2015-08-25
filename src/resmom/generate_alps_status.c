@@ -88,6 +88,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <time.h>
 
 #include "../lib/Libifl/lib_ifl.h"
 
@@ -677,7 +678,13 @@ int parse_alps_output(
     return(ALPS_PARSING_ERROR);
     }
 
-  process_element(status, xmlDocGetRootElement(doc));
+  if (process_element(status, xmlDocGetRootElement(doc)) == ALPS_QUERY_FAILURE)
+    {
+  	snprintf(log_buffer, sizeof(log_buffer), "Failed to query alps");
+	  log_err(-1, __func__, log_buffer);
+  	return(ALPS_QUERY_FAILURE);
+    }
+
 
   xmlFreeDoc(doc);
   xmlMemoryDump();
@@ -711,6 +718,8 @@ int generate_alps_status(
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
 
+  time_t time_to_respond = time(0);
+
   if ((alps_pipe = popen(inventory_command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
@@ -735,7 +744,15 @@ int generate_alps_status(
     }
 
   /* perform post-processing */
+  time_to_respond = time(0) - time_to_respond;
+
   pclose(alps_pipe);
+
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "Query took %lu seconds to respond", time_to_respond);
+    log_event(PBSEVENT_SYSTEM | PBSEVENT_SYSLOG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
 
   if ((bytes_read == -1) ||
       (total_bytes_read == 0))
