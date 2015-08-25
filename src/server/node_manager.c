@@ -4260,6 +4260,10 @@ int place_subnodes_in_hostlist(
     std::string       cpus;
     std::string       mems;
 
+    // We shouldn't be starting a job if the layout hasn't been set up yet.
+    if (pnode->nd_layout == NULL)
+      return(-1);
+
     update_req_hostlist(pjob, pnode->nd_name, naji->req_rank, naji->ppn_needed);
 
     rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
