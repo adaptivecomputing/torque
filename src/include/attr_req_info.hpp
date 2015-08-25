@@ -44,9 +44,7 @@ class attr_req_info
     unsigned long default_disk;
     int default_nodes;
     int default_sockets;
-    int default_cores;
     int default_numa_nodes;
-    int default_threads;
     struct size_value default_mem_value;
     struct size_value default_swap_value;
     struct size_value default_disk_value;
