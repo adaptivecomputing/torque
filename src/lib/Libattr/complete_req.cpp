@@ -10,6 +10,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "resource.h"
+#include "utils.h"
 
 
 complete_req::complete_req() : reqs()
@@ -486,6 +487,14 @@ int complete_req::get_req_index_for_host(
       if (!strcmp(hostlist, host))
         {
         return(PBSE_NONE);
+        }
+      else
+        {
+        /* see if the short name matches */
+        if (task_hosts_match(hostlist, host) == true)
+          {
+          return(PBSE_NONE);
+          }
         }
       }
     req_index++;

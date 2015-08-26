@@ -1214,7 +1214,7 @@ unsigned long cput_sum(
       std::string   task_host;
 
       host_req.get_task_host_name(task_host, task_index);
-      if (strcmp(task_host.c_str(), this_hostname))
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
         {
         /* names don't match. Got to next task */
         continue;
@@ -1564,7 +1564,7 @@ unsigned long long resi_sum(
       std::string   task_host;
 
       host_req.get_task_host_name(task_host, task_index);
-      if (strcmp(task_host.c_str(), this_hostname))
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
         {
         /* names don't match. Got to next task */
         continue;

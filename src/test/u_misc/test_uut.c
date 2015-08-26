@@ -105,6 +105,31 @@ START_TEST(test_translate_range_string_to_vector)
   }
 END_TEST
 
+START_TEST(test_task_hosts_match)
+  {
+  std::string  hostlist;
+  std::string  this_host;
+  bool         match;
+
+  hostlist = "numa3";
+  this_host = "numa3";
+
+  match = task_hosts_match(hostlist.c_str(), this_host.c_str());
+  fail_unless(match==true);
+
+  hostlist = "numa3.ac";
+
+  /* short names can match FQDN */
+  match = task_hosts_match(hostlist.c_str(), this_host.c_str());
+  fail_unless(match==true);
+
+  hostlist = "nowforsomethingcompletelydiffernt";
+  match = task_hosts_match(hostlist.c_str(), this_host.c_str());
+  fail_unless(match==false);
+
+  }
+END_TEST
+
 
 Suite *u_misc_suite(void)
   {
@@ -118,6 +143,9 @@ Suite *u_misc_suite(void)
   tcase_add_test(tc_core, test_capture_until_close_character);
   suite_add_tcase(s, tc_core);
   
+  tc_core = tcase_create("test_task_hosts_match");
+  tcase_add_test(tc_core, test_task_hosts_match);
+  suite_add_tcase(s, tc_core);
   return(s);
   }
 

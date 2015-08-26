@@ -399,4 +399,51 @@ void capture_until_close_character(
   } // capture_until_close_character()
 
 
+/* 
+ * task_hosts_match()
+ *
+ * check for FQDN and short name to see if
+ * host names match
+ *
+ * @param  task_host - first host name to match
+ * @param  this_hostname - host name of physical host
+ *
+ */
+
+bool task_hosts_match(
+        
+  const char *task_host, 
+  const char *this_hostname)
+ 
+  {
+  if (strcmp(task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+  return(true);
+ }
+
+
+
+
 

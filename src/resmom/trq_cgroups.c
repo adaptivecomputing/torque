@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include "log.h"
 #include "trq_cgroups.h"
+#include "utils.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #include "complete_req.hpp"
@@ -912,7 +913,7 @@ int trq_cg_create_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (strcmp(task_host.c_str(), this_hostname))
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1228,7 +1229,7 @@ int trq_cg_populate_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (strcmp(task_host.c_str(), this_hostname))
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
