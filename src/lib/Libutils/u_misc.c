@@ -332,7 +332,7 @@ void translate_range_string_to_vector(
   {
   char *str = strdup(range_string);
   char *ptr = str;
-  int   prev;
+  int   prev = 0;
   int   curr;
 
   while (*ptr != '\0')
@@ -363,6 +363,9 @@ void translate_range_string_to_vector(
           (is_whitespace(*ptr)))
         ptr++;
       }
+
+    if (str == ptr)
+      break;
     }
 
   free(str);

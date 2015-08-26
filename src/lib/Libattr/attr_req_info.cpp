@@ -65,9 +65,7 @@ attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
   default_disk = newattr_req_info.default_disk;
   default_nodes = newattr_req_info.default_nodes;
   default_sockets = newattr_req_info.default_sockets;
-  default_cores = newattr_req_info.default_cores;
   default_numa_nodes = newattr_req_info.default_numa_nodes;
-  default_threads = newattr_req_info.default_threads;
   default_mem_value.atsv_num = newattr_req_info.default_mem_value.atsv_num;
   default_mem_value.atsv_shift = newattr_req_info.default_mem_value.atsv_shift;
   default_swap_value.atsv_num = newattr_req_info.default_swap_value.atsv_num;
@@ -83,8 +81,8 @@ attr_req_info::attr_req_info() : max_lprocs(0), max_mem(0), max_swap(0), max_dis
                                  max_sockets(0), max_cores(0), max_numa_nodes(0), max_threads(0),
                                  min_lprocs(0), min_mem(0), min_swap(0), min_disk(0), min_nodes(0),
                                  min_sockets(0), min_cores(0), min_numa_nodes(0), min_threads(0),
-                                 default_lprocs(0), default_mem(0), default_swap(0), default_disk(0), default_nodes(0),
-                                 default_sockets(0), default_cores(0), default_numa_nodes(0), default_threads(0)
+                                 default_lprocs(0), default_mem(0), default_swap(0), default_disk(0),
+                                 default_nodes(0), default_sockets(0), default_numa_nodes(0)
    {
    }
 
@@ -260,17 +258,9 @@ int attr_req_info::set_default_limit_value(
     {
     default_sockets = atoi(val);
     }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
-    {
-    default_cores = atoi(val);
-    }
   else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
     default_numa_nodes = atoi(val);
-    }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
-    {
-    default_threads = atoi(val);
     }
   else
     return(PBSE_BAD_PARAMETER);
@@ -428,14 +418,6 @@ int attr_req_info::get_signed_default_limit_value(
   else if (!strncmp(rescn, NUMA_NODE, strlen(NUMA_NODE)))
     {
     value = default_numa_nodes;
-    }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
-    {
-    value = default_cores;
-    }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
-    {
-    value = default_threads;
     }
   else
     return (PBSE_BAD_PARAMETER);
@@ -686,22 +668,6 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
     sprintf(buf, "%s", NUMA_NODE);
     names.push_back(buf);
     sprintf(buf, "%d", default_numa_nodes);
-    values.push_back(buf);
-    }
-
-  if (default_cores != 0)
-    {
-    sprintf(buf, "%s", CORES);
-    names.push_back(buf);
-    sprintf(buf, "%d", default_cores);
-    values.push_back(buf);
-    }
-
-  if (default_threads != 0)
-    {
-    sprintf(buf, "%s", THREADS);
-    names.push_back(buf);
-    sprintf(buf, "%d", default_threads);
     values.push_back(buf);
     }
 

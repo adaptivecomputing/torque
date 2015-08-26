@@ -2423,7 +2423,7 @@ int save_node_for_adding(
     old_next = cur_naji->next;
     while (old_next != NULL)
       {
-      if (to_add->req_rank <= old_next->req_rank)
+      if (to_add->req_rank < old_next->req_rank)
         {
         cur_naji->next = to_add;
         to_add->next = old_next;
@@ -2434,6 +2434,7 @@ int save_node_for_adding(
       cur_naji = old_next;
       old_next = cur_naji->next;
       }
+
     if (to_add != NULL)
       {
       cur_naji->next = to_add;
@@ -4259,6 +4260,10 @@ int place_subnodes_in_hostlist(
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
+
+    // We shouldn't be starting a job if the layout hasn't been set up yet.
+    if (pnode->nd_layout == NULL)
+      return(-1);
 
     update_req_hostlist(pjob, pnode->nd_name, naji->req_rank, naji->ppn_needed);
 
