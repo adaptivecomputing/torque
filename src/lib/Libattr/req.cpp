@@ -1815,13 +1815,19 @@ int req::set_value(
   if (!strncmp(name, "index", 5))
     this->index = strtol(value, NULL, 10);
   else if (!strncmp(name, "task_count", 10))
-    this->task_count = strtol(value, NULL, 10);
+    {
+    if (this->task_count <=1)
+      this->task_count = strtol(value, NULL, 10);
+    }
   else if (!strncmp(name, "lprocs", 6))
     {
     if (value[0] == 'a')
       this->execution_slots = ALL_EXECUTION_SLOTS;
     else
-      this->execution_slots = strtol(value, NULL, 10);
+      {
+      if (this->execution_slots <= 1)
+        this->execution_slots = strtol(value, NULL, 10);
+      }
     }
   else if (!strncmp(name, "memory", 6))
     {
@@ -1858,12 +1864,6 @@ int req::set_value(
     this->mics = strtol(value, NULL, 10);
   else if (!strncmp(name, "maxtpn", 6))
     this->maxtpn = strtol(value, NULL, 10);
-  else if (!strncmp(name, "thread_usage_policy", 19))
-    this->thread_usage_str = value;
-  else if (!strncmp(name, "placement_type", 14))
-    {
-    this->set_place_value(value);
-    }
   else if (!strncmp(name, "reqattr", 7))
     this->req_attr = value;
   else if (!strncmp(name, "gres", 4))
