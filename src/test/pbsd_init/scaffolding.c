@@ -742,6 +742,11 @@ void capture_until_close_character(
     *start = ptr + 1; // add 1 to move past the character
     }
   } // capture_until_close_character()
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
   
 
 #include "../../lib/Libutils/machine.cpp"
