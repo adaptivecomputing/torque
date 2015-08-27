@@ -311,6 +311,8 @@ START_TEST(process_as_node_list_test)
   fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji) == false);
   fail_unless(process_as_node_list("bob+10:ppn=10", &naji) == false);
   fail_unless(process_as_node_list("bob+10", &naji) == false);
+
+  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji) == true);
   }
 END_TEST
 

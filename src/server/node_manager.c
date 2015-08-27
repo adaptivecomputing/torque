@@ -3016,7 +3016,11 @@ bool process_as_node_list(
 
   std::string nodes(spec);
   std::size_t pos = nodes.find("+");
+  std::size_t bar_pos = nodes.find("|");
   std::string second_node;
+
+  if (bar_pos < pos)
+    pos = bar_pos;
 
   if (pos != std::string::npos)
     {

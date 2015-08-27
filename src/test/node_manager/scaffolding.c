@@ -116,6 +116,10 @@ struct pbsnode *find_nodebyname(const char *nodename)
 
   if (!strcmp(nodename, "bob"))
     return(&bob);
+  else if (!strcmp(nodename, "napali"))
+    return(&bob);
+  else if (!strcmp(nodename, "waimea"))
+    return(&bob);
   else if (!strcmp(nodename, "2"))
     return(&bob);
   else if (!strcmp(nodename, "3"))
