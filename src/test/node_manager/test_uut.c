@@ -1,3 +1,4 @@
+#include "pbs_config.h"
 #include <string>
 #include <sstream>
 #include <vector>
@@ -181,7 +182,7 @@ START_TEST(test_initialize_alps_req_data)
 END_TEST
 
 
-START_TEST(translate_job_reservation_info_to_stirng_test)
+START_TEST(translate_job_reservation_info_to_string_test)
   {
   std::vector<job_reservation_info> host_info;
   job_reservation_info jri[5];
@@ -693,7 +694,10 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
   job_reservation_info jri;
-  int rc =  place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
+#ifdef PENABLE_LINUX_CGROUPS
+  pnode->nd_layout = new Machine();
+#endif
+  int rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
 
   fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
@@ -725,6 +729,7 @@ Suite *node_manager_suite(void)
   Suite *s = suite_create("node_manager_suite methods");
   TCase *tc_core = tcase_create("get_next_exec_host_test");
   tcase_add_test(tc_core, get_next_exec_host_test);
+  tcase_add_test(tc_core, test_add_remove_mic_jobs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("job_should_be_killed_test");
@@ -734,14 +739,18 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("node_in_exechostlist_test");
   tcase_add_test(tc_core, node_in_exechostlist_test);
+  tcase_add_test(tc_core, remove_job_from_node_test);
+  tcase_add_test(tc_core, job_already_being_killed_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("check_for_node_type_test");
   tcase_add_test(tc_core, check_for_node_type_test);
+  tcase_add_test(tc_core, process_job_attribute_information_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("check_node_order_test");
   tcase_add_test(tc_core, check_node_order_test);
+  tcase_add_test(tc_core, process_as_node_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("sync_node_jobs_with_moms_test");
@@ -753,21 +762,21 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
   tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
-  tcase_add_test(tc_core, test_add_remove_mic_jobs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
-  tcase_add_test(tc_core, remove_job_from_node_test);
-  tcase_add_test(tc_core, job_already_being_killed_test);
-  tcase_add_test(tc_core, process_job_attribute_information_test);
-  tcase_add_test(tc_core, process_as_node_list_test);
-  tcase_add_test(tc_core, node_is_spec_acceptable_test);
-  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
-  tcase_add_test(tc_core, translate_job_reservation_info_to_stirng_test);
-  tcase_add_test(tc_core, test_initialize_alps_req_data);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("more tests");
+  tcase_add_test(tc_core, translate_job_reservation_info_to_string_test);
+  tcase_add_test(tc_core, test_initialize_alps_req_data);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("even more tests");
+  tcase_add_test(tc_core, node_is_spec_acceptable_test);
+  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  suite_add_tcase(s, tc_core);
 
   return(s);
   }
