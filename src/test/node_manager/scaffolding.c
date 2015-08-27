@@ -698,6 +698,12 @@ int Machine::place_job(
   return(0);
   }
 
-#include "../../src/lib/Libattr/complete_req.cpp"
-#include "../../src/lib/Libattr/req.cpp"
-#include "../../src/lib/Libutils/allocation.cpp"
+bool task_hosts_match(
+        
+  const char *task_host, 
+  const char *this_hostname)
+
+  {
+  return(true);
+  }
+
