@@ -1864,6 +1864,12 @@ int req::set_value(
     this->mics = strtol(value, NULL, 10);
   else if (!strncmp(name, "maxtpn", 6))
     this->maxtpn = strtol(value, NULL, 10);
+  else if (!strncmp(name, "thread_usage_policy", 19))
+    this->thread_usage_str = value;
+  else if (!strncmp(name, "placement_type", 14))
+    {
+    this->set_place_value(value);
+    }
   else if (!strncmp(name, "reqattr", 7))
     this->req_attr = value;
   else if (!strncmp(name, "gres", 4))
