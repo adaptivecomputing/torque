@@ -290,6 +290,11 @@ void capture_until_close_character(
   std::string  &storage,
   char          end) {}
 
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"
 #include "../../src/lib/Libutils/allocation.cpp"

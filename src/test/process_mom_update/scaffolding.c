@@ -341,6 +341,11 @@ id_map::id_map(){}
 
 id_map::~id_map(){}
 
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
 #include "../../lib/Libutils/machine.cpp"
 #include "../../lib/Libutils/numa_chip.cpp"
 #include "../../lib/Libutils/numa_core.cpp"

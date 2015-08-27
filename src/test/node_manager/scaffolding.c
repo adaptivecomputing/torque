@@ -681,6 +681,9 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   return(0);
   }
 
+Machine::Machine() {}
+Machine::~Machine() {}
+
 void Machine::free_job_allocation(const char *jobid)
   {
   }
@@ -698,6 +701,46 @@ int Machine::place_job(
   return(0);
   }
 
-#include "../../src/lib/Libattr/complete_req.cpp"
-#include "../../src/lib/Libattr/req.cpp"
-#include "../../src/lib/Libutils/allocation.cpp"
+Socket::Socket() {}
+Socket::~Socket() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+
+bool task_hosts_match(
+        
+  const char *task_host, 
+  const char *this_hostname)
+
+  {
+  if (strcmp(task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+
+  return(true);
+  }
+
