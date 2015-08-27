@@ -764,6 +764,10 @@ void move_past_whitespace(
   *str = current;
   } // END move_past_whitespace()
 
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
 
 
 #ifdef PENABLE_LINUX_CGROUPS

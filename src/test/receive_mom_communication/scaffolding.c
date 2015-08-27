@@ -891,6 +891,11 @@ void translate_range_string_to_vector(
   free(str);
   } /* END translate_range_string_to_vector() */
 
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
 
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
