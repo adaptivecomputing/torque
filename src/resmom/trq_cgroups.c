@@ -1463,7 +1463,60 @@ int trq_cg_set_swap_memory_limit(
   f = fopen(oom_control_name.c_str(), "r+");
   if (f == NULL)
     {
-    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
+    sprintf(log_buf, "failed to open cgroup path %s. Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED", oom_control_name.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  sprintf(mem_limit_string, "%ld", memory_limit);
+  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
+    
+  fclose(f);
+
+  if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  return(PBSE_NONE);
+  } // END trq_cg_set_swap_memory_limit()
+
+/*
+ * trq_cg_set_task_swap_memory_limit()
+ *
+ * Sets the memory.limit_in_bytes to memory_limit for the cgroup of this process.
+ *
+ * @param pid  -  The process id of the cgroup
+ * @param memory_limit - The memory limit for this cgroup 
+ *
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_set_task_swap_memory_limit(
+  
+  const char    *job_id,
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long  memory_limit)
+
+  {
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   mem_limit_string[64];
+  string oom_control_name;
+  FILE   *f;
+  size_t  bytes_written;
+  
+  /* Create a string with a path to the 
+     memory.limit_in_bytes cgroup for the job */
+  oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
+
+  /* open the memory.limit_in_bytes file and set it to memory_limit */
+  f = fopen(oom_control_name.c_str(), "r+");
+  if (f == NULL)
+    {
+    sprintf(log_buf, "failed to open cgroup path %s. Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED", oom_control_name.c_str());
     log_err(errno, __func__, log_buf);
     return(PBSE_SYSTEM);
     }
