@@ -597,10 +597,12 @@ struct pbsnode *next_node(
   static int next_node_count = 0;
   static pbsnode *pn = (pbsnode *)calloc(1, sizeof(pbsnode));
 
+#ifdef PENABLE_LINUX_CGROUPS
   if (pn->nd_layout == NULL)
     {
     pn->nd_layout = new Machine();
     }
+#endif
 
   if (next_node_count++ % 2 == 0)
     return(pn);
