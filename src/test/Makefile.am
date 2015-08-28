@@ -1,6 +1,8 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if BUILD_LINUX_CGROUPS
 NUMA_DIRS = allocation machine numa_chip numa_core numa_socket numa_pci_device numa_socket
+endif
 
 SERVER_UT_DIRS = accounting array_func array_upgrade attr_recov batch_request completed_jobs_map \
 								 delete_all_tracker dis_read display_alps_status execution_slot_tracker \
