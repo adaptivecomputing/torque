@@ -627,7 +627,8 @@ char *check_for_parameter(
   if (begin != NULL)
     {
     if ((begin == str) ||
-        (*(begin - 1) == ':'))
+        (*(begin - 1) == ':') ||
+        (*(begin - 1) == '='))
       {
       char *end = begin + len;
 
@@ -792,24 +793,41 @@ bool req::submission_string_has_duplicates(
     return(true);
     }
 
-  std::vector<std::string> thread_use_values;
-  std::vector<std::string> gpu_mode_values;
+  static std::vector<std::string> thread_use_values;
+  static std::vector<std::string> gpu_mode_values;
+  static std::vector<std::string> place_and_threads;
 
-  thread_use_values.push_back(use_cores);
-  thread_use_values.push_back(use_threads);
-  thread_use_values.push_back(allow_threads);
-  thread_use_values.push_back(use_fast_cores);
+  if (thread_use_values.size() == 0)
+    {
+    thread_use_values.push_back(use_cores);
+    thread_use_values.push_back(use_threads);
+    thread_use_values.push_back(allow_threads);
+    thread_use_values.push_back(use_fast_cores);
+    }
 
-  gpu_mode_values.push_back("shared");
-  gpu_mode_values.push_back("exclusive_thread");
-  gpu_mode_values.push_back("prohibited");
-  gpu_mode_values.push_back("exclusive_process");
-  gpu_mode_values.push_back("exclusive");
-  gpu_mode_values.push_back("default");
-  gpu_mode_values.push_back("reseterr");
+  if (gpu_mode_values.size() == 0)
+    {
+    gpu_mode_values.push_back("shared");
+    gpu_mode_values.push_back("exclusive_thread");
+    gpu_mode_values.push_back("prohibited");
+    gpu_mode_values.push_back("exclusive_process");
+    gpu_mode_values.push_back("exclusive");
+    gpu_mode_values.push_back("default");
+    gpu_mode_values.push_back("reseterr");
+    }
+
+  if (place_and_threads.size() == 0)
+    {
+    place_and_threads.push_back(place_numa_node);
+    place_and_threads.push_back(place_socket);
+    place_and_threads.push_back(place_node);
+    place_and_threads.push_back(use_threads);
+    place_and_threads.push_back(use_fast_cores);
+    }
 
   if ((are_conflicting_params_present(str, thread_use_values, error)) ||
-      (are_conflicting_params_present(str, gpu_mode_values, error)))
+      (are_conflicting_params_present(str, gpu_mode_values, error)) ||
+      (are_conflicting_params_present(str, place_and_threads, error)))
     {
     return(true);
     }

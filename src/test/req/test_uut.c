@@ -234,7 +234,11 @@ START_TEST(test_submission_string_has_duplicates)
   char *err_str2 = strdup("3:usecores:usefastcores");
   char *err_str3 = strdup("2:shared:shared");
   char *err_str4 = strdup("2:swap=8gb:swap=4gb");
+  char *err_str5 = strdup("2:usethreads:place=numanode");
+  char *err_str6 = strdup("2:usefastcores:place=socket");
+  char *err_str7 = strdup("2:usethreads:place=node");
   char *non_err_str1 = strdup("2:reqattr=matlab>7:reqattr=<9");
+  char *non_err_str2 = strdup("2:usecores:place=numanode");
 
   std::string error;
   req         r;
@@ -245,7 +249,11 @@ START_TEST(test_submission_string_has_duplicates)
   fail_unless(r.submission_string_has_duplicates(err_str2, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str3, error) == true);
   fail_unless(r.submission_string_has_duplicates(err_str4, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str5, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str6, error) == true);
+  fail_unless(r.submission_string_has_duplicates(err_str7, error) == true);
   fail_unless(r.submission_string_has_duplicates(non_err_str1, error) == false);
+  fail_unless(r.submission_string_has_duplicates(non_err_str2, error) == false);
   fail_unless(r.submission_string_precheck(strdup("5:lprocs=4+2:lprocs=2"), error) != PBSE_NONE);
   fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE);
   }
@@ -547,30 +555,34 @@ START_TEST(test_get_num_tasks_for_host)
   fail_unless(tasks == 8, "Expected 8, got %d", tasks);
   fail_unless(r.get_num_tasks_for_host(16) == 8);
 
-  r.set_value("lprocs", "1");
-  r.set_hostlist("napali");
-  tasks = r.get_num_tasks_for_host("napali");
+  req r2;
+  r2.set_value("lprocs", "1");
+  r2.set_hostlist("napali");
+  tasks = r2.get_num_tasks_for_host("napali");
   fail_unless(tasks == 1, "Expected 1, got %d", tasks);
-  fail_unless(r.get_num_tasks_for_host(1) == 1);
+  fail_unless(r2.get_num_tasks_for_host(1) == 1);
   
-  r.set_value("hostlist", "napali/0-15");
-  tasks = r.get_num_tasks_for_host("napali");
+  req r3;
+  r3.set_value("hostlist", "napali/0-15");
+  tasks = r3.get_num_tasks_for_host("napali");
   fail_unless(tasks == 16, "Expected 16, got %d", tasks);
-  fail_unless(r.get_num_tasks_for_host(16) == 16);
-  
-  r.set_value("hostlist", "napali/0-15+wailua/0-15");
-  r.set_value("lprocs", "4");
-  r.set_value("task_count", "8");
-  tasks = r.get_num_tasks_for_host("napali");
+  fail_unless(r3.get_num_tasks_for_host(16) == 16);
+ 
+  req r4;
+  r4.set_value("hostlist", "napali/0-15+wailua/0-15");
+  r4.set_value("lprocs", "4");
+  r4.set_value("task_count", "8");
+  tasks = r4.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
-  fail_unless(r.get_num_tasks_for_host(16) == 4);
+  fail_unless(r4.get_num_tasks_for_host(16) == 4);
   
-  r.set_value("hostlist", "waimea/0-16+napali/0-15");
-  r.set_value("lprocs", "4");
-  r.set_value("task_count", "8");
-  tasks = r.get_num_tasks_for_host("napali");
+  req r5;
+  r5.set_value("hostlist", "waimea/0-16+napali/0-15");
+  r5.set_value("lprocs", "4");
+  r5.set_value("task_count", "8");
+  tasks = r5.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
-  fail_unless(r.get_num_tasks_for_host(16) == 4);
+  fail_unless(r5.get_num_tasks_for_host(16) == 4);
   }
 END_TEST
 
