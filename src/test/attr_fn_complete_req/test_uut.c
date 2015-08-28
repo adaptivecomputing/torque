@@ -105,10 +105,6 @@ START_TEST(test_set_complete_req)
   fail_unless(cr2->req_count() != cr1->req_count());
   fail_unless(set_complete_req(&pattr2, &pattr, SET) == PBSE_NONE);
   
-  // they should be the same again
-  cr2 = (complete_req *)pattr2.at_val.at_ptr;
-  fail_unless(cr2->req_count() == cr1->req_count());
-
   fail_unless(set_complete_req(NULL, &pattr, SET) == PBSE_BAD_PARAMETER);
   fail_unless(set_complete_req(&pattr2, &pattr, UNSET) == PBSE_NONE);
   fail_unless(pattr2.at_val.at_ptr == NULL);
