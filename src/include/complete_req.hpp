@@ -105,8 +105,10 @@ class complete_req
     void           toString(std::string &output) const;
     int            req_count() const;
     void           get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
-    unsigned long  get_memory_for_this_host(const std::string &hostname) const;
-    unsigned long  get_swap_memory_for_this_host(const std::string &hostname) const;
+    unsigned long long get_memory_for_this_host(const std::string &hostname) const;
+    unsigned long long get_memory_per_task(unsigned int req_index);
+    unsigned long long get_swap_memory_for_this_host(const std::string &hostname) const;
+    unsigned long long get_swap_per_task(unsigned int req_index);
     req           &get_req(int i);
     int            get_req_index_for_host(const char *host, unsigned int &req_index);
     int            get_req_and_task_index(const int rank, unsigned int &req_index, unsigned int &task_index);

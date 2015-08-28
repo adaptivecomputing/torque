@@ -4384,8 +4384,8 @@ int TMomFinalizeChild(
   if ((pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
     {
     char          this_hostname[PBS_MAXHOSTNAME];
-    unsigned long mem_limit;
-    unsigned long swap_limit;
+    unsigned long long mem_limit;
+    unsigned long long swap_limit;
     complete_req *cr;
     pid_t this_pid = getpid();
 
@@ -5514,12 +5514,31 @@ int start_process(
       {
       unsigned int req_index;
       unsigned int task_index;
+      unsigned long long mem_limit;
+      unsigned long long swap_limit;
 
       complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
 
       rc = cr->get_req_and_task_index(rank, req_index, task_index);
       if (rc == PBSE_NONE)
         {
+        mem_limit = cr->get_memory_per_task(req_index);
+        swap_limit = cr->get_swap_per_task(req_index);
+
+        rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
+        if (rc != PBSE_NONE)
+          {
+          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+          exit(1);
+          }
+
+        rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
+        if (rc != PBSE_NONE)
+          {
+          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+          exit(1);
+          }
+
         rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
                             pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
         if (rc == PBSE_NONE)

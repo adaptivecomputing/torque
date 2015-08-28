@@ -2236,7 +2236,32 @@ int req::get_task_allocation(
   return(PBSE_NONE);
   }
 
+/*
+ * get_swap_per_task
+ *
+ * return the amount of swap allocated per task
+ *
+ */
 
+unsigned long long req::get_swap_per_task()
+
+  {
+  return(this->swap);
+  }
+
+
+/*
+ * get_memory_per_task
+ *
+ * return the amount of memory allocated per task
+ *
+ */
+
+unsigned long long req::get_memory_per_task()
+
+  {
+  return(this->mem);
+  }
 
 /*
  * get_swap_for_host()
@@ -2245,13 +2270,13 @@ int req::get_task_allocation(
  * @return the number of kb of swap for this host
  */
 
-unsigned long req::get_swap_for_host(
+unsigned long long req::get_swap_for_host(
 
   const std::string &host) const
 
   {
   int           num_tasks = this->get_num_tasks_for_host(host);
-  unsigned long swap = this->swap * num_tasks;
+  unsigned long long swap = this->swap * num_tasks;
 
   return(swap);
   } // END get_swap_for_host()
@@ -2265,13 +2290,13 @@ unsigned long req::get_swap_for_host(
  * @return the number of kb of memory for this host
  */
 
-unsigned long req::get_memory_for_host(
+unsigned long long req::get_memory_for_host(
 
   const std::string &host) const
 
   {
   int           num_tasks = this->get_num_tasks_for_host(host);
-  unsigned long mem = this->mem * num_tasks;
+  unsigned long long mem = this->mem * num_tasks;
 
   return(mem);
   } // END get_memory_for_host()

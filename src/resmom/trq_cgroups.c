@@ -1437,7 +1437,7 @@ int trq_cg_add_process_to_cgroup_accts(
  *
  * Sets the memory.limit_in_bytes to memory_limit for the cgroup of this process.
  *
- * @param pid  -  The process id of the cgroup
+ * @param job_id  -  The job id of the job
  * @param memory_limit - The memory limit for this cgroup 
  *
  * @return PBSE_NONE on success
@@ -1446,7 +1446,7 @@ int trq_cg_add_process_to_cgroup_accts(
 int trq_cg_set_swap_memory_limit(
   
   const char    *job_id,
-  unsigned long  memory_limit)
+  unsigned long long  memory_limit)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1454,7 +1454,13 @@ int trq_cg_set_swap_memory_limit(
   string oom_control_name;
   FILE   *f;
   size_t  bytes_written;
+  unsigned long long memory_limit_in_bytes;
   
+  if (memory_limit == 0)
+    return(PBSE_NONE);
+
+  memory_limit_in_bytes = memory_limit * 1024;
+
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
   oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
@@ -1468,7 +1474,7 @@ int trq_cg_set_swap_memory_limit(
     return(PBSE_SYSTEM);
     }
 
-  sprintf(mem_limit_string, "%ld", memory_limit);
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
   bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
     
   fclose(f);
@@ -1481,14 +1487,16 @@ int trq_cg_set_swap_memory_limit(
     }
 
   return(PBSE_NONE);
-  } // END trq_cg_set_swap_memory_limit()
+  } // END trq_cg_set_task_swap_memory_limit()
 
 /*
  * trq_cg_set_task_swap_memory_limit()
  *
  * Sets the memory.limit_in_bytes to memory_limit for the cgroup of this process.
  *
- * @param pid  -  The process id of the cgroup
+ * @param job_id  -  The id of the job
+ * @param req_index - the req index for this resource request
+ * @param task_index - the task index 
  * @param memory_limit - The memory limit for this cgroup 
  *
  * @return PBSE_NONE on success
@@ -1499,18 +1507,27 @@ int trq_cg_set_task_swap_memory_limit(
   const char    *job_id,
   unsigned int   req_index,
   unsigned int   task_index,
-  unsigned long  memory_limit)
+  unsigned long long  memory_limit)
 
   {
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  char   mem_limit_string[64];
-  string oom_control_name;
+  char    log_buf[LOCAL_LOG_BUF_SIZE];
+  char    mem_limit_string[64];
+  string  oom_control_name;
+  char    task_directory[1024]; 
   FILE   *f;
   size_t  bytes_written;
+  unsigned long long memory_limit_in_bytes;  /* memory_limit comes in as kb */
   
+  if (memory_limit == 0)
+    return(PBSE_NONE);
+
+  /* convert kb to bytes */
+  memory_limit_in_bytes = 1024 * memory_limit;
+
   /* Create a string with a path to the 
-     memory.limit_in_bytes cgroup for the job */
-  oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
+     memory.limit_in_bytes cgroup for the job and task */
+  sprintf(task_directory, "/R%u.t%u/memory.memsw.limit_in_bytes", req_index, task_index);
+  oom_control_name = cg_memory_path + job_id + task_directory;
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
   f = fopen(oom_control_name.c_str(), "r+");
@@ -1521,7 +1538,7 @@ int trq_cg_set_task_swap_memory_limit(
     return(PBSE_SYSTEM);
     }
 
-  sprintf(mem_limit_string, "%ld", memory_limit);
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
   bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
     
   fclose(f);
@@ -1552,7 +1569,7 @@ int trq_cg_set_task_swap_memory_limit(
 int trq_cg_set_resident_memory_limit(
   
   const char    *job_id, 
-  unsigned long  memory_limit)
+  unsigned long long  memory_limit)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1560,7 +1577,13 @@ int trq_cg_set_resident_memory_limit(
   string oom_control_name;
   FILE   *fd;
   size_t  bytes_written;
+  unsigned long long memory_limit_in_bytes;
   
+  if (memory_limit == 0)
+    return(PBSE_NONE);
+
+  memory_limit_in_bytes = memory_limit * 1024;
+
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
   oom_control_name = cg_memory_path + job_id + "/memory.limit_in_bytes";
@@ -1574,7 +1597,7 @@ int trq_cg_set_resident_memory_limit(
     return(PBSE_SYSTEM);
     }
 
-  sprintf(mem_limit_string, "%ld", memory_limit);
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
   bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), fd);
   if (bytes_written < 1)
     {
@@ -1588,6 +1611,69 @@ int trq_cg_set_resident_memory_limit(
 
   return(PBSE_NONE);
   } // END trq_cg_set_resident_memory_limit()
+
+/*
+ * trq_cg_set_task_resident_memory_limit()
+ *
+ * Sets the memory.limit_in_bytes to memory_limit for the task cgroup of this process.
+ *
+ * @param job_id  -  The id of the job
+ * @param req_index - the req index for this resource request
+ * @param task_index - the task index 
+ * @param memory_limit - The memory limit for this cgroup 
+ *
+ * @return PBSE_NONE on success
+ */
+
+int trq_cg_set_task_resident_memory_limit(
+  
+  const char    *job_id, 
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long long memory_limit)
+
+  {
+  char   task_directory[1024];
+  char   log_buf[LOCAL_LOG_BUF_SIZE];
+  char   mem_limit_string[64];
+  string oom_control_name;
+  FILE   *fd;
+  size_t  bytes_written;
+  unsigned long long memory_limit_in_bytes;
+  
+   if (memory_limit == 0)
+    return(PBSE_NONE);
+
+  memory_limit_in_bytes = memory_limit * 1024;
+ /* Create a string with a path to the 
+     memory.limit_in_bytes cgroup for the job */
+  sprintf(task_directory, "/R%u.t%u/memory.limit_in_bytes", req_index, task_index);
+  oom_control_name = cg_memory_path + job_id + task_directory;
+
+  /* open the memory.limit_in_bytes file and set it to memory_limit */
+  fd = fopen(oom_control_name.c_str(), "r+");
+  if (fd == NULL)
+    {
+    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
+  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), fd);
+  if (bytes_written < 1)
+    {
+    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
+    log_err(errno, __func__, log_buf);
+    fclose(fd);
+    return(PBSE_SYSTEM);
+    }
+
+  fclose(fd);
+
+  return(PBSE_NONE);
+  } // END trq_cg_set_task_resident_memory_limit()
+
 
 
 

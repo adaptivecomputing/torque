@@ -393,16 +393,37 @@ void complete_req::get_values(
     this->reqs[i].get_values(names, values);
   } // END get_values()
     
+
+/* Get the memory request for the given req_index */
+unsigned long long complete_req::get_memory_per_task(
+
+  unsigned int req_index)
+
+  {
+  return(this->reqs[req_index].get_memory_per_task());
+  }
+
+
+/* Get the swap request for the given req_index */
+unsigned long long complete_req::get_swap_per_task(
+
+  unsigned int req_index)
+
+  {
+  return(this->reqs[req_index].get_swap_per_task());
+  }
+
+
 /* 
  * get_swap_memory_for_this_host()
  */
 
-unsigned long complete_req::get_swap_memory_for_this_host(
+unsigned long long complete_req::get_swap_memory_for_this_host(
     
   const std::string &hostname) const
 
   {
-  unsigned long mem = 0;
+  unsigned long long mem = 0;
   
   for (unsigned int i = 0; i < this->reqs.size(); i++)
     mem += this->reqs[i].get_swap_for_host(hostname);
@@ -416,12 +437,12 @@ unsigned long complete_req::get_swap_memory_for_this_host(
  * get_memory_for_this_host()
  */
 
-unsigned long complete_req::get_memory_for_this_host(
+unsigned long long complete_req::get_memory_for_this_host(
     
   const std::string &hostname) const
 
   {
-  unsigned long mem = 0;
+  unsigned long long mem = 0;
   
   for (unsigned int i = 0; i < this->reqs.size(); i++)
     mem += this->reqs[i].get_memory_for_host(hostname);

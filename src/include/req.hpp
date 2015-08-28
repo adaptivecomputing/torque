@@ -192,8 +192,10 @@ class req
     int           get_num_tasks_for_host(int num_ppn) const;
     int           get_num_tasks_for_host(const std::string &host) const;
     int           get_task_allocation(unsigned int index, allocation &task_allocation);
-    unsigned long get_memory_for_host(const std::string &host) const;
-    unsigned long get_swap_for_host(const std::string &host) const;
+    unsigned long long get_memory_for_host(const std::string &host) const;
+    unsigned long long get_memory_per_task();
+    unsigned long long get_swap_for_host(const std::string &host) const;
+    unsigned long long get_swap_per_task();
     void          get_task_stats(std::vector<int> &task_index, std::vector<unsigned long> &cput_used,
                                  std::vector<unsigned long long> &mem_used);
     int           get_execution_slots() const;
