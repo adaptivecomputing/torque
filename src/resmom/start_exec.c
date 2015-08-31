@@ -227,6 +227,7 @@ extern char           jobstarter_exe_name[];
 extern char           mom_alias[];
 extern char           mom_host[];
 extern int            jobstarter_set;
+extern int            jobstarter_privileged;
 
 extern char           path_checkpoint[];
 
@@ -4412,20 +4413,39 @@ int TMomFinalizeChild(
       }
     }
 
-  /* become the user, execv the shell and become the real job */
-  if (LOGLEVEL >= 6)
+  /* become the user (if necessary), execv the shell and become the real job */
+
+  // see if we need to run a privileged jobstarter
+  if (jobstarter_set && (jobstarter_privileged == TRUE))
     {
-    snprintf(log_buf, sizeof(log_buf), "setting user/group credentials to %d/%d, job id %s",
-      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-      pjob->ji_qs.ji_jobid);
+    // privileged
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, sizeof(log_buf), "elevated privileges for jobstarter, job id %s",
+        pjob->ji_qs.ji_jobid);
+
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
+      }
     }
+  else
+    {
+    // not privileged
 
-  /* NOTE: must set groups before setting the user because not all users can
-   * call setgid and setgroups, even if its their group, see setgid's man page */
-  become_the_user_sjr(pjob, TJE->upfds, TJE->downfds, &sjr);
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, sizeof(log_buf), "setting user/group credentials to %d/%d, job id %s",
+        pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        pjob->ji_qs.ji_jobid);
+
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,  __func__, log_buf);
+      }
+
+    /* NOTE: must set groups before setting the user because not all users can
+     * call setgid and setgroups, even if its their group, see setgid's man page */
+    become_the_user_sjr(pjob, TJE->upfds, TJE->downfds, &sjr);
+    }
 
   go_to_init_dir(pjob, &sjr, TJE, pwdp);
 
@@ -5583,17 +5603,21 @@ int start_process(
       }
     }
 
-  /* become the user and execv the shell and become the real job */
+  /* become the user (if necessary) and execv the shell and become the real job */
 
-  /* NOTE: must set groups before setting the user because not all users can
-   * call setgid and setgroups, even if its their group, see setgid's man page */
-  become_the_user_sjr(pjob, kid_write, kid_read, &sjr);
+  // see if we need to run a non-privileged jobstarter
+  if ((!jobstarter_set) || (jobstarter_privileged != TRUE))
+    {
+    // not privileged
+
+    /* NOTE: must set groups before setting the user because not all users can
+     * call setgid and setgroups, even if its their group, see setgid's man page */
+    become_the_user_sjr(pjob, kid_write, kid_read, &sjr);
+    }
 
   /* cwd to PBS_O_INITDIR if specified, otherwise User's Home */
   if ((idir = get_job_envvar(pjob, "PBS_O_INITDIR")) != NULL)
     {
-    /* in start_process() executed as user */
-
     if (chdir(idir) == -1)
       {
       sprintf(log_buffer, "PBS: chdir to %.256s failed: %s\n",
@@ -5613,8 +5637,6 @@ int start_process(
     }
   else
     {
-    /* in start_process() executed as user */
-
     if (chdir(pjob->ji_grpcache->gc_homedir) == -1)
       {
       sprintf(log_buffer, "PBS: chdir to %.256s failed: %s\n",

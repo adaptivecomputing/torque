@@ -148,6 +148,7 @@ int              is_login_node   = FALSE;
 int              job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 char             jobstarter_exe_name[MAXPATHLEN + 1];
 int              jobstarter_set = 0;
+int              jobstarter_privileged = 0;
 char            *server_alias = NULL;
 char            *TRemChkptDirList[TMAX_RCDCOUNT];
 char             tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
@@ -268,6 +269,7 @@ unsigned long setremchkptdirlist(const char *);
 unsigned long setmaxconnecttimeout(const char *);
 unsigned long aliasservername(const char *);
 unsigned long jobstarter(const char *value);
+unsigned long setjobstarterprivileged(const char *);
 #ifdef PENABLE_LINUX26_CPUSETS
 unsigned long setusesmt(const char *);
 unsigned long setmempressthr(const char *);
@@ -290,7 +292,6 @@ unsigned long setmaxjoinjobwaittime(const char *);
 unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
-unsigned long setcudavisibledevices(const char *);
 unsigned long setcudavisibledevices(const char *);
 
 struct specials special[] = {
@@ -349,6 +350,7 @@ struct specials special[] = {
   { "max_conn_timeout_micro_sec",   setmaxconnecttimeout },
   { "alias_server_name", aliasservername },
   { "job_starter", jobstarter},
+  { "job_starter_run_privileged", setjobstarterprivileged},
 #ifdef PENABLE_LINUX26_CPUSETS
   { "use_smt",                      setusesmt      },
   { "memory_pressure_threshold",    setmempressthr },
@@ -1266,6 +1268,29 @@ unsigned long jobstarter(const char *value)  /* I */
 
   return(1);
   }  /* END jobstarter() */
+
+
+
+/********************************************************
+ *  setjobstarterprivileged - enable/disable the jobstarter
+ *  to run with elevated privileges
+ *
+ *  Returns: 1
+ *******************************************************/
+unsigned long setjobstarterprivileged(
+
+  const char *value)  /* I */
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    jobstarter_privileged = enable;
+
+  return(1);
+  }  /* END setjobstarter_privileged() */
 
 
 
@@ -3299,5 +3324,4 @@ u_long setcudavisibledevices(
 
   return(1);
   }  /* END setcudavisibledevices() */
-
 
