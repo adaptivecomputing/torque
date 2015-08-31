@@ -257,7 +257,8 @@ void *start_process_pbs_server_port(
          (rc != PBSE_INTERNAL) &&
          (rc != PBSE_SYSTEM) &&
          (rc != PBSE_MEM_MALLOC) &&
-         (rc != PBSE_SOCKET_CLOSE))
+         (rc != PBSE_SOCKET_CLOSE) &&
+         (rc != PBSE_TIMEOUT))
     {
     netcounter_incr();
 
