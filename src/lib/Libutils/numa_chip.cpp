@@ -1235,7 +1235,10 @@ bool Chip::spread_place(
         for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
           {
           if (this->reserve_thread(i, from_this_chip) == true)
+            {
             placed++;
+            remainder--;
+            }
           }
         }
       }

@@ -92,6 +92,15 @@ START_TEST(test_spread_place)
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   fail_unless(c.has_socket_exclusive_allocation() == true);
+
+  c.free_task(jobid);
+  allocation a2;
+  a2.place_type = exclusive_chip;
+  remaining = 0;
+  r.set_value("lprocs", "18");
+  fail_unless(c.spread_place(r, a2, 1, remaining) == true);
+  fail_unless(c.getAvailableCores() == 0);
+  fail_unless(c.getAvailableThreads() == 0);
   }
 END_TEST
 
