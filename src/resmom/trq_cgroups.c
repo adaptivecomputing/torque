@@ -907,6 +907,8 @@ int trq_cg_create_task_cgroups(
       rc = each_req.get_task_allocation(task_index, al);
       if (rc != PBSE_NONE)
         {
+        sprintf(log_buf, "Failed to get allocation for task_index %d: error %d", task_index, rc);
+        log_err(-1, __func__, log_buf);
         return(rc);
         }
 
@@ -985,7 +987,7 @@ int trq_cg_create_cgroup(
   if (rc != PBSE_NONE)
     {
     sprintf(log_buf, "failed to create task cgroups: %d", rc);
-    log_err(errno, __func__, log_buf);
+    log_err(-1, __func__, log_buf);
     }
 
 
