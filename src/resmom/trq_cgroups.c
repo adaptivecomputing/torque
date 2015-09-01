@@ -1396,6 +1396,12 @@ int trq_cg_create_all_cgroups(
           rc = trq_cg_populate_task_cgroups(cg_cpuset_path, pjob);
         }
       }
+    if (rc == PBSE_NONE)
+      rc = trq_cg_create_cgroup(cg_devices_path, pjob);
+
+    if (rc == PBSE_NONE)
+      rc = trq_cg_create_cgroup(cg_cpu_path, pjob);
+
     }
 
   return(rc);
