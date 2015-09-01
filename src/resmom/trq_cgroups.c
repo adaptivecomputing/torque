@@ -1280,9 +1280,21 @@ int trq_cg_populate_cgroup(
 
   if ((f = fopen(path.c_str(), "w")) == NULL)
     {
-    sprintf(log_buf, "failed to open %s", path.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    /* Some older cgroups implementation do not use cpuset.cpus or cpuset.mems
+       They just use cpus or mems. Try those and see if they work */
+    string old_path(cg_cpuset_path);
+    old_path += job_id;
+    if (which == CPUS)
+      old_path += "/cpus";
+    else
+      old_path += "/mems";
+
+    if ((f = fopen(old_path.c_str(), "w")) == NULL)
+      {
+      sprintf(log_buf, "failed to open %s", path.c_str());
+      log_err(errno, __func__, log_buf);
+      return(PBSE_SYSTEM);
+      }
     }
 
   if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
