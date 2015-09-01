@@ -1910,9 +1910,17 @@ int req::set_value(
   else if (!strncmp(name, "hostlist", 8))
     this->insert_hostname(value);
   else if (!strcmp(name, "core"))
-    this->cores = strtol(value, NULL, 10);
+    {
+    int core_count = strtol(value, NULL, 10);
+    if (core_count != 0)
+      this->cores = core_count;
+    }
   else if (!strcmp(name, "thread"))
-    this->threads = strtol(value, NULL, 10);
+    {
+    int thread_count = strtol(value, NULL, 10);
+    if (thread_count != 0)
+      this->threads = thread_count;
+    }
   else
     return(PBSE_BAD_PARAMETER);
 

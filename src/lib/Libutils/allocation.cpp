@@ -303,14 +303,30 @@ void allocation::initialize_from_string(
 
   if ((ptr = strstr(val, "cores\":")) != NULL)
     {
+    int new_val;
+
     val = ptr + strlen("cores\":");
-    this->cores = strtol(val, &val, 10);
+    new_val = strtol(val, &val, 10);
+
+    /* check for non-zero. Default values are 0. Don't set default
+       values because they tend to overwrite exising valid values
+       in the attr_atomic_set function */
+    if (new_val != 0)
+      this->cores = new_val;
     }
 
   if ((ptr = strstr(val, "threads\":")) != NULL)
     {
+    int new_val;
+
     val = ptr + strlen("threads\":");
-    this->threads = strtol(val, &val, 10);
+    new_val = strtol(val, &val, 10);
+
+     /* check for non-zero. Default values are 0. Don't set default
+       values because they tend to overwrite exising valid values
+       in the attr_atomic_set function */
+    if (new_val != 0)
+      this->threads = new_val;
     }
 
 
