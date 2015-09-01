@@ -4392,6 +4392,7 @@ int translate_howl_to_string(
 
     next = hp->next;
 
+    free(hp->name);
     free(hp);
     }
 

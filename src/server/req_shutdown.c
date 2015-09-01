@@ -157,6 +157,8 @@ void save_queues()
     que_save(pque);
     unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
+
+  delete iter;
   } /* END save_queues() */
 
 

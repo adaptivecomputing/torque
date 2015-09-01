@@ -419,7 +419,6 @@ void free_attrlist(
     {
     nxpal = (struct svrattrl *)GET_NEXT(pal->al_link);
     delete_link(&pal->al_link);
-    memset(pal, 254, sizeof(svrattrl));
     (void)free(pal);
     pal = nxpal;
     }
