@@ -97,8 +97,8 @@ START_TEST(test_spread_place)
   allocation a2;
   a2.place_type = exclusive_chip;
   remaining = 0;
-  r.set_value("lprocs", "18");
-  fail_unless(c.spread_place(r, a2, 1, remaining) == true);
+  fail_unless(c.spread_place(r, a2, 40, remaining) == false);
+  fail_unless(c.spread_place(r, a2, 18, remaining) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   }

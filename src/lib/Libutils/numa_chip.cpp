@@ -1173,7 +1173,8 @@ bool Chip::spread_place(
   {
   bool task_placed = false;
 
-  if (this->chipIsAvailable() == true)
+  if ((this->chipIsAvailable() == true) &&
+      ((execution_slots_per + execution_slots_remainder) <= this->totalThreads))
     {
     allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
