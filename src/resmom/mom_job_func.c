@@ -629,15 +629,11 @@ static void job_init_wattr(
   }   /* END job_init_wattr() */
 
 
+void remove_tmpdir_file(
 
-
-
-void *delete_job_files(
-
-  void *vp)
+    job_file_delete_info *jfdi)
 
   {
-  job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
 
@@ -660,6 +656,11 @@ void *delete_job_files(
       else
         {
         rc = remtree(namebuf);
+        if (rc != 0)
+          {
+          sprintf(log_buffer, "remtree failed: %s", strerror(errno));
+          log_err(errno, __func__, log_buffer);
+          }
         
         setuid_ext(pbsuser, TRUE);
         setegid(pbsgroup);
@@ -676,6 +677,20 @@ void *delete_job_files(
         }
       }
     } /* END code to remove temp dir */
+  }
+
+
+
+
+void *delete_job_files(
+
+  void *vp)
+
+  {
+  job_file_delete_info *jfdi = (job_file_delete_info *)vp;
+  char                  namebuf[MAXPATHLEN];
+  int                   rc = 0;
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -895,6 +910,8 @@ void mom_job_purge(
       global_job_sid_set.erase(it);
       }
     }
+
+  remove_tmpdir_file(jfdi);
 
   if (thread_unlink_calls == true)
     enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
