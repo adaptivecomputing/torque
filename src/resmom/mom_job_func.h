@@ -19,6 +19,7 @@ int job_unlink_file(job *pjob, const char *name);
 /* static void job_init_wattr(job *pj); */
 
 void *delete_job_files(void *vp);
+void remove_tmpdir_files(void);
 
 void mom_job_purge(job *pjob);
 
