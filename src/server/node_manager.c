@@ -4261,6 +4261,24 @@ int place_subnodes_in_hostlist(
   if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info.est) == PBSE_NONE)
     {
     /* SUCCESS */
+    node_info.port = pnode->nd_mom_rm_port;
+    
+    job_usage_info jui(pjob->ji_internal_id);
+    jui.est = node_info.est;
+    
+    node_info.node_id = pnode->nd_id;
+    pnode->nd_job_usages.push_back(jui);
+
+    bool job_exclusive_on_use = false;
+    if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
+        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+      job_exclusive_on_use = true;
+    
+    if ((pnode->nd_slots.get_number_free() <= 0) ||
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
+        (job_exclusive_on_use))
+      pnode->nd_state |= INUSE_JOB;
+
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
@@ -4281,24 +4299,6 @@ int place_subnodes_in_hostlist(
 
     pnode->nd_np_to_be_used -= naji->ppn_needed;
     naji->ppn_needed = 0;
-
-    node_info.port = pnode->nd_mom_rm_port;
-    
-    job_usage_info jui(pjob->ji_internal_id);
-    jui.est = node_info.est;
-    
-    node_info.node_id = pnode->nd_id;
-    pnode->nd_job_usages.push_back(jui);
-
-    bool job_exclusive_on_use = false;
-    if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
-      job_exclusive_on_use = true;
-    
-    if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
-        (job_exclusive_on_use))
-      pnode->nd_state |= INUSE_JOB;
     }
   else
     {
@@ -4663,6 +4663,10 @@ int build_hostlist_nodes_req(
           pnode->nd_np_to_be_used    -= current->ppn_needed;
           pnode->nd_ngpus_to_be_used -= current->gpu_needed;
           pnode->nd_nmics_to_be_used -= current->mic_needed;
+
+#ifdef PENABLE_LINUX_CGROUPS
+          remove_job_from_node(pnode, pjob->ji_internal_id);
+#endif
           }
         }
 
@@ -5689,7 +5693,8 @@ void free_nodes(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3)) 
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED))
       {
       cr->clear_allocations();
       }

@@ -530,7 +530,7 @@ void Machine::place_remaining(
 
   req         &r,
   allocation  &master,
-  int          remaining_tasks,
+  int         &remaining_tasks,
   const char  *hostname)
 
   {
@@ -795,8 +795,14 @@ int Machine::place_job(
       {
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
-      for (int i = 0; i < remaining_tasks; i++)
-        place_remaining(r, a, remaining_tasks, hostname);
+      place_remaining(r, a, remaining_tasks, hostname);
+      }
+
+    if (remaining_tasks > 0)
+      {
+      // We didn't place all of the tasks, but don't exit yet. We need to mark
+      // this allocation so that the cleanup happens correctly
+      rc = -1;
       }
     }
 
@@ -805,7 +811,7 @@ int Machine::place_job(
 
   this->allocations.push_back(a);
   
-  return(PBSE_NONE);
+  return(rc);
   } // END place_job()
 
 
