@@ -3060,11 +3060,13 @@ int node_np_action(
           {
           delete_a_subnode(pnode);
           old_np--;
+          svr_clnodes--;
           }
         else
           {
           add_execution_slot(pnode);
           old_np++;
+          svr_clnodes++;
           }
         }
 
