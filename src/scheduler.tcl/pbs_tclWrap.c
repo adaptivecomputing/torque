@@ -935,7 +935,7 @@ int PBS_ReRun(
 
   if (argc != 2)
     {
-    sprintf(interp->result,
+      sprintf((char *)Tcl_GetStringResult(interp),
             "%s: wrong # args: job_id", argv[0]);
     return TCL_ERROR;
     }
@@ -946,15 +946,18 @@ int PBS_ReRun(
     SET_PBSERR(PBSE_NOSERVER);
     return TCL_OK;
     }
+  sprintf(log_buffer, "0");
+  Tcl_SetResult(interp, log_buffer, TCL_VOLATILE);
 
-  interp->result = strdup("0");
+  /* interp->result = strdup("0"); */
 
   if (pbs_rerunjob_err(connector, strdup(argv[1]), extend, &local_errno))
     {
-    interp->result = strdup("-1");
-    msg = pbs_geterrmsg(connector);
-    sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
-    log_err(-1, argv[0], log_buffer);
+      sprintf(log_buffer, "-1");
+      Tcl_SetResult(interp, log_buffer, TCL_VOLATILE);
+      msg = pbs_geterrmsg(connector);
+      sprintf(log_buffer, "%s (%d)", msg ? msg : fail, local_errno);
+      log_err(-1, argv[0], log_buffer);
     }
   else
     {
