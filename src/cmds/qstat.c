@@ -2345,10 +2345,10 @@ void tcl_run(
     trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 
     if (trace == NULL)
-      Tcl_GetStringResult(interp);
+      trace = Tcl_GetStringResult(interp);
 
     fprintf(stderr, "%s: TCL error @ line %d: %s\n",
-            script, Tcl_GetErrorLine(interp)); 
+            script, Tcl_GetErrorLine(interp), trace); 
     }
 
   Tcl_DeleteInterp(interp);
