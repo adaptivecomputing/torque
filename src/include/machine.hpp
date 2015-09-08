@@ -265,6 +265,7 @@ class Socket
 
 class Machine
   {
+  int                 hardwareStyle; /* Intel or AMD */
   hwloc_uint64_t      totalMemory;
   int                 totalSockets;
   int                 totalChips;
@@ -308,6 +309,7 @@ class Machine
     int getDedicatedChips() const;
     int getDedicatedCores() const;
     int getDedicatedThreads() const;
+    int getHardwareStyle() const;
     bool isNUMA;
     void displayAsString(stringstream &out) const;
     void displayAsJson(stringstream &out, bool include_jobs) const;

@@ -68,6 +68,7 @@
 #include "timer.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
 #include "trq_cgroups.h"
 #include "complete_req.hpp"
 #include "req.hpp"
@@ -121,6 +122,10 @@ extern  int     LOGLEVEL;
 
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
+
+#ifdef PENABLE_LINUX_CGROUPS
+extern Machine this_node;
+#endif
 
 proc_stat_t   *proc_array = NULL;
 static int            nproc = 0;
@@ -1598,11 +1603,19 @@ unsigned long long resi_sum(
     close(fd);
     return(0);
     }
-  else if (rc != 0) /* if rc is 0 something is not right but not a critical error. Don't do anything */
+  else if (rc != 0) 
     {
+    int hardwareStyle;
     unsigned long long mem_read;
+
     mem_read = strtoull(buf, NULL, 10);
-    resisize += mem_read;
+
+    hardwareStyle = this_node.getHardwareStyle();
+
+    if (hardwareStyle == AMD) /* AMD adds everything up in the parent cgroup hierarchy and Intel does not */
+      resisize = mem_read;
+    else
+      resisize += mem_read;
     }
 
   close(fd);

@@ -102,6 +102,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   if (this == &newMachine)
     return *this;
 
+  hardwareStyle = newMachine.hardwareStyle;
   totalSockets = newMachine.totalSockets;
   sockets = newMachine.sockets;
   totalMemory = newMachine.totalMemory;
@@ -178,7 +179,7 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : totalMemory(0), totalSockets(0), totalChips(0),
+Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
                                                    totalCores(0), totalThreads(0), 
                                                    availableSockets(0), availableChips(0),
                                                    availableCores(0), availableThreads(0)
@@ -202,7 +203,7 @@ Machine::Machine(const std::string &json_layout) : totalMemory(0), totalSockets(
   update_internal_counts();
   }
 
-Machine::Machine() : totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
+Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
                      totalThreads(0), availableSockets(0), availableChips(0),
                      availableCores(0), availableThreads(0)
   { 
@@ -315,12 +316,14 @@ int Machine::initializeMachine(hwloc_topology_t topology)
       Socket intel_socket;
       intel_socket.initializeIntelSocket(socket_obj, topology);
       this->sockets.push_back(intel_socket);
+      this->hardwareStyle = style;
       }
     else if (style == AMD)
       {
       Socket amd_socket;
       amd_socket.initializeAMDSocket(socket_obj, topology);
       this->sockets.push_back(amd_socket);
+      this->hardwareStyle = style;
       }
     else
       {
@@ -435,6 +438,10 @@ void Machine::displayAsJson(
   out << "}}";
   }
 
+int Machine::getHardwareStyle() const
+  {
+  return(this->hardwareStyle);
+  }
 
 
 void Machine::displayAsString(
