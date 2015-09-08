@@ -2216,7 +2216,7 @@ tcl_init(void)
   if (Tcl_Init(interp) == TCL_ERROR)
     {
     fprintf(stderr, "Tcl_Init error: %s",
-            interp->result);
+	    Tcl_GetStringResult(interp));
     }
 
 #if TCLX
@@ -2229,7 +2229,7 @@ tcl_init(void)
     {
 #endif
     fprintf(stderr, "Tclx_Init error: %s",
-            interp->result);
+	    Tcl_GetStringResult(interp));
     }
 
 #endif /* TCLX */
@@ -2345,10 +2345,10 @@ void tcl_run(
     trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 
     if (trace == NULL)
-      trace = interp->result;
+      trace = Tcl_GetStringResult(interp);
 
     fprintf(stderr, "%s: TCL error @ line %d: %s\n",
-            script, interp->errorLine, trace);
+            script, Tcl_GetErrorLine(interp), trace); 
     }
 
   Tcl_DeleteInterp(interp);
