@@ -1292,6 +1292,9 @@ void check_nodes(
     {
     log_err(rc, __func__, "Unable to enqueue check nodes task into the threadpool");
     }
+
+  free(ptask->wt_mutex);
+  free(ptask);
   }  /* END check_nodes() */
 
 
