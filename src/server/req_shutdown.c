@@ -108,6 +108,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "job_func.h"
+#include "u_tree.h"
 
 
 int          issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
@@ -135,6 +136,7 @@ extern struct server server;
 extern attribute_def svr_attr_def[];
 extern int    LOGLEVEL;
 extern all_jobs alljobs;
+extern AvlTree  ipaddrs;
 
 
 
@@ -177,6 +179,8 @@ void svr_shutdown(
   close(lockfds);
 
   save_queues();
+
+  AVL_clear_tree(ipaddrs);
 
   /* Lets start by logging shutdown and saving everything */
   get_svr_attr_l(SRV_ATR_State, &state);
