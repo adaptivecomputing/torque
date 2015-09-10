@@ -104,7 +104,7 @@ void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_he
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
-int              thread_unlink_calls = FALSE;
+bool             thread_unlink_calls = true;
 /* by default, enforce these policies */
 int              ignwalltime = 0; 
 int              ignmem = 0;
@@ -933,9 +933,9 @@ unsigned long setthreadunlinkcalls(
   if (!strncasecmp(value,"t",1) ||
       (value[0] == '1') ||
       (!strcasecmp(value,"on")))
-    thread_unlink_calls = TRUE;
+    thread_unlink_calls = true;
   else
-    thread_unlink_calls = FALSE;
+    thread_unlink_calls = false;
 
   return(1);
   } /* END setthreadunlinkcalls() */

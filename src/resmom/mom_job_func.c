@@ -896,7 +896,7 @@ void mom_job_purge(
       }
     }
 
-  if (thread_unlink_calls == TRUE)
+  if (thread_unlink_calls == true)
     enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
   else
     delete_job_files(jfdi);
