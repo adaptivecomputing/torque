@@ -360,7 +360,6 @@ START_TEST(test_constructors)
 
   fail_unless(names[0] == "task_count.0", names[0].c_str());
   fail_unless(names[1] == "lprocs.0", names[1].c_str());
-  fail_unless(names[3] == "thread_usage_policy.0", names[3].c_str());
   fail_unless(values[0] == "2");
   fail_unless(values[1] == "1");
   }
