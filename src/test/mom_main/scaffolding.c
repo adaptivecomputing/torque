@@ -35,7 +35,7 @@ extern mom_hierarchy_t *mh;
 
 #endif
 
-
+bool   thread_unlink_calls;
 extern mom_hierarchy_t *mh;
 std::list<job *> alljobs_list;
 int              job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
