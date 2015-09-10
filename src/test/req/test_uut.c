@@ -149,15 +149,15 @@ START_TEST(test_get_set_values)
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
   fail_unless(names[2] == "numanode.0");
-  fail_unless(names[4] == "maxtpn.0");
-  fail_unless(names[5] == "thread_usage_policy.0");
-  fail_unless(names[6] == "pack.0");
+  fail_unless(names[3] == "maxtpn.0", "%s", names[4].c_str());
+  fail_unless(names[4] == "thread_usage_policy.0");
+  fail_unless(names[5] == "pack.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
-  fail_unless(values[4] == "1");
-  fail_unless(values[5] == "usecores", values[5].c_str());
-  fail_unless(values[6] == "true");
+  fail_unless(values[3] == "1");
+  fail_unless(values[4] == "usecores", values[5].c_str());
+  fail_unless(values[5] == "true");
 
   fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
 
@@ -360,10 +360,9 @@ START_TEST(test_constructors)
 
   fail_unless(names[0] == "task_count.0", names[0].c_str());
   fail_unless(names[1] == "lprocs.0", names[1].c_str());
-  fail_unless(names[2] == "core.0", names[2].c_str());
+  fail_unless(names[3] == "thread_usage_policy.0", names[3].c_str());
   fail_unless(values[0] == "2");
   fail_unless(values[1] == "1");
-  fail_unless(values[2] == "1");
   }
 END_TEST
 

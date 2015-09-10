@@ -288,8 +288,6 @@ int req::set_place_value(
       {
       rc = PBSE_CORE_PLACE;
       }
-    else
-      this->cores = 1;
       
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = use_cores;
@@ -300,8 +298,6 @@ int req::set_place_value(
       {
       rc = PBSE_CORE_PLACE;
       }
-    else
-      this->threads = 1;
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = use_threads;
