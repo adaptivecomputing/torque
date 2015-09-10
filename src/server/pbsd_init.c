@@ -1023,6 +1023,9 @@ int setup_server_attrs(
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
 
+  server.sv_attr[SRV_ATR_DownOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_DownOnError].at_flags = ATR_VFLAG_SET;
+
   /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);
 
