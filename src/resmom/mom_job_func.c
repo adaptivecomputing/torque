@@ -687,7 +687,6 @@ void *delete_job_files(
   {
   job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
-  int                   rc = 0;
 
 
 #ifdef PENABLE_LINUX26_CPUSETS
