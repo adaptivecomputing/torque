@@ -27,6 +27,10 @@
 #if TCLX
 #include <tclExtend.h>
 #endif
+#if ((TCL_MAJOR_VERSION < 8) || ((TCL_MAJOR_VERSION == 8) && \
+    (TCL_MINOR_VERSION < 6))) && (!defined(Tcl_GetErrorLine))
+#define Tcl_GetErrorLine(interp) (interp->errorLine)
+#endif
 #endif
 
 #include "cmds.h"
@@ -2345,7 +2349,7 @@ void tcl_run(
     trace = (char *)Tcl_GetVar(interp, "errorInfo", 0);
 
     if (trace == NULL)
-      trace = Tcl_GetStringResult(interp);
+      trace = (char *)Tcl_GetStringResult(interp);
 
     fprintf(stderr, "%s: TCL error @ line %d: %s\n",
             script, Tcl_GetErrorLine(interp), trace); 
