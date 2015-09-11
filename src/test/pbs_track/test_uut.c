@@ -208,7 +208,7 @@ START_TEST(fork_process)
   argv[1] = strdup("echo");
   argv[2] = strdup("nonsense");
 
-  rc = fork_process(5, argv, DoBackground, pid, JobID, Args);
+  rc = fork_process(3, argv, DoBackground, pid, JobID, Args);
   fail_unless(rc == PBSE_NONE, "handle_adopt_results failed with TM_SUCCESS ", rc);
 
   rc = TM_SUCCESS;
@@ -219,7 +219,7 @@ START_TEST(fork_process)
   argv[1] = strdup("echo");
   argv[2] = strdup("nonsense");
 
-  rc = fork_process(5, argv, DoBackground, pid, JobID, Args);
+  rc = fork_process(3, argv, DoBackground, pid, JobID, Args);
   if (pid == 0) {
     fail_unless(rc == PBSE_NONE, "handle_adopt_results failed with TM_SUCCESS ", rc);
     exit(0);
