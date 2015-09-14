@@ -241,6 +241,8 @@ extern nodeboard      node_boards[MAX_NODE_BOARDS];
 extern int            numa_index;
 #endif
 
+extern int            linux_time;
+
 /* Local Variables */
 
 static int      script_in; /* script file, will be stdin   */

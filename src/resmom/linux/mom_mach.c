@@ -252,10 +252,8 @@ void proc_get_btime(void)
 
   fclose(fp);
 
-  if(LOGLEVEL >= 7) {
-      sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", linux_time);
-      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-  }
+  sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", linux_time);
+  log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_MOM, "linux_time", log_buffer);
 
   return;
   }  /* END proc_get_btime() */
@@ -4591,6 +4589,7 @@ void scan_non_child_tasks(void)
   {
   job *pJob;
   static int first_time = TRUE;
+  int log_drift_event = 0;
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
@@ -4672,19 +4671,16 @@ void scan_non_child_tasks(void)
         if((job_start_time != 0)&&
             (session_start_time != 0))
           {
-              if(LOGLEVEL >= 7)
-              {
-              sprintf(log_buffer, "Comparing linux_time %ld; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
-                  linux_time,
-                  job_start_time,
-                  job_session_id,
-                  session_start_time,
-                  abs(job_start_time - session_start_time));
-              log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
-              }
           if(abs(job_start_time - session_start_time) < 5)
             {
             found = 1;
+            }
+          else
+            {
+              if(LOGLEVEL >= 7)
+                {
+                log_drift_event = 1;
+                }
             }
           }
         else
@@ -4752,6 +4748,8 @@ void scan_non_child_tasks(void)
 
         extern int exiting_tasks;
 
+        log_drift_event = 1;
+
         sprintf(buf, "found exited session %d for task %d in job %s",
             pTask->ti_qs.ti_sid,
             pTask->ti_qs.ti_task,
@@ -4782,6 +4780,17 @@ void scan_non_child_tasks(void)
         exiting_tasks = 1;
         }
       }
+      
+      if(log_drift_event)
+        {
+        sprintf(log_buffer, "DRIFT debug: comparing linux_time %ld; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
+          linux_time,
+          job_start_time,
+          job_session_id,
+          session_start_time,
+          abs(job_start_time - session_start_time));
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
+        }
     } /* END for each job */
 
   if (pdir != NULL)
