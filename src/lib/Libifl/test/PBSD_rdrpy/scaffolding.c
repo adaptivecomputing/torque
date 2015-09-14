@@ -22,3 +22,11 @@ struct tcp_chan *DIS_tcp_setup(int fd)
 void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
+
+char *pbs_strerror(
+
+  int err)  /* I */
+
+  {
+  return(NULL);
+  }
