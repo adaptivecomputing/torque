@@ -11,7 +11,9 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* job_file */
+#include "mom_func.h"
 
+std::list<job *> alljobs_list;
 const char *PJobSubState[10];
 char *path_jobs;
 const char *msg_script_write = "Unable to write script file";
@@ -107,10 +109,9 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-void start_exec(job *pjob)
+int start_exec(job *pjob)
   {
-  fprintf(stderr, "The call to start_exec needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void mom_server_all_update_stat(void)
@@ -219,3 +220,5 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+void remove_from_job_list(job *pjob) {}

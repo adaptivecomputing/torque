@@ -196,6 +196,7 @@ unsigned long setmempressthr(const char *);
 unsigned long setmempressdur(const char *);
 #endif
 int read_config(char *file);
+void reset_config_vars();
 
 
 

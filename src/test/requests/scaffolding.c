@@ -48,6 +48,7 @@ int multi_mom = 1;
 char MOMUNameMissing[64];
 char log_buffer[LOG_BUF_SIZE];
 char checkpoint_run_exe_name[MAXPATHLEN + 1];
+std::list<job *>    alljobs_list;
 
 
 int become_the_user(job *pjob)
@@ -181,10 +182,9 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-int kill_task(struct task *task, int sig, int pg)
+int kill_task(job *pjob, struct task *task, int sig, int pg)
   {
-  fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int DIS_tcp_wflush(tcp_chan *chan)

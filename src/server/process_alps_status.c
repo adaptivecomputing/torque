@@ -209,19 +209,51 @@ void *check_if_orphaned(
   void *vp)
 
   {
-  char                 *rsv_id = (char *)vp;
-  char                  job_id[PBS_MAXSVRJOBID];
-  struct batch_request *preq;
-  int                   handle = -1;
-  int                   retries = 0;
-  struct pbsnode       *pnode;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char           *node_name = (char *)vp;
+  char           *rsv_id = NULL;
+  char            job_id[PBS_MAXSVRJOBID];
+  batch_request  *preq;
+  int             handle = -1;
+  int             retries = 0;
+  struct pbsnode *pnode;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((rsv_id = strchr(node_name, ':')) != NULL)
+    {
+    *rsv_id = '\0';
+    rsv_id++;
+    }
+  else
+    {
+    free(node_name);
+    return(NULL);
+    }
 
   if (is_orphaned(rsv_id, job_id) == true)
     {
+    // Make sure the node with the orphan is not available for jobs
+    if ((pnode = find_nodebyname(node_name)) != NULL)
+      {
+      if ((pnode->nd_state & (INUSE_BUSY | INUSE_DOWN)) == 0)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node %s has an orphan but wasn't marked as busy. Marking as busy now.",
+          node_name);
+        log_err(-1, __func__, log_buf);
+
+        update_node_state(pnode, INUSE_BUSY);
+        }
+
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      }
+
     if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
-      return NULL;
-    preq->rq_extend = rsv_id;
+      {
+      free(node_name);
+      return(NULL);
+      }
+
+    preq->rq_extend = strdup(rsv_id);
 
     /* Assume the request will be successful and remove the RSV from the hash table */
     remove_alps_reservation(rsv_id);
@@ -258,8 +290,8 @@ void *check_if_orphaned(
       free_br(preq);
       }
     }
-  else
-    free(rsv_id);
+
+  free(node_name);
 
   return(NULL);
   } /* END check_if_orphaned() */
@@ -539,26 +571,25 @@ int record_reservation(
 
 
 
-
 int process_reservation_id(
     
   struct pbsnode *pnode, 
-  const char    *rsv_id_str)
+  const char     *rsv_id_str)
 
   {
-  char           *rsv_id;
+  const char *rsv_id = rsv_id_str + strlen(reservation_id) + 1;
 
   if (pnode == NULL)
     return(PBSE_BAD_PARAMETER);
  
-  rsv_id = strdup(rsv_id_str + strlen(reservation_id) + 1);
+  std::string info(pnode->nd_name);
+  info += ":";
+  info += rsv_id;
 
   if (already_recorded(rsv_id) == TRUE)
-    enqueue_threadpool_request(check_if_orphaned, rsv_id, task_pool);
+    enqueue_threadpool_request(check_if_orphaned, strdup(info.c_str()), task_pool);
   else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
-    enqueue_threadpool_request(check_if_orphaned, rsv_id, task_pool);
-  else
-    free(rsv_id);
+    enqueue_threadpool_request(check_if_orphaned, strdup(info.c_str()), task_pool);
 
   return(PBSE_NONE);
   } /* END process_reservation_id() */
