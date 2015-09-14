@@ -252,7 +252,7 @@ void proc_get_btime(void)
 
   fclose(fp);
 
-  sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", linux_time);
+  sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", (long)linux_time);
   log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_MOM, "linux_time", log_buffer);
 
   return;
@@ -4671,16 +4671,17 @@ void scan_non_child_tasks(void)
         if((job_start_time != 0)&&
             (session_start_time != 0))
           {
-          if(abs(job_start_time - session_start_time) < 5)
+          if(abs(job_start_time - session_start_time) < 3600)
             {
             found = 1;
+            if(job_start_time != session_start_time)
+              {
+              log_drift_event = 1;
+              }
             }
           else
             {
-              if(LOGLEVEL >= 7)
-                {
-                log_drift_event = 1;
-                }
+            log_drift_event = 1;
             }
           }
         else
@@ -4724,7 +4725,7 @@ void scan_non_child_tasks(void)
               proc_stat_t *ts = get_proc_stat(ps->session);
               if(ts == NULL)
                 continue;
-              if(ts->start_time == (unsigned long)pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long)
+              if(abs(ts->start_time - (unsigned long)pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long) < 3600)
                 {
                 found = 1;
                 break;
@@ -4747,8 +4748,6 @@ void scan_non_child_tasks(void)
         char buf[MAXLINE];
 
         extern int exiting_tasks;
-
-        log_drift_event = 1;
 
         sprintf(buf, "found exited session %d for task %d in job %s",
             pTask->ti_qs.ti_sid,
@@ -4781,9 +4780,10 @@ void scan_non_child_tasks(void)
         }
       }
       
-      if(log_drift_event)
+      if ((log_drift_event) || 
+          (LOGLEVEL >= 7))
         {
-        sprintf(log_buffer, "DRIFT debug: comparing linux_time %ld; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
+        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
           linux_time,
           job_start_time,
           job_session_id,
