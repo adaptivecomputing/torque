@@ -149,10 +149,19 @@ struct batch_reply *PBSD_rdrpy(
     if (chan->IsTimeout == TRUE)
       {
       *local_errno = PBSE_TIMEOUT;
+      rc = PBSE_TIMEOUT;
       }
     else
       {
       *local_errno = PBSE_PROTOCOL;
+      }
+
+    if ((the_msg = pbs_strerror(*local_errno)) != NULL)
+      {
+      if (connection[c].ch_errtxt != NULL)
+        free(connection[c].ch_errtxt);
+
+      connection[c].ch_errtxt = strdup(the_msg);
       }
 
     connection[c].ch_errno = *local_errno;
@@ -181,6 +190,9 @@ struct batch_reply *PBSD_rdrpy(
     {
     if ((the_msg = reply->brp_un.brp_txt.brp_str) != NULL)
       {
+      if (connection[c].ch_errtxt != NULL)
+        free(connection[c].ch_errtxt);
+
       connection[c].ch_errtxt = strdup(the_msg);
       }
     }
