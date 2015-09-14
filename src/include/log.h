@@ -121,11 +121,11 @@
 #endif
 
 #ifndef LOG_ERR
-#define LOG_ERR 4 
+#define LOG_ERR 4
 #endif
 
 #ifndef LOG_ERR
-#define LOG_ERR 5 
+#define LOG_ERR 5
 #endif
 
 #ifndef LOG_WARNING
@@ -214,6 +214,7 @@ int chk_file_sec( const char *path, int isdir, int sticky, int disallow, int ful
 #define PBS_EVENTCLASS_ACCT 6 /* Accounting info */
 #define PBS_EVENTCLASS_NODE 7 /* Nodes           */
 #define PBS_EVENTCLASS_TRQAUTHD 8 /* trqauthd */
+#define PBS_EVENTCLASS_MOM 9 /* moms */
 
 /* definition's for pbs_log.c's log_remove_old() function */
 #define MAX_PATH_LEN    1024  /* maximum possible length of any path */
