@@ -594,8 +594,6 @@ int release_dependency(
 
 
 
-
-
 int ready_dependency(
 
   batch_request *preq,
@@ -636,6 +634,15 @@ int ready_dependency(
 
 
 
+/*
+ * delete_dependency_job()
+ *
+ * Deletes the dependent job. We are here because the dependency can never be satisfied.
+ * @param preq - the batch request specifying the request
+ * @param pjob_ptr - a pointer to a pointer to the job
+ * @return PBSE_NONE on success or PBSE_IVALREQ if a job is detected to be dependent on
+ * itself.
+ */
 
 int delete_dependency_job(
  
@@ -647,13 +654,16 @@ int delete_dependency_job(
   int  rc = PBSE_NONE;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   
+  // Do not take action for a job depending on itself.
   if (!strcmp(preq->rq_ind.rq_register.rq_parent,
         preq->rq_ind.rq_register.rq_child))
     {
     rc = PBSE_IVALREQ; /* prevent an infinite loop */
     }
-  // only abort if the job isn't already exiting
-  else if (pjob->ji_qs.ji_state < JOB_STATE_EXITING)
+  // Only abort if the job isn't already exiting, and never abort
+  // running jobs for any job dependency reasons.
+  else if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
+           (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
     {
     sprintf(log_buf, msg_registerdel, preq->rq_ind.rq_register.rq_child);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -667,6 +677,15 @@ int delete_dependency_job(
 
 
 
+/*
+ * unregister_dependency()
+ *
+ * Remove a dependency from a job
+ * @param preq - the request in question
+ * @param pjob - the job who needs to have a dependency removed.
+ * @param type - the dependency type
+ * @return PBSE_NONE on success or a failure code
+ */
 
 int unregister_dependency(
  

@@ -24,8 +24,6 @@ int has_exec_host_and_port(job *pjob);
 
 void init_abort_jobs(int recover);
 
-void mom_deljob(job *pjob);
-
 int needs_and_ready_for_reply(job *pjob);
 
 int send_job_obit_to_ms(job *pjob, int mom_radix);

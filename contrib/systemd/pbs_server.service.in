@@ -1,0 +1,16 @@
+[Unit]
+Description=TORQUE pbs_server daemon
+Requires=trqauthd.service network.target
+After=trqauthd.service network.target
+
+[Service]
+Type=forking
+User=root
+
+PIDFile=@PBS_HOME@/server_priv/server.lock
+
+ExecStart=@sbindir@/pbs_server -d @PBS_HOME@
+ExecStop=@bindir@/qterm
+
+[Install]
+WantedBy=multi-user.target

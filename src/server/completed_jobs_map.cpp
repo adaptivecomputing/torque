@@ -258,5 +258,6 @@ void add_to_completed_jobs(
     free(jobid);
     }
 
+  free(ptask);
   } // END add_to_completed_jobs()
 

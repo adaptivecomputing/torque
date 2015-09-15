@@ -25,7 +25,7 @@ char *apbasil_path = (char *)"/usr/local/bin/apbasil";
 char *apbasil_protocol = (char *)"1.0";
 char *apbasil_protocol_13 = (char *)"1.3";
 char *apbasil_protocol_14 = (char *)"1.4";
-char *blank_cmd = (char *)"../../../test/test_scripts/blank_script.sh";
+char *blank_cmd = (char *)"../test_scripts/blank_script.sh";
 
 char *alps_rsv_outputs[] = {
     (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='SUCCESS' method='RESERVE'><Reserved reservation_id='777' admin_cookie='0' alloc_cookie='0'/></ResponseData></BasilResponse>",
@@ -321,7 +321,7 @@ START_TEST(execute_reservation_test)
   char *rsv_id;
   int   rc;
   int   rid = 30;
-  char *cmd = (char *)"../../../test/test_scripts/execute_reservation.sh";
+  char *cmd = (char *)"../test_scripts/execute_reservation.sh";
   char  cmdbuf[1024];
 
   snprintf(cmdbuf, sizeof(cmdbuf), "%s %d", cmd, rid);

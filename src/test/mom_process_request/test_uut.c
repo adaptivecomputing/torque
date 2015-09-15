@@ -24,8 +24,8 @@ START_TEST(test_mom_process_request_bad_host_err)
   int sock = 999;
 
   mom_process_request(&sock);
-  fail_unless(strcmp(log_buffer, "Access from host not allowed, or unknown host: 10.1.4.4") == 0,
-          "Error message was not constructed as expected");
+  fail_unless(strncmp(log_buffer, "Access from host not allowed, or unknown host", strlen("Access from host not allowed, or unknown host")) == 0,
+          "Error message was not constructed as expected: %s", log_buffer);
   }
 END_TEST
 
