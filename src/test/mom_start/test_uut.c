@@ -3,8 +3,13 @@
 #include "test_mom_start.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <list>
 
 #include "pbs_error.h"
+#include "pbs_job.h"
+
+std::list<job *> alljobs_list;
+
 START_TEST(test_one)
   {
   }

@@ -48,6 +48,28 @@ void process_config_file(
   } /* END process_config_file */
 
 
+
+bool is_array(
+
+  char *job_id)
+
+  {
+  char *bracket_ptr;
+
+  if ((bracket_ptr = strchr(job_id,'[')) != NULL)
+    {
+    /* Make sure the next character is ']' */
+    if (*(++bracket_ptr) == ']')
+      {
+      return(true);
+      }
+    }
+    
+  return(false);
+  } /* END is_array() */
+
+
+
 /* qdel */
 
 int qdel_main(
@@ -63,7 +85,8 @@ int qdel_main(
   int purge_completed = FALSE;
   int located = FALSE;
   char *pc;
-  bool isarray = false;
+  bool  dash_t = false; /* for array submission job handling */
+  int  past_failure = 0; /* for multiple job submission error message tracking */
 
   char job_id[PBS_MAXCLTJOBID]; /* from the command line */
 
@@ -88,9 +111,6 @@ int qdel_main(
     }
 
   extend[0] = '\0';
-  
-  int brackcount;
-  // brackcount used to check for brackets in case of -t
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -162,7 +182,7 @@ int qdel_main(
 
       case 't':
 
-        isarray = true;
+        dash_t = true;
 
         if (extend[0] != '\0')
           {
@@ -265,26 +285,14 @@ int qdel_main(
 
    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
    
-   for (unsigned int i = 0; i < strlen(job_id); i++)
+   if ((dash_t == true) && 
+       is_array(job_id) == false)
      {
-	   
-     if (job_id[i] == '[' || job_id[i] == ']')
-       { 
-       isarray = true;
-       
-       brackcount++;
-       }
-    	 
-     }
-   
-   if ((isarray == true) &&
-       (brackcount % 2 != 0))
-     {
-     fprintf(stderr, "qdel: illegally formed array identifier: %s\n",
-         job_id);
-     
+     fprintf(stderr, "qdel: Error: job id '%s' isn't a job array but -t was specified.\n",
+       job_id);
+
      any_failed = 1;
-     
+
      exit(any_failed);
      }
    
@@ -331,6 +339,9 @@ cnt:
         }
       } while ((++retries < MAX_RETRIES) && (any_failed == PBSE_TIMEOUT));
 
+    if (past_failure == 0)
+      past_failure = any_failed;
+
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
       {
@@ -355,11 +366,14 @@ cnt:
     if (!located && any_failed != 0)
       {
       fprintf(stderr, "qdel: nonexistent job id: %s\n", job_id);
-      // need to change to PBSE_ERROR.db
       }
 
     pbs_disconnect(connect);
     }
+
+  if ((past_failure != PBSE_NONE) &&
+      (any_failed == PBSE_NONE))
+    any_failed = past_failure;
 
   exit(any_failed);
   } /* END qdel_main() */

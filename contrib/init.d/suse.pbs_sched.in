@@ -61,5 +61,5 @@ case "$1" in
 	*)
 		echo "Usage: pbs_sched {start|stop|status|try-restart|restart|force-reload|reload}"
 		exit 1
-rc_exit
 esac
+rc_exit

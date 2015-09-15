@@ -144,6 +144,7 @@
 #include "mom_config.h"
 #include "container.hpp"
 #include "mom_job_cleanup.h"
+#include "mom_func.h"
 #include "node_frequency.hpp"
 
 #ifndef TRUE
@@ -180,7 +181,6 @@ extern char    server_name[];
 extern time_t  time_now;
 
 extern tlist_head svr_newjobs;
-extern tlist_head svr_alljobs;
 
 extern job_pid_set_t global_job_sid_set;
 
@@ -491,7 +491,6 @@ job *job_alloc(void)
 
   pj->ji_qs.qs_version = PBS_QS_VERSION;
 
-  CLEAR_LINK(pj->ji_alljobs);
   CLEAR_LINK(pj->ji_jobque);
 
   CLEAR_HEAD(pj->ji_tasks);
@@ -630,15 +629,11 @@ static void job_init_wattr(
   }   /* END job_init_wattr() */
 
 
+void remove_tmpdir_file(
 
-
-
-void *delete_job_files(
-
-  void *vp)
+    job_file_delete_info *jfdi)
 
   {
-  job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
 
@@ -661,6 +656,11 @@ void *delete_job_files(
       else
         {
         rc = remtree(namebuf);
+        if (rc != 0)
+          {
+          sprintf(log_buffer, "remtree failed: %s", strerror(errno));
+          log_err(errno, __func__, log_buffer);
+          }
         
         setuid_ext(pbsuser, TRUE);
         setegid(pbsgroup);
@@ -677,6 +677,20 @@ void *delete_job_files(
         }
       }
     } /* END code to remove temp dir */
+  }
+
+
+
+
+void *delete_job_files(
+
+  void *vp)
+
+  {
+  job_file_delete_info *jfdi = (job_file_delete_info *)vp;
+  char                  namebuf[MAXPATHLEN];
+  int                   rc = 0;
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -824,6 +838,16 @@ void remove_from_exiting_list(
 
 
 
+void remove_from_job_list(
+
+  job *pjob)
+
+  {
+  alljobs_list.remove(pjob);
+  } // END remove_from_job_list()
+
+
+
 void mom_job_purge(
 
   job *pjob)  /* I (modified) */
@@ -887,14 +911,17 @@ void mom_job_purge(
       }
     }
 
-  if (thread_unlink_calls == TRUE)
+  remove_tmpdir_file(jfdi);
+
+  if (thread_unlink_calls == true)
     enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
   else
     delete_job_files(jfdi);
 
   /* remove this job from the global queue */
   delete_link(&pjob->ji_jobque);
-  delete_link(&pjob->ji_alljobs);
+
+  remove_from_job_list(pjob);
 
   remove_from_exiting_list(pjob);
 
@@ -937,7 +964,7 @@ void mom_job_purge(
 
   /* if no jobs are left, check if MOM should be restarted */
 
-  if (((job *)GET_NEXT(svr_alljobs)) == NULL)
+  if (alljobs_list.size() == 0)
     MOMCheckRestart();
 
   return;
@@ -959,26 +986,25 @@ job *mom_find_job(
   const char *jobid)
 
   {
-  char *jid = strdup(jobid);
-  char *at;
-  job  *pj;
+  std::string  jid(jobid);
+  job         *pj;
+  std::size_t  pos = 0;
 
-  if ((at = strchr(jid, (int)'@')) != NULL)
-    * at = '\0'; /* strip off @server_name */
+  if ((pos = jid.find("@")) != std::string::npos)
+    jid.erase(pos);
 
-  pj = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pj != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    if (!strcmp(jid, pj->ji_qs.ji_jobid))
-      break;
+    pj = *iter;
 
-    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    // Match
+    if (jid == pj->ji_qs.ji_jobid)
+      return(pj);
     }
 
-  free(jid);
-
-  return(pj);  /* may be NULL */
+  return(NULL);
   }   /* END mom_find_job() */
 
 

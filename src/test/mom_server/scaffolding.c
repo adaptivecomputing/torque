@@ -21,9 +21,11 @@
 #include "pbs_config.h"
 #include "container.hpp"
 #include "dis.h"
+#include "mom_func.h"
 
 #define MAXLINE 1024
 
+std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;

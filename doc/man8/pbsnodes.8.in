@@ -85,7 +85,7 @@ pbsnodes [\^\-{a|x}\^] [\-q] [\-s server] [node|:property]
 .br
 pbsnodes \-l [\-q] [\-s server] [state] [nodename|:property ...]
 .br
-pbsnodes [\^\-{c|d|o|r}\^] [\-q] [\-s server] [\-n] [\-N "note"] [node|:property]
+pbsnodes [\^\-{c|d|o|r}\^] [\-q] [\-s server] [\-n] [\-N "note"] [\-A "append note"] [node|:property]
 
 .SH DESCRIPTION
 The 
@@ -106,6 +106,9 @@ or
 .B \-l
 options, the user must have PBS Manager or Operator privilege.
 .SH OPTIONS
+.IP "\-A" 15
+Append a note attribute to existing note attributes. The -N note option will overwrite exiting note attributes. -A
+will append a new note attribute to the existing note attributes delimited by a ',' and a space.
 .IP "\-a" 15
 All attributes of a node or all nodes are listed.  This is the default
 if no flag is given.

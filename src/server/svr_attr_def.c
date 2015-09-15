@@ -1481,4 +1481,16 @@ attribute_def svr_attr_def[] =
       ATR_TYPE_LONG,
       PARENT_TYPE_SERVER},
 
+    /* SRV_ATR_DontWriteNodesFile */
+    {(char *)ATTR_dontwritenodesfile, /* "dont_write_nodes_file" */
+     decode_b,
+     encode_b,
+     set_b,
+     comp_b,
+     free_null,
+     NULL_FUNC,
+     MGR_ONLY_SET,
+     ATR_TYPE_LONG,
+     PARENT_TYPE_SERVER},
+
   };

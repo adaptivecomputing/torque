@@ -86,3 +86,8 @@ int openpty (int *__amaster, int *__aslave, char *__name, const struct termios *
   }
 }
 #endif
+
+int kill_task(job *pjob, struct task *task, int sig, int pg)
+  {
+  return(0);
+  }

@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* struct passwd */
+#include <list>
 
-#include "../../../mom_main.h" /* MAX_LINE */
+#include "mom_main.h" /* MAX_LINE */
 #include "resource.h" /* resource_def, resource */
 #include "list_link.h" /* tlist_head, list_link, pidl */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -15,6 +16,7 @@
 #include "node_frequency.hpp"
 
 
+std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];

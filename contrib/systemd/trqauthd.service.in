@@ -1,0 +1,14 @@
+[Unit]
+Description=TORQUE trqauthd daemon
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=root
+
+ExecStart=@sbindir@/trqauthd
+ExecStop=@sbindir@/trqauthd -d
+
+[Install]
+WantedBy=multi-user.target
