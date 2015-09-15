@@ -1,3 +1,4 @@
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -522,14 +523,20 @@ void add_procs_and_nodes_used(
       std::size_t      plus = nodelist.find("+", pos);
       std::string      host(nodelist.substr(pos, plus - pos));
       std::size_t      slash = host.find("/");
-      std::string      range(host.substr(slash + 1));
+      std::string      range;
       std::vector<int> indices;
 
-      // remove the /<index>
-      host.erase(slash);
+      // remove the /<index> if it exists
+      if (slash != std::string::npos)
+        {
+        range = host.substr(slash + 1);
+        host.erase(slash);
 
-      translate_range_string_to_vector(range.c_str(), indices);
-      total_execution_slots += indices.size();
+        translate_range_string_to_vector(range.c_str(), indices);
+        total_execution_slots += indices.size();
+        }
+      else
+        total_execution_slots += 1;
 
       if (last_host != host)
         {
@@ -568,8 +575,6 @@ void account_jobend(
 #ifdef USESAVEDRESOURCES
   pbs_attribute      *pattr;
   long                walltime_val = 0;
-#else
-  time_t              time_now = time(NULL);
 #endif
 
   if ((acct_job(pjob, ds)) != PBSE_NONE)
@@ -620,7 +625,7 @@ void account_jobend(
     }
   sprintf(local_buf, "end=%ld ", (long)pjob->ji_qs.ji_stime + walltime_val);
 #else
-  sprintf(local_buf, "end=%ld ", (long)time_now);
+  sprintf(local_buf, "end=%ld ", (long)pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
 #endif /* USESAVEDRESOURCES */
 
   ds += local_buf;

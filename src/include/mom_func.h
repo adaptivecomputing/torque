@@ -81,6 +81,7 @@
 
 #include "libpbs.h"
 #include <set>
+#include <list>
 
 #ifndef MOM_MACH
 #include "mom_mach.h"
@@ -263,7 +264,7 @@ int          become_the_user(job *pjob);
 bool         am_i_mother_superior(const job &pjob);
 
 /* defined in mach-dependant mom_mach.c */
-extern int kill_task(struct task *, int, int);
+extern int kill_task(job *,struct task *, int, int);
 
 /* Defines for pe_io_type, see run_pelog() */
 
@@ -286,5 +287,8 @@ extern char *std_file_name(job *, enum job_file, int *);
 #ifdef BATCH_REQUEST_H
 extern int   start_checkpoint(job *, int, struct batch_request *);
 #endif /* BATCH_REQUEST_H */
+
+extern std::list<job *> alljobs_list;
+void remove_from_job_list(job *pjob);
 
 #endif /* _MOM_FUNC_H */

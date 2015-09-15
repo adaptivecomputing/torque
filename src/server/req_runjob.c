@@ -181,14 +181,13 @@ int  kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 
 
 
-void *check_and_run_job(
+int check_and_run_job_work(
 
-  void *vp)
+  batch_request *preq)
 
   {
-  batch_request   *preq = (batch_request *)vp;
   job             *pjob;
-  int             *rc_ptr = (int *)calloc(1, sizeof(int));
+  int              rc = PBSE_NONE;
   char             failhost[MAXLINE];
   char             emsg[MAXLINE];
   long             job_atr_hold;
@@ -197,14 +196,14 @@ void *check_and_run_job(
   char             job_id[PBS_MAXSVRJOBID+1];
   char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
-  *rc_ptr = PBSE_NONE;
+  rc = PBSE_NONE;
   pjob = svr_find_job(preq->rq_ind.rq_run.rq_jid, FALSE);
 
   if (pjob == NULL)
     {
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-    *rc_ptr = PBSE_JOBNOTFOUND;
-    return(rc_ptr);
+    rc = PBSE_JOBNOTFOUND;
+    return(rc);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -221,8 +220,8 @@ void *check_and_run_job(
       {
       job_mutex.set_unlock_on_exit(false);
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-      *rc_ptr = PBSE_JOBNOTFOUND;
-      return(rc_ptr);
+      rc = PBSE_JOBNOTFOUND;
+      return(rc);
       }
    
     if (pa != NULL)
@@ -245,8 +244,8 @@ void *check_and_run_job(
           {
           req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL,
             "Job deleted while updating array values");
-          *rc_ptr = PBSE_JOBNOTFOUND;
-          return(rc_ptr);
+          rc = PBSE_JOBNOTFOUND;
+          return(rc);
           }
         else
           job_mutex.mark_as_locked();
@@ -262,18 +261,18 @@ void *check_and_run_job(
        
         req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
         
-        *rc_ptr = PBSE_IVALREQ;
+        rc = PBSE_IVALREQ;
 
-        return(rc_ptr);
+        return(rc);
         }
       }
     }
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
 
-  *rc_ptr = svr_startjob(pjob, &preq, failhost, emsg);
+  rc = svr_startjob(pjob, &preq, failhost, emsg);
 
-  if ((*rc_ptr != 0) && 
+  if ((rc != 0) && 
       (preq != NULL))
     {
     free_nodes(pjob);
@@ -281,18 +280,33 @@ void *check_and_run_job(
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
     if (pjob->ji_rejectdest->size() > 0)
       {
-      req_reject(*rc_ptr, 0, preq, pjob->ji_rejectdest->at(0).c_str(), "could not contact host");
+      req_reject(rc, 0, preq, pjob->ji_rejectdest->at(0).c_str(), "could not contact host");
       }
     else
       {
-      req_reject(*rc_ptr, 0, preq, failhost, emsg);
+      req_reject(rc, 0, preq, failhost, emsg);
       }
     }
 
-  if ((*rc_ptr == PBSE_NONE) && (preq != NULL))
+  if ((rc == PBSE_NONE) &&
+      (preq != NULL))
     free_br(preq);
 
-  return(rc_ptr);
+  return(rc);
+  } // END check_and_run_job_work()
+
+
+
+void *check_and_run_job(
+
+  void *vp)
+
+  {
+  batch_request   *preq = (batch_request *)vp;
+
+  check_and_run_job_work(preq);
+
+  return(NULL);
   } /* END check_and_run_job() */
 
 
@@ -313,7 +327,6 @@ int req_runjob(
   job                  *pjob;
   int                   rc = PBSE_NONE;
   int                   setneednodes;
-  int                  *rc_ptr;
   char                  log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   /* chk_job_torun will extract job id and assign hostlist if specified */
@@ -379,9 +392,7 @@ int req_runjob(
     }
   else
     {
-    rc_ptr = (int *)check_and_run_job(preq);
-    rc = *rc_ptr;
-    free(rc_ptr);
+    rc = check_and_run_job_work(preq);
     }
 
   return(rc);
@@ -438,8 +449,6 @@ void post_checkpointsend(
 
   code = preq->rq_reply.brp_code;
   pjob = svr_find_job((char *)preq->rq_extra, FALSE);
-
-  free(preq->rq_extra);
 
   if (pjob != NULL)
     {
@@ -531,7 +540,6 @@ int svr_send_checkpoint(
 
   struct batch_request *momreq = 0;
   int                   rc;
-  char                 *tmp_jobid = NULL;
   char                  jobid[PBS_MAXSVRJOBID + 1];
   job                  *pjob = *pjob_ptr;
 
@@ -548,14 +556,7 @@ int svr_send_checkpoint(
     }
 
   /* save job id for post_checkpointsend */
-
-  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-    {
-    free_br(momreq);
-    return(PBSE_SYSTEM);
-    }
-
-  momreq->rq_extra = tmp_jobid;
+  momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -588,7 +589,6 @@ int svr_send_checkpoint(
   else
     {
     free_br(momreq);
-    free(tmp_jobid);
     }
 
   return(rc);
@@ -680,8 +680,6 @@ void post_stagein(
 
   code = preq->rq_reply.brp_code;
   pjob = svr_find_job((char *)preq->rq_extra, FALSE);
-
-  free(preq->rq_extra);
 
   if (pjob != NULL)
     {
@@ -784,7 +782,6 @@ int svr_stagein(
   job                  *pjob = *pjob_ptr;
   struct batch_request *momreq = 0;
   int                   rc;
-  char                 *tmp_jobid = NULL;
   char                  jobid[PBS_MAXSVRJOBID + 1];
 
   momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
@@ -802,14 +799,7 @@ int svr_stagein(
   /* have files to stage in */
 
   /* save job id for post_stagein */
-
-  if ((tmp_jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-    {
-    free_br(momreq);
-    return(PBSE_SYSTEM);
-    }
-
-  momreq->rq_extra = tmp_jobid;
+  momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -857,7 +847,6 @@ int svr_stagein(
   else
     {
     free_br(momreq);
-    free(tmp_jobid);
     }
 
   return(rc);
@@ -1152,6 +1141,39 @@ int svr_startjob(
 
 
 #define THRESHOLD_LEN 999000000
+char *get_mail_text(
+
+  batch_request *preq,
+  const char    *job_id)
+
+  {
+  char *mail_text = NULL;
+
+  if ((preq != NULL) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
+    {
+    /* assume it's a corrupted record when the length is too high */
+    if ((preq->rq_type != PBS_BATCH_CopyFiles) && 
+      (preq->rq_reply.brp_un.brp_txt.brp_txtlen < THRESHOLD_LEN))
+      mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
+    else
+      {
+      if (preq->rq_type != PBS_BATCH_CopyFiles)
+        {
+        char tmpLine[MAXLINE];
+        sprintf(tmpLine,
+          "Unexpected length for email's text: '%ld' - discarded as a corrupted field",
+          preq->rq_reply.brp_un.brp_txt.brp_txtlen);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
+        }
+      }
+    }
+
+  return(mail_text);
+  } // END get_mail_text()
+
+
+
 int send_job_to_mom(
  
   job           **pjob_ptr,   /* M */
@@ -1160,8 +1182,6 @@ int send_job_to_mom(
 
   {
   job             *pjob = *pjob_ptr;
-  int              old_state;
-  int              old_subst;
   long             job_timeout = 0;
   long             tcp_timeout = 0;
   unsigned long    job_momaddr = -1;
@@ -1178,9 +1198,6 @@ int send_job_to_mom(
     {
     return(PBSE_BAD_PARAMETER);
     }
-
-  old_state = pjob->ji_qs.ji_state;
-  old_subst = pjob->ji_qs.ji_substate;
 
   svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_PRERUN, FALSE);
 
@@ -1199,22 +1216,7 @@ int send_job_to_mom(
   *pjob_ptr = NULL;
   pjob = NULL;
 
-  if ((preq != NULL) && 
-      (preq->rq_reply.brp_un.brp_txt.brp_str != NULL))
-    {
-    /* assume it's a corrupted record when the length is too high */
-    if ((preq->rq_type != PBS_BATCH_CopyFiles) && 
-      (preq->rq_reply.brp_un.brp_txt.brp_txtlen < THRESHOLD_LEN))
-      mail_text = strdup(preq->rq_reply.brp_un.brp_txt.brp_str);
-    else
-      {
-      if (preq->rq_type != PBS_BATCH_CopyFiles)
-        {
-        sprintf(tmpLine, "Unexpected length for email's text: '%ld' - discarded as a corrupted field", preq->rq_reply.brp_un.brp_txt.brp_txtlen);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
-        }
-      }
-    }
+  mail_text = get_mail_text(preq, pjob->ji_qs.ji_jobid);
 
   if (send_job_work(job_id, NULL, MOVE_TYPE_Exec, &my_err, preq) == PBSE_NONE)
     {
@@ -1264,12 +1266,6 @@ int send_job_to_mom(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, tmpLine);
       *pjob_ptr = pjob;
       pjob->ji_qs.ji_destin[0] = '\0';
-      
-      /* Do not restore the status to running again
-      ** since it's not able to run the job on the MOM
-      */
-      if (old_state != JOB_STATE_RUNNING)
-        svr_setjobstate(pjob, old_state, old_subst, FALSE);
       }
 
     if (mail_text != NULL)

@@ -141,6 +141,8 @@ extern void rel_resc(job *);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 
+extern char *get_correct_jobname(const char *jobid);
+
 /* prototypes */
 void post_modify_arrayreq(batch_request *preq);
 void post_modify_req(batch_request *preq);
@@ -957,12 +959,28 @@ void *req_modifyjob(
   job       *pjob;
   svrattrl  *plist;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
+  char      *correct_jobname_p;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
   if (pjob == NULL)
     {
     return(NULL);
+    }
+
+  // get the correct job name
+  correct_jobname_p = get_correct_jobname(preq->rq_ind.rq_modify.rq_objname);
+
+  // if correct job name and one passed in don't match, adjust one passed in
+  //  so that mom will be able to match it and not reject modify request due
+  //  to job not found
+  if ((correct_jobname_p != NULL) &&
+      (strcmp(correct_jobname_p, preq->rq_ind.rq_modify.rq_objname) != 0))
+    {
+    // job names don't match so need to modify the requested jobname
+    snprintf(preq->rq_ind.rq_modify.rq_objname,
+             sizeof(preq->rq_ind.rq_modify.rq_objname),
+             "%s", correct_jobname_p);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);

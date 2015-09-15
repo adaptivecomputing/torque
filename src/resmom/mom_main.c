@@ -117,7 +117,6 @@
 #define DEFAULT_JOB_EXIT_WAIT_TIME 600
 #define MAX_JOIN_WAIT_TIME          600
 #define RESEND_WAIT_TIME            300
-#define OBIT_STATE_RETRY_TIME       30
 
 /* Global Data Items */
 
@@ -134,7 +133,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[BUF_SIZE];
+char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 
 /* mom data items */
@@ -189,7 +188,7 @@ unsigned int pbs_mom_port = 0;
 unsigned int pbs_rm_port = 0;
 tlist_head mom_polljobs; /* jobs that must have resource limits polled */
 tlist_head svr_newjobs; /* jobs being sent to MOM */
-tlist_head svr_alljobs; /* all jobs under MOM's control */
+std::list<job *> alljobs_list; // all jobs under MOM's control
 tlist_head mom_varattrs; /* variable attributes */
 int  termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t  time_now = 0;
@@ -203,7 +202,7 @@ time_t          last_log_check;
 std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
-mom_hierarchy_t  *mh;
+mom_hierarchy_t  *mh = NULL;
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -227,6 +226,10 @@ int             MOMPrologFailureCount;
 
 char            MOMUNameMissing[64];
 
+extern int      MOMConfigDownOnError;
+extern int      MOMConfigRestart;
+extern int      MOMCudaVisibleDevices; /* on by default starting in 4.2.8 */
+extern int      MOMConfigRReconfig;
 long            system_ncpus = 0;
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
@@ -297,11 +300,10 @@ static int      call_hup = 0;
 char           *path_log;
 
 
-
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 int                     DOBACKGROUND = 1;
-long                    TJobStartTimeout = 300; /* seconds to wait for job to launch before purging */
+long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
 char                   *ret_string;
@@ -1245,6 +1247,7 @@ void process_hup(void)
   memory_pressure_duration  = 0;
 #endif
   clear_servers();
+  reset_config_vars();
   read_config(NULL);
   check_log();
   cleanup();
@@ -1569,7 +1572,7 @@ int process_clear_job_request(
     if (!strcasecmp(ptr, "all"))
       {
       clear_jobs(svr_newjobs, output);
-      clear_jobs(svr_alljobs, output);
+      alljobs_list.clear();
       output << "clear completed";
       }
     else 
@@ -2094,21 +2097,23 @@ void add_diag_job_list(
   {
   job  *pjob;
 
-  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+  if (alljobs_list.size() == 0)
     {
     output << "NOTE:  no local jobs detected\n";
     }
   else
     {
-    int            numvnodes = 0;
+    int                        numvnodes = 0;
+    std::list<job *>::iterator iter;
 
-    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
+      pjob = *iter;
       add_diag_job_entry(output, &numvnodes, pjob);
       }  /* END for (pjob) */
 
     output << "Assigned CPU Count:     " << numvnodes << "\n";
-    }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
+    }
 
   add_diag_new_jobs(output);
   } /* END add_diag_job_list() */
@@ -2414,6 +2419,21 @@ void set_report_mom_rolling_restart(
   } /* END set_report_mom_rolling_restart() */
 
 
+void set_report_mom_cuda_visible_devices(
+    
+    std::stringstream &output, 
+    char              *curr)
+
+  {
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    setcudavisibledevices(curr + 1);
+    }
+
+  output << "cuda_visible_devices=" << MOMCudaVisibleDevices;
+  } /* END set_report_mom_cuda_visible_devices() */
+
+
 
 void set_report_rcpcmd(
 
@@ -2672,6 +2692,10 @@ int process_rm_cmd_request(
       else if (!strncasecmp(name, "diag", strlen("diag")))
         {
         ret = process_diag_request(output, name);
+        }
+       else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
+        {
+        set_report_mom_cuda_visible_devices(output, curr);
         }
       else
         {
@@ -3397,7 +3421,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(ptask, sig, 0);
+      ct += kill_task(pjob, ptask, sig, 0);
       }
 
     ptask = (task *)GET_NEXT(ptask->ti_jobtask);
@@ -3831,7 +3855,6 @@ void initialize_globals(void)
   time(&MOMStartTime);
 
   CLEAR_HEAD(svr_newjobs);
-  CLEAR_HEAD(svr_alljobs);
   CLEAR_HEAD(mom_polljobs);
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
@@ -4046,9 +4069,6 @@ void parse_command_line(
       {
 
       case '-':
-
-        if (optarg == NULL)
-          break;
 
         if (!strcmp(optarg, "about"))
           {
@@ -4353,7 +4373,7 @@ bool verify_mom_hierarchy()
       for (unsigned int k = 0; k < nodes.size(); k++)
         {
         node_comm_t &nc = nodes[k];
-        if (!strcmp(nc.name, mom_alias))
+        if (nc.name == mom_alias)
           continue_on_path = false;
         else
           {
@@ -4371,10 +4391,10 @@ bool verify_mom_hierarchy()
           {
           node_comm_t &nc = nodes[k];
           struct addrinfo *addr_info;
-          if (pbs_getaddrinfo(nc.name, NULL, &addr_info) == 0)
+          if (pbs_getaddrinfo(nc.name.c_str(), NULL, &addr_info) == 0)
             {
             add_network_entry(tmp_hierarchy,
-                              nc.name,
+                              nc.name.c_str(),
                               addr_info,
                               ntohs(nc.sock_addr.sin_port),
                               path_index,
@@ -4445,13 +4465,14 @@ void recover_internal_layout()
 
   {
 #ifndef NUMA_SUPPORT
-  std::list<job *> job_list;
+  std::list<job *>           job_list;
+  std::list<job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
-  for (job *pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    job *pjob = *iter;
+
     if (job_list.empty() == true)
       job_list.push_back(pjob);
     else
@@ -4499,12 +4520,11 @@ int setup_program_environment(void)
 #endif
   char logSuffix[MAX_PORT_STRING_LEN];
   char momLock[MAX_LOCK_FILE_NAME_LEN];
-#ifdef PENABLE_LINUX26_CPUSETS
   int  rc;
-#endif
 
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
+  int           network_retries = 0;
 
   /* must be started with real and effective uid of 0 */
   if (IamRoot() == 0)
@@ -4716,21 +4736,31 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_WRLCK); /* See if other MOMs are running */
 
-  if(multi_mom)
+  if (multi_mom)
     {
-	nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
+    nd_frequency.invalidate(); //Do not mess with frequencies on multi-mom.
     }
   else
     {
-	nd_frequency.get_base_frequencies(mom_home);
+    nd_frequency.get_base_frequencies(mom_home);
     }
 
-  /* initialize the network interface */
-
-  if (init_network(pbs_mom_port, mom_process_request) != 0)
+  // initialize the network interface - try up to 4 times so restarts are successful
+  while (((rc = init_network(pbs_mom_port, mom_process_request)) != 0) &&
+         (network_retries < 3))
     {
     c = errno;
 
+    if (c != EADDRINUSE)
+      break;
+
+    sleep(1);
+
+    network_retries++;
+    }
+
+  if (rc != PBSE_NONE)
+    {
     sprintf(log_buffer, "server port = %u, errno = %d (%s)",
       pbs_mom_port,
       c,
@@ -5194,7 +5224,14 @@ int setup_program_environment(void)
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
 
-  initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+  if (thread_unlink_calls == true)
+    {
+    initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+    start_request_pool(request_pool);
+    }
+
+  /* allow the threadpool to start processing */
+  start_request_pool(request_pool);
 
   requested_cluster_addrs = 0;
 
@@ -5202,6 +5239,8 @@ int setup_program_environment(void)
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
+
+
 
 /*
  * TMOMJobGetStartInfo
@@ -5246,7 +5285,6 @@ int TMOMScanForStarting(void)
 
   {
   job *pjob;
-  job *nextjob;
 
   int  Count;
   int  RC;
@@ -5258,19 +5296,19 @@ int TMOMScanForStarting(void)
 
 #ifdef MSIC
   /* NOTE:  solaris system is choking on GET_NEXT - isolate */
-
+/* This code is completely defunct.
   tmpL = GET_NEXT(svr_alljobs);
 
   tmpL = svr_alljobs.ll_next->ll_struct;
 
-  pjob = (job *)tmpL;
+  pjob = (job *)tmpL; */
 #endif /* MSIC */
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pjob != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
@@ -5302,8 +5340,6 @@ int TMOMScanForStarting(void)
 
         exec_bail(pjob, JOB_EXEC_RETRY);
 
-        pjob = nextjob;
-
         continue;
         }
 
@@ -5329,11 +5365,11 @@ int TMOMScanForStarting(void)
 
         STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
 
-        if ((STime > 0) && ((time_now - STime) > TJobStartTimeout))
+        if ((STime > 0) && ((time_now - STime) > pe_alarm_time))
           {
           sprintf(log_buffer, "job %s child not started after %ld seconds, server will retry",
             pjob->ji_qs.ji_jobid,
-            TJobStartTimeout);
+            pe_alarm_time);
 
           log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
@@ -5372,8 +5408,6 @@ int TMOMScanForStarting(void)
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
       }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
-
-    pjob = nextjob;
     }        /* END while (pjob != NULL) */
 
   return(SUCCESS);
@@ -5435,14 +5469,6 @@ void examine_all_polled_jobs(void)
       continue;
       }
 
-    if (c & JOB_SVFLG_OVERLMT1)
-      {
-      kill_job(pjob, SIGTERM, __func__, "job is over-limit-1");
-
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
-
-      continue;
-      }
 
     if (c & JOB_SVFLG_JOB_ABORTED)
       {
@@ -5479,7 +5505,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT1;
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
       }
     }    /* END for (pjob) */
 
@@ -5501,20 +5527,31 @@ void examine_all_running_jobs(void)
   int         c;
 #endif
   task         *ptask;
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
         {
-        if (pjob->ji_examined <= 10)
-          {
-          pjob->ji_examined++;
-          }
+        long STime;
+        long real_alarm_time;
+
+        /* TJobStartTimeout is set to the default prologue/epilogue
+           timeout. (PBS_PROLOG_TIME). We will wait a minimum 
+           of TJobStartTimeout and longer if pe_alarm_time (set by $prologalarm)
+           is greater than the TJobStartTimeout */
+        if (pe_alarm_time > TJobStartTimeout)
+          real_alarm_time = pe_alarm_time;
         else
+          real_alarm_time = TJobStartTimeout;
+        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
+        time_now = time((time_t *)0);
+        if ((STime > 0) && ((time_now - STime) > real_alarm_time))
           {
           sprintf(log_buffer, "job %s already examined. substate=%d",
                   pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);
@@ -5658,12 +5695,13 @@ void check_jobs_awaiting_join_job_reply()
   {
   job    *pjob;
   time_now = time(NULL);
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
         (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
         (am_i_mother_superior(*pjob) == true))
@@ -5691,12 +5729,12 @@ void check_jobs_in_obit()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
         (am_i_mother_superior(*pjob) == true))
       {
@@ -5713,11 +5751,12 @@ void check_jobs_in_mom_wait()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
       {
       if ((pjob->ji_kill_started != 0) &&
@@ -5744,23 +5783,34 @@ void check_jobs_in_mom_wait()
   } /* END check_jobs_in_mom_wait() */
 
 
-//If we have a job that's exiting we should call scan for exiting.
+
+/*
+ * call_scan_for_exiting()
+ *
+ * Checks for any exiting jobs. If they exist, we'll call scan_for_exiting.
+ */
+
 bool call_scan_for_exiting()
   {
-  if(exiting_tasks) return true;
+  if (exiting_tasks)
+    return(true);
 
-  job          *nextjob;
   job          *pjob;
 
   //NOTE: May want to put some kind of timeout so we only call this once in a while.
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
-    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    pjob = *iter;
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
+      return(true);
     }
-  return false;
+
+  return(false);
   }
+
+
 
 void check_exiting_jobs()
 
@@ -5774,7 +5824,7 @@ void check_exiting_jobs()
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if (time_now - eji.obit_sent < OBIT_STATE_RETRY_TIME)
+    if ((time_now - eji.obit_sent) < pe_alarm_time)
       {
       /* insert this back at the front */
       exiting_job_list.insert(exiting_job_list.begin(), eji);
@@ -5805,11 +5855,12 @@ void kill_all_running_jobs(void)
   {
   job *pjob;
   unsigned int momport = 0;
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
       {
       kill_job(pjob, SIGKILL, __func__, "mom is terminating with kill jobs flag");
@@ -5851,9 +5902,11 @@ void prepare_child_tasks_for_delete()
   {
   job *pJob;
 
+  std::list<job *>::iterator iter;
 
-  for (pJob = (job *)GET_NEXT(svr_alljobs);pJob != NULL;pJob = (job *)GET_NEXT(pJob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pJob = *iter;
     task *pTask;
 
     for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
@@ -5964,7 +6017,7 @@ void main_loop(void)
       {
       last_poll_time = time_now;
       
-      if (GET_NEXT(svr_alljobs))
+      if (alljobs_list.size() != 0)
         {
         /* There are jobs, update process status from the OS */
         
@@ -6046,7 +6099,7 @@ void main_loop(void)
       log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
-    if (GET_NEXT(svr_alljobs) == NULL)
+    if (alljobs_list.size() == 0)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
@@ -6942,6 +6995,8 @@ void get_mom_job_dir_sticky_config(
   fclose(conf);
 
   } /* END get_mom_job_dir_sticky_config */
+
+
 
 /* END mom_main.c */
 

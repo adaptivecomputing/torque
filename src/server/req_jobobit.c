@@ -123,9 +123,12 @@
 #include "exiting_jobs.h"
 #include "track_alps_reservations.h"
 #include "id_map.hpp"
+#include "completed_jobs_map.h"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
+
+#define REMOVE_COMPLETED_JOBS_SLEEP_TIME 5
 
 /* External Global Data Items */
 
@@ -157,6 +160,8 @@ extern int              LOGLEVEL;
 
 extern const char      *PJobState[];
 extern bool cpy_stdout_err_on_rerun;
+
+extern completed_jobs_map_class completed_jobs_map;
 
 /* External Functions called */
 
@@ -1350,10 +1355,6 @@ handle_stageout_cleanup:
 
   if (preq != NULL)
     {
-    if (preq->rq_extra != NULL)
-      {
-      free(preq->rq_extra);
-      }
     free_br(preq);
     }
   
@@ -1658,6 +1659,95 @@ int handle_complete_subjob(
 
 
 
+/*
+ * get_used()
+ *
+ * Examines JOB_ATR_resc_used to get the final resources used for the accounting file
+ *
+ * @param pjob - the job for which we're logging usage
+ * @param acct_data - the string we output into
+ *
+ * @return PBSE_NONE on success
+ */
+
+int get_used(
+
+  job         *pjob,
+  std::string &acct_data)
+
+  {
+  resource      *pr = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
+  attribute_def  at_def;
+  const char     empty[] = "0";
+
+  while (pr != NULL)
+    {
+    acct_data += " resources_used.";
+    acct_data += pr->rs_defin->rs_name;
+    acct_data += "=";
+
+    at_def.at_type = pr->rs_value.at_type;
+    if (attr_to_str(acct_data, &at_def, pr->rs_value, false) == NO_ATTR_DATA)
+      acct_data += empty;
+
+    pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+
+  return(PBSE_NONE);
+  } // END get_used()
+
+
+
+/*
+ * end_of_job_accounting()
+ *
+ * Records the end of job information for pjob
+ * 
+ * @param pjob      - the job for which we're recording accounting information
+ * @param acct_data - the output string
+ * @param accttail  - the position in acct_data before usage information is added
+ * @return PBSE_NONE on success
+ */
+
+int end_of_job_accounting(
+
+  job         *pjob,
+  std::string &acct_data,
+  size_t       accttail)
+
+  {
+  long  events = 0;
+
+  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
+  get_used(pjob, acct_data);
+
+  /* record accounting and maybe in log */
+  account_jobend(pjob, acct_data);
+
+  get_svr_attr_l(SRV_ATR_log_events, &events);
+  if (events & PBSEVENT_JOB_USAGE)
+    {
+    /* log events set to record usage */
+    log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      acct_data.c_str());
+    }
+  else
+    {
+    /* no usage in log, truncate message */
+    std::string noacctail = acct_data.substr(0, accttail - 1);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
+    }
+
+  return(PBSE_NONE);
+  } /* END end_of_job_accounting() */
+
+
+
+/*
+ * handle_complete_first_time()
+ */
 
 int handle_complete_first_time(
 
@@ -1667,10 +1757,12 @@ int handle_complete_first_time(
   int          rc = PBSE_NONE;
   pbs_queue   *pque;
   int          KeepSeconds = 0;
-  time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
   long         must_report = FALSE;
   int          job_complete = 0;
+  char         acctbuf[RESC_USED_BUF];
+  std::string  acct_data;
+  size_t       accttail;
 
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1721,6 +1813,15 @@ int handle_complete_first_time(
       KeepSeconds = JOBMUSTREPORTDEFAULTKEEP;
     }
 
+  /*
+   * After the job is officially considered completed, print information on the
+   * completed job to the accounting log.
+   */
+  accttail = acct_data.length();
+  sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+  acct_data = acctbuf;
+  end_of_job_accounting(pjob, acct_data, accttail);
+
   if (KeepSeconds <= 0)
     {
     rc = svr_job_purge(pjob);
@@ -1738,13 +1839,12 @@ int handle_complete_first_time(
      */
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s: rc = -1", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed,
-      pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds,
-      handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    // add job id and clean up time for processing by cleanup task
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -1758,12 +1858,12 @@ int handle_complete_first_time(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed, time_now + KeepSeconds,
-      handle_complete_second_time, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    // add job id and clean up time for processing by cleanup task
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1797,7 +1897,6 @@ void handle_complete_second_time(
 
   {
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
-  time_t       time_now = time(NULL);
   char        *job_id = (char *)ptask->wt_parm1;
   job         *pjob;
 
@@ -1836,15 +1935,13 @@ void handle_complete_second_time(
     
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
+      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
-    set_task(WORK_Timed,
-      time_now + JOBMUSTREPORTDEFAULTKEEP,
-      handle_complete_second_time,
-      strdup(pjob->ji_qs.ji_jobid),
-      FALSE);
+    // add job id and clean up time for processing by cleanup task
+    set_task(WORK_Immed, JOBMUSTREPORTDEFAULTKEEP, add_to_completed_jobs,
+             strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else
     {
@@ -1866,8 +1963,6 @@ void handle_complete_second_time(
 
   return;
   } /* END handle_complete_second_time() */
-
-
 
 
 
@@ -1925,6 +2020,8 @@ void on_job_exit(
     free(job_id);
     return;
     }
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
   job_mutex.set_unlock_on_exit(false);
@@ -2040,30 +2137,14 @@ void on_job_exit(
         handle_complete_subjob(pjob);
         }
       else if (type == WORK_Immed) /* WORK_Immed == PBSE_NONE.... */
+        {
         handle_complete_first_time(pjob);
+        }
       else
         {
-        struct work_task *ptask = (struct work_task *)calloc(1, sizeof(struct work_task));
-
-        if (ptask == NULL)
-          return;
-
-        if ((ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
-          {
-          free(ptask);
-          return;
-          }
-
-        if ((ptask->wt_parm1 = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-          {
-          free(ptask->wt_mutex);
-          free(ptask);
-
-          return;
-          }
-
-        handle_complete_second_time(ptask);
+        set_task(WORK_Immed, 0, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
         }
+
       break;
 
     default:
@@ -2075,6 +2156,8 @@ void on_job_exit(
 
   if (job_id != NULL)
     free(job_id);
+
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return;
   }  /* END on_job_exit() */
@@ -2101,11 +2184,11 @@ void *on_job_exit_task(
 
   if (jobid != NULL)
     {
-  if (LOGLEVEL >= 10)
-    {
-    snprintf(log_buf, sizeof(log_buf), "%s", jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "log_buf");
-    }
+    if (LOGLEVEL >= 10)
+      {
+      snprintf(log_buf, sizeof(log_buf), "%s", jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "log_buf");
+      }
 
     on_job_exit(NULL, jobid);
     }
@@ -2564,7 +2647,6 @@ void wait_for_send(
 
 
 
-
 int setrerun(
 
   job *pjob,
@@ -2588,7 +2670,6 @@ int setrerun(
 
   return(1);
   }  /* END setrerun() */
-
 
 
 
@@ -2931,42 +3012,6 @@ int handle_rerunning_heterogeneous_jobs(
 
 
 
-
-int end_of_job_accounting(
-
-  job         *pjob,
-  std::string &acct_data,
-  size_t       accttail)
-
-  {
-  long  events = 0;
-
-  std::replace(acct_data.begin(), acct_data.end(), '\n', ' ');
-  /* record accounting and maybe in log */
-  account_jobend(pjob, acct_data);
-
-  get_svr_attr_l(SRV_ATR_log_events, &events);
-  if (events & PBSEVENT_JOB_USAGE)
-    {
-    /* log events set to record usage */
-    log_event(PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      acct_data.c_str());
-    }
-  else
-    {
-    /* no usage in log, truncate message */
-    std::string noacctail = acct_data.substr(0, accttail - 1);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
-    }
-
-  return(PBSE_NONE);
-  } /* END end_of_job_accounting() */
-
-
-
-
 int handle_terminating_array_subjob(
 
   job *pjob)
@@ -3008,6 +3053,50 @@ int handle_terminating_array_subjob(
   return(PBSE_NONE);
   } /* END handle_terminating_array_subjob() */
 
+
+
+/*
+ * handle_rerunning_array_subjob()
+ *
+ * @param pjob - the job that is being rerun
+ * @return PBSE_NONE on SUCCESS or PBSE_UNKJOBID if the job disappears
+ */
+
+int handle_rerunning_array_subjob(
+
+  job *pjob)
+
+  {
+  job_array *pa;
+
+  // Adjust the array counts
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    pa = get_jobs_array(&pjob);
+    
+    if (pjob == NULL)
+      return(PBSE_UNKJOBID);
+
+    if (pa != NULL)
+      {
+      char job_id[PBS_MAXSVRJOBID+1];
+
+      snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
+
+      update_array_values(pa, JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
+      
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      pjob = svr_find_job(job_id, TRUE);
+
+      if (pjob == NULL)
+        return(PBSE_UNKJOBID);
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END handle_rerunning_array_subjob()
 
 
 
@@ -3055,152 +3144,160 @@ int handle_terminating_job(
 
 int update_substate_from_exit_status(
 
-  job *pjob,
-  int *alreadymailed,
+  job        *pjob,
+  int        *alreadymailed,
   const char *text)
 
   {
   long  automatic_requeue = -1000;
+  long  disable_requeue = FALSE;
   int   exitstatus = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
   int   rc = PBSE_NONE;
   int   newstate;
   int   newsubst;
 
-  /* Was there a special exit status from MOM ? */
-  get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
-        
-  if (exitstatus == automatic_requeue)
+  // Ignore all special exit codes if the job has been qdel'ed
+  if (pjob->ji_being_deleted == false)
     {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
-    }
-  else if (exitstatus < 0)
-    {
-    /* negative exit status is special */
-
-    switch (exitstatus)
+    /* Was there a special exit status from MOM ? */
+    get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
+    get_svr_attr_l(SRV_ATR_DisableAutoRequeue, &disable_requeue);
+    
+    if (exitstatus == automatic_requeue)
       {
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+      }
+    else if (exitstatus < 0)
+      {
+      /* negative exit status is special */
 
-      case JOB_EXEC_OVERLIMIT_MEM:
+      switch (exitstatus)
+        {
 
-        /* the job exceeded a memory resource limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_MEM:
 
-        break;
+          /* the job exceeded a memory resource limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovermemlimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_OVERLIMIT_WT:
+          break;
 
-        /* the job exceeded its  walltime limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_WT:
 
-        break;
+          /* the job exceeded its  walltime limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjoboverwalltimelimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_OVERLIMIT_CPUT:
+          break;
 
-        /* the job exceeded its cpu time limit */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit,text);
-        *alreadymailed = 1;
+        case JOB_EXEC_OVERLIMIT_CPUT:
 
-        break;
+          /* the job exceeded its cpu time limit */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momjobovercputlimit,text);
+          *alreadymailed = 1;
 
-      case JOB_EXEC_FAIL1:
+          break;
 
-      default:
+        case JOB_EXEC_FAIL1:
 
-        /* MOM rejected job with fatal error, abort job */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1,text);
+        default:
 
-        *alreadymailed = 1;
+          /* MOM rejected job with fatal error, abort job */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec1,text);
 
-        break;
+          *alreadymailed = 1;
 
-      case JOB_EXEC_FAIL2:
+          break;
 
-        /* MOM reject job after files setup, abort job */
-        svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2,text);
+        case JOB_EXEC_FAIL2:
 
-        *alreadymailed = 1;
+          /* MOM reject job after files setup, abort job */
+          svr_mailowner_with_message(pjob, MAIL_ABORT, MAIL_FORCE, msg_momnoexec2,text);
 
-        break;
+          *alreadymailed = 1;
 
-      case JOB_EXEC_INITABT:
+          break;
 
-        /* MOM aborted job on her initialization */
-        *alreadymailed = setrerun(pjob,text);
+        case JOB_EXEC_INITABT:
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
-
-        break;
-
-      case JOB_EXEC_RETRY:
-
-        /* MOM rejected job, but said retry it */
-
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
-          {
-          /* has run before, treat this as another rerun */
+          /* MOM aborted job on her initialization */
           *alreadymailed = setrerun(pjob,text);
-          }
-        else
-          {
-          /* have mom remove job files, not saving them, and requeue job */
-          /* transient failure detected */
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
-          }
 
-        break;
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
-      case JOB_EXEC_BADRESRT:
+          break;
 
-        /* MOM could not restart job, setup for rerun */
-        *alreadymailed = setrerun(pjob,text);
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
+        case JOB_EXEC_RETRY:
 
-        break;
+          /* MOM rejected job, but said retry it */
+          if (disable_requeue == FALSE)
+            {
+            if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+              {
+              /* has run before, treat this as another rerun */
+              *alreadymailed = setrerun(pjob,text);
+              }
+            else
+              {
+              /* have mom remove job files, not saving them, and requeue job */
+              /* transient failure detected */
+              pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN1;
+              }
+            }
 
-      case JOB_EXEC_INITRST:
+          break;
 
-        /* MOM abort job on init, job has checkpoint file */
-        /* Requeue it, and thats all folks.   */
+        case JOB_EXEC_BADRESRT:
 
-        if (LOGLEVEL >= 1)
-          {
-          log_event(
-            PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
-            PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
-            "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
-          }
+          /* MOM could not restart job, setup for rerun */
+          *alreadymailed = setrerun(pjob,text);
+          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
 
-        rel_resc(pjob);
+          break;
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
+        case JOB_EXEC_INITRST:
 
-        svr_evaljobstate(*pjob, newstate, newsubst, 1);
-        svr_setjobstate(pjob, newstate, newsubst, FALSE);
+          /* MOM abort job on init, job has checkpoint file */
+          /* Requeue it, and thats all folks.   */
 
-        close_conn(pjob->ji_momhandle, FALSE);
-        pjob->ji_momhandle = -1;
+          if (LOGLEVEL >= 1)
+            {
+            log_event(
+              PBSEVENT_JOB_USAGE | PBSEVENT_JOB_USAGE,
+              PBS_EVENTCLASS_JOB,
+              pjob->ji_qs.ji_jobid,
+              "received JOB_EXEC_INITRST, setting job CHECKPOINT_FLAG flag");
+            }
 
-        return(PBSE_SYSTEM);
+          rel_resc(pjob);
 
-        /*NOTREACHED*/
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
 
-        break;
+          svr_evaljobstate(*pjob, newstate, newsubst, 1);
+          svr_setjobstate(pjob, newstate, newsubst, FALSE);
 
-      case JOB_EXEC_INITRMG:
+          close_conn(pjob->ji_momhandle, FALSE);
+          pjob->ji_momhandle = -1;
 
-        /* MOM abort job on init, job has migratable checkpoint */
-        /* Must recover output and checkpoint file, do eoj      */
-        *alreadymailed = setrerun(pjob,text);
+          return(PBSE_SYSTEM);
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+          /*NOTREACHED*/
 
-        break;
-      }  /* END switch (exitstatus) */
-    }    /* END if (exitstatus < 0) */
+          break;
+
+        case JOB_EXEC_INITRMG:
+
+          /* MOM abort job on init, job has migratable checkpoint */
+          /* Must recover output and checkpoint file, do eoj      */
+          *alreadymailed = setrerun(pjob,text);
+
+          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+
+          break;
+        }  /* END switch (exitstatus) */
+      }    /* END if (exitstatus < 0) */
+    } // END if !pjob->ji_being_deleted
 
   if (LOGLEVEL >= 2)
     {
@@ -3214,7 +3311,7 @@ int update_substate_from_exit_status(
     }
 
   return(rc);
-  } /* END update_state_from_exit_status() */
+  } /* END update_substate_from_exit_status() */
 
 
 
@@ -3246,8 +3343,9 @@ int req_jobobit(
   char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
   time_t                time_now = time(NULL);
   pbs_net_t             mom_addr;
-  int                   rerunning_job = FALSE;
+  bool                  rerunning_job = false;
   int                   have_resc_used = FALSE;
+  long                  status_cancel_queue = FALSE;
 
   /* This will be needed later for logging after preq is freed. */
   strcpy(job_id, preq->rq_ind.rq_jobobit.rq_jid);
@@ -3366,12 +3464,29 @@ int req_jobobit(
    * cannot be used after the call to reply_ack();
    */
 
-  exitstatus = preq->rq_ind.rq_jobobit.rq_status;
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &status_cancel_queue);
 
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
+  /*
+   * Check whether the server parameter ATTR_exitcodecancelqueuedjob has been
+   * set. If so, override the exit status with the user supplied value.
+   */
+  if (status_cancel_queue == 0)
+    {
+    exitstatus = preq->rq_ind.rq_jobobit.rq_status;
 
-  pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
-  pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = exitstatus;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = exitstatus;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+    exitstatus = status_cancel_queue;
+
+    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
+    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    }
 
   if ((exitstatus != JOB_EXEC_RETRY) &&
       (pjob->ji_parent_job != NULL))
@@ -3414,7 +3529,6 @@ int req_jobobit(
     mailbuf[0] = '\0';
     }
 
-  size_t accttail = acct_data.length();
   have_resc_used = get_used(patlist, acct_data);
 
 #ifdef USESAVEDRESOURCES
@@ -3477,14 +3591,21 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    end_of_job_accounting(pjob, acct_data, accttail);
     
+
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);
     }
   else
     {
-    rerunning_job = TRUE;
+    rerunning_job = true;
+
+    if ((rc = handle_rerunning_array_subjob(pjob)) == PBSE_UNKJOBID)
+      {
+      job_mutex.set_unlock_on_exit(false);
+        
+      return(rc);
+      }
 
     /* if this is a heterogeneous sub-job, handle it appropriately */
     if (pjob->ji_parent_job != NULL)
@@ -3517,7 +3638,7 @@ int req_jobobit(
       "req_jobobit completed");
     }
 
-  if (rerunning_job == FALSE)
+  if (rerunning_job == false)
     {
     if (LOGLEVEL >= 7)
       {
@@ -3531,6 +3652,22 @@ int req_jobobit(
   return(PBSE_NONE);
   }  /* END req_jobobit() */
 
+void *remove_completed_jobs(
+
+  void *vp)
+
+  {
+  while (1)
+    {
+    // cleanup any completed jobs
+    completed_jobs_map.cleanup_completed_jobs();
+
+    // wait a bit before trying again
+    sleep(REMOVE_COMPLETED_JOBS_SLEEP_TIME);
+    }
+
+  return(NULL);
+  } /* END remove_completed_jobs() */
 
 /* END req_jobobit.c */
 

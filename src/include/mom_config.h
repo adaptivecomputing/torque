@@ -95,7 +95,7 @@
 
 
 
-extern int              thread_unlink_calls;
+extern bool             thread_unlink_calls;
 extern int              ignwalltime;
 extern int              ignmem;
 extern int              igncput;
@@ -151,7 +151,7 @@ extern int              MOMConfigDownOnError;
 extern int              MOMConfigRestart;
 extern double           wallfactor;
 extern struct cphosts  *pcphosts;
-extern unsigned int     pe_alarm_time;
+extern long             pe_alarm_time;
 extern char             DEFAULT_UMASK[1024];
 extern char             PRE_EXEC[1024];
 extern int              src_login_batch;
@@ -189,12 +189,14 @@ unsigned long setdownonerror(const char *value);
 unsigned long setenablemomrestart(const char *value);
 unsigned long setrcpcmd(const char *value);
 unsigned long setjobdirectorysticky(const char *value);
+unsigned long setcudavisibledevices(const char *value);
 
 #ifdef PENABLE_LINUX26_CPUSETS
 unsigned long setmempressthr(const char *);
 unsigned long setmempressdur(const char *);
 #endif
 int read_config(char *file);
+void reset_config_vars();
 
 
 

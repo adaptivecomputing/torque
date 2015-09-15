@@ -1,7 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
 ACLOCAL_AMFLAGS = -I buildutils
-SUBDIRS = src doc contrib/blcr contrib/init.d
+SUBDIRS = src doc contrib/blcr contrib/init.d contrib/systemd
 
 EXTRA_DIST = acinclude.m4 \
   CHANGELOG \
@@ -55,7 +55,8 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/README.pestat \
 	contrib/README.qpeek \
 	contrib/showjobs \
-	contrib/diag/tdiag.sh
+	contrib/diag/tdiag.sh \
+	contrib/use_jobs_subdirs_setup
 
 bin_SCRIPTS = pbs-config
 

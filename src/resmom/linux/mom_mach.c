@@ -125,7 +125,6 @@ extern pid2jobsid_map_t pid2jobsid_map;
 ** external functions and data
 */
 extern job_pid_set_t    global_job_sid_set;
-extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
 extern long     system_ncpus;
@@ -2746,6 +2745,7 @@ int mom_set_use(
 
 int kill_task(
 
+  job  *pjob,   /* I */
   task *ptask,  /* I */
   int   sig,    /* I */
   int   pg)     /* I (1=signal process group, 0=signal master process only) */
@@ -2898,23 +2898,39 @@ int kill_task(
             continue;
             }  /* END if (ps->pid == mompid) */
           
-          if ((sig == SIGKILL) || 
-              (sig == SIGTERM))
-            {
-            ++ctThisIteration; //Only count for killing don't count for any other signal.
-            }
-    
           if (sig == SIGKILL)
             {
-            sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
-              __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
-            
-            log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-            
             if (pg == 0)
-              kill(ps->pid, SIGTERM);
+              {
+              /* make sure we only send a SIGTERM one time per process */
+              if ((ps->state != 'Z') &&
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
+                {
+                sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
+                  __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                    ptask->ti_qs.ti_parentjobid, log_buffer);
+            
+                kill(ps->pid, SIGTERM);
+                pjob->ji_sigtermed_processes->insert(ps->pid);
+                }
+              }
             else
-              killpg(ps->pid, SIGTERM);
+              {
+              if ((ps->state != 'Z') &&
+                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
+                {
+                sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
+                  __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
+                
+                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
+                    ptask->ti_qs.ti_parentjobid, log_buffer);
+            
+                killpg(ps->pid, SIGTERM);
+                pjob->ji_sigtermed_processes->insert(ps->pid);
+                }
+              }
             
             for (i = 0;i < 20;i++)
               {
@@ -2977,9 +2993,30 @@ int kill_task(
                 log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                 
                 if (pg == 0)
-                  kill(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    kill(ps->pid, sig);
+                    }
+                  /* make sure we only send a SIGTERM one time */
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
+                    {
+                    killpg(ps->pid, SIGTERM);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
+                    }
+                  }
                 else
-                  killpg(ps->pid, sig);
+                  {
+                  if (sig != SIGTERM)
+                    {
+                    killpg(ps->pid, sig);
+                    }
+                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
+                    {
+                    killpg(ps->pid, SIGTERM);
+                    pjob->ji_sigtermed_processes->insert(ps->pid);
+                    }
+                  }
                 }
               }    /* END if ((ps = get_proc_stat(ps->pid)) != NULL) */
             }      /* END if (i >= 20) */
@@ -3001,7 +3038,7 @@ int kill_task(
       {
       ctCleanIterations=0;
       }
-    } while ((ctCleanIterations <= 5) && (loopCt++ < 20));
+    } while ((ctCleanIterations <= 3) && (loopCt++ < 20));
 
   /* NOTE:  to fix bad state situations resulting from a hard crash, the logic
             below should be triggered any time no processes are found (NYI) */
@@ -3671,11 +3708,13 @@ const char *sessions(
   s = ret_string;
 
   /* Walk through job list, look for jobs running on this NUMA node */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
       continue;
 
@@ -3973,11 +4012,13 @@ const char *nusers(
   sprintf(mom_check_name + strlen(mom_check_name), "-%d/", numa_index);
 
   /* Walk through job list, look for jobs running on this NUMA node */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
       continue;
 
@@ -4549,29 +4590,33 @@ void scan_non_child_tasks(void)
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
   pdir = opendir(procfs);
+  std::list<job *>::iterator iter;
 
-  for (pJob = (job *)(GET_NEXT(svr_alljobs));
-      pJob != (job *)NULL;pJob = (job *)(GET_NEXT(pJob->ji_alljobs)))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pJob = *iter;
+
     task *pTask;
 
     long job_start_time = 0;
     long job_session_id = 0;
     long session_start_time = 0;
     proc_stat_t *ps = NULL;
-    if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+    if (pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
       {
       job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
       }
-    if(pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
+
+    if (pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
       {
       job_session_id = pJob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
       }
-    if((ps = get_proc_stat(job_session_id)) != NULL)
+
+    if ((ps = get_proc_stat(job_session_id)) != NULL)
       {
       session_start_time = (long)ps->start_time;
       }
-
 
     for (pTask = (task *)(GET_NEXT(pJob->ji_tasks));
         pTask != NULL;
@@ -4722,7 +4767,7 @@ void scan_non_child_tasks(void)
         exiting_tasks = 1;
         }
       }
-    }    /* END for (job = GET_NEXT(svr_alljobs)) */
+    } /* END for each job */
 
   if (pdir != NULL)
     closedir(pdir);

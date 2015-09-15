@@ -61,7 +61,6 @@ extern char  *path_epilogp;
 extern char  *path_epiloguserp;
 extern char  *path_jobs;
 extern unsigned int default_server_port;
-extern tlist_head svr_alljobs;
 extern tlist_head mom_polljobs;
 extern int  exiting_tasks;
 extern char  *msg_daemonname;
@@ -844,39 +843,58 @@ bool mother_superior_cleanup(
       __func__,
       "calling mom_open_socket_to_jobs_server");
     }
-    /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
-    bool sisters_done = false;
 
-    /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
-    time_now = time(NULL);
-    if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+  /* Have all the sister nodes reported in? Don't run the epilogue until the sisters are done */
+  bool sisters_done = false;
+
+  /* See if our wait time has expired. We can't wait forever for all the sisters to report in */
+  time_now = time(NULL);
+  if (time_now - pjob->ji_kill_started > job_exit_wait_time)
+    {
+    sisters_done = true;
+    }
+  else
+    {
+    if (pjob->ji_numnodes > 1)
       {
-      sisters_done = true;
+      sisters_done = are_all_sisters_done(pjob);
       }
     else
-      {
-      if (pjob->ji_numnodes > 1)
-        {
-        sisters_done = are_all_sisters_done(pjob);
-        }
-      else
-        sisters_done = true;
-      }
+      sisters_done = true;
+    }
 
-    /* epilogues are now run by preobit reply, which happens after the fork */
+  /* epilogues are now run by preobit reply, which happens after the fork */
 
-    if ((sisters_done == true) && ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0))
+  if (sisters_done == true) 
+    {
+    if ((pjob->ji_flags & MOM_EPILOGUE_RUN) == 0)
       {
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
       pjob->ji_flags |= MOM_EPILOGUE_RUN;
 
       preobit_preparation(pjob);
-
       }
+    else
+      {
+      bool found = false;
+
+      // Make sure the job is in the exiting jobs list
+      for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+        {
+        if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+          {
+          found = true;
+          break;
+          }
+        }
+
+      if (found == false)
+        exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
+      }
+    }
 
   return(false);
   } /* END mother_superior_cleanup() */
-
 
 
 
@@ -953,7 +971,7 @@ void scan_for_exiting(void)
 
   {
   job          *nextjob;
-  job          *pjob;
+  job          *pjob = NULL;
   int           found_one = 0;
 
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
@@ -998,9 +1016,12 @@ void scan_for_exiting(void)
 
   /* do not change this from the nextjob formal. In some cases pjob has
    * been freed by the time that the loop comes around */
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+  std::list<job *>copy_alljobs(alljobs_list);
+  std::list<job *>::iterator iter;
+
+  for (iter = copy_alljobs.begin(); iter != copy_alljobs.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if (eligible_for_exiting_check(pjob) == false)
       continue;
@@ -1235,8 +1256,6 @@ int post_epilogue(
 
 
 
-
-
 /**
  * preobit_preparation
  *
@@ -1317,6 +1336,161 @@ void preobit_preparation(
 
 
 
+/*
+ * process_jobs_obit_reply()
+ *
+ * Processes the reply to this job's obituary which we received from the server
+ * @param pjob - the job in question
+ * @param preq - the reply information
+ * @return - the return code from pbs server
+ */
+
+int process_jobs_obit_reply(
+
+  job *pjob,
+  batch_request *preq)
+
+  {
+  int          rc = preq->rq_reply.brp_code;
+  unsigned int momport = 0;
+  char         tmp_line[MAXLINE];
+
+  switch (rc)
+    {
+
+    case PBSE_NONE:
+
+      /* normal ack, mark job as exited */
+      pjob->ji_qs.ji_destin[0] = '\0';
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+      if (multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      job_save(pjob, SAVEJOB_QUICK, momport);
+
+      if (LOGLEVEL >= 4)
+        {
+        log_event(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
+        }
+
+      break;
+
+    case PBSE_ALRDYEXIT:
+
+      /* have already told the server before recovery */
+      /* the server will contact us to continue       */
+
+      if (LOGLEVEL >= 7)
+        {
+        log_record(
+          PBSEVENT_ERROR,
+          PBS_EVENTCLASS_JOB,
+          pjob->ji_qs.ji_jobid,
+          "setting already exited job substate to EXITED");
+        }
+
+      pjob->ji_qs.ji_destin[0] = '\0';
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+      if (multi_mom)
+        {
+        momport = pbs_rm_port;
+        }
+
+      job_save(pjob, SAVEJOB_QUICK, momport);
+
+      break;
+
+    case PBSE_CLEANEDOUT:
+
+      {
+      /* all jobs discarded by server, discard job */
+
+      pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_interactive];
+
+      if (((pattr->at_flags & ATR_VFLAG_SET) == 0) ||
+          (pattr->at_val.at_long == 0))
+        {
+        int x; /* dummy */
+        /* do this if not interactive */
+
+        job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
+        job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
+        job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
+        }
+
+      mom_deljob(pjob);
+
+      break;
+      }
+
+    case PBSE_SERVER_BUSY:
+
+      // NO-OP, handled later
+
+      break;
+
+    case - 1:
+
+      /* FIXME - causes epilogue to be run twice! */
+
+      pjob->ji_qs.ji_destin[0] = '\0';
+
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+      exiting_tasks = 1;
+
+      break;
+
+    default:
+
+      {
+
+      switch (preq->rq_reply.brp_code)
+        {
+
+        case PBSE_BADSTATE:
+
+          sprintf(tmp_line, "server rejected job obit - unexpected job state");
+
+          break;
+
+        case PBSE_SYSTEM:
+
+          sprintf(tmp_line, "server rejected job obit - server not ready for job completion");
+
+          break;
+
+        default:
+
+          sprintf(tmp_line, "server rejected job obit - %d",
+                  preq->rq_reply.brp_code);
+
+          break;
+        }  /* END switch (preq->rq_reply.brp_code) */
+
+      log_ext(-1,__func__,tmp_line,LOG_ALERT);
+
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+      }  /* END BLOCK */
+
+    mom_deljob(pjob);
+
+    break;
+    }  /* END switch (preq->rq_reply.brp_code) */
+
+  return(rc);
+  } // END process_jobs_obit_reply()
+
 
 
 /*
@@ -1340,14 +1514,11 @@ void *obit_reply(
 
   {
   int                   irtn;
-  job                  *nxjob;
-  job                  *pjob;
-  pbs_attribute        *pattr;
-  unsigned int          momport = 0;
+  job                  *pjob = NULL;
+  job                  *pj = NULL;
   char                  tmp_line[MAXLINE];
 
-  struct batch_request *preq;
-  int                   x; /* dummy */
+  batch_request        *preq;
   int                   sock = *(int *)new_sock;
   struct tcp_chan      *chan = NULL;
   int                   count = 0;
@@ -1392,184 +1563,46 @@ void *obit_reply(
   /* find the job associated with the reply by the socket number */
   /* saved in the job structure, ji_momhandle */
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pjob != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pj = *iter;
 
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
-        (pjob->ji_momhandle == sock))
+    if (pj->ji_momhandle == sock)
       {
-
-      switch (preq->rq_reply.brp_code)
-        {
-
-        case PBSE_NONE:
-
-          /* normal ack, mark job as exited */
-          pjob->ji_qs.ji_destin[0] = '\0';
-
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-          if (multi_mom)
-            {
-            momport = pbs_rm_port;
-            }
-
-          job_save(pjob, SAVEJOB_QUICK, momport);
-
-          if (LOGLEVEL >= 4)
-            {
-            log_event(
-              PBSEVENT_ERROR,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
-            }
-
-          break;
-
-        case PBSE_ALRDYEXIT:
-
-          /* have already told the server before recovery */
-          /* the server will contact us to continue       */
-
-          if (LOGLEVEL >= 7)
-            {
-            log_record(
-              PBSEVENT_ERROR,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "setting already exited job substate to EXITED");
-            }
-          
-          pjob->ji_qs.ji_destin[0] = '\0';
-
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-          if (multi_mom)
-            {
-            momport = pbs_rm_port;
-            }
-
-          job_save(pjob, SAVEJOB_QUICK, momport);
-
-          break;
-
-        case PBSE_CLEANEDOUT:
-
-          /* all jobs discarded by server, discard job */
-
-          pattr = &pjob->ji_wattr[JOB_ATR_interactive];
-
-          if (((pattr->at_flags & ATR_VFLAG_SET) == 0) ||
-              (pattr->at_val.at_long == 0))
-            {
-            /* do this if not interactive */
-
-            job_unlink_file(pjob, std_file_name(pjob, StdOut, &x));
-            job_unlink_file(pjob, std_file_name(pjob, StdErr, &x));
-            job_unlink_file(pjob, std_file_name(pjob, Checkpoint, &x));
-            }
-
-          mom_deljob(pjob);
-
-          break;
-          
-        case PBSE_SERVER_BUSY:
-
-          not_deleted = true;
-
-          break;
-
-
-        case - 1:
-
-          /* FIXME - causes epilogue to be run twice! */
-      
-          pjob->ji_qs.ji_destin[0] = '\0';
-
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-          exiting_tasks = 1;
-
-          break;
-
-        default:
-
-          {
-
-          switch (preq->rq_reply.brp_code)
-            {
-
-            case PBSE_BADSTATE:
-
-              sprintf(tmp_line, "server rejected job obit - unexpected job state");
-
-              break;
-
-            case PBSE_SYSTEM:
-
-              sprintf(tmp_line, "server rejected job obit - server not ready for job completion");
-
-              break;
-
-            default:
-
-              sprintf(tmp_line, "server rejected job obit - %d",
-                      preq->rq_reply.brp_code);
-
-              break;
-            }  /* END switch (preq->rq_reply.brp_code) */
-
-          log_ext(-1,__func__,tmp_line,LOG_ALERT);
-
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-          }  /* END BLOCK */
-
-        mom_deljob(pjob);
-
-        break;
-        }  /* END switch (preq->rq_reply.brp_code) */
-
+      pjob = pj;
       break;
       }    /* END if (...) */
-    else
-      {
-      if (pjob->ji_momhandle == sock)
-        {
-        if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
-          {
-          sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-          /* This means the server has no idea what this job is
-           * and it should be deleted!!! */
-          mom_deljob(pjob);
-          }
-        else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
-          {
-          sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-          }
-        /* Commenting for now. The mom's are way to chatty right now */
-/*        else
-          {
-          sprintf(tmp_line, "Current state is: %d code (%d) sock (%d) - unknown Job state/request",
-              pjob->ji_qs.ji_substate, preq->rq_reply.brp_code, sock);
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid, tmp_line);
-          }
-          */
-        }
-      }
-
-    pjob = nxjob;
     }  /* END while (pjob != NULL) */
 
-  if (pjob == NULL)
+  if (pjob != NULL)
+    {
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT)
+      {
+      if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
+        not_deleted = true;
+      }
+    else
+      {
+      if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
+        {
+        sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+        /* This means the server has no idea what this job is
+         * and it should be deleted!!! */
+        mom_deljob(pjob);
+        }
+      else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
+        {
+        sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+        }
+      }
+    }
+  else
     {
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_REQUEST, __func__, "Job not found for obit reply");
     }
@@ -1722,7 +1755,7 @@ void init_abort_jobs(
 
     set_globid(pj, NULL);
 
-    append_link(&svr_alljobs, &pj->ji_alljobs, pj);
+    alljobs_list.push_back(pj);
 
     job_nodes(*pj);
 

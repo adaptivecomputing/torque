@@ -1218,11 +1218,16 @@ int update_nodes_file(
   struct pbsnode *held)
 
   {
-  struct pbsnode  *np;
-  int              j;
+  struct pbsnode     *np;
+  int                 j;
   all_nodes_iterator *iter = NULL;
-  FILE            *nin;
-  long             cray_enabled = FALSE;
+  FILE               *nin;
+  long                cray_enabled = FALSE;
+  long                dont_update_file = FALSE;
+    
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_file);
+  if (dont_update_file == TRUE)
+    return(PBSE_NONE);
 
   if (LOGLEVEL >= 2)
     {
@@ -1422,6 +1427,12 @@ void recompute_ntype_cnts(void)
       {
       delete iter.node_index;
       iter.node_index = NULL;
+      }
+
+    if (iter.alps_index != NULL)
+      {
+      delete iter.alps_index;
+      iter.alps_index = NULL;
       }
     }
   } /* END recompute_ntype_cnts() */
@@ -2237,71 +2248,483 @@ int create_pbs_dynamic_node(
  */
 void add_to_property_list(
 
-  std::stringstream &propstr,
-  const char        *token)
+  std::string &propstr,
+  const char  *token)
 
   {
   if (token != NULL)
     {
-    if (propstr.str().size() != 0)
-      propstr << ",";
+    if (propstr.size() != 0)
+      propstr += ",";
     
-    propstr << token;
+    propstr += token;
     }
-  }
+  } // END add_to_property_list()
+
+
+
+int add_node_attribute_to_list(
+    
+  char        *token,
+  char       **line_ptr,
+  tlist_head  *atrlist_ptr,
+  int          linenum)
+
+  {
+  svrattrl *pal;
+  int       err;
+  char     *val;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  char      xchar;
+
+  /* have new style pbs_attribute, keyword=value */
+  if (!strcmp(token,"TTL"))
+    {
+    val = parse_node_token(line_ptr, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
+    }
+  else if (!strcmp(token,"acl"))
+    {
+    val = parse_node_token(line_ptr, OPAQUE, &err, &xchar);
+    }
+  else
+    {
+    val = parse_node_token(line_ptr, COMMA_OK, &err, &xchar);
+    }
+
+  if ((val == NULL) ||
+      (err != 0) ||
+      (xchar == '='))
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "token \"%s\" in error on line %d of file nodes",
+      token,
+      linenum);
+    log_err(-1, __func__, log_buf);
+
+    return(-1);
+    }
+
+  pal = attrlist_create(token, 0, strlen(val) + 1);
+
+  if (pal == NULL)
+    {
+    strcpy(log_buf, "cannot create node attribute");
+    log_err(-1, __func__, log_buf);
+
+    return(-1);
+    }
+
+  strcpy(pal->al_value, val);
+
+  pal->al_flags = SET;
+
+  append_link(atrlist_ptr, &pal->al_link, pal);
+
+  return(PBSE_NONE);
+  } // END add_node_attribute_to_list()
+
+
+
+void add_node_property(
+
+  std::string &propstr,
+  const char  *token,
+  bool         &is_alps_starter,
+  bool         &is_alps_reporter,
+  bool         &is_alps_compute)
+
+  {
+  /* old style properity */
+  if (!strcmp(token, alps_starter_feature))
+    is_alps_starter = true;
+
+  if (!strcmp(token, alps_reporter_feature))
+    {
+    is_alps_reporter = true;
+
+    add_to_property_list(propstr, "cray_compute");
+    }
+  else
+    {
+    if (!strcmp(token, "cray_compute"))
+      is_alps_compute = true;
+
+    add_to_property_list(propstr, token);
+    }
+  } // END add_node_property()
+
+
+
+int record_node_property_list(
+    
+  std::string const &propstr,
+  tlist_head        *atrlist_ptr)
+
+  {
+  svrattrl *pal;
+  char      log_buf[LOCAL_LOG_BUF_SIZE];
+
+  /* if any properties, create property attr and add to list */
+  if (propstr.size() != 0)
+    {
+    pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_properties, 0, propstr.size() + 1);
+    
+    if (pal == NULL)
+      {
+      strcpy(log_buf, "cannot create node attribute");
+      
+      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+      
+      /* FAILURE */
+      return(ENOMEM);
+      }
+    
+    strcpy((char *)pal->al_value, propstr.c_str());
+    
+    pal->al_flags = SET;
+    
+    append_link(atrlist_ptr, &pal->al_link, pal);
+    }
+
+  return(PBSE_NONE);
+  } // END record_node_property_list()
+
+
+
+int create_node_range(
+
+  char     *nodename,
+  char     *open_bracket,
+  svrattrl *pal)
+
+  {
+  int   num_digits;
+  int   start = strtol(open_bracket+1, NULL, 10);
+  int   err;
+  int   perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  int   bad;
+
+  char *dash = strchr(open_bracket,'-');
+  char *close_bracket = strchr(open_bracket,']');
+  char  tmp_node_name[MAX_LINE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((dash == NULL) ||
+      (close_bracket == NULL))
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "malformed nodename with range: %s, must be of form [x-y]\n",
+      nodename);
+    log_err(-1, __func__, log_buf);
+
+    return(-1);
+    }
+
+  int end = strtol(dash+1, NULL, 10);
+
+  /* nullify the open bracket */
+  *open_bracket = '\0';
+
+  num_digits = dash - open_bracket - 1;
+
+  /* move past the closing bracket */
+  close_bracket++;
+
+  while (start <= end)
+    {
+    int num_len = 1;
+    int tmp = 10;
+
+    snprintf(tmp_node_name, sizeof(tmp_node_name), "%s", nodename);
+
+    /* determine the length of the number */
+    while (start / tmp > 0)
+      {
+      tmp *= 10;
+      num_len++;
+      }
+
+    /* print extra zeros if needed */
+    while (num_len < num_digits)
+      {
+      strcat(tmp_node_name,"0");
+
+      num_len++;
+      }
+
+    sprintf(tmp_node_name+strlen(tmp_node_name),"%d%s",
+      start,
+      close_bracket);
+
+    err = create_pbs_node(tmp_node_name,pal,perm,&bad);
+
+    if (err != 0)
+      break;
+
+    start++;
+    }
+
+  return(err);
+  } // END create_node_range()
+
+
+
+void handle_cray_specific_node_values(
+    
+  char     *nodename,
+  bool      cray_enabled,
+  bool      is_alps_reporter,
+  bool      is_alps_starter,
+  bool      is_alps_compute,
+  svrattrl *pal)
+
+  {
+  pbsnode *np;
+  int      perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (cray_enabled == true)
+    {
+    if (is_alps_reporter == true)
+      {
+      if ((np = find_nodebyname(nodename)) != NULL)
+        {
+        np->nd_is_alps_reporter = TRUE;
+        alps_reporter = np;
+        np->alps_subnodes = new all_nodes();
+        unlock_node(np, __func__, NULL, LOGLEVEL);
+        }
+      }
+    else if (is_alps_starter == true)
+      {
+      if ((np = find_nodebyname(nodename)) != NULL)
+        {
+        np->nd_is_alps_login = TRUE;
+        add_to_login_holder(np);
+        unlock_node(np, __func__, NULL, LOGLEVEL);
+        }
+      }
+    else if (is_alps_compute == true)
+      {
+      np = create_alps_subnode(alps_reporter, nodename);
+      // add features
+      int bad;
+      if (mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, 
+                            perm, &bad, (void *)np, ATR_ACTION_ALTER) != PBSE_NONE)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node %s may not have all attributes initialized correctly", nodename);
+        log_err(-1, __func__, log_buf);
+        }
+
+      unlock_node(np, __func__, NULL, LOGLEVEL);
+      }
+    }
+  } // END handle_cray_specific_node_values()
 
 
 
 /*
- * Read the file, "nodes", containing the list of properties for each node.
- * The list of nodes is formed and stored in allnodes.
- * Return -1 on error, 0 otherwise.
+ * parse_node_name()
  *
- * Read the node state file, "node_state", for any "offline"
- * conditions which should be set in the nodes.
-*/
+ * Parses the node name from the line passed in
+ *
+ * @param ptr - the ptr to the current place in the line (I/O)
+ * @param linenum - the index of the line we're on (I)
+ * @return a pointer to the node name if an acceptable name is found, NULL otherwise
+ */
 
-int setup_nodes(void)
+char *parse_node_name(
+
+  char **ptr,
+  int   &err,
+  int    linenum,
+  bool   cray_enabled)
 
   {
-  FILE              *nin;
-  char               line[MAXLINE << 4];
-  char               note[MAX_NOTE+1];
-  char              *nodename;
-  std::stringstream  propstr;
-  char              *token;
-  char              *open_bracket;
-  char              *close_bracket;
-  char              *dash;
-  char               tmp_node_name[MAX_LINE];
-  char               log_buf[LOCAL_LOG_BUF_SIZE];
-  int                bad;
-  int                num;
-  int                linenum;
-  int                err;
-  int                start = -1;
-  int                end = -1;
-  bool               is_alps_reporter = false;
-  bool               is_alps_starter = false;
-  bool               is_alps_compute = false;
-  long               cray_enabled = FALSE;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  xchar;
+  /* first token is the node name, may have ":ts" appended */
+  char *nodename = parse_node_token(ptr, COLON_OK, &err, &xchar);
 
-  struct pbsnode    *np;
-  char              *val;
-  char               xchar;
-  svrattrl          *pal;
-  int                perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
-  tlist_head         atrlist;
+  if (nodename == NULL)
+    {
+    // blank line
+    return(NULL);
+    }
 
-  extern char        server_name[];
-  extern resource_t  next_resource_tag;
+  if (err != 0)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+      "invalid character in token \"%s\" on line %d", nodename, linenum);
+    log_err(-1, __func__, log_buf);
 
-  snprintf(log_buf, sizeof(log_buf), "%s()", __func__);
+    return(NULL);
+    }
 
-  log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+  // cray allows numeric node names
+  if (cray_enabled == false)
+    {
+    if (!isalpha((int)*nodename))
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "token \"%s\" doesn't start with alpha on line %d", nodename, linenum);
+      log_err(-1, __func__, log_buf);
+      err = -1;
+      
+      return(NULL);
+      }
+    }
+
+  return(nodename);
+  } // END parse_node_name()
+
+
+
+int parse_line_in_nodes_file(
+    
+  char *line,
+  int   line_size,
+  int   linenum,
+  bool  cray_enabled)
+
+  {
+  if (line[0] == '#') /* comment */
+    {
+    memset(line, 0, line_size);
+    return(PBSE_NONE);
+    }
+
+  bool         is_alps_reporter = false;
+  bool         is_alps_starter = false;
+  bool         is_alps_compute = false;
+  std::string  propstr;
+  char        *ptr = line;
+  char        *token;
+  char        *nodename;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  char         xchar;
+  svrattrl    *pal;
+  int          err;
+  tlist_head   atrlist;
+  int          perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR;
+  int          bad;
 
   CLEAR_HEAD(atrlist);
 
+  nodename = parse_node_name(&ptr, err, linenum, cray_enabled);
+
+  if (err != PBSE_NONE)
+    return(-1);
+  else if (nodename == NULL)
+    return(PBSE_NONE);
+
+  /* now process remaining tokens (if any), they may be either */
+  /* attributes (keyword=value) or old style properties        */
+  while ((token = parse_node_token(&ptr, 0, &err, &xchar)) != NULL)
+    {
+    if (err != 0)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "token \"%s\" in error on line %d of file nodes",
+        token,
+        linenum);
+      log_err(-1, __func__, log_buf);
+      
+      return(-1);
+      }
+
+    if (xchar == '=')
+      {
+      err = add_node_attribute_to_list(token, &ptr, &atrlist, linenum);
+
+      if (err != PBSE_NONE)
+        return(err);
+      }
+    else
+      add_node_property(propstr, token, is_alps_starter, is_alps_reporter, is_alps_compute);
+    }    /* END while(1) */
+
+  record_node_property_list(propstr, &atrlist);
+
+  /* now create node and subnodes */
+  pal = (svrattrl *)GET_NEXT(atrlist);
+
+  err = PBSE_NONE;
+
+  char *open_bracket = strchr(nodename, '[');
+
+  if (open_bracket != NULL)
+    {
+    err = create_node_range(nodename, open_bracket, pal);
+    }
+  else if (is_alps_compute == false)
+    {
+    err = create_pbs_node(nodename, pal, perm, &bad);
+    }
+
+  if (err == PBSE_NODEEXIST)
+    {
+    snprintf(log_buf, sizeof(log_buf), "duplicate node \"%s\"on line %d",
+      nodename,
+      linenum);
+    log_err(-1, __func__, log_buf);
+
+    return(-1);
+    }
+  else if (err != PBSE_NONE)
+    {
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+      "could not create node \"%s\", error = %d",
+      nodename,
+      err);
+
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+
+    free_attrlist(&atrlist);
+    memset(line, 0, line_size);
+
+    return(PBSE_NONE);
+    }
+
+  handle_cray_specific_node_values(nodename, cray_enabled, is_alps_reporter, is_alps_starter, is_alps_compute, pal);
+
+  if (LOGLEVEL >= 3)
+    {
+    snprintf(log_buf, sizeof(log_buf), "node '%s' successfully loaded from nodes file", nodename);
+
+    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+    }
+
+  free_attrlist(&atrlist);
+
+  memset(line, 0, line_size);
+  
+  return(PBSE_NONE);
+  } // END parse_line_in_nodes_file()
+
+
+
+/*
+ * parse_nodes_file()
+ *
+ * Opens and parses the nodes file, creating all relevant nodes
+ *
+ * @return - PBSE_NONE if the file is successfully parsed and no fatal error occurs,
+ *           or non-zero on a fatal failure
+ */
+
+int parse_nodes_file()
+
+  {
+  FILE              *nin;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  extern char        server_name[];
+  long               cray_enabled = FALSE;
+  char               line[MAXLINE << 4];
+
+  extern resource_t  next_resource_tag;
+ 
   if ((nin = fopen(path_nodes, "r")) == NULL)
     {
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -2322,277 +2745,15 @@ int setup_nodes(void)
   /* clear out line so we don't have residual data if there is no LF */
   memset(line, 0, sizeof(line));
 
-  for (linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
+  for (int linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
-    char *ptr;
-    if (line[0] == '#') /* comment */
+    int err = parse_line_in_nodes_file(line, sizeof(line), linenum, cray_enabled);
+
+    if (err != PBSE_NONE)
       {
-      memset(line, 0, sizeof(line));
-      continue;
+      fclose(nin);
+      return(err);
       }
-
-    is_alps_reporter = false;
-    is_alps_starter = false;
-    is_alps_compute = false;
-    propstr.str("");
-
-    /* first token is the node name, may have ":ts" appended */
-    ptr = line;
-    token = parse_node_token(&ptr, COLON_OK, &err, &xchar);
-
-    if (token == NULL)
-      {
-      memset(line, 0, sizeof(line));
-      continue; /* blank line */
-      }
-
-    if (err != 0)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "invalid character in token \"%s\" on line %d", token, linenum);
-
-      goto errtoken2;
-      }
-
-    // cray allows numeric node names
-    if (cray_enabled == FALSE)
-      {
-      if (!isalpha((int)*token))
-        {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-          "token \"%s\" doesn't start with alpha on line %d", token, linenum);
-        
-        goto errtoken2;
-        }
-      }
-
-    nodename = token;
-
-    /* now process remaining tokens (if any), they may be either */
-    /* attributes (keyword=value) or old style properties        */
-    while (1)
-      {
-      token = parse_node_token(&ptr, 0,&err, &xchar);
-
-      if (err != 0)
-        goto errtoken1;
-
-      if (token == NULL)
-        break;
-
-      if (xchar == '=')
-        {
-        /* have new style pbs_attribute, keyword=value */
-        if(!strcmp(token,"TTL"))
-          {
-          val = parse_node_token(&ptr, COLON_OK|COMMA_OK|PLUS_OK, &err, &xchar);
-          }
-        else if(!strcmp(token,"acl"))
-          {
-          val = parse_node_token(&ptr, OPAQUE, &err, &xchar);
-          }
-        else
-          {
-          val = parse_node_token(&ptr, COMMA_OK, &err, &xchar);
-          }
-
-        if ((val == NULL) || (err != 0) || (xchar == '='))
-          goto errtoken1;
-
-        pal = attrlist_create(token, 0, strlen(val) + 1);
-
-        if (pal == NULL)
-          {
-          strcpy(log_buf, "cannot create node attribute");
-
-          goto errtoken2;
-          }
-
-        strcpy((char *)pal->al_value, val);
-
-        pal->al_flags = SET;
-
-        append_link(&atrlist, &pal->al_link, pal);
-        }
-      else
-        {
-        /* old style properity */
-        if (!strcmp(token, alps_starter_feature))
-          is_alps_starter = true;
-
-        if (!strcmp(token, alps_reporter_feature))
-          {
-          is_alps_reporter = true;
-
-          add_to_property_list(propstr, "cray_compute");
-          }
-        else
-          {
-          if (!strcmp(token, "cray_compute"))
-            is_alps_compute = true;
-
-          add_to_property_list(propstr, token);
-          }
-        }
-      }    /* END while(1) */
-
-    /* if any properties, create property attr and add to list */
-    if (propstr.str().size() != 0)
-      {
-      pal = (svrattrl *)attrlist_create((char *)ATTR_NODE_properties, 0, strlen(propstr.str().c_str()) + 1);
-      
-      if (pal == NULL)
-        {
-        strcpy(log_buf, "cannot create node attribute");
-        
-        log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-        
-        /* FAILURE */
-        return(-1);
-        }
-      
-      strcpy((char *)pal->al_value, propstr.str().c_str());
-      
-      pal->al_flags = SET;
-      
-      append_link(&atrlist, &pal->al_link, pal);
-      }
-
-    /* now create node and subnodes */
-    pal = (svrattrl *)GET_NEXT(atrlist);
-
-    err = PBSE_NONE;
-
-    if ((open_bracket = strchr(nodename,'[')) != NULL)
-      {
-      int num_digits;
-
-      start = atoi(open_bracket+1);
-
-      dash = strchr(open_bracket,'-');
-      close_bracket = strchr(open_bracket,']');
-
-      if ((dash == NULL) ||
-          (close_bracket == NULL))
-        {
-        snprintf(log_buf, sizeof(log_buf),
-          "malformed nodename with range: %s, must be of form [x-y]\n",
-          nodename);
-
-        goto errtoken2;
-        }
-
-      end = atoi(dash+1);
-
-      /* nullify the open bracket */
-      *open_bracket = '\0';
-
-      num_digits = dash - open_bracket - 1;
-
-      /* move past the closing bracket */
-      close_bracket++;
-
-      while (start <= end)
-        {
-        int num_len = 1;
-        int tmp = 10;
-
-        snprintf(tmp_node_name, sizeof(tmp_node_name), "%s", nodename);
-
-        /* determine the length of the number */
-        while (start / tmp > 0)
-          {
-          tmp *= 10;
-          num_len++;
-          }
-
-        /* print extra zeros if needed */
-        while (num_len < num_digits)
-          {
-          strcat(tmp_node_name,"0");
-
-          num_len++;
-          }
-
-        sprintf(tmp_node_name+strlen(tmp_node_name),"%d%s",
-          start,
-          close_bracket);
-
-        err = create_pbs_node(tmp_node_name,pal,perm,&bad);
-
-        if (err != 0)
-          break;
-
-        start++;
-        }
-      }
-    else if (is_alps_compute == false)
-      {
-      err = create_pbs_node(nodename, pal, perm, &bad);
-      }
-
-    if (err == PBSE_NODEEXIST)
-      {
-      snprintf(log_buf, sizeof(log_buf), "duplicate node \"%s\"on line %d",
-        nodename,
-        linenum);
-
-      goto errtoken2;
-      }
-
-    if (err != 0)
-      {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "could not create node \"%s\", error = %d",
-        nodename,
-        err);
-
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-
-      free_attrlist(&atrlist);
-      memset(line, 0, sizeof(line));
-
-      continue;
-      }
-
-    if (cray_enabled == TRUE)
-      {
-      if (is_alps_reporter == true)
-        {
-        np = find_nodebyname(nodename);
-        np->nd_is_alps_reporter = TRUE;
-        alps_reporter = np;
-        np->alps_subnodes = new all_nodes();
-        unlock_node(np, __func__, NULL, LOGLEVEL);
-        }
-      else if (is_alps_starter == true)
-        {
-        np = find_nodebyname(nodename);
-        np->nd_is_alps_login = TRUE;
-        add_to_login_holder(np);
-        /* NYI: add to login node list */
-        unlock_node(np, __func__, NULL, LOGLEVEL);
-        }
-      else if (is_alps_compute == true)
-        {
-        np = create_alps_subnode(alps_reporter, nodename);
-        // add features
-        int bad;
-        mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, perm, &bad, (void *)np, ATR_ACTION_ALTER);
-        unlock_node(np, __func__, NULL, LOGLEVEL);
-        }
-      }
-
-    if (LOGLEVEL >= 3)
-      {
-      snprintf(log_buf, sizeof(log_buf), "node '%s' successfully loaded from nodes file", nodename);
-
-      log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-      }
-
-    free_attrlist(&atrlist);
-
-    memset(line, 0, sizeof(line));
     }  /* END for (linenum) */
 
   if (cray_enabled == TRUE)
@@ -2610,6 +2771,40 @@ int setup_nodes(void)
 
   fclose(nin);
 
+  return(PBSE_NONE);
+  } // END parse_nodes_file()
+
+
+
+/*
+ * Read the file, "nodes", containing the list of properties for each node.
+ * The list of nodes is formed and stored in allnodes.
+ * Return -1 on error, 0 otherwise.
+ *
+ * Read the node state file, "node_state", for any "offline"
+ * conditions which should be set in the nodes.
+*/
+
+int setup_nodes(void)
+
+  {
+  FILE              *nin;
+  char               note[MAX_NOTE+1];
+  std::string        propstr;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+  int                num;
+  int                err;
+  char               line[MAXLINE << 4];
+
+  struct pbsnode    *np;
+
+  snprintf(log_buf, sizeof(log_buf), "%s()", __func__);
+
+  log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+
+  if ((err = parse_nodes_file()) != PBSE_NONE)
+    return(err);
+
   nin = fopen(path_nodestate, "r");
 
   if (nin != NULL)
@@ -2618,27 +2813,24 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      all_nodes_iterator *iter = NULL;
-
-      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
         {
-        if (strcmp(np->nd_name, line) == 0)
+        if (isdigit(line[0]))
           {
-          np->nd_state = num;
-
-          /* exclusive bits are calculated later in set_old_nodes() */
-          np->nd_state &= ~INUSE_JOB;
-
-          unlock_node(np, __func__, "match", LOGLEVEL);
-
-          break;
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
           }
-
-        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
 
-      if (iter != NULL)
-        delete iter;
+      if (np != NULL)
+        {
+        // Update the state accordingly
+        np->nd_state = num;
+
+        /* exclusive bits are calculated later in set_old_nodes() */
+        np->nd_state &= ~INUSE_JOB;
+        unlock_node(np, __func__, "no match", LOGLEVEL);
+        }
       }
 
     fclose(nin);
@@ -2652,28 +2844,25 @@ int setup_nodes(void)
                   line,
                   &num) == 2)
       {
-      all_nodes_iterator *iter = NULL;
-
-      while ((np = next_host(&allnodes,&iter,NULL)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
         {
-        if (strcmp(np->nd_name, line) == 0)
+        if (isdigit(line[0]))
           {
-          np->nd_power_state = num;
-
-          unlock_node(np, __func__, "match", LOGLEVEL);
-
-          break;
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
           }
-
-        unlock_node(np, __func__, "no match", LOGLEVEL);
         }
 
-      if (iter != NULL)
-        delete iter;
+      if (np != NULL)
+        {
+        np->nd_power_state = num;
+
+        unlock_node(np, __func__, "match", LOGLEVEL);
+        }
       }
 
     fclose(nin);
-  }
+    }
 
   /* initialize note attributes */
   nin = fopen(path_nodenote, "r");
@@ -2685,7 +2874,16 @@ int setup_nodes(void)
                   line,
                   note) == 2)
       {
-      if ((np = find_nodebyname(line)) != NULL)
+      if ((np = find_nodebyname(line)) == NULL)
+        {
+        if (isdigit(line[0]))
+          {
+          // If cray enabled, create the node if it looks like a Cray subnode
+          np = create_alps_subnode(alps_reporter, line);
+          }
+        }
+
+      if (np != NULL)
         {
         np->nd_note = strdup(note);
         
@@ -2706,21 +2904,6 @@ int setup_nodes(void)
   /* SUCCESS */
 
   return(0);
-
-errtoken1:
-
-  snprintf(log_buf, sizeof(log_buf),
-    "token \"%s\" in error on line %d of file nodes",
-    token,
-    linenum);
-
-errtoken2:
-
-  log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-
-  free_attrlist(&atrlist);
-
-  fclose(nin);
 
   /* FAILURE */
 

@@ -241,6 +241,7 @@
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
 #include "mom_config.h"
+#include "mom_func.h"
 #include <string>
 #include <vector>
 #include "container.hpp"
@@ -283,7 +284,6 @@ extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
 extern int                 verbositylevel;
 extern AvlTree             okclients;
-extern tlist_head          svr_alljobs;
 extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
@@ -304,8 +304,6 @@ extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
-extern char *dependent(const char *res, struct rm_attribute *attr);
-extern char *reqgres(struct rm_attribute *);
 extern void send_update_soon();
 
 #ifdef NVIDIA_GPUS
@@ -582,8 +580,8 @@ int mom_server_add(
 
 void mom_server_stream_error(
 
-  int   stream,
-  char *name,
+  int         stream,
+  const char *name,
   const char *id,
   const char *message)
 
@@ -643,8 +641,8 @@ int mom_server_flush_io(
 int is_compose(
 
   struct tcp_chan *chan,
-  char *server_name,
-  int   command)
+  const char      *server_name,
+  int              command)
 
   {
   int ret;
@@ -730,10 +728,10 @@ void gen_size(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
+  struct config       *ap;
 
   struct rm_attribute *attr;
-  char *value;
+  const char          *value;
 
   ap = rm_search(config_array, name);
 
@@ -834,7 +832,7 @@ void gen_gres(
   std::vector<std::string> &status)
 
   {
-  char  *value;
+  const char *value;
 
   value = reqgres(NULL);
 
@@ -855,9 +853,9 @@ void gen_gen(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
-  char  *value;
-  char  *ptr;
+  struct config *ap;
+  const char    *value;
+  char          *ptr;
 
   ap = rm_search(config_array,name);
 
@@ -1096,7 +1094,7 @@ int write_update_header(
     
   struct tcp_chan *chan,
   const char *id,
-  char       *name)
+  const char *name)
 
   {
   int  ret;
@@ -1261,9 +1259,6 @@ int write_cached_statuses(
     } /* END iterate over received statuses */
 
   delete iter;
-  
-  if (ret == DIS_SUCCESS)
-    updates_waiting_to_send = 0;
 
   received_statuses.unlock();
   return(ret);
@@ -1408,7 +1403,7 @@ void node_comm_error(
   const char *message)
  
   {
-  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name);
+  snprintf(log_buffer,sizeof(log_buffer), "%s %s", message, nc->name.c_str());
   log_err(-1, "Node communication process",log_buffer);
   
   close(nc->stream);
@@ -1433,7 +1428,7 @@ int write_status_strings(
   if (LOGLEVEL >= 9)
     {
     snprintf(log_buffer, sizeof(log_buffer),
-      "Attempting to send status update to mom %s", nc->name);
+      "Attempting to send status update to mom %s", nc->name.c_str());
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
  
@@ -1441,7 +1436,7 @@ int write_status_strings(
     {
     }
   /* write protocol */
-  else if ((rc = write_update_header(chan,__func__,nc->name)) != DIS_SUCCESS)
+  else if ((rc = write_update_header(chan,__func__,nc->name.c_str())) != DIS_SUCCESS)
     {
     }
   else if ((rc = write_my_server_status(chan,__func__, strings, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
@@ -1459,7 +1454,7 @@ int write_status_strings(
     if (LOGLEVEL >= 7)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully sent status update to mom %s", nc->name);
+        "Successfully sent status update to mom %s", nc->name.c_str());
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER,__func__,log_buffer);
       }
     }
@@ -1709,6 +1704,7 @@ void mom_server_all_update_stat(void)
       ForceServerUpdate = false;
       LastServerUpdateTime = time_now;
       UpdateFailCount = 0;
+      updates_waiting_to_send = 0;
     
       received_node                                             *rn;
       received_statuses.lock();
@@ -1732,9 +1728,17 @@ void mom_server_all_update_stat(void)
         }
 
       if (buf[0] != '0')
-          num_stat_update_failures++;
+        num_stat_update_failures++;
       else
-          num_stat_update_failures = 0;
+        {
+        num_stat_update_failures = 0;
+        for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
+          {
+          if (mom_servers[sindex].pbs_servername[0] == '\0')
+            continue;
+          mom_servers[sindex].MOMLastSendToServerTime = time_now;
+          }
+        }
 
       return;
       }
@@ -2747,10 +2751,13 @@ void check_busy(
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
-    if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+    std::list<job *>::iterator iter;
+
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
-      for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-        numvnodes += pjob->ji_numvnod;
+      pjob = *iter;
+
+      numvnodes += pjob->ji_numvnod;
       }
 
     mymax_load = compute_load_threshold(auto_max_load, numvnodes, max_load_val);
@@ -2849,13 +2856,14 @@ void check_state(
 #if MOMCHECKLOCALSPOOL
     {
     char *sizestr;
-    u_Long freespace;
+    u_Long freespace = 0;
     extern char *size_fs(char *);  /* FIXME: put this in a header file */
 
     /* size_fs() is arch-specific method in mom_mach.c */
     sizestr = size_fs(path_spool);  /* returns "free:total" */
 
-    freespace = atoL(sizestr);
+    if (sizestr != NULL)
+      freespace = atoL(sizestr);
 
     if (freespace < TMINSPOOLBLOCKS)
       {
@@ -2900,7 +2908,7 @@ void check_state(
           if (LOGLEVEL >= 1)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-            "Setting node to down. The node health script output the following message:\n%s\n",
+            "Setting node to down. The node health script output the following message: %s",
             tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }
@@ -2912,7 +2920,7 @@ void check_state(
           if (LOGLEVEL >= 3)
             {
             snprintf(log_buffer,sizeof(log_buffer),
-              "Node health script ran and says the node is healthy with this message:\n%s\n",
+              "Node health script ran and says the node is healthy with this message: %s",
               tmpPBSNodeMsgBuf);
             log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_NODE,__func__,log_buffer);
             }

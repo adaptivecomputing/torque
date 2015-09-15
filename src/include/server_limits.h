@@ -127,6 +127,8 @@
 
 #define RETURN_STRING_SIZE 4096
 
+#define TIMEOUT_FOR_JOB_DEL_REQ 120
+
 
 /* Server Database information - path names */
 

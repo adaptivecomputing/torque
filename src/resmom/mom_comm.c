@@ -152,7 +152,6 @@ extern unsigned int  pbs_rm_port;
 extern unsigned int  pbs_tm_port;
 extern tlist_head    svr_newjobs;
 extern tlist_head    mom_polljobs; /* must have resource limits polled */
-extern tlist_head    svr_alljobs; /* all jobs under MOM's control */
 extern int           termin_child;
 extern time_t        time_now;
 extern AvlTree       okclients;
@@ -167,7 +166,8 @@ container::item_container<received_node *> received_statuses; /* holds informati
 int                  updates_waiting_to_send = 0;
 extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
-extern int         use_nvidia_gpu;
+extern int           use_nvidia_gpu;
+extern int           internal_state;
 
 const char *PMOMCommand[] =
   {
@@ -205,6 +205,7 @@ fd_set readset;
 
 /* external functions */
 
+void                      check_state(int force);
 extern struct radix_buf **allocate_sister_list(int radix);
 extern int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
 extern void free_sisterlist(struct radix_buf **list, int radix);
@@ -1930,10 +1931,7 @@ int contact_sisters(
 
   /* We have to put this job into the proper queues. These queues are filled
 	 in req_quejob and req_commit on Mother Superior for non-job_radix jobs */
-  append_link(&svr_newjobs, &pjob->ji_alljobs, pjob); /* from req_quejob */
-
-  delete_link(&pjob->ji_alljobs); /* from req_commit */
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob); /* from req_commit */
+  alljobs_list.push_back(pjob);
 
   /* initialize the nodes for every sister in this job
      only the first mom_radix+1 entries will be used
@@ -2516,6 +2514,31 @@ int im_join_job_as_sister(
    * pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
    **/
 
+  // Run a health check if a jobstart health check script is defined
+  if (PBSNodeCheckProlog)
+    {
+    check_state(1);
+
+    if (internal_state & INUSE_DOWN)
+      {
+      sprintf(log_buffer, "Not starting job %s because my health check script reported an error",
+        pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
+
+      send_im_error(PBSE_BADMOMSTATE, 1, pjob, cookie, event, fromtask);
+
+      mom_job_purge(pjob);
+
+      if (radix_hosts != NULL)
+        free(radix_hosts);
+
+      if (radix_ports != NULL)
+        free(radix_ports);
+
+      return(IM_DONE);
+      }
+    }
+
   if (check_pwd(pjob) == NULL)
     {
     /* log_buffer populated in check_pwd() */
@@ -2701,7 +2724,7 @@ int im_join_job_as_sister(
   if (mom_do_poll(pjob))
     append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
   
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
+  alljobs_list.push_back(pjob);
   
   /* establish a connection and write the reply back */
   if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
@@ -3208,7 +3231,7 @@ int im_signal_task(
         ptask != NULL;
         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
       {
-      kill_task(ptask, sig, 0);
+      kill_task(pjob, ptask, sig, 0);
       }
    
     /* if STOPing all tasks, we're obviously suspending the job */
@@ -3236,7 +3259,7 @@ int im_signal_task(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
     if ((ptask = task_find(pjob, taskid)))
-        kill_task(ptask, sig, 0);
+        kill_task(pjob, ptask, sig, 0);
     }
 
   if ((socket = get_reply_stream(pjob)) < 0)
@@ -5919,6 +5942,12 @@ void im_request(
     /* all of these are requests for a sister until we get to IM_ALL_OK */
     case IM_KILL_JOB:
       {
+      // Run a health check if a jobend health check script is allowed
+      if (PBSNodeCheckEpilog)
+        {
+        check_state(1);
+        }
+
       if (connection_from_ms(chan, pjob, pSockAddr) == TRUE)
         {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
@@ -6154,11 +6183,12 @@ void tm_eof(
   /*
   ** Search though all the jobs looking for this fd.
   */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-    pjob != NULL;
-    pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
       ptask != NULL;
       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
@@ -6916,7 +6946,7 @@ int tm_signal_request(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
   
-  kill_task(ptask, signum, 0);
+  kill_task(pjob, ptask, signum, 0);
   
   *ret = tm_reply(chan, TM_OKAY, event);
  
@@ -7851,7 +7881,11 @@ static int adoptSession(
   {
   job *pjob = NULL;
   task *ptask = NULL;
-  unsigned short momport = 0;
+  unsigned short  momport = 0;
+  bool            multi = false;
+  char           *ptr;
+  char            jobid_copy[PBS_MAXSVRJOBID+1];
+  int             other_id_len;
 
 #ifdef PENABLE_LINUX26_CPUSETS
   unsigned int len;
@@ -7861,15 +7895,24 @@ static int adoptSession(
   char  pid_str[MAXPATHLEN];
 #endif
 
+  ptr = strrchr(jobid, '.');
+  if (strchr(jobid, '.') != ptr)
+    {
+    multi = true;
+    snprintf(jobid_copy, sizeof(jobid_copy), "%s", jobid);
+    jobid_copy[ptr - jobid] = '\0';
+    other_id_len = strlen(jobid_copy);
+    }
+
   /* extern  int next_sample_time; */
   /* extern  time_t time_resc_updated; */
 
   /* Find the job that has this job/alt id */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
 
     if (command == TM_ADOPT_JOBID)
       {
@@ -7890,6 +7933,12 @@ static int adoptSession(
             
           *dot = '.';
           }
+        }
+      // Correct for long versus short names
+      else if (multi)
+        {
+        if (!strncmp(jobid_copy, pjob->ji_qs.ji_jobid, other_id_len))
+          break;
         }
       }
     else
@@ -8684,7 +8733,7 @@ void empty_received_nodes()
   received_node *rn;
 
   while ((rn = received_statuses.pop()) != NULL)
-    free(rn);
+    delete rn;
   } // END empty_received_nodes()
 
 
@@ -8709,7 +8758,7 @@ received_node *get_received_node_entry(
   
   if (rn == NULL)
     {
-    rn = (received_node *)calloc(1, sizeof(received_node));
+    rn = new received_node();
     
     if (rn == NULL)
       {
@@ -8718,7 +8767,7 @@ received_node *get_received_node_entry(
       }
     
     /* initialize the received node struct */
-    snprintf(rn->hostname, sizeof(rn->hostname), "%s", hostname);
+    rn->hostname = hostname;
     
     rn->hellos_sent = 0;
 
@@ -8733,9 +8782,9 @@ received_node *get_received_node_entry(
 
     /* add the new node to the received status list */
     received_statuses.lock();
-    if (!received_statuses.insert(rn, rn->hostname))
+    if (!received_statuses.insert(rn, rn->hostname.c_str()))
       {
-      free(rn);
+      delete rn;
       rn = NULL;
       log_err(ENOMEM, __func__, 
         "No memory to resize the received_statuses array...SYSTEM FAILURE\n");

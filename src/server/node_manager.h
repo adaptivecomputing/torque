@@ -19,7 +19,7 @@ void update_job_data(struct pbsnode *np, char *jobstring_in);
 
 void setup_notification(char *pname);
 
-int is_stat_get(char *node_name, struct tcp_chan *chan);
+int is_stat_get(const char *node_name, struct tcp_chan *chan);
 
 int is_compose(struct tcp_chan *chan, int command);
 
