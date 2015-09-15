@@ -260,6 +260,5 @@ void add_to_completed_jobs(
 
   free(ptask->wt_mutex);
   free(ptask);
-
   } // END add_to_completed_jobs()
 

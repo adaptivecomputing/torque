@@ -477,6 +477,26 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/numa_chip/Makefile
     src/test/numa_socket/Makefile
     src/test/numa_pci_device/Makefile
+    src/test/alps_reservations/Makefile
+    src/test/catch_child/Makefile
+    src/test/checkpoint/Makefile
+    src/test/cray_cpa/Makefile
+    src/test/cray_energy/Makefile
+    src/test/generate_alps_status/Makefile
+    src/test/mom_job_func/Makefile
+    src/test/mom_comm/Makefile
+    src/test/mom_inter/Makefile
+    src/test/mom_main/Makefile
+    src/test/mom_server/Makefile
+    src/test/mom_process_request/Makefile
+    src/test/mom_req_quejob/Makefile
+    src/test/parse_config/Makefile
+    src/test/pbs_demux/Makefile
+    src/test/prolog/Makefile
+    src/test/release_reservation/Makefile
+    src/test/requests/Makefile
+    src/test/start_exec/Makefile
+    src/test/tmsock_recov/Makefile
     src/resmom/linux/test/Makefile
     src/resmom/linux/test/cpuset/Makefile
     src/test/mom_mach/Makefile
@@ -671,7 +691,7 @@ dnl  compile in debug code?
 dnl
 AC_MSG_CHECKING([whether to turn on the compilation of DEBUG code])
 AC_ARG_ENABLE(debug,
-    [  --enable-debug          turn on the compilation of DEBUG code],
+    [  --enable-debug          turn on the compilation of DEBUG code (for debugging symbols, use --with-debug)],
     enable_debug=$enableval, enable_debug=no)
 AC_MSG_RESULT($enable_debug)
 if test "x$enable_debug" = "xyes" ; then
@@ -1059,6 +1079,41 @@ fi
 dnl add an option to specify a path where TORQUE should look for boost 
 dnl include files
 dnl
+AC_ARG_WITH(boost-path, [
+  --with-boost-path=PATH   
+                       Specifies the path to the boost include files.
+                       Example: ./configure --with-boost-path=/usr/local/packages/boost_1_36_0
+                       Will specify that the include files are in /usr/local/packages/boost_1_36_0],
+ [CPPFLAGS="$CPPFLAGS -I${withval}"])
+
+AC_MSG_CHECKING([whether boost is installed])
+AC_PREPROC_IFELSE([AC_LANG_PROGRAM([#include <boost/version.hpp>])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque needs Boost, but it was not found on your system
+
+This can be solved by one of the two following methods:
+
+1) Install the boost-devel package for your OS distribution. Note that it must be at least version 1.36.0.
+
+2) Run configure with --with-boost-path=<path>. This path
+should be the path to the directory containing the boost/ directory
+for your version of boost.
+])])
+
+AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM(
+[[#include <boost/version.hpp>
+#ifdef BOOST_VERSION
+#if (BOOST_VERSION < 103600)
+  error: incorrect boost version
+#endif
+#else
+  error: no boost found
+#endif
+  ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+
+This can be solved by configuring with --with-boost-path=<path>. This path
+should be the path to the directory containing the boost/ directory
+for your version of boost.
+])])
 
 
 
@@ -2377,6 +2432,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  Makefile
 	  contrib/blcr/Makefile
 	  contrib/init.d/Makefile
+	  contrib/systemd/Makefile
 	  doc/Makefile
 	  doc/man1/Makefile
 	  doc/man3/Makefile

@@ -137,7 +137,6 @@ extern pid2jobsid_map_t pid2jobsid_map;
 ** external functions and data
 */
 extern job_pid_set_t    global_job_sid_set;
-extern tlist_head               svr_alljobs;
 extern struct  config          *search(struct config *,char *);
 extern struct  rm_attribute    *momgetattr(char *);
 extern long     system_ncpus;
@@ -3926,11 +3925,13 @@ const char *sessions(
   s = ret_string;
 
   /* Walk through job list, look for jobs running on this NUMA node */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
       continue;
 
@@ -4228,11 +4229,13 @@ const char *nusers(
   sprintf(mom_check_name + strlen(mom_check_name), "-%d/", numa_index);
 
   /* Walk through job list, look for jobs running on this NUMA node */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
       continue;
 
@@ -4804,29 +4807,33 @@ void scan_non_child_tasks(void)
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
   pdir = opendir(procfs);
+  std::list<job *>::iterator iter;
 
-  for (pJob = (job *)(GET_NEXT(svr_alljobs));
-      pJob != (job *)NULL;pJob = (job *)(GET_NEXT(pJob->ji_alljobs)))
+  // get a list of jobs in start time order, first to last
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pJob = *iter;
+
     task *pTask;
 
     long job_start_time = 0;
     long job_session_id = 0;
     long session_start_time = 0;
     proc_stat_t *ps = NULL;
-    if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+    if (pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
       {
       job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
       }
-    if(pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
+
+    if (pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
       {
       job_session_id = pJob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
       }
-    if((ps = get_proc_stat(job_session_id)) != NULL)
+
+    if ((ps = get_proc_stat(job_session_id)) != NULL)
       {
       session_start_time = (long)ps->start_time;
       }
-
 
     for (pTask = (task *)(GET_NEXT(pJob->ji_tasks));
         pTask != NULL;
@@ -4977,7 +4984,7 @@ void scan_non_child_tasks(void)
         exiting_tasks = 1;
         }
       }
-    }    /* END for (job = GET_NEXT(svr_alljobs)) */
+    } /* END for each job */
 
   if (pdir != NULL)
     closedir(pdir);

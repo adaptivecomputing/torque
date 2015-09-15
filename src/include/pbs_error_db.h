@@ -291,6 +291,7 @@ PbsErrClient(PBSE_INDICES_EMPTY, (char *)"The cpuset or memset indices are not s
 PbsErrClient(PBSE_EMPTY, (char *)"The container is empty")
 PbsErrClient(PBSE_CORE_PLACE, (char *)"Core and thread do not support a value assignment for place")
 PbsErrClient(PBSE_MINLIMIT, (char *)"Request doesn't meet minimum limit")
+PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

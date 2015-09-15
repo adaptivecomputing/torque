@@ -106,6 +106,8 @@ threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
 
+char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
+
 void on_job_rerun_task(struct work_task *ptask)
   {
   }
@@ -597,7 +599,10 @@ void poll_job_task(struct work_task *wt) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level)
+  {
+  strncpy(global_log_ext_msg, msg, sizeof(global_log_ext_msg));
+  }
 
 int pbs_getaddrinfo(const char *pNode, struct addrinfo *pHints, struct addrinfo **ppAddrInfoOut)
   {

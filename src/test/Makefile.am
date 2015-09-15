@@ -67,11 +67,20 @@ CMDS_UT_DIRS = MXML common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qc
 
 MISC_UT_DIRS = momctl
 
+MOM_UT_DIRS = alps_reservations catch_child checkpoint cray_energy generate_alps_status \
+							mom_comm mom_inter mom_job_func mom_mach mom_main mom_process_request mom_req_quejob \
+							mom_server mom_start parse_config pbs_demux prolog release_reservation requests \
+							start_exec tmsock_recov
+if BUILDCPA
+  MOM_UT_DIRS += cray_cpa
+endif
+
 CHECK_LIBS = scaffold_fail torque_test_lib 
 
 CHECK_DIRS = ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
-						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${NUMA_DIRS}
+						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${NUMA_DIRS} \
+						 ${MOM_UT_DIRS}
 
 $(CHECK_LIBS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)

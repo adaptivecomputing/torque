@@ -5,7 +5,9 @@
 #include <string>
 
 #include "pbs_config.h"
-#include "../../../mom_main.h" /* MAX_LINE */
+#include <list>
+
+#include "mom_main.h" /* MAX_LINE */
 #include "resource.h" /* resource_def, resource */
 #include "list_link.h" /* tlist_head, list_link, pidl */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -14,10 +16,13 @@
 #include "pbs_job.h" /* task */
 #include "pbs_nodes.h"
 #include "node_frequency.hpp"
+#include "machine.hpp"
 
 extern std::string cg_memory_path;
 
+Machine this_node;
 std::string cg_cpuacct_path;
+std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
 char path_meminfo[MAX_LINE];
@@ -293,6 +298,44 @@ void capture_until_close_character(
 bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+Socket::Socket() {}
+Socket::~Socket() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+
+int Machine::getHardwareStyle() const
+  {
+  return(this->hardwareStyle);
+  }
+      
+int trq_cg_get_task_cput_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  unsigned long      &cput_used)
+
+  {
+  return(0);
+  }
+
+int trq_cg_get_task_memory_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  unsigned long long &mem_used)
+
+  {
+  return(0);
   }
 
 #include "../../src/lib/Libattr/req.cpp"

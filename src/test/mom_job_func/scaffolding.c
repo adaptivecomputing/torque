@@ -13,7 +13,9 @@
 #include "pbs_job.h" /* job_file_delete_info */
 #include "threadpool.h"
 #include "machine.hpp"
+#include "mom_func.h"
 
+std::list<job *> alljobs_list;
 threadpool_t *request_pool;
 int is_login_node = 0;
 char *apbasil_path = NULL;

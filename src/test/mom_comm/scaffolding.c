@@ -23,6 +23,10 @@ int             MOMNvidiaDriverVersion    = 0;
 int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
+std::list<job *> alljobs_list;
+int PBSNodeCheckEpilog;
+int PBSNodeCheckProlog;
+int internal_state;
 int create_job_cpuset(job *pj) { return 0; }
 int use_cpusets(job *pj) { return 0; }
 const char *path_jobs = "some path to nowhere."; /* mom_main.c */
@@ -63,7 +67,6 @@ unsigned short disrus(tcp_chan *c, int *retval)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "This mock job_save always returns 0!!\n");
   return(0);
   }
 
@@ -71,25 +74,21 @@ void mom_job_purge(job *pjob) {}
 
 int decode_DIS_svrattrl(struct tcp_chan *chan, tlist_head *phead)
   {
-  fprintf(stderr, "This mock decode_DIS_svrattrl always returns 0!!\n");
   return(0);
   }
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
-  fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
   return(0);
   }
 
 int TMakeTmpDir(job *pjob, char *tmpdir)
   {
-  fprintf(stderr, "The call to TMakeTmpDir needs to be mocked!!\n");
   return(0);
   }
 
 unsigned long gettime(resource *pres)
   {
-  fprintf(stderr, "The call to gettime needs to be mocked!!\n");
   return(0);
   }
 
@@ -97,13 +96,11 @@ void exec_bail(job *pjob, int code, std::set<int> *contacted_sisters) {}
 
 int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
   {
-  fprintf(stderr, "The call to AVL_list needs to be mocked!!\n");
   return(0);
   }
 
 int exec_job_on_ms(job *pjob)
   {
-  fprintf(stderr, "The call to exec_job_on_ms needs to be mocked!!\n");
   return(0);
   }
 
@@ -124,31 +121,26 @@ int mom_do_poll(job *pjob)
 
 void delete_link(struct list_link *old)
   {
-  fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
   return;
   }
 
 char *get_job_envvar(job *pjob, const char *variable)
   {
-  fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   return(0);
   }
 
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag)
   {
-  fprintf(stderr, "The call to open_tcp_stream_to_sisters needs to be mocked!!\n");
   return(0);
   }
 
 int open_demux(u_long addr, int port)
   {
-  fprintf(stderr, "The call to open_demux needs to be mocked!!\n");
   return(0);
   }
 
 int mom_get_sample()
   {
-  fprintf(stderr, "The call to mom_get_sample needs to be mocked!!\n");
   return(0);
   }
 
@@ -166,25 +158,21 @@ unsigned long disrul(struct tcp_chan * chan, int *retval)
 
 const char * getuname(void )
   {
-  fprintf(stderr, "The call to getuname needs to be mocked!!\n");
   return(0);
   }
 
 size_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   {
-  fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
   return(0);
   }
 
 struct tcp_chan *DIS_tcp_setup(int fd)
   {
-  fprintf(stderr, "This mock DIS_tcp_setup always returns NULL!!\n");
   return(NULL);
   }
 
 int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_attr needs to be mocked!!\n");
   return(0);
   }
 
@@ -195,27 +183,23 @@ unsigned disrui(struct tcp_chan *chan, int *retval)
   return(0);
   }
 
-int kill_task(struct task *task, int sig, int pg)
+int kill_task(job *pjob, struct task *task, int sig, int pg)
   {
-  fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   return(0);
   }
 
 int DIS_tcp_wflush(struct tcp_chan * chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
   return(0);
   }
 
 int diswcs(struct tcp_chan * chan, const char *value, size_t nchars)
   {
-  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
   return(0);
   }
 
 unsigned long getsize(resource *pres)
   {
-  fprintf(stderr, "The call to getsize needs to be mocked!!\n");
   return(0);
   }
 
@@ -231,44 +215,37 @@ void *get_next(list_link pl, char *file, int line)
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *rb)
   {
-  fprintf(stderr, "The call to add_host_to_sister_list needs to be mocked!!\n");
   return(0);
   }
 
 char *disrcs(struct tcp_chan * chan, size_t *nchars, int *retval)
   {
-  fprintf(stderr, "The call to disrcs needs to be mocked!!\n");
   return(0);
   }
 
 int start_process(task *tsk, char **argv, char **envp)
   {
-  fprintf(stderr, "The call to start_process needs to be mocked!!\n");
   return(0);
   }
 
 #undef diswui
 int diswui(struct tcp_chan * chan, unsigned value)
   {
-  fprintf(stderr, "The call to diswui needs to be mocked!!\n");
   return(0);
   }
 
 void free_sisterlist(struct radix_buf **list, int radix)
   {
-  fprintf(stderr, "The call to free_sisterlist needs to be mocked!!\n");
   return;
   }
 
 int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command, int exit_code)
   {
-  fprintf(stderr, "This mock write_tcp_reply always returns 0!!\n");
   return(0);
   }
 
 int mom_set_use(job *pjob)
   {
-  fprintf(stderr, "The call to mom_set_use needs to be mocked!!\n");
   return(0);
   }
 
@@ -276,7 +253,6 @@ void free_attrlist(tlist_head *pattrlisthead) {}
 
 void attrl_fixlink(tlist_head *phead)
   {
-  fprintf(stderr, "The call to attrl_fixlink needs to be mocked!!\n");
   return;
   }
 
@@ -297,13 +273,11 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
 
 struct radix_buf **allocate_sister_list(int radix)
   {
-  fprintf(stderr, "The call to allocate_sister_list needs to be mocked!!\n");
   return(0);
   }
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
-  fprintf(stderr, "This mock tcp_connect_sockaddr always returns 0!!\n");
   return(10);
   }
 
@@ -311,7 +285,6 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
 
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
   {
-  fprintf(stderr, "The call to sister_job_nodes needs to be mocked!!\n");
   return;
   }
 
@@ -326,19 +299,16 @@ void close_conn(int sd, int has_mutex) {}
 
 int diswul(struct tcp_chan * chan, unsigned long value)
   {
-  fprintf(stderr, "The call to diswul needs to be mocked!!\n");
   return(0);
   }
 
 int rpp_eom(int index)
   {
-  fprintf(stderr, "The call to rpp_eom needs to be mocked!!\n");
   return(0);
   }
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  fprintf(stderr, "This mock find_resc_entry always returns NULL!!\n");
   return(NULL);
   }
 
@@ -361,7 +331,6 @@ job *mom_find_job(const char *jobid)
 #undef diswsi
 int diswsi(tcp_chan *c, int value)
   {
-  fprintf(stderr, "This mock diswsi always returns 0!!\n");
   return(0);
   }
 
@@ -377,37 +346,31 @@ job *job_alloc(void )
 
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
   {
-  fprintf(stderr, "The call to timeval_subtract needs to be mocked!!\n");
   return(0);
   }
 
 int allocate_demux_sockets(job *pjob, int flag)
   {
-  fprintf(stderr, "The call to allocate_demux_sockets needs to be mocked!!\n");
   return(0);
   }
 
 int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
-  fprintf(stderr, "This mock kill_job always returns 0!!\n");
   return(0);
   }
 
 int add_to_resend_things(resend_momcomm *mc)
   {
-  fprintf(stderr, "The call to add_to_resend_things needs to be mocked!!\n");
   return(0);
   }
 
 im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
   {
-  fprintf(stderr, "The call to create_compose_reply_info needs to be mocked!!\n");
   return(0);
   }
 
 int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
   {
-  fprintf(stderr, "The call to get_hostaddr_hostent_af needs to be mocked!!\n");
   return(0);
   }
 
@@ -535,3 +498,5 @@ int trq_cg_reserve_cgroup(job *pjob)
   {
   return(PBSE_NONE);
   }
+
+void check_state(int Force) {}

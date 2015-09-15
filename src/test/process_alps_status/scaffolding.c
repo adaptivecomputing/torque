@@ -34,6 +34,10 @@
   c ^= b; c -= rot(b,24); \
   }
 
+int removed_reservation = 0;
+int issued_request = 0;
+int state_updated = 0;
+
 threadpool_t *task_pool;
 bool exit_called = false;
 char log_buffer[LOG_BUF_SIZE];
@@ -77,6 +81,8 @@ void update_node_state(
   int             newstate)   /* I (one of INUSE_*) */
 
   {
+  state_updated++;
+
   if (newstate & INUSE_DOWN)
     {
     if (!(np->nd_state & INUSE_DOWN))
@@ -1609,6 +1615,7 @@ int issue_Drequest(
   bool                   close_handle)
 
   {
+  issued_request++;
   return(0);
   }
 
@@ -1649,7 +1656,7 @@ void release_req(
 
 int already_recorded(
 
-  char *rsv_id)
+  const char *rsv_id)
 
   {
   static int i = 0;
@@ -1711,6 +1718,7 @@ void delete_a_subnode(
 
 int remove_alps_reservation(char *rsv_id)
   {
+  removed_reservation++;
   return(0);
   }
 
