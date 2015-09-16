@@ -15,7 +15,7 @@ KillMode=process
 
 PIDFile=@PBS_HOME@/mom_priv/mom.lock
 
-ExecStart=@sbindir@/pbs_mom -d /var/spool/torque
+ExecStart=@sbindir@/pbs_mom -d @PBS_HOME@
 ExecStop=/bin/bash -c " \
   for i in {1..5}; do \
     kill -0 $MAINPID &>/dev/null || exit 0; \
