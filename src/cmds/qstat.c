@@ -40,7 +40,7 @@ using namespace std;
 
 bool    do_not_display_complete = false;
 
-static void states(  
+static void states(
 
   char *string, /* I */
   char *queued,      /* O */
@@ -190,7 +190,7 @@ bool istrue(
 
 int time_to_string(
 
-  char *time_string, 
+  char *time_string,
   int   time_to_convert)
 
   {
@@ -219,7 +219,7 @@ int time_to_string(
   }
 
 int timestring_to_int(
-    
+
   const char *timestring,
   int        *req_walltime)
 
@@ -242,8 +242,8 @@ int timestring_to_int(
     free(ptr_string);
     return (PBSE_BAD_PARAMETER);
     }
-  
-  *ptr = 0; 
+
+  *ptr = 0;
   ptr++;
   hours = atoi(number);
   hours = hours * 3600;
@@ -256,14 +256,14 @@ int timestring_to_int(
     return (PBSE_BAD_PARAMETER);
     }
 
-  *ptr = 0; 
+  *ptr = 0;
   ptr++;
   minutes = atoi(number);
   minutes = minutes * 60;
   number = ptr;
 
   seconds = atoi(number);
-  
+
   *req_walltime = hours + minutes + seconds;
 
   free(ptr_string);
@@ -922,7 +922,7 @@ static void altdsp_statjob(
           snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "dmem"))
-          { 
+          {
           snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
           }
         else if (!strcmp(pat->resource, "vmem"))
@@ -1003,7 +1003,7 @@ static void altdsp_statjob(
       }
 
     if ((*jstate != 'Q') && (*jstate != 'C') && (*jstate != 'H'))
-      { 
+      {
       elap_time = req_walltime - rem_walltime;
       time_to_string(elap_time_string, elap_time);
       }
@@ -2237,8 +2237,8 @@ tcl_init(void)
   }
 
 void tcl_addarg(
-    
-  const char *name, 
+
+  const char *name,
   const char *arg)
 
   {
@@ -2361,16 +2361,16 @@ void tcl_run(
 #else
 #define tcl_init()
 #define tcl_addarg(name, arg)
-#define tcl_stat(type, bs, f_opt) ; 
+#define tcl_stat(type, bs, f_opt) ;
 #define tcl_run(f_opt)
 #endif /* TCL_QSTAT */
 
 
 int process_commandline_opts(
 
-  int argc, 
-  char **argv, 
-  int *exec_only_flg, 
+  int argc,
+  char **argv,
+  int *exec_only_flg,
   int *errflg_out)
 
   {
@@ -2498,9 +2498,9 @@ int process_commandline_opts(
         break;
 
       case 't':
-      
+
         t_opt = 1;
-        
+
         break;
 
       case 'u':
@@ -2775,8 +2775,8 @@ int process_commandline_opts(
 
 
 int run_job_mode(
-    
-    bool have_args, 
+
+    bool have_args,
     const char *operand,
     int  *located,
     char *server_out,
@@ -2968,7 +2968,7 @@ int run_job_mode(
           errmsg = get_err_msg(any_failed,"job", connect, job_id_out);
           break;
           }
-        
+
         if (any_failed && (retry_count < MAX_RETRIES))
           {
           pbs_disconnect(connect);
@@ -2976,7 +2976,7 @@ int run_job_mode(
           }
 
         tcl_stat("job", NULL, f_opt);
-        
+
         }
       }
     else
@@ -2985,13 +2985,13 @@ int run_job_mode(
 #ifdef TCL_QSTAT
       condition = tcl_stat("job", p_status, f_opt);
 #endif
-      
+
       if (alt_opt != 0)
         {
         altdsp_statjob(p_status, p_server, alt_opt);
         }
       else if ((f_opt == 0) ||
-               (condition)) 
+               (condition))
         {
         display_statjob(p_status, print_header, f_opt, user);
         }
@@ -3011,7 +3011,7 @@ int run_job_mode(
 
 int run_queue_mode(
 
-    bool have_args, 
+    bool have_args,
     const char *operand,
     char *server_out,
     char *queue_name_out,
@@ -3024,7 +3024,7 @@ int run_queue_mode(
   int    server_out_size = MAXSERVERNAME;
   int    retry_count = 0;
   char   destination[PBS_MAXDEST + 1];
- 
+
   struct batch_status *p_status;
 
   if (have_args == true)
@@ -3213,7 +3213,7 @@ int run_server_mode(
     break;
     } /* end while */
 
-  return(any_failed); 
+  return(any_failed);
   }
 
 
@@ -3299,7 +3299,7 @@ int main(
     print_usage();
     exit(2);
     }
-    
+
 
   if (errflg)
     {
@@ -3342,19 +3342,19 @@ int main(
     /* If no arguments, then set defaults */
     snprintf(server_out, sizeof(server_out), "@%s", def_server);
     tcl_addarg(ops, server_out);
-    
+
     job_id_out[0] = '\0';
     server_out[0] = '\0';
-    
+
     queue_name_out = NULL;
-    have_args = false;   
+    have_args = false;
     }    /* END if (optind >= argc) */
   else
     {
     have_args = true;
     }
 
-  for (;optind < argc;optind++)
+  for (;optind <= argc;optind++)
     {
     located = FALSE;
 
