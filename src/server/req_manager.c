@@ -1655,6 +1655,10 @@ void mgr_node_set(
   struct pbsnode  **problem_nodes = NULL;
   struct prop       props;
 
+  if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
+      (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
+    strcpy(preq->rq_ind.rq_manager.rq_objname, ":ALL");
+
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@') ||
       ((*preq->rq_ind.rq_manager.rq_objname == ':') &&
