@@ -95,7 +95,7 @@
 
 
 
-extern int              thread_unlink_calls;
+extern bool             thread_unlink_calls;
 extern int              ignwalltime;
 extern int              ignmem;
 extern int              igncput;
@@ -196,6 +196,7 @@ unsigned long setmempressthr(const char *);
 unsigned long setmempressdur(const char *);
 #endif
 int read_config(char *file);
+void reset_config_vars();
 
 
 

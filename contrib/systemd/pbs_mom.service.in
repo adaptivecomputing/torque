@@ -1,0 +1,28 @@
+[Unit]
+Description=TORQUE pbs_mom daemon
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=root
+
+LimitNOFILE=32768
+LimitMEMLOCK=infinity
+
+KillMode=process
+
+PIDFile=@PBS_HOME@/mom_priv/mom.lock
+
+ExecStart=@sbindir@/pbs_mom -d /var/spool/torque
+ExecStop=/bin/bash -c " \
+  for i in {1..5}; do \
+    kill -0 $MAINPID &>/dev/null || exit 0; \
+    @sbindir@/momctl -s && exit; \
+    sleep 1; \
+  done \
+"
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+uid: 12795, apid: 37311, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:taskstats ['utime', 0, 'stime', 0, 'max_rss', 736, 'rchar', 4524, 'wchar', 90,'exitcode:signal', ['0:0'], 'core', 0]
+uid: 12795, apid: 37311, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:energy ['energy_used', 4329]
+uid: 12795, apid: 37311, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:timestamp APP_START 2014-05-20T11:09:57CDT APP_STOP 2014-05-20T11:10:28CDT
+uid: 12795, apid: 37312, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:taskstats ['utime', 0, 'stime', 4000, 'max_rss', 736, 'rchar', 4524, 'wchar', 90,'exitcode:signal', ['0:0'],'core', 0]
+uid: 12795, apid: 37312, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:energy ['energy_used', 877]
+uid: 12795, apid: 37312, jobid: 860.opal-p1, cmdname: /bin/sleep, plugin:timestamp APP_START 2014-05-20T11:10:30CDT APP_STOP 2014-05-20T11:10:37CDT

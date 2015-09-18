@@ -188,7 +188,7 @@ unsigned int pbs_mom_port = 0;
 unsigned int pbs_rm_port = 0;
 tlist_head mom_polljobs; /* jobs that must have resource limits polled */
 tlist_head svr_newjobs; /* jobs being sent to MOM */
-tlist_head svr_alljobs; /* all jobs under MOM's control */
+std::list<job *> alljobs_list; // all jobs under MOM's control
 tlist_head mom_varattrs; /* variable attributes */
 int  termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t  time_now = 0;
@@ -1247,6 +1247,7 @@ void process_hup(void)
   memory_pressure_duration  = 0;
 #endif
   clear_servers();
+  reset_config_vars();
   read_config(NULL);
   check_log();
   cleanup();
@@ -1571,7 +1572,7 @@ int process_clear_job_request(
     if (!strcasecmp(ptr, "all"))
       {
       clear_jobs(svr_newjobs, output);
-      clear_jobs(svr_alljobs, output);
+      alljobs_list.clear();
       output << "clear completed";
       }
     else 
@@ -2096,21 +2097,23 @@ void add_diag_job_list(
   {
   job  *pjob;
 
-  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+  if (alljobs_list.size() == 0)
     {
     output << "NOTE:  no local jobs detected\n";
     }
   else
     {
-    int            numvnodes = 0;
+    int                        numvnodes = 0;
+    std::list<job *>::iterator iter;
 
-    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
+      pjob = *iter;
       add_diag_job_entry(output, &numvnodes, pjob);
       }  /* END for (pjob) */
 
     output << "Assigned CPU Count:     " << numvnodes << "\n";
-    }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
+    }
 
   add_diag_new_jobs(output);
   } /* END add_diag_job_list() */
@@ -3852,7 +3855,6 @@ void initialize_globals(void)
   time(&MOMStartTime);
 
   CLEAR_HEAD(svr_newjobs);
-  CLEAR_HEAD(svr_alljobs);
   CLEAR_HEAD(mom_polljobs);
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
@@ -4463,13 +4465,14 @@ void recover_internal_layout()
 
   {
 #ifndef NUMA_SUPPORT
-  std::list<job *> job_list;
+  std::list<job *>           job_list;
+  std::list<job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
-  for (job *pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    job *pjob = *iter;
+
     if (job_list.empty() == true)
       job_list.push_back(pjob);
     else
@@ -5221,7 +5224,14 @@ int setup_program_environment(void)
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
 
-  initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+  if (thread_unlink_calls == true)
+    {
+    initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+    start_request_pool(request_pool);
+    }
+
+  /* allow the threadpool to start processing */
+  start_request_pool(request_pool);
 
   requested_cluster_addrs = 0;
 
@@ -5229,6 +5239,8 @@ int setup_program_environment(void)
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
+
+
 
 /*
  * TMOMJobGetStartInfo
@@ -5273,7 +5285,6 @@ int TMOMScanForStarting(void)
 
   {
   job *pjob;
-  job *nextjob;
 
   int  Count;
   int  RC;
@@ -5285,19 +5296,19 @@ int TMOMScanForStarting(void)
 
 #ifdef MSIC
   /* NOTE:  solaris system is choking on GET_NEXT - isolate */
-
+/* This code is completely defunct.
   tmpL = GET_NEXT(svr_alljobs);
 
   tmpL = svr_alljobs.ll_next->ll_struct;
 
-  pjob = (job *)tmpL;
+  pjob = (job *)tmpL; */
 #endif /* MSIC */
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pjob != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
@@ -5328,8 +5339,6 @@ int TMOMScanForStarting(void)
           log_buffer);
 
         exec_bail(pjob, JOB_EXEC_RETRY);
-
-        pjob = nextjob;
 
         continue;
         }
@@ -5399,8 +5408,6 @@ int TMOMScanForStarting(void)
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
       }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
-
-    pjob = nextjob;
     }        /* END while (pjob != NULL) */
 
   return(SUCCESS);
@@ -5520,11 +5527,13 @@ void examine_all_running_jobs(void)
   int         c;
 #endif
   task         *ptask;
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -5686,12 +5695,13 @@ void check_jobs_awaiting_join_job_reply()
   {
   job    *pjob;
   time_now = time(NULL);
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
         (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
         (am_i_mother_superior(*pjob) == true))
@@ -5719,12 +5729,12 @@ void check_jobs_in_obit()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
         (am_i_mother_superior(*pjob) == true))
       {
@@ -5741,11 +5751,12 @@ void check_jobs_in_mom_wait()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
       {
       if ((pjob->ji_kill_started != 0) &&
@@ -5773,22 +5784,30 @@ void check_jobs_in_mom_wait()
 
 
 
-//If we have a job that's exiting we should call scan for exiting.
+/*
+ * call_scan_for_exiting()
+ *
+ * Checks for any exiting jobs. If they exist, we'll call scan_for_exiting.
+ */
+
 bool call_scan_for_exiting()
   {
-  if(exiting_tasks) return true;
+  if (exiting_tasks)
+    return(true);
 
-  job          *nextjob;
   job          *pjob;
 
   //NOTE: May want to put some kind of timeout so we only call this once in a while.
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
-    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    pjob = *iter;
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
+      return(true);
     }
-  return false;
+
+  return(false);
   }
 
 
@@ -5836,11 +5855,12 @@ void kill_all_running_jobs(void)
   {
   job *pjob;
   unsigned int momport = 0;
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
       {
       kill_job(pjob, SIGKILL, __func__, "mom is terminating with kill jobs flag");
@@ -5882,9 +5902,11 @@ void prepare_child_tasks_for_delete()
   {
   job *pJob;
 
+  std::list<job *>::iterator iter;
 
-  for (pJob = (job *)GET_NEXT(svr_alljobs);pJob != NULL;pJob = (job *)GET_NEXT(pJob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pJob = *iter;
     task *pTask;
 
     for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
@@ -5995,7 +6017,7 @@ void main_loop(void)
       {
       last_poll_time = time_now;
       
-      if (GET_NEXT(svr_alljobs))
+      if (alljobs_list.size() != 0)
         {
         /* There are jobs, update process status from the OS */
         
@@ -6077,7 +6099,7 @@ void main_loop(void)
       log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
-    if (GET_NEXT(svr_alljobs) == NULL)
+    if (alljobs_list.size() == 0)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
