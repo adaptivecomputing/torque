@@ -4333,16 +4333,16 @@ int TMomFinalizeChild(
   pjob->ji_wattr[JOB_ATR_session_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
 
   ps = get_proc_stat((int)sjr.sj_session);
-  if(ps != NULL)
+  if (ps != NULL)
     {
     pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
     pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
-    }
 
-  if(LOGLEVEL >= 7)
-    {
-    sprintf(log_buffer, "DRIFT debug: job start time = %ld, linux_time = %ld", ps->start_time, linux_time);
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "DRIFT debug: job start time = %ld, linux_time = %u", ps->start_time, linux_time);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
