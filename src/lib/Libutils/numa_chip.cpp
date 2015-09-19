@@ -972,6 +972,72 @@ int Chip::how_many_tasks_fit(
   return(mem_tasks);
   } // END how_many_tasks_fit()
 
+/*
+ * getContiguousCoreVector
+ *
+ * get a vector of core indices for placing cores
+ * from a numanode. Return true if it is contiguous.
+ * false if it is not.
+ *
+ * @param slots  - A vector of integers containing the indices
+ *                 of the core candidates for allocation.
+ */
+
+bool Chip::getContiguousCoreVector(
+
+  std::vector<int> &slots,
+  int               execution_slots_per_task)
+
+  {
+  unsigned int j = 0;
+  int i = execution_slots_per_task;
+  bool fits = false;
+
+  /* First try to get contiguous cores */
+  do
+    {
+    if (this->cores[j].is_free() == true)
+      {
+      slots.push_back(j);
+      i--;
+      j++;
+      if ((i ==0) || (j == this->cores.size()))
+        {
+        /* We fit if all of the execution slots have been filled
+           or it we have used all the chip */
+        fits = true;
+        }
+      }
+    else
+      {
+      i = execution_slots_per_task;
+      j++;
+      slots.clear();
+      }
+    }while((i != 0) && (j < this->cores.size()));
+
+  if (fits == false)
+    {
+    /* Can't get contiguous cores. Just get them where you can find them */
+    // Get the core indices we will use
+    j = 0;
+    for (int i = 0; i < execution_slots_per_task; i++)
+      {
+      while (j < this->cores.size())
+        {
+        if (this->cores[j].is_free() == true)
+          {
+          slots.push_back(j);
+          j++;
+          break;
+          }
+        else
+          j++;
+        }
+      }
+    }
+  return(fits);
+  }
 
 
 /*
@@ -979,6 +1045,7 @@ int Chip::how_many_tasks_fit(
  *
  * places the task, knowing that we must use only cores
  *
+ * @param lprocs                   - for place=core=x. Number of lprocs to be bound to cpuset
  * @param execution_slots_per_task - the number of cores to place for this task
  * @param a - the allocation we're marking these used for
  */
@@ -989,21 +1056,17 @@ void Chip::place_task_by_cores(
   allocation &a)
 
   {
-  // Get the core indices we will use
-  unsigned int j = 0;
-  for (int i = 0; i < execution_slots_per_task; i++)
+  std::vector<int> slots;
+
+  this->getContiguousCoreVector(slots, execution_slots_per_task);
+  for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
     {
-    while (j < this->cores.size())
-      {
-      if (this->reserve_core(j, a) == true)
-        {
-        j++;
-        break;
-        }
-      else
-        j++;
-      }
+    this->reserve_core(*it, a);
     }
+
+
+  return;
+
 
   } // END place_task_by_cores()
 
@@ -1085,6 +1148,38 @@ bool Chip::task_will_fit(
   } // END task_will_fit()
 
 
+/*
+ * reserve_chip_core()
+ *
+ * Does everything reserver_core does except it does not
+ * put the core_index in the cpu_indices. This is to
+ * accommodate place=core=x.
+ *
+ * @param core_index  -  index number of core to be marked as busy
+ * @param a           -  allocation object where record is kept.
+ */
+bool Chip::reserve_chip_core(
+
+  int core_index, 
+  allocation &a)
+
+  {
+  if (this->cores[core_index].is_free())
+    {
+    int os_index = this->cores[core_index].get_id();
+    this->cores[core_index].mark_as_busy(os_index);
+    this->availableCores--;
+    this->availableThreads -= this->cores[core_index].totalThreads;
+    a.cpu_place_indices.push_back(os_index);
+    a.cpus++;
+    a.cores++;
+    a.threads += this->cores[core_index].totalThreads;
+    return(true);
+    }
+
+  return(false);
+
+  }
 
 /*
  * reserve_core()
@@ -1147,6 +1242,76 @@ bool Chip::reserve_thread(
 
   return(false);
   } // END reserve_thread()
+
+
+bool Chip::spread_place_cores(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         &cores_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+
+  {
+  bool placed = false;
+  bool fits = false;
+  /* with place=core=x we all reserve more cores than we pin to the cpuset */
+  /* step gives a rough estimate of how far apart the procs will be
+     that get put in the cpuset */
+  int step; 
+  int avail_cores_per_chip = this->getAvailableCores();
+  allocation from_this_chip(task_alloc.jobid.c_str());
+  std::vector<int> slots;
+
+  if (lprocs_per_task_remaining == 1)
+    step = (cores_per_task_remaining/2) + 1;
+  else
+    step = cores_per_task_remaining/lprocs_per_task_remaining; 
+
+  if ((this->chipIsAvailable() == false) || (avail_cores_per_chip < step))
+    {
+    /* If there are not enough available cores to make the spread there is
+       no point in putting any of the task here */
+    placed = false;
+    return(placed); 
+    }
+
+  from_this_chip.cores_only = true;
+
+  fits = this->getContiguousCoreVector(slots, cores_per_task_remaining);
+
+  if (fits == true)
+    {
+    int step_count = 1;
+
+    /* cores_placed and cores_to_fill are used because we only want to make sure we 
+       fill the number of cores for this task */
+
+    for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
+      {
+      if (step_count == step)
+        {
+        this->reserve_core(*it, from_this_chip);
+        step_count = 1;
+        cores_per_task_remaining--;
+        lprocs_per_task_remaining--;
+        }
+      else
+        {
+        this->reserve_chip_core(*it, from_this_chip);
+        cores_per_task_remaining--;
+        step_count++;
+        }
+      }
+
+    from_this_chip.mem_indices.push_back(this->id);
+    this->aggregate_allocation(from_this_chip);
+    task_alloc.add_allocation(from_this_chip);
+    placed = true;
+    }
+
+
+  return(placed);
+  }
 
 
 
@@ -1632,6 +1797,10 @@ bool Chip::free_task(
       // Now mark the individual cores as available
       for (unsigned int j = 0; j < this->allocations[i].cpu_indices.size(); j++)
         free_cpu_index(this->allocations[i].cpu_indices[j], this->allocations[i].cores_only);
+
+      // do the same for place=core or place=thread indices
+      for (unsigned int j = 0; j < this->allocations[i].cpu_place_indices.size(); j++)
+        free_cpu_index(this->allocations[i].cpu_place_indices[j], this->allocations[i].cores_only);
 
       free_accelerators(this->allocations[i]);
       

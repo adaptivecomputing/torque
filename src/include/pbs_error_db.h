@@ -289,7 +289,6 @@ PbsErrClient(PBSE_NO_PROCESS_RANK, (char *)"A process rank was not given. will a
 PbsErrClient(PBSE_REQ_NOT_FOUND, (char *)"A req for this host was not found")
 PbsErrClient(PBSE_INDICES_EMPTY, (char *)"The cpuset or memset indices are not set")
 PbsErrClient(PBSE_EMPTY, (char *)"The container is empty")
-PbsErrClient(PBSE_CORE_PLACE, (char *)"Core and thread do not support a value assignment for place")
 PbsErrClient(PBSE_MINLIMIT, (char *)"Request doesn't meet minimum limit")
 PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
 

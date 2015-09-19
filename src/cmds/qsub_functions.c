@@ -2473,6 +2473,18 @@ void process_opt_L(
     print_qsub_usage_exit(err_buf);
     }
 
+  int core_count = r.getPlaceCores(); /* see if place=core was used */
+  int lprocs = r.get_cores(); /* this returns the number of execution slots requested */
+
+  if (core_count > 1)  /* core count of 1 is default */
+    {
+    if (core_count < lprocs)
+      {
+      snprintf(err_buf, sizeof(err_buf), "qsub: malformed piece of -L value: place=core=x must be >= lprocs '%s'", err.c_str());
+      print_qsub_usage_exit(err_buf);
+      }
+    }
+
   cr.add_req(r);
   } // END process_opt_L()
 

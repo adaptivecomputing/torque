@@ -94,12 +94,13 @@ const int exclusive_node = 1;
 const int exclusive_socket = 2;
 const int exclusive_chip = 3;
 const int exclusive_core = 4;
+const int exclusive_thread = 5;
 
 allocation::allocation(
 
-  const allocation &alloc) : cpu_indices(alloc.cpu_indices), mem_indices(alloc.mem_indices),
-                             gpu_indices(alloc.gpu_indices), mic_indices(alloc.mic_indices),
-                             memory(alloc.memory), cpus(alloc.cpus), 
+  const allocation &alloc) : cpu_place_indices(alloc.cpu_place_indices), cpu_indices(alloc.cpu_indices), 
+                             mem_indices(alloc.mem_indices), gpu_indices(alloc.gpu_indices), 
+                             mic_indices(alloc.mic_indices), memory(alloc.memory), cpus(alloc.cpus), 
                              cores(alloc.cores), threads(alloc.threads),
                              place_type(alloc.place_type), cores_only(alloc.cores_only),
                              jobid(alloc.jobid), hostname(alloc.hostname),
@@ -109,7 +110,7 @@ allocation::allocation(
   {
   }
 
-allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+allocation::allocation() : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                            cpus(0), cores(0), threads(0), place_type(exclusive_none),
                            cores_only(false), jobid(), hostname(), gpus(0), mics(0), task_cput_used(0),
                            task_memory_used(0)
@@ -119,7 +120,7 @@ allocation::allocation() : cpu_indices(), mem_indices(), gpu_indices(), mic_indi
 
 allocation::allocation(
 
-  const req &r) : cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
+  const req &r) : cpu_place_indices(), cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
                   cores_only(false), jobid(), hostname(), task_cput_used(0), task_memory_used(0)
 
   {
@@ -136,7 +137,7 @@ allocation::allocation(
 
 allocation::allocation(
 
-  const char *jid) : cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
+  const char *jid) : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                      cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
                      jobid(jid), hostname(), gpus(0), mics(0), task_cput_used(0), task_memory_used(0)
 
@@ -150,6 +151,9 @@ int allocation::add_allocation(
   {
   for (unsigned int i = 0; i < other.cpu_indices.size(); i++)
     this->cpu_indices.push_back(other.cpu_indices[i]);
+
+  for (unsigned int i = 0; i < other.cpu_place_indices.size(); i++)
+    this->cpu_place_indices.push_back(other.cpu_place_indices[i]);
 
   this->cpus += other.cpus;
   this->cores += other.cores;
@@ -185,7 +189,6 @@ int allocation::add_allocation(
   }
 
 
-
 void allocation::place_indices_in_string(
 
   std::string &output,
@@ -211,7 +214,7 @@ void allocation::set_place_type(
     this->place_type = exclusive_socket;
   else if (placement_str.find(place_numa_node) == 0)
     this->place_type = exclusive_chip;
-  else if (placement_str == place_core)
+  else if (placement_str.find(place_core) == 0)
     this->place_type = exclusive_core;
   else
     this->place_type = exclusive_none;

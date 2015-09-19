@@ -354,3 +354,14 @@ char *get_trq_param(const char *param, const char *config_buf)
   fprintf(stderr, "The call to get_trq_param to be mocked!!\n");
   exit(1);
   }
+
+int req::getPlaceCores() const
+  {
+  return(4);
+  }
+
+int req::get_cores() const
+  {
+  return(4);
+  }
+

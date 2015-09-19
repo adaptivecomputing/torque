@@ -174,6 +174,7 @@ class req
     int           get_threads() const;
     int           get_sockets() const;
     int           get_numa_nodes() const;
+    int           getPlaceCores() const;
     unsigned long getDisk() const;
     int           getMaxtpn() const;
     int           getGpus() const;

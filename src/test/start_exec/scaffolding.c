@@ -21,6 +21,7 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 #include "pbs_nodes.h"
+#include "complete_req.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
@@ -29,6 +30,7 @@
 
 std::string cg_memory_path;
 std::string cg_cpuacct_path;
+std::string cg_cpuset_path;
 int  send_ms_called;
 int  send_sisters_called;
 int  num_contacted;
@@ -730,6 +732,50 @@ int trq_cg_set_swap_memory_limit(const char *job_id, unsigned long limit)
   return(PBSE_NONE);
   }
 
+int trq_cg_add_process_to_task_cgroup(
+  string     &cgroup_path,
+  const char *job_id,
+  const unsigned int req_index,
+  const unsigned int task_index,
+  pid_t       new_pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_task_swap_memory_limit(
+  const char    *job_id,
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(
+  const char    *job_id,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_task_resident_memory_limit(
+  const char    *job_id,
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_resident_memory_limit(
+  const char    *job_id,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+
+
 int is_whitespace(
 
   char c)
@@ -769,8 +815,33 @@ bool task_hosts_match(const char *one, const char *two)
   return(true);
   }
 
+unsigned long long complete_req::get_swap_memory_for_this_host( const std::string &hostname) const
+  {
+  return(0);
+  }
 
-#ifdef PENABLE_LINUX_CGROUPS
-#include "../../../lib/Libattr/complete_req.cpp"
-#include "../../../lib/Libattr/req.cpp"
-#endif
+unsigned long long complete_req::get_swap_per_task( unsigned int req_index)
+  {
+  return(0);
+  }
+
+unsigned long long complete_req::get_memory_per_task(unsigned int req_index)
+  {
+  return(0);
+  }
+
+int complete_req::get_req_and_task_index(
+  const int rank, 
+  unsigned int &req_index, 
+  unsigned int &task_index)
+
+  {
+  return(0);
+  }
+
+unsigned long long complete_req::get_memory_for_this_host(
+  const std::string &hostname) const
+  {
+  return(0);
+  }
+

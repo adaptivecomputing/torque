@@ -399,6 +399,36 @@ void Socket::place_all_execution_slots(
   } // END place_all_execution_slots()
 
 
+bool Socket::spread_place_cores(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         chips_needed,
+  int         &cores_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+
+  {
+  int rc;
+  bool placed = false;
+
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    bool fits = false;
+
+    fits = this->chips[i].spread_place_cores(r, task_alloc, cores_per_task_remaining, lprocs_per_task_remaining);
+    if (fits == true)
+      {
+      if ((cores_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
+        {
+        placed = true;
+        break;
+        }
+      }
+    }
+
+  return(placed);
+  }
+
 
 /*
  * spread_place()

@@ -171,6 +171,13 @@ int parse_positive_integer(
   int        &parsed)
 
   {
+  if (str == NULL)
+  {
+    /* No value passed in. set count to 0) */
+    parsed = 0;
+    return(PBSE_NONE);
+  }
+
   if (strchr(str, '.') != NULL)
     return(PBSE_BAD_PARAMETER);
 
@@ -236,7 +243,6 @@ int req::set_memory_used(int task_index, const unsigned long long mem_used)
  * parses the place value and updates req values appropriately.
  * the place value is in the format:
  * place={node|socket|numanode|core|thread}[=#]
- * NOTE: core and thread cannot have an =# specification
  *
  * @param value - the string in the above format
  * @return PBSE_NONE as long as value is in the proper format,
@@ -284,20 +290,23 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, place_core))
     {
+    int count;
+
     if (numeric_value != NULL)
-      {
-      rc = PBSE_CORE_PLACE;
-      }
-      
+      rc = parse_positive_integer(numeric_value, this->cores);
+    else
+      this->cores = 1;
+ 
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = use_cores;
     }
   else if (!strcmp(work_str, place_thread))
     {
-    if (numeric_value != NULL)
-      {
-      rc = PBSE_CORE_PLACE;
-      }
+    int count;
+
+    rc = parse_positive_integer(numeric_value, count);
+    if (rc == PBSE_NONE)
+      this->threads = count;
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = use_threads;
@@ -2388,6 +2397,11 @@ int req::get_numa_nodes() const
 
   {
   return(this->numa_nodes);
+  }
+
+int req::getPlaceCores() const
+  {
+  return(this->cores);
   }
 
 int req::get_cores() const

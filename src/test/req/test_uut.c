@@ -149,15 +149,17 @@ START_TEST(test_get_set_values)
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
   fail_unless(names[2] == "numanode.0");
-  fail_unless(names[3] == "maxtpn.0", "%s", names[4].c_str());
-  fail_unless(names[4] == "thread_usage_policy.0");
-  fail_unless(names[5] == "pack.0");
+  fail_unless(names[3] == "core.0");
+  fail_unless(names[4] == "maxtpn.0", "%s", names[4].c_str());
+  fail_unless(names[5] == "thread_usage_policy.0");
+  fail_unless(names[6] == "pack.0");
   fail_unless(values[0] == "1");
   fail_unless(values[1] == "2");
   fail_unless(values[2] == "1");
   fail_unless(values[3] == "1");
-  fail_unless(values[4] == "usecores", values[5].c_str());
-  fail_unless(values[5] == "true");
+  fail_unless(values[4] == "1");
+  fail_unless(values[5] == "usecores", values[5].c_str());
+  fail_unless(values[6] == "true");
 
   fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
 
@@ -584,6 +586,28 @@ START_TEST(test_get_num_tasks_for_host)
   }
 END_TEST
 
+START_TEST(test_set_place_value)
+  {
+  req r;
+  int num_cores;
+
+  r.set_place_value("core=4");
+  num_cores = r.getPlaceCores();
+  fail_unless(num_cores==4, "set_place core failed");
+
+  int numanodes = 0;
+  r.set_place_value("numanode=2");
+  numanodes = r.get_numa_nodes();
+  fail_unless(numanodes==2, "set_place numanode failed");
+
+  int sockets = 0;
+  r.set_place_value("socket=2");
+  sockets = r.get_sockets();
+  fail_unless(sockets==2, "set_place socket failed");
+
+  }
+END_TEST
+
 
 START_TEST(test_get_swap_for_host)
   {
@@ -660,6 +684,10 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_swap_for_host);
   tcase_add_test(tc_core, test_get_task_allocation);
   tcase_add_test(tc_core, test_update_hostlist);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_setters");
+  tcase_add_test(tc_core, test_set_place_value);
   suite_add_tcase(s, tc_core);
   
   return(s);

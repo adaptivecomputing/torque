@@ -100,6 +100,9 @@ class req;
 class allocation
   {
   public:
+  std::vector<int> cpu_place_indices; /* These are indices that are not bound to the 
+                                         cpuset but were reserved because of a 
+                                         place=core=x or place=thread=x request */
   std::vector<int> cpu_indices;
   std::vector<int> mem_indices;
   std::vector<int> gpu_indices;

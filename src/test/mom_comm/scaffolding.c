@@ -17,6 +17,8 @@
 #include "pbs_job.h" /* job */
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
+#include "complete_req.hpp"
+
 
 #ifdef NVIDIA_GPUS
 int             MOMNvidiaDriverVersion    = 0;
@@ -500,3 +502,7 @@ int trq_cg_reserve_cgroup(job *pjob)
   }
 
 void check_state(int Force) {}
+
+void complete_req::set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used)
+  {
+  }

@@ -243,3 +243,15 @@ std::string req::getPlacementType() const
   }
 
 allocation::allocation() {}
+
+bool Chip::spread_place_cores(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         &cores_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+
+  {
+  return(true);
+  }
+

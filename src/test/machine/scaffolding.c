@@ -12,12 +12,14 @@ int num_tasks_fit;
 int num_placed;
 int hardware_style;
 int my_req_count;
+int my_core_count;
 int called_free_task;
 int called_place_task;
 int called_partially_place;
 int called_fits_on_socket;
 int called_store_pci;
 int called_spread_place;
+int called_spread_place_cores;
 int json_socket;
 int sockets;
 int numa_node_count;
@@ -26,9 +28,10 @@ int placed_all;
 const int exclusive_socket = 2;
 const int exclusive_node = 1;
 const int exclusive_chip = 3;
+const int exclusive_core = 4;
 bool socket_fit;
 bool partially_placed;
-bool spreaded;
+bool spreaded = true;
 int my_placement_type;
 
 char mom_alias[1024];
@@ -79,6 +82,20 @@ bool Socket::store_pci_device_appropriately(PCI_Device &d, bool force)
 void Socket::place_all_execution_slots(req &r, allocation &task_alloc)
   {
   placed_all++;
+  }
+
+bool Socket::spread_place_cores(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         chips_needed,
+  int         &cores_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+ 
+  {
+  called_spread_place_cores++;
+
+  return(spreaded);
   }
 
 bool Socket::spread_place(
@@ -180,6 +197,11 @@ bool Socket::is_available() const
   }
 
 void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
+
+int req::getPlaceCores() const
+  {
+  return(my_core_count);
+  }
 
 complete_req::complete_req() {}
 

@@ -15,6 +15,7 @@ extern int hardware_style;
 int get_hardware_style(hwloc_topology_t topology);
 
 extern int my_req_count;
+extern int my_core_count;
 extern int num_tasks_fit;
 extern int num_placed;
 extern int called_free_task;
@@ -22,6 +23,7 @@ extern int called_place_task;
 extern int called_partially_place;
 extern int called_fits_on_socket;
 extern int called_spread_place;
+extern int called_spread_place_cores;
 extern int num_for_host;
 extern int called_store_pci;
 extern int json_socket;
@@ -126,6 +128,32 @@ START_TEST(test_spread_place)
   fail_unless(called_spread_place == 6);
   }
 END_TEST
+
+START_TEST(test_spread_place_cores)
+  {
+  Machine m;
+  job     pjob;
+  std::string cpu;
+  std::string mem;
+  complete_req cr;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+
+  m.addSocket(2);
+
+  sockets = 1;
+  my_placement_type = 4;
+  numa_node_count = 0;
+  called_spread_place_cores = 0;
+  num_for_host = 1;
+  spreaded = true;
+
+  // Make sure we call spread place once for each successfully placed task
+  m.place_job(&pjob, cpu, mem, "napali");
+  fail_unless(called_spread_place_cores == 1, "called %d", called_spread_place_cores);
+
+  }
+END_TEST
+
 
 START_TEST(test_displayAsString)
   {

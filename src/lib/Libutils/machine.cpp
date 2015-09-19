@@ -606,6 +606,72 @@ void Machine::place_remaining(
   } // END place_remaining()
 
 
+int Machine::spread_place_cores(
+
+  req        &r,
+  allocation &master,
+  int         tasks_for_node,
+  const char *hostname)
+
+  {
+  int   rc;
+  int   cores_per_task  = r.getPlaceCores();
+  int   lprocs_per_task = r.getExecutionSlots();
+
+  if (cores_per_task > this->totalCores)
+    return(PBSE_IVALREQ);
+
+  /* Calculate how many numa nodes we need */
+  int chips_needed;
+  int cores_per_chip; /* cores per numa node */
+  int remainder;
+  int tasks_placed = 0;
+
+  cores_per_chip = this->getTotalCores()/this->getTotalChips();
+  remainder    = cores_per_task % cores_per_chip;
+  chips_needed = cores_per_task/cores_per_chip;
+  if (remainder != 0)
+    chips_needed++;
+
+  for (unsigned int i = 0; i < tasks_for_node; i++)
+    {
+    int cores_per_task_remaining;
+    int lprocs_per_task_remaining;
+    bool partial_place = false;
+    allocation task_alloc(master.jobid.c_str());
+    task_alloc.set_place_type(r.getPlacementType());
+
+    cores_per_task_remaining = cores_per_task;
+    lprocs_per_task_remaining = lprocs_per_task;
+
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      {
+      bool fits = false;
+
+      fits = this->sockets[j].spread_place_cores(r, task_alloc, chips_needed, cores_per_task_remaining, lprocs_per_task_remaining);
+      if (fits == true)
+        {
+        if ((cores_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
+          {
+          partial_place = true;
+          break;
+          }
+        }
+      }
+
+    if (partial_place == true)
+      tasks_placed++;
+
+    task_alloc.set_host(hostname);
+    r.record_allocation(task_alloc);
+    master.add_allocation(task_alloc);
+    }
+
+  if (tasks_placed != tasks_for_node)
+    return(PBSE_IVALREQ);
+
+  return(PBSE_NONE);
+  } /* END spread_place_cores() */
 
 /*
  * spread_place()
@@ -690,7 +756,6 @@ int Machine::spread_place(
   } // END spread_place()
 
 
-
 /*
  * place_job()
  *
@@ -746,6 +811,11 @@ int Machine::place_job(
              (a.place_type == exclusive_chip))
       {
       if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
+        return(rc);
+      }
+    else if (a.place_type == exclusive_core)
+      {
+      if ((rc = spread_place_cores(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else

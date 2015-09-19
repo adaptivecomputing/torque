@@ -19,6 +19,7 @@
 #include "errno.h"
 #include "mom_func.h"
 #include "mom_job_cleanup.h"
+#include "complete_req.hpp"
 
 int server_down;
 int called_open_socket = 0;
@@ -1391,6 +1392,13 @@ int encode_complete_req(
   int            mode,
   int            perm)
 
+  {
+  return(0);
+  }
+
+int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task_index,
+                                 std::vector<unsigned long> &cput_used,
+                                 std::vector<unsigned long long> &mem_used)
   {
   return(0);
   }
