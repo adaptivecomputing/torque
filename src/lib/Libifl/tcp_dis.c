@@ -312,18 +312,14 @@ int DIS_tcp_wflush(
   struct tcp_chan *chan)  /* I */
 
   {
-  size_t            ct;
   int               i;
-  char             *pb = NULL;
   char             *pbs_debug = NULL;
 
-  struct tcpdisbuf *tp;
+  struct tcpdisbuf *tp = &chan->writebuf;
+  char             *pb = tp->tdis_thebuf;
+  size_t            ct = tp->tdis_trailp - tp->tdis_thebuf;
 
   pbs_debug = getenv("PBSDEBUG");
-
-  tp = &chan->writebuf;
-  pb = tp->tdis_thebuf;
-  ct = tp->tdis_trailp - tp->tdis_thebuf;
 
   while ((i = write_ac_socket(chan->sock, pb, ct)) != (ssize_t)ct)
     {

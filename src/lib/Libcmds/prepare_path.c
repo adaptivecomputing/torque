@@ -147,6 +147,7 @@ int prepare_path(
 
   c = path_in;
 
+  // skip leading spaces
   while ((int)isspace(*c))
     c++;
 
@@ -179,7 +180,8 @@ int prepare_path(
 
     while (*c != '\0')
       {
-      if (!isgraph(*c))
+      // allow space in path
+      if ((!isgraph(*c)) && (*c != ' '))
         break;
 
       path_name[p_pos++] = *c;

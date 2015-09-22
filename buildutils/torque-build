@@ -235,8 +235,8 @@ if [ ${unit_tests} -ne 0 ]
 then
     make -j${parallel}
     chmod +x src/test/test_scripts/*
-    make check 2>&1 | tee log.txt
-    cat log.txt | ./parse_cov_results.py
+    make check 
+    make check  | ./parse_cov_results.py
 fi
 
 distdir="torque-${version}-${release_number}"
@@ -260,8 +260,15 @@ then
     mkdir -p buildutils/rpmbuild/SOURCES
     mkdir -p buildutils/rpmbuild/SPECS
     mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
-    cp buildutils/torque.adaptive.spec \
-        buildutils/rpmbuild/SPECS/torque.adaptive.spec
+    # get the distro
+    distro=$(buildutils/determine.distro -r)
+    if [ "${distro}" = EL7 ]; then
+      cp buildutils/torque.adaptive.spec.el7 \
+          buildutils/rpmbuild/SPECS/torque.adaptive.spec
+    else
+      cp buildutils/torque.adaptive.spec.el6 \
+          buildutils/rpmbuild/SPECS/torque.adaptive.spec
+    fi
 
     source_file=${distdir}.tar.gz
     if [ ! -s "${source_file}" ]

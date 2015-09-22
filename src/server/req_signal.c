@@ -399,8 +399,6 @@ void post_signal_req(
       log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    free(jobid);
-
     reply_ack(preq);
     }
 

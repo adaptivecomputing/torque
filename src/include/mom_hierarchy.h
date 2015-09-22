@@ -84,7 +84,10 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
+#include <string.h>
 #include <vector>
+#include <string>
 #include <netdb.h>
 #include "tcp.h" /* tcp_chan */
 
@@ -99,14 +102,36 @@
 
 
 /* the basic struct to hold the node communication information */
-typedef struct node_comm_t
+class node_comm_t
   {
+  public:
   time_t              mtime;        /* the last time that this connection was used/updated */
   int                 stream;       /* the stream to communicate over */
   short               bad;          /* indicates an error occurred with this communication */ 
   struct sockaddr_in  sock_addr;    /* information for the socket connection */
-  char               *name;         /* the node's hostname */
-  } node_comm_t;
+  std::string         name;         /* the node's hostname */
+
+  node_comm_t() : mtime(0), stream(-1), bad(0), name()
+    {
+    memset(&this->sock_addr, 0, sizeof(struct sockaddr_in));
+    }
+
+  node_comm_t(const node_comm_t &other) : mtime(other.mtime), stream(other.stream),
+                                          bad(other.bad), name(other.name)
+    {
+    memcpy(&this->sock_addr, &other.sock_addr, sizeof(struct sockaddr_in));
+    }
+
+  node_comm_t &operator =(const node_comm_t &other)
+    {
+    this->mtime = other.mtime;
+    this->stream = other.stream;
+    this->bad = other.bad;
+    this->name = other.name;
+    memcpy(&this->sock_addr, &other.sock_addr, sizeof(struct sockaddr_in));
+    return(*this);
+    }
+  };
 
 
 typedef std::vector<node_comm_t> mom_nodes;
@@ -123,7 +148,7 @@ typedef struct mom_hierarchy
   } mom_hierarchy_t;
 
 
-int add_network_entry(mom_hierarchy_t *,char *,struct addrinfo *,unsigned short,int,int);
+int add_network_entry(mom_hierarchy_t *,const char *,struct addrinfo *,unsigned short,int,int);
 mom_hierarchy_t *initialize_mom_hierarchy();
 node_comm_t *force_path_update(mom_hierarchy_t *);
 node_comm_t *update_current_path(mom_hierarchy_t *);

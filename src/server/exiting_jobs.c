@@ -102,6 +102,7 @@ void force_purge_work(job *pjob);
 
 std::vector<job_exiting_retry_info>  exiting_jobs_info;
 extern pthread_mutex_t              *exiting_jobs_info_mutex;
+extern bool                          exit_called;
 
 
 int record_job_as_exiting(
@@ -204,6 +205,9 @@ int get_next_retryable_jobid(
   job                    *pjob;
   time_t                  time_now = time(NULL);
   char                    log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (exit_called == true)
+    return(-1);
 
   pthread_mutex_lock(exiting_jobs_info_mutex);
 

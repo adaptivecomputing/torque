@@ -308,16 +308,23 @@ int init_scheduling_cycle(server_info *sinfo)
 
   if (cstat.sort_by[0].sort != NO_SORT)
     {
-    if (cstat.by_queue || cstat.round_robin)
+    if (cstat.strict_fifo)
       {
-      for (i = 0; i < sinfo -> num_queues; i++)
-        {
-        qinfo = sinfo -> queues[i];
-        qsort(qinfo -> jobs, qinfo -> sc.total, sizeof(job_info *), cmp_sort);
-        }
+      qsort(sinfo -> jobs, sinfo -> sc.total, sizeof(job_info *), fifo_sort);
       }
     else
-      qsort(sinfo -> jobs, sinfo -> sc.total, sizeof(job_info *), cmp_sort);
+      {
+      if (cstat.by_queue || cstat.round_robin)
+        {
+        for (i = 0; i < sinfo -> num_queues; i++)
+          {
+          qinfo = sinfo -> queues[i];
+          qsort(qinfo -> jobs, qinfo -> sc.total, sizeof(job_info *), cmp_sort);
+          }
+        }
+      else
+        qsort(sinfo -> jobs, sinfo -> sc.total, sizeof(job_info *), cmp_sort);
+      }
     }
 
   next_job(sinfo, INITIALIZE);
@@ -819,6 +826,35 @@ job_info *next_job(server_info *sinfo, int init)
             else if (cjobs[last_queue][last_job] -> can_not_run == 0)
               rjob = cjobs[last_queue][last_job];
             }
+          }
+        }
+      }
+    }
+  else if (cstat.strict_fifo)
+    {
+    if (init == INITIALIZE)
+      {
+      last_job = -1;
+      last_queue = 0;
+      }
+    else
+      {
+      last_job++;
+
+      if (sinfo->jobs[last_job] == NULL)
+        {
+        rjob = NULL;
+        }
+      else
+        {
+        while(sinfo->jobs[last_job] != NULL)
+          {
+          rjob = sinfo->jobs[last_job];
+          if (rjob->is_queued)
+            break;
+          
+          rjob = NULL;
+          last_job++;
           }
         }
       }

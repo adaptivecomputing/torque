@@ -258,6 +258,7 @@
 #define ATTR_dfltque     "default_queue"
 #define ATTR_dispsvrsuffix "display_job_server_suffix"
 #define ATTR_jobsuffixalias "job_suffix_alias"
+#define ATTR_usejobssubdirs "use_jobs_subdirs"
 #define ATTR_defnode     "default_node"
 #define ATTR_locsvrs     "location_servers"
 #define ATTR_logevents   "log_events"
@@ -356,8 +357,13 @@
 #define ATTR_NODE_acl              "acl"
 #define ATTR_NODE_requestid        "requestid"
 
-#define ATTR_copy_on_rerun         "copy_on_rerun"
-#define ATTR_job_exclusive_on_use   "job_exclusive_on_use"
+#define ATTR_copy_on_rerun             "copy_on_rerun"
+#define ATTR_job_exclusive_on_use      "job_exclusive_on_use"
+#define ATTR_disable_automatic_requeue "disable_automatic_requeue"
+#define ATTR_exitcodecanceledjob       "exit_code_canceled_job"
+#define ATTR_timeoutforjobdelete       "timeout_for_job_delete"
+#define ATTR_timeoutforjobrequeue      "timeout_for_job_requeue"
+#define ATTR_dontwritenodesfile        "dont_write_nodes_file"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

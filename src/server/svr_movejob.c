@@ -640,7 +640,8 @@ int get_job_script_path(
   std::string &script_path)
 
   {
-  script_path  = path_jobs;
+  // get the adjusted path to the script
+  script_path = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
 
   if (pjob->ji_arraystructid[0] != '\0')
     {

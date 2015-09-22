@@ -103,6 +103,7 @@
 #include <unistd.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <pthread.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -898,12 +899,7 @@ void translate_dependency_to_string(
         value += ":";
         value += pdjob->dc_child;
 
-        if (pdjob->dc_svr[0] != '\0')
-          {
-          value += "@";
-          value += pdjob->dc_svr;
-          }
-
+        // Don't write out the server as it can mess up high availability scenarios.
         }
       }
     }
@@ -1167,11 +1163,17 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
   const char   *tmp_ptr = NULL;
 
   time_t  time_now = time(NULL);
+#ifndef PBS_MOM
+  // get the adjusted path_jobs path
+  std::string   adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+#endif
 
 
 #ifdef PBS_MOM
@@ -1185,17 +1187,31 @@ int job_save(
 
   if (mom_port)
     {
+#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
+#else
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
+#endif
     }
   else
     {
+#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
+#else
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
+#endif
     }
 
   /* if ji_modified is set, ie an pbs_attribute changed, then update mtime */
@@ -1224,13 +1240,14 @@ int job_save(
     }
   else /* saveJobToXML failed */
     {
-    log_event(
-    PBSEVENT_ERROR | PBSEVENT_SECURITY,
-    PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
-    (char *)"call to saveJobToXML in job_save failed");
+    log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+      "call to saveJobToXML in job_save failed");
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
     return -1;
     }
+
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+
   return(PBSE_NONE);
   }  /* END job_save() */
 
@@ -1300,7 +1317,7 @@ int set_array_job_ids(
 
 int job_recov_xml(
 
-  char *filename,  /* I */   /* pathname to job save file */
+  const char *filename,  /* I */   /* pathname to job save file */
   job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
   char *log_buf,   /* O */   /* buffer to hold error message */
   size_t buf_len)  /* I */   /* len of the error buffer */
@@ -1353,7 +1370,7 @@ int job_recov_xml(
 
 int job_recov_binary(
 
-  char *filename,  /* I */   /* pathname to job save file */
+  const char *filename,  /* I */   /* pathname to job save file */
   job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
   char *log_buf,   /* O */   /* buffer to hold error message */
   size_t buf_len)  /* I */   /* len of the error buffer */
@@ -1394,7 +1411,7 @@ int job_recov_binary(
       filename);
     log_err(-1, __func__, log_buf);
 
-    if (job_qs_upgrade(pj, fds, filename, pj->ji_qs.qs_version) != 0)
+    if (job_qs_upgrade(pj, fds, (char *)filename, pj->ji_qs.qs_version) != 0)
       {
       snprintf(log_buf, buf_len, "unable to upgrade %s\n", filename);
       close(fds);
@@ -1405,7 +1422,19 @@ int job_recov_binary(
   /* Does file name match the internal name? */
   /* This detects ghost files */
 
-  pn = strrchr(filename, (int)'/') + 1;
+  // see if filename has a leading path
+  pn = strrchr((char *)filename, (int)'/');
+
+  if (pn == NULL)
+    {
+    // file name had no leading path so just point to beginning of string
+    pn = (char *)filename;
+    }
+  else
+    {
+    // file name had a leading path so skip over it
+    pn++;
+    }
 
 #ifndef PBS_MOM
   if (strncmp(pn, pj->ji_qs.ji_fileprefix, strlen(pj->ji_qs.ji_fileprefix)) != 0)
@@ -1484,13 +1513,15 @@ int job_recov_binary(
 
 job *job_recov(
 
-  char *filename) /* I */   /* pathname to job save file */
+  const char *filename) /* I */   /* pathname to job save file */
 
   {
   job  *pj;
-  char  namebuf[MAXPATHLEN];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc;
+#ifdef PBS_MOM
+  char namebuf[MAXPATHLEN];
+#endif
 
   pj = job_alloc(); /* allocate & initialize job structure space */
 
@@ -1501,14 +1532,23 @@ job *job_recov(
     return(NULL);
     }
 
-  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename); /* job directory path, filename */
   size_t logBufLen = sizeof(log_buf);
-
-  if ((rc = job_recov_xml(namebuf, &pj, log_buf, logBufLen)) && rc == PBSE_INVALID_SYNTAX)
+#ifdef PBS_MOM
+  // job directory path, filename
+  snprintf(namebuf, MAXPATHLEN, "%s%s", path_jobs, filename);
+  
+  if ((rc = job_recov_xml(namebuf, &pj, log_buf, logBufLen)) &&
+      (rc == PBSE_INVALID_SYNTAX))
     rc = job_recov_binary(namebuf, &pj, log_buf, logBufLen);
+#else
+  if ((rc = job_recov_xml(filename, &pj, log_buf, logBufLen)) &&
+      (rc == PBSE_INVALID_SYNTAX))
+    rc = job_recov_binary(filename, &pj, log_buf, logBufLen);
 
   if (rc == PBSE_NONE)
     rc = set_array_job_ids(&pj, log_buf, logBufLen);
+#endif
+
 
   if (rc != PBSE_NONE) 
     {

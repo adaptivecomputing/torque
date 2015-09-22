@@ -305,7 +305,7 @@ int socket_connect_unix(
 
 int socket_connect(
 
-  int         *local_socket,
+  int         &local_socket,
   char        *dest_addr,
   int          dest_addr_len,
   int          dest_port,
@@ -340,7 +340,7 @@ int socket_connect(
 
 int socket_connect_addr(
     
-  int              *socket,
+  int              &socket,
   struct sockaddr  *remote,
   size_t            remote_size,
   int               is_privileged,
@@ -350,7 +350,7 @@ int socket_connect_addr(
   int   cntr = 0;
   int   rc = PBSE_NONE;
   char  tmp_buf[LOCAL_LOG_BUF_SIZE+1];
-  int   local_socket = *socket;
+  int   local_socket = socket;
 
   while ((cntr < RES_PORT_RETRY) &&
          ((rc = connect(local_socket, remote, remote_size)) != 0))
@@ -438,7 +438,7 @@ int socket_connect_addr(
       break;
     }
 
-  *socket = local_socket;
+  socket = local_socket;
   
   if ((local_socket >= 0) &&
       (rc != PBSE_NONE))

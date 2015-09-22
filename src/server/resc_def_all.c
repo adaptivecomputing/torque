@@ -1005,6 +1005,10 @@ long count_proc(
   char *spec;
   char *spec_ptr;
 
+  // if we get a null param spec, just return 0 procs
+  if (param_spec == NULL)
+    return(0);
+
   if ((spec = strdup(param_spec)) == NULL)
     return(-1);
 
@@ -1402,7 +1406,6 @@ int decode_procct(
   }
 
 
-
 int encode_procct(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute */
@@ -1413,6 +1416,32 @@ int encode_procct(
   int             perm)   /* only used for resources */
 
   {
-  return (0);
+  size_t   ct;
+  char   cvnbuf[32];
+  svrattrl *pal;
+
+  if (!attr)
+    return (-1);
+
+  if (!(attr->at_flags & ATR_VFLAG_SET))
+    return (0);
+
+  sprintf(cvnbuf, "%ld", attr->at_val.at_long);
+
+  ct = strlen(cvnbuf);
+
+  pal = attrlist_create(atname, rsname, ct + 1);
+
+  if (pal == (svrattrl *)0)
+    return (-1);
+
+  memcpy(pal->al_value, cvnbuf, ct);
+
+  pal->al_flags = attr->at_flags;
+
+  append_link(phead, &pal->al_link, pal);
+
+  return (1);
   }
+
 

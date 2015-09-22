@@ -25,11 +25,7 @@ mom_server *mom_server_find_empty_slot(void);
 
 int mom_server_add(const char *value);
 
-void mom_server_stream_error(int socket, char *name, const char *id, const char *message);
-
 int mom_server_flush_io(struct tcp_chan *chan, const char *id, const char *message);
-
-int is_compose(struct tcp_chan *chan, char *server_name, int command);
 
 void gen_size(const char *name, char **BPtr, int *BSpace);
 
@@ -76,8 +72,6 @@ void generate_server_status(std::vector<std::string>& status);
 #ifdef NVML_API
 void generate_server_gpustatus_nvml(std::vector<std::string>& gpu_status);
 #endif /* NVML_API */
-
-int write_update_header(struct tcp_chan *chan, const char *id, char *name);
 
 int write_my_server_status(struct tcp_chan *chan, const char *id, char *status_strings, void *dest, int mode);
 
