@@ -110,6 +110,7 @@ class Core
     void unit_test_init(); // Only for unit tests
     void append_indices(std::vector<int> core_indices, int which) const;
     bool reserve_processing_unit(int index);
+    int  get_thread_index(int thread_indice) const;
   };
 
 
@@ -181,8 +182,10 @@ class Chip
     int  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r) const;
+    void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs);
+    bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_place, allocation &a);
@@ -206,8 +209,12 @@ class Chip
     void aggregate_allocations(vector<allocation> &master_list);
     bool reserve_core(int core_index, allocation &a);
     bool reserve_chip_core(int core_index, allocation &a);
+    bool getContiguousThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousCoreVector(std::vector<int> &slots, int execution_slots_per_task);
     bool reserve_thread(int core_index, allocation &a);
+    bool reserve_chip_thread(int core_index, allocation &a);
+    bool reserve_place_thread(int core_index, allocation &a);
+    bool reserve_chip_place_thread(int core_index, allocation &a);
   };
 
 
@@ -255,7 +262,8 @@ class Socket
     int  how_many_tasks_fit(const req &r, int place_type) const;
     void place_all_execution_slots(req &r, allocation &task_alloc);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
-    bool spread_place_cores(req &r, allocation &task_alloc, int chips, int &cores, int &lprocs);
+    bool spread_place_cores(req &r, allocation &task_alloc, int &cores, int &lprocs);
+    bool spread_place_theads(req &r, allocation &task_alloc, int &cores, int &lprocs);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;

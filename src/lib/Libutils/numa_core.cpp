@@ -53,6 +53,29 @@ int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
   }
 
 
+/* 
+ * get_thread_index
+ * 
+ * return the value of the core cpu_indices at the given index
+ *
+ * @param indice  - The index to the location in the cpu_indices vector
+ *
+ */
+
+ int Core::get_thread_index(
+
+   int indice) const
+
+  {
+  int thread_index;
+
+  if (indice >= this->indices.size())
+    return(-1);
+
+  thread_index = this->indices[indice];
+  return(thread_index);
+  }
+
 
 /*
  * mark_as_busy()

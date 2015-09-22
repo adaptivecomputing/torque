@@ -615,43 +615,37 @@ int Machine::spread_place_cores(
 
   {
   int   rc;
-  int   cores_per_task  = r.getPlaceCores();
+  int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
+  int   tasks_placed = 0;
 
-  if (cores_per_task > this->totalCores)
+  if (pu_per_task > this->totalCores)
     return(PBSE_IVALREQ);
 
-  /* Calculate how many numa nodes we need */
-  int chips_needed;
-  int cores_per_chip; /* cores per numa node */
-  int remainder;
-  int tasks_placed = 0;
-
-  cores_per_chip = this->getTotalCores()/this->getTotalChips();
-  remainder    = cores_per_task % cores_per_chip;
-  chips_needed = cores_per_task/cores_per_chip;
-  if (remainder != 0)
-    chips_needed++;
+  if (master.place_type == exclusive_core)
+    pu_per_task = r.getPlaceCores();
+  else if (master.place_type == exclusive_thread)
+    pu_per_task = r.getPlaceThreads();
 
   for (unsigned int i = 0; i < tasks_for_node; i++)
     {
-    int cores_per_task_remaining;
+    int pu_per_task_remaining;
     int lprocs_per_task_remaining;
     bool partial_place = false;
     allocation task_alloc(master.jobid.c_str());
     task_alloc.set_place_type(r.getPlacementType());
 
-    cores_per_task_remaining = cores_per_task;
+    pu_per_task_remaining = pu_per_task;
     lprocs_per_task_remaining = lprocs_per_task;
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
       {
       bool fits = false;
 
-      fits = this->sockets[j].spread_place_cores(r, task_alloc, chips_needed, cores_per_task_remaining, lprocs_per_task_remaining);
+      fits = this->sockets[j].spread_place_cores(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
       if (fits == true)
         {
-        if ((cores_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
+        if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
           {
           partial_place = true;
           break;
@@ -813,7 +807,8 @@ int Machine::place_job(
       if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
-    else if (a.place_type == exclusive_core)
+    else if ((a.place_type == exclusive_core) ||
+             (a.place_type == exclusive_thread))
       {
       if ((rc = spread_place_cores(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);

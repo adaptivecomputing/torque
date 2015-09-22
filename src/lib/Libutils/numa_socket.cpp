@@ -403,8 +403,7 @@ bool Socket::spread_place_cores(
 
   req         &r,
   allocation  &task_alloc,
-  int         chips_needed,
-  int         &cores_per_task_remaining,
+  int         &pu_per_task_remaining,
   int         &lprocs_per_task_remaining)
 
   {
@@ -415,10 +414,13 @@ bool Socket::spread_place_cores(
     {
     bool fits = false;
 
-    fits = this->chips[i].spread_place_cores(r, task_alloc, cores_per_task_remaining, lprocs_per_task_remaining);
+    if (task_alloc.place_type == exclusive_core)
+      fits = this->chips[i].spread_place_cores(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
+    else if (task_alloc.place_type == exclusive_thread)
+      fits = this->chips[i].spread_place_threads(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
     if (fits == true)
       {
-      if ((cores_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
+      if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
         {
         placed = true;
         break;

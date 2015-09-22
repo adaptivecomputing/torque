@@ -2405,6 +2405,12 @@ int req::getPlaceCores() const
   return(this->cores);
   }
 
+int req::getPlaceThreads() const
+  {
+  return(this->threads);
+  }
+
+
 int req::get_cores() const
 
   {

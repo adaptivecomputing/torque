@@ -973,6 +973,99 @@ int Chip::how_many_tasks_fit(
   } // END how_many_tasks_fit()
 
 /*
+ * getContiguousThreadVector
+ *
+ * get a vector of core indices for placing cores
+ * from a numanode. Return true if it is contiguous.
+ * false if it is not.
+ *
+ * @param slots  - A vector of integers containing the indices
+ *                 of the core candidates for allocation.
+ */
+
+bool Chip::getContiguousThreadVector(
+
+  std::vector<int> &slots,
+  int               execution_slots_per_task)
+
+  {
+  unsigned int j = 0;
+  int i = execution_slots_per_task;
+  bool fits = false;
+
+  /* First try to get contiguous cores */
+  do
+    {
+    if (this->cores[j].is_free() == true)
+      {
+      for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+        {
+        int thread_index;
+
+        thread_index = this->cores[j].get_thread_index(x);
+        if (thread_index == -1)
+          {
+          fits = false;
+          return(fits);
+          }
+
+        slots.push_back(thread_index);
+        i--;
+        if ((i ==0) || (j == this->cores.size()))
+          {
+          /* We fit if all of the execution slots have been filled
+             or it we have used all the chip */
+          fits = true;
+          break;
+          }
+        }
+      j++;
+      }
+    else
+      {
+      i = execution_slots_per_task;
+      j++;
+      slots.clear();
+      }
+    }while((i != 0) && (j < this->cores.size()));
+
+  if (fits == false)
+    {
+    /* Can't get contiguous cores. Just get them where you can find them */
+    // Get the core indices we will use
+    j = 0;
+    for (int i = 0; i < execution_slots_per_task; i++)
+      {
+      while (j < this->cores.size())
+        {
+        if (this->cores[j].is_free() == true)
+          {
+          for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+            {
+            int thread_index;
+
+            thread_index = this->cores[j].get_thread_index(x);
+            if (thread_index == -1)
+              {
+              fits = false;
+              return(fits);
+              }
+
+            slots.push_back(thread_index);
+            j++;
+            }
+          break;
+          }
+        else
+          j++;
+        }
+      }
+    }
+  return(fits);
+  }
+
+
+/*
  * getContiguousCoreVector
  *
  * get a vector of core indices for placing cores
@@ -1213,6 +1306,52 @@ bool Chip::reserve_core(
   } // END reserve_core()
 
 
+bool Chip::reserve_place_thread(
+
+  int         thread_index,
+  allocation &a)
+
+  {
+
+  for (unsigned int i = 0; i < this->cores.size(); i++)
+    {
+     if (this->cores[i].reserve_processing_unit(thread_index) == true)
+       {
+       a.threads++;
+       a.cpus++;
+       a.cpu_indices.push_back(thread_index);
+       this->availableThreads--;
+       return(true);
+       }
+    }
+  return(false);
+  }
+
+
+bool Chip::reserve_chip_place_thread(
+
+  int         thread_index,
+  allocation &a)
+
+  {
+  int core_index;
+
+  for (unsigned int i = 0; i < this->cores.size(); i++)
+    {
+    if (this->cores[i].reserve_processing_unit(thread_index) == true)
+      {
+      a.threads++;
+      a.cpus++;
+      a.cpu_place_indices.push_back(thread_index);
+      this->availableThreads--;
+      return(true);
+      }
+    }
+  return(false);
+  }
+
+
+
 
 /*
  * reserve_thread()
@@ -1243,6 +1382,187 @@ bool Chip::reserve_thread(
   return(false);
   } // END reserve_thread()
 
+/*
+ * reserve_chip_thread()
+ *
+ * Reserves a thread inside core with index core_index if possible
+ * but does not add the index to cpu_indices to be added to the cpuset.
+ * @param core_index - the index of the core whose thread we wish to reserve
+ * @param a - the allocation where we should record our reservation
+ * @return true if a thread was reserved, false otherwise.
+ */
+
+bool Chip::reserve_chip_thread(
+
+  int         core_index,
+  allocation &a)
+
+  {
+  int index = this->cores[core_index].get_open_processing_unit();
+
+  if (index >= 0)
+    {
+    a.threads++;
+    a.cpus++;
+    a.cpu_place_indices.push_back(index);
+    this->availableThreads--;
+    return(true);
+    }
+
+  return(false);
+  } // END reserve_thread()
+
+
+void Chip::calculateStepCounts(
+
+  const int lprocs_per_task,
+  const int processing_units_per_task,
+  int &step, 
+  int &step_remainder, 
+  int &place_count, 
+  int &place_count_remaining)
+
+  {
+   if (lprocs_per_task == 1)
+    {
+    step = (processing_units_per_task/2) + 1;
+    step_remainder = 0;
+    }
+  else
+    {
+    step = processing_units_per_task/lprocs_per_task; 
+    step_remainder = processing_units_per_task % lprocs_per_task;
+    }
+
+  /* if step == 1 then we are placing cores in over half of the available cores 
+     Some cores will have to be adjacent to each other so we need to calculate
+     how many in a row to place together before we leave an empty slot */
+  if (step == 1)
+    {
+    place_count = (processing_units_per_task/2) - step_remainder + (processing_units_per_task % 2);
+    place_count_remaining = place_count;
+    }
+
+ }
+
+
+/* spread_place_threads
+ *
+ * allocate contiguous threads and then only allocate
+ * the lprocs_per_task_remaining to the cpuset.
+ *
+ * @param r  - The req to be filled
+ * @param task_alloc - the allocation which will be filled
+ * @param threads_per_task_remaining - the number of threads to allocate per task
+ * @param lprocs_per_task_remaining - The number of logical processes to allocate the the cpuset
+ *
+ */
+
+bool Chip::spread_place_threads(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         &threads_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+
+  {
+  bool placed = false;
+  bool fits = false;
+  /* with place=core=x we all reserve more cores than we pin to the cpuset */
+  /* step gives a rough estimate of how far apart the procs will be
+     that get put in the cpuset */
+  int step; 
+  int step_remainder;
+  int place_count = 0;
+  int place_count_remaining = 0;
+  int avail_threads_per_chip = this->getAvailableThreads();
+  allocation from_this_chip(task_alloc.jobid.c_str());
+  std::vector<int> slots;
+
+  slots.clear();
+  calculateStepCounts(lprocs_per_task_remaining, threads_per_task_remaining, step, step_remainder, 
+                      place_count, place_count_remaining); 
+
+  if ((this->chipIsAvailable() == false) || (avail_threads_per_chip < step))
+    {
+    /* If there are not enough available cores to make the spread there is
+       no point in putting any of the task here */
+    placed = false;
+    return(placed); 
+    }
+
+  fits = this->getContiguousThreadVector(slots, threads_per_task_remaining);
+
+  if (fits == true)
+    {
+    int step_count = step;
+
+
+    /* cores_placed and cores_to_fill are used because we only want to make sure we 
+       fill the number of cores for this task */
+
+    for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
+      {
+      if ((step >= 2) && (lprocs_per_task_remaining != 0))
+        {
+        if (step_count == step)
+          {
+          this->reserve_place_thread(*it, from_this_chip);
+          step_count = 1;
+          threads_per_task_remaining--;
+          lprocs_per_task_remaining--;
+          }
+        else
+          {
+          this->reserve_chip_place_thread(*it, from_this_chip);
+          threads_per_task_remaining--;
+          step_count++;
+          }
+        }
+      else
+        {
+        if (place_count_remaining > 0)
+          {
+          this->reserve_place_thread(*it, from_this_chip);
+          step_count = 1;
+          threads_per_task_remaining--;
+          lprocs_per_task_remaining--;
+          place_count_remaining--;
+          if (step_remainder == 0)
+            place_count_remaining = place_count;
+          }
+         else
+          {
+          this->reserve_chip_place_thread(*it, from_this_chip);
+          threads_per_task_remaining--;
+          place_count_remaining = place_count;
+          step_remainder--;
+          }
+        }
+      }
+
+    from_this_chip.mem_indices.push_back(this->id);
+    this->aggregate_allocation(from_this_chip);
+    task_alloc.add_allocation(from_this_chip);
+    placed = true;
+    }
+
+
+  return(placed);
+  }
+
+
+/* spread_place_cores
+ *
+ * allocate contiguous core and then only allocate
+ * the lprocs_per_task_remaining to the cpuset.
+ *
+ * @param r  - The req to be filled
+ * @param task_alloc - the allocation which will be filled
+ * @param cores_per_task_remaining - the number of cores to allocate per task
+ * @param lprocs_per_task_remaining - The number of logical processes to allocate the the cpuset
+ *
+ */
 
 bool Chip::spread_place_cores(
 
@@ -1259,32 +1579,15 @@ bool Chip::spread_place_cores(
      that get put in the cpuset */
   int step; 
   int step_remainder;
-  int place_count;
-  int place_count_remaining;
+  int place_count = 0;
+  int place_count_remaining = 0;
   int avail_cores_per_chip = this->getAvailableCores();
   allocation from_this_chip(task_alloc.jobid.c_str());
   std::vector<int> slots;
 
-  if (lprocs_per_task_remaining == 1)
-    {
-    step = (cores_per_task_remaining/2) + 1;
-    step_remainder = 0;
-    }
-  else
-    {
-    step = cores_per_task_remaining/lprocs_per_task_remaining; 
-    step_remainder = cores_per_task_remaining % lprocs_per_task_remaining;
-    }
-
-  /* if step == 1 then we are placing cores in over half of the available cores 
-     Some cores will have to be adjacent to each other so we need to calculate
-     how many in a row to place together before we leave an empty slot */
-  if (step == 1)
-    {
-    place_count = (cores_per_task_remaining/2) - step_remainder + (cores_per_task_remaining % 2);
-    place_count_remaining = place_count;
-    }
-
+  slots.clear();
+  calculateStepCounts(lprocs_per_task_remaining, cores_per_task_remaining, step, step_remainder, 
+                      place_count, place_count_remaining); 
 
   if ((this->chipIsAvailable() == false) || (avail_cores_per_chip < step))
     {

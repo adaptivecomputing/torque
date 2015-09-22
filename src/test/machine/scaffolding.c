@@ -89,7 +89,6 @@ bool Socket::spread_place_cores(
 
   req         &r,
   allocation  &task_alloc,
-  int         chips_needed,
   int         &cores_per_task_remaining,
   int         &lprocs_per_task_remaining)
  
@@ -203,6 +202,12 @@ int req::getPlaceCores() const
   {
   return(my_core_count);
   }
+
+int req::getPlaceThreads() const
+  {
+  return(my_core_count);
+  }
+
 
 complete_req::complete_req() {}
 
