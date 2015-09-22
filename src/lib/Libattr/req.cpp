@@ -304,9 +304,10 @@ int req::set_place_value(
     {
     int count;
 
-    rc = parse_positive_integer(numeric_value, count);
-    if (rc == PBSE_NONE)
-      this->threads = count;
+    if (numeric_value != NULL)
+      rc = parse_positive_integer(numeric_value, this->threads);
+    else
+      this->threads = 1;
       
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = use_threads;

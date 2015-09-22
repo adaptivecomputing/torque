@@ -128,7 +128,10 @@ START_TEST(test_set_place_type)
   a.set_place_type(place_core);
   fail_unless(a.place_type == exclusive_core);
 
-  a.set_place_type("bobo");
+  a.set_place_type(place_thread);
+  fail_unless(a.place_type == exclusive_thread);
+
+ a.set_place_type("bobo");
   fail_unless(a.place_type == exclusive_none);
 
   a.set_place_type("socket=2");
@@ -136,6 +139,12 @@ START_TEST(test_set_place_type)
 
   a.set_place_type("numanode=2");
   fail_unless(a.place_type == exclusive_chip);
+
+  a.set_place_type("core=2");
+  fail_unless(a.place_type == exclusive_core);
+
+  a.set_place_type("thread=2");
+  fail_unless(a.place_type == exclusive_thread);
   }
 END_TEST
 

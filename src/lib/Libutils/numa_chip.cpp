@@ -1258,14 +1258,33 @@ bool Chip::spread_place_cores(
   /* step gives a rough estimate of how far apart the procs will be
      that get put in the cpuset */
   int step; 
+  int step_remainder;
+  int place_count;
+  int place_count_remaining;
   int avail_cores_per_chip = this->getAvailableCores();
   allocation from_this_chip(task_alloc.jobid.c_str());
   std::vector<int> slots;
 
   if (lprocs_per_task_remaining == 1)
+    {
     step = (cores_per_task_remaining/2) + 1;
+    step_remainder = 0;
+    }
   else
+    {
     step = cores_per_task_remaining/lprocs_per_task_remaining; 
+    step_remainder = cores_per_task_remaining % lprocs_per_task_remaining;
+    }
+
+  /* if step == 1 then we are placing cores in over half of the available cores 
+     Some cores will have to be adjacent to each other so we need to calculate
+     how many in a row to place together before we leave an empty slot */
+  if (step == 1)
+    {
+    place_count = (cores_per_task_remaining/2) - step_remainder + (cores_per_task_remaining % 2);
+    place_count_remaining = place_count;
+    }
+
 
   if ((this->chipIsAvailable() == false) || (avail_cores_per_chip < step))
     {
@@ -1288,18 +1307,41 @@ bool Chip::spread_place_cores(
 
     for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
       {
-      if (step_count == step)
+      if (step >= 2)
         {
-        this->reserve_core(*it, from_this_chip);
-        step_count = 1;
-        cores_per_task_remaining--;
-        lprocs_per_task_remaining--;
+        if (step_count == step)
+          {
+          this->reserve_core(*it, from_this_chip);
+          step_count = 1;
+          cores_per_task_remaining--;
+          lprocs_per_task_remaining--;
+          }
+        else
+          {
+          this->reserve_chip_core(*it, from_this_chip);
+          cores_per_task_remaining--;
+          step_count++;
+          }
         }
       else
         {
-        this->reserve_chip_core(*it, from_this_chip);
-        cores_per_task_remaining--;
-        step_count++;
+        if (place_count_remaining > 0)
+          {
+          this->reserve_core(*it, from_this_chip);
+          step_count = 1;
+          cores_per_task_remaining--;
+          lprocs_per_task_remaining--;
+          place_count_remaining--;
+          if (step_remainder == 0)
+            place_count_remaining = place_count;
+          }
+         else
+          {
+          this->reserve_chip_core(*it, from_this_chip);
+          cores_per_task_remaining--;
+          place_count_remaining = place_count;
+          step_remainder--;
+          }
         }
       }
 

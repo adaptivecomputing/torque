@@ -15,6 +15,7 @@ extern int called_place;
 extern int oscillate;
 extern int called_store_pci;
 extern int called_spread_place;
+extern int called_spread_place_cores;
 extern int place_amount;
 extern int json_chip;
 extern int placed_all;
@@ -32,6 +33,23 @@ START_TEST(test_place_all_execution_slots)
   placed_all = 0;
   s.place_all_execution_slots(r, a);
   fail_unless(placed_all == 2);
+  }
+END_TEST
+
+START_TEST(test_spread_place_cores)
+  {
+  Socket s;
+  req        r;
+  allocation a;
+  int        cores_remaining = 2;
+  int        lprocs_remaining = 2;
+  s.addChip();
+  s.addChip();
+
+  called_spread_place_cores = 0;
+  fail_unless(s.spread_place_cores(r, a, 5, cores_remaining, lprocs_remaining) == true);
+  fail_unless(called_spread_place_cores == 2);
+  
   }
 END_TEST
 
@@ -333,6 +351,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
   tcase_add_test(tc_core, test_store_pci_device_appropriately);
+  tcase_add_test(tc_core, test_spread_place_cores);
   tcase_add_test(tc_core, test_spread_place);
   suite_add_tcase(s, tc_core);
   

@@ -13,6 +13,7 @@ int placed;
 int called_place;
 int called_store_pci;
 int called_spread_place;
+int called_spread_place_cores;
 bool oscillate = false;
 bool avail_oscillate = false;
 bool make_socket_exclusive = true;
@@ -191,6 +192,8 @@ int Chip::how_many_tasks_fit(req const &r, int place_type) const
   return(tasks);
   }
 
+
+
 int Chip::place_task(req &r, allocation &a, int to_place, const char *hostname)
 
   {
@@ -252,6 +255,9 @@ bool Chip::spread_place_cores(
   int         &lprocs_per_task_remaining)
 
   {
+  cores_per_task_remaining--;
+  lprocs_per_task_remaining--;
+  called_spread_place_cores++;
   return(true);
   }
 

@@ -42,6 +42,150 @@ START_TEST(test_place_all_execution_slots)
 END_TEST
 
 
+START_TEST(test_spread_place_cores)
+  {
+  const char        *jobid = "1.napali";
+  req                r;
+  std::stringstream  out;
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  int                lprocs_remaining = 1;
+  int                cores_remaining = 3;
+  a.place_type = exclusive_core;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  out.str("");
+  c.displayAsJson(out, true);
+  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+
+  fail_unless(c.reserve_core(0,a) == false);
+  fail_unless(c.reserve_core(1,a) == false);
+  fail_unless(c.reserve_core(2,a) == false);
+
+  fail_unless(a.cpu_indices.size() == 1);
+  fail_unless(a.cpu_indices[0] == 1);
+  fail_unless(a.cpu_place_indices.size() == 2);
+  fail_unless(a.cpu_place_indices[0] == 0);
+  fail_unless(a.cpu_place_indices[1] == 2);
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 3;
+  cores_remaining = 5;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+
+  fail_unless(a.cpu_indices.size() == 3);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 2);
+  fail_unless(a.cpu_indices[2] == 4);
+  fail_unless(a.cpu_place_indices.size() == 2);
+  fail_unless(a.cpu_place_indices[0] == 1);
+  fail_unless(a.cpu_place_indices[1] == 3);
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 4;
+  cores_remaining = 5;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+
+  fail_unless(a.cpu_indices.size() == 4);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 1);
+  fail_unless(a.cpu_indices[2] == 3);
+  fail_unless(a.cpu_indices[3] == 4);
+  fail_unless(a.cpu_place_indices.size() == 1);
+  fail_unless(a.cpu_place_indices[0] == 2);
+
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 2;
+  cores_remaining = 4;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+
+  fail_unless(a.cpu_indices.size() == 2);
+  fail_unless(a.cpu_indices[0] == 1);
+  fail_unless(a.cpu_indices[1] == 3);
+  fail_unless(a.cpu_place_indices.size() == 2);
+  fail_unless(a.cpu_place_indices[0] == 0);
+  fail_unless(a.cpu_place_indices[1] == 2);
+
+  fail_unless(c.reserve_core(0,a) == false);
+  fail_unless(c.reserve_core(1,a) == false);
+  fail_unless(c.reserve_core(2,a) == false);
+  fail_unless(c.reserve_core(3,a) == false);
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 5;
+  cores_remaining = 8;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+
+  fail_unless(a.cpu_indices.size() == 5);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 2);
+  fail_unless(a.cpu_indices[2] == 4);
+  fail_unless(a.cpu_indices[3] == 6);
+  fail_unless(a.cpu_indices[4] == 7);
+  fail_unless(a.cpu_place_indices.size() == 3);
+  fail_unless(a.cpu_place_indices[0] == 1);
+  fail_unless(a.cpu_place_indices[1] == 3);
+  fail_unless(a.cpu_place_indices[2] == 5);
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 7;
+  cores_remaining = 8;
+
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+
+  fail_unless(a.cpu_indices.size() == 7);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 1);
+  fail_unless(a.cpu_indices[2] == 2);
+  fail_unless(a.cpu_indices[3] == 4);
+  fail_unless(a.cpu_indices[4] == 5);
+  fail_unless(a.cpu_indices[5] == 6);
+  fail_unless(a.cpu_indices[6] == 7);
+  fail_unless(a.cpu_place_indices.size() == 1);
+  fail_unless(a.cpu_place_indices[0] == 3);
+
+  c.free_task(jobid);
+  a.cpu_indices.clear();
+  a.cpu_place_indices.clear();
+
+  lprocs_remaining = 7;
+  cores_remaining = 8;
+  c.setChipAvailable(false);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == false);
+ }
+END_TEST
+
+
+
 START_TEST(test_spread_place)
   {
   const char        *jobid = "1.napali";
@@ -643,6 +787,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
   tcase_add_test(tc_core, test_reserve_accelerators);
+  tcase_add_test(tc_core, test_spread_place_cores);
   tcase_add_test(tc_core, test_spread_place);
   suite_add_tcase(s, tc_core);
   

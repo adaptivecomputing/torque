@@ -216,6 +216,8 @@ void allocation::set_place_type(
     this->place_type = exclusive_chip;
   else if (placement_str.find(place_core) == 0)
     this->place_type = exclusive_core;
+  else if (placement_str.find(place_thread) == 0)
+    this->place_type = exclusive_thread;
   else
     this->place_type = exclusive_none;
   } // END set_place_type()

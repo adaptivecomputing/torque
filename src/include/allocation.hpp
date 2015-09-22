@@ -92,6 +92,7 @@ extern const int exclusive_node;
 extern const int exclusive_socket;
 extern const int exclusive_chip;
 extern const int exclusive_core;
+extern const int exclusive_thread;
 extern const int exclusive_none;
 
 // forward declare req

@@ -29,6 +29,7 @@ const int exclusive_socket = 2;
 const int exclusive_node = 1;
 const int exclusive_chip = 3;
 const int exclusive_core = 4;
+const int exclusive_thread = 4;
 bool socket_fit;
 bool partially_placed;
 bool spreaded = true;
