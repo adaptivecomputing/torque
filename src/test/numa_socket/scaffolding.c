@@ -14,6 +14,7 @@ int called_place;
 int called_store_pci;
 int called_spread_place;
 int called_spread_place_cores;
+int called_spread_place_threads;
 bool oscillate = false;
 bool avail_oscillate = false;
 bool make_socket_exclusive = true;
@@ -21,9 +22,19 @@ int place_amount = 1;
 int json_chip;
 int placed_all;
 std::string my_placement_type;
-const char *place_socket = "socket";
 
+const char *place_node = "node";
+const char *place_socket = "socket";
+const char *place_numa_node = "numanode";
+const char *place_core = "core";
+const char *place_thread = "thread";
+
+const int exclusive_none = 0;
+const int exclusive_node = 1;
 const int exclusive_socket = 2;
+const int exclusive_chip = 3;
+const int exclusive_core = 4;
+const int exclusive_thread = 5;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -102,6 +113,7 @@ void Chip::displayAsJson(
 
   {
   }
+
 
 bool Chip::spread_place(
 
@@ -246,6 +258,39 @@ std::string req::getPlacementType() const
   }
 
 allocation::allocation() {}
+
+void allocation::set_place_type(
+
+  const std::string &placement_str)
+
+  {
+  if (placement_str == place_node)
+    this->place_type = exclusive_node;
+  else if (placement_str.find(place_socket) == 0)
+    this->place_type = exclusive_socket;
+  else if (placement_str.find(place_numa_node) == 0)
+    this->place_type = exclusive_chip;
+  else if (placement_str.find(place_core) == 0)
+    this->place_type = exclusive_core;
+  else if (placement_str.find(place_thread) == 0)
+    this->place_type = exclusive_thread;
+  else
+    this->place_type = exclusive_none;
+  } // END set_place_type()
+  
+bool Chip::spread_place_threads(
+
+  req         &r,
+  allocation  &task_alloc,
+  int         &cores_per_task_remaining,
+  int         &lprocs_per_task_remaining)
+
+  {
+  cores_per_task_remaining--;
+  lprocs_per_task_remaining--;
+  called_spread_place_threads++;
+  return(true);
+  }
 
 bool Chip::spread_place_cores(
 
