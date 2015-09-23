@@ -672,6 +672,7 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
 int trq_cg_add_process_to_cgroup_accts(pid_t job_pid ) 
   {
   return(PBSE_NONE);
@@ -773,7 +774,7 @@ int trq_cg_set_resident_memory_limit(
   {
   return(PBSE_NONE);
   }
-
+#endif
 
 
 int is_whitespace(
