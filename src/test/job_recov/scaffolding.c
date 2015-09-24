@@ -45,74 +45,38 @@ threadpool_t    *task_pool;
 
 completed_jobs_map_class completed_jobs_map;
 
+int aborted;
+
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
-  fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 int save_attr(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds, char *buf, size_t *buf_remaining, size_t buf_size)
   {
-  fprintf(stderr, "The call to save_attr needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   {
-  fprintf(stderr, "The call to write_nonblocking_socket needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 job_array *get_array(char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int job_qs_upgrade(job *pj, int fds, char *path, int version)
   {
-  fprintf(stderr, "The call to job_qs_upgrade needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
-/*
-int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_attribute *pattr, int limit, int unknown, int do_actions)
-  {
-  fprintf(stderr, "The call to recov_attr needs to be mocked!!\n");
-  exit(1);
-  }
-
-int job_abt(struct job **pjobp, const char *text)
-  {
-  fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
-  exit(1);
-  }
-
-void job_free(job *pj, int use_recycle)
-  {
-  fprintf(stderr, "The call to job_free needs to be mocked!!\n");
-  exit(1);
-  }
-
-job *job_alloc(void)
-  {
-  fprintf(stderr, "The call to job_alloc needs to be mocked!!\n");
-  exit(1);
-  }
- 
- int save_struct(char *pobj, unsigned int objsize, int fds, char *buf_ptr, size_t *space_remaining, size_t buf_size)
-  {
-  fprintf(stderr, "The call to save_struct needs to be mocked!!\n");
-  exit(1);
-  }
-
-*/
 
 void array_get_parent_id(char *job_id, char *parent_id)
   {
-  fprintf(stderr, "The call to array_get_parent_id needs to be mocked!!\n");
-  exit(1);
+  strcpy(parent_id, "4[].napali");
   }
 
 int lock_ss()
@@ -175,20 +139,17 @@ mutex_mgr::~mutex_mgr() {}
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
   {
-  fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 char *get_variable(job *pjob, const char *variable)
   {
-  fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int safe_strncat(
