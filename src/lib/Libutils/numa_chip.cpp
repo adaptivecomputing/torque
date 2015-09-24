@@ -1425,6 +1425,14 @@ void Chip::calculateStepCounts(
   int &place_count_remaining)
 
   {
+   if (lprocs_per_task == 0)
+     {
+     step = 0;
+     step_remainder = processing_units_per_task;
+     place_count = 0;
+     return;
+     }
+
    if (lprocs_per_task == 1)
     {
     step = (processing_units_per_task/2) + 1;
