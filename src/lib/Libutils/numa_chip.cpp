@@ -1616,7 +1616,11 @@ bool Chip::spread_place_cores(
 
   if (fits == true)
     {
-    int step_count = 1;
+    int step_count = step;
+
+    if (lprocs_per_task_remaining == 1)
+      step_count = 1;
+
 
     /* cores_placed and cores_to_fill are used because we only want to make sure we 
        fill the number of cores for this task */
