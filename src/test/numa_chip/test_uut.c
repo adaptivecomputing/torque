@@ -115,11 +115,11 @@ START_TEST(test_spread_place_threads)
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 2);
-  fail_unless(a.cpu_indices[0] == 1);
-  fail_unless(a.cpu_indices[1] == 3);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 2);
   fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 0);
-  fail_unless(a.cpu_place_indices[1] == 2);
+  fail_unless(a.cpu_place_indices[0] == 1);
+  fail_unless(a.cpu_place_indices[1] == 3);
 
   fail_unless(c.reserve_core(0,a) == false);
   fail_unless(c.reserve_core(1,a) == false);
@@ -259,11 +259,11 @@ START_TEST(test_spread_place_cores)
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 2);
-  fail_unless(a.cpu_indices[0] == 1);
-  fail_unless(a.cpu_indices[1] == 3);
+  fail_unless(a.cpu_indices[0] == 0);
+  fail_unless(a.cpu_indices[1] == 2);
   fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 0);
-  fail_unless(a.cpu_place_indices[1] == 2);
+  fail_unless(a.cpu_place_indices[0] == 1);
+  fail_unless(a.cpu_place_indices[1] == 3);
 
   fail_unless(c.reserve_core(0,a) == false);
   fail_unless(c.reserve_core(1,a) == false);
