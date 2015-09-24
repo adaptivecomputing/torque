@@ -25,6 +25,7 @@ Core::Core() : id(-1), totalThreads(0), free(true), indices(), is_index_busy(),
   {
   memset(core_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(core_nodeset_string, 0, MAX_NODESET_SIZE);
+  indices.clear();
   }
 
 Core::~Core()

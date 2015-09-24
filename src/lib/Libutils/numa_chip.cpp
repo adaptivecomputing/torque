@@ -1011,7 +1011,7 @@ bool Chip::getContiguousThreadVector(
 
         slots.push_back(thread_index);
         i--;
-        if ((i ==0) || (j == this->cores.size()))
+        if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
           {
           /* We fit if all of the execution slots have been filled
              or it we have used all the chip */
@@ -1025,41 +1025,43 @@ bool Chip::getContiguousThreadVector(
       {
       i = execution_slots_per_task;
       j++;
+      fits = false;
       slots.clear();
       }
     }while((i != 0) && (j < this->cores.size()));
 
   if (fits == false)
     {
+    slots.clear();
+    i = execution_slots_per_task;
+    j = 0;
     /* Can't get contiguous cores. Just get them where you can find them */
     // Get the core indices we will use
-    j = 0;
-    for (int i = 0; i < execution_slots_per_task; i++)
+    do
       {
-      while (j < this->cores.size())
+      if (this->cores[j].is_free() == true)
         {
-        if (this->cores[j].is_free() == true)
+        for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
           {
-          for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+          int thread_index;
+
+          thread_index = this->cores[j].get_thread_index(x);
+
+          slots.push_back(thread_index);
+          i--;
+          if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
             {
-            int thread_index;
-
-            thread_index = this->cores[j].get_thread_index(x);
-            if (thread_index == -1)
-              {
-              fits = false;
-              return(fits);
-              }
-
-            slots.push_back(thread_index);
-            j++;
+            /* We fit if all of the execution slots have been filled
+               or it we have used all the chip */
+            fits = true;
+            break;
             }
-          break;
           }
-        else
-          j++;
+        j++;
         }
-      }
+      else
+          j++;
+      }while((i != 0) && (j < this->cores.size()));
     }
   return(fits);
   }
@@ -1496,6 +1498,9 @@ bool Chip::spread_place_threads(
   if (fits == true)
     {
     int step_count = step;
+
+    if (lprocs_per_task_remaining == 1)
+      step_count = 1;
 
 
     /* cores_placed and cores_to_fill are used because we only want to make sure we 
