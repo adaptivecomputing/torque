@@ -152,10 +152,6 @@ void numa_node::get_cpuinfo(
   if (path == NULL)
     return;
 
-  unsigned int       total_cpus;
-  unsigned long      total_memory;
-  unsigned long      available_memory;
-  unsigned int       available_cpus;
 
   std::string   line;
   std::ifstream myfile(path);
@@ -456,13 +452,13 @@ unsigned int numa_node::get_my_index() const
 
 allocation::allocation(
 
-  const allocation &alloc) : memory(alloc.memory), cpus(alloc.cpus), cpu_indices(alloc.cpu_indices)
+  const allocation &alloc) : cpu_indices(alloc.cpu_indices), memory(alloc.memory), cpus(alloc.cpus), jobid()
 
   {
   strcpy(this->jobid, alloc.jobid);
   }
 
-allocation::allocation() : memory(0), cpus(0), cpu_indices()
+allocation::allocation() : cpu_indices(), memory(0), cpus(0), jobid()
 
   {
   this->jobid[0] = '\0';

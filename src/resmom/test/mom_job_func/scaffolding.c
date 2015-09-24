@@ -12,6 +12,7 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
 #include "threadpool.h"
+#include "node_frequency.hpp"
 
 threadpool_t *request_pool;
 int is_login_node = 0;
@@ -141,4 +142,10 @@ char *pbse_to_txt(int err)
   fprintf(stderr, "The call to pbse_to_txt needs to be mocked!!\n");
   exit(1);
   }
+
+bool node_frequency::get_frequency_string(std::string& str,bool full)
+ {
+ return(false);
+ }
+
 

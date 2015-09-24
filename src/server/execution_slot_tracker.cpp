@@ -199,7 +199,7 @@ int execution_slot_tracker::reserve_execution_slots(
   while (est.get_total_execution_slots() < this->get_total_execution_slots())
     est.add_execution_slot();
 
-  for (int i = 0; i < this->slots.size() && reserved_so_far < num_slots_to_reserve; i++)
+  for (size_t i = 0; i < this->slots.size() && reserved_so_far < num_slots_to_reserve; i++)
     {
     if (this->slots[i] == FREE)
       {
@@ -230,7 +230,7 @@ int execution_slot_tracker::unreserve_execution_slots(
   if (this->slots.size() < subset.slots.size())
     return(SUBSET_TOO_LARGE);
 
-  for (int i = 0; i < subset.slots.size(); i++)
+  for (size_t i = 0; i < subset.slots.size(); i++)
     {
     if (subset.slots[i] == OCCUPIED)
       this->mark_as_free(i);
