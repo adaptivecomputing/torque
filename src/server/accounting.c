@@ -610,7 +610,7 @@ void account_jobend(
     }
   sprintf(local_buf, "end=%ld ", (long)pjob->ji_qs.ji_stime + walltime_val);
 #else
-  sprintf(local_buf, "end=%ld ", (long)time_now);
+  sprintf(local_buf, "end=%ld ", (long)pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
 #endif /* USESAVEDRESOURCES */
 
   full_job_accounting += local_buf;

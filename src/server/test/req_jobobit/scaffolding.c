@@ -21,8 +21,11 @@
 #include "queue.h" /* pbs_queue */
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
+#include "resource.h"
 
 
+int  attr_count = 0;
+int  next_count = 0;
 const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
 const char *msg_job_end_sig = "Terminated on signal %d";
 const char *msg_obitnojob  = "Job Obit notice received from %s has error %d";
@@ -353,4 +356,90 @@ completed_jobs_map_class::completed_jobs_map_class() {}
 completed_jobs_map_class::~completed_jobs_map_class() {}
 int completed_jobs_map_class::cleanup_completed_jobs() {return 0;}
 bool completed_jobs_map_class::add_job(char const *s, time_t t) {return true;}
+
+int attr_to_str(
+
+  std::string&      ds,     /* O */
+  attribute_def    *at_def, /* I */
+  pbs_attribute     attr,   /* I */
+  bool              XML)    /* I */
+
+  {
+  char        buf[100];
+
+  switch (attr_count)
+    {
+    case 0:
+
+      sprintf(buf, "%d", 100);
+      ds += buf;
+      break;
+
+    case 1:
+      
+      sprintf(buf, "%dmb", 4096);
+      ds += buf;
+      break;
+
+    case 2:
+      
+      sprintf(buf, "%dmb", 8192);
+      ds += buf;
+      break;
+
+    default:
+      return(NO_ATTR_DATA);
+    }
+
+  attr_count++;
+
+  return(PBSE_NONE);
+  }
+
+
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
+  {
+  static struct resource_def   rs_def;
+  static struct pbs_attribute  pattr;
+  resource                    *r = NULL;
+
+  switch (next_count)
+    {
+    case 0:
+
+      r = (resource *)calloc(1, sizeof(resource));
+      r->rs_defin = &rs_def;
+      rs_def.rs_name = "cput";
+      r->rs_value = pattr;
+      break;
+
+    case 1:
+      
+      r = (resource *)calloc(1, sizeof(resource));
+      r->rs_defin = &rs_def;
+      rs_def.rs_name = "mem";
+      r->rs_value = pattr;
+      break;
+
+    case 2:
+      
+      r = (resource *)calloc(1, sizeof(resource));
+      r->rs_defin = &rs_def;
+      rs_def.rs_name = "vmem";
+      r->rs_value = pattr;
+      break;
+
+    default:
+      break;
+    }
+
+  next_count++;
+
+  return(r);
+  }
 
