@@ -1926,7 +1926,7 @@ static void resume_suspend(
     {
     task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
     if(tmpTask != NULL)
-      kill_task(tmpTask, SIGTSTP, 0);
+      kill_task(pjob, tmpTask, SIGTSTP, 0);
 
     sleep(5);
     }
@@ -1943,7 +1943,7 @@ static void resume_suspend(
            tp->ti_qs.ti_task,
            tp->ti_qs.ti_parentnode));
 
-    stat = kill_task(tp, signum, 0);
+    stat = kill_task(pjob, tp, signum, 0);
 
     if (stat < 0)
       {
@@ -1997,7 +1997,7 @@ static void resume_suspend(
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      kill_task(tp, signum, 0);
+      kill_task(pjob, tp, signum, 0);
       }
 
     if (pjob->ji_numnodes > 1)
