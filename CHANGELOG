@@ -1,5 +1,21 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+5.0.2-bw-patch-non-hotfix
+
+  b - TRQ-3201. Log if we can't query ALPS.
+  e - TRQ-2839. Improve the logging of node states from ALPS.
+  b - TRQ-3235. Fix problem with spaces in paths.
+  b - TRQ-2993. Preemption broken when setting kill_delay option -- University of Washington 21353
+  b - TRQ-2993. Preemption broken when setting kill_delay option -- University of Washington 21353
+  b - TRQ-2993. Preemption broken when setting kill_delay option -- University of Washington 21353
+  b - TRQ-3284. Fix an issue with jobs not having things properly xml escaped.
+  b - TRQ-2840. Make the end of job times in Torque when the node is available for a new job.
+  b - TRQ-2840. Fix two compile issues caused by the cherry-pick for this ticket.
+  b - TRQ-3221. Make sure nodes with orphaned reservations are marked busy.
+  b - TRQ-3166. Add another safety check before killing stray jobs.
+  b - TRQ-3166. Add an additional check before killing stray jobs on Cray systems.
+  b - TRQ-3239. Track signal sending to pids
+
 5.0.2
   b - TRQ-3029. Make it so that pbs_server can't have active threads when the main
       thread exits.
