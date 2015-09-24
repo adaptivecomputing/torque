@@ -605,6 +605,11 @@ START_TEST(test_set_place_value)
   sockets = r.get_sockets();
   fail_unless(sockets==2, "set_place socket failed");
 
+  int threads = 0;
+  r.set_place_value("thread=4");
+  threads = r.getPlaceThreads();
+  fail_unless(threads==4, "set_place threads failed");
+
   }
 END_TEST
 
