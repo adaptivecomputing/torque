@@ -16,6 +16,7 @@ extern int oscillate;
 extern int called_store_pci;
 extern int called_spread_place;
 extern int called_spread_place_cores;
+extern int called_spread_place_threads;
 extern int place_amount;
 extern int json_chip;
 extern int placed_all;
@@ -47,7 +48,8 @@ START_TEST(test_spread_place_cores)
   s.addChip();
 
   called_spread_place_cores = 0;
-  fail_unless(s.spread_place_cores(r, a, 5, cores_remaining, lprocs_remaining) == true);
+  a.set_place_type(place_core);
+  fail_unless(s.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
   fail_unless(called_spread_place_cores == 2);
   
   }
