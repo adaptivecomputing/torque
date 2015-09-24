@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.1.2
+  b - TRQ-3239. Track signal sending to job pids to eliminate repeat sending.
   b - TRQ-3245. Enable reporter mom to correctly handle UNKNOWN role.
   b - TRQ-2788. Allow jobs submitted on hold to be moved through a routing queue.
   b - TRQ-3242. Fix problem where resource string argument to prologue
