@@ -2,6 +2,7 @@ c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
 
 5.0.3
+  b - TRQ-3239. Track signal sending to job pids to eliminate repeat sending.
   b - TRQ_3245. Enable reporter mom to correctly handle UNKNOWN role.
   b - TRQ-3235. Fix problem when path to error, output or execution environment
       contains one or more spaces.
