@@ -3413,7 +3413,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(ptask, sig, 0);
+      ct += kill_task(pjob, ptask, sig, 0);
       }
 
     ptask = (task *)GET_NEXT(ptask->ti_jobtask);

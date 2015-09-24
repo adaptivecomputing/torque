@@ -663,6 +663,7 @@ struct job
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
                                         and tasks from start_process. */
+  std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
 
 #else     /* END MOM ONLY */
 

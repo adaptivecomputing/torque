@@ -263,7 +263,7 @@ int          become_the_user(job *pjob);
 bool         am_i_mother_superior(const job &pjob);
 
 /* defined in mach-dependant mom_mach.c */
-extern int kill_task(struct task *, int, int);
+extern int kill_task(job *, struct task *, int, int);
 
 /* Defines for pe_io_type, see run_pelog() */
 
