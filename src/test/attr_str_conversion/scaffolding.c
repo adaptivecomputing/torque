@@ -1,8 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <vector>
+#include <string>
 
 #include "pbs_error.h"
 #include "resource.h"
+#include "attribute.h"
+#include "attr_req_info.hpp"
 
 int svr_resc_size = 0;
 resource_def *svr_resc_def;
@@ -43,6 +47,15 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
   }
 
 int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<std::string>& values)
+  {
+  return(0);
+  }
+
+int attr_req_info::get_default_values(
+    
+  std::vector<std::string>& names,
+  std::vector<std::string>& values)
+
   {
   return(0);
   }
