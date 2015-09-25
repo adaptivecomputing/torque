@@ -9,8 +9,6 @@
 #include <string>
 #include <sstream>
 #include <set>
-#include <boost/foreach.hpp>
-#include <boost/tokenizer.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -21,6 +19,8 @@
 #include "trq_cgroups.h"
 #include "utils.h"
 #ifdef PENABLE_LINUX_CGROUPS
+#include <boost/tokenizer.hpp>
+#include <boost/foreach.hpp>
 #include "machine.hpp"
 #include "complete_req.hpp"
 #endif
@@ -54,7 +54,6 @@ const int MEMS = 1;
 
 #ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
-#endif
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */
@@ -872,7 +871,6 @@ int trq_cg_create_task_cgroups(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr;
 
-#ifdef PENABLE_LINUX_CGROUPS
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
 
   if (pattr == NULL)
@@ -938,7 +936,6 @@ int trq_cg_create_task_cgroups(
 
       }
     }
-#endif
 
   return(PBSE_NONE);
   }
@@ -1047,7 +1044,6 @@ int trq_cg_get_task_set_string(
   }
 
 
-#ifdef PENABLE_LINUX_CGROUPS
 /* 
  * trq_cg_write_task_memset_string
  *
@@ -1163,7 +1159,6 @@ int trq_cg_write_task_cpuset_string(
 
   return(rc);
   }   
-#endif
 
 
 
@@ -1188,7 +1183,6 @@ int trq_cg_populate_task_cgroups(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr;
 
-#ifdef PENABLE_LINUX_CGROUPS
   /* See if the JOB_ATR_req_information is set. If not
      This was not a -L request */
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1243,7 +1237,6 @@ int trq_cg_populate_task_cgroups(
 
       }
     }
-#endif
  
   return(PBSE_NONE);
   }
@@ -1339,7 +1332,6 @@ int trq_cg_get_cpuset_and_mem(
   {
   int rc = PBSE_NONE;
 
-#ifdef PENABLE_LINUX_CGROUPS
   if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
       (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
     return(-1);
@@ -1353,7 +1345,6 @@ int trq_cg_get_cpuset_and_mem(
   
   if (find_range_in_cpuset_string(mems, mem_string) != 0)
     return(-1);
-#endif
 
   return(rc);
   } // END trq_cg_get_cpuset_and_mem()
@@ -1814,5 +1805,5 @@ void trq_cg_delete_job_cgroups(
   trq_cg_delete_cgroup_path(cgroup_path);
 
   } // END trq_cg_delete_job_cgroups()
-
+#endif
 
