@@ -177,7 +177,7 @@ unsigned disrui(struct tcp_chan *chan, int *retval)
   return(0);
   }
 
-int kill_task(struct task *task, int sig, int pg)
+int kill_task(job *pj, struct task *task, int sig, int pg)
   {
   return(0);
   }

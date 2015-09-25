@@ -357,7 +357,7 @@ void net_close(int but)
   exit(1);
   }
 
-int kill_task(task *ptask, int sig, int pg)
+int kill_task(job *pj, task *ptask, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   exit(1);
