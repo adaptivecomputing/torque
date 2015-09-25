@@ -180,7 +180,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-int kill_task(struct task *task, int sig, int pg)
+int kill_task(job *pj, struct task *task, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   exit(1);
