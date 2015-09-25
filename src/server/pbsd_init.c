@@ -1000,9 +1000,6 @@ int setup_server_attrs(
   for (i = 0; i < SRV_ATR_LAST; i++)
     clear_attr(&server.sv_attr[i], &svr_attr_def[i]);
 
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =  PBS_SCHEDULE_CYCLE;
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_flags = ATR_VFLAG_SET;
-
   server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_INIT;
   server.sv_attr[SRV_ATR_State].at_flags = ATR_VFLAG_SET;
 
@@ -1044,6 +1041,9 @@ int setup_server_attrs(
 
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
+
+  server.sv_attr[SRV_ATR_DownOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_DownOnError].at_flags = ATR_VFLAG_SET;
 
   /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);

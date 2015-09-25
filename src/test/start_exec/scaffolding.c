@@ -25,6 +25,7 @@
 #include "node_internals.hpp"
 #endif
 
+unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
 int  num_contacted;
