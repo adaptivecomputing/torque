@@ -258,6 +258,8 @@ void add_to_completed_jobs(
     free(jobid);
     }
 
+  free(ptask->wt_mutex);
   free(ptask);
+
   } // END add_to_completed_jobs()
 

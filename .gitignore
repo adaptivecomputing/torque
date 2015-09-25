@@ -505,9 +505,9 @@ src/drmaa/test/worker_job
 src/scheduler.basl/Lexer.c
 src/scheduler.basl/Parser.c
 src/scheduler.basl/y.tab.h
-src/resmom/test/mom_comm/some\ path\ to\ nowhere.prefix0.TK
-src/resmom/test/mom_comm/some\ path\ to\ nowhere.0.TK
-src/resmom/test/release_reservation/test_input.txt
+src/test/mom_comm/some\ path\ to\ nowhere.prefix0.TK
+src/test/mom_comm/some\ path\ to\ nowhere.0.TK
+src/test/release_reservation/test_input.txt
 torque-package-clients-linux-x86_64.sh
 torque-package-devel-linux-x86_64.sh
 torque-package-doc-linux-x86_64.sh
