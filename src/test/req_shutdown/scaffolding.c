@@ -8,6 +8,7 @@
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task */
 #include "queue.h"
+#include "u_tree.h"
 
 all_queues              svr_queues;
 int lockfds=0;
@@ -23,6 +24,7 @@ all_jobs alljobs;
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 bool exit_called = false;
+AvlTree ipaddrs = NULL;
 
 struct batch_request *alloc_br(int type)
   {
@@ -149,4 +151,10 @@ void log_event(int type, int otype, const char *func_name, const char *msg) {}
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
   return(0);
+  }
+
+AvlTree AVL_clear_tree(AvlTree a)
+  {
+  fprintf(stderr, "The call to AVL_clear_tree needs to be mocked!!\n");
+  exit(1);
   }
