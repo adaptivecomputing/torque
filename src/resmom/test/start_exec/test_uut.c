@@ -38,6 +38,8 @@ extern bool fail_init_groups;
 extern bool fail_site_grp_check;
 extern bool am_ms;
 
+int linux_time;
+
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
