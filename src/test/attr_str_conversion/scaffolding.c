@@ -37,3 +37,25 @@ void log_err(
   {
   }
 
+int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<std::string>& values)
+  {
+  return(0);
+  }
+
+int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<std::string>& values)
+  {
+  return(0);
+  }
+
+int  decode_attr_req_info(
+    
+  pbs_attribute *patr,
+  const char    *name,
+  const char    *rescn,
+  const char    *val,
+  int            perm)
+
+  {
+  return(0);
+  }
+
