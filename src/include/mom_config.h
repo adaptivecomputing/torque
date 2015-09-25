@@ -137,6 +137,7 @@ extern int              is_login_node;
 extern int              job_exit_wait_time;
 extern char             jobstarter_exe_name[];
 extern int              jobstarter_set;
+extern int              jobstarter_privileged;
 extern char            *server_alias;
 extern char            *TRemChkptDirList[TMAX_RCDCOUNT];
 extern char             tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */

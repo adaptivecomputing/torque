@@ -93,6 +93,7 @@
  * @param xml - to be appended to str
  * @param str - the string object that will be appended with xml
  */
+
 void appendEscapedXML(
     
   const char *xml,
@@ -124,6 +125,8 @@ void appendEscapedXML(
       }
     }
   }
+
+
 
 int size_to_str(
 
@@ -170,7 +173,7 @@ int size_to_str(
       strcat(out,"pb");
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END size_to_str */
 
 

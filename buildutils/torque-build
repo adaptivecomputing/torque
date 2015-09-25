@@ -293,7 +293,7 @@ then
         verbose_option=""
     fi
 
-    rpmbuild_option="-bb"
+    rpmbuild_option="-ba"
 
     test ${quiet} -eq 0 && echo "Making adaptive rpm..."
 

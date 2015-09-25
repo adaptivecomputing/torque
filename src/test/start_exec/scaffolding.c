@@ -27,10 +27,10 @@
 #include "node_internals.hpp"
 #endif
 
-
 std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
+unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
 int  num_contacted;

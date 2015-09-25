@@ -42,6 +42,7 @@ void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
 
+int jobstarter_privileged = 0;
 
 START_TEST(remove_leading_hostname_test)
   {

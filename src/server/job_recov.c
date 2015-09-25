@@ -955,7 +955,7 @@ int add_encoded_attributes(
           translate_dependency_to_string(pattr + i, value);
         else
 #endif
-          attr_to_str(value, job_attr_def + i, pattr[i], false);
+          attr_to_str(value, job_attr_def + i, pattr[i], true);
 
         if (value.size() == 0)
           continue;
@@ -1291,6 +1291,10 @@ int set_array_job_ids(
   job *pj = *pjob;
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
+      
+  // If this variable isn't set this job isn't actually an array subjob.
+  if ((pj->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0)
+   return(PBSE_NONE);
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
@@ -1301,10 +1305,10 @@ int set_array_job_ids(
     array_get_parent_id(pj->ji_qs.ji_jobid, parent_id);
     pa = get_array(parent_id);
     if (pa == NULL)
-      {   
+      {
       job_abt(&pj, (char *)"Array job missing array struct, aborting job");
       snprintf(log_buf, buflen, "Array job missing array struct %s", __func__);
-      return -1;
+      return(-1);
       }
 
     strcpy(pj->ji_arraystructid, parent_id);
@@ -1337,7 +1341,8 @@ int set_array_job_ids(
       }
     }
 #endif /* !PBS_MOM */
-  return rc;
+
+  return(rc);
   }
 
 

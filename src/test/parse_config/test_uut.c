@@ -4,6 +4,7 @@
 #include <check.h>
 
 #include "pbs_job.h"
+#include "mom_func.h"
 
 extern int encode_used_ctr;
 extern int encode_flagged_attrs_ctr;
@@ -11,6 +12,11 @@ extern int MOMCudaVisibleDevices;
 
 void add_job_status_information(job &pjob, std::stringstream &list);
 u_long setcudavisibledevices(const char *value);
+unsigned long setjobstarterprivileged(const char *);
+
+int jobstarter_privileged = 0;
+char         PBSNodeMsgBuf[MAXLINE];
+int          MOMJobDirStickySet;
 
 
 START_TEST(test_add_job_status_information)
@@ -41,6 +47,34 @@ START_TEST(test_setcudavisibledevices)
   }
 END_TEST
 
+START_TEST(test_setjobstarterprivileged)
+  {
+  fail_unless(setjobstarterprivileged("") == 1);
+  fail_unless(jobstarter_privileged == 0);
+
+  fail_unless(setjobstarterprivileged("off") == 1);
+  fail_unless(jobstarter_privileged == 0);
+
+  fail_unless(setjobstarterprivileged("0") == 1);
+  fail_unless(jobstarter_privileged == 0);
+
+  fail_unless(setjobstarterprivileged("false") == 1);
+  fail_unless(jobstarter_privileged == 0);
+
+  fail_unless(setjobstarterprivileged("on") == 1);
+  fail_unless(jobstarter_privileged == TRUE);
+
+  fail_unless(setjobstarterprivileged("t") == 1);
+  fail_unless(jobstarter_privileged == TRUE);
+
+  fail_unless(setjobstarterprivileged("T") == 1);
+  fail_unless(jobstarter_privileged == TRUE);
+
+  fail_unless(setjobstarterprivileged("1") == 1);
+  fail_unless(jobstarter_privileged == TRUE);
+  }
+END_TEST
+
 
 Suite *parse_config_suite(void)
   {
@@ -51,6 +85,10 @@ Suite *parse_config_suite(void)
 
   tc_core = tcase_create("test_setcudavisibledevices");
   tcase_add_test(tc_core, test_setcudavisibledevices);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_setjobstarterprivileged");
+  tcase_add_test(tc_core, test_setjobstarterprivileged);
   suite_add_tcase(s, tc_core);
   
   return(s);
