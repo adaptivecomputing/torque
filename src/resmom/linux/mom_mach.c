@@ -5000,7 +5000,7 @@ void scan_non_child_tasks(void)
       if ((log_drift_event) || 
           (LOGLEVEL >= 7))
         {
-        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
+        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %ld",
           linux_time,
           job_start_time,
           job_session_id,
