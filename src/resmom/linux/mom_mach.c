@@ -4888,7 +4888,7 @@ void scan_non_child_tasks(void)
         if((job_start_time != 0)&&
             (session_start_time != 0))
           {
-          if(abs(job_start_time - session_start_time) < 3600)
+          if(labs(job_start_time - session_start_time) < 3600)
             {
             found = 1;
             if(job_start_time != session_start_time)
