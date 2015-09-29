@@ -4940,9 +4940,11 @@ void scan_non_child_tasks(void)
             if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
               {
               proc_stat_t *ts = get_proc_stat(ps->session);
-              if(ts == NULL)
+              long         job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
+              if (ts == NULL)
                 continue;
-              if(abs(ts->start_time - (unsigned long)pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long) < 3600)
+
+              if (abs((long)ts->start_time - job_start_time) < 3600)
                 {
                 found = 1;
                 break;
