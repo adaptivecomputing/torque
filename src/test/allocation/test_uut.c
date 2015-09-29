@@ -193,6 +193,24 @@ START_TEST(test_task_usage_stats)
   }
 END_TEST
 
+START_TEST(test_accelerators_remaining)
+  {
+  allocation a;
+  int gpus_remaining;
+  int mics_remaining;
+
+  a.cores = 2;
+  a.threads = 4;
+  a.set_mics_remaining(2);
+  a.set_gpus_remaining(2);
+  a.get_mics_remaining(mics_remaining);
+  a.get_gpus_remaining(gpus_remaining);
+  
+  fail_unless(mics_remaining == 2);
+  fail_unless(gpus_remaining == 2);
+  }
+END_TEST
+
 
 Suite *allocation_suite(void)
   {
@@ -206,6 +224,7 @@ Suite *allocation_suite(void)
   tcase_add_test(tc_core, test_place_indices_in_string);
   tcase_add_test(tc_core, test_write_task_information);
   tcase_add_test(tc_core, test_task_usage_stats);
+  tcase_add_test(tc_core, test_accelerators_remaining);
   suite_add_tcase(s, tc_core);
   
   return(s);

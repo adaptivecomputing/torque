@@ -59,9 +59,11 @@ START_TEST(test_spread_place_threads)
 
   int                lprocs_remaining = 1;
   int                cores_remaining = 3;
+  int                gpus_remaining = 0;
+  int                mics_remaining = 0;
   a.place_type = exclusive_core;
 
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"16\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
@@ -79,7 +81,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 3;
   cores_remaining = 5;
 
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 3);
   fail_unless(a.cpu_indices[0] == 0);
@@ -94,7 +96,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 4;
   cores_remaining = 5;
 
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 4);
   fail_unless(a.cpu_indices[0] == 0);
@@ -112,7 +114,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 2;
   cores_remaining = 4;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 2);
   fail_unless(a.cpu_indices[0] == 0);
@@ -133,7 +135,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 5;
   cores_remaining = 8;
 
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 5);
   fail_unless(a.cpu_indices[0] == 0);
@@ -153,7 +155,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 7;
   cores_remaining = 8;
 
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 7);
   fail_unless(a.cpu_indices[0] == 0);
@@ -173,7 +175,7 @@ START_TEST(test_spread_place_threads)
   lprocs_remaining = 7;
   cores_remaining = 8;
   c.setChipAvailable(false);
-  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining) == false);
+  fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == false);
  }
 END_TEST
 
@@ -195,11 +197,14 @@ START_TEST(test_spread_place_cores)
   for (int i = 0; i < 16; i++)
     c.make_core(i);
 
-  int                lprocs_remaining = 1;
-  int                cores_remaining = 3;
+  int           lprocs_remaining = 1;
+  int           cores_remaining = 3;
+  int           gpus_remaining = 0;
+  int           mics_remaining = 0;
+
   a.place_type = exclusive_core;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
@@ -221,7 +226,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 3;
   cores_remaining = 5;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 3);
   fail_unless(a.cpu_indices[0] == 0);
@@ -238,7 +243,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 4;
   cores_remaining = 5;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 4);
   fail_unless(a.cpu_indices[0] == 0);
@@ -256,7 +261,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 2;
   cores_remaining = 4;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 2);
   fail_unless(a.cpu_indices[0] == 0);
@@ -277,7 +282,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 5;
   cores_remaining = 8;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 5);
   fail_unless(a.cpu_indices[0] == 0);
@@ -297,7 +302,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 7;
   cores_remaining = 8;
 
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
   fail_unless(a.cpu_indices.size() == 7);
   fail_unless(a.cpu_indices[0] == 0);
@@ -317,7 +322,7 @@ START_TEST(test_spread_place_cores)
   lprocs_remaining = 7;
   cores_remaining = 8;
   c.setChipAvailable(false);
-  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == false);
+  fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == false);
  }
 END_TEST
 

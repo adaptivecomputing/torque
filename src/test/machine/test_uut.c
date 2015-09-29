@@ -129,7 +129,7 @@ START_TEST(test_spread_place)
   }
 END_TEST
 
-START_TEST(test_spread_place_cores)
+START_TEST(test_spread_place_pu)
   {
   Machine m;
   job     pjob;

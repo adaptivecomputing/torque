@@ -136,6 +136,10 @@ class allocation
   void get_stats_used(unsigned long &cput_used, unsigned long long &mem_used);
   void set_task_usage_stats(unsigned long cput_used, unsigned long long mem_used);
   void get_task_host_name(std::string &host);
+  void set_gpus_remaining(int gpus);
+  void get_gpus_remaining(int &gpus);
+  void set_mics_remaining(int mics);
+  void get_mics_remaining(int &mics);
   };
 
 #endif 

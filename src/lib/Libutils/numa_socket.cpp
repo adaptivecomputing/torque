@@ -399,12 +399,14 @@ void Socket::place_all_execution_slots(
   } // END place_all_execution_slots()
 
 
-bool Socket::spread_place_cores(
+bool Socket::spread_place_pu(
 
   req         &r,
   allocation  &task_alloc,
   int         &pu_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
 
   {
   int rc;
@@ -415,9 +417,11 @@ bool Socket::spread_place_cores(
     bool fits = false;
 
     if (task_alloc.place_type == exclusive_core)
-      fits = this->chips[i].spread_place_cores(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
+      fits = this->chips[i].spread_place_cores(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining,
+                                                 gpus_remaining, mics_remaining);
     else if (task_alloc.place_type == exclusive_thread)
-      fits = this->chips[i].spread_place_threads(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
+      fits = this->chips[i].spread_place_threads(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining,
+                                                 gpus_remaining, mics_remaining);
     if (fits == true)
       {
       if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
@@ -700,6 +704,28 @@ bool Socket::store_pci_device_appropriately(
     }
 
   return(stored);
+  }
+
+int Socket::get_gpus_remaining()
+  {
+  int gpus_available = 0;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    gpus_available += this->chips[i].get_available_gpus();
+    }
+
+  return(gpus_available);
+  }
+
+int Socket::get_mics_remaining()
+  {
+  int mics_available = 0;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    mics_available += this->chips[i].get_available_mics();
+    }
+
+  return(mics_available);
   }
 
 

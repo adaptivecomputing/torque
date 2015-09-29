@@ -37,19 +37,21 @@ START_TEST(test_place_all_execution_slots)
   }
 END_TEST
 
-START_TEST(test_spread_place_cores)
+START_TEST(test_spread_place_pu)
   {
   Socket s;
   req        r;
   allocation a;
   int        cores_remaining = 2;
   int        lprocs_remaining = 2;
+  int        gpus_remaining = 0;
+  int        mics_remaining = 0;
   s.addChip();
   s.addChip();
 
   called_spread_place_cores = 0;
   a.set_place_type(place_core);
-  fail_unless(s.spread_place_cores(r, a, cores_remaining, lprocs_remaining) == true);
+  fail_unless(s.spread_place_pu(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
   fail_unless(called_spread_place_cores == 2);
   
   }
@@ -79,6 +81,25 @@ START_TEST(test_spread_place)
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
   fail_unless(called_spread_place == 4);
 
+  }
+END_TEST
+
+START_TEST(test_accelerators_remaining)
+  {
+  Socket s;
+  req    r;
+  allocation a;
+  int gpus_remaining;
+  int mics_remaining;
+
+  s.addChip();
+  s.addChip();
+
+  gpus_remaining = s.get_gpus_remaining();
+  mics_remaining = s.get_mics_remaining();
+
+  fail_unless(gpus_remaining == 0);
+  fail_unless(mics_remaining == 0);
   }
 END_TEST
 
@@ -353,8 +374,9 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_how_many_tasks_fit);
   tcase_add_test(tc_core, test_partial_place);
   tcase_add_test(tc_core, test_store_pci_device_appropriately);
-  tcase_add_test(tc_core, test_spread_place_cores);
+  tcase_add_test(tc_core, test_spread_place_pu);
   tcase_add_test(tc_core, test_spread_place);
+  tcase_add_test(tc_core, test_accelerators_remaining);
   suite_add_tcase(s, tc_core);
   
   return(s);

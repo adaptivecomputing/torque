@@ -283,7 +283,9 @@ bool Chip::spread_place_threads(
   req         &r,
   allocation  &task_alloc,
   int         &cores_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
 
   {
   cores_per_task_remaining--;
@@ -297,12 +299,24 @@ bool Chip::spread_place_cores(
   req         &r,
   allocation  &task_alloc,
   int         &cores_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
 
   {
   cores_per_task_remaining--;
   lprocs_per_task_remaining--;
   called_spread_place_cores++;
   return(true);
+  }
+
+int Chip::get_available_gpus() const
+  {
+  return(0);
+  }
+
+int Chip::get_available_mics() const
+  {
+  return(0);
   }
 

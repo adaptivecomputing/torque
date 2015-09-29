@@ -407,3 +407,37 @@ void allocation::get_task_host_name(
   {
   host = this->hostname;
   }
+
+void allocation::set_gpus_remaining(
+
+  int gpus_remaining)
+
+  {
+  this->gpus = gpus_remaining;
+  }
+
+void allocation::get_gpus_remaining(
+
+  int &gpus_remaining)
+
+  {
+  gpus_remaining = this->gpus;
+  }
+
+void allocation::set_mics_remaining(
+
+  int mics_remaining)
+
+  {
+  this->mics = mics_remaining;
+  }
+
+void allocation::get_mics_remaining(
+
+  int &mics_remaining)
+
+  {
+  mics_remaining = this->mics;
+  }
+
+

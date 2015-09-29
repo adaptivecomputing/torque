@@ -85,12 +85,14 @@ void Socket::place_all_execution_slots(req &r, allocation &task_alloc)
   placed_all++;
   }
 
-bool Socket::spread_place_cores(
+bool Socket::spread_place_pu(
 
   req         &r,
   allocation  &task_alloc,
   int         &cores_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
  
   {
   called_spread_place_cores++;
@@ -308,6 +310,16 @@ void PCI_Device::displayAsString(std::stringstream &out) const {}
 PCI_Device &PCI_Device::operator=(const PCI_Device &other)
   {
   return(*this);
+  }
+
+int req::getMics() const
+  {
+  return(0);
+  }
+
+int req::getGpus() const
+  {
+  return(0);
   }
 
 

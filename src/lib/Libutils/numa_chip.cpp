@@ -993,6 +993,12 @@ bool Chip::getContiguousThreadVector(
   int i = execution_slots_per_task;
   bool fits = false;
 
+  /* this makes it so users can request gpus and mics 
+     from numanodes which are not where the cores or threads
+     are allocated */
+  if (execution_slots_per_task == 0)
+    return(true);
+
   /* First try to get contiguous cores */
   do
     {
@@ -1087,6 +1093,12 @@ bool Chip::getContiguousCoreVector(
   unsigned int j = 0;
   int i = execution_slots_per_task;
   bool fits = false;
+
+  /* this makes it so users can request gpus and mics 
+     from numanodes which are not where the cores or threads
+     are allocated */
+  if (execution_slots_per_task == 0)
+    return(true);
 
   /* First try to get contiguous cores */
   do
@@ -1473,7 +1485,9 @@ bool Chip::spread_place_threads(
   req         &r,
   allocation  &task_alloc,
   int         &threads_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
 
   {
   bool placed = false;
@@ -1554,6 +1568,17 @@ bool Chip::spread_place_threads(
         }
       }
 
+    allocation remaining(r);
+
+    remaining.set_gpus_remaining(gpus_remaining);
+    remaining.set_mics_remaining(mics_remaining);
+
+    place_accelerators(remaining, from_this_chip);
+    from_this_chip.mem_indices.push_back(this->id);
+
+    remaining.get_gpus_remaining(gpus_remaining);
+    remaining.get_mics_remaining(mics_remaining);
+
     from_this_chip.mem_indices.push_back(this->id);
     this->aggregate_allocation(from_this_chip);
     task_alloc.add_allocation(from_this_chip);
@@ -1582,7 +1607,9 @@ bool Chip::spread_place_cores(
   req         &r,
   allocation  &task_alloc,
   int         &cores_per_task_remaining,
-  int         &lprocs_per_task_remaining)
+  int         &lprocs_per_task_remaining,
+  int         &gpus_remaining,
+  int         &mics_remaining)
 
   {
   bool placed = false;
@@ -1665,7 +1692,17 @@ bool Chip::spread_place_cores(
         }
       }
 
+    allocation remaining(r);
+
+    remaining.set_gpus_remaining(gpus_remaining);
+    remaining.set_mics_remaining(mics_remaining);
+
+    place_accelerators(remaining, from_this_chip);
     from_this_chip.mem_indices.push_back(this->id);
+
+    remaining.get_gpus_remaining(gpus_remaining);
+    remaining.get_mics_remaining(mics_remaining);
+
     this->aggregate_allocation(from_this_chip);
     task_alloc.add_allocation(from_this_chip);
     placed = true;

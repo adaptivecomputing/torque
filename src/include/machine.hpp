@@ -184,8 +184,8 @@ class Chip
     bool task_will_fit(const req &r) const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
-    bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs);
-    bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs);
+    bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
+    bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_place, allocation &a);
@@ -262,8 +262,7 @@ class Socket
     int  how_many_tasks_fit(const req &r, int place_type) const;
     void place_all_execution_slots(req &r, allocation &task_alloc);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
-    bool spread_place_cores(req &r, allocation &task_alloc, int &cores, int &lprocs);
-    bool spread_place_theads(req &r, allocation &task_alloc, int &cores, int &lprocs);
+    bool spread_place_pu(req &r, allocation &task_alloc, int &cores, int &lprocs, int &gpus, int &mics);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;
@@ -271,6 +270,8 @@ class Socket
     bool partially_place(allocation &remaining, allocation &a);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
     void update_internal_counts(vector<allocation> &allocs);
+    int  get_gpus_remaining();
+    int  get_mics_remaining();
   };
 
 
@@ -329,7 +330,7 @@ class Machine
     void store_device_on_appropriate_chip(PCI_Device &device);
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
-    int  spread_place_cores(req &r, allocation &master, int tasks_for_node, const char *hostname);
+    int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
     void setMemory(long long mem); // used for unit tests
     void addSocket(int count); // used for unit tests

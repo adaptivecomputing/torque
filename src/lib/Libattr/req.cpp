@@ -1673,9 +1673,15 @@ void req::set_from_string(
       }
     }
 
+  if (!strncmp(current, "gpus", 4))
+    {
+    current += 6; //move past 'gpus:'
+    this->gpus = strtol(current, &current, 10);
+    }
+
   if (!strncmp(current, "mics", 4))
     {
-    current += 6; // move past 'gpus: '
+    current += 6; // move past 'mics: '
     this->mics = strtol(current, &current, 10);
 
     move_past_whitespace(&current);

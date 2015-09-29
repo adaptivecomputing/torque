@@ -606,7 +606,7 @@ void Machine::place_remaining(
   } // END place_remaining()
 
 
-int Machine::spread_place_cores(
+int Machine::spread_place_pu(
 
   req        &r,
   allocation &master,
@@ -622,6 +622,7 @@ int Machine::spread_place_cores(
   if (pu_per_task > this->totalCores)
     return(PBSE_IVALREQ);
 
+
   if (master.place_type == exclusive_core)
     pu_per_task = r.getPlaceCores();
   else if (master.place_type == exclusive_thread)
@@ -629,6 +630,8 @@ int Machine::spread_place_cores(
 
   for (unsigned int i = 0; i < tasks_for_node; i++)
     {
+    int gpus_remaining;
+    int mics_remaining;
     int pu_per_task_remaining;
     int lprocs_per_task_remaining;
     bool partial_place = false;
@@ -637,15 +640,22 @@ int Machine::spread_place_cores(
 
     pu_per_task_remaining = pu_per_task;
     lprocs_per_task_remaining = lprocs_per_task;
+    gpus_remaining = r.getGpus();
+    mics_remaining = r.getMics();
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
       {
+      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_node)
+        continue;
+
       bool fits = false;
 
-      fits = this->sockets[j].spread_place_cores(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining);
+      fits = this->sockets[j].spread_place_pu(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining,
+                                              gpus_remaining, mics_remaining);
       if (fits == true)
         {
-        if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0))
+        if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0) &&
+             (gpus_remaining == 0) && (mics_remaining == 0))
           {
           partial_place = true;
           break;
@@ -655,6 +665,27 @@ int Machine::spread_place_cores(
 
     if (partial_place == true)
       tasks_placed++;
+    else
+      {
+      for (unsigned int j = 0; j < this->totalSockets; j++)
+        {
+        bool fits = false;
+
+        fits = this->sockets[j].spread_place_pu(r, task_alloc, pu_per_task_remaining, lprocs_per_task_remaining,
+                                              gpus_remaining, mics_remaining);
+        if (fits == true)
+          {
+          if ((pu_per_task_remaining == 0) && (lprocs_per_task_remaining == 0) &&
+             (gpus_remaining == 0) && (mics_remaining == 0))
+            {
+            partial_place = true;
+            tasks_placed++;
+            break;
+            }
+          }
+        }
+      }
+
 
     task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);
@@ -665,7 +696,7 @@ int Machine::spread_place_cores(
     return(PBSE_IVALREQ);
 
   return(PBSE_NONE);
-  } /* END spread_place_cores() */
+  } /* END spread_place_pu() */
 
 /*
  * spread_place()
@@ -810,7 +841,7 @@ int Machine::place_job(
     else if ((a.place_type == exclusive_core) ||
              (a.place_type == exclusive_thread))
       {
-      if ((rc = spread_place_cores(r, a, tasks_for_node, hostname)) != PBSE_NONE)
+      if ((rc = spread_place_pu(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else
