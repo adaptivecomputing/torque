@@ -572,6 +572,8 @@ public:
   unsigned char ttl[32];
   int          acl_size;
   std::string  rqid;
+
+  node_check_info() : first(NULL), first_status(NULL), state(0), ntype(0), nprops(0), nstatus(0), note(NULL), power_state(0), ttl(), acl_size(0), rqid() {}
   };
 
 
