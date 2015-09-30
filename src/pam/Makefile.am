@@ -1,8 +1,6 @@
 
 include $(top_srcdir)/buildutils/config.mk
 
-CHECK_DIR = test
-
 CLEANFILES = *.gcda *.gcno *.gcov
 
 pammoddir=@pammoddir@

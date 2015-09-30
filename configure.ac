@@ -392,6 +392,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/tm/Makefile
     src/test/torquecfg/Makefile
     src/test/trq_auth/Makefile
+    src/test/trq_auth_daemon/Makefile
     src/test/chk_file_sec/Makefile
     src/test/log_event/Makefile
     src/test/pbs_log/Makefile
@@ -459,12 +460,8 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/qsub_functions/Makefile
     src/test/qterm/Makefile
     src/test/momctl/Makefile
-    src/daemon_client/test/Makefile
-    src/daemon_client/test/trq_auth_daemon/Makefile
 	  src/drmaa/test/Makefile
-    src/lib/test/Makefile
-    src/pam/test/Makefile
-    src/pam/test/pam_pbssimpleauth/Makefile
+    src/test/pam_pbssimpleauth/Makefile
     src/test/alps_reservations/Makefile
     src/test/catch_child/Makefile
     src/test/checkpoint/Makefile
@@ -485,11 +482,11 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/requests/Makefile
     src/test/start_exec/Makefile
     src/test/tmsock_recov/Makefile
+    src/test/mom_mach/Makefile
+    src/test/mom_start/Makefile
     src/resmom/linux/test/Makefile
     src/resmom/linux/test/cpuset/Makefile
-    src/test/mom_mach/Makefile
     src/resmom/linux/test/sys_file/Makefile
-    src/test/mom_start/Makefile
     src/resmom/linux/test/numa_node/Makefile
     src/resmom/linux/test/node_internals/Makefile
     src/test/pe_input/Makefile

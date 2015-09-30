@@ -71,11 +71,18 @@ if BUILDCPA
   MOM_UT_DIRS += cray_cpa
 endif
 
+if INCLUDE_PAM
+PAM_DIRS = pam
+endif
+
+TRQAUTH_DIRS = trq_auth_daemon
+
 CHECK_LIBS = scaffold_fail torque_test_lib 
 
 CHECK_DIRS = ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
-						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${MOM_UT_DIRS}
+						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${MOM_UT_DIRS} \
+						 ${PAM_DIRS} ${TRQAUTH_DIRS}
 
 $(CHECK_LIBS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
