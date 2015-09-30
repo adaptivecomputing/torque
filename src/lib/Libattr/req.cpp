@@ -856,14 +856,34 @@ bool req::has_conflicting_values(
   std::string &error)
 
   {
-  if ((this->execution_slots == ALL_EXECUTION_SLOTS) &&
-      (strncmp(this->placement_str.c_str(), "node", 4)))
+  bool bad_syntax = false;
+
+  if (this->execution_slots == ALL_EXECUTION_SLOTS)
     {
-    error = "-lprocs=all may only be used in conjunction with place=node";
-    return(true);
+    if (strncmp(this->placement_str.c_str(), "node", 4))
+      {
+      error = "-lprocs=all may only be used in conjunction with place=node";
+      bad_syntax = true;
+      }
+    }
+  else
+    {
+    if ((this->execution_slots > this->cores) &&
+        (this->cores > 1))
+      {
+      error = "place=core=x must be >= lprocs";
+      bad_syntax = true;
+      }
+
+    if ((this->execution_slots > this->threads) &&
+        (this->threads > 1))
+      {
+      error = "place=thread=x must be >= lprocs";
+      bad_syntax = true;
+      }
     }
 
-  return(false);
+  return(bad_syntax);
   } // END has_conflicting_values()
 
 

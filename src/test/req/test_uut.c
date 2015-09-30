@@ -239,6 +239,8 @@ START_TEST(test_submission_string_has_duplicates)
   char *err_str5 = strdup("2:usethreads:place=numanode");
   char *err_str6 = strdup("2:usefastcores:place=socket");
   char *err_str7 = strdup("2:usethreads:place=node");
+  char *err_str8 = strdup("2:lprocs=4:place=cores=2");
+  char *err_str9 = strdup("2:lprocs=3:place=threads=2");
   char *non_err_str1 = strdup("2:reqattr=matlab>7:reqattr=<9");
   char *non_err_str2 = strdup("2:usecores:place=numanode");
 
@@ -258,6 +260,8 @@ START_TEST(test_submission_string_has_duplicates)
   fail_unless(r.submission_string_has_duplicates(non_err_str2, error) == false);
   fail_unless(r.submission_string_precheck(strdup("5:lprocs=4+2:lprocs=2"), error) != PBSE_NONE);
   fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE);
+  fail_unless(r.set_from_submission_string(strdup(err_str8), error) != PBSE_NONE);
+  fail_unless(r.set_from_submission_string(strdup(err_str9), error) != PBSE_NONE);
   }
 END_TEST
 
