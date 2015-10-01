@@ -3276,6 +3276,7 @@ const char *validuser(
 
   if (p != NULL)
     {
+    free(p);
     return("yes");
     }
 

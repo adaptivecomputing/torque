@@ -5269,6 +5269,7 @@ static const char *quota(
       }
 
     uid = pw->pw_uid;
+    free(pw);
     }
 
   if (syscall(

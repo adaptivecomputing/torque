@@ -2440,6 +2440,7 @@ valid_user(struct rm_attribute *attrib)
 
   if (p)
     {
+    free(p);
     return "yes";
     }
   else

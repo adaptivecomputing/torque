@@ -1772,7 +1772,9 @@ void init_abort_jobs(
       DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
         pj->ji_qs.ji_jobid));
       
-      if (check_pwd(pj) == NULL)
+      struct passwd *pwent;
+      pwent = check_pwd(pj);
+      if (pwent == NULL)
         {
         /* somehow a job that was legally executing (had a password entry)
          * no longer has a password entry?? */
@@ -1786,7 +1788,10 @@ void init_abort_jobs(
 
         continue;
         }
+      else
+        free(pwent);
       }
+    
 
     if ((recover != JOB_RECOV_RUNNING) && 
         (recover != JOB_RECOV_DELETE) &&

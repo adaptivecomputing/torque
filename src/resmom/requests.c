@@ -256,7 +256,7 @@ static pid_t fork_to_user(
   pid_t           pid;
   job            *pjob;
 
-  struct passwd  *pwdp;
+  struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
 
   char           *idir;
@@ -330,6 +330,8 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
+      if (pwdp)
+        free(pwdp);
       return(-PBSE_BADUSER);
       }
 
@@ -350,6 +352,8 @@ static pid_t fork_to_user(
       {
       hdir = pwdp->pw_dir;
       }
+    if (pwdp)
+      free(pwdp);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
   if (hdir == NULL)

@@ -18,23 +18,39 @@ struct group *getgrnam_ext(
   char *grp_name) /* I */
 
   {
-  struct group * grp;
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
 
-  /* bad argument check */
-  if (grp_name == NULL)
-    return NULL;
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
 
-  grp = getgrnam(grp_name);
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
 
-  /* if the group wasn't found by name, check if the name */
-  /* was the group's id */
+  grp = (struct group *)calloc(1, sizeof(struct group));
   if (grp == NULL)
     {
-    if (isdigit(grp_name[0]))
-      grp = getgrgid(atoi(grp_name));
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
     }
-  
-  return grp;
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if (rc)
+    {
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+
+  return(grp);
   } /* END getgrnam_ext() */
 
 
