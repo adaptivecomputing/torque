@@ -526,6 +526,7 @@ struct passwd *check_pwd(
     if (grpp != NULL)
       {
       pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
+      free(grpp);
       }
     else
       {

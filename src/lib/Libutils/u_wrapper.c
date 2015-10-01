@@ -64,7 +64,7 @@ struct passwd *getpwuid_wrapper(
   if (bufsize == -1)
     bufsize = 8196;
 
-  buf = (char *)malloc(bufsize);
+  buf = (char *)calloc(1, bufsize);
   if (buf == NULL)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
@@ -75,6 +75,7 @@ struct passwd *getpwuid_wrapper(
   if (pwent == NULL)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
     return(NULL);
     }
 
@@ -83,8 +84,11 @@ struct passwd *getpwuid_wrapper(
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    free(buf);
     return (NULL);
     }
+    
+  free(buf);
   
   return(pwent); 
   }
