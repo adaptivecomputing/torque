@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qrun.h"
 #include "test_qrun.h"
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "tmsock_recov.h"
 #include "test_tmsock_recov.h"
 #include <stdlib.h>
 #include <stdio.h>

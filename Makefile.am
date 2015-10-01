@@ -33,6 +33,7 @@ EXTRA_DIST = acinclude.m4 \
 	buildutils/pbs_mach_type \
 	buildutils/pbs_mkdirs.in \
 	buildutils/self-extract-head-sh.in \
+	buildutils/test-driver \
 	buildutils/torque.spec.in \
 	contrib/AddPrivileges \
   contrib/hwloc_install.sh \
@@ -56,7 +57,11 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/README.qpeek \
 	contrib/showjobs \
 	contrib/diag/tdiag.sh \
-	contrib/use_jobs_subdirs_setup
+	contrib/use_jobs_subdirs_setup \
+	src/test \
+	src/tools/test \
+	src/resmom/linux/test \
+	src/drmaa/test
 
 bin_SCRIPTS = pbs-config
 

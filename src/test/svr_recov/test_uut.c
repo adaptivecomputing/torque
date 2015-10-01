@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "svr_recov.h"
 #include "test_svr_recov.h"
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,10 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_fn_resc.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "attribute.h"
 #include "pbs_error.h"
 
 START_TEST(test_one)

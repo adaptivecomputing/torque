@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "momctl.h"
 #include "test_momctl.h"
 #include <stdlib.h>
 #include <stdio.h>

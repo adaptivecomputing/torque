@@ -1,11 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "stat_job.h"
-#include "test_stat_job.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "pbs_error.h"
 #include "pbs_job.h"
+#include "test_stat_job.h"
 
 bool include_in_status(int index);
 

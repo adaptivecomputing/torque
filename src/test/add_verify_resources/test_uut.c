@@ -1,11 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "lib_cmds.h"
-#include "test_add_verify_resources.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "pbs_cmds.h"
 #include "pbs_error.h"
+#include "test_add_verify_resources.h"
 
 START_TEST(test_simple)
   {
