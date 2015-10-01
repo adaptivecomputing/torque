@@ -560,8 +560,11 @@ int req::set_attribute(
     {
     if (this->gpu_mode.size() > 0)
       {
-      this->gpu_mode += ":";
-      this->gpu_mode += str;
+      if (this->gpu_mode.find(str) == std::string::npos)
+        {
+        this->gpu_mode += ":";
+        this->gpu_mode += str;
+        }
       }
     else
       this->gpu_mode = str;
