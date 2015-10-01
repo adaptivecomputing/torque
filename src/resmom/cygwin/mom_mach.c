@@ -3984,6 +3984,7 @@ static char *quota(
       }
 
     uid = pw->pw_uid;
+    free(pw);
     }
 
   /* Cygwin doesn't yet support quota
