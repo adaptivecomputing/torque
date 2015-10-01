@@ -26,6 +26,9 @@ struct group *getgrnam_ext(
   struct group *result;
   int rc;
 
+  if (grp_name == NULL)
+    return(NULL);
+
   bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
   if (bufsize == -1)
     bufsize = 8196;
@@ -47,6 +50,14 @@ struct group *getgrnam_ext(
   rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
   if (rc)
     {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if (rc == 0)
+        return(grp);
+      }
+ 
     sprintf(buf, "getgrnam_r failed: %d", rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
     return (NULL);

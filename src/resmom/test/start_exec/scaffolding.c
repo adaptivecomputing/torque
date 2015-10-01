@@ -8,6 +8,8 @@
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
 #include <pwd.h> /* gid_t, uid_t */
+#include <sys/types.h>
+#include <grp.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -25,6 +27,17 @@
 #include "node_internals.hpp"
 #endif
 
+#define LDAP_RETRIES 5
+
+unsigned linux_time = 0;
+int  send_ms_called;
+int  send_sisters_called;
+int  num_contacted;
+bool am_ms = false;
+bool bad_pwd = false;
+bool fail_init_groups = false;
+bool fail_site_grp_check = false;
+int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
 int is_login_node = 0;
@@ -390,6 +403,7 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
   exit(1);
   }
 
+<<<<<<< HEAD
 struct passwd * getpwnam_ext(char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
@@ -397,6 +411,151 @@ struct passwd * getpwnam_ext(char * user_name)
   }
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
+=======
+struct passwd *getpwnam_wrapper(
+
+  const char *user_name)
+
+  {
+  struct passwd *pwent;
+  char  *buf;
+  long   bufsize;
+  struct passwd *result;
+  int rc;
+
+  bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  pwent = (struct passwd *)calloc(1, sizeof(struct passwd));
+  if (pwent == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
+    }
+
+  rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
+  if (rc)
+    {
+    sprintf(buf, "getpwnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+  
+  return(pwent);
+  }
+
+
+struct group *getgrnam_ext( 
+
+  char *grp_name) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  if (grp_name == NULL)
+    return(NULL);
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  grp = (struct group *)calloc(1, sizeof(struct group));
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
+    }
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if (rc)
+    {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if (rc == 0)
+        return(grp);
+      }
+ 
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+
+  return(grp);
+  } /* END getgrnam_ext() */
+
+
+
+struct passwd *getpwnam_ext( 
+
+  char *user_name) /* I */
+
+  {
+  struct passwd *pwent = NULL;
+  int            retrycnt = 0;
+
+  /* bad argument check */
+  if (user_name == NULL)
+    return NULL;
+
+  errno = 0;
+
+  while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
+    {
+    pwent = getpwnam_wrapper( user_name );
+
+    /* if the user wasn't found check for any errors to log */
+    if (pwent == NULL)
+      {
+      switch (errno)
+        {
+        case EINTR:
+        case EIO:
+        case EMFILE:
+        case ENFILE:
+        case ENOMEM:
+        case ERANGE:
+          sprintf(log_buffer, "ERROR: getpwnam() error %d (%s)",
+                  errno,
+                  strerror(errno));
+
+          log_ext(-1, __func__, log_buffer, LOG_ERR);
+          retrycnt++;
+          break;
+
+        default:
+          retrycnt = -1;
+          break;
+        }
+      }
+    }
+
+  return(pwent);
+  } /* END getpwnam_ext() */
+
+
+int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
+>>>>>>> 338c32a... fixed unit tests for bugs introduced by changes
   {
   fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
   exit(1);
