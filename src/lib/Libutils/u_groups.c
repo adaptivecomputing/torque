@@ -42,22 +42,29 @@ struct group *getgrnam_ext(
   if (grp == NULL)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
     return(NULL);
     }
 
   rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
-  if (rc)
+  if ((rc) ||
+      (result == NULL))
     {
     /* See if a number was passed in instead of a name */
     if (isdigit(grp_name[0]))
       {
       rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
-      if (rc == 0)
+      if ((rc == 0) &&
+          (result != NULL))
         return(grp);
       }
  
     sprintf(buf, "getgrnam_r failed: %d", rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    free(buf);
+    free(grp);
+
     return (NULL);
     }
 
