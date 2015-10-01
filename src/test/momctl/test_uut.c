@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "momctl.h"
 
 extern int   flush_rc;
 extern char *string_read;
