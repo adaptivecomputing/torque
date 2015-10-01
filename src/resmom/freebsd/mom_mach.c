@@ -2522,6 +2522,7 @@ quota(struct rm_attribute *attrib)
       }
 
     uid = pw->pw_uid;
+    free(pw);
     }
 
   if (quotactl(fs->fs_file, Q_GETQUOTA, uid, (char *)&qi) == -1)

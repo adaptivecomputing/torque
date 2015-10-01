@@ -2496,7 +2496,7 @@ int im_join_job_as_sister(
   
   pjob->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
   
-  /* check_pwd is setting up ji_un as type MOM
+ /* check_pwd is setting up ji_un as type MOM
    * pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
    * pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
    * pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = addr->sin_addr.s_addr;
@@ -2506,11 +2506,11 @@ int im_join_job_as_sister(
   if (check_pwd(pjob) == NULL)
     {
     /* log_buffer populated in check_pwd() */
-    
+
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-    
+
     send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
-    
+
     mom_job_purge(pjob);
 
     if (radix_hosts != NULL)
@@ -2518,9 +2518,10 @@ int im_join_job_as_sister(
 
     if (radix_ports != NULL)
       free(radix_ports);
-      
+
     return(IM_DONE);
     }
+
 
   /* should we make a tmpdir? */
   if (TTmpDirName(pjob, namebuf, sizeof(namebuf)))
@@ -5602,7 +5603,6 @@ void im_request(
   unsigned int         momport = 0;
   char                 log_buffer[LOCAL_LOG_BUF_SIZE+1];
 
-  struct passwd       *check_pwd();
   
   u_long gettime(resource *);
   u_long getsize(resource *);
