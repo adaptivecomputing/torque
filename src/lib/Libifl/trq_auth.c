@@ -712,15 +712,18 @@ int validate_user(
   if (strcmp(user_pwd->pw_name, user_name))
     {
     sprintf(msg, "User names do not match: submitted: %s, expected: %s", user_name, user_pwd->pw_name);
+    free(user_pwd);
     return(PBSE_IFF_NOT_FOUND);
     }
 
   if (cr.pid != user_pid)
     {
     sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
+    free(user_pwd);
     return(PBSE_IFF_NOT_FOUND);
     }
 
+  free(user_pwd);
   return(PBSE_NONE);
   }
 

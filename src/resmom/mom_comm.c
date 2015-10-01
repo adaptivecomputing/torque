@@ -2543,7 +2543,10 @@ int im_join_job_as_sister(
       }
     }
 
-  if (check_pwd(pjob) == NULL)
+  struct passwd *pwent;
+
+  pwent = check_pwd(pjob);
+  if (pwent == NULL)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -2561,6 +2564,8 @@ int im_join_job_as_sister(
       
     return(IM_DONE);
     }
+  else
+    free(pwent);
 
   /* should we make a tmpdir? */
   if (TTmpDirName(pjob, namebuf, sizeof(namebuf)))
@@ -5642,7 +5647,6 @@ void im_request(
   unsigned int         momport = 0;
   char                 log_buffer[LOCAL_LOG_BUF_SIZE+1];
 
-  struct passwd       *check_pwd();
   
   u_long gettime(resource *);
   u_long getsize(resource *);
