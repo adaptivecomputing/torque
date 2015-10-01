@@ -427,6 +427,7 @@ int set_jobexid(
         {
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
+        free(pwent);
         pwent = getpwnam_ext((char *)puser.c_str());
 
         if (pwent == NULL)

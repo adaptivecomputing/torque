@@ -35,14 +35,20 @@ struct passwd *getpwnam_wrapper(
   if (pwent == NULL)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
     return(NULL);
     }
 
   rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
-  if (rc)
+  if ((rc) ||
+      (result == NULL))
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    free(buf);
+    free(pwent);
+
     return (NULL);
     }
   
