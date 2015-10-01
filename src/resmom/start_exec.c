@@ -522,6 +522,7 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "calloc failed");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
+    free(pwdp);
     return(NULL);
     }
 
@@ -568,6 +569,7 @@ struct passwd *check_pwd(
           strerror(errno));
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
+        free(pwdp);
         return(NULL);
         }
       }   /* END if (grpp != NULL) */
@@ -589,9 +591,10 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "too many group entries");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
+    if (pwdp)
+      free(pwdp);
     return(NULL);
     }
-
   /* perform site specific check on validatity of account */
 
   if (site_mom_chkuser(pjob))
@@ -601,6 +604,8 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "site_mom_chkuser failed");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
+    if (pwdp)
+      free(pwdp);
     return(NULL);
     }
 
@@ -4900,12 +4905,17 @@ int start_process(
    * to spawn tasks (ji_grpcache).
    */
 
-  if (!check_pwd(pjob))
+  struct passwd *pwent;
+
+  pwent = check_pwd(pjob);
+  if (pwent == NULL)
     {
     log_err(-1, __func__, log_buffer);
 
     return(-1);
     }
+  else
+    free(pwent);
 
   /*
   ** Begin a new process for the fledgling task.
@@ -6458,7 +6468,10 @@ int start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-  if (!check_pwd(pjob))
+  struct passwd *pwent;
+
+  pwent = check_pwd(pjob);
+  if (pwent == NULL)
     {
     sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
@@ -6468,6 +6481,8 @@ int start_exec(
 
     return(PBSE_BADUSER);
     }
+  else
+    free(pwent);
 
   /* should we make a tmpdir? */
 
@@ -8016,6 +8031,7 @@ int init_groups(
       }
 
     pwgrp = pwe->pw_gid;
+    free(pwe);
     }
 
   if (LOGLEVEL >= 4)
@@ -8914,6 +8930,8 @@ int exec_job_on_ms(
 
     if (SC != 0)
       {
+      if (TJE->pwdp)
+        free(TJE->pwdp);
       memset(TJE, 0, sizeof(pjobexec_t));
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob1", pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -8930,6 +8948,8 @@ int exec_job_on_ms(
     {
     if (SC != 0)
       {
+      if (TJE->pwdp)
+        free(TJE->pwdp);
       memset(TJE, 0, sizeof(pjobexec_t));
 
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob2", pjob->ji_qs.ji_jobid);
@@ -8959,6 +8979,9 @@ int exec_job_on_ms(
 
   if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
     {
+    if (TJE->pwdp)
+      free(TJE->pwdp);
+
     sprintf(log_buffer, "ALERT:  job failed phase 3 start - jobid %s", pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -8972,6 +8995,8 @@ int exec_job_on_ms(
 
   /* SUCCESS:  MOM returns */
 
+  if (TJE->pwdp)
+    free(TJE->pwdp);
   memset(TJE, 0, sizeof(pjobexec_t));
 
   if (LOGLEVEL >= 3)

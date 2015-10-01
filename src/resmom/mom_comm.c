@@ -2527,7 +2527,10 @@ int im_join_job_as_sister(
    * pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
    **/
 
-  if (check_pwd(pjob) == NULL)
+  struct passwd *pwent;
+
+  pwent = check_pwd(pjob);
+  if (pwent == NULL)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -2545,6 +2548,8 @@ int im_join_job_as_sister(
       
     return(IM_DONE);
     }
+  else
+    free(pwent);
 
   /* should we make a tmpdir? */
   if (TTmpDirName(pjob, namebuf, sizeof(namebuf)))
@@ -4844,8 +4849,6 @@ void im_request(
   int local_socket;
   struct tcp_chan *local_chan = NULL;
 
-  struct passwd       *check_pwd();
-  
   u_long gettime(resource *);
   u_long getsize(resource *);
 

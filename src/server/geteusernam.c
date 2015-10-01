@@ -473,6 +473,7 @@ int set_jobexid(
             snprintf(EMsg, 1024, "root user %s fails ACL check",
                      puser.c_str());
 
+          free(pwent);
           return(PBSE_BADUSER); /* root not allowed */
           }
         }
@@ -482,6 +483,7 @@ int set_jobexid(
           snprintf(EMsg, 1024, "root user %s not allowed",
                    puser.c_str());
           
+        free(pwent);
         return(PBSE_BADUSER); /* root not allowed */
         }
       }    /* END if (pwent->pw_uid == 0) */
@@ -535,11 +537,13 @@ int set_jobexid(
         snprintf(EMsg, 1024, "user %s not located in user data base",
                  puser.c_str());
 
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
     if (pudb->ue_permbits & (PERMBITS_NOBATCH | PERMBITS_RESTRICTED))
       {
+      free(pwent);
       return(PBSE_QACESS);
       }
 
@@ -608,6 +612,7 @@ int set_jobexid(
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");
 
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
@@ -639,6 +644,7 @@ int set_jobexid(
         snprintf(EMsg, 1024, "cannot locate group %s in server group file",
           pgrpn.c_str());
 
+      free(pwent);
       return(PBSE_BADGRP);  /* no such group */
       }
 
@@ -669,9 +675,12 @@ int set_jobexid(
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "%s",log_buf);
 
+        free(pwent);
+        free(gpent);
         return(PBSE_BADGRP); /* user not in group */
         }
       }
+    free(gpent);
     }    /* END if ((pgrpn = getegroup(pjob,pattr))) */
 
   /* set new group */
@@ -685,7 +694,9 @@ int set_jobexid(
   pattr->at_flags |= addflags;
 
   /* SUCCESS */
-  return(0);
+  free(pwent);
+  return(PBSE_NONE);
+
   }  /* END set_jobexid() */
 
 /* END geteusernam.c */

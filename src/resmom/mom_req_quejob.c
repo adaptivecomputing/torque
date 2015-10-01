@@ -756,14 +756,18 @@ void req_mvjobfile(
     return;
     }
 
+  pwd = check_pwd(pj);
   if ((pj->ji_grpcache == NULL) && 
-      (check_pwd(pj) == NULL))
+      (pwd == NULL))
     {
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
     return;
     }
 
+  /* check_pwd allocated pwd and getpwnam_ext is going to allocate
+     another one. Free pwd first */
+  free(pwd);
   if ((pwd = getpwnam_ext(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
     {
     /* FAILURE */
@@ -783,8 +787,12 @@ void req_mvjobfile(
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buffer);
 
+    if (pwd)
+      free(pwd);
     return;
     }
+  if (pwd)
+    free(pwd);
 
   if (write_ac_socket(
         fds,

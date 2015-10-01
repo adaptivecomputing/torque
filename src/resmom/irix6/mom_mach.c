@@ -2776,6 +2776,7 @@ quota(struct rm_attribute *attrib)
       }
 
     uid = pw->pw_uid;
+    free(pw);
     }
 
   if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, (caddr_t)&qi) == -1)
