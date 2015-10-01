@@ -516,6 +516,9 @@ struct passwd *getpwnam_ext(
   if (user_name == NULL)
     return NULL;
 
+  if (bad_pwd == true)
+    return(NULL);
+
   errno = 0;
 
   while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
