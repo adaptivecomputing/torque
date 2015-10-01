@@ -1,10 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qmgr_functions.h"
 #include "qmgr.h"
 #include "test_qmgr.h"
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "attribute.h"
 #include "pbs_error.h"
 
 int check_list(int type, const char *list);

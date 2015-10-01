@@ -1,10 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_fn_unkn.h"
 #include "test_attr_fn_unkn.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "attribute.h"
 #include "pbs_error.h"
 
 START_TEST(test_one)

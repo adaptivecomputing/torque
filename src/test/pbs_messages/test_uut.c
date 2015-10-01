@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "pbs_messages.h"
 #include "test_pbs_messages.h"
 #include <stdlib.h>
 #include <stdio.h>

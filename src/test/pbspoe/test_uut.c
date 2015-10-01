@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "pbspoe.h"
 #include "test_pbspoe.h"
 #include <stdlib.h>
 #include <stdio.h>
