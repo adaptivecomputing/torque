@@ -361,7 +361,7 @@ START_TEST(test_check_pwd_euser)
   fail_unless(pwd == NULL, "check_pwd succeeded with an empty job");
 
   bad_pwd = true;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "rightsaidfred", 0);
   pwd = check_pwd(pjob);
   fail_unless(pwd == NULL, "bad pwd fail");
 
