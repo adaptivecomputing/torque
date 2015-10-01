@@ -521,7 +521,7 @@ struct passwd *check_pwd(
      * code will send a group ID over in some instances, so we should try
      * to work with a groupid if provided */
 
-    grpp = getgrnam(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+    grpp = getgrnam_ext(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
 
     if (grpp != NULL)
       {
