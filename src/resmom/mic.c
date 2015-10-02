@@ -331,8 +331,12 @@ int add_mic_status(
 
     if (COIEngineGetHandle(COI_ISA_MIC, i, &engine) != COI_SUCCESS)
       {
-      snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
-      log_err(-1, __func__, log_buffer);
+      if (down_mics.find(i) == down_mics.end())
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+        down_mics.insert(i);
+        }
 
       continue;
       }
