@@ -263,7 +263,7 @@ int check_for_mics()
       if (it == down_mics.end())
         {
         snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         down_mics.insert(i);
         }
 
@@ -276,7 +276,7 @@ int check_for_mics()
         {
         /* if we made it here we have the mic again. remove it from the down_mics set */
         snprintf(log_buffer, sizeof(log_buffer), "handle for mic index %d is back online", (int)i);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         down_mics.erase(it);
         }
       }
