@@ -300,6 +300,7 @@ extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
 
+
 extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
@@ -312,6 +313,9 @@ extern void send_update_soon();
 extern int  use_nvidia_gpu;
 #endif
 
+#ifdef MIC
+int check_for_mics();
+#endif
 
 int num_stat_update_failures = 0;
 
@@ -1677,6 +1681,11 @@ void mom_server_all_update_stat(void)
     global_gpu_status.clear();
     add_gpu_status(global_gpu_status);
 #endif
+
+#ifdef MIC
+    check_for_mics();
+#endif 
+
     /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
        to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
        been queued and at the same time the server makes a request to the mom we can get stuck
