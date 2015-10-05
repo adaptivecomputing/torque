@@ -1270,7 +1270,7 @@ void main_loop(void)
   long          timeout = 0;
   long          log = 0;
   long          scheduling = FALSE;
-  long          sched_iteration = 0;
+  long          sched_iteration = PBS_SCHEDULE_CYCLE;
   time_t        time_now = time(NULL);
 //  time_t        try_hellos = 0;
   time_t        update_timeout = 0;
