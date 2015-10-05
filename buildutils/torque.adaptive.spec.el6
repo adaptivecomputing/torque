@@ -750,7 +750,7 @@ EOF
         echo "    '%{torque_user}'..."
         yes 'y' | %{_sbindir}/torque.setup \
             "%{torque_user}" >/dev/null
-        qterm >/dev/null 2>&1 || :
+        %{_bindir}/qterm >/dev/null 2>&1 || :
         %{_sbindir}/trqauthd -d >/dev/null 2>&1 || :
 
         if [ ! -s "${NODES_FILE}" ]
