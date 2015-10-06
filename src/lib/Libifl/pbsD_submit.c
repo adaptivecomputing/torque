@@ -131,7 +131,7 @@ char *pbs_submit_err(
 
   if ((script != NULL) && (*script != '\0'))
     {
-    if (PBSD_jscript(c, script, NULL) != 0)
+    if (PBSD_jscript(c, script, return_jobid) != 0)
       {
       *local_errno = PBSE_BADSCRIPT;
 
