@@ -54,7 +54,8 @@ struct passwd *getpwnam_wrapper(
       rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
       }while((rc != 0) && (errno == ERANGE));
     }
-  else if ((rc) ||
+  
+  if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
@@ -112,7 +113,8 @@ struct passwd *getpwuid_wrapper(
       rc = getpwuid_r(uid, pwent, buf, bufsize, &result);
       }while((rc != 0) && (errno == ERANGE));
     }
-   else if ((rc) ||
+   
+   if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
