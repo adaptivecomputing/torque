@@ -652,8 +652,7 @@ if [ $1 -eq 1 ]
 then
     echo "  No other installation of '%{client_pkg}' detected on"
     echo "    the system."
-    chkconfig --add trqauthd >/dev/null 2>&1 || :
-    chkconfig trqauthd on >/dev/null 2>&1 || :
+    systemctl enable trqauthd >/dev/null 2>&1 || :
 else
     echo "  Additional instance of '%{client_pkg}' detected on"
     echo "  the system."
@@ -666,9 +665,8 @@ then
     echo "  No other installation of '%{client_pkg} detected on"
     echo "  the system other than the one being uninstalled."
     echo "  Stopping the 'trqauthd' service..."
-    chkconfig trqauthd off >/dev/null 2>&1 || :
-    service trqauthd stop >/dev/null 2>&1 || :
-    chkconfig --del trqauthd >/dev/null 2>&1 || :
+    systemctl stop trqauthd >/dev/null 2>&1 || :
+    systemctl disable trqauthd >/dev/null 2>&1 || :
 fi
 
 %pre %{server_sub}
@@ -757,8 +755,7 @@ EOF
         fi
     fi
 
-    chkconfig --add pbs_server >/dev/null 2>&1 || :
-    chkconfig pbs_server on >/dev/null 2>&1 || :
+    systemctl enable pbs_server >/dev/null 2>&1 || :
 else
     echo "  Additional instance of '%{server_pkg}' detected on"
     echo "    the system."
@@ -771,9 +768,8 @@ then
     echo "  No other installation of '%{server_pkg}' detected on"
     echo "    the system other than the one being uninstalled."
     echo "  Stopping the 'pbs_server' service..."
-    chkconfig pbs_server off >/dev/null 2>&1 || :
-    service pbs_server stop >/dev/null 2>&1 || :
-    chkconfig --del pbs_server >/dev/null 2>&1 || :
+    systemctl stop pbs_server >/dev/null 2>&1 || :
+    systemctl disable pbs_server >/dev/null 2>&1 || :
 fi
 
 %pre %{devel_sub}
@@ -850,8 +846,7 @@ EOF
 
     export TORQUE_SERVER="${HOSTNAME}"
 
-    chkconfig --add pbs_mom >/dev/null 2>&1 || :
-    chkconfig pbs_mom on >/dev/null 2>&1 || :
+    systemctl enable pbs_mom >/dev/null 2>&1 || :
 else
     echo "  Additional instance of '%{mom_pkg}' detected on"
     echo "    the system."
@@ -866,9 +861,8 @@ then
     echo "  No other installation of '%{mom_pkg}' detected on"
     echo "    the system other than the one being uninstalled."
     echo "  Stopping the 'pbs_mom' service..."
-    chkconfig pbs_mom off >/dev/null 2>&1 || :
-    service pbs_mom stop >/dev/null 2>&1 || :
-    chkconfig --del pbs_mom >/dev/null 2>&1 || :
+    systemctl stop pbs_mom stop >/dev/null 2>&1 || :
+    systemctl disable pbs_mom >/dev/null 2>&1 || :
 fi
 
 %postun %{mom_sub}

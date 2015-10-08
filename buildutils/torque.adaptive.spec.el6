@@ -761,6 +761,8 @@ EOF
         fi
     fi
 
+    chkconfig --add trqauthd >/dev/null 2>&1 || :
+    chkconfig trqauthd on >/dev/null 2>&1 || :
     chkconfig --add pbs_server >/dev/null 2>&1 || :
     chkconfig pbs_server on >/dev/null 2>&1 || :
 else
@@ -778,6 +780,9 @@ then
     chkconfig pbs_server off >/dev/null 2>&1 || :
     service pbs_server stop >/dev/null 2>&1 || :
     chkconfig --del pbs_server >/dev/null 2>&1 || :
+    chkconfig trqauthd off >/dev/null 2>&1 || :
+    service trqauthd stop >/dev/null 2>&1 || :
+    chkconfig --del trqauthd >/dev/null 2>&1 || :
 fi
 
 %pre %{devel_sub}
