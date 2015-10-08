@@ -39,7 +39,9 @@ int MXMLGetChildCI(mxml_t *E, char *CName, int *CTok, mxml_t **CP);
 int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg, int emsg_size);
 
 /* u_groups.c */
-struct group * getgrnam_ext(char * grp_name );
+void free_grname(struct group *, char *);
+struct group * getgrnam_ext(char **user_buf, char * grp_name );
+struct group * getgrgid_ext(char **user_buf, gid_t grp_id );
 
 /* src/include/u_hash_map_structs.h */
 
@@ -98,7 +100,8 @@ int AVL_list_add_item(AvlTree tree, char **Buf, long *current_len, long *max_len
 int AVL_list( AvlTree tree, char **Buf, long *current_len, long *max_len );
 
 /* u_users.c */
-struct passwd * getpwnam_ext(char * user_name );
+extern void free_pwnam(struct passwd *pwdp, char *buf);
+struct passwd * getpwnam_ext(char **user_buffer, char * user_name );
 
 /* u_xml.c */
 int get_parent_and_child(char *start, char **parent, char **child, char **end);

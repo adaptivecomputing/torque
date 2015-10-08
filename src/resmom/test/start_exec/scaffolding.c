@@ -86,6 +86,11 @@ int       num_node_boards = 10;
 node_internals internal_layout;
 #endif
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grp, char *buf)
+  {}
 
 
 
@@ -405,12 +410,18 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char *user_name)
-  {
-  static int ct = 1;
-  static passwd pwd;
+struct passwd *getpwnam_wrapper(
 
-  if (ct == 1)
+  char       **user_buffer,
+  const char *user_name)
+
+  *user_buffer = NULL;
+  bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
     {
     pwd.pw_dir = strdup("/home/dbeer");
     pwd.pw_gid = 6;
@@ -423,8 +434,121 @@ struct passwd * getpwnam_ext(char *user_name)
     return(&pwd);
     }
 
-  return(NULL);
+  rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
+  if (rc)
+    {
+    sprintf(buf, "getpwnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+  
+  *user_buffer = buf;
+  return(pwent);
   }
+
+
+struct group *getgrnam_ext( 
+
+  char **grp_buf,
+  char *grp_name) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  if (grp_name == NULL)
+    return(NULL);
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  grp = (struct group *)calloc(1, sizeof(struct group));
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
+    }
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if (rc)
+    {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if (rc == 0)
+        return(grp);
+      }
+ 
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+
+  return(grp);
+  } /* END getgrnam_ext() */
+
+
+
+struct passwd *getpwnam_ext( 
+
+  char **user_buf,
+  char *user_name) /* I */
+
+  {
+  struct passwd *pwent = NULL;
+  int            retrycnt = 0;
+
+  /* bad argument check */
+  if (user_name == NULL)
+    return NULL;
+
+  errno = 0;
+
+  while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
+    {
+    pwent = getpwnam_wrapper( user_name );
+
+    /* if the user wasn't found check for any errors to log */
+    if (pwent == NULL)
+      {
+      switch (errno)
+        {
+        case EINTR:
+        case EIO:
+        case EMFILE:
+        case ENFILE:
+        case ENOMEM:
+        case ERANGE:
+          sprintf(log_buffer, "ERROR: getpwnam() error %d (%s)",
+                  errno,
+                  strerror(errno));
+
+          log_ext(-1, __func__, log_buffer, LOG_ERR);
+          retrycnt++;
+          break;
+
+        default:
+          retrycnt = -1;
+          break;
+        }
+      }
+    }
+
+  return(pwent);
+  } /* END getpwnam_ext() */
+
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
