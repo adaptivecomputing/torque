@@ -125,6 +125,8 @@ struct job_array;
 
 #define JOB_REPORTED_POLL_TIMEOUT 300
 #define JOB_CONDENSED_TIMEOUT     45
+#define REQ_VERSION_1             1
+#define REQ_VERSION_2             2
 
 /*
  * The depend_job structure is used to record the name and location
@@ -384,6 +386,7 @@ enum job_atr
   JOB_ATR_system_start_time,
   JOB_ATR_nppcu, /* Hyper-Thread handling for ALPS (Cray) */
   JOB_ATR_login_node_key,
+  JOB_ATR_request_version,
   JOB_ATR_req_information,
 #include "site_job_attr_enum.h"
 

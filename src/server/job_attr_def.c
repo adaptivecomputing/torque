@@ -1230,6 +1230,18 @@ attribute_def job_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_JOB},
 
+  /* JOB_ATR_request_version */
+  {ATTR_request_version, /* "request_version" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_WRITE,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
+
   /* JOB_ATR_req_information */
   {ATTR_req_information, /* "req_information" */
    decode_complete_req,

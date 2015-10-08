@@ -261,7 +261,6 @@ static pid_t fork_to_user(
   char           *idir;
 
   std::string     hdir;
-  char           *buf;
 
   struct stat     sb;
 
