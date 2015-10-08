@@ -15,6 +15,9 @@
 #include "utils.h"
 #include "log.h"
 
+#include "utils.h"
+#include "log.h"
+
 int pbs_errno = 0; 
 char *pbs_server = NULL;
 bool  exit_called = false;

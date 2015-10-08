@@ -104,12 +104,12 @@ struct batch_reply *PBSD_rdrpy(
   int  c)           /* I */
 
   {
-  int      rc;
+  int          rc;
 
-  struct batch_reply *reply;
-  int      sock;
-  const char    *the_msg = NULL;
-  struct tcp_chan *chan = NULL;
+  batch_reply *reply;
+  int          sock;
+  const char  *the_msg = NULL;
+  tcp_chan    *chan = NULL;
   
   if ((c < 0) || 
       (c >= PBS_NET_MAX_CONNECTIONS))
@@ -158,9 +158,6 @@ struct batch_reply *PBSD_rdrpy(
 
     if ((the_msg = pbs_strerror(*local_errno)) != NULL)
       {
-      if (connection[c].ch_errtxt != NULL)
-        free(connection[c].ch_errtxt);
-
       connection[c].ch_errtxt = strdup(the_msg);
       }
 
@@ -190,9 +187,6 @@ struct batch_reply *PBSD_rdrpy(
     {
     if ((the_msg = reply->brp_un.brp_txt.brp_str) != NULL)
       {
-      if (connection[c].ch_errtxt != NULL)
-        free(connection[c].ch_errtxt);
-
       connection[c].ch_errtxt = strdup(the_msg);
       }
     }

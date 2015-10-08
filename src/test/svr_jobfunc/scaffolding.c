@@ -23,6 +23,8 @@
 
 all_nodes               allnodes;
 bool possible = false;
+
+
 bool exit_called = false;
 extern int svr_resc_size;
 all_queues svr_queues;
@@ -563,7 +565,6 @@ int to_size(
   return(0);
   }
 
-Machine::Machine() {}
 PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device() {}
 Socket::Socket() {}

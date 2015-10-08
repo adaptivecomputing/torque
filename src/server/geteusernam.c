@@ -506,12 +506,14 @@ int set_jobexid(
         puser.c_str(),
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
-          
+
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
     if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
       {
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
@@ -582,7 +584,7 @@ int set_jobexid(
 
   /* extract user-specified egroup if it exists */
 
-  if(!getegroup(pjob, pattr,pgrpn))
+  if (!getegroup(pjob, pattr,pgrpn))
     {
     free_pwnam(pwent, buf);
     pwent = NULL;
