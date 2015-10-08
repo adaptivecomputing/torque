@@ -64,11 +64,23 @@ struct group *getgrnam_ext(
   if (grp == NULL)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
     return(NULL);
     }
 
   rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
-  if (rc)
+
+  while ((rc != 0) &&
+         (errno == ERANGE))
+    {
+    free(buf);
+    bufsize *= 2;
+    buf = (char *)calloc(1, bufsize);
+    rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+    }
+
+  if ((rc) ||
+      (result == NULL))
     {
     /* See if a number was passed in instead of a name */
     if (isdigit(grp_name[0]))
@@ -84,6 +96,10 @@ struct group *getgrnam_ext(
  
     sprintf(buf, "getgrnam_r failed: %d", rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    free(buf);
+    free(grp);
+
     return (NULL);
     }
 
@@ -123,7 +139,16 @@ struct group *getgrgid_ext(
     }
 
   rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
-  if ((rc) ||
+   while ((rc != 0) &&
+         (errno == ERANGE))
+    {
+    free(buf);
+    bufsize *= 2;
+    buf = (char *)calloc(1, bufsize);
+    rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
+    }
+
+ if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getgrnam_r failed: %d", rc);

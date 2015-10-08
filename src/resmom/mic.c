@@ -212,7 +212,78 @@ int add_single_mic_info(
   return(PBSE_NONE);
   } /* END add_single_mic_info() */
 
+std::set<int> down_mics;
 
+int check_for_mics()
+
+  {
+  uint32_t                 num_engines = 0;
+  uint32_t                 i = 0;
+
+#ifdef NUMA_SUPPORT
+    /* does this node board have mics configured? */
+    if (node_boards[numa_index].mic_end_index < 0)
+      return(PBSE_NONE);
+#endif
+
+    if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
+      {
+      log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
+      return(PBSE_SYSTEM);
+      }
+
+#ifdef NUMA_SUPPORT
+  if (num_engines < node_boards[numa_index].mic_end_index)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+    "node board %d is supposed to have mic range %d-%d but there are only %d mics",
+    numa_index, node_boards[numa_index].mic_start_index,
+    node_boards[numa_index].mic_end_index, num_engines);
+    log_err(-1, __func__, log_buffer);
+    return(PBSE_SYSTEM);
+    }
+
+    for (i = node_boards[numa_index].mic_start_index; i <= node_boards[numa_index].mic_end_index; i++)
+#else
+  for (i = 0; i < num_engines; i++)
+#endif
+    {
+    int                     rc;
+    COIENGINE               engine;
+    struct COI_ENGINE_INFO  mic_stat;
+    std::set<int>::iterator it;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&mic_stat, 0, sizeof(mic_stat));
+
+    rc = COIEngineGetHandle(COI_ISA_MIC, i, &engine);
+    if (rc != COI_SUCCESS)
+      {
+      it = down_mics.find(i);
+      if (it == down_mics.end())
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        down_mics.insert(i);
+        }
+
+      continue;
+      }
+    else
+      {
+      it = down_mics.find(i);
+      if (it != down_mics.end())
+        {
+        /* if we made it here we have the mic again. remove it from the down_mics set */
+        snprintf(log_buffer, sizeof(log_buffer), "handle for mic index %d is back online", (int)i);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        down_mics.erase(it);
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  }
 
 
 
