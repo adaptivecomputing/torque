@@ -53,7 +53,7 @@ void mom_job_purge(job *pjob)
   exit(1);
   }
 
-struct passwd *check_pwd(job *pjob)
+bool check_pwd(job *pjob)
   {
   fprintf(stderr, "The call to check_pwd needs to be mocked!!\n");
   exit(1);
@@ -142,7 +142,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char * user_name)
+struct passwd * getpwnam_ext(char **user_buf, char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
   exit(1);
@@ -219,3 +219,8 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
   return(0);
   }
+
+void remove_from_job_list(job *pjob) {}
+
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}

@@ -683,6 +683,7 @@ int validate_user(
 #else
   struct ucred   cr;
   socklen_t      cr_size;
+  char *buf;
 
   if (msg == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -701,7 +702,7 @@ int validate_user(
     }
 #endif
 
-  user_pwd = get_password_entry_by_uid(cr.uid);
+  user_pwd = get_password_entry_by_uid(&buf, cr.uid);
    
   if (user_pwd == NULL)
     {
@@ -712,18 +713,18 @@ int validate_user(
   if (strcmp(user_pwd->pw_name, user_name))
     {
     sprintf(msg, "User names do not match: submitted: %s, expected: %s", user_name, user_pwd->pw_name);
-    free(user_pwd);
+    free_pwnam(user_pwd, buf);
     return(PBSE_IFF_NOT_FOUND);
     }
 
   if (cr.pid != user_pid)
     {
     sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
-    free(user_pwd);
+    free_pwnam(user_pwd, buf);
     return(PBSE_IFF_NOT_FOUND);
     }
 
-  free(user_pwd);
+  free_pwnam(user_pwd, buf);
   return(PBSE_NONE);
   }
 

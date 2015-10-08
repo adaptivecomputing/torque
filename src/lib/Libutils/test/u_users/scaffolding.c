@@ -16,7 +16,7 @@ void log_ext(int errnum, const char *routine, const char *text, int severity)
   exit(1);
   }
 
-struct passwd *getpwuid_wrapper(uid_t uid)
+struct passwd *getpwuid_wrapper(char **buf, uid_t uid)
   {
   if (uid_i++ % 5 == 0)
     return(getpwuid(uid));
@@ -24,7 +24,14 @@ struct passwd *getpwuid_wrapper(uid_t uid)
     return(NULL);
   }
 
-struct passwd *getpwnam_wrapper(const char *user_name)
+struct passwd *getpwnam_wrapper(char **user_buf, const char *user_name)
   {
+  char *buf;
+
+  buf = (char *)malloc(1024);
+  if (buf == NULL)
+    return(NULL);
+
+  *user_buf = buf;
   return(getpwnam(user_name));
   }
