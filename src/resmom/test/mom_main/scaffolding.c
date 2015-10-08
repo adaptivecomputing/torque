@@ -47,7 +47,6 @@ extern char *server_alias;
 const char *dis_emsg[10];
 long *log_event_mask = NULL;
 int rpp_dbprt = 0;
-extern long pe_alarm_time;
 struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 struct config standard_config[2];
 struct config dependent_config[2];
@@ -238,7 +237,7 @@ int IamRoot()
   exit(1);
   }
 
-int add_network_entry(mom_hierarchy_t *nt, const char *name, struct addrinfo *ai, unsigned short rm_port, int path, int level)
+int add_network_entry(mom_hierarchy_t *nt, char *name, struct addrinfo *ai, unsigned short rm_port, int path, int level)
   {
   fprintf(stderr, "The call to add_network_entry needs to be mocked!!\n");
   exit(1);
@@ -358,7 +357,7 @@ void net_close(int but)
   exit(1);
   }
 
-int kill_task(job *pj, task *ptask, int sig, int pg)
+int kill_task(task *ptask, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   exit(1);
@@ -859,6 +858,32 @@ time_t get_stat_update_interval()
   return ServerStatUpdateInterval;
   }
 
-void empty_received_nodes() {}
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
 
-void start_request_pool(threadpool_t *tp) {}
+int kill_task(
+
+  job  *pjob,   /* I */
+  task *ptask,  /* I */
+  int   sig,    /* I */
+  int   pg)     /* I (1=signal process group, 0=signal master process only) */
+
+  {
+  return(0);
+  }
+
+int add_network_entry(
+
+  mom_hierarchy_t    *nt,
+  const char         *name,
+  struct addrinfo    *addr_info,
+  unsigned short      rm_port,
+  int                 path,
+  int                 level)
+
+  {
+  return(0);
+  }
+
+void start_request_pool( threadpool_t *tp)
+ {}
