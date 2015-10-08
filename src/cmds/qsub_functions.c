@@ -2317,6 +2317,7 @@ int validate_group_list(
   {
   /* check each group to determine if it is a valid group that the user can be a part of.
    * group list is of the form group[@host][,group[@host]...] */
+  char           *buf = NULL;
   char           *groups = strdup(glist);
   const char     *delims = ",";
   char           *tmp_group = strtok(groups, delims); 
@@ -2339,13 +2340,14 @@ int validate_group_list(
     if ((at = strchr(tmp_group,'@')) != NULL)
       *at = '\0';
     
-    if ((grent = getgrnam(tmp_group)) == NULL)
+    if ((grent = getgrnam_ext(&buf, tmp_group)) == NULL)
       {
       free(groups);
       return(FALSE);
       }
     
     pmem = grent->gr_mem;
+    free_grname(grent, buf);
     
     if (pmem == NULL)
       {

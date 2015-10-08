@@ -145,6 +145,12 @@
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
 #include "user_info.h" /* remove_server_suffix */
+#include <string>
+#include <vector>
+#include <algorithm>
+#include "utils.h"
+
+#include "user_info.h" /* remove_server_suffix() */
 
 #define MSG_LEN_LONG 160
 
@@ -2133,7 +2139,8 @@ static int check_queue_group_ACL(
 
       for (i = 0; pas != NULL && i < pas->as_usedptr;i++)
         {
-        if ((grp = getgrnam(pas->as_string[i])) == NULL)
+        char *buf = NULL;
+        if ((grp = getgrnam_ext(&buf, pas->as_string[i])) == NULL)
           continue;
 
         for (j = 0;grp->gr_mem[j] != NULL;j++)
@@ -2145,6 +2152,8 @@ static int check_queue_group_ACL(
             break;
             }
           }
+
+        free_grname(grp, buf);
 
         if (rc == 1)
           break;

@@ -247,7 +247,7 @@ START_TEST(test_check_pwd_euser)
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
   pwd = check_pwd(pjob);
   fail_unless(pwd == false, "bad site fail");
-
+  
   pjob->ji_grpcache = NULL;
   fail_site_grp_check = false;
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);

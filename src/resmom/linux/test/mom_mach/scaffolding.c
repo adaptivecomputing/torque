@@ -1,7 +1,15 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <unistd.h>
 #include <pwd.h> /* struct passwd */
+#include <string>
+#include <sys/types.h>
+#include <ctype.h>
+#include <grp.h>
+
+#include "pbs_config.h"
+#include <list>
 
 #include "../../../mom_main.h" /* MAX_LINE */
 #include "resource.h" /* resource_def, resource */
@@ -12,6 +20,9 @@
 #include "pbs_job.h" /* task */
 #include "pbs_nodes.h"
 #include "pbs_config.h"
+#include "node_frequency.hpp"
+#include "log.h"
+
 
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
@@ -51,6 +62,9 @@ int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
+
+void log_event(int event, int event_class, const char *func_name, const char buf)
+  {}
 
 resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   {
@@ -98,7 +112,7 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char * user_name)
+struct passwd * getpwnam_ext(char **user_buf, char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
   exit(1);
@@ -147,3 +161,168 @@ bool am_i_mother_superior(const job &pjob)
   {
   return(false);
   }
+
+char *threadsafe_tokenizer(
+
+  char       **str,    /* M */
+  const char  *delims) /* I */
+
+  {
+  return(NULL);
+  }
+
+bool node_frequency::set_frequency(cpu_frequency_type, unsigned long, unsigned long)
+  {
+  return(false);
+  }
+
+node_frequency::node_frequency() {}
+node_frequency::~node_frequency() {}
+
+bool node_frequency::get_frequency(
+
+  cpu_frequency_type &type,
+  unsigned long      &currMhz,
+  unsigned long      &maxMhz,
+  unsigned long      &minMhz)
+
+  {
+  return(false);
+  }
+
+bool node_frequency::get_frequency_string(std::string& str,bool full)
+ {
+ return(false);
+ }
+
+node_frequency nd_frequency;
+void from_frequency(struct cpu_frequency_value *pfreq, char *cvnbuf) {}
+
+void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices)
+  {
+  return;
+  }
+
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end) {}
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
+void free_pwnam(
+
+  struct passwd *pwdp,
+  char          *user_buf)
+
+  {
+  if (user_buf)
+    {
+    free(user_buf);
+    user_buf = NULL;
+    }
+
+  if (pwdp)
+    {
+    free(pwdp);
+    pwdp = NULL;
+    }
+
+  }
+
+
+
+void free_grname(
+
+  struct group *grp,
+  char         *user_buf)
+
+  {
+  if (user_buf)
+    {
+    free(user_buf);
+    user_buf = NULL;
+    }
+
+  if (grp)
+    {
+    free(grp);
+    grp = NULL;
+    }
+
+  }
+
+
+struct group *getgrnam_ext(
+
+  char **user_buf,
+  char *grp_name) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  *user_buf = NULL;
+  if (grp_name == NULL)
+    return(NULL);
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+  int buf_size = sizeof(struct group);
+  int alloc_size = sizeof(struct group);
+  grp = (struct group *)calloc(1, alloc_size);
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
+    return(NULL);
+    }
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if ((rc) ||
+      (result == NULL))
+    {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if ((rc == 0) &&
+          (result != NULL))
+        {
+        *user_buf = buf;
+        return(grp);
+        }
+      }
+
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    free(buf);
+    free(grp);
+
+    return (NULL);
+    }
+
+  *user_buf = buf;
+  return(grp);
+  } /* END getgrnam_ext() */
+
+
+
+>>>>>>> 96c700a... TRQ-3190 Had to rework getpwnam_ext and getgrnam_ext

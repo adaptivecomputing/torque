@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread */
+#include <sys/types.h>
+#include <grp.h>
 
 #include "queue.h" /* all_queues, pbs_queue */
 #include "attribute.h" /* pbs_attribute */
@@ -12,6 +14,8 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
 #include "pbs_nodes.h"
+#include "log.h"
+#include "utils.h"
 
 
 extern int svr_resc_size;
@@ -460,4 +464,210 @@ char *csv_nth(const char *csv_str, int n)
   {
   return(NULL);
   }
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
+
+void create_size_string(
+
+  char *buf, 
+  struct size_value values)
+
+  {
+  }
+
+int to_size(
+
+  const char        *val,   /* I */
+  struct size_value *psize) /* O */
+
+  {
+  return(0);
+  }
+
+struct pbsnode *next_node(
+    
+  all_nodes     *an,
+  pbsnode       *pnode,
+  node_iterator *ni)
+
+  {
+  static int next_node_count = 0;
+  static pbsnode *pn = (pbsnode *)calloc(1, sizeof(pbsnode));
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pn->nd_layout == NULL)
+    {
+    pn->nd_layout = new Machine();
+    }
+#endif
+
+  if (next_node_count++ % 2 == 0)
+    return(pn);
+  else
+    return(NULL);
+  }
+
+
+void free_grname(
+
+  struct group *grp,
+  char         *user_buf)
+
+  {
+  if (user_buf)
+    {
+    free(user_buf);
+    user_buf = NULL;
+    }
+
+  if (grp)
+    {
+    free(grp);
+    grp = NULL;
+    }
+
+  }
+
+
+struct group *getgrnam_ext(
+
+  char **user_buf,
+  char *grp_name) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  *user_buf = NULL;
+  if (grp_name == NULL)
+    return(NULL);
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  int alloc_size = sizeof(struct group);
+  grp = (struct group *)calloc(1, alloc_size);
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
+    return(NULL);
+    }
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if ((rc) ||
+      (result == NULL))
+    {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if ((rc == 0) &&
+          (result != NULL))
+        {
+        *user_buf = buf;
+        return(grp);
+        }
+      }
+
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    free(buf);
+    free(grp);
+
+    return (NULL);
+    }
+
+  *user_buf = buf;
+  return(grp);
+  } /* END getgrnam_ext() */
+
 

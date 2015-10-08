@@ -1333,6 +1333,7 @@ static const char *validuser(
 
   {
   struct passwd *p;
+  char          *buf;
 
   if ((attrib == NULL) || (attrib->a_value == NULL))
     {
@@ -1342,7 +1343,7 @@ static const char *validuser(
     return(NULL);
     }
 
-  p = getpwnam_ext(attrib->a_value);
+  p = getpwnam_ext(&buf, attrib->a_value);
 
   if (p != NULL)
     {

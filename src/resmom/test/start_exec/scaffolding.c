@@ -91,6 +91,11 @@ int       num_node_boards = 10;
 node_internals internal_layout;
 #endif
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grp, char *buf)
+  {}
 
 
 
@@ -414,6 +419,7 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size)
 =======
 struct passwd *getpwnam_wrapper(
 
+  char       **user_buffer,
   const char *user_name)
 
   {
@@ -423,6 +429,7 @@ struct passwd *getpwnam_wrapper(
   struct passwd *result;
   int rc;
 
+  *user_buffer = NULL;
   bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1)
     bufsize = 8196;
@@ -449,12 +456,14 @@ struct passwd *getpwnam_wrapper(
     return (NULL);
     }
   
+  *user_buffer = buf;
   return(pwent);
   }
 
 
 struct group *getgrnam_ext( 
 
+  char **grp_buf,
   char *grp_name) /* I */
 
   {
@@ -508,6 +517,7 @@ struct group *getgrnam_ext(
 
 struct passwd *getpwnam_ext( 
 
+  char **user_buf,
   char *user_name) /* I */
 
   {

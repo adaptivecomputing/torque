@@ -204,7 +204,8 @@ extern int            numa_index;
 /* external functions */
 int      mom_server_add(const char *name);
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count);
-struct passwd *getpwnam_ext(char *user_name);
+extern void free_pwnam(struct passwd *pwdp, char *buf);
+struct passwd *getpwnam_ext(char **user_buffer, char *user_name);
 
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
@@ -3189,6 +3190,7 @@ const char *validuser(
 
   {
   struct passwd *p;
+  char          *buf;
 
   if ((attrib == NULL) || (attrib->a_value == NULL))
     {
@@ -3198,11 +3200,11 @@ const char *validuser(
     return(NULL);
     }
 
-  p = getpwnam_ext(attrib->a_value);
+  p = getpwnam_ext(&buf, attrib->a_value);
 
   if (p != NULL)
     {
-    free(p);
+    free_pwnam(p, buf);
     return("yes");
     }
 
