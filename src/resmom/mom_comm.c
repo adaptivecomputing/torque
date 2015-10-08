@@ -2503,31 +2503,6 @@ int im_join_job_as_sister(
    * pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
    **/
 
-  // Run a health check if a jobstart health check script is defined
-  if (PBSNodeCheckProlog)
-    {
-    check_state(1);
-
-    if (internal_state & INUSE_DOWN)
-      {
-      sprintf(log_buffer, "Not starting job %s because my health check script reported an error",
-        pjob->ji_qs.ji_jobid);
-      log_err(-1, __func__, log_buffer);
-
-      send_im_error(PBSE_BADMOMSTATE, 1, pjob, cookie, event, fromtask);
-
-      mom_job_purge(pjob);
-
-      if (radix_hosts != NULL)
-        free(radix_hosts);
-
-      if (radix_ports != NULL)
-        free(radix_ports);
-
-      return(IM_DONE);
-      }
-    }
-
   bool good;
 
   good = check_pwd(pjob);
