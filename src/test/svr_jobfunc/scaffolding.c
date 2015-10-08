@@ -702,6 +702,8 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+Machine::Machine() {}
+
 
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
