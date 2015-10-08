@@ -2539,10 +2539,10 @@ int im_join_job_as_sister(
       }
     }
 
-  struct passwd *pwent;
+  bool good;
 
-  pwent = check_pwd(pjob);
-  if (pwent == NULL)
+  good = check_pwd(pjob);
+  if (good == false)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -2560,8 +2560,6 @@ int im_join_job_as_sister(
       
     return(IM_DONE);
     }
-  else
-    free(pwent);
 
   /* should we make a tmpdir? */
   if (TTmpDirName(pjob, namebuf, sizeof(namebuf)))

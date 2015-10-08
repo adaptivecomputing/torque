@@ -2467,7 +2467,8 @@ quota(struct rm_attribute *attrib)
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
+    char *buf;
+    if ((pw = getpwnam_ext(&buf, attrib->a_value)) == NULL)
       {
       sprintf(log_buffer,
               "user not found: %s", attrib->a_value);
@@ -2477,7 +2478,7 @@ quota(struct rm_attribute *attrib)
       }
 
     uid = pw->pw_uid;
-    free(pw);
+    free_pwnam(pw, buf);
     }
 
   if (quotactl(Q_GETQUOTA, me->mnt_fsname, uid, &qi) == -1)
