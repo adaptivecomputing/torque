@@ -26,6 +26,9 @@ char log_buffer[LOG_BUF_SIZE];
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
 void encode_used(
 
   job               *pjob,   /* I */

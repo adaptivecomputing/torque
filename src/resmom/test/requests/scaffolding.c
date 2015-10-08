@@ -457,6 +457,29 @@ void free_grname(
 
   }
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(
+
+  struct group *grp,
+  char         *user_buf)
+
+  {
+  if (user_buf)
+    {
+    free(user_buf);
+    user_buf = NULL;
+    }
+
+  if (grp)
+    {
+    free(grp);
+    grp = NULL;
+    }
+
+  }
+
 
 struct group *getgrnam_ext(
 

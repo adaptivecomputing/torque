@@ -98,7 +98,6 @@ void free_grname(struct group *grp, char *buf)
   {}
 
 
-
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
 int create_job_cpuset(job * pj) { return 0; }
