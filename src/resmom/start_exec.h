@@ -21,7 +21,7 @@ enum csa_chk_cmd
 #define B_THRESHOLD 2048
 #define EXTRA_VARIABLE_SPACE 5120
 
-struct passwd *check_pwd(job *pjob);
+bool check_pwd(job *pjob);
 
 int open_demux(u_long addr, int port);
 

@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pwd.h> /* passwd */
+#include <sys/types.h>
+#include <grp.h>
 
 #include "pbs_job.h" /* job */
 #include "attribute.h" /* attribute_def, pbs_attribute  */
 #include "server.h" /* server */
+#include "log.h"
 
 attribute_def job_attr_def[10];
 struct server server;
@@ -25,7 +28,7 @@ char *get_variable(job *pjob, const char *variable)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char * user_name)
+struct passwd * getpwnam_ext(char **user_buf, char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
   exit(1);
@@ -37,7 +40,7 @@ int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging)
   exit(1);
   }
 
-struct group * getgrnam_ext(char * grp_name)
+struct group * getgrnam_ext(char **grp_buf, char * grp_name)
   {
   fprintf(stderr, "The call to getgrnam_ext needs to be mocked!!\n");
   exit(1);
@@ -82,3 +85,58 @@ int svr_get_privilege(
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grpp, char *buf)
+  {}
+
+struct group *getgrgid_ext(
+
+  char **user_buf,
+  gid_t  grp_id) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  grp = (struct group *)calloc(1, sizeof(struct group));
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    free(buf);
+    return(NULL);
+    }
+
+  rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
+  if ((rc) ||
+      (result == NULL))
+    {
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+
+    *user_buf = NULL;
+    free(buf);
+    free(grp);
+    return (NULL);
+    }
+
+  *user_buf = buf;
+  return(grp);
+  } /* END getgrnam_ext() */
+

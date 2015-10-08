@@ -7,13 +7,14 @@
 
 #include "pbs_error.h"
 
-struct passwd *get_password_entry_by_uid(uid_t uid);
+struct passwd *get_password_entry_by_uid(char **user_buf, uid_t uid);
 extern int uid_i;
 extern int nam_i;
 
 START_TEST(get_password_entry_by_uid_test)
   {
-  struct passwd *root = get_password_entry_by_uid(0);
+  char *buf;
+  struct passwd *root = get_password_entry_by_uid(&buf, 0);
   fail_unless(uid_i == 6);
   fail_unless(root != NULL);
   }
@@ -21,18 +22,20 @@ END_TEST
 
 START_TEST(null_check)
   {
+  char *user_buf = NULL;
   char *user_name = NULL;
   struct passwd *ret_user = NULL;
-  ret_user = getpwnam_ext(user_name);
+  ret_user = getpwnam_ext(&user_buf, user_name);
   fail_unless(ret_user == NULL, "null shouldn't work as user_name");
   }
 END_TEST
 
 START_TEST(invalid_user)
   {
+  char *user_buf = NULL;
   char *user_name = strdup("unknown_user");
   struct passwd *ret_user = NULL;
-  ret_user = getpwnam_ext(user_name);
+  ret_user = getpwnam_ext(&user_buf, user_name);
   fail_unless(ret_user == NULL, "unknown_user is a valid user????");
   free(user_name);
   }
@@ -40,9 +43,10 @@ END_TEST
 
 START_TEST(valid_user)
   {
+  char *user_buf = NULL;
   char *user_name = strdup("root");
   struct passwd *ret_user = NULL;
-  ret_user = getpwnam_ext(user_name);
+  ret_user = getpwnam_ext(&user_buf, user_name);
   fail_if(ret_user == NULL, "unknown_user is a valid user????");
   fail_unless(strcmp(user_name, ret_user->pw_name) == 0, "Incorrect user returned (%s != %s)", user_name, ret_user->pw_name);
   free(user_name);
@@ -51,10 +55,11 @@ END_TEST
 
 START_TEST(invalid_user_with_error)
   {
+  char *user_buf = NULL;
   /* How do I lock memory allocation again.... */
   char *user_name = strdup("unknown_user");
   struct passwd *ret_user = NULL;
-  ret_user = getpwnam_ext(user_name);
+  ret_user = getpwnam_ext(&user_buf, user_name);
   fail_unless(ret_user == NULL, "unknown_user is a valid user????");
   free(user_name);
   }

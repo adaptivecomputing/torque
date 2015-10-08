@@ -2436,11 +2436,12 @@ valid_user(struct rm_attribute *attrib)
     return NULL;
     }
 
-  p = getpwnam_ext(attrib -> a_value);
+  char *buf;
+  p = getpwnam_ext(&buf, attrib -> a_value);
 
   if (p)
     {
-    free(p);
+    free_pwnam(pw, buf);
     return "yes";
     }
   else

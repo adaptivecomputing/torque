@@ -38,6 +38,7 @@ bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
 int logged_event;
+int MOMCudaVisibleDevices;
 int exec_with_exec;
 int is_login_node = 0;
 char *apbasil_protocol = NULL;
@@ -79,6 +80,7 @@ char jobstarter_exe_name[MAXPATHLEN + 1];
 int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
 char log_buffer[LOG_BUF_SIZE];
+char mom_alias[1024];
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -89,6 +91,11 @@ int       num_node_boards = 10;
 node_internals internal_layout;
 #endif
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grp, char *buf)
+  {}
 
 
 
@@ -410,6 +417,7 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
 
 struct passwd *getpwnam_wrapper(
 
+  char       **user_buffer,
   const char *user_name)
 
   {
@@ -419,6 +427,7 @@ struct passwd *getpwnam_wrapper(
   struct passwd *result;
   int rc;
 
+  *user_buffer = NULL;
   bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1)
     bufsize = 8196;
@@ -445,12 +454,14 @@ struct passwd *getpwnam_wrapper(
     return (NULL);
     }
   
+  *user_buffer = buf;
   return(pwent);
   }
 
 
 struct group *getgrnam_ext( 
 
+  char **grp_buf,
   char *grp_name) /* I */
 
   {
@@ -504,6 +515,7 @@ struct group *getgrnam_ext(
 
 struct passwd *getpwnam_ext( 
 
+  char **user_buf,
   char *user_name) /* I */
 
   {
@@ -773,6 +785,7 @@ job *mom_find_job(const char *jobid)
   return(NULL);
   }
 
+
 char * csv_find_string(const char *csv_str, const char *search_str)
   {
   fprintf(stderr, "The call to csv_find_string to be mocked!!\n");
@@ -790,3 +803,4 @@ int csv_length(const char *csv_str)
   fprintf(stderr, "The call to csv_length to be mocked!!\n");
   exit(1);
   }
+
