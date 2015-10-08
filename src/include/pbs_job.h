@@ -512,6 +512,7 @@ typedef struct
   int       upfds;
   int       mjspipe[2];     /* MOM to job starter for ack */
   int       downfds;
+  char     *buf;           /* Buffer pointer to hold memory allocated for pwdp */
   } pjobexec_t;
 
 

@@ -96,6 +96,11 @@ int       num_node_boards = 10;
 node_internals internal_layout;
 #endif
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grp, char *buf)
+  {}
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
@@ -415,6 +420,7 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
 
 struct passwd *getpwnam_wrapper(
 
+  char       **user_buffer,
   const char *user_name)
 
   {
@@ -424,6 +430,7 @@ struct passwd *getpwnam_wrapper(
   struct passwd *result;
   int rc;
 
+  *user_buffer = NULL;
   bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1)
     bufsize = 8196;
@@ -450,12 +457,14 @@ struct passwd *getpwnam_wrapper(
     return (NULL);
     }
   
+  *user_buffer = buf;
   return(pwent);
   }
 
 
 struct group *getgrnam_ext( 
 
+  char **grp_buf,
   char *grp_name) /* I */
 
   {
@@ -509,6 +518,7 @@ struct group *getgrnam_ext(
 
 struct passwd *getpwnam_ext( 
 
+  char **user_buf,
   char *user_name) /* I */
 
   {

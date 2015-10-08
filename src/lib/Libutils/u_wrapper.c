@@ -11,6 +11,7 @@
 
 struct passwd *getpwnam_wrapper(
 
+  char      **user_buffer, /* getpwnam_r uses a buffer which must be freed later. This is a pointer to that buffer */
   const char *user_name)
 
   {
@@ -19,6 +20,8 @@ struct passwd *getpwnam_wrapper(
   long   bufsize;
   struct passwd *result;
   int rc;
+
+  *user_buffer = NULL;
 
   bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1)
@@ -52,11 +55,13 @@ struct passwd *getpwnam_wrapper(
     return (NULL);
     }
   
+  *user_buffer = buf;
   return(pwent);
   }
 
 struct passwd *getpwuid_wrapper(
 
+  char **user_buf,
   uid_t uid)
 
   {
@@ -66,6 +71,7 @@ struct passwd *getpwuid_wrapper(
   struct passwd *result;
   int rc;
 
+  *user_buf = NULL;
   bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1)
     bufsize = 8196;
@@ -92,5 +98,6 @@ struct passwd *getpwuid_wrapper(
     return (NULL);
     }
   
+  *user_buf = buf;
   return(pwent); 
   }

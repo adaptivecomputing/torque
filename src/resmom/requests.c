@@ -261,6 +261,7 @@ static pid_t fork_to_user(
   char           *idir;
 
   char           *hdir;
+  char           *buf;
 
   struct stat     sb;
 
@@ -292,7 +293,9 @@ static pid_t fork_to_user(
     }
   else
     {
-    if ((pwdp = getpwnam_ext(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    char *buf = NULL;
+
+    if ((pwdp = getpwnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
@@ -314,9 +317,10 @@ static pid_t fork_to_user(
       {
       usergid = pwdp->pw_gid;   /* default to login group */
       }
-    else if ((grpp = getgrnam(preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
+    else if ((grpp = getgrnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
       {
       usergid = grpp->gr_gid;
+      free_grname(grpp, buf);
       }
     else
       {
@@ -329,8 +333,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      if (pwdp)
-        free(pwdp);
+      free_pwnam(pwdp, buf);
       return(-PBSE_BADUSER);
       }
 
@@ -351,8 +354,8 @@ static pid_t fork_to_user(
       {
       hdir = pwdp->pw_dir;
       }
-    if (pwdp)
-      free(pwdp);
+
+    free_pwnam(pwdp, buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
   if (hdir == NULL)

@@ -92,6 +92,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "utils.h"
 
 /* This typedef allows a function to return a pointer to a function */
 typedef int (*fptr_int)(const char *, const char *);
@@ -748,26 +749,29 @@ int gid_match(const char *group1, const char *group2)
 
   struct group *pgrp;
   gid_t gid1, gid2;
+  char *buf;
 
   if (!strcmp(group1, group2))
     {
     return(0); /* match */
     }
 
-  pgrp = getgrnam(group1);
+  pgrp = getgrnam_ext(&buf, (char *)group1);
 
   if (pgrp == NULL)
     return(1);
 
   gid1 = pgrp->gr_gid;
 
-  pgrp = getgrnam(group2);
+  free_grname(pgrp, buf);
+  pgrp = getgrnam_ext(&buf, (char *)group2);
 
   if (pgrp == NULL)
     return(1);
 
   gid2 = pgrp->gr_gid;
 
+  free_grname(pgrp, buf);
   return (!(gid1 == gid2));
   }
 

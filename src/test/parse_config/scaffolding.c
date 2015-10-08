@@ -29,6 +29,9 @@ int MOMJobDirStickySet = FALSE;
 char PBSNodeMsgBuf[MAXLINE];
 std::list<job *>    alljobs_list;
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
 void encode_used(
 
   job               *pjob,   /* I */
@@ -169,6 +172,7 @@ void DIS_tcp_settimeout(long timeout) {}
 
 struct passwd *getpwnam_ext( 
 
+  char **user_buf,
   char *user_name) /* I */
   
   {
