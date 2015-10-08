@@ -8,6 +8,8 @@ if [ "$1" = "" ] ; then
   exit 1
   fi
 
+export PATH=/usr/local/sbin:/usr/local/bin:$PATH
+
 unset PBSDEBUG
 TRQ_CHECK=`pgrep trqauthd`
 TRQ_CHECK_RES=$?

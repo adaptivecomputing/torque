@@ -460,7 +460,7 @@ bool Socket::spread_place(
   int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
-  if ((this->is_available() == true) ||
+  if ((this->getAvailableChips() == this->chips.size()) ||
       (chip == true))
     {
     if (chip == false)
@@ -470,7 +470,7 @@ bool Socket::spread_place(
       per_numa_remainder = per_numa % this->chips.size();
       per_numa /= this->chips.size();
       count = this->chips.size();
-      
+    
       this->socket_exclusive = true;
       }
 

@@ -69,6 +69,16 @@ struct group *getgrnam_ext(
     }
 
   rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+
+  while ((rc != 0) &&
+         (errno == ERANGE))
+    {
+    free(buf);
+    bufsize *= 2;
+    buf = (char *)calloc(1, bufsize);
+    rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+    }
+
   if ((rc) ||
       (result == NULL))
     {
