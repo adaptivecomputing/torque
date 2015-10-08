@@ -521,8 +521,10 @@ struct passwd *getpwnam_ext(
   {
   struct passwd *pwent = NULL;
   int            retrycnt = 0;
+  char *buf;
 
   /* bad argument check */
+  *user_buf = NULL;
   if (user_name == NULL)
     return NULL;
 
@@ -530,7 +532,7 @@ struct passwd *getpwnam_ext(
 
   while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
     {
-    pwent = getpwnam_wrapper( user_name );
+    pwent = getpwnam_wrapper(&buf,  user_name );
 
     /* if the user wasn't found check for any errors to log */
     if (pwent == NULL)
@@ -558,6 +560,7 @@ struct passwd *getpwnam_ext(
       }
     }
 
+  *user_buf = buf;
   return(pwent);
   } /* END getpwnam_ext() */
 
