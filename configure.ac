@@ -745,16 +745,6 @@ AC_CHECK_LIB(pthread, pthread_create,
 LIBS="$LIBS $PTHREAD_LIBS"
 
 
-dnl we need -lssl and -lcrypto, lets make sure they exist
-AC_CHECK_LIB(ssl, SSL_accept,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib openssl-devel in order to build]) ])
-AC_CHECK_LIB(crypto, BN_init,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib crypto (often openssl-devel) in order to build]) ])
-
-
-
 dnl
 dnl we need libxml2
 dnl 
