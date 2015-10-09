@@ -840,8 +840,11 @@ int decode_utc(
     givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
     givenEpoch -= offset;       //Add in the passed in offset.
     }
-
-  if (givenEpoch <= time(NULL))
+  else
+    {
+    givenEpoch += tm.tm_gmtoff; //Take away the calculated offset.
+    }
+  if(givenEpoch <= time(NULL))
     {
     return(PBSE_BAD_UTC_RANGE);
     }
