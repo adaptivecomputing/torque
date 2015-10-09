@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qgpumode.h"
 #include "test_qgpumode.h"
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qterm.h"
 #include "test_qterm.h"
 #include <stdlib.h>
 #include <stdio.h>

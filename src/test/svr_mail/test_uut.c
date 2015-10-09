@@ -1,15 +1,13 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "svr_mail.h"
-#include "test_svr_mail.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
-#include "svr_format_job.h"
 #include "server.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include "test_svr_mail.h"
 
 struct server server;
 

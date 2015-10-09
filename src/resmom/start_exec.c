@@ -427,18 +427,16 @@ void no_hang(
 
 
 
-struct passwd *check_pwd(
+bool check_pwd(
 
-  job *pjob) /* I (modified) */
+  job  *pjob) /* I (modified) */
 
   {
   int retryCount;
-
   struct passwd *pwdp = NULL;
-
   struct group *grpp;
-
   char          *ptr;
+  char          *pwd_buf = NULL;
 
   /* NOTE:  should cache entire pwd object (NYI) */
 
@@ -451,14 +449,14 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "no user specified for job");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(NULL);
+    return(false);
     }
 
   /* we will retry if needed just to cover temporary problems */
 
   for (retryCount = 0;retryCount < EXTPWDRETRY;retryCount++)
     {
-    pwdp = getpwnam_ext(ptr);
+    pwdp = getpwnam_ext(&pwd_buf, ptr);
 
     if (pwdp != NULL)
       break;
@@ -475,12 +473,14 @@ struct passwd *check_pwd(
             ptr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(NULL);
+    return(false);
     }
 
 #ifdef __CYGWIN__
   if (IamUserByName(ptr) == 0)
-      return(NULL);
+    {
+      free_pwnam(pwdp, pwd_buf);
+      return(false);
 #endif  /* __CYGWIN__ */
 
   if (pjob->ji_grpcache != NULL)
@@ -488,8 +488,8 @@ struct passwd *check_pwd(
     /* SUCCESS */
 
     /* group cache previously loaded and cached */
-
-    return(pwdp);
+    free_pwnam(pwdp, pwd_buf);
+    return(true);
     }
 
   pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
@@ -504,7 +504,8 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "calloc failed");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(NULL);
+    free_pwnam(pwdp, pwd_buf);
+    return(false);
     }
 
   strcpy(pjob->ji_grpcache->gc_homedir, pwdp->pw_dir);
@@ -514,17 +515,20 @@ struct passwd *check_pwd(
   if ((pjob->ji_wattr[JOB_ATR_egroup].at_flags &
        (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
     {
+    char   *grp_buf = NULL;
+
     /* execution group specified and not default of login group */
 
     /* NOTE: ideally egroup should be groupname, not groupid, but pbs_server
      * code will send a group ID over in some instances, so we should try
      * to work with a groupid if provided */
 
-    grpp = getgrnam(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+    grpp = getgrnam_ext(&grp_buf, pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
 
     if (grpp != NULL)
       {
       pjob->ji_qs.ji_un.ji_momt.ji_exgid = grpp->gr_gid;
+      free_grname(grpp, grp_buf);
       }
     else
       {
@@ -550,7 +554,8 @@ struct passwd *check_pwd(
           strerror(errno));
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-        return(NULL);
+        free_pwnam(pwdp, pwd_buf);
+        return(false);
         }
       }   /* END if (grpp != NULL) */
     }
@@ -571,9 +576,9 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "too many group entries");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(NULL);
+    free_pwnam(pwdp, pwd_buf);
+    return(false);
     }
-
   /* perform site specific check on validatity of account */
 
   if (site_mom_chkuser(pjob))
@@ -583,12 +588,14 @@ struct passwd *check_pwd(
     sprintf(log_buffer, "site_mom_chkuser failed");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(NULL);
+    free_pwnam(pwdp, pwd_buf);
+    return(false);
     }
 
   /* SUCCESS */
 
-  return(pwdp);
+  free_pwnam(pwdp, pwd_buf);
+  return(true);
   }   /* END check_pwd() */
 
 
@@ -2228,7 +2235,7 @@ int TMomFinalizeJob1(
     * we do this now to save a few things in the job structure
    */
 
-  if ((TJE->pwdp = (void *)check_pwd(pjob)) == NULL)
+  if (check_pwd(pjob) == false)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -2237,6 +2244,7 @@ int TMomFinalizeJob1(
     return(FAILURE);
     }
 
+  if ((TJE->pwdp = getpwnam_ext(&TJE->buf, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
 #if IBM_SP2==2        /* IBM SP with PSSP 3.1 */
 
   /* load IBM SP switch table */
@@ -5018,7 +5026,10 @@ int start_process(
    * to spawn tasks (ji_grpcache).
    */
 
-  if (!check_pwd(pjob))
+  bool good;
+
+  good= check_pwd(pjob);
+  if (good == false)
     {
     log_err(-1, __func__, log_buffer);
 
@@ -6524,7 +6535,10 @@ int start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-  if (!check_pwd(pjob))
+  bool good;
+  
+  good = check_pwd(pjob);
+  if (good == false)
     {
     sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
@@ -8095,7 +8109,8 @@ int init_groups(
     /* Emulate the original init_groups() behaviour which treated
        gid==0 as a special case */
 
-    struct passwd *pwe = getpwnam_ext(pwname);
+    char          *buf;
+    struct passwd *pwe = getpwnam_ext(&buf, pwname);
 
     if (pwe == NULL)
       {
@@ -8105,6 +8120,7 @@ int init_groups(
       }
 
     pwgrp = pwe->pw_gid;
+    free_pwnam(pwe, buf);
     }
 
   if (LOGLEVEL >= 4)
@@ -9003,6 +9019,8 @@ int exec_job_on_ms(
 
     if (SC != 0)
       {
+      if (TJE->pwdp)
+        free(TJE->pwdp);
       memset(TJE, 0, sizeof(pjobexec_t));
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob1", pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -9019,6 +9037,8 @@ int exec_job_on_ms(
     {
     if (SC != 0)
       {
+      if (TJE->pwdp)
+        free(TJE->pwdp);
       memset(TJE, 0, sizeof(pjobexec_t));
 
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob2", pjob->ji_qs.ji_jobid);
@@ -9048,6 +9068,9 @@ int exec_job_on_ms(
 
   if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
     {
+    if (TJE->pwdp)
+      free(TJE->pwdp);
+
     sprintf(log_buffer, "ALERT:  job failed phase 3 start - jobid %s", pjob->ji_qs.ji_jobid);
 
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -9061,6 +9084,8 @@ int exec_job_on_ms(
 
   /* SUCCESS:  MOM returns */
 
+  if (TJE->pwdp)
+    free(TJE->pwdp);
   memset(TJE, 0, sizeof(pjobexec_t));
 
   if (LOGLEVEL >= 3)

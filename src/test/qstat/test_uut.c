@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qstat.h"
 #include "test_qstat.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,7 +6,6 @@
 #include <string>
 
 #include "pbs_error.h"
-#include "qstat.h"
 #include "cmds.h"
 
 
@@ -23,6 +21,15 @@ int read_int_token(const char **ptr);
 int read_int_prop(const char **prop, const char *prefix);
 int read_node_spec(const char **nodespec);
 int get_tasks_from_nodes_resc(const char * nodes);
+bool istrue(const char *string);
+int run_queue_mode(bool have_args, const char *operand, char *server_out, char *queue_name_out, char *server_name_out, string &errmsg);
+int run_server_mode(bool have_args, const char *operand, char *server_out, string &errmsg);
+int run_job_mode(bool have_args, const char *operand, int *located, char *server_out, char *server_old, char *queue_name_out, char *server_name_out, char *job_id_out, string &errmsg);
+bool isjobid(const char *string);
+int timestring_to_int(const char *timestring, int *req_walltime);
+int process_commandline_opts(int argc, char **argv, int *exec_only_flg, int *errflg_out);
+void get_ct(const char *str, int *jque, int *jrun);
+string get_err_msg(int any_failed, const char *mode, int connect, char *id);
 
 START_TEST(time_to_string_test)
   {

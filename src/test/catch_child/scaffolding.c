@@ -1305,10 +1305,10 @@ void mom_job_purge(job *pjob)
   return;
   }
 
-struct passwd *check_pwd(job *pjob)
+bool check_pwd(job *pjob)
   {
   struct passwd *respass = NULL;
-  return respass;
+  return false;
   }
 
 unsigned long gettime(resource *pres)

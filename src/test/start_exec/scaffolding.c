@@ -8,6 +8,8 @@
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
 #include <pwd.h> /* gid_t, uid_t */
+#include <sys/types.h>
+#include <grp.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -24,6 +26,8 @@
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
 #endif
+
+#define LDAP_RETRIES 5
 
 unsigned linux_time = 0;
 int  send_ms_called;
@@ -87,6 +91,11 @@ int       num_node_boards = 10;
 node_internals internal_layout;
 #endif
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
+
+void free_grname(struct group *grp, char *buf)
+  {}
 
 
 
@@ -406,26 +415,126 @@ int mom_checkpoint_job_is_checkpointable(job *pjob)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char *user_name)
+struct passwd *getpwnam_wrapper(
+
+  char       **user_buffer,
+  const char *user_name)
+
+  {
+  struct passwd *pwent;
+  char  *buf;
+  long   bufsize;
+  struct passwd *result;
+  int rc;
+
+  *user_buffer = NULL;
+  bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  pwent = (struct passwd *)calloc(1, sizeof(struct passwd));
+  if (pwent == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
+    }
+
+  rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
+  if (rc)
+    {
+    sprintf(buf, "getpwnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+  
+  *user_buffer = buf;
+  return(pwent);
+  }
+
+
+struct group *getgrnam_ext( 
+
+  char **grp_buf,
+  char *grp_name) /* I */
+
+  {
+  struct group *grp;
+  char  *buf;
+  long   bufsize;
+  struct group *result;
+  int rc;
+
+  if (grp_name == NULL)
+    return(NULL);
+
+  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (bufsize == -1)
+    bufsize = 8196;
+
+  buf = (char *)malloc(bufsize);
+  if (buf == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
+    return(NULL);
+    }
+
+  grp = (struct group *)calloc(1, sizeof(struct group));
+  if (grp == NULL)
+    {
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "could not allocate passwd structure");
+    return(NULL);
+    }
+
+  rc = getgrnam_r(grp_name, grp, buf, bufsize, &result);
+  if (rc)
+    {
+    /* See if a number was passed in instead of a name */
+    if (isdigit(grp_name[0]))
+      {
+      rc = getgrgid_r(atoi(grp_name), grp, buf, bufsize, &result);
+      if (rc == 0)
+        return(grp);
+      }
+ 
+    sprintf(buf, "getgrnam_r failed: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return (NULL);
+    }
+
+  return(grp);
+  } /* END getgrnam_ext() */
+
+
+
+struct passwd *getpwnam_ext( 
+
+  char **user_buf,
+  char *user_name) /* I */
+
   {
   static int ct = 1;
-  static passwd pwd;
+  passwd *pwd = (passwd *)calloc(1, sizeof(*pwd));
 
-  if (ct == 1)
-    {
-    pwd.pw_dir = strdup("/home/dbeer");
-    pwd.pw_gid = 6;
-    pwd.pw_name = strdup("dbeer");
-    }
+  pwd->pw_dir = strdup("/home/dbeer");
+  pwd->pw_gid = 6;
+  pwd->pw_name = strdup("dbeer");
 
   if ((ct++ % 2 == 0) &&
       (bad_pwd == false))
     {
-    return(&pwd);
+    return(pwd);
     }
 
   return(NULL);
-  }
+  } /* END getpwnam_ext() */
+
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {

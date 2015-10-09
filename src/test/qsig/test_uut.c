@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qsig.h"
 #include "test_qsig.h"
 #include <stdlib.h>
 #include <stdio.h>

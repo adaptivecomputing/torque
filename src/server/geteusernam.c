@@ -292,6 +292,7 @@ int set_jobexid(
   pbs_attribute  *pattr;
   char          **pmem;
 
+  char           *grp_buf = NULL;
   struct group   *gpent;
   std::string    puser = "";
   char           *at;
@@ -300,6 +301,7 @@ int set_jobexid(
 
 
   struct passwd  *pwent = NULL;
+  char           *buf = NULL;
   std::string      pgrpn = "";
   char            gname[PBS_MAXGRPN + 1];
 #ifdef _CRAY
@@ -398,7 +400,7 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    pwent = getpwnam_ext((char *)puser.c_str());
+    pwent = getpwnam_ext(&buf, (char *)puser.c_str());
 
     perm = svr_get_privilege((char *)puser.c_str(),get_variable(pjob,(char *)"PBS_O_HOST"));
 
@@ -427,7 +429,8 @@ int set_jobexid(
         {
         puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
 
-        pwent = getpwnam_ext((char *)puser.c_str());
+        free_pwnam(pwent, buf);
+        pwent = getpwnam_ext(&buf, (char *)puser.c_str());
 
         if (pwent == NULL)
           {
@@ -473,6 +476,7 @@ int set_jobexid(
             snprintf(EMsg, 1024, "root user %s fails ACL check",
                      puser.c_str());
 
+          free_pwnam(pwent, buf);
           return(PBSE_BADUSER); /* root not allowed */
           }
         }
@@ -482,6 +486,7 @@ int set_jobexid(
           snprintf(EMsg, 1024, "root user %s not allowed",
                    puser.c_str());
           
+        free_pwnam(pwent, buf);
         return(PBSE_BADUSER); /* root not allowed */
         }
       }    /* END if (pwent->pw_uid == 0) */
@@ -501,12 +506,14 @@ int set_jobexid(
         puser.c_str(),
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
-          
+
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
     if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
       {
+      free(pwent);
       return(PBSE_BADUSER);
       }
 
@@ -535,11 +542,13 @@ int set_jobexid(
         snprintf(EMsg, 1024, "user %s not located in user data base",
                  puser.c_str());
 
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
     if (pudb->ue_permbits & (PERMBITS_NOBATCH | PERMBITS_RESTRICTED))
       {
+      free_pwnam(pwent, buf);
       return(PBSE_QACESS);
       }
 
@@ -575,17 +584,21 @@ int set_jobexid(
 
   /* extract user-specified egroup if it exists */
 
-  if(!getegroup(pjob, pattr,pgrpn))
+  if (!getegroup(pjob, pattr,pgrpn))
     {
-    if ((pwent != NULL) || ((pwent = getpwnam_ext((char *)puser.c_str())) != NULL))
+    free_pwnam(pwent, buf);
+    pwent = NULL;
+    if ((pwent != NULL) || ((pwent = getpwnam_ext(&buf, (char *)puser.c_str())) != NULL))
       {
       /* egroup not specified - use user login group */
 
-      gpent = getgrgid(pwent->pw_gid);
+      gpent = getgrgid_ext(&grp_buf, pwent->pw_gid);
 
       if (gpent != NULL)
         {
         pgrpn = gpent->gr_name;           /* use group name */
+        free(grp_buf);
+        free(gpent);
         }
       else
         {
@@ -608,6 +621,7 @@ int set_jobexid(
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "user does not exist in server password file");
 
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
@@ -631,7 +645,7 @@ int set_jobexid(
     /* user specified a group, group must exist and either */
     /* must be user's primary group or the user must be in it */
 
-    gpent = getgrnam_ext((char *)pgrpn.c_str());
+    gpent = getgrnam_ext(&grp_buf, (char *)pgrpn.c_str());
 
     if (gpent == NULL)
       {
@@ -639,6 +653,7 @@ int set_jobexid(
         snprintf(EMsg, 1024, "cannot locate group %s in server group file",
           pgrpn.c_str());
 
+      free_pwnam(pwent, buf);
       return(PBSE_BADGRP);  /* no such group */
       }
 
@@ -669,9 +684,12 @@ int set_jobexid(
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "%s",log_buf);
 
+        free_pwnam(pwent, buf);
+        free_grname(gpent, grp_buf);
         return(PBSE_BADGRP); /* user not in group */
         }
       }
+    free_grname(gpent, grp_buf);
     }    /* END if ((pgrpn = getegroup(pjob,pattr))) */
 
   /* set new group */
@@ -685,6 +703,7 @@ int set_jobexid(
   pattr->at_flags |= addflags;
 
   /* SUCCESS */
+  free_pwnam(pwent, buf);
   return(PBSE_NONE);
 
   }  /* END set_jobexid() */
