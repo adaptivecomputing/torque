@@ -86,7 +86,7 @@ int trq_cg_cleanup_torque_cgroups()
     {
 
     /* directory exists. Remove it */
-    rc = rmdir(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str());
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -99,7 +99,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str());
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -112,7 +112,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str());
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -125,7 +125,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str());
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -138,7 +138,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str());
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -1278,7 +1278,7 @@ int trq_cg_populate_cgroup(
     return(PBSE_SYSTEM);
     }
 
-  if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
+  while ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
     {
     sprintf(log_buf, "failed to write cpuset for job %s", job_id);
     log_err(errno, __func__, log_buf);
@@ -1577,6 +1577,7 @@ int trq_cg_set_resident_memory_limit(
   FILE   *fd;
   size_t  bytes_written;
   unsigned long long memory_limit_in_bytes;
+  int                rc = PBSE_NONE;
   
   if (memory_limit == 0)
     return(PBSE_NONE);
@@ -1602,13 +1603,12 @@ int trq_cg_set_resident_memory_limit(
     {
     sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
     log_err(errno, __func__, log_buf);
-    fclose(fd);
-    return(PBSE_SYSTEM);
+    rc = PBSE_SYSTEM;
     }
 
   fclose(fd);
 
-  return(PBSE_NONE);
+  return(rc);
   } // END trq_cg_set_resident_memory_limit()
 
 /*
@@ -1702,7 +1702,12 @@ void trq_cg_remove_task_dirs(
       if (dent->d_name[0] == 'R')
         {
         std::string dir_name = torque_path + "/" + dent->d_name;
-        rmdir(dir_name.c_str());
+        int rc = rmdir_ext(dir_name.c_str());
+        if (rc != 0)
+          {
+          sprintf(log_buffer, "failed to remove directory %s", dir_name.c_str());
+          log_err(rc, __func__, log_buffer);
+          }
         }
       }
 
@@ -1732,40 +1737,13 @@ void trq_cg_delete_cgroup_path(
 #define MAX_CGROUP_DELETE_RETRIES 10
   int retries = 0;
   trq_cg_remove_task_dirs(cgroup_path);
-  int rc;
-  
-  do
+  int rc = rmdir_ext(cgroup_path.c_str());
+
+  if (rc != 0)
     {
-    rc = rmdir(cgroup_path.c_str());
-
-    if (rc < 0 )
-      {
-      if (errno == EBUSY)
-        {
-        /* cgroups are still cleaning up. try again later. */
-        if (LOGLEVEL >= 8)
-          {
-          sprintf(log_buffer, "cgroup not finished %s from cgroups: %d ", cgroup_path.c_str(), errno);
-          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-          }
-
-        retries++;
-
-        sleep(1);
-        }
-      else if (errno != ENOENT)
-        {
-        sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());
-        log_err(errno, __func__, log_buffer);
-        break;
-        }
-      else
-        break;
-      }
-    else
-      rc = PBSE_NONE;
-
-    } while ((rc != PBSE_NONE) && (retries < MAX_CGROUP_DELETE_RETRIES));
+    sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());
+    log_err(rc, __func__, log_buffer);
+    }
 
   } // END trq_cg_delete_cgroup_path()
 

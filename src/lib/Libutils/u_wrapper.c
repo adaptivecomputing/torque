@@ -129,3 +129,52 @@ struct passwd *getpwuid_wrapper(
   *user_buf = buf;
   return(pwent); 
   }
+
+
+int rmdir_ext(
+
+  const char *dir,
+  int         retry_limit)
+
+  {
+  int rc;
+  int retry_count = 0;
+
+  while ((rc = rmdir(dir)) &&
+         (retry_count < retry_limit))
+    {
+    switch (errno)
+      {
+      case EINTR:
+      case EBUSY:
+
+        retry_count++;
+        usleep(200000);
+        rc = 0;
+
+        break;
+
+      case ENOENT:
+
+        rc = 0;
+        errno = 0;
+        retry_count += retry_limit;
+
+        break;
+
+      default:
+
+        retry_count += retry_limit;
+        rc = errno;
+
+        break;
+      }
+    }
+
+  if ((rc == 0) &&
+      (errno != 0))
+    rc = errno;
+
+  return(rc);
+  } // END rmdir_ext()
+

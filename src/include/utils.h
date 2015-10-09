@@ -201,5 +201,8 @@ int unescape_xml(char *,char *,int);
 /* functions from u_putenv.c */
 int put_env_var(const char *, const char *);
 
+// from u_wrapper.c
+int rmdir_ext(const char *dir, int retry_limit = 20);
+
 #endif /* END #ifndef UTILS_H */
  
