@@ -290,25 +290,25 @@ void overwrite_complete_req(
   to_copy->get_values(names, values);
 
   for (unsigned int i = 0; i < names.size(); i++)
-  {
-  if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
     {
-    cr->set_value(names[i].c_str(), values[i].c_str());
-    }
-  else
-    {
-    char  *attr_name = strdup(names[i].c_str());
-    char  *dot;
-
-    dot = strchr(attr_name, '.');
-    if (dot != NULL)
+    if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
       {
-      int index = strtol(dot + 1, NULL, 10);
-      *dot = '\0';
-      cr->set_value(index, attr_name, values[i].c_str());
+      cr->set_value(names[i].c_str(), values[i].c_str());
+      }
+    else
+      {
+      char  *attr_name = strdup(names[i].c_str());
+      char  *dot;
+
+      dot = strchr(attr_name, '.');
+      if (dot != NULL)
+        {
+        int index = strtol(dot + 1, NULL, 10);
+        *dot = '\0';
+        cr->set_value(index, attr_name, values[i].c_str());
+        }
       }
     }
-  }
 
   attr->at_flags |= ATR_VFLAG_SET;
   } // END overwrite_complete_req

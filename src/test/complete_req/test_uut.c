@@ -211,6 +211,7 @@ START_TEST(test_set_hostlists)
   std::vector<std::string> list;
   fail_unless(r.getHostlist(list) == 0);
   fail_unless(list[0] == "napali:ppn=32", list[0].c_str());
+  fail_unless(list.size() == 1);
   const req &other = c.get_req(1);
   fail_unless(other.getHostlist(list) == 0);
   fail_unless(list[0] == "waimea:ppn=16", "it is '%s'", list[0].c_str());

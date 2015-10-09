@@ -132,6 +132,9 @@ req::req(
 
   {
   }
+
+
+
 /*
  * insert_hostname()
  *
@@ -141,6 +144,7 @@ req::req(
  * @param hostlist_name - Name to be added to req
  *
  */
+
 void req::insert_hostname(
 
   const char *hostlist_name)
@@ -2382,7 +2386,7 @@ void req::update_hostlist(
   const std::string &host_spec)
 
   {
-  this->hostlist.push_back(host_spec);
+  this->insert_hostname(host_spec.c_str());
   } // END update_hostlist()
 
     

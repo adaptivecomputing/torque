@@ -542,6 +542,29 @@ START_TEST(test_update_hostlist)
   fail_unless(list[0] == "napali");
   fail_unless(list[1] == "waimea");
   fail_unless(list[2] == "lihue");
+
+  list.clear();
+  r.update_hostlist("waimea");
+  r.update_hostlist("napali");
+  r.update_hostlist("lihue");
+  fail_unless(r.getHostlist(list) == 0);
+  fail_unless(list.size() == 3);
+  fail_unless(list[0] == "napali");
+  fail_unless(list[1] == "waimea");
+  fail_unless(list[2] == "lihue");
+  }
+END_TEST
+
+
+START_TEST(test_set_hostlist)
+  {
+  req r;
+  std::vector<std::string> list;
+  r.set_hostlist("napali:ppn=2");
+  r.set_hostlist("napali:ppn=2");
+  r.getHostlist(list);
+  fail_unless(list.size() == 1);
+
   }
 END_TEST
 
@@ -697,6 +720,7 @@ Suite *req_suite(void)
 
   tc_core = tcase_create("test_setters");
   tcase_add_test(tc_core, test_set_place_value);
+  tcase_add_test(tc_core, test_set_hostlist);
   suite_add_tcase(s, tc_core);
   
   return(s);

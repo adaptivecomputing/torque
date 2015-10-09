@@ -675,7 +675,7 @@ void complete_req::set_hostlists(
         {
         current = bar;
         }
-      }while((ppn < req_ppn) && (current != NULL));
+      } while((ppn < req_ppn) && (current != NULL));
 
 
     i++;
@@ -685,8 +685,8 @@ void complete_req::set_hostlists(
     {
     // We think there are more reqs than Moab does
     snprintf(log_buf, sizeof(log_buf),
-               "We only received %d or req assignments for job %s which has %d reqs.",
-               i, job_id, (int)this->reqs.size());
+      "We only received %d or req assignments for job %s which has %d reqs.",
+      i, job_id, (int)this->reqs.size());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
     }
 
