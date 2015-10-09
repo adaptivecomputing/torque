@@ -1,3 +1,4 @@
+#include "pbs_config.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <sstream>
 #include <fstream>
@@ -1091,81 +1092,51 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("node_mom_port_action_test");
   tcase_add_test(tc_core, node_mom_port_action_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("node_mom_rm_port_action_test");
   tcase_add_test(tc_core, node_mom_rm_port_action_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("node_gpus_action_test");
   tcase_add_test(tc_core, node_gpus_action_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("node_numa_action_test");
   tcase_add_test(tc_core, node_numa_action_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("numa_str_action_test");
   tcase_add_test(tc_core, numa_str_action_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("gpu_str_action_test");
   tcase_add_test(tc_core, gpu_str_action_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("create_partial_pbs_node_test");
   tcase_add_test(tc_core, create_partial_pbs_node_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("next_node_test");
   tcase_add_test(tc_core, next_node_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("insert_node_test");
   tcase_add_test(tc_core, insert_node_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("remove_node_test");
   tcase_add_test(tc_core, remove_node_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("next_host_test");
   tcase_add_test(tc_core, next_host_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_to_property_list_test");
   tcase_add_test(tc_core, add_to_property_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("write_compute_node_properties_test");
   tcase_add_test(tc_core, write_compute_node_properties_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_node_attribute_to_list_test");
   tcase_add_test(tc_core, add_node_attribute_to_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("add_node_property_test");
   tcase_add_test(tc_core, add_node_property_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("record_node_property_list_test");
-  tcase_add_test(tc_core, record_node_property_list_test);
+  //tcase_add_test(tc_core, record_node_property_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("read_val_and_advance_test");
   tcase_add_test(tc_core, read_val_and_advance_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("parse_node_token_test");
   tcase_add_test(tc_core, parse_node_token_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("handle_cray_specific_node_values_test");
   tcase_add_test(tc_core, handle_cray_specific_node_values_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("parse_node_name_test");
   tcase_add_test(tc_core, parse_node_name_test);
   suite_add_tcase(s, tc_core);
 
