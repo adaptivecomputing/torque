@@ -278,6 +278,7 @@ void overwrite_complete_req(
     {
     cr = new complete_req();
     attr->at_val.at_ptr = cr;
+    attr->at_flags |= ATR_VFLAG_SET;
     }
   else
     {
@@ -307,11 +308,13 @@ void overwrite_complete_req(
         *dot = '\0';
         cr->set_value(index, attr_name, values[i].c_str());
         }
+
+      free(attr_name);
       }
     }
 
   attr->at_flags |= ATR_VFLAG_SET;
-  } // END overwrite_complete_req
+  } // END overwrite_complete_req()
 
 
 
