@@ -154,8 +154,8 @@ case "$1" in
 		RET=$?
 		;;
 	restart)
-		stop
-		start
+		$0 stop
+		$0 start
 		;;
 	reload)
 		reload
