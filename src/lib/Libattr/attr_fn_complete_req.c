@@ -278,7 +278,7 @@ void overwrite_complete_req(
     {
     cr = new complete_req();
     attr->at_val.at_ptr = cr;
-    attr->at_flags |= ATR_VFLAG_SET;
+    attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     }
   else
     {
