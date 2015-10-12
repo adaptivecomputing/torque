@@ -1278,7 +1278,7 @@ int trq_cg_populate_cgroup(
     return(PBSE_SYSTEM);
     }
 
-  while ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
+  if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
     {
     sprintf(log_buf, "failed to write cpuset for job %s", job_id);
     log_err(errno, __func__, log_buf);
