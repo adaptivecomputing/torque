@@ -1127,6 +1127,7 @@ void req_deletejob(
      */
     if (TMOMJobGetStartInfo(pjob, &TJE) == SUCCESS)
       {
+      free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
       memset(TJE, 0, sizeof(pjobexec_t));
       }
 
