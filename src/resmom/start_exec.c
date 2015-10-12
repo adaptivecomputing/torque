@@ -2241,6 +2241,8 @@ int TMomFinalizeJob1(
     return(FAILURE);
     }
 
+  /* TJE->buf and TJE->pwdp at the end of exec_job_on_ms when
+     the job starts successfully */
   if ((TJE->pwdp = getpwnam_ext(&TJE->buf, pjob->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
 #if IBM_SP2==2        /* IBM SP with PSSP 3.1 */
   
@@ -2714,13 +2716,14 @@ int determine_umask(
     {
     if (!strcasecmp(DEFAULT_UMASK, "userdefault"))
       {
+      char *buf;
       /* apply user default */
 
       /* do we inherit umask when we do setuid(), NO */
       /* we want to try and determine what the users umask is */
       /* then we return its value so it can be set correctly */
 
-      if ((pwdp = getpwuid(uid)) == NULL)
+      if ((pwdp = get_password_entry_by_uid(&buf, uid)) == NULL)
         {
         sprintf(log_buffer, "FAILED to get password structure for uid %d",
                 uid);
@@ -2741,6 +2744,7 @@ int determine_umask(
           pclose(fp);
           }
         }
+      free_pwnam(pwdp, buf);
       }
     else
       {
@@ -8945,8 +8949,7 @@ int exec_job_on_ms(
 
     if (SC != 0)
       {
-      if (TJE->pwdp)
-        free(TJE->pwdp);
+      free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
       memset(TJE, 0, sizeof(pjobexec_t));
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob1", pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -8963,8 +8966,7 @@ int exec_job_on_ms(
     {
     if (SC != 0)
       {
-      if (TJE->pwdp)
-        free(TJE->pwdp);
+      free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
       memset(TJE, 0, sizeof(pjobexec_t));
 
       sprintf(log_buffer, "job %s failed after TMomFinalizeJob2", pjob->ji_qs.ji_jobid);
@@ -8994,8 +8996,7 @@ int exec_job_on_ms(
 
   if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
     {
-    if (TJE->pwdp)
-      free(TJE->pwdp);
+    free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
 
     sprintf(log_buffer, "ALERT:  job failed phase 3 start - jobid %s", pjob->ji_qs.ji_jobid);
 
@@ -9010,8 +9011,7 @@ int exec_job_on_ms(
 
   /* SUCCESS:  MOM returns */
 
-  if (TJE->pwdp)
-    free(TJE->pwdp);
+    free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
   memset(TJE, 0, sizeof(pjobexec_t));
 
   if (LOGLEVEL >= 3)
