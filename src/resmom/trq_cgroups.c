@@ -1038,8 +1038,6 @@ int trq_cg_get_task_set_string(
     return(PBSE_INDICES_EMPTY);
     }
 
-
-
   return(PBSE_NONE);
   }
 
@@ -1702,11 +1700,10 @@ void trq_cg_remove_task_dirs(
       if (dent->d_name[0] == 'R')
         {
         std::string dir_name = torque_path + "/" + dent->d_name;
-        int rc = rmdir_ext(dir_name.c_str());
-        if (rc != 0)
+        if (rmdir_ext(dir_name.c_str()) != PBSE_NONE)
           {
           sprintf(log_buffer, "failed to remove directory %s", dir_name.c_str());
-          log_err(rc, __func__, log_buffer);
+          log_err(errno, __func__, log_buffer);
           }
         }
       }
@@ -1735,14 +1732,12 @@ void trq_cg_delete_cgroup_path(
 
   {
 #define MAX_CGROUP_DELETE_RETRIES 10
-  int retries = 0;
   trq_cg_remove_task_dirs(cgroup_path);
-  int rc = rmdir_ext(cgroup_path.c_str());
 
-  if (rc != 0)
+  if (rmdir_ext(cgroup_path.c_str()) != PBSE_NONE)
     {
     sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());
-    log_err(rc, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   } // END trq_cg_delete_cgroup_path()

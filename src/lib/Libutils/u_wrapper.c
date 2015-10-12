@@ -10,7 +10,7 @@
 
 #include "log.h"
 
-#include "log.h"
+#include "pbs_error.h"
 
 struct passwd *getpwnam_wrapper(
 
@@ -150,14 +150,13 @@ int rmdir_ext(
 
         retry_count++;
         usleep(200000);
-        rc = 0;
+        rc = PBSE_NONE;
 
         break;
 
       case ENOENT:
 
-        rc = 0;
-        errno = 0;
+        rc = PBSE_NONE;
         retry_count += retry_limit;
 
         break;
@@ -165,15 +164,14 @@ int rmdir_ext(
       default:
 
         retry_count += retry_limit;
-        rc = errno;
+        rc = -1;
 
         break;
       }
     }
 
-  if ((rc == 0) &&
-      (errno != 0))
-    rc = errno;
+  if (rc == 0)
+    errno = 0;
 
   return(rc);
   } // END rmdir_ext()
