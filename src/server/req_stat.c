@@ -111,7 +111,6 @@
 #include "array.h"
 #include "queue.h"
 #include "node_func.h" /* find_nodebyname */
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "svr_connect.h" /* svr_connect */
 #include "queue_func.h" /* find_queuebyname */
 #include "reply_send.h" /* reply_send_svr */
@@ -146,7 +145,6 @@ extern pthread_mutex_t *netrates_mutex;
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
-extern int  hasprop(struct pbsnode *, struct prop *);
 extern void rel_resc(job*);
 
 /* The following private support functions are included */
@@ -795,21 +793,21 @@ int stat_to_mom(
     {
     if (LOGLEVEL >= 6)
       {
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+      snprintf(log_buf, sizeof(log_buf),
           "node '%s' is allocated to job but in state 'down'",
-          node->nd_name);
+          node->get_name());
 
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,job_id,log_buf);
       }
 
-    unlock_node(node, __func__, "no rely mom", LOGLEVEL);
+    node->unlock_node(__func__, "no rely mom", LOGLEVEL);
     free_br(newrq);
 
     return PBSE_NORELYMOM;
     }
 
   /* get connection to MOM */
-  unlock_node(node, __func__, "before svr_connect", LOGLEVEL);
+  node->unlock_node(__func__, "before svr_connect", LOGLEVEL);
   handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL);
 
   if (handle >= 0)
@@ -1270,9 +1268,9 @@ int get_numa_statuses(
     if (pn == NULL)
       continue;
 
-    lock_node(pn, __func__, NULL, LOGLEVEL);
+    pn->lock_node(__func__, NULL, LOGLEVEL);
     rc = status_node(pn, preq, bad, pstathd);
-    unlock_node(pn, __func__, NULL, LOGLEVEL);
+    pn->unlock_node(__func__, NULL, LOGLEVEL);
 
     if (rc != PBSE_NONE)
       {
@@ -1376,7 +1374,7 @@ int req_stat_node(
     else
       rc = get_numa_statuses(pnode, preq, &bad, &preply->brp_un.brp_status);
 
-    unlock_node(pnode, __func__, "type == 0", LOGLEVEL);
+    pnode->unlock_node(__func__, "type == 0", LOGLEVEL);
     }
   else
     {
@@ -1386,9 +1384,9 @@ int req_stat_node(
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
       if ((type == 2) && 
-          (!hasprop(pnode, &props)))
+          (!pnode->hasprop(&props)))
         {
-        unlock_node(pnode, __func__, "type != 0, next_host", LOGLEVEL);
+        pnode->unlock_node(__func__, "type != 0, next_host", LOGLEVEL);
         continue;
         }
 
@@ -1400,11 +1398,11 @@ int req_stat_node(
       
       if (rc != PBSE_NONE)
         {
-        unlock_node(pnode, __func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
+        pnode->unlock_node(__func__, "type != 0, rc != 0, get_numa_statuses", LOGLEVEL);
         break;
         }
 
-      unlock_node(pnode, __func__, "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
+      pnode->unlock_node(__func__, "type != 0, rc == 0, get_numa_statuses", LOGLEVEL);
       }
 
     if (iter != NULL)
@@ -1471,7 +1469,7 @@ int status_node(
 
   pstat->brp_objtype = MGR_OBJ_NODE;
 
-  strncpy(pstat->brp_objname, pnode->nd_name, sizeof(pstat->brp_objname)-1);
+  snprintf(pstat->brp_objname, sizeof(pstat->brp_objname), "%s", pnode->get_name());
 
   CLEAR_LINK(pstat->brp_stlink);
   CLEAR_HEAD(pstat->brp_attr);

@@ -1511,9 +1511,9 @@ int chk_mppnodect(
     {
     if (alps_reporter != NULL)
       {
-      lock_node(alps_reporter, __func__, NULL, 0);
+      alps_reporter->lock_node(__func__, NULL, 0);
       nppn = alps_reporter->max_subnode_nppn;
-      unlock_node(alps_reporter, __func__, NULL, 0);
+      alps_reporter->unlock_node(__func__, NULL, 0);
       }
     }
 

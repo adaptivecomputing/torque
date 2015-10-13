@@ -910,6 +910,7 @@ free_prop_list(struct prop *prop)
   while (prop)
     {
     pp = prop->next;
+    free(prop->name);
     free(prop);
     prop = pp;
     }
@@ -1316,9 +1317,9 @@ int node_requestid(
     {
     case ATR_ACTION_NEW:
 
-      if(np->nd_requestid->size() != 0)
+      if (np->nd_requestid.size() != 0)
         {
-        temp.at_val.at_str = (char *)np->nd_requestid->c_str();
+        temp.at_val.at_str = (char *)np->nd_requestid.c_str();
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_STR;
 
@@ -1336,11 +1337,11 @@ int node_requestid(
 
       if(new_attr->at_val.at_str != NULL)
         {
-        *np->nd_requestid = new_attr->at_val.at_str;
+        np->nd_requestid = new_attr->at_val.at_str;
         }
       else
         {
-        np->nd_requestid->clear();
+        np->nd_requestid.clear();
         }
 
       break;

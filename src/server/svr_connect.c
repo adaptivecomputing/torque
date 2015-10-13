@@ -155,8 +155,8 @@ int connect_while_handling_mutex(
   if ((pnode != NULL) &&
       (*pnode != NULL))
     {
-    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->nd_name);
-    unlock_node(*pnode, __func__, NULL, LOGLEVEL);
+    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->get_name());
+    (*pnode)->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   /* establish socket connection to specified host */

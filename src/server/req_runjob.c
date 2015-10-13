@@ -113,7 +113,6 @@
 #include "array.h"
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
@@ -1304,7 +1303,7 @@ int requeue_job(
     retry++;
     }
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->unlock_node(__func__, NULL, LOGLEVEL);
 
   /* set the job's state to queued */
   svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
@@ -1923,7 +1922,7 @@ int set_job_exec_info(
     memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = ntohl(hostaddr.s_addr);
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     
     return(PBSE_NONE);
     }

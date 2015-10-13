@@ -135,3 +135,17 @@ struct pbsnode *find_nodebyname(const char *node_name)
   find_node_called++;
   return(NULL);
   }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  node_unlocked++;
+
+  return(0);
+  }
+
+pbsnode::pbsnode() {}

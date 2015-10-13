@@ -101,7 +101,6 @@
 #include "../Liblog/log_event.h"
 #include "batch_request.h"
 #include "pbs_nodes.h"
-#include "../Libutils/u_lock_ctl.h" /* unlock_node */
 
 #ifndef TRUE
 #define TRUE 1
@@ -243,7 +242,7 @@ int site_check_user_map(
       ((tmp = find_nodebyname(orighost)) != NULL))
     {
     /* job submitted from compute host, access allowed */
-    unlock_node(tmp, "site_check_user_map", NULL, logging);
+    tmp->unlock_node("site_check_user_map", NULL, logging);
 
     if (dptr != NULL)
       *dptr = '.';

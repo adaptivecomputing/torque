@@ -133,7 +133,6 @@
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_node */
 #include "node_manager.h" /* setup_notification */
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
@@ -248,7 +247,7 @@ int mgr_modify_node(
           break;
         case ND_ATR_requestid:
           {
-          *(*ppnode)->nd_requestid = pnew->at_val.at_str;
+          (*ppnode)->nd_requestid = pnew->at_val.at_str;
           rc = PBSE_NONE;
           }
           break;
@@ -366,7 +365,7 @@ void mgr_node_modify(
 
     if(pnode != NULL)
       {
-      unlock_node(pnode, "mgr_node_set", (char *)"error", LOGLEVEL);
+      pnode->unlock_node(__func__, "error", LOGLEVEL);
       pnode = NULL;
       }
 
@@ -383,7 +382,7 @@ void mgr_node_modify(
 
   if(pnode != NULL)
     {
-    unlock_node(pnode, "mgr_node_set", (char *)"single_node", LOGLEVEL);
+    pnode->unlock_node(__func__, "single_node", LOGLEVEL);
     pnode = NULL;
     }
 

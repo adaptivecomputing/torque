@@ -41,7 +41,6 @@ START_TEST(load_hierarchy_test)
   */
 
   pbsnode node;
-  memset(&node,0,sizeof(node));
   sendNodeHolder *snh = new sendNodeHolder(&node);
   xml_index = 0;
 
@@ -50,8 +49,8 @@ START_TEST(load_hierarchy_test)
 
   hierarchy_handler.reloadHierarchy();
 
-  memset(&node,0,sizeof(node));
-  snh = new sendNodeHolder(&node);
+  pbsnode node2;
+  snh = new sendNodeHolder(&node2);
   xml_index = 0;
 
   hierarchy_handler.sendHierarchyThreadTask((void *)snh);

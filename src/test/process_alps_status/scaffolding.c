@@ -138,8 +138,7 @@ struct pbsnode *find_nodebyname(
 
   if (initialized == 0)
     {
-    memset(&pnode, 0, sizeof(struct pbsnode));
-    pnode.nd_name = strdup("george");
+    pnode.change_name("george");
     pnode.alps_subnodes = new all_nodes();
     }
 
@@ -1306,37 +1305,6 @@ int insert_node(
 
 
 
-
-int initialize_pbsnode(
-
-  struct pbsnode *pnode,
-  char           *pname, /* node name */
-  u_long         *pul,  /* host byte order array */
-  /* ipaddrs for this node */
-  int             ntype, /* time-shared or cluster */
-  bool            isNUMANode) /* TRUE if this is a NUMA node. */
-
-  {
-  memset(pnode, 0, sizeof(struct pbsnode));
-
-  pnode->nd_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  if (pnode->nd_mutex == NULL)
-    {
-    log_err(ENOMEM, __func__, "Could not allocate memory for the node's mutex");
-
-    return(ENOMEM);
-    }
-
-  pthread_mutex_init(pnode->nd_mutex,NULL);
-
-  pnode->nd_name = pname;
-
-  return(PBSE_NONE);
-  }  /* END initialize_pbsnode() */
-
-
-
-
 void attr_atomic_kill(
 
   pbs_attribute *temp,
@@ -1806,3 +1774,45 @@ int svr_resc_size = sizeof(svr_resc_def_const)/sizeof(resource_def);
 
 resource_def *svr_resc_def = svr_resc_def_const;
 
+pbsnode::pbsnode() : nd_ngpus(0) 
+  {
+  }
+
+pbsnode::~pbsnode() 
+  {
+  }
+
+pbsnode::pbsnode(const char *name, u_long *addrs, bool lookup) : nd_ngpus(0)
+  {
+  this->nd_name = name;
+  }
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::get_error() const
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *name)
+  {
+  this->nd_name = name;
+  }
+
+int pbsnode::copy_properties(pbsnode *dest) const
+  {
+  return(0);
+  }

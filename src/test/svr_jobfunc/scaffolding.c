@@ -661,3 +661,15 @@ struct group *getgrnam_ext(
   } /* END getgrnam_ext() */
 
 
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+
+  return(0);
+  }
+
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+
+  return(0);
+  }

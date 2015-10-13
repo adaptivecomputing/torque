@@ -177,6 +177,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_hierarchy_handler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
+    src/test/pbsnode/Makefile
     src/test/pbsd_init/Makefile
     src/test/pbsd_main/Makefile
     src/test/process_alps_status/Makefile

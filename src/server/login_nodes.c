@@ -131,9 +131,9 @@ struct pbsnode *check_node(
   {
   struct pbsnode *pnode = ln->pnode;
 
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->lock_node(__func__, NULL, LOGLEVEL);
 
-  if ((hasprop(pnode, needed) == TRUE) &&
+  if ((pnode->hasprop(needed) == true) &&
       (pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used >= 1) &&
       ((pnode->nd_state & INUSE_NOT_READY) == 0) &&
       ((pnode->nd_state & INUSE_OFFLINE) == 0) &&
@@ -141,7 +141,7 @@ struct pbsnode *check_node(
     return(pnode);
   else
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return(NULL);
     }
   } /* END check_node() */
@@ -234,11 +234,11 @@ struct pbsnode *get_next_login_node(
   login_node &ln = logins.nodes[logins.next_node];
 
   pnode = ln.pnode;
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->lock_node(__func__, NULL, LOGLEVEL);
   
   if (needed != NULL)
     {
-    if (hasprop(pnode, needed) == FALSE)
+    if (pnode->hasprop(needed) == false)
       {
       node_fits = FALSE;
       }
@@ -255,7 +255,7 @@ struct pbsnode *get_next_login_node(
   
   if (node_fits == FALSE)
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     pnode = find_fitting_node(needed);
     }
   else

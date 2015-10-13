@@ -56,7 +56,6 @@ START_TEST(test_two)
   pbsnode nd;
 
   memset(&attr,0,sizeof(attr));
-  memset(&nd,0,sizeof(pbsnode));
   nd.nd_state = INUSE_DOWN;
 
   int rc = node_state(&attr,&nd,ATR_ACTION_NEW);

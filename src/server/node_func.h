@@ -4,7 +4,6 @@
 #include "list_link.h" /* tlist_head */
 #include "net_connect.h"
 #include "pbs_nodes.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "utils.h"
 #include <vector>
 #include <string>
@@ -35,13 +34,9 @@ int chk_characteristic(struct pbsnode *pnode, struct node_check_info *nci, int *
 
 int status_nodeattrib(struct svrattrl *pal, struct attribute_def *padef, struct pbsnode *pnode, int limit, int priv, tlist_head *phead, int *bad);
 
-void effective_node_delete(struct pbsnode **pnode);
-
 int update_nodes_file(struct pbsnode *held);
 
 void recompute_ntype_cnts(void);
-
-struct prop *init_prop(char *pname);
 
 int create_a_gpusubnode(struct pbsnode *pnode);
 

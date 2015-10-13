@@ -119,7 +119,6 @@
 #include "dis.h"
 #include "array.h"
 #include "req_stat.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* globalset_del_sock */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_getcred.h" /* req_altauthenuer */ 
@@ -325,7 +324,7 @@ bool request_passes_acl_check(
       }
 
     if (isanode != NULL)
-      unlock_node(isanode, __func__, NULL, LOGLEVEL);
+      isanode->unlock_node(__func__, NULL, LOGLEVEL);
     }
   
   return(true);

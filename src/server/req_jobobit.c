@@ -2883,7 +2883,7 @@ int handle_subjob_exit_status(
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, other_job_id, log_buf);
         
         kill_job_on_mom(other_job_id, pnode);
-        unlock_node(pnode, __func__, NULL, LOGLEVEL);
+        pnode->unlock_node(__func__, NULL, LOGLEVEL);
         }
       }
     else

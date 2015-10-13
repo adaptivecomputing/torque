@@ -344,3 +344,23 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
 int svr_unresolvednodes = 0;
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::lock_node(const char *msg, const char *id, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *msg, const char *id, int level)
+  {
+  return(0);
+  }
+
+bool pbsnode::hasprop(prop *needed) const
+  {
+  return(true);
+  }

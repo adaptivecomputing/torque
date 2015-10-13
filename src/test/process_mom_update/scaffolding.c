@@ -294,3 +294,23 @@ id_map::id_map(){}
 
 id_map::~id_map(){}
 
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *id)
+  {
+  this->nd_name = id;
+  }
+

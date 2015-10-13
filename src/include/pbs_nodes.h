@@ -86,6 +86,7 @@
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
+#include <sys/types.h>
 
 #include "execution_slot_tracker.hpp"
 #include "net_connect.h" /* pbs_net_t */
@@ -97,6 +98,7 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#include "attribute.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -276,9 +278,15 @@ class received_node
   };
 
 
-struct pbsnode
+class pbsnode
   {
-  char                         *nd_name;             /* node's host name */
+private:
+  std::string                   nd_name;             /* node's host name */
+  int                           nd_error;            // set if there's an error
+  std::vector<std::string>      nd_properties;       // The node's properties
+
+public:
+  pthread_mutex_t               nd_mutex;            // mutex for accessing this node 
   int                           nd_id;               /* node's id */
 
   struct prop                  *nd_first;            /* first and last property */
@@ -328,7 +336,7 @@ struct pbsnode
   short                         nd_nmics_free;       /* number of free mics */
   short                         nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
  
-  struct pbsnode               *parent;              /* pointer to the node holding this node, or NULL */
+  pbsnode                      *parent;              /* pointer to the node holding this node, or NULL */
   unsigned short                num_node_boards;     /* number of numa nodes */
   struct AvlNode               *node_boards;         /* private tree of numa nodes */
   char                         *numa_str;            /* comma-delimited string of processor values */
@@ -346,14 +354,33 @@ struct pbsnode
   time_t                        nd_power_state_change_time; //
   char                          nd_ttl[32];
   struct array_strings         *nd_acl;
-  std::string                  *nd_requestid;
+  std::string                   nd_requestid;
   unsigned char               nd_tmp_unlock_count;    /*Nodes will get temporarily unlocked so that
                                                        further processing can happen, but the function
                                                        doing the unlock intends to lock it again
                                                        so we need a flag here to prevent a node from being
                                                        deleted while it is temporarily locked. */
 
-  pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
+
+  pbsnode();
+  pbsnode(const char *pname, u_long *pul, bool skip_address_lookup);
+  ~pbsnode();
+
+  // CONST methods
+  int         get_error() const;
+  const char *get_name() const;
+  bool        hasprop(struct prop *props) const;
+  void        write_compute_node_properties(FILE *nin) const;
+  int         copy_properties(pbsnode *dest) const;
+
+  // NON-CONST methods
+  void change_name(const char *new_name);
+  void update_properties();
+  void add_property(const std::string &prop);
+  int tmp_lock_node(const char *method_name, const char *msg, int logging);
+  int tmp_unlock_node(const char *method_name, const char *msg, int logging);
+  int lock_node(const char *method_name, const char *msg, int logging);
+  int unlock_node(const char *method_name, const char *msg, int logging);
   };
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
@@ -414,7 +441,7 @@ void       *send_hierarchy_threadtask(void *);
 
 struct howl
   {
-  char           *name;
+  const char     *name;
   int             order;
   int             index;
   unsigned short  port;
@@ -561,7 +588,7 @@ enum node_types
 class node_check_info
   {
 public:
-  struct prop *first;
+  std::vector<std::string>  properties;
   struct prop *first_status;
   short        state;
   short        ntype;
@@ -601,10 +628,10 @@ struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
+void             effective_node_delete(pbsnode **);
 
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
-void             effective_node_delete(struct pbsnode *);
 void             setup_notification(char *);
 
 struct pbssubn  *find_subnodebyname(char *);
@@ -623,8 +650,7 @@ void             reinitialize_node_iterator(node_iterator *);
 
 #endif /* BATCH_REQUEST_H */
 
-struct prop     *init_prop(char *pname);
-int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype, bool isNUMANode);
+struct prop     *init_prop(const char *pname);
 int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, int internal_job_id);

@@ -152,7 +152,7 @@ void mom_hierarchy_handler::make_default_hierarchy()
     if (level_ds.length() > 0)
       level_ds += ",";
 
-    level_ds += pnode->nd_name;
+    level_ds += pnode->get_name();
 
     if (PBS_MANAGER_SERVICE_PORT != pnode->nd_mom_rm_port)
       {
@@ -162,7 +162,7 @@ void mom_hierarchy_handler::make_default_hierarchy()
 
     pnode->nd_hierarchy_level = 0;
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   if (LOGLEVEL >= 5)
@@ -251,7 +251,7 @@ void mom_hierarchy_handler::check_if_in_nodes_file(
   if (pnode->nd_hierarchy_level > level_index)
     pnode->nd_hierarchy_level = level_index;
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->unlock_node(__func__, NULL, LOGLEVEL);
 
   if (colon != NULL)
     *colon = ':';
@@ -347,22 +347,22 @@ void mom_hierarchy_handler::add_missing_nodes(void)
         hierarchy_xml.push_back("<sp>");
         hierarchy_xml.push_back("<sl>");
         found_missing_node = true;
-        hierarchy_xml.push_back(pnode->nd_name);
+        hierarchy_xml.push_back(pnode->get_name());
         }
       else
         {
         hierarchy_xml.push_back(",");
-        hierarchy_xml.push_back(pnode->nd_name);
+        hierarchy_xml.push_back(pnode->get_name());
         }
 
       snprintf(log_buf, sizeof(log_buf),
         "Node %s found in the nodes file but not in the mom_hierarchy file. Making it a level 1 node",
-        pnode->nd_name);
+        pnode->get_name());
 
       pnode->nd_hierarchy_level = 0;
       log_err( -1, __func__, log_buf);
       }
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   if (found_missing_node == true)
@@ -486,7 +486,7 @@ void mom_hierarchy_handler::initialLoadHierarchy(void)
       pnode->nd_lastHierarchySent = 0;
       pnode->nd_state &= ~INUSE_NOHIERARCHY;
       }
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
   pthread_mutex_unlock(&hierarchy_mutex);
   }
@@ -522,7 +522,7 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
     if (pnode != NULL)
       {
       pnode->nd_lastHierarchySent = timeSent;
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      pnode->unlock_node(__func__, NULL, LOGLEVEL);
       }
       
     if (LOGLEVEL >= 3)
@@ -702,7 +702,7 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       {
       hierarchyNotSentFlagSet = true;
       }
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   if (nodesToSend.size() != 0)
@@ -734,7 +734,7 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
                                         //it now has a good ok host list so mark
                                         //it ready for use.
           }
-        unlock_node(pnode, __func__, NULL, LOGLEVEL);
+        pnode->unlock_node(__func__, NULL, LOGLEVEL);
         }
       }
 

@@ -16,7 +16,6 @@ void initialize_node_for_testing(
   struct pbsnode *pnode)
 
   {
-  memset(pnode, 0, sizeof(struct pbsnode));
   for (int i = 0; i < 5; i++)
     pnode->nd_slots.add_execution_slot();
   }
@@ -89,16 +88,16 @@ void increment_counts(
 
 START_TEST(retrieval_test)
   {
-  struct pbsnode  n1;
-  struct pbsnode  n2;
-  struct pbsnode  n3;
-  struct pbsnode  n4;
-  struct pbsnode *rtd;
-  int             rc;
-  int             n1_rtd = 0;
-  int             n2_rtd = 0;
-  int             n3_rtd = 0;
-  int             n4_rtd = 0;
+  pbsnode  n1;
+  pbsnode  n2;
+  pbsnode  n3;
+  pbsnode  n4;
+  pbsnode *rtd;
+  int      rc;
+  int      n1_rtd = 0;
+  int      n2_rtd = 0;
+  int      n3_rtd = 0;
+  int      n4_rtd = 0;
 
   initialize_login_holder();
   initialize_node_for_testing(&n1);
@@ -147,10 +146,10 @@ START_TEST(retrieval_test)
   /* Set a node down and make sure it doesn't get used */
   n2.nd_state = INUSE_DOWN;
 
-  n1.nd_name = strdup("n1");
-  n2.nd_name = strdup("n2");
-  n3.nd_name = strdup("n3");
-  n4.nd_name = strdup("n4");
+  n1.change_name("n1");
+  n2.change_name("n2");
+  n3.change_name("n3");
+  n4.change_name("n4");
 
   rtd = get_next_login_node(NULL);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
@@ -169,8 +168,6 @@ START_TEST(check_node_test)
   {
   struct pbsnode pnode;
   login_node ln(&pnode);
-
-  memset(&pnode, 0, sizeof(pnode));
 
   pnode.nd_slots.add_execution_slot();
   fail_unless(check_node(&ln, NULL) != NULL);
@@ -205,11 +202,11 @@ START_TEST(prop_test)
   initialize_node_for_testing(&n3);
   initialize_node_for_testing(&n4);
 
+  n1.add_property(feature);
+  n2.add_property(feature);
+
   proplist(&feature, &props, &dummy1, &dummy2);
   proplist(&feature2, &props2, &dummy1, &dummy2);
-
-  n1.nd_first = props;
-  n2.nd_first = props;
 
   initialize_login_holder();
   rc = add_to_login_holder(&n1);

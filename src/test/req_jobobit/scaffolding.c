@@ -444,3 +444,11 @@ void *get_next(
   }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+pbsnode::pbsnode() {}
+pbsnode::~pbsnode() {}
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }

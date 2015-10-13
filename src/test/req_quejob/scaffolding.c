@@ -16,6 +16,7 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "id_map.hpp"
+#include "pbs_nodes.h"
 
 bool exit_called = false;
 const char *PJobSubState[10];
@@ -441,3 +442,14 @@ void log_ext(int i, char const* s, char const* s2, int i2)
   }
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+

@@ -136,7 +136,7 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   else
     {
     sprintf(buf, "%lu", key);
-    numa.nd_name = buf;
+    numa.change_name(buf);
     return(&numa);
     }
   }
@@ -334,7 +334,7 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   {
   created_subnode++;
-  return(NULL);
+  return(new pbsnode());
   }
 
 id_map::id_map() : counter(0) {}

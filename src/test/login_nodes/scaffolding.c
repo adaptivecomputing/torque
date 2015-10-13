@@ -182,3 +182,66 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
   return(PBSE_NONE);
   } /* END proplist() */
 
+
+pbsnode::pbsnode(): nd_properties(), nd_mutex(), nd_state(INUSE_FREE), nd_needed(0),
+                    nd_np_to_be_used(0),
+                    nd_power_state(0)
+  {}
+
+pbsnode::~pbsnode() {}
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *name)
+  {
+  this->nd_name = name;
+  this->nd_properties.push_back(this->nd_name);
+  }
+
+
+
+bool pbsnode::hasprop(
+
+  struct prop *props) const
+
+  {
+  struct  prop    *need;
+
+  for (need = props;need;need = need->next)
+    {
+    if (need->mark == 0) /* not marked, skip */
+      continue;
+    
+    bool found = false;
+
+    for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+      {
+      if (!strcmp(this->nd_properties[i].c_str(), need->name))
+        {
+        found = true;
+        break;
+        }
+      }
+
+    if (found == false)
+      return(found);
+    }
+
+  return(true);
+  }
+
+void pbsnode::add_property(
+
+  const std::string &prop)
+
+  {
+  this->nd_properties.push_back(prop);
+  }

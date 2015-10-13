@@ -119,7 +119,6 @@
 #include "csv.h"
 #include "pbs_nodes.h"
 #include "threadpool.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_recov.h" /* que_recov_xml */
 #include "utils.h"
 #include "queue_recycler.h" /* queue_recycler */
@@ -448,7 +447,7 @@ void  update_default_np()
       while (pnode->nd_slots.get_total_execution_slots() < default_np)
         add_execution_slot(pnode);
       
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      pnode->unlock_node(__func__, NULL, LOGLEVEL);
       }
 
     if (iter != NULL)

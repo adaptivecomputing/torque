@@ -109,7 +109,6 @@
 #include "pbs_job.h"
 #include "server.h"
 #include <stdint.h>
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "process_request.h" /* dispatch_request */
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "ji_mutex.h"
@@ -192,7 +191,7 @@ int relay_to_mom(
       ((node->nd_state & INUSE_NOT_READY)||
       (node->nd_power_state != POWER_STATE_RUNNING)))
     {
-    unlock_node(node, __func__, "no relay mom", LOGLEVEL);
+    node->unlock_node(__func__, "no relay mom", LOGLEVEL);
     return(PBSE_NORELYMOM);
     }
 
@@ -206,7 +205,7 @@ int relay_to_mom(
     free(tmp);
     }
 
-  unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
+  node->unlock_node(__func__, "after svr_connect", LOGLEVEL);
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   *pjob_ptr = NULL;

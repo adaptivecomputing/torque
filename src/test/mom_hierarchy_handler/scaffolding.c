@@ -94,8 +94,7 @@ int unlock_node(
 int nodeId = 0;
 int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
   {
-  pbsnode *pnode = (pbsnode *)calloc(1,sizeof(pbsnode));
-  pnode->nd_name = strdup(nodename);
+  pbsnode *pnode = new pbsnode(nodename, NULL, true);
   pnode->nd_id = nodeId++;
   pnode->nd_hierarchy_level = 500;
   allnodes.insert(pnode,nodename,true);
@@ -306,4 +305,21 @@ const char *id_map::get_name(int id)
   return(NULL);
   }
 
+pbsnode::pbsnode(const char *hostname, u_long *addrs, bool skip_lookup)
 
+  {
+  this->nd_name = hostname;
+  }
+
+pbsnode::pbsnode() {}
+pbsnode::~pbsnode() {}
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }

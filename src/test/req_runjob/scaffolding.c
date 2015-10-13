@@ -381,3 +381,10 @@ bool log_available(int eventtype)
   return true;
   }
 
+pbsnode::pbsnode() {}
+pbsnode::~pbsnode() {}
+
+int pbsnode::unlock_node(const char *msg, const char *id, int level)
+  {
+  return(0);
+  }

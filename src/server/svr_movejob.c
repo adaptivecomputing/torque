@@ -114,7 +114,6 @@
 #include "array.h"
 #include "job_route.h"
 #include "threadpool.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname */
 #include "req_runjob.h" /* finish_sendmom */
 #include "ji_mutex.h"

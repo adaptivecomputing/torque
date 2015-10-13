@@ -15,6 +15,7 @@
 #include "threadpool.h"
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
+#include "pbs_nodes.h"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -324,3 +325,13 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
 
 void add_to_completed_jobs(work_task *wt) {}
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }

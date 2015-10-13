@@ -13,7 +13,6 @@
 #include "batch_request.h"
 #include "pbs_nodes.h"
 #include "svrfunc.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "log.h"
 #include "threadpool.h"
 #include "net_cache.h"
@@ -41,11 +40,11 @@ void *send_power_state_to_mom(
   handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
   if (handle < 0)
     {
-    unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+    pNode->unlock_node(__func__, "Error connecting", LOGLEVEL);
     return NULL;
     }
 
-  unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+  pNode->unlock_node(__func__, "Done connecting", LOGLEVEL);
   issue_Drequest(handle, pRequest, true);
 
   return NULL;
@@ -253,7 +252,7 @@ int set_node_power_state(
   request->rq_ind.rq_powerstate = newState;
   pNode->nd_power_state_change_time = time(NULL);
 
-  snprintf(request->rq_host, sizeof(request->rq_host), "%s", pNode->nd_name);
+  snprintf(request->rq_host, sizeof(request->rq_host), "%s", pNode->get_name());
   std::string hostname(request->rq_host);
   int rc = PBSE_NONE;
 
@@ -261,13 +260,14 @@ int set_node_power_state(
     int handle = 0;
     int local_errno = 0;
     handle = svr_connect(pNode->nd_addrs[0],pNode->nd_mom_port,&local_errno,pNode,NULL);
-    if(handle < 0)
+    if (handle < 0)
       {
-      unlock_node(pNode, __func__, "Error connecting", LOGLEVEL);
+      pNode->unlock_node(__func__, "Error connecting", LOGLEVEL);
       *ppNode = NULL;
       return local_errno;
       }
-    unlock_node(pNode, __func__, "Done connecting", LOGLEVEL);
+
+    pNode->unlock_node(__func__, "Done connecting", LOGLEVEL);
     *ppNode = NULL;
     rc = issue_Drequest(handle, request,true);
     if(rc == PBSE_NONE)
@@ -284,7 +284,7 @@ int set_node_power_state(
     }
 
   return(rc);
-  }
+  } // END set_node_power_state()
 
 
 
