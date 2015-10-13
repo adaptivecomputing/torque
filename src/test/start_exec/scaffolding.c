@@ -955,3 +955,11 @@ unsigned long long complete_req::get_memory_for_this_host(
   return(0);
   }
 
+struct passwd *get_password_entry_by_uid(
+
+  char **user_buf,
+  uid_t uid)
+
+  {
+  return(NULL);
+  }
