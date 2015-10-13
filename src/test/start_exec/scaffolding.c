@@ -778,3 +778,12 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+struct passwd *get_password_entry_by_uid(
+
+  char **user_buf,
+  uid_t uid)
+
+  {
+  return(NULL);
+  }
+
