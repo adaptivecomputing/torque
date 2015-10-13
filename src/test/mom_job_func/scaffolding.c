@@ -184,3 +184,13 @@ void trq_cg_delete_job_cgroups(
 
   {
   }
+
+int unlink_ext(const char *filename, int retry_limit)
+  {
+  return(0);
+  }
+
+int rmdir_ext(const char *dirname, int retry_limit)
+  {
+  return(0);
+  }

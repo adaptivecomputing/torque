@@ -176,3 +176,51 @@ int rmdir_ext(
   return(rc);
   } // END rmdir_ext()
 
+
+
+int unlink_ext(
+
+  const char *filename,
+  int         retry_limit)
+
+  {
+  int rc;
+  int retry_count = 0;
+
+  while ((rc = unlink(filename)) &&
+         (retry_count < retry_limit))
+    {
+    switch (errno)
+      {
+      case EINTR:
+      case EBUSY:
+
+        retry_count++;
+        usleep(200000);
+        rc = PBSE_NONE;
+
+        break;
+
+      case ENOENT:
+
+        rc = PBSE_NONE;
+        errno = 0;
+        retry_count += retry_limit;
+
+        break;
+
+      default:
+        
+        retry_count += retry_limit;
+        rc = -1;
+
+        break;
+      }
+    }
+
+  if (rc == 0)
+    errno = 0;
+
+  return(rc);
+  } // END unlink_ext()
+
