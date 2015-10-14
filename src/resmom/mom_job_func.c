@@ -115,6 +115,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <set>
+#include <semaphore.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -183,6 +184,8 @@ extern tlist_head svr_newjobs;
 extern tlist_head svr_alljobs;
 
 extern job_pid_set_t global_job_sid_set;
+
+extern sem_t *delete_job_files_sem;
 
 void nodes_free(job *);
 
@@ -692,6 +695,16 @@ void *delete_job_files(
   char                  namebuf[MAXPATHLEN];
 
 
+  if (thread_unlink_calls == true)
+    {
+    int rc;
+
+    rc = sem_post(delete_job_files_sem);
+    if (rc)
+      {
+      log_err(-1, __func__, "failed to post delete_job_files_sem");
+      }
+    }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
   delete_cpuset(jfdi->jobid, true);
@@ -786,6 +799,8 @@ void *delete_job_files(
 
   free(jfdi);
 
+  if (thread_unlink_calls == true)
+    sem_wait(delete_job_files_sem);
   return(NULL);
   } /* END delete_job_files() */
 
