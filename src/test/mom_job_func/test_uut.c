@@ -4,6 +4,7 @@
 #include "test_mom_job_func.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <semaphore.h>
 
 #include <set>
 
@@ -18,6 +19,8 @@ bool am_i_mother_superior(const job &pjob);
 void remove_from_exiting_list(job *pjob);
 
 std::vector<exiting_job_info> exiting_job_list;
+
+sem_t *delete_job_files_sem;
 
 START_TEST(test_am_i_mother_superior)
   {
