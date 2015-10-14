@@ -1119,6 +1119,9 @@ int modify_job_attr(
       (newattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
     {
     overwrite_complete_req(&pattr[JOB_ATR_req_information], &newattr[JOB_ATR_req_information]);
+
+    job_attr_def[JOB_ATR_req_information].at_free(newattr + JOB_ATR_req_information);
+    newattr[JOB_ATR_req_information].at_flags &= ATR_VFLAG_MODIFY;
     }
 
   /* if resource limits are being changed ... */

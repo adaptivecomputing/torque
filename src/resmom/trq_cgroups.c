@@ -1693,8 +1693,6 @@ void trq_cg_remove_task_dirs(
 
   if ((pdir = opendir(torque_path.c_str())) != NULL)
     {
-    rewinddir(pdir);
-
     while ((dent = readdir(pdir)) != NULL)
       {
       if (dent->d_name[0] == 'R')
