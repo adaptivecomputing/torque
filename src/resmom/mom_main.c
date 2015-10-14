@@ -49,6 +49,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <semaphore.h>
 
 
 #include "libpbs.h"
@@ -179,6 +180,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
+sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
@@ -3028,9 +3030,26 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      if (thread_unlink_calls == true)
+        {
+        int sem_val;
+        int rc;
+        do
+          {
+          rc = sem_getvalue(delete_job_files_sem, &sem_val);
+          if (rc != 0)
+            {
+            log_err(-1, __func__, "failed to get job file semaphore on shutdown");
+            break;
+            }
+          if (sem_val > 0)
+            sleep(1);
 #ifdef PENABLE_LINUX_CGROUPS
-      trq_cg_cleanup_torque_cgroups();
+          else
+            trq_cg_cleanup_torque_cgroups();
 #endif
+          }while(sem_val > 0);
+        }
 
       log_close(1);
 
@@ -5391,8 +5410,22 @@ int setup_program_environment(void)
 
   if (thread_unlink_calls == true)
     {
+    int rc;
     initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
-    start_request_pool(request_pool);
+    delete_job_files_sem = (sem_t *)malloc(sizeof(sem_t));
+    if (delete_job_files_sem == NULL)
+      {
+      perror("failed to allocate memory for delete_job_files_sem");
+      exit(1);
+      }
+    rc = sem_init(delete_job_files_sem, 1 /* share */, 0);
+    if (rc != 0)
+      {
+      perror("failed to initialize delete_job_files semaphore");
+      exit(1);
+      }
+
+   start_request_pool(request_pool);
     }
 
   requested_cluster_addrs = 0;

@@ -140,7 +140,7 @@ int rmdir_ext(
   int rc;
   int retry_count = 0;
 
-  while ((rc = rmdir(dir)) &&
+  while ((rc = remove(dir)) &&
          (retry_count < retry_limit))
     {
     switch (errno)
