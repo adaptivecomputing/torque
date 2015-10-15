@@ -9085,7 +9085,7 @@ int exec_job_on_ms(
 
   /* SUCCESS:  MOM returns */
 
-    free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
+  free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
   memset(TJE, 0, sizeof(pjobexec_t));
 
   if (LOGLEVEL >= 3)
