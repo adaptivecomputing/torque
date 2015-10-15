@@ -36,6 +36,7 @@ char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 bool exit_called = false;
 int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
+pthread_mutex_t *delete_job_files_mutex;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
