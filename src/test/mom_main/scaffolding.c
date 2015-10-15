@@ -1061,3 +1061,5 @@ int read_config(
   return(0);
   }
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
