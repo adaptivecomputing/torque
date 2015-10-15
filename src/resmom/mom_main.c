@@ -153,6 +153,8 @@ char           path_meminfo[MAX_LINE];
 
 extern pthread_mutex_t log_mutex;
 
+pthread_mutex_t  delete_job_files_mutex;
+
 int          lockfds = -1;
 int          multi_mom = 0;
 time_t       loopcnt;  /* used for MD5 calc */
@@ -5425,7 +5427,15 @@ int setup_program_environment(void)
       exit(1);
       }
 
-   start_request_pool(request_pool);
+    rc = pthread_mutex_init(&delete_job_files_mutex, NULL);
+    if (rc != 0)
+      {
+      perror("failed to allocate delete_job_files_mutex");
+      exit(1);
+      }
+
+    start_request_pool(request_pool);
+
     }
 
   requested_cluster_addrs = 0;
