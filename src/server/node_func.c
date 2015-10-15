@@ -263,7 +263,7 @@ struct pbsnode *find_nodebyname(
       {
       if (alps_reporter != NULL)
         {
-        pnode->lock_node(__func__, NULL, LOGLEVEL);
+        alps_reporter->lock_node(__func__, NULL, LOGLEVEL);
         
         alps_reporter->alps_subnodes->lock();
         if ((pnode = (struct pbsnode *)alps_reporter->alps_subnodes->find(nodename)) != NULL)
@@ -272,7 +272,7 @@ struct pbsnode *find_nodebyname(
           }
         alps_reporter->alps_subnodes->unlock();
 
-        pnode->unlock_node(__func__, NULL, LOGLEVEL);
+        alps_reporter->unlock_node(__func__, NULL, LOGLEVEL);
         }
       }
     else

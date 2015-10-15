@@ -629,6 +629,7 @@ int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 void             effective_node_delete(pbsnode **);
+void             free_prop_list(struct prop*);
 
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
@@ -637,7 +638,6 @@ void             setup_notification(char *);
 struct pbssubn  *find_subnodebyname(char *);
 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
-void             free_prop_list(struct prop*);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);

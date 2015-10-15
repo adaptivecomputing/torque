@@ -41,6 +41,11 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                                           //the node to be used until an updated node
                                           //list has been send to all nodes.
     }
+  
+  this->nd_first           = init_prop(this->nd_name.c_str());
+  this->nd_last            = this->nd_first;
+  this->nd_f_st            = init_prop(this->nd_name.c_str());
+  this->nd_l_st            = this->nd_f_st;
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END empty constructor
@@ -111,6 +116,12 @@ pbsnode::pbsnode(
 pbsnode::~pbsnode()
 
   {
+  if (this->nd_first != NULL)
+    free_prop_list(this->nd_first);
+
+  if (this->nd_f_st != NULL)
+    free_prop_list(this->nd_f_st);
+
   if (this->nd_addrs != NULL)
     {
     for (u_long *up = this->nd_addrs; *up != 0; up++)
