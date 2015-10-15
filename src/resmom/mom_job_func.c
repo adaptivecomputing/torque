@@ -138,6 +138,7 @@
 #include "alps_functions.h"
 #include "alps_constants.h"
 #include "dis.h"
+#include "mutex_mgr.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -151,6 +152,8 @@
 #define TRUE 1
 #define FALSE 0
 #endif
+
+extern pthread_mutex_t  *delete_job_files_mutex;
 
 int conn_qsub(char *, long, char *);
 
@@ -635,7 +638,6 @@ static void job_init_wattr(
 
 
 
-
 void *delete_job_files(
 
   void *vp)
@@ -643,43 +645,7 @@ void *delete_job_files(
   {
   job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
-  int                   rc = 0;
-
-  if (jfdi->has_temp_dir == TRUE)
-    {
-    if (tmpdir_basename[0] == '/')
-      {
-      snprintf(namebuf, sizeof(namebuf), "%s/%s", tmpdir_basename, jfdi->jobid);
-      sprintf(log_buffer, "removing transient job directory %s",
-        namebuf);
-
-      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
-
-      if ((setegid(jfdi->gid) == -1) ||
-          (setuid_ext(jfdi->uid, TRUE) == -1))
-        {
-        /* FAILURE */
-        rc = -1;;
-        }
-      else
-        {
-        rc = remtree(namebuf);
-        
-        setuid_ext(pbsuser, TRUE);
-        setegid(pbsgroup);
-        }
-      
-      if ((rc != 0) && 
-          (LOGLEVEL >= 5))
-        {
-        sprintf(log_buffer,
-          "recursive remove of job transient tmpdir %s failed",
-          namebuf);
-        
-        log_err(errno, "recursive (r)rmdir", log_buffer);
-        }
-      }
-    } /* END code to remove temp dir */
+  mutex_mgr             sem_mutex(delete_job_files_mutex);
 
   if (thread_unlink_calls == true)
     {
@@ -690,6 +656,8 @@ void *delete_job_files(
       {
       log_err(-1, __func__, "failed to post delete_job_files_sem");
       }
+    
+    sem_mutex.lock();
     }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -786,7 +754,10 @@ void *delete_job_files(
   free(jfdi);
 
   if (thread_unlink_calls == true)
+    {
     sem_wait(delete_job_files_sem);
+    sem_mutex.unlock();
+    }
   return(NULL);
   } /* END delete_job_files() */
 
