@@ -696,8 +696,6 @@ void *delete_job_files(
   {
   job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
-  int                   rc = 0;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
   mutex_mgr             sem_mutex(delete_job_files_mutex);
 
   if (thread_unlink_calls == true)
