@@ -18,6 +18,7 @@
 #include "list_link.h" /* list_link  */
 #include "queue.h"
 #include "threadpool.h"
+#include "complete_req.hpp"
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 const char *PJobSubState[10];
@@ -381,3 +382,4 @@ bool log_available(int eventtype)
   return true;
   }
 
+void complete_req::set_hostlists(const char *jobid, const char *list) {}

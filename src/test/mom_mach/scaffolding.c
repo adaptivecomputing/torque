@@ -19,11 +19,14 @@
 #include "resmon.h" /* rm_attribute */
 #include "pbs_job.h" /* task */
 #include "pbs_nodes.h"
-#include "pbs_config.h"
 #include "node_frequency.hpp"
+#include "machine.hpp"
 #include "log.h"
 
+extern std::string cg_memory_path;
 
+Machine this_node;
+std::string cg_cpuacct_path;
 std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
@@ -63,6 +66,16 @@ int      memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short    memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int      MOMConfigUseSMT           = 1; /* 0: off, 1: on */
 #endif
+
+int trq_cg_get_task_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  allocation         &al)
+  {
+  return(0);
+  }
 
 void log_event(int event, int event_class, const char *func_name, const char buf)
   {}
@@ -196,6 +209,40 @@ bool node_frequency::get_frequency_string(std::string& str,bool full)
  return(false);
  }
 
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+
 node_frequency nd_frequency;
 void from_frequency(struct cpu_frequency_value *pfreq, char *cvnbuf) {}
 
@@ -203,6 +250,51 @@ void translate_vector_to_range_string(std::string &range_string, const std::vect
   {
   return;
   }
+
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+                          
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+       ptr++;
+     }
+   else
+     {
+     indices.push_back(prev);
+
+     if ((*ptr == ',') ||
+         (is_whitespace(*ptr)))
+       ptr++;
+     }
+   }
+
+   free(str);
+   } /* END translate_range_string_to_vector() */
 
 
 void capture_until_close_character(
@@ -214,6 +306,44 @@ void capture_until_close_character(
 bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+Socket::Socket() {}
+Socket::~Socket() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+
+int Machine::getHardwareStyle() const
+  {
+  return(this->hardwareStyle);
+  }
+      
+int trq_cg_get_task_cput_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  unsigned long      &cput_used)
+
+  {
+  return(0);
+  }
+
+int trq_cg_get_task_memory_stats(
+
+  const char         *job_id,
+  const unsigned int  req_index,
+  const unsigned int  task_index,
+  unsigned long long &mem_used)
+
+  {
+  return(0);
   }
 
 void free_pwnam(
@@ -326,3 +456,6 @@ struct group *getgrnam_ext(
 
 
 
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libattr/complete_req.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"

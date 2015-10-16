@@ -6,8 +6,11 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "log.h"
+
+#include "pbs_error.h"
 
 struct passwd *getpwnam_wrapper(
 
@@ -43,7 +46,18 @@ struct passwd *getpwnam_wrapper(
     }
 
   rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
-  if ((rc) ||
+  
+  if ((rc != 0) && (errno == ERANGE))
+    {
+    do
+      {
+      free(buf);
+      bufsize *= 2;
+      buf = (char *)calloc(1, bufsize);
+      rc = getpwnam_r(user_name, pwent, buf, bufsize, &result);
+      }while((rc != 0) && (errno == ERANGE));
+    }
+  else if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
@@ -92,7 +106,17 @@ struct passwd *getpwuid_wrapper(
     }
 
   rc = getpwuid_r(uid, pwent, buf, bufsize, &result);
-  if ((rc) ||
+   if ((rc != 0) && (errno == ERANGE))
+    {
+    do
+      {
+      free(buf);
+      bufsize *= 2;
+      buf = (char *)calloc(1, bufsize);
+      rc = getpwuid_r(uid, pwent, buf, bufsize, &result);
+      }while((rc != 0) && (errno == ERANGE));
+    }
+   else if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getpwnam_r failed: %d", rc);
@@ -105,3 +129,98 @@ struct passwd *getpwuid_wrapper(
   *user_buf = buf;
   return(pwent); 
   }
+
+
+int rmdir_ext(
+
+  const char *dir,
+  int         retry_limit)
+
+  {
+  int rc;
+  int retry_count = 0;
+
+  while ((rc = remove(dir)) &&
+         (retry_count < retry_limit))
+    {
+    switch (errno)
+      {
+      case EINTR:
+      case EBUSY:
+
+        retry_count++;
+        usleep(200000);
+        rc = PBSE_NONE;
+
+        break;
+
+      case ENOENT:
+
+        rc = PBSE_NONE;
+        retry_count += retry_limit;
+
+        break;
+
+      default:
+
+        retry_count += retry_limit;
+        rc = -1;
+
+        break;
+      }
+    }
+
+  if (rc == 0)
+    errno = 0;
+
+  return(rc);
+  } // END rmdir_ext()
+
+
+
+int unlink_ext(
+
+  const char *filename,
+  int         retry_limit)
+
+  {
+  int rc;
+  int retry_count = 0;
+
+  while ((rc = unlink(filename)) &&
+         (retry_count < retry_limit))
+    {
+    switch (errno)
+      {
+      case EINTR:
+      case EBUSY:
+
+        retry_count++;
+        usleep(200000);
+        rc = PBSE_NONE;
+
+        break;
+
+      case ENOENT:
+
+        rc = PBSE_NONE;
+        errno = 0;
+        retry_count += retry_limit;
+
+        break;
+
+      default:
+        
+        retry_count += retry_limit;
+        rc = -1;
+
+        break;
+      }
+    }
+
+  if (rc == 0)
+    errno = 0;
+
+  return(rc);
+  } // END unlink_ext()
+

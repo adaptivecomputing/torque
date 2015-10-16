@@ -1,5 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
+#include "log.h"
 
 void log_event(
 
@@ -9,4 +10,6 @@ void log_event(
   const char *text)
 
   {
+  return;
   }
+ 

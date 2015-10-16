@@ -97,6 +97,9 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#endif
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -354,7 +357,12 @@ struct pbsnode
                                                        deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
-  };
+
+  /* numa hardware configuration information */
+#ifdef PENABLE_LINUX_CGROUPS
+  Machine *nd_layout;
+#endif
+ };
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
 typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
@@ -545,6 +553,16 @@ enum nodeattr
   ND_ATR_ttl,
   ND_ATR_acl,
   ND_ATR_requestid,
+#ifdef PENABLE_LINUX_CGROUPS
+  ND_ATR_total_sockets,
+  ND_ATR_total_numa_nodes,
+  ND_ATR_total_cores,
+  ND_ATR_total_threads,
+  ND_ATR_dedicated_sockets,
+  ND_ATR_dedicated_numa_nodes,
+  ND_ATR_dedicated_cores,
+  ND_ATR_dedicated_threads,
+#endif
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -602,6 +620,8 @@ int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
+void             reinitialize_node_iterator(node_iterator *);
+
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             effective_node_delete(struct pbsnode *);
@@ -619,7 +639,6 @@ int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrat
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
-void             reinitialize_node_iterator(node_iterator *);
 
 #endif /* BATCH_REQUEST_H */
 

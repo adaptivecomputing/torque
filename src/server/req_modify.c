@@ -380,6 +380,29 @@ void chkpt_xfr_done(
 
 
 
+/*
+ * has_unalterable_attribute()
+ *
+ * @param plist - checks the list of attributes to see if any shouldn't be altered
+ * @return true if there's an attribute that shouldn't be altered, else false
+ */
+
+bool has_unalterable_attribute(
+
+  svrattrl *plist)
+
+  {
+  while (plist != NULL)
+    {
+    if (!strcmp(plist->al_name, ATTR_req_information))
+      return(true);
+
+    plist = (svrattrl *)GET_NEXT(plist->al_link);
+    }
+
+  return(false);
+  } // END has_unalterable_attribute()
+
 
 
 /*
@@ -468,6 +491,13 @@ int modify_job(
         }
 
       }
+    }
+
+  if (has_unalterable_attribute(plist) == true)
+    {
+    req_reject(PBSE_UNALTERABLE_ATTR, 0, preq, NULL, NULL);
+
+    return(PBSE_UNALTERABLE_ATTR);
     }
 
   /* if job is running, special checks must be made */
@@ -1083,6 +1113,16 @@ int modify_job_attr(
          allow_unkn,   /* I */
          perm,         /* I */
          bad);         /* O */
+
+  /* if req_information has been changed move it over to pattr */
+  if ((rc == 0) &&
+      (newattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+    {
+    overwrite_complete_req(&pattr[JOB_ATR_req_information], &newattr[JOB_ATR_req_information]);
+
+    job_attr_def[JOB_ATR_req_information].at_free(newattr + JOB_ATR_req_information);
+    newattr[JOB_ATR_req_information].at_flags &= ATR_VFLAG_MODIFY;
+    }
 
   /* if resource limits are being changed ... */
 

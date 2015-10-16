@@ -49,6 +49,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <semaphore.h>
 
 
 #include "libpbs.h"
@@ -84,6 +85,10 @@
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
 #endif
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#include <hwloc.h>
+#endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
@@ -97,6 +102,7 @@
 #include "node_frequency.hpp"
 #include <string>
 #include <vector>
+#include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
 
@@ -147,6 +153,8 @@ char           path_meminfo[MAX_LINE];
 
 extern pthread_mutex_t log_mutex;
 
+pthread_mutex_t  delete_job_files_mutex;
+
 int          lockfds = -1;
 int          multi_mom = 0;
 time_t       loopcnt;  /* used for MD5 calc */
@@ -174,6 +182,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
+sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
@@ -204,8 +213,15 @@ std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh = NULL;
 
+#ifdef PENABLE_LINUX_CGROUPS
+Machine          this_node;
+#endif
+
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
+#endif
+
+#if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
 
@@ -2730,6 +2746,59 @@ int process_rm_cmd_request(
 
 
 /*
+ * process_layout_request()
+ *
+ * Creates and sends the reply for momctl -l
+ * NOTE: This does nothing if you don't have cgroups enabled
+ * @param chan - the tcp channel we should reply to
+ * @return PBSE_NONE on success or a dis_ error
+ */
+
+int process_layout_request(
+
+  struct tcp_chan *chan)
+
+  {
+  std::stringstream output;
+  int               ret = diswsi(chan, RM_RSP_OK);
+
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+#ifdef PENABLE_LINUX_CGROUPS
+  this_node.displayAsString(output);
+#endif
+    
+  if ((ret = diswst(chan, output.str().c_str())) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+  
+  if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+  return(PBSE_NONE);
+  } // END process_layout_request()
+
+
+
+/*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
 */
@@ -2963,11 +3032,39 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      if (thread_unlink_calls == true)
+        {
+        int sem_val;
+        int rc;
+        do
+          {
+          rc = sem_getvalue(delete_job_files_sem, &sem_val);
+          if (rc != 0)
+            {
+            log_err(-1, __func__, "failed to get job file semaphore on shutdown");
+            break;
+            }
+          if (sem_val > 0)
+            sleep(1);
+#ifdef PENABLE_LINUX_CGROUPS
+          else
+            trq_cg_cleanup_torque_cgroups();
+#endif
+          }while(sem_val > 0);
+        }
+
       log_close(1);
 
       exit(0);
 
       /*NOTREACHED*/
+
+      break;
+
+    case RM_CMD_LAYOUT:
+
+      if (process_layout_request(chan) != DIS_SUCCESS)
+        goto bad;
 
       break;
 
@@ -4460,7 +4557,7 @@ void read_mom_hierarchy()
   } /* END read_mom_hierarchy() */
 
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
 void recover_internal_layout()
 
   {
@@ -4504,17 +4601,106 @@ void recover_internal_layout()
   }
 #endif
 
+#ifdef PENABLE_LINUX_CGROUPS
+int cg_initialize_hwloc_topology()
+  {
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
 
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
 
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+
+  return(PBSE_NONE);
+  }
+#endif
+
+#ifdef PENABLE_LINUX26_CPUSETS
+int initialize_hwloc_topology()
+  {
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
+
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+
+  return(PBSE_NONE);
+  }
+#endif
+ 
 /**
  * setup_program_environment
  */
-
 int setup_program_environment(void)
 
   {
   int           c;
   int           hostc = 1;
+#ifdef PENABLE_LINUX_CGROUPS
+  int           ret;
+#endif
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
   FILE         *dummyfile;
 #endif
@@ -4807,33 +4993,33 @@ int setup_program_environment(void)
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  /* load system topology */
-  if ((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
+  rc = initialize_hwloc_topology();
+  if (rc != PBSE_NONE)
+    exit(rc);
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
-  
   internal_layout = node_internals();
 
 #endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+#ifndef PENABLE_LINUX26_CPUSETS
+  /* If cpusets are enabled initialization has already been done */
+  ret = cg_initialize_hwloc_topology();
+  if (ret != PBSE_NONE)
+    exit(ret);
+#endif
+
+  this_node.initializeMachine(topology);
+  ret = trq_cg_initialize_hierarchy();
+  if (ret != PBSE_NONE)
+    {
+    fprintf(stderr, "cgroups not initialized\n");
+    return(1);
+    }
+
+#endif /* PENABLE_LINUX_CGROUPS */
+
+
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -5170,7 +5356,7 @@ int setup_program_environment(void)
 
   init_abort_jobs(recover);
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
   /* Nuke cpusets that do not correspond to existing jobs */
   cleanup_torque_cpuset();
 
@@ -5226,12 +5412,31 @@ int setup_program_environment(void)
 
   if (thread_unlink_calls == true)
     {
+    int rc;
     initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
-    start_request_pool(request_pool);
-    }
+    delete_job_files_sem = (sem_t *)malloc(sizeof(sem_t));
+    if (delete_job_files_sem == NULL)
+      {
+      perror("failed to allocate memory for delete_job_files_sem");
+      exit(1);
+      }
+    rc = sem_init(delete_job_files_sem, 1 /* share */, 0);
+    if (rc != 0)
+      {
+      perror("failed to initialize delete_job_files semaphore");
+      exit(1);
+      }
 
-  /* allow the threadpool to start processing */
-  start_request_pool(request_pool);
+    rc = pthread_mutex_init(&delete_job_files_mutex, NULL);
+    if (rc != 0)
+      {
+      perror("failed to allocate delete_job_files_mutex");
+      exit(1);
+      }
+
+    start_request_pool(request_pool);
+
+    }
 
   requested_cluster_addrs = 0;
 
@@ -5395,6 +5600,7 @@ int TMOMScanForStarting(void)
         else
           {
           /* job successfully started */
+          free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
           memset(TJE, 0, sizeof(pjobexec_t));
 
           if (LOGLEVEL >= 3)
@@ -6572,6 +6778,9 @@ int main(
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
+/* Due to differences in the NVIDIA libraries, NVML initialization must be done 
+ * after the MOM is daemonized which happens in setup_program_environment.
+ * */
   if (!init_nvidia_nvml())
     {
     use_nvidia_gpu = FALSE;
@@ -6588,7 +6797,6 @@ int main(
 
     log_ext(-1, "main", log_buffer, LOG_DEBUG);
     }
-
 #endif  /* NVIDIA_GPUS */
 
   main_loop();

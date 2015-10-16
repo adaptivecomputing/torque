@@ -145,7 +145,7 @@ extern nodeboard node_boards[];
 
 
 /*
- * Function to initialize the Nvidia nvml api
+ * Function to log nvml errors
  */
 #ifdef NVML_API
 void log_nvml_error(
@@ -165,13 +165,31 @@ void log_nvml_error(
           (char *)"Successful");
         }
       break;
+    case NVML_ERROR_UNINITIALIZED:
+      if (LOGLEVEL >= 3)
+        {
+        log_err(
+          PBSE_RMSYSTEM,
+          id,
+          (char *)"NVML is uninitialized");
+        }
+      break;
     case NVML_ERROR_ALREADY_INITIALIZED:
       if (LOGLEVEL >= 3)
         {
         log_err(
           PBSE_RMSYSTEM,
           id,
-          (char *)"Already initialized");
+          (char *)"NVML is already initialized");
+        }
+      break;
+    case NVML_ERROR_DRIVER_NOT_LOADED:
+      if (LOGLEVEL >= 1)
+        {
+        log_err(
+          PBSE_RMSYSTEM,
+          id,
+          (char *)"NVIDIA driver is not running");
         }
       break;
     case NVML_ERROR_NO_PERMISSION:
@@ -190,6 +208,39 @@ void log_nvml_error(
           PBSE_RMSYSTEM,
           id,
           (char *)"NVML invalid argument");
+        }
+      break;
+    case NVML_ERROR_INSUFFICIENT_POWER:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, (char *)"Improperly attached external power cables on GPU %s",
+          (gpuid != NULL) ? gpuid : "NULL");
+        log_err(
+          PBSE_RMSYSTEM,
+          id,
+          log_buffer);
+        }
+      break;
+    case NVML_ERROR_IRQ_ISSUE:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, "Kernel detected an interrupt issue with GPU %s",
+          (gpuid != NULL) ? gpuid : "NULL");
+        log_err(
+          PBSE_RMSYSTEM,
+          id,
+          log_buffer);
+        }
+      break;
+    case NVML_ERROR_GPU_IS_LOST:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, "GPU %s has fallen off the bus or is otherwise inaccessible",
+          (gpuid != NULL) ? gpuid : "NULL");
+        log_err(
+          PBSE_RMSYSTEM,
+          id,
+          log_buffer);
         }
       break;
     case NVML_ERROR_NOT_FOUND:
@@ -244,8 +295,8 @@ void log_nvml_error(
 
 int init_nvidia_nvml()
   {
-  nvmlReturn_t  rc;
-  unsigned int      device_count;
+  nvmlReturn_t rc;
+  unsigned int device_count;
 
   rc = nvmlInit();
 
@@ -1178,6 +1229,28 @@ void generate_server_gpustatus_nvml(
       continue;
       }
 
+    /* get the display mode */
+    /* Nvidia GeForce does not support display mode */
+    rc = nvmlDeviceGetDisplayMode(device_hndl, &display_mode);
+
+    if (rc == NVML_SUCCESS)
+      {
+      if (display_mode == NVML_FEATURE_ENABLED)
+        {
+        gpu_status.push_back("gpu_display=Enabled");
+        }
+      else
+        {
+        gpu_status.push_back("gpu_display=Disabled");
+        }
+      }
+    else
+      {
+      log_nvml_error (rc, NULL, __func__);
+       gpu_status.push_back("gpu_display=Unknown");
+      }
+
+
     /* get the PCI info */
     rc = nvmlDeviceGetPciInfo(device_hndl, &pci_info);
 
@@ -1209,22 +1282,6 @@ void generate_server_gpustatus_nvml(
       std::string s("gpu_product_name=");
       s += tmpbuf;
       gpu_status.push_back(s);
-      }
-    else
-      {
-      log_nvml_error (rc, NULL, __func__);
-      }
-
-    /* get the display mode */
-    rc = nvmlDeviceGetDisplayMode(device_hndl, &display_mode);
-
-    if (rc == NVML_SUCCESS)
-      {
-      gpu_status.push_back("gpu_display=Enabled");
-      }
-    else if (rc == NVML_ERROR_INVALID_ARGUMENT)
-      {
-      gpu_status.push_back("gpu_display=Disabled");
       }
     else
       {

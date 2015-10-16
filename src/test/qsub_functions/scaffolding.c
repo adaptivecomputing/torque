@@ -8,27 +8,55 @@
 #include <time.h>
 #include "u_hash_map_structs.h"
 #include "port_forwarding.h"
+#include "req.hpp"
+#include "complete_req.hpp"
+#include "pbs_ifl.h"
+
+#include "utils.h"
+#include "log.h"
 
 #include "utils.h"
 #include "log.h"
 
 int pbs_errno = 0; 
 char *pbs_server = NULL;
-bool exit_called = false;
+bool  exit_called = false;
+bool  submission_string_fail = false;
+bool  added_req = false;
+bool  stored_complete_req = false;
+bool  find_mpp = false;
+bool  find_nodes = false;
+bool  find_size = false;
+bool  validate_path = false;
+int   req_val = 0;
+
+std::string added_value;
+std::string added_name;
 
 void log_event(int event, int event_class, const char *func_name, const char *buf)
   {}
 
 char *pbs_geterrmsg(int connect)
   {
-  fprintf(stderr, "The call to pbs_geterrmsg to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
-  fprintf(stderr, "The call to hash_find to be mocked!!\n");
-  exit(1);
+  if ((find_mpp == true) &&
+      (!strcmp(name, "mppwidth")))
+    return(1);
+  else if ((find_nodes == true) &&
+           (!strcmp(name, "nodes")))
+    return(1);
+  else if ((find_size == true) &&
+           (!strcmp(name, "size")))
+    return(1);
+  else if ((validate_path == true) &&
+           (!strcmp(name, "validate_path")))
+    return(1);
+  else
+    return(0);
   }
 
 int TShowAbout_exit(void)
@@ -190,8 +218,14 @@ void hash_add_or_exit(
   int                 var_type)             /* I - Sets the type of the variable */
 
   {
-  fprintf(stderr, "The call to hash_add_or_exit to be mocked!!\n");
-  exit(1);
+  if (!strcmp(name, ATTR_req_information))
+    stored_complete_req = true;
+
+  if (val != NULL)
+    added_value = val;
+
+  if (name != NULL)
+    added_name = name;
   }
 
 void set_env_opts(job_data_container *env_attr, char **envp)
@@ -287,11 +321,61 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
+complete_req::complete_req() {}
+
+void complete_req::toString(
+
+  std::string &output) const
+
+  {
+  char buf[10];
+  sprintf(buf, "%d", req_val);
+  output = buf;
+  }
+
+int complete_req::req_count() const
+  {
+  return(req_val);
+  }
+
+void complete_req::add_req(req &r)
+  {
+  added_req = true;
+  }
+
+req::req()
+
+  {
+  }
+
+int req::set_from_submission_string(
+
+  char        *submission_str,
+  std::string &error)
+
+  {
+  if (submission_string_fail == true)
+    return(-1);
+
+  return(0);
+  }
+
 char *get_trq_param(const char *param, const char *config_buf)
   {
   fprintf(stderr, "The call to get_trq_param to be mocked!!\n");
   exit(1);
   }
+
+int req::getPlaceCores() const
+  {
+  return(4);
+  }
+
+int req::get_cores() const
+  {
+  return(4);
+  }
+
 
 void free_grname(
 

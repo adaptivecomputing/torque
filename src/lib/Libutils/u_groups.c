@@ -139,6 +139,15 @@ struct group *getgrgid_ext(
     }
 
   rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
+  while ((rc != 0) &&
+         (errno == ERANGE))
+    {
+    free(buf);
+    bufsize *= 2;
+    buf = (char *)calloc(1, bufsize);
+    rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
+    }
+
   if ((rc) ||
       (result == NULL))
     {

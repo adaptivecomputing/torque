@@ -261,7 +261,6 @@ static pid_t fork_to_user(
   char           *idir;
 
   std::string     hdir;
-  char           *buf;
 
   struct stat     sb;
 
@@ -1128,6 +1127,7 @@ void req_deletejob(
      */
     if (TMOMJobGetStartInfo(pjob, &TJE) == SUCCESS)
       {
+      free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
       memset(TJE, 0, sizeof(pjobexec_t));
       }
 

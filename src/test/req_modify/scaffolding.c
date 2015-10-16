@@ -102,6 +102,11 @@ int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *n
   exit(1);
   }
 
+void *get_next(list_link pl, char *file, int line)
+  {
+  return(NULL);
+  }
+
 int chk_hold_priv(long val, int perm)
   {
   fprintf(stderr, "The call to chk_hold_priv to be mocked!!\n");
@@ -280,6 +285,10 @@ job *chk_job_request(char *p, batch_request *b)
   return(jp);
   }
 
-void *get_next(list_link pl, char *file, int line) {return NULL;}
 
 void reply_ack(struct batch_request *preq) {}
+
+void overwrite_complete_req(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr) {}

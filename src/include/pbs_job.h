@@ -1,5 +1,4 @@
-/*
-*         OpenPBS (Portable Batch System) v2.3 Software License
+/*         OpenPBS (Portable Batch System) v2.3 Software License
 *
 * Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
@@ -126,6 +125,8 @@ struct job_array;
 
 #define JOB_REPORTED_POLL_TIMEOUT 300
 #define JOB_CONDENSED_TIMEOUT     45
+#define REQ_VERSION_1             1
+#define REQ_VERSION_2             2
 
 /*
  * The depend_job structure is used to record the name and location
@@ -385,9 +386,15 @@ enum job_atr
   JOB_ATR_system_start_time,
   JOB_ATR_nppcu, /* Hyper-Thread handling for ALPS (Cray) */
   JOB_ATR_login_node_key,
+  JOB_ATR_request_version,
+  JOB_ATR_req_information,
 #include "site_job_attr_enum.h"
 
   JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
+#ifdef PENABLE_LINUX_CGROUPS
+  JOB_ATR_cpuset_string,
+  JOB_ATR_memset_string,
+#endif
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -439,6 +446,9 @@ typedef struct noderes
   long nr_vmem; /* virtual memory */
   } noderes;
 
+typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
+typedef std::map<pid_t, int> pid2procarrayindex_map_t;
+typedef std::set<pid_t> job_pid_set_t;
 
 typedef std::map< pid_t, pid_t, std::less< int > > pid2jobsid_map_t;
 typedef std::map<pid_t, int> pid2procarrayindex_map_t;
@@ -1156,7 +1166,6 @@ extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum 
 int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
 
 #endif /* BATCH_REQUEST_H */
-
 
 #endif /* PBS_JOB_H */
 
