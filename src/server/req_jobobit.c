@@ -1761,12 +1761,10 @@ int handle_complete_first_time(
   int          rc = PBSE_NONE;
   pbs_queue   *pque;
   int          KeepSeconds = 0;
-  time_t       time_now = time(NULL);
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
+  time_t       time_now = time(NULL);
   long         must_report = FALSE;
-  int          job_complete = 0;
   std::string  jid;
-  time_t       time_to_remove;
   char         acctbuf[RESC_USED_BUF];
   std::string  acct_data;
   size_t       accttail;
@@ -1820,59 +1818,16 @@ int handle_complete_first_time(
       KeepSeconds = JOBMUSTREPORTDEFAULTKEEP;
     }
 
-  /*
-   * After the job is officially considered completed, print information on the
-   * completed job to the accounting log.
-   */
-  accttail = acct_data.length();
-  sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
-  acct_data = acctbuf;
-  end_of_job_accounting(pjob, acct_data, accttail);
-
-  if (KeepSeconds <= 0)
-    {
-    rc = svr_job_purge(pjob);
-    return(rc);
-    }
-
-  job_complete = pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE ? 1 : 0;
-  if ((job_complete == 1) &&
-      (pjob->ji_wattr[JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET))
-    {
-    /*
-     * server restart - if we already have a completion_time then we
-     * better be restarting.
-     * use the comp_time to determine task invocation time
-     */
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      }
-
-    // add job id and clean up time for processing by cleanup task
-    jid = pjob->ji_qs.ji_jobid;
-    time_to_remove = pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long + KeepSeconds;
-    }
-  else
+  if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) ||
+      ((pjob->ji_wattr[JOB_ATR_comp_time].at_flags & ATR_VFLAG_SET) == 0))
     {
     struct timeval   tv;
     struct timeval  *tv_attr;
     struct timeval   result;
     struct timezone  tz;
     
-    pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = (long)time(NULL);
+    pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long = time_now;
     pjob->ji_wattr[JOB_ATR_comp_time].at_flags |= ATR_VFLAG_SET;
-    
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      }
-
-    // add job id and clean up time for processing by cleanup task
-    jid = pjob->ji_qs.ji_jobid;
-    time_to_remove = time_now + KeepSeconds;
     
     if (gettimeofday(&tv, &tz) == 0)
       {
@@ -1891,11 +1846,34 @@ int handle_complete_first_time(
     job_save(pjob, SAVEJOB_FULL, 0);
     }
 
+  /*
+   * After the job is officially considered completed, print information on the
+   * completed job to the accounting log.
+   */
+  accttail = acct_data.length();
+  sprintf(acctbuf, msg_job_end_stat, pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+  acct_data = acctbuf;
+  end_of_job_accounting(pjob, acct_data, accttail);
+  
+  if (KeepSeconds <= 0)
+    {
+    rc = svr_job_purge(pjob);
+    return(rc);
+    }
+    
+  jid = pjob->ji_qs.ji_jobid;
+
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     
-  if (jid.size() != 0)
-    completed_jobs_map.add_job(jid.c_str(), time_to_remove);
-  
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    }
+
+  // add job id and clean up time for processing by cleanup task
+  completed_jobs_map.add_job(pjob->ji_qs.ji_jobid, time_now + KeepSeconds);
+    
   return(FALSE);
   } /* END handle_complete_first_time() */
 
