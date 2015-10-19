@@ -519,46 +519,20 @@ struct passwd *getpwnam_ext(
   char *user_name) /* I */
 
   {
-  struct passwd *pwent = NULL;
-  int            retrycnt = 0;
+  static int ct = 1;
+  passwd *pwd = (passwd *)calloc(1, sizeof(*pwd));
 
-  /* bad argument check */
-  if (user_name == NULL)
-    return NULL;
+  pwd->pw_dir = strdup("/home/dbeer");
+  pwd->pw_gid = 6;
+  pwd->pw_name = strdup("dbeer");
 
-  errno = 0;
-
-  while ((pwent == NULL) && (retrycnt != -1) && (retrycnt < LDAP_RETRIES))
+  if ((ct++ % 2 == 0) &&
+      (bad_pwd == false))
     {
-    pwent = getpwnam_wrapper( user_name );
-
-    /* if the user wasn't found check for any errors to log */
-    if (pwent == NULL)
-      {
-      switch (errno)
-        {
-        case EINTR:
-        case EIO:
-        case EMFILE:
-        case ENFILE:
-        case ENOMEM:
-        case ERANGE:
-          sprintf(log_buffer, "ERROR: getpwnam() error %d (%s)",
-                  errno,
-                  strerror(errno));
-
-          log_ext(-1, __func__, log_buffer, LOG_ERR);
-          retrycnt++;
-          break;
-
-        default:
-          retrycnt = -1;
-          break;
-        }
-      }
+    return(pwd);
     }
 
-  return(pwent);
+  return(NULL);
   } /* END getpwnam_ext() */
 
 
@@ -804,3 +778,11 @@ int csv_length(const char *csv_str)
   exit(1);
   }
 
+struct passwd *get_password_entry_by_uid(
+
+  char **user_buf,
+  uid_t uid)
+
+  {
+  return(NULL);
+  }
