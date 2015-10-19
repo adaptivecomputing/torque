@@ -243,7 +243,7 @@ int site_check_user_map(
       ((tmp = find_nodebyname(orighost)) != NULL))
     {
     /* job submitted from compute host, access allowed */
-    unlock_node(tmp, "site_check_user_map", NULL, logging);
+    unlock_node(tmp, __func__, NULL, logging);
 
     if (dptr != NULL)
       *dptr = '.';
@@ -301,6 +301,10 @@ int site_check_user_map(
         }
       }  /* END for (hostnum) */
     }    /* END if (SRV_ATR_SubmitHosts) */
+
+  // Check limited acls
+  if (limited_acls.is_authorized(orighost, owner) == true)
+    return(0);
 
   if (dptr != NULL)
     *dptr = '.';

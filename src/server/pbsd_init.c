@@ -250,6 +250,8 @@ extern int    set_old_nodes(job *);
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
 void          on_job_exit_task(struct work_task *);
+int           update_user_acls(pbs_attribute *pattr, enum batch_op  op);
+int           update_group_acls(pbs_attribute *pattr, enum batch_op  op);
 
 /* Private functions in this file */
 
@@ -1051,6 +1053,12 @@ int setup_server_attrs(
       {
       cpy_stdout_err_on_rerun = true;
       }
+
+    if (server.sv_attr[SRV_ATR_acl_users_hosts].at_flags & ATR_VFLAG_SET)
+      update_user_acls(server.sv_attr + SRV_ATR_acl_users_hosts, SET);
+
+    if (server.sv_attr[SRV_ATR_acl_groups_hosts].at_flags & ATR_VFLAG_SET)
+      update_group_acls(server.sv_attr + SRV_ATR_acl_groups_hosts, SET);
     }
   else
     {

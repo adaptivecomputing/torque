@@ -428,6 +428,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/resmom/linux/test/node_internals/Makefile
     src/resmom/linux/test/pe_input/Makefile
     src/server/test/Makefile
+    src/server/test/acl_special/Makefile
     src/server/test/accounting/Makefile
     src/server/test/array_func/Makefile
     src/server/test/array_upgrade/Makefile
@@ -488,6 +489,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/server/test/req_tokens/Makefile
     src/server/test/req_track/Makefile
     src/server/test/resc_def_all/Makefile
+    src/server/test/restricted_host/Makefile
     src/server/test/run_sched/Makefile
     src/server/test/stat_job/Makefile
     src/server/test/svr_chk_owner/Makefile

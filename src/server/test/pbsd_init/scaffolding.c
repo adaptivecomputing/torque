@@ -660,3 +660,12 @@ std::string get_path_jobdata(const char *a, const char *b) {return "";}
   return(-1);
   }*/
 
+int update_user_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
+
+int update_group_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
