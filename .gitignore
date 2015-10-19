@@ -417,6 +417,8 @@ src/server/test/geteusernam/test_geteusernam
 src/server/test/id_map/test_id_map
 src/server/test/incoming_request/test_incoming_request
 src/server/test/issue_request/test_issue_request
+src/server/test/acl_special/test_acl_special
+src/server/test/restricted_host/test_restricted_host
 src/server/test/job_attr_def/test_job_attr_def
 src/server/test/job_container/test_job_container
 src/server/test/job_func/test_job_func

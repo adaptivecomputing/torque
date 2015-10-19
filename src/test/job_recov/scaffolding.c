@@ -331,7 +331,27 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
 const char *pbsnode::get_name() const
   {
   return(this->nd_name.c_str());
+  }
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int            actmode)
+
+  {
+  return(0);
   }

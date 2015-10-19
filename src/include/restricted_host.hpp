@@ -1,3 +1,6 @@
+#ifndef RESTRICTED_HOST_HPP
+#define RESTRICTED_HOST_HPP
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -77,120 +80,28 @@
 * without reference to its choice of law rules.
 */
 
-/*
- * This is a list of public server attributes
- *
- * FORMAT:
- *  attr1,
- *   attr2, <--- important the last has a comma after it
- *
- *  This file will be used for the initialization of an array
- *
- */
+#include <string>
+#include <set>
 
-/* sync w/SRV_ATR_* in server.h, server/svr_attr_def.c, and ATTR_* in pbs_ifl.h  */
+class restricted_host
+  {
+  std::string           hostname;
+  std::set<std::string> users;
+  std::set<std::string> groups;
 
-ATTR_aclhten,
-ATTR_aclhost,
-ATTR_acluren,
-ATTR_acluser,
-ATTR_aclroot,
-ATTR_comment,
-ATTR_defnode,
-ATTR_dfltque,
-ATTR_locsvrs,
-ATTR_logevents,
-ATTR_loglevel,
-ATTR_managers,
-ATTR_mailfrom,
-ATTR_maxrun,
-ATTR_maxuserrun,
-ATTR_maxgrprun,
-ATTR_nodepack,
-ATTR_nodesuffix,
-ATTR_operators,
-ATTR_queryother,
-ATTR_rescavail,
-ATTR_resccost,
-ATTR_rescdflt,
-ATTR_rescmax,
-ATTR_schedit,
-ATTR_scheduling,
-ATTR_syscost,
-ATTR_pingrate,
-ATTR_ndchkrate,
-ATTR_tcptimeout,
-ATTR_jobstatrate,
-ATTR_polljobs,
-ATTR_downonerror,
-ATTR_disableserveridcheck,
-ATTR_jobnanny,
-ATTR_ownerpurge,
-ATTR_qcqlimits,
-ATTR_momjobsync,
-ATTR_maildomain,
-ATTR_killdelay,
-ATTR_acllogic,
-ATTR_aclgrpslpy,
-ATTR_keepcompleted,
-ATTR_submithosts,
-ATTR_allownodesubmit,
-ATTR_allowproxyuser,
-ATTR_servername,
-ATTR_autonodenp,
-ATTR_logfilemaxsize,
-ATTR_logfilerolldepth,
-ATTR_logkeepdays,
-ATTR_nextjobnum,
-ATTR_tokens,
-ATTR_extraresc,
-ATTR_schedversion,
-ATTR_acctkeepdays,
-ATTR_lockfile,
-ATTR_LockfileUpdateTime,
-ATTR_LockfileCheckTime,
-ATTR_credentiallifetime,
-ATTR_jobmustreport,
-ATTR_checkpoint_dir,
-ATTR_dispsvrsuffix,
-ATTR_jobsuffixalias,
-ATTR_usejobssubdirs,
-ATTR_mailsubjectfmt,
-ATTR_mailbodyfmt,
-ATTR_npdefault,
-ATTR_clonebatchsize,
-ATTR_clonebatchdelay,
-ATTR_jobstarttimeout,
-ATTR_jobforcecanceltime,
-ATTR_maxarraysize,
-ATTR_maxslotlimit,
-ATTR_recordjobinfo,
-ATTR_recordjobscript,
-ATTR_joblogfilemaxsize,
-ATTR_joblogfilerolldepth,
-ATTR_joblogkeepdays,
-#ifdef MUNGE_AUTH
-ATTR_authusers,
+  public:
+  restricted_host(const std::string &hostname, const std::string &user, const std::string &group);
+  restricted_host();
+  bool operator==(const restricted_host &other) const;
+  void add_user(const std::string &user);
+  void add_group(const std::string &group);
+  void remove_user(const std::string &user);
+  void remove_group(const std::string &group);
+  bool has_user(const std::string &user) const;
+  bool authorize_by_group(const std::string &user) const;
+  bool has_group(const std::string &group) const;
+  void clear_users();
+  void clear_groups();
+  };
+
 #endif
-ATTR_minthreads,
-ATTR_maxthreads,
-ATTR_threadidleseconds,
-ATTR_moabarraycompatible,
-ATTR_nomailforce,
-ATTR_crayenabled,
-ATTR_interactivejobscanroam,
-ATTR_maxuserqueuable,
-ATTR_automaticrequeueexitcode,
-ATTR_nppcu,
-ATTR_jobsynctimeout,
-ATTR_pass_cpu_clock,
-ATTR_job_full_report_time,
-ATTR_copy_on_rerun,
-ATTR_job_exclusive_on_use,
-ATTR_disable_automatic_requeue,
-ATTR_exitcodecanceledjob,
-ATTR_timeoutforjobdelete,
-ATTR_timeoutforjobrequeue,
-ATTR_dontwritenodesfile,
-ATTR_aclusershosts,
-ATTR_aclgroupshosts,

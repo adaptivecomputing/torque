@@ -97,6 +97,7 @@
 
 #include "server_limits.h"
 #include "attribute.h" /* attribute_def */
+#include "acl_special.hpp"
 
 #define DEFAULT_KILL_DELAY 2
 #define NO_BUFFER_SPACE -2
@@ -218,6 +219,8 @@ enum srv_atr
   SRV_ATR_TimeoutForJobDelete,
   SRV_ATR_TimeoutForJobRequeue,
   SRV_ATR_DontWriteNodesFile,
+  SRV_ATR_acl_users_hosts,
+  SRV_ATR_acl_groups_hosts,
 
   /* This must be last */
   SRV_ATR_LAST
@@ -260,6 +263,7 @@ struct server
 
 extern struct server server;
 
+extern acl_special limited_acls;
 
 /*
  * server state values

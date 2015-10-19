@@ -661,3 +661,13 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   {
   return(0);
   }
+
+int update_user_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
+
+int update_group_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
