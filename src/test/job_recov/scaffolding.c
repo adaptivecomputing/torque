@@ -356,10 +356,26 @@ int set_complete_req(
   pbs_attribute *attr,
   pbs_attribute *new_attr,
   enum batch_op  op)
-  
+
   {
   return(0);
   }
+  
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(0);
+  }
+
 void handle_complete_second_time(struct work_task *ptask)
   {
   }
@@ -371,3 +387,13 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
 
 void add_to_completed_jobs(work_task *wt) {}
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int            actmode)
+
+  {
+  return(0);
+  }

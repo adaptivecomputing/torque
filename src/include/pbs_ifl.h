@@ -384,6 +384,8 @@
 #define ATTR_timeoutforjobdelete       "timeout_for_job_delete"
 #define ATTR_timeoutforjobrequeue      "timeout_for_job_requeue"
 #define ATTR_dontwritenodesfile        "dont_write_nodes_file"
+#define ATTR_aclusershosts              "acl_user_hosts"
+#define ATTR_aclgroupshosts             "acl_group_hosts"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

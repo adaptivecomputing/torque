@@ -17,6 +17,7 @@
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
 #include "completed_jobs_map.h"
+#include "acl_special.hpp"
 
 bool exit_called = false;
 pthread_mutex_t *job_log_mutex;
@@ -508,3 +509,5 @@ void clear_all_alps_reservations() {}
 completed_jobs_map_class::completed_jobs_map_class() {}
 completed_jobs_map_class::~completed_jobs_map_class() {}
 void *remove_completed_jobs(void *vp) {return(NULL);}
+
+acl_special::acl_special() {}

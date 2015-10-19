@@ -116,6 +116,8 @@ extern int set_tokens (struct pbs_attribute *attr, struct pbs_attribute *new_att
 extern int extra_resc_chk (pbs_attribute * pattr, void *pobject, int actmode);
 extern void free_extraresc (pbs_attribute * attr);
 extern void restore_attr_default (struct pbs_attribute *);
+int         update_user_acls(pbs_attribute *pattr, void *pobject, int actmode);
+int         update_group_acls(pbs_attribute *pattr, void *pobject, int actmode);
 
 /* DIAGTODO: write diag_attr_def.c */
 
@@ -1492,5 +1494,31 @@ attribute_def svr_attr_def[] =
      MGR_ONLY_SET,
      ATR_TYPE_LONG,
      PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_acl_users_hosts */
+  { (char *)ATTR_aclusershosts,  /* "acl_user_hosts" */
+    decode_arst,
+    encode_arst,
+    set_hostacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_acl_groups_hosts */
+  { (char *)ATTR_aclgroupshosts,  /* "acl_group_hosts" */
+    decode_arst,
+    encode_arst,
+    set_hostacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
 
   };

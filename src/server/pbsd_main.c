@@ -318,7 +318,8 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
-sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+sem_t                  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+acl_special             limited_acls;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;

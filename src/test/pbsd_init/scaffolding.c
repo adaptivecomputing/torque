@@ -760,3 +760,13 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
+
+int update_user_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
+
+int update_group_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
