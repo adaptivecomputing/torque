@@ -74,4 +74,5 @@ void log_err(
   {
   }
 
-
+id_map::id_map() {}
+id_map::~id_map() {}
