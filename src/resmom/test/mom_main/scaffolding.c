@@ -871,3 +871,11 @@ time_t get_stat_update_interval()
 void empty_received_nodes() {}
 
 void start_request_pool(threadpool_t *tp) {}
+
+void free_pwnam(
+  
+  struct passwd *pwdp, 
+  char *buf)
+
+  {
+  }

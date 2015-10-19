@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pwd.h> /* gid_t, uid_t */
+#include <semaphore.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
@@ -34,7 +35,8 @@ char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 bool exit_called = false;
 int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
-
+sem_t *delete_job_files_sem;
+pthread_mutex_t  delete_job_files_mutex;
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {

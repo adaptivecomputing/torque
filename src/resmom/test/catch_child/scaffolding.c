@@ -1306,7 +1306,6 @@ void mom_job_purge(job *pjob)
 
 bool check_pwd(job *pjob)
   {
-  struct passwd *respass = NULL;
   return false;
   }
 
