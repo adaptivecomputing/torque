@@ -885,5 +885,12 @@ int add_network_entry(
   return(0);
   }
 
-void start_request_pool( threadpool_t *tp)
- {}
+void start_request_pool(threadpool_t *tp) {}
+
+void free_pwnam(
+  
+  struct passwd *pwdp, 
+  char *buf)
+
+  {
+  }
