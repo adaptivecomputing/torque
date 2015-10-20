@@ -994,14 +994,17 @@ void free_array_job_sub_struct(
     free(rn);
     }
 
-  /* free the memory for the job pointers */
-  for (int i = 0; i < pa->ai_qs.array_size; i++)
+  if (pa->job_ids != NULL)
     {
-    if (pa->job_ids[i] != NULL)
-      free(pa->job_ids[i]);
-    }
+    /* free the memory for the job pointers */
+    for (int i = 0; i < pa->ai_qs.array_size; i++)
+      {
+      if (pa->job_ids[i] != NULL)
+        free(pa->job_ids[i]);
+      }
 
-  free(pa->job_ids);
+    free(pa->job_ids);
+    }
   }
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
