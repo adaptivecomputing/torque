@@ -116,6 +116,9 @@
 #define ATRTYPE  6  /* sync w/ATR_TYPE_*  (see #defines below) */
 #define ATRPART  3
 
+#define NO_ATTR_DATA    1
+#define ATTR_NOT_FOUND  -2
+
 /*
  * The svrattrl structure is used to hold the external form of attributes.
  */

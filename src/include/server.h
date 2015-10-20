@@ -101,8 +101,6 @@
 
 #define DEFAULT_KILL_DELAY 2
 #define NO_BUFFER_SPACE -2
-#define NO_ATTR_DATA    1
-#define ATTR_NOT_FOUND  -2
 /* default multi threading options */
 #define DEFAULT_MIN_THREADS    10
 #define DEFAULT_THREAD_IDLE    300
