@@ -130,7 +130,9 @@ bool restricted_host::authorize_by_group(
   bool                             authorized = false;
 
   memset(&grp, 0, sizeof(grp));
-  bufsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+  if ((bufsize = sysconf(_SC_GETGR_R_SIZE_MAX)) < 0)
+    bufsize = MAXLINE;
+
   buf = (char *)calloc(1, bufsize);
 
   for (it = this->groups.begin(); it != this->groups.end() && authorized == false; it++)
