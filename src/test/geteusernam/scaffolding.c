@@ -15,7 +15,10 @@
 attribute_def job_attr_def[10];
 struct server server;
 char *server_host;
+char *msg_orighost = strdup("Couldn't find orighost");
 int LOGLEVEL;
+
+acl_special limited_acls;
 
 
 char *site_map_user(char *uname,  char *host) 
@@ -158,4 +161,6 @@ bool acl_special::is_authorized(const std::string &host, const std::string &user
   {
   return(true);
   }
+
+acl_special::acl_special() {}
 
