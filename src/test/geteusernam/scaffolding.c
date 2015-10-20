@@ -9,6 +9,8 @@
 #include "attribute.h" /* attribute_def, pbs_attribute  */
 #include "server.h" /* server */
 #include "log.h"
+#include "acl_special.hpp"
+#include "pbs_nodes.h"
 
 attribute_def job_attr_def[10];
 struct server server;
@@ -24,8 +26,7 @@ char *site_map_user(char *uname,  char *host)
 
 char *get_variable(job *pjob, const char *variable)
   {
-  fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 struct passwd * getpwnam_ext(char **user_buf, char * user_name)
@@ -48,8 +49,7 @@ struct group * getgrnam_ext(char **grp_buf, char * grp_name)
 
 int acl_check(pbs_attribute *pattr, char   *name, int   type)
   {
-  fprintf(stderr, "The call to acl_check needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void get_jobowner(char *from, char *to)
@@ -139,4 +139,23 @@ struct group *getgrgid_ext(
   *user_buf = buf;
   return(grp);
   } /* END getgrnam_ext() */
+
+
+struct pbsnode *find_nodebyname(
+
+  const char *nodename) /* I */
+
+  {
+  return(NULL);
+  }
+
+int pbsnode::unlock_node(const char *caller, const char *msg, int loglevel)
+  {
+  return(0);
+  }
+
+bool acl_special::is_authorized(const std::string &host, const std::string &user) const
+  {
+  return(true);
+  }
 

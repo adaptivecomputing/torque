@@ -435,7 +435,7 @@ bool is_user_allowed_to_submit_jobs(
     }    /* END if (SRV_ATR_SubmitHosts) */
 
   // Check limited acls
-  if (limited_acls.is_authorized(orighost, user.c_str()) == true)
+  if (limited_acls.is_authorized(orighost, user) == true)
     return(0);
 
   if (dptr != NULL)
