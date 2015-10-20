@@ -99,7 +99,6 @@
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
-#include "server.h"
 
 /* private data */
 
