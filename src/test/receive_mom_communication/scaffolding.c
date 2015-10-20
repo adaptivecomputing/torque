@@ -8,6 +8,7 @@
 #include "dynamic_string.h"
 #include "tcp.h"
 #include "pbs_job.h"
+#include "pbs_nodes.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "execution_slot_tracker.hpp"
@@ -695,6 +696,25 @@ char *csv_find_string(
   }
 
 
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::lock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *hostname)
+  {
+  this->nd_name = hostname;
+  }
 
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
