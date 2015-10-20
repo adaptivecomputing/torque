@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+#include "pbs_nodes.h"
 #include "batch_request.h" /* batch_request */
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -85,3 +86,13 @@ void log_err(int errnum, const char *routine, const char *text) {}
 
 
 unsigned int pbs_mom_port = 0;
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::lock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
