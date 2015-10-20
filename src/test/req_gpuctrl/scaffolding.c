@@ -92,7 +92,7 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
-int pbsnode::lock_node(const char *caller, const char *msg, int level)
+int pbsnode::unlock_node(const char *caller, const char *msg, int level)
   {
   return(0);
   }
