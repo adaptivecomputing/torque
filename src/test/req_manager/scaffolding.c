@@ -455,6 +455,11 @@ int pbsnode::tmp_unlock_node(const char *caller, const char *msg, int level)
   return(0);
   }
 
+int pbsnode::unlock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
 struct prop *init_prop(
 
   const char *pname) /* I */
@@ -476,6 +481,10 @@ void acl_special::add_user_configuration(const std::string &qmgr_input)
   }
 
 void acl_special::add_group_configuration(const std::string &qmgr_input)
+  {
+  }
+
+void acl_special::clear_users()
   {
   }
 
