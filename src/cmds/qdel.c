@@ -363,7 +363,7 @@ cnt:
       prt_job_err((char *)"qdel", connect, job_id_out);
       }
     
-    if (!located && any_failed != 0)
+    if (!located && any_failed != 0 && strcasecmp(job_id, "all"))
       {
       fprintf(stderr, "qdel: nonexistent job id: %s\n", job_id);
       }
