@@ -93,7 +93,6 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
-#include "server.h"
 #include "queue.h"
 #include "pbs_job.h"
 #include "log.h"
