@@ -24,6 +24,8 @@
 int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
+int called_remove_job;
+int dequejob_rc;
 
 extern sem_t *job_clone_semaphore;
 bool exit_called = false;
@@ -161,8 +163,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
 
 int svr_dequejob(job *pjob, int val)
   {
-  fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
-  exit(1);
+  return(dequejob_rc);
   }
 
 ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
@@ -512,6 +513,7 @@ job *svr_find_job(const char *jobid, int sub)
 
 int remove_job(all_jobs *aj, job *pjob, bool force_lock)
   {
+  called_remove_job++;
   return(0);
   }
 
