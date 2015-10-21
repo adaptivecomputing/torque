@@ -2014,8 +2014,11 @@ int svr_job_purge(
     if (rc != PBSE_JOBNOTFOUND)
       {
       /* we came out of svr_dequejob with pjob locked. Our pointer is still good */
-      /* job_free will unlock the mutex for us */
-      if (pjob->ji_being_recycled == FALSE)
+      /* job_free will unlock the mutex for us.
+       * If rc == PBSE_JOB_NOT_IN_QUEUE, it is because another thread is simultaneously
+       * deleting this job. We'll quit for them. */
+      if ((pjob->ji_being_recycled == FALSE) &&
+          (rc != PBSE_JOB_NOT_IN_QUEUE))
         {
         job_free(pjob, TRUE);
         pjob_mutex.set_unlock_on_exit(false);  /* job_free will release lock */
