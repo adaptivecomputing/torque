@@ -139,7 +139,16 @@ struct group *getgrgid_ext(
     }
 
   rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
-  if ((rc) ||
+   while ((rc != 0) &&
+         (errno == ERANGE))
+    {
+    free(buf);
+    bufsize *= 2;
+    buf = (char *)calloc(1, bufsize);
+    rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
+    }
+
+ if ((rc) ||
       (result == NULL))
     {
     sprintf(buf, "getgrnam_r failed: %d", rc);
