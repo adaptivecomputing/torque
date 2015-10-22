@@ -302,6 +302,12 @@ void scan_for_terminated(void) /* linux */
     {
     std::list<job *>::reverse_iterator iter;
 
+    if (LOGLEVEL >= 8)
+      {
+      sprintf(log_buffer, "pid terminated: %d", pid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
     // get a list of jobs in start time order, first to last
     for (iter = alljobs_list.rbegin(); iter != alljobs_list.rend(); iter++)
       {

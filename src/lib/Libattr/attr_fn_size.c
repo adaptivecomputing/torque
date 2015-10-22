@@ -412,7 +412,65 @@ normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta
   }
 
 
+/*
+ * create_size_string
+ *
+ * This functions looks at the elements in values and returns
+ * either a pure number or a number with its abbreviation size
+ * in Kb, Mb, etc.
+ *
+ * @param buf  - character buffer which will contain the string
+ *               representation of the number stored
+ * @param values - a struct size_value argument which contains
+ *                 a number and a shift value indicating Kb, Mb
+ *                 Gb, etc. for the number contained.
+ *
+ */
 
+void create_size_string(
+
+  char *buf, 
+  struct size_value values)
+
+  {
+  char size_abbrev[5];
+
+  memset(size_abbrev, 0, 5);
+
+  switch (values.atsv_shift)
+    {
+    case 10:
+      strcpy(size_abbrev, "kb");
+      break;
+
+    case 20:
+      strcpy(size_abbrev, "mb");
+      break;
+
+    case 30:
+      strcpy(size_abbrev, "gb");
+      break;
+
+    case 40:
+      strcpy(size_abbrev, "tb");
+      break;
+
+    case 50:
+      strcpy(size_abbrev, "pb");
+      break;
+
+    case 60:
+      strcpy(size_abbrev, "eb");
+      break;
+    }
+
+    if (size_abbrev[0] == 0)
+      sprintf(buf, "%lu", values.atsv_num);
+    else
+      sprintf(buf, "%lu%s", values.atsv_num, size_abbrev);
+
+    return;
+  }
 
 
 /*
@@ -475,6 +533,13 @@ int to_size(
       psize->atsv_shift = 50;
       break;
 
+    case 'e':
+
+    case 'E':
+      psize->atsv_shift = 60;
+      break;
+
+
     case 'b':
 
     case 'B':
@@ -522,7 +587,7 @@ int to_size(
       }
     }
 
-  return(0);
+  return(PBSE_NONE);
   }
 
 

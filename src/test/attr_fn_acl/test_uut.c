@@ -1,11 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_fn_acl.h"
-#include "attr_fn_arst.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "attribute.h"
 #include "pbs_error.h"
 
 extern char *server_host;

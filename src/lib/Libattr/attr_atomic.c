@@ -89,6 +89,9 @@
 #include "attribute.h"
 #include "resource.h"
 #include "pbs_error.h"
+#include "pbs_job.h"
+
+#include "complete_req.hpp"
 
 /*
  * This file contains general functions for manipulating an pbs_attribute array.

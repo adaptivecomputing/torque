@@ -240,6 +240,7 @@ char                   *path_svrdb_new;
 char                   *path_svrlog;
 char                   *path_track;
 char                   *path_nodes;
+char                   *path_node_usage;
 char                   *path_mom_hierarchy;
 char                   *path_nodes_new;
 char                   *path_nodestate;
@@ -1270,7 +1271,7 @@ void main_loop(void)
   long          timeout = 0;
   long          log = 0;
   long          scheduling = FALSE;
-  long          sched_iteration = 0;
+  long          sched_iteration = PBS_SCHEDULE_CYCLE;
   time_t        time_now = time(NULL);
 //  time_t        try_hellos = 0;
   time_t        update_timeout = 0;
@@ -3079,6 +3080,18 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
   rc = pthread_mutex_unlock(sv_qs_mutex);
   return(rc);
   }
+
+#ifdef PENABLE_LINUX_CGROUPS
+// Stub out some functions for NUMA
+#ifdef NVML_API
+int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
+void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology) {}
+#endif
+#ifdef MIC
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology) {return(0);}
+void PCI_Device::initializeMic(int idx, hwloc_topology_t topology) {}
+#endif
+#endif
 
 /* END pbsd_main.c */
 

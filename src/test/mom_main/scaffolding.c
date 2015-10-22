@@ -23,15 +23,17 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "tcp.h"
 #include "mom_config.h"
+#include "machine.hpp"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 extern mom_hierarchy_t *mh;
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
+#include "machine.hpp"
 
 #endif
 
@@ -143,6 +145,10 @@ int setbool(
 
   return(enable);
   }
+
+int wsi_ret = 0;
+int wcs_ret = 0;
+int flush_ret = 0;
 
 void save_args(int argc, char **argv) {}
 
@@ -423,14 +429,12 @@ void mom_server_all_init(void)
 
 int DIS_tcp_wflush(tcp_chan *chan)
   {
-  fprintf(stderr, "The call to DIS_tcp_wflush needs to be mocked!!\n");
-  exit(1);
+  return(flush_ret);
   }
 
 int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   {
-  fprintf(stderr, "The call to diswcs needs to be mocked!!\n");
-  exit(1);
+  return(wcs_ret);
   }
 
 void mom_checkpoint_check_periodic_timer(job *pjob)
@@ -539,7 +543,7 @@ void term_job(job *pjob)
   exit(1);
   }
 
-struct passwd * getpwnam_ext(char * user_name)
+struct passwd * getpwnam_ext(char **user_buf, char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
   exit(1);
@@ -673,8 +677,7 @@ mom_hierarchy_t *initialize_mom_hierarchy(void)
 
 int diswsi(tcp_chan *chan, int value)
   {
-  fprintf(stderr, "The call to diswsi needs to be mocked!!\n");
-  exit(1);
+  return(wsi_ret);
   }
 
 void mom_server_all_diag(std::stringstream &output)
@@ -810,7 +813,7 @@ char *pbse_to_txt(int err)
   }
 
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS 
 
 int hwloc_topology_init(hwloc_topology_t *)
   {
@@ -846,12 +849,40 @@ int init_torque_cpuset(void)
   return 0;
   }
 
+int trq_cg_initialize_hierarchy()
+  {
+  return(0);
+  }
+
+int trq_cg_cleanup_torque_cgroups()
+  {
+  return(0);
+  }
+
 
 node_internals::node_internals(void){}
 
 numa_node::numa_node(numa_node const&){}
 
 allocation::allocation(allocation const&){}
+
+int Machine::initializeMachine(hwloc_topology_t topology)
+  {
+  return(0);
+  }
+
+Machine::Machine(){}
+Machine::~Machine(){}
+Socket::Socket(){}
+Socket::~Socket(){}
+Chip::Chip(){}
+Chip::~Chip(){}
+Core::Core(){}
+Core::~Core(){}
+PCI_Device::PCI_Device(){}
+PCI_Device::~PCI_Device(){}
+
+
 
 void recover_cpuset_reservation(job &pjob)
   {
@@ -916,7 +947,15 @@ time_t get_stat_update_interval()
 
 void empty_received_nodes() {}
 
-void start_request_pool(threadpool_t *tp) {}
+void start_request_pool(
+
+    threadpool_t *tp)
+
+  {
+  return;
+  }
+
+void Machine::displayAsString(std::stringstream &out) const {}
 
 unsigned long setenablemomrestart(
 
@@ -1022,3 +1061,5 @@ int read_config(
   return(0);
   }
 
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}

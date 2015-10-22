@@ -115,6 +115,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <set>
+#include <semaphore.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -137,6 +138,7 @@
 #include "alps_functions.h"
 #include "alps_constants.h"
 #include "dis.h"
+#include "mutex_mgr.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #endif
@@ -147,10 +149,17 @@
 #include "mom_func.h"
 #include "node_frequency.hpp"
 
+#ifdef PENABLE_LINUX_CGROUPS
+#include "trq_cgroups.h"
+#include "machine.hpp"
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
 #endif
+
+extern pthread_mutex_t  *delete_job_files_mutex;
 
 int conn_qsub(char *, long, char *);
 
@@ -183,6 +192,8 @@ extern time_t  time_now;
 extern tlist_head svr_newjobs;
 
 extern job_pid_set_t global_job_sid_set;
+
+extern sem_t *delete_job_files_sem;
 
 void nodes_free(job *);
 
@@ -337,15 +348,12 @@ int remtree(
         {
         rtnv = remtree(namebuf);
         }
-      else if (unlink(namebuf) < 0)
+      else if (unlink_ext(namebuf) < 0)
         {
-        if (errno != ENOENT)
-          {
-          sprintf(log_buffer, "unlink failed on %s", namebuf);
-          log_err(errno, __func__, log_buffer);
-          
-          rtnv = -1;
-          }
+        sprintf(log_buffer, "unlink failed on %s", namebuf);
+        log_err(errno, __func__, log_buffer);
+        
+        rtnv = -1;
         }
       else if (LOGLEVEL >= 7)
         {
@@ -357,7 +365,7 @@ int remtree(
 
     closedir(dir);
 
-    if (rmdir(dirname) < 0)
+    if (rmdir_ext(dirname) < 0)
       {
       if ((errno != ENOENT) && (errno != EINVAL))
         {
@@ -376,7 +384,7 @@ int remtree(
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
       }
     }
-  else if (unlink(dirname) < 0)
+  else if (unlink_ext(dirname) < 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),"unlink failed on %s",dirname);
     log_err(errno,__func__,log_buffer);
@@ -584,7 +592,7 @@ int job_unlink_file(
   gid_t gid = getegid();
 
   if (uid != 0)
-    return unlink(name);
+    return unlink_ext(name);
 
   if ((setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) == -1))
     return -1;
@@ -595,7 +603,7 @@ int job_unlink_file(
     errno = saved_errno;
     return -1;
     }
-  result = unlink(name);
+  result = unlink_ext(name);
   saved_errno = errno;
 
   setuid_ext(uid, TRUE);
@@ -690,22 +698,44 @@ void *delete_job_files(
   job_file_delete_info *jfdi = (job_file_delete_info *)vp;
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  mutex_mgr             sem_mutex(delete_job_files_mutex);
 
-
+  if (thread_unlink_calls == true)
+    {
+    rc = sem_post(delete_job_files_sem);
+    if (rc)
+      {
+      log_err(-1, __func__, "failed to post delete_job_files_sem");
+      }
+    
+    sem_mutex.lock();
+    }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
   delete_cpuset(jfdi->jobid, true);
 #endif /* PENABLE_LINUX26_CPUSETS */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  /* We need to remove the cgroup hierarchy for this job */
+  trq_cg_delete_job_cgroups(jfdi->jobid);
+
+  if (LOGLEVEL >=6)
+    {
+    sprintf(log_buf, "removed cgroup of job %s.", jfdi->jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+#endif
+
   /* delete the node file and gpu file */
   sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
-  unlink(namebuf);
+  unlink_ext(namebuf);
   
   sprintf(namebuf, "%s/%sgpu", path_aux, jfdi->jobid);
-  unlink(namebuf);
+  unlink_ext(namebuf);
   
   sprintf(namebuf, "%s/%smic", path_aux, jfdi->jobid);
-  unlink(namebuf);
+  unlink_ext(namebuf);
 
   /* delete script file */
   if (multi_mom)
@@ -724,15 +754,16 @@ void *delete_job_files(
       JOB_SCRIPT_SUFFIX);
     }
 
-  if (unlink(namebuf) < 0)
+  if (unlink_ext(namebuf) < 0)
     {
-    if (errno != ENOENT)
-      log_err(errno,__func__,msg_err_purgejob);
+    snprintf(log_buf, sizeof(log_buf), "Failed to remove '%s' for job '%s'",
+      namebuf, jfdi->jobid);
+    log_err(errno, __func__, log_buf);
     }
   else
     {
-    snprintf(log_buffer,sizeof(log_buffer),"removed job script");
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
+    snprintf(log_buf, sizeof(log_buf), "removed job script");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, jfdi->jobid, log_buf);
     }
 
   /* delete job task directory */
@@ -773,19 +804,25 @@ void *delete_job_files(
       JOB_FILE_SUFFIX);
     }
 
-  if (unlink(namebuf) < 0)
+  if (unlink_ext(namebuf) < 0)
     {
-    if (errno != ENOENT)
-      log_err(errno,__func__,msg_err_purgejob);
+    snprintf(log_buf, sizeof(log_buf), "Failed to remove '%s' for job '%s'",
+      namebuf, jfdi->jobid);
+    log_err(errno, __func__, log_buf);
     }
   else if (LOGLEVEL >= 6)
     {
-    snprintf(log_buffer,sizeof(log_buffer),"remove job file");
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
+    snprintf(log_buf, sizeof(log_buf), "removed job file");
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, jfdi->jobid, log_buf);
     }
 
   free(jfdi);
 
+  if (thread_unlink_calls == true)
+    {
+    sem_wait(delete_job_files_sem);
+    sem_mutex.unlock();
+    }
   return(NULL);
   } /* END delete_job_files() */
 
@@ -960,6 +997,7 @@ void mom_job_purge(
       }
     }
 
+  /*delete pjob->ji_job_pid_set;*/
   mom_job_free(pjob);
 
   /* if no jobs are left, check if MOM should be restarted */

@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "lib_cmds.h"
 #include "test_parse_jobid.h"
 #include <stdlib.h>
 #include <stdio.h>

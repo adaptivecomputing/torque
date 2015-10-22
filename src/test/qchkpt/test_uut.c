@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qchkpt.h"
 #include "test_qchkpt.h"
 #include <stdlib.h>
 #include <stdio.h>

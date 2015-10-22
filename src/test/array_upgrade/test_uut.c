@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "array_upgrade.h"
 #include "test_array_upgrade.h"
 #include <stdlib.h>
 #include <stdio.h>

@@ -131,6 +131,8 @@
 #define APOS_ESCAPED     "&apos;"
 #define APOS_ESCAPED_LEN 6
 
+const unsigned long NANO_SECONDS = 1000000000;
+
 extern char **ArgV;
 extern int ArgC;
 extern char *OriginalPath;
@@ -138,11 +140,14 @@ extern char *OriginalPath;
 /* Function declarations */
 
 /* group functions in u_groups.c */
-extern struct group *getgrnam_ext (char *);
+extern void free_grname(struct group *, char *);
+extern void free_pwnam(struct passwd *pwdp, char *buf);
+extern struct group *getgrnam_ext (char **, char *);
+extern struct group *getgrgid_ext (char **, gid_t);
 
 /* user functions in u_users.c */
-extern struct passwd *getpwnam_ext (char *);
-struct passwd *get_password_entry_by_uid(uid_t uid);
+extern struct passwd *getpwnam_ext (char **, char *);
+struct passwd *get_password_entry_by_uid(char ** user_buf, uid_t uid);
 int                   setuid_ext(uid_t uid, int set_euid);
 int                   initgroups_ext(const char *username, gid_t gr_id);
 
@@ -153,12 +158,16 @@ extern struct pbsnode *tfind (const u_long, tree **);
 extern int tlist (tree *, char *, int);
 extern void tfree (tree **);
 extern int is_whitespace (char);
+void       move_past_whitespace(char **);
 extern int write_buffer (char *,int,int);
 
 /* misc functions */
 extern void save_args(int, char **);
 extern char *find_command(char *, char *);
+void         translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices);
 void         translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
+void         capture_until_close_character(char **start, std::string &storage, char end);
+bool         task_hosts_match(const char *, const char *);
 
 /* utility functions in u_mu.c */
 int           MUSNPrintF (char **, int *, const char *, ...);
@@ -191,6 +200,10 @@ int unescape_xml(char *,char *,int);
 
 /* functions from u_putenv.c */
 int put_env_var(const char *, const char *);
+
+// from u_wrapper.c
+int rmdir_ext(const char *dir, int retry_limit = 20);
+int unlink_ext(const char *filename, int retry_limit = 20);
 
 #endif /* END #ifndef UTILS_H */
  

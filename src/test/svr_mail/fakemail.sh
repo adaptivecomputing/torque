@@ -3,7 +3,7 @@
 # write to a file in /tmp instead of actually
 # mailing the message
 
-MAILFILE=/tmp/mail.out
+MAILFILE=./mail.out
 MAILFROM=$2
 shift 2
 MAILTO="$@"

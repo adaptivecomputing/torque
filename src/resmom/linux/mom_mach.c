@@ -3,6 +3,7 @@
 #include "lib_mom.h" /* header */
 
 #include <string>
+#include <vector>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -66,6 +67,13 @@
 #include "mom_config.h"
 #include "timer.hpp"
 
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#include "trq_cgroups.h"
+#include "complete_req.hpp"
+#include "req.hpp"
+#endif
+
 
 /*
 ** System dependent code to gather information for the resource
@@ -102,7 +110,7 @@
 
 static char    procfs[] = "/proc";
 static DIR    *pdir = NULL;
-int            pagesize;
+int     pagesize;
 
 pid2procarrayindex_map_t pid2procarrayindex_map;
 
@@ -115,11 +123,15 @@ extern  int     LOGLEVEL;
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
 
+#ifdef PENABLE_LINUX_CGROUPS
+extern Machine this_node;
+#endif
+
 proc_stat_t   *proc_array = NULL;
 static int            nproc = 0;
 static int            max_proc = 0;
 
-extern pid2jobsid_map_t pid2jobsid_map;
+extern pid2jobsid_map_t pid2jobsid_map; 
 
 /*
 ** external functions and data
@@ -1080,6 +1092,8 @@ bool injob(
  * adjusted by cputfactor.
  */
 
+#ifndef PENABLE_LINUX_CGROUPS
+
 unsigned long cput_sum(
 
   job *pjob)  /* I */
@@ -1113,7 +1127,7 @@ unsigned long cput_sum(
       {
       continue;
       }
-
+    
     /* pid is in the job */
 
     /* get the index of this pid in the proc_array */
@@ -1123,7 +1137,7 @@ unsigned long cput_sum(
     if (pa_iter == pid2procarrayindex_map.end())
       {
       /* not in map so skip */
-       continue;
+      continue;
       }
 
     /* assign index to the index of the pid in proc_array */
@@ -1159,6 +1173,112 @@ unsigned long cput_sum(
 
 
 
+#else
+#define LOCAL_BUF_SIZE 256
+
+unsigned long cput_sum(
+
+    job *pjob)
+
+  {
+  ulong        cputime = 0; 
+  std::string  full_cgroup_path;
+  int          fd;
+  int          rc;
+  char         buf[LOCAL_BUF_SIZE];
+
+  pbs_attribute *pattr;
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) == 1)
+    {
+    char   this_hostname[PBS_MAXHOSTNAME];
+    unsigned int    req_index;
+    int    rc;
+    const char  *job_id = pjob->ji_qs.ji_jobid;
+
+    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+    if (rc != 0)
+      {
+      sprintf(buf, "failed to get hostname: %s", strerror(errno));
+      log_err(-1, __func__, buf);
+      return(0);
+      }
+
+    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
+    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      return(cputime);
+      }
+
+    req &host_req = cr->get_req(req_index);
+
+    for (unsigned int task_index = 0; task_index < host_req.get_req_allocation_count(); task_index++)
+      {
+      unsigned long cput_used;
+      std::string   task_host;
+
+      host_req.get_task_host_name(task_host, task_index);
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+        {
+        /* names don't match. Got to next task */
+        continue;
+        }
+
+      rc = trq_cg_get_task_cput_stats(job_id, req_index, task_index, cput_used);
+      if (rc != PBSE_NONE)
+        continue;
+
+      cr->set_task_cput_used(req_index, task_index, cput_used/NANO_SECONDS);
+
+      }
+    pjob->ji_flags &= ~MOM_NO_PROC;
+    }
+
+    /* This is not a -L request */
+
+    full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
+
+    fd = open(full_cgroup_path.c_str(), O_RDONLY);
+    if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+    rc = read(fd, buf, LOCAL_BUF_SIZE);
+    if (rc == -1)
+    {
+    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    close(fd);
+    return(0);
+    }
+    else if (rc != 0) /* if rc is 0 something is not right but it is not a critical error. Don't do anything */
+    {
+    ulong nano_seconds;
+    /* successful read. Should be a number in nano-seconds */
+
+    nano_seconds = atol(buf);
+    cputime += nano_seconds;
+    }
+
+    /* convert the nano seconds to seconds */
+    cputime = cputime/NANO_SECONDS;
+
+    pjob->ji_flags &= ~MOM_NO_PROC;
+
+    close(fd);
+    
+
+  return(cputime);
+  
+  }
+
+#endif /* #ifndef PENABLE_LINUX_CGROUPS */
 
 
 /*
@@ -1219,8 +1339,6 @@ int overcpu_proc(
 
   return(FALSE);
   }  /* END overcpu_proc() */
-
-
 
 
 
@@ -1300,7 +1418,7 @@ unsigned long long mem_sum(
 
 
 
-
+#ifndef PENABLE_LINUX_CGROUPS
 /*
  * Internal session memory usage function.
  *
@@ -1408,6 +1526,105 @@ unsigned long long resi_sum(
   return(resisize);
   }  /* END resi_sum() */
 
+#else
+
+unsigned long long resi_sum(
+
+  job *pjob)
+
+  {
+  unsigned long long resisize = 0;
+  std::string  full_cgroup_path;
+  char         buf[LOCAL_BUF_SIZE];
+  int          fd;
+  int          rc;
+
+  pbs_attribute *pattr;
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+    {
+    char         this_hostname[256];
+    int          rc;
+    unsigned int req_index;
+
+    rc = gethostname(this_hostname, 256);
+    if (rc != 0)
+      {
+      sprintf(buf, "failed to get hostname: %s", strerror(errno));
+      log_err(-1, __func__, buf);
+      return(0);
+      }
+
+    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
+    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      return(resisize);
+      }
+
+    req &host_req = cr->get_req(req_index);
+    for (unsigned int task_index = 0; task_index < host_req.get_req_allocation_count(); task_index++)
+      {
+      unsigned long long mem_used;
+      std::string   task_host;
+
+      host_req.get_task_host_name(task_host, task_index);
+      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+        {
+        /* names don't match. Got to next task */
+        continue;
+        }
+
+      mem_used = 0;
+      rc = trq_cg_get_task_memory_stats(pjob->ji_qs.ji_jobid, req_index, task_index, mem_used);
+      if (rc != PBSE_NONE)
+        continue;
+
+      cr->set_task_memory_used(req_index, task_index, mem_used);
+      resisize += mem_used;
+      }
+    }
+
+  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.max_usage_in_bytes";
+
+  fd = open(full_cgroup_path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    return(0);
+    }
+
+  rc = read(fd, buf, LOCAL_BUF_SIZE);
+  if (rc == -1)
+    {
+    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+    log_err(-1, __func__, buf);
+    close(fd);
+    return(0);
+    }
+  else if (rc != 0) 
+    {
+    int hardwareStyle;
+    unsigned long long mem_read;
+
+    mem_read = strtoull(buf, NULL, 10);
+
+    hardwareStyle = this_node.getHardwareStyle();
+
+    if (hardwareStyle == AMD) /* AMD adds everything up in the parent cgroup hierarchy and Intel does not */
+      resisize = mem_read;
+    else
+      resisize += mem_read;
+    }
+
+  close(fd);
+
+  return(resisize);
+  }
+#endif
 
 
 
@@ -2323,8 +2540,6 @@ int mom_get_sample(void)
 
 
 
-
-
 /*
  * Measure job resource usage and compare with its limits.
  *
@@ -2570,7 +2785,9 @@ int mom_set_use(
 
   if ((at->at_flags & ATR_VFLAG_SET) == 0)
     {
-    /* initialize usage structures */
+    /* This is the first time mom_set_use 
+     * has been called for this job.
+     * initialize usage structures */
 
     at->at_flags |= ATR_VFLAG_SET;
 
@@ -2631,7 +2848,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = (unsigned long *) & pres->rs_value.at_val.at_long;
 
@@ -2660,7 +2877,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
@@ -2677,7 +2894,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   /* NOTE: starting jobs can come through here before stime is recorded */
   if (pjob->ji_qs.ji_stime == 0)
@@ -2695,7 +2912,7 @@ int mom_set_use(
   pres = find_resc_entry(at, rd);
 
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
-	return -1;
+    return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
 
@@ -4671,7 +4888,7 @@ void scan_non_child_tasks(void)
         if((job_start_time != 0)&&
             (session_start_time != 0))
           {
-          if(abs(job_start_time - session_start_time) < 3600)
+          if(labs(job_start_time - session_start_time) < 3600)
             {
             found = 1;
             if(job_start_time != session_start_time)
@@ -4723,9 +4940,11 @@ void scan_non_child_tasks(void)
             if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
               {
               proc_stat_t *ts = get_proc_stat(ps->session);
-              if(ts == NULL)
+              long         job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
+              if (ts == NULL)
                 continue;
-              if(abs(ts->start_time - (unsigned long)pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long) < 3600)
+
+              if (abs((long)ts->start_time - job_start_time) < 3600)
                 {
                 found = 1;
                 break;
@@ -4783,7 +5002,7 @@ void scan_non_child_tasks(void)
       if ((log_drift_event) || 
           (LOGLEVEL >= 7))
         {
-        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
+        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %ld",
           linux_time,
           job_start_time,
           job_session_id,
@@ -5404,7 +5623,8 @@ static const char *quota(
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
+    char *buf;
+    if ((pw = getpwnam_ext(&buf, attrib->a_value)) == NULL)
       {
       sprintf(log_buffer,
               "user not found: %s", attrib->a_value);
@@ -5414,6 +5634,7 @@ static const char *quota(
       }
 
     uid = pw->pw_uid;
+    free_pwnam(pw, buf);
     }
 
   if (syscall(

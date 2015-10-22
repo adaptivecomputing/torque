@@ -1,10 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_fn_tv.h"
 #include "test_attr_fn_tv.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "attribute.h"
 #include "pbs_error.h"
 
 START_TEST(decode_tv)

@@ -54,7 +54,7 @@ allocation::allocation(
   const allocation &alloc) : cpu_indices(alloc.cpu_indices), memory(alloc.memory), cpus(alloc.cpus)
 
   {
-  strcpy(this->jobid, alloc.jobid);
+  this->jobid = alloc.jobid;
   }
 
 allocation::allocation() : cpu_indices(), memory(0), cpus(0)

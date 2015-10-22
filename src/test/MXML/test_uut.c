@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "MXML.h"
 #include "test_MXML.h"
 #include <stdlib.h>
 #include <stdio.h>

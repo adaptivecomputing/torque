@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "resc_def_all.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>

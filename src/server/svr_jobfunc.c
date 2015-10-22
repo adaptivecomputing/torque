@@ -143,8 +143,13 @@
 #include "svr_jobfunc.h"
 #include "job_route.h" /*remove_procct */
 #include "mutex_mgr.hpp"
+#include "complete_req.hpp"
+#include "attr_req_info.hpp"
+#include "pbs_nodes.h"
 #include <string>
 #include <vector>
+#include <algorithm>
+#include "utils.h"
 
 #include "user_info.h" /* remove_server_suffix() */
 
@@ -2251,7 +2256,8 @@ static int check_queue_group_ACL(
 
       for (i = 0; pas != NULL && i < pas->as_usedptr;i++)
         {
-        if ((grp = getgrnam(pas->as_string[i])) == NULL)
+        char *buf = NULL;
+        if ((grp = getgrnam_ext(&buf, pas->as_string[i])) == NULL)
           continue;
 
         for (j = 0;grp->gr_mem[j] != NULL;j++)
@@ -2263,6 +2269,8 @@ static int check_queue_group_ACL(
             break;
             }
           }
+
+        free_grname(grp, buf);
 
         if (rc == 1)
           break;
@@ -2381,6 +2389,68 @@ static int check_queue_user_ACL(
   return(return_code);
   }
 
+
+/*
+ * check_for_complete_req_and_limits
+ *
+ * Check to see if the job req will fit within the limits of the queue. 
+ * 
+ * @param pque  - pointer to queue
+ * @param pjob  - pointer to current job 
+ *
+ */
+
+int check_for_complete_req_and_limits(struct pbs_queue *const pque, job *pjob)
+  {
+  int rc = PBSE_NONE;
+
+   /* Check for -L queue limits */
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    int req_count;
+    std::vector<std::string> names, values;
+
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    req_count = cr->req_count();
+    if (req_count <= 0)
+      {
+      return(PBSE_NONE);
+      }
+
+
+    cr->get_values(names, values); 
+
+
+    if ((pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr != NULL))
+      {
+      attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMax].at_val.at_ptr;
+
+      rc = ari->check_max_values(names, values);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+      }
+
+    if ((pque->qu_attr[QA_ATR_ReqInformationMin].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr != NULL))
+      { 
+      attr_req_info *ari = (attr_req_info *)pque->qu_attr[QA_ATR_ReqInformationMin].at_val.at_ptr;
+
+      rc = ari->check_min_values(names, values);
+      if (rc != PBSE_NONE)
+        {
+        return(rc);
+        }
+      }
+    }
+
+  return(rc);
+  } // END check_for_complete_req_and_limits()
+
+
+
 static int check_queue_job_limit(
 
     struct job       *const pjob,
@@ -2470,6 +2540,7 @@ static int check_queue_job_limit(
       }
     }
 
+  return_code = check_for_complete_req_and_limits(pque, pjob);
   return(return_code);
   }
 
@@ -2527,6 +2598,93 @@ static int check_local_route(
   return(return_code);
   }
 
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+bool do_nodes_exist(
+
+  int sockets,
+  int numa_nodes,
+  int cores,
+  int threads)
+
+  {
+  node_iterator   iter;
+  struct pbsnode *pnode = NULL;
+  bool            possible = false;
+  
+  reinitialize_node_iterator(&iter);
+
+  /* iterate over all nodes */
+  while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
+    {
+    pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
+
+    if ((sockets == 0) &&
+        (numa_nodes == 0) &&
+        (cores == 0) &&
+        (threads == 0))
+      {
+      possible = true;
+      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      break;
+      }
+    }
+  
+  if (iter.node_index != NULL)
+    delete iter.node_index;
+
+  return(possible);
+  } // END do_nodes_exist()
+#endif
+
+
+
+int numa_task_exceeds_resources(
+
+  job  *pjob,
+  char *EMsg)
+
+  {
+  int rc = PBSE_NONE;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+    int num_reqs = cr->req_count();
+
+    for (int i = 0; i < num_reqs; i++)
+      {
+      req &r = cr->get_req(i);
+
+      int cores = r.get_cores();
+      int threads = r.get_threads();
+      int numa_nodes = r.get_numa_nodes();
+      int sockets = r.get_sockets();
+
+      if (do_nodes_exist(sockets, numa_nodes, cores, threads) == false)
+        {
+        rc = -1;
+        break;
+        }
+      }
+    }
+#endif
+
+  if (rc != PBSE_NONE)
+    {
+    if ((EMsg != NULL) &&
+        (EMsg[0] == '\0'))
+      strcpy(EMsg, "Cannot locate feasible nodes (nodes file is empty, or no nodes have the requested numa configuration - check sockets, numa nodes, cores, and threads.)");
+    }
+
+  return(rc);
+  } // END numa_task_exceeds_resources()
+
+
+
 static int are_job_resources_in_limits_of_queue(
 
   struct job       *const pjob,
@@ -2538,9 +2696,23 @@ static int are_job_resources_in_limits_of_queue(
   int check_limits;
 
   initialize_procct(pjob);
+
+  if ((check_limits = numa_task_exceeds_resources(pjob, EMsg)) != PBSE_NONE)
+    {
+    /* FAILURE */
+    remove_procct(pjob);
+    return(check_limits);
+    }
     
   check_limits = chk_resc_limits(&pjob->ji_wattr[JOB_ATR_resource], pque, EMsg);
-
+  if (check_limits != 0)
+    {
+    /* FAILURE */
+    remove_procct(pjob);
+    return(check_limits);
+    }
+ 
+  check_limits = check_for_complete_req_and_limits(pque, pjob);
   if (check_limits != 0)
     {
     /* FAILURE */
@@ -2570,6 +2742,46 @@ static int are_job_resources_in_limits_of_queue(
   remove_procct(pjob);
   return(return_code);
   }
+
+
+
+/*
+ * Checks if the resource request in pjob is incompatible with
+ * the default resources for this queue
+ *
+ * @param pjob - the job in question
+ * @param pque - the queue in question
+ * @return true if there is a conflict, false otherwise
+ */
+
+bool has_conflicting_resource_requests(
+
+  job       *pjob,
+  pbs_queue *pque)
+
+  {
+  // check to make sure we don't have certain -l defaults and a -L request
+  if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+    {
+    static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                      "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                      "software", "geometry", "opsys", "tpn", "trl", NULL };
+    pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
+
+    // Return true if the queue has any of the conflicting_types in its -l defaults
+    for (int i = 0; conflicting_types[i] != NULL; i++)
+      {
+      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      if (find_resc_entry(pattr, prd) != NULL)
+        return(true);
+      }
+    }
+
+  return(false);
+  } /* END has_conflicting_resource_requests() */
+
+
 
 /*
  * svr_chkque - check if job can enter a queue
@@ -2611,6 +2823,9 @@ int svr_chkque(
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
+  // Do not allow conflicting resource requests
+  if (has_conflicting_resource_requests(pjob, pque))
+    return(PBSE_RESC_CONFLICT);
 
   /*
    * 1. If the queue is an Execution queue ...
@@ -3114,40 +3329,66 @@ void set_deflt_resc(
 
   if (dflt->at_flags & ATR_VFLAG_SET)
     {
-    /* for each resource in the default value list */
 
-    prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
-
-    while (prescdt != NULL)
+    if ((dflt->at_type == ATR_TYPE_REQ) || (dflt->at_type == ATR_TYPE_RESC))
       {
-      if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
+      /* for each resource in the default value list */
+
+      prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
+
+      while (prescdt != NULL)
         {
-        /* see if the job already has that resource */
-
-        prescjb = find_resc_entry(jb, prescdt->rs_defin);
-
-        if ((prescjb == NULL) ||
-            ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
+        if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
           {
-          /* resource does not exist or value is not set */
+          /* see if the job already has that resource */
 
-          if (prescjb == NULL)
-            prescjb = add_resource_entry(jb, prescdt->rs_defin);
+          prescjb = find_resc_entry(jb, prescdt->rs_defin);
 
-          if (prescjb != NULL)
+          if ((prescjb == NULL) ||
+              ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
             {
-            if (prescdt->rs_defin->rs_set(
-                  &prescjb->rs_value,
-                  &prescdt->rs_value,
-                  SET) == 0)
+            /* resource does not exist or value is not set */
+
+            if (prescjb == NULL)
+              prescjb = add_resource_entry(jb, prescdt->rs_defin);
+
+            if (prescjb != NULL)
               {
-              prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
+              if (prescdt->rs_defin->rs_set(
+                    &prescjb->rs_value,
+                    &prescdt->rs_value,
+                    SET) == 0)
+                {
+                prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
+                }
               }
             }
           }
-        }
 
-      prescdt = (resource *)GET_NEXT(prescdt->rs_link);
+        prescdt = (resource *)GET_NEXT(prescdt->rs_link);
+        }
+      }
+    else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
+      {
+      std::vector<std::string> req_names, req_values;
+      std::vector<std::string> default_names, default_values;
+      complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
+      attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
+      int req_count;
+
+      if (cr == NULL)
+        return;
+      cr->get_values(req_names, req_values);
+      req_count = cr->req_count();
+      ari->add_default_values(req_names, req_values, default_names, default_values);
+
+      for (unsigned int i = 0; i < default_names.size(); i++)
+        {
+        for (unsigned int j = 0; j < (unsigned int)req_count; j++)
+          {
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          }
+        }
       }
     }
 
@@ -3252,6 +3493,7 @@ void set_resc_deflt(
 
   {
   pbs_attribute *ja;
+  pbs_attribute *L_ja;  /* for new complete req options */
 
   pbs_queue     *pque;
   attribute_def *pdef;
@@ -3259,9 +3501,15 @@ void set_resc_deflt(
   int            rc;
 
   if (ji_wattr != NULL)
+    {
     ja = &ji_wattr[JOB_ATR_resource];
+    L_ja = &ji_wattr[JOB_ATR_req_information];
+    }
   else
+    {
     ja = &pjob->ji_wattr[JOB_ATR_resource];
+    L_ja = &pjob->ji_wattr[JOB_ATR_req_information];
+    }
 
 
   if (LOGLEVEL >= 10)
@@ -3283,6 +3531,7 @@ void set_resc_deflt(
   if (pque != NULL)
     {
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
     
     pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
@@ -3292,6 +3541,7 @@ void set_resc_deflt(
 #ifdef RESOURCEMAXDEFAULT
     /* apply queue max limits first since they take precedence */
     set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
     
     /* server max limits will only be applied to attributes which have
        not yet been set */

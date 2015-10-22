@@ -135,7 +135,10 @@
 #include <string>
 #include <vector>
 #include "container.hpp"
-
+#include "trq_cgroups.h"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "complete_req.hpp"
+#endif
 
 #define IM_FINISHED                 1
 #define IM_DONE                     0
@@ -2539,7 +2542,10 @@ int im_join_job_as_sister(
       }
     }
 
-  if (check_pwd(pjob) == NULL)
+  bool good;
+
+  good = check_pwd(pjob);
+  if (good == false)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -2606,6 +2612,14 @@ int im_join_job_as_sister(
   
 #endif  /* ndef NUMA_SUPPORT */
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    }
+#endif
     
   ret = run_prologue_scripts(pjob);
   if (ret != PBSE_NONE)
@@ -2783,6 +2797,8 @@ void im_kill_job_as_sister(
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
   pjob->ji_obit = event;
+
+  mom_set_use(pjob);
   
   if (multi_mom)
     {
@@ -4056,6 +4072,48 @@ int handle_im_kill_job_response(
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
       }
     }  /* END if (pjob_ji_resources != NULL) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  int task_count;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    task_count = disrsi(chan, &ret);
+    if (ret == DIS_SUCCESS)
+      {
+
+      if (task_count > 0)
+        {
+        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+        for (int task_i = 0; task_i < task_count; task_i++)
+          {
+          int req_index;
+          int task_index;
+          unsigned long cput_used;
+          unsigned long long mem_used;
+
+          req_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            task_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            cput_used = disrul(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            mem_used = disrul(chan, &ret);
+          if (ret != DIS_SUCCESS)
+            {
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            break;
+            }
+
+          cr->set_task_usage_stats(req_index, task_index, cput_used, mem_used);
+          }
+        }
+      }
+    }
+
+#endif
   
   np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
                                        set in send_sisters() */
@@ -5444,6 +5502,49 @@ int handle_im_kill_job_radix_response(
     u_long joules  = disrul(chan, &ret);
   */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  int task_count;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    task_count = disrsi(chan, &ret);
+    if (ret == DIS_SUCCESS)
+      {
+
+      if (task_count > 0)
+        {
+        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+        for (int task_i = 0; task_i < task_count; task_i++)
+          {
+          int req_index;
+          int task_index;
+          unsigned long cput_used;
+          unsigned long long mem_used;
+
+          req_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            task_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            cput_used = disrul(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            mem_used = disrul(chan, &ret);
+          if (ret != DIS_SUCCESS)
+            {
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            break;
+            }
+
+          cr->set_task_usage_stats(req_index, task_index, cput_used, mem_used);
+          }
+        }
+      }
+    }
+
+#endif
+ 
+
   if (ret != DIS_SUCCESS)
     {
     close_conn(chan->sock, FALSE);
@@ -5638,7 +5739,6 @@ void im_request(
   unsigned int         momport = 0;
   char                 log_buffer[LOCAL_LOG_BUF_SIZE+1];
 
-  struct passwd       *check_pwd();
   
   u_long gettime(resource *);
   u_long getsize(resource *);
@@ -8839,12 +8939,12 @@ int read_status_strings(
     return DIS_INVALID;
     }
   /* was mom_port but storage unnecessary */ 
-  disrsi(chan,&rc);
+  (void)disrsi(chan,&rc);
 
   if (rc == DIS_SUCCESS)
     {
     /* was rm_port but no longer needed to be stored */   
-    disrsi(chan,&rc);
+    (void)disrsi(chan,&rc);
     }
 
   if (rc != DIS_SUCCESS)

@@ -1230,6 +1230,29 @@ attribute_def job_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_JOB},
 
+  /* JOB_ATR_request_version */
+  {ATTR_request_version, /* "request_version" */
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_WRITE,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
+
+  /* JOB_ATR_req_information */
+  {ATTR_req_information, /* "req_information" */
+   decode_complete_req,
+   encode_complete_req,
+   set_complete_req,
+   comp_complete_req,
+   free_complete_req,
+   NULL_FUNC,
+   READ_WRITE | ATR_DFLAG_MOM,
+   ATR_TYPE_REQ,
+   PARENT_TYPE_JOB},
 
 /* Site defined attributes if any, see site_job_attr_*.h  */
 #include "site_job_attr_def.h"
@@ -1245,6 +1268,34 @@ attribute_def job_attr_def[] =
     READ_WRITE | ATR_DFLAG_MOM,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
+
+#ifdef PENABLE_LINUX_CGROUPS
+  // JOB_ATR_cpuset_string
+  {(char *)ATTR_cpustr,   /* "cpuset_string" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
+
+  // JOB_ATR_memset_string
+  {(char *)ATTR_memstr,   /* "memset_string" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
+#endif
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",

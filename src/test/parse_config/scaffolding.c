@@ -9,6 +9,7 @@
 #include "log.h"
 
 #define LOG_BUF_SIZE        16384
+#define MAXLINE            1024
 
 int encode_used_ctr;
 int encode_flagged_attrs_ctr;
@@ -24,9 +25,12 @@ int    internal_state = 0;
 AvlTree okclients = NULL;
 tlist_head svr_alljobs; /* all jobs under MOM's control */
 char log_buffer[LOG_BUF_SIZE];
-int            MOMJobDirStickySet = FALSE;
-char                    PBSNodeMsgBuf[MAXLINE];
+int MOMJobDirStickySet = FALSE;
+char PBSNodeMsgBuf[MAXLINE];
 std::list<job *>    alljobs_list;
+
+void free_pwnam(struct passwd *pwdp, char *buf)
+  {}
 
 void encode_used(
 
@@ -168,6 +172,7 @@ void DIS_tcp_settimeout(long timeout) {}
 
 struct passwd *getpwnam_ext( 
 
+  char **user_buf,
   char *user_name) /* I */
   
   {

@@ -97,6 +97,19 @@ typedef struct job_exiting_retry_info
   time_t          last_attempt;
   int             attempts;
   int             internal_job_id;
+  
+  /* Scott Myers, Effective C++ recommends you do not
+     allow the compiler to create your constructors or 
+     copy constructors. Even for structs. */
+  job_exiting_retry_info(const job_exiting_retry_info &obj)
+    {
+    last_attempt    = obj.last_attempt;
+    attempts        = obj.attempts;
+    internal_job_id = obj.internal_job_id;
+    }
+
+  job_exiting_retry_info():last_attempt(0), attempts(0), internal_job_id(0){}
+  ~job_exiting_retry_info(){};
   } job_exiting_retry_info;
 
 

@@ -3153,7 +3153,9 @@ static char *quota(
 
   if ((uid = (uid_t)atoi(attrib->a_value)) == 0)
     {
-    if ((pw = getpwnam_ext(attrib->a_value)) == NULL)
+    char *buf;
+
+    if ((pw = getpwnam_ext(&buf, attrib->a_value)) == NULL)
       {
       sprintf(log_buffer, "user not found: %s", attrib->a_value);
       log_err(-1, id, log_buffer);
@@ -3162,6 +3164,7 @@ static char *quota(
       }
 
     uid = pw->pw_uid;
+    free_pwnam(pw, buf);
     }
 
   if (quotactl(fs->fs_file, Q_GETQUOTA, uid, (char *)&qi) == -1)

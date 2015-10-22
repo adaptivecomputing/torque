@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h>
+#include <semaphore.h>
 #include <errno.h>
 #include <string>
 #include <semaphore.h>
@@ -25,12 +26,12 @@ int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
 
-extern sem_t *job_clone_semaphore;
 bool exit_called = false;
 
 int valbuf_size = 0;
 /* end manip */
 
+sem_t *job_clone_semaphore;
 char *path_jobs;
 char path_checkpoint[MAXPATHLEN + 1];
 char *job_log_file = NULL;
@@ -45,7 +46,6 @@ char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 completed_jobs_map_class completed_jobs_map;
-sem_t *job_clone_semaphore;
 
 user_info_holder users;
 extern bool add_job_called;
@@ -608,6 +608,55 @@ int id_map::get_new_id(const char *id)
   }
 
 id_map job_mapper;
+
+int encode_complete_req(
+    
+  pbs_attribute *attr,
+  tlist_head    *phead,
+  const char    *atname,
+  const char    *rsname,
+  int            mode,
+  int            perm)
+
+  {
+  return(0);
+  }
+
+int  decode_complete_req(
+    
+  pbs_attribute *patr,
+  const char    *name,
+  const char    *rescn,
+  const char    *val,
+  int            perm)
+
+  {
+  return(0);
+  }
+
+int comp_complete_req(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
+  {
+  return(0);
+  } // END comp_complete_req()
+
+void free_complete_req(
+
+  pbs_attribute *patr) {}
+
+int set_complete_req(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+  
+  {
+  return(0);
+  }
+
  
 void handle_complete_second_time(struct work_task *ptask)
   {

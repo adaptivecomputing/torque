@@ -354,34 +354,34 @@ END_TEST
 START_TEST(test_check_pwd_euser)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  struct passwd *pwd = NULL;
+  bool pwd = false;
 
   pwd = check_pwd(pjob);
-  fail_unless(pwd == NULL, "check_pwd succeeded with an empty job");
+  fail_unless(pwd == false, "check_pwd succeeded with an empty job");
 
   bad_pwd = true;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "rightsaidfred", 0);
   pwd = check_pwd(pjob);
-  fail_unless(pwd == NULL, "bad pwd fail");
+  fail_unless(pwd == false, "bad pwd fail");
 
   bad_pwd = false;
   fail_init_groups = true;
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
   pwd = check_pwd(pjob);
-  fail_unless(pwd == NULL, "bad grp fail");
+  fail_unless(pwd == false, "bad grp fail");
 
   pjob->ji_grpcache = NULL;
   fail_init_groups = false;
   fail_site_grp_check = true;
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
   pwd = check_pwd(pjob);
-  fail_unless(pwd == NULL, "bad site fail");
+  fail_unless(pwd == false, "bad site fail");
   
   pjob->ji_grpcache = NULL;
   fail_site_grp_check = false;
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
   pwd = check_pwd(pjob);
-  fail_unless(pwd != NULL);
+  fail_unless(pwd == true);
   }
 END_TEST
 
