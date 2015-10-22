@@ -139,7 +139,7 @@ struct group *getgrgid_ext(
     }
 
   rc = getgrgid_r(grp_id, grp, buf, bufsize, &result);
-  while ((rc != 0) &&
+   while ((rc != 0) &&
          (errno == ERANGE))
     {
     free(buf);
