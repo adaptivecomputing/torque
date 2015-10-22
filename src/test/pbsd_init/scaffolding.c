@@ -106,6 +106,10 @@ threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
 
+int enque_rc;
+int evaluated;
+int aborted;
+
 char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
 
 void on_job_rerun_task(struct work_task *ptask)
@@ -163,8 +167,6 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
 
 void set_statechar(job *pjob)
   {
-  fprintf(stderr, "The call to set_statechar needs to be mocked!!\n");
-  exit(1);
   }
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -315,8 +317,8 @@ void initialize_all_jobs_array(all_jobs *aj)
 
 int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
-  fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
-  exit(1);
+  aborted++;
+  return(0);
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -333,8 +335,7 @@ int log_open(char *filename, char *directory)
 
 int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
   {
-  fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
-  exit(1);
+  return(enque_rc);
   }
 
 int initialize_threadpool(threadpool_t **pool, int min_threads, int max_threads, int max_idle_time)
@@ -423,8 +424,7 @@ int array_recov(const char *path, job_array **pa)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void track_save(struct work_task *pwt)
@@ -459,14 +459,12 @@ int acct_open(char *filename, bool acct_mutex_locked)
 
 void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
-  fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
-  exit(1);
+  evaluated++;
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 

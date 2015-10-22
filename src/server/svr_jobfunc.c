@@ -643,7 +643,7 @@ int svr_enquejob(
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
-        return(PBSE_BADDEPEND);
+        rc = PBSE_BADDEPEND;
       }
 
     /* set eligible time */
