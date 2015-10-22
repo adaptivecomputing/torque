@@ -259,13 +259,12 @@ static pid_t fork_to_user(
   struct group   *grpp;
   pid_t           pid;
   job            *pjob;
-
   struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
-
   char           *idir;
-
-  char           *hdir;
+  char           *pw_buf = NULL;
+  char           *gr_buf = NULL;
+  std::string     hdir;
   struct stat     sb;
 
   /* initialize */
@@ -296,9 +295,8 @@ static pid_t fork_to_user(
     }
   else
     {
-    char *buf = NULL;
 
-    if ((pwdp = getpwnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    if ((pwdp = getpwnam_ext(&pw_buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
@@ -320,10 +318,10 @@ static pid_t fork_to_user(
       {
       usergid = pwdp->pw_gid;   /* default to login group */
       }
-    else if ((grpp = getgrnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
+    else if ((grpp = getgrnam_ext(&gr_buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
       {
       usergid = grpp->gr_gid;
-      free_grname(grpp, buf);
+      free_grname(grpp, gr_buf);
       }
     else
       {
@@ -336,7 +334,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      free_pwnam(pwdp, buf);
+      free_pwnam(pwdp, pw_buf);
       return(-PBSE_BADUSER);
       }
 
@@ -358,7 +356,7 @@ static pid_t fork_to_user(
       hdir = pwdp->pw_dir;
       }
 
-    free_pwnam(pwdp, buf);
+    free_pwnam(pwdp, pw_buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
   if (hdir == NULL)
