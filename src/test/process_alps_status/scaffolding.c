@@ -34,10 +34,14 @@
   c ^= b; c -= rot(b,24); \
   }
 
+int removed_reservation = 0;
+int issued_request = 0;
+int state_updated = 0;
+
 threadpool_t *task_pool;
 bool exit_called = false;
 char log_buffer[LOG_BUF_SIZE];
-int count;
+int mgr_count;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 all_nodes allnodes;
 struct node_state
@@ -77,6 +81,8 @@ void update_node_state(
   int             newstate)   /* I (one of INUSE_*) */
 
   {
+  state_updated++;
+
   if (newstate & INUSE_DOWN)
     {
     if (!(np->nd_state & INUSE_DOWN))
@@ -316,9 +322,9 @@ int mgr_set_node_attr(
                              this func at this time*/
 
   {
-  count++;
+  mgr_count++;
 
-  if (count < 2)
+  if (mgr_count < 2)
     return(0);
   else
     return(1);
@@ -1609,6 +1615,7 @@ int issue_Drequest(
   bool                   close_handle)
 
   {
+  issued_request++;
   return(0);
   }
 
@@ -1649,7 +1656,7 @@ void release_req(
 
 int already_recorded(
 
-  char *rsv_id)
+  const char *rsv_id)
 
   {
   static int i = 0;
@@ -1711,6 +1718,7 @@ void delete_a_subnode(
 
 int remove_alps_reservation(char *rsv_id)
   {
+  removed_reservation++;
   return(0);
   }
 
@@ -1798,3 +1806,50 @@ int svr_resc_size = sizeof(svr_resc_def_const)/sizeof(resource_def);
 
 resource_def *svr_resc_def = svr_resc_def_const;
 
+int encode_complete_req(
+    
+  pbs_attribute *attr,
+  tlist_head    *phead,
+  const char    *atname,
+  const char    *rsname,
+  int            mode,
+  int            perm)
+
+  {
+  return(0);
+  }
+
+int  decode_complete_req(
+    
+  pbs_attribute *patr,
+  const char    *name,
+  const char    *rescn,
+  const char    *val,
+  int            perm)
+
+  {
+  return(0);
+  }
+
+int comp_complete_req(
+   
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
+  {
+  return(0);
+  } // END comp_complete_req()
+
+void free_complete_req(
+
+  pbs_attribute *patr) {}
+
+int set_complete_req(
+    
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+  
+  {
+  return(0);
+  }

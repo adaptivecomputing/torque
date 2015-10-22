@@ -170,7 +170,8 @@ static const char *class_names[] =
   "Fil",
   "Act",
   "node",
-  "trqauthd"
+  "trqauthd",
+  "mom"
   };
 
 /* External functions called */
@@ -394,12 +395,12 @@ int log_open(
     snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
   else
     snprintf(buf2, sizeof(buf2), "Log opened");
-  
+
   if (log_host_port[0])
     snprintf(buf2, sizeof(buf2), "Log opened at %s", log_host_port);
   else
     snprintf(buf2, sizeof(buf2), "Log opened");
-  
+
   log_record(
     PBSEVENT_SYSTEM,
     PBS_EVENTCLASS_SERVER,
@@ -582,7 +583,7 @@ void log_ext(
       EPtr = EBuf;
       }
 
-    sprintf(tmpLine,"%s (%d) in ", 
+    sprintf(tmpLine,"%s (%d) in ",
             EPtr,
             errnum);
     }
@@ -612,7 +613,7 @@ void log_ext(
             msg_daemonname,
             buf);
     }
-    
+
   if (log_opened > 0)
     {
     pthread_mutex_unlock(&log_mutex);
@@ -662,7 +663,7 @@ const char *log_get_severity_string(
     case LOG_EMERG:
       result = "LOG_EMERGENCY";
       break;
-    
+
     case LOG_ALERT:
       result = "LOG_ALERT";
       break;
@@ -805,11 +806,11 @@ void log_record(
   now = time((time_t *)0); /* get time for message */
 
   ptm = localtime_r(&now,&tmpPtm);
-  
+
   /* mytime used to calculate milliseconds */
-  
+
   gettimeofday(&mytime, NULL);
-  
+
   int milliseconds = mytime.tv_usec/1000;
 
   /* Do we need to switch the log? */
@@ -826,8 +827,8 @@ void log_record(
       return;
       }
     }
-  
-  time_formatted_str[0] = 0;    
+
+  time_formatted_str[0] = 0;
   log_get_set_eventclass(&eventclass, GETV);
   if (eventclass == PBS_EVENTCLASS_TRQAUTHD)
     {
@@ -915,7 +916,7 @@ void log_record(
     clearerr(logfile);
     savlog = logfile;
     logfile = fopen("/dev/console", "w");
-    /* we need to add this check to make sure the disk isn't full so we don't segfault 
+    /* we need to add this check to make sure the disk isn't full so we don't segfault
      * if we can't open this then we're going to have a nice surprise failure */
     if (logfile != NULL)
       {
@@ -927,7 +928,7 @@ void log_record(
 
     logfile = savlog;
     }
-  
+
   pthread_mutex_unlock(&log_mutex);
 
   return;
@@ -956,7 +957,7 @@ void log_close(
         snprintf(buf, sizeof(buf), "Log closed at %s", log_host_port);
       else
         snprintf(buf, sizeof(buf), "Log closed");
-       
+
       pthread_mutex_unlock(&log_mutex);
       log_record(
         PBSEVENT_SYSTEM,
@@ -971,12 +972,6 @@ void log_close(
     log_opened = 0;
     }
 
-#if SYSLOG
-
-  if (syslogopen)
-    closelog();
-
-#endif /* SYSLOG */
 
   return;
   }  /* END log_close() */
@@ -1040,16 +1035,16 @@ int log_remove_old(
 
   {
   char tmpPath[MAX_PATH_LEN];
- 
+
   DIR *DirHandle;
   struct dirent *FileHandle;
   struct stat sbuf;
   unsigned long FMTime;
   unsigned long TTime;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
- 
+
   int IsDir = FALSE;
- 
+
   /* check the input for an empty path */
   if ((DirPath == NULL) || (DirPath[0] == '\0'))
     {
@@ -1062,19 +1057,19 @@ int log_remove_old(
     }
 
   /* open directory for reading */
-      
+
   DirHandle = opendir(DirPath);
 
-  /* fail if path couldn't be opened */  
+  /* fail if path couldn't be opened */
   if (DirHandle == (DIR *)NULL)
     {
     return(-1);
     }
 
   FileHandle = readdir(DirHandle);
-  
+
   while (FileHandle != (struct dirent *)NULL)
-    {    
+    {
     /* attempt to delete old files */
 
     if (!strcmp(FileHandle->d_name,".") ||
@@ -1091,7 +1086,7 @@ int log_remove_old(
       DirPath,
       FileHandle->d_name);
 
-    if (stat(tmpPath,&sbuf) == -1) 
+    if (stat(tmpPath,&sbuf) == -1)
       {
       /* -1 is the failure value for stat */
 
@@ -1105,7 +1100,7 @@ int log_remove_old(
     TTime = time((time_t *)NULL);
     /* set FMTime's value */
     FMTime = (unsigned long)sbuf.st_mtime;
-    
+
     if ((IsDir == FALSE) &&
         (FMTime + ExpireTime) < TTime)
       {
@@ -1138,7 +1133,7 @@ void log_roll(
   int err = 0;
   char *source  = NULL;
   char *dest    = NULL;
-  
+
   pthread_mutex_lock(&log_mutex);
 
   if (!log_opened)
@@ -1260,7 +1255,7 @@ void job_log_roll(
   int err = 0;
   char *source  = NULL;
   char *dest    = NULL;
-      
+
   pthread_mutex_lock(&job_log_mutex);
 
   if (!job_log_opened)
@@ -1368,7 +1363,7 @@ done_job_roll:
       "Job Log",
       "Job Log Rolled");
     }
-    
+
   pthread_mutex_unlock(&job_log_mutex);
 
   return;
@@ -1391,7 +1386,7 @@ long log_size(void)
 
   struct stat file_stat;
 #endif
-  
+
   pthread_mutex_lock(&log_mutex);
 
 #if defined(HAVE_STRUCT_STAT64) && defined(HAVE_STAT64) && defined(LARGEFILE_WORKS)
@@ -1409,7 +1404,7 @@ long log_size(void)
 
     return(0);
     }
-  
+
   if (!log_opened) {
       pthread_mutex_unlock(&log_mutex);
       log_err(EAGAIN, "log_size", "PBS cannot find size of log file because logfile has not been opened");
@@ -1433,7 +1428,7 @@ long job_log_size(void)
 
   struct stat file_stat;
 #endif
- 
+
   memset(&file_stat, 0, sizeof(file_stat));
   pthread_mutex_lock(&job_log_mutex);
 
@@ -1451,7 +1446,7 @@ long job_log_size(void)
 
     return(0);
     }
-  
+
   pthread_mutex_unlock(&job_log_mutex);
 
   return(file_stat.st_size / 1024);
@@ -1459,7 +1454,7 @@ long job_log_size(void)
 
 
 void print_trace(
-    
+
   int socknum)
 
   {
@@ -1474,7 +1469,7 @@ void print_trace(
   meth_names = backtrace_symbols(array, size);
   snprintf(meth_name, sizeof(meth_name), "pt - pos %d", socknum);
   snprintf(msg, sizeof(msg), "Obtained %d stack frames.\n", size);
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, msg); 
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, msg);
   for (cntr = 0; cntr < size; cntr++)
     {
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, meth_name, meth_names[cntr]);
@@ -1485,7 +1480,7 @@ void print_trace(
 
 void log_get_set_eventclass(
 
-  int *objclass, 
+  int *objclass,
   SGetter action)
 
   {
@@ -1500,7 +1495,7 @@ void log_get_set_eventclass(
 
 void log_format_trq_timestamp(
 
-  char *time_formatted_str, 
+  char *time_formatted_str,
   unsigned int buflen)
 
   {
@@ -1510,7 +1505,7 @@ void log_format_trq_timestamp(
   struct tm      result;
   unsigned int   milisec=0;
 
-  gettimeofday(&tv, NULL); 
+  gettimeofday(&tv, NULL);
   curtime=tv.tv_sec;
 
   localtime_r(&curtime, &result);
@@ -1526,22 +1521,22 @@ void log_set_hostname_sharelogging(const char *server_name, const char *server_p
   char *hostname = NULL;
   struct hostent *he;
   struct in_addr **addr_list;
-         
+
   if (server_name)
      hostname = (char *)server_name;
   else if (gethostname(hostnm, sizeof(hostnm)) == 0)
      hostname = hostnm;
 
-  if (hostname) 
+  if (hostname)
     {
-    if ((he = gethostbyname(hostname)) == NULL) 
+    if ((he = gethostbyname(hostname)) == NULL)
       {
       strcpy(ip, "null");
       }
     else
       {
       addr_list = (struct in_addr **) he->h_addr_list;
-      if (addr_list[0]) 
+      if (addr_list[0])
         snprintf(ip , sizeof(ip), "%s", inet_ntoa(*addr_list[0]));
       else
         strcpy(ip, "null");
@@ -1554,7 +1549,7 @@ void log_set_hostname_sharelogging(const char *server_name, const char *server_p
     hostname = hostnm;
     }
 
-  snprintf(log_host_port, sizeof(log_host_port), "%s:%s (host: %s)", 
+  snprintf(log_host_port, sizeof(log_host_port), "%s:%s (host: %s)",
     ip, server_port, hostname);
   }
 

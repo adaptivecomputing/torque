@@ -1331,6 +1331,13 @@ int check_attribute_settings(
     server_name,
     resc_access_perm);
 
+  // Set the request version 
+  pj->ji_wattr[JOB_ATR_request_version].at_flags |= ATR_VFLAG_SET;
+  if (pj->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+    pj->ji_wattr[JOB_ATR_request_version].at_val.at_long = REQ_VERSION_2;
+  else
+    pj->ji_wattr[JOB_ATR_request_version].at_val.at_long = REQ_VERSION_1;
+
   return(PBSE_NONE);
   } /* END check_attribute_settings() */
 

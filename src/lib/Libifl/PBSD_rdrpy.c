@@ -104,12 +104,12 @@ struct batch_reply *PBSD_rdrpy(
   int  c)           /* I */
 
   {
-  int      rc;
+  int          rc;
 
-  struct batch_reply *reply;
-  int      sock;
-  const char    *the_msg = NULL;
-  struct tcp_chan *chan = NULL;
+  batch_reply *reply;
+  int          sock;
+  const char  *the_msg = NULL;
+  tcp_chan    *chan = NULL;
   
   if ((c < 0) || 
       (c >= PBS_NET_MAX_CONNECTIONS))
@@ -149,10 +149,16 @@ struct batch_reply *PBSD_rdrpy(
     if (chan->IsTimeout == TRUE)
       {
       *local_errno = PBSE_TIMEOUT;
+      rc = PBSE_TIMEOUT;
       }
     else
       {
       *local_errno = PBSE_PROTOCOL;
+      }
+
+    if ((the_msg = pbs_strerror(*local_errno)) != NULL)
+      {
+      connection[c].ch_errtxt = strdup(the_msg);
       }
 
     connection[c].ch_errno = *local_errno;

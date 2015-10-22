@@ -480,7 +480,7 @@ void decode_attribute(
   if (index < 0)
     index = JOB_ATR_UNKN;
 
-  if(freeExisting)
+  if (freeExisting)
     {
     job_attr_def[index].at_free(&pj->ji_wattr[index]);
     }
@@ -567,6 +567,7 @@ int parse_attributes(
   xmlNode      *cur_node = NULL;
   xmlNode      *resource_list_node = NULL;
   xmlNode      *resources_used_node = NULL;
+  xmlNode      *complete_req_node = NULL;
   bool          element_found = false;
 
   for (cur_node = attr_node->children; cur_node != NULL && rc == PBSE_NONE; cur_node = cur_node->next)
@@ -581,6 +582,8 @@ int parse_attributes(
       resource_list_node = cur_node;
     else if (!(strcmp((const char*)cur_node->name,  ATTR_used)))
       resources_used_node = cur_node;
+    else if (!(strcmp((const char *)cur_node->name, ATTR_req_information)))
+      complete_req_node = cur_node;
     else
       {
       svrattrl *pal = NULL;
@@ -613,6 +616,9 @@ int parse_attributes(
     rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
   if (rc == PBSE_NONE && resources_used_node)
     rc = fill_resource_list(pj, resources_used_node, log_buf, buf_len, ATTR_used);
+  if ((rc == PBSE_NONE) &&
+      (complete_req_node))
+    rc = fill_resource_list(pj, complete_req_node, log_buf, buf_len, ATTR_req_information);
   else if (element_found == false)
     {
     snprintf(log_buf, buf_len, "%s", "Error: there were no job attributes found"); 
@@ -931,6 +937,7 @@ int add_encoded_attributes(
   CLEAR_HEAD(lhead);
   xmlNodePtr  resource_list_head_node = NULL;
   xmlNodePtr  resource_used_head_node = NULL;
+  xmlNodePtr  complete_req_head_node = NULL;
 
   for (i = 0; ((i < JOB_ATR_LAST) && (rc >= 0)); i++)
     {
@@ -938,7 +945,8 @@ int add_encoded_attributes(
         ((pattr + i)->at_flags & ATR_VFLAG_SET))
       {
       if ((i != JOB_ATR_resource) &&
-          (i != JOB_ATR_resc_used))
+          (i != JOB_ATR_resc_used) &&
+          (i != JOB_ATR_req_information))
         {
         std::string value;
 
@@ -947,7 +955,7 @@ int add_encoded_attributes(
           translate_dependency_to_string(pattr + i, value);
         else
 #endif
-          attr_to_str(value, job_attr_def + i, pattr[i], false);
+          attr_to_str(value, job_attr_def + i, pattr[i], true);
 
         if (value.size() == 0)
           continue;
@@ -980,16 +988,34 @@ int add_encoded_attributes(
 
         while ((pal = (svrattrl *)GET_NEXT(lhead)) != NULL)
           {
-          if (i == JOB_ATR_resource) 
-            pal_xmlNode = add_resource_list_attribute(ATTR_l, attr_node, &resource_list_head_node, pal);
+          if (i == JOB_ATR_resource)
+            {
+            pal_xmlNode = add_resource_list_attribute(ATTR_l,
+                                                      attr_node,
+                                                      &resource_list_head_node,
+                                                      pal);
+            }
+          else if (i == JOB_ATR_req_information)
+            {
+            pal_xmlNode = add_resource_list_attribute(ATTR_req_information,
+                                                      attr_node,
+                                                      &complete_req_head_node,
+                                                      pal);
+            }
           else
-            pal_xmlNode = add_resource_list_attribute(ATTR_used, attr_node, &resource_used_head_node, pal);
+            {
+            pal_xmlNode = add_resource_list_attribute(ATTR_used,
+                                                      attr_node,
+                                                      &resource_used_head_node,
+                                                      pal);
+            }
 
             if (pal_xmlNode)
               {
               snprintf(buf, sizeof(buf), "%u", (unsigned int)pal->al_flags);
               xmlSetProp(pal_xmlNode, (const xmlChar *)AL_FLAGS_ATTR, (const xmlChar *)buf);
               }
+
             delete_link(&pal->al_link);
             free(pal);
             if (!pal_xmlNode)
@@ -1265,6 +1291,10 @@ int set_array_job_ids(
   job *pj = *pjob;
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
+      
+  // If this variable isn't set this job isn't actually an array subjob.
+  if ((pj->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0)
+   return(PBSE_NONE);
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
@@ -1275,10 +1305,10 @@ int set_array_job_ids(
     array_get_parent_id(pj->ji_qs.ji_jobid, parent_id);
     pa = get_array(parent_id);
     if (pa == NULL)
-      {   
+      {
       job_abt(&pj, (char *)"Array job missing array struct, aborting job");
       snprintf(log_buf, buflen, "Array job missing array struct %s", __func__);
-      return -1;
+      return(-1);
       }
 
     strcpy(pj->ji_arraystructid, parent_id);
@@ -1311,7 +1341,8 @@ int set_array_job_ids(
       }
     }
 #endif /* !PBS_MOM */
-  return rc;
+
+  return(rc);
   }
 
 

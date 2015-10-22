@@ -12,6 +12,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "completed_jobs_map.h"
+#include "server.h"
 
 sem_t *job_clone_semaphore;
 extern int set_nodes_attr(job *pjob);
@@ -25,6 +26,30 @@ char  server_name[] = "lei.ac";
 
 int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
 void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
+int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen);
+
+void init()
+  {
+  server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  }
+
+
+START_TEST(test_set_array_jobs_ids)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+  char  buf[1024];
+
+  init();
+
+  sprintf(pjob->ji_qs.ji_jobid, "4[21].napali");
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+
+  pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+  }
+END_TEST
+
 
 START_TEST(test_translate_dependency_to_string)
   {
@@ -322,6 +347,10 @@ Suite *job_recov_suite(void)
   tcase_add_test(tc_core, fill_resource_list_test);
   tcase_add_test(tc_core, test_add_encoded_attributes);
   tcase_add_test(tc_core, test_translate_dependency_to_string);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_moar");
+  tcase_add_test(tc_core, test_set_array_jobs_ids);
   suite_add_tcase(s, tc_core);
 
   return s;

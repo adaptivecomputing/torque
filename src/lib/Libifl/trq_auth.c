@@ -649,6 +649,7 @@ int validate_user(
   struct ucred   cr;
   socklen_t      cr_size;
   struct passwd *user_pwd;
+  char *buf;
 
   if (msg == NULL)
     return(PBSE_BAD_PARAMETER);
@@ -666,7 +667,7 @@ int validate_user(
     return(PBSE_SOCKET_FAULT);
     }
 
-  user_pwd = get_password_entry_by_uid(cr.uid);
+  user_pwd = get_password_entry_by_uid(&buf, cr.uid);
    
   if (user_pwd == NULL)
     {
@@ -677,15 +678,18 @@ int validate_user(
   if (strcmp(user_pwd->pw_name, user_name))
     {
     sprintf(msg, "User names do not match: submitted: %s, expected: %s", user_name, user_pwd->pw_name);
+    free_pwnam(user_pwd, buf);
     return(PBSE_IFF_NOT_FOUND);
     }
 
   if (cr.pid != user_pid)
     {
     sprintf(msg, "invalid pid: submitted: %d, expected: %d", user_pid, cr.pid);
+    free_pwnam(user_pwd, buf);
     return(PBSE_IFF_NOT_FOUND);
     }
 
+  free_pwnam(user_pwd, buf);
   return(PBSE_NONE);
   }
 
@@ -916,7 +920,7 @@ int authorize_socket(
         usleep(10000);
         continue;
         }
-      else if ((rc = socket_connect(&svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
+      else if ((rc = socket_connect(svr_sock, trq_server_addr, trq_server_addr_len, server_port, AF_INET, 1, err_msg)) != PBSE_NONE)
         {
         /* for now we only need ssh_key and sign_key as dummys */
         char *ssh_key = NULL;

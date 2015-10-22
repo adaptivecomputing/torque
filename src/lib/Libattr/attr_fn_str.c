@@ -129,14 +129,12 @@ extern int ctnodes(char *spec);
 int decode_str(
 
   pbs_attribute *patr,   /* (I modified, allocated ) */
-  const char  *name,   /* (I - optional) pbs_attribute name */
-  const char *rescn,  /* resource name - unused here */
+  const char    *name,   /* (I - optional) pbs_attribute name */
+  const char    *rescn,  /* resource name - unused here */
   const char    *val,    /* pbs_attribute value */
   int            perm)   /* only used for resources */
 
   {
-  size_t len;
-
   if (patr->at_val.at_str != NULL)
     {
     free(patr->at_val.at_str);
@@ -144,9 +142,10 @@ int decode_str(
     patr->at_val.at_str = NULL;
     }
 
-  if ((val != NULL) && ((len = strlen(val) + 1) > 1))
+  if ((val != NULL) &&
+      (strlen(val) + 1) > 1)
     {
-    patr->at_val.at_str = (char *)calloc(1, (unsigned)len);
+    patr->at_val.at_str = strdup(val);
 
     if (patr->at_val.at_str == NULL)
       {
@@ -154,8 +153,6 @@ int decode_str(
 
       return(PBSE_SYSTEM);
       }
-
-    strcpy(patr->at_val.at_str, val);
 
     patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     }
@@ -174,7 +171,6 @@ int decode_str(
 
 
 
-
 /*
  * encode_str - encode pbs_attribute of type ATR_TYPE_STR into attr_extern
  *
@@ -189,8 +185,8 @@ int encode_str(
 
   pbs_attribute  *attr,    /* ptr to pbs_attribute */
   tlist_head     *phead,   /* head of attrlist */
-  const char    *atname,  /* name of pbs_attribute */
-  const char    *rsname,  /* resource name or null */
+  const char     *atname,  /* name of pbs_attribute */
+  const char     *rsname,  /* resource name or null */
   int             mode,    /* encode mode, unused here */
   int             perm)    /* only used for resources */
 
@@ -318,7 +314,7 @@ int set_str(
       break;
 
     default:
-      return (PBSE_INTERNAL);
+      return(PBSE_INTERNAL);
     }
 
   if ((attr->at_val.at_str != (char *)0) && (*attr->at_val.at_str != '\0'))

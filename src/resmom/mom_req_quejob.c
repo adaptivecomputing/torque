@@ -144,7 +144,6 @@ const char *TJobFileType[] =
   NULL
   };
 
-extern tlist_head svr_alljobs;
 extern tlist_head svr_newjobs;
 extern attribute_def job_attr_def[];
 extern char *path_jobs;
@@ -463,7 +462,7 @@ void mom_req_quejob(
 
     if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0)
       {
-      delete_link(&pj->ji_alljobs);
+      remove_from_job_list(pj);
 
       append_link(&svr_newjobs,&pj->ji_alljobs,pj);
 
@@ -728,6 +727,7 @@ void req_mvjobfile(
   job         *pj;
 
   struct passwd *pwd;
+  char          *buf = NULL;
 
   jft = (enum job_file)preq->rq_ind.rq_jobfile.rq_type;
 
@@ -754,15 +754,19 @@ void req_mvjobfile(
     return;
     }
 
+  bool good;
+  good = check_pwd(pj);
   if ((pj->ji_grpcache == NULL) && 
-      (check_pwd(pj) == NULL))
+      (good == false))
     {
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 
     return;
     }
 
-  if ((pwd = getpwnam_ext(pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
+  /* check_pwd allocated pwd and getpwnam_ext is going to allocate
+     another one. Free pwd first */
+  if ((pwd = getpwnam_ext(&buf, pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
     {
     /* FAILURE */
     req_reject(PBSE_MOMREJECT, 0, preq, NULL, "password lookup failed");
@@ -781,7 +785,15 @@ void req_mvjobfile(
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buffer);
 
+    if (pwd)
+      {
+      free_pwnam(pwd, buf);
+      }
     return;
+    }
+  if (pwd)
+    {
+    free_pwnam(pwd, buf);
     }
 
   if (write_ac_socket(
@@ -1022,7 +1034,7 @@ void req_commit(
 
   delete_link(&pj->ji_alljobs);
 
-  append_link(&svr_alljobs, &pj->ji_alljobs, pj);
+  alljobs_list.push_back(pj);
 
   /*
   ** Set JOB_SVFLG_HERE to indicate that this is Mother Superior.

@@ -241,11 +241,14 @@
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
 #include "mom_config.h"
+#include "mom_func.h"
 #include <string>
 #include <vector>
 #include "container.hpp"
 #include <arpa/inet.h>
-
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#endif
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
 #define UPDATE_TO_SERVER                  0
@@ -265,6 +268,10 @@ mom_server     mom_servers[PBS_MAXSERVER];
 int            mom_server_count = 0;
 pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 
+#ifdef PENABLE_LINUX_CGROUPS
+extern Machine this_node;
+#endif
+
 extern unsigned int        default_server_port;
 extern char               *path_jobs;
 extern char               *path_home;
@@ -283,7 +290,6 @@ extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
 extern int                 verbositylevel;
 extern AvlTree             okclients;
-extern tlist_head          svr_alljobs;
 extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
@@ -300,18 +306,20 @@ extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
 
+
 extern struct config *rm_search(struct config *where, const char *what);
 
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
-extern char *dependent(const char *res, struct rm_attribute *attr);
-extern char *reqgres(struct rm_attribute *);
 extern void send_update_soon();
 
 #ifdef NVIDIA_GPUS
 extern int  use_nvidia_gpu;
 #endif
 
+#ifdef MIC
+int check_for_mics();
+#endif
 
 int num_stat_update_failures = 0;
 
@@ -678,36 +686,19 @@ int is_compose(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+void gen_layout(
 
+  const char               *name,
+  std::vector<std::string> &status)
 
-
-/**
- *  generate_server_status
- *
- *  This should update the PBS server with the status information
- *  that the resource manager should need.  This should allow for
- *  less trouble on the part of the resource manager.  It can get
- *  this information from the server rather than going to each mom.
- *
- *  This was originally part of is_update_stat, a very complicated
- * routine.  I have broken this into pieces so that the special cases
- * a each in a specific routine.  The routine gen_gen is the one
- * for the general case.
- *
- *  The old is_update_stat used to write directly to a DIS stream.
- * Now we generate the strings in to a buffer, each string terminated
- * with a NULL and a double NULL at the end.
- *
- * Warning: Because of the complexity of the old is_update_stat, it
- * was very hard to break out the special cases.  I actually had to
- * go back and look at older code before there were multiple server
- * arrays to try and figure out what should be happening.
- *
- * If there is some trouble with some status getting back to the
- * pbs_server, this is the place to look.
- */
-
-
+  {
+  std::stringstream layout;
+  layout << name << "=";
+  this_node.displayAsJson(layout, false);
+  status.push_back(layout.str());
+  } // END gen_layout()
+#endif
 
 
 
@@ -730,10 +721,10 @@ void gen_size(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
+  struct config       *ap;
 
   struct rm_attribute *attr;
-  char *value;
+  const char          *value;
 
   ap = rm_search(config_array, name);
 
@@ -760,8 +751,6 @@ void gen_size(
 
 
 
-
-
 void gen_arch(
 
   const char               *name,
@@ -782,8 +771,6 @@ void gen_arch(
 
   return;
   }
-
-
 
 
 
@@ -810,8 +797,6 @@ void gen_opsys(
 
 
 
-
-
 void gen_jdata(
 
   const char               *name,
@@ -834,7 +819,7 @@ void gen_gres(
   std::vector<std::string> &status)
 
   {
-  char  *value;
+  const char *value;
 
   value = reqgres(NULL);
 
@@ -855,9 +840,9 @@ void gen_gen(
   std::vector<std::string> &status)
 
   {
-  struct config  *ap;
-  char  *value;
-  char  *ptr;
+  struct config *ap;
+  const char    *value;
+  char          *ptr;
 
   ap = rm_search(config_array,name);
 
@@ -900,6 +885,8 @@ void gen_gen(
 
   return;
   }   /* END gen_gen() */
+
+
 
 void gen_macaddr(
 
@@ -994,7 +981,7 @@ void gen_macaddr(
   s += "=";
   s += mac_addr;
   status.push_back(s);
-  }
+  } // END gen_macaddr()
 
 
 
@@ -1029,15 +1016,38 @@ stat_record stats[] = {
   {"varattr",     gen_gen},
   {"cpuclock",    gen_gen},
   {"macaddr",     gen_macaddr},
+#ifdef PENABLE_LINUX_CGROUPS
+  {"layout",      gen_layout},
+#endif
   {NULL,          NULL}
   };
-
 
 
 
 /**
  * generate_server_status
  *
+ *  This should update the PBS server with the status information
+ *  that the resource manager should need.  This should allow for
+ *  less trouble on the part of the resource manager.  It can get
+ *  this information from the server rather than going to each mom.
+ *
+ *  This was originally part of is_update_stat, a very complicated
+ * routine.  I have broken this into pieces so that the special cases
+ * a each in a specific routine.  The routine gen_gen is the one
+ * for the general case.
+ *
+ *  The old is_update_stat used to write directly to a DIS stream.
+ * Now we generate the strings in to a buffer, each string terminated
+ * with a NULL and a double NULL at the end.
+ *
+ * Warning: Because of the complexity of the old is_update_stat, it
+ * was very hard to break out the special cases.  I actually had to
+ * go back and look at older code before there were multiple server
+ * arrays to try and figure out what should be happening.
+ *
+ * If there is some trouble with some status getting back to the
+ * pbs_server, this is the place to look.
  */
 
 void generate_server_status(
@@ -1048,8 +1058,8 @@ void generate_server_status(
   int   i;
   std::stringstream ss;
 
-  /* identify which vnode this is */
 #ifdef NUMA_SUPPORT
+  /* identify which vnode this is */
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
@@ -1071,6 +1081,7 @@ void generate_server_status(
   }  /* END generate_server_status */
 
 
+
 int should_request_cluster_addrs()
 
   {
@@ -1089,8 +1100,16 @@ int should_request_cluster_addrs()
   } /* END should_request_cluster_addrs() */
 
 
+
 /* 
  * writes the header for a server status update
+ *
+ *  Header format
+ *
+ *   Protocol | Version | Command (IS_STATUS) | mom service port | mom manager port 
+ *   The following two lines are added to the header if cgroups are enabled.
+ *   | available sockets | available numa_nodes | available cores | available threads
+ *   | total sockets     | total numa_nodes     | total cores     | total threads
  */
 int write_update_header(
     
@@ -1126,10 +1145,9 @@ int write_update_header(
         }
       }
     }
-  
+
   return(ret);
   } /* END write_update_header() */
-
 
 
 
@@ -1150,16 +1168,16 @@ int write_my_server_status(
   /* put each string into the message. */
   for (unsigned int i = 0; i < strings.size(); i++)
     {
+    const char *str_to_write = strings[i].c_str();
+
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buffer,"%s: sending to server \"%s\"",
+      sprintf(log_buffer,"%s: sending to server \"%s\", i = %u size = %d",
         id,
-        strings[i].c_str());
+        str_to_write, i, (int)strings.size());
       
       log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
       }
-
-    const char *str_to_write = strings[i].c_str();
     
     if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
       {
@@ -1178,7 +1196,7 @@ int write_my_server_status(
           nc = (node_comm_t *)dest;
           nc->stream = chan->sock;
           
-          node_comm_error(nc,"Error writing strings to");
+          node_comm_error(nc, "Error writing strings to");
           
           break;
         } /* END switch (mode) */
@@ -1677,6 +1695,11 @@ void mom_server_all_update_stat(void)
     global_gpu_status.clear();
     add_gpu_status(global_gpu_status);
 #endif
+
+#ifdef MIC
+    check_for_mics();
+#endif 
+
     /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
        to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
        been queued and at the same time the server makes a request to the mom we can get stuck
@@ -2753,10 +2776,13 @@ void check_busy(
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
-    if ((pjob = (job *)GET_NEXT(svr_alljobs)) != NULL)
+    std::list<job *>::iterator iter;
+
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
-      for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-        numvnodes += pjob->ji_numvnod;
+      pjob = *iter;
+
+      numvnodes += pjob->ji_numvnod;
       }
 
     mymax_load = compute_load_threshold(auto_max_load, numvnodes, max_load_val);

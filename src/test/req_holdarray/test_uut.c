@@ -1,22 +1,16 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "req_holdarray.h"
 #include "test_req_holdarray.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+
 START_TEST(test_one)
   {
-  int x = 2;
-
-  fail_unless(x==2);
   }
 END_TEST
 
 START_TEST(test_two)
   {
-  int x = 2;
-
-  fail_unless(x==2);
   }
 END_TEST
 

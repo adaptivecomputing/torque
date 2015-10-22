@@ -282,6 +282,15 @@ PbsErrClient(PBSE_CREATE_NOT_ALLOWED_WITH_MOM_HIERARCHY, (char *)"Nodes may not 
 PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The updated okclients list hasn't been sent out to the cluster yet. The node(s) will automatically update to free once this is done and the mom has reported in.")
 PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
+PbsErrClient(PBSE_CGROUPS_NOT_ENABLED, (char *)"Cgroups are not enabled on this node.")
+PbsErrClient(PBSE_RESC_CONFLICT, (char *)"This job's resource request conflicts with the queue's default resources.")
+PbsErrClient(PBSE_UNALTERABLE_ATTR, (char *)"The requested attribute cannot be altered after submission.")
+PbsErrClient(PBSE_NO_PROCESS_RANK, (char *)"A process rank was not given. will add process to job cgroup.")
+PbsErrClient(PBSE_REQ_NOT_FOUND, (char *)"A req for this host was not found")
+PbsErrClient(PBSE_INDICES_EMPTY, (char *)"The cpuset or memset indices are not set")
+PbsErrClient(PBSE_EMPTY, (char *)"The container is empty")
+PbsErrClient(PBSE_MINLIMIT, (char *)"Request doesn't meet minimum limit")
+PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)

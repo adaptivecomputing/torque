@@ -1,10 +1,14 @@
 include $(top_srcdir)/buildutils/config.mk
 
+if BUILD_LINUX_CGROUPS
+NUMA_DIRS = allocation machine numa_chip numa_core numa_socket numa_pci_device numa_socket
+endif
+
 SERVER_UT_DIRS = accounting array_func array_upgrade attr_recov batch_request completed_jobs_map \
 								 delete_all_tracker dis_read display_alps_status execution_slot_tracker \
 								 exiting_jobs geteusernam get_path_jobdata id_map incoming_request \
 								 issue_request job_attr_def job_container job_func job_qs_upgrade job_recov \
-								 job_recycler job_usage_info login_nodes mom_hierarchy_handler node_func node_func2\
+								 job_recycler job_usage_info login_nodes mom_hierarchy_handler node_func \
 								 node_manager pbsd_init pbsd_main process_alps_status process_mom_update \
 								 process_request queue_func queue_recov queue_recycler receive_mom_communication \
 								 reply_send req_delete req_deletearray req_getcred req_gpuctrl req_holdarray \
@@ -21,7 +25,8 @@ LIBUTILS_UT_DIRS = u_MXML u_groups u_hash_map_structs u_lock_ctl u_misc u_mom_hi
 LIBATTR_UT_DIRS = attr_atomic attr_fn_acl attr_fn_arst attr_fn_b attr_fn_c attr_fn_freq \
 									attr_fn_hold attr_fn_intr attr_fn_intr attr_fn_l attr_fn_ll attr_fn_nppcu \
 									attr_fn_resc attr_fn_size attr_fn_str attr_fn_time attr_fn_tokens attr_fn_tv \
-									attr_fn_unkn attr_func attr_node_func node_func2
+									attr_fn_unkn attr_func attr_node_func attr_fn_complete_req req complete_req \
+									attr_str_conversion
 
 LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server locate_job \
 									parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
@@ -63,11 +68,26 @@ CMDS_UT_DIRS = MXML common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qc
 
 MISC_UT_DIRS = momctl
 
+MOM_UT_DIRS = alps_reservations catch_child checkpoint cray_energy generate_alps_status \
+							mom_comm mom_inter mom_job_func mom_mach mom_main mom_process_request mom_req_quejob \
+							mom_server mom_start parse_config pbs_demux prolog release_reservation requests \
+							start_exec tmsock_recov
+if BUILDCPA
+  MOM_UT_DIRS += cray_cpa
+endif
+
+if INCLUDE_PAM
+PAM_DIRS = pam
+endif
+
+TRQAUTH_DIRS = trq_auth_daemon
+
 CHECK_LIBS = scaffold_fail torque_test_lib 
 
 CHECK_DIRS = ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
-						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS}
+						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${NUMA_DIRS} \
+						 ${MOM_UT_DIRS} ${PAM_DIRS} ${TRQAUTH_DIRS}
 
 $(CHECK_LIBS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)

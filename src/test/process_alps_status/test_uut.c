@@ -25,7 +25,10 @@ char buf[4096];
 const char *alps_status[] = {"node=1", "CPROC=12", "state=UP", "reservation_id=12", "<cray_gpu_status>", "gpu_id=0", "clock_mhz=2600", "gpu_id=1", "clock_mhz=2600", "</cray_gpu_status>", NULL};
 /*node=2\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0node=3\0CPROC=12\0state=UP\0<cray_gpu_status>\0gpu_id=0\0clock_mhz=2600\0gpu_id=1\0clock_mhz=2600\0</cray_gpu_status>\0\0";*/
 
-extern int count;
+extern int mgr_count;
+extern int removed_reservation;
+extern int issued_request;
+extern int state_updated;
 
 START_TEST(record_reservation_test)
   {
@@ -169,12 +172,12 @@ START_TEST(determine_node_from_str_test)
   parent.nd_name = strdup("george");
   parent.alps_subnodes = new all_nodes();
 
-  count = 0; // set so that create_alps_subnode doesn't fail
+  mgr_count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str1, &parent, &parent);
   fail_unless(new_node != NULL, "new node is NULL?");
   fail_unless(new_node->nd_lastupdate != 0, "update time not set");
 
-  count = 0; // set so that create_alps_subnode doesn't fail
+  mgr_count = 0; // set so that create_alps_subnode doesn't fail
   new_node = determine_node_from_str(node_str2, &parent, &parent);
   fail_unless(new_node == &parent, "advanced current when current should've remained the same");
 
@@ -186,9 +189,15 @@ END_TEST
 
 START_TEST(check_orphaned_test)
   {
-  const char *rsv_id = "tom";
+  const char *rsv_id = "napali:tom";
+  removed_reservation = 0;
+  issued_request = 0;
+  state_updated = 0;
 
-  fail_unless(check_if_orphaned((void *)rsv_id) == 0, "bad return code");
+  fail_unless(check_if_orphaned(strdup(rsv_id)) == 0, "bad return code");
+  fail_unless(removed_reservation == 1);
+  fail_unless(issued_request == 1);
+  fail_unless(state_updated == 1);
   }
 END_TEST
 
@@ -240,6 +249,7 @@ START_TEST(process_reservation_id_test)
   struct pbsnode pnode;
 
   memset(&pnode, 0, sizeof(struct pbsnode));
+  pnode.nd_name = strdup("napali");
 
   fail_unless(process_reservation_id(&pnode, "12") == 0, "couldn't process reservation");
   fail_unless(process_reservation_id(&pnode, "13") == 0, "couldn't process reservation");

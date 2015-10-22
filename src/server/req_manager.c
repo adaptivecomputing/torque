@@ -141,6 +141,7 @@
 #include "req_rerun.h"
 #include "req_delete.h"
 #include "mom_hierarchy_handler.h"
+#include "attr_req_info.hpp"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -482,10 +483,12 @@ static int mgr_set_attr(
         {
         list_move(&pnew->at_val.at_list, &pold->at_val.at_list);
         }
-      else
+      else if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
         {
-        *pold = *pnew;
+        pold->at_val.at_ptr = pnew->at_val.at_ptr;
         }
+      else
+        *pold = *pnew;
 
       pold->at_flags = pnew->at_flags; /* includes MODIFY */
       }
@@ -1675,6 +1678,18 @@ void mgr_node_set(
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
   struct prop       props;
+  long              dont_update_nodes = FALSE;
+
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == TRUE)
+    {
+    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
+    return;
+    }
+
+  if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
+      (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
+    strcpy(preq->rq_ind.rq_manager.rq_objname, ":ALL");
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@') ||
@@ -1826,7 +1841,7 @@ void mgr_node_set(
           break;
         }
 
-      unlock_node(pnode, "mgr_node_set", (char *)"error", LOGLEVEL);
+      unlock_node(pnode, __func__, "error", LOGLEVEL);
       
       return;
       } /* END if (rc != 0) */ 
@@ -1838,7 +1853,7 @@ void mgr_node_set(
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
       }
 
-    unlock_node(pnode, "mgr_node_set", (char *)"single_node", LOGLEVEL);
+    unlock_node(pnode, __func__, "single_node", LOGLEVEL);
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)
@@ -2044,12 +2059,20 @@ static void mgr_node_delete(
   all_nodes_iterator *iter = NULL;
 
   struct pbsnode *pnode;
-  const char    *nodename = NULL;
+  const char     *nodename = NULL;
 
 
   svrattrl       *plist;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  long            dont_update_nodes = FALSE;
+
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == TRUE)
+    {
+    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
+    return;
+    }
 
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
@@ -2190,9 +2213,17 @@ void mgr_node_create(
   struct batch_request *preq)
 
   {
-  int   bad;
+  int       bad;
   svrattrl *plist;
-  int   rc;
+  int       rc;
+  long      dont_update_nodes = FALSE;
+
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == TRUE)
+    {
+    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
+    return;
+    }
 
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
 
@@ -2511,6 +2542,10 @@ int manager_oper_chk(
 
         err = PBSE_BADACLHOST;
         }
+      }
+    else
+      {
+      err = PBSE_NONE;
       }
     }
 

@@ -191,6 +191,7 @@ extern char *path_svrdb_new;
 extern char *path_svrlog;
 extern char *path_track;
 extern char *path_nodes;
+extern char *path_node_usage;
 extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
@@ -729,6 +730,54 @@ int setup_signal_handling()
   return(PBSE_NONE);
   } /* END setup_signal_handling() */
 
+// check divided jobs and arrays subdirectories for existence
+// Note: These are normally constructed during installation. See
+// mk_server_dirs() in buildutils/pbs_mkdirs.in.
+
+int mk_subdirs(
+
+  char **paths)
+
+  {
+  int         j;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (paths == NULL)
+    return(-1);
+
+  for (j = 0; paths[j] != NULL; j++)
+    {
+    int i;
+
+    for (i = 0; i <= 9; i++)
+      {
+      char buf[1024];
+
+      // build the complete path
+      snprintf(buf, sizeof(buf), "%s%d/", paths[j], i);
+
+      // try to make the directory
+      if (mkdir(buf, 0770) == 0)
+        {
+        // success - add log message
+        snprintf(log_buf, sizeof(log_buf), "created missing directory %s", buf);
+        log_ext(0, __func__, log_buf, LOG_INFO);
+        }
+      else if (errno != EEXIST)
+        {
+        // fail only if directory (or file) named by buf does not exist
+        snprintf(log_buf, sizeof(log_buf), "%s cannot create directory, errno=%d, %s",
+           buf,
+           errno,
+           strerror(errno));
+        log_err(-1, __func__, log_buf);
+        return(3);
+        }
+      }
+    }
+  return(PBSE_NONE);
+  }
+
 
 
 int initialize_paths()
@@ -739,18 +788,21 @@ int initialize_paths()
   const char        *new_tag = ".new";
   struct stat  statbuf;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
+  long         use_jobs_subdirs = FALSE;
+  char        *paths[3] = { NULL };
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char         EMsg[1024];
-  long         use_jobs_subdirs = FALSE;
 #endif /* not DEBUG and not NO_SECURITY_CHECK */
 
   if (path_priv == NULL)
     path_priv        = build_path(path_home, PBS_SVR_PRIVATE, suffix_slash);
 
   path_arrays        = build_path(path_priv, PBS_ARRAYDIR, suffix_slash);
+  paths[0]           = path_arrays;
   path_spool         = build_path(path_home, PBS_SPOOLDIR, suffix_slash);
   path_queues        = build_path(path_priv, PBS_QUEDIR,   suffix_slash);
   path_jobs          = build_path(path_priv, PBS_JOBDIR,   suffix_slash);
+  paths[1]           = path_jobs;
   path_credentials   = build_path(path_priv, PBS_CREDENTIALDIR, suffix_slash);
   path_acct          = build_path(path_priv, PBS_ACCT,     suffix_slash);
 
@@ -762,6 +814,7 @@ int initialize_paths()
   path_jobinfo_log   = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
   path_track         = build_path(path_priv, PBS_TRACKING, NULL);
   path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
+  path_node_usage    = build_path(path_priv, NODE_USAGE, suffix_slash);
   path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
   path_nodepowerstate = build_path(path_priv, NODE_POWER_STATE,  NULL);
@@ -786,7 +839,7 @@ int initialize_paths()
   path_checkpoint    = build_path(path_home, PBS_CHKPTDIR, suffix_slash);
 #endif
 
-  /* check existance amd make sure it is a directory */
+  /* check existence and make sure it is a directory */
 
   if (stat(path_checkpoint, &statbuf) < 0)
     {
@@ -830,42 +883,38 @@ int initialize_paths()
       }
     }
 
-#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
-
-  rc  = chk_file_sec(path_jobs,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-
   // get the use_jobs_subdirs value if set
   get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+
+  // check divided jobs and arrays subdirectories for existence
+  if (use_jobs_subdirs == TRUE)
+    {
+    mk_subdirs(paths);
+    }
+
+#if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
 
   // check divided jobs subdirectories if needed
   if (use_jobs_subdirs == TRUE)
     {
-    int i;
+    int j;
 
-    for (i = 0; i <= 9; i++)
+    for (j = 0; paths[j] != NULL; j++)
       {
-      char buf[1024];
+      int i;
 
-      snprintf(buf, sizeof(buf), "%s%d/", path_jobs, i);
-      rc  |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+      rc |= chk_file_sec(paths[j],  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+
+      for (i = 0; i <= 9; i++)
+        {
+        char buf[1024];
+
+        snprintf(buf, sizeof(buf), "%s%d/", paths[j], i);
+        rc |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+        }
       }
     }
 
-  rc  = chk_file_sec(path_arrays,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-
-  // check divided arrays subdirectories if needed
-  if (use_jobs_subdirs == TRUE)
-    {
-    int i;
-
-    for (i = 0; i <= 9; i++)
-      {
-      char buf[1024];
-
-      snprintf(buf, sizeof(buf), "%s%d/", path_arrays, i);
-      rc  |= chk_file_sec(buf,  1, 0, S_IWGRP | S_IWOTH, 1, EMsg);
-      }
-    }
   rc |= chk_file_sec(path_queues, 1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
@@ -953,9 +1002,6 @@ int setup_server_attrs(
   for (i = 0; i < SRV_ATR_LAST; i++)
     clear_attr(&server.sv_attr[i], &svr_attr_def[i]);
 
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_val.at_long =  PBS_SCHEDULE_CYCLE;
-  server.sv_attr[SRV_ATR_scheduler_iteration].at_flags = ATR_VFLAG_SET;
-
   server.sv_attr[SRV_ATR_State].at_val.at_long = SV_STATE_INIT;
   server.sv_attr[SRV_ATR_State].at_flags = ATR_VFLAG_SET;
 
@@ -997,6 +1043,9 @@ int setup_server_attrs(
 
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
+
+  server.sv_attr[SRV_ATR_DownOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_DownOnError].at_flags = ATR_VFLAG_SET;
 
   /* If not a "create" initialization, recover server db */
   rc = chk_save_file(path_svrdb);
@@ -1076,6 +1125,173 @@ int setup_server_attrs(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ * remove_invalid_allocations()
+ *
+ * Checks the 
+ */
+void remove_invalid_allocations(
+
+  pbsnode *pnode)
+
+  {
+
+  if (pnode->nd_layout != NULL)
+    {
+    std::vector<std::string> job_ids;
+
+    pnode->nd_layout->populate_job_ids(job_ids);
+
+    for (unsigned int i = 0; i < job_ids.size(); i++)
+      {
+      if (job_id_exists(job_ids[i]) == false)
+        pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
+      }
+    }
+  } // END remove_invalid_allocations()
+
+
+
+/*
+ * load_node_usage()
+ *
+ * Loads pnode's usage information from file
+ *
+ * @param pnode - the node whose usage information we're loading
+ * @param node_name - the name of pnode
+ */
+
+void load_node_usage(
+
+  pbsnode    *pnode,
+  const char *node_name)
+
+  {
+  std::string layout;
+  int         fds = open(node_name, O_RDONLY, 0);
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        buf[LOCAL_LOG_BUF_SIZE];
+  char       *read_ptr = buf;
+
+  if (fds < 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't open %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    return;
+    }
+
+  memset(buf, 0, sizeof(buf));
+
+  while (read_ac_socket(fds, read_ptr, sizeof(buf)) > 0)
+    {
+    layout += buf;
+    memset(buf, 0, sizeof(buf));
+    }
+
+  if (layout.size() > 0)
+    {
+    if (pnode->nd_layout != NULL)
+      delete pnode->nd_layout;
+
+    pnode->nd_layout = new Machine(layout);
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't read data from %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    }
+
+  close(fds);
+
+  remove_invalid_allocations(pnode);
+  } // END load_node_usage()
+
+
+
+/*
+ * load_node_usages()
+ *
+ * Loads the current usage information for any and all nodes
+ * @return PBSE_NONE on success, or -1 if the directory doesn't exist or cannot be opened
+ */
+
+int load_node_usages()
+  {
+  DIR              *dir;
+  struct dirent    *pdirent;
+  pbsnode          *pnode;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (chdir(path_node_usage) != 0)
+    {
+    if (errno == ENOENT)
+      {
+      int old_errno = errno;
+
+      errno = 0;
+
+      if (mkdir(path_node_usage, 0750) != 0)
+        {
+        errno = old_errno;
+        }
+      }
+
+    if (errno != 0)
+      {
+      sprintf(log_buf, msg_init_chdir, path_node_usage);
+
+      log_err(errno, __func__, log_buf);
+
+      return(-1);
+      }
+    }
+  
+  dir = opendir(".");
+
+  if (dir == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Couldn't open %s for recover node usage states.",
+      path_node_usage);
+    log_err(errno, __func__, log_buf);
+
+    sprintf(log_buf, "%s:1", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+    return(-1);
+    }
+
+  while ((pdirent = readdir(dir)) != NULL)
+    {
+    if ((pdirent->d_name[0] == '\0') ||
+        (!strcmp(pdirent->d_name, "..")) ||
+        (!strcmp(pdirent->d_name, ".")))
+      {
+      /* invalid name returned */
+      continue;
+      }
+
+    if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
+      {
+      mutex_mgr   nd_mutex(pnode->nd_mutex, true);
+      load_node_usage(pnode, pdirent->d_name);
+      }
+    }
+
+  closedir(dir);
+
+  return(PBSE_NONE);
+  } // END load_node_usages()
+#endif
+
+
+
 int initialize_nodes()
 
   {
@@ -1089,9 +1305,6 @@ int initialize_nodes()
 
   return(PBSE_NONE);
   } /* END initialize_nodes() */
-
-
-
 
 int handle_queue_recovery(
     
@@ -1175,9 +1388,6 @@ int handle_queue_recovery(
 
   return(rc);
   } /* END handle_queue_recovery() */
-
-
-
 
 void mark_as_badjob(
 
@@ -1714,7 +1924,6 @@ int process_jobs_dirent(
   } /* END process_jobs_dirent() */
 
 
-
 int cleanup_recovered_arrays()
 
   {
@@ -2001,6 +2210,13 @@ int pbsd_init(
       return(ret);
 
     handle_job_and_array_recovery(type);
+
+#ifdef PENABLE_LINUX_CGROUPS
+    if ((ret = load_node_usages()) != PBSE_NONE)
+      {
+      return(ret);
+      }
+#endif
 
     /* Put us back in the Server's Private directory */
     if (chdir(path_priv) != 0)

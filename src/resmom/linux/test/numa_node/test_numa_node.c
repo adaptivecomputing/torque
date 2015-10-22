@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "allocation.hpp"
 #include "numa_node.hpp"
 #include <check.h>
 
@@ -41,6 +42,9 @@ START_TEST(test_recover_reservation)
 
   fail_unless(a2.cpus == 0);
   fail_unless(a2.memory == 0);
+
+  allocation a3("3.napali");
+  fail_unless(!strcmp(a3.jobid.c_str(), "3.napali"));
 
   }
 END_TEST
@@ -171,26 +175,6 @@ START_TEST(test_reserve)
 END_TEST
 
 
-START_TEST(test_allocation_constructors)
-  {
-  allocation a;
-
-  fail_unless(a.jobid[0] == '\0');
-  fail_unless(a.memory == 0);
-  fail_unless(a.cpus == 0);
-
-  strcpy(a.jobid, "1.napali");
-  a.memory = 1024 * 6;
-  a.cpus = 4;
-
-  allocation a2(a);
-  fail_unless(!strcmp(a2.jobid, "1.napali"));
-  fail_unless(a2.cpus == 4);
-  fail_unless(a2.memory == 1024 * 6);
-  }
-END_TEST
-
-
 Suite *numa_node_suite(void)
   {
   Suite *s = suite_create("numa_node test suite methods");
@@ -203,9 +187,9 @@ Suite *numa_node_suite(void)
   tcase_add_test(tc_core, test_recover_reservation);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_allocation");
+  /*tc_core = tcase_create("test_allocation");
   tcase_add_test(tc_core, test_allocation_constructors);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
   
   return(s);
   }

@@ -1,9 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "job_recycler.h"
-#include "test_job_recycler.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
+#include "pbs_job.h"
+#include "test_job_recycler.h"
 
 job_recycler recycler;
 bool exit_called = false;
@@ -11,6 +11,7 @@ extern pthread_t     open_threads[];
 extern int           open_thread_count;
 
 job *pop_job_from_recycler(all_jobs *aj);
+void *remove_some_recycle_jobs(void *vp);
 
 
 START_TEST(test_insert_into_recycler)

@@ -5,6 +5,7 @@
 #include "pbs_ifl.h" /* attopl, attrl */
 #include "mcom.h" /* MDataFormatEnum */
 #include "cmds.h"
+#include "allocation.hpp"
 
 #define ISNAMECHAR(x) ( (isgraph(x)) && ((x) != '#') && ( (x) != '@') )
 
@@ -402,4 +403,8 @@ struct batch_status * pbs_selstatattr_err(
   return(NULL);
   }
 
+void translate_vector_to_range_string(std::string &out, const std::vector<int> &v) {}
 
+allocation::allocation() {}
+
+void allocation::initialize_from_string(const std::string &init) {}

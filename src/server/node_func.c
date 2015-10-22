@@ -162,7 +162,8 @@ int addr_ok(
         }
       }
     }
-  if(pnode->nd_power_state != POWER_STATE_RUNNING)
+
+  if (pnode->nd_power_state != POWER_STATE_RUNNING)
     {
     status = 0;
     }
@@ -623,6 +624,64 @@ int status_nodeattrib(
       continue;
     else if (i == ND_ATR_gpustatus)
       atemp[i].at_val.at_arst = pnode->nd_gpustatus;
+#ifdef PENABLE_LINUX_CGROUPS
+    else if (i == ND_ATR_total_sockets)
+      {
+      if (pnode->nd_layout == NULL)
+        atemp[i].at_val.at_long = 0;
+      else
+        atemp[i].at_val.at_long = pnode->nd_layout->getTotalSockets();
+      }
+    else if (i == ND_ATR_total_numa_nodes)
+      {
+      if (pnode->nd_layout == NULL)
+        atemp[i].at_val.at_long = 0;
+      else
+        atemp[i].at_val.at_long = pnode->nd_layout->getTotalChips();
+      }
+    else if (i == ND_ATR_total_cores)
+      {
+      if (pnode->nd_layout == NULL)
+        atemp[i].at_val.at_long = 0;
+      else
+        atemp[i].at_val.at_long = pnode->nd_layout->getTotalCores();
+      }
+    else if (i == ND_ATR_total_threads)
+      {
+      if (pnode->nd_layout == NULL)
+        atemp[i].at_val.at_long = 0;
+      else
+        atemp[i].at_val.at_long = pnode->nd_layout->getTotalThreads();
+      }
+    else if (i == ND_ATR_dedicated_sockets)
+       {
+       if (pnode->nd_layout == NULL)
+         atemp[i].at_val.at_long = 0;
+       else
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedSockets();
+       }
+    else if (i == ND_ATR_dedicated_numa_nodes)
+       {
+       if (pnode->nd_layout == NULL)
+         atemp[i].at_val.at_long = 0;
+       else
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedChips();
+       }
+    else if (i == ND_ATR_dedicated_cores)
+       {
+       if (pnode->nd_layout == NULL)
+         atemp[i].at_val.at_long = 0;
+       else
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedCores();
+       }
+    else if (i == ND_ATR_dedicated_threads)
+       {
+       if (pnode->nd_layout == NULL)
+         atemp[i].at_val.at_long = 0;
+       else
+         atemp[i].at_val.at_long = pnode->nd_layout->getDedicatedThreads();
+       }
+#endif
     else if (i == ND_ATR_gpus)
       {
       if (pnode->nd_ngpus == 0)
@@ -812,7 +871,7 @@ int initialize_pbsnode(
                                           //list has been send to all nodes.
     }
 
-  if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
+ if (!isNUMANode) //NUMA nodes don't have their own address and their name is not in DNS.
     {
     if (pbs_getaddrinfo(pname,NULL,&pAddrInfo))
       {
@@ -1218,11 +1277,16 @@ int update_nodes_file(
   struct pbsnode *held)
 
   {
-  struct pbsnode  *np;
-  int              j;
+  struct pbsnode     *np;
+  int                 j;
   all_nodes_iterator *iter = NULL;
-  FILE            *nin;
-  long             cray_enabled = FALSE;
+  FILE               *nin;
+  long                cray_enabled = FALSE;
+  long                dont_update_file = FALSE;
+    
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_file);
+  if (dont_update_file == TRUE)
+    return(PBSE_NONE);
 
   if (LOGLEVEL >= 2)
     {
@@ -3001,11 +3065,13 @@ int node_np_action(
           {
           delete_a_subnode(pnode);
           old_np--;
+          svr_clnodes--;
           }
         else
           {
           add_execution_slot(pnode);
           old_np++;
+          svr_clnodes++;
           }
         }
 
@@ -3289,7 +3355,6 @@ int node_numa_action(
 
   return(rc);
   } /* END node_numa_action */
-
 
 
 

@@ -20,7 +20,9 @@
 #include "user_info.h"
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
+#include "machine.hpp"
 
+char *path_node_usage;
 threadpool_t *task_pool;
 int paused;
 int scheduler_sock=0;
@@ -103,6 +105,8 @@ id_map job_mapper;
 threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
+
+char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
 
 void on_job_rerun_task(struct work_task *ptask)
   {
@@ -595,7 +599,10 @@ void poll_job_task(struct work_task *wt) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_ext(int eventtype, const char *func_name, const char *msg, int level) {}
+void log_ext(int eventtype, const char *func_name, const char *msg, int level)
+  {
+  strncpy(global_log_ext_msg, msg, sizeof(global_log_ext_msg));
+  }
 
 int pbs_getaddrinfo(const char *pNode, struct addrinfo *pHints, struct addrinfo **ppAddrInfoOut)
   {
@@ -651,3 +658,107 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 int is_svr_attr_set(int i) {return 0;}
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  return;
+  }
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  return;
+  }
+
+
+bool job_id_exists(
+
+  const std::string job_id_string)
+
+  {
+  return(true);
+  }
+
+/*
+ *  * capture_until_close_character()
+ *   */
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+  
+
+#include "../../lib/Libutils/machine.cpp"
+#include "../../lib/Libutils/numa_pci_device.cpp"
+#include "../../lib/Libutils/numa_socket.cpp"
+#include "../../lib/Libutils/numa_chip.cpp"
+#include "../../lib/Libutils/numa_core.cpp"
+#include "../../lib/Libutils/allocation.cpp"
+#include "../../lib/Libattr/req.cpp"
+#include "../../lib/Libattr/complete_req.cpp"

@@ -49,6 +49,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <semaphore.h>
 
 
 #include "libpbs.h"
@@ -84,6 +85,10 @@
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
 #endif
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#include <hwloc.h>
+#endif
 #include "threadpool.h"
 #include "mom_hierarchy.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
@@ -97,6 +102,7 @@
 #include "node_frequency.hpp"
 #include <string>
 #include <vector>
+#include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
 
@@ -147,6 +153,8 @@ char           path_meminfo[MAX_LINE];
 
 extern pthread_mutex_t log_mutex;
 
+pthread_mutex_t  delete_job_files_mutex;
+
 int          lockfds = -1;
 int          multi_mom = 0;
 time_t       loopcnt;  /* used for MD5 calc */
@@ -174,6 +182,7 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
+sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
@@ -188,7 +197,7 @@ unsigned int pbs_mom_port = 0;
 unsigned int pbs_rm_port = 0;
 tlist_head mom_polljobs; /* jobs that must have resource limits polled */
 tlist_head svr_newjobs; /* jobs being sent to MOM */
-tlist_head svr_alljobs; /* all jobs under MOM's control */
+std::list<job *> alljobs_list; // all jobs under MOM's control
 tlist_head mom_varattrs; /* variable attributes */
 int  termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t  time_now = 0;
@@ -204,8 +213,15 @@ std::vector<resend_momcomm *> things_to_resend;
 
 mom_hierarchy_t  *mh = NULL;
 
+#ifdef PENABLE_LINUX_CGROUPS
+Machine          this_node;
+#endif
+
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
+#endif
+
+#if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
 
@@ -1247,6 +1263,7 @@ void process_hup(void)
   memory_pressure_duration  = 0;
 #endif
   clear_servers();
+  reset_config_vars();
   read_config(NULL);
   check_log();
   cleanup();
@@ -1571,7 +1588,7 @@ int process_clear_job_request(
     if (!strcasecmp(ptr, "all"))
       {
       clear_jobs(svr_newjobs, output);
-      clear_jobs(svr_alljobs, output);
+      alljobs_list.clear();
       output << "clear completed";
       }
     else 
@@ -2096,21 +2113,23 @@ void add_diag_job_list(
   {
   job  *pjob;
 
-  if ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL)
+  if (alljobs_list.size() == 0)
     {
     output << "NOTE:  no local jobs detected\n";
     }
   else
     {
-    int            numvnodes = 0;
+    int                        numvnodes = 0;
+    std::list<job *>::iterator iter;
 
-    for (;pjob != NULL;pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
+      pjob = *iter;
       add_diag_job_entry(output, &numvnodes, pjob);
       }  /* END for (pjob) */
 
     output << "Assigned CPU Count:     " << numvnodes << "\n";
-    }  /* END else ((pjob = (job *)GET_NEXT(svr_alljobs)) == NULL) */
+    }
 
   add_diag_new_jobs(output);
   } /* END add_diag_job_list() */
@@ -2727,6 +2746,59 @@ int process_rm_cmd_request(
 
 
 /*
+ * process_layout_request()
+ *
+ * Creates and sends the reply for momctl -l
+ * NOTE: This does nothing if you don't have cgroups enabled
+ * @param chan - the tcp channel we should reply to
+ * @return PBSE_NONE on success or a dis_ error
+ */
+
+int process_layout_request(
+
+  struct tcp_chan *chan)
+
+  {
+  std::stringstream output;
+  int               ret = diswsi(chan, RM_RSP_OK);
+
+  if (ret != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+#ifdef PENABLE_LINUX_CGROUPS
+  this_node.displayAsString(output);
+#endif
+    
+  if ((ret = diswst(chan, output.str().c_str())) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+  
+  if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
+    {
+    sprintf(log_buffer, "write request response failed: %s",
+      dis_emsg[ret]);
+    log_err(errno, __func__, log_buffer);
+
+    return(ret);
+    }
+
+  return(PBSE_NONE);
+  } // END process_layout_request()
+
+
+
+/*
 ** Process a request for the resource monitor.  The i/o
 ** will take place using DIS over a tcp fd or an rpp stream.
 */
@@ -2960,11 +3032,39 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      if (thread_unlink_calls == true)
+        {
+        int sem_val;
+        int rc;
+        do
+          {
+          rc = sem_getvalue(delete_job_files_sem, &sem_val);
+          if (rc != 0)
+            {
+            log_err(-1, __func__, "failed to get job file semaphore on shutdown");
+            break;
+            }
+          if (sem_val > 0)
+            sleep(1);
+#ifdef PENABLE_LINUX_CGROUPS
+          else
+            trq_cg_cleanup_torque_cgroups();
+#endif
+          }while(sem_val > 0);
+        }
+
       log_close(1);
 
       exit(0);
 
       /*NOTREACHED*/
+
+      break;
+
+    case RM_CMD_LAYOUT:
+
+      if (process_layout_request(chan) != DIS_SUCCESS)
+        goto bad;
 
       break;
 
@@ -3852,7 +3952,6 @@ void initialize_globals(void)
   time(&MOMStartTime);
 
   CLEAR_HEAD(svr_newjobs);
-  CLEAR_HEAD(svr_alljobs);
   CLEAR_HEAD(mom_polljobs);
   CLEAR_HEAD(svr_requests);
   CLEAR_HEAD(mom_varattrs);
@@ -4458,18 +4557,19 @@ void read_mom_hierarchy()
   } /* END read_mom_hierarchy() */
 
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
 void recover_internal_layout()
 
   {
 #ifndef NUMA_SUPPORT
-  std::list<job *> job_list;
+  std::list<job *>           job_list;
+  std::list<job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
-  for (job *pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    job *pjob = *iter;
+
     if (job_list.empty() == true)
       job_list.push_back(pjob);
     else
@@ -4501,17 +4601,106 @@ void recover_internal_layout()
   }
 #endif
 
+#ifdef PENABLE_LINUX_CGROUPS
+int cg_initialize_hwloc_topology()
+  {
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
 
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
 
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+
+  return(PBSE_NONE);
+  }
+#endif
+
+#ifdef PENABLE_LINUX26_CPUSETS
+int initialize_hwloc_topology()
+  {
+  /* load system topology */
+  if ((hwloc_topology_init(&topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    return(-1);
+    }
+
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+
+  #ifdef NVIDIA_GPUS
+  /* Include IO devices (i.e. PCI devices) when loading topology information.
+   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
+   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
+   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
+   */
+  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
+  #endif
+
+  if ((hwloc_topology_set_flags(topology, flags) != 0))
+    {
+    log_err(-1, msg_daemonname, "Unable to configure machine topology");
+    return(-1);
+    }
+
+  if ((hwloc_topology_load(topology) == -1))
+    {
+    log_err(-1, msg_daemonname, "Unable to load machine topology");
+    return(-1);
+    }
+
+  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
+    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+
+  return(PBSE_NONE);
+  }
+#endif
+ 
 /**
  * setup_program_environment
  */
-
 int setup_program_environment(void)
 
   {
   int           c;
   int           hostc = 1;
+#ifdef PENABLE_LINUX_CGROUPS
+  int           ret;
+#endif
 #if !defined(DEBUG) && !defined(DISABLE_DAEMONS)
   FILE         *dummyfile;
 #endif
@@ -4804,33 +4993,33 @@ int setup_program_environment(void)
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
-  /* load system topology */
-  if ((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
+  rc = initialize_hwloc_topology();
+  if (rc != PBSE_NONE)
+    exit(rc);
 
-  if ((hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d memory nodes, %d cpus",
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
-  
   internal_layout = node_internals();
 
 #endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+#ifndef PENABLE_LINUX26_CPUSETS
+  /* If cpusets are enabled initialization has already been done */
+  ret = cg_initialize_hwloc_topology();
+  if (ret != PBSE_NONE)
+    exit(ret);
+#endif
+
+  this_node.initializeMachine(topology);
+  ret = trq_cg_initialize_hierarchy();
+  if (ret != PBSE_NONE)
+    {
+    fprintf(stderr, "cgroups not initialized\n");
+    return(1);
+    }
+
+#endif /* PENABLE_LINUX_CGROUPS */
+
+
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -5167,7 +5356,7 @@ int setup_program_environment(void)
 
   init_abort_jobs(recover);
 
-#if PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX26_CPUSETS
   /* Nuke cpusets that do not correspond to existing jobs */
   cleanup_torque_cpuset();
 
@@ -5221,7 +5410,33 @@ int setup_program_environment(void)
     sleep(tmpL % (rand() + 1));
     }  /* END if (ptr != NULL) */
 
-  initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+  if (thread_unlink_calls == true)
+    {
+    int rc;
+    initialize_threadpool(&request_pool,MOM_THREADS,MOM_THREADS,THREAD_INFINITE);
+    delete_job_files_sem = (sem_t *)malloc(sizeof(sem_t));
+    if (delete_job_files_sem == NULL)
+      {
+      perror("failed to allocate memory for delete_job_files_sem");
+      exit(1);
+      }
+    rc = sem_init(delete_job_files_sem, 1 /* share */, 0);
+    if (rc != 0)
+      {
+      perror("failed to initialize delete_job_files semaphore");
+      exit(1);
+      }
+
+    rc = pthread_mutex_init(&delete_job_files_mutex, NULL);
+    if (rc != 0)
+      {
+      perror("failed to allocate delete_job_files_mutex");
+      exit(1);
+      }
+
+    start_request_pool(request_pool);
+
+    }
 
   requested_cluster_addrs = 0;
 
@@ -5229,6 +5444,8 @@ int setup_program_environment(void)
 
   return(PBSE_NONE);
   }  /* END setup_program_environment() */
+
+
 
 /*
  * TMOMJobGetStartInfo
@@ -5273,7 +5490,6 @@ int TMOMScanForStarting(void)
 
   {
   job *pjob;
-  job *nextjob;
 
   int  Count;
   int  RC;
@@ -5285,19 +5501,19 @@ int TMOMScanForStarting(void)
 
 #ifdef MSIC
   /* NOTE:  solaris system is choking on GET_NEXT - isolate */
-
+/* This code is completely defunct.
   tmpL = GET_NEXT(svr_alljobs);
 
   tmpL = svr_alljobs.ll_next->ll_struct;
 
-  pjob = (job *)tmpL;
+  pjob = (job *)tmpL; */
 #endif /* MSIC */
 
-  pjob = (job *)GET_NEXT(svr_alljobs);
+  std::list<job *>::iterator iter;
 
-  while (pjob != NULL)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
 
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
       {
@@ -5328,8 +5544,6 @@ int TMOMScanForStarting(void)
           log_buffer);
 
         exec_bail(pjob, JOB_EXEC_RETRY);
-
-        pjob = nextjob;
 
         continue;
         }
@@ -5386,6 +5600,7 @@ int TMOMScanForStarting(void)
         else
           {
           /* job successfully started */
+          free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
           memset(TJE, 0, sizeof(pjobexec_t));
 
           if (LOGLEVEL >= 3)
@@ -5399,8 +5614,6 @@ int TMOMScanForStarting(void)
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
       }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
-
-    pjob = nextjob;
     }        /* END while (pjob != NULL) */
 
   return(SUCCESS);
@@ -5520,11 +5733,13 @@ void examine_all_running_jobs(void)
   int         c;
 #endif
   task         *ptask;
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -5686,12 +5901,13 @@ void check_jobs_awaiting_join_job_reply()
   {
   job    *pjob;
   time_now = time(NULL);
+  
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
         (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
         (am_i_mother_superior(*pjob) == true))
@@ -5719,12 +5935,12 @@ void check_jobs_in_obit()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
-
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
         (am_i_mother_superior(*pjob) == true))
       {
@@ -5741,11 +5957,12 @@ void check_jobs_in_mom_wait()
   {
   job    *pjob;
   time_now = time(NULL);
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
       {
       if ((pjob->ji_kill_started != 0) &&
@@ -5773,22 +5990,30 @@ void check_jobs_in_mom_wait()
 
 
 
-//If we have a job that's exiting we should call scan for exiting.
+/*
+ * call_scan_for_exiting()
+ *
+ * Checks for any exiting jobs. If they exist, we'll call scan_for_exiting.
+ */
+
 bool call_scan_for_exiting()
   {
-  if(exiting_tasks) return true;
+  if (exiting_tasks)
+    return(true);
 
-  job          *nextjob;
   job          *pjob;
 
   //NOTE: May want to put some kind of timeout so we only call this once in a while.
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nextjob)
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nextjob = (job *)GET_NEXT(pjob->ji_alljobs);
-    //if (is_job_state_exiting(pjob) == false) Not using this call because it has some side effects. This function is just checking.
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) return true;
+    pjob = *iter;
+    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
+      return(true);
     }
-  return false;
+
+  return(false);
   }
 
 
@@ -5836,11 +6061,12 @@ void kill_all_running_jobs(void)
   {
   job *pjob;
   unsigned int momport = 0;
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
       {
       kill_job(pjob, SIGKILL, __func__, "mom is terminating with kill jobs flag");
@@ -5882,9 +6108,11 @@ void prepare_child_tasks_for_delete()
   {
   job *pJob;
 
+  std::list<job *>::iterator iter;
 
-  for (pJob = (job *)GET_NEXT(svr_alljobs);pJob != NULL;pJob = (job *)GET_NEXT(pJob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pJob = *iter;
     task *pTask;
 
     for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
@@ -5995,7 +6223,7 @@ void main_loop(void)
       {
       last_poll_time = time_now;
       
-      if (GET_NEXT(svr_alljobs))
+      if (alljobs_list.size() != 0)
         {
         /* There are jobs, update process status from the OS */
         
@@ -6077,7 +6305,7 @@ void main_loop(void)
       log_err(errno, __func__, "sigprocmask(BLOCK)");
 
 
-    if (GET_NEXT(svr_alljobs) == NULL)
+    if (alljobs_list.size() == 0)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
@@ -6550,6 +6778,9 @@ int main(
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
+/* Due to differences in the NVIDIA libraries, NVML initialization must be done 
+ * after the MOM is daemonized which happens in setup_program_environment.
+ * */
   if (!init_nvidia_nvml())
     {
     use_nvidia_gpu = FALSE;
@@ -6566,7 +6797,6 @@ int main(
 
     log_ext(-1, "main", log_buffer, LOG_DEBUG);
     }
-
 #endif  /* NVIDIA_GPUS */
 
   main_loop();

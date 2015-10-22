@@ -61,7 +61,7 @@ int main(
   char *o_attr_value = NULL;
   char *e_attr_value = NULL;
 
-#define GETOPT_ARGS "a:A:c:e:h:j:k:l:m:M:n:N:o:p:qr:S:t:u:v:W:x:"
+#define GETOPT_ARGS "a:A:c:e:h:j:k:l:L:m:M:n:N:o:p:qr:S:t:u:v:W:x:"
 
   while ((c = getopt(argc, argv, GETOPT_ARGS)) != EOF)
     {
@@ -269,6 +269,13 @@ int main(
 
           errflg++;
           }
+
+        break;
+
+      case 'L':
+          
+        fprintf(stderr, "qalter: The -L attribute cannot be modified after submission\n");
+        exit(2);
 
         break;
 

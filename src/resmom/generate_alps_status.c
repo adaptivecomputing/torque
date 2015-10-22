@@ -87,8 +87,12 @@
 #include "alps_constants.h"
 #include <string>
 #include <vector>
+#include <set>
+#include <time.h>
 
 #include "../lib/Libifl/lib_ifl.h"
+
+std::set<std::string> down_nodes;
 
 
 /*
@@ -333,6 +337,9 @@ int process_node(
   xmlNode            *compute_units;
   xmlNode            *compute_unit_child;
   std::string        features = "";
+  std::string        node_state = "";
+  std::string        node_name = "";
+  std::string        node_id_string  = "";
   char                buf[MAXLINE];
   int                 num_procs         = 0;
   int                 avail_procs       = 0;
@@ -340,10 +347,12 @@ int process_node(
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
+  std::set<std::string>::iterator iter;
 
     {
     std::string str("node=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
+    node_id_string = attr_value;
     str += attr_value;
     status.push_back(str);
     free(attr_value);
@@ -363,6 +372,7 @@ int process_node(
     {
     std::string str("name=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
+    node_name = attr_value;
     str += attr_value;
     status.push_back(str);
     free(attr_value);
@@ -474,9 +484,9 @@ int process_node(
 
   if (rsv_id != NULL)
     {
-    /* don't write the reservation id if we're in interactive mode */
+    /* only write the reservation id if we're in batch mode (or role was not supplied) */
     if ((role_value == NULL) ||
-        (strcmp(role_value, interactive_caps)))
+        (!strcmp(role_value, batch_caps)))
       {
       std::string str("reservation_id=");
       str += rsv_id;
@@ -486,6 +496,7 @@ int process_node(
     free(rsv_id);
 
     /* if there's a reservation on this node, the state is busy */
+    node_state = "BUSY";
     status.push_back("state=BUSY");
     
     snprintf(buf, sizeof(buf), "availmem=0kb");
@@ -497,18 +508,24 @@ int process_node(
     std::string str("state=");
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
     
+
+    /* state is down if we're not in batch mode */
     if ((role_value != NULL) &&
-        (!strcmp(role_value, interactive_caps)))
+        (strcmp(role_value, batch_caps)))
       {
+      node_state = "DOWN";
       str += "DOWN";
       status.push_back(str);
       
+
+
       snprintf(buf, sizeof(buf), "availmem=0kb");
       status.push_back(buf);
       }
     else
       {
       str += attr_value;
+      node_state = attr_value;
       status.push_back(str);
      
       snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
@@ -516,6 +533,44 @@ int process_node(
       }
 
     free(attr_value);
+    }
+
+  /* Record whenever an ALPS node is reported as entering a DOWN state */
+  if (LOGLEVEL >= 3)
+    {
+    iter = down_nodes.find(node_id_string);
+
+    /* Check to see if a node's state has changed. All nodes in a DOWN state are
+     * recorded in the down_nodes structure. We can see if the node has changed status
+     * based on whether its ID can be found in the down_nodes structure.
+     */
+    if (node_state == "DOWN")
+      {
+      if (iter == down_nodes.end())
+        {
+        down_nodes.insert(node_id_string);
+
+        snprintf(buf, sizeof(buf), "ALPS node %s (%s) is reported as being DOWN", node_name.c_str(), node_id_string.c_str());
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, buf);
+        }
+      }
+    else
+      {
+      if (iter != down_nodes.end())
+        {
+        snprintf(buf, sizeof(buf), "ALPS node %s (%s) is online again", node_name.c_str(), node_id_string.c_str());
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, buf);
+        down_nodes.erase(iter);
+        }
+      }
+
+    }
+
+  /* Verbose debug output, log every single ALPS node's state */
+  if (LOGLEVEL >= 7)
+    {
+    snprintf(buf, sizeof(buf), "ALPS node %s (%s) is reported as being %s", node_name.c_str(), node_id_string.c_str(), node_state.c_str());
+    log_record(PBSEVENT_SYSTEM, 0, __func__, buf);
     }
 
   if (role_value != NULL)
@@ -623,7 +678,13 @@ int parse_alps_output(
     return(ALPS_PARSING_ERROR);
     }
 
-  process_element(status, xmlDocGetRootElement(doc));
+  if (process_element(status, xmlDocGetRootElement(doc)) == ALPS_QUERY_FAILURE)
+    {
+  	snprintf(log_buffer, sizeof(log_buffer), "Failed to query alps");
+	  log_err(-1, __func__, log_buffer);
+  	return(ALPS_QUERY_FAILURE);
+    }
+
 
   xmlFreeDoc(doc);
   xmlMemoryDump();
@@ -657,6 +718,8 @@ int generate_alps_status(
     (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
     (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
 
+  time_t time_to_respond = time(0);
+
   if ((alps_pipe = popen(inventory_command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
@@ -681,7 +744,15 @@ int generate_alps_status(
     }
 
   /* perform post-processing */
+  time_to_respond = time(0) - time_to_respond;
+
   pclose(alps_pipe);
+
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "Query took %lu seconds to respond", time_to_respond);
+    log_event(PBSEVENT_SYSTEM | PBSEVENT_SYSLOG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+    }
 
   if ((bytes_read == -1) ||
       (total_bytes_read == 0))

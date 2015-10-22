@@ -1,10 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "attr_func.h"
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "attribute.h"
 #include "pbs_error.h"
 
 extern void im_dying();

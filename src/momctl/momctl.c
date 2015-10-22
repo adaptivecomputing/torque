@@ -56,7 +56,8 @@ enum MOMCmdEnum
   momClear,
   momQuery,
   momReconfig,
-  momShutdown
+  momShutdown,
+  momLayout
   };
 
 enum MOMCmdEnum CmdIndex = momNONE;
@@ -125,7 +126,7 @@ int main(
   char **ArgV)  /* I */
 
   {
-  const char *OptString = "c:Cd:f:h:p:q:r:sv";
+  const char *OptString = "c:Cd:f:h:lp:q:r:sv";
 
   char  HostList[65536];
 
@@ -255,6 +256,12 @@ int main(
 
         break;
 
+      case 'l':
+
+        CmdIndex = momLayout;
+
+        break;
+
       case 'p':
 
         /* port */
@@ -350,7 +357,7 @@ int main(
           }
         else
           {
-          strncpy(ConfigBuf, optarg, sizeof(ConfigBuf));
+          snprintf(ConfigBuf, sizeof(ConfigBuf), "%s", optarg);
           }
         }  /* END (case 'r') */
 
@@ -811,6 +818,29 @@ int do_mom(
 
     break;
 
+    case momLayout:
+        
+      char *value;
+
+      if (send_command(chan, RM_CMD_LAYOUT) != PBSE_NONE)
+        {
+        fprintf(stdout, "Layout command failed to send to mom\n");
+        return(-1);
+        }
+        
+      if ((value = read_mom_reply(&local_errno, chan)) == NULL)
+        {
+        fprintf(stdout, "Could not read a layout reply from the mom\n");
+        return(-1);
+        }
+      else
+        {
+        fprintf(stdout, "%s", value);
+        free(value);
+        }
+
+      break;
+
     case momQuery:
 
     default:
@@ -939,6 +969,8 @@ void MCShowUsage(
   fprintf(stderr, "            [ -f HOSTFILE ]       // FILE CONTAINING HOSTLIST\n");
 
   fprintf(stderr, "            [ -h HOST[,HOST]... ] // HOSTLIST\n");
+
+  fprintf(stderr, "            [ -l ]                // PRINT MACHINE LAYOUT (CGROUPS ONLY)\n");
 
   fprintf(stderr, "            [ -p PORT ]           // PORT\n");
 

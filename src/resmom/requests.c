@@ -162,7 +162,6 @@ int resetgpuecc(char *, int, int);
 extern unsigned int alarm_time;
 extern unsigned int default_server_port;
 extern int  exiting_tasks;
-extern tlist_head svr_alljobs;
 extern char            *msg_err_unlink;
 extern char            *path_spool;
 extern char            *path_undeliv;
@@ -256,12 +255,12 @@ static pid_t fork_to_user(
   pid_t           pid;
   job            *pjob;
 
-  struct passwd  *pwdp;
+  struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
 
   char           *idir;
 
-  char           *hdir;
+  std::string     hdir;
 
   struct stat     sb;
 
@@ -293,7 +292,9 @@ static pid_t fork_to_user(
     }
   else
     {
-    if ((pwdp = getpwnam_ext(preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    char *buf = NULL;
+
+    if ((pwdp = getpwnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
@@ -315,9 +316,10 @@ static pid_t fork_to_user(
       {
       usergid = pwdp->pw_gid;   /* default to login group */
       }
-    else if ((grpp = getgrnam(preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
+    else if ((grpp = getgrnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
       {
       usergid = grpp->gr_gid;
+      free_grname(grpp, buf);
       }
     else
       {
@@ -330,6 +332,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
+      free_pwnam(pwdp, buf);
       return(-PBSE_BADUSER);
       }
 
@@ -350,9 +353,11 @@ static pid_t fork_to_user(
       {
       hdir = pwdp->pw_dir;
       }
+
+    free_pwnam(pwdp, buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
-  if (hdir == NULL)
+  if (hdir.size() == 0)
     {
     /* FAILURE */
 
@@ -371,10 +376,10 @@ static pid_t fork_to_user(
            issues will be logged by the parent but TORQUE will only fail if the
            problems persist in the child after the setuid() call */
 
-  if (stat(hdir, &sb) != 0)
+  if (stat(hdir.c_str(), &sb) != 0)
     {
     sprintf(log_buffer, "Root cannot open home directory '%s' specified, errno=%d (%s) -- Ignore if root squashing is enabled",
-            hdir,
+            hdir.c_str(),
             errno,
             strerror(errno));
 
@@ -393,7 +398,7 @@ static pid_t fork_to_user(
   else if (!S_ISDIR(sb.st_mode))
     {
     sprintf(log_buffer, "invalid home directory '%s' specified, not a directory",
-            hdir);
+      hdir.c_str());
 
     log_err(PBSE_UNKRESC, __func__, log_buffer);
 
@@ -408,7 +413,7 @@ static pid_t fork_to_user(
     sprintf(log_buffer, "forking to user, uid: %ld  gid: %ld  homedir: '%s'",
             (long)useruid,
             (long)usergid,
-            hdir);
+            hdir.c_str());
 
     log_record(
       PBSEVENT_JOB,
@@ -418,7 +423,7 @@ static pid_t fork_to_user(
     }
 
   if (HDir != NULL)
-    strcpy(HDir, hdir);
+    strcpy(HDir, hdir.c_str());
 
   pid = fork_me(preq->rq_conn);
 
@@ -485,7 +490,7 @@ static pid_t fork_to_user(
       return(-PBSE_BADUSER);
       }
 
-    if (chdir(hdir) == -1)
+    if (chdir(hdir.c_str()) == -1)
       {
       /* cannot change directory to user home dir (or 'INITDIR' if specified) */
 
@@ -499,7 +504,7 @@ static pid_t fork_to_user(
 
     /* set some useful env variables */
 
-    rc = put_env_var("HOME", hdir);
+    rc = put_env_var("HOME", hdir.c_str());
     if (rc)
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
@@ -1122,6 +1127,7 @@ void req_deletejob(
      */
     if (TMOMJobGetStartInfo(pjob, &TJE) == SUCCESS)
       {
+      free_pwnam(static_cast<struct passwd *>(TJE->pwdp), TJE->buf);
       memset(TJE, 0, sizeof(pjobexec_t));
       }
 
@@ -2458,6 +2464,44 @@ void encode_flagged_attrs(
 
 
 
+void stat_single_job(
+
+  job           *pjob,
+  batch_request *preq,
+  batch_reply   *preply)
+
+  {
+  static int         resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
+
+  struct brp_status *pstat;
+
+  if ((am_i_mother_superior(*pjob) == true) &&
+      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
+    {
+    /* allocate reply structure and fill in header portion */
+    pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
+
+    assert(pstat != NULL);
+
+    CLEAR_LINK(pstat->brp_stlink);
+
+    pstat->brp_objtype = MGR_OBJ_JOB;
+
+    strcpy(pstat->brp_objname, pjob->ji_qs.ji_jobid);
+
+    CLEAR_HEAD(pstat->brp_attr);
+
+    append_link(&preply->brp_un.brp_status, &pstat->brp_stlink, pstat);
+
+    encode_used(pjob, resc_access_perm, NULL, &pstat->brp_attr); /* adds resources_used attr */
+    
+    /* adds other flagged attrs */
+    encode_flagged_attrs(pjob, resc_access_perm, NULL, &pstat->brp_attr);
+    }
+
+  } // END stat_single_job()
+
+
 
 /*
  * req_stat_job - return the status of one (if id is specified) or all
@@ -2477,14 +2521,10 @@ int req_stat_job(
   struct batch_request *preq)  /* I */
 
   {
-  int     all;
-  int     resc_access_perm = preq->rq_perm & ATR_DFLAG_RDACC;
   char    name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)+1];
   job    *pjob;
 
   struct batch_reply *preply = &preq->rq_reply;
-
-  struct brp_status *pstat;
 
   /*
    * first, validate the name of the requested object, either
@@ -2494,16 +2534,22 @@ int req_stat_job(
   snprintf(name, sizeof(name), "%s", preq->rq_ind.rq_status.rq_id);
   name[sizeof(name) - 1] = '\0';
 
+  preply->brp_code = PBSE_NONE;
+  preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+
+  CLEAR_HEAD(preply->brp_un.brp_status);
+
   if ((name[0] == '\0') || (name[0] == '@'))
     {
-    all = 1;
+    std::list<job *>::iterator iter;
 
-    pjob = (job *)GET_NEXT(svr_alljobs);
+    for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+      {
+      stat_single_job(*iter, preq, preply);
+      }
     }
   else
     {
-    all = 0;
-
     pjob = mom_find_job(name);
 
     if (pjob == NULL)
@@ -2517,48 +2563,14 @@ int req_stat_job(
 
       return(PBSE_UNKJOBID);
       }
-    }
-
-  preply->brp_code = PBSE_NONE;
-  preply->brp_choice = BATCH_REPLY_CHOICE_Status;
-
-  CLEAR_HEAD(preply->brp_un.brp_status);
-
-  for (;pjob;pjob = all ? (job *)GET_NEXT(pjob->ji_alljobs) : NULL)
-    {
-    if (am_i_mother_superior(*pjob) == false)
-      continue;
-
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-      continue;
-
-    /* allocate reply structure and fill in header portion */
-
-    pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
-
-    assert(pstat != NULL);
-
-    CLEAR_LINK(pstat->brp_stlink);
-
-    pstat->brp_objtype = MGR_OBJ_JOB;
-
-    strcpy(pstat->brp_objname, pjob->ji_qs.ji_jobid);
-
-    CLEAR_HEAD(pstat->brp_attr);
-
-    append_link(&preply->brp_un.brp_status, &pstat->brp_stlink, pstat);
-
-    encode_used(pjob, resc_access_perm, NULL, &pstat->brp_attr); /* adds resources_used attr */
-
-    encode_flagged_attrs(pjob, resc_access_perm, NULL, &pstat->brp_attr); /* adds other flagged attrs */
+    else
+      stat_single_job(pjob, preq, preply);
     }
 
   reply_send_mom(preq);
 
   return(PBSE_NONE);
   }  /* END req_stat_job() */
-
-
 
 
 
@@ -3234,9 +3246,28 @@ static int sys_copy(
   return(rc);
   }  /* END sys_copy() */
 
+// replace characters in a string
+//  char_from replaced with char_to
+void string_replchar(
 
+  const char *str,
+  char        char_from,
+  char        char_to)
 
+  {
+  char *p;
 
+  if (str == NULL)
+    return;
+
+  p = (char *)str;
+  while (*p)
+    {
+    if (*p == char_from)
+      *p = char_to;
+    p++;
+    }
+  }
 
 /*
  * req_cpyfile - process the Copy Files request from the server to dispose
@@ -3263,7 +3294,7 @@ PBS_BATCH_RunJob (received from sched)
                                         PBSD_rdytocmt ----> req_rdytocommit
                                         PBSD_commit ------> req_commit[3]
 
-[1] job not in svr_alljobs list (pjob == NULL)
+[1] job not in alljobs_list (pjob == NULL)
 [2] added to svr_newjobs list
 [3] deleted from svr_newjobs, added to srv_alljobs
 
@@ -3788,6 +3819,10 @@ void req_cpyfile(
 
     /* Expand and verify arg3 (destination path) */
 
+    // translate spaces so wordexp() won't split things up
+    //  on a path containing them
+    string_replchar(arg3, ' ', '\001');
+
     switch (wordexp(arg3, &arg3exp, WRDE_NOCMD | WRDE_UNDEF))
       {
 
@@ -3797,7 +3832,10 @@ void req_cpyfile(
 
         if (arg3exp.we_wordc == 1)
           {
-          strcpy(arg3, arg3exp.we_wordv[0]);
+          snprintf(arg3, MAXPATHLEN+1, "%s", arg3exp.we_wordv[0]);
+
+          // restore spaces (if any)
+          string_replchar(arg3, '\001', ' ');
 
           wordfree(&arg3exp);
 
@@ -4138,27 +4176,30 @@ void req_delfile(
   }  /* END req_delfile() */
 
 
+
 job *job_with_reservation_id(
 
   const char *rsv_id)
 
   {
   job *pjob, *nxjob;
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs); pjob != NULL; pjob = nxjob)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    pjob = *iter;
+
     if ((pjob->ji_wattr[JOB_ATR_reservation_id].at_flags & ATR_VFLAG_SET) &&
         (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
       {
       if (!strcmp(rsv_id, pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str))
-        {
-        break;
-        }
+        return(pjob);
       }
     }
-    return pjob;
-  }
+
+  return(NULL);
+  } // END job_with_reservation_id()
+
 
 
 void req_delete_reservation(

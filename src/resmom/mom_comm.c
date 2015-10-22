@@ -135,7 +135,10 @@
 #include <string>
 #include <vector>
 #include "container.hpp"
-
+#include "trq_cgroups.h"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "complete_req.hpp"
+#endif
 
 #define IM_FINISHED                 1
 #define IM_DONE                     0
@@ -152,7 +155,6 @@ extern unsigned int  pbs_rm_port;
 extern unsigned int  pbs_tm_port;
 extern tlist_head    svr_newjobs;
 extern tlist_head    mom_polljobs; /* must have resource limits polled */
-extern tlist_head    svr_alljobs; /* all jobs under MOM's control */
 extern int           termin_child;
 extern time_t        time_now;
 extern AvlTree       okclients;
@@ -167,7 +169,8 @@ container::item_container<received_node *> received_statuses; /* holds informati
 int                  updates_waiting_to_send = 0;
 extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
-extern int         use_nvidia_gpu;
+extern int           use_nvidia_gpu;
+extern int           internal_state;
 
 const char *PMOMCommand[] =
   {
@@ -205,6 +208,7 @@ fd_set readset;
 
 /* external functions */
 
+void                      check_state(int force);
 extern struct radix_buf **allocate_sister_list(int radix);
 extern int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
 extern void free_sisterlist(struct radix_buf **list, int radix);
@@ -1930,10 +1934,7 @@ int contact_sisters(
 
   /* We have to put this job into the proper queues. These queues are filled
 	 in req_quejob and req_commit on Mother Superior for non-job_radix jobs */
-  append_link(&svr_newjobs, &pjob->ji_alljobs, pjob); /* from req_quejob */
-
-  delete_link(&pjob->ji_alljobs); /* from req_commit */
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob); /* from req_commit */
+  alljobs_list.push_back(pjob);
 
   /* initialize the nodes for every sister in this job
      only the first mom_radix+1 entries will be used
@@ -2516,7 +2517,35 @@ int im_join_job_as_sister(
    * pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
    **/
 
-  if (check_pwd(pjob) == NULL)
+  // Run a health check if a jobstart health check script is defined
+  if (PBSNodeCheckProlog)
+    {
+    check_state(1);
+
+    if (internal_state & INUSE_DOWN)
+      {
+      sprintf(log_buffer, "Not starting job %s because my health check script reported an error",
+        pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
+
+      send_im_error(PBSE_BADMOMSTATE, 1, pjob, cookie, event, fromtask);
+
+      mom_job_purge(pjob);
+
+      if (radix_hosts != NULL)
+        free(radix_hosts);
+
+      if (radix_ports != NULL)
+        free(radix_ports);
+
+      return(IM_DONE);
+      }
+    }
+
+  bool good;
+
+  good = check_pwd(pjob);
+  if (good == false)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -2583,6 +2612,14 @@ int im_join_job_as_sister(
   
 #endif  /* ndef NUMA_SUPPORT */
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    }
+#endif
     
   ret = run_prologue_scripts(pjob);
   if (ret != PBSE_NONE)
@@ -2701,7 +2738,7 @@ int im_join_job_as_sister(
   if (mom_do_poll(pjob))
     append_link(&mom_polljobs, &pjob->ji_jobque, pjob);
   
-  append_link(&svr_alljobs, &pjob->ji_alljobs, pjob);
+  alljobs_list.push_back(pjob);
   
   /* establish a connection and write the reply back */
   if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
@@ -2760,6 +2797,8 @@ void im_kill_job_as_sister(
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   
   pjob->ji_obit = event;
+
+  mom_set_use(pjob);
   
   if (multi_mom)
     {
@@ -4033,6 +4072,48 @@ int handle_im_kill_job_response(
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
       }
     }  /* END if (pjob_ji_resources != NULL) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  int task_count;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    task_count = disrsi(chan, &ret);
+    if (ret == DIS_SUCCESS)
+      {
+
+      if (task_count > 0)
+        {
+        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+        for (int task_i = 0; task_i < task_count; task_i++)
+          {
+          int req_index;
+          int task_index;
+          unsigned long cput_used;
+          unsigned long long mem_used;
+
+          req_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            task_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            cput_used = disrul(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            mem_used = disrul(chan, &ret);
+          if (ret != DIS_SUCCESS)
+            {
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            break;
+            }
+
+          cr->set_task_usage_stats(req_index, task_index, cput_used, mem_used);
+          }
+        }
+      }
+    }
+
+#endif
   
   np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
                                        set in send_sisters() */
@@ -5421,6 +5502,49 @@ int handle_im_kill_job_radix_response(
     u_long joules  = disrul(chan, &ret);
   */
 
+#ifdef PENABLE_LINUX_CGROUPS
+  int task_count;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    task_count = disrsi(chan, &ret);
+    if (ret == DIS_SUCCESS)
+      {
+
+      if (task_count > 0)
+        {
+        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+        for (int task_i = 0; task_i < task_count; task_i++)
+          {
+          int req_index;
+          int task_index;
+          unsigned long cput_used;
+          unsigned long long mem_used;
+
+          req_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            task_index = disrsi(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            cput_used = disrul(chan, &ret);
+          if (ret == DIS_SUCCESS)
+            mem_used = disrul(chan, &ret);
+          if (ret != DIS_SUCCESS)
+            {
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+            break;
+            }
+
+          cr->set_task_usage_stats(req_index, task_index, cput_used, mem_used);
+          }
+        }
+      }
+    }
+
+#endif
+ 
+
   if (ret != DIS_SUCCESS)
     {
     close_conn(chan->sock, FALSE);
@@ -5615,7 +5739,6 @@ void im_request(
   unsigned int         momport = 0;
   char                 log_buffer[LOCAL_LOG_BUF_SIZE+1];
 
-  struct passwd       *check_pwd();
   
   u_long gettime(resource *);
   u_long getsize(resource *);
@@ -5919,6 +6042,12 @@ void im_request(
     /* all of these are requests for a sister until we get to IM_ALL_OK */
     case IM_KILL_JOB:
       {
+      // Run a health check if a jobend health check script is allowed
+      if (PBSNodeCheckEpilog)
+        {
+        check_state(1);
+        }
+
       if (connection_from_ms(chan, pjob, pSockAddr) == TRUE)
         {
         im_kill_job_as_sister(pjob,event,momport,FALSE);
@@ -6154,11 +6283,12 @@ void tm_eof(
   /*
   ** Search though all the jobs looking for this fd.
   */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-    pjob != NULL;
-    pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
+
     for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
       ptask != NULL;
       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
@@ -7878,11 +8008,11 @@ static int adoptSession(
   /* extern  time_t time_resc_updated; */
 
   /* Find the job that has this job/alt id */
+  std::list<job *>::iterator iter;
 
-  for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
-       pjob = (job *)GET_NEXT(pjob->ji_alljobs))
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
+    pjob = *iter;
 
     if (command == TM_ADOPT_JOBID)
       {
@@ -8809,12 +8939,12 @@ int read_status_strings(
     return DIS_INVALID;
     }
   /* was mom_port but storage unnecessary */ 
-  disrsi(chan,&rc);
+  (void)disrsi(chan,&rc);
 
   if (rc == DIS_SUCCESS)
     {
     /* was rm_port but no longer needed to be stored */   
-    disrsi(chan,&rc);
+    (void)disrsi(chan,&rc);
     }
 
   if (rc != DIS_SUCCESS)

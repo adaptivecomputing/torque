@@ -325,7 +325,8 @@ int set_resc(
   resource *oldresc;
   int   rc;
 
-  assert(old && new_attr);
+  if (old == NULL || new_attr == NULL)
+    return(PBSE_BAD_PARAMETER);
 
   newresc = (resource *)GET_NEXT(new_attr->at_val.at_list);
 

@@ -19,9 +19,8 @@ execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker& est
 
 
 
-execution_slot_tracker::execution_slot_tracker()
+execution_slot_tracker::execution_slot_tracker() : open_count(0)
   {
-  this->open_count = 0;
   } /* END default contructor */
 
 

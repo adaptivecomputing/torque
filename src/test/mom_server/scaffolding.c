@@ -20,10 +20,13 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "pbs_config.h"
 #include "container.hpp"
+#include "machine.hpp"
 #include "dis.h"
+#include "mom_func.h"
 
 #define MAXLINE 1024
 
+std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;
 char *apbasil_path = NULL;
@@ -78,10 +81,11 @@ nodeboard node_boards[MAX_NODE_BOARDS];
 int       numa_index;
 #endif
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#ifdef PENABLE_LINUX_CGROUPS
 int              memory_pressure_threshold = 0; /* 0: off, >0: check and kill */
 short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              MOMConfigUseSMT           = 1; /* 0: off, 1: on */
+Machine this_node;
 //hwloc_topology_t topology;
 #endif
 
@@ -243,9 +247,14 @@ int rpp_close(int index)
   exit(1);
   }
 
+int close(int fd)
+  {
+  return(0);
+  }
+
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
-  return 0;
+  return 100;
   }
 
 char *size_fs(char *param)
@@ -412,6 +421,34 @@ int pbs_getaddrinfo(
   return(0);
   }
 
+Machine::Machine()
+  {
+  }
+
+Machine::~Machine()
+  {
+  }
+
+void Machine::displayAsJson(std::stringstream &out, bool jobs) const {}
+
+Socket::Socket()
+  {
+  }
+
+Socket::~Socket()
+  {
+  }
+
+Chip::Chip(){}
+Chip::~Chip(){}
+
+Core::Core(){}
+Core::~Core(){}
+
+PCI_Device::PCI_Device(){}
+PCI_Device::~PCI_Device(){}
+
+
 time_t get_stat_update_interval()
 
   {
@@ -427,3 +464,4 @@ bool overwrite_cache(
   {
   return(true);
   }
+

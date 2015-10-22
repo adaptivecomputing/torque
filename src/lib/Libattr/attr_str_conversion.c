@@ -84,6 +84,7 @@
 #include "server.h"
 #include "utils.h"
 #include "resource.h"
+#include "attr_req_info.hpp"
 
 
 /*
@@ -92,6 +93,7 @@
  * @param xml - to be appended to str
  * @param str - the string object that will be appended with xml
  */
+
 void appendEscapedXML(
     
   const char *xml,
@@ -123,6 +125,8 @@ void appendEscapedXML(
       }
     }
   }
+
+
 
 int size_to_str(
 
@@ -169,7 +173,7 @@ int size_to_str(
       strcat(out,"pb");
     }
 
-  return(0);
+  return(PBSE_NONE);
   } /* END size_to_str */
 
 
@@ -340,6 +344,44 @@ int attr_to_str(
         current = (resource *)GET_NEXT(current->rs_link);
         ds += "\n";
         }
+      }
+
+      break;
+
+    case ATR_TYPE_ATTR_REQ_INFO:
+      {
+      std::vector<std::string> names, values;
+      attr_req_info *cr = (attr_req_info *)attr.at_val.at_ptr;
+
+      if (cr == NULL)
+        break;
+
+      if (!strcmp(ATTR_req_infomin, at_def->at_name))
+        cr->get_min_values(names, values);
+      else if (!strcmp(ATTR_req_infomax, at_def->at_name))
+        cr->get_max_values(names, values);
+      else if (!strcmp(ATTR_req_infodefault, at_def->at_name))
+        cr->get_default_values(names, values);
+      else
+        {
+        /* something's not right */
+        return(PBSE_BAD_PARAMETER);
+        }
+
+      for (unsigned int it = 0; it < names.size(); it++)
+        {
+        ds += "\n\t\t<";
+        ds += names[it].c_str();
+        ds += ">";
+
+        ds += values[it].c_str();
+
+        ds += "</";
+        ds += names[it].c_str();
+        ds += ">";
+        }
+      ds += "\n";
+
       }
 
       break;
@@ -535,6 +577,47 @@ int str_to_attr(
 
       }
 
+      break;
+
+    case ATR_TYPE_ATTR_REQ_INFO:
+      {
+      char *resc_parent;
+      char *resc_child;
+      char *resc_ptr = val;
+
+      int   len = strlen(resc_ptr);
+      int   rc;
+      int   errFlg = 0;
+
+      while (resc_ptr - val < len)
+        {
+        if (get_parent_and_child(resc_ptr,&resc_parent,&resc_child,
+              &resc_ptr))
+          {
+          errFlg = TRUE;
+
+          break;
+          }
+        
+        if ((rc = decode_attr_req_info(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS)))
+          {
+          snprintf(log_buf,sizeof(log_buf),
+            "Error decoding resource %s, %s = %s\n",
+            name,
+            resc_parent,
+            resc_child);
+          
+          errFlg = TRUE;
+
+          log_err(rc, __func__, log_buf);
+          }
+        }
+
+      if (errFlg == TRUE)
+        return(-1);
+
+
+      }
       break;
 
     /* NYI */

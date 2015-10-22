@@ -4,6 +4,7 @@
 
 #include "attribute.h" /* pbs_attribute, batch_op */
 #include "list_link.h" /* tlist_head */
+#include "pbs_error.h"
 
 
 int set_arst(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op)
@@ -362,3 +363,43 @@ int comp_ll(
   return(0);
   }
 
+int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op)
+  {
+  return(PBSE_NONE);
+  }
+
+void free_complete_req( pbs_attribute *patr)
+  {
+  return;
+  }
+
+int encode_complete_req(
+    pbs_attribute *attr, 
+    tlist_head    *phead, 
+    const char    *atname,
+    const char    *rsname,
+    int            mode,
+    int            perm)
+  {
+  return(PBSE_NONE);
+  }
+
+int comp_complete_req(
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
+  {
+  return(0);
+  }
+
+int  decode_complete_req(
+ 
+  pbs_attribute *patr,
+  const char    *name,
+  const char    *rescn,
+  const char    *val,
+  int            perm)
+  
+  {
+  return(PBSE_NONE);
+  }

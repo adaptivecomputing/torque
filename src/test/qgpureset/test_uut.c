@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qgpureset.h"
 #include "test_qgpureset.h"
 #include <stdlib.h>
 #include <stdio.h>

@@ -149,6 +149,7 @@ int daemonize_trqauthd(const char *server_ip, const char *server_port, void *(*p
   char  error_buf[MAX_BUF];
   char msg_trqauthddown[MAX_BUF];
   char unix_socket_name[MAXPATHLEN + 1];
+  const char *path_home = PBS_SERVER_HOME;
 
   umask(022);
 
@@ -161,6 +162,16 @@ int daemonize_trqauthd(const char *server_ip, const char *server_port, void *(*p
                      "setgroups(group = %lu) failed: %s\n",
                      (unsigned long)gid, strerror(errno));
     fprintf(stderr, "%s\n", error_buf);
+    return(1);
+    }
+
+  /* change working directory to PBS_SERVER_HOME */
+  if (chdir(path_home) == -1)
+    {
+    sprintf(error_buf, "unable to change to directory %s", path_home);
+
+    log_err(-1, __func__, error_buf);
+
     return(1);
     }
 

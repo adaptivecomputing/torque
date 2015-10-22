@@ -1,5 +1,4 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "qalter.h"
 #include "test_qalter.h"
 #include <stdlib.h>
 #include <stdio.h>

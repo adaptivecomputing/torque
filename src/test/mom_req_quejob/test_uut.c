@@ -1,11 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "mom_req_quejob.h"
-#include "test_mom_req_quejob.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "batch_request.h"
 #include "pbs_error.h"
+#include "test_mom_req_quejob.h"
 
 void mom_req_quejob(batch_request *preq);
 
