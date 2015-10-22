@@ -145,8 +145,8 @@ int completed_jobs_map_class::cleanup_completed_jobs(
 
   // clean up any jobs that are beyond their adjusted completion time
   for (std::map<std::string,time_t>::iterator it = completed_jobs_map.begin();
-    it != completed_jobs_map.end();
-    ++it)
+       it != completed_jobs_map.end();
+       ++it)
     {
     // if cleanup time is before/at now, then clean up
     if (it->second <= now)

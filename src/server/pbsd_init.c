@@ -2487,7 +2487,12 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
+  rc = svr_enquejob(pjob, TRUE, NULL, false);
+
+  // Since we aren't aborting jobs that receive PBSD_BADDEPEND, 
+  // we need to set them up properly, inside this if statement.
+  if ((rc == PBSE_NONE) ||
+      (rc == PBSE_BADDEPEND))
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,
@@ -2515,12 +2520,13 @@ int pbsd_init_reque(
       {
       set_statechar(pjob);
       }
+
+    rc = PBSE_NONE;
     }
   else
     {
     /* Oops, this should never happen */
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       {
       snprintf(log_buf, sizeof(log_buf), "%s; job %s queue %s",
         msg_err_noqueue,
@@ -2532,8 +2538,7 @@ int pbsd_init_reque(
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       job_abt(&pjob, log_buf);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
