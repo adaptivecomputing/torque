@@ -2398,6 +2398,8 @@ void on_job_rerun(
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
+          job_id = strdup(pjob->ji_qs.ji_jobid); 
+          job_mutex.unlock();
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* FAILURE */
@@ -2415,7 +2417,22 @@ void on_job_rerun(
             
             /* we will "fall" into the post reply side */
             }
-    
+
+          pjob = svr_find_job(job_id, TRUE);
+
+          if (pjob == NULL)
+            {
+            snprintf(log_buf, sizeof(log_buf), "Job %s removed during call to issue_Drequest", job_id );
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+  
+            free(job_id);
+            return;
+            }
+
+          job_mutex.mark_as_locked();
+
+          free(job_id);
+ 
           /* here we have a reply (maybe faked) from MOM about the copy */
           if (preq->rq_reply.brp_code != 0)
             {
@@ -2489,7 +2506,9 @@ void on_job_rerun(
           preq->rq_type = PBS_BATCH_DelFiles;
 
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
+          job_id = strdup(pjob->ji_qs.ji_jobid); 
 
+          job_mutex.unlock();
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* error on sending request */          
@@ -2498,6 +2517,21 @@ void on_job_rerun(
             preq->rq_reply.brp_code = 1;
             /* we will "fall" into the post reply side */
             }
+
+          pjob = svr_find_job(job_id, TRUE);
+
+          if (pjob == NULL)
+            {
+            snprintf(log_buf, sizeof(log_buf), "Job %s removed during call to issue_Drequest", job_id );
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+  
+            free(job_id);
+            return;
+            }
+
+          job_mutex.mark_as_locked();
+
+          free(job_id);
       
           /* post reply side for delete file request to MOM */
           if (preq->rq_reply.brp_code != 0)
