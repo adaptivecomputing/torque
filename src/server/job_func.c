@@ -2461,12 +2461,21 @@ int split_job(
 
 bool job_id_exists(
 
-  const std::string job_id_string)
+  const  std::string job_id_string,
+  int   *rcode)
 
   {
+  int ret;
   bool rc = false;
 
-  alljobs.lock();
+  ret = alljobs.trylock();
+  if (ret != 0)
+    {
+    *rcode = ret;
+    return(false);
+    }
+
+  *rcode = ret;
 
   if (alljobs.find(job_id_string) != NULL)
     {
