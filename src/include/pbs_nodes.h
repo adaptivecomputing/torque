@@ -99,6 +99,9 @@
 #include "container.hpp"
 #include "job_usage_info.hpp"
 #include "attribute.h"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#endif
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -360,6 +363,10 @@ public:
                                                        doing the unlock intends to lock it again
                                                        so we need a flag here to prevent a node from being
                                                        deleted while it is temporarily locked. */
+  /* numa hardware configuration information */
+#ifdef PENABLE_LINUX_CGROUPS
+  Machine *nd_layout;
+#endif
 
 
   pbsnode();
@@ -382,6 +389,7 @@ public:
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
   };
+
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
 typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
@@ -572,6 +580,16 @@ enum nodeattr
   ND_ATR_ttl,
   ND_ATR_acl,
   ND_ATR_requestid,
+#ifdef PENABLE_LINUX_CGROUPS
+  ND_ATR_total_sockets,
+  ND_ATR_total_numa_nodes,
+  ND_ATR_total_cores,
+  ND_ATR_total_threads,
+  ND_ATR_dedicated_sockets,
+  ND_ATR_dedicated_numa_nodes,
+  ND_ATR_dedicated_cores,
+  ND_ATR_dedicated_threads,
+#endif
   ND_ATR_LAST
   }; /* WARNING: Must be the highest valued enum */
 
@@ -631,6 +649,8 @@ extern void      delete_a_subnode(struct pbsnode *pnode);
 void             effective_node_delete(pbsnode **);
 void             free_prop_list(struct prop*);
 
+void             reinitialize_node_iterator(node_iterator *);
+
 #ifdef BATCH_REQUEST_H 
 void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             setup_notification(char *);
@@ -646,7 +666,6 @@ int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrat
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
-void             reinitialize_node_iterator(node_iterator *);
 
 #endif /* BATCH_REQUEST_H */
 

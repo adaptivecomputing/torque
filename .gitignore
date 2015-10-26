@@ -12,6 +12,9 @@ test_uut
 .dirstamp
 .libs
 *.m4
+*.log
+*.trs
+*.tmp
 .settings
 *.trs
 *.log
@@ -153,6 +156,7 @@ src/cmds/test/qstart/test_qstart
 src/cmds/test/qstat/test_qstat
 src/cmds/test/qstop/test_qstop
 src/cmds/test/qsub_functions/build_test_files.sh
+src/cmds/test/qsub_functions/test_x11_get_proto
 src/cmds/test/qsub_functions/test_qsub_functions
 src/cmds/test/qterm/test_qterm
 src/daemon_client/test/trq_auth_daemon/test_trq_auth_daemon
@@ -161,11 +165,13 @@ src/lib/Libattr/test/attr_fn_acl/test_attr_fn_acl
 src/lib/Libattr/test/attr_fn_arst/test_attr_fn_arst
 src/lib/Libattr/test/attr_fn_b/test_attr_fn_b
 src/lib/Libattr/test/attr_fn_c/test_attr_fn_c
+src/lib/Libattr/test/attr_fn_complete_req/test_attr_fn_complete_req
 src/lib/Libattr/test/attr_fn_hold/test_attr_fn_hold
 src/lib/Libattr/test/attr_fn_intr/test_attr_fn_intr
 src/lib/Libattr/test/attr_fn_l/test_attr_fn_l
 src/lib/Libattr/test/attr_fn_ll/test_attr_fn_ll
 src/lib/Libattr/test/attr_fn_resc/test_attr_fn_resc
+src/lib/Libattr/test/attr_fn_attr_req_info/test_attr_fn_attr_req_info
 src/lib/Libattr/test/attr_fn_size/test_attr_fn_size
 src/lib/Libattr/test/attr_fn_str/test_attr_fn_str
 src/lib/Libattr/test/attr_fn_time/test_attr_fn_time
@@ -175,6 +181,8 @@ src/lib/Libattr/test/attr_fn_unkn/test_attr_fn_unkn
 src/lib/Libattr/test/attr_func/test_attr_func
 src/lib/Libattr/test/attr_func/test_uut
 src/lib/Libattr/test/attr_node_func/test_attr_node_func
+src/lib/Libattr/test/req/test_req
+src/lib/Libattr/test/complete_req/test_complete_req
 src/lib/Libcmds/test/add_verify_resources/test_add_verify_resources
 src/lib/Libcmds/test/ck_job_name/test_ck_job_name
 src/lib/Libcmds/test/cnt2server/test_cnt2server
@@ -369,6 +377,7 @@ src/resmom/linux/test/node_internals/test_node_internals
 src/resmom/linux/test/mom_mach/test_mom_mach
 src/resmom/linux/test/mom_start/test_mom_start
 src/resmom/linux/test/pe_input/test_pe_input
+src/resmom/test/allocation/test_allocation
 src/resmom/test/alps_reservations/test_alps_reservations
 src/resmom/test/catch_child/1.sysname.ac.JB
 src/resmom/test/catch_child/2.sysname.ac.JB
@@ -386,6 +395,7 @@ src/resmom/test/catch_child/test_scan_for_exiting
 src/resmom/test/checkpoint/test_checkpoint
 src/resmom/test/cray_energy/test_cray_energy
 src/resmom/test/generate_alps_status/test_generate_alps_status
+src/resmom/test/machine/test_machine
 src/resmom/test/mom_comm/test_mom_comm
 src/resmom/test/mom_inter/test_mom_inter
 src/resmom/test/mom_job_func/test_mom_job_func
@@ -394,12 +404,17 @@ src/resmom/test/mom_main/bob
 src/resmom/test/mom_process_request/test_mom_process_request
 src/resmom/test/mom_req_quejob/test_mom_req_quejob
 src/resmom/test/mom_server/test_mom_server
+src/resmom/test/numa_chip/test_numa_chip
+src/resmom/test/numa_core/test_numa_core
+src/resmom/test/numa_socket/test_numa_socket
+src/resmom/test/numa_pci_device/test_numa_pci_device
 src/resmom/test/parse_config/test_parse_config
 src/resmom/test/pbs_demux/test_pbs_demux
 src/resmom/test/prolog/test_prolog
 src/resmom/test/release_reservation/test_release_reservation
 src/resmom/test/requests/test_requests
 src/resmom/test/start_exec/test_start_exec
+src/resmom/test/trq_cgroups/test_trq_cgroups
 src/resmom/test/tmsock_recov/test_tmsock_recov
 src/server/test/accounting/test_accounting
 src/test/array_func/test_array_func

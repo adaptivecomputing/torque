@@ -267,6 +267,16 @@ int mgr_modify_node(
         case ND_ATR_gpustatus:
         case ND_ATR_mics:
         case ND_ATR_micstatus:
+#ifdef PENABLE_LINUX_CGROUPS
+        case ND_ATR_total_sockets:
+        case ND_ATR_total_numa_nodes:
+        case ND_ATR_total_cores:
+        case ND_ATR_total_threads:
+        case ND_ATR_dedicated_sockets:
+        case ND_ATR_dedicated_numa_nodes:
+        case ND_ATR_dedicated_cores:
+        case ND_ATR_dedicated_threads:
+#endif
         default:
           rc = PBSE_IVALREQ;
           break;

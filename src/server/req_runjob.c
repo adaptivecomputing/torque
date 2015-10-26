@@ -118,6 +118,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
+#include "complete_req.hpp"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>

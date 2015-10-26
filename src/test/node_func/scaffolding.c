@@ -20,6 +20,8 @@
 #include "id_map.hpp"
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
+#include "machine.hpp"
+
 
 std::string attrname;
 std::string attrval;
@@ -285,8 +287,7 @@ job *get_job_from_jobinfo(
 
 int insert_addr_name_info(
     struct addrinfo *,
-    const char *
-)
+    const char *)
 
   {
   return(0);
@@ -456,11 +457,77 @@ struct batch_request *alloc_br(
   return(req);
   } /* END alloc_br() */
 
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+
+
 void free_br(struct batch_request *preq)
   {
   return;
   }
 
 void mom_hierarchy_handler::reloadHierarchy()
-{
-}
+  {
+  }
+
+int Machine::getDedicatedSockets() const
+  {
+  return(0);
+  }
+
+int Machine::getTotalThreads() const
+  {
+  return(0);
+  }
+
+int Machine::getDedicatedChips() const
+  {
+  return(0);
+  }
+
+int Machine::getTotalCores() const
+  {
+  return(0);
+  }
+
+int Machine::getDedicatedCores() const
+  {
+  return(0);
+  }
+
+int Machine::getDedicatedThreads() const
+  {
+  return(0);
+  }
+
+int Machine::getTotalSockets() const
+  {
+  return(0);
+  }
+
+int Machine::getTotalChips() const
+  {
+  return(0);
+  }
+

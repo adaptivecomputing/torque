@@ -133,6 +133,9 @@
 #include "mutex_mgr.hpp"
 #include "timer.hpp"
 #include "id_map.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
+#include "complete_req.hpp"
+#endif
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -166,6 +169,7 @@ extern int              ctnodes(char *);
 
 extern char            *path_home;
 extern char            *path_nodes;
+extern char            *path_node_usage;
 extern char            *path_nodes_new;
 extern char            *path_nodestate;
 extern char            *path_nodepowerstate;
@@ -2377,16 +2381,18 @@ int save_node_for_adding(
     old_next = cur_naji->next;
     while (old_next != NULL)
       {
-      if (to_add->req_rank <= old_next->req_rank)
+      if (to_add->req_rank < old_next->req_rank)
         {
         cur_naji->next = to_add;
         to_add->next = old_next;
         to_add = NULL;
         break;
         }
+
       cur_naji = old_next;
       old_next = cur_naji->next;
       }
+
     if (to_add != NULL)
       {
       cur_naji->next = to_add;
@@ -2778,9 +2784,9 @@ void record_fitting_node(
     {
     if ((job_type == JOB_TYPE_heterogeneous) &&
         (node_is_external(pnode) == TRUE))
-      save_node_for_adding(naji, pnode, req, first_node_id, TRUE, i+1);
+      save_node_for_adding(naji, pnode, req, first_node_id, TRUE, req->req_id);
     else
-      save_node_for_adding(naji, pnode, req, first_node_id, FALSE, i+1);
+      save_node_for_adding(naji, pnode, req, first_node_id, FALSE, req->req_id);
 
     if ((num_alps_reqs > 0) &&
         (ard_array != NULL) &&
@@ -2968,7 +2974,11 @@ bool process_as_node_list(
 
   std::string nodes(spec);
   std::size_t pos = nodes.find("+");
+  std::size_t bar_pos = nodes.find("|");
   std::string second_node;
+
+  if (bar_pos < pos)
+    pos = bar_pos;
 
   if (pos != std::string::npos)
     {
@@ -3223,7 +3233,7 @@ int node_spec(
 #ifndef CRAY_MOAB_PASSTHRU
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
-  if(alps_reporter != NULL)
+  if (alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->lock();
     }
@@ -4020,6 +4030,159 @@ int place_mics_in_hostlist(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * save_cpus_and_memory_cpusets()
+ *
+ * Adds the cpus and mems to the job's list
+ */
+
+void save_cpus_and_memory_cpusets(
+
+  job         *pjob,
+  const char  *node_name,
+  std::string &cpus,
+  std::string &mems)
+
+  {
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+    formatted += ":" + cpus;
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
+    all_cpus += "+";
+    all_cpus += node_name;
+    all_cpus += ":" + cpus;
+    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
+    }
+  
+  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+    formatted += ":" + mems;
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
+    all_mems += "+";
+    all_mems += node_name;
+    all_mems += ":" + mems;
+    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
+    }
+
+  } // END save_cpus_and_memory_cpusets()
+
+
+
+/*
+ * save_node_usage()
+ *
+ * Saves this node's usage in a file with the path path_node_usage/node_name
+ *
+ * @param pnode - the node whose usage state should be saved
+ */
+
+void save_node_usage(
+
+  pbsnode *pnode)
+
+  {
+  std::stringstream  node_state;
+  std::string        path(path_node_usage);
+  std::string        tmp_path;
+  FILE              *f = NULL;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
+
+  path += "/";
+  path += pnode->nd_name;
+  tmp_path = path + ".tmp";
+
+  pnode->nd_layout->displayAsJson(node_state, true);
+
+  if ((f = fopen(tmp_path.c_str(), "w+")) != NULL)
+    {
+    fprintf(f, "%s", node_state.str().c_str());
+    fclose(f);
+    
+    unlink(path.c_str());
+
+    if (link(tmp_path.c_str(), path.c_str()) == -1)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Couldn't replace %s with new file %s in trying to save %s's state",
+        path.c_str(), tmp_path.c_str(), pnode->nd_name);
+      log_err(errno, __func__, log_buf);
+      }
+    else
+      {
+      // Delete the temporary file on success
+      unlink(tmp_path.c_str());
+      }
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Couldn't create new file to save %s's node state",
+      pnode->nd_name);
+    log_err(errno, __func__, log_buf);
+    }
+  } // END save_node_usage()
+
+
+
+void update_req_hostlist(
+    
+  job        *pjob,
+  const char *host_name,
+  int         req_index,
+  int         ppn_needed)
+
+  {
+  long cray_enabled = FALSE;
+  complete_req *cr;
+  char          host_spec[MAXLINE];
+ 
+  snprintf(host_spec, sizeof(host_spec), "%s:ppn=%d", host_name, ppn_needed);
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+    {
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    }
+  else
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+  
+  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+
+  if (cray_enabled == TRUE)
+    {
+    // In cray enabled mode, only create this information for the login node
+    // which will have req_index 0.
+    if (req_index == 0)
+      {
+      cr->update_hostlist(host_spec, req_index);
+      }
+    }
+  else
+    {
+    cr->update_hostlist(host_spec, req_index);
+    }
+
+  } // END update_req_hostlist()
+#endif
+
+
 
 /*
  * checks the subnodes of pnode and places them in the host list
@@ -4056,9 +4219,6 @@ int place_subnodes_in_hostlist(
   if (pnode->nd_slots.reserve_execution_slots(naji->ppn_needed, node_info.est) == PBSE_NONE)
     {
     /* SUCCESS */
-    pnode->nd_np_to_be_used -= naji->ppn_needed;
-    naji->ppn_needed = 0;
-
     node_info.port = pnode->nd_mom_rm_port;
     
     job_usage_info jui(pjob->ji_internal_id);
@@ -4076,6 +4236,27 @@ int place_subnodes_in_hostlist(
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
         (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
+
+#ifdef PENABLE_LINUX_CGROUPS
+    std::string       cpus;
+    std::string       mems;
+
+    // We shouldn't be starting a job if the layout hasn't been set up yet.
+    if (pnode->nd_layout == NULL)
+      return(-1);
+
+    update_req_hostlist(pjob, pnode->nd_name, naji->req_rank, naji->ppn_needed);
+
+    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
+    if (rc != PBSE_NONE)
+      return(rc);
+
+    save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
+    save_node_usage(pnode);
+#endif
+
+    pnode->nd_np_to_be_used -= naji->ppn_needed;
+    naji->ppn_needed = 0;
     }
   else
     {
@@ -4411,8 +4592,11 @@ int build_hostlist_nodes_req(
         }
       else
         {
+        int rc = PBSE_NONE;
+
         job_reservation_info host_single;
-        if (place_subnodes_in_hostlist(pjob, pnode, current, host_single, ProcBMStr) == PBSE_NONE)
+        rc = place_subnodes_in_hostlist(pjob, pnode, current, host_single, ProcBMStr);
+        if (rc == PBSE_NONE)
           {
           host_info.push_back(host_single);
           place_gpus_in_hostlist(pnode, pjob, current, gpu_list);
@@ -4436,6 +4620,10 @@ int build_hostlist_nodes_req(
           pnode->nd_np_to_be_used    -= current->ppn_needed;
           pnode->nd_ngpus_to_be_used -= current->gpu_needed;
           pnode->nd_nmics_to_be_used -= current->mic_needed;
+
+#ifdef PENABLE_LINUX_CGROUPS
+          remove_job_from_node(pnode, pjob->ji_internal_id);
+#endif
           }
         }
 
@@ -4659,7 +4847,7 @@ int set_nodes(
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
   bool job_is_exclusive = false;
-  if(pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
     job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
   /* allocate nodes */
@@ -5383,6 +5571,14 @@ int remove_job_from_node(
       i--; /* the array has shrunk by 1 so we need to reduce i by one */
       }
     }
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pnode->nd_layout != NULL)
+    {
+    pnode->nd_layout->free_job_allocation(job_mapper.get_name(internal_job_id));
+    save_node_usage(pnode);
+    }
+#endif
   
   return(PBSE_NONE);
   } /* END remove_job_from_node() */
@@ -5446,6 +5642,35 @@ void free_nodes(
     }
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED))
+      {
+      cr->clear_allocations();
+      }
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags &= ~ATR_VFLAG_SET;
+    }
+
+  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = NULL;
+    pjob->ji_wattr[JOB_ATR_memset_string].at_flags &= ~ATR_VFLAG_SET;
+    }
+#endif
 
   return;
   }  /* END free_nodes() */
@@ -5590,8 +5815,6 @@ int set_one_old(
 
   return(rc);
   }  /* END set_one_old() */
-
-
 
 
 

@@ -369,7 +369,106 @@ attribute_def node_attr_def[] =
     MGR_ONLY_SET,
     ATR_TYPE_STR,
     PARENT_TYPE_NODE,
+#ifndef PENABLE_LINUX_CGROUPS
+  }
+#else
   },
-
+	/* ND_ATR_total_sockets */
+	{ (char *)ATTR_NODE_total_sockets,  /* "total_sockets" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_numa_nodes */
+	{ (char *)ATTR_NODE_total_numa_nodes,  /* "total_numa_nodes" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_cores */
+	{ (char *)ATTR_NODE_total_cores,  /* "total_cores" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_total_threads */
+	{ (char *)ATTR_NODE_total_threads,  /* "total_threads" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_dedicated_sockets */
+	{ (char *)ATTR_NODE_dedicated_sockets,  /* "dedicated_sockets" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_dedicated_numa_nodes */
+	{ (char *)ATTR_NODE_dedicated_numa_nodes,  /* "dedicated_numa_nodes" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+    NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_dedicated_cores */
+	{ (char *)ATTR_NODE_dedicated_cores,  /* "dedicated_cores" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+		NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	},
+ 	/* ND_ATR_dedicated_threads */
+	{ (char *)ATTR_NODE_dedicated_threads,  /* "dedicated_threads" */
+	  decode_l,
+	  encode_l,
+	  set_l,
+	  comp_null,
+	  free_null,
+		NULL_FUNC,
+	  NO_USER_SET,
+	  ATR_TYPE_LONG,
+	  PARENT_TYPE_NODE,
+	}
+#endif
 
   };

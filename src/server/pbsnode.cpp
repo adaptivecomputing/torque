@@ -33,6 +33,9 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      max_subnode_nppn(0), nd_power_state(0),
                      nd_power_state_change_time(0), nd_acl(NULL),
                      nd_requestid(), nd_tmp_unlock_count(0)
+#ifdef PENABLE_LINUX_CGROUPS
+                     , nd_layout(NULL)
+#endif
 
   {
   if (hierarchy_handler.isHiearchyLoaded())
@@ -79,6 +82,9 @@ pbsnode::pbsnode(
                                      max_subnode_nppn(0), nd_power_state(0),
                                      nd_power_state_change_time(0), nd_acl(NULL),
                                      nd_requestid(), nd_tmp_unlock_count(0)
+#ifdef PENABLE_LINUX_CGROUPS
+                                     , nd_layout(NULL)
+#endif
 
   {
   struct addrinfo *pAddrInfo;

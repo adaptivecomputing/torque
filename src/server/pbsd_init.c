@@ -190,6 +190,7 @@ extern char *path_svrdb_new;
 extern char *path_svrlog;
 extern char *path_track;
 extern char *path_nodes;
+extern char *path_node_usage;
 extern char *path_mom_hierarchy;
 extern char *path_nodes_new;
 extern char *path_nodestate;
@@ -814,6 +815,7 @@ int initialize_paths()
   path_jobinfo_log   = build_path(path_home, PBS_JOBINFOLOGDIR, suffix_slash);
   path_track         = build_path(path_priv, PBS_TRACKING, NULL);
   path_nodes         = build_path(path_priv, NODE_DESCRIP, NULL);
+  path_node_usage    = build_path(path_priv, NODE_USAGE, suffix_slash);
   path_nodes_new     = build_path(path_priv, NODE_DESCRIP, new_tag);
   path_nodestate     = build_path(path_priv, NODE_STATUS,  NULL);
   path_nodepowerstate = build_path(path_priv, NODE_POWER_STATE,  NULL);
@@ -1127,6 +1129,173 @@ int setup_server_attrs(
 
   return(rc);
   } /* END setup_server_attrs() */
+
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ * remove_invalid_allocations()
+ *
+ * Checks the 
+ */
+void remove_invalid_allocations(
+
+  pbsnode *pnode)
+
+  {
+
+  if (pnode->nd_layout != NULL)
+    {
+    std::vector<std::string> job_ids;
+
+    pnode->nd_layout->populate_job_ids(job_ids);
+
+    for (unsigned int i = 0; i < job_ids.size(); i++)
+      {
+      if (job_id_exists(job_ids[i]) == false)
+        pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
+      }
+    }
+  } // END remove_invalid_allocations()
+
+
+
+/*
+ * load_node_usage()
+ *
+ * Loads pnode's usage information from file
+ *
+ * @param pnode - the node whose usage information we're loading
+ * @param node_name - the name of pnode
+ */
+
+void load_node_usage(
+
+  pbsnode    *pnode,
+  const char *node_name)
+
+  {
+  std::string layout;
+  int         fds = open(node_name, O_RDONLY, 0);
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        buf[LOCAL_LOG_BUF_SIZE];
+  char       *read_ptr = buf;
+
+  if (fds < 0)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't open %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    return;
+    }
+
+  memset(buf, 0, sizeof(buf));
+
+  while (read_ac_socket(fds, read_ptr, sizeof(buf)) > 0)
+    {
+    layout += buf;
+    memset(buf, 0, sizeof(buf));
+    }
+
+  if (layout.size() > 0)
+    {
+    if (pnode->nd_layout != NULL)
+      delete pnode->nd_layout;
+
+    pnode->nd_layout = new Machine(layout);
+    }
+  else
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Can't read data from %s to recover node usage",
+      node_name);
+    log_err(errno, __func__, log_buf);
+    }
+
+  close(fds);
+
+  remove_invalid_allocations(pnode);
+  } // END load_node_usage()
+
+
+
+/*
+ * load_node_usages()
+ *
+ * Loads the current usage information for any and all nodes
+ * @return PBSE_NONE on success, or -1 if the directory doesn't exist or cannot be opened
+ */
+
+int load_node_usages()
+  {
+  DIR              *dir;
+  struct dirent    *pdirent;
+  pbsnode          *pnode;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (chdir(path_node_usage) != 0)
+    {
+    if (errno == ENOENT)
+      {
+      int old_errno = errno;
+
+      errno = 0;
+
+      if (mkdir(path_node_usage, 0750) != 0)
+        {
+        errno = old_errno;
+        }
+      }
+
+    if (errno != 0)
+      {
+      sprintf(log_buf, msg_init_chdir, path_node_usage);
+
+      log_err(errno, __func__, log_buf);
+
+      return(-1);
+      }
+    }
+  
+  dir = opendir(".");
+
+  if (dir == NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Couldn't open %s for recover node usage states.",
+      path_node_usage);
+    log_err(errno, __func__, log_buf);
+
+    sprintf(log_buf, "%s:1", __func__);
+    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
+
+    return(-1);
+    }
+
+  while ((pdirent = readdir(dir)) != NULL)
+    {
+    if ((pdirent->d_name[0] == '\0') ||
+        (!strcmp(pdirent->d_name, "..")) ||
+        (!strcmp(pdirent->d_name, ".")))
+      {
+      /* invalid name returned */
+      continue;
+      }
+
+    if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
+      {
+      mutex_mgr   nd_mutex(pnode->nd_mutex, true);
+      load_node_usage(pnode, pdirent->d_name);
+      }
+    }
+
+  closedir(dir);
+
+  return(PBSE_NONE);
+  } // END load_node_usages()
+#endif
 
 
 
@@ -1762,7 +1931,6 @@ int process_jobs_dirent(
   } /* END process_jobs_dirent() */
 
 
-
 int cleanup_recovered_arrays()
 
   {
@@ -2049,6 +2217,13 @@ int pbsd_init(
       return(ret);
 
     handle_job_and_array_recovery(type);
+
+#ifdef PENABLE_LINUX_CGROUPS
+    if ((ret = load_node_usages()) != PBSE_NONE)
+      {
+      return(ret);
+      }
+#endif
 
     /* Put us back in the Server's Private directory */
     if (chdir(path_priv) != 0)

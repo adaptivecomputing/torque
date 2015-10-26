@@ -140,6 +140,7 @@
 #include "req_rerun.h"
 #include "req_delete.h"
 #include "mom_hierarchy_handler.h"
+#include "attr_req_info.hpp"
 
 
 #define PERM_MANAGER (ATR_DFLAG_MGWR | ATR_DFLAG_MGRD)
@@ -572,10 +573,12 @@ static int mgr_set_attr(
         {
         list_move(&pnew->at_val.at_list, &pold->at_val.at_list);
         }
-      else
+      else if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
         {
-        *pold = *pnew;
+        pold->at_val.at_ptr = pnew->at_val.at_ptr;
         }
+      else
+        *pold = *pnew;
 
       pold->at_flags = pnew->at_flags; /* includes MODIFY */
       }

@@ -1,3 +1,4 @@
+#include "pbs_config.h"
 #include <string>
 #include <sstream>
 #include <vector>
@@ -41,6 +42,30 @@ extern std::vector<int> jobsKilled;
 
 extern int str_to_attr_count;
 extern int decode_resc_count;
+
+#ifdef PENABLE_LINUX_CGROUPS
+void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
+START_TEST(test_save_cpus_and_memory_cpusets)
+  {
+  job         *pjob = (job *)calloc(1, sizeof(job));
+  std::string  cpus("0-3");
+  std::string  mems("0");
+
+  save_cpus_and_memory_cpusets(pjob, "napali", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0"));
+  
+  save_cpus_and_memory_cpusets(pjob, "wailua", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0"));
+  
+  save_cpus_and_memory_cpusets(pjob, "waimea", cpus, mems);
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3+waimea:0-3"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0+waimea:0"));
+
+  }
+END_TEST
+#endif
 
 
 START_TEST(test_add_remove_mic_jobs)
@@ -155,7 +180,7 @@ START_TEST(test_initialize_alps_req_data)
 END_TEST
 
 
-START_TEST(translate_job_reservation_info_to_stirng_test)
+START_TEST(translate_job_reservation_info_to_string_test)
   {
   std::vector<job_reservation_info> host_info;
   job_reservation_info jri[5];
@@ -284,6 +309,8 @@ START_TEST(process_as_node_list_test)
   fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji) == false);
   fail_unless(process_as_node_list("bob+10:ppn=10", &naji) == false);
   fail_unless(process_as_node_list("bob+10", &naji) == false);
+
+  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji) == true);
   }
 END_TEST
 
@@ -349,6 +376,7 @@ START_TEST(remove_job_from_node_test)
   {
   job_usage_info jui(1);
   struct pbsnode *pnode = new pbsnode();
+  pnode->change_name("napali");
 
   for (int i = 0; i < 10; i++)
     pnode->nd_slots.add_execution_slot();
@@ -402,6 +430,8 @@ START_TEST(sync_node_jobs_with_moms_test)
   {
   struct pbsnode *pnode = new pbsnode();
   extern bool     job_mode;
+
+  pnode->change_name("napali");
 
   job_mode = true;
   for (int i = 0; i < 9; i++)
@@ -629,6 +659,8 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
 
   struct pbsnode *pnode = new pbsnode();
+  pnode->change_name("napali");
+
   for (int i = 0; i < 9; i++)
     pnode->nd_slots.add_execution_slot();
 
@@ -654,7 +686,10 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
   job_reservation_info jri;
-  int rc =  place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
+#ifdef PENABLE_LINUX_CGROUPS
+  pnode->nd_layout = new Machine();
+#endif
+  int rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
 
   fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
@@ -687,6 +722,7 @@ Suite *node_manager_suite(void)
   Suite *s = suite_create("node_manager_suite methods");
   TCase *tc_core = tcase_create("get_next_exec_host_test");
   tcase_add_test(tc_core, get_next_exec_host_test);
+  tcase_add_test(tc_core, test_add_remove_mic_jobs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("job_should_be_killed_test");
@@ -696,37 +732,44 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("node_in_exechostlist_test");
   tcase_add_test(tc_core, node_in_exechostlist_test);
+  tcase_add_test(tc_core, remove_job_from_node_test);
+  tcase_add_test(tc_core, job_already_being_killed_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("check_for_node_type_test");
   tcase_add_test(tc_core, check_for_node_type_test);
+  tcase_add_test(tc_core, process_job_attribute_information_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("check_node_order_test");
   tcase_add_test(tc_core, check_node_order_test);
+  tcase_add_test(tc_core, process_as_node_list_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("sync_node_jobs_with_moms_test");
   tcase_add_test(tc_core, sync_node_jobs_with_moms_test);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, test_save_cpus_and_memory_cpusets);
+#endif
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
   tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
-  tcase_add_test(tc_core, test_add_remove_mic_jobs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
-  tcase_add_test(tc_core, remove_job_from_node_test);
-  tcase_add_test(tc_core, job_already_being_killed_test);
-  tcase_add_test(tc_core, process_job_attribute_information_test);
-  tcase_add_test(tc_core, process_as_node_list_test);
-  tcase_add_test(tc_core, node_is_spec_acceptable_test);
-  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
-  tcase_add_test(tc_core, translate_job_reservation_info_to_stirng_test);
-  tcase_add_test(tc_core, test_initialize_alps_req_data);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("more tests");
+  tcase_add_test(tc_core, translate_job_reservation_info_to_string_test);
+  tcase_add_test(tc_core, test_initialize_alps_req_data);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("even more tests");
+  tcase_add_test(tc_core, node_is_spec_acceptable_test);
+  tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  suite_add_tcase(s, tc_core);
 
   return(s);
   }

@@ -17,6 +17,13 @@
 #include "pbs_job.h" /* job */
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
+#include "complete_req.hpp"
+
+
+#ifdef NVIDIA_GPUS
+int             MOMNvidiaDriverVersion    = 0;
+int             use_nvidia_gpu = TRUE;
+#endif  /* NVIDIA_GPUS */
 
 std::list<job *> alljobs_list;
 int PBSNodeCheckEpilog;
@@ -477,4 +484,26 @@ bool am_i_mother_superior(const job &pjob)
 
 void create_cpuset_reservation_if_needed(job &pjob){}
 
+int setup_gpus_for_job(
+
+  job  *pjob) /* I */
+
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_all_cgroups(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_reserve_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
 void check_state(int Force) {}
+
+void complete_req::set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used)
+  {
+  }

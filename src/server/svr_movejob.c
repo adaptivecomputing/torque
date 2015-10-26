@@ -690,6 +690,11 @@ void encode_attributes(
 
   for (int i = 0; i < JOB_ATR_LAST; i++)
     {
+    if ((job_attr_def + i)->at_name == NULL)
+      continue; /* this check prevents a segfault found while
+                   running the unit test for encode_attributes
+                   when at_name is NULL */
+
     if (((job_attr_def + i)->at_flags & resc_access_perm) ||
         ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
          (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))

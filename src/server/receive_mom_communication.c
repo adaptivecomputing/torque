@@ -85,6 +85,7 @@
 #include <vector>
 #include <string>
 
+#include "pbs_config.h"
 #include "pbs_nodes.h"
 #include "log.h"
 #include "dis.h"

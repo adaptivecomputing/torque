@@ -719,4 +719,40 @@ attribute_def que_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_QUE_ALL
   },
+  /* QA_ATR_ReqInformationMax */
+  { (char *)ATTR_req_infomax, /* "req_information_max" */
+    decode_attr_req_info,
+    encode_attr_req_info,
+    set_attr_req_info,
+    NULL_FUNC,
+    free_attr_req_info,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_ATTR_REQ_INFO,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_ReqInformationMin */
+  { (char *)ATTR_req_infomin, /* "req_information_min" */
+    decode_attr_req_info,
+    encode_attr_req_info,
+    set_attr_req_info,
+    NULL_FUNC,
+    free_attr_req_info,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_ATTR_REQ_INFO,
+    PARENT_TYPE_QUE_ALL
+  },
+   /* QA_ATR_ReqInformationDefault */
+  { (char *)ATTR_req_infodefault, /* "req_information_default" */
+    decode_attr_req_info,
+    encode_attr_req_info,
+    set_attr_req_info,
+    NULL_FUNC,
+    free_attr_req_info,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_ATTR_REQ_INFO,
+    PARENT_TYPE_QUE_ALL
+  },
   };

@@ -38,6 +38,8 @@
 #include "utils.h"
 #include "libcmds.h" /* TShowAbout_exit */
 #include "net_cache.h"
+#include "utils.h"
+#include "allocation.hpp"
 #include "../lib/Libifl/lib_ifl.h"
 
 using namespace std;
@@ -82,12 +84,12 @@ extern char         *optarg;
 
 enum qstat_mode { JOBS, QUEUES, SERVERS } mode;
 
-mbool_t DisplayXML = FALSE;
+bool  DisplayXML = false;
 #define maxlinesize 65536
 int   linesize = 77;
 
 int                  alt_opt;
-int                  f_opt;
+bool                 f_opt;
 int                  B_opt;
 int                  Q_opt;
 int                  t_opt;
@@ -366,9 +368,9 @@ static void states(
 
 void prt_attr(
 
-  char *n,  /* I name */
-  char *r,  /* I resource (optional) */
-  char *v)  /* I value */
+  const char *n,  /* I name */
+  const char *r,  /* I resource (optional) */
+  const char *v)  /* I value */
 
   {
   char *c;
@@ -376,6 +378,7 @@ void prt_attr(
   int   first = 1;
   int   l;
   int   start;
+  char *work_val = strdup(v);
 
   start = strlen(n) + 7; /* 4 spaces + ' = ' is 7 */
 
@@ -390,7 +393,7 @@ void prt_attr(
 
   printf(" = ");
 
-  c = strtok(v, comma);
+  c = strtok(work_val, comma);
 
   while (c != NULL)
     {
@@ -430,6 +433,8 @@ void prt_attr(
       putchar(',');
       }
     }
+
+  free(work_val);
 
   return;
   }  /* END prt_attr() */
@@ -1344,6 +1349,581 @@ bool is_the_user(
 
 
 
+/*
+ * get_summary_attributes()
+ *
+ * Iteratres over the attributes and stores the ones we're interested in for the summary
+ * @param attribute - a linked list of the job's attributes
+ * @param name - O to store the name
+ * @param owner - O to store the owner
+ * @param timeu - O to store the time
+ * @param state - O to store the state
+ * @param location - O to store the queue
+ */
+
+void get_summary_attributes(
+
+  struct attrl *attribute,
+  std::string  &name,
+  std::string  &owner,
+  std::string  &timeu,
+  std::string  &state,
+  std::string  &location)
+
+  {
+  char         *c;
+  unsigned int  len;
+
+  for (; attribute != NULL; attribute = attribute->next)
+    {
+    if (attribute->name != NULL)
+      {
+      if (strcmp(attribute->name, ATTR_name) == 0)
+        {
+        len = strlen(attribute->value);
+
+        /* truncate AName */
+
+        if (len > PBS_NAMELEN)
+          {
+          char  long_name[17];
+
+          len = len - PBS_NAMELEN + 3;
+
+          c = attribute->value + len;
+
+          while ((*c != '/') && (*c != '\0'))
+            c++;
+
+          if (*c == '\0')
+            c = attribute->value + len;
+
+          snprintf(long_name, sizeof(long_name), "...%s", c);
+
+          c = long_name;
+          }
+        else
+          {
+          c = attribute->value;
+          }
+
+        name = c;
+        }
+      else if (!strcmp(attribute->name, ATTR_owner))
+        {
+        c = attribute->value;
+
+        while ((*c != '@') && (*c != '\0'))
+          c++;
+
+        *c = '\0';
+
+        len = strlen(attribute->value);
+
+        if (len > OWNERL)
+          {
+          c = attribute->value + OWNERL;
+
+          *c = '\0';
+          }
+
+        owner = attribute->value;
+        }
+      else if (!strcmp(attribute->name, ATTR_used))
+        {
+        if (!strcmp(attribute->resource, "cput"))
+          {
+          len = strlen(attribute->value);
+
+          if (len > TIMEUL)
+            {
+            c = attribute->value + TIMEUL;
+
+            *c = '\0';
+            }
+
+          timeu = attribute->value;
+          }
+        }
+      else if (!strcmp(attribute->name, ATTR_state))
+        {
+        len = strlen(attribute->value);
+
+        if (len > STATEL)
+          {
+          c = attribute->value + STATEL;
+
+          *c = '\0';
+          }
+
+        state = attribute->value;
+        }
+      else if (!strcmp(attribute->name, ATTR_queue))
+        {
+        c = attribute->value;
+
+        while ((*c != '@') && (*c != '\0'))
+          c++;
+
+        *c = '\0';
+
+        len = strlen(attribute->value);
+
+        if (len > LOCL)
+          {
+          c = attribute->value + LOCL;
+
+          *c = '\0';
+          }
+
+        location = attribute->value;
+        }
+      }
+    }
+
+  if (timeu.size() == 0)
+    timeu = "0";
+  } // END get_summary_attributes()
+
+
+
+/*
+ * display_job_summary()
+ *
+ * Displays a job for a default qstat command.
+ * @param p - the source of information about the job
+ * @param format - the format in which the job should be displayed.
+ */
+
+void display_job_summary(
+
+  struct batch_status *p,
+  const char          *format)
+
+  {
+  struct attrl *a;
+  unsigned int  len;
+  char         *c = NULL;
+  char         *jid = NULL;
+  std::string   name;
+  std::string   owner;
+  std::string   state;
+  std::string   location;
+  std::string   timeu;
+
+  if (p->name != NULL)
+    {
+    c = p->name;
+
+    while ((*c != '.') && (*c != '\0'))
+      c++;
+
+    if (alias_opt == TRUE)
+      {
+      /* show the alias as well as the first part of the server name */
+      if (*c == '.')
+        {
+        c++;
+
+        while((*c != '.') && (*c != '\0'))
+          c++;
+        }
+      }
+
+    if (alias_opt == TRUE)
+      {
+      /* show the alias as well as the first part of the server name */
+      if (*c == '.')
+        {
+        c++;
+
+        while((*c != '.') && (*c != '\0'))
+          c++;
+        }
+      }
+
+    if (*c != '\0')
+      c++;    /* List the first part of the server name, too. */
+
+    while ((*c != '.') && (*c != '\0'))
+      c++;
+
+    *c = '\0';
+
+    len = strlen(p->name);
+
+    if (len > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8))
+      {
+      /* truncate job name */
+
+      c = p->name + PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 14;
+
+      *c = '\0';
+      }
+
+    jid = p->name;
+    }
+
+  get_summary_attributes(p->attribs, name, owner, timeu, state, location);
+
+  /* display summary data */
+  printf(format,
+         jid,
+         name.c_str(),
+         owner.c_str(),
+         timeu.c_str(),
+         state.c_str(),
+         location.c_str());
+  } // END display_job_summary()
+
+
+
+/*
+ * job_is_complete()
+ *
+ * Checks if a job is complete or not
+ * @param a - a list of the job's attributes
+ * @return true if the job is complete, false otherwise
+ */
+
+bool job_is_complete(
+
+  struct attrl *a)
+
+  {
+  while (a != NULL)
+    {
+    if (!strcmp(a->name, ATTR_state))
+      {
+      if (a->value[0] == 'C')
+        {
+        return(true);
+        }
+      }
+
+    a = a->next;
+    }
+
+  return(false);
+  } // END job_is_complete()
+
+
+void add_xml_resource(
+
+  mxml_t     *RE,
+  const char *resc_name,
+  const char *value)
+
+  {
+  mxml_t      *AE;
+    
+  MXMLCreateE(&AE, resc_name);
+  MXMLSetVal(AE, (void *)value, mdfString);
+  MXMLAddE(RE, AE);
+  } // END add_xml_resource()
+
+
+
+void print_req_information(
+
+  struct attrl *req_information_attr,
+  mxml_t       *JE)
+
+  {
+  mxml_t      *RE;
+  mxml_t      *AE;
+  std::string  out;
+  char         buf[100];
+  char         name[1024];
+  char        *left_dot;
+  char        *right_dot;
+  int          req_index = 0;
+  int          task_index = 0;
+  allocation   a;
+  a.initialize_from_string(req_information_attr->value);
+
+  if ((left_dot = strchr(req_information_attr->resource, '.')) != NULL)
+    req_index = strtol(left_dot + 1, NULL, 10);
+
+  if ((right_dot = strrchr(req_information_attr->resource, '.')) != NULL)
+    task_index = strtol(right_dot + 1, NULL, 10);
+
+  if (JE == NULL)
+    sprintf(name, "%s.task_usage.%d.task.%d", ATTR_req_information, req_index, task_index);
+  else
+    sprintf(name, "task_usage.%d.task.%d", req_index, task_index);
+        
+  translate_vector_to_range_string(out, a.cpu_indices);
+  if (JE == NULL)
+    {
+    prt_attr(name, "cpu_list", out.c_str());
+    printf("\n");
+    }
+  else
+    {
+    MXMLCreateE(&RE, name);
+    MXMLAddE(JE, RE);
+    add_xml_resource(RE, "cpu_list", out.c_str());
+    }
+    
+  translate_vector_to_range_string(out, a.mem_indices);
+  if (JE == NULL)
+    {
+    prt_attr(name, "mem_list", out.c_str());
+    printf("\n");
+    }
+  else
+    add_xml_resource(RE, "mem_list", out.c_str());
+    
+  if (a.task_cput_used != 0)
+    {
+    sprintf(buf, "%lu", a.task_cput_used);
+    
+    if (JE == NULL)
+      {
+      prt_attr(name, "cpu_time_used", buf);
+      printf("\n");
+      }
+    else
+      add_xml_resource(RE, "cpu_time_used", buf);
+    }
+    
+  if (a.task_memory_used != 0)
+    {
+    unsigned long long mem_used;
+
+    mem_used = a.task_memory_used/1024;
+
+    sprintf(buf, "%llukb", mem_used);
+
+    if (JE == NULL)
+      {
+      prt_attr(name, "memory_used", buf);
+      printf("\n");
+      }
+    else
+      add_xml_resource(RE, "memory_used", buf);
+    }
+    
+  sprintf(buf, "%d", a.cores);
+  if (JE == NULL)
+    {
+    prt_attr(name, "cores", buf);
+    printf("\n");
+    }
+  else
+    add_xml_resource(RE, "cores", buf);
+    
+  sprintf(buf, "%d", a.threads);
+  if (JE == NULL)
+    {
+    prt_attr(name, "threads", buf);
+    printf("\n");
+    }
+  else
+    add_xml_resource(RE, "threads", buf);
+
+  if (JE == NULL)
+    {
+    prt_attr(name, "host", a.hostname.c_str());
+    printf("\n");
+    }
+  else
+    add_xml_resource(RE, "host", a.hostname.c_str());
+
+  } // END print_req_information()
+
+
+
+/*
+ * create_full_job_xml()
+ *
+ * Builds the xml for the job's full ouput
+ * @param p - the source for the job's information
+ * @param DE - the document element we're adding to
+ */
+
+void create_full_job_xml(
+
+  struct batch_status *p,
+  mxml_t              *DE)
+
+  {
+  mxml_t       *JE;
+  mxml_t       *AE;
+  mxml_t       *RE1;
+  mxml_t       *JI;
+  struct attrl *attribute;
+  
+  if (DisplayXML == true)
+    {
+    JE = NULL;
+
+    MXMLCreateE(&JE, "Job");
+
+    MXMLAddE(DE, JE);
+
+    JI = NULL;
+
+    MXMLCreateE(&JI, "Job_Id");
+
+    MXMLSetVal(JI, p->name,mdfString);
+
+    MXMLAddE(JE, JI);
+    }
+
+  RE1 = NULL;
+
+  for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
+    {
+    if (attribute->name != NULL)
+      {
+      if (!strcmp(attribute->name, ATTR_execport))
+        continue;
+
+      /* lookup attribute->name -> XML attr name */
+      if ((attribute->resource != NULL) &&
+          (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
+        {
+        print_req_information(attribute, RE1);
+        }
+      else
+        {
+
+        AE = NULL;
+
+        if (attribute->resource != NULL)
+          {
+          if (RE1 == NULL)
+            {
+            MXMLCreateE(&RE1, attribute->name);
+            MXMLAddE(JE, RE1);
+            }
+
+          MXMLCreateE(&AE, attribute->resource);
+
+          MXMLSetVal(AE, attribute->value, mdfString);
+          MXMLAddE(RE1, AE);
+          }
+        else
+          {
+          RE1 = NULL;
+          MXMLCreateE(&AE, attribute->name);
+          MXMLSetVal(AE, attribute->value, mdfString);
+          MXMLAddE(JE, AE);
+          }
+        }
+      }
+    }
+  } // END create_full_job_xml()
+
+
+
+/*
+ * display_full_job()
+ *
+ * Prints the full ouput for a job, including each attribute
+ * @param p - the source for information about the job
+ */
+
+void display_full_job(
+
+  struct batch_status *p)
+
+  {
+  struct attrl *attribute;
+  unsigned int  len;
+  time_t        epoch;
+
+  printf("Job Id: %s\n", p->name);
+  
+  for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
+    {
+    if (attribute->name != NULL)
+      {
+      if (!strcmp(attribute->name, ATTR_execport))
+        continue;
+
+      if ((attribute->resource != NULL) &&
+          (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
+        {
+        print_req_information(attribute, NULL);
+        }
+      else if (!strcmp(attribute->name, ATTR_ctime) ||
+          !strcmp(attribute->name, ATTR_etime) ||
+          !strcmp(attribute->name, ATTR_mtime) ||
+          !strcmp(attribute->name, ATTR_qtime) ||
+          !strcmp(attribute->name, ATTR_start_time) ||
+          !strcmp(attribute->name, ATTR_comp_time) ||
+          !strcmp(attribute->name, ATTR_checkpoint_time) ||
+          !strcmp(attribute->name, ATTR_a))
+        {
+        epoch = (time_t)strtol(attribute->value, NULL, 10);
+
+        prt_attr(attribute->name, attribute->resource, ctime(&epoch));
+        }
+      else
+        {
+        if ((!strcmp(attribute->name, "Walltime")) && (attribute->value[0] == '-'))
+          prt_attr(attribute->name, (char *)"Exceeded", attribute->value);
+        else
+          prt_attr(attribute->name, attribute->resource, attribute->value);
+        printf("\n");
+        }
+      }
+    }
+  } // END display_full_job()
+
+
+
+/*
+ * display_single_job()
+ *
+ * Displays a single job for qstat. For qstat -x, builds the xml but doesn't output it yet.
+ * @param p - the source for all of our job information
+ * @param user - the user's name
+ * @param format - the format string
+ * @param DE - the document element for the XML. Used conditionally.
+ * @param full - true if the output should display the full job
+ */
+
+void display_single_job(
+  
+  struct batch_status *p,
+  char                *user,
+  const char          *format,
+  mxml_t              *DE,
+  bool                 full)
+
+  {
+  if (is_the_user(user, p->attribs) == false)
+    {
+    return;
+    }
+
+  if ((do_not_display_complete == true) &&
+      (job_is_complete(p->attribs) == true))
+    return;
+
+  if (full)
+    {
+    if (DisplayXML == true)
+      create_full_job_xml(p, DE);
+    else
+      display_full_job(p);
+    }   /* END if (full) */
+  else
+    {
+    display_job_summary(p, format);
+    }  /* END else (full) */
+
+  if ((DisplayXML != true) &&
+      (full == true))
+    printf("\n");
+
+  } // END display_single_job()
+
+
 
 /* display when a normal "qstat" is executed */
 
@@ -1351,36 +1931,21 @@ void display_statjob(
 
   struct batch_status *status,    /* I (data) */
   bool                 prtheader, /* I (boolean) */
-  int                  full,      /* I (boolean) */
+  bool                 full,      /* I (boolean) */
   char                *user)
 
   {
   struct batch_status *p;
 
   struct attrl        *a;
-  int                  l;
-  char                *c;
-  char                *jid;
-  char                *name;
-  char                *owner;
-  const char          *timeu;
-  char                *state;
-  char                *location;
   char                 format[80];
-  char                 long_name[17];
-  time_t               epoch;
-  bool do_not_display = false;
 
   mxml_t              *DE;
-  mxml_t              *JE;
-  mxml_t              *AE;
-  mxml_t              *RE1;
-  mxml_t              *JI;
 
   /* XML only support for full output */
 
-  if (DisplayXML == TRUE)
-    full = 1;
+  if (DisplayXML == true)
+    full = true;
 
   if (!full)
     {
@@ -1401,7 +1966,7 @@ void display_statjob(
       }
     }    /* END if (!full) */
 
-  if (DisplayXML == TRUE)
+  if (DisplayXML == true)
     {
     /* create parent */
 
@@ -1410,348 +1975,12 @@ void display_statjob(
     MXMLCreateE(&DE, "Data");
     }
 
-  for (p = status;p != NULL;p = p->next)
+  for (p = status; p != NULL; p = p->next)
     {
-    jid = NULL;
-    name = NULL;
-    owner = NULL;
-    timeu = NULL;
-    state = NULL;
-    location = NULL;
-    do_not_display = false;
-
-    if (is_the_user(user, p->attribs) == false)
-      {
-      continue;
-      }
-
-    if (full)
-      {
-
-      a = p->attribs;
-      while (a != NULL)
-        {
-        if (!strcmp(a->name, ATTR_execport))
-          {
-          a = a->next;
-          continue;
-          }
-
-        if (!strcmp(a->name, ATTR_state))
-          {
-          l = strlen(a->value);
-
-          if (l > STATEL)
-            {
-            c = a->value + STATEL;
-
-            *c = '\0';
-            }
-
-          state = a->value;
-          if (*state == 'C')
-            {
-            if ( do_not_display_complete == true )
-              {
-              do_not_display = true;
-              }
-            break;
-            }
-          }
-        a = a->next;
-        }
-
-      if (do_not_display == true)
-        continue;
-
-      if (DisplayXML == TRUE)
-        {
-        JE = NULL;
-
-        MXMLCreateE(&JE, "Job");
-
-        MXMLAddE(DE, JE);
-
-        JI = NULL;
-
-        MXMLCreateE(&JI, "Job_Id");
-
-        MXMLSetVal(JI, p->name,mdfString);
-
-        MXMLAddE(JE, JI);
-        }
-      else
-        {
-        printf("Job Id: %s\n", p->name);
-        }
-
-
-      RE1 = NULL;
-
-      a = p->attribs;
-      while (a != NULL)
-        {
-        if (a->name != NULL)
-          {
-          if (!strcmp(a->name, ATTR_execport))
-            {
-            a = a->next;
-            continue;
-            }
-
-          if (DisplayXML == TRUE)
-            {
-            /* lookup a->name -> XML attr name */
-
-            AE = NULL;
-
-            if (a->resource != NULL)
-              {
-              if (RE1 == NULL)
-                {
-                MXMLCreateE(&RE1, a->name);
-                MXMLAddE(JE, RE1);
-                }
-
-              MXMLCreateE(&AE, a->resource);
-
-              MXMLSetVal(AE, a->value, mdfString);
-              MXMLAddE(RE1, AE);
-              }
-            else
-              {
-              RE1 = NULL;
-              MXMLCreateE(&AE, a->name);
-              MXMLSetVal(AE, a->value, mdfString);
-              MXMLAddE(JE, AE);
-              }
-            }
-          else
-            {
-            if (!strcmp(a->name, ATTR_ctime) ||
-                !strcmp(a->name, ATTR_etime) ||
-                !strcmp(a->name, ATTR_mtime) ||
-                !strcmp(a->name, ATTR_qtime) ||
-                !strcmp(a->name, ATTR_start_time) ||
-                !strcmp(a->name, ATTR_comp_time) ||
-                !strcmp(a->name, ATTR_checkpoint_time) ||
-                !strcmp(a->name, ATTR_a))
-              {
-              epoch = (time_t)atoi(a->value);
-
-              prt_attr(a->name, a->resource, ctime(&epoch));
-              }
-            else
-              {
-              if ((!strcmp(a->name, "Walltime")) && (a->value[0] == '-'))
-                prt_attr(a->name, (char *)"Exceeded", a->value);
-              else
-                prt_attr(a->name, a->resource, a->value);
-              printf("\n");
-              }
-            }
-          }
-
-        a = a->next;
-        }
-      }   /* END if (full) */
-    else
-      {
-      /* display summary data */
-
-      if (p->name != NULL)
-        {
-        c = p->name;
-
-        while ((*c != '.') && (*c != '\0'))
-          c++;
-
-        if (alias_opt == TRUE)
-          {
-          /* show the alias as well as the first part of the server name */
-          if (*c == '.')
-            {
-            c++;
-
-            while((*c != '.') && (*c != '\0'))
-              c++;
-            }
-          }
-
-        if (alias_opt == TRUE)
-          {
-          /* show the alias as well as the first part of the server name */
-          if (*c == '.')
-            {
-            c++;
-
-            while((*c != '.') && (*c != '\0'))
-              c++;
-            }
-          }
-
-        if (*c != '\0')
-          c++;    /* List the first part of the server name, too. */
-
-        while ((*c != '.') && (*c != '\0'))
-          c++;
-
-        *c = '\0';
-
-        l = strlen(p->name);
-
-        if (l > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8))
-          {
-          /* truncate job name */
-
-          c = p->name + PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 14;
-
-          *c = '\0';
-          }
-
-        jid = p->name;
-        }
-
-      a = p->attribs;
-
-      while (a != NULL)
-        {
-        if (a->name != NULL)
-          {
-          if (strcmp(a->name, ATTR_name) == 0)
-            {
-            l = strlen(a->value);
-
-            /* truncate AName */
-
-            if (l > PBS_NAMELEN)
-              {
-              l = l - PBS_NAMELEN + 3;
-
-              c = a->value + l;
-
-              while ((*c != '/') && (*c != '\0'))
-                c++;
-
-              if (*c == '\0')
-                c = a->value + l;
-
-              snprintf(long_name, sizeof(long_name), "...%s", c);
-
-              c = long_name;
-              }
-            else
-              {
-              c = a->value;
-              }
-
-            name = c;
-            }
-          else if (!strcmp(a->name, ATTR_owner))
-            {
-            c = a->value;
-
-            while ((*c != '@') && (*c != '\0'))
-              c++;
-
-            *c = '\0';
-
-            l = strlen(a->value);
-
-            if (l > OWNERL)
-              {
-              c = a->value + OWNERL;
-
-              *c = '\0';
-              }
-
-            owner = a->value;
-            }
-          else if (!strcmp(a->name, ATTR_used))
-            {
-            if (!strcmp(a->resource, "cput"))
-              {
-              l = strlen(a->value);
-
-              if (l > TIMEUL)
-                {
-                c = a->value + TIMEUL;
-
-                *c = '\0';
-                }
-
-              timeu = a->value;
-              }
-            }
-          else if (!strcmp(a->name, ATTR_state))
-            {
-            l = strlen(a->value);
-
-            if (l > STATEL)
-              {
-              c = a->value + STATEL;
-
-              *c = '\0';
-              }
-
-            state = a->value;
-            if (*state == 'C')
-              {
-              if ( do_not_display_complete == true )
-                do_not_display = true;
-              }
-            }
-          else if (!strcmp(a->name, ATTR_queue))
-            {
-            c = a->value;
-
-            while ((*c != '@') && (*c != '\0'))
-              c++;
-
-            *c = '\0';
-
-            l = strlen(a->value);
-
-            if (l > LOCL)
-              {
-              c = a->value + LOCL;
-
-              *c = '\0';
-              }
-
-            location = a->value;
-            }
-          }
-
-        a = a->next;
-        }
-
-      if (timeu == NULL)
-        timeu = "0";
-
-      /* display summary data */
-
-      if (do_not_display == false)
-        {
-        printf(format,
-               jid,
-               name,
-               owner,
-               timeu,
-               state,
-               location);
-        }
-      }  /* END else (full) */
-
-    if (DisplayXML != TRUE && do_not_display == false)
-      {
-      if (full)
-        printf("\n");
-      }
-
+    display_single_job(p, user, format, DE, full);
     }  /* END for (p = status) */
 
-  if (DisplayXML == TRUE)
+  if (DisplayXML == true)
     {
     char *tmpBuf = NULL, *tail = NULL;
     int  bufsize;
@@ -2265,7 +2494,7 @@ int tcl_stat(
 
   const char          *type,
   struct batch_status *bs,
-  int                  f_opt)
+  bool                 f_opt)
 
   {
 
@@ -2283,7 +2512,7 @@ int tcl_stat(
     return(1);
     }
 
-  if (f_opt == 0)
+  if (f_opt == false)
     {
     return(1);
     }
@@ -2334,7 +2563,7 @@ int tcl_stat(
 
 void tcl_run(
 
-  int f_opt)
+  bool f_opt)
 
   {
   if (interp == NULL)
@@ -2384,16 +2613,16 @@ int process_commandline_opts(
   int rc = PBSE_NONE;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "acCeE:filn1qrstu:xGMQRBW:-:"
+#define GETOPT_ARGS "acCeE:filn1pqrstu:xGMQRBW:-:"
 #else
-#define GETOPT_ARGS "flQBW:"
+#define GETOPT_ARGS "flpQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
   mode = JOBS;
   user[0] = '\0';
 
   alt_opt = 0;
-  f_opt = 0;
+  f_opt = false;
   B_opt = 0;
   Q_opt = 0;
   t_opt = 0;
@@ -2545,7 +2774,7 @@ int process_commandline_opts(
           return(PBSE_IVALREQ);
           }
 
-        f_opt = 1;
+        f_opt = true;
 
         /* We want to return all attributes */
         attrib = NULL;
@@ -2554,7 +2783,7 @@ int process_commandline_opts(
 
       case 'x':
 
-        DisplayXML = TRUE;
+        DisplayXML = true;
 
         /* We want to return all attributes */
         attrib = NULL;
@@ -2747,7 +2976,7 @@ int process_commandline_opts(
     rc = PBSE_IVALREQ;
     }
 
-  if ((alt_opt & ALT_DISPLAY_q) && (f_opt == 1))
+  if ((alt_opt & ALT_DISPLAY_q) && (f_opt == true))
     {
     fprintf(stderr, "%s", conflict_msg);
 

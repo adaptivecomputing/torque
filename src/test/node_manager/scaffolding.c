@@ -19,8 +19,11 @@
 #include "work_task.h" /* work_task, work_type */
 #include "threadpool.h"
 #include "id_map.hpp"
+#include "machine.hpp"
+#include "complete_req.hpp"
 
 
+char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
 int str_to_attr_count;
 int decode_resc_count;
 int SvrNodeCt = 0; 
@@ -110,6 +113,10 @@ struct pbsnode *find_nodebyname(const char *nodename)
   static struct pbsnode bob;
 
   if (!strcmp(nodename, "bob"))
+    return(&bob);
+  else if (!strcmp(nodename, "napali"))
+    return(&bob);
+  else if (!strcmp(nodename, "waimea"))
     return(&bob);
   else if (!strcmp(nodename, "2"))
     return(&bob);
@@ -607,6 +614,47 @@ id_map::~id_map()
   {
   }
 
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  } // END translate_vector_to_range_string()
+  
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  } /* END translate_range_string_to_vector() */
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+  
 
 id_map node_mapper;
 id_map job_mapper;
@@ -852,3 +900,67 @@ void pbsnode::add_property(
   {
   this->nd_properties.push_back(prop);
   }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+void Machine::free_job_allocation(const char *jobid)
+  {
+  }
+
+void Machine::displayAsJson(stringstream &out, bool include_jobs) const {}
+
+int Machine::place_job(
+
+  job        *pjob,
+  string     &cpu_string,
+  string     &mem_string,
+  const char *hostname)
+
+  {
+  return(0);
+  }
+
+Socket::Socket() {}
+Socket::~Socket() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+
+bool task_hosts_match(
+        
+  const char *task_host, 
+  const char *this_hostname)
+
+  {
+  if (strcmp(task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+
+  return(true);
+  }
+

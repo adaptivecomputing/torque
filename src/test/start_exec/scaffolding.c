@@ -8,6 +8,7 @@
 #include <md5.h> /* MD5_CTX */
 #include <sys/socket.h> /* sockaddr_in, sockaddr */
 #include <pwd.h> /* gid_t, uid_t */
+#include <string> /* std::string */
 #include <sys/types.h>
 #include <grp.h>
 
@@ -22,11 +23,15 @@
 #include "mom_mach.h" /* startjob_rtn */
 #include "mom_func.h" /* var_table */
 #include "pbs_nodes.h"
+#include "complete_req.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
 #endif
 
+std::string cg_memory_path;
+std::string cg_cpuacct_path;
+std::string cg_cpuset_path;
 #define LDAP_RETRIES 5
 
 unsigned linux_time = 0;
@@ -96,8 +101,6 @@ void free_pwnam(struct passwd *pwdp, char *buf)
 
 void free_grname(struct group *grp, char *buf)
   {}
-
-
 
 int diswcs (struct tcp_chan *chan, const char *value,size_t nchars) 
   { return 0; }
@@ -776,6 +779,180 @@ int csv_length(const char *csv_str)
   {
   fprintf(stderr, "The call to csv_length to be mocked!!\n");
   exit(1);
+  }
+
+#ifdef PENABLE_LINUX_CGROUPS
+int trq_cg_add_process_to_cgroup_accts(pid_t job_pid ) 
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup(std::string& cgroup_path, pid_t job_pid, pid_t new_pid) 
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_resident_memory_limit(pid_t pid, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(pid_t pid, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_cpuset_cgroup(job*, int)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_all_cgroups(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_reserve_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_create_all_cgroups(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_cgroup_accts(const char *job_id, int pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_resident_memory_limit(const char *job_id, unsigned long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(const char *job_id, unsigned long limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_task_cgroup(
+  string     &cgroup_path,
+  const char *job_id,
+  const unsigned int req_index,
+  const unsigned int task_index,
+  pid_t       new_pid)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_task_swap_memory_limit(
+  const char    *job_id,
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_swap_memory_limit(
+  const char    *job_id,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_task_resident_memory_limit(
+  const char    *job_id,
+  unsigned int   req_index,
+  unsigned int   task_index,
+  unsigned long long memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_set_resident_memory_limit(
+  const char    *job_id,
+  unsigned long long  memory_limit)
+  {
+  return(PBSE_NONE);
+  }
+#endif
+
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
+unsigned long long complete_req::get_swap_memory_for_this_host( const std::string &hostname) const
+  {
+  return(0);
+  }
+
+unsigned long long complete_req::get_swap_per_task( unsigned int req_index)
+  {
+  return(0);
+  }
+
+unsigned long long complete_req::get_memory_per_task(unsigned int req_index)
+  {
+  return(0);
+  }
+
+int complete_req::get_req_and_task_index(
+  const int rank, 
+  unsigned int &req_index, 
+  unsigned int &task_index)
+
+  {
+  return(0);
+  }
+
+unsigned long long complete_req::get_memory_for_this_host(
+  const std::string &hostname) const
+  {
+  return(0);
   }
 
 struct passwd *get_password_entry_by_uid(

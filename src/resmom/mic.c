@@ -247,6 +247,7 @@ int check_for_mics()
 #else
   for (i = 0; i < num_engines; i++)
 #endif
+
     {
     int                     rc;
     COIENGINE               engine;
@@ -263,7 +264,7 @@ int check_for_mics()
       if (it == down_mics.end())
         {
         snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         down_mics.insert(i);
         }
 
@@ -276,7 +277,7 @@ int check_for_mics()
         {
         /* if we made it here we have the mic again. remove it from the down_mics set */
         snprintf(log_buffer, sizeof(log_buffer), "handle for mic index %d is back online", (int)i);
-        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER __func__, log_buffer);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_SERVER, __func__, log_buffer);
         down_mics.erase(it);
         }
       }
@@ -292,11 +293,8 @@ int add_mic_status(
   std::vector<std::string> &status)
 
   {
-  COIENGINE                engine[MAX_ENGINES];
   uint32_t                 num_engines = 0;
-  uint32_t                 i;
-
-  struct COI_ENGINE_INFO   mic_stat[MAX_ENGINES];
+  uint32_t                 i = 0;
 
 #ifdef NUMA_SUPPORT
   /* does this node board have mics configured? */
@@ -328,15 +326,25 @@ int add_mic_status(
   for (i = 0; i < num_engines; i++)
 #endif
     {
-    if (COIEngineGetHandle(COI_ISA_MIC, i, &engine[i]) != COI_SUCCESS)
+    COIENGINE                engine;
+    struct COI_ENGINE_INFO   mic_stat;
+
+    memset(&engine, 0, sizeof(engine));
+    memset(&mic_stat, 0, sizeof(mic_stat));
+
+    if (COIEngineGetHandle(COI_ISA_MIC, i, &engine) != COI_SUCCESS)
       {
-      snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
-      log_err(-1, __func__, log_buffer);
+      if (down_mics.find(i) == down_mics.end())
+        {
+        snprintf(log_buffer, sizeof(log_buffer), "Can't get handle for mic index %d", (int)i);
+        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
+        down_mics.insert(i);
+        }
 
       continue;
       }
 
-    if (COIEngineGetInfo(engine[i], sizeof(struct COI_ENGINE_INFO), &mic_stat[i]) != COI_SUCCESS)
+    if (COIEngineGetInfo(engine, sizeof(struct COI_ENGINE_INFO), &mic_stat) != COI_SUCCESS)
       {
       snprintf(log_buffer, sizeof(log_buffer), "Can't get information for mic index %d", (int)i);
       log_err(-1, __func__, log_buffer);
@@ -344,7 +352,7 @@ int add_mic_status(
       continue;
       }
 
-    add_single_mic_info(status, &mic_stat[i]);
+    add_single_mic_info(status, &mic_stat);
     }
 
   status.push_back(END_MIC_STATUS);

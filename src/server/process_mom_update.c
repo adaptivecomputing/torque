@@ -736,7 +736,6 @@ int save_node_status(
 
 
 
-
 int process_status_info(
 
   const char               *nd_name,
@@ -773,7 +772,7 @@ int process_status_info(
     return(PBSE_NONE);
 
   //A node we put to sleep is up and running.
-  if(current->nd_power_state != POWER_STATE_RUNNING)
+  if (current->nd_power_state != POWER_STATE_RUNNING)
     {
     //Make sure we wait for a stray update that came after we changed the state to pass
     //by.
@@ -783,6 +782,7 @@ int process_status_info(
       write_node_power_state();
       }
     }
+
   /* loop over each string */
   for (unsigned int i = 0; i != status_info.size(); i++)
     {
@@ -841,6 +841,17 @@ int process_status_info(
       process_mic_status(current, i, status_info);
       str = status_info[i].c_str();
       }
+#ifdef PENABLE_LINUX_CGROUPS
+    else if (!strncmp(str, "layout", 6))
+      {
+      if (current->nd_layout == NULL)
+        {
+        current->nd_layout = new Machine(status_info[i]);
+        }
+
+      continue;
+      }
+#endif
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */

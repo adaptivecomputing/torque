@@ -12,6 +12,7 @@
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
 #include "pbs_job.h" /* job_file_delete_info */
 #include "threadpool.h"
+#include "machine.hpp"
 #include "mom_func.h"
 
 std::list<job *> alljobs_list;
@@ -35,6 +36,7 @@ char log_buffer[LOG_BUF_SIZE]; /* pbs_log.c */
 bool exit_called = false;
 int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
+pthread_mutex_t *delete_job_files_mutex;
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -144,3 +146,52 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
+void *trq_cg_remove_process_from_accts(void *vp)  
+  {
+  return(PBSE_NONE);
+  }
+
+void log_event(
+
+  int         eventtype,
+  int         objclass,
+  const char *objname,
+  const char *text)
+  
+  {
+  return;
+  }
+
+void Machine::free_job_allocation(const char *job_id)
+  {
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+PCI_Device::~PCI_Device() {}
+
+Socket::~Socket() {}
+
+Chip::~Chip() {}
+
+Core::~Core() {}
+
+Machine          this_node;
+
+void trq_cg_delete_job_cgroups(
+        
+      const char *job_id)
+
+  {
+  }
+
+int unlink_ext(const char *filename, int retry_limit)
+  {
+  return(0);
+  }
+
+int rmdir_ext(const char *dirname, int retry_limit)
+  {
+  return(0);
+  }

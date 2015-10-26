@@ -8,6 +8,7 @@
 #include "pbs_job.h"
 #include "pbs_config.h"
 #include "node_internals.hpp"
+#include "allocation.hpp"
 
 int LOGLEVEL;
 
@@ -191,3 +192,14 @@ int is_whitespace(
 
 
 #endif
+
+allocation::allocation() {}
+allocation::allocation(const allocation &other) {}
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  }

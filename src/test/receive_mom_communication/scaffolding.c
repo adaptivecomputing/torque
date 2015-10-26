@@ -16,6 +16,7 @@
 #include "mom_hierarchy_handler.h"
 #include "id_map.hpp"
 #include "node_manager.h"
+#include "pbs_ifl.h"
 
 
 id_map      job_mapper;
@@ -40,6 +41,15 @@ const char *dis_emsg[] =
   };
 
 threadpool_t *task_pool;
+
+#define ATTR_NODE_total_sockets        "total_sockets"
+#define ATTR_NODE_total_numa_nodes     "total_numa_nodes"
+#define ATTR_NODE_total_cores          "total_cores"
+#define ATTR_NODE_total_threads        "total_threads"
+#define ATTR_NODE_dedicated_sockets    "dedicated_sockets"
+#define ATTR_NODE_dedicated_numa_nodes "dedicated_numa_nodes"
+#define ATTR_NODE_dedicated_cores      "dedicated_cores"
+#define ATTR_NODE_dedicated_threads    "dedicated_threads"
 
 
 char * netaddr(struct sockaddr_in *ap)
@@ -284,6 +294,17 @@ void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
   {
   }
 
+int disrsi(tcp_chan *channel, int *ret)
+  {
+  return(PBSE_NONE);
+  }
+
+int disrui(tcp_chan *channel, int *ret)
+  {
+  return(PBSE_NONE);
+  }
+
+                                                                                                                                           
 void write_node_power_state(void)
   {
   return;
@@ -361,11 +382,6 @@ int node_gpustatus_list(
   void          *pnode,    /* pointer to a pbsnode struct     */
   int            actmode)  /* action mode; "NEW" or "ALTER"   */
 
-  {
-  return(0);
-  }
-
-int process_alps_status(const char *nd_name, std::vector<std::string> &status)
   {
   return(0);
   }
@@ -695,6 +711,191 @@ char *csv_find_string(
   return(NULL);
   }
 
+int process_alps_status(
+
+  const char               *nd_name,
+  std::vector<std::string> &status_info)
+
+  {
+  return(PBSE_NONE);
+  }
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+
+/*
+ *  * capture_until_close_character()
+ *   */
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+
+
+#define MAXLINE 1024
+
+void add_range_to_string(
+
+  std::string &range_string,
+  int          begin,
+  int          end)
+
+  {
+  char buf[MAXLINE];
+
+  if (begin == end)
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d", begin);
+    else
+      sprintf(buf, ",%d", begin);
+    }
+  else
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d-%d", begin, end);
+    else
+      sprintf(buf, ",%d-%d", begin, end);
+    }
+
+  range_string += buf;
+  } // END add_range_to_string()
+
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  // range_string starts empty
+  range_string.clear();
+  
+  if (indices.size() == 0)
+    return;
+  
+  int first = indices[0];
+  int prev = first;
+  
+  for (unsigned int i = 1; i < indices.size(); i++)
+    {
+    if (indices[i] == prev + 1)
+      {
+      // Still in a consecutive range
+      prev = indices[i];
+      }
+    else
+      {
+      add_range_to_string(range_string, first, prev);
+  
+      first = prev = indices[i];
+      }
+    }
+  
+  // output final piece
+  add_range_to_string(range_string, first, prev);
+  } // END translate_vector_to_range_string()
+  
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
 
 const char *pbsnode::get_name() const
   {
@@ -718,4 +919,12 @@ void pbsnode::change_name(const char *hostname)
 
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
+#include "../../src/lib/Libutils/machine.cpp"
+#include "../../src/lib/Libutils/numa_chip.cpp"
+#include "../../src/lib/Libutils/numa_socket.cpp"
+#include "../../src/lib/Libutils/numa_core.cpp"
+#include "../../src/lib/Libutils/numa_pci_device.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"

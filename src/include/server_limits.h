@@ -145,6 +145,7 @@
 #define PBS_SVRACL          "acl_svr"
 #define PBS_TRACKING        "tracking"
 #define NODE_DESCRIP        "nodes"
+#define NODE_USAGE          "node_usage"
 #define NODE_STATUS         "node_status"
 #define NODE_POWER_STATE    "node_power_state"
 #define NODE_NOTE           "node_note"

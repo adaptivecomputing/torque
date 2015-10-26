@@ -972,12 +972,6 @@ void log_close(
     log_opened = 0;
     }
 
-#if SYSLOG
-
-  if (syslogopen)
-    closelog();
-
-#endif /* SYSLOG */
 
   return;
   }  /* END log_close() */

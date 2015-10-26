@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread */
@@ -14,8 +15,14 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "list_link.h" /* list_link */
 #include "pbs_nodes.h"
+#include "complete_req.hpp"
+#include "attr_req_info.hpp"
+#include "machine.hpp"
 #include "log.h"
 #include "utils.h"
+
+all_nodes               allnodes;
+bool possible = false;
 
 
 bool exit_called = false;
@@ -40,6 +47,10 @@ struct pbsnode *alps_reporter;
 user_info_holder users;
 int decrement_count;
 job napali_job;
+std::string set_resource;
+const char *my_conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                       "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                       "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 
 void remove_server_suffix(
@@ -236,7 +247,11 @@ int site_acl_check(job *pjob, pbs_queue *pque)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  return(0);
+  for (int i = 0; my_conflicting_types[i] != NULL; i++)
+    if (set_resource == my_conflicting_types[i])
+      return((resource *)1);
+
+  return(NULL);
   }
 
 job *svr_find_job(const char *jobid, int get_subjob)
@@ -430,7 +445,7 @@ int decode_tokens(pbs_attribute *patr, const char *name, const char *rescn, cons
 
 int get_svr_attr_arst(int index, struct array_strings **arst)
   {
-  return(0);
+  return(-1);
   }
 
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm)
@@ -550,6 +565,33 @@ int to_size(
   return(0);
   }
 
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+Socket::Socket() {}
+Socket::~Socket() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+
+void reinitialize_node_iterator(
+
+  node_iterator *iter)
+
+  {
+  if (iter != NULL)
+    {
+    iter->node_index = NULL;
+    iter->numa_index = -1;
+    iter->alps_index = NULL;
+    }
+  } /* END reinitialize_node_iterator() */
+
+bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const
+  {
+  return(possible);
+  }
+
 struct pbsnode *next_node(
     
   all_nodes     *an,
@@ -660,6 +702,8 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+Machine::Machine() {}
+
 
 int pbsnode::lock_node(const char *id, const char *msg, int level)
   {
@@ -673,3 +717,7 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
 
   return(0);
   }
+
+#include "../../lib/Libattr/req.cpp"
+#include "../../lib/Libattr/complete_req.cpp"
+#include "../../lib/Libattr/attr_req_info.cpp"

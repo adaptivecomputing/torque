@@ -132,7 +132,7 @@ int decode_DIS_attropl(
 
   for (i = 0; i < numpat; ++i)
     {
-    disrui(chan, &rc); /* name_len is unused here */
+    (void)disrui(chan, &rc); /* name_len is unused here */
 
     if (rc) break;
 

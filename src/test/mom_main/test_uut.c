@@ -26,10 +26,35 @@ void set_report_mom_cuda_visible_devices(std::stringstream &output, char *curr);
 void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_select_timeout();
+int process_layout_request(tcp_chan *chan);
 
 extern int  exiting_tasks;
 
 bool call_scan_for_exiting();
+extern tlist_head svr_alljobs;
+extern int wsi_ret;
+extern int wcs_ret;
+extern int flush_ret;
+
+
+START_TEST(test_process_layout_request)
+  {
+  wsi_ret = -1;
+  fail_unless(process_layout_request(NULL) == -1, "diswsi failure should trigger failure");
+
+  wsi_ret = 0;
+  wcs_ret = -1;
+  fail_unless(process_layout_request(NULL) == -1, "diswcs failure should trigger failure");
+  
+  wcs_ret = 0;
+  flush_ret = -1;
+  fail_unless(process_layout_request(NULL) == -1, "flush failure should trigger failure");
+  
+  flush_ret = 0;
+  fail_unless(process_layout_request(NULL) == 0, "Should've succeeded");
+  }
+END_TEST
+
 
 START_TEST(test_read_mom_hierarchy)
   {
@@ -220,6 +245,7 @@ Suite *mom_main_suite(void)
   Suite *s = suite_create("mom_main_suite methods");
   TCase *tc_core = tcase_create("test_read_mom_hierarchy");
   tcase_add_test(tc_core, test_read_mom_hierarchy);
+  tcase_add_test(tc_core, test_process_layout_request);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_mom_job_dir_sticky_config");

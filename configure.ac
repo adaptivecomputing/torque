@@ -24,6 +24,9 @@ dnl Added --enable-memacct to enable pbs_mom to get rss values that are more rel
 dnl Added requirement for libhwloc when --enable-cpuset or --enable-numa-support
 dnl   Bernd Kallies (kallies@zib.de)
 dnl
+dnl Added --enable-cgroups. If cgroups are enabled cpusets will be disabled.
+dnl    Ken Nielson (knielson@adaptivecomputing.com)
+dnl
 dnl Expanded to allow unit testing via Check
 dnl Updated to use m4
 dnl added library functionality to testing
@@ -228,6 +231,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/svr_task/Makefile
     src/test/track_alps_reservations/Makefile
     src/test/user_info/Makefile
+    src/test/req/Makefile
+    src/test/complete_req/Makefile
+    src/test/attr_fn_complete_req/Makefile
     src/test/attr_atomic/Makefile
     src/test/attr_fn_acl/Makefile
     src/test/attr_fn_arst/Makefile
@@ -464,6 +470,12 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/qterm/Makefile
     src/test/momctl/Makefile
 	  src/drmaa/test/Makefile
+    src/test/allocation/Makefile
+    src/test/machine/Makefile
+    src/test/numa_core/Makefile
+    src/test/numa_chip/Makefile
+    src/test/numa_socket/Makefile
+    src/test/numa_pci_device/Makefile
     src/test/pam_pbssimpleauth/Makefile
     src/test/alps_reservations/Makefile
     src/test/catch_child/Makefile
@@ -721,6 +733,22 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       ;;
   esac
   AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
+  
+  AC_MSG_RESULT([before tweak CXXFLAGS=$CXXFLAGS])
+  CXXFLAGS=`echo $CXXFLAGS | sed 's/ \?-O[[^ ]]*//g'`
+  AC_MSG_RESULT([mid tweak CXXFLAGS=$CXXFLAGS])
+  case $CXXFLAGS in
+    *-g*)
+      ;;
+    *)
+      if test "$CXXFLAGS" = ''; then
+        CXXFLAGS="-g"
+      else
+        CXXFLAGS="-g $CXXFLAGS"
+      fi
+      ;;
+  esac
+  AC_MSG_RESULT([after tweak CXXFLAGS=$CXXFLAGS])
 fi
 
 dnl if using gcc, we can be very strict
@@ -905,6 +933,18 @@ else
   AC_MSG_RESULT([no])
 fi
 
+AC_ARG_ENABLE(cgroups, [  --enable-cgroups       enable Linux control groups])
+build_linux_cgroups=no
+AC_MSG_CHECKING([whether to enable cgroups])
+if test "x$enable_cgroups" = "xyes"; then
+  AC_MSG_RESULT([yes])
+  build_linux_cgroups=yes
+  AC_DEFINE(PENABLE_LINUX_CGROUPS, 1, [Define to enable Linux cgroups])
+else
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL([BUILD_LINUX_CGROUPS], test "$build_linux_cgroups" = yes)
+
 AC_ARG_ENABLE(cpuset,[  --enable-cpuset         enable Linux 2.6 kernel cpusets])
 build_l26_cpuset=no
 cpuset=0
@@ -1067,32 +1107,110 @@ for your version of boost.
 
 
 
-
-
 dnl add an option to specify a different path where TORQUE should look for HWLOC 
 dnl lib and include files
 dnl
 AC_ARG_WITH(hwloc-path, [
   --with-hwloc-path=PATH   
                        Specifies the path to the hwloc libraries and include files.
-                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.2
-                       Will specify that the include files are in /usr/local/hwloc-1.2/include and
-                       the libraries are in /usr/local/hwloc-1.2/lib],
+                       Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.9
+                       Will specify that the include files are in /usr/local/hwloc-1.9/include and
+                       the libraries are in /usr/local/hwloc-1.9/lib],
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
 
+dnl
+dnl enable Nvidia gpu support
+dnl
+AC_MSG_CHECKING([whether to build Nvidia gpu support])
+AC_ARG_ENABLE(nvidia-gpus,
+    [  --enable-nvidia-gpus    enable Nvidia gpu support
+                          Nvidia gpu support requires the use of the Nvidia Management Library (NVML)
+                          When using --enable-nvidia-gpus, you must also specify --with-nvml-lib=DIR and 
+                          --with-nvml-include=DIR. hwloc 1.9 or later is also required. 
+                          See --with-hwloc-path.
+],
+    enable_nvidia=$enableval,enable_nvidia=no)
+AC_MSG_RESULT($enable_nvidia)
+case "$enable_nvidia" in
+  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
+esac
+AM_CONDITIONAL([NVIDIA], test "$enable_nvidia" = yes)
 
-dnl For Linux 2.6 cpusets, libhwloc is needed for pbs_mom.
+dnl
+dnl check for nvml include and lib dir only if Nvidia gpu support has been enabled
+dnl
+if test "${enable_nvidia}" = "yes"; then
+  AC_ARG_WITH(nvml_include,
+      [  --with-nvml-include=DIR include path for nvml.h],
+      nvmlinclude=$withval,nvmlinclude=none)   
+  AC_ARG_WITH(nvml_lib,
+      [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
+      nvmllib=$withval,nvmllib=none)   
+
+  if test "x$nvmlinclude" = "xnone" && test "x$nvmllib" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-lib and --with-nvml-include need to be specified])
+  elif test "x$nvmllib" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-lib needs to be specified])
+  elif test "x$nvmlinclude" == "xnone"; then
+    AC_MSG_ERROR([--with-nvml-include needs to be specified])
+  fi
+
+  if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone"; then
+    CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
+    MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
+    gccwarnings=no
+    AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
+  fi
+fi
+
+
+dnl For Linux 2.6 cpusets, libhwloc 1.2 or later is needed for pbs_mom.
+dnl For GPU detection, libhwloc 1.7 or later is needed for pbs_mom.
+dnl For cgroup support, libhwloc 1.7 or later is needed for pbs_mom.
+dnl hwloc 1.7 is newer than the versions distributed with supported operating systems.
+dnl hwloc 1.9 is stable. Therefore, 1.9 or later will be required.
 dnl We are using pkg-config to figure out libs and cflags.
 dnl The used m4 macro is found in buildutils/pkg.m4.
-dnl In addition, we check libhwloc for hwloc_bitmap_list_snprintf (present since v1.2).
-if test "${build_l26_cpuset}" = "yes" ; then
-  if test "${build_mom}" = "yes" ; then
-    PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.2],
-      [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS" ],
-      [ AC_MSG_ERROR([cpuset support requires the hwloc development package
+dnl In addition, we check libhwloc for hwloc_linux_get_tid_last_cpu_location (present since v1.9).
+if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test "${build_linux_cgroups}" = "yes"; then
+  if test "${build_l26_cpuset}" = "yes"; then
+    # The carriage return is siginifican. Do not delete it
+    CPUSET_DEPENDS_ON_HWLOC="cpuset support requires the hwloc development package
+"
+  fi
 
+  if test "${enable_nvidia}" = "yes"; then
+    # The carriage return is siginificant. Do not delete it
+    GPU_DETECTION_DEPENDS_ON_HWLOC="GPU detection requires the hwloc development package
+"
+  # In order to get AC_CHECK_LIB to pick up the nvml library
+  # if it is not in the default location we need to add 
+  # the value of nvmllib set in --with-nvml-lib to LDFLAGS
+  LDFLAGS="$LDFLAGS -L$nvmllib"
+  AC_CHECK_LIB([nvidia-ml], [nvmlDeviceGetHandleByIndex],,
+     [AC_MSG_ERROR([libnvidia does not look like >= 4.1])])
+  fi
+
+  if test "${build_linux_cgroups}" = "yes"; then
+    # The carriage return is siginifican. Do not delete it
+    CGROUP_DEPENDS_ON_HWLOC="cgroup support requires the hwloc development package
+"
+  fi
+
+  if test "${build_mom}" = "yes"; then
+    # Do not look for package hwloc using PKG_CHECK_MODULES if the user uses --with-hwloc-dir
+    # --with-hwloc-dir sets HWLOC_LIBS and HWLOC_CFLAGS. Therefore, if HWLOC_LIBS is not empty
+    # do not look for an installed hwloc.
+    if test -z "${HWLOC_LIBS}" ; then
+      # pkg_check_modules takes the first parameter "HWLOC" and provides an "HWLOC_LIBS" and "HWLOC_CFLAGS"
+      # variable when the second parameter (the package and version we are looking for) resolves to true.
+      PKG_CHECK_MODULES([HWLOC], [hwloc >= 1.9],
+        [ MOMLIBS="$MOMLIBS $HWLOC_LIBS"; CFLAGS="$CFLAGS $HWLOC_CFLAGS"; CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS"; ],
+        [ AC_MSG_ERROR([${CPUSET_DEPENDS_ON_HWLOC}${GPU_DETECTION_DEPENDS_ON_HWLOC}${CGROUP_DEPENDS_ON_HWLOC}
 $HWLOC_PKG_ERRORS
 
 This can be solved by configuring with --with-hwloc-path=<path>. This path
@@ -1108,13 +1226,20 @@ to the PKG_CONFIG_PATH environment variable.
 If you have done these and still get this  error, try running ./autogen.sh and
 then configuring again.
 ])])
-    olibs=$LIBS
+
+      AC_CHECK_LIB([hwloc], [hwloc_linux_get_tid_last_cpu_location],,
+        [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
+    fi
+
     LIBS="$LIBS $HWLOC_LIBS";
-    AC_CHECK_LIB([hwloc], [hwloc_bitmap_list_snprintf],,
-      [AC_MSG_ERROR([libhwloc does not look like >= 1.2])])
-    LIBS=$olibs
   fi
 fi 
+
+
+if test "x$HWLOC_CFLAGS" != "xnone"; then
+  CFLAGS="$CFLAGS $HWLOC_CFLAGS"
+  CPPFLAGS="$CPPFLAGS $HWLOC_CFLAGS"
+fi
 
 
 dnl enable pbs_mom to use the cpuset API from libcpuset
@@ -1279,45 +1404,6 @@ case "$BLCR" in
   no) : ;;
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
-
-
-dnl
-dnl enable Nvidia gpu support
-dnl
-AC_MSG_CHECKING([whether to build Nvidia gpu support])
-AC_ARG_ENABLE(nvidia-gpus,
-    [  --enable-nvidia-gpus    enable Nvidia gpu support],
-    NVIDIA=$enableval,NVIDIA=no)
-AC_MSG_RESULT($NVIDIA)
-case "$NVIDIA" in
-  yes) AC_DEFINE([NVIDIA_GPUS], 1, [Define to enable Nvidia gpu support]) ;;
-  no) : ;;
-  *) AC_MSG_ERROR([--enable-nvidia-gpus should be yes or no]) ;;
-esac
-AM_CONDITIONAL([NVIDIA], test "$NVIDIA" = yes)
-
-AC_ARG_WITH(nvml_include,
-    [  --with-nvml-include=DIR include path for nvml.h],
-    nvmlinclude=$withval,nvmlinclude=none)   
-AC_ARG_WITH(nvml_lib,
-    [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
-    nvmllib=$withval,nvmllib=none)   
-
-if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" != "xnone" ;then
-  CPPFLAGS="$CPPFLAGS -I$nvmlinclude"
-  MOMLIBS="$MOMLIBS -L$nvmllib -lnvidia-ml"
-  gccwarnings=no
-  AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
-fi
-
-if test "x$nvmlinclude" != "xnone" && test "x$nvmllib" == "xnone" ;then
-  AC_MSG_ERROR([--with-nvml-lib needs to be specified])
-fi
-
-if test "x$nvmllib" != "xnone" && test "x$nvmlinclude" == "xnone" ;then
-  AC_MSG_ERROR([--with-nvml-include needs to be specified])
-fi
-
 
 dnl 
 dnl if we're running from a tarball (not checked out) automatically turn off
