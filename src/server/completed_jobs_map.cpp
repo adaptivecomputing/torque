@@ -154,7 +154,7 @@ int completed_jobs_map_class::cleanup_completed_jobs(
     // if cleanup time is before/at now, then clean up
     if (it->second <= now)
       {
-      int retcode;
+      int retcode = PBSE_NONE;
       work_task *pnew;
 
       // Does job exist

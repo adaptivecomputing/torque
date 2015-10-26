@@ -2461,7 +2461,7 @@ int split_job(
 
 bool job_id_exists(
 
-  const  std::string job_id_string,
+  const  std::string &job_id_string,
   int   *rcode)
 
   {
