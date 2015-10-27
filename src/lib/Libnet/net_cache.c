@@ -101,7 +101,7 @@
   ****************************************/
 
 static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
-static int cacheDestroyed = FALSE;
+bool cacheDestroyed = false;
 bool exit_called = false;
 
 
@@ -124,7 +124,8 @@ class addrcache
     const char      *host)
 
     {
-    if ((pAddr->ai_family != AF_INET)||(cacheDestroyed == TRUE))
+    if ((pAddr->ai_family != AF_INET) ||
+        (cacheDestroyed == true))
       return(NULL);
 
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
@@ -198,9 +199,9 @@ class addrcache
     struct addrinfo *p = NULL;
     char             key[65];
 
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
-        return NULL;
+      return NULL;
       }
     sprintf(key,"%d",addr);
 
@@ -216,9 +217,9 @@ class addrcache
   struct addrinfo * getFromCache(const char *hostName)
     {
     struct addrinfo *p = NULL;
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
-        return NULL;
+      return NULL;
       }
     pthread_mutex_lock(&cacheMutex);
     nameToAddr.lock();
@@ -236,7 +237,7 @@ class addrcache
     {
     const char *p = NULL;
     char key[65];
-    if(cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
         return NULL;
       }
@@ -261,7 +262,7 @@ class addrcache
 
   ~addrcache()
     {
-    cacheDestroyed = TRUE;
+    cacheDestroyed = true;
 #if 0
     for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
       {
