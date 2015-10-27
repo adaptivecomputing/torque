@@ -10,6 +10,7 @@
 
 PBS_DAEMON=@sbindir@/pbs_sched
 PBS_HOME=@PBS_HOME@
+PBS_ARGS=""
 export PBS_DAEMON PBS_HOME
 
 if [ -f /etc/sysconfig/pbs_sched ];then
@@ -24,7 +25,7 @@ case "$1" in
 		RET=$?
 		[ $RET -eq 0 ] && echo -n "pbs_sched already running" && success && echo && exit 0
 
-		daemon $PBS_DAEMON -d $PBS_HOME
+		daemon $PBS_DAEMON -d $PBS_HOME $PBS_ARGS
 		RET=$?
 		[ $RET -eq 0 ] && touch /var/lock/subsys/pbs_sched
 		echo
