@@ -18,6 +18,11 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+int              is_reporter_mom = FALSE;
+int              is_login_node   = FALSE;
+int PBSNodeCheckEpilog;
+int PBSNodeCheckProlog;
+int internal_state;
 int create_job_cpuset(job *pj) { return 0; }
 int use_cpusets(job *pj) { return 0; }
 const char *path_jobs = "some path to nowhere."; /* mom_main.c */
