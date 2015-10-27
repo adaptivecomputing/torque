@@ -101,7 +101,7 @@
   ****************************************/
 
 static pthread_mutex_t cacheMutex = PTHREAD_MUTEX_INITIALIZER;
-static int cacheDestroyed = FALSE;
+bool cacheDestroyed = false;
 bool exit_called = false;
 
 
@@ -130,6 +130,10 @@ private:
     char            *key)
 
     {
+    if ((pAddr->ai_family != AF_INET) ||
+        (cacheDestroyed == true))
+      return(NULL);
+
     struct sockaddr_in *pINetAddr = (struct sockaddr_in *)pAddr->ai_addr;
     struct addrinfo    *pTmpAddr = NULL;
     int                 i = -1;
@@ -318,9 +322,9 @@ public:
     struct addrinfo *p = NULL;
     char             key[65];
 
-    if (cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
-        return NULL;
+      return NULL;
       }
     sprintf(key,"%d",addr);
 
@@ -341,7 +345,7 @@ public:
 
     {
     struct addrinfo *p = NULL;
-    if (cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
       return(NULL);
       }
@@ -363,7 +367,7 @@ public:
     {
     const char *p = NULL;
     char key[65];
-    if (cacheDestroyed == TRUE)
+    if (cacheDestroyed == true)
       {
         return NULL;
       }
@@ -388,7 +392,7 @@ public:
 
   ~addrcache()
     {
-    cacheDestroyed = TRUE;
+    cacheDestroyed = true;
     for(std::vector<struct addrinfo *>::iterator i = addrs.begin();i != addrs.end();i++)
       {
       freeaddrinfo(*i);
