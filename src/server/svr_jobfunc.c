@@ -391,7 +391,7 @@ int svr_enquejob(
   pbs_attribute *pattrjb;
   attribute_def *pdef;
   pbs_queue     *pque;
-  int            rc = -1;
+  int            rc = PBSE_NONE;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
   char           job_id[PBS_MAXSVRJOBID+1];
@@ -402,6 +402,7 @@ int svr_enquejob(
 
   if (pjob == NULL)
     {
+    rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL job pointer input");
     return(rc);
     }
@@ -612,6 +613,8 @@ int svr_enquejob(
   /* set any "unspecified" checkpoint with queue default values, if any */
   set_chkpt_deflt(pjob, pque);
 
+  rc = PBSE_NONE;
+
   /* See if we need to do anything special based on type of queue */
   if (pque->qu_qs.qu_type == QTYPE_Execution)
     {
@@ -666,10 +669,8 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     }
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END svr_enquejob() */
-
-
 
 
 
