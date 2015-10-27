@@ -3,12 +3,14 @@
 #include "login_nodes.h"
 #include "pbs_nodes.h"
 #include "attribute.h"
+#include "job_usage_info.hpp"
 #include <check.h>
 
 extern login_holder logins;
 char                buf[4096];
 int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req);
 struct pbsnode *check_node(login_node *ln, struct prop *needed);
+void update_next_node_index(unsigned int to_beat);
 
 
 void initialize_node_for_testing(
@@ -160,6 +162,76 @@ START_TEST(retrieval_test)
   fail_unless(((n1_rtd == 3) && (n2_rtd == 2) && (n3_rtd == 3) && (n4_rtd == 3)),
     "Should have used n1,n2,n3,n4 3,2,3,3 times but found %d,%d,%d,%d",
     n1_rtd, n2_rtd, n3_rtd, n4_rtd);
+  
+  // Make sure load balancing works
+  n2.nd_state = INUSE_FREE;
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n1.nd_job_usages.push_back(ju);
+    }
+  
+  // Make sure we don't pick n1 as the next node 
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node != 0);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n2.nd_job_usages.push_back(ju);
+    }
+  
+  // make sure we're excluding n1 and n2
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node != 0);
+    fail_unless(logins.next_node != 1);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n3.nd_job_usages.push_back(ju);
+    }
+
+  // Make sure we use n4, the only empty node
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node == 3);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n4.nd_job_usages.push_back(ju);
+    }
+
+  n1.nd_job_usages.clear();
+  // now n1 is empty 
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node == 0);
+    }
+
+  n2.nd_job_usages.clear();
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1);
+    }
+
+  n3.nd_job_usages.clear();
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1 || logins.next_node == 2);
+    }
   }
 END_TEST
 

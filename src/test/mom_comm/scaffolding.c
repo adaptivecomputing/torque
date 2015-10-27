@@ -26,6 +26,8 @@ int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
 std::list<job *> alljobs_list;
+int              is_reporter_mom = FALSE;
+int              is_login_node   = FALSE;
 int PBSNodeCheckEpilog;
 int PBSNodeCheckProlog;
 int internal_state;

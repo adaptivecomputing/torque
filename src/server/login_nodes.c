@@ -84,6 +84,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 
 extern int LOGLEVEL;
+const int  JOB_USAGE_THRESHOLD = 50;
 
 login_holder logins;
 
@@ -196,6 +197,35 @@ struct pbsnode *find_fitting_node(
 
 
 
+void update_next_node_by_usage()
+
+  {
+  unsigned int    jobs_to_beat = -1;
+  struct pbsnode *pnode = logins.nodes[logins.next_node].pnode;
+
+  pnode->lock_node(__func__, NULL, LOGLEVEL);
+  jobs_to_beat = pnode->nd_job_usages.size();
+  pnode->unlock_node(__func__, NULL, LOGLEVEL);
+
+  // If we have more than 50 jobs on the next login to use, then we should load balance 
+  // instead of round-robin
+  if (jobs_to_beat > JOB_USAGE_THRESHOLD)
+    {
+    for (unsigned int i = 0; i < logins.nodes.size(); i++)
+      {
+      struct pbsnode *pnode = logins.nodes[i].pnode;
+      pnode->lock_node(__func__, NULL, LOGLEVEL);
+      if (pnode->nd_job_usages.size() < jobs_to_beat)
+        {
+        logins.next_node = i;
+        jobs_to_beat = pnode->nd_job_usages.size();
+        }
+      pnode->unlock_node(__func__, NULL, LOGLEVEL);
+      }
+    }
+  } // END update_next_node_by_usage()
+
+
 
 void update_next_node_index(
 
@@ -216,6 +246,7 @@ void update_next_node_index(
     prev_index++;
     }
 
+  update_next_node_by_usage();
   } /* END update_next_node_index() */
 
 

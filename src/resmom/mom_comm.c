@@ -825,6 +825,13 @@ int send_sisters(
   char            *cookie;
   resend_momcomm  *mc;
 
+  // These moms have no sisters
+  if ((is_login_node == TRUE) ||
+      (is_reporter_mom == TRUE))
+    {
+    return(0);
+    }
+
   if (LOGLEVEL >= 4)
     {
     sprintf(log_buffer, "sending command %s for job %s (%d)",
