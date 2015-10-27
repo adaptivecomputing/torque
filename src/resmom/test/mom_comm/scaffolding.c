@@ -18,6 +18,8 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+int              is_reporter_mom = FALSE;
+int              is_login_node   = FALSE;
 int PBSNodeCheckEpilog;
 int PBSNodeCheckProlog;
 int internal_state;
