@@ -1144,6 +1144,7 @@ void remove_invalid_allocations(
   pbsnode *pnode)
 
   {
+  int retcode;
 
   if (pnode->nd_layout != NULL)
     {
@@ -1153,7 +1154,15 @@ void remove_invalid_allocations(
 
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
-      if (job_id_exists(job_ids[i]) == false)
+      bool exists;
+      do
+        {
+        /* job_id_exists will return false if it can't
+           get a mutex lock. Check the recode first
+           if it returns false */
+        exists = job_id_exists(job_ids[i], &retcode);
+        }while(exists == false && retcode != 0);
+      if (exists == false)
         pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
       }
     }
