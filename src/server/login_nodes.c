@@ -84,7 +84,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 
 extern int LOGLEVEL;
-const int  JOB_USAGE_THRESHOLD = 50;
+const unsigned int  JOB_USAGE_THRESHOLD = 50;
 
 login_holder logins;
 
