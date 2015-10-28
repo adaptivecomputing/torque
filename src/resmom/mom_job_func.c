@@ -153,7 +153,7 @@
 #define FALSE 0
 #endif
 
-extern pthread_mutex_t  *delete_job_files_mutex;
+extern pthread_mutex_t  delete_job_files_mutex;
 
 int conn_qsub(char *, long, char *);
 
@@ -659,7 +659,7 @@ void *delete_job_files(
       log_err(-1, __func__, "failed to post delete_job_files_sem");
       }
     
-    pthread_mutex_lock(delete_job_files_mutex);
+    pthread_mutex_lock(&delete_job_files_mutex);
     }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -758,7 +758,7 @@ void *delete_job_files(
   if (thread_unlink_calls == true)
     {
     sem_wait(delete_job_files_sem);
-    pthread_mutex_unlock(delete_job_files_mutex);
+    pthread_mutex_unlock(&delete_job_files_mutex);
     }
   return(NULL);
   } /* END delete_job_files() */
