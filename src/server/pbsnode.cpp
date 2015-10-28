@@ -45,8 +45,6 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                                           //list has been send to all nodes.
     }
   
-  this->nd_first           = init_prop(this->nd_name.c_str());
-  this->nd_last            = this->nd_first;
   this->nd_f_st            = init_prop(this->nd_name.c_str());
   this->nd_l_st            = this->nd_f_st;
 
@@ -94,8 +92,6 @@ pbsnode::pbsnode(
   this->nd_id              = node_mapper.get_new_id(this->nd_name.c_str());
   this->nd_addrs           = pul;       /* list of host byte order */
   //this->nd_ntype           = ntype;
-  this->nd_first           = init_prop(this->nd_name.c_str());
-  this->nd_last            = this->nd_first;
   this->nd_f_st            = init_prop(this->nd_name.c_str());
   this->nd_l_st            = this->nd_f_st;
 
@@ -122,9 +118,6 @@ pbsnode::pbsnode(
 pbsnode::~pbsnode()
 
   {
-  if (this->nd_first != NULL)
-    free_prop_list(this->nd_first);
-
   if (this->nd_f_st != NULL)
     free_prop_list(this->nd_f_st);
 

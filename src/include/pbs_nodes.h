@@ -292,8 +292,6 @@ public:
   pthread_mutex_t               nd_mutex;            // mutex for accessing this node 
   int                           nd_id;               /* node's id */
 
-  struct prop                  *nd_first;            /* first and last property */
-  struct prop                  *nd_last;
   struct prop                  *nd_f_st;             /* first and last status */
   struct prop                  *nd_l_st;
   
