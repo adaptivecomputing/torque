@@ -197,15 +197,25 @@ struct pbsnode *find_fitting_node(
 
 
 
-void update_next_node_by_usage()
+/*
+ * update_next_node_by_usage
+ *
+ * @param held - a pointer to a node whose mutex we own
+ */
+
+void update_next_node_by_usage(
+    
+  struct pbsnode *held)
 
   {
   unsigned int    jobs_to_beat = -1;
   struct pbsnode *pnode = logins.nodes[logins.next_node].pnode;
 
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  if (pnode != held)
+    lock_node(pnode, __func__, NULL, LOGLEVEL);
   jobs_to_beat = pnode->nd_job_usages.size();
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  if (pnode != held)
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
 
   // If we have more than 50 jobs on the next login to use, then we should load balance 
   // instead of round-robin
@@ -214,13 +224,17 @@ void update_next_node_by_usage()
     for (unsigned int i = 0; i < logins.nodes.size(); i++)
       {
       struct pbsnode *pnode = logins.nodes[i].pnode;
-      lock_node(pnode, __func__, NULL, LOGLEVEL);
+      if (pnode != held)
+        lock_node(pnode, __func__, NULL, LOGLEVEL);
+
       if (pnode->nd_job_usages.size() < jobs_to_beat)
         {
         logins.next_node = i;
         jobs_to_beat = pnode->nd_job_usages.size();
         }
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
+      if (pnode != held)
+        unlock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
   } // END update_next_node_by_usage()
@@ -229,7 +243,8 @@ void update_next_node_by_usage()
 
 void update_next_node_index(
 
-  unsigned int to_beat)
+  unsigned int    to_beat,
+  struct pbsnode *held)
 
   {
   int         prev_index = 0;
@@ -246,7 +261,7 @@ void update_next_node_index(
     prev_index++;
     }
 
-  update_next_node_by_usage();
+  update_next_node_by_usage(held);
   } /* END update_next_node_index() */
 
 
@@ -292,7 +307,7 @@ struct pbsnode *get_next_login_node(
   else
     {
     ln.times_used++;
-    update_next_node_index(ln.times_used);
+    update_next_node_index(ln.times_used, pnode);
     }
 
   pthread_mutex_unlock(logins.ln_mutex);
