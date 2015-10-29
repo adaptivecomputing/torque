@@ -12,36 +12,6 @@ int LOGLEVEL = 5;
 int lock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 int unlock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 
-int hasprop(
-
-  struct pbsnode *pnode,
-  struct prop    *props)
-
-  {
-  struct  prop    *need;
-
-  for (need = props;need;need = need->next)
-    {
-
-    struct prop *pp;
-
-    if (need->mark == 0) /* not marked, skip */
-      continue;
-
-    for (pp = pnode->nd_first;pp != NULL;pp = pp->next)
-      {
-      if (strcmp(pp->name, need->name) == 0)
-        break;  /* found it */
-      }
-
-    if (pp == NULL)
-      {
-      return(0);
-      }
-    }
-
-  return(1);
-  }  /* END hasprop() */
 
 
 int number(
