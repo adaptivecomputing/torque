@@ -10,7 +10,7 @@ extern login_holder logins;
 char                buf[4096];
 int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req);
 struct pbsnode *check_node(login_node *ln, struct prop *needed);
-void update_next_node_index(unsigned int to_beat);
+void update_next_node_index(unsigned int to_beat, struct pbsnode *held);
 
 
 void initialize_node_for_testing(
@@ -175,7 +175,7 @@ START_TEST(retrieval_test)
   // Make sure we don't pick n1 as the next node 
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node != 0);
     }
   
@@ -188,7 +188,7 @@ START_TEST(retrieval_test)
   // make sure we're excluding n1 and n2
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node != 0);
     fail_unless(logins.next_node != 1);
     }
@@ -202,7 +202,7 @@ START_TEST(retrieval_test)
   // Make sure we use n4, the only empty node
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node == 3);
     }
   
@@ -216,21 +216,21 @@ START_TEST(retrieval_test)
   // now n1 is empty 
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node == 0);
     }
 
   n2.nd_job_usages.clear();
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node == 0 || logins.next_node == 1);
     }
 
   n3.nd_job_usages.clear();
   for (int i = 0; i < 200; i++)
     {
-    update_next_node_index(0);
+    update_next_node_index(0, NULL);
     fail_unless(logins.next_node == 0 || logins.next_node == 1 || logins.next_node == 2);
     }
   }
