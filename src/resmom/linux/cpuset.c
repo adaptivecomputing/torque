@@ -784,10 +784,11 @@ int delete_cpuset(
        */
       else if (!strcmp(pdirent->d_name, "tasks"))
         {
+        slept = 0;
+
         do
           {
           npids = 0;
-          slept = 0;
           if ((fd = fopen(path, "r")) != NULL)
             {
             while ((fgets(tid, sizeof(tid), fd)) != NULL)
