@@ -227,6 +227,8 @@ pbsnode &pbsnode::operator =(
 #ifdef PENABLE_LINUX_CGROUPS
   this->nd_layout = other.nd_layout;
 #endif
+
+  return(*this);
   }
 
 
