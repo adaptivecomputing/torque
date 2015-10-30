@@ -559,6 +559,47 @@ int encode_arst(
 
 
 
+struct array_strings *copy_arst(
+
+  struct array_strings *to_copy)
+
+  {
+  struct array_strings *arst;
+
+  // Check for validity
+  if ((to_copy == NULL) ||
+      (to_copy->as_npointers < 1))
+    {
+    return(NULL);
+    }
+
+  size_t need = sizeof(struct array_strings) + (to_copy->as_npointers - 1) * sizeof(char *);
+  size_t bufsize = to_copy->as_bufsize;
+
+  if ((arst = (struct array_strings *)calloc(1, need)) != NULL)
+    {
+    arst->as_npointers = to_copy->as_npointers;
+    arst->as_usedptr = to_copy->as_usedptr;
+    arst->as_bufsize = to_copy->as_bufsize;
+    if ((arst->as_buf = (char *)calloc(1, arst->as_bufsize)) != NULL)
+      {
+      memcpy(arst->as_buf, to_copy->as_buf, arst->as_bufsize);
+
+      arst->as_next = arst->as_buf + (to_copy->as_next - to_copy->as_buf);
+
+      for (int i = 0; i < to_copy->as_usedptr; i++)
+        arst->as_string[i] = arst->as_buf + (to_copy->as_string[i] - to_copy->as_buf);
+      }
+    else
+      {
+      free(arst);
+      arst = NULL;
+      }
+    }
+
+  return(arst);
+  } // END copy_arst()
+
 
 
 /*

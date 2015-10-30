@@ -22,7 +22,7 @@ void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::string &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
-int read_val_and_advance(int *val, char **str);
+int read_val_and_advance(int *val, const char **str);
 char *parse_node_token(char **start, int flags, int *err, char *term);
 int add_node_attribute_to_list(char *token, char **line_ptr, tlist_head *atrlist_ptr, int linenum);
 void add_node_property(std::string &propstr, const char *token, bool &is_alps_starter, bool &is_alps_reporter, bool &is_alps_compute);
@@ -184,7 +184,7 @@ START_TEST(add_node_attribute_to_list_test)
 
   ret = add_node_attribute_to_list(strdup("np"), &ptr, &th, 1);
   fail_unless(ret == PBSE_NONE);
-  fail_unless(strcmp(attrname.c_str(), "np") == 0);
+  fail_unless(strcmp(attrname.c_str(), "np") == 0, "attrname is %s", attrname.c_str());
   fail_unless(strcmp(attrval.c_str(), "100") == 0);
   attrlist_free();
   attrname.clear();
@@ -237,7 +237,7 @@ END_TEST
 START_TEST(read_val_and_advance_test)
   {
   int   val;
-  char *str = NULL;
+  const char *str = NULL;
 
   fail_unless(read_val_and_advance(NULL, &str) == PBSE_BAD_PARAMETER);
   fail_unless(read_val_and_advance(&val, &str) == PBSE_BAD_PARAMETER);
@@ -252,48 +252,6 @@ START_TEST(read_val_and_advance_test)
   }
 END_TEST
   
-
-START_TEST(write_compute_node_properties_test)
-  {
-  struct pbsnode  node1;
-  struct pbsnode  node2;
-  struct pbsnode  reporter;
-
-  alps_reporter = &reporter;
-
-  node1.change_name("bob");
-  node2.change_name("tom");
-  reporter.alps_subnodes = new all_nodes();
-  initialize_allnodes(reporter.alps_subnodes, &node1, &node2);
-
-  node1.add_property("bob");
-  node1.add_property("cray_compute");
-  node2.add_property("tom");
-  node2.add_property("cray_compute");
-  node2.add_property("martin");
-
-  FILE *nin = fopen("nodes", "w");
-  reporter.write_compute_node_properties(nin);
-  fflush(nin);
-  fclose(nin);
-
-  std::ifstream myfile("nodes");
-  std::string   line;
-
-  getline(myfile, line);
-  fail_unless(strstr(line.c_str(), "martin") != NULL);
-  fail_unless(strstr(line.c_str(), "cray_compute") != NULL);
-  const char *ptr = strstr(line.c_str(), "tom");
-  fail_unless(ptr != NULL);
-  fail_unless(strstr(ptr + 1, "tom") == NULL);
-  // there should only be 1 line 
-  line.clear();
-  getline(myfile, line);
-  fail_unless(line.size() == 0);
-  alps_reporter = NULL;
-  }
-END_TEST
-
 
 START_TEST(add_to_property_list_test)
   {
@@ -1041,8 +999,7 @@ Suite *node_func_suite(void)
   tcase_add_test(tc_core, add_to_property_list_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("write_compute_node_properties_test");
-  tcase_add_test(tc_core, write_compute_node_properties_test);
+  tc_core = tcase_create("add_node_attribute_to_list_test");
   tcase_add_test(tc_core, add_node_attribute_to_list_test);
   suite_add_tcase(s, tc_core);
 

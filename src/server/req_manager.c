@@ -816,9 +816,6 @@ int mgr_set_node_attr(
 
   struct pbsnode   tnode;  /*temporary node*/
 
-  struct prop     *pdest;
-
-  struct prop    **plink;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (plist == NULL)
@@ -984,35 +981,6 @@ int mgr_set_node_attr(
   /* update prop list based on new prop array */
   pnode->update_properties();
   
-  /* update status list based on new status array */
-
-  free_prop_list(pnode->nd_f_st);
-
-  plink = &pnode->nd_f_st;
-
-  if (pnode->nd_status != NULL)
-    {
-    nstatus = pnode->nd_status->as_usedptr;
-
-    for (i = 0;i < nstatus;++i)
-      {
-      pdest = init_prop(pnode->nd_status->as_string[i]);
-
-      *plink = pdest;
-      plink  = &pdest->next;
-      }
-    }
-
-  /* now add in name as last status */
-
-  pdest  = init_prop(pnode->get_name());
-
-  *plink = pdest;
-
-  pnode->nd_l_st = pdest;
-
-  pnode->nd_nstatus = nstatus + 1;
-
   /* now update subnodes */
 
   update_subnode(pnode);

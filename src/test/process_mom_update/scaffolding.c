@@ -346,6 +346,14 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
+pbsnode::pbsnode() : nd_note()
+  {
+  }
+
+pbsnode::~pbsnode() 
+  {
+  }
+
 int pbsnode::lock_node(const char *id, const char *msg, int level)
   {
   return(0);

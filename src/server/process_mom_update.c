@@ -203,17 +203,8 @@ int process_mic_status(
 
     if (mic_count > pnode->nd_nmics_alloced)
       {
-      struct jobinfo *tmp = (struct jobinfo *)calloc(mic_count, sizeof(struct jobinfo));
-      
-      if (tmp == NULL)
-        return(ENOMEM);
-
-      memcpy(tmp, pnode->nd_micjobs, sizeof(struct jobinfo) * pnode->nd_nmics_alloced);
-      free(pnode->nd_micjobs);
-      pnode->nd_micjobs = tmp;
-          
-      for (int j = pnode->nd_nmics_alloced; j < mic_count; j++)
-        pnode->nd_micjobs[j].internal_job_id = -1;
+      for (int i = 0; i < mic_count - pnode->nd_nmics_alloced; i++)
+        pnode->nd_micjobids.push_back(-1);
 
       pnode->nd_nmics_alloced = mic_count;
       }
@@ -502,7 +493,7 @@ int set_note_error(
   std::string oldnote = "";
 
   // If a note already exists, append the error; otherwise, create a new note
-  if (np->nd_note != NULL)
+  if (np->nd_note.size() != 0)
     {
     oldnote = np->nd_note;
 
@@ -513,12 +504,11 @@ int set_note_error(
       }
 
     message = oldnote + " - " + errmsg;
-    free(np->nd_note);
     }
   else
     message = std::string(str).substr(8, std::string::npos);
 
-  np->nd_note = strdup(message.c_str());
+  np->nd_note = message.c_str();
 
   return(PBSE_NONE);
   }  /* END set_note() */
@@ -542,7 +532,7 @@ int restore_note(
   std::size_t found;
 
   // If a note exists, strip it of any error message
-  if (np->nd_note != NULL)
+  if (np->nd_note.size() != 0)
     {
     oldnote = np->nd_note;
 
@@ -562,14 +552,12 @@ int restore_note(
     // simply remove the entire note
     if (found == 0)
       {
-      free(np->nd_note);
-      np->nd_note = NULL;
+      np->nd_note.clear();
       }
     else
       {
       message = oldnote.substr(0, found);
-      free(np->nd_note);
-      np->nd_note = strdup(message.c_str());
+      np->nd_note = message;
       }
     }
 
@@ -1130,9 +1118,10 @@ int is_gpustat_get(
        * if we have not filled in the gpu_id returned by the mom node
        * then fill it in
        */
-      if ((gpuidx >= 0) && (np->nd_gpusn[gpuidx].gpuid == NULL))
+      if ((gpuidx >= 0) &&
+          (np->nd_gpusn[gpuidx].gpuid.size() == 0))
         {
-        np->nd_gpusn[gpuidx].gpuid = strdup(gpuid);
+        np->nd_gpusn[gpuidx].gpuid = gpuid;
         }      
 
       }

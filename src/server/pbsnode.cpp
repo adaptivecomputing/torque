@@ -13,7 +13,7 @@ extern AvlTree          ipaddrs;
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      nd_mutex(), nd_id(-1), nd_addrs(NULL), nd_prop(NULL), nd_status(NULL),
-                     nd_note(NULL),
+                     nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
                      nd_mom_rm_port(PBS_MANAGER_SERVICE_PORT), nd_sock_addr(),
@@ -22,13 +22,13 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
                      nd_warnbad(0),
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
-                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(NULL),
+                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
                      nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
-                     nd_micstatus(NULL), nd_micjobs(NULL), nd_nmics_alloced(0),
+                     nd_micstatus(NULL), nd_micjobids(), nd_nmics_alloced(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
-                     num_node_boards(0), node_boards(NULL), numa_str(NULL),
-                     gpu_str(NULL), nd_mom_reported_down(0), nd_is_alps_reporter(0),
+                     num_node_boards(0), node_boards(NULL), numa_str(),
+                     gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
                      nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
                      max_subnode_nppn(0), nd_power_state(0),
                      nd_power_state_change_time(0), nd_acl(NULL),
@@ -59,7 +59,7 @@ pbsnode::pbsnode(
   u_long     *pul,
   bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_prop(NULL),
                                      nd_status(NULL),
-                                     nd_note(NULL),
+                                     nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
                                      nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -69,13 +69,13 @@ pbsnode::pbsnode(
                                      nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
                                      nd_warnbad(0),
                                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
-                                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(NULL),
+                                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
                                      nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
-                                     nd_micstatus(NULL), nd_micjobs(NULL), nd_nmics_alloced(0),
+                                     nd_micstatus(NULL), nd_micjobids(), nd_nmics_alloced(0),
                                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
-                                     num_node_boards(0), node_boards(NULL), numa_str(NULL),
-                                     gpu_str(NULL), nd_mom_reported_down(0), nd_is_alps_reporter(0),
+                                     num_node_boards(0), node_boards(NULL), numa_str(),
+                                     gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
                                      nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
                                      max_subnode_nppn(0), nd_power_state(0),
                                      nd_power_state_change_time(0), nd_acl(NULL),
@@ -136,9 +136,6 @@ pbsnode::~pbsnode()
       }
     }
 
-  if (this->alps_subnodes != NULL)
-    delete this->alps_subnodes;
-
   if (this->nd_acl != NULL)
     {
     if (this->nd_acl->as_buf != NULL)
@@ -150,6 +147,140 @@ pbsnode::~pbsnode()
     }
 
   } // END destructor
+
+
+
+void pbsnode::copy_gpu_subnodes(
+
+  const pbsnode &other)
+
+  {
+  for (unsigned int i = 0; i < other.nd_gpusn.size(); i++)
+    this->nd_gpusn.push_back(other.nd_gpusn[i]);
+  } // END copy_gpu_subnodes()
+
+
+
+pbsnode &pbsnode::operator =(
+
+  const pbsnode &other)
+
+  {
+  this->nd_error = other.nd_error;
+  this->nd_properties = other.nd_properties;
+  this->nd_prop = copy_arst(other.nd_prop);
+  this->nd_status = copy_arst(other.nd_status);
+  this->nd_note = other.nd_note;
+
+  this->nd_flag = other.nd_flag;
+  this->nd_mom_port = other.nd_mom_port;
+  this->nd_mom_rm_port = other.nd_mom_rm_port;
+  memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));
+  this->nd_nprops = other.nd_nprops;
+  this->nd_nstatus = other.nd_nstatus;
+  this->nd_slots = other.nd_slots;
+  this->nd_job_usages = other.nd_job_usages;
+  this->nd_needed = other.nd_needed;
+  this->nd_np_to_be_used = other.nd_np_to_be_used;
+  this->nd_state = other.nd_state;
+  this->nd_ntype = other.nd_ntype;
+  this->nd_order = other.nd_order;
+  this->nd_warnbad = other.nd_warnbad;
+  this->nd_lastupdate = other.nd_lastupdate;
+  this->nd_lastHierarchySent = other.nd_lastHierarchySent;
+  this->nd_hierarchy_level = other.nd_hierarchy_level;
+  this->nd_in_hierarchy = other.nd_in_hierarchy;
+  this->nd_ngpus = other.nd_ngpus;
+  this->nd_gpus_real = other.nd_gpus_real;
+  this->nd_gpusn.clear();
+  this->copy_gpu_subnodes(other);
+  this->nd_ngpus_free = other.nd_ngpus_free;
+  this->nd_ngpus_needed = other.nd_ngpus_needed;
+  this->nd_ngpus_to_be_used = other.nd_ngpus_to_be_used;
+  this->nd_gpustatus = copy_arst(other.nd_gpustatus);
+  this->nd_ngpustatus = other.nd_ngpustatus;
+  this->nd_nmics = other.nd_nmics;
+  this->nd_micstatus = copy_arst(other.nd_micstatus);
+
+  for (unsigned int i = 0; i < other.nd_micjobids.size(); i++)
+    this->nd_micjobids[i] = other.nd_micjobids[i];
+
+  this->nd_nmics_alloced = other.nd_nmics_alloced;
+  this->nd_nmics_free = other.nd_nmics_free;
+  this->nd_nmics_to_be_used = other.nd_nmics_to_be_used;
+  this->parent = other.parent;
+  this->num_node_boards = other.num_node_boards;
+  this->node_boards = other.node_boards;
+  this->numa_str = other.numa_str;
+  this->gpu_str = other.gpu_str;
+  this->nd_mom_reported_down = other.nd_mom_reported_down;
+  this->nd_is_alps_reporter = other.nd_is_alps_reporter;
+  this->nd_is_alps_login = other.nd_is_alps_login;
+  this->nd_ms_jobs = other.nd_ms_jobs;
+  this->alps_subnodes = other.alps_subnodes;
+  this->max_subnode_nppn = other.max_subnode_nppn;
+  this->nd_power_state = other.nd_power_state;
+  this->nd_power_state_change_time = other.nd_power_state_change_time;
+  this->nd_acl = copy_arst(other.nd_acl);
+  this->nd_requestid = other.nd_requestid;
+  this->nd_tmp_unlock_count = other.nd_tmp_unlock_count;
+#ifdef PENABLE_LINUX_CGROUPS
+  this->nd_layout = other.nd_layout;
+#endif
+  }
+
+
+
+pbsnode::pbsnode(
+
+  const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties), nd_mutex(),
+                          nd_note(other.nd_note), nd_stream(other.nd_stream),
+                          nd_flag(other.nd_flag), nd_mom_port(other.nd_mom_port),
+                          nd_mom_rm_port(other.nd_mom_rm_port), nd_sock_addr(), nd_nprops(0),
+                          nd_nstatus(other.nd_nstatus), nd_slots(other.nd_slots),
+                          nd_job_usages(other.nd_job_usages),
+                          nd_needed(other.nd_needed), nd_np_to_be_used(other.nd_np_to_be_used),
+                          nd_state(other.nd_state), nd_ntype(other.nd_ntype),
+                          nd_order(other.nd_order), nd_warnbad(other.nd_warnbad),
+                          nd_lastupdate(other.nd_lastupdate),
+                          nd_lastHierarchySent(other.nd_lastHierarchySent),
+                          nd_hierarchy_level(other.nd_hierarchy_level),
+                          nd_in_hierarchy(other.nd_in_hierarchy), nd_ngpus(other.nd_ngpus),
+                          nd_gpus_real(other.nd_gpus_real), nd_gpusn(),
+                          nd_ngpus_free(other.nd_ngpus_free),
+                          nd_ngpus_needed(other.nd_ngpus_needed),
+                          nd_ngpus_to_be_used(other.nd_ngpus_to_be_used),
+                          nd_ngpustatus(other.nd_ngpustatus),
+                          nd_nmics(other.nd_nmics),
+                          nd_micjobids(other.nd_micjobids),
+                          nd_nmics_alloced(other.nd_nmics_alloced),
+                          nd_nmics_free(other.nd_nmics_free),
+                          nd_nmics_to_be_used(other.nd_nmics_to_be_used), parent(other.parent),
+                          num_node_boards(other.num_node_boards), numa_str(other.numa_str),
+                          gpu_str(other.gpu_str), nd_mom_reported_down(other.nd_mom_reported_down),
+                          nd_is_alps_reporter(other.nd_is_alps_reporter),
+                          nd_is_alps_login(other.nd_is_alps_login), nd_ms_jobs(other.nd_ms_jobs),
+                          max_subnode_nppn(other.max_subnode_nppn),
+                          nd_power_state(other.nd_power_state),
+                          nd_power_state_change_time(other.nd_power_state_change_time),
+                          nd_requestid(other.nd_requestid),
+                          nd_tmp_unlock_count(other.nd_tmp_unlock_count)
+#ifdef PENABLE_LINUX_CGROUPS
+                          , nd_layout(other.nd_layout)
+#endif
+
+  {
+  this->nd_prop = copy_arst(other.nd_prop);
+  this->nd_status = copy_arst(other.nd_status);
+  this->nd_gpustatus = copy_arst(other.nd_gpustatus);
+  this->nd_micstatus = copy_arst(other.nd_micstatus);
+  this->node_boards = other.node_boards;
+  this->alps_subnodes = other.alps_subnodes;
+  this->nd_acl = copy_arst(other.nd_acl);
+
+  memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));
+  this->copy_gpu_subnodes(other);
+  }
 
 
 

@@ -498,6 +498,8 @@ void free_attr_req_info(pbs_attribute *patr);
 int   parse_equal_string(char *, char **, char **);
 char *parse_comma_string(char *,char **);
 
+struct array_strings *copy_arst(struct array_strings *to_copy);
+
 // More for size
 int normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta, struct size_value *tb);
 int to_size(const char *val, struct size_value *psize);
@@ -557,7 +559,7 @@ int      node_gpustatus_list(pbs_attribute*, void*, int);
 int      node_micstatus_list(pbs_attribute *, void *, int);
 int      node_note(pbs_attribute*, void*, int);
 int      node_alt_name(pbs_attribute*, void*, int);
-int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int      set_note_str(pbs_attribute *attr, pbs_attribute *, enum batch_op);
 int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 void     replace_attr_string(pbs_attribute*, char*);
 int      job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
