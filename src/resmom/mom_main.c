@@ -2786,8 +2786,12 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    sprintf(log_buffer, "write request response failed: %s",
-      dis_emsg[ret]);
+    if (ret <= DIS_INVALID)
+      sprintf(log_buffer, "write request response failed: %s",
+        dis_emsg[ret]);
+    else
+      sprintf(log_buffer, "write request response failed with rc: %d", ret);
+
     log_err(errno, __func__, log_buffer);
 
     return(ret);
