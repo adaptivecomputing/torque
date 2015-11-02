@@ -507,13 +507,13 @@ int set_jobexid(
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
 
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
     if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
       {
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
