@@ -1072,6 +1072,25 @@ int comp_arst(
 
 
 
+void free_arst_value(
+
+  struct array_strings *arst)
+
+  {
+  
+  if (arst != NULL)
+    {
+    if (arst->as_buf != NULL)
+      {
+      free(arst->as_buf);
+      arst->as_buf = NULL;
+      }
+
+    free(arst);
+    }
+  } // END free_arst_value()
+
+
 
 void free_arst(
 
@@ -1080,13 +1099,7 @@ void free_arst(
   {
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))
     {
-    if (attr->at_val.at_arst->as_buf)
-      {
-      (void)free(attr->at_val.at_arst->as_buf);
-      attr->at_val.at_arst->as_buf = NULL;
-      }
-
-    (void)free((char *)attr->at_val.at_arst);
+    free_arst_value(attr->at_val.at_arst);
     }
 
   attr->at_val.at_arst = (struct array_strings *)0;

@@ -498,6 +498,7 @@ void free_attr_req_info(pbs_attribute *patr);
 int   parse_equal_string(char *, char **, char **);
 char *parse_comma_string(char *,char **);
 
+void                  free_arst_value(struct array_strings *arst);
 struct array_strings *copy_arst(struct array_strings *to_copy);
 
 // More for size

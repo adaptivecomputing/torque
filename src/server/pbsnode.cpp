@@ -12,7 +12,7 @@
 extern AvlTree          ipaddrs;
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
-                     nd_mutex(), nd_id(-1), nd_addrs(NULL), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -90,7 +90,10 @@ pbsnode::pbsnode(
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = node_mapper.get_new_id(this->nd_name.c_str());
-  this->nd_addrs           = pul;       /* list of host byte order */
+  for (u_long *up = pul; *up != 0; up++)
+    this->nd_addrs.push_back(*up);
+
+  free(pul);
   //this->nd_ntype           = ntype;
   this->nd_f_st            = init_prop(this->nd_name.c_str());
   this->nd_l_st            = this->nd_f_st;
@@ -121,31 +124,11 @@ pbsnode::~pbsnode()
   if (this->nd_f_st != NULL)
     free_prop_list(this->nd_f_st);
 
-  if (this->nd_addrs != NULL)
-    {
-    for (u_long *up = this->nd_addrs; *up != 0; up++)
-      {
-      /* del node's IP addresses from tree  */
-      ipaddrs = AVL_delete_node(*up, this->nd_mom_port, ipaddrs);
-      }
-
-    if (this->nd_addrs != NULL)
-      {
-      /* remove array of IP addresses */
-      free(this->nd_addrs);
-      }
-    }
-
-  if (this->nd_acl != NULL)
-    {
-    if (this->nd_acl->as_buf != NULL)
-      {
-      free(this->nd_acl->as_buf);
-      }
-
-    free(this->nd_acl);
-    }
-
+  free_arst_value(this->nd_acl);
+  free_arst_value(this->nd_prop);
+  free_arst_value(this->nd_status);
+  free_arst_value(this->nd_gpustatus);
+  free_arst_value(this->nd_micstatus);
   } // END destructor
 
 
@@ -167,10 +150,12 @@ pbsnode &pbsnode::operator =(
 
   {
   this->nd_error = other.nd_error;
+  this->nd_id = other.nd_id;
   this->nd_properties = other.nd_properties;
   this->nd_prop = copy_arst(other.nd_prop);
   this->nd_status = copy_arst(other.nd_status);
   this->nd_note = other.nd_note;
+  this->nd_addrs = other.nd_addrs;
 
   this->nd_flag = other.nd_flag;
   this->nd_mom_port = other.nd_mom_port;
@@ -236,6 +221,7 @@ pbsnode &pbsnode::operator =(
 pbsnode::pbsnode(
 
   const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties), nd_mutex(),
+                          nd_id(other.nd_id), nd_addrs(other.nd_addrs),
                           nd_note(other.nd_note), nd_stream(other.nd_stream),
                           nd_flag(other.nd_flag), nd_mom_port(other.nd_mom_port),
                           nd_mom_rm_port(other.nd_mom_rm_port), nd_sock_addr(), nd_nprops(0),

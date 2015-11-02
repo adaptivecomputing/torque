@@ -677,7 +677,7 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
-                     nd_mutex(), nd_id(-1), nd_addrs(NULL), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -687,7 +687,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
                      nd_warnbad(0),
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
-                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(NULL),
+                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
                      nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
                      nd_micstatus(NULL), nd_nmics_alloced(0),
@@ -721,7 +721,7 @@ pbsnode::pbsnode(
                                      nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
                                      nd_warnbad(0),
                                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
-                                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(NULL),
+                                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
                                      nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
                                      nd_micstatus(NULL), nd_nmics_alloced(0),
@@ -739,7 +739,6 @@ pbsnode::pbsnode(
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = 1;
-  this->nd_addrs           = pul;       /* list of host byte order */
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END constructor

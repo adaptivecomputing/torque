@@ -288,8 +288,9 @@ public:
 
   struct prop                  *nd_f_st;             /* first and last status */
   struct prop                  *nd_l_st;
-  
-  u_long                       *nd_addrs;            /* IP addresses of host */
+ 
+
+  std::vector<u_long>           nd_addrs;            /* IP addresses of host */
 
   struct array_strings         *nd_prop;             /* array of properities */
 

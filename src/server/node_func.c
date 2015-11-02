@@ -841,6 +841,12 @@ void effective_node_delete(
     tmp_unlock_count = pnode->nd_tmp_unlock_count;
     pnode->unlock_node(__func__, NULL, LOGLEVEL);
     } while(tmp_unlock_count != 0);
+    
+  for (unsigned int i = 0; i < pnode->nd_addrs.size(); i++)
+    {
+    /* del node's IP addresses from tree  */
+    ipaddrs = AVL_delete_node(pnode->nd_addrs[i], pnode->nd_mom_port, ipaddrs);
+    }
 
   delete pnode;
 
@@ -1453,7 +1459,7 @@ static int setup_node_boards(
   const char     *np_ptr = NULL;
   const char     *gp_ptr = NULL;
   char           *allocd_name;
-  int             np;
+  int             np = 0;
   int             gpus;
   int             rc = PBSE_NONE;
 

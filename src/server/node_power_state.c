@@ -178,7 +178,7 @@ int set_node_power_state(
 
   {
   struct pbsnode *pNode = *ppNode;
-  if (pNode->nd_addrs == NULL)
+  if (pNode->nd_addrs.size() == 0)
     {
     return PBSE_BAD_PARAMETER;
     }
