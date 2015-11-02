@@ -668,6 +668,7 @@ int parse_alps_output(
 
   {
   xmlDocPtr  doc;
+  xmlNode   *child;
 
   if ((doc = xmlReadMemory(alps_output.c_str(), alps_output.length(), "apbasil", NULL, 0)) == NULL)
     {
@@ -680,8 +681,24 @@ int parse_alps_output(
 
   if (process_element(status, xmlDocGetRootElement(doc)) == ALPS_QUERY_FAILURE)
     {
-  	snprintf(log_buffer, sizeof(log_buffer), "Failed to query alps");
-	  log_err(-1, __func__, log_buffer);
+    xmlNode   *root = xmlDocGetRootElement(doc);
+	  // Verbose debug output for ALPS_QUERY_FAILURE node error message
+	  for (child = root->children; child != NULL; child = child->next)
+	    {
+	    if (!strcmp((const char *)child->name, response_data))
+	      {
+        for (xmlNode *gchild = child->children; gchild != NULL; gchild = gchild->next)
+          {
+          if (!strcmp((const char *)gchild->name, "Message"))
+            {
+            snprintf(log_buffer, sizeof(log_buffer),
+              "Failed to query ALPS: %s", (const char *)xmlNodeGetContent(gchild));
+            log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+            }
+          }
+	      }
+	    }
+
   	return(ALPS_QUERY_FAILURE);
     }
 
