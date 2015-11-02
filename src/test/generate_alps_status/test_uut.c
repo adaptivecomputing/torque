@@ -10,6 +10,7 @@ int log_event_called = 0;
 int parse_alps_output(std::string& alps_output, std::vector<std::string>& status);
 
 void log_event( int eventtype, int objclass, const char *objname, const char *text);
+extern int      LOGLEVEL;
 
 
 
@@ -198,7 +199,6 @@ START_TEST(parse_alps_output_test)
   output.clear();
   status.clear();
   
-  extern int      LOGLEVEL;
   extern std::string msg_err;
   LOGLEVEL = 10;
 
@@ -250,6 +250,7 @@ START_TEST(full_generate_test)
   int             rc;
   char           *path = (char *)"../test_scripts/get_inventory.sh";
   char           *protocol = (char *)"1.0";
+  LOGLEVEL = 10;
 
   rc = generate_alps_status(status, path, protocol);
 
