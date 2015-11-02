@@ -739,13 +739,13 @@ int set_jobexid(
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
 
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
     if (is_user_allowed_to_submit_jobs(pjob, puser.c_str(), EMsg, LOGLEVEL) == false)
       {
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
