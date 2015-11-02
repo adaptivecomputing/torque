@@ -316,6 +316,7 @@ int complete_req::set_value(
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
+    free(attr_name);
     return(PBSE_BAD_PARAMETER);
     }
 

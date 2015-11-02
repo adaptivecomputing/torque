@@ -1583,7 +1583,10 @@ void req::set_from_string(
   char *current = strchr(req, '[');
 
   if (current == NULL)
+    {
+    free(req);
     return;
+    }
 
   current++;
 
@@ -1592,7 +1595,10 @@ void req::set_from_string(
   // read the task count
   current = strchr(current, ':');
   if (current == NULL)
+    {
+    free(req);
     return;
+    }
 
   current += 2; // move past the ': '
   this->task_count = strtol(current, &current, 10);
