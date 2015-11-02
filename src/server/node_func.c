@@ -1701,10 +1701,13 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
     ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
     }  /* END for (i) */
 
-  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
+  if ((rc = setup_node_boards(pnode, pul)) != PBSE_NONE)
     {
+    free(pul);
     return(rc);
     }
+
+  free(pul);
 
   insert_node(&allnodes,pnode);
 

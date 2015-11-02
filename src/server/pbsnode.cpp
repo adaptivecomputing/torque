@@ -90,10 +90,16 @@ pbsnode::pbsnode(
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = node_mapper.get_new_id(this->nd_name.c_str());
-  for (u_long *up = pul; *up != 0; up++)
-    this->nd_addrs.push_back(*up);
 
-  free(pul);
+  if (pul != NULL)
+    {
+    for (u_long *up = pul; *up != 0; up++)
+      this->nd_addrs.push_back(*up);
+
+    if (skip_address_lookup == false)
+      free(pul);
+    }
+
   //this->nd_ntype           = ntype;
   this->nd_f_st            = init_prop(this->nd_name.c_str());
   this->nd_l_st            = this->nd_f_st;
