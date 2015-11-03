@@ -5,6 +5,7 @@
 #include "server.h" /* server */
 #include "pbs_nodes.h" /* pbs_node */
 #include "pbs_job.h" /* job */
+#include "acl_special.hpp"
 
 char *server_host;
 struct server server;
@@ -35,4 +36,11 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
+  }
+
+
+bool acl_special::is_authorized(const std::string &host, const std::string &user) const
+
+  {
+  return(false);
   }
