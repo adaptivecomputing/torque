@@ -294,7 +294,7 @@ bool is_user_allowed_to_submit_jobs(
   {
   char           *orighost;
   std::string     user(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-  std::size_t     at_pos = user.find('a');
+  std::size_t     at_pos = user.find('@');
   int             rc = PBSE_NONE;
   bool            ProxyAllowed = false;
   bool            ProxyRequested = false;
