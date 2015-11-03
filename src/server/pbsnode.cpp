@@ -95,9 +95,6 @@ pbsnode::pbsnode(
     {
     for (u_long *up = pul; *up != 0; up++)
       this->nd_addrs.push_back(*up);
-
-    if (skip_address_lookup == false)
-      free(pul);
     }
 
   //this->nd_ntype           = ntype;
