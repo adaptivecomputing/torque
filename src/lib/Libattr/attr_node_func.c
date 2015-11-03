@@ -1838,9 +1838,12 @@ int node_note(
     case ATR_ACTION_ALTER:
 
       /* update node with new string */
-      np->nd_note = new_attr->at_val.at_str;
+      if (new_attr->at_val.at_str != NULL)
+        {
+        np->nd_note = new_attr->at_val.at_str;
 
-      new_attr->at_val.at_str = NULL;
+        new_attr->at_val.at_str = NULL;
+        }
 
       break;
 
