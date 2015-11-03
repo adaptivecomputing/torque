@@ -2,10 +2,24 @@
 #include "test_geteusernam.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string>
 #include "pbs_error.h"
-START_TEST(test_one)
-  {
 
+void get_user_host_from_user( std::string &user_host, const std::string user);
+
+
+START_TEST(test_get_user_host_from_user)
+  {
+  std::string user_host;
+  std::string user;
+
+  user = "user@hostname";
+  get_user_host_from_user(user_host, user);
+  fail_unless(strcmp(user_host.c_str(), "hostname") == 0);
+
+  user = "user";
+  get_user_host_from_user(user_host, user);
+  fail_unless(user_host.size() == 0);
 
   }
 END_TEST
@@ -20,8 +34,8 @@ END_TEST
 Suite *geteusernam_suite(void)
   {
   Suite *s = suite_create("geteusernam_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_get_user_host_from_user");
+  tcase_add_test(tc_core, test_get_user_host_from_user);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

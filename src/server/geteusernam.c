@@ -101,11 +101,15 @@
 #endif /* _CRAY */
 #include "svrfunc.h" /* get_svr_attr_* */
 #include <string>
+#include "u_lock_ctl.h"
 
 /* External Data */
 
 extern char server_host[];
+extern char *msg_orighost;
 extern int LOGLEVEL;
+
+extern pthread_mutex_t ruserok_mutex;
 
 /*
  * geteusernam - get effective user name
@@ -261,6 +265,259 @@ bool getegroup(
   }  /* END getegroup() */
 
 
+/*
+ * get_user_host_from_user
+ *
+ * @param user_host  - receives the host name associated with the user.
+ * @param user       - user name with or without the host name.
+ *
+ */
+
+void get_user_host_from_user(
+    
+  std::string      &user_host,
+  const std::string user)
+
+  {
+  char  *ptr;
+  char  *tmp_name = strdup(user.c_str());
+
+  user_host.clear();
+  ptr = strchr(tmp_name, '@');
+  if (ptr != NULL)
+    {
+    ptr++;
+    user_host = ptr;
+    }
+
+  free(tmp_name);
+
+  }
+
+
+
+
+/*
+ * Verifies that the job's user is acceptable
+ *
+ * @return true if allowed, else false
+ */
+
+bool is_user_allowed_to_submit_jobs(
+
+  job        *pjob,    /* I */
+  const char *luser,   /* I */
+  char       *EMsg,    /* O optional */
+  int         logging) /* I */
+
+  {
+  char           *orighost;
+  std::string     user_host;  /* this is a back up to orighost in case we need FQDN */
+  std::string     user(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  std::size_t     at_pos = user.find('@');
+  int             rc = PBSE_NONE;
+  bool            ProxyAllowed = false;
+  bool            ProxyRequested = false;
+  bool            HostAllowed = false;
+  char           *dptr;
+
+  struct pbsnode *tmp;
+  char            log_buf[256];
+
+#ifdef MUNGE_AUTH
+  char            uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];
+#endif
+    
+  if (LOGLEVEL >= 10)
+    {
+    sprintf(log_buf, "job id: %s - luser: %s", pjob->ji_qs.ji_jobid, luser);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+    
+  if (EMsg != NULL)
+    EMsg[0] = '\0';
+
+  get_user_host_from_user(user_host, user);
+
+  if (at_pos != std::string::npos)
+    user.erase(at_pos);
+
+  orighost = get_variable(pjob, ATTR_pbs_o_host);
+
+  if (orighost == NULL)
+    {
+    /* access denied */
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, msg_orighost);
+
+    if (EMsg != NULL)
+      strcpy(EMsg, "source host not specified");
+
+    return(false);
+    }
+
+  /* check to see if we are allowing a proxy user to submit the job */
+  if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
+      (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_long == 1))
+    {
+    ProxyAllowed = true;
+    }
+
+  /* If the users are different and allow_proxy_user is set we have a proxy submission */
+  if (strcmp(user.c_str(), luser) != 0)
+    {
+    ProxyRequested = true;
+    }
+
+  if (!strcmp(orighost, server_host) && !strcmp(user.c_str(), luser))
+    {
+    /* submitting from server host, access allowed */
+
+    if ((ProxyRequested == false) || (ProxyAllowed == true))
+      {
+      return(true);
+      }
+
+    /* host is fine, must validate proxy via ruserok() */
+
+    HostAllowed = true;
+    }
+
+  /* make short host name */
+  if ((dptr = strchr(orighost, '.')) != NULL)
+    {
+    *dptr = '\0';
+    }
+
+  if ((HostAllowed == false) &&
+      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) &&
+      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) &&
+      ((tmp = find_nodebyname(orighost)) != NULL))
+    {
+    /* job submitted from compute host, access allowed */
+    //tmp->unlock_node(__func__, NULL, logging);
+    lock_node(tmp, __func__, NULL, logging);
+
+    if (dptr != NULL)
+      *dptr = '.';
+
+    if ((ProxyRequested == false) ||
+        (ProxyAllowed == true))
+      {
+      return(true);
+      }
+
+    /* host is fine, must validate proxy via ruserok() */
+
+    HostAllowed = false;
+    }
+
+  if ((HostAllowed == false) &&
+      (server.sv_attr[SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET))
+    {
+    struct array_strings *submithosts = NULL;
+    char                 *testhost;
+    int                   hostnum = 0;
+
+    submithosts = server.sv_attr[SRV_ATR_SubmitHosts].at_val.at_arst;
+
+    for (hostnum = 0;hostnum < submithosts->as_usedptr;hostnum++)
+      {
+      testhost = submithosts->as_string[hostnum];
+
+      int cmpRet = strcasecmp(testhost, orighost);
+
+      if ((cmpRet != 0) &&
+          (dptr != NULL))
+        {
+        *dptr = '.';
+        cmpRet = strcasecmp(testhost, orighost);
+        *dptr = '\0';
+        }
+
+      if (cmpRet == 0)
+        {
+        /* job submitted from host found in trusted submit host list, access allowed */
+
+        if (dptr != NULL)
+          *dptr = '.';
+
+        if ((ProxyRequested == false) ||
+            (ProxyAllowed == true))
+          {
+          return(true);
+          }
+
+        /* host is fine, must validate proxy via ruserok() */
+
+        HostAllowed = true;
+
+        break;
+        }
+      }  /* END for (hostnum) */
+    }    /* END if (SRV_ATR_SubmitHosts) */
+
+  // Check limited acls
+  if (limited_acls.is_authorized(orighost, user) == true)
+    return(true);
+  else if (limited_acls.is_authorized(user_host.c_str(), user) == true)
+    return(true);
+
+  if (dptr != NULL)
+    *dptr = '.';
+
+#ifdef MUNGE_AUTH
+  sprintf(uh, "%s@%s", user.c_str(), orighost);
+  rc = acl_check(&server.sv_attr[SRV_ATR_authusers], uh, ACL_User_Host);
+  if (rc <= 0)
+    {
+    /* rc == 0 means we did not find a match.
+       this is a failure */
+    if (EMsg != NULL)
+      {
+      snprintf(EMsg, 1024, "could not authorize user %s from %s",
+        user.c_str(), orighost);
+      }
+    rc = -1; /* -1 is what set_jobexid is expecting for a failure*/
+    }
+  else
+    {
+    /*SUCCESS*/
+    rc = 0; /* the call to ruserok below was in the code first. ruserok returns 
+               0 on success but acl_check returns a positive value on success. 
+               We set rc to 0 to be consistent with the original ruserok functionality */
+    }
+#else
+
+  /* ruserok is the last chance the incoming submission can work. 
+     check to see if the user hosts combination is allowed */
+  /* ruserok is not thread safe. mutex it */
+  pthread_mutex_lock(&ruserok_mutex);
+  rc = ruserok(orighost, 0, user.c_str(), luser);
+  pthread_mutex_unlock(&ruserok_mutex);
+
+  if (rc != 0)
+    {
+    /* Test rc so as to not fill this message in the case of success, since other
+     * callers might not fill this message in the case of their errors and
+     * very misleading error message will go into the logs.
+     */
+    if (EMsg != NULL)
+      snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
+        user.c_str(), luser, orighost);
+    rc = -1;
+    }
+#endif
+
+#ifdef sun
+  /* broken Sun ruserok() sets process so it appears to be owned */
+  /* by the luser, change it back for cosmetic reasons           */
+
+  setuid(0);
+#endif /* sun */
+
+  return(rc == 0);
+  } // END is_user_allowed_to_submit_jobs()
 
 
 
@@ -511,7 +768,7 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
+    if (is_user_allowed_to_submit_jobs(pjob, puser.c_str(), EMsg, LOGLEVEL) == false)
       {
       free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
