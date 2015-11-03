@@ -2344,6 +2344,7 @@ void reset_config_vars()
   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
+  LOGLEVEL = 0;
   }
 
 
