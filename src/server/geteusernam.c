@@ -261,6 +261,34 @@ bool getegroup(
   }  /* END getegroup() */
 
 
+/*
+ * get_user_host_from_user
+ *
+ * @param user_host  - receives the host name associated with the user.
+ * @param user       - user name with or without the host name.
+ *
+ */
+
+void get_user_host_from_user(
+    
+  std::string      &user_host,
+  const std::string user)
+
+  {
+  char  *ptr;
+  char  *tmp_name = strdup(user.c_str());
+
+  user_host.clear();
+  ptr = strchr(tmp_name, '@');
+  if (ptr != NULL)
+    {
+    ptr++;
+    user_host = ptr;
+    }
+
+  free(tmp_name);
+
+  }
 
 
 
