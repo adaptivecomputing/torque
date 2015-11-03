@@ -167,13 +167,6 @@ struct prop
   struct prop *next;
   };
 
-struct jobinfo
-  {
-  int internal_job_id;
-
-  struct jobinfo *next;
-  };
-
 typedef struct alps_req_data
   {
   std::string *node_list;
@@ -216,30 +209,31 @@ typedef struct node_job_add_info
 
 struct pbssubn
   {
-  struct pbsnode *host;
+  struct pbsnode   *host;
 
-  struct pbssubn *next;
+  struct pbssubn   *next;
 
-  struct jobinfo *jobs;     /* list of jobs allocating resources within subnode */
+  std::vector<int>  job_ids;
   /* does this include suspended jobs? */
-  resource_t      allocto;
-  enum psit      flag;  /* XXX */
-  unsigned short  inuse;
-  short           index;  /* subnode index */
+  resource_t        allocto;
+  enum psit         flag;  /* XXX */
+  unsigned short    inuse;
+  short             index;  /* subnode index */
   };
 
 
 
-struct gpusubn
+class gpusubn
   {
+  public:
   int             job_internal_id; /* internal id of job on gpu */
-  unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
+  bool            inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
   enum psit       flag;   /* same as for pbssubn */
   short           index;  /* gpu index */
-  char           *gpuid;  /* gpu id */
+  std::string     gpuid;  /* gpu id */
   int             job_count;
   };
 
@@ -294,13 +288,14 @@ public:
 
   struct prop                  *nd_f_st;             /* first and last status */
   struct prop                  *nd_l_st;
-  
-  u_long                       *nd_addrs;            /* IP addresses of host */
+ 
+
+  std::vector<u_long>           nd_addrs;            /* IP addresses of host */
 
   struct array_strings         *nd_prop;             /* array of properities */
 
   struct array_strings         *nd_status;
-  char                         *nd_note;             /* note set by administrator */
+  std::string                   nd_note;             /* note set by administrator */
   int                           nd_stream;           /* stream to Mom on host */
   enum psit                     nd_flag;
   unsigned short                nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
@@ -323,7 +318,7 @@ public:
 
   short                         nd_ngpus;            /* number of gpus */ 
   short                         nd_gpus_real;        /* gpus are real not virtual */ 
-  struct gpusubn               *nd_gpusn;            /* gpu subnodes */
+  std::vector<gpusubn>          nd_gpusn;            /* gpu subnodes */
   short                         nd_ngpus_free;       /* number of free gpus */
   short                         nd_ngpus_needed;     /* number of gpus needed */
   short                         nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
@@ -332,7 +327,7 @@ public:
 
   short                         nd_nmics;            /* number of mics */
   struct array_strings         *nd_micstatus;        /* string array of MIC status */
-  struct jobinfo               *nd_micjobs;          /* array for the jobs on the mic(s) */
+  std::vector<int>              nd_micjobids;        /* ids for the jobs on the mic(s) */
   short                         nd_nmics_alloced;    /* number of mic slots alloc'ed */
   short                         nd_nmics_free;       /* number of free mics */
   short                         nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
@@ -340,8 +335,8 @@ public:
   pbsnode                      *parent;              /* pointer to the node holding this node, or NULL */
   unsigned short                num_node_boards;     /* number of numa nodes */
   struct AvlNode               *node_boards;         /* private tree of numa nodes */
-  char                         *numa_str;            /* comma-delimited string of processor values */
-  char                         *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
+  std::string                   numa_str;            /* comma-delimited string of processor values */
+  std::string                   gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
 
   unsigned char                 nd_mom_reported_down;/* notes that the mom reported its own shutdown */
   
@@ -368,8 +363,11 @@ public:
 
 
   pbsnode();
+  pbsnode(const pbsnode &other);
   pbsnode(const char *pname, u_long *pul, bool skip_address_lookup);
   ~pbsnode();
+  pbsnode &operator =(const pbsnode &other);
+  bool operator ==(const pbsnode &other);
 
   // CONST methods
   int         get_error() const;
@@ -386,6 +384,7 @@ public:
   int tmp_unlock_node(const char *method_name, const char *msg, int logging);
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
+  void copy_gpu_subnodes(const pbsnode &src);
   };
 
 
@@ -610,7 +609,7 @@ public:
   short        ntype;
   int          nprops;
   int          nstatus;
-  char        *note;
+  std::string  note;
   short        power_state;
   unsigned char ttl[32];
   int          acl_size;

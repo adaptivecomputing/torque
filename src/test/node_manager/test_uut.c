@@ -73,13 +73,12 @@ START_TEST(test_add_remove_mic_jobs)
   struct pbsnode      pnode;
   job                *pjobs = (job *)calloc(3, sizeof(job));
   
-  pnode.nd_micjobs = (struct jobinfo *)calloc(5, sizeof(struct jobinfo));
   pnode.nd_nmics = 5;
   pnode.nd_nmics_free = 5;
   pnode.nd_nmics_to_be_used = 3;
 
   for (short i = 0; i < pnode.nd_nmics; i++)
-    pnode.nd_micjobs[i].internal_job_id = -1;
+    pnode.nd_micjobids.push_back(-1);
 
   pjobs[0].ji_internal_id = 0;
   pjobs[1].ji_internal_id = 1;
@@ -481,13 +480,9 @@ END_TEST
 START_TEST(job_should_be_killed_test)
   {
   struct pbsnode pnode;
-  struct jobinfo jinfo;
   std::string    job_id;
 
-  memset(&jinfo, 0, sizeof(jinfo));
-
   pnode.change_name("tom");
-  jinfo.internal_job_id = 1;
 
   fail_unless(job_should_be_killed(job_id, 2, &pnode) == true, "non-existent job shouldn't be on node");
   fail_unless(job_should_be_killed(job_id, 3, &pnode) == true, "non-existent job shouldn't be on node");

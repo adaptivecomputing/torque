@@ -145,8 +145,6 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
 
 void free_attrlist(tlist_head *pattrlisthead)
   {
-  fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
-  exit(1);
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -154,6 +152,13 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   svrattrl *pal = (svrattrl *)pobj;
   attrname = pal->al_name;
   attrval = pal->al_value;
+  }
+
+void delete_link(
+
+  struct list_link *old) /* ptr to link to delete */
+
+  {
   }
 
 char *pbs_strerror(int err)

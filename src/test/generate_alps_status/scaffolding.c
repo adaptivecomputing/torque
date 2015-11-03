@@ -11,6 +11,8 @@
 extern int log_event_called;
 
 char log_buffer[16384];
+std::string msg_err;
+int  LOGLEVEL;
 
 
 void log_err(int errnum, const char *routine, const char *msg) {}
@@ -34,6 +36,7 @@ void log_record(
   const char *text)       /* I */
 
   {
+  msg_err = text;
   }
 
 

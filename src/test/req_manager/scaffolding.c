@@ -468,6 +468,14 @@ struct prop *init_prop(
   return(NULL);
   }
 
+pbsnode &pbsnode::operator =(
+
+  const pbsnode &other)
+
+  {
+  return(*this);
+  }
+
 pbsnode::pbsnode()
   {
   }

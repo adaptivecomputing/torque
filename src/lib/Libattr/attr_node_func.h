@@ -38,5 +38,4 @@ int node_gpustatus_list(pbs_attribute *new_attr, void *pnode, int actmode);
 
 int node_note(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int set_note_str(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 

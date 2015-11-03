@@ -346,15 +346,11 @@ void save_characteristic(
   nci->ntype        = pnode->nd_ntype;
   nci->nprops       = pnode->nd_nprops;
   nci->nstatus      = pnode->nd_nstatus;
-  nci->first_status = pnode->nd_f_st;
   strcpy((char *)nci->ttl,(char *)pnode->nd_ttl);
   nci->acl_size = (pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr;
   nci->rqid = pnode->nd_requestid;
   
-  if (pnode->nd_note != NULL)
-    nci->note = strdup(pnode->nd_note);
-  else
-    nci->note = NULL;
+  nci->note = pnode->nd_note;
   }  /* END save_characteristic() */
 
 
@@ -441,19 +437,12 @@ int chk_characteristic(
       nci->rqid.compare(pnode->nd_requestid))
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
-  if (pnode->nd_note != nci->note)    /* not both NULL or with the same address */
+  if (pnode->nd_note != nci->note)    /* not the same string */
     {
-    if (pnode->nd_note == NULL || nci->note == NULL)
-      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
-    else if (strcmp(pnode->nd_note, nci->note))
-      *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
+    *pneed_todo |= WRITENODE_NOTE;        /*node's note changed*/
     }
 
-  if (nci->note != NULL)
-    {
-    free(nci->note);
-    nci->note = NULL;
-    }
+  nci->note.clear();
 
   return(PBSE_NONE);
   }  /* END chk_characteristic() */
@@ -606,7 +595,7 @@ int status_nodeattrib(
     else if (i == ND_ATR_np)
       atemp[i].at_val.at_long = pnode->nd_slots.get_total_execution_slots();
     else if (i == ND_ATR_note)
-      atemp[i].at_val.at_str  = pnode->nd_note;
+      atemp[i].at_val.at_str  = (char *)pnode->nd_note.c_str();
     else if (i == ND_ATR_mom_port)
       atemp[i].at_val.at_long  = pnode->nd_mom_port;
     else if (i == ND_ATR_mom_rm_port)
@@ -852,6 +841,12 @@ void effective_node_delete(
     tmp_unlock_count = pnode->nd_tmp_unlock_count;
     pnode->unlock_node(__func__, NULL, LOGLEVEL);
     } while(tmp_unlock_count != 0);
+    
+  for (unsigned int i = 0; i < pnode->nd_addrs.size(); i++)
+    {
+    /* del node's IP addresses from tree  */
+    ipaddrs = AVL_delete_node(pnode->nd_addrs[i], pnode->nd_mom_port, ipaddrs);
+    }
 
   delete pnode;
 
@@ -1168,9 +1163,8 @@ int update_nodes_file(
         np->num_node_boards);
       }
 
-    if ((np->numa_str != NULL) &&
-        (np->numa_str[0] != '\0'))
-      fprintf(nin, " %s=%s", ATTR_NODE_numa_str, np->numa_str);
+    if (np->numa_str.size() != 0)
+      fprintf(nin, " %s=%s", ATTR_NODE_numa_str, np->numa_str.c_str());
 
     /* write out the ports if needed */
     if (np->nd_mom_port != PBS_MOM_SERVICE_PORT)
@@ -1179,9 +1173,8 @@ int update_nodes_file(
     if (np->nd_mom_rm_port != PBS_MANAGER_SERVICE_PORT)
       fprintf(nin, " %s=%d", ATTR_NODE_mom_rm_port, np->nd_mom_rm_port);
 
-    if ((np->gpu_str != NULL) &&
-        (np->gpu_str[0] != '\0'))
-      fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, np->gpu_str);
+    if (np->gpu_str.size() != 0)
+      fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, np->gpu_str.c_str());
 
     if(np->nd_ttl[0] != '\0')
       fprintf(nin, " %s=%s",ATTR_NODE_ttl,np->nd_ttl);
@@ -1385,8 +1378,8 @@ int create_a_gpusubnode(
   struct pbsnode *pnode)
 
   {
-  int rc = PBSE_NONE;
-  struct gpusubn *tmp = NULL;
+  int     rc = PBSE_NONE;
+  gpusubn tmp;
 
   if (pnode == NULL)
     {
@@ -1395,37 +1388,19 @@ int create_a_gpusubnode(
     return(rc);
     }
   
-  tmp = (struct gpusubn *)calloc((1 + pnode->nd_ngpus), sizeof(struct gpusubn));
-
-  if (tmp == NULL)
-    {
-    rc = PBSE_MEM_MALLOC;
-    log_err(rc,__func__,
-        (char *)"Couldn't allocate memory for a subnode. EPIC FAILURE");
-    return(rc);
-    }
-
-  if (pnode->nd_ngpus > 0)
-    {
-    /* copy old memory to the new place */
-    memcpy(tmp,pnode->nd_gpusn,(sizeof(struct gpusubn) * pnode->nd_ngpus));
-    }
-
   /* now use the new memory */
-  free(pnode->nd_gpusn);
-  pnode->nd_gpusn = tmp;
 
   /* initialize the node */
   pnode->nd_gpus_real = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].job_internal_id = -1;
-  pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
-  pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
-  pnode->nd_gpusn[pnode->nd_ngpus].flag = okay;
-  pnode->nd_gpusn[pnode->nd_ngpus].index = pnode->nd_ngpus;
-  pnode->nd_gpusn[pnode->nd_ngpus].gpuid = NULL;
+  tmp.inuse = FALSE;
+  tmp.job_internal_id = -1;
+  tmp.mode = gpu_normal;
+  tmp.state = gpu_unallocated;
+  tmp.flag = okay;
+  tmp.index = pnode->nd_gpusn.size();
 
   /* increment the number of gpu subnodes and gpus free */
+  pnode->nd_gpusn.push_back(tmp);
   pnode->nd_ngpus++;
   pnode->nd_ngpus_free++;
 
@@ -1441,11 +1416,11 @@ int create_a_gpusubnode(
 
 int read_val_and_advance(
 
-  int   *val,
-  char **str)
+  int         *val,
+  const char **str)
 
   {
-  char *comma;
+  const char *comma;
 
   if ((*str == NULL) ||
       (val == NULL))
@@ -1481,10 +1456,10 @@ static int setup_node_boards(
   int             j;
   struct pbsnode *pn;
   char            pname[MAX_LINE];
-  char           *np_ptr = NULL;
-  char           *gp_ptr = NULL;
+  const char     *np_ptr = NULL;
+  const char     *gp_ptr = NULL;
   char           *allocd_name;
-  int             np;
+  int             np = 0;
   int             gpus;
   int             rc = PBSE_NONE;
 
@@ -1501,23 +1476,23 @@ static int setup_node_boards(
 
   /* if this isn't a numa node, return no error */
   if ((pnode->num_node_boards == 0) &&
-      (pnode->numa_str == NULL))
+      (pnode->numa_str.size() == 0))
     {
     return(PBSE_NONE);
     }
 
   /* determine the number of cores per node */
-  if (pnode->numa_str != NULL)
+  if (pnode->numa_str.size() != 0)
     {
-    np_ptr = pnode->numa_str;
+    np_ptr = pnode->numa_str.c_str();
     }
   else
     np = pnode->nd_slots.get_total_execution_slots() / pnode->num_node_boards;
 
   /* determine the number of gpus per node */
-  if (pnode->gpu_str != NULL)
+  if (pnode->gpu_str.size() == 0)
     {
-    gp_ptr = pnode->gpu_str;
+    gp_ptr = pnode->gpu_str.c_str();
     read_val_and_advance(&gpus,&gp_ptr);
     }
   else
@@ -1726,10 +1701,13 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
     ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
     }  /* END for (i) */
 
-  if ((rc = setup_node_boards(pnode,pul)) != PBSE_NONE)
+  if ((rc = setup_node_boards(pnode, pul)) != PBSE_NONE)
     {
+    free(pul);
     return(rc);
     }
+
+  free(pul);
 
   insert_node(&allnodes,pnode);
 
@@ -2664,14 +2642,7 @@ int setup_nodes(void)
 
       if (np != NULL)
         {
-        np->nd_note = strdup(note);
-        
-        if (np->nd_note == NULL)
-          {
-          snprintf(log_buf, sizeof(log_buf),
-            "couldn't allocate space for note (node = %s)", np->get_name());
-          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-          }
+        np->nd_note = note;
         
         np->unlock_node(__func__, "init - no note", LOGLEVEL);
         }
@@ -2716,21 +2687,19 @@ static void delete_a_gpusubnode(
   struct pbsnode *pnode)
 
   {
-  struct gpusubn *tmp = pnode->nd_gpusn + (pnode->nd_ngpus - 1);
-
-  if (pnode->nd_ngpus < 1)
+  // Don't delete unless we have gpu subnodes
+  if (pnode->nd_gpusn.size() > 0)
     {
-    /* ERROR, can't free non-existent subnodes */
-    return;
+    gpusubn &tmp = pnode->nd_gpusn[pnode->nd_gpusn.size() - 1];
+
+    if (tmp.inuse == false)
+      pnode->nd_ngpus_free--;
+
+    /* decrement the number of gpu subnodes */
+    pnode->nd_ngpus--;
+
+    pnode->nd_gpusn.pop_back();
     }
-
-  if (tmp->inuse == FALSE)
-    pnode->nd_ngpus_free--;
-
-  /* decrement the number of gpu subnodes */
-  pnode->nd_ngpus--;
-
-  /* DONE */
   } /* END delete_a_gpusubnode() */
 
 
@@ -3005,19 +2974,9 @@ int node_mics_action(
 
         if (new_mics > np->nd_nmics_alloced)
           {
-          struct jobinfo *tmp = (struct jobinfo *)calloc(new_mics, sizeof(struct jobinfo));
-
-          if (tmp == NULL)
-            return(ENOMEM);
-
-          memcpy(tmp, np->nd_micjobs, sizeof(struct jobinfo) * np->nd_nmics_alloced);
-          free(np->nd_micjobs);
-          np->nd_micjobs = tmp;
-
+          for (int i = 0; i < new_mics - np->nd_nmics_alloced; i++)
+            np->nd_micjobids.push_back(-1);
           
-          for (int i = np->nd_nmics_alloced; i < new_mics; i++)
-            np->nd_micjobs[i].internal_job_id = -1;
-
           np->nd_nmics_alloced = new_mics;
           }
         }
@@ -3086,7 +3045,6 @@ int numa_str_action(
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
-  int len = 0;
 
   if (new_attr == NULL)
     {
@@ -3104,15 +3062,9 @@ int numa_str_action(
     {
     case ATR_ACTION_NEW:
 
-      if (np->numa_str != NULL)
+      if (np->numa_str.size() != 0)
         {
-        len = strlen(np->numa_str) + 1;
-        new_attr->at_val.at_str = (char *)calloc(len, sizeof(char));
-
-        if (new_attr->at_val.at_str == NULL)
-          return(PBSE_SYSTEM);
-
-        strcpy(new_attr->at_val.at_str,np->numa_str);
+        new_attr->at_val.at_str = strdup(np->numa_str.c_str());
         }
       else
         new_attr->at_val.at_str = NULL;
@@ -3123,16 +3075,10 @@ int numa_str_action(
 
       if (new_attr->at_val.at_str != NULL)
         {
-        len = strlen(new_attr->at_val.at_str) + 1;
-        np->numa_str = (char *)calloc(len, sizeof(char));
-
-        if (np->numa_str == NULL)
-          return(PBSE_SYSTEM);
-
-        strcpy(np->numa_str,new_attr->at_val.at_str);
+        np->numa_str = new_attr->at_val.at_str;
         }
       else
-        np->numa_str = NULL;
+        np->numa_str.clear();
 
       break;
 
@@ -3154,7 +3100,6 @@ int gpu_str_action(
 
   {
   struct pbsnode *np = (struct pbsnode *)pnode;
-  int             len;
 
   if (new_attr == NULL)
     {
@@ -3172,15 +3117,9 @@ int gpu_str_action(
     {
     case ATR_ACTION_NEW:
 
-      if (np->gpu_str != NULL)
+      if (np->gpu_str.size() != 0)
         {
-        len = strlen(np->gpu_str) + 1;
-        new_attr->at_val.at_str = (char *)calloc(len, sizeof(char));
-
-        if (new_attr->at_val.at_str == NULL)
-          return(PBSE_SYSTEM);
-
-        strcpy(new_attr->at_val.at_str,np->gpu_str);
+        new_attr->at_val.at_str = strdup(np->gpu_str.c_str());
         }
       else
         new_attr->at_val.at_str = NULL;
@@ -3191,16 +3130,10 @@ int gpu_str_action(
 
       if (new_attr->at_val.at_str != NULL)
         {
-        len = strlen(new_attr->at_val.at_str) + 1;
-        np->gpu_str = (char *)calloc(len, sizeof(char));
-
-        if (np->gpu_str == NULL)
-          return(PBSE_SYSTEM);
-
-        strcpy(np->gpu_str,new_attr->at_val.at_str);
+        np->gpu_str = new_attr->at_val.at_str;
         }
       else
-        np->gpu_str = NULL;
+        np->gpu_str.clear();
 
       break;
 

@@ -59,8 +59,6 @@ int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
 int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-int add_job_to_node(struct pbsnode *pnode, struct pbssubn *snp, short newstate, job *pjob);
-
 int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
 
 int build_host_list(struct howl **hlistptr, struct pbssubn *snp, struct pbsnode *pnode);

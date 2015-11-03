@@ -1814,11 +1814,11 @@ int node_note(
       /* if node has a note, then copy string into temp  */
       /* to use to setup a copy, otherwise setup empty   */
 
-      if (np->nd_note != NULL)
+      if (np->nd_note.size() != 0)
         {
         /* setup temporary pbs_attribute with the string from the node */
 
-        temp.at_val.at_str = np->nd_note;
+        temp.at_val.at_str = (char *)np->nd_note.c_str();
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_STR;
 
@@ -1837,18 +1837,13 @@ int node_note(
 
     case ATR_ACTION_ALTER:
 
-      if (np->nd_note != NULL)
-        {
-        free(np->nd_note);
-
-        np->nd_note = NULL;
-        }
-
       /* update node with new string */
+      if (new_attr->at_val.at_str != NULL)
+        {
+        np->nd_note = new_attr->at_val.at_str;
 
-      np->nd_note = new_attr->at_val.at_str;
-
-      new_attr->at_val.at_str = NULL;
+        new_attr->at_val.at_str = NULL;
+        }
 
       break;
 
