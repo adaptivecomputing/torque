@@ -459,11 +459,15 @@ batch_request *read_request_from_socket(
 
   if (request_passes_acl_check(request, conn_addr) == false)
     {
-    char tmpLine[MAXLINE];
-    snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-      request->rq_host);
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    return(NULL);
+    /* See if the request is in the limited acl list */
+    if (limited_acls.is_authorized(request->rq_host, request->rq_user) == false)
+      {
+      char tmpLine[MAXLINE];
+      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
+        request->rq_host);
+      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+      return(NULL);
+      }
     }
 
   return(request);

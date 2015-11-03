@@ -277,6 +277,37 @@ bool getegroup(
   }  /* END getegroup() */
 
 
+/*
+ * get_user_host_from_user
+ *
+ * @param user_host  - receives the host name associated with the user.
+ * @param user       - user name with or without the host name.
+ *
+ */
+
+void get_user_host_from_user(
+    
+  std::string      &user_host,
+  const std::string user)
+
+  {
+  char  *ptr;
+  char  *tmp_name = strdup(user.c_str());
+
+  user_host.clear();
+  ptr = strchr(tmp_name, '@');
+  if (ptr != NULL)
+    {
+    ptr++;
+    user_host = ptr;
+    }
+
+  free(tmp_name);
+
+  }
+
+
+
 
 /*
  * Verifies that the job's user is acceptable
@@ -293,8 +324,9 @@ bool is_user_allowed_to_submit_jobs(
 
   {
   char           *orighost;
+  std::string     user_host;  /* this is a back up to orighost in case we need FQDN */
   std::string     user(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-  std::size_t     at_pos = user.find('a');
+  std::size_t     at_pos = user.find('@');
   int             rc = PBSE_NONE;
   bool            ProxyAllowed = false;
   bool            ProxyRequested = false;
@@ -316,6 +348,8 @@ bool is_user_allowed_to_submit_jobs(
     
   if (EMsg != NULL)
     EMsg[0] = '\0';
+
+  get_user_host_from_user(user_host, user);
 
   if (at_pos != std::string::npos)
     user.erase(at_pos);
@@ -436,7 +470,9 @@ bool is_user_allowed_to_submit_jobs(
 
   // Check limited acls
   if (limited_acls.is_authorized(orighost, user) == true)
-    return(0);
+    return(true);
+  else if (limited_acls.is_authorized(user_host.c_str(), user) == true)
+    return(true);
 
   if (dptr != NULL)
     *dptr = '.';

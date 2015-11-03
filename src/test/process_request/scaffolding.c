@@ -14,6 +14,7 @@
 #include "pbs_nodes.h" /* pbsnode */
 #include "attribute.h" /* pbs_attribute */
 #include "threadpool.h"
+#include "acl_special.hpp"
 
 bool exit_called = false;
 const char *msg_err_noqueue = "Unable to requeue job, queue is not defined";
@@ -32,6 +33,15 @@ bool fail_get_connecthost = false;
 int free_attrlist_called;
 char scaff_buffer[1024];
 int dis_req_read_rc = PBSE_NONE;
+
+bool fail_check;
+
+acl_special limited_acls;
+
+acl_special::acl_special() : ug_acls()
+
+  {
+  }
 
 bool threadpool_is_too_busy(threadpool *tp, int permissions)
   {
@@ -519,4 +529,11 @@ pbsnode::~pbsnode() {}
 int pbsnode::unlock_node(const char *id, const char *msg, int level)
   {
   return(0);
+  }
+
+bool acl_special::is_authorized(const std::string &host, const std::string &user) const
+  {
+  if(fail_check == false)
+    return(false);
+  return(true);
   }
