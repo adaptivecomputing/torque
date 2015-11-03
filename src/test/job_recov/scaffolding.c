@@ -371,11 +371,6 @@ int update_user_acls(
   return(0);
   }
 
-const char *pbsnode::get_name() const
-  {
-  return(0);
-  }
-
 void handle_complete_second_time(struct work_task *ptask)
   {
   }
