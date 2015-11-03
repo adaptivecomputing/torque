@@ -1842,8 +1842,11 @@ int node_note(
         {
         np->nd_note = new_attr->at_val.at_str;
 
+        free(new_attr->at_val.at_str);
         new_attr->at_val.at_str = NULL;
         }
+      else
+        np->nd_note.clear();
 
       break;
 
