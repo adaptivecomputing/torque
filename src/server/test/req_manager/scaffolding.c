@@ -12,10 +12,12 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_type */
 #include "mom_hierarchy_handler.h"
+#include "acl_special.hpp"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
 
+acl_special limited_acls;
 
 all_nodes allnodes;
 int svr_resc_size = 0;
@@ -431,3 +433,32 @@ int get_svr_attr_l(
   {
   return(0);
   }
+
+acl_special::acl_special() {}
+
+void acl_special::add_group_configuration(
+
+  const std::string &qmgr_input) {}
+
+
+void acl_special::add_user_configuration(
+
+  const std::string &qmgr_input) {}
+
+void acl_special::clear_groups() {}
+void acl_special::clear_users() {}
+
+void acl_special::remove_group_configuration(
+
+  const std::string &qmgr_input)
+
+  {
+  }
+
+void acl_special::remove_user_configuration(
+
+  const std::string &qmgr_input)
+
+  {
+  }
+
