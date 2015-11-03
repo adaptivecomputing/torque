@@ -191,7 +191,7 @@ pbsnode &pbsnode::operator =(
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
   for (unsigned int i = 0; i < other.nd_micjobids.size(); i++)
-    this->nd_micjobids[i] = other.nd_micjobids[i];
+    this->nd_micjobids.push_back(other.nd_micjobids[i]);
 
   this->nd_nmics_alloced = other.nd_nmics_alloced;
   this->nd_nmics_free = other.nd_nmics_free;
