@@ -14,6 +14,8 @@ int    LOGLEVEL = 10;
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_orighost = "Job missing PBS_O_HOST value";
 
+acl_special limited_acls;
+
 char *get_variable(job *pjob, const char *variable)
   { 
   fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
@@ -44,3 +46,5 @@ bool acl_special::is_authorized(const std::string &host, const std::string &user
   {
   return(false);
   }
+
+acl_special::acl_special() {}
