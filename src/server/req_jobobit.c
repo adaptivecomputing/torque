@@ -2010,6 +2010,8 @@ void on_job_exit(
     return;
     }
 
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+
   mutex_mgr job_mutex(pjob->ji_mutex, true);
   job_mutex.set_unlock_on_exit(false);
     
@@ -2143,6 +2145,8 @@ void on_job_exit(
 
   if (job_id != NULL)
     free(job_id);
+
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return;
   }  /* END on_job_exit() */
