@@ -485,18 +485,26 @@ void decode_attribute(
     job_attr_def[index].at_free(&pj->ji_wattr[index]);
     }
 
-  job_attr_def[index].at_decode(
-    &pj->ji_wattr[index],
-     pal->al_name,
-     pal->al_resc,
-     pal->al_value,
-     ATR_DFLAG_ACCESS);
+  if (index == JOB_ATR_hold)
+    {
+    // JOB_ATR_hold is written to file as a number so it won't decode correctly
+    pj->ji_wattr[index].at_val.at_long = strtol(pal->al_value, NULL, 10);
+    }
+  else
+    {
+    job_attr_def[index].at_decode(
+      &pj->ji_wattr[index],
+       pal->al_name,
+       pal->al_resc,
+       pal->al_value,
+       ATR_DFLAG_ACCESS);
+    }
 
   if (job_attr_def[index].at_action != NULL)
     job_attr_def[index].at_action(&pj->ji_wattr[index], pj, ATR_ACTION_RECOV);
 
   pj->ji_wattr[index].at_flags =  pal->al_flags & ~ATR_VFLAG_MODIFY;
-  }
+  } // END decode_attribute()
 
 
 int fill_resource_list(
