@@ -887,10 +887,3 @@ int add_network_entry(
 
 void start_request_pool(threadpool_t *tp) {}
 
-void free_pwnam(
-  
-  struct passwd *pwdp, 
-  char *buf)
-
-  {
-  }
