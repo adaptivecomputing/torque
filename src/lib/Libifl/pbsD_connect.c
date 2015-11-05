@@ -711,29 +711,29 @@ int validate_socket(
     write_buf_len = strlen(write_buf);
     if ((local_socket = socket_get_unix()) <= 0)
       {
-      external_err_msg = "qsub was unable to open a socket\n";
+      external_err_msg = "pbs_connect was unable to open a socket\n";
       rc = PBSE_SOCKET_FAULT;
       }
     else if ((rc = socket_connect_unix(local_socket, unix_sockname, &err_msg)) != PBSE_NONE)
       {
-      external_err_msg = "qsub couldn't connect its socket to trqauthd: VERIFY THAT trqauthd IS RUNNING\n";
+      external_err_msg = "pbs_connect couldn't connect its socket to trqauthd: VERIFY THAT trqauthd IS RUNNING\n";
       }
     else if ((rc = socket_write(local_socket, write_buf, write_buf_len)) != write_buf_len)
       {
       rc = PBSE_SOCKET_WRITE;
-      external_err_msg = "qsub couldn't write authentication information to trqauthd";
+      external_err_msg = "pbs_connect couldn't write authentication information to trqauthd";
       }
     else if ((rc = socket_read_num(local_socket, &code)) != PBSE_NONE)
       {
-      external_err_msg = "qsub couldn't read the size of information from trqauthd\n";
+      external_err_msg = "pbs_connect couldn't read the size of information from trqauthd\n";
       }
     else if ((rc = socket_read_str(local_socket, &read_buf, &read_buf_len)) != PBSE_NONE)
       {
-      external_err_msg = "qsub couldn't read the response from trqauthd\n";
+      external_err_msg = "pbs_connect couldn't read the response from trqauthd\n";
       }
     else if ((rc = parse_daemon_response(code, read_buf_len, read_buf)) != PBSE_NONE)
       {
-      snprintf(err_buf, sizeof(err_buf), "qsub received error code %lld ('%s') from trqauthd\n", code, pbse_to_txt(code));
+      snprintf(err_buf, sizeof(err_buf), "pbs_connect received error code %lld ('%s') from trqauthd\n", code, pbse_to_txt(code));
       external_err_msg = err_buf;
       }
     else
