@@ -15,6 +15,7 @@
 int pbs_errno = 0; 
 char *pbs_server = NULL;
 bool exit_called = false;
+std::vector<std::string> in_hash;
 
 void log_event(int event, int event_class, const char *func_name, const char *buf)
   {}
@@ -27,8 +28,13 @@ char *pbs_geterrmsg(int connect)
 
 int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
-  fprintf(stderr, "The call to hash_find to be mocked!!\n");
-  exit(1);
+  for (unsigned int i = 0; i < in_hash.size(); i++)
+    {
+    if (in_hash[i] == name)
+      return(TRUE);
+    }
+
+  return(FALSE);
   }
 
 int TShowAbout_exit(void)
