@@ -32,6 +32,7 @@ int   req_val = 0;
 
 std::string added_value;
 std::string added_name;
+std::vector<std::string> in_hash;
 
 void log_event(int event, int event_class, const char *func_name, const char *buf)
   {}
@@ -55,8 +56,14 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
   else if ((validate_path == true) &&
            (!strcmp(name, "validate_path")))
     return(1);
-  else
-    return(0);
+  
+  for (unsigned int i = 0; i < in_hash.size(); i++)
+    {
+    if (in_hash[i] == name)
+      return(TRUE);
+    }
+
+  return(FALSE);
   }
 
 int TShowAbout_exit(void)
