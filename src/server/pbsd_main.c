@@ -1283,6 +1283,8 @@ void main_loop(void)
   sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
+    
+  hierarchy_handler.checkAndSendHierarchy(true);
 
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
@@ -1359,9 +1361,9 @@ void main_loop(void)
       }
 #endif
 
-    hierarchy_handler.checkAndSendHierarchy();
+    hierarchy_handler.checkAndSendHierarchy(false);
 
-      enqueue_threadpool_request(check_tasks, NULL, task_pool);
+    enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
