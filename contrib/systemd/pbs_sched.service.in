@@ -7,9 +7,16 @@ After=network.target
 Type=forking
 User=root
 
+# Do not set PIDFile via enviroment PBS_HOME
+# better to change to PIDFile=/var/run/%i.pid
+# and cleanup all code that relies on the current location of the PIDFile
 PIDFILE=@PBS_HOME@/sched_priv/sched.lock
 
-ExecStart=@sbindir@/pbs_sched -d @PBS_HOME@
+Environment=PBS_HOME=@PBS_HOME@
+Environment=PBS_ARGS=
+EnvironmentFile=-/etc/sysconfig/pbs_sched
+
+ExecStart=@sbindir@/pbs_sched -d $PBS_HOME $PBS_ARGS
 
 [Install]
 WantedBy=multi-user.target
