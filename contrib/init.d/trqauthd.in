@@ -49,6 +49,10 @@ case "$1" in
 		$0 stop
 		$0 start
 		;;
+	condrestart)
+		status trqauthd || exit 0
+		$0 restart
+		;;
 	reload) 
 		echo -n "Reloading TORQUE Authorization Daemon: "
 		killproc trqauthd -HUP
