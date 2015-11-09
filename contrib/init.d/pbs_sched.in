@@ -48,6 +48,10 @@ case "$1" in
 		$0 stop
 		$0 start
 		;;
+	condrestart)
+		status pbs_sched || exit 0
+		$0 restart
+		;;
 	reload) 
 		echo -n "Reloading pbs_sched: "
 		killproc pbs_sched -HUP
