@@ -691,15 +691,10 @@ void mom_hierarchy_handler::checkAndSendHierarchy(
   {
   time_t now = time(NULL);
 
-  if (first_time)
-    {
-    pthread_mutex_lock(&hierarchy_mutex);
-    nextSendTime = now + MOM_CHECK_SEND_INTERVAL;
-    pthread_mutex_unlock(&hierarchy_mutex);
-    }
-  else if ((sendOnDemand) || // Don't send if we are only sending on demand.
-      (nextSendTime > now) || // Don't send if its not time to send.
-      (sendingThreadCount != 0)) // Don't send if we are still sending from last time.
+  if ((sendOnDemand) || // Don't send if we are only sending on demand.
+      ((first_time == false) &&
+       ((nextSendTime > now) || // Don't send if its not time to send.
+        (sendingThreadCount != 0)))) // Don't send if we are still sending from last time.
     return; 
 
   std::vector<sendNodeHolder *>  nodesToSend;
@@ -709,12 +704,18 @@ void mom_hierarchy_handler::checkAndSendHierarchy(
 
   while ((pnode = nextNode(&iter)) != NULL)
     {
-    if (pnode->nd_lastHierarchySent < lastReloadTime)
+    // On follow up passes, don't try to send the hierarchy to nodes that
+    // are down or offlined. Wait for them to report in or be marked online by
+    // the admin to send it again.
+    if ((pnode->nd_lastHierarchySent < lastReloadTime) &&
+        ((first_time) ||
+         (((pnode->nd_state & INUSE_DOWN) == 0) &&
+          ((pnode->nd_state & INUSE_OFFLINE) == 0))))
       {
       // This new'd object is deleted in sendHierarchyThreadTask
       nodesToSend.push_back(new sendNodeHolder(pnode, first_time));
       }
-    else if(pnode->nd_state&INUSE_NOHIERARCHY)
+    else if (pnode->nd_state & INUSE_NOHIERARCHY)
       {
       hierarchyNotSentFlagSet = true;
       }
@@ -744,7 +745,7 @@ void mom_hierarchy_handler::checkAndSendHierarchy(
       //If we are here then all nodes have an up to date and correct hierarchy so clear all flags.
       while ((pnode = nextNode(&iter)) != NULL)
         {
-        if (pnode->nd_state&INUSE_NOHIERARCHY)
+        if (pnode->nd_state & INUSE_NOHIERARCHY)
           {
           pnode->nd_state = INUSE_FREE; //This was created as a dynamic node and
                                         //it now has a good ok host list so mark
