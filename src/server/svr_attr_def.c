@@ -118,6 +118,7 @@ extern void free_extraresc (pbs_attribute * attr);
 extern void restore_attr_default (struct pbs_attribute *);
 int         update_user_acls(pbs_attribute *pattr, void *pobject, int actmode);
 int         update_group_acls(pbs_attribute *pattr, void *pobject, int actmode);
+int         node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
 
 /* DIAGTODO: write diag_attr_def.c */
 
@@ -1516,6 +1517,19 @@ attribute_def svr_attr_def[] =
     comp_arst,
     free_arst,
     NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_node_submit_exceptions */
+  { (char *)ATTR_nodesubmitexceptions,  /* "node_submit_exceptions" */
+    decode_arst,
+    encode_arst,
+    set_arst,
+    comp_arst,
+    free_arst,
+    node_exception_check,
     MGR_ONLY_SET,
     ATR_TYPE_ACL,
     PARENT_TYPE_SERVER

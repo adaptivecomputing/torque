@@ -9,6 +9,7 @@
 #include "attribute.h" /* attribute_def, pbs_attribute  */
 #include "server.h" /* server */
 #include "log.h"
+#include "execution_slot_tracker.hpp"
 
 attribute_def job_attr_def[10];
 struct server server;
@@ -139,4 +140,30 @@ struct group *getgrgid_ext(
   *user_buf = buf;
   return(grp);
   } /* END getgrnam_ext() */
+
+int lock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+execution_slot_tracker::execution_slot_tracker() {}
+
+execution_slot_tracker &execution_slot_tracker::operator =(const execution_slot_tracker &other)
+  {
+  return *this;
+  }
+
+execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker &other)
+  {
+  this->slots = other.slots;
+  this->open_count = other.open_count;
+  }
+
+bool node_exists(const char *node_name)
+  {
+  if (!strcmp("waimea", node_name))
+    return(false);
+
+  return(true);
+  }
 

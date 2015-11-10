@@ -385,6 +385,7 @@ int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
+bool            node_exists(const char *node_name);
 
 
 #if 0

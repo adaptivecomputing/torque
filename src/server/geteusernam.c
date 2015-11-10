@@ -736,5 +736,41 @@ int set_jobexid(
 
   }  /* END set_jobexid() */
 
+
+
+/*
+ * node_exception_check()
+ *
+ */
+
+int node_exception_check(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  struct array_strings *pstr;
+
+  if (actmode == ATR_ACTION_FREE)
+    {
+    return(PBSE_NONE); /* no checking on free */
+    }
+
+  pstr = pattr->at_val.at_arst;
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if (node_exists(pstr->as_string[i]) == false)
+      {
+      return(PBSE_UNKNODE);
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END node_exception_check()
+
+
+
 /* END geteusernam.c */
 
