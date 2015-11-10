@@ -1362,6 +1362,9 @@ int trq_cg_create_all_cgroups(
   job    *pjob)
 
   {
+  // make sure cgroups setup properly
+  init_torque_cgroups();
+
   int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob);
 
   if (rc == PBSE_NONE)
