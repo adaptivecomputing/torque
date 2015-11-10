@@ -101,7 +101,7 @@
 #endif /* _CRAY */
 #include "svrfunc.h" /* get_svr_attr_* */
 #include <string>
-#include "u_lock_ctl.h"
+#include "../lib/Libutils/u_lock_ctl.h"
 
 /* External Data */
 
