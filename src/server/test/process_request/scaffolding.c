@@ -523,10 +523,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   snprintf(scaff_buffer, sizeof(scaff_buffer), "%s", text);
   }
 
-pbsnode::pbsnode() {}
-pbsnode::~pbsnode() {}
-
-int pbsnode::unlock_node(const char *id, const char *msg, int level)
+int unlock_node(struct pbsnode *pnode, const char *id, char *msg, int log_level)
   {
   return(0);
   }

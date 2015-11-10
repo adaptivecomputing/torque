@@ -4,16 +4,45 @@
 #include <pwd.h> /* passwd */
 #include <sys/types.h>
 #include <grp.h>
+#include <pthread.h>
 
 #include "pbs_job.h" /* job */
 #include "attribute.h" /* attribute_def, pbs_attribute  */
 #include "server.h" /* server */
 #include "log.h"
+#include "pbs_nodes.h"
+#include "execution_slot_tracker.hpp"
 
+
+pthread_mutex_t ruserok_mutex;
 attribute_def job_attr_def[10];
 struct server server;
+const char *msg_orighost = "Job missing PBS_O_HOST value";
 char *server_host;
 int LOGLEVEL;
+
+acl_special limited_acls;
+
+acl_special::acl_special() : ug_acls()
+  {
+  }
+
+bool acl_special::is_authorized(
+  const std::string &host,
+  const std::string &user) const
+  {
+  return(true);
+  }
+
+
+struct pbsnode *find_nodebyname(const char *nodename)
+  {
+  static struct pbsnode bob;
+
+  memset(&bob, 0, sizeof(bob));
+
+  return(&bob);
+  }
 
 
 char *site_map_user(char *uname,  char *host) 
@@ -139,4 +168,23 @@ struct group *getgrgid_ext(
   *user_buf = buf;
   return(grp);
   } /* END getgrnam_ext() */
+
+
+int lock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+execution_slot_tracker::execution_slot_tracker() {}
+
+execution_slot_tracker &execution_slot_tracker::operator =(const execution_slot_tracker &other)
+  {
+  return *this;
+  }
+
+execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker &other)
+  {
+  this->slots = other.slots;
+  this->open_count = other.open_count;
+  }
 

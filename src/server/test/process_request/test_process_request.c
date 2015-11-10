@@ -22,7 +22,7 @@ extern struct connection svr_conn[];
 extern char server_name[];
 extern int free_attrlist_called;
 extern int dis_req_read_rc;
-extern bool fail_check = true;
+extern bool fail_check;
 
 void initialize_svr_conn(
 
