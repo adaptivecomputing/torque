@@ -112,6 +112,8 @@ extern char  server_host[];
 extern char *msg_orighost; /* error message: no PBS_O_HOST */
 
 
+
+
 /*
  * site_check_u - site_check_user_map()
  *

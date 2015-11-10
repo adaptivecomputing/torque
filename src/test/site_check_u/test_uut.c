@@ -7,12 +7,6 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
-  {
-
-
-  }
-END_TEST
 
 START_TEST(test_two)
   {
@@ -24,11 +18,7 @@ END_TEST
 Suite *site_check_u_suite(void)
   {
   Suite *s = suite_create("site_check_u_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_two");
+  TCase *tc_core = tcase_create("test_two");
   tcase_add_test(tc_core, test_two);
   suite_add_tcase(s, tc_core);
 

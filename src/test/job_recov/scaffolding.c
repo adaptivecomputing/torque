@@ -402,3 +402,14 @@ int update_group_acls(
   {
   return(0);
   }
+
+int node_exception_check(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+

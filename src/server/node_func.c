@@ -174,7 +174,6 @@ int addr_ok(
 
 
 
-
 struct pbsnode *find_node_in_allnodes(
 
   all_nodes *an,
@@ -203,6 +202,34 @@ struct pbsnode *find_node_in_allnodes(
 
   return(pnode);
   } /* END find_node_in_allnodes() */
+
+
+
+bool node_exists(
+
+  const char *node_name)
+
+  {
+  bool exists = false;
+
+  allnodes.lock();
+  if (allnodes.find(node_name) != NULL)
+    exists = true;
+  allnodes.unlock();
+
+  return(exists);
+  } // END node_exists()
+
+
+
+bool node_exists_by_id(
+
+  int node_id)
+
+  {
+  const char     *name = node_mapper.get_name(node_id);
+  return(node_exists(name));
+  } // END node_exists_by_id()
 
 
 

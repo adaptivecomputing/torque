@@ -4,8 +4,28 @@
 #include <stdio.h>
 #include <string>
 #include "pbs_error.h"
+#include "attribute.h"
 
+int node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
 void get_user_host_from_user( std::string &user_host, const std::string user);
+bool is_permitted_by_node_submit(const char *orighost, int logging);
+
+extern bool exists;
+
+
+START_TEST(test_is_permitted_by_node_submit)
+  {
+  int logging = 5;
+  exists = true;
+  fail_unless(is_permitted_by_node_submit("napali", logging) == false);
+  fail_unless(is_permitted_by_node_submit("waimea", logging) == false);
+  fail_unless(is_permitted_by_node_submit("lihue", logging) == true);
+  fail_unless(is_permitted_by_node_submit("wailua", logging) == true);
+
+  exists = false;
+  fail_unless(is_permitted_by_node_submit("haole", logging) == false);
+  }
+END_TEST
 
 
 START_TEST(test_get_user_host_from_user)
@@ -20,9 +40,38 @@ START_TEST(test_get_user_host_from_user)
   user = "user";
   get_user_host_from_user(user_host, user);
   fail_unless(user_host.size() == 0);
-
   }
 END_TEST
+
+START_TEST(test_node_exception_check)
+  {
+  pbs_attribute pattr;
+  memset(&pattr, 0, sizeof(pattr));
+  size_t need = sizeof(struct array_strings) + 3 * sizeof(char *);
+  struct array_strings *arst = (struct array_strings *)calloc(1, need);
+  char *buf = (char *)calloc(100, sizeof(char));
+  strcpy(buf, "napali");
+  strcpy(buf + 7, "waimea");
+  arst->as_buf = buf;
+  arst->as_usedptr = 2;
+  arst->as_bufsize = 100;
+  arst->as_next = arst->as_buf + 14;
+  arst->as_string[0] = arst->as_buf;
+  arst->as_string[1] = arst->as_buf + 7;
+  pattr.at_val.at_arst = arst;
+
+  // FREE shouldn't do any checking
+  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_FREE) == PBSE_NONE);
+  exists = false;
+  // nodes are set to not exist, so we should error
+  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_UNKNODE);
+ 
+  // the nodes exist 
+  exists = true;
+  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_NONE);
+  }
+END_TEST
+
 
 START_TEST(test_two)
   {
@@ -36,10 +85,11 @@ Suite *geteusernam_suite(void)
   Suite *s = suite_create("geteusernam_suite methods");
   TCase *tc_core = tcase_create("test_get_user_host_from_user");
   tcase_add_test(tc_core, test_get_user_host_from_user);
+  tcase_add_test(tc_core, test_node_exception_check);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_is_permitted_by_node_submit");
+  tcase_add_test(tc_core, test_is_permitted_by_node_submit);
   suite_add_tcase(s, tc_core);
 
   return s;
