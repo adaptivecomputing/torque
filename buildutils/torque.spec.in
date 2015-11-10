@@ -15,11 +15,11 @@
 
 # some binaries under /bin in el5|6 are only provided in /usr/bin in el7+.
 # the el7 rpms actually provide the old location, but can't be used as a rpm requirement
-# introducing the _rootbin macro for this, as none seems to exists
+# introducing the rootbin macro for this, as none seems to exists
 %if 0%{?el6:1} || 0%{?el5:1}
-%define _rootbin /bin
+%define rootbin /bin
 %else
-%define _rootbin /usr/bin
+%define rootbin /usr/bin
 %endif
 
 ### Features disabled by default
@@ -70,7 +70,7 @@
 %define breq_scp      %{?with_scp:/usr/bin/scp}
 
 # Requirements
-%define req_cgroups   %{?with_cgroups:%{_rootbin}/lssubsys}
+%define req_cgroups   %{?with_cgroups:%{rootbin}/lssubsys}
 
 ### Macro variables
 %{!?torque_user:%global torque_user torque}
