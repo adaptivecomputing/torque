@@ -169,7 +169,6 @@ struct group *getgrgid_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
-
 int lock_node(struct pbsnode *the_node, const char *method_name, const char *msg, int logging)
   {
   return(0);
@@ -186,5 +185,13 @@ execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker &oth
   {
   this->slots = other.slots;
   this->open_count = other.open_count;
+  }
+
+bool node_exists(const char *node_name)
+  {
+  if (!strcmp("waimea", node_name))
+    return(false);
+
+  return(true);
   }
 

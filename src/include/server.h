@@ -221,6 +221,7 @@ enum srv_atr
   SRV_ATR_DontWriteNodesFile,
   SRV_ATR_acl_users_hosts,
   SRV_ATR_acl_groups_hosts,
+  SRV_ATR_node_submit_exceptions,
 
   /* This must be last */
   SRV_ATR_LAST

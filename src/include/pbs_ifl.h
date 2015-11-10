@@ -366,6 +366,7 @@
 #define ATTR_dontwritenodesfile        "dont_write_nodes_file"
 #define ATTR_aclusershosts              "acl_user_hosts"
 #define ATTR_aclgroupshosts             "acl_group_hosts"
+#define ATTR_nodesubmitexceptions       "node_submit_exceptions"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
