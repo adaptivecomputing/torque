@@ -500,7 +500,7 @@ void *remove_extra_recycle_jobs(void *)
   return(NULL);
   }
   
-void mom_hierarchy_handler::checkAndSendHierarchy(void)
+void mom_hierarchy_handler::checkAndSendHierarchy(bool b)
   {
   }
 

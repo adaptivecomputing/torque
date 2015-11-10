@@ -709,10 +709,10 @@ void translate_range_string_to_vector(
   return;
   }
 
-
 bool job_id_exists(
 
-  const std::string job_id_string)
+  const std::string &job_id_string,
+  int   *rcode)
 
   {
   return(true);
