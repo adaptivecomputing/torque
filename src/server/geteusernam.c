@@ -111,6 +111,46 @@ extern int LOGLEVEL;
 
 extern pthread_mutex_t ruserok_mutex;
 
+
+
+bool is_permitted_by_node_submit(
+    
+  const char *orighost,
+  int         logging)
+
+  {
+  long allow_node_submit = FALSE;
+
+  get_svr_attr_l(SRV_ATR_AllowNodeSubmit, &allow_node_submit);
+
+  if ((allow_node_submit == TRUE) &&
+      (node_exists(orighost) == true))
+    {
+    /* job submitted from compute host, access allowed */
+    struct array_strings *arst = NULL;
+
+    get_svr_attr_arst(SRV_ATR_node_submit_exceptions, &arst);
+
+    if (arst != NULL)
+      {
+      // If we find this node's name in the disallowed nodes for submission, forbid it.
+      for (int i = 0; i < arst->as_usedptr; i++)
+        {
+        if (!strcmp(orighost, arst->as_string[i]))
+          {
+          return(false);
+          }
+        }
+      }
+
+    return(true);
+    }
+
+  return(false);
+  } // END is_permitted_by_node_submit()
+
+
+
 /*
  * geteusernam - get effective user name
  * Get the user name under which the job should be run on this host:
@@ -321,7 +361,6 @@ bool is_user_allowed_to_submit_jobs(
   bool            HostAllowed = false;
   char           *dptr;
 
-  struct pbsnode *tmp;
   char            log_buf[256];
 
 #ifdef MUNGE_AUTH
@@ -390,13 +429,8 @@ bool is_user_allowed_to_submit_jobs(
     }
 
   if ((HostAllowed == false) &&
-      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) &&
-      ((tmp = find_nodebyname(orighost)) != NULL))
+      (is_permitted_by_node_submit(orighost, logging) == true))
     {
-    /* job submitted from compute host, access allowed */
-    //tmp->unlock_node(__func__, NULL, logging);
-    lock_node(tmp, __func__, NULL, logging);
 
     if (dptr != NULL)
       *dptr = '.';

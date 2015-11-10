@@ -8,6 +8,22 @@
 
 int node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
 void get_user_host_from_user( std::string &user_host, const std::string user);
+bool is_permitted_by_node_submit(const char *orighost, int logging);
+extern bool exists;
+
+START_TEST(test_is_permitted_by_node_submit)
+  {
+  int logging = 5;
+  exists = true;
+  fail_unless(is_permitted_by_node_submit("napali", logging) == false);
+  fail_unless(is_permitted_by_node_submit("waimea", logging) == false);
+  fail_unless(is_permitted_by_node_submit("lihue", logging) == true);
+  fail_unless(is_permitted_by_node_submit("wailua", logging) == true);
+
+  exists = false;
+  fail_unless(is_permitted_by_node_submit("haole", logging) == false);
+  }
+END_TEST
 
 
 START_TEST(test_get_user_host_from_user)
@@ -44,22 +60,17 @@ START_TEST(test_node_exception_check)
 
   // FREE shouldn't do any checking
   fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_FREE) == PBSE_NONE);
+  exists = false;
   // waimea is set to not exist, so we should error
   fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_UNKNODE);
  
   // make it so waimea isn't seen and we should succeed
-  arst->as_usedptr = 1;
+  exists = true;
   fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_NONE);
   }
 END_TEST
 
 
-START_TEST(test_two)
-  {
-
-
-  }
-END_TEST
 
 Suite *geteusernam_suite(void)
   {
@@ -69,8 +80,8 @@ Suite *geteusernam_suite(void)
   tcase_add_test(tc_core, test_node_exception_check);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_is_permitted_by_node_submit");
+  tcase_add_test(tc_core, test_is_permitted_by_node_submit);
   suite_add_tcase(s, tc_core);
 
   return s;

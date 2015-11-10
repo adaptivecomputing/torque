@@ -20,6 +20,7 @@ struct server server;
 const char *msg_orighost = "Job missing PBS_O_HOST value";
 char *server_host;
 int LOGLEVEL;
+bool exists = true;
 
 acl_special limited_acls;
 
@@ -85,16 +86,6 @@ void get_jobowner(char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner needs to be mocked!!\n");
   exit(1);
-  }
-
-int get_svr_attr_arst(int attr_index, struct array_strings **arst)
-  {
-  return(0);
-  }
-
-int get_svr_attr_l(int attr_index, long *l)
-  {
-  return(0);
   }
 
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
@@ -189,9 +180,39 @@ execution_slot_tracker::execution_slot_tracker(const execution_slot_tracker &oth
 
 bool node_exists(const char *node_name)
   {
-  if (!strcmp("waimea", node_name))
-    return(false);
+  return(exists);
+  }
 
-  return(true);
+int get_svr_attr_l(
+
+  int   index,
+  long *l)
+
+  {
+  *l = 1;
+  return(0);
+  }
+
+int get_svr_attr_arst(
+
+  int  index,
+  struct array_strings **arst_ptr)
+
+  {
+  size_t need = sizeof(struct array_strings) + 3 * sizeof(char *);
+  struct array_strings *arst = (struct array_strings *)calloc(1, need);
+  char *buf = (char *)calloc(100, sizeof(char));
+  strcpy(buf, "napali");
+  strcpy(buf + 7, "waimea");
+  arst->as_buf = buf;
+  arst->as_usedptr = 2;
+  arst->as_bufsize = 100;
+  arst->as_next = arst->as_buf + 14;
+  arst->as_string[0] = arst->as_buf;
+  arst->as_string[1] = arst->as_buf + 7;
+
+  *arst_ptr = arst;
+
+  return(0);
   }
 
