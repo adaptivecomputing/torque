@@ -925,6 +925,8 @@ void *sync_node_jobs(
     return(NULL);
     }
 
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+
   /* FORMAT <JOBID>[ <JOBID>]... */
   jobs_in_mom = strdup(jobstring_in);
   joblist = jobstring_in;
@@ -956,6 +958,8 @@ void *sync_node_jobs(
 
         if (jobs_in_mom)
           free(jobs_in_mom);
+  
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
         return(NULL);
         }
@@ -1006,6 +1010,8 @@ void *sync_node_jobs(
     }
 
   unlock_node(np, __func__, NULL, LOGLEVEL);
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return(NULL);
   }  /* END sync_node_jobs() */
