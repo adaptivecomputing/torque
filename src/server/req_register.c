@@ -120,7 +120,6 @@
 
 /* External functions */
 
-extern int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 extern int que_to_local_svr(struct batch_request *preq);
 extern long calc_job_cost(job *);
 char *get_correct_jobname(const char *jobid);
@@ -2469,21 +2468,22 @@ int send_depend_req(
   svraddr1 = get_hostaddr(&my_err, server_name);
   svraddr2 = get_hostaddr(&my_err, pparent->dc_svr);
 
-  if((svraddr1 == svraddr2)&&(bAsyncOk))
+  if ((svraddr1 == svraddr2) &&
+      (bAsyncOk))
     {
     snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",pparent->dc_svr);
     rc = que_to_local_svr(preq);
+    preq = NULL;
     }
   else
     {
-    rc = issue_to_svr(pparent->dc_svr, preq, NULL);
+    rc = issue_to_svr(pparent->dc_svr, &preq, NULL);
     }
 
   if (rc != PBSE_NONE)
     {
-    /* local requests have already been processed and freed. Do not attempt to
-     * free or reference again. */
-    if (svraddr1 != svraddr2)
+    /* requests are conditionally freed in issue_to_svr() */
+    if (preq != NULL)
       {
       free_br(preq);
       }
@@ -2503,7 +2503,7 @@ int send_depend_req(
     }
   /* local requests have already been processed and freed. Do not attempt to
    * free or reference again. */
-  else if (svraddr1 != svraddr2)
+  else if (preq != NULL)
     postfunc(preq);
 
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
