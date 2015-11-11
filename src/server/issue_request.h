@@ -10,8 +10,6 @@
 
 void reissue_to_svr(struct work_task *);
 
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *));
-
 int handle_local_request(int conn, batch_request *request);
 
 void release_req(struct work_task *pwt);
