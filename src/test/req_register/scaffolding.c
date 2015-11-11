@@ -167,7 +167,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
   {
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);

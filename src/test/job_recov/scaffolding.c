@@ -282,7 +282,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
 batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *)) {return 0;}
+int issue_to_svr(char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
 int que_to_local_svr(struct batch_request *preq) {return 0;}
 int job_set_wait(pbs_attribute *pattr, void *pjob, int mode) {return 0;}
 int get_batch_request_id(batch_request *preq) {return 0;}
