@@ -371,7 +371,6 @@ bool is_user_allowed_to_submit_jobs(
   bool            HostAllowed = false;
   char           *dptr;
 
-  struct pbsnode *tmp;
   char            log_buf[256];
 
 #ifdef MUNGE_AUTH
@@ -443,8 +442,6 @@ bool is_user_allowed_to_submit_jobs(
       (is_permitted_by_node_submit(orighost, logging)))
     {
     /* job submitted from compute host, access allowed */
-    tmp->unlock_node(__func__, NULL, logging);
-
     if (dptr != NULL)
       *dptr = '.';
 
