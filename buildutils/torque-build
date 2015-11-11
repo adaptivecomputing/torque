@@ -192,7 +192,7 @@ branch=`git branch | awk '/^[*]/ { print $2}'`
 version=`buildutils/determine.version`
 release_number="`buildutils/determine.release_number`"
 changeset=`git rev-parse HEAD`
-distro="`buildutils/determine.distro -c | tr [A-Z] [a-z]`"
+distro=`buildutils/determine.distro -c`
 
 if [ -z "${version}" ]
 then

@@ -5,13 +5,13 @@
 # Output possibilities:
 #
 #  no args:
-#    Unknown
-#    CentOS
-#    RHEL
-#    Ubuntu
+#    el
+#    sles
+#    unknown
 #
 #  w/args
-#    EL<ver>
+#    el<ver>
+#    sles<ver>
 #    unknown
 
 # We prefer to use lsb_release if it is available
@@ -27,39 +27,39 @@ if [ $? -eq 0 ] ; then
     # Map raw data stream to a normalized output
     case ${DISTRO} in
       CentOS)
-        DISTRO=EL
+        DISTRO=el
         ;;
       RedHatEnterpriseServer)
-        DISTRO=EL
+        DISTRO=el
         ;;
       RHEL)
-        DISTRO=EL
+        DISTRO=el
         ;;
       'SUSE LINUX')
-        DISTRO=SLES
+        DISTRO=sles
         ;;
       SLES)
-        DISTRO=SLES
+        DISTRO=sles
         ;;
       SUSE)
-        DISTRO=SLES
+        DISTRO=sles
         ;;
       Scientific)
-        DISTRO=EL
+        DISTRO=el
         ;;
       *)
-        DISTRO=Unknown
+        DISTRO=unknown
         ;;
     esac
   fi;
 
 # If lsb_release is not found, look for a /etc/*-release file
 elif test -f /etc/redhat-release; then
-  DISTRO=EL
+  DISTRO=el
   REL=`cat /etc/redhat-release | sed -e "s/^[^0-9]*//" -e "s/[^0-9].*$//"`
 
 elif test -f /etc/SuSE-release; then
-  DISTRO=SLES
+  DISTRO=sles
   REL=`grep SUSE /etc/SuSE-release | sed -e "s/^[^0-9]*//" -e "s/[^0-9].*$//"`
 elif test -f /etc/lsb-release; then
   DISTRO=`grep DISTRIB_ID /etc/lsb-release | sed "s/^DISTRIB_ID=//"`
@@ -67,7 +67,7 @@ elif test -f /etc/lsb-release; then
 
 # Otherwise it is unknown
 else
-  DISTRO=Unknown
+  DISTRO=unknown
 fi
 
 #

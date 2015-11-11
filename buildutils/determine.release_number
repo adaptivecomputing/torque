@@ -11,8 +11,5 @@ then
     exit 1
 fi
 
-revision_number="`git rev-list HEAD | wc -l`"
-changeset="`git rev-parse HEAD`"
-short_changeset="`echo "${changeset}" | sed 's/^\([[:xdigit:]]\{8\}\).*$/\1/'`"
-release_number="${revision_number}_${short_changeset}"
+release_number=`git log --pretty=format:%ct_%h -1`
 echo "${release_number}"
