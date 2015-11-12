@@ -194,16 +194,20 @@ typedef struct complete_spec_data
 
 
 
-typedef struct node_job_add_info
+class node_job_add_info
   {
+  public:
   int                       node_id;
   int                       ppn_needed;
   int                       gpu_needed;
   int                       mic_needed;
   int                       is_external;
   int                       req_rank;
-  struct node_job_add_info *next;
-  } node_job_add_info;
+
+  node_job_add_info() : node_id(-1), ppn_needed(0), gpu_needed(0),
+                        mic_needed(0), is_external(0), req_rank(0) {}
+
+  };
 
 
 
