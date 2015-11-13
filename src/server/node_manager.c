@@ -4145,13 +4145,13 @@ int place_subnodes_in_hostlist(
     if (pnode->nd_layout == NULL)
       return(-1);
 
-    update_req_hostlist(pjob, pnode->nd_name, naji->req_rank, naji->ppn_needed);
+    update_req_hostlist(pjob, pnode->get_name(), naji->req_rank, naji->ppn_needed);
 
-    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
+    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->get_name());
     if (rc != PBSE_NONE)
       return(rc);
 
-    save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
+    save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cpus, mems);
     save_node_usage(pnode);
 #endif
 
