@@ -193,7 +193,6 @@ extern int              multi_mom;
 int handle_complete_first_time(job *pjob);
 int is_compute_node(char *node_id);
 int hasprop(struct pbsnode *, struct prop *);
-int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *, job *, char *, job_reservation_info &);
 int procs_available(int proc_ct);
@@ -3597,78 +3596,6 @@ int reserve_node(
   return(PBSE_NONE);
   }
 #endif /* GEOMETRY_REQUESTS */
-
-
-
-
-/**
- * adds this job to the node's list of jobs
- * checks to be sure not to add duplicates
- *
- * conditionally updates the subnode's state
- * decrements the amount of needed nodes
- *
- * @param pnode - the node that the job is running on
- * @param nd_psn - the subnode (processor) that the job is running on
- * @param newstate - the state nodes are transitioning to when used
- * @param pjob - the job that is going to be run
- */
-int add_job_to_node(
-
-  struct pbsnode *pnode,     /* I/O */
-  struct pbssubn *snp,       /* I/O */
-  short           newstate,  /* I */
-  job            *pjob)      /* I */
-
-  {
-  struct jobinfo *jp;
-  char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  /* NOTE:  search existing job array.  add job only if job not already in place */
-  if (LOGLEVEL >= 5)
-    {
-    sprintf(log_buf, "allocated node %s/%d to job %s (nsnfree=%d)",
-      pnode->nd_name,
-      snp->index,
-      pjob->ji_qs.ji_jobid,
-      pnode->nd_slots.get_number_free());
-
-    log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-    DBPRT(("%s\n", log_buf));
-    }
-
-  for (jp = snp->jobs;jp != NULL;jp = jp->next)
-    {
-    if (jp->internal_job_id == pjob->ji_internal_id)
-      break;
-    }
-
-  if (jp == NULL)
-    {
-    /* add job to front of subnode job array */
-    jp = (struct jobinfo *)calloc(1, sizeof(struct jobinfo));
-
-    jp->next = snp->jobs;
-    snp->jobs = jp;
-    jp->internal_job_id = pjob->ji_internal_id;
-
-    /* if no free VPs, set node state */
-    if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE))
-      pnode->nd_state = newstate;
-
-    if (snp->inuse == INUSE_FREE)
-      {
-      snp->inuse = newstate;
-      }
-    }
-
-  /* decrement the amount of nodes needed */
-  --pnode->nd_np_to_be_used;
-
-  return(SUCCESS);
-  } /* END add_job_to_node() */
-
 
     
 
