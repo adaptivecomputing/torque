@@ -211,22 +211,6 @@ class node_job_add_info
 
 
 
-struct pbssubn
-  {
-  struct pbsnode   *host;
-
-  struct pbssubn   *next;
-
-  std::vector<int>  job_ids;
-  /* does this include suspended jobs? */
-  resource_t        allocto;
-  enum psit         flag;  /* XXX */
-  unsigned short    inuse;
-  short             index;  /* subnode index */
-  };
-
-
-
 class gpusubn
   {
   public:
@@ -235,12 +219,11 @@ class gpusubn
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
-  enum psit       flag;   /* same as for pbssubn */
+  enum psit       flag;
   short           index;  /* gpu index */
   std::string     gpuid;  /* gpu id */
   int             job_count;
   };
-
 
 
 
@@ -657,10 +640,7 @@ void             free_prop_list(struct prop*);
 void             reinitialize_node_iterator(node_iterator *);
 
 #ifdef BATCH_REQUEST_H 
-void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             setup_notification(char *);
-
-struct pbssubn  *find_subnodebyname(char *);
 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_attr(pbs_attribute*);
