@@ -425,14 +425,17 @@ void       *send_hierarchy_threadtask(void *);
 
 
 
-struct howl
+class howl
   {
-  char           *name;
+  public:
+  std::string     hostname;
   int             order;
   int             index;
   unsigned short  port;
-
-  struct howl    *next;
+  howl(const std::string &name) : hostname(name) {}
+  howl(const std::string &name, int o, int i, unsigned int p) : hostname(name), order(o), index(i),
+                                                                port(p) {}
+  howl() : hostname(), order(-1), index(-1), port(0) {}
   };
 
 
