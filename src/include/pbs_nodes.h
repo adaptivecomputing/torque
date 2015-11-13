@@ -219,22 +219,6 @@ class node_job_add_info
 
 
 
-struct pbssubn
-  {
-  struct pbsnode *host;
-
-  struct pbssubn *next;
-
-  struct jobinfo *jobs;     /* list of jobs allocating resources within subnode */
-  /* does this include suspended jobs? */
-  resource_t      allocto;
-  enum psit      flag;  /* XXX */
-  unsigned short  inuse;
-  short           index;  /* subnode index */
-  };
-
-
-
 struct gpusubn
   {
   int             job_internal_id; /* internal id of job on gpu */
@@ -242,7 +226,7 @@ struct gpusubn
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
-  enum psit       flag;   /* same as for pbssubn */
+  enum psit       flag;
   short           index;  /* gpu index */
   char           *gpuid;  /* gpu id */
   int             job_count;
@@ -634,11 +618,8 @@ extern void      delete_a_subnode(struct pbsnode *pnode);
 void             reinitialize_node_iterator(node_iterator *);
 
 #ifdef BATCH_REQUEST_H 
-void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             effective_node_delete(struct pbsnode *);
 void             setup_notification(char *);
-
-struct pbssubn  *find_subnodebyname(char *);
 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_list(struct prop*);
