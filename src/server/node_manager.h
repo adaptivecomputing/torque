@@ -61,10 +61,6 @@ int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 
 int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
 
-int build_host_list(struct howl **hlistptr, struct pbssubn *snp, struct pbsnode *pnode);
-
-int add_gpu_to_hostlist(struct howl **hlistptr, struct gpusubn *gn, struct pbsnode *pnode);
-
 int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg);
 
 int procs_requested(char *spec);
