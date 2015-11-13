@@ -196,7 +196,6 @@ int hasprop(struct pbsnode *, struct prop *);
 int add_job_to_node(struct pbsnode *,struct pbssubn *,short,job *);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *, job *, char *, job_reservation_info &);
-int build_host_list(struct howl **,struct pbssubn *,struct pbsnode *);
 int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
 int gpu_entry_by_id(struct pbsnode *,char *, int);
@@ -3744,92 +3743,38 @@ int remove_job_from_nodes_mics(
 
 
 
-
-/**
- * builds the host list (hlist)
- *
- * @param pnode - the node being added to the host list
- * @param hlist - the host list being built
- */ 
-int build_host_list(
-
-  struct howl    **hlistptr,  /* O */
-  struct pbssubn  *snp,       /* I */
-  struct pbsnode  *pnode)     /* I */
-  
-  {
-  struct howl *curr;
-  struct howl *prev;
-  struct howl *hp;
-
-  /* initialize the pointers */
-  curr = (struct howl *)calloc(1, sizeof(struct howl));
-  curr->order = pnode->nd_order;
-  curr->name  = pnode->nd_name;
-  curr->index = snp->index;
-  curr->port = pnode->nd_mom_rm_port;
-
-  /* find the proper place in the list */
-  for (prev = NULL, hp = *hlistptr;hp;prev = hp, hp = hp->next)
-    {
-    if (curr->order <= hp->order)
-      break;
-    }  /* END for (prev) */
-
-  /* set the correct pointers in the list */
-  curr->next = hp;
-
-  if (prev == NULL)
-    *hlistptr = curr;
-  else
-    prev->next = curr;
-
-  return(SUCCESS);
-  }
-
-
-
 int add_gpu_to_hostlist(
-    
-  struct howl    **hlistptr,
+  
+  std::list<howl> &gpu_list,
   struct gpusubn  *gn,
   struct pbsnode  *pnode)
 
   {
-  struct howl *curr;
-  struct howl *prev;
-  struct howl *hp;
-  char        *gpu_name;
-  static char *gpu = (char *)"gpu";
+  std::string        gpu_name(pnode->nd_name);
+  static const char *suffix = "-gpu";
+  bool               inserted = false;
 
   /* create gpu_name */
-  gpu_name = (char *)calloc(1, strlen(pnode->nd_name) + strlen(gpu) + 2);
-  sprintf(gpu_name, "%s-%s", pnode->nd_name, gpu);
-
+  gpu_name += suffix;
 
   /* initialize the pointers */
-  curr = (struct howl *)calloc(1, sizeof(struct howl));
-  curr->order = pnode->nd_order;
-  curr->name  = gpu_name;
-  curr->index = gn->index;
-  curr->port = pnode->nd_mom_rm_port;
+  howl h(gpu_name, pnode->nd_order, gn->index, pnode->nd_mom_rm_port);
 
   /* find the proper place in the list */
-  for (prev = NULL, hp = *hlistptr;hp;prev = hp, hp = hp->next)
+  for (std::list<howl>::iterator it = gpu_list.begin(); it != gpu_list.end(); it++)
     {
-    if (curr->order <= hp->order)
+    if (h.order <= it->order)
+      {
+      inserted = true;
+      gpu_list.insert(it, h);
       break;
+      }
     }  /* END for (prev) */
 
-  /* set the correct pointers in the list */
-  curr->next = hp;
+  if (inserted == false)
+    gpu_list.push_back(h);
 
-  if (prev == NULL)
-    *hlistptr = curr;
-  else
-    prev->next = curr;
-
-  return(SUCCESS);
+  return(PBSE_NONE);
   } /* END add_gpu_to_hostlist() */
 
 
@@ -3843,7 +3788,7 @@ int place_gpus_in_hostlist(
   struct pbsnode     *pnode,
   job                *pjob,
   node_job_add_info  &naji,
-  struct howl       **gpu_list)
+  std::list<howl>    &gpu_list)
 
   {
   int             j;
@@ -3909,7 +3854,7 @@ int place_gpus_in_hostlist(
       }
     DBPRT(("%s\n", log_buf));
     
-    add_gpu_to_hostlist(gpu_list,gn,pnode);
+    add_gpu_to_hostlist(gpu_list, gn, pnode);
     
     /*
      * If this a real gpu in exclusive/single job mode, or a gpu in default
@@ -3970,47 +3915,38 @@ int place_gpus_in_hostlist(
 
 int add_mic_to_list(
 
-  struct howl    **mic_list,
+  std::list<howl> &mic_list,
   struct pbsnode  *pnode,
   int              index)
 
   {
-  struct howl *curr;
-  struct howl *prev;
-  struct howl *hp;
-  char        *name;
-  static char *mic = (char *)"mic";
-
+  bool               inserted = false;
+  static const char *mic_suffix = "-mic";
   /* create gpu_name */
-  name = (char *)calloc(1, strlen(pnode->nd_name) + strlen(mic) + 2);
-  sprintf(name, "%s-%s", pnode->nd_name, mic);
+  std::string        name(pnode->nd_name);
+  name += mic_suffix;
 
 
   /* initialize the pointers */
-  curr = (struct howl *)calloc(1, sizeof(struct howl));
-  curr->order = pnode->nd_order;
-  curr->name  = name;
-  curr->index = index;
-  curr->port = pnode->nd_mom_rm_port;
+  howl h(name, pnode->nd_order, index, pnode->nd_mom_rm_port);
 
   /* find the proper place in the list */
-  for (prev = NULL, hp = *mic_list; hp != NULL; prev = hp, hp = hp->next)
+  for (std::list<howl>::iterator it = mic_list.begin(); it != mic_list.end(); it++)
     {
-    if (curr->order <= hp->order)
+    if (h.order <= it->order)
+      {
+      inserted = true;
+      mic_list.insert(it, h);
+
       break;
+      }
     }  /* END for (prev) */
 
-  /* set the correct pointers in the list */
-  curr->next = hp;
-
-  if (prev == NULL)
-    *mic_list = curr;
-  else
-    prev->next = curr;
+  if (inserted == false)
+    mic_list.push_back(h);
 
   return(PBSE_NONE);
   } /* END add_mic_to_list() */
-
 
 
 
@@ -4019,7 +3955,7 @@ int place_mics_in_hostlist(
   struct pbsnode    *pnode,
   job               *pjob,
   node_job_add_info &naji,
-  struct howl      **mic_list)
+  std::list<howl>   &mic_list)
 
   {
   int i;
@@ -4113,26 +4049,24 @@ int place_subnodes_in_hostlist(
 
 int translate_howl_to_string(
 
-  struct howl  *list,
-  char         *EMsg,
-  int          *NCount,
-  char        **str_ptr,
-  char        **portstr_ptr,
-  int           port)
+  std::list<howl>  &hlist,
+  char             *EMsg,
+  int              *NCount,
+  char            **str_ptr,
+  char            **portstr_ptr,
+  int               port)
 
   {
-  struct howl *hp;
-  struct howl *next;
-  size_t       len = 1;
-  int          count = 1;
-  char        *str;
-  char        *end;
-  char        *portlist = NULL;
-  char        *endport;
+  size_t  len = 1;
+  int     count = 1;
+  char   *str;
+  char   *end;
+  char   *portlist = NULL;
+  char   *endport;
 
-  for (hp = list;hp != NULL;hp = hp->next)
+  for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
     {
-    len += (strlen(hp->name) + 8);
+    len += it->hostname.size() + 8;
     count++;
     }
 
@@ -4169,25 +4103,23 @@ int translate_howl_to_string(
   /* now copy in name+name+... */
   *NCount = 0;
 
-  for (hp = list,end = str,endport = portlist; hp != NULL; hp = next)
+  end = str;
+  endport = portlist;
+  for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
     {
     (*NCount)++;
 
     sprintf(end, "%s/%d+",
-      hp->name,
-      hp->index);
+      it->hostname.c_str(),
+      it->index);
 
     end += strlen(end);
 
     if (port == TRUE)
       {
-      sprintf(endport, "%d+", hp->port);
+      sprintf(endport, "%d+", it->port);
       endport += strlen(endport);
       }
-
-    next = hp->next;
-
-    free(hp);
     }
 
   /* strip trailing '+' and assign pointers */
@@ -4376,8 +4308,8 @@ int build_hostlist_nodes_req(
   char                               *spec,      /* I */
   short                               newstate,  /* I */
   std::vector<job_reservation_info>  &host_info, /* O */
-  struct howl                       **gpu_list,  /* O */
-  struct howl                       **mic_list,  /* O */ 
+  std::list<howl>                    &gpu_list,  /* O */
+  std::list<howl>                    &mic_list,  /* O */
   std::list<node_job_add_info>       *naji_list, /* I */
   char                               *ProcBMStr) /* I */
 
@@ -4601,8 +4533,8 @@ int set_nodes(
   std::string                       exec_hosts;
   std::stringstream                 exec_ports;
   std::list<node_job_add_info>      naji_list;
-  struct howl       *gpu_list = NULL;
-  struct howl       *mic_list = NULL;
+  std::list<howl>                   gpu_list;
+  std::list<howl>                   mic_list;
 
   int                i;
   int                rc;
@@ -4710,8 +4642,8 @@ int set_nodes(
                                      spec,
                                      newstate,
                                      host_info,
-                                     &gpu_list,
-                                     &mic_list,
+                                     gpu_list,
+                                     mic_list,
                                      &naji_list,
                                      ProcBMStr)) != PBSE_NONE)
     {
@@ -4775,7 +4707,7 @@ int set_nodes(
       }
     }
 
-  if (mic_list != NULL)
+  if (mic_list.size() != 0)
     {
     if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
       {
@@ -4795,7 +4727,7 @@ int set_nodes(
     free(mic_str);
     }
 
-  if (gpu_list != NULL)
+  if (gpu_list.size() != 0)
     {
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
