@@ -13,6 +13,7 @@ ulimit -n 32768
 SBIN_PATH=@sbindir@
 PBS_DAEMON="$SBIN_PATH/pbs_mom"
 PBS_HOME=@PBS_HOME@
+PBS_ARGS=""
 
 SUBSYS_LOCK="/var/lock/subsys/pbs_mom"
 
@@ -98,7 +99,7 @@ case "$1" in
 		fi
 
 		# ulimit -c unlimited  # Uncomment this to preserve core files
-		daemon $PBS_DAEMON $args -d $PBS_HOME
+		daemon $PBS_DAEMON $args -d $PBS_HOME $PBS_ARGS
 		RET=$?
 		touch $SUBSYS_LOCK
 		echo
