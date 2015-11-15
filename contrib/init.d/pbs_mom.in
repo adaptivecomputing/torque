@@ -144,7 +144,7 @@ case "$1" in
 		sleep 1
 		$0 start
 		;;
-	condrestart)
+	condrestart|try-restart)
 		$0 status || exit 0
 		$0 restart
 		;;
