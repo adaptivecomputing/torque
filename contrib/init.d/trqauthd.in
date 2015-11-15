@@ -59,7 +59,7 @@ case "$1" in
 		$0 stop
 		$0 start
 		;;
-	condrestart)
+	condrestart|try-restart)
 		status trqauthd || exit 0
 		$0 restart
 		;;
