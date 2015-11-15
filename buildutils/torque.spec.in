@@ -241,7 +241,7 @@ if [ $1 -eq 1 ]; then
     chkconfig trqauthd on >/dev/null 2>&1 || :
     service trqauthd start >/dev/null 2>&1 || :
 else
-    service trqauthd condrestart >/dev/null 2>&1 || :
+    service trqauthd try-restart >/dev/null 2>&1 || :
 fi
 
 %preun
@@ -296,7 +296,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_server on >/dev/null 2>&1 || :
     service pbs_server start >/dev/null 2>&1 || :
 else
-    service pbs_server condrestart >/dev/null 2>&1 || :
+    service pbs_server try-restart >/dev/null 2>&1 || :
 fi
 
 %preun server
@@ -329,7 +329,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_mom on >/dev/null 2>&1 || :
     service pbs_mom start >/dev/null 2>&1 || :
 else
-    service pbs_mom condrestart >/dev/null 2>&1 || :
+    service pbs_mom try-restart >/dev/null 2>&1 || :
 fi
 
 %preun client
@@ -345,7 +345,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_sched on >/dev/null 2>&1 || :
     service pbs_sched start >/dev/null 2>&1 || :
 else
-    service pbs_sched condrestart >/dev/null 2>&1 || :
+    service pbs_sched try-restart >/dev/null 2>&1 || :
 fi
 
 %preun scheduler
