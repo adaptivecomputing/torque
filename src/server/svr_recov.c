@@ -408,6 +408,9 @@ int svr_recov_xml(
         
         if (!strcmp(parent, ATTR_tcptimeout))
           recovered_tcp_timeout = strtol(child_attr, NULL, 10);
+
+        if (!strcmp(child_parent, ATTR_tcptimeout))
+          pbs_tcp_timeout = strtol(child_attr, NULL, 10);
         }
 
       if (recovered_tcp_timeout < 300)
