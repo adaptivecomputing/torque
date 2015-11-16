@@ -13,6 +13,8 @@ struct server server;
 attribute_def svr_attr_def[10];
 int disable_timeout_check;
 
+long pbs_tcp_timeout = 30;
+
 
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
