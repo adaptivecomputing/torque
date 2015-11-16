@@ -70,6 +70,17 @@ def get_file_num(myfilename):
         return None
 # end get_file_num()
 
+def move_file_clean(src_file, dst_file):
+    # remove the destination file if it exists
+    try:
+        os.remove(dst_file)
+    except:
+        pass
+    # move the file
+    try:
+        shutil.move(src_file, dst_file)
+    except:
+        sys.stderr.write("Could not move " + src_file + " to " + dst_file + "\n")
 
 # moves all files from Path mypath
 # to subdirectories within original directory
@@ -80,19 +91,19 @@ def move_file(pbsvar):
         for name in glob.glob(pat):
             file_num = get_file_num(name)
             if file_num is not None:
-                try:
-                    shutil.move(mypath + name, mypath + file_num)
-                except:
-                    sys.stderr.write("Could not move " + mypath + name + " to " + mypath + file_num + "\n")
+                src_file = mypath + name
+                dst_file = mypath + file_num + "/" + name
+                move_file_clean(src_file, dst_file)
+
     os.chdir(pbsvar + "/server_priv/arrays")
     mypath = pbsvar + "/server_priv/arrays/"
     for name in glob.glob("*.AR"):
         file_num = get_file_num(name)
         if file_num is not None:
-            try:
-                shutil.move(mypath + name, mypath + file_num)
-            except:
-                sys.stderr.write("Could not move " + mypath + name + " to " + mypath + file_num + "\n")
+            src_file = mypath + name
+            dst_file = mypath + file_num + "/" + name
+            move_file_clean(src_file, dst_file)
+
     print("Files Moved into Folders")
     return
 # end move_file()
