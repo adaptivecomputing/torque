@@ -1370,6 +1370,9 @@ void main_loop(void)
       update_timeout = time_now + UPDATE_TIMEOUT_INTERVAL;
       get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
 
+#if 0
+      /* Ken Nielson - Taking this safety check out. 300 seconds does not seem
+         to be a critical time anymore. */
       /* don't allow timeouts to go below 300 seconds - this is a safety
        * net for an extremely rare error */
       if (timeout < 300)
@@ -1380,7 +1383,7 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
-      
+#endif      
       DIS_tcp_settimeout(timeout);
       }
 
