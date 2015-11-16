@@ -33,6 +33,7 @@ import shutil
 import glob
 import sys
 import getopt
+import re
 
 
 # Checks to see if the user has directories '0' - '9'
@@ -59,16 +60,14 @@ def create_direc(pbsvar):
 
 
 # uses the 'myfilename' param to find the number directly
-# before the first period to know which
+# before the first non-digit to know which
 # directory to put job file in
 def get_file_num(myfilename):
-    mylist = list(myfilename)
-    i = 0
-    for letter in mylist:
-        if (letter == '.'):
-            mychar = mylist[i - 1]
-            return mychar
-        i = i + 1
+    m = re.search('^\d*(\d)[^\d]', myfilename)
+    try:
+        return m.group(1)
+    except:
+        return None
 # end get_file_num()
 
 
@@ -77,18 +76,23 @@ def get_file_num(myfilename):
 def move_file(pbsvar):
     os.chdir(pbsvar + "/server_priv/jobs/")
     mypath = pbsvar + "/server_priv/jobs/"
-    for name in glob.glob("*.BD"):
-        shutil.move(mypath + name, mypath + get_file_num(name))
-    for name in glob.glob("*.JB"):
-        shutil.move(mypath + name, mypath + get_file_num(name))
-    for name in glob.glob("*.SC"):
-        shutil.move(mypath + name, mypath + get_file_num(name))
-    for name in glob.glob("*.TA"):
-        shutil.move(mypath + name, mypath + get_file_num(name))
+    for pat in ["*.BD", "*.JB", "*.SC", "*.TA"]:
+        for name in glob.glob(pat):
+            file_num = get_file_num(name)
+            if file_num is not None:
+                try:
+                    shutil.move(mypath + name, mypath + file_num)
+                except:
+                    sys.stderr.write("Could not move " + mypath + name + " to " + mypath + file_num + "\n")
     os.chdir(pbsvar + "/server_priv/arrays")
     mypath = pbsvar + "/server_priv/arrays/"
     for name in glob.glob("*.AR"):
-        shutil.move(mypath + name, mypath + get_file_num(name))
+        file_num = get_file_num(name)
+        if file_num is not None:
+            try:
+                shutil.move(mypath + name, mypath + file_num)
+            except:
+                sys.stderr.write("Could not move " + mypath + name + " to " + mypath + file_num + "\n")
     print("Files Moved into Folders")
     return
 # end move_file()
