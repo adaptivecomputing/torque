@@ -5,6 +5,17 @@
 # chkconfig: 345 95 05
 # description: TORQUE/PBS is a versatile batch system for SMPs and clusters
 #
+#### BEGIN INIT INFO 
+# Provides: pbs_mom 
+# Required-Start: $local_fs $network $syslog 
+# Required-Stop: $local_fs $network $syslog 
+# Default-Start: 2 3 4 5 
+# Default-Stop: 0 1 6 
+# Short-Description: Start up the pbs_mom daemon 
+# Description: pbs_mom a part of a batch scheduler 
+# This service starts up the compute node. 
+### END INIT INFO 
+
 ulimit -n 32768
 # Source the library functions
 . /etc/rc.d/init.d/functions
