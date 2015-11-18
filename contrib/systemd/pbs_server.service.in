@@ -1,7 +1,7 @@
 [Unit]
 Description=TORQUE pbs_server daemon
-Requires=trqauthd.service network.target
-After=trqauthd.service network.target
+Requires=trqauthd.service network.target local-fs.target syslog.target
+After=trqauthd.service network.target local-fs.target syslog.target
 
 [Service]
 Type=forking
