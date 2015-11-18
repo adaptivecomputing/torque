@@ -5,6 +5,16 @@
 # chkconfig: 345 95 05
 # description: PBS is a versatile batch system for SMPs and clusters
 #
+#### BEGIN INIT INFO 
+# Provides: pbs_server
+# Required-Start: $local_fs $network $syslog 
+# Required-Stop: $local_fs $network $syslog 
+# Default-Start: 2 3 4 5 
+# Default-Stop: 0 1 6 
+# Short-Description: Start up the pbs_server daemon 
+# Description: pbs_server is part of a batch scheduler 
+### END INIT INFO 
+#
 # Source the library functions
 test -f /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
 # customize these to match your settings
