@@ -6039,8 +6039,7 @@ void main_loop(void)
 
 #ifdef USESAVEDRESOURCES
     /* if -p, must poll tasks inside jobs to look for completion */
-    if ((check_dead) &&
-        (recover == JOB_RECOV_RUNNING))
+    if ((check_dead))
       scan_non_child_tasks();
 #endif
 
@@ -6074,14 +6073,16 @@ void main_loop(void)
 
     /* if -p, must poll tasks inside jobs to look for completion */
 
-    if (recover == JOB_RECOV_RUNNING)
-      scan_non_child_tasks();
 
     if (recover == JOB_RECOV_DELETE)
       {
       prepare_child_tasks_for_delete();
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
+      }
+    else
+      {
+      scan_non_child_tasks();
       }
 
     check_jobs_awaiting_join_job_reply();
