@@ -49,7 +49,7 @@ case "$1" in
 		$0 stop
 		$0 start
 		;;
-	condrestart)
+	condrestart|try-restart)
 		status pbs_sched || exit 0
 		$0 restart
 		;;
