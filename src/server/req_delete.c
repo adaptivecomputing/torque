@@ -623,7 +623,7 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-  else if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
+  else if ((pjob->ji_qs.ji_state < JOB_STATE_RUNNING) &&
            (status_cancel_queue != 0))
     {
     /*
