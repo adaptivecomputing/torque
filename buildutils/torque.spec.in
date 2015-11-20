@@ -401,6 +401,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %{_libdir}/lib%{name}.so.*
 %{torque_home}/aux
 %{torque_home}/spool
+%{torque_home}/checkpoint
 %{_mandir}/man*/*
 
 %files server
@@ -453,7 +454,6 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{with pam}
 /%{_lib}/security/pam_pbssimpleauth.so
 %endif
-%{torque_home}/checkpoint
 %{torque_home}/mom_logs
 %{torque_home}/mom_priv/jobs/
 %{torque_home}/undelivered
