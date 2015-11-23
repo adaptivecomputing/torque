@@ -6080,9 +6080,15 @@ void main_loop(void)
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
       }
-    else
+    else if (recover != JOB_RECOV_TERM_REQUE)
       {
       scan_non_child_tasks();
+      }
+    else
+      { /* recover is set to JOB_RECOV_TERM_REQUE. Wait for all
+           the jobs to be removed before starting to run more jobs. */
+      if (GET_NEXT(svr_alljobs) == NULL)
+        recover = JOB_RECOV_RUNNING;
       }
 
     check_jobs_awaiting_join_job_reply();
