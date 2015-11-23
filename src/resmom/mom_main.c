@@ -6262,7 +6262,7 @@ void main_loop(void)
     else
       { /* recover is set to JOB_RECOV_TERM_REQUE. Wait for all
            the jobs to be removed before starting to run more jobs. */
-      if (GET_NEXT(svr_alljobs) == NULL)
+      if (alljobs_list.size() == 0)
         recover = JOB_RECOV_RUNNING;
       }
 
