@@ -169,6 +169,7 @@ extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
 extern int           use_nvidia_gpu;
 extern int           internal_state;
+extern job_pid_set_t    global_job_sid_set;
 
 const char *PMOMCommand[] =
   {
@@ -8037,6 +8038,9 @@ static int adoptSession(
   ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
   (void)task_save(ptask);
+
+  // Add the sid to our global job set
+  global_job_sid_set.insert(sid);
 
   /* Mark the job as running if we need to. This is copied from start_process() */
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
