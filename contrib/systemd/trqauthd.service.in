@@ -1,6 +1,7 @@
 [Unit]
 Description=TORQUE trqauthd daemon
-Requires=network.target local-fs.target syslog.target
+Requires=network.target local-fs.target
+Wants=syslog.target
 After=network.target local-fs.target syslog.target
 
 [Service]
