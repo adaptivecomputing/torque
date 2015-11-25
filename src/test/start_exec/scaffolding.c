@@ -86,6 +86,10 @@ int    attempttomakedir = 0;
 int EXTPWDRETRY = 3;
 char log_buffer[LOG_BUF_SIZE];
 char mom_alias[1024];
+int ac_read_amount;
+int ac_errno;
+int job_saved;
+int task_saved;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -143,6 +147,7 @@ char *arst_string(const char *str, pbs_attribute *pattr)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
+  job_saved++;
   return(0);
   }
 
@@ -589,8 +594,8 @@ char *rcvttype(int sock)
 
 int task_save(task *ptask)
   {
-  fprintf(stderr, "The call to task_save needs to be mocked!!\n");
-  exit(1);
+  task_saved++;
+  return(0);
   }
 
 char * set_shell(job *pjob, struct passwd *pwdp)
@@ -662,7 +667,8 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
-  return(0);
+  errno = ac_errno;
+  return(ac_read_amount);
   }
 
 proc_stat_t *get_proc_stat(int pid)

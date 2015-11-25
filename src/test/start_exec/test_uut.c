@@ -17,6 +17,7 @@ void job_nodes(job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
+int setup_process_launch_pipes(int &kid_read, int &kid_write, int &parent_read, int &parent_write);
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -41,8 +42,98 @@ extern bool am_ms;
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
+int read_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, int parent_read, int parent_write);
+int process_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, const char *application_name);
+void update_task_and_job_states_after_launch(task *ptask, job *pjob, const char *application_name);
 
 int jobstarter_privileged = 0;
+int ac_read_amount;
+int ac_errno;
+extern int job_saved;
+extern int task_saved;
+
+
+START_TEST(update_task_and_job_states_after_launch_test)
+  {
+  job  *pjob = (job *)calloc(1, sizeof(job));
+  task *ptask = (task *)calloc(1, sizeof(task));
+
+  job_saved = 0;
+  task_saved = 0;
+
+  update_task_and_job_states_after_launch(ptask, pjob, "matlab");
+  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(ptask->ti_qs.ti_status == TI_STATE_RUNNING);
+  fail_unless(job_saved == 1);
+  fail_unless(task_saved == 1);
+
+  }
+END_TEST
+
+
+START_TEST(process_launcher_child_status_test)
+  {
+  struct startjob_rtn  srj;
+  const char          *jobid = "1.napali";
+  const char          *app = "bob's awesomeness";
+
+  memset(&srj, 0, sizeof(srj));
+
+  // sj_code == 0, so it should be success
+  fail_unless(process_launcher_child_status(&srj, jobid, app) == PBSE_NONE);
+
+  for (int i = -1; i > -13; i--)
+    {
+    srj.sj_code = i;
+    fail_unless(process_launcher_child_status(&srj, jobid, app) == -1);
+    }
+
+  }
+END_TEST
+
+START_TEST(test_setup_process_launch_pipes)
+  {
+  int kid_read;
+  int kid_write;
+  int parent_read;
+  int parent_write;
+
+  if (setup_process_launch_pipes(kid_read, kid_write, parent_read, parent_write) == PBSE_NONE)
+    {
+    fail_unless(kid_read > 2);
+    fail_unless(kid_write > 2);
+
+    close(kid_read);
+    close(kid_write);
+    close(parent_read);
+    close(parent_write);
+    }
+  }
+END_TEST
+
+
+START_TEST(test_read_launcher_child_status)
+  {
+  struct startjob_rtn  srj;
+  const char          *jobid = "1.napali";
+  int                  parent_read;
+  int                  parent_write;
+
+  ac_errno = 0;
+  ac_read_amount = sizeof(startjob_rtn);
+  memset(&srj, 0, sizeof(srj));
+
+  srj.sj_code = -1;
+  fail_unless(read_launcher_child_status(&srj, jobid, parent_read, parent_write) == PBSE_NONE);
+  srj.sj_code = 0;
+  fail_unless(read_launcher_child_status(&srj, jobid, parent_read, parent_write) == PBSE_NONE);
+
+  ac_read_amount = 1;
+  fail_unless(read_launcher_child_status(&srj, jobid, parent_read, parent_write) != PBSE_NONE);
+  }
+END_TEST
+
 
 START_TEST(remove_leading_hostname_test)
   {
@@ -493,6 +584,8 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_check_pwd_no_user");
   tcase_add_test(tc_core, test_check_pwd_no_user);
+  tcase_add_test(tc_core, process_launcher_child_status_test);
+  tcase_add_test(tc_core, update_task_and_job_states_after_launch_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_check_pwd_adaptive_user");
@@ -506,6 +599,7 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_get_num_nodes_ppn");
   tcase_add_test(tc_core, test_get_num_nodes_ppn);
+  tcase_add_test(tc_core, test_setup_process_launch_pipes);
   suite_add_tcase(s, tc_core);
 
   return s;
