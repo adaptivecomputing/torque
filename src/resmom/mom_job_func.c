@@ -636,6 +636,56 @@ static void job_init_wattr(
   }   /* END job_init_wattr() */
 
 
+void remove_tmpdir_file(
+
+    job_file_delete_info *jfdi)
+
+  {
+  char                  namebuf[MAXPATHLEN];
+  int                   rc = 0;
+
+  if (jfdi->has_temp_dir == TRUE)
+    {
+    if (tmpdir_basename[0] == '/')
+      {
+      snprintf(namebuf, sizeof(namebuf), "%s/%s", tmpdir_basename, jfdi->jobid);
+      sprintf(log_buffer, "removing transient job directory %s",
+        namebuf);
+
+      log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jfdi->jobid,log_buffer);
+
+      if ((setegid(jfdi->gid) == -1) ||
+          (setuid_ext(jfdi->uid, TRUE) == -1))
+        {
+        /* FAILURE */
+        rc = -1;;
+        }
+      else
+        {
+        rc = remtree(namebuf);
+        if (rc != 0)
+          {
+          sprintf(log_buffer, "remtree failed: %s", strerror(errno));
+          log_err(errno, __func__, log_buffer);
+          }
+
+        setuid_ext(pbsuser, TRUE);
+        setegid(pbsgroup);
+        }
+
+      if ((rc != 0) &&
+          (LOGLEVEL >= 5))
+        {
+        sprintf(log_buffer,
+          "recursive remove of job transient tmpdir %s failed",
+          namebuf);
+
+        log_err(errno, "recursive (r)rmdir", log_buffer);
+        }
+      }
+    } /* END code to remove temp dir */
+  }
+
 
 
 void *delete_job_files(
@@ -874,6 +924,8 @@ void mom_job_purge(
       global_job_sid_set.erase(it);
       }
     }
+
+  remove_tmpdir_file(jfdi);
 
   if (thread_unlink_calls == TRUE)
     enqueue_threadpool_request(delete_job_files, jfdi, request_pool);
