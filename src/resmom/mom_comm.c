@@ -6644,8 +6644,6 @@ int tm_spawn_request(
     
     if (ptask != NULL)
       {
-      strcpy(ptask->ti_qs.ti_parentjobid, jobid);
-      
       ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
       ptask->ti_qs.ti_parenttask = fromtask;
       
