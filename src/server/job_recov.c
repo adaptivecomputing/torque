@@ -1273,10 +1273,20 @@ int set_array_job_ids(
   job *pj = *pjob;
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
-      
+
   // If this variable isn't set this job isn't actually an array subjob.
   if ((pj->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0)
-   return(PBSE_NONE);
+    {
+    // Check and set if this is the array template job
+    char *open_bracket = strchr(pj->ji_qs.ji_jobid, '[');
+    if (open_bracket != NULL)
+      {
+      if (*(open_bracket + 1) == ']')
+        pj->ji_is_array_template = TRUE;
+      }
+
+    return(rc);
+    }
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
