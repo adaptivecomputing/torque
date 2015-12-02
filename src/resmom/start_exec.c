@@ -4441,7 +4441,7 @@ int TMomFinalizeChild(
       rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit * KB);
       if (rc != PBSE_NONE)
         {
-        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
+        sprintf(log_buffer, "Could not set swap memory limits for  %s.", pjob->ji_qs.ji_jobid);
         log_ext(-1, __func__, log_buffer, LOG_ERR);
         starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
         exit(-1);
