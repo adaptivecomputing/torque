@@ -260,15 +260,8 @@ then
     mkdir -p buildutils/rpmbuild/SOURCES
     mkdir -p buildutils/rpmbuild/SPECS
     mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
-    # get the distro
-    distro=$(buildutils/determine.distro -r)
-    if [ "${distro}" = el7 ]; then
-      cp buildutils/torque.adaptive.spec.el7 \
-          buildutils/rpmbuild/SPECS/torque.adaptive.spec
-    else
-      cp buildutils/torque.adaptive.spec.el6 \
-          buildutils/rpmbuild/SPECS/torque.adaptive.spec
-    fi
+    cp buildutils/torque.adaptive.spec \
+       buildutils/rpmbuild/SPECS/torque.adaptive.spec
 
     source_file=${distdir}.tar.gz
     if [ ! -s "${source_file}" ]

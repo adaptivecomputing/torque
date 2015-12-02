@@ -9,7 +9,7 @@
 # Autoconf variables
 # These are set in /usr/lib/rpm/macros, but are explicitly defined here
 # For consistency between distributions.
-%define _prefix                /usr/local
+%define _prefix                /usr
 %define _exec_prefix           %{_prefix}
 %define _bindir                %{_exec_prefix}/bin
 %define _sbindir               %{_exec_prefix}/sbin
@@ -24,7 +24,11 @@
 %define _oldincludedir         /usr/include
 %define _infodir               %{_prefix}/info
 %define _mandir                %{_prefix}/man
+%if %{?el6}0
+%define _initrddir             %{_sysconfdir}/init.d
+%else
 %define _unitdir               %{_sysconfdir}/usr/lib/systemd/system
+%endif
 
 # Autoconf variables, which are not set in /usr/lib/rpm/macros.
 # Set according to the standard found here:
@@ -127,10 +131,17 @@
   then \
       CONFFLAGS="${CONFFLAGS} --man2dir=%{_man2dir}" \
   fi \
+%if %{?el6}0
+  if grep -q  -- '--initrddir' ${CONFFLAGS_FILE} \
+  then \
+      CONFFLAGS="${CONFFLAGS} --initrddir=%{_initrddir}" \
+  fi \
+%else
   if grep -q  -- '--unitdir' ${CONFFLAGS_FILE} \
   then \
       CONFFLAGS="${CONFFLAGS} --unitdir=%{_unitdir}" \
   fi \
+%endif
   CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ; \
   CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ; \
   FFLAGS="${FFLAGS:-%optflags}" ; export FFLAGS ; \
@@ -188,7 +199,11 @@
                 -e "s|@spooldir@|%{_spooldir}|g" \\\
                 -e "s|@cachedir@|%{_cachedir}|g" \\\
                 -e "s|@appstatedir@|%{_appstatedir}|g" \\\
+%if %{?el6}0
+                -e "s|@initrddir@|%{_initrddir}|g" \\\
+%else
                 -e "s|@unitdir@|%{_unitdir}|g" \\\
+%endif
                 -e "s|@logdir@|%{_logdir}|g" "${i}" \
         done \
     done
@@ -236,7 +251,11 @@
                 -e 's/\\([^)]\\)\\$(spooldir)/\\1$(DESTDIR)$(spooldir)/g' \\\
                 -e 's/\\([^)]\\)\\$(cachedir)/\\1$(DESTDIR)$(cachedir)/g' \\\
                 -e 's/\\([^)]\\)\\$(appstatedir)/\\1$(DESTDIR)$(appstatedir)/g' \\\
+%if %{?el6}0
+                -e 's/\\([^)]\\)\\$(initrddir)/\\1$(DESTDIR)$(initrddir)/g' \\\
+%else
                 -e 's/\\([^)]\\)\\$(unitdir)/\\1$(DESTDIR)$(unitdir)/g' \\\
+%endif
                 -e 's/\\([^)]\\)\\$(logdir)/\\1$(DESTDIR)$(logdir)/g' "${i}" \
         done \
     done
@@ -348,7 +367,11 @@
 %define _appstatedir            %{_localstatedir}/lib
 %define _logdir                 %{_localstatedir}/log
 %define _spooldir               %{_localstatedir}/spool
+%if %{?el6}0
+%define _initrddir              /etc/init.d
+%else
 %define _unitdir                /usr/lib/systemd/system
+%endif
 
 %define torque_sysconfdir       %{torque_home}
 %define torque_appstatedir      %{torque_home}
@@ -550,10 +573,18 @@ CXXFLAGS="-g3 -O0"
 %{__rm} -rf %{buildroot}/%{_lib}/security/*a \
     %{buildroot}%{_sysconfdir}/modulefiles
 
+%if %{?el6}0
+# init.d scripts
+%{__mkdir_p} %{buildroot}%{_initrddir}
+INIT_PREFIX=""
+
+for PROG in pbs_mom pbs_sched pbs_server trqauthd
+%else
 # systemd unit files
 %{__mkdir_p} %{buildroot}%{_unitdir}
 
 for UNITFILE in pbs_mom.service pbs_server.service trqauthd.service
+%endif
 do
     %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_appstatedir}|' \
              -e 's|^SYSCONF_PATH=.*|SYSCONF_PATH=%{torque_sysconfdir}|' \
@@ -562,7 +593,13 @@ do
              -e 's|^SPOOL_PATH=.*|SPOOL_PATH=%{torque_spooldir}|' \
              -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
              -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' \
+             -e 's|^PBS_DAEMON=.*|PBS_DAEMON=%{_sbindir}/'"$PROG"'|' \
+%if %{?el6}0
+            contrib/init.d/$INIT_PREFIX$PROG > %{buildroot}%{_initrddir}/$PROG
+    %{__chmod} 0755 %{buildroot}%{_initrddir}/$PROG
+%else
             contrib/systemd/$UNITFILE > %{buildroot}%{_unitdir}/$UNITFILE
+%endif
 done
 
 %{__install} torque.setup %{buildroot}%{_sbindir}
@@ -578,6 +615,11 @@ echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
 
 # We do not package the FIFO scheduler with our suites.
 rm -rf %{buildroot}%{torque_spooldir}/sched_priv
+%if %{?el6}0
+rm -f %{buildroot}%{_initrddir}/pbs_sched
+%else
+rm -f %{buildroot}%{_unitdir}/pbs_sched
+%endif
 rm -f %{buildroot}%{_sbindir}/pbs_sched
 rm -f %{buildroot}%{_sbindir}/qschedd
 rm -rf %{buildroot}%{torque_spooldir}/sched_logs
@@ -626,7 +668,11 @@ ldconfig
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{client_sub}-${TIMESTAMP}}
 # Taken from the client's file list
+%if %{?el6}0
+%{pre_add_back_up_file %{_initrddir}/trqauthd %{client_sub}-${TIMESTAMP}}
+%else
 %{pre_add_back_up_file %{_unitdir}/trqauthd.service %{client_sub}-${TIMESTAMP}}
+%endif
 %{pre_add_back_up_file %{_bindir}/chk_tree %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/hostn %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/nqs2pbs %{client_sub}-${TIMESTAMP}}
@@ -652,7 +698,12 @@ if [ $1 -eq 1 ]
 then
     echo "  No other installation of '%{client_pkg}' detected on"
     echo "    the system."
+%if %{?el6}0
+    chkconfig --add trqauthd >/dev/null 2>&1 || :
+    chkconfig trqauthd on >/dev/null 2>&1 || :
+%else
     systemctl enable trqauthd >/dev/null 2>&1 || :
+%endif
 else
     echo "  Additional instance of '%{client_pkg}' detected on"
     echo "  the system."
@@ -665,8 +716,14 @@ then
     echo "  No other installation of '%{client_pkg} detected on"
     echo "  the system other than the one being uninstalled."
     echo "  Stopping the 'trqauthd' service..."
+%if %{?el6}0
+    chkconfig trqauthd off >/dev/null 2>&1 || :
+    service trqauthd stop >/dev/null 2>&1 || :
+    chkconfig --del trqauthd >/dev/null 2>&1 || :
+%else
     systemctl stop trqauthd >/dev/null 2>&1 || :
     systemctl disable trqauthd >/dev/null 2>&1 || :
+%endif
 fi
 
 %pre %{server_sub}
@@ -679,7 +736,11 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_add_back_up_file %{torque_sysconfdir}/server_name %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/nodes \
                        %{server_sub}-${TIMESTAMP}}
+%if %{?el6}0
+%{pre_add_back_up_file %{_initrddir}/pbs_server %{server_sub}-${TIMESTAMP}}
+%else
 %{pre_add_back_up_file %{_unitdir}/pbs_server.service %{server_sub}-${TIMESTAMP}}
+%endif
 %{pre_add_back_up_file %{_sbindir}/pbs_server %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/qserverd %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir  %{torque_logdir}/server_logs %{server_sub}-${TIMESTAMP}}
@@ -744,7 +805,7 @@ EOF
         echo "    '%{torque_user}'..."
         yes 'y' | %{_sbindir}/torque.setup \
             "%{torque_user}" >/dev/null
-        %{_bindir}/qterm >/dev/null 2>&1 || :
+        qterm >/dev/null 2>&1 || :
         %{_sbindir}/trqauthd -d >/dev/null 2>&1 || :
 
         if [ ! -s "${NODES_FILE}" ]
@@ -755,7 +816,15 @@ EOF
         fi
     fi
 
+%if %{?el6}0
+    chkconfig --add trqauthd >/dev/null 2>&1 || :
+    chkconfig trqauthd on >/dev/null 2>&1 || :
+    chkconfig --add pbs_server >/dev/null 2>&1 || :
+    chkconfig pbs_server on >/dev/null 2>&1 || :
+%else
+    systemctl enable trqauthd >/dev/null 2>&1 || :
     systemctl enable pbs_server >/dev/null 2>&1 || :
+%endif
 else
     echo "  Additional instance of '%{server_pkg}' detected on"
     echo "    the system."
@@ -768,8 +837,19 @@ then
     echo "  No other installation of '%{server_pkg}' detected on"
     echo "    the system other than the one being uninstalled."
     echo "  Stopping the 'pbs_server' service..."
+%if %{?el6}0
+    chkconfig pbs_server off >/dev/null 2>&1 || :
+    service pbs_server stop >/dev/null 2>&1 || :
+    chkconfig --del pbs_server >/dev/null 2>&1 || :
+    chkconfig trqauthd off >/dev/null 2>&1 || :
+    service trqauthd stop >/dev/null 2>&1 || :
+    chkconfig --del trqauthd >/dev/null 2>&1 || :
+%else
     systemctl stop pbs_server >/dev/null 2>&1 || :
     systemctl disable pbs_server >/dev/null 2>&1 || :
+    systemctl stop trqauthd >/dev/null 2>&1 || :
+    systemctl disable trqauthd >/dev/null 2>&1 || :
+%endif
 fi
 
 %pre %{devel_sub}
@@ -803,7 +883,11 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_add_back_up_dir %{torque_logdir}/mom_logs %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_dir %{torque_spooldir}/undelivered %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/mom_priv/config %{mom_sub}-${TIMESTAMP}}
+%if %{?el6}0
+%{pre_add_back_up_file %{_initrddir}/pbs_mom %{mom_sub}-${TIMESTAMP}}
+%else
 %{pre_add_back_up_file %{_unitdir}/pbs_mom.service %{mom_sub}-${TIMESTAMP}}
+%endif
 %{pre_add_back_up_file %{_sbindir}/pbs_demux %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/pbs_mom %{mom_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/momctl %{mom_sub}-${TIMESTAMP}}
@@ -846,7 +930,12 @@ EOF
 
     export TORQUE_SERVER="${HOSTNAME}"
 
+%if %{?el6}0
+    chkconfig --add pbs_mom >/dev/null 2>&1 || :
+    chkconfig pbs_mom on >/dev/null 2>&1 || :
+%else
     systemctl enable pbs_mom >/dev/null 2>&1 || :
+%endif
 else
     echo "  Additional instance of '%{mom_pkg}' detected on"
     echo "    the system."
@@ -861,8 +950,14 @@ then
     echo "  No other installation of '%{mom_pkg}' detected on"
     echo "    the system other than the one being uninstalled."
     echo "  Stopping the 'pbs_mom' service..."
+%if %{?el6}0
+    chkconfig pbs_mom off >/dev/null 2>&1 || :
+    service pbs_mom stop >/dev/null 2>&1 || :
+    chkconfig --del pbs_mom >/dev/null 2>&1 || :
+%else
     systemctl stop pbs_mom stop >/dev/null 2>&1 || :
     systemctl disable pbs_mom >/dev/null 2>&1 || :
+%endif
 fi
 
 %postun %{mom_sub}
@@ -884,7 +979,11 @@ ldconfig
 %attr(1777,root,root) %dir %{torque_appstatedir}/checkpoint
 
 %files %{client_sub}
+%if %{?el6}0
+%attr(-,root,root) %config(noreplace) %{_initrddir}/trqauthd
+%else
 %attr(-,root,root) %config(noreplace) %{_unitdir}/trqauthd.service
+%endif
 %attr(-,root,root) %{_bindir}/chk_tree
 %attr(-,root,root) %{_bindir}/hostn
 %attr(-,root,root) %{_bindir}/nqs2pbs
@@ -906,7 +1005,11 @@ ldconfig
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/nodes
+%if %{?el6}0
+%attr(-,root,root) %config(noreplace) %{_initrddir}/pbs_server
+%else
 %attr(-,root,root) %config(noreplace) %{_unitdir}/pbs_server.service
+%endif
 %attr(-,root,root) %{_sbindir}/pbs_server
 %attr(-,root,root) %{_sbindir}/qserverd
 %attr(0755,root,root) %dir %{torque_logdir}/server_logs
@@ -934,7 +1037,11 @@ ldconfig
 %attr(-,root,root) %dir %{torque_logdir}/mom_logs
 %attr(-,root,root) %dir %{torque_spooldir}/undelivered
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/mom_priv/config
+%if %{?el6}0
+%attr(-,root,root) %config(noreplace) %{_initrddir}/pbs_mom
+%else
 %attr(-,root,root) %config(noreplace) %{_unitdir}/pbs_mom.service
+%endif
 %attr(-,root,root) %{_sbindir}/pbs_demux
 %attr(-,root,root) %{_sbindir}/pbs_mom
 %attr(-,root,root) %{_sbindir}/momctl
