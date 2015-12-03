@@ -12,7 +12,7 @@ START_TEST(test_one)
   pbs_attribute pa;
   struct tm tm;
   time_t now = time(NULL) + 87000;
-  localtime_r(&now,&tm);
+  gmtime_r(&now,&tm);
   char str[30];
 
 
@@ -40,7 +40,7 @@ START_TEST(test_one)
   rc = decode_utc(&pa,"TTL",NULL,str,0);
   fail_unless(rc == 0);
   now -= 90000;
-  localtime_r(&now,&tm);
+  gmtime_r(&now,&tm);
   memset(&pa,0,sizeof(pa));
   sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02dZ",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
   rc = decode_utc(&pa,"TTL",NULL,str,0);
