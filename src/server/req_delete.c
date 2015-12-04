@@ -938,6 +938,7 @@ batch_request *duplicate_request(
       break;
 
     case PBS_BATCH_RunJob:
+    case PBS_BATCH_AsyrunJob:
   
       if (preq->rq_ind.rq_run.rq_destin)
         preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
