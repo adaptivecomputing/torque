@@ -1274,6 +1274,8 @@ int send_job_work(
     {
     if (rc == PBSE_JOB_RECYCLED)
       job_mutex.set_unlock_on_exit(false);
+  
+    free_server_attrs(&attrl);
 
     return(rc);
     }
