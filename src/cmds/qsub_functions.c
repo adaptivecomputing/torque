@@ -59,6 +59,7 @@
 #include "common_cmds.h" 
 #include "utils.h"
 #include "complete_req.hpp"
+#include "pbs_helper.h"
 
 #if defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
@@ -1002,7 +1003,7 @@ void validate_basic_resourcing(
  */
 void validate_join_options (
   job_data_container *job_attr,
-  char               *script_tmp)
+  char               * UNUSED(script_tmp))
 
   {
 
@@ -1913,7 +1914,7 @@ void send_term(
 
 void catchchild(
 
-  int sig)
+  int UNUSED(sig) )
 
   {
   int status;
@@ -1962,7 +1963,7 @@ void catchchild(
 
 void no_suspend(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   fprintf(stderr, "Sorry, you cannot suspend qsub until the job is started\n");
@@ -2021,7 +2022,7 @@ void bailout(void)
 
 void toolong(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   printf("Timeout -- deleting job\n");
@@ -2037,7 +2038,7 @@ void toolong(
 
 void catchint(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   int c;

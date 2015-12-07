@@ -89,6 +89,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of type
@@ -125,10 +126,10 @@
 int decode_time(
 
   pbs_attribute *patr,  /* I/O (modified) */
-  const char   *name,  /* I - pbs_attribute name (not used) */
-  const char *rescn, /* I - resource name (not used) */
+  const char * UNUSED(name),  /* I - pbs_attribute name (not used) */
+  const char * UNUSED(rescn), /* I - resource name (not used) */
   const char    *val,   /* I - pbs_attribute value */
-  int            perm)  /* only used for resources */
+  int          UNUSED(perm))  /* only used for resources */
 
   {
   int   i;
@@ -270,8 +271,8 @@ int encode_time(
   tlist_head     *phead,  /* head of attrlist list (optional) */
   const char    *atname, /* pbs_attribute name */
   const char    *rsname, /* resource name (optional) */
-  int             mode,   /* encode mode (not used) */
-  int             perm)  /* only used for resources */
+  int            UNUSED(mode),   /* encode mode (not used) */
+  int            UNUSED(perm))  /* only used for resources */
 
   {
   size_t    ct;

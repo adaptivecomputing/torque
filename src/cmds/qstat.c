@@ -1501,7 +1501,6 @@ void display_job_summary(
   const char          *format)
 
   {
-  struct attrl *a;
   unsigned int  len;
   char         *c = NULL;
   char         *jid = NULL;
@@ -1631,7 +1630,6 @@ void print_req_information(
 
   {
   mxml_t      *RE;
-  mxml_t      *AE;
   std::string  out;
   char         buf[100];
   char         name[1024];
@@ -1832,7 +1830,6 @@ void display_full_job(
 
   {
   struct attrl *attribute;
-  unsigned int  len;
   time_t        epoch;
 
   printf("Job Id: %s\n", p->name);
@@ -1937,7 +1934,6 @@ void display_statjob(
   {
   struct batch_status *p;
 
-  struct attrl        *a;
   char                 format[80];
 
   mxml_t              *DE;

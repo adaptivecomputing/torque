@@ -71,6 +71,7 @@
 #include "qmgr.h"
 #include "net_cache.h"
 #include "../lib/Libifl/lib_ifl.h"
+#include "pbs_helper.h"
 
 
 
@@ -981,7 +982,7 @@ void clean_up_and_exit(int exit_val)
 void display(
 
   int                  otype,
-  char                *oname,
+  char                * UNUSED(oname),
   struct batch_status *status,
   int                  format)
 

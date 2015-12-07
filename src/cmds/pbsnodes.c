@@ -116,7 +116,7 @@
 #include        "cmds.h"
 #include "libcmds.h" /* TShowAbout_exit */
 #include "../lib/Libifl/lib_ifl.h"
-
+#include "pbs_helper.h"
 
 #define LIST 1
 #define CLEAR 2
@@ -485,7 +485,7 @@ const char *NState[] =
 
 int filterbystate(
 
-  struct batch_status *pbstat,
+  struct batch_status * UNUSED(pbstat),
   enum NStateEnum      ListType,
   char                *S)
 

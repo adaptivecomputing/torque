@@ -28,6 +28,7 @@
 #include "../lib/Liblog/pbs_log.h" /* logging stuff */
 #include "../include/log.h"  /* log events and event classes */
 #include "csv.h" /*csv_nth() */
+#include "pbs_helper.h"
 
 
 #define MAX_BUF 1024
@@ -90,7 +91,7 @@ int load_trqauthd_config(
   }
 
 int load_ssh_key(
-    char **ssh_key)
+    char ** UNUSED(ssh_key) )
   {
   int rc = PBSE_NONE;
   return rc;
@@ -381,7 +382,7 @@ int trq_main(
 
   int    argc,
   char **argv,
-  char **envp)
+  char ** UNUSED(envp))
 
   {
   int rc = PBSE_NONE;

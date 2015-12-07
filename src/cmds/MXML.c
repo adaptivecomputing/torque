@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include "pbs_helper.h"
 
 /* prototypes */
 
@@ -814,7 +815,7 @@ int MXMLToString(
   char     *Buf,           /* O */
   int       BufSize,       /* I */
   char    **Tail,          /* O */
-  mbool_t   IsRootElement) /* I */
+  mbool_t   UNUSED(IsRootElement)) /* I */
 
   {
   int index;

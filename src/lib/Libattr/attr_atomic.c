@@ -90,6 +90,7 @@
 #include "resource.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
+#include "pbs_helper.h"
 
 #include "complete_req.hpp"
 
@@ -325,7 +326,7 @@ int attr_atomic_set(
 int attr_atomic_node_set(
 
   struct svrattrl *plist,    /* list of pbs_attribute modif structs */
-  pbs_attribute   *old,      /* unused */
+  pbs_attribute   * UNUSED(old),
   pbs_attribute   *new_attr,      /* new pbs_attribute array begins here */
   attribute_def   *pdef,     /* begin array  definition structs */
   int              limit,    /* number elts in definition array */

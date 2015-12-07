@@ -79,6 +79,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains general function for attributes of type
@@ -269,10 +270,10 @@ int decode_arst_direct(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  const char   *name,    /* I pbs_attribute name (notused) */
-  const char *rescn,   /* I resource name (notused) */
+  const char *  UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char *  UNUSED(rescn),   /* I resource name (notused) */
   const char    *val,     /* I pbs_attribute value */
-  int            perm) /* only used for resources */
+  int           UNUSED(perm)) /* only used for resources */
 
   {
   int           rc;
@@ -353,8 +354,8 @@ int decode_acl_arst(
 int decode_arst_merge(
 
   pbs_attribute *patr,    /* O (modified) */
-  const char   *name,    /* I pbs_attribute name (notused) */
-  const char *rescn,   /* I resource name (notused) */
+  const char * UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char * UNUSED(rescn),   /* I resource name (notused) */
   const char    *val)     /* I pbs_attribute value */
 
   {
@@ -444,7 +445,7 @@ int encode_arst(
   const char   *atname, /* I pbs_attribute name */
   const char   *rsname, /* I resource name or NULL (optional) */
   int             mode,   /* I encode mode */
-  int             perm)   /* only used for resources */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   char     *end;

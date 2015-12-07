@@ -90,6 +90,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of type
@@ -129,10 +130,10 @@ static const char *false_val = ATR_FALSE;
 int decode_b(
 
   pbs_attribute *patr,
-  const char    *name,  /* pbs_attribute name */
-  const char *rescn,  /* resource name, unused here */
+  const char * UNUSED(name),  /* pbs_attribute name */
+  const char * UNUSED(rescn),  /* resource name, unused here */
   const char    *val,  /* pbs_attribute value */
-  int            perm) /* only used for resources */
+  int          UNUSED(perm)) /* only used for resources */
 
   {
   const char *src;
@@ -191,10 +192,10 @@ int encode_b(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute */
   tlist_head     *phead,  /* head of pbs_attribute list */
-  const char    *atname, /* pbs_attribute name */
-  const char    *rsname, /* resource name or null */
-  int             mode,   /* encode mode, unused here */
-  int             perm)   /* only used for resources */
+  const char     *atname, /* pbs_attribute name */
+  const char     *rsname, /* resource name or null */
+  int            UNUSED(mode),   /* encode mode, unused here */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   size_t   ct;
