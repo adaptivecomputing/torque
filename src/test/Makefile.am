@@ -98,3 +98,5 @@ $(CHECK_DIRS):: $(CHECK_LIBS) FORCE
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 check: $(CHECK_DIRS)
+
+clean-local: $(CHECK_DIRS)
