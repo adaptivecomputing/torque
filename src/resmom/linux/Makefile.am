@@ -19,8 +19,7 @@ if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
-.PHONY: cleancheck
-cleancheck:
+clean-local:
 	cd $(CHECK_DIR) && $(MAKE) cleancheck
 endif
 
