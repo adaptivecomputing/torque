@@ -89,6 +89,7 @@
 #include "attribute.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
+#include "pbs_helper.h"
 
 int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 
@@ -126,10 +127,10 @@ int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval 
 int decode_tv(
 
   pbs_attribute *patr,
-  const char   *name,  /* pbs_attribute name */
-  const char *rescn, /* resource name*/
+  const char * UNUSED(name),  /* pbs_attribute name */
+  const char * UNUSED(rescn), /* resource name*/
   const char    *val,   /* pbs_attribute value */
-  int            perm)  /* only used for resources */
+  int          UNUSED(perm))  /* only used for resources */
    
   {
   char 		*pc;
@@ -211,8 +212,8 @@ int encode_tv(
   tlist_head     *phead,  /* head of attrlist list (optional) */
   const char    *atname, /* pbs_attribute name */
   const char    *rsname, /* resource name (optional) */
-  int             mode,   /* endcode mode (not used) */
-  int             perm)   /* only used for resources */
+  int            UNUSED(mode),   /* endcode mode (not used) */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   size_t 		 ct;

@@ -973,7 +973,6 @@ bool mother_superior_cleanup(
 void scan_for_exiting(void)
 
   {
-  job          *nextjob;
   job          *pjob = NULL;
   int           found_one = 0;
 
@@ -2103,7 +2102,6 @@ int send_job_obit_to_ms(
   u_long       cput = resc_used(pjob, "cput", gettime);
   u_long       mem = resc_used(pjob, "mem", getsize);
   u_long       vmem = resc_used(pjob, "vmem", getsize);
-  u_long       joules = resc_used(pjob, "energy_used", gettime);
   int          command;
   tm_event_t   event;
   hnodent     *np;
