@@ -6,7 +6,6 @@
 #include "threadpool.h"
 #include "resource.h"
 #include "queue.h"
-#include "dynamic_string.h" /* dynamic_string */
 #include "pbs_job.h"
 #include "list_link.h" /* list_link */
 #include "mutex_mgr.hpp"

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "u_hash_map_structs.h"
-#include "dynamic_string.h"
 
 
 bool exit_called = false;
@@ -80,23 +79,3 @@ void hash_add_or_exit(job_data_container *head, const char *name, const char *va
     }
   }
 
-#if 0
-int append_dynamic_string(dynamic_string *ds, const char *str)
-  {
-  strcat(ds->str, str);
-  return(0);
-  }
-
-dynamic_string *get_dynamic_string(int size, const char *str)
-  {
-  dynamic_string *ds = (dynamic_string *)calloc(1, sizeof(dynamic_string));
-  ds->str = (char *)calloc(1, 1024*10);
-  return(ds);
-  }
-
-void free_dynamic_string(dynamic_string *ds)
-  {
-  free(ds->str);
-  free(ds);
-  }
-#endif

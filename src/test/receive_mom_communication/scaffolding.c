@@ -5,7 +5,6 @@
 #include <netdb.h>
 
 #include "u_tree.h"
-#include "dynamic_string.h"
 #include "tcp.h"
 #include "pbs_job.h"
 #include "pbs_nodes.h"
@@ -89,15 +88,6 @@ int insert_addr_name_info(
   return(0);
   }
 
-dynamic_string *get_dynamic_string(
-    
-  int         initial_size, /* I (-1 means default) */
-  const char *str)          /* I (optional) */
-
-  {
-  return(0);
-  }
-
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
@@ -143,8 +133,6 @@ struct pbsnode *find_nodebyname(
   {
   return(NULL);
   }
-
-void free_dynamic_string(dynamic_string *ds) {}
 
 int unlock_node(
     
@@ -217,11 +205,6 @@ long disrsl(
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy) 
-  {
-  return(0);
-  }
 
 job *get_job_from_jobinfo(
     

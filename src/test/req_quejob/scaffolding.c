@@ -11,7 +11,6 @@
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task, work_type */
-#include "dynamic_string.h"
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
@@ -300,11 +299,6 @@ int get_svr_attr_str(int index, char **str)
     *str = str_to_set;
 
   return(0);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  return(NULL);
   }
 
 int enqueue_threadpool_request(

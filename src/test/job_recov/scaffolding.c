@@ -7,7 +7,6 @@
 #include "pbs_job.h" /* job */
 #include "array.h" /* job_array */
 #include "mutex_mgr.hpp"
-#include "dynamic_string.h"
 #include "net_connect.h" /* pbs_net_t */
 #include "user_info.h"
 #include "server.h" /* server */
