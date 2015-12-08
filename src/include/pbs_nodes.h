@@ -199,16 +199,20 @@ typedef struct complete_spec_data
 
 
 
-typedef struct node_job_add_info
+class node_job_add_info
   {
+  public:
   int                       node_id;
   int                       ppn_needed;
   int                       gpu_needed;
   int                       mic_needed;
   int                       is_external;
   int                       req_rank;
-  struct node_job_add_info *next;
-  } node_job_add_info;
+
+  node_job_add_info() : node_id(-1), ppn_needed(0), gpu_needed(0),
+                        mic_needed(0), is_external(0), req_rank(0) {}
+
+  };
 
 
 
@@ -385,6 +389,7 @@ int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
+bool            node_exists(const char *node_name);
 
 
 #if 0
@@ -420,14 +425,17 @@ void       *send_hierarchy_threadtask(void *);
 
 
 
-struct howl
+class howl
   {
-  char           *name;
+  public:
+  std::string     hostname;
   int             order;
   int             index;
   unsigned short  port;
-
-  struct howl    *next;
+  howl(const std::string &name) : hostname(name) {}
+  howl(const std::string &name, int o, int i, unsigned int p) : hostname(name), order(o), index(i),
+                                                                port(p) {}
+  howl() : hostname(), order(-1), index(-1), port(0) {}
   };
 
 

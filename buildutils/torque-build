@@ -192,7 +192,7 @@ branch=`git branch | awk '/^[*]/ { print $2}'`
 version=`buildutils/determine.version`
 release_number="`buildutils/determine.release_number`"
 changeset=`git rev-parse HEAD`
-distro="`buildutils/determine.distro -c | tr [A-Z] [a-z]`"
+distro=`buildutils/determine.distro -c`
 
 if [ -z "${version}" ]
 then
@@ -243,6 +243,7 @@ distdir="torque-${version}-${release_number}"
 
 if [ ${tarball} -ne 0 ]
 then
+    make -j${parallel} clean
     make -j${parallel} distclean
     sh autogen.sh
     ./configure
@@ -262,7 +263,7 @@ then
     mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
     # get the distro
     distro=$(buildutils/determine.distro -r)
-    if [ "${distro}" = EL7 ]; then
+    if [ "${distro}" = el7 ]; then
       cp buildutils/torque.adaptive.spec.el7 \
           buildutils/rpmbuild/SPECS/torque.adaptive.spec
     else

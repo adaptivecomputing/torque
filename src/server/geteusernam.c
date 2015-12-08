@@ -261,6 +261,34 @@ bool getegroup(
   }  /* END getegroup() */
 
 
+/*
+ * get_user_host_from_user
+ *
+ * @param user_host  - receives the host name associated with the user.
+ * @param user       - user name with or without the host name.
+ *
+ */
+
+void get_user_host_from_user(
+    
+  std::string      &user_host,
+  const std::string user)
+
+  {
+  char  *ptr;
+  char  *tmp_name = strdup(user.c_str());
+
+  user_host.clear();
+  ptr = strchr(tmp_name, '@');
+  if (ptr != NULL)
+    {
+    ptr++;
+    user_host = ptr;
+    }
+
+  free(tmp_name);
+
+  }
 
 
 
@@ -507,13 +535,13 @@ int set_jobexid(
         pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
       log_err(PBSE_BADUSER, __func__, log_buf);
 
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
     if (site_check_user_map(pjob, (char *)puser.c_str(), EMsg, LOGLEVEL) == -1)
       {
-      free(pwent);
+      free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
       }
 
@@ -707,6 +735,42 @@ int set_jobexid(
   return(PBSE_NONE);
 
   }  /* END set_jobexid() */
+
+
+
+/*
+ * node_exception_check()
+ *
+ */
+
+int node_exception_check(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  struct array_strings *pstr;
+
+  if (actmode == ATR_ACTION_FREE)
+    {
+    return(PBSE_NONE); /* no checking on free */
+    }
+
+  pstr = pattr->at_val.at_arst;
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if (node_exists(pstr->as_string[i]) == false)
+      {
+      return(PBSE_UNKNODE);
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END node_exception_check()
+
+
 
 /* END geteusernam.c */
 

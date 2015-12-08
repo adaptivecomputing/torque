@@ -527,7 +527,7 @@ jump_to_check:
     err_buf[0] = '\0';
 
   fprintf(stderr, "INFO:  cannot connect to port %d, errno=%d - %s\n",
-    tryport,
+    port,
     errno,
     err_buf);
 #endif /* NDEBUG2 */

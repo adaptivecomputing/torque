@@ -2786,8 +2786,12 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    sprintf(log_buffer, "write request response failed: %s",
-      dis_emsg[ret]);
+    if (ret <= DIS_INVALID)
+      sprintf(log_buffer, "write request response failed: %s",
+        dis_emsg[ret]);
+    else
+      sprintf(log_buffer, "write request response failed with rc: %d", ret);
+
     log_err(errno, __func__, log_buffer);
 
     return(ret);
@@ -6214,8 +6218,7 @@ void main_loop(void)
 
 #ifdef USESAVEDRESOURCES
     /* if -p, must poll tasks inside jobs to look for completion */
-    if ((check_dead) &&
-        (recover == JOB_RECOV_RUNNING))
+    if ((check_dead))
       scan_non_child_tasks();
 #endif
 
@@ -6249,14 +6252,22 @@ void main_loop(void)
 
     /* if -p, must poll tasks inside jobs to look for completion */
 
-    if (recover == JOB_RECOV_RUNNING)
-      scan_non_child_tasks();
 
     if (recover == JOB_RECOV_DELETE)
       {
       prepare_child_tasks_for_delete();
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
+      }
+    else if (recover != JOB_RECOV_TERM_REQUE)
+      {
+      scan_non_child_tasks();
+      }
+    else
+      { /* recover is set to JOB_RECOV_TERM_REQUE. Wait for all
+           the jobs to be removed before starting to run more jobs. */
+      if (alljobs_list.size() == 0)
+        recover = JOB_RECOV_RUNNING;
       }
 
     check_jobs_awaiting_join_job_reply();

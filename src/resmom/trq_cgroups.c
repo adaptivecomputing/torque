@@ -1362,6 +1362,9 @@ int trq_cg_create_all_cgroups(
   job    *pjob)
 
   {
+  // make sure cgroups setup properly
+  init_torque_cgroups();
+
   int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob);
 
   if (rc == PBSE_NONE)
@@ -1580,7 +1583,7 @@ int trq_cg_set_resident_memory_limit(
   if (memory_limit == 0)
     return(PBSE_NONE);
 
-  memory_limit_in_bytes = memory_limit * 1024;
+  memory_limit_in_bytes = memory_limit;
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */

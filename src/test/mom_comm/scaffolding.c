@@ -26,6 +26,8 @@ int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
 std::list<job *> alljobs_list;
+int              is_reporter_mom = FALSE;
+int              is_login_node   = FALSE;
 int PBSNodeCheckEpilog;
 int PBSNodeCheckProlog;
 int internal_state;
@@ -59,6 +61,7 @@ char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
 bool exit_called = false;
 bool ms_val = true;
+job_pid_set_t    global_job_sid_set;
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)

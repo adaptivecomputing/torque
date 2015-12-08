@@ -28,7 +28,11 @@ void *handle_complete_second_time(work_task *wt)
   return(NULL);
   }
 
-bool job_id_exists(std::string)
+bool job_id_exists(
+
+  const std::string &job_id_string,
+  int   *rcode)
+
   {
   return(job_id_exists_rc);
   }

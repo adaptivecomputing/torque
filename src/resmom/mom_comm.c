@@ -171,6 +171,7 @@ extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
 extern int           use_nvidia_gpu;
 extern int           internal_state;
+extern job_pid_set_t    global_job_sid_set;
 
 const char *PMOMCommand[] =
   {
@@ -824,6 +825,13 @@ int send_sisters(
   eventent        *ep;
   char            *cookie;
   resend_momcomm  *mc;
+
+  // These moms have no sisters
+  if ((is_login_node == TRUE) ||
+      (is_reporter_mom == TRUE))
+    {
+    return(0);
+    }
 
   if (LOGLEVEL >= 4)
     {
@@ -6644,8 +6652,6 @@ int tm_spawn_request(
     
     if (ptask != NULL)
       {
-      strcpy(ptask->ti_qs.ti_parentjobid, jobid);
-      
       ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
       ptask->ti_qs.ti_parenttask = fromtask;
       
@@ -8125,6 +8131,9 @@ static int adoptSession(
   ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
   (void)task_save(ptask);
+
+  // Add the sid to our global job set
+  global_job_sid_set.insert(sid);
 
   /* Mark the job as running if we need to. This is copied from start_process() */
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)

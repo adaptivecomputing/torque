@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include "pbs_config.h"
 #include "job_recov.h"
 #include "test_job_recov.h"
 #include <stdlib.h>
@@ -27,11 +28,27 @@ char  server_name[] = "lei.ac";
 int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
 void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
 int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen);
+svrattrl *fill_svrattr_info(const char *aname, const char *avalue, const char *rname, char *log_buf, size_t      buf_len);
+void decode_attribute(svrattrl *pal, job **pjob, bool freeExisting);
 
 void init()
   {
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   }
+
+
+START_TEST(test_decode_attribute)
+  {
+  char      buf[1024];
+  job      *pjob = (job *)calloc(1, sizeof(job));
+  svrattrl *pal = fill_svrattr_info("Hold_Types", "1", "", buf, sizeof(buf));
+  pal->al_flags = ATR_VFLAG_SET;
+
+  decode_attribute(pal, &pjob, false);
+  fail_unless(pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 1, "val: %d", (int)pjob->ji_wattr[JOB_ATR_hold].at_val.at_long);
+  fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
+  }
+END_TEST
 
 
 START_TEST(test_set_array_jobs_ids)
@@ -47,6 +64,11 @@ START_TEST(test_set_array_jobs_ids)
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+
+  pjob = (job *)calloc(1, sizeof(job));
+  sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(pjob->ji_is_array_template == TRUE);
   }
 END_TEST
 
@@ -351,6 +373,7 @@ Suite *job_recov_suite(void)
 
   tc_core = tcase_create("test_moar");
   tcase_add_test(tc_core, test_set_array_jobs_ids);
+  tcase_add_test(tc_core, test_decode_attribute);
   suite_add_tcase(s, tc_core);
 
   return s;

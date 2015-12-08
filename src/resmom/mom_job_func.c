@@ -159,7 +159,7 @@
 #define FALSE 0
 #endif
 
-extern pthread_mutex_t  *delete_job_files_mutex;
+extern pthread_mutex_t  delete_job_files_mutex;
 
 int conn_qsub(char *, long, char *);
 
@@ -699,17 +699,20 @@ void *delete_job_files(
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  mutex_mgr             sem_mutex(delete_job_files_mutex);
 
   if (thread_unlink_calls == true)
     {
+    /* this algorithm needs to make sure the 
+       thread for delete_job_files posts to the 
+       semaphore before it tries to lock the
+       delete_job_files_mutex */
     rc = sem_post(delete_job_files_sem);
     if (rc)
       {
       log_err(-1, __func__, "failed to post delete_job_files_sem");
       }
     
-    sem_mutex.lock();
+    pthread_mutex_lock(&delete_job_files_mutex);
     }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -821,7 +824,7 @@ void *delete_job_files(
   if (thread_unlink_calls == true)
     {
     sem_wait(delete_job_files_sem);
-    sem_mutex.unlock();
+    pthread_mutex_unlock(&delete_job_files_mutex);
     }
   return(NULL);
   } /* END delete_job_files() */

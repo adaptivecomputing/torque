@@ -318,7 +318,8 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
-sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+sem_t                  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+acl_special             limited_acls;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -1293,6 +1294,8 @@ void main_loop(void)
   sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
+    
+  hierarchy_handler.checkAndSendHierarchy(true);
 
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
@@ -1369,9 +1372,9 @@ void main_loop(void)
       }
 #endif
 
-    hierarchy_handler.checkAndSendHierarchy();
+    hierarchy_handler.checkAndSendHierarchy(false);
 
-      enqueue_threadpool_request(check_tasks, NULL, task_pool);
+    enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
@@ -1388,7 +1391,6 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
-      
       DIS_tcp_settimeout(timeout);
       }
 

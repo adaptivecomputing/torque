@@ -33,7 +33,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [master], [torqueusers@supercluster.org])
+AC_INIT([torque], [6.0], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -153,6 +153,7 @@ m4_ifdef([AM_SILENT_RULES],[
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
     src/test/accounting/Makefile
+    src/test/acl_special/Makefile
     src/test/array_func/Makefile
     src/test/array_upgrade/Makefile
     src/test/attr_recov/Makefile
@@ -214,6 +215,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/req_tokens/Makefile
     src/test/req_track/Makefile
     src/test/resc_def_all/Makefile
+    src/test/restricted_host/Makefile
     src/test/run_sched/Makefile
     src/test/stat_job/Makefile
     src/test/svr_chk_owner/Makefile

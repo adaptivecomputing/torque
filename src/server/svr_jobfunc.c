@@ -394,7 +394,7 @@ int svr_enquejob(
   pbs_attribute *pattrjb;
   attribute_def *pdef;
   pbs_queue     *pque;
-  int            rc = -1;
+  int            rc = PBSE_NONE;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
   char           job_id[PBS_MAXSVRJOBID+1];
@@ -405,6 +405,7 @@ int svr_enquejob(
 
   if (pjob == NULL)
     {
+    rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL job pointer input");
     return(rc);
     }
@@ -615,6 +616,8 @@ int svr_enquejob(
   /* set any "unspecified" checkpoint with queue default values, if any */
   set_chkpt_deflt(pjob, pque);
 
+  rc = PBSE_NONE;
+
   /* See if we need to do anything special based on type of queue */
   if (pque->qu_qs.qu_type == QTYPE_Execution)
     {
@@ -643,7 +646,7 @@ int svr_enquejob(
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
-        return(PBSE_BADDEPEND);
+        rc = PBSE_BADDEPEND;
       }
 
     /* set eligible time */
@@ -669,10 +672,8 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     }
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END svr_enquejob() */
-
-
 
 
 
@@ -804,44 +805,6 @@ int svr_dequejob(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
-#ifndef NDEBUG
-
-  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
-    pque ? pque->qu_qs.qu_name : "unknown queue",
-    PJobState[pjob->ji_qs.ji_state]);
-
-  log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
-  if (bad_ct)   /* state counts are all messed up */
-    {
-    char queue_name[PBS_MAXQUEUENAME+1];
-    char           job_id[PBS_MAXSVRJOBID+1];
-
-    strcpy(job_id, pjob->ji_qs.ji_jobid);
-
-    /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-
-    if (parent_queue_mutex_held == TRUE)
-      {
-      strcpy(queue_name, pque->qu_qs.qu_name);
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
-      }
-
-    correct_ct();
-
-    /* lock queue then job */
-    if (parent_queue_mutex_held == TRUE)
-      {
-      pque = find_queuebyname(queue_name);
-      }
-
-    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-      return(PBSE_JOBNOTFOUND);
-    }
-
-#endif /* NDEBUG */
-
   pjob->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
 
   /* clear any default resource values.  */
@@ -898,6 +861,42 @@ int svr_dequejob(
       "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
     log_ext(-1, __func__, log_buf, LOG_WARNING);
     }
+
+#ifndef NDEBUG
+  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
+    pque ? pque->qu_qs.qu_name : "unknown queue",
+    PJobState[pjob->ji_qs.ji_state]);
+
+  log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
+  if (bad_ct)   /* state counts are all messed up */
+    {
+    char queue_name[PBS_MAXQUEUENAME+1];
+    char           job_id[PBS_MAXSVRJOBID+1];
+
+    strcpy(job_id, pjob->ji_qs.ji_jobid);
+
+    /* this function will lock queues and jobs */
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (parent_queue_mutex_held == TRUE)
+      {
+      strcpy(queue_name, pque->qu_qs.qu_name);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      }
+
+    correct_ct();
+
+    /* lock queue then job */
+    if (parent_queue_mutex_held == TRUE)
+      {
+      pque = find_queuebyname(queue_name);
+      }
+
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+      return(PBSE_JOBNOTFOUND);
+    }
+#endif /* NDEBUG */
 
   /* notify scheduler a job has been removed */
 

@@ -623,7 +623,7 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-  else if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
+  else if ((pjob->ji_qs.ji_state < JOB_STATE_RUNNING) &&
            (status_cancel_queue != 0))
     {
     /*
@@ -938,6 +938,7 @@ batch_request *duplicate_request(
       break;
 
     case PBS_BATCH_RunJob:
+    case PBS_BATCH_AsyrunJob:
   
       if (preq->rq_ind.rq_run.rq_destin)
         preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);

@@ -22,6 +22,7 @@ extern struct connection svr_conn[];
 extern char server_name[];
 extern int free_attrlist_called;
 extern int dis_req_read_rc;
+extern bool fail_check = true;
 
 void initialize_svr_conn(
 
@@ -64,8 +65,9 @@ START_TEST(test_read_request_from_socket)
   set_connection_type(chan.sock, ToServerDIS);
   find_node = false;
   check_acl = true;
+  fail_check = false;
   fail_unless(read_request_from_socket(&chan) == NULL, "Node not found should fail");
-
+  fail_check = true;
   find_node = true;
   check_acl = false;
   fail_unless(read_request_from_socket(&chan) != NULL, "should pass");

@@ -281,7 +281,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
 batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *)) {return 0;}
+int issue_to_svr(char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
 int que_to_local_svr(struct batch_request *preq) {return 0;}
 int job_set_wait(pbs_attribute *pattr, void *pjob, int mode) {return 0;}
 int get_batch_request_id(batch_request *preq) {return 0;}
@@ -356,10 +356,21 @@ int set_complete_req(
   pbs_attribute *attr,
   pbs_attribute *new_attr,
   enum batch_op  op)
-  
+
   {
   return(0);
   }
+  
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
 void handle_complete_second_time(struct work_task *ptask)
   {
   }
@@ -371,3 +382,24 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
 
 void add_to_completed_jobs(work_task *wt) {}
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
+int node_exception_check(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+

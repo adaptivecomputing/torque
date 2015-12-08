@@ -273,6 +273,24 @@ START_TEST(read_val_and_advance_test)
   fail_unless(val == 16);
   }
 END_TEST
+
+
+START_TEST(node_exists_check)
+  {
+  struct pbsnode  node1;
+  struct pbsnode  node2;
+  
+  memset(&node1, 0, sizeof(node1));
+  memset(&node2, 0, sizeof(node2));
+  node1.nd_name = strdup("bob");
+  node2.nd_name = strdup("tom");
+
+  initialize_allnodes(&allnodes, &node1, &node2);
+  fail_unless(node_exists("bob") == true);
+  fail_unless(node_exists("tom") == true);
+  fail_unless(node_exists("joe") == false);
+  }
+END_TEST
   
 
 START_TEST(write_compute_node_properties_test)
@@ -1128,6 +1146,7 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("add_node_property_test");
   tcase_add_test(tc_core, add_node_property_test);
   //tcase_add_test(tc_core, record_node_property_list_test);
+  tcase_add_test(tc_core, node_exists_check);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("read_val_and_advance_test");

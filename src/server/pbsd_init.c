@@ -251,6 +251,8 @@ extern int    set_old_nodes(job *);
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
 void          on_job_exit_task(struct work_task *);
+int           update_user_acls(pbs_attribute *pattr, enum batch_op  op);
+int           update_group_acls(pbs_attribute *pattr, enum batch_op  op);
 
 /* Private functions in this file */
 
@@ -1072,6 +1074,12 @@ int setup_server_attrs(
       {
       cpy_stdout_err_on_rerun = true;
       }
+
+    if (server.sv_attr[SRV_ATR_acl_users_hosts].at_flags & ATR_VFLAG_SET)
+      update_user_acls(server.sv_attr + SRV_ATR_acl_users_hosts, SET);
+
+    if (server.sv_attr[SRV_ATR_acl_groups_hosts].at_flags & ATR_VFLAG_SET)
+      update_group_acls(server.sv_attr + SRV_ATR_acl_groups_hosts, SET);
     }
   else
     {
@@ -1137,6 +1145,7 @@ void remove_invalid_allocations(
   pbsnode *pnode)
 
   {
+  int retcode;
 
   if (pnode->nd_layout != NULL)
     {
@@ -1146,7 +1155,15 @@ void remove_invalid_allocations(
 
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
-      if (job_id_exists(job_ids[i]) == false)
+      bool exists;
+      do
+        {
+        /* job_id_exists will return false if it can't
+           get a mutex lock. Check the recode first
+           if it returns false */
+        exists = job_id_exists(job_ids[i], &retcode);
+        }while(exists == false && retcode != 0);
+      if (exists == false)
         pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
       }
     }
@@ -2673,7 +2690,12 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
+  rc = svr_enquejob(pjob, TRUE, NULL, false);
+
+  // Since we aren't aborting jobs that receive PBSD_BADDEPEND, 
+  // we need to set them up properly, inside this if statement.
+  if ((rc == PBSE_NONE) ||
+      (rc == PBSE_BADDEPEND))
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,
@@ -2701,12 +2723,13 @@ int pbsd_init_reque(
       {
       set_statechar(pjob);
       }
+
+    rc = PBSE_NONE;
     }
   else
     {
     /* Oops, this should never happen */
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       {
       snprintf(log_buf, sizeof(log_buf), "%s; job %s queue %s",
         msg_err_noqueue,
@@ -2718,8 +2741,7 @@ int pbsd_init_reque(
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       job_abt(&pjob, log_buf);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);

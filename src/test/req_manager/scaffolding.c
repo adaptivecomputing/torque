@@ -12,6 +12,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_type */
 #include "mom_hierarchy_handler.h"
+//#include "acl_special.hpp"
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -39,6 +40,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
 bool exit_called = false;
+acl_special limited_acls;
 
 mom_hierarchy_t *mh;
 boost::ptr_vector<std::string> hierarchy_holder;
@@ -431,3 +433,11 @@ int get_svr_attr_l(
   {
   return(0);
   }
+
+acl_special::acl_special() : ug_acls() {}
+void acl_special::add_user_configuration(const std::string &qmgr_input) {}
+void acl_special::remove_user_configuration(const std::string &qmgr_input) {}
+void acl_special::add_group_configuration(const std::string &qmgr_input) {}
+void acl_special::remove_group_configuration(const std::string &qmgr_input) {}
+void acl_special::clear_users() {}
+void acl_special::clear_groups() {}

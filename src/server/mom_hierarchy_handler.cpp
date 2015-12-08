@@ -94,11 +94,10 @@ public:
   int                id;
   unsigned short int level;
   unsigned short     port;
-  sendNodeHolder(struct pbsnode *node)
+  bool               first_send;
+  sendNodeHolder(struct pbsnode *node, bool first) : id(node->nd_id), level(node->nd_hierarchy_level),
+                                                     port(node->nd_mom_rm_port), first_send(first)
     {
-    id    = node->nd_id;
-    level = node->nd_hierarchy_level;
-    port  = node->nd_mom_rm_port;
     }
   };
 
@@ -516,7 +515,7 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
   port = pNodeHolder->port;
   time_t timeSent = time(NULL); //Record the time now to avoid a race condition.
     
-  if (sendHierarchyToNode(name, port) == PBSE_NONE)
+  if (sendHierarchyToNode(name, port, pNodeHolder->first_send) == PBSE_NONE)
     {
     pnode = find_nodebyname(name);
     if (pnode != NULL)
@@ -551,7 +550,8 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
 int mom_hierarchy_handler::sendHierarchyToNode(
 
   const char     *name,
-  unsigned short  port)
+  unsigned short  port,
+  bool            first_time)
 
   {
   char                log_buf[LOCAL_LOG_BUF_SIZE];
@@ -580,10 +580,13 @@ int mom_hierarchy_handler::sendHierarchyToNode(
     {
     /* could not connect */
     /* - quiting after 5 retries",*/
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-      "Could not send mom hierarchy to host %s:%d",
-      name, port);
-    log_err(-1, __func__, log_buf);
+    if (first_time)
+      {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "Could not send mom hierarchy to host %s:%d",
+        name, port);
+      log_err(-1, __func__, log_buf);
+      }
 
     return(-1);
     }
@@ -608,20 +611,23 @@ int mom_hierarchy_handler::sendHierarchyToNode(
       string = tmpHolder[i].c_str();
       if ((ret = diswst(chan, string)) != DIS_SUCCESS)
         {
-        if (ret > 0)
+        if (first_time)
           {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Could not send mom hierarchy to host %s - %s",
-            name, dis_emsg[ret]);
-          }
-        else
-          {
-          snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "Unknown error when sending mom hierarchy to host %s",
-            name);
-          }
+          if (ret > 0)
+            {
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+              "Could not send mom hierarchy to host %s - %s",
+              name, dis_emsg[ret]);
+            }
+          else
+            {
+            snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+              "Unknown error when sending mom hierarchy to host %s",
+              name);
+            }
 
-        log_err(-1, __func__, log_buf);
+          log_err(-1, __func__, log_buf);
+          }
 
         break;
         }
@@ -639,7 +645,7 @@ int mom_hierarchy_handler::sendHierarchyToNode(
     }
 
   return(ret);
-  } /* END send_hierarchy() */
+  } /* END sendHierarchyToNode() */
 
 
 
@@ -649,7 +655,7 @@ void mom_hierarchy_handler::sendHierarchyToANode(
 
   {
   node->nd_lastHierarchySent = 0; //Make sure we send this out.
-  sendNodeHolder *pNodeHolder = new sendNodeHolder(node);
+  sendNodeHolder *pNodeHolder = new sendNodeHolder(node, false);
 
   pthread_mutex_lock(&hierarchy_mutex);
   sendingThreadCount++;
@@ -678,12 +684,17 @@ bool sortFunc(
 
 
 
-void mom_hierarchy_handler::checkAndSendHierarchy(void)
+void mom_hierarchy_handler::checkAndSendHierarchy(
+    
+  bool first_time)
+
   {
   time_t now = time(NULL);
+
   if ((sendOnDemand) || // Don't send if we are only sending on demand.
-      (nextSendTime > now) || // Don't send if its not time to send.
-      (sendingThreadCount != 0)) // Don't send if we are still sending from last time.
+      ((first_time == false) &&
+       ((nextSendTime > now) || // Don't send if its not time to send.
+        (sendingThreadCount != 0)))) // Don't send if we are still sending from last time.
     return; 
 
   std::vector<sendNodeHolder *>  nodesToSend;
@@ -693,12 +704,18 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
 
   while ((pnode = nextNode(&iter)) != NULL)
     {
-    if (pnode->nd_lastHierarchySent < lastReloadTime)
+    // On follow up passes, don't try to send the hierarchy to nodes that
+    // are down or offlined. Wait for them to report in or be marked online by
+    // the admin to send it again.
+    if ((pnode->nd_lastHierarchySent < lastReloadTime) &&
+        ((first_time) ||
+         (((pnode->nd_state & INUSE_DOWN) == 0) &&
+          ((pnode->nd_state & INUSE_OFFLINE) == 0))))
       {
       // This new'd object is deleted in sendHierarchyThreadTask
-      nodesToSend.push_back(new sendNodeHolder(pnode));
+      nodesToSend.push_back(new sendNodeHolder(pnode, first_time));
       }
-    else if(pnode->nd_state&INUSE_NOHIERARCHY)
+    else if (pnode->nd_state & INUSE_NOHIERARCHY)
       {
       hierarchyNotSentFlagSet = true;
       }
@@ -728,7 +745,7 @@ void mom_hierarchy_handler::checkAndSendHierarchy(void)
       //If we are here then all nodes have an up to date and correct hierarchy so clear all flags.
       while ((pnode = nextNode(&iter)) != NULL)
         {
-        if (pnode->nd_state&INUSE_NOHIERARCHY)
+        if (pnode->nd_state & INUSE_NOHIERARCHY)
           {
           pnode->nd_state = INUSE_FREE; //This was created as a dynamic node and
                                         //it now has a good ok host list so mark

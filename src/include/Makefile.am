@@ -26,7 +26,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 delete_all_tracker.hpp timer.hpp id_map.hpp container.hpp \
 		 node_frequency.hpp cpu_frequency.hpp sys_file.hpp power_state.hpp \
 		 job_usage_info.hpp machine.hpp req.hpp complete_req.hpp trq_cgroups.h \
-		 job_recovery.h allocation.hpp attr_req_info.hpp
+		 job_recovery.h allocation.hpp attr_req_info.hpp acl_special.hpp restricted_host.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

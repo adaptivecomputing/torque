@@ -89,6 +89,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sstream>
 
@@ -2344,6 +2345,7 @@ void reset_config_vars()
   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
+  LOGLEVEL = 0;
   }
 
 
@@ -3039,6 +3041,7 @@ const char *reqvarattr(
       else
         {
         fd = fileno(child);
+        fcntl(fd, F_SETFL, O_NONBLOCK);
 
         child_spot = tmpBuf;
         child_len  = 0;
@@ -3061,12 +3064,12 @@ const char *reqvarattr(
         if (len == -1)
           {
           /* FAILURE - cannot read var script output */
-          log_err(errno, __func__, "pipe read");
+          log_err(errno, __func__, "Cannot read pipe for reqvarattr script. Please check!");
 
           sprintf(pva->va_value, "? %d",
             RM_ERR_SYSTEM);
 
-          pclose(child);
+          // Do not plose here as it will hang until the child exits.
 
           continue;
           }

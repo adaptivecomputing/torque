@@ -12,6 +12,7 @@ char *path_svrdb = NULL;
 struct server server;
 attribute_def svr_attr_def[10];
 int disable_timeout_check;
+time_t pbs_tcp_timeout;
 
 
 

@@ -623,8 +623,8 @@ int assign_array_info_fields(
   else if ((nameLen == strlen(SUBMIT_HOST_TAG)) &&
     (!(strcmp((char *)xml_node->name, SUBMIT_HOST_TAG)))) 
     snprintf(pa->ai_qs.submit_host, PBS_MAXSERVERNAME + 1, "%s", (const char *)content);
-  else if ((nameLen == strlen(NUM_SUCCESSFUL_TAG)) &&
-    (!(strcmp((char *)xml_node->name, NUM_SUCCESSFUL_TAG)))) 
+  else if (((nameLen - strlen(NUM_SUCCESSFUL_TAG) < 2) &&
+    (!(strncmp((char *)xml_node->name, NUM_SUCCESSFUL_TAG, strlen(NUM_SUCCESSFUL_TAG)))))) 
     pa->ai_qs.num_successful = atoi((const char *)content);
   else if ((nameLen == strlen(NUM_TOKENS_TAG)) &&
     (!(strcmp((char *)xml_node->name, NUM_TOKENS_TAG)))) 
@@ -991,14 +991,17 @@ void free_array_job_sub_struct(
     free(rn);
     }
 
-  /* free the memory for the job pointers */
-  for (int i = 0; i < pa->ai_qs.array_size; i++)
+  if (pa->job_ids != NULL)
     {
-    if (pa->job_ids[i] != NULL)
-      free(pa->job_ids[i]);
-    }
+    /* free the memory for the job pointers */
+    for (int i = 0; i < pa->ai_qs.array_size; i++)
+      {
+      if (pa->job_ids[i] != NULL)
+        free(pa->job_ids[i]);
+      }
 
-  free(pa->job_ids);
+    free(pa->job_ids);
+    }
   }
 
 /* array_recov reads in  an array struct saved to disk and inserts it into

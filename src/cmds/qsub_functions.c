@@ -892,10 +892,10 @@ int are_mpp_present(
 
 
 
+bool is_resource_request_valid(
 
-void validate_basic_resourcing(
-
-  job_info *ji)
+  job_info    *ji,
+  std::string &err_msg)
 
   {
   job_data_container *resources = ji->res_attr;
@@ -903,18 +903,24 @@ void validate_basic_resourcing(
   bool               nodes = false;
   bool               size = false;
   bool               mpp = false;
+  bool               ncpus = false;
 
   nodes = hash_find(resources, "nodes", &dummy);
   size  = hash_find(resources, "size", &dummy);
+  ncpus  = hash_find(resources, "ncpus", &dummy);
 
-  if ((nodes == true) &&
-      (size == true))
+  if (((nodes == true) &&
+      ((size == true) ||
+       (ncpus == true))) ||
+      ((size == true) &&
+       (ncpus == true)))
     {
-    fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l size\n");
-    exit(4);
+    err_msg =  "qsub: Jobs may not mix -l nodes with -l size or -l ncpus\n";
+    return(false);
     }
   else if ((nodes == true) ||
-           (size == true))
+           (size == true) ||
+           (ncpus == true))
     {
     mpp = are_mpp_present(resources, &dummy);
 
@@ -922,13 +928,18 @@ void validate_basic_resourcing(
       {
       if (nodes == true)
         {
-        fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n");
-        exit(4);
+        err_msg = "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n";
+        return(false);
+        }
+      else if (size == TRUE)
+        {
+        err_msg = "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n";
+        return(false);
         }
       else
         {
-        fprintf(stderr, "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n");
-        exit(4);
+        err_msg = "qsub: Specifying -l ncpus is incompatible with specifying -l mppwidth\n";
+        return(false);
         }
       }
     }
@@ -940,8 +951,8 @@ void validate_basic_resourcing(
         (size == true) ||
         (mpp == true))
       {
-      fprintf(stderr, "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n");
-      exit(4);
+      err_msg = "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n";
+      return(false);
       }
 
     if ((hash_find(resources, "mem", &dummy)) ||
@@ -958,12 +969,32 @@ void validate_basic_resourcing(
         (hash_find(resources, "tpn", &dummy)) ||
         (hash_find(resources, "trl", &dummy)))
       {
-      fprintf(stderr, "qsub: resource requests cannot combine -L with -l memory, gres, geometry, opsys, reqattr, hostlist, or proc count requests\n");
-      exit(4);
+      err_msg = "qsub: resource requests cannot combine -L with -l memory, gres, geometry, opsys, reqattr, hostlist, or proc count requests\n";
+      return(false);
       }
     }
 
+  return(true);
+  } // is_resource_request_valid()
+
+
+
+void validate_basic_resourcing(
+
+  job_info *ji)
+
+  {
+  std::string err_msg;
+
+  if (is_resource_request_valid(ji, err_msg) == false)
+    {
+    fprintf(stderr, "%s", err_msg.c_str());
+    exit(4);
+    }
+
   } /* END validate_basic_resourcing() */
+
+
 
 /*
  * Set up (or enforce) errpath or outpath when join option specified

@@ -244,27 +244,30 @@ START_TEST(test_issue_to_svr)
 
   return_addr = true;
   local_connect = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
+  // local connect should cause preq to be set to NULL
+  fail_unless(preq == NULL);
 
   return_addr = false;
-  rc = issue_to_svr(server_name, preq, NULL);
+  preq = alloc_br(PBS_BATCH_StatusJob);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   return_addr = true;
   local_connect = false;
   net_rc_retry = false;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   net_rc_retry = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   local_connect = false;
   net_rc_retry = false;
   connect_error = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_INTERNAL);
 
   }
