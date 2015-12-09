@@ -136,6 +136,7 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
+#include "runjob_help.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -1579,31 +1580,6 @@ err1:
 
 
 
-/*
- * free_prop - free list of prop structures created by proplist()
- */
-
-static void free_prop(
-
-  struct prop *prop)
-
-  {
-  struct prop *pp;
-
-  for (pp = prop;pp != NULL;pp = prop)
-    {
-    prop = pp->next;
-
-    free(pp->name);
-    free(pp);
-    }  /* END for (pp) */
-
-  return;
-  }    /* END free_prop() */
-
-
-
-
 void *node_unreserve_work(
 
   void *vp)
@@ -1936,14 +1912,13 @@ static int property(
 
 int proplist(
 
-  char        **str,
-  struct prop **plist,
-  int          *node_req,
-  int          *gpu_req,
-  int          *mic_req)
+  char              **str,
+  std::vector<prop>  &plist,
+  int                *node_req,
+  int                *gpu_req,
+  int                *mic_req)
 
   {
-  struct prop *pp;
   char         name_storage[80];
   char        *pname;
   char        *pequal;
@@ -2040,13 +2015,8 @@ int proplist(
       }
     else
       {
-      pp = (struct prop *)calloc(1, sizeof(struct prop));
-
-      pp->mark = 1;
-      pp->name = strdup(pname);
-      pp->next = *plist;
-
-      *plist = pp;
+      prop p(pname);
+      plist.push_back(p);
       }
 
     if ((have_gpus) && (LOGLEVEL >= 7))
@@ -2179,17 +2149,17 @@ int procs_available(
 bool node_is_spec_acceptable(
 
   struct pbsnode   *pnode,
-  single_spec_data *spec,
+  single_spec_data &spec,
   char             *ProcBMStr,
   int              *eligible_nodes,
   bool              job_is_exclusive)
 
   {
-  struct prop    *prop = spec->prop;
+  std::vector<prop> *plist = &(spec.plist);
 
-  int             ppn_req = spec->ppn;
-  int             gpu_req = spec->gpu;
-  int             mic_req = spec->mic;
+  int             ppn_req = spec.ppn;
+  int             gpu_req = spec.gpu;
+  int             mic_req = spec.mic;
   int             gpu_free;
   int             np_free;
   int             mic_free;
@@ -2209,7 +2179,7 @@ bool node_is_spec_acceptable(
   pnode->nd_flag = okay;
 
   /* make sure that the node has properties */
-  if (pnode->hasprop(prop) == false)
+  if (pnode->hasprop(plist) == false)
     return(false);
 
   if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
@@ -2246,55 +2216,49 @@ bool node_is_spec_acceptable(
 
 int parse_req_data(
     
-  complete_spec_data *all_reqs)
+  complete_spec_data &all_reqs)
 
   {
   int               i;
   int               j = 0;
   long              cray_enabled = FALSE;
 
-  single_spec_data *req;
-
   get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  all_reqs->total_nodes = 0;
+  all_reqs.total_nodes = 0;
 
-  for (i = 0; i < all_reqs->num_reqs; i++)
+  for (i = 0; i < all_reqs.num_reqs; i++)
     {
-    req = all_reqs->reqs + i;
-    req->nodes = 1;
-    req->gpu   = 0;
-    req->ppn   = 1;
-    req->prop  = NULL;
+    single_spec_data &req = all_reqs.reqs[i];
 
     if ((cray_enabled == FALSE) ||
-        (is_compute_node(all_reqs->req_start[i]) == FALSE))
+        (is_compute_node(all_reqs.req_start[i]) == FALSE))
       {
-      if ((j = number(&(all_reqs->req_start[i]), &(req->nodes))) == -1)
+      if ((j = number(&(all_reqs.req_start[i]), &(req.nodes))) == -1)
         return(j);
       }
 
     if (j == 0)
       {
       /* there was a number */
-      if (*(all_reqs->req_start[i]) != '\0')
+      if (*(all_reqs.req_start[i]) != '\0')
         {
-        if (*(all_reqs->req_start[i]) == ':')
-          all_reqs->req_start[i]++;
+        if (*(all_reqs.req_start[i]) == ':')
+          all_reqs.req_start[i]++;
         
-        if (proplist(&(all_reqs->req_start[i]), &(req->prop), &(req->ppn), &(req->gpu), &(req->mic)))
+        if (proplist(&(all_reqs.req_start[i]), req.plist, &(req.ppn), &(req.gpu), &(req.mic)))
           return(-1);
         }
       }
     else
       {
-      if (*(all_reqs->req_start[i]) != '\0')
+      if (*(all_reqs.req_start[i]) != '\0')
         {
-        if (proplist(&(all_reqs->req_start[i]), &(req->prop), &(req->ppn), &(req->gpu), &(req->mic)))
+        if (proplist(&(all_reqs.req_start[i]), req.plist, &(req.ppn), &(req.gpu), &(req.mic)))
           return(-1);
         }
       }
 
-    all_reqs->total_nodes += req->nodes;
+    all_reqs.total_nodes += req.nodes;
     }
 
   return(PBSE_NONE);
@@ -2312,7 +2276,7 @@ int save_node_for_adding(
     
   std::list<node_job_add_info> *naji_list,
   struct pbsnode               *pnode,
-  single_spec_data             *req,
+  single_spec_data             &req,
   int                           first_node_id,
   int                           is_external_node,
   int                           req_rank)
@@ -2326,9 +2290,9 @@ int save_node_for_adding(
     
   /* initialize */
   naji.node_id = pnode_id;
-  naji.ppn_needed = req->ppn;
-  naji.gpu_needed = req->gpu;
-  naji.mic_needed = req->mic;
+  naji.ppn_needed = req.ppn;
+  naji.gpu_needed = req.gpu;
+  naji.mic_needed = req.mic;
   naji.is_external = is_external_node;
 
   if ((first_node_id == pnode_id) ||
@@ -2367,9 +2331,9 @@ int save_node_for_adding(
     }
 
   /* count off the number we have reserved */
-  pnode->nd_np_to_be_used    += req->ppn;
-  pnode->nd_ngpus_to_be_used += req->gpu;
-  pnode->nd_nmics_to_be_used -= req->mic;
+  pnode->nd_np_to_be_used    += req.ppn;
+  pnode->nd_ngpus_to_be_used += req.gpu;
+  pnode->nd_nmics_to_be_used -= req.mic;
 
   return(PBSE_NONE);
   } /* END save_node_for_adding */
@@ -2513,11 +2477,10 @@ void release_node_allocation(
 
 int check_for_node_type(
 
-  complete_spec_data *all_reqs,
+  complete_spec_data &all_reqs,
   enum node_types     nt)
 
   {
-  single_spec_data *req;
   int               i;
   int               found_type = FALSE;
   struct pbsnode   *pnode;
@@ -2532,18 +2495,19 @@ int check_for_node_type(
     }
 
 
-  for (i = 0; i < all_reqs->num_reqs; i++)
+  for (i = 0; i < all_reqs.num_reqs; i++)
     {
-    req = all_reqs->reqs + i;
+    single_spec_data &req = all_reqs.reqs[i];
 
-    for (p = req->prop; p != NULL; p = p->next)
+    for (unsigned int i = 0; i < req.plist.size(); i++)
       {
-      if ((!strcmp(p->name, "cray_compute")) ||
-          (!strcmp(p->name, alps_starter_feature)))
+      prop &p = req.plist[i];
+      if ((!strcmp(p.name.c_str(), "cray_compute")) ||
+          (!strcmp(p.name.c_str(), alps_starter_feature)))
         continue;
 
       reporter->lock_node(__func__, NULL, LOGLEVEL);
-      pnode = find_node_in_allnodes(reporter->alps_subnodes, p->name);
+      pnode = find_node_in_allnodes(reporter->alps_subnodes, p.name.c_str());
       reporter->unlock_node(__func__, NULL, LOGLEVEL);
 
       if (pnode != NULL)
@@ -2561,7 +2525,7 @@ int check_for_node_type(
         {
         int login = FALSE;
 
-        pnode = find_nodebyname(p->name);
+        pnode = find_nodebyname(p.name.c_str());
 
         if (pnode != NULL)
           {
@@ -2596,7 +2560,7 @@ int check_for_node_type(
 
 enum job_types find_job_type(
 
-  complete_spec_data *all_reqs)
+  complete_spec_data &all_reqs)
 
   {
   enum job_types jt = JOB_TYPE_cray;
@@ -2634,7 +2598,7 @@ int add_login_node_if_needed(
   int               dummy1;
   int               dummy2;
   int               dummy3;
-  struct prop      *prop = NULL;
+  std::vector<prop> plist;
   single_spec_data  req;
 
   if (login == NULL)
@@ -2651,7 +2615,7 @@ int add_login_node_if_needed(
     {
     if (login_prop != NULL)
       {
-      if (proplist(&login_prop, &prop, &dummy1, &dummy2, &dummy3) != PBSE_NONE)
+      if (proplist(&login_prop, plist, &dummy1, &dummy2, &dummy3) != PBSE_NONE)
         {
         if (LOGLEVEL >= 3)
           {
@@ -2662,19 +2626,14 @@ int add_login_node_if_needed(
         }
       }
 
-    if ((login = get_next_login_node(prop)) == NULL)
+    if ((login = get_next_login_node(&plist)) == NULL)
       rc = -1;
     else
       {
       if (naji_list != NULL)
         {
         /* add to list */
-        req.nodes = 1;
-        req.ppn = 1;
-        req.gpu = 0;
-        req.mic = 0;
-        req.prop = NULL;
-        save_node_for_adding(naji_list, login, &req, login->nd_id, FALSE, -1);
+        save_node_for_adding(naji_list, login, req, login->nd_id, FALSE, -1);
         first_node_id = login->nd_id;
         }
       
@@ -2682,9 +2641,6 @@ int add_login_node_if_needed(
 
       login->unlock_node(__func__, NULL, LOGLEVEL);
       }
-
-    if (prop != NULL)
-      free_prop(prop);
     }
 
   return(rc);
@@ -2729,12 +2685,12 @@ void record_fitting_node(
   int                           &num,
   struct pbsnode                *pnode,
   std::list<node_job_add_info>  *naji_list,       /* O (optional) */
-  single_spec_data              *req,
+  single_spec_data              &req,
   int                            first_node_id,
   int                            i,
   int                            num_alps_reqs,
   enum job_types                 job_type,
-  complete_spec_data            *all_reqs,
+  complete_spec_data            &all_reqs,
   alps_req_data                **ard_array)       /* O (optional) */
 
   {
@@ -2755,18 +2711,18 @@ void record_fitting_node(
         (ard_array != NULL) &&
         (*ard_array != NULL))
       {
-      if ((*ard_array)[req->req_id].node_list->length() != 0)
-        (*ard_array)[req->req_id].node_list->append(",");
+      if ((*ard_array)[req.req_id].node_list.length() != 0)
+        (*ard_array)[req.req_id].node_list.append(",");
 
-      (*ard_array)[req->req_id].node_list->append(pnode->get_name());
+      (*ard_array)[req.req_id].node_list.append(pnode->get_name());
 
-      if (req->ppn > (*ard_array)[req->req_id].ppn)
-        (*ard_array)[req->req_id].ppn = req->ppn;
+      if (req.ppn > (*ard_array)[req.req_id].ppn)
+        (*ard_array)[req.req_id].ppn = req.ppn;
       }
     }
 
-  all_reqs->total_nodes--;
-  req->nodes--;
+  all_reqs.total_nodes--;
+  req.nodes--;
   } /* END record_fitting_node */
 
 
@@ -2787,7 +2743,7 @@ void record_fitting_node(
 
 int select_nodes_using_hostlist(
     
-  complete_spec_data            *all_reqs,        /* I */
+  complete_spec_data            &all_reqs,        /* I */
   std::list<node_job_add_info>  *naji_list,       /* O */
   int                           *eligible_nodes,  /* O */
   const char                    *spec,            /* I */
@@ -2803,13 +2759,13 @@ int select_nodes_using_hostlist(
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
   int                  num = 0;
   
-  for (int i = 0; i < all_reqs->num_reqs; i++)
+  for (int i = 0; i < all_reqs.num_reqs; i++)
     {
-    single_spec_data *req = all_reqs->reqs + i;
+    single_spec_data &req = all_reqs.reqs[i];
 
     // must have a property and name specified for each 
-    if ((req->prop == NULL) ||
-        (req->prop->name == NULL))
+    if ((req.plist.size() == 0) ||
+        (req.plist[0].name == ""))
       {
       snprintf(log_buf, sizeof(log_buf), "Spec '%s' doesn't have a node name for all entries", spec);
       log_err(-1, __func__, log_buf);
@@ -2817,12 +2773,12 @@ int select_nodes_using_hostlist(
       return(-1);
       }
 
-    pnode = find_nodebyname(req->prop->name);
+    pnode = find_nodebyname(req.plist[0].name.c_str());
 
     // couldn't find the specified node 
     if (pnode == NULL)
       {
-      snprintf(log_buf, sizeof(log_buf), "Node '%s' not found", req->prop->name);
+      snprintf(log_buf, sizeof(log_buf), "Node '%s' not found", req.plist[0].name.c_str());
       log_err(-1, __func__, log_buf);
 
       return(-2);
@@ -2830,7 +2786,8 @@ int select_nodes_using_hostlist(
     
     if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == false)
       {
-      snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
+      snprintf(log_buf, sizeof(log_buf),
+        "Requested node '%s' is not currently available", req.plist[0].name.c_str());
       log_err(-1, __func__, log_buf);
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
       break;
@@ -2859,7 +2816,7 @@ int select_nodes_using_hostlist(
 
 int select_from_all_nodes(
 
-  complete_spec_data            *all_reqs,        /* I */
+  complete_spec_data            &all_reqs,        /* I */
   std::list<node_job_add_info>  *naji_list,       /* O (optional) */
   int                           *eligible_nodes,  /* O */
   alps_req_data                **ard_array,       /* O (optional) */
@@ -2880,25 +2837,25 @@ int select_from_all_nodes(
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
     /* check each req against this node to see if it satisfies it */
-    for (int i = 0; i < all_reqs->num_reqs; i++)
+    for (int i = 0; i < all_reqs.num_reqs; i++)
       {
-      single_spec_data *req = all_reqs->reqs + i;
+      single_spec_data &req = all_reqs.reqs[i];
 
-      if (req->nodes > 0)
+      if (req.nodes > 0)
         {
         if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == true)
           {
           record_fitting_node(num, pnode, naji_list, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
 
           /* are all reqs satisfied? */
-          if (all_reqs->total_nodes == 0)
+          if (all_reqs.total_nodes == 0)
             break;
           }
         }
       }
 
     /* are all reqs satisfied? */
-    if (all_reqs->total_nodes == 0)
+    if (all_reqs.total_nodes == 0)
       {
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
       break;
@@ -2982,23 +2939,6 @@ bool process_as_node_list(
  
   return(false);
   } /* process_as_node_list() */
-
-
-int initialize_alps_req_data(
-
-  alps_req_data **ard_array,
-  int             num_reqs)
-
-  {
-  alps_req_data *ard = (alps_req_data *)calloc(num_reqs, sizeof(alps_req_data));
-  
-  for (int i = 0; i < num_reqs; i++)
-    ard[i].node_list = new std::string();
-
-  *ard_array = ard;
-
-  return(PBSE_NONE);
-  } // initialize_alps_req_data()
 
 
 
@@ -3129,17 +3069,10 @@ int node_spec(
     }
 
   /* allocate space in all_reqs */
-  all_reqs.reqs      = (single_spec_data *)calloc(all_reqs.num_reqs, sizeof(single_spec_data));
   all_reqs.req_start = (char **)calloc(all_reqs.num_reqs, sizeof(char *));
 
-  if ((all_reqs.reqs == NULL) ||
-      (all_reqs.req_start == NULL))
+  if (all_reqs.req_start == NULL)
     {
-    if (all_reqs.reqs != NULL)
-      free(all_reqs.reqs);
-    else if (all_reqs.req_start != NULL)
-      free(all_reqs.req_start);
-
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
     free(spec);
     return(-1);
@@ -3148,11 +3081,14 @@ int node_spec(
   /* set up pointers for reqs */
   plus = spec;
   i = 0;
+  single_spec_data ssd;
+  all_reqs.reqs.push_back(ssd);
   all_reqs.req_start[i] = spec;
   i++;
 
   while (*plus != '\0')
     {
+    single_spec_data tmp;
     /* make the '+' NULL and advance past it */
     if (*plus == '|')
       num_alps_reqs++;
@@ -3160,7 +3096,7 @@ int node_spec(
     if ((*plus == '|') ||
         (*plus == '+'))
       {
-      all_reqs.reqs[i].req_id = num_alps_reqs;
+      tmp.req_id = num_alps_reqs;
       
       *plus = '\0';
       plus++;
@@ -3169,6 +3105,7 @@ int node_spec(
       if (!strncmp(plus, "nodes=", strlen("nodes=")))
         plus += strlen("nodes=");
       
+      all_reqs.reqs.push_back(tmp);
       all_reqs.req_start[i] = plus;
       i++;
       }
@@ -3177,15 +3114,9 @@ int node_spec(
     }
 
   /* now parse each spec into the data */
-  if ((rc = parse_req_data(&all_reqs)) != PBSE_NONE)
+  if ((rc = parse_req_data(all_reqs)) != PBSE_NONE)
     {
     /* FAILURE */
-    for (i = 0; i < all_reqs.num_reqs; i++)
-      free_prop(all_reqs.reqs[i].prop);
-    
-    free(all_reqs.reqs);
-    free(all_reqs.req_start);
-
     free(spec);
 
     return(rc);
@@ -3252,7 +3183,7 @@ int node_spec(
 
   if (cray_enabled == TRUE)
     {
-    job_type = find_job_type(&all_reqs);
+    job_type = find_job_type(all_reqs);
 
     if ((job_type == JOB_TYPE_cray) ||
         (job_type == JOB_TYPE_heterogeneous))
@@ -3282,29 +3213,23 @@ int node_spec(
         (job_type == JOB_TYPE_cray))
       {
       *num_reqs = num_alps_reqs + 1;
-      initialize_alps_req_data(ard_array, *num_reqs);
+      *ard_array = new alps_req_data[*num_reqs];
       }
     }
 
   if (process_as_node_list(spec_param, naji_list) == true)
     {
-    select_nodes_using_hostlist(&all_reqs, naji_list, &eligible_nodes, spec, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
+    select_nodes_using_hostlist(all_reqs, naji_list, &eligible_nodes, spec, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
     }
   else
-    select_from_all_nodes(&all_reqs, naji_list, &eligible_nodes, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
+    select_from_all_nodes(all_reqs, naji_list, &eligible_nodes, ard_array, first_node_id, num_alps_reqs, job_type, ProcBMStr,job_is_exclusive);
 
-  for (i = 0; i < all_reqs.num_reqs; i++)
-    if (all_reqs.reqs[i].prop != NULL)
-      free_prop(all_reqs.reqs[i].prop);
   
-  free(all_reqs.reqs);
-  free(all_reqs.req_start);
-
   free(spec);
 
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
-  if(alps_reporter != NULL)
+  if (alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->lock();
     }
@@ -3312,7 +3237,7 @@ int node_spec(
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
-    if(alps_reporter != NULL)
+    if (alps_reporter != NULL)
       {
       alps_reporter->alps_subnodes->unlock();
       }
@@ -3336,7 +3261,7 @@ int node_spec(
       }
 #endif
     }
-  else if(alps_reporter != NULL)
+  else if (alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->unlock();
     }
@@ -4508,20 +4433,6 @@ int build_hostlist_procs_req(
 
 
 
-void free_alps_req_data_array(
-    
-  alps_req_data *ard_array,
-  int            num_reqs)
-
-  {
-  for (int i = 0; i < num_reqs; i++)
-    delete ard_array[i].node_list;
-
-  free(ard_array);
-  } /* END free_alps_req_data_array() */
-
-
-
 /*
  * add_multi_reqs_to_job() -- for Cray
  *
@@ -4545,14 +4456,14 @@ int add_multi_reqs_to_job(
   if (ard_array == NULL)
     return(PBSE_NONE);
 
-  attr_str = *ard_array[0].node_list;
+  attr_str = ard_array[0].node_list;
 
   for (int i = 0; i < num_reqs; i++)
     {
     if (i != 0)
       {
       attr_str += '|';
-      attr_str += ard_array[i].node_list->c_str();
+      attr_str += ard_array[i].node_list.c_str();
       }
 
     snprintf(buf, sizeof(buf), "*%d", ard_array[i].ppn);
@@ -4663,20 +4574,20 @@ int set_nodes(
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
 
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
 
     return(PBSE_RESCUNAV);
     }
   else if (i == PBSE_LOGIN_BUSY)
     {
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
     return(i);
     }
   else if (i < 0)
     {
     /* request failed, corrupt request */
     log_err(PBSE_UNKNODE, __func__, "request failed, corrupt request");
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
     return(PBSE_UNKNODE);
     }
  
@@ -4707,14 +4618,14 @@ int set_nodes(
                                      ProcBMStr)) != PBSE_NONE)
     {
     free_nodes(pjob);
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
     return(rc);
     }
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, host_info)) != PBSE_NONE)
     {
     free_nodes(pjob);
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
     return(rc);
     }
 
@@ -4731,7 +4642,7 @@ int set_nodes(
     if (EMsg != NULL)
       sprintf(EMsg, "no nodes can be allocated to job");
     
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
 
     return(PBSE_RESCUNAV);
     }  /* END if (host_info.size() == 0) */
@@ -4742,7 +4653,7 @@ int set_nodes(
   rc = translate_job_reservation_info_to_string(host_info, &NCount, exec_hosts, &exec_ports);
   if (rc != PBSE_NONE)
     {
-    free_alps_req_data_array(ard_array, num_reqs);
+    delete [] ard_array;
     return(rc);
     }
 
@@ -4790,7 +4701,7 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
-      free_alps_req_data_array(ard_array, num_reqs);
+      delete [] ard_array;
       return(rc);
       }
 
@@ -4839,7 +4750,7 @@ int set_nodes(
     }
 
   add_multi_reqs_to_job(pjob, num_reqs, ard_array);
-  free_alps_req_data_array(ard_array, num_reqs);
+  delete [] ard_array;
 
   /* SUCCESS */
 
@@ -4868,7 +4779,7 @@ int procs_requested(
   int          num_gpus = 0;
   int          num_mics = 0;
   int          i;
-  struct prop *prop = NULL;
+  std::vector<prop> plist;
   char        *tmp_spec;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -4935,17 +4846,14 @@ int procs_requested(
 
         str++;
 
-        if (proplist(&str, &prop, &num_procs, &num_gpus, &num_mics))
+        if (proplist(&str, plist, &num_procs, &num_gpus, &num_mics))
           {
           free(tmp_spec);
-          if (prop != NULL)
-            free_prop(prop);
           return(-1);
           }
-        else if (prop != NULL)
+        else if (plist.size() != 0)
           {
-          free_prop(prop);
-          prop = NULL;
+          plist.clear();
           }
         }
       }
@@ -4953,19 +4861,16 @@ int procs_requested(
       {
       /* no number */
       num_nodes = 1;
-      if (proplist(&str, &prop, &num_procs, &num_gpus, &num_mics))
+      if (proplist(&str, plist, &num_procs, &num_gpus, &num_mics))
         {
         /* must be a prop list with no number in front */
         free(tmp_spec);
-        if (prop != NULL)
-          free_prop(prop);
 
         return(-1);
         }
-      else if (prop != NULL)
+      else if (plist.size() != 0)
         {
-        free_prop(prop);
-        prop = NULL;
+        plist.clear();
         }
       }
     total_procs += num_procs * num_nodes;
@@ -5041,7 +4946,7 @@ int node_avail(
   struct pbsnode *pn;
   char           *pc;
 
-  struct prop    *prop = NULL;
+  std::vector<prop>  plist;
   register int    xavail;
   register int    xalloc;
   register int    xresvd;
@@ -5076,7 +4981,7 @@ int node_avail(
 
     if (*pc)
       {
-      if (proplist(&pc, &prop, &node_req, &gpu_req, &mic_req))
+      if (proplist(&pc, plist, &node_req, &gpu_req, &mic_req))
         {
         return(RM_ERR_BADPARAM);
         }
@@ -5087,7 +4992,7 @@ int node_avail(
 
     while ((pn = next_node(&allnodes, pn, &iter)) != NULL)
       {
-      if ((pn->nd_ntype == NTYPE_CLUSTER) && pn->hasprop(prop))
+      if ((pn->nd_ntype == NTYPE_CLUSTER) && pn->hasprop(&plist))
         {
         if (pn->nd_state & (INUSE_OFFLINE | INUSE_NOT_READY))
           ++xdown;
@@ -5105,8 +5010,6 @@ int node_avail(
           }
         }
       } /* END for each node */
-
-    free_prop(prop);
 
     *navail = xavail;
 

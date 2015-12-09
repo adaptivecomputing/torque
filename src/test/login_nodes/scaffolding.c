@@ -79,12 +79,20 @@ int property(
   return(0);
   }  /* END property() */
 
-int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
+
+int proplist(
+
+  char              **str,
+  std::vector<prop>  &plist,
+  int                *node_req,
+  int                *gpu_req,
+  int                *mic_req)
+
   {
-  struct prop *pp;
   char         name_storage[80];
   char        *pname;
   char        *pequal;
+  int          have_gpus = FALSE;
 
   *node_req = 1; /* default to 1 processor per node */
 
@@ -119,6 +127,16 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
           return(1);
           }
         }
+      else if (strcmp(pname, "mics") == 0)
+        {
+        pequal++;
+
+        if ((number(&pequal, mic_req) != PBSE_NONE) ||
+            (*pequal != '\0'))
+          {
+          return(1);
+          }
+        }
       else if (strcmp(pname, "gpus") == 0)
         {
         pequal++;
@@ -127,6 +145,10 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
           {
           return(1);
           }
+
+        have_gpus = TRUE;
+
+        /* default value if no other gets specified */
         }
       else
         {
@@ -135,13 +157,8 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
       }
     else
       {
-      pp = (struct prop *)calloc(1, sizeof(struct prop));
-
-      pp->mark = 1;
-      pp->name = strdup(pname);
-      pp->next = *plist;
-
-      *plist = pp;
+      prop p(pname);
+      plist.push_back(p);
       }
 
     if (**str != ':')
@@ -151,7 +168,7 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
     }  /* END for(;;) */
 
   return(PBSE_NONE);
-  } /* END proplist() */
+  }  /* END proplist() */
 
 
 pbsnode::pbsnode(): nd_properties(), nd_mutex(), nd_state(INUSE_FREE), nd_needed(0),
@@ -181,21 +198,23 @@ void pbsnode::change_name(const char *name)
 
 bool pbsnode::hasprop(
 
-  struct prop *props) const
+  std::vector<prop> *props) const
 
   {
-  struct  prop    *need;
+  if (props == NULL)
+    return(true);
 
-  for (need = props;need;need = need->next)
+  for (unsigned int i = 0; i < props->size(); i++)
     {
-    if (need->mark == 0) /* not marked, skip */
+    prop &need = props->at(i);
+    if (need.mark == 0) /* not marked, skip */
       continue;
     
     bool found = false;
 
     for (unsigned int i = 0; i < this->nd_properties.size(); i++)
       {
-      if (!strcmp(this->nd_properties[i].c_str(), need->name))
+      if (this->nd_properties[i] == need.name)
         {
         found = true;
         break;

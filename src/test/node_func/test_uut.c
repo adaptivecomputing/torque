@@ -542,10 +542,7 @@ END_TEST
 START_TEST(init_prop_test)
   {
   char name[] = "node_name";
-  struct prop * result = init_prop(NULL);
-  fail_unless(result->name == NULL, "NULL name init fail");
-
-  result = init_prop(name);
+  struct prop *result = init_prop(name);
   fail_unless(result->name == name, "name init fail");
   }
 END_TEST

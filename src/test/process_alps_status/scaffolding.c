@@ -148,38 +148,13 @@ struct pbsnode *find_nodebyname(
   }  /* END find_nodebyname() */
 
 
-void free_prop_list(
-        
-  struct prop *prop)
-  
-  {  
-  struct prop *pp;
-  
-  while (prop)
-    {
-    pp = prop->next;
-    free(prop);
-    prop = pp;
-    }
-  } /* END free_prop_list() */
-
-
 
 struct prop *init_prop(
 
   char *pname) /* I */
 
   {
-  struct prop *pp;
-  
-  if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
-    {
-    pp->name    = pname;
-    pp->mark    = 0;
-    pp->next    = 0;
-    }
-  
-  return(pp);
+  return(new prop(pname));
   }  /* END init_prop() */
 
 
@@ -1636,7 +1611,7 @@ int already_recorded(
 
 struct pbsnode *get_next_login_node(
 
-  struct prop *needed)
+  std::vector<prop> *needed)
 
   {
   static struct pbsnode login;
@@ -1672,7 +1647,7 @@ int copy_properties(struct pbsnode *dest, struct pbsnode *src)
   return(0);
   }
 
-struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
+struct pbsnode *find_node_in_allnodes(all_nodes *an, const char *nodename)
   {
   return(NULL);
   }

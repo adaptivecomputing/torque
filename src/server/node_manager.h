@@ -45,8 +45,6 @@ void *node_unreserve_work(void *vp);
 
 void node_unreserve(resource_t handle);
 
-int hasprop(struct pbsnode *pnode, struct prop *props);
-
 int search_acceptable(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq);
 
 int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq, int pass);

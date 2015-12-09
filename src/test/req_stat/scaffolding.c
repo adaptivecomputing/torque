@@ -196,12 +196,6 @@ void netcounter_get(int netrates[])
   exit(1);
   }
 
-int hasprop(struct pbsnode *pnode, struct prop *props)
-  {
-  fprintf(stderr, "The call to hasprop to be mocked!!\n");
-  exit(1);
-  }
-
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req to be mocked!!\n");
@@ -360,7 +354,7 @@ int pbsnode::unlock_node(const char *msg, const char *id, int level)
   return(0);
   }
 
-bool pbsnode::hasprop(prop *needed) const
+bool pbsnode::hasprop(std::vector<prop> *needed) const
   {
   return(true);
   }

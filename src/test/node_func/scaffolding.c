@@ -112,17 +112,6 @@ int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svr
   return(0);
   }
 
-void free_prop_list(struct prop *prop)
-  {
-  struct prop *pp;
-  while (prop)
-    {
-    pp = prop->next;
-    free(prop);
-    prop = pp;
-    }
-  }
-
 void *get_next(list_link pl, char *file, int line)
   {
   return(NULL);

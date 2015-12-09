@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <vector>
 
 #include "login_nodes.h"
 #include "pbs_nodes.h"
@@ -8,8 +9,8 @@
 
 extern login_holder logins;
 char                buf[4096];
-int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req);
-struct pbsnode *check_node(login_node *ln, struct prop *needed);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
+struct pbsnode *check_node(login_node *ln, std::vector<prop> *needed);
 void update_next_node_index(unsigned int to_beat, struct pbsnode *held);
 
 
@@ -260,14 +261,15 @@ START_TEST(prop_test)
   int                   rc;
   int                   dummy1;
   int                   dummy2;
+  int                   dummy3;
   int                   n1_rtd = 0;
   int                   n2_rtd = 0;
   int                   n3_rtd = 0;
   int                   n4_rtd = 0;
   char                 *feature = (char *)"tom";
   char                 *feature2 = (char *)"bob";
-  struct prop          *props = NULL;
-  struct prop          *props2 = NULL;
+  std::vector<prop>     props;
+  std::vector<prop>     props2;
 
   initialize_node_for_testing(&n1);
   initialize_node_for_testing(&n2);
@@ -277,8 +279,8 @@ START_TEST(prop_test)
   n1.add_property(feature);
   n2.add_property(feature);
 
-  proplist(&feature, &props, &dummy1, &dummy2);
-  proplist(&feature2, &props2, &dummy1, &dummy2);
+  proplist(&feature, props, &dummy1, &dummy2, &dummy3);
+  proplist(&feature2, props2, &dummy1, &dummy2, &dummy3);
 
   initialize_login_holder();
   rc = add_to_login_holder(&n1);
@@ -290,9 +292,9 @@ START_TEST(prop_test)
   rc = add_to_login_holder(&n4);
   fail_unless(rc == 0);
 
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   snprintf(buf, sizeof(buf), "Should have used n1 once but is %d", n1_rtd);
   fail_unless(n1_rtd == 1, buf);
@@ -303,16 +305,16 @@ START_TEST(prop_test)
   snprintf(buf, sizeof(buf), "Shouldn't have used n4 but is %d", n4_rtd);
   fail_unless(n4_rtd == 0, buf);
 
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   fail_unless(n1_rtd == 2, "Should have used n1 twice");
   fail_unless(n2_rtd == 2, "Should have used n2 twice");
   fail_unless(n3_rtd == 0, "Shouldn't have used n3");
   fail_unless(n4_rtd == 0, "Shouldn't have used n4");
 
-  fail_unless(get_next_login_node(props2) == NULL, "Somehow found a node when none have the property");
+  fail_unless(get_next_login_node(&props2) == NULL, "Somehow found a node when none have the property");
   }
 END_TEST
 

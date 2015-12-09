@@ -12,7 +12,7 @@
 extern AvlTree          ipaddrs;
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
-                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -44,9 +44,6 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                                           //the node to be used until an updated node
                                           //list has been send to all nodes.
     }
-  
-  this->nd_f_st            = init_prop(this->nd_name.c_str());
-  this->nd_l_st            = this->nd_f_st;
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END empty constructor
@@ -57,8 +54,8 @@ pbsnode::pbsnode(
 
   const char *pname,
   u_long     *pul,
-  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_prop(NULL),
-                                     nd_status(NULL),
+  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_f_st(),
+                                     nd_prop(NULL), nd_status(NULL),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -98,8 +95,6 @@ pbsnode::pbsnode(
     }
 
   //this->nd_ntype           = ntype;
-  this->nd_f_st            = init_prop(this->nd_name.c_str());
-  this->nd_l_st            = this->nd_f_st;
 
   if (hierarchy_handler.isHiearchyLoaded())
     {
@@ -124,9 +119,6 @@ pbsnode::pbsnode(
 pbsnode::~pbsnode()
 
   {
-  if (this->nd_f_st != NULL)
-    free_prop_list(this->nd_f_st);
-
   free_arst_value(this->nd_acl);
   free_arst_value(this->nd_prop);
   free_arst_value(this->nd_status);
@@ -154,6 +146,7 @@ pbsnode &pbsnode::operator =(
   {
   this->nd_error = other.nd_error;
   this->nd_id = other.nd_id;
+  this->nd_f_st = other.nd_f_st;
   this->nd_properties = other.nd_properties;
   this->nd_prop = copy_arst(other.nd_prop);
   this->nd_status = copy_arst(other.nd_status);
@@ -404,21 +397,23 @@ int pbsnode::get_error() const
 
 bool pbsnode::hasprop(
 
-  struct prop *props) const
+  std::vector<prop> *props) const
 
   {
-  struct prop *need;
+  if (props == NULL)
+    return(true);
 
-  for (need = props; need != NULL; need = need->next)
+  for (unsigned int i = 0; i < props->size(); i++)
     {
-    if (need->mark == 0) /* not marked, skip */
+    prop &need = props->at(i);
+    if (need.mark == 0) /* not marked, skip */
       continue;
 
     bool found = false;
 
     for (unsigned int i = 0; i < this->nd_properties.size(); i++)
       {
-      if (!strcmp(this->nd_properties[i].c_str(), need->name))
+      if (this->nd_properties[i] == need.name)
         {
         found = true;
         break;
@@ -468,7 +463,7 @@ void pbsnode::change_name(
     }
 
   this->nd_name = name;
-  }
+  } // END change_name()
 
 
 

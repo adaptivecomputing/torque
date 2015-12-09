@@ -137,7 +137,6 @@ void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, 
  * node_ntype()
  * node_prop_list()
  *
- * free_prop_list()
  * free_prop_attr()  "function for at_free func pointer"
  *
  * local:
@@ -892,30 +891,6 @@ int decode_ntype(
 
   return rc;
   }
-
-
-/*
- * free_prop_list
- * For each element of a null terminated prop list call free
- * to clean up any string buffer that hangs from the element.
- * After this, call free to remove the struct prop.
- */
-
-void
-free_prop_list(struct prop *prop)
-  {
-
-  struct prop *pp;
-
-  while (prop)
-    {
-    pp = prop->next;
-    free(prop->name);
-    free(prop);
-    prop = pp;
-    }
-  }
-
 
 
 

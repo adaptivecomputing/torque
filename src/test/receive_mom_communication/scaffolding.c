@@ -329,16 +329,7 @@ struct prop *init_prop(
   char *pname) /* I */
 
   {
-  struct prop *pp;
-
-  if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
-    {
-    pp->name    = pname;
-    pp->mark    = 0;
-    pp->next    = 0;
-    }
-
-  return(pp);
+  return(new prop(pname));
   }  /* END init_prop() */
 
 

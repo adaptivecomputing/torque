@@ -47,7 +47,6 @@
 #include "utils.h"
 #include "u_tree.h"
 #include "node_manager.h" /* is_compose */
-#include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "req_manager.h" /* mgr_set_node_attr */
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "svrfunc.h" /* get_svr_attr_* */
@@ -63,6 +62,7 @@
 #include "threadpool.h"
 #include "timer.hpp"
 #include "mom_hierarchy_handler.h"
+#include "runjob_help.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -176,8 +176,8 @@ int addr_ok(
 
 struct pbsnode *find_node_in_allnodes(
 
-  all_nodes *an,
-  char      *nodename)
+  all_nodes  *an,
+  const char *nodename)
 
   {
   struct pbsnode *pnode = NULL;
@@ -1348,21 +1348,12 @@ void recompute_ntype_cnts(void)
  * pname points to the property string
  */
 
-struct prop *init_prop(
+prop *init_prop(
 
   const char *pname) /* I */
 
   {
-  struct prop *pp;
-
-  if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
-    {
-    pp->name    = strdup(pname);
-    pp->mark    = 0;
-    pp->next    = 0;
-    }
-
-  return(pp);
+  return new prop(pname);
   }  /* END init_prop() */
 
 

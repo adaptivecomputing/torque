@@ -126,8 +126,8 @@ int add_to_login_holder(
  */
 struct pbsnode *check_node(
 
-  login_node  *ln,
-  struct prop *needed)
+  login_node        *ln,
+  std::vector<prop> *needed)
 
   {
   struct pbsnode *pnode = ln->pnode;
@@ -152,7 +152,7 @@ struct pbsnode *check_node(
 
 struct pbsnode *find_fitting_node(
 
-  struct prop *needed)
+  std::vector<prop> *needed)
 
   {
   struct pbsnode  *pnode = NULL;
@@ -270,7 +270,7 @@ void update_next_node_index(
 
 struct pbsnode *get_next_login_node(
 
-  struct prop *needed)
+  std::vector<prop> *needed)
 
   {
   struct pbsnode *pnode = NULL;

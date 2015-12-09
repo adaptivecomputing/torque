@@ -204,12 +204,6 @@ void recompute_ntype_cnts(void)
   exit(1);
   }
 
-int hasprop(struct pbsnode *pnode, struct prop *props)
-  {
-  fprintf(stderr, "The call to hasprop to be mocked!!\n");
-  exit(1);
-  }
-
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int limit)
   {
   fprintf(stderr, "The call to attr_atomic_kill to be mocked!!\n");
@@ -440,7 +434,7 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
-bool pbsnode::hasprop(prop *p) const
+bool pbsnode::hasprop(std::vector<prop> *needed) const
   {
   return(true);
   }

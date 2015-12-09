@@ -130,7 +130,6 @@
 #include "pbs_nodes.h"
 #include "work_task.h"
 #include "mcom.h"
-#include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_dynamic_node */
 #include "node_manager.h" /* setup_notification */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
@@ -1717,7 +1716,7 @@ void mgr_node_set(
 
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
-  struct prop       props;
+  prop              props;
   long              dont_update_nodes = FALSE;
 
   get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
@@ -1748,9 +1747,8 @@ void mgr_node_set(
         {
         propnodes = 1;
         nodename = preq->rq_ind.rq_manager.rq_objname;
-        props.name = (char *)nodename + 1;
+        props.name = nodename + 1;
         props.mark = 1;
-        props.next = NULL;
         }
       else
         {
@@ -1789,11 +1787,13 @@ void mgr_node_set(
   
     reinitialize_node_iterator(&iter);
     pnode = NULL;
+    std::vector<prop> prop_list;
+    prop_list.push_back(props);
 
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       if ((propnodes == TRUE) && 
-          (!pnode->hasprop(&props)))
+          (!pnode->hasprop(&prop_list)))
         {
         continue;
         }

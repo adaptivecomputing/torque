@@ -1304,7 +1304,7 @@ int req_stat_node(
 
   struct pbsnode       *pnode = NULL;
   struct batch_reply   *preply;
-  struct prop props;
+  prop                  props;
   svrattrl             *pal;
 
   /*
@@ -1347,7 +1347,6 @@ int req_stat_node(
       type = 2;
       props.name = name + 1;
       props.mark = 1;
-      props.next = NULL;
       }
     }
 
@@ -1380,11 +1379,14 @@ int req_stat_node(
     {
     /* get status of all or several nodes */
     all_nodes_iterator *iter = NULL;
+    std::vector<prop>   plist;
+
+    plist.push_back(props);
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
       if ((type == 2) && 
-          (!pnode->hasprop(&props)))
+          (!pnode->hasprop(&plist)))
         {
         pnode->unlock_node(__func__, "type != 0, next_host", LOGLEVEL);
         continue;

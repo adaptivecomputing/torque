@@ -102,6 +102,7 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#include "runjob_help.hpp"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -158,58 +159,6 @@ enum gpstatit
   gpu_exclusive,
   gpu_unavailable
   };
-
-struct prop
-  {
-  char *name;
-  short mark;
-
-  struct prop *next;
-  };
-
-typedef struct alps_req_data
-  {
-  std::string *node_list;
-  int          ppn;
-  } alps_req_data;
-
-typedef struct single_spec_data
-  {
-  int          nodes;   /* nodes needed for this req */
-  int          ppn;     /* ppn for this req */
-  int          gpu;     /* gpus for this req */
-  int          mic;   /* mics for this req */
-  int          req_id;  /* the id of this alps req - used only for cray */
-  struct prop *prop;    /* node properties needed */
-  } single_spec_data;
-
-typedef struct complete_spec_data
-  {
-  single_spec_data  *reqs;        /* array of data for each req */
-  int                num_reqs;    /* number of reqs (number of '+' in spec + 1) */
-  int                total_nodes; /* number of nodes for all reqs in a spec */
-  /* pointer to start of req in spec, only valid until call of parse_req_data() */
-  char             **req_start;   
-  } complete_spec_data;
-
-
-
-class node_job_add_info
-  {
-  public:
-  int                       node_id;
-  int                       ppn_needed;
-  int                       gpu_needed;
-  int                       mic_needed;
-  int                       is_external;
-  int                       req_rank;
-
-  node_job_add_info() : node_id(-1), ppn_needed(0), gpu_needed(0),
-                        mic_needed(0), is_external(0), req_rank(0) {}
-
-  };
-
-
 
 class gpusubn
   {
@@ -273,7 +222,7 @@ public:
   pthread_mutex_t               nd_mutex;            // mutex for accessing this node 
   int                           nd_id;               /* node's id */
 
-  struct prop                  *nd_f_st;             /* first and last status */
+  std::vector<prop>             nd_f_st;
   struct prop                  *nd_l_st;
  
 
@@ -359,7 +308,7 @@ public:
   // CONST methods
   int         get_error() const;
   const char *get_name() const;
-  bool        hasprop(struct prop *props) const;
+  bool        hasprop(std::vector<prop> *props) const;
   void        write_compute_node_properties(FILE *nin) const;
   int         copy_properties(pbsnode *dest) const;
 
@@ -595,7 +544,7 @@ class node_check_info
   {
 public:
   std::vector<std::string>  properties;
-  struct prop *first_status;
+  prop                     *first_status;
   short        state;
   short        ntype;
   int          nprops;
@@ -630,7 +579,7 @@ extern int update_nodes_file(struct pbsnode *);
 struct pbsnode  *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_nodebyid(int);
-struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
+struct pbsnode  *find_node_in_allnodes(all_nodes *an, const char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);

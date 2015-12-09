@@ -136,7 +136,7 @@ struct pbsnode *find_nodebyid(int id)
     return(NULL);
   }
 
-struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
+struct pbsnode *find_node_in_allnodes(all_nodes *an, const char *nodename)
   {
   static struct pbsnode cray;
 
@@ -455,7 +455,7 @@ int process_alps_status(
 
 struct pbsnode *get_next_login_node(
 
-  struct prop *needed)
+  std::vector<prop> *need)
 
   {
   return(NULL);
@@ -824,21 +824,24 @@ int pbsnode::get_error() const
 
 bool pbsnode::hasprop(
 
-  struct prop *props) const
+  std::vector<prop> *plist) const
 
   {
-  struct prop *need;
+  if (plist == NULL)
+    return(true);
 
-  for (need = props; need != NULL; need = need->next)
+  for (unsigned int i = 0; i < plist->size(); i++)
     {
-    if (need->mark == 0) /* not marked, skip */
+    prop &need = plist->at(i);
+
+    if (need.mark == 0) /* not marked, skip */
       continue;
 
     bool found = false;
 
     for (unsigned int i = 0; i < this->nd_properties.size(); i++)
       {
-      if (!strcmp(this->nd_properties[i].c_str(), need->name))
+      if (this->nd_properties[i] == need.name)
         {
         found = true;
         break;
