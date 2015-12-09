@@ -4568,18 +4568,19 @@ static const char *physmem(
     }
 
   mem_total = 0;
-
+  int test_file = 0;
 #ifdef NUMA_SUPPORT
 
   for (i = 0; i < node_boards[numa_index].num_nodes; i++)
 #endif /* NUMA_SUPPORT */
     {
 #ifdef NUMA_SUPPORT
-    if (!(fp = fopen(node_boards[numa_index].path_meminfo[i],"r")))
+    test_file = !(fp = fopen(node_boards[numa_index].path_meminfo[i],"r"));
 #else
-    if (!(fp = fopen(path_meminfo, "r")))
+    test_file = !(fp = fopen(path_meminfo, "r"));
 #endif
-      {
+      if (test_file) 
+	  {
       rm_errno = RM_ERR_SYSTEM;
 
       return(NULL);
