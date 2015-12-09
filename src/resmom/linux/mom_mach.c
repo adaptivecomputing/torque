@@ -4579,7 +4579,7 @@ static const char *physmem(
 #else
     test_file = !(fp = fopen(path_meminfo, "r"));
 #endif
-      if (test_file) 
+    if (test_file) 
 	  {
       rm_errno = RM_ERR_SYSTEM;
 
