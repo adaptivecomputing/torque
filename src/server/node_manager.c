@@ -2796,9 +2796,9 @@ void record_fitting_node(
     {
     if ((job_type == JOB_TYPE_heterogeneous) &&
         (node_is_external(pnode) == TRUE))
-      save_node_for_adding(naji_list, pnode, req, first_node_id, TRUE, i+1);
+      save_node_for_adding(naji_list, pnode, req, first_node_id, TRUE, i);
     else
-      save_node_for_adding(naji_list, pnode, req, first_node_id, FALSE, i+1);
+      save_node_for_adding(naji_list, pnode, req, first_node_id, FALSE, i);
 
     if ((num_alps_reqs > 0) &&
         (ard_array != NULL) &&
