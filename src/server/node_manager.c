@@ -2379,6 +2379,8 @@ int save_node_for_adding(
   naji.gpu_needed = req->gpu;
   naji.mic_needed = req->mic;
   naji.is_external = is_external_node;
+  naji.req_index = req->req_index;
+  naji.node_name = req->prop->name;
 
   if ((first_node_id == pnode_id) ||
       (first_node_id == -1))
@@ -3086,6 +3088,7 @@ int node_spec(
   char                *cp;
   char                *hold;
   int                  i;
+  int                  req_index;
   int                  num;
   int                  rc;
   int                  eligible_nodes = 0;
@@ -3197,7 +3200,9 @@ int node_spec(
   /* set up pointers for reqs */
   plus = spec;
   i = 0;
+  req_index = 0;
   all_reqs.req_start[i] = spec;
+  all_reqs.reqs[i].req_index = req_index;
   i++;
 
   while (*plus != '\0')
@@ -3209,7 +3214,11 @@ int node_spec(
     if ((*plus == '|') ||
         (*plus == '+'))
       {
+      if (*plus == '|')
+        req_index++;
+
       all_reqs.reqs[i].req_id = num_alps_reqs;
+      all_reqs.reqs[i].req_index = req_index;
       
       *plus = '\0';
       plus++;
@@ -4194,7 +4203,7 @@ int place_subnodes_in_hostlist(
     if (pnode->nd_layout == NULL)
       return(-1);
 
-    update_req_hostlist(pjob, pnode->nd_name, naji.req_rank, naji.ppn_needed);
+    update_req_hostlist(pjob, pnode->nd_name, naji.req_index, naji.ppn_needed);
 
     rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name);
     if (rc != PBSE_NONE)
@@ -4498,7 +4507,7 @@ int build_hostlist_nodes_req(
 
   for (it = naji_list->begin(); it != naji_list->end(); it++)
     {
-    if ((pnode = find_nodebyid(it->node_id)) != NULL)
+    if ((pnode = find_nodebyname(it->node_name.c_str())) != NULL)
       {
       if (failure == true)
         {

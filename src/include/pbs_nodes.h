@@ -185,6 +185,7 @@ typedef struct single_spec_data
   int          gpu;     /* gpus for this req */
   int          mic;   /* mics for this req */
   int          req_id;  /* the id of this alps req - used only for cray */
+  int          req_index; /* index into complete_req req vector */
   struct prop *prop;    /* node properties needed */
   } single_spec_data;
 
@@ -208,6 +209,8 @@ class node_job_add_info
   int                       mic_needed;
   int                       is_external;
   int                       req_rank;
+  int                       req_index; /* indicates which req class index for when cgroups are enabled */
+  std::string               node_name;
 
   node_job_add_info() : node_id(-1), ppn_needed(0), gpu_needed(0),
                         mic_needed(0), is_external(0), req_rank(0) {}
