@@ -2380,7 +2380,9 @@ int save_node_for_adding(
   naji.mic_needed = req->mic;
   naji.is_external = is_external_node;
   naji.req_index = req->req_index;
-  naji.node_name = req->prop->name;
+  /* if there is no prop then no host name was given on the run command */
+  if (req->prop != NULL)
+    naji.node_name = req->prop->name;
 
   if ((first_node_id == pnode_id) ||
       (first_node_id == -1))
@@ -4507,7 +4509,12 @@ int build_hostlist_nodes_req(
 
   for (it = naji_list->begin(); it != naji_list->end(); it++)
     {
-    if ((pnode = find_nodebyname(it->node_name.c_str())) != NULL)
+    /* if it->name_name.size() is not 0 then a name was given in the run command */
+    if (it->node_name.size() != 0)
+      pnode = find_nodebyname(it->node_name.c_str());
+    else
+      pnode = find_nodebyid(it->node_id); /* no names for hosts given in the run command */
+    if (pnode != NULL)
       {
       if (failure == true)
         {
