@@ -1294,6 +1294,28 @@ if test "${build_mom}" = "yes" ; then
 fi
 
 
+dnl 
+dnl Add the ability to link against the pmix library
+dnl 
+dnl --enable-pmix
+AC_ARG_ENABLE(pmix, [
+  --enable-pmix links pbs_mom against libpmix])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build with pmix support])
+    if test "${enable_pmix}" = "yes"; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([pmix], [PMIx_Finalize], ,
+        [AC_MSG_ERROR([--enable-pmix requires libpmix to be installed]) ])
+      AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      MOMLIBS="$MOMLIBS -lpmix"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+
+
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
 dnl 
