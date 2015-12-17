@@ -455,15 +455,26 @@ END_TEST
 
 START_TEST(end_of_job_accounting_test)
   {
+  extern bool called_account_jobend;
   char *str = strdup("bob tom");
   std::string acct_data(str);
   job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   size_t accttail = acct_data.length();
+
+  // Make sure we aren't doing end of job accounting on jobs that are being deleted 
+  // and never started
+  called_account_jobend = false;
+  pjob->ji_being_deleted = true;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  pjob->ji_being_deleted = false;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 0;
+  fail_unless(called_account_jobend == true);
   }
 END_TEST
 

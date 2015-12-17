@@ -60,6 +60,7 @@ int usage;
 bool purged = false;
 bool completed = false;
 bool exited = false;
+bool called_account_jobend = false;
 long disable_requeue = 0;
 completed_jobs_map_class completed_jobs_map;
 
@@ -337,7 +338,10 @@ void log_err(int error, const char *func_id, const char *msg) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void account_jobend(job *pjob, std::string &data) {}
+void account_jobend(job *pjob, std::string &data) 
+  {
+  called_account_jobend = true;
+  }
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}
 
