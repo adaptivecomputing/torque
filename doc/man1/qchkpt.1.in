@@ -37,6 +37,11 @@ operands of the form:
 See the description under "Job Identifier" in section \*(Ji in this ERS.
 .Ig
 .LP
+.SH EXAMPLES
+.IP
+.Ty  $ # request a checkpoint for job 3233
+.IP
+.Ty  $ qchkpt 3233
 .SH STANDARD ERROR
 The qchkpt command will write a diagnostic message to standard error for each
 error occurrence.
