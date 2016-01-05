@@ -513,5 +513,9 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
-job::job() {}
+job::job()
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
 job::~job() {}
