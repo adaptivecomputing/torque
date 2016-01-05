@@ -447,3 +447,5 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
+job::job() {}
+job::~job() {}

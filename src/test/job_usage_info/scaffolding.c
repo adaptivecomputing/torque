@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "execution_slot_tracker.hpp"
+int    LOGLEVEL = 10;
 
 execution_slot_tracker::execution_slot_tracker() {}
 

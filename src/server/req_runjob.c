@@ -211,7 +211,7 @@ int check_and_run_job_work(
 
   /* if the job is part of an array, check the slot limit */
   if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == FALSE))
+      (pjob->ji_is_array_template == false))
     {
     job_array *pa = get_jobs_array(&pjob);
 
@@ -277,9 +277,9 @@ int check_and_run_job_work(
     free_nodes(pjob);
 
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
-    if (pjob->ji_rejectdest->size() > 0)
+    if (pjob->ji_rejectdest.size() > 0)
       {
-      req_reject(rc, 0, preq, pjob->ji_rejectdest->at(0).c_str(), "could not contact host");
+      req_reject(rc, 0, preq, pjob->ji_rejectdest[0].c_str(), "could not contact host");
       }
     else
       {
@@ -914,7 +914,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot lookup master compute host */
       return(PBSE_RESCUNAV);
@@ -939,7 +939,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot create socket for master compute host */
       return(PBSE_RESCUNAV);
@@ -967,7 +967,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot connect to master compute host */
       return(PBSE_RESCUNAV);

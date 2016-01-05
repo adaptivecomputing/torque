@@ -22,6 +22,7 @@ extern attribute_def job_attr_def[];
 extern void free_server_attrs(tlist_head *att_head);
 extern completed_jobs_map_class completed_jobs_map;
 int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, size_t buflen, const char *aname);
+void init_resc_defs();
 
 char  server_name[] = "lei.ac";
 
@@ -40,7 +41,7 @@ void init()
 START_TEST(test_decode_attribute)
   {
   char      buf[1024];
-  job      *pjob = (job *)calloc(1, sizeof(job));
+  job      *pjob = new job();
   svrattrl *pal = fill_svrattr_info("Hold_Types", "1", "", buf, sizeof(buf));
   pal->al_flags = ATR_VFLAG_SET;
 
@@ -53,7 +54,7 @@ END_TEST
 
 START_TEST(test_set_array_jobs_ids)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   char  buf[1024];
 
   init();
@@ -65,7 +66,7 @@ START_TEST(test_set_array_jobs_ids)
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(pjob->ji_is_array_template == TRUE);
@@ -325,9 +326,11 @@ START_TEST(fill_resource_list_test)
   {
   const char *rl_sample = "<Resource_List>\n  <neednodes flags=\"1\">2</neednodes>\n  <nodect flags=\"1\">2</nodect>\n  <nodes flags=\"1\">2</nodes>\n  </Resource_List>";
   xmlDocPtr   doc = xmlReadMemory(rl_sample, strlen(rl_sample), "Resource List", NULL, 0);
-  job        *pjob = (job *)calloc(1, sizeof(job));
+  job        *pjob = new job();
   char        buf[1024];
   svr_resc_def = svr_resc_def_const;
+  init();
+  init_resc_defs();
 
   fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0);
   

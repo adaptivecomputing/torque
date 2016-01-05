@@ -1618,7 +1618,7 @@ int handle_complete_subjob(
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   lock_ji_mutex(parent_job, __func__, NULL, LOGLEVEL);
 
-  if (parent_job->ji_being_recycled == FALSE)
+  if (parent_job->ji_being_recycled == false)
     {
     if (parent_job->ji_cray_clone == pjob)
       other_subjob = parent_job->ji_external_clone;
@@ -1627,7 +1627,7 @@ int handle_complete_subjob(
 
     lock_ji_mutex(other_subjob, __func__, NULL, LOGLEVEL);
     
-    if ((other_subjob->ji_being_recycled == TRUE) ||
+    if ((other_subjob->ji_being_recycled == true) ||
         (other_subjob->ji_qs.ji_state == JOB_STATE_COMPLETE))
       complete_parent = TRUE;
 
@@ -3043,7 +3043,7 @@ int handle_terminating_array_subjob(
 
   /* decrease array running job count */
   if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == FALSE))
+      (pjob->ji_is_array_template == false))
     {
     pa = get_jobs_array(&pjob);
 
@@ -3090,7 +3090,7 @@ int handle_rerunning_array_subjob(
 
   // Adjust the array counts
   if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == FALSE))
+      (pjob->ji_is_array_template == false))
     {
     pa = get_jobs_array(&pjob);
     

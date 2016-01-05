@@ -545,7 +545,7 @@ jump:
     }
 
   if ((svr_chk_owner(preq, pjob) != 0) &&
-      (pjob->ji_has_delete_nanny == FALSE))
+      (pjob->ji_has_delete_nanny == false))
     {
     /* only send email if owner did not delete job and job deleted
        has not been previously attempted */
@@ -587,7 +587,7 @@ jump:
      * comments at job_delete_nanny()).
      */
 
-    if (pjob->ji_has_delete_nanny == TRUE)
+    if (pjob->ji_has_delete_nanny == true)
       {
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "job cancel in progress");
 
@@ -644,7 +644,7 @@ jump:
       ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
     {
     if ((pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == FALSE))
+        (pjob->ji_is_array_template == false))
       {
       int        i;
       int        newstate;
@@ -1591,7 +1591,7 @@ int apply_job_delete_nanny(
   /* short-circuit if nanny isn't enabled or we have a delete nanny */
   get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
   if ((nanny == FALSE) ||
-      (pjob->ji_has_delete_nanny == TRUE))
+      (pjob->ji_has_delete_nanny == true))
     {
     return(PBSE_NONE);
     }
@@ -1611,7 +1611,7 @@ int apply_job_delete_nanny(
     return(-1);
     }
 
-  pjob->ji_has_delete_nanny = TRUE;
+  pjob->ji_has_delete_nanny = true;
 
   /* add a nanny task at the requested time */
   set_task(tasktype, delay, job_delete_nanny, strdup(pjob->ji_qs.ji_jobid), FALSE);

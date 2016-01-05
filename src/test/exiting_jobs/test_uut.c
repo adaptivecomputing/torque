@@ -13,7 +13,6 @@ START_TEST(record_job_as_exiting_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_jobid, "1.tom");
 
   fail_unless(record_job_as_exiting(&pjob) == 0, "Couldn't record job as exiting");
@@ -27,8 +26,6 @@ START_TEST(remove_job_from_exiting_list_test)
   {
   job pjob;
   job *pJob = &pjob;
-
-  memset(&pjob, 0, sizeof(pjob));
 
   strcpy(pjob.ji_qs.ji_jobid, "2.napali");
   fail_unless(remove_job_from_exiting_list(&pJob) == 0, "Couldn't remove job from exiting list");

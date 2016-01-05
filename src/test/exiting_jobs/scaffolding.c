@@ -87,3 +87,6 @@ const char *id_map::get_name(int id)
   }
 
 id_map job_mapper;
+
+job::job() {}
+job::~job() {}

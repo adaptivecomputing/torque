@@ -164,3 +164,6 @@ job *next_job(
   pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   return(pjob);
   }
+
+job::job() {}
+job::~job() {}

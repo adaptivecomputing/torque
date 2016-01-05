@@ -49,7 +49,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c \
          receive_mom_communication.c process_mom_update.c execution_slot_tracker.cpp \
          job_usage_info.cpp incoming_request.c delete_all_tracker.cpp id_map.cpp \
          node_power_state.c req_modify_node.c mom_hierarchy_handler.cpp \
-         completed_jobs_map.cpp pbsnode.cpp restricted_host.cpp acl_special.cpp
+         completed_jobs_map.cpp pbsnode.cpp restricted_host.cpp acl_special.cpp job.cpp
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

@@ -392,3 +392,6 @@ int pbsnode::unlock_node(const char *msg, const char *id, int level)
 
 void complete_req::set_hostlists(const char *jobid, const char *list) {}
 
+job::job() {}
+job::~job() {}
+

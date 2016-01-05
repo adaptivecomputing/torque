@@ -724,7 +724,7 @@ int decode_attributes_into_job(
       {
       if (strcmp(psatl->al_atopl.resource, "nodes") == 0)
         {
-        pj->ji_have_nodes_request = 1;
+        pj->ji_have_nodes_request = true;
         }
       else if (!passCpu)
         {
@@ -1475,7 +1475,7 @@ int req_quejob(
     char  *oldid;
     char  *hostname;
     
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
     
     /* rewrite jobid to include empty brackets
        this causes arrays to show up as id[].host in qstat output, and 
@@ -1960,7 +1960,7 @@ int req_rdytocommit(
    */
   if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
 
     // get adjusted path_jobs path
     adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
@@ -2154,7 +2154,7 @@ int req_commit(
     {
     std::string adjusted_path_jobs;
 
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
     
     // get adjusted path_jobs path
     adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);

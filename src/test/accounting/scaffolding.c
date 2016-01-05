@@ -107,3 +107,16 @@ void translate_range_string_to_vector(
 
   free(str);
   } /* END translate_range_string_to_vector() */
+
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+job::job() {}
+job::~job() {}

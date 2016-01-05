@@ -608,23 +608,19 @@ struct jobfix
  * @see job_free() - free job structure
  */
 
-struct job
+#ifdef PBS_MOM
+typedef struct job
   {
   /* Note: these members, up to ji_qs, are not saved to disk
             (except for ji_stdout, ji_stderr) */
 
-#ifndef PBS_MOM
-  list_link       ji_jobque_array_sum;
-#else
   list_link       ji_jobque;  /* used for polling in mom */
-#endif
   /* MOM: links to polled jobs */
   time_t  ji_momstat; /* SVR: time of last status from MOM */
   /* MOM: time job suspend (Cray) */
   int  ji_modified; /* struct changed, needs to be saved */
   int  ji_momhandle; /* open connection handle to MOM */
   int  ji_radix;    /* number of nodes in a job radix. used for qsub -W job_radix option  */
-#ifdef PBS_MOM    /* MOM ONLY */
 
   list_link       ji_alljobs; /* link to next job in server job list */
   struct grpcache *ji_grpcache; /* cache of user's groups */
@@ -676,32 +672,6 @@ struct job
                                         and tasks from start_process. */
   std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
 
-#else     /* END MOM ONLY */
-
-  int               ji_has_delete_nanny;
-  struct pbs_queue *ji_qhdr; /* current queue header */
-  int               ji_lastdest; /* last destin tried by route */
-  int               ji_retryok; /* ok to retry, some reject was temp */
-  std::vector<std::string> *ji_rejectdest; /* list of rejected destinations */
-  char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
-  int               ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
-  int               ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
-
-  /* these three are only used for heterogeneous jobs */
-  struct job       *ji_external_clone; /* the sub-job on the external (to the cray) nodes */
-  struct job       *ji_cray_clone;     /* the sub-job on the cray nodes */
-  struct job       *ji_parent_job;     /* parent job (only populated on the sub-jobs */
-
-  int               ji_internal_id;
-  pthread_mutex_t  *ji_mutex;
-  char              ji_being_recycled;
-  time_t            ji_last_reported_time;
-  time_t            ji_mod_time;       // the timestamp of when the state last changed
-  // This is used as a bitmap to ensure that a job is only counted once as a queued job for 
-  // the queue count and the server count
-  unsigned          ji_queue_counted;
-  bool              ji_being_deleted;
-#endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
   /*
@@ -730,7 +700,76 @@ struct job
 
   int  maxAdoptedTaskId;  /* DJH 27 Feb 2002. Keep track of the task ids
                              the local mom allocates to adopted tasks; */
+  } job;
+
+#else
+// for the server
+class job
+  {
+  public:
+
+  /* MOM: links to polled jobs */
+  time_t  ji_momstat; /* SVR: time of last status from MOM */
+  /* MOM: time job suspend (Cray) */
+  int  ji_modified; /* struct changed, needs to be saved */
+  int  ji_momhandle; /* open connection handle to MOM */
+  int  ji_radix;    /* number of nodes in a job radix. used for qsub -W job_radix option  */
+
+  bool              ji_has_delete_nanny;
+  struct pbs_queue *ji_qhdr; /* current queue header */
+  int               ji_lastdest; /* last destin tried by route */
+  int               ji_retryok; /* ok to retry, some reject was temp */
+  std::vector<std::string>  ji_rejectdest; /* list of rejected destinations */
+  char              ji_arraystructid[PBS_MAXSVRJOBID + 1]; /* id of job array for this job */
+  bool              ji_is_array_template;    /* set to TRUE if this is a "template job" for a job array*/
+  bool              ji_have_nodes_request; /* set to TRUE if node spec uses keyword nodes */
+
+  /* these three are only used for heterogeneous jobs */
+  job       *ji_external_clone; /* the sub-job on the external (to the cray) nodes */
+  job       *ji_cray_clone;     /* the sub-job on the cray nodes */
+  job       *ji_parent_job;     /* parent job (only populated on the sub-jobs */
+
+  int               ji_internal_id;
+  pthread_mutex_t  *ji_mutex;
+  bool              ji_being_recycled;
+  time_t            ji_last_reported_time;
+  time_t            ji_mod_time;       // the timestamp of when the state last changed
+  // This is used as a bitmap to ensure that a job is only counted once as a queued job for 
+  // the queue count and the server count
+  unsigned          ji_queue_counted;
+  bool              ji_being_deleted;
+  int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
+
+  /*
+   * fixed size internal data - maintained via "quick save"
+   * some of the items are copies of attributes, if so this
+   * internal version takes precendent
+   * 
+   * NOTE: IF YOU MAKE ANY CHANGES TO THIS STRUCT THEN YOU ARE INTRODUCING 
+   * AN INCOMPATIBILITY WITH .JB FILES FROM PREVIOUS VERSIONS OF TORQUE.
+   * YOU SHOULD INCREMENT THE VERSION OF THE STRUCT AND PROVIDE APPROPRIATE 
+   * SUPPORT IN joq_qs_upgrade() FOR UPGRADING PREVIOUS VERSIONS OF THIS 
+   * STRUCT TO THE CURRENT VERSION.  ALSO NOTE THAT ANY CHANGES TO CONSTANTS
+   * THAT DEFINE THE SIZE OF ANY ARRAYS IN THIS STRUCT ALSO INTRODUCE AN 
+   * INCOMPATIBILITY WITH .JB FILES FROM PREVIOUS VERSIONS AND REQUIRE A NEW
+   * STRUCT VERSION AND UPGRADE SUPPORT.
+   */
+
+  struct jobfix   ji_qs;
+
+  /*
+   * The following array holds the decode format of the attributes.
+   * Its presence is for rapid acces to the attributes.
+   */
+
+  pbs_attribute ji_wattr[JOB_ATR_LAST]; /* decoded attributes  */
+
+  job();
+  ~job();
+  void free_job_allocation();
+  void job_init_wattr();
   };
+#endif
 
 typedef struct job job;
 
@@ -1156,6 +1195,9 @@ extern int   svr_setjobstate(job *, int, int, int);
 int          split_job(job *);
 
 bool   have_reservation(job *, struct pbs_queue *);
+
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);
 extern int   net_move(job *, struct batch_request *);

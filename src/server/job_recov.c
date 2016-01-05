@@ -1213,7 +1213,7 @@ int job_save(
 #ifdef PBS_MOM
   tmp_ptr = JOB_FILE_SUFFIX;
 #else
-  if (pjob->ji_is_array_template == TRUE)
+  if (pjob->ji_is_array_template == true)
     tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
   else
     tmp_ptr = (char *)JOB_FILE_SUFFIX;
@@ -1308,7 +1308,7 @@ int set_array_job_ids(
     if (open_bracket != NULL)
       {
       if (*(open_bracket + 1) == ']')
-        pj->ji_is_array_template = TRUE;
+        pj->ji_is_array_template = true;
       }
 
     return(rc);
@@ -1333,7 +1333,7 @@ int set_array_job_ids(
 
     if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
       {
-      pj->ji_is_array_template = TRUE;
+      pj->ji_is_array_template = true;
       }
     else
       {

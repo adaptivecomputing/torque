@@ -452,3 +452,12 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   {
   return(0);
   }
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(this->ji_mutex, NULL);
+  }
+
+job::~job() {}

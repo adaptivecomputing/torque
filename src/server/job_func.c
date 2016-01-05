@@ -90,9 +90,6 @@
  *   job_clone    clones a job (for use with job_arrays)
  *   job_clone_wt work task for cloning a job
  *
- * Include private function:
- *   job_init_wattr() initialize job working pbs_attribute array to "unspecified"
- *
  * NOTE: for multi-threaded TORQUE, all functions in here except svr_find_job assume that
  * the caller holds any relevant mutexes
  */
@@ -177,7 +174,6 @@ void handle_complete_second_time(struct work_task *ptask);
 
 /* Local Private Functions */
 
-static void job_init_wattr(job *);
 void free_all_of_job(job *pjob);
 
 /* Global Data items */
@@ -580,7 +576,7 @@ int job_abt(
         /* update internal array bookeeping values */
         if ((pjob != NULL) &&
             (pjob->ji_arraystructid[0] != '\0') &&
-            (pjob->ji_is_array_template == FALSE))
+            (pjob->ji_is_array_template == false))
           {
           job_array *pa = get_jobs_array(&pjob);
           
@@ -641,7 +637,7 @@ int job_abt(
     /* update internal array bookeeping values */
     if ((pjob != NULL) &&
         (pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == FALSE))
+        (pjob->ji_is_array_template == false))
       {
       job_array *pa = get_jobs_array(&pjob);
 
@@ -762,71 +758,17 @@ int conn_qsub(
 job *job_alloc(void)
 
   {
-  job *pj = (job *)calloc(1, sizeof(job));
-  
-  if (pj == NULL)
-    {
-    log_err(errno, __func__, "no memory");
-    
-    return(NULL);
-    }
-
-  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pj->ji_mutex,NULL);
-  lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-
-  pj->ji_qs.qs_version = PBS_QS_VERSION;
-
-  pj->ji_rejectdest = new std::vector<std::string>();
-  pj->ji_is_array_template = FALSE;
-
-  pj->ji_momhandle = -1;  /* mark mom connection invalid */
-
-  /* set the working attributes to "unspecified" */
-  job_init_wattr(pj);
-  
-  return(pj);
+  return(new job());
   }  /* END job_alloc() */
 
 
 
-void free_job_allocation(
-
+void free_all_of_job(
+    
   job *pjob)
 
   {
-  if (pjob->ji_cray_clone != NULL)
-    {
-    lock_ji_mutex(pjob->ji_cray_clone, __func__, NULL, LOGLEVEL);
-    free_all_of_job(pjob->ji_cray_clone);
-    }
-
-  if (pjob->ji_external_clone != NULL)
-    {
-    lock_ji_mutex(pjob->ji_external_clone, __func__, NULL, LOGLEVEL);
-    free_all_of_job(pjob->ji_external_clone);
-    }
-
-  /* remove any calloc working pbs_attribute space */
-  for (int i = 0;i < JOB_ATR_LAST;i++)
-    job_attr_def[i].at_free(&pjob->ji_wattr[i]);
-
-  /* free any bad destination structs */
-  if (pjob->ji_rejectdest != NULL)
-    {
-    delete pjob->ji_rejectdest;
-    pjob->ji_rejectdest = NULL;
-    }
-  } /* END free_job_allocation() */
-
-
-
-void free_all_of_job(job *pjob)
-  {
-  free_job_allocation(pjob);
-  pthread_mutex_destroy(pjob->ji_mutex);
-  free(pjob->ji_mutex);
-  free(pjob);
+  delete pjob;
   } /* END free_all_of_job() */
 
 
@@ -894,14 +836,12 @@ job *copy_job(
     return(NULL);
     }
 
-  if ((pnewjob = job_alloc()) == NULL)
+  if ((pnewjob = new job()) == NULL)
     {
     log_err(errno, __func__, "no memory");
 
     return(NULL);
     }
-
-  job_init_wattr(pnewjob);
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
@@ -978,14 +918,12 @@ job *job_clone(
     return(NULL);
     }
 
-  if ((pnewjob = job_alloc()) == NULL)
+  if ((pnewjob = new job()) == NULL)
     {
     log_err(errno, __func__, "no memory");
 
     return(NULL);
     }
-
-  job_init_wattr(pnewjob);
 
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
@@ -1463,29 +1401,6 @@ void *job_clone_wt(
   sem_wait(job_clone_semaphore);
   return(NULL);
   }  /* END job_clone_wt */
-
-
-
-
-/*
- * job_init_wattr - initialize job working pbs_attribute array
- * set the types and the "unspecified value" flag
- */
-
-static void job_init_wattr(
-
-  job *pj)
-
-  {
-  int i;
-
-  for (i = 0;i < JOB_ATR_LAST;i++)
-    {
-    clear_attr(&pj->ji_wattr[i], &job_attr_def[i]);
-    }
-
-  return;
-  }   /* END job_init_wattr() */
 
 
 
@@ -2014,7 +1929,7 @@ int svr_job_purge(
       /* job_free will unlock the mutex for us.
        * If rc == PBSE_JOB_NOT_IN_QUEUE, it is because another thread is simultaneously
        * deleting this job. We'll quit for them. */
-      if ((pjob->ji_being_recycled == FALSE) &&
+      if ((pjob->ji_being_recycled == false) &&
           (rc != PBSE_JOB_NOT_IN_QUEUE))
         {
         job_free(pjob, TRUE);
@@ -2459,6 +2374,7 @@ int split_job(
   } /* END split_job() */
 
 
+
 bool job_id_exists(
 
   const  std::string &job_id_string,
@@ -2486,7 +2402,8 @@ bool job_id_exists(
 
   return(rc);
   }
-  
+
+
 
 /* END job_func.c */
 

@@ -46,7 +46,7 @@ extern int decode_resc_count;
 void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
 START_TEST(test_save_cpus_and_memory_cpusets)
   {
-  job         *pjob = (job *)calloc(1, sizeof(job));
+  job         *pjob = new job();
   std::string  cpus("0-3");
   std::string  mems("0");
 
@@ -70,7 +70,7 @@ END_TEST
 START_TEST(test_add_remove_mic_jobs)
   {
   struct pbsnode      pnode;
-  job                *pjobs = (job *)calloc(3, sizeof(job));
+  job                *pjobs = new job();
   
   pnode.nd_nmics = 5;
   pnode.nd_nmics_free = 5;
@@ -161,7 +161,7 @@ START_TEST(test_initialize_alps_req_data)
   fail_unless(!strcmp(ard[2].node_list.c_str(), "lihue"));
   fail_unless(ard[2].ppn == 12);
 
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
   fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
   fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
@@ -617,8 +617,6 @@ START_TEST(record_external_node_test)
   struct pbsnode pnode3;
   char           buf[4096];
 
-  memset(&pjob, 0, sizeof(pjob));
-
   pnode1.change_name("tom");
   pnode2.change_name("bob");
   pnode3.change_name("jim");
@@ -644,7 +642,6 @@ END_TEST
 START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   {
   job pjob;
-  memset(&pjob, 0, sizeof(job));
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
 
   struct pbsnode *pnode = new pbsnode();

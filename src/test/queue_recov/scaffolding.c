@@ -4,9 +4,10 @@
 #include <pthread.h> /* pthread_mutex_t */
 #include <unistd.h>
 
-
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "queue.h" /* pbs_queue */
+
+int LOGLEVEL = 10;
 
 pthread_mutex_t *setup_save_mutex = NULL;
 char *path_queues;

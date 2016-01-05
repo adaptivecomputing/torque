@@ -58,8 +58,6 @@ START_TEST(fix_cray_exec_hosts_test)
   char *exec3 = (char *)"napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
   job   pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(exec1);
   pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str = strdup(externals);
 
@@ -98,8 +96,6 @@ START_TEST(fix_external_exec_hosts_test)
   char *exec2 = (char *)"napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3+two/0+two/1";
   char *exec3 = (char *)"napali/0+napali/1+napali/2+napali/3+three/0+three/1+a1/0+a1/1+a1/2+a1/3";
   job   pjob;
-
-  memset(&pjob, 0, sizeof(pjob));
 
   fail_unless(fix_external_exec_hosts(&pjob) == PBSE_BAD_PARAMETER, "error codes not correctly checked");
 
@@ -150,8 +146,6 @@ START_TEST(split_job_test)
   char *externals = (char *)"one+two+three";
   char *exec1 = (char *)"one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
 
-  memset(&pjob, 0, sizeof(pjob));
-
   strcpy(pjob.ji_qs.ji_jobid, "12.napali");
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(exec1);
   pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
@@ -196,7 +190,6 @@ START_TEST(handle_aborted_job_test)
   job pjob;
   job *job_ptr = &pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
   long KeepSeconds = 50;
 

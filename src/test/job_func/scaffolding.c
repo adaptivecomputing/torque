@@ -181,8 +181,7 @@ void initialize_all_tasks_array(all_tasks *at)
 
 job_array *get_array(char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 job *get_recycled_job()
@@ -676,3 +675,10 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}

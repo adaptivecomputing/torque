@@ -718,6 +718,9 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
+job::job() {}
+job::~job() {}
+
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
 #include "../../lib/Libattr/attr_req_info.cpp"

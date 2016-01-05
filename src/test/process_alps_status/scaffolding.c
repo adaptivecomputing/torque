@@ -1841,3 +1841,6 @@ int set_complete_req(
   {
   return(0);
   }
+
+job::job() {}
+job::~job() {}

@@ -102,7 +102,7 @@ int attempt_delete(
     {
     /* set up nanny */
     
-    if (pjob->ji_has_delete_nanny == FALSE)
+    if (pjob->ji_has_delete_nanny == false)
       {
       setup_apply_job_delete_nanny(pjob, time_now);
 

@@ -147,7 +147,7 @@ START_TEST(test_forced_jobpurge)
   job           *pjob;
   batch_request *preq;
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   preq = (batch_request *)calloc(1, sizeof(batch_request));
 
   preq->rq_extend = strdup(delpurgestr);
@@ -170,7 +170,7 @@ START_TEST(test_delete_all_work)
   job             *pjob;
   batch_request   *preq;
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(pjob->ji_mutex,NULL);
 
@@ -248,7 +248,7 @@ END_TEST
 
 START_TEST(test_apply_job_delete_nanny)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
 
   fail_unless(apply_job_delete_nanny(pjob, -1) == -1);
   fail_unless(pjob->ji_has_delete_nanny == FALSE);
@@ -274,7 +274,7 @@ END_TEST
 
 START_TEST(test_delete_inactive_job)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
 
   fail_unless(delete_inactive_job((job **)NULL, NULL) == PBSE_BAD_PARAMETER);
   
@@ -282,25 +282,25 @@ START_TEST(test_delete_inactive_job)
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   bad_queue = 1;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
   bad_queue = 0;
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING);
   fail_unless(pjob->ji_momhandle = -1);
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob == NULL);
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   bad_relay = 1;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
@@ -311,7 +311,7 @@ END_TEST
 
 START_TEST(test_force_purge_work)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
 
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
   depend_term_called = 0;
@@ -333,7 +333,6 @@ START_TEST(test_is_ms_on_server)
   }
 
   job myjob;
-  memset(&myjob, 0, sizeof(job));
 
   myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(server_host);
   rc = is_ms_on_server(&myjob);
@@ -368,7 +367,6 @@ START_TEST(test_setup_apply_job_delete_nanny)
   server.sv_attr[SRV_ATR_JobNanny].at_val.at_long = 1;
 
   job myjob;
-  memset(&myjob, 0, sizeof(job));
 
   nanny = 0; // don't use this hook as the other unit tests do
   setup_apply_job_delete_nanny(&myjob, time_now);
@@ -379,8 +377,13 @@ START_TEST(test_setup_apply_job_delete_nanny)
   call_time = time_now + 60;
   server.sv_attr[SRV_ATR_KeepCompleted].at_flags = 0;
   server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 0;
-  memset(&myjob, 0, sizeof(job)); 
 
+  setup_apply_job_delete_nanny(&myjob, time_now);
+  fail_unless(apply_job_delete_nanny_time != call_time,
+    "A new job delete time shouldn't have been set since this job already has a nanny");
+
+  // Pretending we don't have a nanny already should set a new time
+  myjob.ji_has_delete_nanny = false;
   setup_apply_job_delete_nanny(&myjob, time_now);
   fail_unless(apply_job_delete_nanny_time == call_time, 
               "apply_job_delete_nanny did not go off at the right time when there was no keep_completed");

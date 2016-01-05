@@ -84,8 +84,6 @@ START_TEST(handle_stagedel_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("SherrieJWD");
   pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
 
@@ -100,8 +98,6 @@ START_TEST(handle_stageout_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-
   // test to be sure that NULL exec hosts doesn't cause a segfault
   fail_unless(handle_stageout(&pjob, WORK_Immed, NULL) != PBSE_NONE);
   }
@@ -113,7 +109,6 @@ START_TEST(setup_from_test)
   job   pjob;
   char *str;
 
-  memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_fileprefix, "bob");
   str = setup_from(&pjob, "by");
   fail_unless(!strcmp(str, "bobby"));
@@ -127,7 +122,6 @@ START_TEST(is_joined_test)
   {
   job   pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
 
   pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup("oe");
@@ -153,7 +147,6 @@ START_TEST(return_stdfile_test)
   batch_request *p1 = &preq;
   batch_request *p2;
 
-  memset(&pjob, 0, sizeof(pjob));
   memset(&preq, 0, sizeof(preq));
   pjob.ji_wattr[JOB_ATR_checkpoint_name].at_flags = ATR_VFLAG_SET;
 
@@ -196,8 +189,6 @@ START_TEST(handle_exiting_or_abort_substate_test)
   {
   job            pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-  
   fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE);
   fail_unless(pjob.ji_qs.ji_state == JOB_STATE_EXITING);
   fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RETURNSTD);
@@ -214,8 +205,6 @@ START_TEST(setrerun_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-
   fail_unless(setrerun(&pjob,NULL) != PBSE_NONE);
   pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
   fail_unless(setrerun(&pjob,"rerunner") == PBSE_NONE);
@@ -228,7 +217,7 @@ END_TEST
 
 START_TEST(setup_cpyfiles_test)
   {
-  job           *pjob = (job *)calloc(1, sizeof(job));
+  job           *pjob = new job();
   batch_request *preq;
   alloc_br_null = 1;
   fail_unless(setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1) == NULL);
@@ -254,7 +243,7 @@ START_TEST(handle_returnstd_test)
   batch_request *preq;
   job           *pjob;
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new job();
   preq = (batch_request *)calloc(1, sizeof(batch_request));
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
@@ -276,7 +265,6 @@ START_TEST(mom_comm_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
 
@@ -302,7 +290,6 @@ START_TEST(handle_complete_first_time_test)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
   fail_unless(handle_complete_first_time(&pjob) == 0);
@@ -379,9 +366,9 @@ END_TEST
 
 START_TEST(handle_complete_subjob_test)
   {
-  job *parent   = (job *)calloc(1, sizeof(job));
-  job *cray     = (job *)calloc(1, sizeof(job));
-  job *external = (job *)calloc(1, sizeof(job));
+  job *parent   = new job();
+  job *cray     = new job();
+  job *external = new job();
 
   strcpy(parent->ji_qs.ji_jobid, "1.napali");
   svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -412,7 +399,7 @@ END_TEST
 
 START_TEST(handle_exited_test)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
@@ -441,7 +428,7 @@ END_TEST
 
 START_TEST(add_comment_to_parent_test)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup("napali/0+napali/1");
@@ -457,7 +444,7 @@ START_TEST(end_of_job_accounting_test)
   {
   char *str = strdup("bob tom");
   std::string acct_data(str);
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   size_t accttail = acct_data.length();
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
@@ -472,7 +459,7 @@ END_TEST
 
 START_TEST(handle_terminating_array_subjob_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
   strcpy(pjob->ji_arraystructid, "1[].napali");
 
@@ -492,7 +479,7 @@ END_TEST
 
 START_TEST(handle_rerunning_array_subjob_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
   strcpy(pjob->ji_arraystructid, "1[].napali");
   
@@ -511,7 +498,7 @@ END_TEST
 
 START_TEST(handle_terminating_job_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
@@ -524,7 +511,7 @@ END_TEST
 
 START_TEST(update_substate_from_exit_status_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   int   alreadymailed = 0;
 
   pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;

@@ -396,45 +396,6 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  char *current_char;
-  char *start;
-
-  if ((str == NULL) ||
-      (*str == NULL))
-    return(NULL);
-
-  /* save start position */
-  start = *str;
-
-  /* return NULL at the end of the string */
-  if (*start == '\0')
-    return(NULL);
-
-  /* begin at the start */
-  current_char = start;
-
-  /* advance to the end of the string or until you find a delimiter */
-  while ((*current_char != '\0') &&
-         (!strchr(delims, *current_char)))
-    current_char++;
-
-  /* advance str */
-  if (*current_char != '\0')
-    {
-    /* not at the end of the string */
-    *str = current_char + 1;
-    *current_char = '\0';
-    }
-  else
-    {
-    /* at the end of the string */
-    *str = current_char;
-    }
-
-  return(start);
-  }
 
 int get_svr_attr_l(int index, long *l)
   {
@@ -965,4 +926,11 @@ bool task_hosts_match(
 
   return(true);
   }
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}
 

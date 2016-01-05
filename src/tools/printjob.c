@@ -330,7 +330,6 @@ int read_tm_info(
 
 
 
-
 int main(
 
   int argc,
@@ -435,6 +434,29 @@ int main(
 
   return(0);
   }    /* END main() */
+
+
+
+job::job() : ji_momstat(0), ji_modified(0), ji_momhandle(-1), ji_radix(0),
+             ji_has_delete_nanny(false), ji_qhdr(NULL), ji_lastdest(0),
+             ji_retryok(0), ji_rejectdest(), ji_is_array_template(false),
+             ji_have_nodes_request(false), ji_external_clone(NULL),
+             ji_cray_clone(NULL), ji_parent_job(NULL), ji_internal_id(-1),
+             ji_being_recycled(false), ji_last_reported_time(0), ji_mod_time(0),
+             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false)
+
+  {
+  memset(this->ji_arraystructid, 0, sizeof(ji_arraystructid));
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+
+  this->ji_qs.qs_version = PBS_QS_VERSION;
+  } // END constructor()
+
+
+
+job::~job()
+  {
+  } // END destructor()
 
 /* END printjob.c */
 

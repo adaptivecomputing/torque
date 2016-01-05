@@ -12,7 +12,7 @@ all_nodes                allnodes;
 char                    *path_mom_hierarchy = NULL;
 threadpool_t             *async_pool = NULL;
 extern mom_hierarchy_t  *mh;
-int                     LOGLEVEL;
+int                     LOGLEVEL = 10;
 bool                    exit_called = false;
 threadpool_t           *task_pool;
 id_map                  node_mapper;

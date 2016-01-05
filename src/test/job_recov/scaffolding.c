@@ -412,3 +412,10 @@ int node_exception_check(
   return(0);
   }
 
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}
+

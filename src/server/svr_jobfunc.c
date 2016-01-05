@@ -422,7 +422,7 @@ int svr_enquejob(
     /* job came in locked, so it must exit locked if possible */
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    if (pjob->ji_being_recycled == TRUE)
+    if (pjob->ji_being_recycled == true)
       {
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
@@ -446,7 +446,7 @@ int svr_enquejob(
    * so svr_find_job can not be used.... */
   lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-  if (pjob->ji_being_recycled == TRUE)
+  if (pjob->ji_being_recycled == true)
     {
     unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
     return(PBSE_JOB_RECYCLED);
@@ -714,7 +714,7 @@ int svr_dequejob(
 
   /* do not allow svr_dequeujob to be called on a running job */
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-      (pjob->ji_is_array_template == FALSE))
+      (pjob->ji_is_array_template == false))
     {
     return(PBSE_BADSTATE);
     }
@@ -1150,7 +1150,7 @@ int svr_setjobstate(
       release_node_allocation_if_needed(*pjob, newstate);
 
       /* the array job isn't actually a job so don't count it here */
-      if (pjob->ji_is_array_template == FALSE)
+      if (pjob->ji_is_array_template == false)
         {
         pthread_mutex_lock(server.sv_jobstates_mutex);
         server.sv_jobstates[oldstate]--;
@@ -1183,7 +1183,7 @@ int svr_setjobstate(
         changed = true;
 
         /* decrement queued job count if we're completing */
-        if ((pjob->ji_is_array_template == FALSE) &&
+        if ((pjob->ji_is_array_template == false) &&
             (newstate == JOB_STATE_COMPLETE))
           {
           if (LOGLEVEL >= 6)
@@ -1198,7 +1198,7 @@ int svr_setjobstate(
         if (pque != NULL)
           {
           /* the array job isn't actually a job so don't count it here */
-          if (pjob->ji_is_array_template == FALSE)
+          if (pjob->ji_is_array_template == false)
             {
             pque->qu_njstate[oldstate]--;
             pque->qu_njstate[newstate]++;
@@ -2486,7 +2486,7 @@ static int check_queue_job_limit(
     total_jobs = count_queued_jobs(pque, NULL);
 
     lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    if (pjob->ji_being_recycled == TRUE)
+    if (pjob->ji_being_recycled == true)
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);
@@ -2520,7 +2520,7 @@ static int check_queue_job_limit(
     user_jobs = count_queued_jobs(pque, uname.c_str());
 
     lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-    if (pjob->ji_being_recycled == TRUE)
+    if (pjob->ji_being_recycled == true)
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       return(PBSE_JOB_RECYCLED);

@@ -4,7 +4,7 @@
 #include "mom_hierarchy_handler.h"
 
 AvlTree                 ipaddrs = NULL;
-int                     LOGLEVEL;
+int                     LOGLEVEL = 10;
 id_map                  node_mapper;
 mom_hierarchy_handler   hierarchy_handler; //The global declaration.
 bool                    exit_called;
@@ -76,3 +76,10 @@ void log_err(
 
 id_map::id_map() {}
 id_map::~id_map() {}
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}

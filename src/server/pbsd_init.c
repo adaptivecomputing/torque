@@ -1896,7 +1896,7 @@ int process_jobs_dirent(
       {
       if ((pjob = job_recov(dirent_name)) != NULL)
         {
-        pjob->ji_is_array_template = TRUE;
+        pjob->ji_is_array_template = true;
 
 
         JobArray[pjob->ji_qs.ji_jobid] = pjob;
@@ -2576,7 +2576,7 @@ int pbsd_init_job(
 
       /* do array bookeeping */
       if ((pjob->ji_arraystructid[0] != '\0') &&
-          (pjob->ji_is_array_template == FALSE))
+          (pjob->ji_is_array_template == false))
         {
         job_array *pa = get_jobs_array(&pjob);
 

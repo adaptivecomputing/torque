@@ -8,6 +8,7 @@
 #include "attribute.h" /* pbs_attribute, attribute_def */
 #include <string>
 
+int    LOGLEVEL = 10;
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
