@@ -2300,7 +2300,9 @@ int save_node_for_adding(
     {
     pnode->nd_order = 0;
     first = true;
-    req_rank = 0;
+
+    if (req_rank > 0)
+      req_rank = 0;
     }
   else
     pnode->nd_order = 1;

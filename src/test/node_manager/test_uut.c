@@ -605,6 +605,14 @@ START_TEST(check_node_order_test)
   fail_unless(it->node_id == 2);
   it++;
   fail_unless(it->node_id == 7);
+  
+  // Make sure that req_rank -1 is placed at the front. This is how login nodes are 
+  // added to jobs
+  memset(&node,0,sizeof(struct pbsnode));
+  node.nd_id = 8;
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, -1) == PBSE_NONE);
+  it = naji_list.begin();
+  fail_unless(it->node_id == 8);
   }
 END_TEST
 
