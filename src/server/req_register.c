@@ -143,7 +143,6 @@ struct depend_job *make_dependjob(struct depend *, char *jobid, char *host);
 void   del_depend_job(struct depend *pdep, struct depend_job *pdj);
 int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
-void   del_depend(struct depend *);
 int    release_cheapest(job *, struct depend *);
 int    send_depend_req(job *, struct depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
 depend_job *alloc_dependjob(const char *jobid, const char *host);
@@ -364,7 +363,7 @@ int register_before_dep(
         {
         /* first time registered */
         if (--pdep->dp_numexp <= 0)
-          del_depend(pdep);
+          delete pdep;
         }
       }
     }
@@ -498,7 +497,7 @@ int release_before_dependency(
       if (pdep->dp_jobs.size() == 0)
         {
         /* no more dependencies of this type */
-        del_depend(pdep);
+        delete pdep;
         
         set_depend_hold(pjob, pattr);
         }
@@ -1014,11 +1013,10 @@ int register_array_depend(
   /* make dependency if none exists */
   if (pdep == NULL)
     {
-    pdep = (struct array_depend *)calloc(1, sizeof(struct array_depend));
+    pdep = new array_depend();
 
     if (pdep != NULL)
       {
-      CLEAR_HEAD(pdep->dp_link);
       pdep->dp_type = type;
 
       append_link(&pa->ai_qs.deps, &pdep->dp_link, pdep);
@@ -1079,6 +1077,7 @@ int register_array_depend(
   } /* END register_array_depend */
 
 
+
 bool remove_array_dependency_job_from_job(
 
   struct array_depend *pdep,
@@ -1104,13 +1103,14 @@ bool remove_array_dependency_job_from_job(
       if (job_pdep->dp_jobs.size() == 0)
         {
         /* no more dependencies of this type */
-        del_depend(job_pdep);
+        delete job_pdep;
         }
       }
     }
 
   return(removed);
   } /* remove_array_dependency_job_from_job() */
+
 
 
 /*
@@ -1547,7 +1547,7 @@ void post_doe(
         {
         /* no more dependencies of this type */
 
-        del_depend(pdep);
+        delete pdep;
         }
       }
     }
@@ -2092,11 +2092,10 @@ struct depend *make_depend(
   {
   struct depend *pdep = NULL;
 
-  pdep = (struct depend *)calloc(1, sizeof(struct depend));
+  pdep = new depend();
 
   if (pdep != NULL)
     {
-    clear_depend(pdep, type, 0);
     append_link(&pattr->at_val.at_list, &pdep->dp_link, pdep);
     pattr->at_flags |= ATR_VFLAG_SET;
     }
@@ -2954,7 +2953,7 @@ int set_depend(
         pdold = find_depend(pdnew->dp_type, attr);
 
         if (pdold != NULL)
-          del_depend(pdold);
+          delete pdold;
 
         if ((rc = dup_depend(attr, pdnew)) != 0)
           {
@@ -3019,22 +3018,13 @@ void free_depend(
 
   while ((pdp = (struct depend *)GET_NEXT(attr->at_val.at_list)))
     {
-    unsigned int dp_jobs_size = pdp->dp_jobs.size();
-    for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      pdjb = pdp->dp_jobs[i];
-      free(pdjb);
-      }
-
-    delete_link(&pdp->dp_link);
-
-    free(pdp);
+    delete pdp;
     }
 
   attr->at_flags &= ~ATR_VFLAG_SET;
 
   return;
-  }  /* END comp_depend() */
+  }  /* END free_depend() */
 
 
 
@@ -3334,33 +3324,6 @@ void clear_depend(
 
   return;
   }  /* END clear_depend() */
-
-
-
-
-
-/*
- * del_depend - delete a single dependency set, including any depend_jobs
- */
-
-void del_depend(
-
-  struct depend *pd)
-
-  {
-  unsigned int dp_jobs_size = pd->dp_jobs.size();
-  for (unsigned int i = 0; i < dp_jobs_size; i++)
-    {
-    free(pd->dp_jobs[i]);
-    }
-
-  delete_link(&pd->dp_link);
-
-  free(pd);
-
-  return;
-  }  /* END del_depend() */
-
 
 
 

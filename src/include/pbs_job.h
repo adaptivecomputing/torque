@@ -153,14 +153,31 @@ typedef struct depend_job
  * ready are also recorded.
  */
 
-struct depend
+class depend
   {
+  public:
   list_link dp_link; /* link to next dependency, if any       */
   short   dp_type; /* type of dependency (all)           */
   short   dp_numexp; /* num jobs expected (on or syncct only) */
   short   dp_numreg; /* num jobs registered (syncct only)     */
   short   dp_released; /* This job released to run (syncwith)   */
   std::vector<depend_job *> dp_jobs;
+
+  depend() : dp_type(0), dp_numexp(0), dp_numreg(0), dp_released(0), dp_jobs()
+    {
+    CLEAR_LINK(this->dp_link);
+    }
+
+  ~depend()
+    {
+    unsigned int dp_jobs_size = this->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
+      {
+      free(this->dp_jobs[i]);
+      }
+
+    delete_link(&this->dp_link);
+    }
   };
 
 typedef struct array_depend_job
@@ -171,11 +188,28 @@ typedef struct array_depend_job
   int  dc_num;
   } array_depend_job;
 
-struct array_depend
+class array_depend
   {
+  public:
   list_link  dp_link;
   short      dp_type;
   std::vector<array_depend_job *> dp_jobs;
+
+  array_depend() : dp_type(0), dp_jobs()
+    {
+    CLEAR_HEAD(this->dp_link);
+    }
+
+  ~array_depend()
+    {
+    unsigned int dp_jobs_size = this->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
+      {
+      free(this->dp_jobs[i]);
+      }
+
+    delete_link(&this->dp_link);
+    }
   };
 
 struct dependnames

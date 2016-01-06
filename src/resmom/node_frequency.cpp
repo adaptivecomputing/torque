@@ -187,7 +187,7 @@ bool node_frequency::load_base_frequencies(
       {
       continue;
       }
-    const char *cpuNum = (const char *)xmlGetProp(node,(xmlChar *)cpuNodeNumber);
+    char *cpuNum = (char *)xmlGetProp(node,(xmlChar *)cpuNodeNumber);
     xmlNode *typeNode = NULL;
     xmlNode *freqNode = NULL;
     xmlNode *maxFreqNode = NULL;
@@ -226,9 +226,13 @@ bool node_frequency::load_base_frequencies(
       {
       xmlFreeDoc(doc);
       last_error = PBSE_INVALID_FREQUENCY_FILE;
+      free(cpuNum);
       return false;
       }
+
     unsigned long cpu = boost::lexical_cast<int>(cpuNum);
+    free(cpuNum);
+
     if((cpu >= cpus.size())||(cpu != i))
       {
       xmlFreeDoc(doc);

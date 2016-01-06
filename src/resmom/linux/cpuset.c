@@ -1481,6 +1481,9 @@ int create_job_cpuset(
       
       for (unsigned int i = 0; i < mem_indices->size(); i++)
         hwloc_bitmap_set(mems, mem_indices->at(i));
+
+      delete mem_indices;
+      delete cpu_indices;
       }
     }
 
