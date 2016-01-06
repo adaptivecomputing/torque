@@ -36,8 +36,7 @@ START_TEST(test_req_modifyjob)
   req_modifyjob(preq);
 
   // make sure the request objname was changed to the forced value
-  fail_unless(0 == strncmp(preq->rq_ind.rq_modify.rq_objname, get_correct_jobname_return,
-    sizeof(preq->rq_ind.rq_modify.rq_objname)));
+  fail_unless(!strcmp(preq->rq_ind.rq_modify.rq_objname, "123"));
   }
 END_TEST
 

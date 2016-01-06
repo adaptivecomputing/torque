@@ -168,6 +168,11 @@ class depend
     CLEAR_LINK(this->dp_link);
     }
 
+  depend(int type) : dp_type(type), dp_numexp(0), dp_numreg(0), dp_released(0), dp_jobs()
+    {
+    CLEAR_LINK(this->dp_link);
+    }
+
   ~depend()
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
