@@ -34,9 +34,12 @@ int put_env_var(const char *name, const char *value)
 
   if (putenv(envstr))
     {
+    free(envstr);
     /* putenv() failure */
     return(-3);
     }
+
+  free(envstr);
 
   return(PBSE_NONE);
   } /* END put_env_var() */

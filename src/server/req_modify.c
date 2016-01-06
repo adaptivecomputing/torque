@@ -1004,13 +1004,17 @@ void *req_modifyjob(
   // if correct job name and one passed in don't match, adjust one passed in
   //  so that mom will be able to match it and not reject modify request due
   //  to job not found
-  if ((correct_jobname_p != NULL) &&
-      (strcmp(correct_jobname_p, preq->rq_ind.rq_modify.rq_objname) != 0))
+  if (correct_jobname_p != NULL)
     {
-    // job names don't match so need to modify the requested jobname
-    snprintf(preq->rq_ind.rq_modify.rq_objname,
-             sizeof(preq->rq_ind.rq_modify.rq_objname),
-             "%s", correct_jobname_p);
+    if (strcmp(correct_jobname_p, preq->rq_ind.rq_modify.rq_objname) != 0)
+      {
+      // job names don't match so need to modify the requested jobname
+      snprintf(preq->rq_ind.rq_modify.rq_objname,
+               sizeof(preq->rq_ind.rq_modify.rq_objname),
+               "%s", correct_jobname_p);
+      }
+    
+    free(correct_jobname_p);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);

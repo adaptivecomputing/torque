@@ -1132,14 +1132,7 @@ int array_delete(
        pdep != NULL;
        pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps))
     {
-    delete_link(&pdep->dp_link);
-
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
-      {
-      free(pdep->dp_jobs[i]);
-      }
-
-    free(pdep);
+    delete pdep;
     }
 
   /* purge the "template" job, 
