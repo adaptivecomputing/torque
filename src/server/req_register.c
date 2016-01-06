@@ -2092,7 +2092,7 @@ struct depend *make_depend(
   {
   struct depend *pdep = NULL;
 
-  pdep = new depend();
+  pdep = new depend(type);
 
   if (pdep != NULL)
     {
