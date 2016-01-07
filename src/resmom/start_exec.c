@@ -6093,7 +6093,7 @@ void job_nodes(
     /* if this is a SGI UV or other shared memory system 
        remove the suffix for the node name before resolving the address */
     std::size_t last_dash = host.find_last_of("-");
-    if (last_dash != string::npos)
+    if (last_dash != std::string::npos)
       host.erase(last_dash);
 #endif
 
