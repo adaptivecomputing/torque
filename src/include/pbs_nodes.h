@@ -223,7 +223,6 @@ public:
   int                           nd_id;               /* node's id */
 
   std::vector<prop>             nd_f_st;
-  struct prop                  *nd_l_st;
  
 
   std::vector<u_long>           nd_addrs;            /* IP addresses of host */
