@@ -1,0 +1,5 @@
+node01 NHC: check_ps_loadavg:  1-minute load average too high:  35 >= 32 - ERROR:  nhc:  Health check failed:  check_ps_loadavg:  1-minute load average too high:  35 >= 32 - ERROR:  nhc:  Health check failed:  check_ps_loadavg:  1-minute load average too high:  33 >= 32
+node02 cloning issues
+node03 ERROR:  nhc:  Health check failed:  Check /usr/bin/nvidia-smi -q | grep Compute | grep -q Exclusive_Process returned 1
+node03 ERROR:  nhc:  Health check failed:  Check ibstat|grep Firmware |grep -q 10.12.0780 # Wrong IB HCA firmware returned 1
+node04 Needs BIOS update
