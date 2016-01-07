@@ -29,6 +29,7 @@ void add_node_property(std::string &propstr, const char *token, bool &is_alps_st
 int record_node_property_list(std::string const &propstr, tlist_head *atrlist_ptr);
 void handle_cray_specific_node_values(char *nodename, bool cray_enabled, bool is_alps_reporter, bool is_alps_starter, bool is_alps_compute, svrattrl *pal);
 char *parse_node_name(char **ptr, int &err, int linenum, bool cray_enabled);
+void load_node_notes(bool cray_enabled);
 
 void attrlist_free();
 
@@ -36,6 +37,7 @@ extern std::string attrname;
 extern std::string attrval;
 
 
+extern char *path_nodenote;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -213,6 +215,31 @@ START_TEST(add_node_attribute_to_list_test)
   attrlist_free();
   attrname.clear();
   attrval.clear();
+  }
+END_TEST
+
+
+START_TEST(test_load_node_notes)
+  {
+  struct pbsnode  node1;
+  struct pbsnode  node2;
+  struct pbsnode  node3;
+  struct pbsnode  node4;
+  
+  node1.change_name("node01");
+  node2.change_name("node02");
+  node3.change_name("node03");
+  node4.change_name("node04");
+  path_nodenote = strdup("test_notes.txt");
+  initialize_allnodes(&allnodes, &node1, &node2);
+  allnodes.insert(&node3, node3.get_name());
+  allnodes.insert(&node4, node4.get_name());
+
+  load_node_notes(FALSE);
+  fail_unless(strstr(node1.nd_note.c_str(), "1-minute load average too high") != NULL);
+  fail_unless(node2.nd_note == "cloning issues");
+  fail_unless(strstr(node3.nd_note.c_str(), "Health check failed:") != NULL);
+  fail_unless(node4.nd_note == "Needs BIOS update");
   }
 END_TEST
 
@@ -968,6 +995,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("copy_properties_test");
   tcase_add_test(tc_core, copy_properties_test);
+  tcase_add_test(tc_core, test_load_node_notes);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("create_pbs_node_test");
