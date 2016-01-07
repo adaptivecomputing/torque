@@ -19,7 +19,6 @@ struct depend_job *find_dependjob(struct depend *pdep, char *name);
 int register_sync(struct depend *pdep, char *child, char *host, long cost);
 int register_dep(pbs_attribute *pattr, batch_request *preq, int type, int *made);
 int unregister_dep(pbs_attribute *pattr, batch_request *preq);
-void del_depend(struct depend *pd);
 int comp_depend(pbs_attribute *a1, pbs_attribute *a2);
 void free_depend(pbs_attribute *pattr);
 int build_depend(pbs_attribute *pattr, const char *value);
@@ -315,23 +314,6 @@ START_TEST(unregister_dep_test)
   fail_unless(unregister_dep(&pattr, &preq) == PBSE_NONE, "didn't unregister");
   }
 END_TEST
-
-
-
-
-START_TEST(del_depend_test)
-  {
-  struct depend    *pdep = (depend *)calloc(1, sizeof(struct depend));
-
-  CLEAR_HEAD(pdep->dp_link);
-
-  make_dependjob(pdep, job1, host);
-  make_dependjob(pdep, job2, host);
-
-  del_depend(pdep);
-  }
-END_TEST
-
 
 
 
@@ -802,7 +784,6 @@ Suite *req_register_suite(void)
   tc_core = tcase_create("register_dep_test");
   tcase_add_test(tc_core, register_dep_test);
   tcase_add_test(tc_core, unregister_dep_test);
-  tcase_add_test(tc_core, del_depend_test);
   tcase_add_test(tc_core, comp_depend_test);
   tcase_add_test(tc_core, free_depend_test);
   tcase_add_test(tc_core, build_depend_test);

@@ -76,17 +76,15 @@ END_TEST
 START_TEST(test_translate_dependency_to_string)
   {
   pbs_attribute dep_attr;
-  struct depend dep;
-  struct depend_job dj;
+  depend dep;
+  struct depend_job *dj = (depend_job *)calloc(1, sizeof(depend_job));
 
-  memset(&dj, 0, sizeof(dj));
-  strcpy(dj.dc_child, "1.napali");
-  strcpy(dj.dc_svr, "napali");
+  strcpy(dj->dc_child, "1.napali");
+  strcpy(dj->dc_svr, "napali");
   
-  memset(&dep, 0, sizeof(dep));
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
   CLEAR_LINK(dep.dp_link);
-  dep.dp_jobs.push_back(&dj);
+  dep.dp_jobs.push_back(dj);
 
   dep_attr.at_flags = ATR_VFLAG_SET;
   CLEAR_HEAD(dep_attr.at_val.at_list);
