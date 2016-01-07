@@ -6262,12 +6262,22 @@ void job_nodes(
 
     host.erase(slash);
 
+#ifdef NUMA_SUPPORT
+    /* if this is a SGI UV or other shared memory system 
+       remove the suffix for the node name before resolving the address */
+    std::size_t last_dash = host.find_last_of("-");
+    if (last_dash != string::npos)
+      host.erase(last_dash);
+#endif
+
+
     memset(&hp, 0, sizeof(hp));
 
     hp.hn_node = nhosts;
     hp.hn_sister = SISTER_OKAY;
     hp.hn_host = strdup(host.c_str());
     hp.hn_port = strtol(port_str.c_str(), NULL, 10);
+
 
     CLEAR_HEAD(hp.hn_events);
 
