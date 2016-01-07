@@ -22,6 +22,8 @@ int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
 int cray_enabled;
 int read_val_and_advance(int *val, char **str);
 char *parse_node_token(char **start, int flags, int *err, char *term);
+void load_node_notes(bool cray_enabled);
+extern char *path_nodenote;
 
 void initialize_allnodes(all_nodes *an, struct pbsnode *n1, struct pbsnode *n2)
   {
@@ -53,6 +55,35 @@ void add_prop(struct pbsnode &pnode, const char *prop_name)
     curr->next = pp;
     }
   }
+
+
+START_TEST(test_load_node_notes)
+  {
+  struct pbsnode  node1;
+  struct pbsnode  node2;
+  struct pbsnode  node3;
+  struct pbsnode  node4;
+  
+  memset(&node1, 0, sizeof(node1));
+  memset(&node2, 0, sizeof(node2));
+  memset(&node3, 0, sizeof(node3));
+  memset(&node4, 0, sizeof(node4));
+  node1.nd_name = strdup("node01");
+  node2.nd_name = strdup("node02");
+  node3.nd_name = strdup("node03");
+  node4.nd_name = strdup("node04");
+  path_nodenote = strdup("test_notes.txt");
+  initialize_allnodes(&allnodes, &node1, &node2);
+  allnodes.insert(&node3, node3.nd_name);
+  allnodes.insert(&node4, node4.nd_name);
+
+  load_node_notes(FALSE);
+  fail_unless(strstr(node1.nd_note, "1-minute load average too high") != NULL);
+  fail_unless(!strcmp(node2.nd_note, "cloning issues"));
+  fail_unless(strstr(node3.nd_note, "Health check failed:") != NULL);
+  fail_unless(!strcmp(node4.nd_note, "Needs BIOS update"));
+  }
+END_TEST
 
 
 START_TEST(parse_node_token_test)
@@ -908,6 +939,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("copy_properties_test");
   tcase_add_test(tc_core, copy_properties_test);
+  tcase_add_test(tc_core, test_load_node_notes);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("create_pbs_node_test");
