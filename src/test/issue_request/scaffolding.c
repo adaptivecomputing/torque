@@ -261,6 +261,7 @@ struct pbsnode dummynode;
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
   memset(&dummynode,0,sizeof(dummynode));
+  dummynode.nd_name = strdup("tmp");
   return &dummynode;
   }
 
@@ -505,4 +506,12 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
       }
   
     return(preq_tmp);
+  }
+
+void update_failure_counts(
+
+  const char *node_name,
+  int         rc)
+
+  {
   }

@@ -168,8 +168,7 @@ struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 unsigned disrui(int stream, int *retval)
