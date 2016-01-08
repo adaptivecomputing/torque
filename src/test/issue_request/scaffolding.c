@@ -260,6 +260,7 @@ struct pbsnode dummynode;
 
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
+  dummynode.change_name("tmp");
   return &dummynode;
   }
 
@@ -513,9 +514,28 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
+void pbsnode::change_name(const char *name)
+  {
+  this->nd_name = name;
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
 job::job()
   {
   memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
   }
 
 job::~job() {}
+
+void update_failure_counts(
+
+  const char *node_name,
+  int         rc)
+
+  {
+  }
+

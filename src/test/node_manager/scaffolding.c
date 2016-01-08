@@ -116,8 +116,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
 
   if (called == 0)
     {
-    memset(&other, 0, sizeof(other));
-    other.nd_name = strdup("lihue");
+    other.change_name("lihue");
     called++;
     }
 
@@ -162,8 +161,7 @@ struct pbsnode *find_node_in_allnodes(all_nodes *an, const char *nodename)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 unsigned disrui(int stream, int *retval)
@@ -659,7 +657,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      nd_mom_rm_port(PBS_MANAGER_SERVICE_PORT), nd_sock_addr(),
                      nd_nprops(0), nd_nstatus(0),
                      nd_slots(), nd_job_usages(), nd_needed(0), nd_np_to_be_used(0),
-                     nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
+                     nd_state(INUSE_FREE), nd_ntype(0), nd_order(0),
                      nd_warnbad(0),
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
@@ -876,6 +874,61 @@ void pbsnode::add_property(
 
   {
   this->nd_properties.push_back(prop);
+  }
+
+bool pbsnode::update_internal_failure_counts(
+
+  int rc)
+
+  {
+  bool held = false;
+  char log_buf[2048];
+
+  if (rc == PBSE_NONE)
+    {
+    this->nd_consecutive_successes++;
+
+    if (this->nd_consecutive_successes > 1)
+      {
+      this->nd_proximal_failures = 0;
+
+      if (this->nd_state & INUSE_NETWORK_FAIL)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node '%s' has had two or more consecutive network successes, marking online.",
+          this->nd_name.c_str());
+        log_record(1, 2, __func__, log_buf);
+        this->remove_node_state_flag(INUSE_NETWORK_FAIL);
+        }
+      }
+    }
+  else
+    {
+    this->nd_proximal_failures++;
+    this->nd_consecutive_successes = 0;
+
+    if ((this->nd_proximal_failures > 2) &&
+        ((this->nd_state & INUSE_NETWORK_FAIL) == 0))
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Node '%s' has had %d failures in close proximity, marking offline.",
+        this->nd_name.c_str(), this->nd_proximal_failures);
+      log_record(1, 2, __func__, log_buf);
+
+      update_node_state(this, INUSE_NETWORK_FAIL);
+      held = true;
+      }
+    }
+
+  return(held);
+  }
+
+void pbsnode::remove_node_state_flag(
+
+  int flag)
+
+  {
+  this->nd_state &= ~flag;
   }
 
 Machine::Machine() {}

@@ -442,4 +442,6 @@ std::string get_path_jobdata(const char *a, const char *b)
 job::job() {}
 job::~job() {}
 
+void update_failure_counts(const char *node_name, int rc) {}
+
 
