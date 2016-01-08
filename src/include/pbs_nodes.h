@@ -342,7 +342,11 @@ struct pbsnode
                                                        deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
-  };
+  // Network failures without two consecutive successive between them.
+  int                           nd_proximal_failures;
+  // Consecutive succesful network transactions
+  int                           nd_consecutive_successes;
+ };
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
 typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
@@ -366,6 +370,7 @@ struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 bool            node_exists(const char *node_name);
+void            update_failure_counts(const char *node_name, int rc);
 
 
 #if 0
@@ -469,7 +474,8 @@ int tlist(tree *, char *, int);
 #define INUSE_NOT_READY       (INUSE_DOWN|INUSE_NOHIERARCHY)
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
-#define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
+#define INUSE_NETWORK_FAIL     0x200 /* Node has had too many network failures */
+#define INUSE_SUBNODE_MASK     0xfff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 
 /* Node power state defines */
