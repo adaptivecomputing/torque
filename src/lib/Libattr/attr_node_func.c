@@ -354,6 +354,11 @@ int encode_state(
 
   state = pattr->at_val.at_short & (INUSE_SUBNODE_MASK | INUSE_UNKNOWN);
 
+  if (pattr->at_val.at_short & INUSE_NETWORK_FAIL)
+    {
+    state |= INUSE_DOWN;
+    }
+
   if (!state)
     {
     strcpy(state_str, ND_free);
