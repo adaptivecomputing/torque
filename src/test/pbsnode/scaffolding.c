@@ -83,3 +83,8 @@ job::job()
   }
 
 job::~job() {}
+
+void update_node_state(pbsnode *pnode, int newstate)
+  {
+  pnode->nd_state = newstate;
+  }
