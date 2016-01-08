@@ -419,6 +419,44 @@ bool task_hosts_match(
   const char *this_hostname)
  
   {
+#ifdef NUMA_SUPPORT
+  char *real_task_host = strdup(task_host);
+  char *last_dash = NULL;
+
+  if (real_task_host == NULL)
+    return(false);
+
+  last_dash = strrchr(real_task_host, '-');
+  if (last_dash != NULL)
+    *last_dash = '\0';
+    
+  if (strcmp(real_task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, real_task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+
+
+#else
   if (strcmp(task_host, this_hostname))
     {
     /* see if the short name might match */
@@ -443,6 +481,7 @@ bool task_hosts_match(
       return(false);
       }
     }
+#endif
 
   return(true);
   }
