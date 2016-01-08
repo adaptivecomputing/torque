@@ -111,6 +111,15 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *t
 struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
+  static struct pbsnode other;
+  static int    called = 0;
+
+  if (called == 0)
+    {
+    memset(&other, 0, sizeof(other));
+    other.nd_name = strdup("lihue");
+    called++;
+    }
 
   memset(&bob, 0, sizeof(bob));
 
@@ -124,9 +133,14 @@ struct pbsnode *find_nodebyname(const char *nodename)
     return(&bob);
   else if (!strcmp(nodename, "3"))
     return(&bob);
+  else if (!strcmp(nodename, "lihue"))
+    {
+    return(&other);
+    }
   else
     return(NULL);
   }
+
 
 struct pbsnode *find_nodebyid(int id)
   {
@@ -154,8 +168,7 @@ struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 unsigned disrui(int stream, int *retval)

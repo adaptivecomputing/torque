@@ -185,6 +185,8 @@ extern int              SvrNodeCt;
 
 extern int              multi_mom;
 
+const int network_fail_wait_time = 300;
+
 #define SKIP_NONE       0
 #define SKIP_EXCLUSIVE  1
 #define SKIP_ANYINUSE   2
@@ -287,6 +289,19 @@ struct pbsnode *tfind_addr(
 
 
 
+/*
+ * Removes a specific flag from the node state
+ */
+
+void remove_node_state_flag(
+    
+  struct pbsnode *pnode,
+  int             flag)
+
+  {
+  pnode->nd_state &= ~flag;
+  } // END remove_node_state_flag()
+
 
 
 /* update_node_state - central location for updating node state */
@@ -324,7 +339,7 @@ void update_node_state(
   log_buf[0] = '\0';
 
   //Node state can't change until the hierarchy has been sent.
-  if(np->nd_state & INUSE_NOHIERARCHY)
+  if (np->nd_state & INUSE_NOHIERARCHY)
     {
     sprintf(log_buf, "node %s has not received its list of nodes yet.",
       (np->nd_name != NULL) ? np->nd_name : "NULL");
@@ -372,14 +387,13 @@ void update_node_state(
       }
 
     np->nd_state &= ~INUSE_BUSY;
-
     np->nd_state &= ~INUSE_UNKNOWN;
-
-    if (np->nd_state & INUSE_DOWN)
-      {
-      np->nd_state &= ~INUSE_DOWN;
-      }
+    np->nd_state &= ~INUSE_DOWN;
     }    /* END else if (newstate == INUSE_FREE) */
+  else if (newstate & INUSE_NETWORK_FAIL)
+    {
+    np->nd_state |= INUSE_NETWORK_FAIL;
+    }
 
   if (newstate & INUSE_UNKNOWN)
     {
@@ -534,6 +548,7 @@ int kill_job_on_mom(
   int            conn;
   int            local_errno = 0;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string    node_name(pnode->nd_name);
 
   /* job is reported by mom but server has no record of job */
   sprintf(log_buf, "stray job %s found on %s", job_id, pnode->nd_name);
@@ -555,10 +570,18 @@ int kill_job_on_mom(
       preq->rq_extra = strdup(SYNC_KILL);
       tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
       rc = issue_Drequest(conn, preq, true);
+
+      if (preq->rq_reply.brp_code == PBSE_TIMEOUT)
+        update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
+      else
+        update_failure_counts(node_name.c_str(), 0);
+
       free_br(preq);
       tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
       }
     }
+  else
+    update_failure_counts(node_name.c_str(), -1);
 
   return(rc);
   } /* END kill_job_on_mom() */
@@ -5755,6 +5778,109 @@ job *get_job_from_jobinfo(
 
   return(pjob);
   } /* END get_job_from_jobinfo() */
+
+
+
+/*
+ * remove_temporary_hold_on_node()
+ *
+ */
+
+void remove_temporary_hold_on_node(
+    
+  struct work_task *pwt)
+
+  {
+  pbsnode *pnode;
+  char    *nd_name = (char *)pwt->wt_parm1;
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
+
+  free(pwt->wt_mutex);
+  free(pwt);
+  
+  pnode = find_nodebyname(nd_name);
+
+  if (pnode != NULL)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Node '%s' is being marked back online after a five minute break for network failures.",
+      pnode->nd_name);
+    log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+    remove_node_state_flag(pnode, INUSE_NETWORK_FAIL);
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  free(nd_name);
+  } // END remove_temporary_hold_on_node()
+
+
+
+/*
+ * update_failure_counts()
+ *
+ * Updates the internal success and failure counts for the node with the specified name
+ * @param node_name - the name of the node
+ * @param rc - the return code of the last network operation
+ */
+
+void update_failure_counts(
+    
+  const char *node_name,
+  int         rc)
+
+  {
+  char     log_buf[LOCAL_LOG_BUF_SIZE];
+  pbsnode *pnode = find_nodebyname(node_name);
+  bool     held_node = false;
+
+  if (pnode != NULL)
+    {
+    if (rc == PBSE_NONE)
+      {
+      pnode->nd_consecutive_successes++;
+
+      if (pnode->nd_consecutive_successes > 1)
+        {
+        pnode->nd_proximal_failures = 0;
+
+        if (pnode->nd_state & INUSE_NETWORK_FAIL)
+          {
+          snprintf(log_buf, sizeof(log_buf),
+            "Node '%s' has had two or more consecutive network successes, marking online.",
+            pnode->nd_name);
+          log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+          remove_node_state_flag(pnode, INUSE_NETWORK_FAIL);
+          }
+        }
+      }
+    else
+      {
+      pnode->nd_proximal_failures++;
+      pnode->nd_consecutive_successes = 0;
+
+      if ((pnode->nd_proximal_failures > 2) &&
+          ((pnode->nd_state & INUSE_NETWORK_FAIL) == 0))
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node '%s' has had %d failures in close proximity, marking offline.",
+          pnode->nd_name, pnode->nd_proximal_failures);
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+
+        update_node_state(pnode, INUSE_NETWORK_FAIL);
+        held_node = true;
+        }
+      }
+
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    }
+
+  if (held_node == true)
+    {
+    set_task(WORK_Timed, time(NULL) + network_fail_wait_time, remove_temporary_hold_on_node,
+             strdup(node_name), FALSE);
+    }
+  } // END update_failure_counts()
 
 
 /* END node_manager.c */
