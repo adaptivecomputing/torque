@@ -6262,14 +6262,6 @@ void job_nodes(
 
     host.erase(slash);
 
-#ifdef NUMA_SUPPORT
-    /* if this is a SGI UV or other shared memory system 
-       remove the suffix for the node name before resolving the address */
-    std::size_t last_dash = host.find_last_of("-");
-    if (last_dash != std::string::npos)
-      host.erase(last_dash);
-#endif
-
 
     memset(&hp, 0, sizeof(hp));
 
@@ -6281,8 +6273,17 @@ void job_nodes(
 
     CLEAR_HEAD(hp.hn_events);
 
+#ifdef NUMA_SUPPORT
+    /* if this is a SGI UV or other shared memory system 
+       remove the suffix for the node name before resolving the address */
+    std::size_t last_dash = host.find_last_of("-");
+    if (last_dash != std::string::npos)
+      host.erase(last_dash);
+#endif
+
+
     /* set up the socket address information */
-    if (pbs_getaddrinfo(hp.hn_host, NULL, &addr_info) == 0)
+    if (pbs_getaddrinfo(host.c_str(), NULL, &addr_info) == 0)
       {
       hp.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
       hp.sock_addr.sin_family = AF_INET;
