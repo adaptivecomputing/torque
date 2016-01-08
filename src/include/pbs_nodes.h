@@ -219,6 +219,10 @@ private:
   std::vector<std::string>      nd_properties;       // The node's properties
 
 public:
+  // Network failures without two consecutive successive between them.
+  int                           nd_proximal_failures;
+  // Consecutive succesful network transactions
+  int                           nd_consecutive_successes;
   pthread_mutex_t               nd_mutex;            // mutex for accessing this node 
   int                           nd_id;               /* node's id */
 
@@ -291,6 +295,7 @@ public:
                                                        doing the unlock intends to lock it again
                                                        so we need a flag here to prevent a node from being
                                                        deleted while it is temporarily locked. */
+
   /* numa hardware configuration information */
 #ifdef PENABLE_LINUX_CGROUPS
   Machine *nd_layout;
@@ -314,12 +319,14 @@ public:
   // NON-CONST methods
   void change_name(const char *new_name);
   void update_properties();
+  bool update_internal_failure_counts(int rc);
   void add_property(const std::string &prop);
   int tmp_lock_node(const char *method_name, const char *msg, int logging);
   int tmp_unlock_node(const char *method_name, const char *msg, int logging);
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
   void copy_gpu_subnodes(const pbsnode &src);
+  void remove_node_state_flag(int flag);
   };
 
 
@@ -345,6 +352,7 @@ struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
 bool            node_exists(const char *node_name);
+void            update_failure_counts(const char *node_name, int rc);
 
 
 #if 0
@@ -448,7 +456,8 @@ int tlist(tree *, char *, int);
 #define INUSE_NOT_READY       (INUSE_DOWN|INUSE_NOHIERARCHY)
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
-#define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
+#define INUSE_NETWORK_FAIL     0x200 /* Node has had too many network failures */
+#define INUSE_SUBNODE_MASK     0xfff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 
 /* Node power state defines */

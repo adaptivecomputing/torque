@@ -11,7 +11,8 @@
 
 extern AvlTree          ipaddrs;
 
-pbsnode::pbsnode() : nd_error(0), nd_properties(),
+pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
+                     nd_consecutive_successes(0),
                      nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
                      nd_stream(-1),
@@ -54,7 +55,8 @@ pbsnode::pbsnode(
 
   const char *pname,
   u_long     *pul,
-  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_f_st(),
+  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_proximal_failures(0),
+                                     nd_consecutive_successes(0), nd_mutex(), nd_f_st(),
                                      nd_prop(NULL), nd_status(NULL),
                                      nd_note(),
                                      nd_stream(-1),
@@ -148,6 +150,8 @@ pbsnode &pbsnode::operator =(
   this->nd_id = other.nd_id;
   this->nd_f_st = other.nd_f_st;
   this->nd_properties = other.nd_properties;
+  this->nd_proximal_failures = other.nd_proximal_failures;
+  this->nd_consecutive_successes = other.nd_consecutive_successes;
   this->nd_prop = copy_arst(other.nd_prop);
   this->nd_status = copy_arst(other.nd_status);
   this->nd_note = other.nd_note;
@@ -216,7 +220,9 @@ pbsnode &pbsnode::operator =(
 
 pbsnode::pbsnode(
 
-  const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties), nd_mutex(),
+  const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties),
+                          nd_proximal_failures(other.nd_proximal_failures),
+                          nd_consecutive_successes(other.nd_consecutive_successes), nd_mutex(),
                           nd_id(other.nd_id), nd_addrs(other.nd_addrs),
                           nd_note(other.nd_note), nd_stream(other.nd_stream),
                           nd_flag(other.nd_flag), nd_mom_port(other.nd_mom_port),
@@ -546,6 +552,75 @@ int pbsnode::copy_properties(
 
   return(PBSE_NONE);
   } /* END copy_properties() */
+
+
+
+/*
+ * update_internal_failure_counts()
+ *
+ * @param rc - the last network interaction return code
+ */
+
+bool pbsnode::update_internal_failure_counts(
+
+  int rc)
+
+  {
+  bool held = false;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (rc == PBSE_NONE)
+    {
+    this->nd_consecutive_successes++;
+
+    if (this->nd_consecutive_successes > 1)
+      {
+      this->nd_proximal_failures = 0;
+
+      if (this->nd_state & INUSE_NETWORK_FAIL)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node '%s' has had two or more consecutive network successes, marking online.",
+          this->nd_name.c_str());
+        log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+        this->remove_node_state_flag(INUSE_NETWORK_FAIL);
+        }
+      }
+    }
+  else
+    {
+    this->nd_proximal_failures++;
+    this->nd_consecutive_successes = 0;
+
+    if ((this->nd_proximal_failures > 2) &&
+        ((this->nd_state & INUSE_NETWORK_FAIL) == 0))
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Node '%s' has had %d failures in close proximity, marking offline.",
+        this->nd_name.c_str(), this->nd_proximal_failures);
+      log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+
+      update_node_state(this, INUSE_NETWORK_FAIL);
+      held = true;
+      }
+    }
+
+  return(held);
+  } // END update_internal_failure_counts()
+
+
+
+/*
+ * Removes a specific flag from the node state
+ */
+
+void pbsnode::remove_node_state_flag(
+    
+  int             flag)
+
+  {
+  this->nd_state &= ~flag;
+  } // END remove_node_state_flag()
 
 
 

@@ -1340,6 +1340,14 @@ int send_job_work(
     else
       rc = LOCUTION_REQUEUE;
     }
+  
+  if (type == MOVE_TYPE_Exec)
+    {
+    if (node_name != NULL)
+      update_failure_counts(node_name, rc);
+    else
+      update_failure_counts(job_destin, rc);
+    }
 
 send_job_work_end:
   finish_move_process(job_id, preq, start_time, node_name, rc, type, mom_err);
@@ -1430,8 +1438,8 @@ void *send_job(
       }
 
     node_name = get_ms_name(*pjob);
-    
-    send_job_work(job_id,node_name,type,&local_errno,preq);
+
+    send_job_work(job_id, node_name, type, &local_errno, preq);
 
     free(node_name);
     }

@@ -36,6 +36,7 @@ void record_fitting_node(int &num, struct pbsnode *pnode, std::list<node_job_add
 int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
 int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
+void update_failure_counts(const char *node_name, int rc);
 
 extern std::vector<int> jobsKilled;
 
@@ -65,6 +66,60 @@ START_TEST(test_save_cpus_and_memory_cpusets)
   }
 END_TEST
 #endif
+
+
+START_TEST(test_update_failure_counts)
+  {
+  const char *name = "lihue";
+  struct pbsnode *pnode = find_nodebyname(name);
+  update_failure_counts(name, -1);
+  update_failure_counts(name, -1);
+
+  // Make sure the two failures are correctly counted
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // One success shouldn't reset the failure counts
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 1);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  
+  // Two should
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_proximal_failures == 0);
+  fail_unless(pnode->nd_consecutive_successes == 2);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // One failure should reset the success count
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_proximal_failures == 1);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // State shouldn't change until there are 3 proximal failures
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_state != INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 3);
+
+  // State shouldn't reset until there are 2 consecutive successes
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_state != INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 3);
+  fail_unless(pnode->nd_consecutive_successes == 1);
+  
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 0);
+  fail_unless(pnode->nd_consecutive_successes == 2);
+  }
+END_TEST
 
 
 START_TEST(test_add_remove_mic_jobs)
@@ -752,6 +807,7 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
+  tcase_add_test(tc_core, test_update_failure_counts);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("more tests");

@@ -161,6 +161,7 @@ int relay_to_mom(
 
   struct pbsnode *node;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string     node_name;
  
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
     {
@@ -203,8 +204,11 @@ int relay_to_mom(
 
     free(tmp);
     }
+  
+  node_name = node->get_name();
 
   node->unlock_node(__func__, "after svr_connect", LOGLEVEL);
+  
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   *pjob_ptr = NULL;
@@ -213,6 +217,7 @@ int relay_to_mom(
 
   if (handle < 0)
     {
+    update_failure_counts(node_name.c_str(), -1);
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
     return(PBSE_NORELYMOM);
@@ -221,6 +226,11 @@ int relay_to_mom(
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
   rc = issue_Drequest(handle, request, true);
+  
+  if (request->rq_reply.brp_code == PBSE_TIMEOUT)
+    update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
+  else
+    update_failure_counts(node_name.c_str(), 0);
 
   *pjob_ptr = svr_find_job(jobid, TRUE);
 
@@ -744,7 +754,12 @@ int send_request_to_remote_server(
     {
     sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    request->rq_reply.brp_code = tmp_rc;
+
+    if (chan->IsTimeout)
+      request->rq_reply.brp_code = PBSE_TIMEOUT;
+    else
+      request->rq_reply.brp_code = tmp_rc;
+
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
     }
 
