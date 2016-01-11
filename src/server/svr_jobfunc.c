@@ -150,6 +150,7 @@
 #include <vector>
 #include <algorithm>
 #include "utils.h"
+#include "pbs_nodes.h"
 
 #include "user_info.h" /* remove_server_suffix() */
 
@@ -2625,7 +2626,7 @@ bool do_nodes_exist(
         (threads == 0))
       {
       possible = true;
-      unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      pnode->unlock_node( __func__, NULL, LOGLEVEL);
       break;
       }
     }

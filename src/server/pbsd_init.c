@@ -1295,7 +1295,7 @@ int load_node_usages()
 
     if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
       {
-      mutex_mgr   nd_mutex(pnode->nd_mutex, true);
+      mutex_mgr   nd_mutex(&pnode->nd_mutex, true);
       load_node_usage(pnode, pdirent->d_name);
       }
     }

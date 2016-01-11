@@ -5910,7 +5910,7 @@ int start_process(
 
 #ifdef PENABLE_LINUX_CGROUPS
   int rank;
-  int rc = PBSE_NO_PROCESS_RANK;
+  rc = PBSE_NO_PROCESS_RANK;
   pbs_attribute *pattr;
   pid_t new_pid = getpid();
 
