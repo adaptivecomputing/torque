@@ -1516,8 +1516,6 @@ void write_node_power_state(void)
 
 /* Create a new node_note file then overwrite the previous one.
  *
- *   The note file could get up to:
- *      (# of nodes) * (2 + MAX_NODE_NAME + MAX_NOTE)  bytes in size
  */
 int write_node_note(void)
 

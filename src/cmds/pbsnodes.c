@@ -235,7 +235,7 @@ static int set_node_power_state(
     }
 
   return(rc);
-  }  /* END set_note() */
+  }  /* END set_node_power_state() */
 
 
 static void prt_node_attr(
@@ -758,15 +758,6 @@ int main(
         if (!strcmp(note, "n"))
           *note = '\0';
 
-        if (strlen(note) > MAX_NOTE)
-          {
-          fprintf(stderr, "Warning: note exceeds length limit (%d) - server may reject it...\n",
-            MAX_NOTE);
-          }
-
-        if (strchr(note, '\n') != NULL)
-          fprintf(stderr, "Warning: note contains a newline - server may reject it...\n");
-
         break;
 
       case 'A':
@@ -791,15 +782,6 @@ int main(
         /* -A n is the same as -A ""  -- it clears the note */
         if (!strcmp(note, "n"))
             *note = '\0';
-
-        if (strlen(note) > MAX_NOTE)
-          {
-          fprintf(stderr, "Warning: note exceeds length limit (%d) - server may reject it...\n",
-                MAX_NOTE);
-          }
-
-        if (strchr(note, '\n') != NULL)
-          fprintf(stderr, "Warning: note contains a newline - server may reject it...\n");
 
         break;
 
@@ -963,12 +945,6 @@ int main(
       note_to = stpcpy (note_to, note);
 
       set_note(con, *pa, new_note);
-
-      if (strlen(new_note) > MAX_NOTE)
-        {
-        fprintf(stderr, "Warning: note for node %s exceeds length limit (%d) - server may reject it...\n",
-                *pa, MAX_NOTE);
-        }
 
       pbs_statfree(bstatus);
       }

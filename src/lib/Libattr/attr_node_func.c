@@ -1853,40 +1853,27 @@ int set_note_str(
   enum batch_op  op)
 
   {
-  static char id[] = "set_note_str";
-  size_t      nsize;
-  int         rc = 0;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-
   assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
-  nsize = strlen(new_attr->at_val.at_str);    /* length of new note */
 
-  if (nsize > MAX_NOTE)
-    {
-    sprintf(log_buf, "Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
-      (int)nsize,
-      MAX_NOTE);
-
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
-
-    rc = PBSE_BADNDATVAL;
-    }
-
+  // if newlines are in the note string, remove them
   if (strchr(new_attr->at_val.at_str, '\n') != NULL)
     {
-    sprintf(log_buf, "Warning: Client attempted to set note with a newline char");
+    std::string new_note = new_attr->at_val.at_str;
+    
+    // remove newline(s) from string                                                                                     
+    new_note.erase(std::remove(new_note.begin(), new_note.end(), '\n'), new_note.end());
 
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    // now reassign string
 
-    rc = PBSE_BADNDATVAL;
+    // remove the old one if present
+    if (new_attr->at_val.at_str != NULL)
+      free(new_attr->at_val.at_str);
+
+    // assign the new one
+    new_attr->at_val.at_str = strdup(new_note.c_str());
     }
 
-  if (rc != 0)
-    return(rc);
-
-  rc = set_str(attr, new_attr, op);
-
-  return(rc);
+  return(set_str(attr, new_attr, op));
   }  /* END set_note_str() */
 
 /* END attr_node_func.c */
