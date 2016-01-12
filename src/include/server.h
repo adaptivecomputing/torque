@@ -279,6 +279,7 @@ extern acl_special limited_acls;
  */
 #define SVR_HOSTACL "svr_hostacl"
 #define PBS_DEFAULT_NODE "1"
+#define RESOURCE_20_FIND "L"
 
 #define SVR_SAVE_QUICK 0
 #define SVR_SAVE_FULL  1

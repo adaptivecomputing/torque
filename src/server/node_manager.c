@@ -2368,7 +2368,8 @@ void set_first_node_name(
   int   i;
   int   len;
 
-  if (isdigit(spec_param[0]) == TRUE)
+  if ((isdigit(spec_param[0]) == TRUE) ||
+      (!strcmp(spec_param, RESOURCE_20_FIND)))
     {
     first_node_name[0] = '\0';
     }
@@ -4489,6 +4490,131 @@ int add_multi_reqs_to_job(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * add_entry_to_naji_list()
+ *
+ * Adds a new entry to the naji list equivalent to the tasks_placed tasks from req r
+ *
+ * @param naji_list - the list of node_add_job_info
+ * @param r - the req we're using to get the placement information
+ * @param hostname - the hostname where these tasks were placed
+ * @param tasks_placed - the number of tasks placed from req r
+ */
+
+void add_entry_to_naji_list(
+
+  std::list<node_job_add_info> &naji_list,
+  req                          &r,
+  struct pbsnode               *pnode,
+  int                           tasks_placed,
+  int                           req_index)
+
+  {
+  node_job_add_info naji;
+
+  naji.node_id = pnode->nd_id;
+  naji.ppn_needed = r.get_execution_slots() * tasks_placed;
+  naji.gpu_needed = r.getGpus() * tasks_placed;
+  naji.mic_needed = r.getMics() * tasks_placed;
+  naji.is_external = false;
+  naji.req_rank = req_index;
+  
+  pnode->nd_np_to_be_used    += naji.ppn_needed;
+  pnode->nd_ngpus_to_be_used += naji.gpu_needed;
+  pnode->nd_nmics_to_be_used += naji.mic_needed;
+
+  naji_list.push_back(naji);
+  } // END add_entry_to_naji_list()
+
+
+
+/*
+ * locate_resource_request_20_nodes()
+ *
+ * Makes -L work when no hostlist is given at run-time, intended for testing purposes
+ *
+ * NOTE: currently this doesn't work for Cray systems
+ *
+ * @param pjob - the job we're running
+ * @param naji_list - the information to save the nodes later
+ * @param ard_array - we need this if we ever want this to work for Cray
+ * @param num_reqs - same thing as ard_array
+ * @param job_type - same thing as ard_array
+ * @return 0 on a busy failure, 1 for success. This mimics the way node_spec() returns because 
+ * we fall into the same error processing code as node_spec()
+ */
+
+int locate_resource_request_20_nodes(
+
+  job                           *pjob,
+  std::list<node_job_add_info>  &naji_list,
+  alps_req_data                **ard_array,
+  int                           &num_reqs,
+  enum job_types                &job_type)
+
+  {
+  int rc = 1; // positive numbers mean success - this needs to return like node_spec()
+  complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+  // It shouldn't be possible for this to be NULL but don't segfault
+  if (cr == NULL)
+    return(0);
+
+  for (int i = 0; i < cr->req_count(); i++)
+    {
+    req &r = cr->get_req(i);
+    int  remaining_tasks = r.getTaskCount();
+    
+    node_iterator   iter;
+    struct pbsnode *pnode = NULL;
+  
+    reinitialize_node_iterator(&iter);
+
+    /* iterate over all nodes */
+    while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
+      {
+      int can_place = pnode->nd_layout->how_many_tasks_can_be_placed(r);
+
+      if (can_place != 0)
+        {
+        if (can_place > remaining_tasks)
+          can_place = remaining_tasks;
+
+        // For now, only mark the number we want to add. They actual placement comes later
+        add_entry_to_naji_list(naji_list, r, pnode, can_place, i);
+
+        remaining_tasks -= can_place;
+      
+        if (remaining_tasks == 0)
+          {
+          pnode->unlock_node(__func__, NULL, 10);
+          break;
+          }
+        }
+      } // END for each node
+
+    if (remaining_tasks > 0)
+      {
+      // We failed to place all the tasks, return a busy error
+      rc = 0;
+    
+      if (iter.node_index != NULL)
+        delete iter.node_index;
+
+      break;
+      }
+    
+    if (iter.node_index != NULL)
+      delete iter.node_index;
+    }
+
+  return(rc);
+  } // END locate_resource_request_20_nodes()
+#endif
+
+
+
 /*
  * set_nodes() - Call node_spec() to allocate nodes then set them inuse.
  * Build list of allocated nodes to pass back in rtnlist.
@@ -4553,23 +4679,27 @@ int set_nodes(
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
     login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+
   bool job_is_exclusive = false;
   if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
     job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
 
+#ifdef PENABLE_LINUX_CGROUPS
+  if (!strcmp(spec, RESOURCE_20_FIND))
+    {
+    i = locate_resource_request_20_nodes(pjob, naji_list, &ard_array, num_reqs, job_type);
+    }
+  else
+    {
+#endif
+    i = node_spec(spec, 1, 1, ProcBMStr, FailHost, &naji_list, EMsg, login_prop, &ard_array,
+                  &num_reqs, job_type, job_is_exclusive);
+#ifdef PENABLE_LINUX_CGROUPS
+    }
+#endif
+
   /* allocate nodes */
-  if ((i = node_spec(spec,
-                     1,
-                     1,
-                     ProcBMStr,
-                     FailHost,
-                     &naji_list,
-                     EMsg,
-                     login_prop,
-                     &ard_array,
-                     &num_reqs,
-                     job_type,
-                     job_is_exclusive)) == 0)
+  if (i == 0)
     {
     /* no resources located, request failed */
     if (EMsg != NULL)

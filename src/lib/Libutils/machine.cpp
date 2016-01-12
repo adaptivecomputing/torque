@@ -1052,4 +1052,21 @@ bool Machine::check_if_possible(
 
 
 
+int Machine::how_many_tasks_can_be_placed(
+
+  req &r) const
+
+  {
+  int           can_place = 0;
+  allocation    a;
+  a.set_place_type(r.getPlacementType());
+
+  for (unsigned int j = 0; j < this->totalSockets; j++)
+    can_place += this->sockets[j].how_many_tasks_fit(r, a.place_type);
+
+  return(can_place);
+  } // END place_as_many_as_possible()
+
+
+
 #endif /* PENABLE_LINUX_CGROUPS */
