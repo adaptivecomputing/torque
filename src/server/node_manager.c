@@ -2538,7 +2538,7 @@ int save_node_for_adding(
   /* count off the number we have reserved */
   pnode->nd_np_to_be_used    += req.ppn;
   pnode->nd_ngpus_to_be_used += req.gpu;
-  pnode->nd_nmics_to_be_used -= req.mic;
+  pnode->nd_nmics_to_be_used += req.mic;
 
   return(PBSE_NONE);
   } /* END save_node_for_adding */
