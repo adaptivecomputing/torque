@@ -4363,6 +4363,7 @@ int TMomFinalizeChild(
       }
     }
 
+#ifndef PENABLE_LINUX_CGROUPS
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
 
@@ -4377,6 +4378,7 @@ int TMomFinalizeChild(
     }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+#endif
 
 #ifdef PENABLE_LINUX_CGROUPS
   int rc;
