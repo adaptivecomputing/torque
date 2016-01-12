@@ -2927,7 +2927,6 @@ int setup_nodes(void)
 
   {
   FILE              *nin;
-  char               note[MAX_NOTE+1];
   std::string        propstr;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   int                num;
