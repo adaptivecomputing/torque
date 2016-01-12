@@ -296,6 +296,13 @@ START_TEST(test_place_and_free_job)
   pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
+  // Check how many tasks fit
+  req r;
+  num_tasks_fit = 8;
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 16);
+  num_tasks_fit = 2;
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 4);
+
   // Make the job fit on one socket so we call place once per task
   called_place_task = 0;
   my_req_count = 2;

@@ -49,6 +49,7 @@ const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
 bool             job_mode = false;
+int              can_place = 0;
 
 
 struct batch_request *alloc_br(int type)
@@ -191,8 +192,7 @@ struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsno
 
 struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, node_iterator *iter)
   {
-  fprintf(stderr, "The call to next_node needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int DIS_tcp_wflush(int fd)
@@ -712,6 +712,11 @@ int Machine::place_job(
 
   {
   return(0);
+  }
+
+int Machine::how_many_tasks_can_be_placed(req &r) const
+  {
+  return(can_place);
   }
 
 Socket::Socket() {}

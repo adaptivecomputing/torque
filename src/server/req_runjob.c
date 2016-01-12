@@ -2173,6 +2173,16 @@ int assign_hosts(
       }
     }
 
+  // RESOURCE_20_FIND means interpret the -L request and find nodes that fit it. Only attempt this
+  // if no hostlist was specified.
+  if ((hosttoalloc == NULL) &&
+      (procs == 0) &&
+      (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL))
+    {
+    hosttoalloc = strdup(RESOURCE_20_FIND);
+    to_free = hosttoalloc;
+    }
+
   get_svr_attr_str(SRV_ATR_DefNode, &def_node);
   if (hosttoalloc != NULL)
     {
