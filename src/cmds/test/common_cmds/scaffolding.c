@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "u_hash_map_structs.h"
-#include "dynamic_string.h"
 
 
 bool exit_called = false;

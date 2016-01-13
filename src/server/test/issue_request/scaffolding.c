@@ -261,6 +261,7 @@ struct pbsnode dummynode;
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
   memset(&dummynode,0,sizeof(dummynode));
+  dummynode.nd_name = strdup("dummynode");
   return &dummynode;
   }
 

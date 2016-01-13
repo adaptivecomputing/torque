@@ -12,7 +12,6 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "queue.h" /* pbs_queue */
 #include "work_task.h" /* work_task */
-#include "dynamic_string.h"
 #include "threadpool.h"
 
 const char *PJobSubState[10];
@@ -203,11 +202,6 @@ void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
 int get_svr_attr_l(int index, long *l)
   {
   return(0);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  return(NULL);
   }
 
 batch_request *get_remove_batch_request(

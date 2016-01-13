@@ -5,7 +5,6 @@
 #include <netdb.h>
 
 #include "u_tree.h"
-#include "dynamic_string.h"
 #include "tcp.h"
 #include "pbs_job.h"
 #include "mutex_mgr.hpp"
@@ -75,15 +74,6 @@ int insert_addr_name_info(
   return(0);
   }
 
-dynamic_string *get_dynamic_string(
-    
-  int         initial_size, /* I (-1 means default) */
-  const char *str)          /* I (optional) */
-
-  {
-  return(0);
-  }
-
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
@@ -128,19 +118,6 @@ struct pbsnode *find_nodebyname(
 
   {
   return(NULL);
-  }
-
-void free_dynamic_string(dynamic_string *ds) {}
-
-int unlock_node(
-    
-  struct pbsnode *the_node,
-  const char     *id,
-  const char     *msg,
-  int             logging)
-
-  {
-  return(0);
   }
 
 int process_alps_status(
@@ -203,11 +180,6 @@ long disrsl(
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy) 
-  {
-  return(0);
-  }
 
 int process_status_info(
 
@@ -287,4 +259,9 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
 void mom_hierarchy_handler::sendHierarchyToANode(struct pbsnode *node)
   {
+  }
+
+int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
+  {
+  return(0);
   }

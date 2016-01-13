@@ -439,4 +439,10 @@ std::string get_path_jobdata(const char *a, const char *b)
   return ret_string;
   }
 
+void update_failure_counts(
 
+  const char *node_name,
+  int         rc)
+
+  {
+  }
