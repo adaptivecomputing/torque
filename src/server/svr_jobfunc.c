@@ -376,16 +376,18 @@ int insert_into_alljobs_by_rank(
  * @param have_reservation - indicates whether or not this job already has spaced 
  * reserved for it in the queue, used to help keep max queuable parameters enforced 
  * correctly.
+ * @param being_recovered - true if this job is being recovered from disk, else false
  *
  * @return PBSE_NONE - the job was correctly queued.
  */
 
 int svr_enquejob(
 
-  job        *pjob,            /* I */
-  int         has_sv_qs_mutex, /* I */
-  const char *prev_job_id,  /* I */
-  bool        have_reservation)
+  job        *pjob,             /* I */
+  int         has_sv_qs_mutex,  /* I */
+  const char *prev_job_id,      /* I */
+  bool        have_reservation, /* I */
+  bool        being_recovered)  /* I */
 
   {
   pbs_attribute *pattrjb;
@@ -429,6 +431,13 @@ int svr_enquejob(
     }
 
   mutex_mgr que_mgr(pque->qu_mutex, true);
+
+  if ((pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long == TRUE) &&
+      (being_recovered == false))
+    {
+    return(PBSE_GHOSTQUEUE);
+    }
+
   if (have_reservation)
     {
     if (LOGLEVEL >= 6)

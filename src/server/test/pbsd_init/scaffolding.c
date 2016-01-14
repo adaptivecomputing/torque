@@ -20,6 +20,7 @@
 #include "user_info.h"
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
+#include "queue.h"
 
 threadpool_t *task_pool;
 int scheduler_sock=0;
@@ -102,6 +103,7 @@ id_map job_mapper;
 threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
+struct pbs_queue *allocd_queue = NULL;
 
 int enque_rc;
 int evaluated;
@@ -330,7 +332,7 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recovery)
   {
   return(enque_rc);
   }
@@ -438,8 +440,7 @@ void acct_close(bool acct_mutex_locked)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int svr_save(struct server *ps, int mode)
@@ -559,8 +560,6 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-
-
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -667,3 +666,19 @@ int update_group_acls(pbs_attribute *pattr, batch_op op_type)
   {
   return(0);
   }
+
+pbs_queue *find_queuebyname(const char *name)
+  {
+  return(NULL);
+  }
+
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
+  {
+  pbs_queue *pq;
+
+  pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+  sprintf(pq->qu_qs.qu_name, "%s", name);
+  allocd_queue = pq;
+  return(pq);
+  }
+

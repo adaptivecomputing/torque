@@ -2245,16 +2245,16 @@ int req_commit(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, NULL, false)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
     if (rc != PBSE_JOB_RECYCLED)
       {
       if (LOGLEVEL >= 6)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot queue job %s",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
           pj->ji_qs.ji_jobid);
         
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
         }
 
       svr_job_purge(pj);

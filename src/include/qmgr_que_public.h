@@ -133,3 +133,5 @@ ATTR_rerunnable,
 ATTR_is_transit,
 ATTR_featreqd,
 ATTR_req_login_property,
+ATTR_ghost_queue,
+

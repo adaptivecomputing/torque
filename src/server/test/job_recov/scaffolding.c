@@ -141,7 +141,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   return(PBSE_NONE);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recov)
   {
   return(PBSE_NONE);
   }

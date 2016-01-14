@@ -283,7 +283,7 @@ PbsErrClient(PBSE_HIERARCHY_NOT_SENT, (char *)"The updated okclients list hasn't
 PbsErrClient(PBSE_MOM_TIMED_OUT_ON_REQUEUE, (char *)"The server was unable to communicate with the MOM to requeue or delete the job. The node has been deleted and all jobs on the node have been purged.")
 PbsErrClient(PBSE_BAD_JOB_STATE_TRANSITION, (char *)"The requested state or substate can't be set from the job's current state.")
 PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
-
+PbsErrClient(PBSE_GHOSTQUEUE, (char *)"This queue had errors during its recovery. Please correct any settings that were lost on restart and then unset the ghost_queue setting via qmgr. Once this is unset, then the queue will be able to accept new jobs again.") 
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif

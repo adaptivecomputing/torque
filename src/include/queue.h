@@ -167,6 +167,7 @@ enum queueattr
   QA_ATR_Started,
   QA_ATR_FeaturesRequired,
   QA_ATR_ReqLoginProperty,
+  QA_ATR_GhostQueue,
   QA_ATR_LAST};   /* WARNING: Must be the highest valued enum */
 
 extern attribute_def que_attr_def[];
@@ -260,6 +261,8 @@ void update_recycler_queue_next_id();
 void initialize_recycler_trash();
 void garbage_collect_recycling();
 
+pbs_queue *find_queuebyname(const char *quename);
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held);
 int   count_user_queued_jobs(pbs_queue *,char *);
 int   svr_chkque(job *, pbs_queue *, char *, int, char *);
 int   default_router(job *, pbs_queue *, long);

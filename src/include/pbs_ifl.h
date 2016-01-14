@@ -200,14 +200,14 @@
 
 /* additional queue attributes names */
 
-#define ATTR_aclgren    "acl_group_enable"
-#define ATTR_aclgroup   "acl_groups"
-#define ATTR_aclhten    "acl_host_enable"
-#define ATTR_aclhost    "acl_hosts"
-#define ATTR_acluren    "acl_user_enable"
-#define ATTR_acluser    "acl_users"
-#define ATTR_altrouter  "alt_router"
-#define ATTR_checkpoint_min  "checkpoint_min"
+#define ATTR_aclgren              "acl_group_enable"
+#define ATTR_aclgroup             "acl_groups"
+#define ATTR_aclhten              "acl_host_enable"
+#define ATTR_aclhost              "acl_hosts"
+#define ATTR_acluren              "acl_user_enable"
+#define ATTR_acluser              "acl_users"
+#define ATTR_altrouter            "alt_router"
+#define ATTR_checkpoint_min       "checkpoint_min"
 #define ATTR_checkpoint_defaults  "checkpoint_defaults"
 #define ATTR_enable     "enabled"
 #define ATTR_fromroute  "from_route_only"
@@ -241,6 +241,7 @@
 #define ATTR_keepcompleted "keep_completed"
 #define ATTR_disallowedtypes "disallowed_types"
 #define ATTR_is_transit  "is_transit"
+#define ATTR_ghost_queue          "ghost_queue"
 
 /* additional server attributes names */
 
