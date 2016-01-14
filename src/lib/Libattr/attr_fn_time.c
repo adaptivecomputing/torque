@@ -309,7 +309,6 @@ int encode_time(
   {
   size_t    ct;
   char      cvnbuf[ENCODE_TIME_SIZE];
-  long      n;
   svrattrl *pal;
 
   if ((attr == NULL)||(phead == NULL))
