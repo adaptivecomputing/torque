@@ -719,4 +719,16 @@ attribute_def que_attr_def[] =
     ATR_TYPE_STR,
     PARENT_TYPE_QUE_ALL
   },
+  /* QA_ATR_GhostQueue */
+  { (char *)ATTR_ghost_queue, /* "ghost_queue" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_QUE_ALL
+  },
   };

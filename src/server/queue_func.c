@@ -213,7 +213,7 @@ int unlock_queue(
 
 pbs_queue *que_alloc(
 
-  char *name,
+  const char *name,
   int   sv_qs_mutex_held)
 
   {
