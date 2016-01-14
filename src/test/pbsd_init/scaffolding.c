@@ -726,7 +726,8 @@ void translate_range_string_to_vector(
 
 bool job_id_exists(
 
-  const std::string job_id_string)
+  const std::string &job_id_string,
+  int               *rc)
 
   {
   return(true);
@@ -789,4 +790,7 @@ pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   allocd_queue = pq;
   return(pq);
   }
+
+job::job() {}
+job::~job() {}
 

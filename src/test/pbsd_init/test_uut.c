@@ -24,7 +24,6 @@ START_TEST(test_check_jobs_queue)
   {
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   sprintf(pjob.ji_qs.ji_jobid, "1.napali");
   sprintf(pjob.ji_qs.ji_queue, "lost");
 
