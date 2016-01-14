@@ -461,3 +461,8 @@ job::job()
   }
 
 job::~job() {}
+
+int get_time_string(char *buf, int bufsize, long timeval)
+  {
+  return(0);
+  }
