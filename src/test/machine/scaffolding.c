@@ -322,4 +322,6 @@ int req::getGpus() const
   return(0);
   }
 
+job::job() {}
+job::~job() {}
 
