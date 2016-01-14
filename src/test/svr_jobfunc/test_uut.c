@@ -176,10 +176,10 @@ START_TEST(svr_enquejob_test)
 
   memset(&test_job, 0, sizeof(test_job));
 
-  result = svr_enquejob(NULL, 0, NULL, false);
+  result = svr_enquejob(NULL, 0, NULL, false, false);
   fail_unless(result != PBSE_NONE, "NULL input pointer fail");
 
-  result = svr_enquejob(&test_job, 0, NULL, false);
+  result = svr_enquejob(&test_job, 0, NULL, false, false);
   /*Need more complicated mocking in order to have other result than PBSE_JOBNOTFOUND*/
   fail_unless(result == PBSE_JOBNOTFOUND, "svr_enquejob fail: %d", result);
 

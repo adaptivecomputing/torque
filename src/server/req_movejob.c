@@ -348,13 +348,13 @@ int req_orderjob(
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
 
-    if (svr_enquejob(pjob1, FALSE, NULL, reservation1) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob1, FALSE, NULL, reservation1, false) == PBSE_JOB_RECYCLED)
       {
       pjob1 = NULL;
       job1_mutex.set_unlock_on_exit(false);
       }
 
-    if (svr_enquejob(pjob2, FALSE, NULL, reservation2) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob2, FALSE, NULL, reservation2, false) == PBSE_JOB_RECYCLED)
       {
       pjob2 = NULL;
       job2_mutex.set_unlock_on_exit(false);

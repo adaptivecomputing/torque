@@ -218,7 +218,7 @@ int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *),
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation, bool recov)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);

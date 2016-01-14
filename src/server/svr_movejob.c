@@ -372,7 +372,7 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation)) == PBSE_JOB_RECYCLED)
+  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
     return(-1);
 
   if (*my_err != PBSE_NONE)
