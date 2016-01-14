@@ -1690,9 +1690,18 @@ int get_used(
     acct_data += pr->rs_defin->rs_name;
     acct_data += "=";
 
-    at_def.at_type = pr->rs_value.at_type;
-    if (attr_to_str(acct_data, &at_def, pr->rs_value, false) == NO_ATTR_DATA)
-      acct_data += empty;
+    if (!strcmp(pr->rs_defin->rs_name, "walltime"))
+      {
+      char buf[MAXLINE];
+      get_time_string(buf, sizeof(buf), pr->rs_value.at_val.at_long);
+      acct_data += buf;
+      }
+    else
+      {
+      at_def.at_type = pr->rs_value.at_type;
+      if (attr_to_str(acct_data, &at_def, pr->rs_value, false) == NO_ATTR_DATA)
+        acct_data += empty;
+      }
 
     pr = (resource *)GET_NEXT(pr->rs_link);
     }

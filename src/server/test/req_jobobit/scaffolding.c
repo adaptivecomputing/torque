@@ -448,3 +448,8 @@ void *get_next(
   }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+int get_time_string(char *buf, int bufsize, long timeval)
+  {
+  return(0);
+  }

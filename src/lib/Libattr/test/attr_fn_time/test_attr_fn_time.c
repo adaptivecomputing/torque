@@ -7,10 +7,22 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+int get_time_string(char *time_string, int string_size, long timeval);
+
+START_TEST(test_get_time_string)
   {
+  char buf[1024];
+  get_time_string(buf, sizeof(buf), 200);
+  fail_unless(!strcmp(buf, "00:03:20"));
 
+  get_time_string(buf, sizeof(buf), 3800);
+  fail_unless(!strcmp(buf, "01:03:20"));
 
+  get_time_string(buf, sizeof(buf), 7523);
+  fail_unless(!strcmp(buf, "02:05:23"), "time: %s", buf);
+
+  get_time_string(buf, sizeof(buf), 380);
+  fail_unless(!strcmp(buf, "00:06:20"));
   }
 END_TEST
 
@@ -24,8 +36,8 @@ END_TEST
 Suite *attr_fn_time_suite(void)
   {
   Suite *s = suite_create("attr_fn_time_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_get_time_string");
+  tcase_add_test(tc_core, test_get_time_string);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

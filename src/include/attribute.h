@@ -394,6 +394,7 @@ int  decode_nppcu(pbs_attribute *patr, const char *name, const char *rescn, cons
 int  decode_frequency(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
  
+int get_time_string(char *time_string, int string_size, long timeval);
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
 int encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,
