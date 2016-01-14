@@ -1081,7 +1081,7 @@ void close_quejob(
           pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-          int rc = svr_enquejob(pjob, FALSE, NULL, false);
+          int rc = svr_enquejob(pjob, FALSE, NULL, false, false);
           
           if ((rc == PBSE_JOBNOTFOUND) ||
               (rc == PBSE_JOB_RECYCLED))

@@ -8,14 +8,35 @@
 #include <log.h>
 
 #include "pbs_error.h"
+#include "queue.h"
 
 int mk_subdirs(char **);
 int pbsd_init_reque(job *, int);
+void check_jobs_queue(job *pjob);
 
 extern char global_log_ext_msg[LOCAL_LOG_BUF_SIZE];
 extern int enque_rc;
 extern int evaluated;
 extern int aborted;
+extern pbs_queue *allocd_queue;
+
+START_TEST(test_check_jobs_queue)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  sprintf(pjob.ji_qs.ji_jobid, "1.napali");
+  sprintf(pjob.ji_qs.ji_queue, "lost");
+
+  check_jobs_queue(&pjob);
+  fail_unless(allocd_queue != NULL);
+  fail_unless(!strcmp(allocd_queue->qu_qs.qu_name, pjob.ji_qs.ji_queue));
+  fail_unless(allocd_queue->qu_qs.qu_type == QTYPE_Execution);
+  fail_unless(allocd_queue->qu_attr[QA_ATR_GhostQueue].at_val.at_long == 1);
+  fail_unless(!strcmp(allocd_queue->qu_attr[QA_ATR_QType].at_val.at_str, "Execution"));
+  }
+END_TEST
+
 
 START_TEST(test_mk_subdirs)
   {
@@ -75,6 +96,7 @@ Suite *pbsd_init_suite(void)
 
   tc_core = tcase_create("test_pbsd_init_reque");
   tcase_add_test(tc_core, test_pbsd_init_reque);
+  tcase_add_test(tc_core, test_check_jobs_queue);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -47,7 +47,7 @@ int write_buffer(char *buf, int len, int fds)
   return -1;
   }
 
-pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   {
   pbs_queue *pq;
 

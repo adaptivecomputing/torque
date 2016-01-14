@@ -9,13 +9,9 @@ int lock_queue( struct pbs_queue *the_queue, const char *id, const char *msg, in
 
 int unlock_queue( struct pbs_queue *the_queue, const char *id, const char *msg, int logging);
 
-pbs_queue *que_alloc(char *name, int sv_qs_mutex_held);
-
 void que_free(pbs_queue *pq, int sv_qs_mutex_held);
 
 int que_purge(pbs_queue *pque);
-
-pbs_queue *find_queuebyname(const char *quename);
 
 pbs_queue *get_dfltque(void);
 

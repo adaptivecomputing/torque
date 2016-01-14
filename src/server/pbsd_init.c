@@ -2673,6 +2673,49 @@ int pbsd_init_job(
 
 
 
+/*
+ * check_jobs_queue()
+ *
+ * This ensures that a queue is created for pjob. If the queue isn't present,
+ * a ghost queue is created so that the job isn't deleted. This queue won't be
+ * able to enqueue new jobs, only jobs that are being recovered.
+ */
+
+void check_jobs_queue(
+
+  job *pjob)
+
+  {
+  std::string queue_name(pjob->ji_qs.ji_queue);
+  std::string job_id(pjob->ji_qs.ji_jobid);
+
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+  pbs_queue *pque = find_queuebyname(queue_name.c_str());
+
+  if (pque == NULL)
+    {
+    // Create the queue but flag it as a ghost queue
+    pque = que_alloc(queue_name.c_str(), TRUE);
+    pque->qu_attr[QA_ATR_QType].at_val.at_str = strdup("Execution");
+    pque->qu_attr[QA_ATR_QType].at_flags |= ATR_VFLAG_SET;
+    pque->qu_qs.qu_type = QTYPE_Execution;
+
+    pque->qu_attr[QA_ATR_Started].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Started].at_flags |= ATR_VFLAG_SET;
+
+    pque->qu_attr[QA_ATR_Enabled].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Enabled].at_flags |= ATR_VFLAG_SET;
+
+    pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_GhostQueue].at_flags |= ATR_VFLAG_SET;
+    }
+
+  unlock_queue(pque, __func__, NULL, LOGLEVEL);
+
+  pjob = svr_find_job(job_id.c_str(), TRUE);
+  } // END check_jobs_queue()
+
 
 
 int pbsd_init_reque(
@@ -2690,7 +2733,10 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  rc = svr_enquejob(pjob, TRUE, NULL, false);
+
+  check_jobs_queue(pjob);
+
+  rc = svr_enquejob(pjob, TRUE, NULL, false, true);
 
   // Since we aren't aborting jobs that receive PBSD_BADDEPEND, 
   // we need to set them up properly, inside this if statement.

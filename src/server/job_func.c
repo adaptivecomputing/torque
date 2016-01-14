@@ -1309,7 +1309,7 @@ void *job_clone_wt(
 
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false)))
         {
         /* XXX need more robust error handling */
         clone_mgr.set_unlock_on_exit(false);
