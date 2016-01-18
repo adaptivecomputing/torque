@@ -1583,7 +1583,8 @@ int trq_cg_set_resident_memory_limit(
   if (memory_limit == 0)
     return(PBSE_NONE);
 
-  memory_limit_in_bytes = memory_limit;
+  // Convert kb to bytes
+  memory_limit_in_bytes = 1024 * memory_limit;
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */

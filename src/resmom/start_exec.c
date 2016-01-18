@@ -4200,7 +4200,35 @@ int get_cpu_count_requested_on_this_node(
 
 
 
+unsigned long long get_memory_from_size(
+
+  struct size_value sz)
+
+  {
+  int shift = sz.atsv_shift;
+  
+  unsigned long long mem = sz.atsv_num;
+  /* make sure that the requested memory is in kb */
+  while (shift > 10)
+    {
+    mem *= 1024;
+    shift -= 10;
+    }
+
+  return(mem);
+  } // END get_memory_from_size()
+
+
+
 #ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ * get_memory_limit_from_resource_list()
+ *
+ * @param pjob (I) - the job whose resource list we're checking
+ * @return the memory limit from the resource list
+ */
+
 unsigned long long get_memory_limit_from_resource_list(
 
   job *pjob)
@@ -4220,23 +4248,35 @@ unsigned long long get_memory_limit_from_resource_list(
   if ((mem != NULL) &&
       (mem->rs_value.at_val.at_size.atsv_num != 0))
     {
-    int             shift = mem->rs_value.at_val.at_size.atsv_shift;
-    
-    mem_limit = mem->rs_value.at_val.at_size.atsv_num;
-    /* make sure that the requested memory is in kb */
-    while (shift > 10)
-      {
-      mem_limit *= 1024;
-      shift -= 10;
-      }
+    mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
+
+    // Figure out how much memory should be used on this host
+    int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+    // make sure the memory is evenly set over the job.
+    double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
+    mem_limit = mem_limit * mem_pcnt;
     }
+  else
+    {
+    /* pmem and vmem */
+    mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                          find_resc_def(svr_resc_def, "pmem", svr_resc_size));
 
-  // Figure out how much memory should be used on this host
-  int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+    if (mem == NULL)
+      {
+      mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                            find_resc_def(svr_resc_def, "pvmem", svr_resc_size));
+      }
+    
+    mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
 
-  // make sure the memory is evenly set over the job.
-  double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
-  mem_limit = mem_limit * mem_pcnt;
+    // Figure out how much memory should be used on this host
+    int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+    // Since this is per process, multiply by the number of execution slots
+    mem_limit = mem_limit * cpu_count;
+    }
 
   return(mem_limit);
   } // END get_memory_limit_from_resource_list()
@@ -4269,6 +4309,34 @@ unsigned long long get_memory_limit_for_this_host(
 
   return(mem_limit);
   } // END get_memory_limit_for_this_host()
+
+
+
+/*
+ * get_swap_limit_for_this_host()
+ *
+ *
+ */
+
+unsigned long long get_swap_limit_for_this_host(
+
+  job          *pjob,
+  complete_req *cr,
+  std::string  &string_hostname)
+
+  {
+  unsigned long long swap_limit = 0;
+
+  if (cr != NULL)
+    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
+
+  if (swap_limit == 0)
+    {
+    swap_limit = get_memory_limit_from_resource_list(pjob);
+    }
+
+  return(swap_limit);
+  } // END get_swap_limit_for_this_host()
 
 
 
@@ -4306,7 +4374,7 @@ int set_job_cgroup_memory_limits(
 
   if ((mem_limit = get_memory_limit_for_this_host(pjob, cr, string_hostname)) != 0)
     {
-    rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit * KB);
+    rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
     if (rc != PBSE_NONE)
       {
       sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
@@ -4315,24 +4383,23 @@ int set_job_cgroup_memory_limits(
       }
     }
 
-    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
-    if (swap_limit != 0)
+  if ((swap_limit = get_swap_limit_for_this_host(pjob, cr, string_hostname)) != 0)
+    {
+    rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit);
+    if (rc != PBSE_NONE)
       {
-      rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit * KB);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "Could not set swap memory limits for  %s.", pjob->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buffer, LOG_ERR);
-        return(rc);
-        }
-      }
-
-    if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
-      {
-      sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
+      sprintf(log_buffer, "Could not set swap memory limits for  %s.", pjob->ji_qs.ji_jobid);
       log_ext(-1, __func__, log_buffer, LOG_ERR);
       return(rc);
       }
+    }
+
+  if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    return(rc);
+    }
 
   return(rc);
   } // END set_job_cgroup_memory_limits()

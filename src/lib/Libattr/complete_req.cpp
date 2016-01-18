@@ -417,6 +417,8 @@ unsigned long long complete_req::get_swap_per_task(
 
 /* 
  * get_swap_memory_for_this_host()
+ *
+ * @return the amount of swap requested for this host in kb
  */
 
 unsigned long long complete_req::get_swap_memory_for_this_host(
@@ -436,6 +438,8 @@ unsigned long long complete_req::get_swap_memory_for_this_host(
 
 /* 
  * get_memory_for_this_host()
+ *
+ * @return the amount of memory requested for this host in kb
  */
 
 unsigned long long complete_req::get_memory_for_this_host(
