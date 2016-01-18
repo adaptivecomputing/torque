@@ -21,6 +21,7 @@ extern time_t last_poll_time;
 extern bool ForceServerUpdate;
 extern int MOMCudaVisibleDevices;
 
+time_t pbs_tcp_timeout;
 unsigned long setcudavisibledevices(const char *);
 void set_report_mom_cuda_visible_devices(std::stringstream &output, char *curr);
 void read_mom_hierarchy();
