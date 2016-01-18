@@ -230,7 +230,7 @@ hwloc_topology_t topology = NULL;       /* system topology */
 
 extern long     MaxConnectTimeout;
 
-time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
+extern time_t   pbs_tcp_timeout;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 bool            ForceServerUpdate = false;

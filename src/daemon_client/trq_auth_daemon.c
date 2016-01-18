@@ -35,12 +35,12 @@
 
 extern char *msg_daemonname;
 extern int debug_mode;
+extern pbs_net_t trq_server_addr;
+extern char *trq_hostname;
 
 bool       down_server = false;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
-pbs_net_t   trq_server_addr;
-char       trq_hostname[PBS_MAXSERVERNAME + 1];
 
 /* Get the name of the active pbs_server */
 int load_trqauthd_config(
