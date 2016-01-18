@@ -347,31 +347,36 @@ START_TEST(test_spread_place)
   int                remaining = 0;
   a.place_type = exclusive_chip;
 
+  // Make sure we get 4 evenly spread cores
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,4,8,12\",\"mem\":0,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
 
+  // Make sure we do not place another task on this chip before freeing the old one
   fail_unless(c.reserve_core(0, a) == false);
   remaining = 1;
   fail_unless(c.spread_place(r, a, 4, remaining) == false);
   fail_unless(c.has_socket_exclusive_allocation() == false);
   c.free_task(jobid);
   
+  // Check that we place 5 cores correctly
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
   fail_unless(remaining == 0, "remaining = %d", remaining);
   fail_unless(c.reserve_core(0, a) == false);
-  fail_unless(c.reserve_core(4, a) == false);
-  fail_unless(c.reserve_core(8, a) == false);
-  fail_unless(c.reserve_core(12, a) == false);
-  fail_unless(c.reserve_core(15, a) == false);
+  fail_unless(c.reserve_core(3, a) == false);
+  fail_unless(c.reserve_core(6, a) == false);
+  fail_unless(c.reserve_core(10, a) == false);
+  fail_unless(c.reserve_core(13, a) == false);
 
   c.free_task(jobid);
+  // Make sure we get core 0 if we request 0 + 1 in the remainder
   remaining = 1;
   fail_unless(c.spread_place(r, a, 0, remaining) == true);
-  fail_unless(c.reserve_core(15, a) == false);
+  fail_unless(c.reserve_core(0, a) == false);
   fail_unless(remaining == 0);
-  
+ 
+  // Check what happens we we place an empty set on the chip
   c.free_task(jobid);
   a.place_type = exclusive_socket;
   fail_unless(c.spread_place(r, a, 0, remaining) == true);

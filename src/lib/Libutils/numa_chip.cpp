@@ -1742,34 +1742,32 @@ bool Chip::spread_place(
     {
     allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
+    int        to_add = 0;
+
+    if (execution_slots_remainder > 0)
+      to_add = 1;
 
     from_this_chip.place_type = task_alloc.place_type;
 
-    if (this->totalCores >= execution_slots_per)
+    if (this->totalCores >= execution_slots_per + to_add)
       {
+      if (to_add == 1)
+        {
+        execution_slots_per++;
+        execution_slots_remainder--;
+        }
+
       // Spread over just the cores
-      int step = 1;
+      float step = 1.0;
       if (execution_slots_per > 0)
-       step = this->totalCores / execution_slots_per;
+       step = this->totalCores / (float)execution_slots_per;
 
       from_this_chip.cores_only = true;
 
-      for (unsigned int i = 0; placed < execution_slots_per; i+= step)
+      for (float i = 0.0; placed < execution_slots_per; i+= step)
         {
-        this->reserve_core(i, from_this_chip);
+        this->reserve_core(std::floor(i + 0.5), from_this_chip);
         placed++;
-        }
-
-      if (execution_slots_remainder > 0)
-        {
-        for (unsigned int i = this->cores.size() - 1; i >= 0; i--)
-          {
-          if (this->reserve_core(i, from_this_chip) == true)
-            {
-            execution_slots_remainder--;
-            break;
-            }
-          }
         }
       }
     else
