@@ -100,7 +100,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
   exit(1);
   }
 
-pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_alloc to be mocked!!\n");
   exit(1);
