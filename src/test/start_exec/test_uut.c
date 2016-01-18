@@ -46,6 +46,10 @@ int read_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, int
 int process_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, const char *application_name);
 void update_task_and_job_states_after_launch(task *ptask, job *pjob, const char *application_name);
 
+#ifdef PENABLE_LINUX_CGROUPS
+unsigned long long get_memory_limit_from_resource_list(job *pjob);
+#endif
+
 int jobstarter_privileged = 0;
 int ac_read_amount;
 int ac_errno;
@@ -133,6 +137,33 @@ START_TEST(test_read_launcher_child_status)
   fail_unless(read_launcher_child_status(&srj, jobid, parent_read, parent_write) != PBSE_NONE);
   }
 END_TEST
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+START_TEST(get_memory_limit_from_resource_list_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_vnods = (vnodent *)calloc(4, sizeof(vnodent));
+  pjob.ji_numvnod = 4;
+
+  for (int i = 0; i < pjob.ji_numvnod; i++)
+    pjob.ji_vnods[i].vn_host = (hnodent *)calloc(1, sizeof(hnodent));
+
+  // Do the full case
+  unsigned long long mem_limit = get_memory_limit_from_resource_list(&pjob);
+  fail_unless(mem_limit == 4 * 1024 * 1024);
+  
+  // Test where only half the vnods are on this node
+  for (int i = pjob.ji_numvnod / 2; i < pjob.ji_numvnod; i++)
+    pjob.ji_vnods[i].vn_host->hn_node = 1;
+
+  mem_limit = get_memory_limit_from_resource_list(&pjob);
+  fail_unless(mem_limit == 2 * 1024 * 1024);
+  }
+END_TEST
+#endif
 
 
 START_TEST(remove_leading_hostname_test)
@@ -600,6 +631,9 @@ Suite *start_exec_suite(void)
   tc_core = tcase_create("test_get_num_nodes_ppn");
   tcase_add_test(tc_core, test_get_num_nodes_ppn);
   tcase_add_test(tc_core, test_setup_process_launch_pipes);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, get_memory_limit_from_resource_list_test);
+#endif
   suite_add_tcase(s, tc_core);
 
   return s;

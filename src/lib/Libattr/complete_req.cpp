@@ -430,7 +430,7 @@ unsigned long long complete_req::get_swap_memory_for_this_host(
     mem += this->reqs[i].get_swap_for_host(hostname);
 
   return(mem);
-  } // END get_memory_for_host()
+  } // END get_swap_memory_for_this_host()
 
 
 

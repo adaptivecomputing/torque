@@ -1281,26 +1281,6 @@ long long get_memory_requested_in_kb(
 
 
 
-int get_cpu_count_requested_on_this_node(
-
-  job &pjob)
-
-  {
-  int      cpus = 0;
-  vnodent *np = pjob.ji_vnods;
-
-  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
-    {
-    /* Add core at position vn_index in TORQUE cpuset */
-    if (pjob.ji_nodeid == np->vn_host->hn_node)
-      cpus++;
-    }
-
-  return(cpus);
-  }
-
-
-
 /**
  * Creates cpuset for a job.
  *
