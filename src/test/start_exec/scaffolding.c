@@ -408,8 +408,7 @@ int site_mom_chkuser(job *pjob)
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int mom_checkpoint_job_is_checkpointable(job *pjob)
@@ -607,8 +606,13 @@ char *pbs_strerror(int err)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
-  exit(1);
+  static resource mem;
+  
+  memset(&mem, 0, sizeof(mem));
+  mem.rs_value.at_val.at_size.atsv_num = 4;
+  mem.rs_value.at_val.at_size.atsv_shift = 30;
+  
+  return(&mem);
   }
 
 int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
