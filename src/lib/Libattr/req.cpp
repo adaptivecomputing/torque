@@ -294,8 +294,6 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, place_core))
     {
-    int count;
-
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->cores);
     else
@@ -306,8 +304,6 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, place_thread))
     {
-    int count;
-
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->threads);
     else

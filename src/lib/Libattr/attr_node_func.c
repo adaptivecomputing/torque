@@ -104,6 +104,7 @@
 #include <syslog.h>
 #endif
 #include "id_map.hpp"
+#include "pbs_helper.h"
 
 extern int LOGLEVEL;
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
@@ -330,8 +331,8 @@ int encode_state(
                        which are to be returned*/
   const char   *aname, /*pbs_attribute's name    */
   const char   *rname, /*resource's name (null if none)  */
-  int            mode, /*mode code, unused here   */
-  int            perm) /* only used for resources */
+  int            UNUSED(mode), /*mode code, unused here   */
+  int            UNUSED(perm)) /* only used for resources */
 
   {
   int       i;
@@ -418,8 +419,8 @@ int encode_power_state(
                        which are to be returned*/
   const char   *aname, /*pbs_attribute's name    */
   const char   *rname, /*resource's name (null if none)  */
-  int            mode, /*mode code, unused here   */
-  int            perm) /* only used for resources */
+  int            UNUSED(mode), /*mode code, unused here   */
+  int            UNUSED(perm)) /* only used for resources */
 
   {
   svrattrl *pal;
@@ -504,8 +505,8 @@ int encode_ntype(
   tlist_head     *ph,    /*head of a list of  "svrattrl"   */
   const char    *aname, /*pbs_attribute's name    */
   const char    *rname, /*resource's name (null if none)  */
-  int             mode,  /*mode code, unused here   */
-  int             perm)  /* only used for resources */
+  int             UNUSED(mode),  /*mode code, unused here   */
+  int             UNUSED(perm))  /* only used for resources */
 
   {
   svrattrl *pal;
@@ -561,8 +562,8 @@ int encode_jobs(
                            which are to be returned*/
   const char    *aname, /*pbs_attribute's name    */
   const char    *rname, /*resource's name (null if none)  */
-  int             mode,  /*mode code, unused here   */
-  int             perm)  /* only used for resources */
+  int             UNUSED(mode),  /*mode code, unused here   */
+  int             UNUSED(perm))  /* only used for resources */
 
   {
   FUNCTION_TIMER
@@ -637,10 +638,10 @@ int encode_jobs(
 int decode_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  const char   *name,    /* pbs_attribute name */
-  const char *rescn,   /* resource name, unused here */
+  const char * UNUSED(name),    /* pbs_attribute name */
+  const char * UNUSED(rescn),   /* resource name, unused here */
   const char    *val,     /* pbs_attribute value */
-  int            perm)    /* only used for resources */
+  int          UNUSED(perm))    /* only used for resources */
 
   {
   int   rc = 0;  /*return code; 0==success*/
@@ -740,10 +741,10 @@ int decode_state(
 int decode_power_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  const char   *name,    /* pbs_attribute name */
-  const char *rescn,   /* resource name, unused here */
+  const char * UNUSED(name),    /* pbs_attribute name */
+  const char * UNUSED(rescn),   /* resource name, unused here */
   const char    *val,     /* pbs_attribute value */
-  int            perm)    /* only used for resources */
+  int          UNUSED(perm))    /* only used for resources */
 
   {
   int   flag = -1;
@@ -870,10 +871,10 @@ int decode_utc(
 int decode_ntype(
 
   pbs_attribute *pattr,
-  const char   *name,   /* pbs_attribute name */
-  const char *rescn,  /* resource name, unused here */
+  const char * UNUSED(name),   /* pbs_attribute name */
+  const char * UNUSED(rescn),  /* resource name, unused here */
   const char    *val,    /* pbs_attribute value */
-  int            perm)   /* only used for resources */
+  int          UNUSED(perm))   /* only used for resources */
 
 
   {

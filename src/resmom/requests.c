@@ -4180,7 +4180,7 @@ job *job_with_reservation_id(
   const char *rsv_id)
 
   {
-  job *pjob, *nxjob;
+  job *pjob;
   std::list<job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)

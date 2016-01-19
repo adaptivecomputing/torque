@@ -98,6 +98,7 @@
 #include "array.h"
 #include "utils.h"
 #include "svrfunc.h" /* get_svr_attr_* */
+#include "pbs_helper.h"
 
 extern struct server server;
 
@@ -1278,9 +1279,9 @@ int set_tokens_nodect(
 
 int set_mppnodect(
 
-  resource      *res,
+  resource      * UNUSED(res),
   pbs_attribute *attr,
-  int            op)
+  int             UNUSED(op))
 
   {
   int           width;
@@ -1368,10 +1369,10 @@ int set_mppnodect(
 int decode_procct(
 
   pbs_attribute *patr,
-  const char  *name,  /* pbs_attribute name */
-  const char *rescn,  /* resource name, unused here */
+  const char * UNUSED(name),  /* pbs_attribute name */
+  const char * UNUSED(rescn),  /* resource name, unused here */
   const char    *val,  /* pbs_attribute value */
-  int            perm) /* only used for resources */
+  int          UNUSED(perm)) /* only used for resources */
 
   {
     const char *pc;
@@ -1412,8 +1413,8 @@ int encode_procct(
   tlist_head     *phead,  /* head of attrlist list */
   const char    *atname, /* pbs_attribute name */
   const char    *rsname, /* resource name or null */
-  int             mode,   /* encode mode, unused here */
-  int             perm)   /* only used for resources */
+  int            UNUSED(mode),   /* encode mode, unused here */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   size_t   ct;
