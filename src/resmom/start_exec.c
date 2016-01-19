@@ -4269,13 +4269,16 @@ unsigned long long get_memory_limit_from_resource_list(
                             find_resc_def(svr_resc_def, "pvmem", svr_resc_size));
       }
     
-    mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
+    if (mem != NULL)
+      {
+      mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
 
-    // Figure out how much memory should be used on this host
-    int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+      // Figure out how much memory should be used on this host
+      int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
 
-    // Since this is per process, multiply by the number of execution slots
-    mem_limit = mem_limit * cpu_count;
+      // Since this is per process, multiply by the number of execution slots
+      mem_limit = mem_limit * cpu_count;
+      }
     }
 
   return(mem_limit);
