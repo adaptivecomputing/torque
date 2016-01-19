@@ -4178,6 +4178,30 @@ void source_login_shells_or_not(
 
 
 
+/*
+ * get_memory_in_kilobytes_from_size()
+ */
+
+unsigned long long get_memory_in_kilobytes_from_size(
+
+  struct size_value sz)
+
+  {
+  int shift = sz.atsv_shift;
+  
+  unsigned long long mem = sz.atsv_num;
+  /* make sure that the requested memory is in kb */
+  while (shift > 10)
+    {
+    mem *= 1024;
+    shift -= 10;
+    }
+
+  return(mem);
+  } // END get_memory_in_kilobytes_from_size()
+
+
+
 #if defined(PENABLE_LINUX_CGROUPS) || defined(PENABLE_LINUX26_CPUSETS)
 int get_cpu_count_requested_on_this_node(
 
@@ -4196,31 +4220,8 @@ int get_cpu_count_requested_on_this_node(
 
   return(cpus);
   } 
-#endif
 
 
-
-unsigned long long get_memory_from_size(
-
-  struct size_value sz)
-
-  {
-  int shift = sz.atsv_shift;
-  
-  unsigned long long mem = sz.atsv_num;
-  /* make sure that the requested memory is in kb */
-  while (shift > 10)
-    {
-    mem *= 1024;
-    shift -= 10;
-    }
-
-  return(mem);
-  } // END get_memory_from_size()
-
-
-
-#ifdef PENABLE_LINUX_CGROUPS
 
 /*
  * get_memory_limit_from_resource_list()
@@ -4248,7 +4249,7 @@ unsigned long long get_memory_limit_from_resource_list(
   if ((mem != NULL) &&
       (mem->rs_value.at_val.at_size.atsv_num != 0))
     {
-    mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
+    mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
 
     // Figure out how much memory should be used on this host
     int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
@@ -4271,7 +4272,7 @@ unsigned long long get_memory_limit_from_resource_list(
     
     if (mem != NULL)
       {
-      mem_limit = get_memory_from_size(mem->rs_value.at_val.at_size);
+      mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
 
       // Figure out how much memory should be used on this host
       int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
@@ -4283,9 +4284,11 @@ unsigned long long get_memory_limit_from_resource_list(
 
   return(mem_limit);
   } // END get_memory_limit_from_resource_list()
+#endif
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 /*
  * get_memory_limit_for_this_host()
  *
@@ -6806,6 +6809,7 @@ void create_cpuset_reservation_if_needed(
     {
     /* this means there is no geometry request */
     long long mem_requested = get_memory_limit_from_resource_list(&pjob);
+    int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
