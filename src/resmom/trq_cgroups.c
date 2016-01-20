@@ -23,6 +23,7 @@
 #include <boost/foreach.hpp>
 #include "machine.hpp"
 #include "complete_req.hpp"
+#include "resource.h" /* struct resource */
 #endif
 
 using namespace std;
@@ -53,6 +54,7 @@ const int CPUS = 0;
 const int MEMS = 1;
 
 #ifdef PENABLE_LINUX_CGROUPS
+std::vector<std::string> incompatible_dash_l_resources;
 extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
@@ -70,6 +72,25 @@ void trq_cg_init_subsys_online(bool val)
   return;
   }
 
+void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
+  {
+  /* These are the -l resources that are not compatible with the -L resource request */
+  incompatible_resource_list.clear();
+  incompatible_resource_list.push_back("mem");
+  incompatible_resource_list.push_back("nodes");
+  incompatible_resource_list.push_back("hostlis");
+  incompatible_resource_list.push_back("ncpus");
+  incompatible_resource_list.push_back("procs");
+  incompatible_resource_list.push_back("pvmem");
+  incompatible_resource_list.push_back("pmem");
+  incompatible_resource_list.push_back("vmem");
+  incompatible_resource_list.push_back("reqattr");
+  incompatible_resource_list.push_back("software");
+  incompatible_resource_list.push_back("geometry");
+  incompatible_resource_list.push_back("opsys");
+  incompatible_resource_list.push_back("tpn");
+  incompatible_resource_list.push_back("trl");
+  }
 
 
 /* We need to remove the torque cgroups when pbs_mom 
@@ -681,12 +702,19 @@ unsigned long long trq_cg_read_numeric_value(
   bool   &error)
 
   {
-  int                fd = open(path.c_str(), O_RDONLY);
+  int                fd;
+  struct stat        stat_buf;
   unsigned long long val = 0;
   char               buf[LOCAL_LOG_BUF_SIZE];
 
   error = false;
 
+  /* If we don't have a file or access to it return 0 */
+  /* probably a -l request and we are looking for a Rx.ty directory */
+  if (stat(path.c_str(), &stat_buf) == -1)
+    return(0);
+
+  fd = open(path.c_str(), O_RDONLY);
   if (fd <= 0)
     {
     sprintf(log_buffer, "failed to open %s: %s", path.c_str(), strerror(errno));
@@ -750,12 +778,12 @@ int trq_cg_get_task_memory_stats(
 
   mem_used = trq_cg_read_numeric_value(cgroup_path, error);
   
-  if (mem_used == 0)
+/*  if (mem_used == 0)
     {
     sprintf(log_buffer, "peak memory usage read from '%s' is 0, something appears to be incorrect.",
       cgroup_path.c_str());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    }
+    }*/
 
   if (error)
     rc = PBSE_SYSTEM;
@@ -801,12 +829,12 @@ int trq_cg_get_task_cput_stats(
 
   cput_used = trq_cg_read_numeric_value(cgroup_path, error);
 
-  if (cput_used == 0)
+/*  if (cput_used == 0)
     {
     sprintf(log_buffer, "cpu time read from '%s' is 0, something appears to be incorrect.",
       cgroup_path.c_str());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    }
+    }*/
 
   if (error)
     rc = PBSE_SYSTEM;
@@ -849,6 +877,47 @@ int trq_cg_add_process_to_all_cgroups(
   } // END trq_cg_add_process_to_all_cgroups()
 
 
+/* 
+ * have_incompatible_dash_l_resource
+ *
+ * Check to see if this is an incompatile -l resource
+ * request for a -L syntax
+ *
+ * @param pjob  - the job structure we are working with
+ *
+ */
+   
+bool have_incompatible_dash_l_resource(
+    
+    job *pjob)
+
+  {
+  resource *presl; /* for -l resource request */
+
+  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list); 
+  if (presl != NULL)
+    {
+    std::vector<std::string>::iterator it;
+
+    if (incompatible_dash_l_resources.size() == 0)
+      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
+
+    do
+      {
+      std::string pname = presl->rs_defin->rs_name;
+      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
+      if (it != incompatible_dash_l_resources.end())
+        {
+        /* pname points to a string of an incompatible -l resource type */
+        return(true);
+        }
+
+      presl = (resource *)GET_NEXT(presl->rs_link);
+      }while(presl != NULL); 
+    }
+  return(false);
+  }
+
 
 /* 
  * trq_cg_create_task_cgroups
@@ -869,16 +938,20 @@ int trq_cg_create_task_cgroups(
   {
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_attribute *pattr;
+  pbs_attribute *pattrL; /* for -L req_information request */
 
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
 
-  if (pattr == NULL)
+  if (have_incompatible_dash_l_resource(pjob) == true)
+    return(PBSE_NONE);
+
+  pattrL = &pjob->ji_wattr[JOB_ATR_req_information];
+
+  if (pattrL == NULL)
     {
     return(PBSE_NONE);
     }
 
-  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
+  if ((pattrL->at_flags & ATR_VFLAG_SET) == 0)
     {
     /* This is not a -L request. Just return */
     return(PBSE_NONE);
@@ -887,7 +960,7 @@ int trq_cg_create_task_cgroups(
   char   this_hostname[PBS_MAXHOSTNAME];
 
   gethostname(this_hostname, PBS_MAXHOSTNAME);
-  complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+  complete_req *cr = (complete_req *)pattrL->at_val.at_ptr;
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -938,8 +1011,7 @@ int trq_cg_create_task_cgroups(
     }
 
   return(PBSE_NONE);
-  }
-
+  } /* trq_cg_create_task_cgroups*/
 
 
 /*
@@ -1187,6 +1259,13 @@ int trq_cg_populate_task_cgroups(
 
   if (pattr == NULL)
     {
+    return(PBSE_NONE);
+    }
+
+  if ( have_incompatible_dash_l_resource(pjob) == true)
+    {
+    /* this is not a -L request or there are incompatible
+       -l resources requested */
     return(PBSE_NONE);
     }
 
@@ -1712,7 +1791,7 @@ void trq_cg_remove_task_dirs(
 
     closedir(pdir);
     }
-  else
+  else if (errno != ENOENT)
     {
     sprintf(log_buffer, "Couldn't open directory '%s' for removal", torque_path.c_str());
     log_err(errno, __func__, log_buffer);
