@@ -26,6 +26,37 @@ START_TEST(test_get_cores_threads)
   }
 END_TEST
 
+START_TEST(test_has_conflicting_values)
+  {
+  req r;
+  std::string error;
+  bool has_conflict;
+
+  /* lprocs and cores are equal. return false */
+  r.set_value("task_count", "1");
+  r.set_value("lprocs", "4");
+  r.set_value("core", "4");
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == false, "expected false");
+
+  /* cores = 1, cores will be set equal to lprocs. return false */
+  r.set_value("task_count", "1");
+  r.set_value("lprocs", "4");
+  r.set_value("core", "1");
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == false, "expected false");
+
+
+  /* lprocs is greater than core. return true */
+  r.set_value("task_count", "1");
+  r.set_value("lprocs", "4");
+  r.set_value("core", "3");
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == true, "expected true");
+  }
+END_TEST
+
+
 
 START_TEST(test_append_gres)
   {
@@ -709,6 +740,7 @@ Suite *req_suite(void)
 
   tc_core = tcase_create("test_set_from_string");
   tcase_add_test(tc_core, test_set_from_string);
+  tcase_add_test(tc_core, test_has_conflicting_values);
   tcase_add_test(tc_core, test_set_attribute);
   tcase_add_test(tc_core, test_submission_string_has_duplicates);
   tcase_add_test(tc_core, test_get_set_values);
