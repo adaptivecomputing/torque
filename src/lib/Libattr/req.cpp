@@ -871,18 +871,36 @@ bool req::has_conflicting_values(
     }
   else
     {
-    if ((this->execution_slots > this->cores) &&
-        (this->cores > 1))
+    if ((this->execution_slots > this->cores))
       {
-      error = "place=core=x must be >= lprocs";
-      bad_syntax = true;
+      if (this->cores > 1)
+        {
+        error = "place=core=x must be >= lprocs";
+        bad_syntax = true;
+        }
+      else
+        {
+        /* A core value of one is a default or even if set by the user
+           will be considered the default. lprocs was greater than 1 so 
+           we will set cores equal to lprocs */
+        this->cores = this->execution_slots;
+        }
       }
 
-    if ((this->execution_slots > this->threads) &&
-        (this->threads > 1))
+    if ((this->execution_slots > this->threads))
       {
-      error = "place=thread=x must be >= lprocs";
-      bad_syntax = true;
+      if (this->threads > 1)
+        {
+        error = "place=thread=x must be >= lprocs";
+        bad_syntax = true;
+        }
+      else
+        {
+         /* A thread value of one is a default or even if set by the user
+           will be considered the default. lprocs was greater than 1 so 
+           we will set thread equal to lprocs */
+        this->threads = this->execution_slots;
+        }
       }
     }
 
