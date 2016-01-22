@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <set>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1350,9 +1351,26 @@ int trq_cg_populate_cgroup(
 
   if ((f = fopen(path.c_str(), "w")) == NULL)
     {
-    sprintf(log_buf, "failed to open %s", path.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    if (errno == EACCES)
+      {
+      /* some versions of Linux don't have cpuset.cpus or cpuset.mems.
+         They just have cpus or mems. Try again */
+      path = cg_cpuset_path;
+      path += "/";
+      if (which == CPUS)
+        path += "cpus";
+      else
+        path += "mems";
+
+      f = fopen(path.c_str(), "w");
+      }
+
+    if (f == NULL)
+      {
+      sprintf(log_buf, "failed to open %s", path.c_str());
+      log_err(errno, __func__, log_buf);
+      return(PBSE_SYSTEM);
+      }
     }
 
   if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
