@@ -1051,6 +1051,47 @@ job *mom_find_job(
 
 
 /*
+ * mom_find_job_by_int_id()
+ *
+ * Finds a job using just the integer portion of the job id
+ * @return the job, or NULL if no local job has that integer id
+ */
+
+job *mom_find_job_by_int_id(
+
+  int jobid)
+
+  {
+  char  job_id_buf[PBS_MAXSVRJOBID + 1];
+  job  *pjob;
+  int   job_id_buf_len;
+
+  job_id_buf_len = sprintf(job_id_buf, "%d", jobid);
+
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+    {
+    pjob = *iter;
+
+    // Compare just the numeric portion of the id
+    if (!strncmp(pjob->ji_qs.ji_jobid, job_id_buf, job_id_buf_len))
+      {
+      // Make sure the job's numeric portion as ended
+      if ((pjob->ji_qs.ji_jobid[job_id_buf_len] == '.') ||
+          (pjob->ji_qs.ji_jobid[job_id_buf_len] == '\0'))
+      // Found the job
+      return(pjob);
+      }
+    }
+
+  // Not found - we return from the loop if we find the job
+  return(NULL);
+  } // END mom_find_job_by_int_id()
+
+
+
+/*
  * am_i_mother_superior()
  *
  * @return true if I am this job's mother superior, else false
