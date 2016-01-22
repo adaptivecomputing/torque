@@ -232,7 +232,7 @@ void scan_for_terminated(void) /* linux */
 
   int           tcount;
 
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 9)
     {
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "entered");
     }
@@ -267,7 +267,7 @@ void scan_for_terminated(void) /* linux */
           {
           if (LOGLEVEL >= 7)
             {
-            snprintf(log_buffer, sizeof(log_buffer), "found match for recovering job task for sid=%d",
+            snprintf(log_buffer, sizeof(log_buffer), "Found match for recovering job task for sid=%d",
               ptask->ti_qs.ti_sid);
 
             log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
@@ -302,6 +302,9 @@ void scan_for_terminated(void) /* linux */
   while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0)
     {
     pjob = (job *)GET_PRIOR(svr_alljobs);
+      
+    sprintf(log_buffer, "Child exited with pid: %d", pid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     while (pjob != NULL)
       {
@@ -310,28 +313,30 @@ void scan_for_terminated(void) /* linux */
        * function for MOM
        */
 
-      if (LOGLEVEL >= 7)
+      if (pjob->ji_momsubt != 0)
         {
-        snprintf(log_buffer, sizeof(log_buffer),
-          "checking job w/subtask pid=%d (child pid=%d)",
-          pjob->ji_momsubt,
-          pid);
-
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-        }
-
-      if (pid == pjob->ji_momsubt)
-        {
-        if (LOGLEVEL >= 7)
+        if (LOGLEVEL >= 9)
           {
           snprintf(log_buffer, sizeof(log_buffer),
-            "found match with job subtask for pid=%d",
-            pid);
+            "Checking to see if exiting child pid '%d' is a match for special mom task with pid=%d",
+            pid, pjob->ji_momsubt);
 
           log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
           }
 
-        break;
+        if (pid == pjob->ji_momsubt)
+          {
+          if (LOGLEVEL >= 9)
+            {
+            snprintf(log_buffer, sizeof(log_buffer),
+              "The exiting child is a match of special subtask with pid=%d for job %s",
+              pid, pjob->ji_qs.ji_jobid);
+
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            }
+
+          break;
+          }
         }
 
       /* look for task */
@@ -350,7 +355,7 @@ void scan_for_terminated(void) /* linux */
           if (LOGLEVEL >= 7)
             {
             snprintf(log_buffer, sizeof(log_buffer),
-              "found match with job task %d for pid=%d",
+              "Exiting child matches job task %d for pid=%d",
               tcount,
               pid);
 
@@ -389,7 +394,7 @@ void scan_for_terminated(void) /* linux */
       {
       if (LOGLEVEL >= 1)
         {
-        sprintf(log_buffer, "pid %d not tracked, statloc=%d, exitval=%d",
+        sprintf(log_buffer, "Child pid %d is not part of a job, statloc=%d, exitval=%d",
           pid,
           statloc,
           exiteval);
@@ -417,13 +422,13 @@ void scan_for_terminated(void) /* linux */
           }
 
         }  /* END if (pjob->ji_mompost != NULL) */
-      else
+      else if (LOGLEVEL >= 8) // This is a debug statement
         {
         log_record(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
           pjob->ji_qs.ji_jobid,
-          "job has no postprocessing routine registered");
+          "Job has no postprocessing routine registered");
         }
 
       /* clear mom sub-task */
@@ -507,7 +512,7 @@ int open_master(
 
   if (status < 0)
     {
-    log_err(errno, "open_master", "failed in openpty()");
+    log_err(errno, __func__, "failed in openpty()");
 
     return(-1);
     }
