@@ -510,3 +510,8 @@ void check_state(int Force) {}
 void complete_req::set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used)
   {
   }
+
+int set_job_cgroup_memory_limits(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
