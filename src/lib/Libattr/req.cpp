@@ -894,7 +894,7 @@ bool req::has_conflicting_values(
         error = "place=thread=x must be >= lprocs";
         bad_syntax = true;
         }
-      else if (this->cores == 1)
+      else if (this->threads == 1)
         {
          /* A thread value of one is a default or even if set by the user
            will be considered the default. lprocs was greater than 1 so 
