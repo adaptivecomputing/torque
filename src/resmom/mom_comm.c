@@ -216,6 +216,9 @@ extern void free_sisterlist(struct radix_buf **list, int radix);
 extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 int start_process(task *, char **, char **);
+#ifdef PENABLE_LINUX_CGROUPS
+int set_job_cgroup_memory_limits(job *pjob);
+#endif
  
 int allocate_demux_sockets(job *pjob, int flag);
 
@@ -2625,6 +2628,12 @@ int im_join_job_as_sister(
   if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    }
+
+  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
     }
 #endif
