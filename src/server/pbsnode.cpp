@@ -35,7 +35,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
                      nd_power_state_change_time(0), nd_acl(NULL),
                      nd_requestid(), nd_tmp_unlock_count(0)
 #ifdef PENABLE_LINUX_CGROUPS
-                     , nd_layout(NULL)
+                     , nd_layout()
 #endif
 
   {
@@ -80,7 +80,7 @@ pbsnode::pbsnode(
                                      nd_power_state_change_time(0), nd_acl(NULL),
                                      nd_requestid(), nd_tmp_unlock_count(0)
 #ifdef PENABLE_LINUX_CGROUPS
-                                     , nd_layout(NULL)
+                                     , nd_layout()
 #endif
 
   {

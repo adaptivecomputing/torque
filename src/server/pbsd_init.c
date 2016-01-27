@@ -1146,11 +1146,11 @@ void remove_invalid_allocations(
   {
   int retcode;
 
-  if (pnode->nd_layout != NULL)
+  if (pnode->nd_layout.is_initialized())
     {
     std::vector<std::string> job_ids;
 
-    pnode->nd_layout->populate_job_ids(job_ids);
+    pnode->nd_layout.populate_job_ids(job_ids);
 
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
@@ -1161,9 +1161,9 @@ void remove_invalid_allocations(
            get a mutex lock. Check the recode first
            if it returns false */
         exists = job_id_exists(job_ids[i], &retcode);
-        }while(exists == false && retcode != 0);
+        } while(exists == false && retcode != 0);
       if (exists == false)
-        pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
+        pnode->nd_layout.free_job_allocation(job_ids[i].c_str());
       }
     }
   } // END remove_invalid_allocations()
@@ -1210,10 +1210,7 @@ void load_node_usage(
 
   if (layout.size() > 0)
     {
-    if (pnode->nd_layout != NULL)
-      delete pnode->nd_layout;
-
-    pnode->nd_layout = new Machine(layout);
+    pnode->nd_layout.reinitialize_from_json(layout);
     }
   else
     {

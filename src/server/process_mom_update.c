@@ -841,9 +841,9 @@ int process_status_info(
 #ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
-      if (current->nd_layout == NULL)
+      if (current->nd_layout.is_initialized() == false)
         {
-        current->nd_layout = new Machine(status_info[i]);
+        current->nd_layout.reinitialize_from_json(status_info[i]);
         }
 
       continue;

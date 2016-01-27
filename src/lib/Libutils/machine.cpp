@@ -113,6 +113,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   availableChips = newMachine.availableChips;
   availableCores = newMachine.availableCores;
   availableThreads = newMachine.availableThreads;
+  this->initialized = true;
   return *this;
   }
 
@@ -154,6 +155,58 @@ void Machine::update_internal_counts()
 
 
 
+void Machine::initialize_from_json(
+
+  const std::string &json_layout)
+
+  {
+  const char *socket_str = "\"socket\":{";
+  std::size_t socket_begin = json_layout.find(socket_str);
+
+  while (socket_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
+    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
+
+    Socket s(one_socket);
+    this->sockets.push_back(s);
+    this->totalSockets++;
+
+    socket_begin = next;
+    }
+
+  update_internal_counts();
+  this->initialized = true;
+  } // END initialize_from_json()
+
+
+
+void Machine::reinitialize_from_json(
+
+  const std::string &json_layout)
+
+  {
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  this->hardwareStyle = 0;
+  this->totalMemory = 0;
+  this->totalSockets = 0;
+  this->totalChips = 0;
+  this->totalCores = 0;
+  this->totalThreads = 0;
+  this->availableSockets = 0;
+  this->availableChips = 0;
+  this->availableCores = 0;
+  this->availableThreads = 0;
+  this->sockets.clear();
+  this->NVIDIA_device.clear();
+  this->allocations.clear();
+
+  this->initialize_from_json(json_layout);
+  } // END reinitialize_from_json()
+
+
+
 /*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
@@ -179,37 +232,29 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
-                                                   totalCores(0), totalThreads(0), 
-                                                   availableSockets(0), availableChips(0),
-                                                   availableCores(0), availableThreads(0)
+Machine::Machine(
+    
+  const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0),
+                                    totalChips(0), totalCores(0), totalThreads(0), 
+                                    availableSockets(0), availableChips(0),
+                                    availableCores(0), availableThreads(0), initialized(true),
+                                    sockets(), NVIDIA_device(), allocations()
 
   {
-  const char *socket_str = "\"socket\":{";
-  std::size_t socket_begin = json_layout.find(socket_str);
+  this->initialize_from_json(json_layout);
+  } // END json constructor
 
-  while (socket_begin != std::string::npos)
-    {
-    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
-    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
-    this->sockets.push_back(s);
-    this->totalSockets++;
 
-    socket_begin = next;
-    }
-
-  update_internal_counts();
-  }
-
-Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
-                     totalThreads(0), availableSockets(0), availableChips(0),
-                     availableCores(0), availableThreads(0)
+Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+                     totalCores(0), totalThreads(0), availableSockets(0), availableChips(0),
+                     availableCores(0), availableThreads(0), initialized(false), sockets(),
+                     NVIDIA_device(), allocations()
   { 
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
-  }
+  } // END default constructor
+
 
 
 Machine::~Machine()
@@ -1066,6 +1111,13 @@ int Machine::how_many_tasks_can_be_placed(
 
   return(can_place);
   } // END place_as_many_as_possible()
+
+
+
+bool Machine::is_initialized() const
+  {
+  return(this->initialized);
+  }
 
 
 

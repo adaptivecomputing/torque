@@ -298,7 +298,7 @@ public:
 
   /* numa hardware configuration information */
 #ifdef PENABLE_LINUX_CGROUPS
-  Machine *nd_layout;
+  Machine                    nd_layout;
 #endif
 
 

@@ -932,7 +932,7 @@ attribute_def job_attr_def[] =
   },
 
   /* JOB_ATR_comp_time */
-  { (char *)ATTR_comp_time, /* completion time */
+  { (char *)ATTR_comp_time, /* "comp_time" */
     decode_l,
     encode_l,
     set_l,

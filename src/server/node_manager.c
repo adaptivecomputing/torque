@@ -3866,7 +3866,7 @@ void save_node_usage(
   path += pnode->get_name();
   tmp_path = path + ".tmp";
 
-  pnode->nd_layout->displayAsJson(node_state, true);
+  pnode->nd_layout.displayAsJson(node_state, true);
 
   if ((f = fopen(tmp_path.c_str(), "w+")) != NULL)
     {
@@ -4002,12 +4002,12 @@ int place_subnodes_in_hostlist(
     std::string       mems;
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
-    if (pnode->nd_layout == NULL)
+    if (pnode->nd_layout.is_initialized() == false)
       return(-1);
 
     update_req_hostlist(pjob, pnode->get_name(), naji.req_rank, naji.ppn_needed);
 
-    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->get_name());
+    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name());
     if (rc != PBSE_NONE)
       return(rc);
 
@@ -4574,7 +4574,7 @@ int locate_resource_request_20_nodes(
     /* iterate over all nodes */
     while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
       {
-      int can_place = pnode->nd_layout->how_many_tasks_can_be_placed(r);
+      int can_place = pnode->nd_layout.how_many_tasks_can_be_placed(r);
 
       if (can_place != 0)
         {
@@ -5394,9 +5394,9 @@ int remove_job_from_node(
     }
 
 #ifdef PENABLE_LINUX_CGROUPS
-  if (pnode->nd_layout != NULL)
+  if (pnode->nd_layout.is_initialized())
     {
-    pnode->nd_layout->free_job_allocation(job_mapper.get_name(internal_job_id));
+    pnode->nd_layout.free_job_allocation(job_mapper.get_name(internal_job_id));
     save_node_usage(pnode);
     }
 #endif

@@ -290,6 +290,7 @@ class Machine
   int                 availableThreads;
   char                allowed_cpuset_string[MAX_CPUSET_SIZE];
   char                allowed_nodeset_string[MAX_NODESET_SIZE];
+  bool                initialized;
   std::vector<Socket> sockets;
   std::vector<PCI_Device> NVIDIA_device;
   vector<allocation>  allocations;
@@ -298,6 +299,8 @@ class Machine
   hwloc_obj_t get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device);
   #endif
 #endif
+    
+  void initialize_from_json(const std::string &json_layout);
 
   public:
     Machine& operator=(const Machine& newMachine);
@@ -342,6 +345,8 @@ class Machine
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
+    bool is_initialized() const;
+    void reinitialize_from_json(const std::string &json_layout);
   };
 
 extern Machine this_node;
