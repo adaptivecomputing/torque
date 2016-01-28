@@ -82,7 +82,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-#include "track_alps_reservations.h"
+#include "track_alps_reservations.hpp"
 #include "utils.h"
 #include "batch_request.h"
 #include "ji_mutex.h"
@@ -92,80 +92,11 @@
 extern int LOGLEVEL;
 
 
-/*
- * add_node_names
- * adds the node names from pjob's exec hosts to ar
- * @param ar - the alps reservation we're populating
- * @param pjob - the job whose reservation we're examining
- * @see track_alps_reservation() - parent
- */
 
-int add_node_names(
-
-  alps_reservation *ar,
-  job              *pjob)
-
+reservation_holder::reservation_holder() : reservations(), orphaned_reservations()
   {
-  if (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)
-    {
-    if (LOGLEVEL >= 7)
-      {
-      char log_buf[PBS_MAXSVRJOBID + 512];
-      snprintf(log_buf, sizeof(log_buf), "Job %s exec list was null", pjob->ji_qs.ji_jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-    return -1;
-    }
-
-  char *exec_str = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  char *host_tok;
-  char *str_ptr = exec_str;
-  char *slash;
-  int   rc = PBSE_NONE;
-  char *prev_node = NULL;
-
-  while ((host_tok = threadsafe_tokenizer(&str_ptr, "+")) != NULL)
-    {
-    if ((slash = strchr(host_tok, '/')) != NULL)
-      *slash = '\0';
-
-    if ((prev_node == NULL) ||
-        (strcmp(prev_node, host_tok)))
-      {
-      ar->ar_node_names.push_back(std::string(host_tok));
-      rc = PBSE_NONE;
-      }
-
-    prev_node = host_tok;
-    }
-
-  if (exec_str != NULL)
-    free(exec_str);
-
-  return(rc);
-  } /* END add_node_names() */
-
-
-alps_reservation *populate_alps_reservation(
-
-  job *pjob)
-
-  {
-  alps_reservation *ar = new alps_reservation(pjob->ji_internal_id,
-                                              pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
-  
-  if (ar != NULL)
-    {
-    if ((add_node_names(ar, pjob)) != PBSE_NONE)
-      {
-      delete ar;
-      ar = NULL;
-      }
-    }
-
-  return(ar);
-  } /* END populate_alps_reservation() */
-
+  pthread_mutex_init(&this->rh_mutex, NULL);
+  }
 
 
 
@@ -174,57 +105,63 @@ alps_reservation *populate_alps_reservation(
  * creates an alps reservation based 
  */
 
-int track_alps_reservation(
+int reservation_holder::track_alps_reservation(
     
   job *pjob)
 
   {
-  int               rc = PBSE_NONE;
-  alps_reservation *ar;
-
   /* job has no alps reservation, nothing to record */
   if (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str == NULL)
     return(PBSE_NONE);
+  
+  int              rc = PBSE_NONE;
+  alps_reservation ar(pjob);
 
-  if ((ar = populate_alps_reservation(pjob)) != NULL)
-    insert_alps_reservation(ar);
-  else
-    rc = ENOMEM;
+  pthread_mutex_lock(&this->rh_mutex);
+  this->reservations[ar.rsv_id] = ar;
+  pthread_mutex_unlock(&this->rh_mutex);
 
   return(rc);
   } /* track_alps_reservation() */
 
 
 
+/*
+ * insert_alps_reservation()
+ */
 
-int insert_alps_reservation(
+int reservation_holder::insert_alps_reservation(
     
-  alps_reservation *ar)
+  const alps_reservation &ar)
 
   {
   int rc = PBSE_NONE;
 
-  alps_reservations.lock();
-  if (!alps_reservations.insert(ar,ar->rsv_id))
-    rc = ENOMEM;
-  alps_reservations.unlock();
+  pthread_mutex_lock(&this->rh_mutex);
+  this->reservations[ar.rsv_id] = ar;
+  pthread_mutex_unlock(&this->rh_mutex);
 
   return(rc);
   } /* insert_alps_reservation() */
 
 
 
-int already_recorded(
+/*
+ * already_recorded()
+ */
+
+bool reservation_holder::already_recorded(
 
   const char *rsv_id)
 
   {
-  int               recorded = FALSE;
+  bool recorded;
 
-  alps_reservations.lock();
-  if (alps_reservations.find(rsv_id) != NULL)
-    recorded = TRUE;
-  alps_reservations.unlock();
+  pthread_mutex_lock(&this->rh_mutex);
+
+  recorded = this->reservations.find(rsv_id) != this->reservations.end();
+  
+  pthread_mutex_unlock(&this->rh_mutex);
 
   return(recorded);
   } /* already_recorded() */
@@ -241,26 +178,24 @@ int already_recorded(
  * @return true if the reservation is now an orphan, false otherwise.
  */
 
-bool is_orphaned(
+bool reservation_holder::is_orphaned(
 
-  char *rsv_id,
-  char *job_id)
+  const char  *rsv_id,
+  std::string &job_id)
 
   {
   bool              orphaned = false;
   job              *pjob;
-  alps_reservation *ar = NULL;
+  std::map<std::string, alps_reservation>::iterator it;
 
-  alps_reservations.lock();
-  ar = alps_reservations.find(rsv_id);
-  alps_reservations.unlock();
+  pthread_mutex_lock(&this->rh_mutex);
+  it = this->reservations.find(rsv_id);
 
-  if (ar != NULL)
+  if (it != this->reservations.end())
     {
-    if (job_id != NULL)
-      snprintf(job_id, PBS_MAXSVRJOBID, "%s", job_mapper.get_name(ar->internal_job_id));
+    job_id = job_mapper.get_name(it->second.internal_job_id);
 
-    if ((pjob = svr_find_job_by_id(ar->internal_job_id)) != NULL)
+    if ((pjob = svr_find_job_by_id(it->second.internal_job_id)) != NULL)
       {
       if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
         orphaned = true;
@@ -268,17 +203,35 @@ bool is_orphaned(
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
     else
+      {
       orphaned = true;
+      }
     }
   else
     {
-    if (job_id != NULL)
-      snprintf(job_id, PBS_MAXSVRJOBID, "unknown");
+    job_id = "unknown";
     orphaned = true;
     }
 
+  if (orphaned == true)
+    {
+    if (this->orphaned_reservations.find(rsv_id) != this->orphaned_reservations.end())
+      {
+      // Only send one release reservation request at a time.
+      orphaned = false;
+      }
+    else
+      {
+      // Record this so we only send one at a time
+      this->orphaned_reservations.insert(rsv_id);
+      }
+    }
+
+  pthread_mutex_unlock(&this->rh_mutex);
+
   return(orphaned);
   } /* END is_orphaned() */
+
 
 
 /*
@@ -289,45 +242,39 @@ bool is_orphaned(
  * @return PBSE_NONE if removed, THING_NOT_FOUND if it wasn't present
  */
 
-int remove_alps_reservation(
+int reservation_holder::remove_alps_reservation(
     
-  char *rsv_id)
+  const char *rsv_id)
 
   {
-  int               rc = PBSE_NONE;
-  alps_reservation *ar;
+  int                                               rc = PBSE_NONE;
+  std::map<std::string, alps_reservation>::iterator it;
 
-  alps_reservations.lock();
-  ar = alps_reservations.find(rsv_id);
-  if (!alps_reservations.remove(rsv_id))
+  pthread_mutex_lock(&this->rh_mutex);
+  it = this->reservations.find(rsv_id);
+  if (it == this->reservations.end())
     rc = THING_NOT_FOUND;
-  alps_reservations.unlock();
+  else
+    this->reservations.erase(it);
 
-  if (ar != NULL)
-    delete ar;
+  pthread_mutex_unlock(&this->rh_mutex);
 
   return(rc);
   } /* END remove_alps_reservation() */
 
 
 
-/*
- * clear_all_alps_reservations()
- *
- * Clears all of the reservations from the structure and deletes them.
- */
-
-void clear_all_alps_reservations()
+void reservation_holder::remove_from_orphaned_list(
+    
+  const char *rsv_id)
 
   {
-  alps_reservation *ar;
+  pthread_mutex_lock(&this->rh_mutex);
 
-  alps_reservations.lock();
+  this->orphaned_reservations.erase(rsv_id);
 
-  while ((ar = alps_reservations.pop()) != NULL)
-    delete ar;
+  pthread_mutex_unlock(&this->rh_mutex);
+  }
 
-  alps_reservations.unlock();
-  } // END clear_all_alps_reservations()
 
 

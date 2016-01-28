@@ -125,7 +125,7 @@
 #include "queue_recycler.h" /* queue_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
-#include "track_alps_reservations.h"
+#include "track_alps_reservations.hpp"
 #include "job_func.h" /* svr_job_purge */
 #include "net_cache.h"
 #include "ji_mutex.h"

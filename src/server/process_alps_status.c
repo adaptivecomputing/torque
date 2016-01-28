@@ -95,7 +95,7 @@
 #include "req_manager.h"
 #include "node_manager.h"
 #include "node_func.h"
-#include "track_alps_reservations.h"
+#include "track_alps_reservations.hpp"
 #include "login_nodes.h"
 #include "svrfunc.h"
 #include "issue_request.h"
@@ -211,7 +211,7 @@ void *check_if_orphaned(
   {
   char           *node_name = (char *)vp;
   char           *rsv_id = NULL;
-  char            job_id[PBS_MAXSVRJOBID];
+  std::string     job_id;
   batch_request  *preq;
   int             handle = -1;
   int             retries = 0;
@@ -229,7 +229,7 @@ void *check_if_orphaned(
     return(NULL);
     }
 
-  if (is_orphaned(rsv_id, job_id) == true)
+  if (alps_reservations.is_orphaned(rsv_id, job_id) == true)
     {
     // Make sure the node with the orphan is not available for jobs
     if ((pnode = find_nodebyname(node_name)) != NULL)
@@ -255,9 +255,6 @@ void *check_if_orphaned(
 
     preq->rq_extend = strdup(rsv_id);
 
-    /* Assume the request will be successful and remove the RSV from the hash table */
-    remove_alps_reservation(rsv_id);
-
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
       struct in_addr hostaddr;
@@ -270,7 +267,7 @@ void *check_if_orphaned(
       snprintf(log_buf, sizeof(log_buf),
         "Found orphan ALPS reservation ID %s for job %s; asking %s to remove it",
         rsv_id,
-        job_id,
+        job_id.c_str(),
         pnode->nd_name);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buf);
 
@@ -289,6 +286,8 @@ void *check_if_orphaned(
         
       free_br(preq);
       }
+
+    alps_reservations.remove_from_orphaned_list(rsv_id);
     }
 
   free(node_name);
@@ -552,7 +551,7 @@ int record_reservation(
 
       job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 
-      track_alps_reservation(pjob);
+      alps_reservations.track_alps_reservation(pjob);
       found_job = true;
 
       job_mutex.unlock(); 
@@ -586,7 +585,7 @@ int process_reservation_id(
   info += ":";
   info += rsv_id;
 
-  if (already_recorded(rsv_id) == TRUE)
+  if (alps_reservations.already_recorded(rsv_id) == TRUE)
     enqueue_threadpool_request(check_if_orphaned, strdup(info.c_str()), task_pool);
   else if (record_reservation(pnode, rsv_id) != PBSE_NONE)
     enqueue_threadpool_request(check_if_orphaned, strdup(info.c_str()), task_pool);

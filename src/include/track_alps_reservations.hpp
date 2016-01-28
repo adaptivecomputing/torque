@@ -82,7 +82,10 @@
 #include "container.hpp"
 #include <vector>
 #include <string>
+#include <set>
+#include <map>
 #include "pbs_job.h"
+#include "utils.h"
 
 #define INITIAL_NODE_LIST_SIZE          10
 #define INITIAL_RESERVATION_HOLDER_SIZE 100
@@ -91,39 +94,91 @@
 class alps_reservation
   {
 public:
-  char            *rsv_id;         /* the reservation id */
+  std::string              rsv_id;         /* the reservation id */
   std::vector<std::string> ar_node_names;/* the node ids associated with this reservation */
-  int              internal_job_id; /* the job id associated with this reservation */
+  int                      internal_job_id; /* the job id associated with this reservation */
 
-  alps_reservation() : rsv_id(NULL), internal_job_id(-1)
+  alps_reservation() : rsv_id(), internal_job_id(-1)
+    {
+    }
+
+  alps_reservation(const alps_reservation &other) : rsv_id(other.rsv_id),
+                                                    ar_node_names(other.ar_node_names),
+                                                    internal_job_id(other.internal_job_id)
     {
     }
 
   alps_reservation(int job_int_id, const char *new_rsvid) : internal_job_id(job_int_id)
     {
-    rsv_id = strdup(new_rsvid);
+    this->rsv_id = new_rsvid;
+    }
+
+  alps_reservation(job *pjob) : rsv_id(), ar_node_names(), internal_job_id(pjob->ji_internal_id)
+    {
+    if (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL)
+      {
+      this->rsv_id = pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str;
+      }
+    
+    char *exec_str = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    char *host_tok;
+    char *str_ptr = exec_str;
+    char *slash;
+    int   rc = PBSE_NONE;
+    char *prev_node = NULL;
+
+    while ((host_tok = threadsafe_tokenizer(&str_ptr, "+")) != NULL)
+      {
+      if ((slash = strchr(host_tok, '/')) != NULL)
+        *slash = '\0';
+
+      if ((prev_node == NULL) ||
+          (strcmp(prev_node, host_tok)))
+        {
+        this->ar_node_names.push_back(host_tok);
+        rc = PBSE_NONE;
+        }
+
+      prev_node = host_tok;
+      }
+
+    if (exec_str != NULL)
+      free(exec_str);
+    }
+
+  alps_reservation &operator =(const alps_reservation &other)
+    {
+    this->rsv_id = other.rsv_id;
+
+    this->ar_node_names = other.ar_node_names;
+    this->internal_job_id = other.internal_job_id;
+
+    return(*this);
     }
 
   ~alps_reservation()
     {
-    if (rsv_id != NULL)
-      free(rsv_id);
     }
   };
 
 
-  typedef container::item_container<alps_reservation *>                 reservation_holder;
-  typedef container::item_container<alps_reservation *>::item_iterator  reservation_holder_iterator;
+class reservation_holder
+  {
+  std::map<std::string, alps_reservation> reservations;
+  std::set<std::string>                   orphaned_reservations;
+  pthread_mutex_t                         rh_mutex;
+
+  public:
+  reservation_holder();
+
+  int  track_alps_reservation(job *pjob);
+  int  remove_alps_reservation(const char *rsv_id);
+  bool is_orphaned(const char *rsv_id, std::string &job_id);
+  bool already_recorded(const char *rsv_id);
+  int  insert_alps_reservation(const alps_reservation &ar);
+  void remove_from_orphaned_list(const char *rsv_id);
+  };
 
 extern reservation_holder alps_reservations;
 
-
-void initialize_alps_reservations();
-
-int track_alps_reservation(job *pjob);
-int remove_alps_reservation(char *rsv_id);
-bool is_orphaned(char *rsv_id, char *job_id);
-int already_recorded(const char *rsv_id);
-int insert_alps_reservation(alps_reservation *ar);
-void clear_all_alps_reservations();
 
