@@ -1656,7 +1656,7 @@ bool Chip::spread_place_cores(
       {
       if (step >= 2)
         {
-        if (step_count == step)
+        if ((step_count == step) && (lprocs_per_task_remaining > 0))
           {
           this->reserve_core(*it, from_this_chip);
           step_count = 1;
