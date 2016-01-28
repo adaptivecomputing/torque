@@ -121,7 +121,7 @@
 #include "mutex_mgr.hpp"
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "exiting_jobs.h"
-#include "track_alps_reservations.h"
+#include "track_alps_reservations.hpp"
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
 
@@ -725,7 +725,6 @@ int mom_comm(
 
 
 
-
 /*
  * rel_resc - release resources assigned to the job
  */
@@ -742,7 +741,7 @@ void rel_resc(
   if ((cray_enabled == TRUE) &&
       (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
     {
-    remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
+    alps_reservations.remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
     }
 
   free_nodes(pjob);
@@ -761,7 +760,6 @@ void rel_resc(
 
   return;
   }  /* END rel_resc() */
-
 
 
 

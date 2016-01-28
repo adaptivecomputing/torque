@@ -146,7 +146,6 @@
 #include "server_comm.h"
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
-#include "track_alps_reservations.h"
 #include "completed_jobs_map.h"
 
 
@@ -1962,8 +1961,6 @@ int main(
   pthread_mutex_lock(&job_log_mutex);
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
-
-  clear_all_alps_reservations();
 
   /* at this point kill the threadpool */
   destroy_request_pool(task_pool);
