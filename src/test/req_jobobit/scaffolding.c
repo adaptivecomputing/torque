@@ -22,6 +22,7 @@
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
 #include "resource.h"
+#include "track_alps_reservations.hpp"
 
 
 int  attr_count = 0;
@@ -57,6 +58,7 @@ int cray_enabled;
 int reported;
 int bad_drequest;
 int usage;
+int called_account_jobend;
 bool purged = false;
 bool completed = false;
 bool exited = false;
@@ -337,7 +339,10 @@ void log_err(int error, const char *func_id, const char *msg) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void account_jobend(job *pjob, std::string &data) {}
+void account_jobend(job *pjob, std::string &data) 
+  {
+  called_account_jobend++;
+  }
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}
 
@@ -465,4 +470,16 @@ job::~job() {}
 int get_time_string(char *buf, int bufsize, long timeval)
   {
   return(0);
+  }
+
+reservation_holder alps_reservations;
+
+reservation_holder::reservation_holder() {}
+
+int reservation_holder::remove_alps_reservation(
+
+  const char *rsv_id)
+
+  {
+  return(PBSE_NONE);
   }

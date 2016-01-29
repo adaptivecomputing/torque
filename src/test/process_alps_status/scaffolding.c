@@ -9,6 +9,7 @@
 #include "u_tree.h"
 #include "threadpool.h"
 #include "resource.h"
+#include "track_alps_reservations.hpp"
 
 #define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -1512,14 +1513,26 @@ int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, con
 
 void free_null(struct pbs_attribute *attr) {}
 
-bool is_orphaned(
+bool reservation_holder::is_orphaned(
 
-  char *rsv_id,
-  char *job_id)
+  const char *rsv_id,
+  std::string &job_id)
 
   {
   return(true);
   }
+  
+bool reservation_holder::already_recorded(const char *rsv_id)
+  {
+  return(true);
+  }
+  
+int reservation_holder::remove_alps_reservation(const char *rsv_id)
+  {
+  return(0);
+  }
+  
+void reservation_holder::remove_from_orphaned_list(const char *rsv_id) {}
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
@@ -1571,10 +1584,14 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
-int track_alps_reservation(job *pjob)
+int reservation_holder::track_alps_reservation(job *pjob)
   {
   return(0);
   }
+
+reservation_holder::reservation_holder() {}
+
+reservation_holder alps_reservations;
 
 int svr_connect(
 

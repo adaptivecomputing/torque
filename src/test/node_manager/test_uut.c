@@ -734,9 +734,6 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
   job_reservation_info jri;
-#ifdef PENABLE_LINUX_CGROUPS
-  pnode->nd_layout = new Machine();
-#endif
   int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, buf);
 
   fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");

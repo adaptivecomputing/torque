@@ -177,6 +177,8 @@ class reservation_holder
   bool already_recorded(const char *rsv_id);
   int  insert_alps_reservation(const alps_reservation &ar);
   void remove_from_orphaned_list(const char *rsv_id);
+  void clear();
+  int  count();
   };
 
 extern reservation_holder alps_reservations;

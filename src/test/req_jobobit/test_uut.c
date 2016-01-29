@@ -57,6 +57,7 @@ extern bool purged;
 extern long disable_requeue;
 extern int  attr_count;
 extern int  next_count;
+extern int  called_account_jobend;
 
 
 void init_server()
@@ -450,6 +451,13 @@ START_TEST(end_of_job_accounting_test)
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  // We need to also set a start time to call this.
+  pjob->ji_qs.ji_stime = 1;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
+  
   usage = 0;
   }
 END_TEST

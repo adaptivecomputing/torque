@@ -592,6 +592,10 @@ bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &
   return(possible);
   }
 
+pbsnode::pbsnode() : nd_layout()
+  {
+  }
+
 struct pbsnode *next_node(
     
   all_nodes     *an,
@@ -600,14 +604,7 @@ struct pbsnode *next_node(
 
   {
   static int next_node_count = 0;
-  static pbsnode *pn = (pbsnode *)calloc(1, sizeof(pbsnode));
-
-#ifdef PENABLE_LINUX_CGROUPS
-  if (pn->nd_layout == NULL)
-    {
-    pn->nd_layout = new Machine();
-    }
-#endif
+  static pbsnode *pn = new pbsnode();
 
   if (next_node_count++ % 2 == 0)
     return(pn);

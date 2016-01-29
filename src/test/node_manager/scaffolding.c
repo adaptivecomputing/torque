@@ -956,6 +956,11 @@ int Machine::how_many_tasks_can_be_placed(req &r) const
   return(can_place);
   }
 
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
+
 Socket::Socket() {}
 Socket::~Socket() {}
 Chip::Chip() {}

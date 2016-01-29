@@ -525,8 +525,12 @@ int Machine::getTotalChips() const
   return(0);
   }
 
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
+
 void update_node_state(pbsnode *pnode, int state) 
   {
   pnode->nd_state = state;
   }
-
