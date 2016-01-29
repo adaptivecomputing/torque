@@ -5007,7 +5007,7 @@ void scan_non_child_tasks(void)
           job_start_time,
           job_session_id,
           session_start_time,
-          abs(job_start_time - session_start_time));
+          (int)abs(job_start_time - session_start_time));
         log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
         }
     } /* END for each job */

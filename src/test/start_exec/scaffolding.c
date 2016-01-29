@@ -967,3 +967,11 @@ struct passwd *get_password_entry_by_uid(
   {
   return(NULL);
   }
+
+bool have_incompatible_dash_l_resource(
+    
+    job *pjob)
+
+  {
+  return(false);
+  }
