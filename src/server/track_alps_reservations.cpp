@@ -277,4 +277,31 @@ void reservation_holder::remove_from_orphaned_list(
   }
 
 
+void reservation_holder::clear()
+
+  {
+  pthread_mutex_lock(&this->rh_mutex);
+
+  this->reservations.clear();
+  this->orphaned_reservations.clear();
+
+  pthread_mutex_unlock(&this->rh_mutex);
+  }
+
+
+
+int reservation_holder::count()
+
+  {
+  int size;
+  pthread_mutex_lock(&this->rh_mutex);
+
+  size = this->reservations.size();
+
+  pthread_mutex_unlock(&this->rh_mutex);
+
+  return(size);
+  }
+
+
 

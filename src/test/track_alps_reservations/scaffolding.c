@@ -126,7 +126,7 @@ id_map::~id_map() {}
 
 const char *id_map::get_name(int id)
   {
-  return(NULL);
+  return(strdup("1.napali"));
   }
 
 id_map job_mapper;

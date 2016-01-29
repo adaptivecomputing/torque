@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread_mutex_t */
@@ -22,6 +23,7 @@
 #include "mom_hierarchy_handler.h"
 #include "machine.hpp"
 #include "queue.h"
+#include "track_alps_reservations.hpp"
 
 char *path_node_usage;
 threadpool_t *task_pool;
@@ -785,3 +787,4 @@ pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   return(pq);
   }
 
+reservation_holder::reservation_holder() {}

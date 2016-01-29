@@ -22,6 +22,7 @@
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
 #include "resource.h"
+#include "track_alps_reservations.hpp"
 
 
 int  attr_count = 0;
@@ -452,4 +453,16 @@ void add_to_completed_jobs(work_task *ptask) {}
 int get_time_string(char *buf, int bufsize, long timeval)
   {
   return(0);
+  }
+
+reservation_holder alps_reservations;
+
+reservation_holder::reservation_holder() {}
+
+int reservation_holder::remove_alps_reservation(
+
+  const char *rsv_id)
+
+  {
+  return(PBSE_NONE);
   }
