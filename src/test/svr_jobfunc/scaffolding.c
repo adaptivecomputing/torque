@@ -592,7 +592,12 @@ bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &
   return(possible);
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
 pbsnode::pbsnode() : nd_layout()
+#else
+pbsnode::pbsnode()
+#endif
+
   {
   }
 
