@@ -542,7 +542,12 @@ task *pbs_task_create(
 
 
 
-
+/*
+ * task_find() 
+ *
+ * Finds a task based on its task id
+ * @return - the task, or NULL if not found
+ */
 
 task *task_find(
 
@@ -561,9 +566,38 @@ task *task_find(
     }
 
   return(ptask);
-  }
+  } // END task_find()
 
 
+
+/*
+ * find_task_by_pid()
+ *
+ * Looks at all tasks for one with a matching pid and returns that if found
+ *
+ * @param pjob - the job whose tasks we're inspecting
+ * @param pid - the pid we're looking for
+ * @return - the task, or NULL if not found
+ */
+
+task *find_task_by_pid(
+
+  job *pjob,
+  int  pid)
+
+  {
+  task *ptask;
+
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    {
+    if (ptask->ti_qs.ti_sid == pid)
+      break;
+    }
+
+  return(ptask);
+  } // END find_task_by_pid()
 
 
 

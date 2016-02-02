@@ -287,7 +287,28 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   return(10);
   }
 
-void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
+void append_link(tlist_head *head, list_link *new_link, void *pobj) 
+  {
+  if (pobj != NULL)
+    {
+    new_link->ll_struct = pobj;
+    }
+  else
+    {
+    /* WARNING: This mixes list_link pointers and ll_struct
+         pointers, and may break if the list_link we are operating
+         on is not the first embeded list_link in the surrounding
+         structure, e.g. work_task.wt_link_obj */
+
+    new_link->ll_struct = (void *)new_link;
+    }
+
+  new_link->ll_prior = head->ll_prior;
+
+  new_link->ll_next  = head;
+  head->ll_prior = new_link;
+  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
+  }
 
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
   {

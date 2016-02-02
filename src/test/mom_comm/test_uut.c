@@ -38,6 +38,30 @@ void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_
 int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, hnodent *np);
 received_node *get_received_node_entry(char *str);
 bool is_nodeid_on_this_host(job *pjob, tm_node_id nodeid);
+task *find_task_by_pid(job *pjob, int pid);
+
+
+START_TEST(test_find_task_by_pid)
+  {
+  job   pjob;
+  task *tasks[10];
+
+  CLEAR_HEAD(pjob.ji_tasks);
+  for (int i = 0; i < 10; i++)
+    {
+    task *ptask = pbs_task_create(&pjob, TM_NULL_TASK);
+    ptask->ti_qs.ti_sid = i + 90;
+    tasks[i] = ptask;
+    }
+
+  for (int i = 0; i < 10; i++)
+    fail_unless(find_task_by_pid(&pjob, i + 90) == tasks[i]);
+
+  fail_unless(find_task_by_pid(&pjob, 1000) == NULL);
+  fail_unless(find_task_by_pid(&pjob, 10) == NULL);
+  fail_unless(find_task_by_pid(&pjob, 777) == NULL);
+  }
+END_TEST
 
 
 START_TEST(is_nodeid_on_this_host_test)
@@ -423,6 +447,7 @@ START_TEST(tm_spawn_request_test)
   memset(&test_hnodent, 0, sizeof(test_hnodent));
 
   test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
+  CLEAR_HEAD(test_job.ji_tasks);
 
   result = tm_spawn_request(&test_chan,
                             &test_job,
@@ -445,6 +470,7 @@ START_TEST(pbs_task_create_test)
 
   /* Check ranning into reserved task IDs */
   pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;
+  CLEAR_HEAD(pjob->ji_tasks);
   fail_unless(pbs_task_create(pjob, TM_NULL_TASK) == NULL, "Reserved task");
 
   /* Success */
@@ -550,6 +576,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("pbs_task_create_test");
   tcase_add_test(tc_core, pbs_task_create_test);
+  tcase_add_test(tc_core,test_find_task_by_pid); 
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("send_update_soon_test");
