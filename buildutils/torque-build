@@ -266,9 +266,15 @@ then
     if [ "${distro}" = el7 ]; then
       cp buildutils/torque.adaptive.spec.el7 \
           buildutils/rpmbuild/SPECS/torque.adaptive.spec
-    else
+    elif [ "${distro}" = el6 ]; then
       cp buildutils/torque.adaptive.spec.el6 \
           buildutils/rpmbuild/SPECS/torque.adaptive.spec
+    elif [ "${distro}" = sles12 ]; then
+      cp buildutils/torque.adaptive.spec.sles12 \
+          buildutils/rpmbuild/SPECS/torque.adaptive.spec
+    else
+      echo "RPM building not supported for distro $distro" >&2
+      exit 1
     fi
 
     source_file=${distdir}.tar.gz
