@@ -414,8 +414,6 @@ void acct_close(
 
 
 
-
-
 /*
  * account_record - write basic accounting record
  */

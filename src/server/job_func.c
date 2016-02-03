@@ -1245,6 +1245,9 @@ void *job_clone_wt(
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
+      // Clear this so that the jobs get a queued entry in the accounting file
+      pjobclone->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
+
       array_mgr.unlock();
 
       if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false)))
