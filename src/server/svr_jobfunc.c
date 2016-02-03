@@ -604,7 +604,9 @@ int svr_enquejob(
 
   pjob->ji_wattr[JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
 
-  if ((pjob->ji_wattr[JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0)
+  // The array template isn't a real job so it shouldn't have a queued accounting record.
+  if (((pjob->ji_wattr[JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0) &&
+      (!pjob->ji_is_array_template))
     {
     pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long = time_now;
     pjob->ji_wattr[JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
