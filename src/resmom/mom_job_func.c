@@ -464,7 +464,7 @@ int conn_qsub(
     snprintf(EMsg, 1024, "Failed to connect to %s at address %s:%d",
              hostname,
              remote_addr,
-             port);
+             (int)port);
 
     return(-1);
     }
