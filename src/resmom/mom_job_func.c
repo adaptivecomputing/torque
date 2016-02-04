@@ -116,6 +116,7 @@
 #include <pthread.h>
 #include <set>
 #include <semaphore.h>
+#include <arpa/inet.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -456,6 +457,16 @@ int conn_qsub(
   if (s < 0)
     {
     /* FAILURE */
+    char remote_addr[128];
+    socklen_t  size = 128;
+    uint32_t net_order = ntohl(hostaddr);
+
+    inet_ntop(AF_INET, (const void *)&net_order, remote_addr, size);
+
+    snprintf(EMsg, 1024, "Failed to connect to %s at address %s:%d",
+             hostname,
+             remote_addr,
+             port);
 
     return(-1);
     }
