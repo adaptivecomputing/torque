@@ -163,6 +163,7 @@ char             MOMConfigVersion[64];
 int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
 int              MOMCudaVisibleDevices     = 1;
+int              cphosts_max = 0;
 double           wallfactor = 1.00;
 struct cphosts  *pcphosts = NULL;
 long             pe_alarm_time = PBS_PROLOG_TIME;
@@ -1835,7 +1836,6 @@ u_long usecp(
 
   {
   char        *pnxt;
-  static int   cphosts_max = 0;
 
   struct cphosts   *newp = NULL;
 
@@ -2261,7 +2261,7 @@ void add_static(
 
 
 /*
- * reset_config() - reset all config variables to defaults
+ * reset_config_vars() - reset all config variables to defaults
  *
  * When pbs_mom receives a HUP signal, the configuration file
  * needs to be reloaded. In order for that to be successful,
@@ -2274,7 +2274,8 @@ void reset_config_vars()
   ignwalltime = 0;
   ignmem = 0;
   igncput = 0;
-  ignvmem = 0;
+  ignvmem = 0; 
+  cphosts_max = 0;
   /* end policies */
   spoolasfinalname = 0;
   maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
