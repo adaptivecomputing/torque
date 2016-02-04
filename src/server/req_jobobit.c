@@ -3509,7 +3509,8 @@ int req_jobobit(
    * Check whether the server parameter ATTR_exitcodecancelqueuedjob has been
    * set. If so, override the exit status with the user supplied value.
    */
-  if (status_cancel_queue == 0)
+  if ((status_cancel_queue == 0) ||
+      (pjob->ji_being_deleted == false))
     {
     exitstatus = preq->rq_ind.rq_jobobit.rq_status;
 
