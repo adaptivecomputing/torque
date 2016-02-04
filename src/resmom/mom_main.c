@@ -259,6 +259,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            read_mom_hierarchy();
 void            sort_paths();
 void            resend_things();
 extern void     add_resc_def(char *, char *);
