@@ -1265,6 +1265,7 @@ void process_hup(void)
   clear_servers();
   reset_config_vars();
   read_config(NULL);
+  read_mom_hierarchy();
   check_log();
   cleanup();
 
