@@ -253,8 +253,11 @@ void proc_get_btime(void)
 
   fclose(fp);
 
-  sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", (long)linux_time);
-  log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_MOM, "linux_time", log_buffer);
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer, "DRIFT debug: getting btime, setting linux_time to %ld", (long)linux_time);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_MOM, "linux_time", log_buffer);
+    }
 
   return;
   }  /* END proc_get_btime() */
@@ -4777,9 +4780,11 @@ void scan_non_child_tasks(void)
         exiting_tasks = 1;
         }
       }
-      if(log_drift_event || LOGLEVEL >= 7)
-      {
-          sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
+      
+      if ((log_drift_event) && 
+          (LOGLEVEL >= 7))
+        {
+        sprintf(log_buffer, "DRIFT debug: comparing linux_time %u; job_start_time %ld and session_start_time[%ld] %ld: difference %d",
           linux_time,
           job_start_time,
           job_session_id,
