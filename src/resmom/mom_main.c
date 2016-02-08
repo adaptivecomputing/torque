@@ -5793,6 +5793,11 @@ void check_jobs_in_mom_wait()
 
   {
   job    *pjob;
+  unsigned int momport = 0;
+
+  if (multi_mom)
+    momport = pbs_rm_port;
+  
   time_now = time(NULL);
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
@@ -5814,7 +5819,7 @@ void check_jobs_in_mom_wait()
 
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-        job_save(pjob, SAVEJOB_QUICK, pbs_rm_port);
+        job_save(pjob, SAVEJOB_QUICK, momport);
 
         exiting_tasks = 1;
         }
