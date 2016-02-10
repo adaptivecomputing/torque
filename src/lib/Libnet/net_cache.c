@@ -386,7 +386,7 @@ public:
 
 
 
-  addrcache()
+  addrcache() : nameToAddr(), addrToName(), addrs(), hosts()
     {
     }
 

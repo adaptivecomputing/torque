@@ -259,6 +259,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            read_mom_hierarchy();
 void            sort_paths();
 void            resend_things();
 extern void     add_resc_def(char *, char *);
@@ -1265,6 +1266,7 @@ void process_hup(void)
   clear_servers();
   reset_config_vars();
   read_config(NULL);
+  read_mom_hierarchy();
   check_log();
   cleanup();
 
@@ -5960,6 +5962,11 @@ void check_jobs_in_mom_wait()
 
   {
   job    *pjob;
+  unsigned int momport = 0;
+
+  if (multi_mom)
+    momport = pbs_rm_port;
+  
   time_now = time(NULL);
   std::list<job *>::iterator iter;
 
@@ -5982,7 +5989,7 @@ void check_jobs_in_mom_wait()
 
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-        job_save(pjob, SAVEJOB_QUICK, pbs_rm_port);
+        job_save(pjob, SAVEJOB_QUICK, momport);
 
         exiting_tasks = 1;
         }
