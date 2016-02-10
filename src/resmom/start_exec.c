@@ -4391,6 +4391,19 @@ int set_job_cgroup_memory_limits(
 
   if ((swap_limit = get_swap_limit_for_this_host(pjob, cr, string_hostname)) != 0)
     {
+    if (mem_limit == 0)
+      {
+      /* memory.memsw.limit_in_bytes cannot be set unless memory.limit_in_bytes is set */
+      mem_limit = swap_limit;
+      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "Could not set resident memory limits for  %s. swap", pjob->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buffer, LOG_ERR);
+        return(rc);
+        }
+      }
+ 
     rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit);
     if (rc != PBSE_NONE)
       {
