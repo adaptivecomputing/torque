@@ -562,9 +562,9 @@ int kill_job_on_mom(
     }
   else
     {
-    tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
     update_failure_counts(node_name.c_str(), -1);
-    tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
     }
 
   return(rc);
