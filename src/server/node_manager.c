@@ -1132,7 +1132,7 @@ void clear_nvidia_gpus(
 
     if (decode_arst(&temp, NULL, NULL, NULL, 0))
       {
-      log_err(-1, __func__, "clear_nvidia_gpus:  cannot initialize attribute\n");
+      log_err(-1, __func__, "cannot initialize attribute\n");
 
       return;
       }
@@ -4325,7 +4325,7 @@ int build_hostlist_nodes_req(
     if (EMsg != NULL)
       {
       sprintf(log_buf,
-        "could not locate requested gpu resources '%.4000s' (node_spec failed) %s",
+        "Could not locate requested resources '%.4000s' (node_spec failed) %s",
         spec,
         EMsg);
       
