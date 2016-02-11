@@ -27,7 +27,7 @@
 
 char *apbasil_protocol;
 char *apbasil_path;
-struct cphosts *pcphosts = NULL;
+std::vector<cphosts> pcphosts;
 char *path_undeliv;
 const char *msg_err_unlink = "Unlink of %s file %s failed";
 time_t time_now;
