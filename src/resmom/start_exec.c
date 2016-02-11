@@ -7608,13 +7608,16 @@ int open_std_file(
     /* errno can change in functions called between here and the if check below */
     int local_errno = errno;
 
-    sprintf(log_buffer,
-      "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
-      path,
-      mode,
-      (keeping == 0) ? "FALSE" : "TRUE");
+    if (am_i_mother_superior(*pjob))
+      {
+      sprintf(log_buffer,
+        "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
+        path,
+        mode,
+        (keeping == 0) ? "FALSE" : "TRUE");
 
-    log_err(local_errno, __func__, log_buffer);
+      log_err(local_errno, __func__, log_buffer);
+      }
 
     if (local_errno == ENOENT)
       {
