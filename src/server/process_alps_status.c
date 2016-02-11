@@ -252,6 +252,7 @@ void *check_if_orphaned(
     if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
       {
       free(node_name);
+      alps_reservations.remove_from_orphaned_list(rsv_id);
       return(NULL);
       }
 
