@@ -434,6 +434,7 @@ enum job_atr
   JOB_ATR_cpuset_string,
   JOB_ATR_memset_string,
 #endif
+  JOB_ATR_user_kill_delay,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
