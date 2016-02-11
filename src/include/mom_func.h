@@ -117,11 +117,14 @@ struct sig_tbl
 
 /* used by mom_main.c and requests.c for $usecp */
 
-struct cphosts
+class cphosts
   {
-  char *cph_hosts;
-  char *cph_from;
-  char *cph_to;
+  public:
+  std::string cph_hosts;
+  std::string cph_from;
+  std::string cph_to;
+
+  cphosts() : cph_hosts(), cph_from(), cph_to() {}
   };
 
 struct radix_buf
