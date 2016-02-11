@@ -17,6 +17,7 @@ bool retry_submit_error(int error);
 int  process_opt_d(job_info *ji, const char *cmd_arg, int data_type, job_data *tmp_job_info);
 int  process_opt_j(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_k(job_info *ji, const char *cmd_arg, int data_type);
+int  process_opt_K(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
 
@@ -41,6 +42,22 @@ bool are_we_forking()
   
   return(true);
   }
+
+
+START_TEST(test_process_opt_K)
+  {
+  job_info ji;
+
+  // Must be a positive number
+  fail_unless(process_opt_K(&ji, NULL, 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "-1", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "abc", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "0", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE);
+  }
+END_TEST
 
 
 START_TEST(test_process_opt_p)
@@ -369,6 +386,7 @@ Suite *qsub_functions_suite(void)
   tcase_add_test(tc_core, test_process_opt_d);
   tcase_add_test(tc_core, test_process_opt_j);
   tcase_add_test(tc_core, test_process_opt_k);
+  tcase_add_test(tc_core, test_process_opt_K);
   tcase_add_test(tc_core, test_process_opt_m);
   tcase_add_test(tc_core, test_process_opt_p);
   tcase_add_test(tc_core, test_retry_submit_error);

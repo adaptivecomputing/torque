@@ -62,9 +62,9 @@
 #include "pbs_helper.h"
 
 #if defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:K:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
 #define MAXBUF 2048
@@ -2644,6 +2644,29 @@ int process_opt_k(
 
 
 
+int process_opt_K(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  long delay = strtol(cmd_arg, NULL, 10);
+
+  // Must be a positive number
+  if (delay < 1)
+    return(-1);
+  
+  hash_add_or_exit(ji->job_attr, ATTR_user_kill_delay, cmd_arg, data_type);
+
+  return(PBSE_NONE);
+  } // END process_opt_K()
+
+
+
 /*
  * process_opt_m()
  *
@@ -2982,6 +3005,13 @@ void process_opts(
         /* FORMAT:  {o|e} */
         if (process_opt_k(ji, optarg, data_type) != PBSE_NONE)
           print_qsub_usage_exit("qsub: illegal -k value");
+
+        break;
+
+      case 'K':
+        
+        if (process_opt_K(ji, optarg, data_type) != PBSE_NONE)
+          print_qsub_usage_exit("qsub: illegal -K value");
 
         break;
 

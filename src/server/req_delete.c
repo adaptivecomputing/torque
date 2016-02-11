@@ -1443,6 +1443,10 @@ void post_delete_mom1(
 
   reply_ack(preq_clt);  /* dont need it, reply now */
 
+  // Apply the user delay first so it takes precedence.
+  if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
+    delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
+
   /*
    * if no delay specified in original request, see if kill_delay
    * queue attribute is set.
@@ -1473,8 +1477,6 @@ void post_delete_mom1(
    */
   apply_job_delete_nanny(pjob, time_now + delay + 60);
   }  /* END post_delete_mom1() */
-
-
 
 
 
