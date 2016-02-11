@@ -107,6 +107,8 @@ START_TEST(insert_create_inspect_test)
 
   fail_unless(alps_reservations.remove_alps_reservation((char *)"00") == THING_NOT_FOUND, "found something that doesn't exist");
   fail_unless(alps_reservations.remove_alps_reservation(rsvids[0]) == 0, "couldn't remove reservation 1");
+  fail_unless(alps_reservations.is_orphaned(rsvids[0], job_id) == false, "1234 is already in orphaned list");
+  fail_unless(alps_reservations.is_orphaned(rsvids[3], job_id) == false, "should already be in orphaned list");
   fail_unless(alps_reservations.remove_alps_reservation(rsvids[1]) == 0, "couldn't remove reservation 2");
   fail_unless(alps_reservations.remove_alps_reservation(rsvids[2]) == 0, "couldn't remove reservation 3");
   fail_unless(alps_reservations.remove_alps_reservation(rsvids[3]) == 0, "couldn't remove reservation 4");
