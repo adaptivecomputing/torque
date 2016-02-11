@@ -772,7 +772,7 @@ static int told_to_cp(
 
   {
   int    i;
-  int    nh;
+  unsigned int    nh;
 
   static char newp[MAXPATHLEN + 1];
   char linkpath[MAXPATHLEN + 1];
@@ -780,9 +780,9 @@ static int told_to_cp(
 
   for (max_links = 16;max_links > 0;max_links--)
     {
-    for (nh = 0;nh < cphosts_num;nh++)
+    for (nh = 0;nh < pcphosts.size(); nh++)
       {
-      if (wchost_match(host, pcphosts[nh].cph_hosts))
+      if (wchost_match(host, pcphosts[nh].cph_hosts.c_str()))
         {
 
         if (LOGLEVEL >= 5)
@@ -790,24 +790,24 @@ static int told_to_cp(
           sprintf(log_buffer, "host '%s' pcphosts[%d].cph_hosts: %s",
                   host,
                   nh,
-                  pcphosts[nh].cph_hosts);
+                  pcphosts[nh].cph_hosts.c_str());
 
           log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
-        i = strlen(pcphosts[nh].cph_from);
+        i = pcphosts[nh].cph_from.size();
 
-        if (strncmp(pcphosts[nh].cph_from, oldpath, i) == 0)
+        if (strncmp(pcphosts[nh].cph_from.c_str(), oldpath, i) == 0)
           {
           int nchars, link_size;
           nchars = snprintf(newp, sizeof(newp), "%s%s",
-                            pcphosts[nh].cph_to, oldpath + i);
+                            pcphosts[nh].cph_to.c_str(), oldpath + i);
 
           if (nchars >= (int)sizeof(newp))
             {
             snprintf(log_buffer, sizeof(log_buffer),
                      "too long string when transforming path '%s' to '%s%s'\n",
-                     oldpath, pcphosts[nh].cph_to, oldpath + i);
+                     oldpath, pcphosts[nh].cph_to.c_str(), oldpath + i);
             log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
             return(0);
             }
@@ -870,8 +870,8 @@ static int told_to_cp(
                 host,
                 oldpath,
                 nh,
-                (pcphosts + nh)->cph_hosts,
-                (pcphosts + nh)->cph_from);
+                pcphosts[nh].cph_hosts.c_str(),
+                pcphosts[nh].cph_from.c_str());
 
         log_record(
           PBSEVENT_SYSTEM,
