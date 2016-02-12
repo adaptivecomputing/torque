@@ -440,6 +440,12 @@ int release_job(
     return(rc);
     }
 
+  if (pjob->ji_arraystructid[0] != '\0')
+    {
+    // Make sure our slot limit counts are correct
+    check_array_slot_limits(pjob);
+    }
+
   /* everything went well, if holds changed, update the job state */
 
   if (old_hold != pjob->ji_wattr[JOB_ATR_hold].at_val.at_long)
