@@ -50,7 +50,6 @@ START_TEST(release_slot_hold_test)
   int difference = 2;
   job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
 
   // Make sure that we release the hold and decrement difference
@@ -71,7 +70,7 @@ START_TEST(update_slot_values_test)
   {
   std::vector<std::string>  candidates;
   char                      buf[1024];
-  job                      *pjob = (job *)calloc(1, sizeof(job));
+  job                      *pjob = new job();
   job_array                *pa = get_job_array(10);
 
   sprintf(pjob->ji_qs.ji_jobid, "0[0].napali");

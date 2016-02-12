@@ -303,3 +303,6 @@ int unlock_ss()
     }
 
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
+
+job::job() {}
+job::~job() {}
