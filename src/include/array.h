@@ -208,6 +208,7 @@ int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);
+int        check_array_slot_limits(job *pjob);
 job_array *next_array(all_arrays_iterator **);
 
 job_array *get_jobs_array(job **);
