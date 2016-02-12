@@ -2209,7 +2209,7 @@ int check_array_slot_limits(
             }
           else if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
             {
-            if (candidates.size() < pa->ai_qs.jobs_running)
+            if ((int)candidates.size() < pa->ai_qs.jobs_running)
               candidates.push_back(pj->ji_qs.ji_jobid);
             }
           }
