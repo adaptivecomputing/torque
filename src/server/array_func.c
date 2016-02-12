@@ -1211,7 +1211,6 @@ int set_slot_limit(
 
 
 
-
 int setup_array_struct(
     
   job *pjob)
@@ -1350,8 +1349,6 @@ int setup_array_struct(
 
 
 
-
-
 int is_num(
     
   const char *str)
@@ -1380,7 +1377,6 @@ int is_num(
 
 
 
-
 int array_request_token_count(
     
   const char *str)
@@ -1404,7 +1400,6 @@ int array_request_token_count(
 
   return(token_count);
   } /* END array_request_token_count() */
-
 
 
 
@@ -1510,7 +1505,6 @@ int array_request_parse_token(
 
   return(num_ids);
   } /* END array_request_parse_token() */
-
 
 
 
@@ -2063,6 +2057,174 @@ int modify_array_range(
   return(rc);
   } /* END modify_array_range() */
 
+
+
+/*
+ * Releases the slot hold on pjob, if it has one
+ *
+ * @param job - the job whose hold should be released
+ * @param difference - a count to be decremented for each hold released
+ */
+
+void release_slot_hold(
+
+  job *pjob,
+  int &difference)
+
+  {
+  if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+    {
+    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+      pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+
+    difference--;
+    }
+  } // END release_slot_hold()
+
+
+
+/*
+ * update_slot_values()
+ *
+ * Updates the job array to have the correct jobs on hold and the correct running count
+ *
+ * @param pa - the job array
+ * @param actually_running - the number of jobs that are actually running
+ * @param number_queued - the actual number of queued jobs in the job array
+ * @param held - the job pointer whose mutex we're holding
+ * @param candidates - a vector of job ids that could have holds released
+ * @return PBSE_NONE
+ */
+
+int update_slot_values(
+
+  job_array                *pa,
+  int                       actually_running,
+  int                       number_queued,
+  job                      *held,
+  std::vector<std::string> &candidates)
+
+  {
+  unsigned int i = 0;
+  int difference = pa->ai_qs.slot_limit - actually_running - number_queued;
+  
+  pa->ai_qs.jobs_running = actually_running;
+
+  if (difference > 0)
+    {
+    release_slot_hold(held, difference);
+  
+    while ((difference > 0) &&
+           (i < candidates.size()))
+      {
+      for (; i < candidates.size(); i++)
+        {
+        if (held->ji_qs.ji_jobid == candidates[i])
+          continue;
+        
+        job *pj = svr_find_job(pa->job_ids[i], TRUE);
+        
+        if (pj != NULL)
+          {
+          release_slot_hold(pj, difference);
+          unlock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+          break;
+          }
+        }
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END update_slot_values()
+
+
+
+/*
+ * check_array_slot_limits()
+ * Iterates over each job in this job's array to get a correct count of running and queued
+ * subjobs.
+ *
+ * @param pjob - the job whose array we're checking
+ * @return PBSE_NONE on success of PBSE_JOB_RECYCLED if the job is lost while locking it's array
+ */
+
+int check_array_slot_limits(
+
+  job *pjob)
+
+  {
+  std::vector<std::string>  candidates;
+  job_array                *pa = get_jobs_array(&pjob);
+
+  if (pa == NULL)
+    {
+    if (pjob == NULL)
+      return(PBSE_JOB_RECYCLED);
+    else
+      return(PBSE_NONE);
+    }
+
+  mutex_mgr(pa->ai_mutex, true);
+
+  if (pa->ai_qs.slot_limit != NO_SLOT_LIMIT)
+    {
+    int  jobs_currently_running = 0;
+    int  number_queued = 0;
+
+    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+      jobs_currently_running++;
+    else if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+      number_queued++;
+    
+    job *pj;
+    int  i = 0;
+
+    // Only loop until we verify that we have the correct running count
+    while ((jobs_currently_running < pa->ai_qs.jobs_running) &&
+           (i < pa->ai_qs.num_jobs))
+      {
+      for (; i < pa->ai_qs.num_jobs; i++)
+        {
+        if (pa->job_ids[i] == NULL)
+          continue;
+
+        if (!strcmp(pjob->ji_qs.ji_jobid, pa->job_ids[i]))
+          continue;
+
+        if ((pj = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
+          {
+          free(pa->job_ids[i]);
+          pa->job_ids[i] = NULL;
+          }
+        else
+          {
+          mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
+
+          if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
+            {
+            jobs_currently_running++;
+            break;
+            }
+          else if (pj->ji_qs.ji_state == JOB_STATE_QUEUED)
+            {
+            number_queued++;
+            }
+          else if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+            {
+            if (candidates.size() < pa->ai_qs.jobs_running)
+              candidates.push_back(pj->ji_qs.ji_jobid);
+            }
+          }
+        }
+      }
+
+    if (jobs_currently_running != pa->ai_qs.jobs_running)
+      update_slot_values(pa, jobs_currently_running, number_queued, pjob, candidates);
+    }
+
+  return(PBSE_NONE);
+  } // END check_array_slot_limits()
 
 
 
