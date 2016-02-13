@@ -356,24 +356,38 @@ void Socket::update_internal_counts(
  * @return - the number of tasks from r that could be placed on this socket
  */
 
-int Socket::how_many_tasks_fit(
+float Socket::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  int num_that_fit = 0;
+  float num_that_fit = 0;
 
   if ((this->socket_exclusive == false) &&
       ((place_type != exclusive_socket) ||
        (this->is_available() == true)))
     {
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      num_that_fit += this->chips[i].how_many_tasks_fit(r, place_type);
+    int numa = r.get_numa_nodes();
 
-    if ((num_that_fit > 1) &&
-        (r.getPlacementType() == place_socket))
-      num_that_fit = 1;
+    if (numa > 1)
+      {
+      // If numa > 1, place_type = exclusive_numa, so each chip is 1 piece at most.
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        if (this->chips[i].how_many_tasks_fit(r, place_type) > 0)
+          num_that_fit += 1;
+
+      num_that_fit /= numa;
+      }
+    else
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        num_that_fit += this->chips[i].how_many_tasks_fit(r, place_type);
+
+      if ((num_that_fit > 1) &&
+          (r.getPlacementType() == place_socket))
+        num_that_fit = 1;
+      }
     }
 
   return(num_that_fit);

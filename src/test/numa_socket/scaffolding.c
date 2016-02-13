@@ -257,6 +257,11 @@ std::string req::getPlacementType() const
   return(my_placement_type);
   }
 
+int req::get_numa_nodes() const
+  {
+  return(this->numa_nodes);
+  }
+
 allocation::allocation() {}
 
 void allocation::set_place_type(

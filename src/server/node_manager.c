@@ -4724,6 +4724,7 @@ int locate_resource_request_20_nodes(
   {
   int rc = 1; // positive numbers mean success - this needs to return like node_spec()
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+  std::set<int> used_nodes;
 
   // It shouldn't be possible for this to be NULL but don't segfault
   if (cr == NULL)
@@ -4742,6 +4743,10 @@ int locate_resource_request_20_nodes(
     /* iterate over all nodes */
     while ((pnode = next_node(&allnodes, pnode, &iter)) != NULL)
       {
+      // Do not re-use a node for a second req
+      if (used_nodes.find(pnode->nd_id) != used_nodes.end())
+        continue;
+
       int can_place = pnode->nd_layout->how_many_tasks_can_be_placed(r);
 
       if (can_place != 0)
@@ -4751,6 +4756,8 @@ int locate_resource_request_20_nodes(
 
         // For now, only mark the number we want to add. They actual placement comes later
         add_entry_to_naji_list(naji_list, r, pnode, can_place, i);
+
+        used_nodes.insert(pnode->nd_id);
 
         remaining_tasks -= can_place;
       
