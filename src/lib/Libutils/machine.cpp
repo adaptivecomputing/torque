@@ -1102,12 +1102,24 @@ int Machine::how_many_tasks_can_be_placed(
   req &r) const
 
   {
-  int           can_place = 0;
+  float         can_place = 0.0;
   allocation    a;
+  int           sockets = r.get_sockets();
   a.set_place_type(r.getPlacementType());
 
-  for (unsigned int j = 0; j < this->totalSockets; j++)
-    can_place += this->sockets[j].how_many_tasks_fit(r, a.place_type);
+  if (sockets > 1)
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      if (this->sockets[j].how_many_tasks_fit(r, a.place_type) > 0)
+        can_place += 1;
+
+    can_place /= sockets;
+    }
+  else
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      can_place += this->sockets[j].how_many_tasks_fit(r, a.place_type);
+    }
 
   return(can_place);
   } // END place_as_many_as_possible()
