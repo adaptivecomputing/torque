@@ -17,6 +17,7 @@ const char *napali = "napali";
 const char *l11 =    "l11";
 struct server server;
 
+int   kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 bool  node_in_exechostlist(const char *, char *, const char *);
 char *get_next_exec_host(char **);
@@ -44,6 +45,8 @@ extern std::vector<int> jobsKilled;
 
 extern int str_to_attr_count;
 extern int decode_resc_count;
+extern bool conn_success;
+extern bool alloc_br_success;
 
 #ifdef PENABLE_LINUX_CGROUPS
 void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
@@ -174,6 +177,37 @@ START_TEST(test_add_remove_mic_jobs)
   }
 END_TEST
 
+
+START_TEST(test_kill_job_on_mom)
+  {
+  struct pbsnode  pnode;
+  char            job_id[20];
+  int             rc;
+  unsigned long   addr = 4567;
+
+  memset(&pnode, 0, sizeof(pnode));
+  strcpy(job_id, "33.torque-devtest-03");
+
+  pnode.nd_name = strdup("numa3.ac");
+  pnode.nd_mom_port = 1234;
+  pnode.nd_addrs = &addr;
+
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == PBSE_NONE); 
+
+  alloc_br_success = false;
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == -1); 
+
+  alloc_br_success = true;;
+  conn_success = false;
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == -1); 
+
+  free(pnode.nd_name);
+
+  }
+END_TEST
 
 START_TEST(test_initialize_alps_req_data)
   {
@@ -800,6 +834,10 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, job_should_be_killed_test);
   tcase_add_test(tc_core, remove_job_from_already_killed_list_test);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_kill_job_on_mom");
+  tcase_add_test(tc_core, test_kill_job_on_mom);
+  suite_add_tcase(s, tc_core); 
 
   tc_core = tcase_create("node_in_exechostlist_test");
   tcase_add_test(tc_core, node_in_exechostlist_test);
