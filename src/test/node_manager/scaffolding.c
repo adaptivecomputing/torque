@@ -23,6 +23,8 @@
 #include "complete_req.hpp"
 
 
+bool conn_success = true;
+bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
 int str_to_attr_count;
 int decode_resc_count;
@@ -54,8 +56,28 @@ int              can_place = 0;
 
 struct batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");
-  exit(1);
+  struct batch_request *req = NULL;
+
+  if (alloc_br_success == false)
+    return(NULL);
+
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
+
+  if (req == NULL)
+    {
+    return(NULL);
+    }
+
+  req->rq_type = type;
+
+  req->rq_conn = -1;  /* indicate not connected */
+  req->rq_orgconn = -1;  /* indicate not connected */
+  req->rq_time = 9877665;
+  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  req->rq_noreply = FALSE;  /* indicate reply is needed */
+
+  CLEAR_LINK(req->rq_link);
+
   }
 
 void DIS_tcp_reset(int fd, int i)
@@ -173,8 +195,7 @@ unsigned disrui(int stream, int *retval)
 
 void svr_disconnect(int handle)
   {
-  fprintf(stderr, "The call to svr_disconnect needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
@@ -214,8 +235,7 @@ int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int comman
 
 int issue_Drequest(int conn, batch_request *br, bool close_handle)
   {
-  fprintf(stderr, "The call to issue_Drequest needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
@@ -268,8 +288,10 @@ void free_arst(struct pbs_attribute *attr)
 
 int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
-  fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
-  exit(1);
+  if (conn_success == true)
+    return(10);
+  else
+    return(-1);
   }
 
 int PNodeStateToString(int SBM, char *Buf, int BufSize)
