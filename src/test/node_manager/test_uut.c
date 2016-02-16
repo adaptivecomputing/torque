@@ -181,12 +181,11 @@ START_TEST(test_kill_job_on_mom)
   int             rc;
   unsigned long   addr = 4567;
 
-  memset(&pnode, 0, sizeof(pnode));
   strcpy(job_id, "33.torque-devtest-03");
 
-  pnode.nd_name = strdup("numa3.ac");
+  pnode.change_name("numa3.ac");
   pnode.nd_mom_port = 1234;
-  pnode.nd_addrs = &addr;
+  pnode.nd_addrs.push_back(addr);
 
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == PBSE_NONE); 
@@ -199,8 +198,6 @@ START_TEST(test_kill_job_on_mom)
   conn_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == -1); 
-
-  free(pnode.nd_name);
 
   }
 END_TEST
