@@ -1965,7 +1965,7 @@ int release_array_range(
       else
         {
         mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-        if ((rc = release_job(preq,pjob)))
+        if ((rc = release_job(preq, pjob, pa)))
           {
           return(rc);
           }
@@ -2161,21 +2161,33 @@ int update_slot_values(
 
 int check_array_slot_limits(
 
-  job *pjob)
+  job       *pjob,
+  job_array *pa_held)
 
   {
   std::vector<std::string>  candidates;
-  job_array                *pa = get_jobs_array(&pjob);
+  job_array                *pa;
 
-  if (pa == NULL)
+  if (pa_held == NULL)
     {
-    if (pjob == NULL)
-      return(PBSE_JOB_RECYCLED);
-    else
-      return(PBSE_NONE);
-    }
+    pa = get_jobs_array(&pjob);
 
-  mutex_mgr(pa->ai_mutex, true);
+    if (pa == NULL)
+      {
+      if (pjob == NULL)
+        return(PBSE_JOB_RECYCLED);
+      else
+        return(PBSE_NONE);
+      }
+    }
+  else
+    pa = pa_held;
+
+  mutex_mgr array_mgr(pa->ai_mutex, true);
+
+  // Don't unlock the array if we held it coming in
+  if (pa_held != NULL)
+    array_mgr.set_unlock_on_exit(false);
 
   if (pa->ai_qs.slot_limit != NO_SLOT_LIMIT)
     {

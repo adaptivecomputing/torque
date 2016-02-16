@@ -46,10 +46,9 @@ void hold_job(pbs_attribute *temphold, void *j)
   exit(1);
   }
 
-int release_job(struct batch_request *preq, void *j)
+int release_job(struct batch_request *preq, void *j, job_array *pa)
   {
-  fprintf(stderr, "The call to release_job needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void post_modify_arrayreq(batch_request *br)
