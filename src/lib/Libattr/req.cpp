@@ -1936,7 +1936,7 @@ int req::set_value(
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpu_mode", 8))
-    this->gpu_mode += value;
+    this->gpu_mode = value;
   else if (!strncmp(name, "mics", 4))
     this->mics = strtol(value, NULL, 10);
   else if (!strncmp(name, "maxtpn", 6))
