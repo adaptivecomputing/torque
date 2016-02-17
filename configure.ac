@@ -1088,22 +1088,42 @@ should be the path to the directory containing the boost/ directory
 for your version of boost.
 ])])
 
-AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
-AC_RUN_IFELSE([AC_LANG_PROGRAM(
-[[#include <boost/version.hpp>
+  build_linux_cgroups=yes
+if test "$build_linux_cgroups" = "yes"; then
+  AC_MSG_CHECKING([for minimum boost version (>=1.41.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
 #ifdef BOOST_VERSION
 #if (BOOST_VERSION < 103600)
-  error: incorrect boost version
+    error: incorrect boost version
 #endif
 #else
-  error: no boost found
+    error: no boost found
 #endif
-  ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.41.0 of Boost to build with cgroups enabled.
 
-This can be solved by configuring with --with-boost-path=<path>. This path
-should be the path to the directory containing the boost/ directory
-for your version of boost.
-])])
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+else
+  AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
+#ifdef BOOST_VERSION
+#if (BOOST_VERSION < 103600)
+    error: incorrect boost version
+#endif
+#else
+    error: no boost found
+#endif
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+fi
 
 
 
