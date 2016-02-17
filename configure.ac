@@ -1097,7 +1097,6 @@ should be the path to the directory containing the boost/ directory
 for your version of boost.
 ])])
 
-  build_linux_cgroups=yes
 if test "$build_linux_cgroups" = "yes"; then
   AC_MSG_CHECKING([for minimum boost version (>=1.41.0)])
   AC_RUN_IFELSE([AC_LANG_PROGRAM(
