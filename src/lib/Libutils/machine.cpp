@@ -663,6 +663,7 @@ int Machine::spread_place_pu(
   int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
   int   tasks_placed = 0;
+  int   tasks_for_this_node = tasks_for_node;
 
   if (pu_per_task > this->totalCores)
     return(PBSE_IVALREQ);
@@ -690,7 +691,7 @@ int Machine::spread_place_pu(
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
       {
-      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_node)
+      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_this_node)
         continue;
 
       bool fits = false;
@@ -735,6 +736,7 @@ int Machine::spread_place_pu(
     task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);
     master.add_allocation(task_alloc);
+    tasks_for_this_node--;
     }
 
   if (tasks_placed != tasks_for_node)
