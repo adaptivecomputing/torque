@@ -706,6 +706,8 @@ typedef struct job
   int            ji_examined;
   time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
+  time_t         ji_obit_busy_time; // the timestamp of when the obit got a busy message
+  time_t         ji_reported_already_exited; // server claims this job has already exited 
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2

@@ -1386,6 +1386,16 @@ int process_jobs_obit_reply(
         }
 
       break;
+      
+    case PBSE_UNKJOBID:
+
+      // pbs_server doesn't know this job, get rid of it
+      sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+      mom_deljob(pjob);
+
+      break;
 
     case PBSE_ALRDYEXIT:
 
@@ -1404,6 +1414,8 @@ int process_jobs_obit_reply(
       pjob->ji_qs.ji_destin[0] = '\0';
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+      pjob->ji_reported_already_exited = time(NULL);
 
       if (multi_mom)
         {
@@ -1439,7 +1451,8 @@ int process_jobs_obit_reply(
 
     case PBSE_SERVER_BUSY:
 
-      // NO-OP, handled later
+      // We need to force this to retry quickly
+      pjob->ji_obit_busy_time = time(NULL);
 
       break;
 
@@ -1582,29 +1595,8 @@ void *obit_reply(
 
   if (pjob != NULL)
     {
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT)
-      {
-      if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
-        not_deleted = true;
-      }
-    else
-      {
-      if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
-        {
-        sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        /* This means the server has no idea what this job is
-         * and it should be deleted!!! */
-        mom_deljob(pjob);
-        }
-      else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
-        {
-        sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        }
-      }
+    if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
+      not_deleted = true;
     }
   else
     {
