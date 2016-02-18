@@ -3452,6 +3452,16 @@ int req_jobobit(
        * jobs list. No need to check return code because if it is 
        * already present then we have no problem. */
       record_job_as_exiting(pjob);
+      
+      if (LOGLEVEL >= 6)
+        {
+        sprintf(log_buf,
+          "Received obit for job '%s' from host '%s' but job is already exited.",
+          job_id,
+          preq->rq_host);
+
+        log_err(PBSE_BADSTATE, job_id, log_buf);
+        }
 
       rc = PBSE_ALRDYEXIT;
       }
