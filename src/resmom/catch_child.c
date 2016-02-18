@@ -1445,6 +1445,16 @@ void *obit_reply(
 
           break;
 
+        case PBSE_UNKJOBID:
+
+          // pbs_server doesn't know this job, get rid of it
+          sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+          mom_deljob(pjob);
+
+          break;
+
         case PBSE_ALRDYEXIT:
 
           /* have already told the server before recovery */
@@ -1494,6 +1504,7 @@ void *obit_reply(
           
         case PBSE_SERVER_BUSY:
 
+          pjob->ji_obit_busy_time = time(NULL);
           not_deleted = true;
 
           break;
@@ -1550,36 +1561,6 @@ void *obit_reply(
 
       break;
       }    /* END if (...) */
-    else
-      {
-      if (pjob->ji_momhandle == sock)
-        {
-        if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
-          {
-          sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-          /* This means the server has no idea what this job is
-           * and it should be deleted!!! */
-          mom_deljob(pjob);
-          }
-        else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
-          {
-          sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-          }
-        /* Commenting for now. The mom's are way to chatty right now */
-/*        else
-          {
-          sprintf(tmp_line, "Current state is: %d code (%d) sock (%d) - unknown Job state/request",
-              pjob->ji_qs.ji_substate, preq->rq_reply.brp_code, sock);
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid, tmp_line);
-          }
-          */
-        }
-      }
 
     pjob = nxjob;
     }  /* END while (pjob != NULL) */

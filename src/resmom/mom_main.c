@@ -136,6 +136,9 @@ char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
 char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
+const int      OBIT_BUSY_RETRY = 6;
+const int      OBIT_RETRY_LIMIT = 5;
+const int      ALREADY_EXITED_RETRY_TIME = 30;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -5772,17 +5775,26 @@ void check_jobs_in_obit()
   {
   job    *pjob;
   time_now = time(NULL);
+  int diff = OBIT_BUSY_RETRY + (rand() % 5);
+  int retried = 0;
 
   for (pjob = (job *)GET_NEXT(svr_alljobs);
-       pjob != NULL;
+       pjob != NULL && retried < OBIT_RETRY_LIMIT;
        pjob = (job *)GET_NEXT(pjob->ji_alljobs))
 
     {
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
-        (am_i_mother_superior(*pjob) == true))
+    if (am_i_mother_superior(*pjob))
       {
-      // retry sending the obit for this job
-      post_epilogue(pjob, MOM_OBIT_RETRY);
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) ||
+          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+           (time_now - pjob->ji_obit_busy_time >= diff)) ||
+          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED) &&
+           (time_now - pjob->ji_reported_already_exited > ALREADY_EXITED_RETRY_TIME)))
+        {
+        // retry sending the obit for this job
+        post_epilogue(pjob, MOM_OBIT_RETRY);
+        retried++;
+        }
       }
     }
   }
