@@ -35,6 +35,7 @@ int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *
 int handle_stageout(job *pjob, int type, batch_request *preq);
 int handle_stagedel(job *pjob,int type,batch_request *preq);
 int get_used(job *pjob, std::string &data);
+void set_job_comment(job *pjob, const char *cmt);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -65,6 +66,23 @@ void init_server()
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
+
+
+START_TEST(set_job_comment_test)
+  {
+  job pjob;
+  memset(&pjob, 0, sizeof(pjob));
+
+  set_job_comment(&pjob, "bob");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "bob"));
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+ 
+  // Overwrite, do not append
+  set_job_comment(&pjob, "tim");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "tim"));
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  }
+END_TEST
 
 
 START_TEST(get_used_test)
@@ -634,6 +652,7 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
   tcase_add_test(tc_core, handle_stagedel_test);
   tcase_add_test(tc_core, get_used_test);
+  tcase_add_test(tc_core, set_job_comment_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

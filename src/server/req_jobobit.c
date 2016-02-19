@@ -3174,6 +3174,24 @@ int handle_terminating_job(
 
 
 
+void set_job_comment(
+
+  job        *pjob,
+  const char *cmt)
+
+  {
+  // Free the old comment if it exists.
+  if (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL)
+    {
+    free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+    pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = NULL;
+    }
+
+  pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(cmt);
+  pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
+  } // END set_job_comment()
+
+
 
 int update_substate_from_exit_status(
 
@@ -3260,6 +3278,12 @@ int update_substate_from_exit_status(
           pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
           break;
+
+        case JOB_EXEC_RETRY_CGROUP:
+
+          set_job_comment(pjob, pbse_to_txt(PBSE_CGROUP_CREATE_FAIL));
+
+          // Fall through intentionally
 
         case JOB_EXEC_RETRY:
 
