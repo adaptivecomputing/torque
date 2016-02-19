@@ -1246,20 +1246,23 @@ unsigned long cput_sum(
 
     fd = open(full_cgroup_path.c_str(), O_RDONLY);
     if (fd <= 0)
-    {
-    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
-    return(0);
-    }
+      {
+      if (pjob->ji_cgroups_created == true)
+        {
+        sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+        log_err(-1, __func__, buf);
+        }
+      return(0);
+      }
 
     rc = read(fd, buf, LOCAL_BUF_SIZE);
     if (rc == -1)
-    {
-    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
-    close(fd);
-    return(0);
-    }
+      {
+      sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
+      log_err(-1, __func__, buf);
+      close(fd);
+      return(0);
+      }
     else if (rc != 0) /* if rc is 0 something is not right but it is not a critical error. Don't do anything */
     {
     ulong nano_seconds;
@@ -1595,8 +1598,12 @@ unsigned long long resi_sum(
   fd = open(full_cgroup_path.c_str(), O_RDONLY);
   if (fd <= 0)
     {
-    sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
+    if (pjob->ji_cgroups_created == true)
+      {
+      sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
+      log_err(-1, __func__, buf);
+      }
+
     return(0);
     }
 

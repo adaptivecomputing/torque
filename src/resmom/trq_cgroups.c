@@ -1375,8 +1375,13 @@ int trq_cg_populate_cgroup(
 
   if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
     {
-    sprintf(log_buf, "failed to write cpuset for job %s", job_id);
-    log_err(errno, __func__, log_buf);
+    sprintf(log_buf, "failed to write cgroup for job %s", job_id);
+
+    if (errno != 0)
+      log_err(errno, __func__, log_buf);
+    else
+      log_err(PBSE_SYSTEM, __func__, log_buf);
+
     rc = PBSE_SYSTEM;
     }
 
@@ -1786,7 +1791,8 @@ int trq_cg_set_task_resident_memory_limit(
 
 void trq_cg_remove_task_dirs(
     
-  const string &torque_path)
+  const string &torque_path,
+  bool          successfully_created)
 
   {
   DIR *pdir = NULL;
@@ -1799,7 +1805,8 @@ void trq_cg_remove_task_dirs(
       if (dent->d_name[0] == 'R')
         {
         std::string dir_name = torque_path + "/" + dent->d_name;
-        if (rmdir_ext(dir_name.c_str()) != PBSE_NONE)
+        if ((rmdir_ext(dir_name.c_str()) != PBSE_NONE) &&
+            (successfully_created == true))
           {
           sprintf(log_buffer, "failed to remove directory %s", dir_name.c_str());
           log_err(errno, __func__, log_buffer);
@@ -1809,7 +1816,8 @@ void trq_cg_remove_task_dirs(
 
     closedir(pdir);
     }
-  else if (errno != ENOENT)
+  else if ((errno != ENOENT) &&
+           (successfully_created == true))
     {
     sprintf(log_buffer, "Couldn't open directory '%s' for removal", torque_path.c_str());
     log_err(errno, __func__, log_buffer);
@@ -1827,13 +1835,15 @@ void trq_cg_remove_task_dirs(
 
 void trq_cg_delete_cgroup_path(
 
-  const string &cgroup_path)
+  const string &cgroup_path,
+  bool          successfully_created)
 
   {
 #define MAX_CGROUP_DELETE_RETRIES 10
-  trq_cg_remove_task_dirs(cgroup_path);
+  trq_cg_remove_task_dirs(cgroup_path, successfully_created);
 
-  if (rmdir_ext(cgroup_path.c_str()) != PBSE_NONE)
+  if ((rmdir_ext(cgroup_path.c_str()) != PBSE_NONE) &&
+      (successfully_created == true))
     {
     sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());
     log_err(errno, __func__, log_buffer);
@@ -1853,28 +1863,29 @@ void trq_cg_delete_cgroup_path(
 
 void trq_cg_delete_job_cgroups(
     
-  const char *job_id)
+  const char *job_id,
+  bool        successfully_created)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   string cgroup_path;
   struct stat buf;
   int         rc;
-
+  
   cgroup_path = cg_cpu_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path);
+  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
 
   cgroup_path = cg_cpuacct_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path);
+  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
   
   cgroup_path = cg_cpuset_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path);
+  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
 
   cgroup_path = cg_memory_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path);
+  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
 
   cgroup_path = cg_devices_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path);
+  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
 
   } // END trq_cg_delete_job_cgroups()
 #endif

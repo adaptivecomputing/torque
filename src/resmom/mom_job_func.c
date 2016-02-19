@@ -519,6 +519,9 @@ job *job_alloc(void)
   pj->ji_stats_done = false;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
+#ifdef PENABLE_LINUX_CGROUPS
+  pj->ji_cgroups_created = false;
+#endif
 
   pj->ji_sigtermed_processes = new std::set<int>();
 
@@ -732,7 +735,7 @@ void *delete_job_files(
 
 #ifdef PENABLE_LINUX_CGROUPS
   /* We need to remove the cgroup hierarchy for this job */
-  trq_cg_delete_job_cgroups(jfdi->jobid);
+  trq_cg_delete_job_cgroups(jfdi->jobid, jfdi->cgroups_all_created);
 
   if (LOGLEVEL >=6)
     {
@@ -944,6 +947,10 @@ void mom_job_purge(
 
   jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  jfdi->cgroups_all_created = pjob->ji_cgroups_created;
+#endif
 
   /* remove each pid in ji_job_pid_set from the global_job_sid_set */
   for (job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->begin();
