@@ -717,6 +717,9 @@ struct job
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
                                         and tasks from start_process. */
   std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
+#ifdef PENABLE_LINUX_CGROUPS
+  bool             ji_cgroups_created;
+#endif
 
 #else     /* END MOM ONLY */
 
@@ -925,6 +928,9 @@ typedef struct job_file_delete_info
   unsigned char  has_temp_dir;
   gid_t          gid;
   uid_t          uid;
+#ifdef PENABLE_LINUX_CGROUPS
+  bool           cgroups_all_created;
+#endif
   } job_file_delete_info;
 #endif
 
@@ -1157,6 +1163,7 @@ dir so that job can be restarted */
 #define JOB_EXEC_OVERLIMIT_MEM  -10  /* job exceeded a memory limit */
 #define JOB_EXEC_OVERLIMIT_WT   -11  /* job exceeded a walltime limit */
 #define JOB_EXEC_OVERLIMIT_CPUT -12  /* job exceeded a cpu time limit */
+#define JOB_EXEC_RETRY_CGROUP   -13  /* couldn't create the job's cgroups */
 
 extern void  depend_clrrdy(job *);
 extern int   depend_on_que(pbs_attribute *, void *, int);

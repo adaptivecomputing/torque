@@ -161,7 +161,8 @@ Machine          this_node;
 
 void trq_cg_delete_job_cgroups(
         
-      const char *job_id)
+  const char *job_id,
+  bool        successfully_created)
 
   {
   }

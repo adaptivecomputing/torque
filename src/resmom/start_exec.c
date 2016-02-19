@@ -4634,7 +4634,7 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
@@ -4644,15 +4644,17 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
   if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
     {
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
+
+  pjob->ji_cgroups_created = true;
 #endif
 
   if (site_job_setup(pjob) != 0)
