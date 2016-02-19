@@ -26,6 +26,19 @@ START_TEST(test_get_cores_threads)
   }
 END_TEST
 
+START_TEST(test_get_gpu_mode)
+  {
+  req r;
+  std::string gpu_mode;
+
+  r.set_value("gpus", "1");
+  r.set_value("gpu_mode", "exclusive_thread");
+  fail_unless(r.getGpus() == 1);
+  gpu_mode = r.get_gpu_mode();
+  fail_unless(gpu_mode.compare("exclusive_thread") == 0);
+  }
+END_TEST
+
 START_TEST(test_has_conflicting_values)
   {
   req r;
@@ -748,6 +761,10 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_swap_for_host);
   tcase_add_test(tc_core, test_get_task_allocation);
   tcase_add_test(tc_core, test_update_hostlist);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_gpu_mode");
+  tcase_add_test(tc_core, test_get_gpu_mode);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_setters");

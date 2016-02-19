@@ -186,6 +186,7 @@ class req
     std::string   getNodeAccessPolicy() const;
     std::string   getPlacementType() const;
     std::string   getReqAttr() const;
+    std::string   get_gpu_mode() const;
     int           getTaskCount() const;
     int           getIndex() const;
     int           getHostlist(std::vector<std::string> &list) const;

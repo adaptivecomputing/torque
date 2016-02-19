@@ -354,3 +354,16 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
+
+#ifdef NVML_API
+void PCI_Device::initializeGpu(int x, hwloc_topology *fred)
+  { 
+  return;
+  } 
+  
+int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+

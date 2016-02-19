@@ -293,6 +293,8 @@ PbsErrClient(PBSE_MINLIMIT, (char *)"Request doesn't meet minimum limit")
 PbsErrClient(PBSE_CANT_EDIT_NODES, (char *)"With dont_write_nodes_file set you can't edit nodes via qmgr.")
 PbsErrClient(PBSE_GHOSTQUEUE, (char *)"This queue had errors during its recovery. Please correct any settings that were lost on restart and then unset the ghost_queue setting via qmgr. Once this is unset, then the queue will be able to accept new jobs again.") 
 PbsErrClient(PBSE_CGROUP_CREATE_FAIL, (char *)"Could not create all of the cgroups for this job.")
+PbsErrClient(PBSE_GPU_NOT_INITIALIZED, (char *)"NVIDIA GPU not initialized")
+PbsErrClient(PBSE_UNSUPPORTED_DEVICE_VERSION, (char *)"Unsupported device version")
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif
