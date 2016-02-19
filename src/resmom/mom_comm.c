@@ -2509,7 +2509,7 @@ int im_join_job_as_sister(
     }  /* END for (psatl) */
   
 #ifdef NVIDIA_GPUS
-  if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
+  if ((use_nvidia_gpu) && (setup_gpus_for_job(pjob) != PBSE_NONE))
     {
     sprintf(log_buffer, "%s: Could not set gpus mode for the job",
       __func__);

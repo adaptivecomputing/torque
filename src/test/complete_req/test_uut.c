@@ -163,6 +163,25 @@ START_TEST(test_get_swap_memory_for_this_host)
   }
 END_TEST
 
+START_TEST(test_get_num_reqs)
+  {
+  complete_req c;
+  std::string hostname = "kmn";
+  unsigned long swap;
+
+  req r1;
+  req r2;
+
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1");
+  r2.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1:gpus=1");
+
+  c.add_req(r1);
+  c.add_req(r2);
+
+  fail_unless(c.get_num_reqs() == 2);
+  }
+END_TEST
+
 
 START_TEST(test_update_hostlist)
   {
@@ -283,6 +302,10 @@ Suite *complete_req_suite(void)
   tc_core = tcase_create("test_get_swap_memory_for_this_host");
   tcase_add_test(tc_core, test_get_swap_memory_for_this_host);
   tcase_add_test(tc_core, test_set_hostlists);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_num_reqs");
+  tcase_add_test(tc_core, test_get_num_reqs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_get_memory_for_this_host");

@@ -189,6 +189,7 @@ sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
+unsigned int gpu_count;
 #endif
 extern int  multi_mom;
 char        *path_layout;
@@ -278,7 +279,7 @@ extern void     mom_checkpoint_set_directory_path(const char *str);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
-extern int      init_nvidia_nvml();
+extern int      init_nvidia_nvml(unsigned int &device_count);
 extern int      shut_nvidia_nvml();
 #endif  /* NVML_API */
 extern int      check_nvidia_setup();
@@ -4883,6 +4884,9 @@ int setup_program_environment(void)
   if (hostname_specified == 0)
     {
     hostc = gethostname(mom_host, PBS_MAXHOSTNAME);
+    hostname_specified = 1;
+    if (hostc == 0)
+      hostc = 1;
     }
 
   if (!multi_mom)
@@ -6812,7 +6816,7 @@ int main(
 /* Due to differences in the NVIDIA libraries, NVML initialization must be done 
  * after the MOM is daemonized which happens in setup_program_environment.
  * */
-  if (!init_nvidia_nvml())
+  if (!init_nvidia_nvml(gpu_count))
     {
     use_nvidia_gpu = FALSE;
     }

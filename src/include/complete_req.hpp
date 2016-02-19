@@ -123,6 +123,7 @@ class complete_req
                                   std::vector<unsigned long> &cput_used,
                                   std::vector<unsigned long long> &mem_used);
     void           set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used);
+    int            get_num_reqs();
   };
 
 #endif
