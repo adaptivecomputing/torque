@@ -764,3 +764,7 @@ void complete_req::set_task_usage_stats(
 
   }
 
+int complete_req::get_num_reqs()
+  {
+  return(this->reqs.size());
+  }

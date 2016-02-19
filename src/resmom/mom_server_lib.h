@@ -42,11 +42,10 @@ void gen_gen(const char *name, char **BPtr, int *BSpace);
 #if defined(NVIDIA_GPUS) && defined(NVML_API)
 void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 
-int init_nvidia_nvml();
+int init_nvidia_nvml(unsigned int &gpu_count);
 
 int shut_nvidia_nvml();
 
-nvmlDevice_t get_nvml_device_handle(char *gpuid);
 #endif /* NVIDIA_GPUS and NVML_API */
 
 #ifdef NVIDIA_GPUS

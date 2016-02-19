@@ -2150,6 +2150,12 @@ std::string req::getReqAttr() const
   return(this->req_attr);
   }
 
+std::string req::get_gpu_mode() const
+
+  {
+  return(this->gpu_mode);
+  }
+
 int req::getIndex() const
 
   {

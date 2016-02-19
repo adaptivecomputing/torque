@@ -1368,7 +1368,7 @@ bool am_i_mother_superior(const job &pjob)
 void get_energy_used(job *pjob)
   {}
 
-int init_nvidia_nvml() 
+int init_nvidia_nvml(unsigned int device_count) 
   {
   return(0);
   }
