@@ -130,6 +130,9 @@ extern long TJobStartTimeout;
 static pid_t child;
 static pid_t childSessionID;
 static int   run_exit;
+extern char *path_jobs;
+extern int   multi_mom;
+extern unsigned int pbs_rm_port;
 
 /* external prototypes */
 
@@ -558,6 +561,19 @@ void setup_pelog_arguments(
   int  LastArg;
   char resc_list[2048];
   char resc_used[2048];
+  char namebuf[1024];
+  
+  if (multi_mom)
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_SCRIPT_SUFFIX);
+    }
+  else
+    {
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+    }
+
 
   arg[0] = pelog;
 
@@ -587,20 +603,21 @@ void setup_pelog_arguments(
     arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
     arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
     arg[10] = exit_stat;
-    arg[11] = NULL;
+    arg[11] = strdup(namebuf);
+    arg[12] = NULL;
 
-    LastArg = 11;
+    LastArg = 12;
     }
   else
     {
     /* prologue */
-
     arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
     arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
-    arg[8] = NULL;
+    arg[8] = strdup(namebuf);
+    arg[9] = NULL;
 
-    LastArg = 8;
+    LastArg = 9;
     }
 
   for (int aindex = 0;aindex < LastArg; aindex++)
@@ -1074,7 +1091,7 @@ void prepare_and_run_pelog_as_child(
   int   fd_input)
 
   {
-  char *arg[12];
+  char *arg[13];
 
   handle_pipes_as_child(parent_read, parent_write, kid_read, kid_write);
 
