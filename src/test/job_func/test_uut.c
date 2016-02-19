@@ -146,6 +146,8 @@ START_TEST(split_job_test)
   char *externals = (char *)"one+two+three";
   char *exec1 = (char *)"one/0+one/1+napali/0+napali/1+napali/2+napali/3+a1/0+a1/1+a1/2+a1/3";
 
+  memset((void *)&pjob, 0, sizeof(pjob));
+
   strcpy(pjob.ji_qs.ji_jobid, "12.napali");
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(exec1);
   pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
