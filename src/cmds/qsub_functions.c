@@ -3930,15 +3930,15 @@ void print_qsub_usage_exit(const char *error_msg)
     [-c [ none | { enabled | periodic | shutdown |\n\
     depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
     [-C directive_prefix] [-d path] [-D path]\n\
-    [-e path] [-h] [-I] [-j oe|eo|n] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
-    [-M user_list] [-N jobname] [-o path] [-p priority] [-P proxy_user [-J <jobid]]\n\
-    [-q queue] [-r y|n] [-S path] [-t number_to_submit] [-T type]  [-u user_list]\n\
-    [-w] path\n";
+    [-e path] [-h] [-I] [-j oe|eo|n] [-k {oe}] [-K <kill delay seconds>] \n\
+    [-l resource_list] [-m n|{abe}] [-M user_list] [-N jobname] [-o path] \n\
+    [-p priority] [-P proxy_user [-J <jobid]] [-q queue] [-r y|n] \n\
+    [-S path] [-t number_to_submit] [-T type]  [-u user_list] [-w] path\n";
 
   /* need secondary usage since there appears to be a 512 byte size limit */
 
   static char usage2[] =
-    "      [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
+    "    [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
     
   fprintf(stderr,"[%s]\n\n%s%s\n", error_msg, usage, usage2);
 
