@@ -2588,7 +2588,8 @@ int TMomFinalizeJob2(
       {
       sprintf(log_buffer, "Failed to initialize gpus. Job %s failed to start", pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-      return(rc);
+      *SC = rc;
+      return(FAILURE);
       }
     }
 #endif  /* NVIDIA_GPUS */
@@ -4668,7 +4669,12 @@ int TMomFinalizeChild(
     }
 
   pjob->ji_cgroups_created = true;
+
+#ifdef NVIDIA_GPUS
+  rc = trq_cg_add_gpu_devices_to_cgroup(pjob);
 #endif
+
+#endif /* PENABLE_LINUX_CGROUPS */
 
   if (site_job_setup(pjob) != 0)
     {
