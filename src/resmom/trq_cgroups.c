@@ -19,6 +19,8 @@
 #include "log.h"
 #include "trq_cgroups.h"
 #include "utils.h"
+#include "nvml.h"
+#include "mom_server_lib.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
@@ -32,6 +34,7 @@ using namespace boost;
 
 #define MAX_JOBID_LENGTH    1024
 extern char mom_alias[];
+extern unsigned int global_gpu_count;
 
 enum cgroup_system
   {
@@ -1890,3 +1893,139 @@ void trq_cg_delete_job_cgroups(
   } // END trq_cg_delete_job_cgroups()
 #endif
 
+
+/*
+ * trq_cg_set_forbidden_gpus
+ *
+ * Add the indices in the forbidden list to the devices.deny file
+ *
+ * @param - forbidden_gpus - gpus that are not to be used 
+ *                           by this job
+ * @param - job_devices_path - path to devices directory for the job
+ *
+ */
+
+int trq_cg_set_forbidden_gpus(std::vector<int> &forbidden_gpus, std::string job_devices_path)
+  {
+  int         rc;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  size_t      bytes_written;
+  std::string devices_deny;
+  FILE       *f;
+
+  devices_deny = job_devices_path + '/' + "devices.deny";
+
+  rc = mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  if ((rc != 0) &&
+       (errno != EEXIST))
+    {
+    sprintf(log_buf, "failed to make directory %s for cgroup: %s", job_devices_path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buf);
+    return(PBSE_SYSTEM);
+    }
+
+  for (std::vector<int>::iterator it = forbidden_gpus.begin(); it != forbidden_gpus.end(); it++)
+    {
+    char   restricted_gpu[1024];
+
+    sprintf(restricted_gpu, "echo \"c 195:%d rwm\" > %s", *it, devices_deny.c_str());
+    f = popen(restricted_gpu, "r");
+    if (f == NULL)
+      {
+      sprintf(log_buf, "Failed to add restricted gpu to devices.deny list: index %d in %s", *it, job_devices_path.c_str());
+      log_err(errno, __func__, log_buf);
+      return(PBSE_SYSTEM);
+      }
+
+    pclose(f);
+    }
+
+  return(PBSE_NONE);
+  }
+
+/*
+ * trq_cg_add_gpu_devices_to_cgroups
+ *
+ * This routine adds any gpu devices not in this 
+ * job (found in the gpu_exec list) into the devices.deny
+ * list of the gpuset for this job
+ *
+ * @param pjob - job structure for job we are working on.
+ *
+ */
+
+int trq_cg_add_gpu_devices_to_cgroup(job *pjob)
+  {
+  std::vector<unsigned int> gpu_indices;
+  std::vector<int> forbidden_gpus;
+  std::string job_devices_path;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   rc = PBSE_NONE;
+  char *gpu_str;
+  unsigned int gpu_count;
+
+
+  gpu_count = global_gpu_count;
+
+  /* First make sure we have gpus */
+  if(gpu_count == 0)
+    return(PBSE_IVALREQ);
+
+  job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;
+
+
+  /* if there are no gpus given, deny all gpus to the job */
+  if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0) ||
+      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str == NULL))
+    {
+    for (unsigned int i = 0; i < gpu_count; i++)
+      forbidden_gpus.push_back(i);
+
+    rc = trq_cg_set_forbidden_gpus(forbidden_gpus, job_devices_path);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+    return(rc);
+    }
+
+
+  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+
+  gpu_indices.clear();
+  get_gpu_indices(gpu_str, gpu_indices);
+
+
+  /* gpu_indices has the list of gpus for this job. 
+     make a list of gpus that are not for this job
+     using that list */
+  for (unsigned int i = 0; i < gpu_count; i++)
+    {
+    for(std::vector<unsigned int>::iterator it = gpu_indices.begin(); it != gpu_indices.end(); it++)
+      {
+      if (*it == i)
+        {
+        forbidden_gpus.push_back(i);
+        break;
+        }
+      }
+    }
+
+  if (forbidden_gpus.size() == 0)
+    return(PBSE_NONE);
+
+  rc = trq_cg_set_forbidden_gpus(forbidden_gpus, job_devices_path);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buf, " 2 Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    return(rc);
+    }
+ 
+  /* We are already here and have a path to the cgroup. Add the pid to the tasks file. */
+  rc = trq_cg_add_process_to_cgroup(cg_devices_path, pjob->ji_qs.ji_jobid, getpid());
+
+  return(rc);
+  
+  }

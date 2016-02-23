@@ -246,6 +246,8 @@
 #include <vector>
 #include "container.hpp"
 #include <arpa/inet.h>
+#include <boost/tokenizer.hpp>
+#include <boost/foreach.hpp>
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
@@ -3343,7 +3345,127 @@ int is_mom_server_down(
   return(0);
   }
 
+#ifdef NVML_API
 
+#define THIS_HOST_LEN 256
+/*
+ * is_for_this_host
+ *
+ * Parses the gpu_string and compares the host for
+ * the gpu in the string to see if it is the same
+ * as this host. If yes return true, else return false
+ *
+ * @param gpu_spec - string with the job specification 
+ *                   indicating the node and gpu index to be run 
+ *                   in the job.
+ *
+ */
+
+bool is_for_this_host(string gpu_spec)
+  {
+  char  this_host[THIS_HOST_LEN];
+  char  *ptr;
+  char  temp_char_string[THIS_HOST_LEN];
+  int   rc;
+
+  rc = gethostname(this_host, sizeof(this_host));
+  if (rc != 0)
+    return(false);
+
+  strcpy(temp_char_string, gpu_spec.c_str());
+
+  /* peel off the -gpu part of the gpu_spec */
+  ptr = strstr(temp_char_string, "-gpu");
+  if (ptr != NULL)
+    *ptr = '\0';
+  else
+    return(false);
+
+  if (!strcmp(this_host, temp_char_string))
+    return(true);
+
+  /* try to match the short name */
+  ptr = strchr(this_host, '.');
+  if (ptr != NULL)
+    *ptr = '\0';
+  ptr = strchr(temp_char_string, '.');
+  if (ptr != NULL)
+    *ptr = '\0';
+
+  /* one last time */
+  if (!strcmp(this_host, temp_char_string))
+      return(true);
+
+  return(false);
+  }
+
+
+
+/*
+ * get_gpu_indices
+ *
+ * this function takes the gpu spec (gpu_str) and then adds
+ * the indices of all gpu indices in the string that belong to 
+ * this host.
+ *
+ * @param gpu_str - A string of one or more hosts and gpu indices of the 
+ *                  format host-gpu/0+host-gpu/1....
+ * @param gpu_indices - A vector of ints with the indices which belong to
+ *                      this host.
+ *
+ */
+
+void get_gpu_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices)
+  {
+  std::string gpu_string = gpu_str;
+  std::vector<string> gpu_tokens;
+  boost::char_separator<char> sep("+");
+  boost::tokenizer< boost::char_separator<char> > tokens(gpu_string, sep);
+
+  /* reset gpu_indices so it is empty */
+  gpu_indices.clear();
+
+  /* pull out each element of the gpu string */
+  BOOST_FOREACH (const string& t, tokens)
+    {
+    gpu_tokens.push_back(t);
+    }
+
+  /* We now have each gpu request in the form of <host>-gpu/x where 
+     x is the indices of the gpu to allocate. See the spec is for this host
+     and add the index to gpu_indices if it is. */
+
+
+  for (std::vector<string>::iterator gpu_spec = gpu_tokens.begin(); gpu_spec != gpu_tokens.end(); ++gpu_spec)
+    {
+    std::string host_name_part;
+    std::string gpu_index_part;
+    std::vector<std::string> parts;
+    boost::char_separator<char> gpu_sep("/");
+    boost::tokenizer< boost::char_separator<char> > gpu_spec_parts(*gpu_spec, gpu_sep);
+
+    BOOST_FOREACH (const string& tok, gpu_spec_parts)
+      {
+      parts.push_back(tok);
+      }
+
+    /* parts should have two entries. */
+    /* The first part will be the host name */
+    host_name_part = parts[0].c_str();
+    
+    /* The second part will be the index */
+    gpu_index_part = parts[1].c_str();
+
+    if (is_for_this_host(host_name_part) == true)
+      {
+      unsigned int gpu_index = atoi(gpu_index_part.c_str());
+
+      gpu_indices.push_back(gpu_index);
+      }
+
+    }
+  }
+#endif
 
 
 
