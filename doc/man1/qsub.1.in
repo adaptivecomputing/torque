@@ -83,7 +83,7 @@ qsub \- submit pbs job
 .SH SYNOPSIS
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
-[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep]
+[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
 [\-l resource_list] [\-m mail_options] [\-M user_list] [\-n node exclusive] [\-N name] 
 [\-o path] [\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
 [\-S path_list] [\-t array_request] [\-T prologue/epilogue script_name] 
@@ -501,6 +501,10 @@ The attribute is set to "KEEP_OUTPUT\ |\ KEEP_ERROR".
 .Ig
 .IP n 3
 Neither stream is retained.
+.RE
+.IP "\-K kill_delay" 8
+Specifies a job specific kill delay in seconds. When specified, this job will
+be sent a SIGTERM, followed by a SIGKILL the specified number of seconds later.
 .RE
 .IP "\-l resource_list" 8
 Defines the resources that are required by the job and establishes a limit
