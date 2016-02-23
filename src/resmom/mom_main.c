@@ -189,7 +189,7 @@ sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
-unsigned int gpu_count;
+unsigned int global_gpu_count;
 #endif
 extern int  multi_mom;
 char        *path_layout;
@@ -6816,7 +6816,7 @@ int main(
 /* Due to differences in the NVIDIA libraries, NVML initialization must be done 
  * after the MOM is daemonized which happens in setup_program_environment.
  * */
-  if (!init_nvidia_nvml(gpu_count))
+  if (!init_nvidia_nvml(global_gpu_count))
     {
     use_nvidia_gpu = FALSE;
     }
