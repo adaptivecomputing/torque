@@ -19,7 +19,9 @@
 #include "log.h"
 #include "trq_cgroups.h"
 #include "utils.h"
+#ifdef NVIDIA_GPUS
 #include "nvml.h"
+#endif
 #include "mom_server_lib.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include <boost/tokenizer.hpp>
@@ -1943,6 +1945,7 @@ int trq_cg_set_forbidden_gpus(std::vector<int> &forbidden_gpus, std::string job_
   return(PBSE_NONE);
   }
 
+#ifdef NVIDIA_GPUS
 /*
  * trq_cg_add_gpu_devices_to_cgroups
  *
@@ -2029,3 +2032,4 @@ int trq_cg_add_gpu_devices_to_cgroup(job *pjob)
   return(rc);
   
   }
+#endif
