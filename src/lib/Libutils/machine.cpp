@@ -839,12 +839,6 @@ int Machine::place_job(
       if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
-    else if ((a.place_type == exclusive_core) ||
-             (a.place_type == exclusive_thread))
-      {
-      if ((rc = spread_place_pu(r, a, tasks_for_node, hostname)) != PBSE_NONE)
-        return(rc);
-      }
     else
       {
       for (unsigned int j = 0; j < this->sockets.size(); j++)

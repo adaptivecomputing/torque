@@ -172,11 +172,12 @@ bool Core::free_pu_index(
   bool &core_is_now_free)
 
   {
+  bool freed_index = false;
   core_is_now_free = false;
 
   for (unsigned int i = 0; i < this->indices.size(); i++)
     {
-    if (this->indices[i] == index)
+    if (this->indices[i] == index && this->is_index_busy[i] == true)
       {
       this->is_index_busy[i] = false;
       this->processing_units_open++;
@@ -186,11 +187,12 @@ bool Core::free_pu_index(
         core_is_now_free = true;
         }
 
-      return(true);
+      freed_index = true;
+      break;
       }
     }
 
-  return(false);
+  return(freed_index);
   } // END free_pu_index()
 
 
