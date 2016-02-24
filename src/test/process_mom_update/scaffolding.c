@@ -395,3 +395,15 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
   }
 #endif
 
+#ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+

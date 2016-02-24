@@ -149,7 +149,8 @@ enum gpmodeit
   gpu_exclusive_thread,
   gpu_prohibited,
   gpu_exclusive_process,
-  gpu_unknown
+  gpu_unknown,
+  gpu_mode_not_set
   };
 
 enum gpstatit

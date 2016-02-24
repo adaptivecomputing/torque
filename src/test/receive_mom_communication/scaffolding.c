@@ -902,3 +902,15 @@ void pbsnode::change_name(const char *hostname)
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"
+#ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+

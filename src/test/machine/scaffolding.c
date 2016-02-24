@@ -322,6 +322,10 @@ int req::getGpus() const
   return(0);
   }
 
-job::job() {}
 job::~job() {}
+
+int  Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
 
