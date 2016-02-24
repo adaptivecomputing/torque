@@ -214,10 +214,11 @@ int add_single_mic_info(
 
 std::set<int> down_mics;
 
-int check_for_mics()
+int check_for_mics(
+  
+  uint32_t& num_engines)
 
   {
-  uint32_t                 num_engines = 0;
   uint32_t                 i = 0;
 
 #ifdef NUMA_SUPPORT

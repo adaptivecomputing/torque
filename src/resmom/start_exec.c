@@ -4427,7 +4427,7 @@ int set_job_cgroup_memory_limits(
       }
     }
 
-  if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
+  if ((rc = trq_cg_add_process_to_cgroup(cg_cpuset_path, pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
@@ -4670,9 +4670,7 @@ int TMomFinalizeChild(
 
   pjob->ji_cgroups_created = true;
 
-#ifdef NVIDIA_GPUS
-  rc = trq_cg_add_gpu_devices_to_cgroup(pjob);
-#endif
+  rc = trq_cg_add_devices_to_cgroup(pjob);
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
