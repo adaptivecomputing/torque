@@ -32,7 +32,7 @@ extern time_t LastServerUpdateTime;
 extern int    is_reporter_mom;
 extern mom_server mom_servers[PBS_MAXSERVER];
 
-bool is_for_this_host(std::string gpu_spec);
+bool is_for_this_host(std::string gpu_spec, const char *suffix);
 void get_device_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices, const char *suffix);
 
 START_TEST(test_sort_paths)
@@ -223,24 +223,24 @@ END_TEST
 START_TEST(test_is_for_this_host)
   {
   std::string spec;
-  char suffix[10];
+  std::string suffix;
 
   suffix = "-gpu";
   /* test the positive case */
   spec =  "fattony3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix) == true);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
 
   /* test the positive case  short name*/
   spec =  "fattony3-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix) == true);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
 
   /* test the negative case */
   spec =  "numa3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix) == false);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
 
   /* test the negative case bad input*/
   spec =  "fattony3.ac/0";
-  fail_unless(is_for_this_host(spec, suffix) == false);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
 
   }
 END_TEST
@@ -254,7 +254,7 @@ START_TEST(test_get_device_indices)
 
   strcpy(suffix, "-gpu");
   spec = "fattony3.ac-gpu/0+fattony3.ac-gpu/1+numa3.ac-gpu/0";
-  get_device_indices(spec.c_str(), gpu_indices);
+  get_device_indices(spec.c_str(), gpu_indices, suffix);
   fail_unless(gpu_indices.size() == 2);
   fail_unless(gpu_indices[0] == 0);
   fail_unless(gpu_indices[1] == 1);

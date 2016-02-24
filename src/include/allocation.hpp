@@ -112,6 +112,7 @@ class allocation
   int              cpus;
   int              cores;
   int              threads;
+  int              place_cpus;
   int              place_type;
   bool             cores_only;
   std::string      jobid;
@@ -140,6 +141,7 @@ class allocation
   void get_gpus_remaining(int &gpus);
   void set_mics_remaining(int mics);
   void get_mics_remaining(int &mics);
+  void clear();
   };
 
 #endif 
