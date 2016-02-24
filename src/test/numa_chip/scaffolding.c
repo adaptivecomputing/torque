@@ -3,6 +3,7 @@
 #include "machine.hpp"
 #include "log.h"
 #include "pbs_error.h"
+#include "machine.hpp"
 
 const char  *use_cores = "usecores";
 std::string  my_placement_type;
@@ -197,3 +198,7 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }

@@ -274,6 +274,7 @@ pbs_net_t      down_svraddrs[PBS_MAXSERVER];
 extern Machine this_node;
 #endif
 
+extern uint32_t            global_mic_count;
 extern unsigned int        default_server_port;
 extern char               *path_jobs;
 extern char               *path_home;
@@ -320,7 +321,7 @@ extern int  use_nvidia_gpu;
 #endif
 
 #ifdef MIC
-int check_for_mics();
+int check_for_mics(uint32_t& num_engines);
 #endif
 
 int num_stat_update_failures = 0;
@@ -1699,7 +1700,7 @@ void mom_server_all_update_stat(void)
 #endif
 
 #ifdef MIC
-    check_for_mics();
+    check_for_mics(global_mic_count);
 #endif 
 
     /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
@@ -3345,23 +3346,26 @@ int is_mom_server_down(
   return(0);
   }
 
-#ifdef NVML_API
 
 #define THIS_HOST_LEN 256
 /*
  * is_for_this_host
  *
- * Parses the gpu_string and compares the host for
- * the gpu in the string to see if it is the same
+ * Parses the device_string and compares the host for
+ * the device in the string to see if it is the same
  * as this host. If yes return true, else return false
  *
- * @param gpu_spec - string with the job specification 
- *                   indicating the node and gpu index to be run 
+ * @param device_spec - string with the job specification 
+ *                   indicating the node and device index to be run 
  *                   in the job.
  *
  */
 
-bool is_for_this_host(string gpu_spec)
+bool is_for_this_host(
+    
+  std::string device_spec, 
+  const char *suffix)
+
   {
   char  this_host[THIS_HOST_LEN];
   char  *ptr;
@@ -3372,10 +3376,10 @@ bool is_for_this_host(string gpu_spec)
   if (rc != 0)
     return(false);
 
-  strcpy(temp_char_string, gpu_spec.c_str());
+  strcpy(temp_char_string, device_spec.c_str());
 
-  /* peel off the -gpu part of the gpu_spec */
-  ptr = strstr(temp_char_string, "-gpu");
+  /* peel off the -device part of the device_spec */
+  ptr = strstr(temp_char_string, suffix);
   if (ptr != NULL)
     *ptr = '\0';
   else
@@ -3399,52 +3403,39 @@ bool is_for_this_host(string gpu_spec)
   return(false);
   }
 
+void get_device_indices(
+  
+  const char *device_str, 
+  std::vector<unsigned int> &device_indices, 
+  const char *suffix)
 
-
-/*
- * get_gpu_indices
- *
- * this function takes the gpu spec (gpu_str) and then adds
- * the indices of all gpu indices in the string that belong to 
- * this host.
- *
- * @param gpu_str - A string of one or more hosts and gpu indices of the 
- *                  format host-gpu/0+host-gpu/1....
- * @param gpu_indices - A vector of ints with the indices which belong to
- *                      this host.
- *
- */
-
-void get_gpu_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices)
   {
-  std::string gpu_string = gpu_str;
-  std::vector<string> gpu_tokens;
+  std::string device_string = device_str;
+  std::vector<std::string> device_tokens;
   boost::char_separator<char> sep("+");
-  boost::tokenizer< boost::char_separator<char> > tokens(gpu_string, sep);
+  boost::tokenizer< boost::char_separator<char> > tokens(device_string, sep);
 
-  /* reset gpu_indices so it is empty */
-  gpu_indices.clear();
+  /* reset device_indices so it is empty */
+  device_indices.clear();
 
-  /* pull out each element of the gpu string */
-  BOOST_FOREACH (const string& t, tokens)
+  /* pull out each element of the device string */
+  BOOST_FOREACH (const std::string& t, tokens)
     {
-    gpu_tokens.push_back(t);
+    device_tokens.push_back(t);
     }
 
-  /* We now have each gpu request in the form of <host>-gpu/x where 
-     x is the indices of the gpu to allocate. See the spec is for this host
-     and add the index to gpu_indices if it is. */
-
-
-  for (std::vector<string>::iterator gpu_spec = gpu_tokens.begin(); gpu_spec != gpu_tokens.end(); ++gpu_spec)
+  /* We now have each device request in the form of <host>-device/x where 
+     x is the indices of the device to allocate. See the spec is for this host
+     and add the index to device_indices if it is. */
+  for (std::vector<std::string>::iterator device_spec = device_tokens.begin(); device_spec != device_tokens.end(); ++device_spec)
     {
     std::string host_name_part;
-    std::string gpu_index_part;
+    std::string device_index_part;
     std::vector<std::string> parts;
-    boost::char_separator<char> gpu_sep("/");
-    boost::tokenizer< boost::char_separator<char> > gpu_spec_parts(*gpu_spec, gpu_sep);
+    boost::char_separator<char> device_sep("/");
+    boost::tokenizer< boost::char_separator<char> > device_spec_parts(*device_spec, device_sep);
 
-    BOOST_FOREACH (const string& tok, gpu_spec_parts)
+    BOOST_FOREACH (const std::string& tok, device_spec_parts)
       {
       parts.push_back(tok);
       }
@@ -3454,18 +3445,17 @@ void get_gpu_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices
     host_name_part = parts[0].c_str();
     
     /* The second part will be the index */
-    gpu_index_part = parts[1].c_str();
+    device_index_part = parts[1].c_str();
 
-    if (is_for_this_host(host_name_part) == true)
+    if (is_for_this_host(host_name_part, suffix) == true)
       {
-      unsigned int gpu_index = atoi(gpu_index_part.c_str());
+      unsigned int device_index = atoi(device_index_part.c_str());
 
-      gpu_indices.push_back(gpu_index);
+      device_indices.push_back(device_index);
       }
 
     }
   }
-#endif
 
 
 

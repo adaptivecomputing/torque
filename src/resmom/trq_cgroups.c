@@ -37,6 +37,7 @@ using namespace boost;
 #define MAX_JOBID_LENGTH    1024
 extern char mom_alias[];
 extern unsigned int global_gpu_count;
+extern uint32_t     global_mic_count;
 
 enum cgroup_system
   {
@@ -1510,14 +1511,14 @@ int trq_cg_create_all_cgroups(
 
 
 
-int trq_cg_add_process_to_cgroup(
+/*int trq_cg_add_process_to_cgroup(
 
   const char *job_id,
   pid_t       job_pid)
 
   {
   return(trq_cg_add_process_to_cgroup(cg_cpuset_path, job_id, job_pid));
-  } // END trq_cg_add_process_to_cgroup()
+  }*/ // END trq_cg_add_process_to_cgroup()
 
 
 
@@ -1893,21 +1894,20 @@ void trq_cg_delete_job_cgroups(
   trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
 
   } // END trq_cg_delete_job_cgroups()
-#endif
 
 
 /*
- * trq_cg_set_forbidden_gpus
+ * trq_cg_set_forbidden_devices
  *
  * Add the indices in the forbidden list to the devices.deny file
  *
- * @param - forbidden_gpus - gpus that are not to be used 
+ * @param - forbidden_devices - gpus that are not to be used 
  *                           by this job
  * @param - job_devices_path - path to devices directory for the job
  *
  */
 
-int trq_cg_set_forbidden_gpus(std::vector<int> &forbidden_gpus, std::string job_devices_path)
+int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::string job_devices_path)
   {
   int         rc;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1926,11 +1926,18 @@ int trq_cg_set_forbidden_gpus(std::vector<int> &forbidden_gpus, std::string job_
     return(PBSE_SYSTEM);
     }
 
-  for (std::vector<int>::iterator it = forbidden_gpus.begin(); it != forbidden_gpus.end(); it++)
+  for (std::vector<int>::iterator it = forbidden_devices.begin(); it != forbidden_devices.end(); it++)
     {
     char   restricted_gpu[1024];
 
+#ifdef NVIDIA_GPUS
     sprintf(restricted_gpu, "echo \"c 195:%d rwm\" > %s", *it, devices_deny.c_str());
+#endif
+
+#ifdef MIC
+    sprintf(restricted_gpu, "echo \"c 245:%d rwm\" > %s", *it, devices_deny.c_str());
+#endif
+
     f = popen(restricted_gpu, "r");
     if (f == NULL)
       {
@@ -1945,80 +1952,103 @@ int trq_cg_set_forbidden_gpus(std::vector<int> &forbidden_gpus, std::string job_
   return(PBSE_NONE);
   }
 
-#ifdef NVIDIA_GPUS
+
 /*
- * trq_cg_add_gpu_devices_to_cgroups
+ * trq_cg_add_devices_to_cgroups
  *
- * This routine adds any gpu devices not in this 
- * job (found in the gpu_exec list) into the devices.deny
+ * This routine adds any mic devices not in this 
+ * job (found in the exec_mics list) into the devices.deny
  * list of the gpuset for this job
  *
  * @param pjob - job structure for job we are working on.
  *
  */
 
-int trq_cg_add_gpu_devices_to_cgroup(job *pjob)
+int trq_cg_add_devices_to_cgroup(
+    
+  job *pjob)
+
   {
-  std::vector<unsigned int> gpu_indices;
-  std::vector<int> forbidden_gpus;
+  std::vector<unsigned int> device_indices;
+  std::vector<int> forbidden_devices;
   std::string job_devices_path;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  char *gpu_str;
-  unsigned int gpu_count;
+  char *device_str;
+  char  suffix[20];
+  unsigned int device_count;
+  int   index;
 
+#ifdef NVIDIA_GPUS
+  device_count = global_gpu_count;
+  strcpy(suffix, "-gpu");
+  index = JOB_ATR_exec_gpus;
+#endif
 
-  gpu_count = global_gpu_count;
+#ifdef MIC
+  device_count = global_mic_count;
+  strcpy(suffix, "-mic");
+  index = JOB_ATR_exec_mics;
+#endif
 
   /* First make sure we have gpus */
-  if(gpu_count == 0)
+  if(device_count == 0)
     return(PBSE_IVALREQ);
 
   job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;
 
 
   /* if there are no gpus given, deny all gpus to the job */
-  if (((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0) ||
-      (pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str == NULL))
+  if (((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) == 0) ||
+      (pjob->ji_wattr[index].at_val.at_str == NULL))
     {
-    for (unsigned int i = 0; i < gpu_count; i++)
-      forbidden_gpus.push_back(i);
+    for (unsigned int i = 0; i < device_count; i++)
+      forbidden_devices.push_back(i);
 
-    rc = trq_cg_set_forbidden_gpus(forbidden_gpus, job_devices_path);
+    rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
     if (rc != PBSE_NONE)
       {
       sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(rc);
       }
+
+    rc = trq_cg_add_process_to_cgroup(cg_devices_path, pjob->ji_qs.ji_jobid, getpid());
     return(rc);
     }
 
 
-  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+  device_str = pjob->ji_wattr[index].at_val.at_str;
 
-  gpu_indices.clear();
-  get_gpu_indices(gpu_str, gpu_indices);
+  device_indices.clear();
+  get_device_indices(device_str, device_indices, suffix);
 
 
-  /* gpu_indices has the list of gpus for this job. 
+  /* device_indices has the list of gpus for this job. 
      make a list of gpus that are not for this job
      using that list */
-  for (unsigned int i = 0; i < gpu_count; i++)
+  for (unsigned int i = 0; i < device_count; i++)
     {
-    for(std::vector<unsigned int>::iterator it = gpu_indices.begin(); it != gpu_indices.end(); it++)
+    bool found;
+
+    found = false;
+    for(std::vector<unsigned int>::iterator it = device_indices.begin(); it != device_indices.end(); it++)
       {
       if (*it == i)
         {
-        forbidden_gpus.push_back(i);
+        found = true;
         break;
         }
       }
-    }
+   if (found == false)
+     forbidden_devices.push_back(i);
 
-  if (forbidden_gpus.size() == 0)
+   }
+
+  if (forbidden_devices.size() == 0)
     return(PBSE_NONE);
 
-  rc = trq_cg_set_forbidden_gpus(forbidden_gpus, job_devices_path);
+  rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
   if (rc != PBSE_NONE)
     {
     sprintf(log_buf, " 2 Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
@@ -2030,6 +2060,6 @@ int trq_cg_add_gpu_devices_to_cgroup(job *pjob)
   rc = trq_cg_add_process_to_cgroup(cg_devices_path, pjob->ji_qs.ji_jobid, getpid());
 
   return(rc);
-  
   }
+
 #endif

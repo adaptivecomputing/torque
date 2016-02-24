@@ -33,7 +33,7 @@ extern int    is_reporter_mom;
 extern mom_server mom_servers[PBS_MAXSERVER];
 
 bool is_for_this_host(std::string gpu_spec);
-void get_gpu_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices);
+void get_device_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices, const char *suffix);
 
 START_TEST(test_sort_paths)
   {
@@ -223,34 +223,38 @@ END_TEST
 START_TEST(test_is_for_this_host)
   {
   std::string spec;
+  char suffix[10];
 
+  suffix = "-gpu";
   /* test the positive case */
   spec =  "fattony3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec) == true);
+  fail_unless(is_for_this_host(spec, suffix) == true);
 
   /* test the positive case  short name*/
   spec =  "fattony3-gpu/0";
-  fail_unless(is_for_this_host(spec) == true);
+  fail_unless(is_for_this_host(spec, suffix) == true);
 
   /* test the negative case */
   spec =  "numa3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec) == false);
+  fail_unless(is_for_this_host(spec, suffix) == false);
 
   /* test the negative case bad input*/
   spec =  "fattony3.ac/0";
-  fail_unless(is_for_this_host(spec) == false);
+  fail_unless(is_for_this_host(spec, suffix) == false);
 
   }
 END_TEST
 
 
-START_TEST(test_get_gpu_indices)
+START_TEST(test_get_device_indices)
   {
   std::string spec;
   std::vector<unsigned int> gpu_indices;
+  char suffix[10];
 
+  strcpy(suffix, "-gpu");
   spec = "fattony3.ac-gpu/0+fattony3.ac-gpu/1+numa3.ac-gpu/0";
-  get_gpu_indices(spec.c_str(), gpu_indices);
+  get_device_indices(spec.c_str(), gpu_indices);
   fail_unless(gpu_indices.size() == 2);
   fail_unless(gpu_indices[0] == 0);
   fail_unless(gpu_indices[1] == 1);
@@ -282,8 +286,8 @@ Suite *mom_server_suite(void)
   tcase_add_test(tc_core, test_is_for_this_host);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_get_gpu_indices");
-  tcase_add_test(tc_core, test_get_gpu_indices);
+  tc_core = tcase_create("test_get_device_indices");
+  tcase_add_test(tc_core, test_get_device_indices);
   suite_add_tcase(s, tc_core);
 
   return s;

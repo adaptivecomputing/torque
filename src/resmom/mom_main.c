@@ -191,6 +191,7 @@ extern std::vector<std::string> mom_status;
 extern std::vector<std::string> global_gpu_status;
 unsigned int global_gpu_count;
 #endif
+uint32_t     global_mic_count;
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -228,6 +229,7 @@ node_internals   internal_layout;
 #if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
 hwloc_topology_t topology = NULL;       /* system topology */
 #endif
+
 
 
 /* externs */
@@ -276,6 +278,7 @@ extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(const char *str);
+extern int      check_for_mics(uint32_t& mic_count);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
@@ -6810,6 +6813,10 @@ int main(
     log_err(-1, __func__, log_buffer);
     return -1;
     }
+
+#ifdef MIC
+  check_for_mics(global_mic_count);
+#endif
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API

@@ -65,9 +65,9 @@ void generate_server_gpustatus_smi(std::vector<std::string>& gpu_status);
 
 void mom_server_update_gpustat(mom_server *pms, char *status_strings);
 
-void get_gpu_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices);
 #endif /* NVIDIA_GPUS */
 
+void get_device_indices(const char *device_str, std::vector<unsigned int> &device_indices, const char *suffix);
 void generate_server_status(std::vector<std::string>& status);
 
 #ifdef NVML_API

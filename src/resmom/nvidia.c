@@ -1041,6 +1041,8 @@ int get_gpu_mode(
   std::string gpu_mode_string)
 
   {
+  if (gpu_mode_string.size() == 0)
+    return(gpu_mode_not_set);
   if (!gpu_mode_string.compare("default"))
     return(gpu_normal);
   if (!gpu_mode_string.compare("exclusive_thread"))
@@ -1072,6 +1074,7 @@ int get_gpu_mode(
  *
  */
  
+#ifdef PENABLE_LINUX_CGROUPS
 
 int set_gpu_req_modes(
     
@@ -1128,6 +1131,9 @@ int set_gpu_req_modes(
             }
 
           mode = get_gpu_mode(gpu_mode);
+          if (mode == gpu_mode_not_set)
+            return(PBSE_NONE);
+
           if (mode == gpu_unknown)
             {
             sprintf(log_buffer, "gpu mode unknown: %s", pjob->ji_qs.ji_jobid);
@@ -1153,6 +1159,8 @@ int set_gpu_req_modes(
 
   return(rc);
   }
+
+#endif /* PENABLE_LINUX_CGROUPS */
 
 
 /*
@@ -1208,7 +1216,7 @@ int setup_gpus_for_job(
 
 
   std::vector<unsigned int> gpu_indices;
-  get_gpu_indices(gpu_str, gpu_indices);
+  get_device_indices(gpu_str, gpu_indices, "-gpu");
 
 #ifndef PENABLE_LINUX_CGROUPS
   rc = set_gpu_modes(gpu_indices, gpu_flags);
