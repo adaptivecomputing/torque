@@ -635,8 +635,10 @@ START_TEST(test_exclusive_place)
   fail_unless(recorded == 0);
   c.free_task(jobid);
   
+  allocation a2(jobid);
+  a2.place_type = exclusive_none;
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
-  tasks = c.place_task(r, a, 6, host);
+  tasks = c.place_task(r, a2, 6, host);
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
@@ -664,10 +666,12 @@ START_TEST(test_exclusive_place)
     c3.make_core(i);
   
   req r2;
+  allocation a3(jobid);
+  a3.place_type = exclusive_none;
   r2.set_value("lprocs", "32");
   thread_type.clear();
   recorded = 0;
-  tasks = c3.place_task(r2, a, 1, host);
+  tasks = c3.place_task(r2, a3, 1, host);
   fail_unless(tasks == 1, "%d tasks", tasks);
   fail_unless(recorded == 1);
   out.str("");
@@ -698,10 +702,11 @@ START_TEST(test_exclusive_place)
   fail_unless(recorded == 0, "actual %d", recorded);
 
   // Make sure exclusive socket works across restarts
-  a.place_type = exclusive_socket;
+  allocation a4(jobid);
+  a4.place_type = exclusive_socket;
   c.free_task(jobid);
   recorded = 0;
-  tasks = c.place_task(r, a, 1, host);
+  tasks = c.place_task(r, a4, 1, host);
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
   out.str("");
@@ -776,7 +781,8 @@ START_TEST(test_partial_place)
   remaining.cores_only = true;
   remaining.cpus = 13;
   remaining.memory = 12;
-  c.partially_place_task(remaining, master);
+  allocation master2("1.napali");
+  c.partially_place_task(remaining, master2);
   fail_unless(remaining.cpus == 1, "cpus %d", remaining.cpus);
   fail_unless(remaining.memory == 6);
 
@@ -873,6 +879,8 @@ START_TEST(test_place_and_free_task)
 
   // make sure we can free and replace
   c.free_task(jobid);
+  a.clear();
+  a.jobid = jobid;
   tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
   c.free_task(jobid);
@@ -887,12 +895,15 @@ START_TEST(test_place_and_free_task)
   // Fill up the threads with multiple jobs
   const char *jobid2 = "2.napali";
   const char *jobid3 = "3.napali";
+  a.clear();
   a.jobid = jobid;
   tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Expected 6 but placed %d", tasks);
+  a.clear();
   a.jobid = jobid2;
   tasks = c.place_task(r, a, 3, host);
   fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
+  a.clear();
   a.jobid = jobid3;
   tasks = c.place_task(r, a, 3, host);
   fail_unless(tasks == 3, "Expected 3 but placed %d", tasks);
@@ -900,6 +911,7 @@ START_TEST(test_place_and_free_task)
   // Make sure we're full
   fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   fail_unless(c.getAvailableThreads() == 0);
+  a.clear();
   tasks = c.place_task(r, a, 1, host);
   fail_unless(tasks == 0);
 

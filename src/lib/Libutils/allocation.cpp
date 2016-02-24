@@ -101,7 +101,7 @@ allocation::allocation(
   const allocation &alloc) : cpu_place_indices(alloc.cpu_place_indices), cpu_indices(alloc.cpu_indices), 
                              mem_indices(alloc.mem_indices), gpu_indices(alloc.gpu_indices), 
                              mic_indices(alloc.mic_indices), memory(alloc.memory), cpus(alloc.cpus), 
-                             cores(alloc.cores), threads(alloc.threads),
+                             cores(alloc.cores), threads(alloc.threads), place_cpus(alloc.place_cpus),
                              place_type(alloc.place_type), cores_only(alloc.cores_only),
                              jobid(alloc.jobid), hostname(alloc.hostname),
                              gpus(alloc.gpus), mics(alloc.mics), task_cput_used(alloc.task_cput_used),
@@ -111,7 +111,7 @@ allocation::allocation(
   }
 
 allocation::allocation() : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
-                           cpus(0), cores(0), threads(0), place_type(exclusive_none),
+                           cpus(0), cores(0), threads(0), place_cpus(0), place_type(exclusive_none),
                            cores_only(false), jobid(), hostname(), gpus(0), mics(0), task_cput_used(0),
                            task_memory_used(0)
 
@@ -120,8 +120,9 @@ allocation::allocation() : cpu_place_indices(), cpu_indices(), mem_indices(), gp
 
 allocation::allocation(
 
-  const req &r) : cpu_place_indices(), cpu_indices(), mem_indices(), cores(0), threads(0), place_type(exclusive_none),
-                  cores_only(false), jobid(), hostname(), task_cput_used(0), task_memory_used(0)
+  const req &r) : cpu_place_indices(), cpu_indices(), mem_indices(), cores(0), threads(0),
+                  place_cpus(0), place_type(exclusive_none), cores_only(false), jobid(), hostname(),
+                  task_cput_used(0), task_memory_used(0)
 
   {
   this->cpus = r.getExecutionSlots();
@@ -133,12 +134,17 @@ allocation::allocation(
     this->cores_only = true;
 
   this->set_place_type(r.getPlacementType());
+
+  if (r.getPlaceCores() > 0)
+    this->place_cpus = r.getPlaceCores();
+  else if (r.getPlaceThreads() > 0)
+    this->place_cpus = r.getPlaceThreads();
   }
 
 allocation::allocation(
 
   const char *jid) : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
-                     cpus(0), cores(0), threads(0), place_type(exclusive_none), cores_only(false),
+                     cpus(0), cores(0), threads(0), place_cpus(0), place_type(exclusive_none), cores_only(false),
                      jobid(jid), hostname(), gpus(0), mics(0), task_cput_used(0), task_memory_used(0)
 
   {
@@ -158,6 +164,7 @@ int allocation::add_allocation(
   this->cpus += other.cpus;
   this->cores += other.cores;
   this->threads += other.threads;
+  this->place_cpus += other.place_cpus;
 
   // Make sure mem indices are unique
   for (unsigned int i = 0; i < other.mem_indices.size(); i++)
@@ -349,6 +356,36 @@ void allocation::initialize_from_string(
 
 
 
+/*
+ * clear() 
+ * Resets this allocation - used for unit tests
+ */
+
+void allocation::clear()
+
+  {
+  this->cpu_place_indices.clear();
+  this->cpu_indices.clear();
+  this->mem_indices.clear();
+  this->gpu_indices.clear();
+  this->mic_indices.clear();
+  this->memory = 0;
+  this->cpus = 0;
+  this->cores = 0;
+  this->threads = 0;
+  this->place_cpus = 0;
+  this->place_type = 0;
+  this->cores_only = 0;
+  this->jobid.clear();
+  this->hostname.clear();
+  this->gpus = 0;
+  this->mics = 0;
+  this->task_cput_used = 0;
+  this->task_memory_used = 0;
+  }
+
+
+
 void allocation::set_host(
 
   const char *hostname)
@@ -439,5 +476,6 @@ void allocation::get_mics_remaining(
   {
   mics_remaining = this->mics;
   }
+
 
 

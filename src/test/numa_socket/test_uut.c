@@ -298,6 +298,7 @@ START_TEST(test_partial_place)
   remaining.cores_only = true;
   remaining.memory = 1;
   remaining.cpus = 1;
+  remaining.place_cpus = 0;
 
   fail_unless(s.fits_on_socket(remaining) == true);
   remaining.cores_only = false;

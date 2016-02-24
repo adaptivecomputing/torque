@@ -653,11 +653,15 @@ bool Socket::fits_on_socket(
   bool fits = false;
   if (this->getAvailableMemory() >= remaining.memory)
     {
+    int max_cpus = remaining.cpus;
+    if (remaining.place_cpus > 0)
+      max_cpus = remaining.place_cpus;
+
     if ((remaining.cores_only == true) &&
-        (this->getAvailableCores() >= remaining.cpus))
+        (this->getAvailableCores() >= max_cpus))
       fits = true;
     else if ((remaining.cores_only == false) &&
-             (this->getAvailableThreads() >= remaining.cpus))
+             (this->getAvailableThreads() >= max_cpus))
       fits = true;
     }
 

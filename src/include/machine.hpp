@@ -188,8 +188,8 @@ class Chip
     bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
-    void place_task_by_cores(int cores_to_place, allocation &a);
-    void place_task_by_threads(int threads_to_place, allocation &a);
+    void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
+    void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests

@@ -49,6 +49,16 @@ int req::getGpus() const
   return(0);
   }
 
+int req::getPlaceCores() const
+  {
+  return(this->cores);
+  }
+
+int req::getPlaceThreads() const
+  {
+  return(this->threads);
+  }
+
 int is_whitespace(
 
   char c)
