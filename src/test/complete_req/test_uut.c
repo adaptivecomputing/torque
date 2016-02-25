@@ -88,17 +88,30 @@ START_TEST(test_constructor)
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
-  fail_unless(r.getMemory() == 2);
+  fail_unless(r.getMemory() == 2, "mem is %lu", r.getMemory());
  
   complete_req list3(h);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
-  fail_unless(rl.getMemory() == 40);
+  fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
   }
 END_TEST
 
+
+START_TEST(test_constructor_oldstyle_req)
+  {
+  tlist_head h;
+  extern int gn_count;
+  gn_count = 9;
+  complete_req list1(h);
+
+  fail_unless(list1.req_count() == 1);
+  const req &rm1 = list1.get_req(0);
+  fail_unless(rm1.getMemory() == 2, "mem is %lu", rm1.getMemory());
+  }
+END_TEST
 
 
 START_TEST(test_to_string)
@@ -297,6 +310,10 @@ Suite *complete_req_suite(void)
   Suite *s = suite_create("complete_req test suite methods");
   TCase *tc_core = tcase_create("test_constructor");
   tcase_add_test(tc_core, test_constructor);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_constructor_oldstyle_req");
+  tcase_add_test(tc_core, test_constructor_oldstyle_req);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_get_swap_memory_for_this_host");
