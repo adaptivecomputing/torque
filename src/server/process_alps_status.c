@@ -78,7 +78,7 @@
 */
 
 
-
+#include <pbs_config.h>
 #include <string>
 #include <vector>
 #include <errno.h>
