@@ -82,11 +82,20 @@ complete_req::complete_req(
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
-      // Convert to kb
-      while (shift > 10)
+      if (shift == 0)
         {
-        mem *= 1024;
-        shift -= 10;
+        // -l used in submission so convert
+        //   bytes to kb
+        mem /= 1024;
+        }
+      else    
+        {
+        // Convert to kb
+        while (shift > 10) 
+          {
+          mem *= 1024;
+          shift -= 10;  
+          }
         }
       }
 
