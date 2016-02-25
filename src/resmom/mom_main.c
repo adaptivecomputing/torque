@@ -3045,6 +3045,11 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      /* We use delete_job_files_sem to make sure
+         there are no outstanding job cleanup routines
+         in progress before we exit. delete_job_files_sem
+         must be 0 before we quit
+       */
       if (thread_unlink_calls == true)
         {
         int sem_val;

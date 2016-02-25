@@ -719,7 +719,10 @@ void *delete_job_files(
     /* this algorithm needs to make sure the 
        thread for delete_job_files posts to the 
        semaphore before it tries to lock the
-       delete_job_files_mutex */
+       delete_job_files_mutex. posting to delete_job_files_sem
+       lets other processes know there are threads still
+       cleaning up jobs
+     */
     rc = sem_post(delete_job_files_sem);
     if (rc)
       {
@@ -837,6 +840,10 @@ void *delete_job_files(
 
   if (thread_unlink_calls == true)
     {
+    /* decrement the delte_job_files_sem so 
+       other threads know this job is done
+       cleaning up 
+     */
     sem_wait(delete_job_files_sem);
     pthread_mutex_unlock(&delete_job_files_mutex);
     }
