@@ -1316,9 +1316,13 @@ int trq_cg_populate_task_cgroups(
         }
 
       /* This task belongs on this host. */
-      trq_cg_write_task_cpuset_string(cpuset_path, req_index, task_index, job_id, al);
-      trq_cg_write_task_memset_string(cpuset_path, req_index, task_index, job_id, al);
-
+      rc = trq_cg_write_task_cpuset_string(cpuset_path, req_index, task_index, job_id, al);
+      if (rc != PBSE_NONE)
+        return(rc);
+      rc = trq_cg_write_task_memset_string(cpuset_path, req_index, task_index, job_id, al);
+      if (rc != PBSE_NONE)
+        return(rc);
+ 
       }
     }
  
