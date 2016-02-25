@@ -1976,7 +1976,7 @@ int trq_cg_add_devices_to_cgroup(
   int   rc = PBSE_NONE;
   char *device_str;
   char  suffix[20];
-  unsigned int device_count;
+  unsigned int device_count = 0;
   int   index;
 
 #ifdef NVIDIA_GPUS
@@ -1993,7 +1993,7 @@ int trq_cg_add_devices_to_cgroup(
 
   /* First make sure we have gpus */
   if(device_count == 0)
-    return(PBSE_IVALREQ);
+    return(PBSE_NONE);
 
   job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;
 
