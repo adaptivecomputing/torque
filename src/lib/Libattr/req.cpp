@@ -2424,6 +2424,14 @@ void req::set_memory(
   this->mem = mem;
   }
 
+void req::set_swap(
+
+  unsigned long swap)
+
+  {
+  this->swap = swap;
+  }
+
 int req::get_execution_slots() const
 
   {

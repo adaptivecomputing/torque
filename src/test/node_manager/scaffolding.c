@@ -730,7 +730,8 @@ int Machine::place_job(
   job        *pjob,
   string     &cpu_string,
   string     &mem_string,
-  const char *hostname)
+  const char *hostname,
+  bool        legacy_vmem)
 
   {
   return(0);
