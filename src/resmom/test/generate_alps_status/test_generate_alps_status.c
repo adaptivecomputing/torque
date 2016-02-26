@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "alps_constants.h"
+#include "alps_functions.h"
 #include <string>
 #include <vector>
 #include <check.h>
@@ -7,7 +8,8 @@
 int log_event_called = 0;
 
 
-int parse_alps_output(std::string& alps_output, std::vector<std::string>& status);
+int parse_alps_output(std::string& alps_output);
+void update_status(std::vector<std::string> &status);
 
 void log_event( int eventtype, int objclass, const char *objname, const char *text);
 
@@ -50,6 +52,20 @@ const char *sample_failure_downnode = "<?xml version='1.0'?><BasilResponse proto
 
 int search_dynamic_string_status(std::vector<std::string> &status, char *str);
 int generate_alps_status(std::vector<std::string> &status, const char *path, const char *protocol);
+int get_knl_information(const char *apbasil_path);
+
+START_TEST(get_knl_information_test)
+  {
+  const char *path = "../../../test/test_scripts/get_inventory_knl.sh";
+  
+  alps_nodes.clear();
+  fail_unless(get_knl_information(path) == PBSE_NONE);
+  fail_unless(alps_nodes.find(6142) != alps_nodes.end());
+  fail_unless(alps_nodes.find(6143) != alps_nodes.end());
+  fail_unless(alps_nodes[6142].os == "os=CLE_a2a_flat", alps_nodes[6142].os.c_str());
+  fail_unless(alps_nodes[6142].hbm == "hbmem=4096000kb", alps_nodes[6142].hbm.c_str());
+  }
+END_TEST
 
 
 START_TEST(parse_alps_output_test)
@@ -82,7 +98,8 @@ START_TEST(parse_alps_output_test)
   output += sample_start23;
   output += sample_start24;
   
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the status");
@@ -95,10 +112,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_norole_withres;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
@@ -108,10 +127,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_norole_nores;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -121,10 +142,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_batrole_withres;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
@@ -134,10 +157,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_batrole_nores;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -147,10 +172,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_introle_withres;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -160,10 +187,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_introle_nores;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -173,10 +202,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_unkrole_withres;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -186,10 +217,12 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
 
   output = sample_unkrole_nores;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
   fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
@@ -197,6 +230,7 @@ START_TEST(parse_alps_output_test)
 
   output.clear();
   status.clear();
+  alps_nodes.clear();
   
   extern int      LOGLEVEL;
   extern std::string msg_err;
@@ -204,7 +238,8 @@ START_TEST(parse_alps_output_test)
 
   output = sample_failure_downnode;
 
-  rc = parse_alps_output(output, status);
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc != 0, "Couldn't parse alps output");
   fail_unless(msg_err == "Failed to query ALPS: Node mapping mismatch: SDB = 15309, ALPS = 15410.", "error msg = '%s'", msg_err.c_str());
   } 
@@ -222,15 +257,18 @@ START_TEST(parse_alps13_output_test)
   FILE           *fp;
   char            linebuf[1024];
 
+  memset(&linebuf, 0, sizeof(linebuf));
+
   if ((fp = fopen(ALPS_13_INPUT_FILE, "r")) == NULL)
     ck_abort_msg("Couldn't open ALPS 13 input file %s", ALPS_13_INPUT_FILE);
 
-  while (fgets(linebuf, sizeof(linebuf), fp) != NULL)
+  while (fgets(linebuf, sizeof(linebuf) - 1, fp) != NULL)
     output += linebuf;
 
   fclose(fp);
-
-  rc = parse_alps_output(output, status);
+    
+  rc = parse_alps_output(output);
+  update_status(status);
   fail_unless(rc == 0, "Couldn't parse ALPS 1.3 output contained in file %s", ALPS_13_INPUT_FILE);
 
   fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the 1.3 status");
@@ -288,6 +326,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("parse_alps13_output_test");
   tcase_add_test(tc_core, parse_alps13_output_test);
+  tcase_add_test(tc_core, get_knl_information_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("full_generate_test");
