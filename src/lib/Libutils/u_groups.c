@@ -1,4 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
+#include "unistd.h"
+#include "sys/types.h"
 #include <grp.h>
 #include "utils.h"
 
