@@ -524,6 +524,8 @@ typedef std::set<pid_t> job_pid_set_t;
 #define COUNTED_GLOBALLY 0x0001
 #define COUNTED_IN_QUEUE 0x0010
 
+#define NO_OBIT_REPLY    -2
+
 
 typedef struct
   {
@@ -710,8 +712,10 @@ struct job
   int            ji_examined;
   time_t         ji_kill_started;      /* time since we've begun killing the job - MS only */
   time_t         ji_joins_sent;        /* time we sent out the join requests - MS only */
-  time_t         ji_obit_busy_time; // the timestamp of when the obit got a busy message
-  time_t         ji_reported_already_exited; // server claims this job has already exited 
+  time_t         ji_obit_busy_time;      // the timestamp of when the obit got a busy message
+  time_t         ji_obit_minus_one_time; // the timestamp of when the obit got a -1 
+  time_t         ji_exited_time;         // server has indicated that this job has exited 
+  time_t         ji_obit_sent;               // The time the obit was sent
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
