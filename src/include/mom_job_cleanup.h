@@ -89,6 +89,11 @@ public:
   std::string  jobid;
   time_t obit_sent;
   exiting_job_info(const char *id) : jobid(id), obit_sent(time(NULL)) {}
+
+  bool operator ==(const exiting_job_info &other)
+    {
+    return(this->jobid == other.jobid);
+    }
   };
 
 extern std::vector<exiting_job_info> exiting_job_list;
