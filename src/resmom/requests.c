@@ -359,7 +359,7 @@ static pid_t fork_to_user(
     free_pwnam(pwdp, pw_buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
-  if (hdir == NULL)
+  if (hdir.size() == 0)
     {
     /* FAILURE */
 
@@ -378,10 +378,10 @@ static pid_t fork_to_user(
            issues will be logged by the parent but TORQUE will only fail if the
            problems persist in the child after the setuid() call */
 
-  if (stat(hdir, &sb) != 0)
+  if (stat(hdir.c_str(), &sb) != 0)
     {
     sprintf(log_buffer, "invalid home directory '%s' specified, errno=%d (%s)",
-            hdir,
+            hdir.c_str(),
             errno,
             strerror(errno));
 
@@ -400,7 +400,7 @@ static pid_t fork_to_user(
   else if (!S_ISDIR(sb.st_mode))
     {
     sprintf(log_buffer, "invalid home directory '%s' specified, not a directory",
-            hdir);
+            hdir.c_str());
 
     log_err(PBSE_UNKRESC, __func__, log_buffer);
 
@@ -415,7 +415,7 @@ static pid_t fork_to_user(
     sprintf(log_buffer, "forking to user, uid: %ld  gid: %ld  homedir: '%s'",
             (long)useruid,
             (long)usergid,
-            hdir);
+            hdir.c_str());
 
     log_record(
       PBSEVENT_JOB,
@@ -425,7 +425,7 @@ static pid_t fork_to_user(
     }
 
   if (HDir != NULL)
-    strcpy(HDir, hdir);
+    strcpy(HDir, hdir.c_str());
 
   pid = fork_me(preq->rq_conn);
 
@@ -492,7 +492,7 @@ static pid_t fork_to_user(
       return(-PBSE_BADUSER);
       }
 
-    if (chdir(hdir) == -1)
+    if (chdir(hdir.c_str()) == -1)
       {
       /* cannot change directory to user home dir (or 'INITDIR' if specified) */
 
@@ -506,7 +506,7 @@ static pid_t fork_to_user(
 
     /* set some useful env variables */
 
-    rc = put_env_var("HOME", hdir);
+    rc = put_env_var("HOME", hdir.c_str());
     if (rc)
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
