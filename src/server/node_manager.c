@@ -3911,15 +3911,17 @@ void update_req_hostlist(
   int         ppn_needed)
 
   {
-  long cray_enabled = FALSE;
+  long          cray_enabled = FALSE;
   complete_req *cr;
   char          host_spec[MAXLINE];
+  long          legacy_vmem = FALSE;
  
   snprintf(host_spec, sizeof(host_spec), "%s:ppn=%d", host_name, ppn_needed);
 
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, (bool)legacy_vmem);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     }
   else
@@ -4004,6 +4006,8 @@ int place_subnodes_in_hostlist(
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
+    long              legacy_vmem = FALSE;
+    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout.is_initialized() == false)
@@ -4011,7 +4015,7 @@ int place_subnodes_in_hostlist(
 
     update_req_hostlist(pjob, pnode->get_name(), naji.req_rank, naji.ppn_needed);
 
-    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name());
+    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), (bool)legacy_vmem);
     if (rc != PBSE_NONE)
       return(rc);
 

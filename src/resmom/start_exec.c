@@ -4204,11 +4204,19 @@ unsigned long long get_memory_in_kilobytes_from_size(
   int shift = sz.atsv_shift;
   
   unsigned long long mem = sz.atsv_num;
+
   /* make sure that the requested memory is in kb */
-  while (shift > 10)
+  if (shift < 10)
     {
-    mem *= 1024;
-    shift -= 10;
+    mem /= 1024;
+    }
+  else
+    {
+    while (shift > 10)
+      {
+      mem *= 1024;
+      shift -= 10;
+      }
     }
 
   return(mem);
