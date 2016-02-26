@@ -247,7 +247,6 @@
 #include "container.hpp"
 #include <arpa/inet.h>
 #include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
@@ -3416,12 +3415,20 @@ void get_device_indices(
   boost::tokenizer< boost::char_separator<char> > tokens(device_string, sep);
 
   /* reset device_indices so it is empty */
+  /* The string comes in with the format of
+     <hostname>-gpu/<index1>+<hostname>-gpu/<index2>+...
+   */
   device_indices.clear();
 
   /* pull out each element of the device string */
-  BOOST_FOREACH (const std::string& t, tokens)
+  //BOOST_FOREACH (const std::string& t, tokens)
+  //  {
+  //  device_tokens.push_back(t);
+  //  }
+
+  for (boost::tokenizer< boost::char_separator<char> >::iterator t=tokens.begin(); t != tokens.end(); ++t)
     {
-    device_tokens.push_back(t);
+    device_tokens.push_back(*t);
     }
 
   /* We now have each device request in the form of <host>-device/x where 
@@ -3435,9 +3442,14 @@ void get_device_indices(
     boost::char_separator<char> device_sep("/");
     boost::tokenizer< boost::char_separator<char> > device_spec_parts(*device_spec, device_sep);
 
-    BOOST_FOREACH (const std::string& tok, device_spec_parts)
+/*    BOOST_FOREACH (const std::string& tok, device_spec_parts)
       {
       parts.push_back(tok);
+      }*/
+
+    for (boost::tokenizer< boost::char_separator<char> >::iterator tok=device_spec_parts.begin(); tok != device_spec_parts.end(); tok++)
+      {
+      parts.push_back(*tok);
       }
 
     /* parts should have two entries. */
