@@ -1122,7 +1122,10 @@ unsigned long setapbasilprotocol(
          (value[2] != '1') &&
          (value[2] != '2') &&
          (value[2] != '3') &&
-         (value[2] != '4')))
+         (value[2] != '4') &&
+         (value[2] != '5') &&
+         (value[2] != '6') &&
+         (value[2] != '7')))
       {
       snprintf(log_buffer, sizeof(log_buffer), 
         "Value must be 1.[0-4] but is %s", value);

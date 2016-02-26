@@ -335,6 +335,9 @@ void translate_range_string_to_vector(
   int   prev = 0;
   int   curr;
 
+  while (is_whitespace(*ptr))
+    ptr++;
+
   while (*ptr != '\0')
     {
     prev = strtol(ptr, &ptr, 10);
@@ -351,7 +354,7 @@ void translate_range_string_to_vector(
         prev++;
         }
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
@@ -359,7 +362,7 @@ void translate_range_string_to_vector(
       {
       indices.push_back(prev);
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
