@@ -138,7 +138,10 @@ char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 const int      OBIT_BUSY_RETRY = 6;
 const int      OBIT_RETRY_LIMIT = 5;
+// The server should reply to an obit within 30 seconds even when it's extremely busy
 const int      ALREADY_EXITED_RETRY_TIME = 30;
+const int      OBIT_SENT_WAIT_TIME = 10;
+const int      MINUS_ONE_RETRY_TIME = 15;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -5770,6 +5773,63 @@ void check_jobs_awaiting_join_job_reply()
 
 
 
+bool should_resend_obit(
+
+  job *pjob,
+  int  diff)
+
+  {
+  bool resend = false;
+
+  // Only check jobs in substates that have to do with exiting.
+  if (pjob->ji_qs.ji_substate < JOB_SUBSTATE_MOM_WAIT)
+    return(resend);
+      
+  if ((pjob->ji_obit_busy_time != 0) &&
+      (time_now - pjob->ji_obit_busy_time >= diff))
+    resend = true;
+  
+  switch (pjob->ji_qs.ji_substate)
+    {
+    case JOB_SUBSTATE_PREOBIT:
+
+      // This means we never sent an obit
+      resend = true;
+      break;
+
+    case JOB_SUBSTATE_OBIT:
+
+      // This means we sent the obit but didn't get a reply.
+      if ((pjob->ji_obit_sent == 0) ||
+          (time_now - pjob->ji_obit_sent >= OBIT_SENT_WAIT_TIME))
+        resend = true;
+
+      break;
+
+    case JOB_SUBSTATE_EXITED:
+      
+      // We have passed the time we're willing to wait for the server to clean us up.
+      if ((pjob->ji_exited_time != 0) &&
+          (time_now - pjob->ji_exited_time > ALREADY_EXITED_RETRY_TIME))
+        resend = true;
+
+      break;
+
+    case JOB_SUBSTATE_EXITING:
+      
+      // Make sure we aren't stuck in exiting
+      if ((pjob->ji_obit_minus_one_time != 0) &&
+          (time_now - pjob->ji_obit_minus_one_time > MINUS_ONE_RETRY_TIME))
+        resend = true;
+
+      break;
+    }
+
+  return(resend);
+  } // END should_resend_obit()
+
+
+
 void check_jobs_in_obit()
 
   {
@@ -5785,11 +5845,7 @@ void check_jobs_in_obit()
     {
     if (am_i_mother_superior(*pjob))
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) ||
-          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
-           (time_now - pjob->ji_obit_busy_time >= diff)) ||
-          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED) &&
-           (time_now - pjob->ji_reported_already_exited > ALREADY_EXITED_RETRY_TIME)))
+      if (should_resend_obit(pjob, diff) == true)
         {
         // retry sending the obit for this job
         post_epilogue(pjob, MOM_OBIT_RETRY);
