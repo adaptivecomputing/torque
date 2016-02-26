@@ -1240,6 +1240,7 @@ int post_epilogue(
     {
     DIS_tcp_wflush(chan);
     DIS_tcp_cleanup(chan);
+    pjob->ji_obit_sent = time(NULL);
     }
 
   free_br(preq);
@@ -1413,9 +1414,10 @@ void *obit_reply(
     {
     nxjob = (job *)GET_NEXT(pjob->ji_alljobs);
 
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
-        (pjob->ji_momhandle == sock))
+    if (pjob->ji_momhandle == sock)
       {
+      // Make sure we have cleared a previous busy reply from the server.
+      pjob->ji_obit_busy_time = 0;
 
       switch (preq->rq_reply.brp_code)
         {
@@ -1425,6 +1427,7 @@ void *obit_reply(
           /* normal ack, mark job as exited */
           pjob->ji_qs.ji_destin[0] = '\0';
 
+          pjob->ji_exited_time = time(NULL);
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
           if (multi_mom)
@@ -1471,6 +1474,7 @@ void *obit_reply(
           
           pjob->ji_qs.ji_destin[0] = '\0';
 
+          pjob->ji_exited_time = time(NULL);
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
           if (multi_mom)
@@ -1513,6 +1517,7 @@ void *obit_reply(
         case - 1:
 
           /* FIXME - causes epilogue to be run twice! */
+          pjob->ji_obit_minus_one_time = time(NULL);
       
           pjob->ji_qs.ji_destin[0] = '\0';
 
