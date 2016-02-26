@@ -143,7 +143,10 @@ char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
 const int      OBIT_BUSY_RETRY = 6;
 const int      OBIT_RETRY_LIMIT = 5;
+// The server should reply to an obit within 30 seconds even when it's extremely busy
 const int      ALREADY_EXITED_RETRY_TIME = 30;
+const int      OBIT_SENT_WAIT_TIME = 10;
+const int      MINUS_ONE_RETRY_TIME = 15;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -5951,6 +5954,83 @@ void check_jobs_awaiting_join_job_reply()
 
 
 
+bool should_resend_obit(
+
+  job *pjob,
+  int  diff)
+
+  {
+  bool resend = false;
+
+  // Only check jobs in substates that have to do with exiting.
+  if (pjob->ji_qs.ji_substate < JOB_SUBSTATE_MOM_WAIT)
+    return(resend);
+      
+  if ((pjob->ji_obit_busy_time != 0) &&
+      (time_now - pjob->ji_obit_busy_time >= diff))
+    resend = true;
+  
+  switch (pjob->ji_qs.ji_substate)
+    {
+    case JOB_SUBSTATE_PREOBIT:
+
+      // This means we never sent an obit
+      resend = true;
+      break;
+
+    case JOB_SUBSTATE_OBIT:
+
+      // This means we sent the obit but didn't get a reply.
+      if ((pjob->ji_obit_sent != 0) &&
+          (time_now - pjob->ji_obit_sent >= OBIT_SENT_WAIT_TIME))
+        resend = true;
+      else
+        {
+        // Make sure this job is in the exiting job list
+        bool found = false;
+
+        for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+          {
+          if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+            {
+            found = true;
+            break;
+            }
+          }
+
+        if (found == false)
+          {
+          exiting_job_info e(pjob->ji_qs.ji_jobid);
+          exiting_job_list.push_back(e);
+          }
+        }
+
+      break;
+
+    case JOB_SUBSTATE_EXITED:
+      
+      // We have passed the time we're willing to wait for the server to clean us up.
+      if ((pjob->ji_exited_time != 0) &&
+          (time_now - pjob->ji_exited_time > ALREADY_EXITED_RETRY_TIME))
+        resend = true;
+
+      break;
+
+    case JOB_SUBSTATE_EXITING:
+      
+      // Make sure we aren't stuck in exiting
+      if ((pjob->ji_obit_minus_one_time != 0) &&
+          (time_now - pjob->ji_obit_minus_one_time > MINUS_ONE_RETRY_TIME))
+        resend = true;
+
+      break;
+    }
+
+  return(resend);
+  } // END should_resend_obit()
+
+
+
 void check_jobs_in_obit()
 
   {
@@ -5967,11 +6047,7 @@ void check_jobs_in_obit()
 
     if (am_i_mother_superior(*pjob))
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) ||
-          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
-           (time_now - pjob->ji_obit_busy_time >= diff)) ||
-          ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED) &&
-           (time_now - pjob->ji_reported_already_exited > ALREADY_EXITED_RETRY_TIME)))
+      if (should_resend_obit(pjob, diff) == true)
         {
         // retry sending the obit for this job
         post_epilogue(pjob, MOM_OBIT_RETRY);
@@ -6057,20 +6133,21 @@ bool call_scan_for_exiting()
 void check_exiting_jobs()
 
   {
-  job                      *pjob;
-  time_t                    time_now = time(NULL);
-  std::vector<std::string>  to_remove;
+  job                           *pjob;
+  std::vector<std::string>       to_remove;
+  std::vector<exiting_job_info>  to_reinsert;
+  time_now = time(NULL);
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if ((time_now - eji.obit_sent) < pe_alarm_time)
+    if ((time_now - eji.obit_sent) < pe_alarm_time / 10)
       {
       /* insert this back at the front */
-      exiting_job_list.insert(exiting_job_list.begin(), eji);
-      break;
+      to_reinsert.insert(to_reinsert.begin(), eji);
+      continue;
       }
 
     pjob = mom_find_job(eji.jobid.c_str());
@@ -6078,11 +6155,35 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+          (pjob->ji_momsubt != 0) &&
+          (kill(pjob->ji_momsubt, 0)))
+        {
+        if (errno == ESRCH)
+          {
+          // The epilog is gone but we didn't catch it
+          post_epilogue(pjob, 0);
+          eji.obit_sent = time_now;
+          to_reinsert.push_back(eji);
+          continue;
+          }
+        }
+      
+      if ((time_now - eji.obit_sent) < pe_alarm_time)
+        {
+        /* insert this back at the front */
+        to_reinsert.insert(to_reinsert.begin(), eji);
+        continue;
+        }
+         
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
-      exiting_job_list.push_back(eji);
+      to_reinsert.push_back(eji);
       }
     }
+
+  for (unsigned int i = 0; i < to_reinsert.size(); i++)
+    exiting_job_list.push_back(to_reinsert[i]);
   } /* END check_exiting_jobs() */
 
 

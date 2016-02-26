@@ -1147,6 +1147,8 @@ int post_epilogue(
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
 
+  pjob->ji_obit_sent = time(NULL);
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
@@ -1246,6 +1248,7 @@ int post_epilogue(
     {
     DIS_tcp_wflush(chan);
     DIS_tcp_cleanup(chan);
+    pjob->ji_obit_sent = time(NULL);
     }
 
   free_br(preq);
@@ -1359,6 +1362,9 @@ int process_jobs_obit_reply(
   unsigned int momport = 0;
   char         tmp_line[MAXLINE];
 
+  // Make sure we have cleared a previous busy reply from the server.
+  pjob->ji_obit_busy_time = 0;
+
   switch (rc)
     {
 
@@ -1367,6 +1373,7 @@ int process_jobs_obit_reply(
       /* normal ack, mark job as exited */
       pjob->ji_qs.ji_destin[0] = '\0';
 
+      pjob->ji_exited_time = time(NULL);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
       if (multi_mom)
@@ -1415,7 +1422,7 @@ int process_jobs_obit_reply(
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
-      pjob->ji_reported_already_exited = time(NULL);
+      pjob->ji_exited_time = time(NULL);
 
       if (multi_mom)
         {
@@ -1459,6 +1466,7 @@ int process_jobs_obit_reply(
     case - 1:
 
       /* FIXME - causes epilogue to be run twice! */
+      pjob->ji_obit_minus_one_time = time(NULL);
 
       pjob->ji_qs.ji_destin[0] = '\0';
 
