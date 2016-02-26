@@ -1143,6 +1143,8 @@ int post_epilogue(
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
 
+  pjob->ji_obit_sent = time(NULL);
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
