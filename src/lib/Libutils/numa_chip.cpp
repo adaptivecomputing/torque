@@ -2122,10 +2122,18 @@ void Chip::place_all_execution_slots(
   a.cores_only = master.cores_only;
   this->chip_exclusive = true;
 
-  if (a.cores_only == true)
-    place_task_by_cores(this->totalCores, this->totalCores, master, a);
-  else
-    place_task_by_threads(this->totalThreads, this->totalThreads, master, a);
+  for (int c=0; c < this->cores.size(); c++)
+    {
+    if (a.cores_only == true)
+      {
+      reserve_core(c, a);
+      }
+    else
+      {
+      for (int t=0; t < this->cores[c].indices.size(); t++)
+        reserve_place_thread(this->cores[c].indices[t], a);
+      }
+    }
   
   a.mem_indices.push_back(this->id);
   this->allocations.push_back(a);
