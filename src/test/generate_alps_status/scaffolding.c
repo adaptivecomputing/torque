@@ -80,3 +80,13 @@ int find_error_type(
   {
   return(0);
   }
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  indices.push_back(6142);
+  indices.push_back(6143);
+  }

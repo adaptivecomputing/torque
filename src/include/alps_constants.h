@@ -89,6 +89,7 @@
 #define APBASIL_PROTOCOL_v14        1.4f
 #define APBASIL_DEFAULT_NPPCU_VALUE 1
 #define APBASIL_QUERY               "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='INVENTORY'></BasilRequest>\" | %s"
+#define APBASIL_SYSTEM              "echo \"<?xml version='1.0'?><BasilRequest protocol='%s' method='QUERY' type='SYSTEM'></BasilRequest>\" | %s"
 
 /* ALPS BASIL protocol < 1.3 */
 #define APBASIL_RESERVE_PARAM_BEGIN_DEPTH "<ReserveParam architecture='XT' width='%d' nppn='%d' depth='%d'><NodeParamArray><NodeParam>"
@@ -137,6 +138,8 @@ extern const char *segment_array;
 extern const char *segment;
 extern const char *socket_array;
 extern const char *socket_name;
+extern const char *system_tag;
+extern const char *nodes_element;
 extern const char *compute_unit_array;
 extern const char *compute_unit;
 extern const char *accelerator_array;
@@ -158,6 +161,11 @@ extern const char *reserved;
 extern const char *pagg_id;
 extern const char *admin_cookie;
 extern const char *error_class;
+extern const char *numa_config;
+extern const char *hbm_cache_pct;
+extern const char *hbm_size;
+extern const char *page_size_kb;
+extern const char *page_count;
 
 typedef struct host_req
   {
