@@ -106,6 +106,12 @@ START_TEST(test_translate_range_string_to_vector)
   indices.clear();
   translate_range_string_to_vector("qt32", indices);
   fail_unless(indices.size() == 1);
+
+  indices.clear();
+  translate_range_string_to_vector("\n       6142-6143\n     ", indices);
+  fail_unless(indices.size() == 2);
+  fail_unless(indices[0] == 6142);
+  fail_unless(indices[1] == 6143);
   }
 END_TEST
 
