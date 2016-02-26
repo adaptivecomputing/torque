@@ -5981,9 +5981,29 @@ bool should_resend_obit(
     case JOB_SUBSTATE_OBIT:
 
       // This means we sent the obit but didn't get a reply.
-      if ((pjob->ji_obit_sent == 0) ||
+      if ((pjob->ji_obit_sent != 0) &&
           (time_now - pjob->ji_obit_sent >= OBIT_SENT_WAIT_TIME))
         resend = true;
+      else
+        {
+        // Make sure this job is in the exiting job list
+        bool found = false;
+
+        for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+          {
+          if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+            {
+            found = true;
+            break;
+            }
+          }
+
+        if (found == false)
+          {
+          exiting_job_info e(pjob->ji_qs.ji_jobid);
+          exiting_job_list.push_back(e);
+          }
+        }
 
       break;
 
@@ -6113,20 +6133,21 @@ bool call_scan_for_exiting()
 void check_exiting_jobs()
 
   {
-  job                      *pjob;
-  time_t                    time_now = time(NULL);
-  std::vector<std::string>  to_remove;
+  job                           *pjob;
+  std::vector<std::string>       to_remove;
+  std::vector<exiting_job_info>  to_reinsert;
+  time_now = time(NULL);
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if ((time_now - eji.obit_sent) < pe_alarm_time)
+    if ((time_now - eji.obit_sent) < pe_alarm_time / 10)
       {
       /* insert this back at the front */
-      exiting_job_list.insert(exiting_job_list.begin(), eji);
-      break;
+      to_reinsert.insert(to_reinsert.begin(), eji);
+      continue;
       }
 
     pjob = mom_find_job(eji.jobid.c_str());
@@ -6134,11 +6155,35 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+          (pjob->ji_momsubt != 0) &&
+          (kill(pjob->ji_momsubt, 0)))
+        {
+        if (errno == ESRCH)
+          {
+          // The epilog is gone but we didn't catch it
+          post_epilogue(pjob, 0);
+          eji.obit_sent = time_now;
+          to_reinsert.push_back(eji);
+          continue;
+          }
+        }
+      
+      if ((time_now - eji.obit_sent) < pe_alarm_time)
+        {
+        /* insert this back at the front */
+        to_reinsert.insert(to_reinsert.begin(), eji);
+        continue;
+        }
+         
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
-      exiting_job_list.push_back(eji);
+      to_reinsert.push_back(eji);
       }
     }
+
+  for (unsigned int i = 0; i < to_reinsert.size(); i++)
+    exiting_job_list.push_back(to_reinsert[i]);
   } /* END check_exiting_jobs() */
 
 
