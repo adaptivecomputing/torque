@@ -1169,19 +1169,28 @@ void Chip::place_task_by_cores(
 
   {
   std::vector<int> slots;
+  float step = 1.0;
+  float pin_index = 0.0;
+  int num_cores = execution_slots_per_task;
+  int total_rsvd_cores = 0;
 
-  /* with place=core=x we must reserve more cores than we pin to the cpuset.
-     When the reserved cpu pool spans chips, we need to keep track of the
-     current index of the entire pool by offsetting the pin index and current index of
-     this chip with how many cores have already been pinned/reserved on other chips */
-  int num_pinned_cores = master.cpu_indices.size();
-  int total_rsvd_cores = master.cpu_place_indices.size() + num_pinned_cores;
-  int req_lprocs = execution_slots_per_task + num_pinned_cores;
+  if (cores_to_rsv > execution_slots_per_task)
+    {
+    /* with place=core=x we must reserve more cores than we pin to the cpuset.
+       When the reserved cpu pool spans chips, we need to keep track of the
+       current index of the entire pool by offsetting the pin index and current index of
+       this chip with how many cores have already been pinned/reserved on other chips */
+    int num_pinned_cores = master.cpu_indices.size();
+    int req_lprocs = execution_slots_per_task + num_pinned_cores;
+    total_rsvd_cores = master.cpu_place_indices.size() + num_pinned_cores;
+    
+    step = cores_to_rsv / (float)req_lprocs;
+    pin_index = num_pinned_cores * step;
+    num_cores = cores_to_rsv - total_rsvd_cores;
+    }
   
-  this->getContiguousCoreVector(slots, cores_to_rsv - total_rsvd_cores);
+  this->getContiguousCoreVector(slots, num_cores);
   
-  float step = cores_to_rsv / (float)req_lprocs;
-  float pin_index = num_pinned_cores * step;
   for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
     {
     if (it - slots.begin() == floor(pin_index + 0.5) - total_rsvd_cores)
@@ -1219,17 +1228,27 @@ void Chip::place_task_by_threads(
 
   {
   std::vector<int> slots;
-  /* with place=thread=x we must reserve more threads than we pin to the cpuset.
-     When the reserved cpu pool spans chips, we need to keep track of the
-     current index of the entire pool by offsetting the pin index and current index of
-     this chip with how many threads have already been pinned/reserved on other chips */
-  int num_pinned_threads = master.cpu_indices.size();
-  int total_rsvd_threads = master.cpu_place_indices.size() + num_pinned_threads;
-  int req_lprocs = execution_slots_per_task + num_pinned_threads;
-  float step = threads_to_rsv / (float)req_lprocs;
-  float pin_index = num_pinned_threads * step;
+  float step = 1.0;
+  float pin_index = 0.0;
+  int num_threads = execution_slots_per_task;
+  int total_rsvd_threads = 0;
+
+  if (threads_to_rsv > execution_slots_per_task)
+    {
+    /* with place=thread=x we must reserve more threads than we pin to the cpuset.
+       When the reserved cpu pool spans chips, we need to keep track of the
+       current index of the entire pool by offsetting the pin index and current index of
+       this chip with how many threads have already been pinned/reserved on other chips */
+    int num_pinned_threads = master.cpu_indices.size();
+    int req_lprocs = execution_slots_per_task + num_pinned_threads;
+    total_rsvd_threads = master.cpu_place_indices.size() + num_pinned_threads;
+    
+    step = threads_to_rsv / (float)req_lprocs;
+    pin_index = num_pinned_threads * step;
+    num_threads = threads_to_rsv - total_rsvd_threads;
+    }
  
-  this->getContiguousThreadVector(slots, threads_to_rsv - total_rsvd_threads);
+  this->getContiguousThreadVector(slots, num_threads);
   
   for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
     {
