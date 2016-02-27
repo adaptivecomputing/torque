@@ -23,7 +23,7 @@ job *mom_find_job(const char *jobid);
 void remove_from_job_list(job *pjob);
 
 std::vector<exiting_job_info> exiting_job_list;
-std::list<job *> alljobs_list;
+extern std::list<job *> alljobs_list;
 
 sem_t *delete_job_files_sem;
 
