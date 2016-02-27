@@ -7,6 +7,7 @@
 #include <semaphore.h>
 
 #include <set>
+#include <list>
 
 #include "mom_job_cleanup.h"
 
@@ -22,7 +23,7 @@ job *mom_find_job(const char *jobid);
 void remove_from_job_list(job *pjob);
 
 std::vector<exiting_job_info> exiting_job_list;
-extern std::list<job *> alljobs_list;
+std::list<job *> alljobs_list;
 
 sem_t *delete_job_files_sem;
 
@@ -118,6 +119,10 @@ Suite *mom_job_func_suite(void)
 
   tc_core = tcase_create("test_remove_from_exiting_list");
   tcase_add_test(tc_core, test_remove_from_exiting_list);
+  tcase_add_test(tc_core, test_mom_finding_jobs);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_mom_finding_jobs");
   tcase_add_test(tc_core, test_mom_finding_jobs);
   suite_add_tcase(s, tc_core);
 
