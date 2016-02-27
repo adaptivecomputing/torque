@@ -4455,20 +4455,24 @@ int set_job_cgroup_memory_limits(
     pattr = &pjob->ji_wattr[JOB_ATR_req_information];
     if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
       {
-      rc = get_process_rank(rank);
-      if (rc == PBSE_NONE)
+      unsigned int req_index;
+      unsigned int task_index;
+      unsigned int num_reqs;
+      int          num_tasks;
+
+      cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+      num_reqs = cr->get_num_reqs();
+
+      for(req_index = 0; req_index < num_reqs; req_index++)
         {
-        unsigned int req_index;
-        unsigned int task_index;
+        req r;
 
-        cr = (complete_req *)pattr->at_val.at_ptr;
-
-        rc = cr->get_req_and_task_index(rank, req_index, task_index);
-        if (rc == PBSE_NONE)
+        mem_limit = cr->get_memory_per_task(req_index);
+        swap_limit = cr->get_swap_per_task(req_index);
+        r = cr->get_req(req_index);
+        num_tasks = r.get_num_tasks_for_host(string_hostname);
+        for (task_index = 0; task_index < num_tasks; task_index++)
           {
-          mem_limit = cr->get_memory_per_task(req_index);
-          swap_limit = cr->get_swap_per_task(req_index);
-
           rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
           if (rc != PBSE_NONE)
             {
