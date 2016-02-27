@@ -16,7 +16,7 @@ SERVER_UT_DIRS = accounting array_func array_upgrade attr_recov batch_request co
 								 req_movejob req_quejob req_register req_rerun req_rescq req_runjob req_select \
 								 req_shutdown req_signal req_stat req_tokens req_track resc_def_all run_sched \
 								 stat_job svr_chk_owner svr_connect svr_format_job svr_func svr_jobfunc svr_mail \
-								 svr_movejob svr_recov svr_resccost svr_task track_alps_reservations \
+								 svr_movejob svr_recov svr_resccost svr_task  \
 								 user_info acl_special restricted_host
 
 LIBUTILS_UT_DIRS = u_MXML u_groups u_hash_map_structs u_lock_ctl u_misc u_mom_hierarchy u_mu \
