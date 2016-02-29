@@ -119,6 +119,7 @@ enum srv_atr
   SRV_ATR_AclUserEnabled,
   SRV_ATR_AclUsers,              /* 10 */
   SRV_ATR_AclRoot,
+  SRV_ATR_Gres_modifiers,
   SRV_ATR_managers,
   SRV_ATR_operators,
   SRV_ATR_dflt_que,

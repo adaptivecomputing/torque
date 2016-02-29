@@ -25,6 +25,8 @@ const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
+static int acl_check_n = 0;
+
 char *get_correct_jobname_return;
 
 struct batch_request *alloc_br(int type)
@@ -286,3 +288,30 @@ void overwrite_complete_req(
 
   pbs_attribute *attr,
   pbs_attribute *new_attr) {}
+
+int acl_check(pbs_attribute *pattr, char *name, int type)
+  {
+  bool rc;
+
+  switch(acl_check_n)
+    {
+    case 0:
+      rc = true;
+      break;
+
+    case 1:
+      rc = false;
+      break;
+
+    case 2:
+      rc = true;
+      break;
+
+    default:
+      rc = false;
+   }
+
+  acl_check_n++;
+
+  return(rc);
+  }
