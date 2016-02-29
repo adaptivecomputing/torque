@@ -173,22 +173,31 @@ bool Core::free_pu_index(
 
   {
   bool freed_index = false;
-  core_is_now_free = false;
 
-  for (unsigned int i = 0; i < this->indices.size(); i++)
+  if (this->free == true)
     {
-    if (this->indices[i] == index && this->is_index_busy[i] == true)
-      {
-      this->is_index_busy[i] = false;
-      this->processing_units_open++;
-      if (this->totalThreads == this->processing_units_open)
-        {
-        this->free = true;
-        core_is_now_free = true;
-        }
+    freed_index = true;
+    core_is_now_free = true;
+    }
+  else
+    {
+    core_is_now_free = false;
 
-      freed_index = true;
-      break;
+    for (unsigned int i = 0; i < this->indices.size(); i++)
+      {
+      if (this->indices[i] == index && this->is_index_busy[i] == true)
+        {
+        this->is_index_busy[i] = false;
+        this->processing_units_open++;
+        if (this->totalThreads == this->processing_units_open)
+          {
+          this->free = true;
+          core_is_now_free = true;
+          }
+
+        freed_index = true;
+        break;
+        }
       }
     }
 
