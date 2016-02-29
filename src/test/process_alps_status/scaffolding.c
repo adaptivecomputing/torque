@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <pbs_config.h>
 
 #include "utils.h"
 #include "batch_request.h"
@@ -1861,3 +1862,35 @@ int set_complete_req(
 
 job::job() {}
 job::~job() {}
+
+#ifdef PENABLE_LINUX_CGROUPS
+int Machine::getTotalThreads() const
+  {
+  return(this->totalThreads);
+  }
+
+Machine::~Machine() {}
+Socket::~Socket() {}
+PCI_Device::~PCI_Device() {}
+Chip::~Chip() {}
+Core::~Core() {}
+
+Machine::Machine(int np)
+  {
+  }
+
+Machine::Machine()
+  {
+  }
+
+Machine &Machine::operator =(const Machine &other)
+  {
+  return(*this);
+  }
+
+void Machine::setMemory(long long mem)
+  {
+  this->totalMemory = mem;
+  }
+#endif
+

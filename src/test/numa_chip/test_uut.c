@@ -396,6 +396,21 @@ START_TEST(test_spread_place)
 END_TEST
 
 
+START_TEST(test_basic_constructor)
+  {
+  Chip c(4);
+  c.setMemory(20);
+
+  fail_unless(c.getTotalCores() == 4);
+  fail_unless(c.getTotalThreads() == 4);
+  fail_unless(c.getAvailableCores() == 4);
+  fail_unless(c.getAvailableThreads() == 4);
+  fail_unless(c.getMemory() == 20);
+  fail_unless(c.getAvailableMemory() == 20);
+  }
+END_TEST
+
+
 START_TEST(test_json_constructor)
   {
   const char *j1 ="\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
@@ -956,6 +971,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_and_free_task);
   tcase_add_test(tc_core, test_exclusive_place);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   

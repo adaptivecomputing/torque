@@ -21,6 +21,21 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
 
 
 
+Socket::Socket(
+    
+  int execution_slots) : id (0), memory(0), totalThreads(execution_slots),
+                         socket_exclusive(false), totalCores(execution_slots)
+
+  {
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+    
+  Chip c(execution_slots);
+  this->chips.push_back(c);
+  }
+
+
+
 /*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
@@ -282,7 +297,12 @@ void Socket::setMemory(
   hwloc_uint64_t memory)
 
   {
+  long long per_socket = memory / this->chips.size();
   this->memory = memory;
+  this->available_memory = memory;
+  
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    this->chips[i].setMemory(per_socket);
   }
 
 void Socket::setId(

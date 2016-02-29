@@ -46,6 +46,14 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
+Socket::Socket(int np)
+  {
+  }
+
+void Socket::setMemory(hwloc_uint64_t mem)
+  {
+  }
+
 Socket::Socket(const std::string &json_layout)
   {
   json_socket++;
@@ -322,6 +330,7 @@ int req::getGpus() const
   return(0);
   }
 
+job::job() {}
 job::~job() {}
 
 int  Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)

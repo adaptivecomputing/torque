@@ -104,6 +104,18 @@ START_TEST(test_accelerators_remaining)
 END_TEST
 
 
+START_TEST(test_basic_constructor)
+  {
+  Socket s(5);
+  s.setMemory(50);
+
+  fail_unless(s.getTotalChips() == 1);
+  fail_unless(s.getAvailableChips() == 1);
+  fail_unless(s.getMemory() == 50);
+  }
+END_TEST
+
+
 START_TEST(test_json_constructor)
   {
   const char *j1 = "\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
@@ -134,7 +146,7 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   std::stringstream out;
-  Socket s;
+  Socket s(1);
   s.setMemory(2);
   s.setId(0);
 
@@ -367,6 +379,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_task);
   tcase_add_test(tc_core, test_free_task);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   
