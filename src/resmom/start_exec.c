@@ -4469,6 +4469,8 @@ int set_job_cgroup_memory_limits(
 
         mem_limit = cr->get_memory_per_task(req_index);
         swap_limit = cr->get_swap_per_task(req_index);
+        if ((mem_limit == 0) && (swap_limit != 0))
+          mem_limit = swap_limit;
         r = cr->get_req(req_index);
         num_tasks = r.get_num_tasks_for_host(string_hostname);
         for (task_index = 0; task_index < num_tasks; task_index++)
