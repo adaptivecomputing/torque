@@ -258,6 +258,7 @@
 */
 
 #define ATTR_aclroot     "acl_roots"
+#define ATTR_gresmodifiers "gres_modifiers"
 #define ATTR_managers    "managers"
 #define ATTR_dfltque     "default_queue"
 #define ATTR_dispsvrsuffix "display_job_server_suffix"
