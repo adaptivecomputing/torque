@@ -133,6 +133,8 @@ extern char server_name[];
 extern const char *PJobSubState[];
 extern char *PJobState[];
 
+extern struct server server;
+
 /* External Functions called */
 
 extern void cleanup_restart_file(job *);
@@ -146,6 +148,7 @@ extern char *get_correct_jobname(const char *jobid);
 /* prototypes */
 void post_modify_arrayreq(batch_request *preq);
 void post_modify_req(batch_request *preq);
+bool allowed_gres_modifier(const char*, const char*);
 
 
 /*
@@ -561,6 +564,21 @@ int modify_job(
           reply_badattr(PBSE_MODATRRUN, 1, plist, preq);
 
           return(PBSE_MODATRRUN);
+          }
+
+        // see if requester permitted to modify running job gres resource
+        if ((!strcmp(prsd->rs_name, "gres")) &&
+            (!allowed_gres_modifier(preq->rq_user, preq->rq_host)))
+          {
+          /* FAILURE */
+          snprintf(log_buf,sizeof(log_buf),
+            "Cannot modify attribute '%s'\n",
+            plist->al_name);
+          log_err(PBSE_PERM, __func__, log_buf);
+    
+          reply_badattr(PBSE_PERM, 1, plist, preq);
+
+          return(PBSE_PERM);
           }
 
         sendmom = 1;
@@ -1372,3 +1390,38 @@ void post_modify_arrayreq(
   return;
   }  /* END post_modify_arrayreq() */
 
+/*
+ * allowed_gres_modifier - see if user permitted to modify running gres resource
+ *
+ * @param user - username to check
+ * @param host - host where user requesting access from
+ * @return true allowed, else false
+ */
+
+bool allowed_gres_modifier(
+
+  const char *user,
+  const char *host)
+
+  {
+  std::string uh;
+
+  if ((user == NULL) || (host == NULL))
+    return(false);
+
+  // uh holds user@host
+  uh = user;
+  uh += "@";
+  uh += host;
+
+  // user@host a manager?
+  if (acl_check(&server.sv_attr[SRV_ATR_managers], (char *)uh.c_str(), ACL_User))
+    return(true);
+
+  // user a gres modifier?
+  if (acl_check(&server.sv_attr[SRV_ATR_Gres_modifiers], (char *)user, ACL_User))
+    return(true);
+
+  // not allowed
+  return(false);
+  }

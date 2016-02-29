@@ -299,6 +299,19 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER
   },
 
+  /* SRV_ATR_Gres_modifiers */  /* List of users who may modify the GRES for their own running jobs */
+  { (char *)ATTR_gresmodifiers,  /* "acl_users" */
+    decode_arst,
+    encode_arst,
+    set_uacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
   /* SRV_ATR_managers */
   { (char *)ATTR_managers,  /* "managers" */
     decode_arst,

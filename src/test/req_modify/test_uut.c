@@ -9,6 +9,8 @@ batch_request *preq;
 
 extern char *get_correct_jobname_return;
 
+bool allowed_gres_modifier(const char*, const char *);
+
 START_TEST(test_req_modifyjob)
   {
   // initialize
@@ -40,10 +42,16 @@ START_TEST(test_req_modifyjob)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_allowed_gres_modifier)
   {
+  // NULL user and/or host should fail
+  fail_unless(allowed_gres_modifier(NULL, "host") == false);
+  fail_unless(allowed_gres_modifier("manager", NULL) == false);
+  fail_unless(allowed_gres_modifier(NULL, NULL) == false);
 
-
+  fail_unless(allowed_gres_modifier("manager", "host") == true);
+  fail_unless(allowed_gres_modifier("adaptive", "host") == true);
+  fail_unless(allowed_gres_modifier("joe", "host") == false);
   }
 END_TEST
 
@@ -54,8 +62,8 @@ Suite *req_modify_suite(void)
   tcase_add_test(tc_core, test_req_modifyjob);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_allowed_gres_modifier");
+  tcase_add_test(tc_core, test_allowed_gres_modifier);
   suite_add_tcase(s, tc_core);
 
   return s;
