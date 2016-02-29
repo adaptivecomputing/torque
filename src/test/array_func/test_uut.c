@@ -42,6 +42,7 @@ job_array *get_job_array(
     pa->job_ids[i] = strdup(buf);
     }
 
+  return(pa);
   }
 
 
@@ -337,6 +338,7 @@ Suite *array_func_suite(void)
   tc_core = tcase_create("array_recov_binary_test");
   tcase_add_test(tc_core, array_recov_binary_test);
   tcase_add_test(tc_core, update_array_values_test);
+  tcase_add_test(tc_core, update_slot_values_test);
   suite_add_tcase(s, tc_core);
 
   return s;
