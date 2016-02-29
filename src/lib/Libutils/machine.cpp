@@ -202,6 +202,21 @@ Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory
   update_internal_counts();
   }
 
+
+
+Machine::Machine(
+
+  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
+            totalThreads(np), availableSockets(1), availableChips(1),
+            availableCores(np), availableThreads(np)
+
+  {
+  Socket s(np);
+  this->sockets.push_back(s);
+  }
+
+
+
 Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
                      totalThreads(0), availableSockets(0), availableChips(0),
                      availableCores(0), availableThreads(0)
@@ -209,6 +224,7 @@ Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChi
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
+
 
 
 Machine::~Machine()
@@ -462,7 +478,11 @@ void Machine::setMemory(
   long long mem)
 
   {
+  long long per_socket = mem / this->sockets.size();
   this->totalMemory = mem;
+
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    this->sockets[i].setMemory(per_socket);
   }
 
 void Machine::insertNvidiaDevice(

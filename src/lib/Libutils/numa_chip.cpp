@@ -81,6 +81,25 @@ Chip &Chip::operator =(
 
 
 
+Chip::Chip(
+
+  int execution_slots) : id(0), totalCores(execution_slots), totalThreads(execution_slots),
+                         availableCores(execution_slots), availableThreads(execution_slots),
+                         total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
+                         chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
+                         allocations()
+
+  {
+  for (int i = 0; i < execution_slots; i++)
+    {
+    Core c;
+    c.add_processing_unit(CORE, execution_slots);
+    this->cores.push_back(c);
+    }
+  }
+
+
+
 /*
  * parse_values_from_json_string()
  */

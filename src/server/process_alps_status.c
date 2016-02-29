@@ -376,6 +376,18 @@ int set_ncpus(
   else if (current->nd_slots.get_total_execution_slots() > parent->max_subnode_nppn)
     parent->max_subnode_nppn = current->nd_slots.get_total_execution_slots();
 
+#ifdef PENABLE_LINUX_CGROUPS
+  if (current->nd_layout == NULL)
+    {
+    current->nd_layout = new Machine(current->nd_slots.get_total_execution_slots());
+    }
+  else if (current->nd_layout->getTotalThreads() != current->nd_slots.get_total_execution_slots())
+    {
+    delete current->nd_layout;
+    current->nd_layout = new Machine(current->nd_slots.get_total_execution_slots());
+    }
+#endif
+
   return(PBSE_NONE);
   } /* END set_ncpus() */
 
@@ -596,6 +608,23 @@ int process_reservation_id(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+int set_total_memory(
+
+  pbsnode    *pnode,
+  const char *mem_str)
+
+  {
+  long long mem = strtoll(mem_str, NULL, 10);
+
+  if (pnode->nd_layout != NULL)
+    pnode->nd_layout->setMemory(mem);
+
+  return(PBSE_NONE);
+  } // END set_total_memory()
+#endif
+
+
 
 int process_alps_status(
 
@@ -763,6 +792,12 @@ int process_alps_status(
       {
       set_state(current, str);
       }
+#ifdef PENABLE_LINUX_CGROUPS
+    else if (!strncmp(str, "totmem", 6))
+      {
+      set_total_memory(current, str);
+      }
+#endif
 
     } /* END processing the status update */
 

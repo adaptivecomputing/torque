@@ -46,6 +46,14 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
+Socket::Socket(int np)
+  {
+  }
+
+void Socket::setMemory(hwloc_uint64_t mem)
+  {
+  }
+
 Socket::Socket(const std::string &json_layout)
   {
   json_socket++;

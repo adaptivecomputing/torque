@@ -139,6 +139,7 @@ class Chip
 
   public:
     Chip();
+    Chip(int execution_slots);
     Chip(const std::string &layout);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
@@ -238,6 +239,7 @@ class Socket
 
   public:
     Socket();
+    Socket(int execution_slots);
     Socket(const std::string &layout);
     ~Socket();
     int initializeSocket(hwloc_obj_t obj);
@@ -302,6 +304,7 @@ class Machine
   public:
     Machine& operator=(const Machine& newMachine);
     Machine(const std::string &layout);
+    Machine(int execution_slots);
     Machine();
     ~Machine();
     Socket getSocket();
@@ -332,7 +335,7 @@ class Machine
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname, bool legacy_vmem);
-    void setMemory(long long mem); // used for unit tests
+    void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
