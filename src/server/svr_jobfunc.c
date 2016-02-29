@@ -2628,7 +2628,8 @@ bool do_nodes_exist(
   /* iterate over all nodes */
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
+    if (pnode->nd_layout != NULL)
+      pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
 
     if ((sockets == 0) &&
         (numa_nodes == 0) &&

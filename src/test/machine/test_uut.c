@@ -157,12 +157,24 @@ END_TEST
 
 START_TEST(test_displayAsString)
   {
-  Machine           new_machine;
+  Machine           new_machine(1);
   std::stringstream out;
 
   new_machine.setMemory(2);
   new_machine.displayAsString(out);
   fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_basic_constructor)
+  {
+  Machine m(3);
+
+  fail_unless(m.getTotalSockets() == 1);
+  fail_unless(m.getAvailableSockets() == 1);
+  fail_unless(m.getTotalCores() == 3);
+  fail_unless(m.getTotalThreads() == 3);
   }
 END_TEST
 
@@ -368,6 +380,7 @@ Suite *machine_suite(void)
   tcase_add_test(tc_core, test_initializeMachine);
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_check_if_possible);
   suite_add_tcase(s, tc_core);
   
