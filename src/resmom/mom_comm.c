@@ -2659,17 +2659,60 @@ int im_join_job_as_sister(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
+  ret = trq_cg_create_all_cgroups(pjob);
+  if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
     }
 
-  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
+  ret = set_job_cgroup_memory_limits(pjob);
+  if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
     }
+
+  ret = trq_cg_add_devices_to_cgroup(pjob);
+  if (ret != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create device limits cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
+    }
+
 #endif
     
   ret = run_prologue_scripts(pjob);
