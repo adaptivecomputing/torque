@@ -177,6 +177,8 @@ int trq_cg_cleanup_torque_cgroups()
   return(rc);
   }
 
+
+
 /*
  * trq_cg_initialize_cpuset_string()
  *
@@ -309,7 +311,7 @@ int init_torque_cgroups()
     rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
-    } 
+    }
 
   torque_path = cg_cpuset_path;
   rc = stat(torque_path.c_str(), &buf);
@@ -1427,6 +1429,9 @@ int find_range_in_cpuset_string(
   end = source.find("+", pos);
 
   output = source.substr(pos, end - pos);
+
+  if (output.size() < 1)
+    return(-1);
 
   return(PBSE_NONE);
   } // END find_range_in_cpuset_string()
