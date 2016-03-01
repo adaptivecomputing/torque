@@ -1753,8 +1753,10 @@ int trq_cg_set_task_resident_memory_limit(
   FILE   *fd;
   size_t  bytes_written;
   unsigned long long memory_limit_in_bytes;
+  struct stat stat_buf;
+  int    rc;
   
-   if (memory_limit == 0)
+  if (memory_limit == 0)
     return(PBSE_NONE);
 
   memory_limit_in_bytes = memory_limit * 1024;
@@ -1762,6 +1764,15 @@ int trq_cg_set_task_resident_memory_limit(
      memory.limit_in_bytes cgroup for the job */
   sprintf(task_directory, "/R%u.t%u/memory.limit_in_bytes", req_index, task_index);
   oom_control_name = cg_memory_path + job_id + task_directory;
+
+  /* This may be happening on a sister node. All tasks may not be preset 
+     Check to see if the task directory exists first */
+  rc = stat(oom_control_name.c_str(), &stat_buf);
+  if (rc != 0)
+    {
+    /* not an error. We just don't have this task */
+    return(PBSE_NONE);
+    }
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
   fd = fopen(oom_control_name.c_str(), "r+");
