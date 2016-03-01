@@ -536,3 +536,8 @@ int set_job_cgroup_memory_limits(job *pjob)
   {
   return(PBSE_NONE);
   }
+
+int trq_cg_add_devices_to_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
