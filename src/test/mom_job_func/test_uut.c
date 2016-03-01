@@ -119,7 +119,6 @@ Suite *mom_job_func_suite(void)
 
   tc_core = tcase_create("test_remove_from_exiting_list");
   tcase_add_test(tc_core, test_remove_from_exiting_list);
-  tcase_add_test(tc_core, test_mom_finding_jobs);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_mom_finding_jobs");
