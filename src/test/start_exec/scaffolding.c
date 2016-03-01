@@ -981,6 +981,11 @@ bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
   }
+    
+int complete_req::req_count() const
+  {
+  return(0);
+  }
 
 unsigned long long complete_req::get_swap_memory_for_this_host( const std::string &hostname) const
   {
