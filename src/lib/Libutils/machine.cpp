@@ -763,6 +763,8 @@ int Machine::spread_place_pu(
   return(PBSE_NONE);
   } /* END spread_place_pu() */
 
+
+
 /*
  * spread_place()
  *
@@ -832,11 +834,13 @@ int Machine::spread_place(
       }
 
     if (partial_place == true)
+      {
       tasks_placed++;
 
-    task_alloc.set_host(hostname);
-    r.record_allocation(task_alloc);
-    master.add_allocation(task_alloc);
+      task_alloc.set_host(hostname);
+      r.record_allocation(task_alloc);
+      master.add_allocation(task_alloc);
+      }
     }
 
   if (tasks_placed != tasks_for_node)
