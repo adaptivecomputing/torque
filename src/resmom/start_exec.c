@@ -4461,7 +4461,7 @@ int set_job_cgroup_memory_limits(
       int          num_tasks;
 
       cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-      num_reqs = cr->get_num_reqs();
+      num_reqs = cr->req_count();
 
       for(req_index = 0; req_index < num_reqs; req_index++)
         {
@@ -4472,19 +4472,21 @@ int set_job_cgroup_memory_limits(
         if ((mem_limit == 0) && (swap_limit != 0))
           mem_limit = swap_limit;
         r = cr->get_req(req_index);
-        num_tasks = r.get_num_tasks_for_host(string_hostname);
+        num_tasks = r.getTaskCount();
         for (task_index = 0; task_index < num_tasks; task_index++)
           {
           rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
           if (rc != PBSE_NONE)
             {
-            return(rc);
+            /* It may be this task does not belong on the sister node. continue */
+            continue;
             }
 
           rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
           if (rc != PBSE_NONE)
             {
-            return(rc);
+            /* It may be this task does not belong on the sister node. continue */
+            continue;
             }
           }
         }
@@ -4728,6 +4730,12 @@ int TMomFinalizeChild(
   pjob->ji_cgroups_created = true;
 
   rc = trq_cg_add_devices_to_cgroup(pjob);
+  if (rc != PBSE_NONE)
+    {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
