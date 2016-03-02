@@ -78,28 +78,6 @@ int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
   }
 
 
-/*
- * mark_as_busy()
- *
- */
-
-void Core::mark_as_busy(
-    
-  int index)
-
-  {
-  for (unsigned int i = 0; i < this->indices.size(); i++)
-    {
-    if (this->indices[i] == index)
-      {
-      this->is_index_busy[i] = true;
-      this->free = false;
-      this->processing_units_open--;
-      }
-    }
-  }
-
-
 
 /*
  * reserve_processing_unit()

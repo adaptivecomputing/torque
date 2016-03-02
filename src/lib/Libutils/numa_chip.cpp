@@ -1240,6 +1240,7 @@ void Chip::place_task_by_cores(
  */
 
 void Chip::place_task_by_threads(
+
   int         execution_slots_per_task,
   int         threads_to_rsv,
   allocation &master,

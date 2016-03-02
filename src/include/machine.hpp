@@ -102,7 +102,6 @@ class Core
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
     std::vector<int> getPU();
     void displayAsString(stringstream &out) const;
-    void mark_as_busy(int index);
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
     bool is_free() const;
