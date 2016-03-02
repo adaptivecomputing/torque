@@ -878,7 +878,10 @@ int trq_cg_add_process_to_all_cgroups(
     {
     if ((rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, job_id, job_pid)) == PBSE_NONE)
       {
-      rc = trq_cg_add_process_to_cgroup(cg_memory_path, job_id, job_pid);
+      if((rc = trq_cg_add_process_to_cgroup(cg_memory_path, job_id, job_pid)) == PBSE_NONE)
+        {
+        rc = trq_cg_add_process_to_cgroup(cg_devices_path, job_id, job_pid);
+        }
       }
     }
 
@@ -1520,35 +1523,6 @@ int trq_cg_create_all_cgroups(
 
 
 
-/*int trq_cg_add_process_to_cgroup(
-
-  const char *job_id,
-  pid_t       job_pid)
-
-  {
-  return(trq_cg_add_process_to_cgroup(cg_cpuset_path, job_id, job_pid));
-  }*/ // END trq_cg_add_process_to_cgroup()
-
-
-
-/* Add a process to the cpuacct and memory subsystems 
- */
-int trq_cg_add_process_to_cgroup_accts(
-    
-  const char *job_id,
-  pid_t       job_pid)
-
-  {
-  int rc = trq_cg_add_process_to_cgroup(cg_cpuacct_path, job_id, job_pid);
-
-  if (rc == PBSE_NONE)
-    rc = trq_cg_add_process_to_cgroup(cg_memory_path, job_id, job_pid); 
-
-  return(rc);
-  }
-
-
-
 /*
  * trq_cg_set_swap_memory_limit()
  *
@@ -2033,7 +2007,6 @@ int trq_cg_add_devices_to_cgroup(
       return(rc);
       }
 
-    rc = trq_cg_add_process_to_cgroup(cg_devices_path, pjob->ji_qs.ji_jobid, getpid());
     return(rc);
     }
 
@@ -2076,9 +2049,6 @@ int trq_cg_add_devices_to_cgroup(
     return(rc);
     }
  
-  /* We are already here and have a path to the cgroup. Add the pid to the tasks file. */
-  rc = trq_cg_add_process_to_cgroup(cg_devices_path, pjob->ji_qs.ji_jobid, getpid());
-
   return(rc);
   }
 
