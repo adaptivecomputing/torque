@@ -59,6 +59,7 @@ string cg_prefix("cpuset.");
 
 const int CPUS = 0;
 const int MEMS = 1;
+const int MAX_WRITE_RETRIES = 5;
 
 #ifdef PENABLE_LINUX_CGROUPS
 std::vector<std::string> incompatible_dash_l_resources;
@@ -98,6 +99,92 @@ void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompat
   incompatible_resource_list.push_back("tpn");
   incompatible_resource_list.push_back("trl");
   }
+
+
+
+/*
+ * write_to_file()
+ *
+ * Writes content to a file
+ * @param path - the path to the file
+ * @param content - what we're writing
+ * @param err_msg - the error message, if any
+ * @return PBSE_NONE on success or a PBSE_ error
+ */
+
+int write_to_file(
+
+  const char        *path,
+  const std::string &content,
+  std::string       &err_msg)
+
+  {
+  if (path == NULL)
+    return(PBSE_BAD_PARAMETER);
+
+  int rc = PBSE_SYSTEM;
+  int retries = 0;
+
+  while (retries < MAX_WRITE_RETRIES)
+    {
+    FILE *fd = fopen(path, "w+");
+    retries++;
+
+    if (fd == NULL)
+      {
+      err_msg = "Could not open ";
+      err_msg += path;
+      }
+    else
+      {
+      int  bytes_written;
+      bool retry_write = true;
+     
+      while (((bytes_written = fwrite(content.c_str(), sizeof(char), content.size(), fd)) < 1) &&
+             (retry_write == true))
+        {
+        switch (errno)
+          {
+          case EEXIST:
+          case EINTR:
+
+            retries++;
+
+            break;
+
+          default:
+
+            // Retry all errors
+            retry_write = false;
+            break;
+          }
+        }
+        
+      fclose(fd);
+
+      if (bytes_written >= 1)
+        {
+        rc = PBSE_NONE;
+        break;
+        }
+
+      usleep(100);
+      }
+    }
+      
+  if (rc != PBSE_NONE)
+    {
+    if (err_msg.size() == 0)
+      {
+      err_msg = "Could not write '";
+      err_msg += content + "' to ";
+      err_msg += path;
+      }
+    }
+
+  return(rc);
+  } // END write_to_file()
+
 
 
 /* We need to remove the torque cgroups when pbs_mom 
@@ -175,7 +262,7 @@ int trq_cg_cleanup_torque_cgroups()
     }
 
   return(rc);
-  }
+  } // END trq_cg_cleanup_torque_cgroups()
 
 
 
@@ -259,26 +346,13 @@ int trq_cg_initialize_cpuset_string(
 
   /* Now write the value we got from the parent cgroup file to the torque cgroup file */
   cpus_path = cg_cpuset_path + cg_prefix + file_name;
-  fd = fopen(cpus_path.c_str(), "r+");
-  if (fd == NULL)
-    {
-    sprintf(log_buf, "Could not open %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
+  std::string err_msg;
+  int rc = write_to_file(cpus_path.c_str(), buf, err_msg);
 
-  bytes_written = fwrite(buf, sizeof(char), strlen(buf), fd);
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "Could not write cpuset to %s while initializing cpuset cgroups: error %d", cpus_path.c_str(), errno);
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
-    fclose(fd);
-    return(PBSE_SYSTEM);
-    }
+  if (rc != PBSE_NONE)
+    log_err(errno, __func__, err_msg.c_str());
 
-  fclose(fd);
-
-  return(PBSE_NONE);
+  return(rc);
   } // END trq_cg_initialize_cpuset_string()
 
 
@@ -1018,6 +1092,11 @@ int trq_cg_create_task_cgroups(
         log_err(errno, __func__, log_buf);
         return(PBSE_SYSTEM); 
         }
+      else if (LOGLEVEL >= 9)
+        {
+        sprintf(log_buf, "Successfully created '%s'", req_task_path.c_str());
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
 
       }
     }
@@ -1061,16 +1140,13 @@ int trq_cg_create_cgroup(
     return(PBSE_SYSTEM); 
     }
 
-
-
   /* create task sub-cgroups if -L resource request */
   rc = trq_cg_create_task_cgroups(full_cgroup_path, pjob);
   if (rc != PBSE_NONE)
     {
     sprintf(log_buf, "failed to create task cgroups: %d", rc);
-    log_err(-1, __func__, log_buf);
+    log_err(errno, __func__, log_buf);
     }
-
 
   return(rc);
   } // END trq_cg_create_cgroup()
@@ -1106,19 +1182,18 @@ int trq_cg_get_task_set_string(
     /* add the first element outside the loop because all
        other elements will be comma separated */
     sprintf(task_element, "%d", indices[0]);
+    set_string = task_element;
+
     for (unsigned int i = 1; i < set_size; i++)
       {
-      char next_element[20];
-
-      sprintf(next_element, ",%d", indices[i]);
-      strcat(task_element, next_element);
+      sprintf(task_element, ",%d", indices[i]);
+      set_string += task_element;
       }
-
-    set_string = task_element;
     }
   else
     {
     /* no set given */
+    log_err(PBSE_INDICES_EMPTY, __func__, "No indices found for task set");
     return(PBSE_INDICES_EMPTY);
     }
 
@@ -1148,40 +1223,27 @@ int trq_cg_write_task_memset_string(
   allocation &al)
 
   {
-  int      rc = PBSE_NONE;
-  string   req_memset_task_path;
-  string   memset_string;
-  char     req_task_number[256];
-  char     log_buf[LOCAL_LOG_BUF_SIZE];
-  size_t   bytes_written;
-  FILE    *f;
+  int          rc = PBSE_NONE;
+  string       req_memset_task_path;
+  string       memset_string;
+  char         req_task_number[256];
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string  err_msg;
 
   sprintf(req_task_number, "%s/R%u.t%u/cpuset.mems", job_id, req_num, task_num);
   req_memset_task_path = cpuset_path + req_task_number;
-
-  if ((f = fopen(req_memset_task_path.c_str(), "w")) == NULL)
-    {
-    sprintf(log_buf, "failed to open %s", req_memset_task_path.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
   rc = trq_cg_get_task_set_string(al.mem_indices, memset_string);
+
   if (rc == PBSE_NONE)
     {
-    bytes_written = fwrite(memset_string.c_str(), sizeof(char), memset_string.size(), f);
-    if (bytes_written < 1)
-      {
-      sprintf(log_buf, "failed to write task memset for job %s, %s", job_id, req_memset_task_path.c_str());
-      log_err(errno, __func__, log_buf);
-      rc = PBSE_SYSTEM;
-      }
+    rc = write_to_file(req_memset_task_path.c_str(), memset_string, err_msg);
+
+    if (rc != PBSE_NONE)
+      log_err(errno, __func__, err_msg.c_str());
     }
 
-  fclose(f);
-
   return(rc);
-  }   
+  } // END trq_cg_write_task_memset_string()
 
 
 
@@ -1212,35 +1274,23 @@ int trq_cg_write_task_cpuset_string(
   string   cpuset_string;
   char     req_task_number[256];
   char     log_buf[LOCAL_LOG_BUF_SIZE];
-  size_t   bytes_written;
-  FILE    *f;
+  string   err_msg;
 
   sprintf(req_task_number, "%s/R%u.t%u/cpuset.cpus", job_id, req_num, task_num);
   req_cpuset_task_path = cpuset_path + req_task_number;
-
-  if ((f = fopen(req_cpuset_task_path.c_str(), "w")) == NULL)
-    {
-    sprintf(log_buf, "failed to open %s", req_cpuset_task_path.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
+  
   rc = trq_cg_get_task_set_string(al.cpu_indices, cpuset_string);
+
   if (rc == PBSE_NONE)
     {
-    bytes_written = fwrite(cpuset_string.c_str(), sizeof(char), cpuset_string.size(), f);
-    if (bytes_written < 1)
-      {
-      sprintf(log_buf, "failed to write task cpuset for job %s, %s", job_id, req_cpuset_task_path.c_str());
-      log_err(errno, __func__, log_buf);
-      rc = PBSE_SYSTEM;
-      }
+    rc = write_to_file(req_cpuset_task_path.c_str(), cpuset_string, err_msg);
+
+    if (rc != PBSE_NONE)
+      log_err(errno, __func__, err_msg.c_str());
     }
 
-  fclose(f);
-
   return(rc);
-  }   
+  } // END trq_cg_write_task_cpuset_string()
 
 
 
@@ -1351,11 +1401,10 @@ int trq_cg_populate_cgroup(
   string     &used)
 
   {
-  FILE   *f;
   string  path(cg_cpuset_path);
+  string  err_msg;
   int     rc = PBSE_NONE;
   char    log_buf[LOCAL_LOG_BUF_SIZE];
-  size_t  bytes_written;
   const char *job_id = pjob->ji_qs.ji_jobid;
 
   path += job_id;
@@ -1363,10 +1412,12 @@ int trq_cg_populate_cgroup(
     path += "/" + cg_prefix + "cpus";
   else
     path += "/" + cg_prefix + "mems";
+    
+  rc = write_to_file(path.c_str(), used, err_msg);
 
-  if ((f = fopen(path.c_str(), "w")) == NULL)
+  if (rc != PBSE_NONE)
     {
-    if (errno == EACCES)
+    if (errno == ENOENT)
       {
       /* some versions of Linux don't have cpuset.cpus or cpuset.mems.
          They just have cpus or mems. Try again */
@@ -1376,31 +1427,13 @@ int trq_cg_populate_cgroup(
         path += "cpus";
       else
         path += "mems";
-
-      f = fopen(path.c_str(), "w");
+  
+      rc = write_to_file(path.c_str(), used, err_msg);
       }
 
-    if (f == NULL)
-      {
-      sprintf(log_buf, "failed to open %s", path.c_str());
-      log_err(errno, __func__, log_buf);
-      return(PBSE_SYSTEM);
-      }
+    if (rc != PBSE_NONE)
+      log_err(errno, __func__, err_msg.c_str());
     }
-
-  if ((bytes_written = fwrite(used.c_str(), sizeof(char), used.size(), f)) < 1)
-    {
-    sprintf(log_buf, "failed to write cgroup for job %s", job_id);
-
-    if (errno != 0)
-      log_err(errno, __func__, log_buf);
-    else
-      log_err(PBSE_SYSTEM, __func__, log_buf);
-
-    rc = PBSE_SYSTEM;
-    }
-
-  fclose(f);
 
   return(rc);
   } // END trq_cg_populate_cgroup()
@@ -1426,7 +1459,11 @@ int find_range_in_cpuset_string(
   std::size_t end;
 
   if (pos == std::string::npos)
+    {
+    sprintf(log_buffer, "Mom '%s' not found in '%s'", mom_alias, source.c_str());
+    log_err(-1, __func__, log_buffer);
     return(-1);
+    }
 
   pos += strlen(mom_alias) + 1; // add 1 to pass the ':'
   end = source.find("+", pos);
@@ -1434,7 +1471,11 @@ int find_range_in_cpuset_string(
   output = source.substr(pos, end - pos);
 
   if (output.size() < 1)
+    {
+    sprintf(log_buffer, "Mom '%s' has no values in '%s'", mom_alias, source.c_str());
+    log_err(-1, __func__, log_buffer);
     return(-1);
+    }
 
   return(PBSE_NONE);
   } // END find_range_in_cpuset_string()
@@ -1452,7 +1493,12 @@ int trq_cg_get_cpuset_and_mem(
 
   if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
       (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+    {
+    sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+
     return(-1);
+    }
 
   std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
 
@@ -1510,6 +1556,7 @@ int trq_cg_create_all_cgroups(
           rc = trq_cg_populate_task_cgroups(cg_cpuset_path, pjob);
         }
       }
+
     if (rc == PBSE_NONE)
       rc = trq_cg_create_cgroup(cg_devices_path, pjob);
 
@@ -1543,42 +1590,32 @@ int trq_cg_set_swap_memory_limit(
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
-  FILE   *f;
-  size_t  bytes_written;
   unsigned long long memory_limit_in_bytes;
+  std::string        err_msg;
   
   if (memory_limit == 0)
     return(PBSE_NONE);
 
   memory_limit_in_bytes = memory_limit * 1024;
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
   oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
 
-  /* open the memory.limit_in_bytes file and set it to memory_limit */
-  f = fopen(oom_control_name.c_str(), "r+");
-  if (f == NULL)
+  int rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
+  if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "failed to open cgroup path %s. Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    sprintf(log_buffer, 
+            "%s Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED",
+            err_msg.c_str());
+    log_err(errno, __func__, log_buffer);
     }
 
-  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
-  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
-    
-  fclose(f);
+  return(rc);
+  } // END trq_cg_set_swap_memory_limit()
 
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
 
-  return(PBSE_NONE);
-  } // END trq_cg_set_task_swap_memory_limit()
 
 /*
  * trq_cg_set_task_swap_memory_limit()
@@ -1605,15 +1642,15 @@ int trq_cg_set_task_swap_memory_limit(
   char    mem_limit_string[64];
   string  oom_control_name;
   char    task_directory[1024]; 
-  FILE   *f;
-  size_t  bytes_written;
   unsigned long long memory_limit_in_bytes;  /* memory_limit comes in as kb */
+  string  err_msg;
   
   if (memory_limit == 0)
     return(PBSE_NONE);
 
   /* convert kb to bytes */
   memory_limit_in_bytes = 1024 * memory_limit;
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job and task */
@@ -1621,28 +1658,19 @@ int trq_cg_set_task_swap_memory_limit(
   oom_control_name = cg_memory_path + job_id + task_directory;
 
   /* open the memory.limit_in_bytes file and set it to memory_limit */
-  f = fopen(oom_control_name.c_str(), "r+");
-  if (f == NULL)
+  int rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
+  if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, "failed to open cgroup path %s. Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
+    sprintf(log_buffer, 
+            "Warning: %s Kernel may not have been built with CONFIG_MEMCG_SWAP and CONFIG_MEMCG_SWAP_ENABLED",
+            err_msg.c_str());
+    log_err(errno, __func__, log_buffer);
+
+    rc = PBSE_NONE;
     }
 
-  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
-  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), f);
-    
-  fclose(f);
-
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
-  return(PBSE_NONE);
-  } // END trq_cg_set_swap_memory_limit()
+  return(rc);
+  } // END trq_cg_set_task_swap_memory_limit()
 
 
 
@@ -1666,8 +1694,7 @@ int trq_cg_set_resident_memory_limit(
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
-  FILE   *fd;
-  size_t  bytes_written;
+  string err_msg;
   unsigned long long memory_limit_in_bytes;
   int                rc = PBSE_NONE;
   
@@ -1676,30 +1703,15 @@ int trq_cg_set_resident_memory_limit(
 
   // Convert kb to bytes
   memory_limit_in_bytes = 1024 * memory_limit;
+  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
   oom_control_name = cg_memory_path + job_id + "/memory.limit_in_bytes";
 
-  /* open the memory.limit_in_bytes file and set it to memory_limit */
-  fd = fopen(oom_control_name.c_str(), "r+");
-  if (fd == NULL)
-    {
-    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
-  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
-  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), fd);
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    rc = PBSE_SYSTEM;
-    }
-
-  fclose(fd);
+  rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
+  if (rc != PBSE_NONE)
+    log_err(errno, __func__, err_msg.c_str());
 
   return(rc);
   } // END trq_cg_set_resident_memory_limit()
@@ -1729,8 +1741,7 @@ int trq_cg_set_task_resident_memory_limit(
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
-  FILE   *fd;
-  size_t  bytes_written;
+  string err_msg;
   unsigned long long memory_limit_in_bytes;
   struct stat stat_buf;
   int    rc;
@@ -1739,6 +1750,7 @@ int trq_cg_set_task_resident_memory_limit(
     return(PBSE_NONE);
 
   memory_limit_in_bytes = memory_limit * 1024;
+  snprintf(mem_limit_string, sizeof(mem_limit_string), "%llu", memory_limit_in_bytes);
  /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
   sprintf(task_directory, "/R%u.t%u/memory.limit_in_bytes", req_index, task_index);
@@ -1753,28 +1765,11 @@ int trq_cg_set_task_resident_memory_limit(
     return(PBSE_NONE);
     }
 
-  /* open the memory.limit_in_bytes file and set it to memory_limit */
-  fd = fopen(oom_control_name.c_str(), "r+");
-  if (fd == NULL)
-    {
-    sprintf(log_buf, "failed to open cgroup path %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
+  rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
+  if (rc != PBSE_NONE)
+    log_err(errno, __func__, err_msg.c_str());
 
-  sprintf(mem_limit_string, "%lld", memory_limit_in_bytes);
-  bytes_written = fwrite(mem_limit_string, sizeof(char), strlen(mem_limit_string), fd);
-  if (bytes_written < 1)
-    {
-    sprintf(log_buf, "failed to write cgroup memory limit to  %s", oom_control_name.c_str());
-    log_err(errno, __func__, log_buf);
-    fclose(fd);
-    return(PBSE_SYSTEM);
-    }
-
-  fclose(fd);
-
-  return(PBSE_NONE);
+  return(rc);
   } // END trq_cg_set_task_resident_memory_limit()
 
 

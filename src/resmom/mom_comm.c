@@ -2663,7 +2663,7 @@ int im_join_job_as_sister(
   if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
     mom_job_purge(pjob);
@@ -2681,7 +2681,7 @@ int im_join_job_as_sister(
   if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
     mom_job_purge(pjob);
@@ -2699,7 +2699,7 @@ int im_join_job_as_sister(
   if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create device limits cgroups for job %s.", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
     mom_job_purge(pjob);
