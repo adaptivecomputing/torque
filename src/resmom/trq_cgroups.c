@@ -1863,24 +1863,18 @@ void trq_cg_delete_job_cgroups(
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
-  string cgroup_path;
   struct stat buf;
   int         rc;
   
-  cgroup_path = cg_cpu_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
+  trq_cg_delete_cgroup_path(cg_cpu_path + job_id, successfully_created);
 
-  cgroup_path = cg_cpuacct_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
+  trq_cg_delete_cgroup_path(cg_cpuacct_path + job_id, successfully_created);
   
-  cgroup_path = cg_cpuset_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
+  trq_cg_delete_cgroup_path(cg_cpuset_path + job_id, successfully_created);
 
-  cgroup_path = cg_memory_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
+  trq_cg_delete_cgroup_path(cg_memory_path + job_id, successfully_created);
 
-  cgroup_path = cg_devices_path + job_id;
-  trq_cg_delete_cgroup_path(cgroup_path, successfully_created);
+  trq_cg_delete_cgroup_path(cg_devices_path + job_id, successfully_created);
 
   } // END trq_cg_delete_job_cgroups()
 
