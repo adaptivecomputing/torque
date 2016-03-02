@@ -119,7 +119,7 @@ extern void restore_attr_default (struct pbs_attribute *);
 int         update_user_acls(pbs_attribute *pattr, void *pobject, int actmode);
 int         update_group_acls(pbs_attribute *pattr, void *pobject, int actmode);
 int         node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
-
+extern int  keep_completed_val_check(pbs_attribute *pattr,void *pobj,int actmode);
 /* DIAGTODO: write diag_attr_def.c */
 
 /*
@@ -761,7 +761,7 @@ attribute_def svr_attr_def[] =
       set_l,
       comp_l,
       free_null,
-      NULL_FUNC,
+      keep_completed_val_check,//in svr_func.c line 657
       NO_USER_SET,
       ATR_TYPE_LONG,
       PARENT_TYPE_SERVER
