@@ -4436,13 +4436,6 @@ int set_job_cgroup_memory_limits(
       }
     }
 
-  if ((rc = trq_cg_add_process_to_cgroup(cg_cpuset_path, pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
-    {
-    sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    return(rc);
-    }
-
   int rank;
   pbs_attribute *pattr;
   pid_t new_pid = getpid();
@@ -4711,16 +4704,6 @@ int TMomFinalizeChild(
     exit(-1);
     }
 
-  /* Add this process to the cpuacct and memory subsystems */
-  rc = trq_cg_add_process_to_cgroup_accts(pjob->ji_qs.ji_jobid, getpid());
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
-    exit(-1);
-    }
-
   if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
     {
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
@@ -4732,6 +4715,15 @@ int TMomFinalizeChild(
   rc = trq_cg_add_devices_to_cgroup(pjob);
   if (rc != PBSE_NONE)
     {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "failed to add pid to all cgroups: %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
