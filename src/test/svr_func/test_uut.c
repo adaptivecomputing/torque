@@ -4,10 +4,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "pbs_error.h"
-START_TEST(test_one)
+
+int keep_completed_val_check(pbs_attribute *pattr,void *pobj,int actmode);
+
+START_TEST(test_keep_comleted_val_check)
   {
-
-
+	 pbs_attribute *keep;
+	 keep->at_val.at_long = -1;
+	 void *test2;
+	 fail_unless(keep_completed_val_check(keep, test2, 0) == 1, "keep->at_val.at_long is < 0");
+	 keep->at_val.at_long = 1;
+	 fail_unless(keep_completed_val_check(keep, test2, 0) == 0, "keep->at_val.at_long is > -1");
   }
 END_TEST
 
@@ -21,8 +28,8 @@ END_TEST
 Suite *svr_func_suite(void)
   {
   Suite *s = suite_create("svr_func_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_keep_comleted_val_check");
+  tcase_add_test(tc_core, test_keep_comleted_val_check);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
