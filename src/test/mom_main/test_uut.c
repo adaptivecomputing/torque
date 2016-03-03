@@ -51,7 +51,7 @@ START_TEST(test_should_resend_obit)
   pjob.ji_obit_sent = time_now;
 
   // Running jobs shouldn't re-send their obits
-  pjob.ji_qs.ji_substate == JOB_SUBSTATE_RUNNING;
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   fail_unless(should_resend_obit(&pjob, diff) == false);
   pjob.ji_obit_busy_time = time_now - (2 * diff);
   fail_unless(should_resend_obit(&pjob, diff) == false);
