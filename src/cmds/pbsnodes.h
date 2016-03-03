@@ -18,10 +18,10 @@ enum NStateEnum
   tnsActive,       /* one or more jobs running on node */
   tnsAll,          /* list all nodes */
   tnsUp,           /* node is healthy */
-  tnsLAST             
+  tnsLAST
   };
 
-/* static int set_note(int con, char *name, char *msg); */
+/* static int set_note(char *name, char *msg); */
 
 /* static void prt_node_attr(struct batch_status *pbs, int IsVerbose);  */
 
@@ -29,7 +29,7 @@ enum NStateEnum
 
 /* static char *get_note(struct batch_status *pbs);  */
 
-/* static int marknode(int con, char *name, char *state1, enum batch_op op1, char *state2, enum batch_op op2); */
+/* static int marknode(char *name, char *state1, enum batch_op op1, char *state2, enum batch_op op2); */
 
 struct batch_status *statnode(int con, char *nodearg);
 
