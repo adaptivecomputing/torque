@@ -109,6 +109,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <map>
 
 #include "portability.h"
 #include "pbs_ifl.h"
@@ -138,8 +139,151 @@ char *progname;
 
 mbool_t DisplayXML = FALSE;
 
+struct pbsnodes_node_attr {
+  struct attropl *pbsmanager_attrs;
+  struct attropl *pbsmodify_attrs;
+};
+
+std::map<char *, struct pbsnodes_node_attr> node_attr_map;
+
 /* END globals */
 
+
+/*
+ * set_last_newattr - Set a node attribute
+ *
+ */
+static int set_last_attropl(
+  struct attropl **attr_list,
+  struct attropl *new_attr
+  ) {
+  struct attropl *last_attr = NULL;
+
+  // new_attr is required and cannot be null
+  if (new_attr == NULL) {
+    fprintf(stderr, "new_attr is not defined");
+    return(1);
+  }
+
+  if (*attr_list == NULL) {
+    // First element added to the list
+    *attr_list = new_attr;
+    return(0);
+  } else {
+    // Iterate to the tail of the linked list
+    last_attr = *attr_list;
+    while (last_attr->next) {
+      last_attr = last_attr->next;
+    }
+    // Add new attribute to the tail of the linked list
+    last_attr->next = new_attr;
+  }
+
+  return(0);
+}
+
+
+/*
+ * set_all_nodeattrs - Set a node attribute
+ *
+ */
+static int set_all_nodeattrs(
+  int    con
+  ) {
+  struct attropl *cur_pbsmanager_attr = NULL;
+  struct attropl *cur_pbsmodify_attr = NULL;
+  struct attropl *tofree_pbsmanager_attr = NULL;
+  char           *errmsg;
+  int             rc = 0;
+  int             local_errno = 0;
+  char            *nodename;
+
+  typedef std::map<char *, struct pbsnodes_node_attr>::iterator it_type;
+  for(it_type iterator = node_attr_map.begin();
+    iterator != node_attr_map.end();
+    iterator++) {
+    nodename = iterator->first;
+    cur_pbsmanager_attr = iterator->second.pbsmanager_attrs;
+    cur_pbsmodify_attr = iterator->second.pbsmodify_attrs;
+
+    if ( cur_pbsmanager_attr ) {
+    rc = pbs_manager_err(
+         con,
+         MGR_CMD_SET,
+         MGR_OBJ_NODE,
+         nodename,
+         cur_pbsmanager_attr,
+         NULL,
+         &local_errno);
+
+    if (rc && !quiet)
+    {
+    fprintf(stderr, "Error setting note attribute for %s - ",
+      nodename);
+
+    if ((errmsg = pbs_geterrmsg(con)) != NULL)
+      {
+      fprintf(stderr, "%s\n", errmsg);
+      free(errmsg);
+      }
+    }
+    }
+
+    if ( cur_pbsmodify_attr ) {
+    rc = pbs_modify_node_err(
+         con,
+         MGR_CMD_SET,
+         MGR_OBJ_NODE,
+         nodename,
+         cur_pbsmodify_attr,
+         NULL,
+         &local_errno);
+
+    if (rc && !quiet)
+    {
+    fprintf(stderr, "Error setting node power state for %s - ",
+      nodename);
+
+      if ((errmsg = pbs_geterrmsg(con)) != NULL)
+      {
+      fprintf(stderr, "%s\n", errmsg);
+      free(errmsg);
+      }
+    }
+    }
+  }
+
+  // Free Memory for Linked List
+  while (cur_pbsmanager_attr) {
+    // Free note allocation
+    if (cur_pbsmanager_attr->name) {
+      if (!strcmp(cur_pbsmanager_attr->name, ATTR_NODE_note)) {
+        if (cur_pbsmanager_attr->value) {
+          free(cur_pbsmanager_attr->value);
+          cur_pbsmanager_attr->value = NULL;
+        }
+      }
+    }
+    // Free attr allocation
+    tofree_pbsmanager_attr = cur_pbsmanager_attr;
+    cur_pbsmanager_attr = cur_pbsmanager_attr->next;
+    if (tofree_pbsmanager_attr) {
+      free(tofree_pbsmanager_attr);
+    }
+  }
+
+  // Free Memory for Linked List
+  while (cur_pbsmodify_attr) {
+    // Free attr allocation
+    tofree_pbsmanager_attr = cur_pbsmanager_attr;
+    cur_pbsmodify_attr = cur_pbsmodify_attr->next;
+    if (tofree_pbsmanager_attr) {
+      free(tofree_pbsmanager_attr);
+    }
+  }
+
+  return(rc);
+}
 
 /*
  * set_note - set the note attribute for a node
@@ -148,45 +292,27 @@ mbool_t DisplayXML = FALSE;
 
 static int set_note(
 
-  int    con,
   char  *name,
   char  *msg)
 
   {
-  char          *errmsg;
+  struct attropl  *new_attr = NULL;
 
-  struct attropl  new_attr;
-  int             rc;
-  int             local_errno = 0;
+  new_attr = (struct attropl*)malloc(sizeof(struct attropl));
+  if ( new_attr == NULL && !quiet) {
+    fprintf(stderr, "Failed to allocate new_attr");
+    return(1);
+  }
 
-  new_attr.name     = (char *)ATTR_NODE_note;
-  new_attr.resource = NULL;
-  new_attr.value    = msg;
-  new_attr.op       = SET;
-  new_attr.next     = NULL;
+  new_attr->name     = (char *)ATTR_NODE_note;
+  new_attr->resource = NULL;
+  new_attr->value    = msg;
+  new_attr->op       = SET;
+  new_attr->next     = NULL;
 
-  rc = pbs_manager_err(
-         con,
-         MGR_CMD_SET,
-         MGR_OBJ_NODE,
-         name,
-         &new_attr,
-         NULL,
-         &local_errno);
+  set_last_attropl(&(node_attr_map[name].pbsmanager_attrs), new_attr);
 
-  if (rc && !quiet)
-    {
-    fprintf(stderr, "Error setting note attribute for %s - ",
-      name);
-
-    if ((errmsg = pbs_geterrmsg(con)) != NULL)
-      {
-      fprintf(stderr, "%s\n", errmsg);
-      free(errmsg);
-      }
-    }
-
-  return(rc);
+  return(0);
   }  /* END set_note() */
 
 /*
@@ -195,47 +321,28 @@ static int set_note(
  */
 
 static int set_node_power_state(
-
-  int    con,
   char  *name,
   char  *power_state)
 
   {
-  char          *errmsg;
+  struct attropl *new_attr = NULL;
 
-  struct attropl  new_attr;
-  int             rc;
-  int             local_errno = 0;
+  new_attr = (struct attropl*)malloc(sizeof(struct attropl));
+  if ( new_attr == NULL  && !quiet ) {
+    fprintf(stderr, "Failed to allocate new_attr");
+    return(1);
+  }
 
-  new_attr.name     = (char *)ATTR_NODE_power_state;
-  new_attr.resource = NULL;
-  new_attr.value    = power_state;
-  new_attr.op       = SET;
-  new_attr.next     = NULL;
+  new_attr->name     = (char *)ATTR_NODE_power_state;
+  new_attr->resource = NULL;
+  new_attr->value    = power_state;
+  new_attr->op       = SET;
+  new_attr->next     = NULL;
 
-  rc = pbs_modify_node_err(
-         con,
-         MGR_CMD_SET,
-         MGR_OBJ_NODE,
-         name,
-         &new_attr,
-         NULL,
-         &local_errno);
+  set_last_attropl(&(node_attr_map[name].pbsmodify_attrs), new_attr);
 
-  if (rc && !quiet)
-    {
-    fprintf(stderr, "Error setting node power state for %s - ",
-      name);
-
-    if ((errmsg = pbs_geterrmsg(con)) != NULL)
-      {
-      fprintf(stderr, "%s\n", errmsg);
-      free(errmsg);
-      }
-    }
-
-  return(rc);
-  }  /* END set_node_power_state() */
+  return(0);
+  }  /* END set_note() */
 
 
 static void prt_node_attr(
@@ -312,60 +419,42 @@ static char *get_note(
 
 
 static int marknode(
-
-  int            con,
-  const char   *name,
+  char *name,
   const char   *state1,
   enum batch_op  op1,
   const char   *state2,
   enum batch_op  op2)
 
   {
-  char          *errmsg;
-
-  struct attropl  new_attr[2];
+  struct attropl  *new_attr = NULL;
   int             rc;
-  int             local_errno = 0;
 
-  new_attr[0].name     = (char *)ATTR_NODE_state;
-  new_attr[0].resource = NULL;
-  new_attr[0].value    = (char *)state1;
-  new_attr[0].op       = op1;
+  new_attr = (struct attropl*)malloc(sizeof(struct attropl));
+  if ( new_attr == NULL && !quiet ) {
+      fprintf(stderr, "Failed to allocate new_attr");
+      return(1);
+  }
+
+  new_attr->name     = (char *)ATTR_NODE_state;
+  new_attr->resource = NULL;
+  new_attr->value    = (char *)state1;
+  new_attr->op       = op1;
 
   if (state2 == NULL)
     {
-    new_attr[0].next     = NULL;
+    new_attr->next     = NULL;
     }
   else
     {
-    new_attr[0].next     = &new_attr[1];
-    new_attr[1].next     = NULL;
-    new_attr[1].name     = (char *)ATTR_NODE_state;
-    new_attr[1].resource = NULL;
-    new_attr[1].value    = (char *)state2;
-    new_attr[1].op     = op2;
+    new_attr->next = (struct attropl*)malloc(sizeof(struct attropl));
+    new_attr->next->next     = NULL;
+    new_attr->next->name     = (char *)ATTR_NODE_state;
+    new_attr->next->resource = NULL;
+    new_attr->next->value    = (char *)state2;
+    new_attr->next->op       = op2;
     }
 
-  rc = pbs_manager_err(
-         con,
-         MGR_CMD_SET,
-         MGR_OBJ_NODE,
-         (char *)name,
-         new_attr,
-         NULL,
-         &local_errno);
-
-  if (rc && !quiet)
-    {
-    fprintf(stderr, "Error marking node %s - ",
-            name);
-
-    if ((errmsg = pbs_geterrmsg(con)) != NULL)
-      {
-      fprintf(stderr, "%s\n", errmsg);
-      free(errmsg);
-      }
-    }
+  set_last_attropl(&(node_attr_map[name].pbsmanager_attrs), new_attr);
 
   return(rc);
   }  /* END marknode() */
@@ -912,10 +1001,8 @@ int main(
 
     for (pa = argv + optind;*pa;pa++)
       {
-      set_note(con, *pa, note);
+      set_note(*pa, note);
       }
-     // Cleanup note related allocations
-     free(note);
     }
   else if ((note_flag == append) && (note != NULL))
     {
@@ -944,15 +1031,13 @@ int main(
       note_to = stpcpy (note_to, current_note);
       note_to = stpcpy (note_to, note);
 
-      set_note(con, *pa, new_note);
+      set_note(*pa, new_note);
 
       pbs_statfree(bstatus);
       }
 
     // Cleanup note related allocations
     free(note);
-    if (new_note)
-      free(new_note);
     note_to = NULL;
     }
 
@@ -971,7 +1056,7 @@ int main(
 
       for (pa = argv + optind;*pa && (rc == 0);pa++)
         {
-        rc = marknode(con, *pa, ND_offline, DECR, NULL, DECR);
+        rc = marknode(*pa, ND_offline, DECR, NULL, DECR);
         }
 
       break;
@@ -982,7 +1067,7 @@ int main(
 
       for (pa = argv + optind;*pa;pa++)
         {
-        marknode(con, *pa, ND_offline, DECR, ND_down, INCR);
+        marknode(*pa, ND_offline, DECR, ND_down, INCR);
         }
 
       break;
@@ -993,7 +1078,7 @@ int main(
 
       for (pa = argv + optind;*pa;pa++)
         {
-        marknode(con, *pa, ND_offline, INCR, NULL, INCR);
+        marknode(*pa, ND_offline, INCR, NULL, INCR);
         }
 
       break;
@@ -1106,11 +1191,13 @@ int main(
 
       for (pa = argv + optind;*pa;pa++)
         {
-        rc = set_node_power_state(con, *pa, power_state);
+        rc = set_node_power_state(*pa, power_state);
         }
       break;
 
     }  /* END switch (flag) */
+
+  set_all_nodeattrs(con);
 
   pbs_disconnect(con);
 
