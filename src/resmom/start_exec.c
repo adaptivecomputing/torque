@@ -4709,13 +4709,13 @@ int TMomFinalizeChild(
     exit(-1);
     }
 
+  pjob->ji_cgroups_created = true;
+
   if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
     {
     starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
-
-  pjob->ji_cgroups_created = true;
 
   rc = trq_cg_add_devices_to_cgroup(pjob);
   if (rc != PBSE_NONE)
@@ -5855,6 +5855,9 @@ int start_process(
             if (rc == PBSE_NONE)
               {
               rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              if (rc == PBSE_NONE)
+                rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
                               pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
               }
             }

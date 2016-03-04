@@ -36,6 +36,7 @@
 std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
+std::string cg_devices_path;
 #define LDAP_RETRIES 5
 
 unsigned linux_time = 0;

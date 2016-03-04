@@ -147,9 +147,10 @@ int rmdir_ext(
       {
       case EINTR:
       case EBUSY:
+      case EPERM:
 
         retry_count++;
-        usleep(200000);
+        sleep(1);
         rc = PBSE_NONE;
 
         break;
@@ -164,7 +165,7 @@ int rmdir_ext(
 
       default:
 
-        retry_count += retry_limit;
+        retry_count++;
         rc = -1;
 
         break;

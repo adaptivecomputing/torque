@@ -366,7 +366,7 @@ int remtree(
 
     closedir(dir);
 
-    if (rmdir_ext(dirname) < 0)
+    if (rmdir_ext(dirname, 10) < 0)
       {
       if ((errno != ENOENT) && (errno != EINVAL))
         {
