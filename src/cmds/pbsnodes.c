@@ -139,10 +139,11 @@ char *progname;
 
 mbool_t DisplayXML = FALSE;
 
-struct pbsnodes_node_attr {
-  struct attropl *pbsmanager_attrs;
-  struct attropl *pbsmodify_attrs;
-};
+struct pbsnodes_node_attr
+  {
+    struct attropl *pbsmanager_attrs;
+    struct attropl *pbsmodify_attrs;
+  };
 
 std::map<char *, struct pbsnodes_node_attr> node_attr_map;
 
@@ -154,33 +155,40 @@ std::map<char *, struct pbsnodes_node_attr> node_attr_map;
  *
  */
 static int set_last_attropl(
+
   struct attropl **attr_list,
-  struct attropl *new_attr
-  ) {
+  struct attropl *new_attr)
+
+  {
   struct attropl *last_attr = NULL;
 
   // new_attr is required and cannot be null
-  if (new_attr == NULL) {
+  if (new_attr == NULL)
+    {
     fprintf(stderr, "new_attr is not defined");
     return(1);
-  }
+    }
 
-  if (*attr_list == NULL) {
+  if (*attr_list == NULL)
+    {
     // First element added to the list
     *attr_list = new_attr;
     return(0);
-  } else {
+    }
+  else
+    {
     // Iterate to the tail of the linked list
     last_attr = *attr_list;
-    while (last_attr->next) {
+    while (last_attr->next)
+      {
       last_attr = last_attr->next;
-    }
+      }
     // Add new attribute to the tail of the linked list
     last_attr->next = new_attr;
-  }
+    }
 
   return(0);
-}
+  } /* END set_last_attropl() */
 
 
 /*
@@ -188,102 +196,111 @@ static int set_last_attropl(
  *
  */
 static int set_all_nodeattrs(
-  int    con
-  ) {
+
+  int    con)
+
+  {
   struct attropl *cur_pbsmanager_attr = NULL;
   struct attropl *cur_pbsmodify_attr = NULL;
   struct attropl *tofree_pbsmanager_attr = NULL;
   char           *errmsg;
   int             rc = 0;
   int             local_errno = 0;
-  char            *nodename;
+  char           *nodename;
 
   typedef std::map<char *, struct pbsnodes_node_attr>::iterator it_type;
   for(it_type iterator = node_attr_map.begin();
     iterator != node_attr_map.end();
-    iterator++) {
+    iterator++)
+    {
     nodename = iterator->first;
     cur_pbsmanager_attr = iterator->second.pbsmanager_attrs;
     cur_pbsmodify_attr = iterator->second.pbsmodify_attrs;
 
-    if ( cur_pbsmanager_attr ) {
-    rc = pbs_manager_err(
-         con,
-         MGR_CMD_SET,
-         MGR_OBJ_NODE,
-         nodename,
-         cur_pbsmanager_attr,
-         NULL,
-         &local_errno);
-
-    if (rc && !quiet)
-    {
-    fprintf(stderr, "Error setting note attribute for %s - ",
-      nodename);
-
-    if ((errmsg = pbs_geterrmsg(con)) != NULL)
+    if ( cur_pbsmanager_attr )
       {
-      fprintf(stderr, "%s\n", errmsg);
-      free(errmsg);
+      rc = pbs_manager_err(
+           con,
+           MGR_CMD_SET,
+           MGR_OBJ_NODE,
+           nodename,
+           cur_pbsmanager_attr,
+           NULL,
+           &local_errno);
+
+      if (rc && !quiet)
+        {
+        fprintf(stderr, "Error setting note attribute for %s - ",
+          nodename);
+
+        if ((errmsg = pbs_geterrmsg(con)) != NULL)
+          {
+          fprintf(stderr, "%s\n", errmsg);
+          free(errmsg);
+          }
+        }
       }
-    }
-    }
 
-    if ( cur_pbsmodify_attr ) {
-    rc = pbs_modify_node_err(
-         con,
-         MGR_CMD_SET,
-         MGR_OBJ_NODE,
-         nodename,
-         cur_pbsmodify_attr,
-         NULL,
-         &local_errno);
-
-    if (rc && !quiet)
-    {
-    fprintf(stderr, "Error setting node power state for %s - ",
-      nodename);
-
-      if ((errmsg = pbs_geterrmsg(con)) != NULL)
+    if ( cur_pbsmodify_attr )
       {
-      fprintf(stderr, "%s\n", errmsg);
-      free(errmsg);
-      }
-    }
-    }
-  }
+      rc = pbs_modify_node_err(
+           con,
+           MGR_CMD_SET,
+           MGR_OBJ_NODE,
+           nodename,
+           cur_pbsmodify_attr,
+           NULL,
+           &local_errno);
 
-  // Free Memory for Linked List
-  while (cur_pbsmanager_attr) {
-    // Free note allocation
-    if (cur_pbsmanager_attr->name) {
-      if (!strcmp(cur_pbsmanager_attr->name, ATTR_NODE_note)) {
-        if (cur_pbsmanager_attr->value) {
-          free(cur_pbsmanager_attr->value);
-          cur_pbsmanager_attr->value = NULL;
+      if (rc && !quiet)
+        {
+        fprintf(stderr, "Error setting node power state for %s - ",
+          nodename);
+
+        if ((errmsg = pbs_geterrmsg(con)) != NULL)
+          {
+          fprintf(stderr, "%s\n", errmsg);
+          free(errmsg);
+          }
         }
       }
     }
+
+  // Free Memory for Linked List
+  while (cur_pbsmanager_attr)
+    {
+    // Free note allocation
+    if (cur_pbsmanager_attr->name &&
+        strcmp(cur_pbsmanager_attr->name, ATTR_NODE_note) == 0 &&
+        cur_pbsmanager_attr->value)
+      {
+      free(cur_pbsmanager_attr->value);
+      cur_pbsmanager_attr->value = NULL;
+      }
+
     // Free attr allocation
     tofree_pbsmanager_attr = cur_pbsmanager_attr;
     cur_pbsmanager_attr = cur_pbsmanager_attr->next;
-    if (tofree_pbsmanager_attr) {
+    if (tofree_pbsmanager_attr)
+      {
       free(tofree_pbsmanager_attr);
+      }
     }
-  }
 
   // Free Memory for Linked List
-  while (cur_pbsmodify_attr) {
+  while (cur_pbsmodify_attr)
+    {
     // Free attr allocation
     tofree_pbsmanager_attr = cur_pbsmanager_attr;
     cur_pbsmodify_attr = cur_pbsmodify_attr->next;
-    if (tofree_pbsmanager_attr) {
+    if (tofree_pbsmanager_attr)
+      {
       free(tofree_pbsmanager_attr);
+      }
     }
-  }
 
   return(rc);
-}
+  }  /* END set_all_nodeattrs() */
 
 /*
  * set_note - set the note attribute for a node
@@ -299,10 +316,11 @@ static int set_note(
   struct attropl  *new_attr = NULL;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL && !quiet) {
+  if ( new_attr == NULL && !quiet)
+    {
     fprintf(stderr, "Failed to allocate new_attr");
     return(1);
-  }
+    }
 
   new_attr->name     = (char *)ATTR_NODE_note;
   new_attr->resource = NULL;
@@ -321,6 +339,7 @@ static int set_note(
  */
 
 static int set_node_power_state(
+
   char  *name,
   char  *power_state)
 
@@ -328,10 +347,11 @@ static int set_node_power_state(
   struct attropl *new_attr = NULL;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL  && !quiet ) {
+  if ( new_attr == NULL  && !quiet )
+    {
     fprintf(stderr, "Failed to allocate new_attr");
     return(1);
-  }
+    }
 
   new_attr->name     = (char *)ATTR_NODE_power_state;
   new_attr->resource = NULL;
@@ -430,10 +450,11 @@ static int marknode(
   int             rc;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL && !quiet ) {
-      fprintf(stderr, "Failed to allocate new_attr");
-      return(1);
-  }
+  if ( new_attr == NULL && !quiet )
+    {
+    fprintf(stderr, "Failed to allocate new_attr");
+    return(1);
+    }
 
   new_attr->name     = (char *)ATTR_NODE_state;
   new_attr->resource = NULL;
