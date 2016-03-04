@@ -202,7 +202,7 @@ static int set_all_nodeattrs(
   {
   struct attropl *cur_pbsmanager_attr = NULL;
   struct attropl *cur_pbsmodify_attr = NULL;
-  struct attropl *tofree_pbsmanager_attr = NULL;
+  struct attropl *tofree_tmp_attr = NULL;
   char           *errmsg;
   int             rc = 0;
   int             local_errno = 0;
@@ -279,11 +279,11 @@ static int set_all_nodeattrs(
       }
 
     // Free attr allocation
-    tofree_pbsmanager_attr = cur_pbsmanager_attr;
+    tofree_tmp_attr = cur_pbsmanager_attr;
     cur_pbsmanager_attr = cur_pbsmanager_attr->next;
-    if (tofree_pbsmanager_attr)
+    if (tofree_tmp_attr)
       {
-      free(tofree_pbsmanager_attr);
+      free(tofree_tmp_attr);
       }
     }
 
@@ -291,11 +291,11 @@ static int set_all_nodeattrs(
   while (cur_pbsmodify_attr)
     {
     // Free attr allocation
-    tofree_pbsmanager_attr = cur_pbsmanager_attr;
+    tofree_tmp_attr = cur_pbsmodify_attr;
     cur_pbsmodify_attr = cur_pbsmodify_attr->next;
-    if (tofree_pbsmanager_attr)
+    if (tofree_tmp_attr)
       {
-      free(tofree_pbsmanager_attr);
+      free(tofree_tmp_attr);
       }
     }
 
