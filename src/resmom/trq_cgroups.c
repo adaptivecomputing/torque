@@ -186,6 +186,7 @@ int write_to_file(
   } // END write_to_file()
 
 
+#define MAX_RMDIR_RETRIES 30
 
 /* We need to remove the torque cgroups when pbs_mom 
  * is unloaded. */
@@ -201,7 +202,7 @@ int trq_cg_cleanup_torque_cgroups()
     {
 
     /* directory exists. Remove it */
-    rc = rmdir_ext(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str(), MAX_RMDIR_RETRIES);
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -214,7 +215,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir_ext(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str(), MAX_RMDIR_RETRIES);
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -227,7 +228,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir_ext(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str(), MAX_RMDIR_RETRIES);
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -240,7 +241,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir_ext(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str(), MAX_RMDIR_RETRIES);
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -253,7 +254,7 @@ int trq_cg_cleanup_torque_cgroups()
   if (rc == 0)
     {
     /* directory exists. Remove it */
-    rc = rmdir_ext(torque_path.c_str());
+    rc = rmdir_ext(torque_path.c_str(), MAX_RMDIR_RETRIES);
     if (rc != 0)
       {
       fprintf(stderr, "could not remove %s from cgroups\n", torque_path.c_str());
@@ -1234,6 +1235,16 @@ int trq_cg_write_task_memset_string(
   req_memset_task_path = cpuset_path + req_task_number;
   rc = trq_cg_get_task_set_string(al.mem_indices, memset_string);
 
+  /* For parallel jobs there may be multiple tasks for the 
+     job but only part of them will be for a node. Check to
+     see if the task directory exists before trying to write to the file */
+  struct stat stat_buf;
+
+  rc = stat(req_memset_task_path.c_str(), &stat_buf);
+  if (rc != 0 )
+    return(PBSE_NONE);
+
+
   if (rc == PBSE_NONE)
     {
     rc = write_to_file(req_memset_task_path.c_str(), memset_string, err_msg);
@@ -1603,6 +1614,7 @@ int trq_cg_set_swap_memory_limit(
      memory.limit_in_bytes cgroup for the job */
   oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
 
+
   int rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
   if (rc != PBSE_NONE)
     {
@@ -1657,8 +1669,19 @@ int trq_cg_set_task_swap_memory_limit(
   sprintf(task_directory, "/R%u.t%u/memory.memsw.limit_in_bytes", req_index, task_index);
   oom_control_name = cg_memory_path + job_id + task_directory;
 
+  /* For parallel jobs there may be multiple tasks for the 
+     job but only part of them will be for a node. Check to
+     see if the task directory exists before trying to write to the file */
+  struct stat stat_buf;
+  int         rc;
+
+  rc = stat(oom_control_name.c_str(), &stat_buf);
+  if (rc != 0 )
+    return(PBSE_NONE);
+
+
   /* open the memory.limit_in_bytes file and set it to memory_limit */
-  int rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
+  rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
   if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, 
@@ -1800,7 +1823,7 @@ void trq_cg_remove_task_dirs(
       if (dent->d_name[0] == 'R')
         {
         std::string dir_name = torque_path + "/" + dent->d_name;
-        if ((rmdir_ext(dir_name.c_str()) != PBSE_NONE) &&
+        if ((rmdir_ext(dir_name.c_str(), MAX_RMDIR_RETRIES) != PBSE_NONE) &&
             (successfully_created == true))
           {
           sprintf(log_buffer, "failed to remove directory %s", dir_name.c_str());
@@ -1834,10 +1857,10 @@ void trq_cg_delete_cgroup_path(
   bool          successfully_created)
 
   {
-#define MAX_CGROUP_DELETE_RETRIES 10
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, cgroup_path.c_str());
   trq_cg_remove_task_dirs(cgroup_path, successfully_created);
 
-  if ((rmdir_ext(cgroup_path.c_str()) != PBSE_NONE) &&
+  if ((rmdir_ext(cgroup_path.c_str(), MAX_RMDIR_RETRIES) != PBSE_NONE) &&
       (successfully_created == true))
     {
     sprintf(log_buffer, "failed to remove cgroup %s ", cgroup_path.c_str());

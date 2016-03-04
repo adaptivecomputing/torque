@@ -2677,6 +2677,8 @@ int im_join_job_as_sister(
     return(IM_DONE);
     }
 
+  pjob->ji_cgroups_created = true;
+
   ret = set_job_cgroup_memory_limits(pjob);
   if (ret != PBSE_NONE)
     {
