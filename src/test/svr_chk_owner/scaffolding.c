@@ -132,7 +132,7 @@ struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo, const char *
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);
