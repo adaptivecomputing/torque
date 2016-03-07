@@ -158,8 +158,8 @@ char * netaddr(struct sockaddr_in *ap)
 
 pbs_net_t get_hostaddr(
 
-  int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  int        *local_errno, /* O */    
+  const char *hostname)    /* I */
 
   {
   pbs_net_t       rval = 0;
@@ -188,7 +188,7 @@ pbs_net_t get_hostaddr(
 int get_hostaddr_hostent(
 
   int             *rc,
-  char            *hostname,
+  const char      *hostname,
   char           **host_addr,
   int             *host_addr_len)
 
@@ -203,7 +203,7 @@ int get_hostaddr_hostent(
 int  get_hostaddr_hostent_af(
 
   int             *rc,
-  char            *hostname,
+  const char      *hostname,
   unsigned short  *af_family,
   char           **host_addr,
   int             *host_addr_len)
@@ -217,9 +217,10 @@ int  get_hostaddr_hostent_af(
 
 #ifdef NUMA_SUPPORT
   /* if this is a numa host, just get the parent node's address */
+  char *tmp_host = strdup(hostname);
   char *dash;
 
-  if ((dash = strchr(hostname,'-')) != NULL)
+  if ((dash = strchr(tmp_host,'-')) != NULL)
     {
     char *tmp;
 
@@ -248,6 +249,8 @@ int  get_hostaddr_hostent_af(
     }
   else
     addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
+
+  free(tmp_host);
 #else
   addr_rc = pbs_getaddrinfo(hostname, NULL, &pAddrInfo);
 #endif /* NUMA_SUPPORT */

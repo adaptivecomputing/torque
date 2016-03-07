@@ -330,7 +330,7 @@ void queue_a_retry_task(
 
 int issue_to_svr(
 
-  char                  *servern,                  /* I */
+  const char            *servern,                  /* I */
   struct batch_request **preq_ptr,                 /* I */
   void (*replyfunc)      (struct work_task *))     /* I */
 

@@ -909,7 +909,7 @@ void translate_dependency_to_string(
       unsigned int dp_jobs_size = dep->dp_jobs.size();
       for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
-        struct depend_job *pdjob = dep->dp_jobs[i];
+        depend_job *pdjob = dep->dp_jobs[i];
         value += ":";
         value += pdjob->dc_child;
 

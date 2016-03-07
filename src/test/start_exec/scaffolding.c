@@ -656,7 +656,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
   exit(1);
   }
 
-int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
+int get_hostaddr_hostent_af(int *local_errno, const char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
   {
   fprintf(stderr, "The call to get_hostaddr_hostent_af needs to be mocked!!\n");
   exit(1);

@@ -193,7 +193,7 @@ job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
 const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return ""; }
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, job       **pjob_ptr){return(NULL);}
-pbs_net_t get_hostaddr(int *local_errno, char *hostname) {return 0;}
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname) {return 0;}
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 pbs_queue *get_dfltque(void) {return NULL;}
 int log_job_record(const char *buf){return 0;}
@@ -281,7 +281,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
 batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
-int issue_to_svr(char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
+int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
 int que_to_local_svr(struct batch_request *preq) {return 0;}
 int job_set_wait(pbs_attribute *pattr, void *pjob, int mode) {return 0;}
 int get_batch_request_id(batch_request *preq) {return 0;}
