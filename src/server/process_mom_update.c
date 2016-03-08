@@ -879,12 +879,12 @@ int process_status_info(
       }
     else if (!strncmp(str, "me", 2))  /* shorter str compare than "message" */
       {
-      if ((!strncmp(str, "message=PBS_ERROR:", 18)) &&
+      if ((!strncmp(str, "message=ERROR", 13)) &&
           (down_on_error == TRUE))
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
-        set_note_error(current, str);
+        //set_note_error(current, str);
         }
       }
     else if (!strncmp(str,"macaddr=",8))
