@@ -816,6 +816,9 @@ int mgr_set_node_attr(
   struct pbsnode   tnode;  /*temporary node*/
 
   char             log_buf[LOCAL_LOG_BUF_SIZE];
+  long             dont_update_nodes = FALSE;
+
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
 
   if (plist == NULL)
     {
@@ -864,7 +867,15 @@ int mgr_set_node_attr(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist,
+                                 unused,
+                                 new_attr,
+                                 pdef,
+                                 limit,
+                                 -1,
+                                 privil,
+                                 bad,
+                                 dont_update_nodes)) != 0)
     {
     attr_atomic_kill(new_attr, pdef, limit);
 
@@ -1719,12 +1730,6 @@ void mgr_node_set(
   prop              props;
   long              dont_update_nodes = FALSE;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
-    {
-    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
-    return;
-    }
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))

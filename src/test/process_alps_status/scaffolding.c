@@ -329,7 +329,8 @@ int attr_atomic_node_set(
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
-  int             *badattr)  /* return list position wher bad   */
+  int             *badattr,  /* return list position wher bad   */
+  bool             update_nodes_file)
 
   {
   int           acc;
