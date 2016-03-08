@@ -884,7 +884,7 @@ int process_status_info(
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
-        set_note_error(current, str);
+        //set_note_error(current, str);
         }
       }
     else if (!strncmp(str,"macaddr=",8))
