@@ -879,7 +879,7 @@ int process_status_info(
       }
     else if (!strncmp(str, "me", 2))  /* shorter str compare than "message" */
       {
-      if ((!strncmp(str, "message=ERROR -", 15)) &&
+      if ((!strncmp(str, "message=PBS_ERROR:", 18)) &&
           (down_on_error == TRUE))
         {
         update_node_state(current, INUSE_DOWN);
