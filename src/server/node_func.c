@@ -466,7 +466,6 @@ int chk_characteristic(
     *pneed_todo |= WRITE_NEW_NODESFILE;
 
   if ((nci->nprops != pnode->nd_nprops) || 
-      (nci->first != pnode->nd_first) ||
       strcmp((char *)nci->ttl,(char *)pnode->nd_ttl) ||
       nci->acl_size != ((pnode->nd_acl == NULL)?0:pnode->nd_acl->as_usedptr) ||
       nci->rqid.compare(*pnode->nd_requestid))

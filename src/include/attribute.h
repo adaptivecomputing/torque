@@ -370,7 +370,7 @@ extern int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
                                   int unkn, int privil, int *badattr);
 extern int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                        pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                       int unkn, int privil, int *badattr);
+                                       int unkn, int privil, int *badattr, bool update_nodes_file);
 extern void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);

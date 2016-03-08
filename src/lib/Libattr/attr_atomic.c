@@ -89,6 +89,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "pbs_error.h"
+#include "pbs_nodes.h"
 
 /*
  * This file contains general functions for manipulating an pbs_attribute array.
@@ -328,7 +329,8 @@ int attr_atomic_node_set(
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
-  int             *badattr)  /* return list position wher bad   */
+  int             *badattr,  /* return list position where bad   */
+  bool             update_nodes_file)
 
   {
   int           acc;
@@ -354,6 +356,19 @@ int attr_atomic_node_set(
         }
       else
         index = unkn;  /*if unknown attr are allowed*/
+      }
+    else if (update_nodes_file == false)
+      {
+      // These attributes cannot edit the nodes file
+      if ((index == ND_ATR_properties) ||
+          (index == ND_ATR_ntype) ||
+          (index == ND_ATR_ttl) ||
+          (index == ND_ATR_acl) ||
+          (index == ND_ATR_requestid))
+        {
+        rc = PBSE_CANT_EDIT_NODES;
+        break;
+        }
       }
 
 
