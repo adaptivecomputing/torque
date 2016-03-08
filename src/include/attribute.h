@@ -373,7 +373,7 @@ int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
                            int unkn, int privil, int *badattr);
 int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                 pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                int unkn, int privil, int *badattr);
+                                int unkn, int privil, int *badattr, bool update_nodes_file);
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 void overwrite_complete_req(pbs_attribute *attr, pbs_attribute *new_attr);

@@ -64,10 +64,9 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr, bool update_nodes_file)
   {
-  fprintf(stderr, "The call to attr_atomic_node_set to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void reply_ack(struct batch_request *preq)
