@@ -50,8 +50,8 @@ START_TEST(test_two)
 
   fail_unless(restore_note(pnode) == PBSE_NONE);
   fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note");
-  fail_unless(set_note_error(pnode, "message=ERROR Everything's broken") == PBSE_NONE);
-  fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note - ERROR Everything's broken");
+  fail_unless(set_note_error(pnode, "message=ERROR - Everything's broken") == PBSE_NONE);
+  fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note - ERROR - Everything's broken");
   fail_unless(restore_note(pnode) == PBSE_NONE);
   fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note");
   }
