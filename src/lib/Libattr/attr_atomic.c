@@ -334,7 +334,7 @@ int attr_atomic_node_set(
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
   int             *badattr,  /* return list position where bad   */
-  bool             update_nodes_file)
+  bool             dont_update_nodes_file)
 
   {
   int           acc;
@@ -361,7 +361,7 @@ int attr_atomic_node_set(
       else
         index = unkn;  /*if unknown attr are allowed*/
       }
-    else if (update_nodes_file == false)
+    else if (dont_update_nodes_file == true)
       {
       // These attributes cannot edit the nodes file
       if ((index == ND_ATR_properties) ||
