@@ -107,7 +107,7 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   return(0);
   }
 
-int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode)
+int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode, bool dont_update)
   {
   return(0);
   }
