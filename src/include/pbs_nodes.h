@@ -97,6 +97,7 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#include "attribute.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -602,6 +603,8 @@ int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
+int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
+
 #ifdef BATCH_REQUEST_H 
 void             effective_node_delete(struct pbsnode *);
 void             setup_notification(char *);
@@ -612,7 +615,6 @@ void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
 int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
-int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
