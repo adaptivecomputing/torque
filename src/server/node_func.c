@@ -49,7 +49,7 @@
 #include "u_tree.h"
 #include "node_manager.h" /* is_compose */
 #include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
-#include "req_manager.h" /* mgr_set_node_attr */
+#include "req_manager.h" 
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "svrfunc.h" /* get_svr_attr_* */
@@ -1996,7 +1996,8 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
            perms,
            bad,
            (void *)pnode,
-           ATR_ACTION_ALTER);
+           ATR_ACTION_ALTER,
+           false);
 
     if (rc != 0)
       {
@@ -2647,7 +2648,7 @@ void handle_cray_specific_node_values(
       // add features
       int bad;
       if (mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, 
-                            perm, &bad, (void *)np, ATR_ACTION_ALTER) != PBSE_NONE)
+                            perm, &bad, (void *)np, ATR_ACTION_ALTER, false) != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf),
           "Node %s may not have all attributes initialized correctly", nodename);
@@ -3603,7 +3604,8 @@ int create_partial_pbs_node(
          perms,
          &bad,
          (void *)pnode,
-         ATR_ACTION_ALTER);
+         ATR_ACTION_ALTER,
+         false);
 
   if (rc != 0)
     {
