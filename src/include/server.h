@@ -222,6 +222,7 @@ enum srv_atr
   SRV_ATR_acl_groups_hosts,
   SRV_ATR_node_submit_exceptions,
   SRV_ATR_LegacyVmem,
+  SRV_ATR_NoteAppendOnError,
 
   /* This must be last */
   SRV_ATR_LAST
