@@ -670,7 +670,9 @@ int get_node_info(
   get_os_value(ani.os, numa_cfg_val, mcdram_cfg_val);
 
   snprintf(buf, sizeof(buf), "hbmem=%lukb", hbm_size_in_mb * 1024);
-  ani.hbm = buf; 
+  ani.hbm = buf;
+
+  return(PBSE_NONE);
   } // END get_node_info()
 
 
@@ -680,9 +682,6 @@ int process_system(
   xmlNode *node)
 
   {
-  int         cpcu = 1;
-  unsigned long  page_count = 0;
-  unsigned long  memory = 0;
   std::string cpus_per_cu;
   xmlNode        *child;
   alps_node_info  ani;
@@ -716,7 +715,8 @@ int process_system(
         }
       }
     }
-      
+  
+  return(PBSE_NONE);  
   } // END process_system()
 
 
