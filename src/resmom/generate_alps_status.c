@@ -613,7 +613,7 @@ void get_os_value(
   if ((numa_cfg_val.size() != 0) &&
       (mcdram_cfg_val.size() != 0))
     {
-    os_value = "os=CLE_";
+    os_value = "opsys=CLE_";
 
     if (mcdram_cfg_val == "0")
       mcdram_cfg_val = "flat";
@@ -628,7 +628,7 @@ void get_os_value(
     os_value += mcdram_cfg_val;
     }
   else
-    os_value = "os=";
+    os_value = "opsys=";
 
   } // END get_os_value()
 
