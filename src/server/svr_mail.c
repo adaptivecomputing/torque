@@ -92,6 +92,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/wait.h>
+
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -104,7 +106,7 @@
 #include "threadpool.h"
 #include "svrfunc.h" /* get_svr_attr_* */
 #include "work_task.h"
-#include <sys/wait.h>
+#include "mail_throttler.hpp"
 
 /* Unit tests should use the special unit test sendmail command */
 #ifdef UT_SENDMAIL_CMD
@@ -122,62 +124,36 @@ extern struct server server;
 
 extern int LOGLEVEL;
 
-
-
-void free_mail_info(
-
-  mail_info *mi)
-
-  {
-  if (mi->exec_host)
-    free(mi->exec_host);
-
-  if (mi->jobname)
-    free(mi->jobname);
-
-  if (mi->text)
-    free(mi->text);
-
-  if (mi->errFile)
-    free(mi->errFile);
-
-  if (mi->outFile)
-    free(mi->outFile);
-
-  free(mi->jobid);
-  free(mi->mailto);
-
-  free(mi);
-  } /* END free_mail_info() */
-
+mail_throttler pending_emails;
 
 
 void add_body_info(
 
   char      *bodyfmtbuf /* I */,
   mail_info *mi /* I */)
+
   {
   char *bodyfmt = NULL;
   bodyfmt =  strcpy(bodyfmtbuf, "PBS Job Id: %i\n"
                                   "Job Name:   %j\n");
-  if (mi->exec_host != NULL)
+  if (mi->exec_host.size() != 0)
     {
     strcat(bodyfmt, "Exec host:  %h\n");
     }
 
   strcat(bodyfmt, "%m\n");
 
-  if (mi->text != NULL)
+  if (mi->text.size() != 0)
     {
     strcat(bodyfmt, "%d\n");
     }
 
-  if (mi->errFile != NULL)
+  if (mi->errFile.size() != 0)
     {
     strcat(bodyfmt, "Error_Path: %k\n");
     }
 
-  if (mi->outFile !=NULL)
+  if (mi->outFile.size() != 0)
     {
     strcat(bodyfmt, "Output_Path: %l\n");
     }
@@ -203,7 +179,7 @@ void write_email(
   char bodyfmtbuf[MAXLINE];
 
   /* Pipe in mail headers: To: and Subject: */
-  fprintf(outmail_input, "To: %s\n", mi->mailto);
+  fprintf(outmail_input, "To: %s\n", mi->mailto.c_str());
 
   /* mail subject line formating statement */
   get_svr_attr_str(SRV_ATR_MailSubjectFmt, (char **)&subjectfmt);
@@ -233,33 +209,25 @@ void write_email(
   } /* write_email() */
 
 
-/*
- * send_the_mail()
- *
- * In emailing, we fork and exec sendmail providing the body of
- * the message on standard in.
- *
- */
-void *send_the_mail(
 
-  void *vp)
+/*
+ * get_sendmail_args()
+ *
+ * Populates the arguments to sendmail
+ */
+
+int get_sendmail_args(
+
+  char       *sendmail_args[],
+  mail_info  *mi,
+  char      **mailptr_ptr)
 
   {
-  mail_info  *mi = (mail_info *)vp;
-
-  int         status = 0;
+  int         rc = PBSE_NONE;
   int         numargs = 0;
-  int         pipes[2];
-  int         counter;
-  pid_t       pid;
-  char       *mailptr;
   const char *mailfrom = NULL;
-  char        tmpBuf[LOG_BUF_SIZE];
-  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
-  char       *sendmail_args[100];
-  FILE       *stream;
-
-
+  char       *mailptr;
+  
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
   get_svr_attr_str(SRV_ATR_mailfrom, (char **)&mailfrom);
   if (mailfrom == NULL)
@@ -274,7 +242,7 @@ void *send_the_mail(
         mailfrom);
       log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        mi->jobid,
+        mi->jobid.c_str(),
         tmpBuf);
       }
     }
@@ -284,9 +252,10 @@ void *send_the_mail(
   sendmail_args[numargs++] = (char *)mailfrom;
 
   /* Add the e-mail addresses to the command line */
-  mailptr = strdup(mi->mailto);
+  *mailptr_ptr = strdup(mi->mailto.c_str());
+  mailptr = *mailptr_ptr;
   sendmail_args[numargs++] = mailptr;
-  for (counter=0; counter < (int)strlen(mailptr); counter++)
+  for (int counter = 0; counter < (int)strlen(mailptr); counter++)
     {
     if (mailptr[counter] == ',')
       {
@@ -299,33 +268,41 @@ void *send_the_mail(
 
   sendmail_args[numargs] = NULL;
 
+  return(rc);
+  } // END get_sendmail_args()
+
+
+
+/*
+ * fork_and_exec_child()
+ *
+ * Forks and execs the sendmail child
+ *
+ */
+
+int fork_and_exec_child(
+
+  FILE        **stream_ptr,
+  std::string  &error_msg,
+  char         *sendmail_args[],
+  pid_t        &pid)
+
+  {
+  int          pipes[2];
   /* Create a pipe to talk to the sendmail process we are about to fork */
   if (pipe(pipes) == -1)
     {
-    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to pipes for sending e-mail\n");
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
-
-    free_mail_info(mi);
-    free(mailptr);
-    return(NULL);
+    error_msg = "Unable to pipes for sending e-mail";
+    return(-1);
     }
 
   if ((pid=fork()) == -1)
     {
-    snprintf(tmpBuf, sizeof(tmpBuf), "Unable to fork for sending e-mail\n");
-    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      mi->jobid,
-      tmpBuf);
+    error_msg = "Unable to fork for sending e-mail";
 
-    free_mail_info(mi);
-    free(mailptr);
     close(pipes[0]);
     close(pipes[1]);
-    return(NULL);
+    return(-1);
     }
   else if (pid == 0)
     {
@@ -340,101 +317,240 @@ void *send_the_mail(
       close(numfds);
 
     execv(SENDMAIL_CMD, sendmail_args);
-    /* This never returns, but if the execv fails the child should exit */
+
+    // If execv returns (only on error) make sure the child goes away
     exit(1);
     }
   else
     {
-    /* This is the parent */
+    // We are the parent
+    // Save the write end of the pipe for later
+    *stream_ptr = fdopen(pipes[1], "w");
 
-    /* Close the read end of the pipe */
+    // Close the read end of the pipe
     close(pipes[0]);
+    }
 
-    /* Write the body to the pipe */
-    stream = fdopen(pipes[1], "w");
-    write_email(stream, mi);
+  return(PBSE_NONE);
+  } // END fork_and_exec_child()
 
-    fflush(stream);
 
-    /* Close and wait for the command to finish */
-    if (fclose(stream) != 0)
-      {
-      snprintf(tmpBuf,sizeof(tmpBuf),
-        "Piping mail body to sendmail closed: errno %d:%s\n",
-        errno, strerror(errno));
 
-      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        mi->jobid,
-        tmpBuf);
-      }
+/*
+ * cleanup_from_sending_email()
+ *
+ */
 
-    // we aren't going to block in order to find out whether or not sendmail worked 
-    if ((waitpid(pid, &status, WNOHANG) != 0) &&
-        (status != 0))
-      {
-      snprintf(tmpBuf,sizeof(tmpBuf),
-        "Sendmail command returned %d. Mail may not have been sent\n",
-        status);
+void cleanup_from_sending_email(
 
-      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-        PBS_EVENTCLASS_JOB,
-        mi->jobid,
-        tmpBuf);
-      }
+  FILE       *stream,
+  char       *mailptr,
+  const char *jobid,
+  pid_t       pid)
 
-    // don't leave zombies
-    while (waitpid(-1, &status, WNOHANG) != 0)
-      {
-      // zombie reaped, NO-OP
-      }
-      
-    free_mail_info(mi);
+  {
+  int  status = 0;
+  char tmpBuf[LOCAL_LOG_BUF_SIZE];
+
+  fflush(stream);
+
+  /* Close and wait for the command to finish */
+  if (fclose(stream) != 0)
+    {
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Piping mail body to sendmail closed: errno %d:%s\n",
+      errno, strerror(errno));
+
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      jobid,
+      tmpBuf);
+    }
+
+  // we aren't going to block in order to find out whether or not sendmail worked 
+  if ((waitpid(pid, &status, WNOHANG) != 0) &&
+      (status != 0))
+    {
+    snprintf(tmpBuf,sizeof(tmpBuf),
+      "Sendmail command returned %d. Mail may not have been sent\n",
+      status);
+
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      jobid,
+      tmpBuf);
+    }
+
+  // don't leave zombies
+  while (waitpid(-1, &status, WNOHANG) != 0)
+    {
+    // zombie reaped, NO-OP
+    }
+    
+  free(mailptr);
+  } // END cleanup_from_sending_email()
+
+
+
+/*
+ * send_the_mail()
+ *
+ * In emailing, we fork and exec sendmail providing the body of
+ * the message on standard in.
+ *
+ */
+void *send_the_mail(
+
+  void *vp)
+
+  {
+  mail_info   *mi = (mail_info *)vp;
+
+  pid_t        pid;
+  std::string  error_msg;
+  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
+  char        *sendmail_args[100];
+  FILE        *stream;
+  char        *mailptr;
+
+  get_sendmail_args(sendmail_args, mi, &mailptr);
+
+  if (fork_and_exec_child(&stream, error_msg, sendmail_args, pid) != PBSE_NONE)
+    {
+    log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      mi->jobid.c_str(),
+      error_msg.c_str());
+    
+    delete mi;
     free(mailptr);
     return(NULL);
     }
-    
-  /* NOT REACHED */
+
+  // We are the parent at this point, the child exits inside fork_and_exec_child()
+
+  /* Write the body to the pipe */
+  write_email(stream, mi);
+
+  cleanup_from_sending_email(stream, mailptr, mi->jobid.c_str(), pid);
+
+  delete mi;
 
   return(NULL);
   } /* END send_the_mail() */
 
 
+void set_output_files(
 
-int add_fileinfo(
-
-  const char           *attrVal,                  /* I */      
-  char                **filename,                 /* O */
-  mail_info            *mi,                       /* I/O */
-  const pbs_attribute   job_attr[JOB_ATR_LAST], /* I */
-  const char           *memory_err)               /* I */
+  job       *pjob,
+  mail_info *mi)
 
   {
-  char *attributeValue = (char *)attrVal;
- 
-  if (job_attr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
+  if (pjob->ji_wattr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
     {
-    if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "oe", 2)))
-      attributeValue = job_attr[JOB_ATR_outpath].at_val.at_str;
-    else if (!(strncmp(job_attr[JOB_ATR_join].at_val.at_str, "eo", 2)))
-      attributeValue = job_attr[JOB_ATR_errpath].at_val.at_str;
-    }
-  if (attributeValue != NULL)
-    {
-    *filename = strdup(attributeValue);
-
-    if (*filename == NULL)
+    char *join_val = pjob->ji_wattr[JOB_ATR_join].at_val.at_str;
+    if (!strcmp(join_val, "oe"))
       {
-      log_err(ENOMEM, __func__, memory_err);
-      free(mi);
-      return -1;
+      mi->errFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+      mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+      }
+    else if (!strcmp(join_val, "eo"))
+      {
+      mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+      mi->outFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
       }
     }
-  else
-    *filename = NULL;
 
-  return 0;
-  }
+  if (mi->outFile.size() == 0)
+    mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+
+  if (mi->errFile.size() == 0)
+    mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+  } // END set_output_files()
+             
+
+
+void send_email_batch(
+    
+  struct work_task *pwt)
+
+  {
+  std::vector<mail_info>  pending_list;
+  char                   *addressee = (char *)pwt->wt_parm1;
+  pid_t                   pid;
+  std::string             error_msg;
+  char                    tmpBuf[LOG_BUF_SIZE];
+  // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
+  char                   *sendmail_args[100];
+  FILE                   *stream;
+  char                   *mailptr;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  if ((pending_emails.get_email_list(addressee, pending_list) == PBSE_NONE) &&
+      (pending_list.size() > 0))
+    {
+    unsigned int size = pending_list.size();
+
+    get_sendmail_args(sendmail_args, &pending_list[0], &mailptr);
+
+    if (fork_and_exec_child(&stream, error_msg, sendmail_args, pid) != PBSE_NONE)
+      {
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pending_list[0].jobid.c_str(),
+        error_msg.c_str());
+      
+      free(mailptr);
+      return;
+      }
+
+    if (size == 1)
+      {
+      write_email(stream, &pending_list[0]);
+      }
+    else
+      {
+      char *bodyfmt = NULL;
+      char  subject_fmt[MAXLINE];
+      char  bodyfmtbuf[MAXLINE];
+        
+      get_svr_attr_str(SRV_ATR_MailBodyFmt, &bodyfmt);
+
+      /* Pipe in mail headers: To: and Subject: */
+      fprintf(stream, "To: %s\n", pending_list[0].mailto.c_str());
+
+      /* mail subject line formating statement */
+      snprintf(subject_fmt, sizeof(subject_fmt), "Summary Email for %u Torque Jobs", size);
+      fprintf(stream, "Subject: %s\n", subject_fmt);
+
+      /* Set "Precedence: bulk" to avoid vacation messages, etc */
+      fprintf(stream, "Precedence: bulk\n\n");
+
+      /* Now pipe in the email body */
+      for (unsigned int i = 0; i < size; i++)
+        {
+        /* mail body formating statement */
+        if (bodyfmt == NULL)
+          {
+          add_body_info(bodyfmtbuf, &pending_list[i]);
+          bodyfmt = bodyfmtbuf;
+          }
+
+        fprintf(stream, "Job '%s'\n", pending_list[i].jobid.c_str());
+        svr_format_job(stream, &pending_list[i], bodyfmt);
+        fprintf(stream, "\n");
+        }
+      }
+  
+    cleanup_from_sending_email(stream, mailptr, "summary of several jobs", pid);
+    }
+
+  free(addressee);
+  } // END send_email_batch()
+
+
 
 void svr_mailowner_with_message(
 
@@ -477,7 +593,7 @@ void svr_mailowner(
   char                  mailto[1024];
   char                 *domain = NULL;
   int                   i;
-  mail_info            *mi;
+  mail_info             mi;
   long                  no_force = FALSE;
 
   struct array_strings *pas;
@@ -562,14 +678,6 @@ void svr_mailowner(
       }
     }
 
-  mi = (mail_info *)calloc(1, sizeof(mail_info));
-
-  if (mi == NULL)
-    {
-    log_err(ENOMEM, __func__, memory_err);
-    return;
-    }
-
   /* Who does the mail go to?  If mail-list, them; else owner */
   mailto[0] = '\0';
 
@@ -641,75 +749,42 @@ void svr_mailowner(
     }
 
   /* initialize the mail information */
-
-  if ((mi->mailto = strdup(mailto)) == NULL)
-    {
-    log_err(ENOMEM, __func__, memory_err);
-    free(mi);
-    return;
-    }
-
-  mi->mail_point = mailpoint;
+  mi.mailto = mailto;
+  mi.mail_point = mailpoint;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    {
-    mi->exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    mi.exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
 
-    if (mi->exec_host == NULL)
-      {
-      log_err(ENOMEM, __func__, memory_err);
-      free(mi);
-      return;
-      }
-    }
-  else
-    mi->exec_host = NULL;
-
-  if ((mi->jobid = strdup(pjob->ji_qs.ji_jobid)) == NULL)
-    {
-    log_err(ENOMEM, __func__, memory_err);
-    free(mi);
-    return;
-    }
+  mi.jobid = pjob->ji_qs.ji_jobid;
 
   if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
-    {
-    mi->jobname = strdup(pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
-
-    if (mi->jobname == NULL)
-      {
-      log_err(ENOMEM, __func__, memory_err);
-      free(mi);
-      return;
-      }
-    }
-  else
-    mi->jobname = NULL;
+    mi.jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
   if (mailpoint == (int) MAIL_END)
-    {
-    if (add_fileinfo((const char*)pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str,
-        &(mi->errFile), mi, pjob->ji_wattr, memory_err))
-      return;
-    else if (add_fileinfo((char *)pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str, 
-             &(mi->outFile), mi, pjob->ji_wattr, memory_err))
-      return;
-   }
+    set_output_files(pjob, &mi);
 
   if (text)
     {
-    if ((mi->text = strdup(text)) == NULL)
-      {
-      free(mi);
-      log_err(ENOMEM, __func__, memory_err);
-      return;
-      }
+    mi.text = text;
     }
-  else
-    mi->text = NULL;
 
-  /* have a thread do the work of sending the mail */
-  enqueue_threadpool_request(send_the_mail, mi, task_pool);
+  long email_delay = 0;
+  get_svr_attr_l(SRV_ATR_EmailBatchSeconds, &email_delay);
+
+  if (email_delay == 0)
+    {
+    /* have a thread do the work of sending the mail */
+    enqueue_threadpool_request(send_the_mail, new mail_info(mi), task_pool);
+    }
+  else if (pending_emails.add_email_entry(mi) == true)
+    {
+    // This is the first for this addressee so set a task
+    set_task(WORK_Timed,
+             time(NULL) + email_delay,
+             send_email_batch,
+             strdup(mi.mailto.c_str()),
+             FALSE);
+    }
 
   return;
   }  /* END svr_mailowner() */

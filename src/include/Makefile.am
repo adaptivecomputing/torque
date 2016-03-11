@@ -27,7 +27,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 node_frequency.hpp cpu_frequency.hpp sys_file.hpp power_state.hpp \
 		 job_usage_info.hpp job_recovery.h acl_special.hpp restricted_host.hpp \
 		 machine.hpp req.hpp complete_req.hpp trq_cgroups.h allocation.hpp attr_req_info.hpp \
-		 runjob_help.hpp pbs_helper.h
+		 runjob_help.hpp pbs_helper.h mail_throttler.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \
