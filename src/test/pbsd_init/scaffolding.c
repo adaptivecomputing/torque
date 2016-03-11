@@ -25,6 +25,8 @@
 #include "queue.h"
 #include "track_alps_reservations.hpp"
 
+bool  use_path_home = false;
+char *path_pbs_environment;
 char *path_node_usage;
 threadpool_t *task_pool;
 int paused;
