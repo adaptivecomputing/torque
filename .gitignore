@@ -404,6 +404,7 @@ src/resmom/test/tmsock_recov/test_tmsock_recov
 src/server/test/accounting/test_accounting
 src/test/array_func/test_array_func
 src/test/array_func/.AR
+src/test/svr_mail/output.dbeer@adaptivecomputing.com
 src/server/test/array_upgrade/test_array_upgrade
 src/server/test/attr_recov/test_attr_recov
 src/server/test/batch_request/test_batch_request

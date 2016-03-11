@@ -9,8 +9,8 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_svr_mail
 
-libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c ${PROG_ROOT}/svr_func.c ${PROG_ROOT}/svr_format_job.c \
-    ${PROG_ROOT}/../lib/Liblog/pbs_messages.c
+libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c ${PROG_ROOT}/svr_format_job.c \
+    ${PROG_ROOT}/../lib/Liblog/pbs_messages.c ${PROG_ROOT}/mail_throttler.cpp
 
 #libsvr_mail_la_SOURCES = scaffolding.c ${PROG_ROOT}/svr_mail.c
 libsvr_mail_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov

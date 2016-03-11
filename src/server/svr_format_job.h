@@ -2,7 +2,7 @@
 #define _SVR_FORMAT_JOB_H
 #include "license_pbs.h" /* See here for the software license */
 #include <stdio.h> /* FILE */
-#include "server.h" /* mail_info */
+#include "mail_throttler.hpp"
 
 void svr_format_job(FILE *fh, mail_info *mi, const char *fmt);
 
