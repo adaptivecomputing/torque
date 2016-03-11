@@ -75,6 +75,9 @@ Chip &Chip::operator =(
   this->cores = other.cores;
   this->devices = other.devices;
   this->allocations = other.allocations;
+  
+  memcpy(chip_cpuset_string, other.chip_cpuset_string, sizeof(chip_cpuset_string));
+  memcpy(chip_nodeset_string, other.chip_nodeset_string, sizeof(chip_nodeset_string));
 
   return(*this);
   }
