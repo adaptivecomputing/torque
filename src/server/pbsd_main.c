@@ -231,6 +231,7 @@ char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
 char                   *path_arrays;
 char                   *path_credentials;
+char                   *path_pbs_environment;
 char                   *path_jobs;
 char                   *path_queues;
 char                   *path_spool;
@@ -259,6 +260,7 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
+bool                    use_path_home = false;  // set to true if pbs_server is started with a -d option
 bool                    auto_send_hierarchy = true; //If false this directs pbs_server to not send the hierarchy to all the MOMs on startup.
                                                      //Instead, the hierarchy is only sent if a MOM requests it.
                                                      //This flag works only in conjunction with the local MOM hierarchy feature.
@@ -600,6 +602,7 @@ void parse_command_line(
       case 'd':
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 

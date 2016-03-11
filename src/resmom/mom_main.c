@@ -171,6 +171,7 @@ int          num_var_env;
 bool         received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
+char        *path_pbs_environment;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -187,6 +188,8 @@ char        *path_undeliv;
 char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
+
+bool         use_path_home = false;
 
 sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
@@ -4279,6 +4282,7 @@ void parse_command_line(
       case 'd': /* directory */
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -4760,7 +4764,15 @@ int setup_program_environment(void)
 
   /* modify program environment */
 
-  if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
+  if (use_path_home == true)
+    {
+    path_pbs_environment = mk_dirs("pbs_environment");
+    if ((num_var_env = setup_env(path_pbs_environment)) == -1)
+      {
+      exit(1);
+      }
+    }
+  else if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
     {
     exit(1);
     }
@@ -4883,7 +4895,10 @@ int setup_program_environment(void)
 
   c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0, NULL);
 
-  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  if (use_path_home == true)
+    c |= chk_file_sec(path_pbs_environment,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  else
+    c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
 
   if (c)
     {
