@@ -200,6 +200,38 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   this->chips.push_back(numaChip);
   return(PBSE_NONE);
   }
+    
+
+
+Socket &Socket::operator=(
+    
+  const Socket &other)
+
+  {
+  this->id = other.id;
+  this->memory = other.memory;
+  this->available_memory = other.available_memory;
+  this->totalCores = other.totalCores;
+  this->totalThreads = other.totalThreads;
+  this->availableCores = other.availableCores;
+  this->availableThreads = other.availableThreads;
+  this->chips = other.chips;
+
+  memcpy(this->socket_cpuset_string, other.socket_cpuset_string, sizeof(this->socket_cpuset_string));
+  memcpy(this->socket_nodeset_string, other.socket_nodeset_string, 
+         sizeof(this->socket_nodeset_string));
+
+  this->socket_exclusive = other.socket_exclusive;
+  this->sock
+
+  hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
+  hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
+  this->allocations = other.allocations;
+
+  return(*this);
+  }
+
+
 
 hwloc_uint64_t Socket::getMemory()
   {

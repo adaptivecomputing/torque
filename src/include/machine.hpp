@@ -241,6 +241,7 @@ class Socket
     Socket(int execution_slots);
     Socket(const std::string &layout);
     ~Socket();
+    Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
     int initializeIntelSocket(hwloc_obj_t obj, Chip &newChip);
     int initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t);
