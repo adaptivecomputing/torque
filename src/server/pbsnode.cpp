@@ -30,7 +30,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                      num_node_boards(0), node_boards(NULL), numa_str(),
                      gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
-                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                     nd_is_alps_login(0), nd_ms_jobs(NULL), alps_subnodes(NULL),
                      max_subnode_nppn(0), nd_power_state(0),
                      nd_power_state_change_time(0), nd_acl(NULL),
                      nd_requestid(), nd_tmp_unlock_count(0)
@@ -45,6 +45,9 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
                                           //the node to be used until an updated node
                                           //list has been send to all nodes.
     }
+  
+  memset(this->nd_ttl, 0, sizeof(this->nd_ttl));
+  memset(this->nd_mac_addr, 0, sizeof(this->nd_mac_addr));
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END empty constructor
@@ -75,7 +78,7 @@ pbsnode::pbsnode(
                                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                                      num_node_boards(0), node_boards(NULL), numa_str(),
                                      gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
-                                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                                     nd_is_alps_login(0), nd_ms_jobs(NULL), alps_subnodes(NULL),
                                      max_subnode_nppn(0), nd_power_state(0),
                                      nd_power_state_change_time(0), nd_acl(NULL),
                                      nd_requestid(), nd_tmp_unlock_count(0)
@@ -112,6 +115,9 @@ pbsnode::pbsnode(
     else
       memcpy(&this->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
     }
+
+  memset(this->nd_ttl, 0, sizeof(this->nd_ttl));
+  memset(this->nd_mac_addr, 0, sizeof(this->nd_mac_addr));
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END constructor
@@ -213,6 +219,9 @@ pbsnode &pbsnode::operator =(
   this->nd_layout = other.nd_layout;
 #endif
 
+  memcpy(this->nd_ttl, other.nd_ttl, sizeof(this->nd_ttl));
+  memcpy(this->nd_mac_addr, other.nd_mac_addr, sizeof(this->nd_mac_addr));
+
   return(*this);
   }
 
@@ -269,6 +278,8 @@ pbsnode::pbsnode(
   this->nd_acl = copy_arst(other.nd_acl);
 
   memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));
+  memcpy(this->nd_ttl, other.nd_ttl, sizeof(this->nd_ttl));
+  memcpy(this->nd_mac_addr, other.nd_mac_addr, sizeof(this->nd_mac_addr));
   this->copy_gpu_subnodes(other);
   }
 

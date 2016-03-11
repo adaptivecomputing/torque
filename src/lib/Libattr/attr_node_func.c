@@ -1240,7 +1240,7 @@ int node_ttl(
     {
     case ATR_ACTION_NEW:
 
-      if(np->nd_ttl[0] != '\0')
+      if (np->nd_ttl[0] != '\0')
         {
         temp.at_val.at_str = (char *)np->nd_ttl;
         temp.at_flags = ATR_VFLAG_SET;
