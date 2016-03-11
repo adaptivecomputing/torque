@@ -479,7 +479,6 @@ void send_email_batch(
   char                   *addressee = (char *)pwt->wt_parm1;
   pid_t                   pid;
   std::string             error_msg;
-  char                    tmpBuf[LOG_BUF_SIZE];
   // We call sendmail with cmd_name + 2 arguments + # of mailto addresses + 1 for null
   char                   *sendmail_args[100];
   FILE                   *stream;
@@ -588,8 +587,6 @@ void svr_mailowner(
   const char  *text)      /* (optional) additional message text */
 
   {
-  static const char   *memory_err = "Cannot allocate memory to send email";
-
   char                  mailto[1024];
   char                 *domain = NULL;
   int                   i;
