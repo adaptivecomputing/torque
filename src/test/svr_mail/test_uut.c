@@ -63,6 +63,12 @@ void read_file_into_string(
 
   memset(&buf, 0, sizeof(buf));
   output.clear();
+
+  if (fp == NULL)
+    {
+    sleep(1);
+    fp = fopen(filename, "r");
+    }
   
   if (fp != NULL)
     {
@@ -95,6 +101,8 @@ START_TEST(test_send_email_batch)
     mi.jobid = buf;
     pending_emails.add_email_entry(mi);
     }
+  
+  remove_old_mail(filename);
 
   // Make svr_format_job() do nothing
   empty_body = true;
