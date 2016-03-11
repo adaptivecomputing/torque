@@ -13,6 +13,7 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "attribute.h" /* svrattrl */
 #include "work_task.h"
+#include "mail_throttler.hpp"
 
 extern void *send_the_mail(void *vp);
 
@@ -115,4 +116,31 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
+bool empty_body = false;
+
+int get_svr_attr_str(
+    
+  int    index,
+  char **str)
+
+  {
+  static char *bodyfmt = strdup("Zaphod");
+
+  if ((index == SRV_ATR_MailBodyFmt) &&
+      (empty_body == true))
+    {
+    *str = bodyfmt;
+    }
+
+  return(0);
+  }
+
+int get_svr_attr_l(
+
+  int   index,
+  long *l)
+
+  {
+  return(0);
+  }
 
