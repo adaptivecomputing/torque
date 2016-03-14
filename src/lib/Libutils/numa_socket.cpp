@@ -222,7 +222,6 @@ Socket &Socket::operator=(
          sizeof(this->socket_nodeset_string));
 
   this->socket_exclusive = other.socket_exclusive;
-  this->sock
 
   hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
   hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
