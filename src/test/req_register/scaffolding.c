@@ -167,7 +167,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int issue_to_svr(char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
   {
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);
@@ -337,7 +337,7 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);

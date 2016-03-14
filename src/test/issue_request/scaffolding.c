@@ -40,7 +40,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
   return(0);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   return(NULL);
   }
@@ -70,7 +70,7 @@ int encode_DIS_PowerState(struct tcp_chan *chan, unsigned short powerState)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   if (return_addr == true)
     {

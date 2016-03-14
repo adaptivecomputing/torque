@@ -205,7 +205,7 @@ void clear_conn(int,int);
 pbs_net_t get_connectaddr(int,int);
 int  get_connecthost(int sock, char *, int);
 void set_localhost_name(char *, size_t);
-pbs_net_t get_hostaddr(int *, char *);
+pbs_net_t get_hostaddr(int *, const char *);
 int  get_fullhostname(char *, char *, int, char *);
 unsigned int  get_svrport(char *, char *, unsigned int);
 int  init_network(unsigned int, void *(*readfunc)(void *));

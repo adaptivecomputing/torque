@@ -78,10 +78,10 @@ START_TEST(test_translate_dependency_to_string)
   {
   pbs_attribute dep_attr;
   depend dep;
-  struct depend_job *dj = (depend_job *)calloc(1, sizeof(depend_job));
+  depend_job *dj = new depend_job();
 
-  strcpy(dj->dc_child, "1.napali");
-  strcpy(dj->dc_svr, "napali");
+  dj->dc_child = "1.napali";
+  dj->dc_svr = "napali";
   
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
   CLEAR_LINK(dep.dp_link);

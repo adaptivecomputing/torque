@@ -179,6 +179,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_usage_info/Makefile
     src/test/login_nodes/Makefile
     src/test/mom_hierarchy_handler/Makefile
+    src/test/mail_throttler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
     src/test/pbsnode/Makefile

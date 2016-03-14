@@ -133,13 +133,18 @@ struct job_array;
  * of each job which is involved with the dependency
  */
 
-typedef struct depend_job
+class depend_job
   {
+  public:
   short dc_state; /* released / ready to run (syncct)  */
   long  dc_cost; /* cost of this child (syncct)   */
-  char  dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char  dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
-  } depend_job;
+  std::string dc_child;
+  std::string dc_svr;
+
+  depend_job() : dc_state(0), dc_cost(0), dc_child(), dc_svr()
+    {
+    }
+  };
 
 /*
  * Dependent Job Structures
@@ -185,13 +190,18 @@ class depend
     }
   };
 
-typedef struct array_depend_job
+class array_depend_job
   {
+  public:
   /* in this case, the child is the job depending on the array */
-  char dc_child[PBS_MAXSVRJOBID+1];
-  char dc_svr[PBS_MAXSERVERNAME+1];
+  std::string dc_child;
+  std::string dc_svr;
   int  dc_num;
-  } array_depend_job;
+
+  array_depend_job() : dc_child(), dc_svr(), dc_num(0)
+    {
+    }
+  };
 
 class array_depend
   {

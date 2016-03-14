@@ -62,7 +62,7 @@ long job_log_size(void)
   exit(1);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername needs to be mocked!!\n");
   exit(1);
@@ -95,7 +95,7 @@ int decode_b(pbs_attribute *patr, const char *name, const char *rescn, const cha
   exit(1);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);

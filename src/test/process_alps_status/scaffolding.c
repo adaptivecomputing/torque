@@ -294,8 +294,9 @@ int mgr_set_node_attr(
   int            *bad,    /* if there is a "bad pbs_attribute" pass back 
                                position via this loc */
   void           *parent, /*may go unused in this function */
-  int             mode)  /*passed to attrib's action func not used by 
+  int             mode,  /*passed to attrib's action func not used by 
                              this func at this time*/
+  bool            dont_update)
 
   {
   mgr_count++;
@@ -329,7 +330,8 @@ int attr_atomic_node_set(
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
-  int             *badattr)  /* return list position wher bad   */
+  int             *badattr,  /* return list position wher bad   */
+  bool             update_nodes_file)
 
   {
   int           acc;
@@ -1579,7 +1581,7 @@ int issue_Drequest(
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);

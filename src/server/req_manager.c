@@ -800,8 +800,9 @@ int mgr_set_node_attr(
   int            *bad,    /* if there is a "bad pbs_attribute" pass back 
                              position via this loc */
   void           *parent, /*may go unused in this function */
-  int             mode)  /*passed to attrib's action func not used by 
+  int             mode,  /*passed to attrib's action func not used by 
                            this func at this time*/
+  bool            dont_update_nodes)
 
   {
   int              i;
@@ -864,7 +865,15 @@ int mgr_set_node_attr(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist,
+                                 unused,
+                                 new_attr,
+                                 pdef,
+                                 limit,
+                                 -1,
+                                 privil,
+                                 bad,
+                                 dont_update_nodes)) != 0)
     {
     attr_atomic_kill(new_attr, pdef, limit);
 
@@ -1720,11 +1729,6 @@ void mgr_node_set(
   long              dont_update_nodes = FALSE;
 
   get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
-    {
-    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
-    return;
-    }
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
@@ -1808,7 +1812,8 @@ void mgr_node_set(
              preq->rq_perm,
              &bad,
              (void *)pnode,
-             ATR_ACTION_ALTER);
+             ATR_ACTION_ALTER,
+             dont_update_nodes);
 
       if (rc != 0)
         {
@@ -1846,7 +1851,8 @@ void mgr_node_set(
            preq->rq_perm,
            &bad,
            (void *)pnode,
-           ATR_ACTION_ALTER);
+           ATR_ACTION_ALTER,
+           dont_update_nodes);
 
     if (rc != 0)
       {

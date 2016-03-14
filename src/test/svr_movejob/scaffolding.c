@@ -57,7 +57,7 @@ pbs_queue *find_queuebyname(const char *quename)
   exit(1);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername to be mocked!!\n");
   exit(1);
@@ -90,7 +90,7 @@ int PBSD_jscript(int c, char *script_file, char *jobid)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr to be mocked!!\n");
   exit(1);

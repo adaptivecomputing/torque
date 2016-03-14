@@ -396,7 +396,7 @@ im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *n
   return(0);
   }
 
-int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
+int get_hostaddr_hostent_af(int *local_errno, const char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
   {
   return(0);
   }

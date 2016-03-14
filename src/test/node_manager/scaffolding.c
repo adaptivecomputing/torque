@@ -513,7 +513,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
   {
   fprintf(stderr,"ERROR: %s is mocked.\n",__func__);
   return 0;
