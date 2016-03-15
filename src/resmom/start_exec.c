@@ -4385,7 +4385,6 @@ int set_job_cgroup_memory_limits(
   unsigned long long mem_limit;
   unsigned long long swap_limit;
   complete_req *cr = NULL;
-  pid_t this_pid = getpid();
 
   int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
   if (rc != 0)
@@ -4436,9 +4435,7 @@ int set_job_cgroup_memory_limits(
       }
     }
 
-  int rank;
   pbs_attribute *pattr;
-  pid_t new_pid = getpid();
 
   /* make sure we don't have an incompatible -l resource request */
   if (have_incompatible_dash_l_resource(pjob) == false)

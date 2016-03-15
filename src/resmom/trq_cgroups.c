@@ -290,7 +290,6 @@ int trq_cg_initialize_cpuset_string(
   char   log_buf[LOCAL_LOG_BUF_SIZE];
   FILE  *fd;
   char   buf[64];
-  size_t bytes_written;
   std::string cpus_path;
   std::string base_path;
   std::string key ("/torque");
@@ -770,7 +769,6 @@ int trq_cg_add_process_to_task_cgroup(
   {
   char   req_task_number[MAX_JOBID_LENGTH];
   string req_task_path;
-  int    fd;
 
   sprintf(req_task_number, "/R%u.t%u/tasks", req_index, task_index);
   req_task_path = cgroup_path + job_id + req_task_number;
@@ -850,8 +848,6 @@ int trq_cg_get_task_memory_stats(
 
   {
   char               req_and_task[256];
-  char               buf[LOCAL_LOG_BUF_SIZE];
-  int                fd;
   int                rc;
 
   /* get memory first */
@@ -872,7 +868,7 @@ int trq_cg_get_task_memory_stats(
   if (error)
     rc = PBSE_SYSTEM;
 
-  return(PBSE_NONE);
+  return(rc);
   } // END trq_cg_get_task_memory_stats()
 
 
@@ -901,8 +897,6 @@ int trq_cg_get_task_cput_stats(
 
   {
   char   req_and_task[256];
-  char   buf[LOCAL_LOG_BUF_SIZE];
-  int    fd;
   int    rc = PBSE_NONE;
   bool   error = PBSE_NONE;
 
@@ -1228,7 +1222,6 @@ int trq_cg_write_task_memset_string(
   string       req_memset_task_path;
   string       memset_string;
   char         req_task_number[256];
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
   std::string  err_msg;
 
   sprintf(req_task_number, "%s/R%u.t%u/cpuset.mems", job_id, req_num, task_num);
@@ -1284,7 +1277,6 @@ int trq_cg_write_task_cpuset_string(
   string   req_cpuset_task_path;
   string   cpuset_string;
   char     req_task_number[256];
-  char     log_buf[LOCAL_LOG_BUF_SIZE];
   string   err_msg;
 
   sprintf(req_task_number, "%s/R%u.t%u/cpuset.cpus", job_id, req_num, task_num);
@@ -1323,7 +1315,6 @@ int trq_cg_populate_task_cgroups(
   {
   int            rc;
   char          *job_id = pjob->ji_qs.ji_jobid;
-  char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr;
 
   /* See if the JOB_ATR_req_information is set. If not
@@ -1415,7 +1406,6 @@ int trq_cg_populate_cgroup(
   string  path(cg_cpuset_path);
   string  err_msg;
   int     rc = PBSE_NONE;
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
   const char *job_id = pjob->ji_qs.ji_jobid;
 
   path += job_id;
@@ -1598,7 +1588,6 @@ int trq_cg_set_swap_memory_limit(
   unsigned long long  memory_limit)
 
   {
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
   unsigned long long memory_limit_in_bytes;
@@ -1650,7 +1639,6 @@ int trq_cg_set_task_swap_memory_limit(
   unsigned long long  memory_limit)
 
   {
-  char    log_buf[LOCAL_LOG_BUF_SIZE];
   char    mem_limit_string[64];
   string  oom_control_name;
   char    task_directory[1024]; 
@@ -1714,7 +1702,6 @@ int trq_cg_set_resident_memory_limit(
   unsigned long long  memory_limit)
 
   {
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
   string err_msg;
@@ -1761,7 +1748,6 @@ int trq_cg_set_task_resident_memory_limit(
 
   {
   char   task_directory[1024];
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
   char   mem_limit_string[64];
   string oom_control_name;
   string err_msg;
@@ -1885,10 +1871,6 @@ void trq_cg_delete_job_cgroups(
   bool        successfully_created)
 
   {
-  char   log_buf[LOCAL_LOG_BUF_SIZE];
-  struct stat buf;
-  int         rc;
-  
   trq_cg_delete_cgroup_path(cg_cpu_path + job_id, successfully_created);
 
   trq_cg_delete_cgroup_path(cg_cpuacct_path + job_id, successfully_created);
@@ -1898,7 +1880,6 @@ void trq_cg_delete_job_cgroups(
   trq_cg_delete_cgroup_path(cg_memory_path + job_id, successfully_created);
 
   trq_cg_delete_cgroup_path(cg_devices_path + job_id, successfully_created);
-
   } // END trq_cg_delete_job_cgroups()
 
 
@@ -1917,7 +1898,6 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
   {
   int         rc;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
-  size_t      bytes_written;
   std::string devices_deny;
   FILE       *f;
 
@@ -1983,7 +1963,7 @@ int trq_cg_add_devices_to_cgroup(
   char *device_str;
   char  suffix[20];
   unsigned int device_count = 0;
-  int   index;
+  int   index = 0;
 
 #ifdef NVIDIA_GPUS
   device_count = global_gpu_count;
@@ -1998,7 +1978,7 @@ int trq_cg_add_devices_to_cgroup(
 #endif
 
   /* First make sure we have gpus */
-  if(device_count == 0)
+  if (device_count == 0)
     return(PBSE_NONE);
 
   job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;

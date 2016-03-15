@@ -78,6 +78,7 @@ struct batch_request *alloc_br(int type)
 
   CLEAR_LINK(req->rq_link);
 
+  return(req);
   }
 
 void DIS_tcp_reset(int fd, int i)

@@ -131,7 +131,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-req::req() : mem(0), gpus(0), mics(0), cores(0), threads(0) {}
+req::req() : mem(0), cores(0), threads(0), gpus(0), mics(0) {}
 
 unsigned long req::getMemory() const
   {

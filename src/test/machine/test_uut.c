@@ -129,31 +129,6 @@ START_TEST(test_spread_place)
   }
 END_TEST
 
-START_TEST(test_spread_place_pu)
-  {
-  Machine m;
-  job     pjob;
-  std::string cpu;
-  std::string mem;
-  complete_req cr;
-  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
-
-  m.addSocket(2);
-
-  sockets = 1;
-  my_placement_type = 4;
-  numa_node_count = 0;
-  called_spread_place_cores = 0;
-  num_for_host = 1;
-  spreaded = true;
-
-  // Make sure we call spread place once for each successfully placed task
-  m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(called_spread_place_cores == 1, "called %d", called_spread_place_cores);
-
-  }
-END_TEST
-
 
 START_TEST(test_displayAsString)
   {

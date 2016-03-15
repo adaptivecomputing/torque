@@ -326,7 +326,7 @@ struct pbsnode *find_nodebyname(
           /* get the NUMA node */
           numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
           if (numa != NULL)
-            pnode->lock_node(__func__, NULL, LOGLEVEL);
+            numa->lock_node(__func__, NULL, LOGLEVEL);
 
           pnode->unlock_node(__func__, NULL, LOGLEVEL);
           pnode = numa;
