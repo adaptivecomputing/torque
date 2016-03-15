@@ -1938,7 +1938,7 @@ int open_tcp_stream_to_sisters(
 
     pjob->ji_outstanding++;
 
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
     if (IS_VALID_STREAM(stream) == FALSE)
       {
@@ -6746,7 +6746,7 @@ int send_join_job_to_sisters(
       log_buffer[0] = '\0';
 
       ret = -1;
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {

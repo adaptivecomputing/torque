@@ -1830,7 +1830,7 @@ int sigalltasks_sisters(
 
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
+    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false)) < 0)
       return(-1);
 
     if ((chan = DIS_tcp_setup(stream)) == NULL)
