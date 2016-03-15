@@ -509,7 +509,6 @@ bool task_hosts_match(
   }
 
 
-
 #ifdef PENABLE_LINUX_CGROUPS
 
 
