@@ -2344,7 +2344,6 @@ int read_cluster_addresses(
   std::string      hierarchy_file = "/n";
   long            list_size;
   long            list_len = 0;
-
   if (mh != NULL)
     free_mom_hierarchy(mh);
 
@@ -3072,7 +3071,7 @@ void state_to_server(
     return;    /* Do nothing, just return */
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
