@@ -124,7 +124,6 @@ public:
     char *host_tok;
     char *str_ptr = exec_str;
     char *slash;
-    int   rc = PBSE_NONE;
     char *prev_node = NULL;
 
     while ((host_tok = threadsafe_tokenizer(&str_ptr, "+")) != NULL)
@@ -136,7 +135,6 @@ public:
           (strcmp(prev_node, host_tok)))
         {
         this->ar_node_names.push_back(host_tok);
-        rc = PBSE_NONE;
         }
 
       prev_node = host_tok;

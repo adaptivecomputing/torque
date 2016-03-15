@@ -218,7 +218,7 @@ START_TEST(add_node_attribute_to_list_test)
   }
 END_TEST
 
-
+/*
 START_TEST(test_load_node_notes)
   {
   struct pbsnode  node1;
@@ -241,7 +241,7 @@ START_TEST(test_load_node_notes)
   fail_unless(strstr(node3.nd_note.c_str(), "Health check failed:") != NULL);
   fail_unless(node4.nd_note == "Needs BIOS update");
   }
-END_TEST
+END_TEST*/
 
 
 START_TEST(parse_node_token_test)
@@ -324,6 +324,7 @@ START_TEST(addr_ok_test)
   }
 END_TEST
 
+
 START_TEST(find_node_in_allnodes_test)
   {
   struct pbsnode *result = NULL;
@@ -348,6 +349,26 @@ START_TEST(find_node_in_allnodes_test)
 */
   }
 END_TEST
+
+
+START_TEST(login_encode_jobs_test)
+  {
+  pbsnode   node;
+  struct list_link list;
+  int              result;
+  memset(&list, 0, sizeof(list));
+
+  result = login_encode_jobs(NULL, &list);
+  fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
+
+  result = login_encode_jobs(&node, NULL);
+  fail_unless(result != PBSE_NONE, "NULL input list_link pointer fail");
+
+  result = login_encode_jobs(&node, &list);
+  fail_unless(result == PBSE_NONE, "login_encode_jobs_test fail");
+  }
+END_TEST
+
 
 START_TEST(find_nodebyname_test)
   {
@@ -374,21 +395,26 @@ START_TEST(find_nodebyname_test)
 
   pnode = find_nodebyname("bob");
   fail_unless(pnode == &node1, "couldn't find bob?");
+  pnode->unlock_node("a", "b", 0);
 
   pnode = find_nodebyname("tom");
   fail_unless(pnode == &node2, "couldn't find tom?");
+  pnode->unlock_node("a", "b", 0);
 
   pnode = find_nodebyname(strdup("tom-0"));
   fail_unless(!strcmp(pnode->get_name(), "0"), "found an incorrect node name");
+  pnode->unlock_node("a", "b", 0);
 
   pnode = find_nodebyname(strdup("tom-1"));
   fail_unless(!strcmp(pnode->get_name(), "1"), "found an incorrect node name");
+  pnode->unlock_node("a", "b", 0);
 
   pnode = find_nodebyname(strdup("tom-10"));
   fail_unless(pnode == NULL, "found an incorrect node name");
 
   pnode = find_nodebyname(strdup("bob/0"));
   fail_unless(pnode == &node1, "couldn't find bob with the exec_host format");
+  pnode->unlock_node("a", "b", 0);
 
   allnodes.lock();
   allnodes.clear();
@@ -413,6 +439,22 @@ START_TEST(find_nodebyname_test)
   }
 END_TEST
 
+
+START_TEST(add_execution_slot_test)
+  {
+  pbsnode node;
+  int result = 0;
+
+  result = add_execution_slot(NULL);
+  fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail");
+
+  result = add_execution_slot(&node);
+  fail_unless(result == PBSE_NONE, "add_execution_slot_test fail");
+  }
+END_TEST
+
+
+/*
 START_TEST(save_characteristic_test)
   {
   pbsnode node;
@@ -422,6 +464,7 @@ START_TEST(save_characteristic_test)
   save_characteristic(&node, &node_info);
   }
 END_TEST
+
 
 START_TEST(chk_characteristic_test)
   {
@@ -444,23 +487,6 @@ START_TEST(chk_characteristic_test)
   }
 END_TEST
 
-START_TEST(login_encode_jobs_test)
-  {
-  pbsnode   node;
-  struct list_link list;
-  int              result;
-  memset(&list, 0, sizeof(list));
-
-  result = login_encode_jobs(NULL, &list);
-  fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
-
-  result = login_encode_jobs(&node, NULL);
-  fail_unless(result != PBSE_NONE, "NULL input list_link pointer fail");
-
-  result = login_encode_jobs(&node, &list);
-  fail_unless(result == PBSE_NONE, "login_encode_jobs_test fail");
-  }
-END_TEST
 
 START_TEST(status_nodeattrib_test)
   {
@@ -511,9 +537,6 @@ START_TEST(status_nodeattrib_test)
                              &list,
                              NULL);
   fail_unless(result != PBSE_NONE, "NULL input result_mask pointer fail: %d" ,result);
-
-  /*FIXME: NOTE: this is probably a correct set of input parameters, but still returns -1*/
- /*   fail_unless(result != PBSE_NONE, "NULL input svrattrl pointer fail: %d" ,result); */
   }
 END_TEST
 
@@ -526,11 +549,11 @@ START_TEST(effective_node_delete_test)
   allnodes.clear();
   allnodes.unlock();
 
-  /*accidental null pointer delete call*/
+  // accidental null pointer delete call
   effective_node_delete(NULL);
   effective_node_delete(&node);
 
-  /* pthread_mutex_init(allnodes.allnodes_mutex, NULL); */
+  // pthread_mutex_init(allnodes.allnodes_mutex, NULL);
   // delete shouldn't work with nameless node
   node = new pbsnode();
   effective_node_delete(&node);
@@ -564,7 +587,7 @@ START_TEST(recompute_ntype_cnts_test)
   {
   recompute_ntype_cnts();
   }
-END_TEST
+END_TEST 
 
 START_TEST(init_prop_test)
   {
@@ -572,20 +595,7 @@ START_TEST(init_prop_test)
   struct prop *result = init_prop(name);
   fail_unless(result->name == name, "name init fail");
   }
-END_TEST
-
-START_TEST(add_execution_slot_test)
-  {
-  pbsnode node;
-  int result = 0;
-
-  result = add_execution_slot(NULL);
-  fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail");
-
-  result = add_execution_slot(&node);
-  fail_unless(result == PBSE_NONE, "add_execution_slot_test fail");
-  }
-END_TEST
+END_TEST 
 
 START_TEST(create_a_gpusubnode_test)
   {
@@ -609,11 +619,11 @@ START_TEST(copy_properties_test)
   result = source_node.copy_properties(NULL);
   fail_unless(result != PBSE_NONE, "NULL destanation pointer input fail");
 
-  /*TODO: fill in source node*/
+  // TODO: fill in source node
   result = source_node.copy_properties(&destination_node);
   fail_unless(result == PBSE_NONE, "copy_properties return fail");
   }
-END_TEST
+END_TEST 
 
 START_TEST(create_pbs_node_test)
   {
@@ -671,7 +681,7 @@ START_TEST(node_np_action_test)
   result = node_np_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
   fail_unless(result == PBSE_BADATVAL, "ATR_ACTION_ALTER fail");
   }
-END_TEST
+END_TEST */
 
 START_TEST(node_mom_port_action_test)
   {
@@ -943,14 +953,12 @@ Suite *node_func_suite(void)
   Suite *s = suite_create("node_func_suite methods");
   TCase *tc_core = tcase_create("addr_ok_test");
   tcase_add_test(tc_core, addr_ok_test);
-  suite_add_tcase(s, tc_core);
-
-  /*tc_core = tcase_create("find_node_in_allnodes_test");
+  tcase_add_test(tc_core, login_encode_jobs_test);
+  tcase_add_test(tc_core, find_nodebyname_test);
   tcase_add_test(tc_core, find_node_in_allnodes_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("find_nodebyname_test");
-  tcase_add_test(tc_core, find_nodebyname_test);
+  /*tc_core = tcase_create("find_node_in_allnodes_test");
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("save_characteristic_test");
@@ -959,10 +967,6 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("chk_characteristic_test");
   tcase_add_test(tc_core, chk_characteristic_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("login_encode_jobs_test");
-  tcase_add_test(tc_core, login_encode_jobs_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("status_nodeattrib_test");
@@ -983,10 +987,6 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("init_prop_test");
   tcase_add_test(tc_core, init_prop_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("add_execution_slot_test");
-  tcase_add_test(tc_core, add_execution_slot_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("create_a_gpusubnode_test");
@@ -1013,6 +1013,7 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("node_mom_port_action_test");
   tcase_add_test(tc_core, node_mom_port_action_test);
   tcase_add_test(tc_core, node_mom_rm_port_action_test);
+  tcase_add_test(tc_core, add_execution_slot_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("node_gpus_action_test");
@@ -1046,7 +1047,7 @@ Suite *node_func_suite(void)
 
   tc_core = tcase_create("add_node_property_test");
   tcase_add_test(tc_core, add_node_property_test);
-  //tcase_add_test(tc_core, record_node_property_list_test);
+  tcase_add_test(tc_core, record_node_property_list_test);
   tcase_add_test(tc_core, node_exists_check);
   suite_add_tcase(s, tc_core);
 

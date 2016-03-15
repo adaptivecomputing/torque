@@ -1043,7 +1043,7 @@ unsigned int complete_req::get_num_reqs()
 
 req &complete_req::get_req(int i)
   {
-  req r;
+  static req r;
 
   return(r);
   }

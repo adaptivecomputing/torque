@@ -224,14 +224,13 @@ START_TEST(test_is_for_this_host)
   {
   std::string spec;
   std::string suffix;
+  extern char mom_alias[];
+
+  sprintf(mom_alias, "fattony3.ac");
 
   suffix = "-gpu";
   /* test the positive case */
   spec =  "fattony3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
-
-  /* test the positive case  short name*/
-  spec =  "fattony3-gpu/0";
   fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
 
   /* test the negative case */
@@ -251,6 +250,9 @@ START_TEST(test_get_device_indices)
   std::string spec;
   std::vector<unsigned int> gpu_indices;
   char suffix[10];
+  extern char mom_alias[];
+
+  sprintf(mom_alias, "fattony3.ac");
 
   strcpy(suffix, "-gpu");
   spec = "fattony3.ac-gpu/0+fattony3.ac-gpu/1+numa3.ac-gpu/0";
@@ -288,6 +290,7 @@ Suite *mom_server_suite(void)
 
   tc_core = tcase_create("test_get_device_indices");
   tcase_add_test(tc_core, test_get_device_indices);
+  tcase_add_test(tc_core, test_mom_server_all_update_stat_clear_force);
   suite_add_tcase(s, tc_core);
 
   return s;

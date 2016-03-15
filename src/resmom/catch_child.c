@@ -1541,7 +1541,6 @@ void *obit_reply(
   int                   irtn;
   job                  *pjob = NULL;
   job                  *pj = NULL;
-  char                  tmp_line[MAXLINE];
 
   batch_request        *preq;
   int                   sock = *(int *)new_sock;

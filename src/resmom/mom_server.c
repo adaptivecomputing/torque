@@ -3366,14 +3366,8 @@ bool is_for_this_host(
   const char *suffix)
 
   {
-  char  this_host[THIS_HOST_LEN];
   char  *ptr;
   char  temp_char_string[THIS_HOST_LEN];
-  int   rc;
-
-  rc = gethostname(this_host, sizeof(this_host));
-  if (rc != 0)
-    return(false);
 
   strcpy(temp_char_string, device_spec.c_str());
 
@@ -3384,20 +3378,8 @@ bool is_for_this_host(
   else
     return(false);
 
-  if (!strcmp(this_host, temp_char_string))
+  if (!strcmp(mom_alias, temp_char_string))
     return(true);
-
-  /* try to match the short name */
-  ptr = strchr(this_host, '.');
-  if (ptr != NULL)
-    *ptr = '\0';
-  ptr = strchr(temp_char_string, '.');
-  if (ptr != NULL)
-    *ptr = '\0';
-
-  /* one last time */
-  if (!strcmp(this_host, temp_char_string))
-      return(true);
 
   return(false);
   }

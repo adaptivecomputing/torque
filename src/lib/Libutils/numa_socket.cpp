@@ -13,7 +13,8 @@ using namespace std;
 #include "machine.hpp"
 #include <hwloc.h>
 
-Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
+Socket::Socket() : id (0), memory(0), totalCores(0), totalThreads(0), availableCores(0),
+                   availableThreads(0), chips(), socket_exclusive(false)
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -481,7 +482,6 @@ bool Socket::spread_place_pu(
   int         &mics_remaining)
 
   {
-  int rc;
   bool placed = false;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)

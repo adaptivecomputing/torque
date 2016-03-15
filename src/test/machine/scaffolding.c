@@ -304,7 +304,12 @@ void allocation::set_place_type(const std::string &place)
   }
 
 void allocation::place_indices_in_string(std::string &out, int which) {}
-int allocation::add_allocation(allocation const &a) {}
+
+int allocation::add_allocation(allocation const &a) 
+  {
+  return(0);
+  }
+
 void allocation::set_host(const char *hostname)
   {
   this->hostname = hostname;

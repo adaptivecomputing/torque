@@ -234,7 +234,6 @@ class Socket
   bool                  socket_exclusive;
   hwloc_const_cpuset_t  socket_cpuset;
   hwloc_const_nodeset_t socket_nodeset;
-  vector<allocation>    allocations;
 
   public:
     Socket();
