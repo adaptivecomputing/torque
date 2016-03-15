@@ -258,7 +258,7 @@ int allocation::add_allocation(const allocation &other)
   return(0);
   }
 
-req::req() {}
+req::req() : numa_nodes(1) {}
 std::string req::getPlacementType() const
 
   {

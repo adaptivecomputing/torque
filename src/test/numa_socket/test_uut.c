@@ -362,9 +362,11 @@ START_TEST(test_how_many_tasks_fit)
 
   // should get the number of chips * tasks for how many fit
   tasks = 2;
-  fail_unless(s.how_many_tasks_fit(r, 0) == 4);
+  int fit = s.how_many_tasks_fit(r, 0);
+  fail_unless(fit == 4, "Only %d tasks fit", fit);
   tasks = 4;
-  fail_unless(s.how_many_tasks_fit(r, 0) == 8);
+  fit = s.how_many_tasks_fit(r, 0);
+  fail_unless(fit == 8, "Only %d tasks fit, expected 8", fit);
   my_placement_type = place_socket;
   fail_unless(s.how_many_tasks_fit(r, 0) == 1);
   }

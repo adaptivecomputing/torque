@@ -79,6 +79,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 
 void *get_next(list_link pl, char *file, int line)
   {
+  return(NULL);
   }
 
 void nodes_free(job *pj)

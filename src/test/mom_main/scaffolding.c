@@ -94,7 +94,7 @@ char             mom_host[PBS_MAXHOSTNAME + 1];
 int       rm_errno;
 int       config_file_specified;
 char             MOMConfigVersion[64];
-struct config common_config[] = {};
+struct config common_config[1];
 char           **ArgV;
 char            *OriginalPath;
 int       resend_join_job_wait_time;

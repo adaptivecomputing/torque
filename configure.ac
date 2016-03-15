@@ -1438,7 +1438,7 @@ dnl
 dnl if we're running from a tarball (not checked out) automatically turn off
 dnl the warnings
 dnl
-AC_CHECK_FILE(src/server/test/req_jobobit/scaffolding.c,
+AC_CHECK_FILE(src/test/req_jobobit/scaffolding.c,
   TOM=bob,gccwarnings=no)
 
 
@@ -2391,7 +2391,8 @@ drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
     
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic -Werror -Wno-sign-compare])
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
 fi
 
 
