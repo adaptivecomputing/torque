@@ -51,6 +51,11 @@
 #include <vector>
 #include <semaphore.h>
 
+#ifdef NVIDIA_DCGM
+#include <dcgm_agent.h>
+#include <dcgm_fields.h>
+#endif
+
 
 #include "libpbs.h"
 #include "pbs_ifl.h"
@@ -160,6 +165,10 @@ char           path_meminfo[MAX_LINE];
 extern pthread_mutex_t log_mutex;
 
 pthread_mutex_t  delete_job_files_mutex;
+
+#ifdef NVIDIA_DCGM
+dcgmHandle_t pDcgmHandle;
+#endif
 
 int          lockfds = -1;
 int          multi_mom = 0;
@@ -6945,6 +6954,43 @@ int main(
 
     log_ext(-1, "main", log_buffer, LOG_DEBUG);
     }
+
+#ifdef NVIDIA_DCGM
+
+  pbs_net_t    mom_addr;
+  char        *ip_address;
+  char         mom_name[PBS_MAXSERVERNAME];
+  dcgmReturn_t dcgm_rc;
+
+  rc = gethostname(mom_name, PBS_MAXSERVERNAME);
+  if (rc != 0)
+    {
+    sprintf(log_buffer, "gethostname failed: %d", errno);
+    log_ext(-1, __func__, log_buffer, 0);
+    exit(-1);
+    }
+
+  mom_addr = get_hostaddr(&rc, mom_name);
+  if (mom_addr == 0)
+    {
+    sprintf(log_buffer, "could not get ip address for %s", mom_name);
+    log_ext(-1, __func__, log_buffer, 0);
+    exit(-1);
+    }
+
+  ip_address = netaddr_pbs_net_t(mom_addr);
+
+  dcgm_rc = dcgmInit(ip_address, DCGM_OPERATION_MODE_AUTO, &pDcgmHandle);
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "Failed to initialize NVIDIA DCGM: %d", dcgm_rc);
+    log_ext(-1, __func__, log_buffer, 0);
+    exit(-1);
+    }
+
+  free(ip_address);
+
+#endif  /* NVIDIA_DCGM */
 #endif  /* NVIDIA_GPUS */
 
   main_loop();

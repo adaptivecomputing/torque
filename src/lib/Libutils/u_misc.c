@@ -489,7 +489,3 @@ bool task_hosts_match(
   return(true);
   }
 
-
-
-
-

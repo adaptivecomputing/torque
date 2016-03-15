@@ -1919,7 +1919,6 @@ int main(
     msg_daemonname,
     log_buf);
 
-
   if (init_network(0, start_process_pbs_server_port) != 0)
     {
     perror("pbs_server: unix domain socket");

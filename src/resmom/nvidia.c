@@ -239,6 +239,30 @@ void log_nvml_error(
         log_err( PBSE_RMSYSTEM, id, log_buffer);
         }
       break;
+     case NVML_ERROR_CORRUPTED_INFOROM:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, "NVML device %s corrupted INFOROM",
+                           (gpuid != NULL) ? gpuid : "NULL");
+        log_err( PBSE_RMSYSTEM, id, log_buffer);
+        }
+      break;
+    case NVML_ERROR_RESET_REQUIRED:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, "NVML device %s reset required",
+                           (gpuid != NULL) ? gpuid : "NULL");
+        log_err( PBSE_RMSYSTEM, id, log_buffer);
+        }
+      break;
+     case NVML_ERROR_OPERATING_SYSTEM:
+      if (LOGLEVEL >= 1)
+        {
+        sprintf(log_buffer, "NVML device %s has been blocked by the OS or cgroups",
+                           (gpuid != NULL) ? gpuid : "NULL");
+        log_err( PBSE_RMSYSTEM, id, log_buffer);
+        }
+      break;
     case NVML_ERROR_UNKNOWN:
       if (LOGLEVEL >= 1)
         {
