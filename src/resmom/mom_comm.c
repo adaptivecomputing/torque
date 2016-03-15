@@ -979,7 +979,7 @@ int send_sisters(
       continue;
       }
 
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true);
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       {
@@ -1129,7 +1129,7 @@ int send_ms(
     return(0);
     }
 
-  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(local_socket) == FALSE)
     {
@@ -3776,7 +3776,7 @@ int get_reply_stream(
   {
   hnodent *np = pjob->ji_hosts;
 
-  return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr)));
+  return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true));
   } /* END get_reply_stream() */
 
 
@@ -3796,7 +3796,7 @@ int get_radix_reply_stream(
   {
   hnodent *np = pjob->ji_sisters;
 
-  return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr)));
+  return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true));
   } /* END get_radix_reply_stream() */
 
 
@@ -4727,7 +4727,7 @@ int handle_im_get_tid_response(
 
     event_alloc(IM_SPAWN_TASK,np,efwd->fe_event,efwd->fe_taskid);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true);
     
     if (local_socket < 0)
       return(IM_DONE);
@@ -4857,7 +4857,7 @@ int send_im_error_addr(
   for (cntr = 0; cntr < 5; cntr++)
     {
 
-    if ((sock = tcp_connect_sockaddr((struct sockaddr *)si,sizeof(struct sockaddr))) < 0)
+    if ((sock = tcp_connect_sockaddr((struct sockaddr *)si,sizeof(struct sockaddr), false)) < 0)
       {
       rc = PBSE_SOCKET_FAULT;
 
@@ -5414,7 +5414,7 @@ int pass_joined_successfully_up_the_chain(
   
   log_buffer[0] = 0;
 
-  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+  local_socket = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(local_socket) == FALSE)
     {
@@ -6798,7 +6798,7 @@ int tm_spawn_request(
     ep->ee_forward.fe_event = event;
     ep->ee_forward.fe_taskid = fromtask;
  
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
 
     if (local_socket < 0)
       return(TM_DONE);
@@ -6838,7 +6838,7 @@ int tm_spawn_request(
   
   job_save(pjob, SAVEJOB_FULL, momport);
   
-  local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+  local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
   
   if (IS_VALID_STREAM(local_socket) == FALSE)
     {
@@ -6973,7 +6973,7 @@ int tm_tasks_request(
     /* not me */
     event_alloc(IM_GET_TASKS, phost, event, fromtask);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       return(TM_DONE);
@@ -7090,7 +7090,7 @@ int tm_signal_request(
     /* not me XXX */
     event_alloc(IM_SIGNAL_TASK, phost, event, fromtask);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       return(TM_DONE);
@@ -7210,7 +7210,7 @@ int tm_obit_request(
     /* not me */
     event_alloc(IM_OBIT_TASK, phost, event, fromtask);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       return(TM_DONE);
@@ -7367,7 +7367,7 @@ int tm_getinfo_request(
     /* not me */
     event_alloc(IM_GET_INFO,phost,event,fromtask);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
     
     if (IS_VALID_STREAM(local_socket) == FALSE)
       {
@@ -7480,7 +7480,7 @@ int tm_resources_request(
     /* not me XXX */
     event_alloc(IM_GET_RESC, phost, event, fromtask);
     
-    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr));
+    local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
 
     if (IS_VALID_STREAM(local_socket) == FALSE)
       return(TM_DONE);
