@@ -39,6 +39,9 @@ __attribute__((unused))
 #endif
 
 
+#ifdef __cplusplus
+extern "C"
+{
 void
 drmaa_delete_job_hashtab(drmaa_job_t **tab)
   {
@@ -155,3 +158,5 @@ drmaa_get_next_job(drmaa_job_iter_t *i)
   return result;
   }
 
+}
+#endif // #ifdef __cplusplus

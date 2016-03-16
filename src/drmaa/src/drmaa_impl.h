@@ -41,6 +41,9 @@
 #include <error.h>
 #include <compat.h>
 
+#ifdef __cplusplus
+extern "C" {
+
 typedef struct drmaa_session_s drmaa_session_t;
 
 typedef struct drmaa_job_s drmaa_job_t;
@@ -269,3 +272,5 @@ drmaa_replace(char *input, const char *placeholder, const char *value);
 
 #endif /* __DRMAA_IMPL_H */
 
+}
+#endif // #ifdef __cplusplus

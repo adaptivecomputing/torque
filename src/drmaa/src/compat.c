@@ -81,7 +81,6 @@ vasprintf(char **strp, const char *fmt, va_list ap)
   {
   size_t size;
   char *buf;
-  char *tmp = NULL;
   buf = (char*)malloc(size = 128);
 
   if (buf == NULL)
@@ -90,7 +89,7 @@ vasprintf(char **strp, const char *fmt, va_list ap)
   while (1)
     {
     int len;
-    char *newbuf;
+    char *oldbuf;
 
 #  if defined(HAVE_VA_COPY) || defined(HAVE___VA_COPY)
     va_list args;
@@ -102,13 +101,7 @@ vasprintf(char **strp, const char *fmt, va_list ap)
 
     if (len < size)
       {
-      tmp = realloc(buf, len + 1);
-      if (tmp == NULL)
-        {
-        free(buf);
-        return -1;
-        }
-      buf = tmp;
+      buf = realloc(buf, len + 1);
       *strp = buf;
       return len;
       }
@@ -117,11 +110,11 @@ vasprintf(char **strp, const char *fmt, va_list ap)
       size *= 2;
     else size = len + 1;
 
-    newbuf = realloc(buf, size *= 2);
+    buf = realloc(oldbuf = buf, size *= 2);
 
-    if (newbuf == NULL)
+    if (buf == NULL)
       {
-      free(buf);
+      free(oldbuf);
       return -1;
       }
     }

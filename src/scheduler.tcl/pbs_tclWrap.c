@@ -115,7 +115,7 @@ int pbs_rerunjob_err(int c, char *jobid, char *extend, int *local_errno);
 int pbs_movejob_err(int c, char *jobid, char *destin, char *extend, int *local_errno);
 int pbs_asyrunjob_err(int c, char *jobid, char *location, char *extend, int *local_errno);
 int pbs_runjob_err(int c, char *jobid, char *location, char *extend, int *rc);
-int pbs_deljob_err(int c, char *jobid, char *extend, int *local_errno);
+int pbs_deljob_err(int c, const char *jobid, char *extend, int *local_errno);
 int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local_errno);
 int pbs_manager_err(int c, int command, int objtype, char *objname, struct attropl *attrib, char *extend, int *local_errno);
 int pbs_alterjob_err(int c, char *jobid, struct attrl *attrib, char *extend, int *local_errno);

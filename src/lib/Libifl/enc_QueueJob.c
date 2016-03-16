@@ -98,8 +98,8 @@
 int encode_DIS_QueueJob(
 
   struct tcp_chan *chan,
-  char  *jobid,
-  char  *destin,
+  const char  *jobid,
+  const char  *destin,
   struct attropl *aoplp)
 
   {

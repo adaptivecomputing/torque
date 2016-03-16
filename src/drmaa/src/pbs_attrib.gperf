@@ -84,4 +84,4 @@ cookie,              ATTR_JOB_COOKIE
 hashname,            ATTR_HASHNAME
 session_id,          ATTR_SESSION_ID
 alt_id,              ATTR_ALT_ID
-# vim: syn=c++
+# vim: syn=c

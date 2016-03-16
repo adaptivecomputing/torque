@@ -137,7 +137,7 @@
 int pbs_deljob_err(
 
   int   c,
-  char *jobid,
+  const char *jobid,
   char *extend,
   int  *local_errno)
 
