@@ -35,8 +35,6 @@ END_TEST
 
 START_TEST(test_setcudavisibledevices)
   {
-  char  curr[3];
-  char  *cp;
   std::stringstream output;
 
   setcudavisibledevices("1");

@@ -1938,7 +1938,7 @@ int open_tcp_stream_to_sisters(
 
     pjob->ji_outstanding++;
 
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
     if (IS_VALID_STREAM(stream) == FALSE)
       {
@@ -4385,7 +4385,6 @@ int set_job_cgroup_memory_limits(
   unsigned long long mem_limit;
   unsigned long long swap_limit;
   complete_req *cr = NULL;
-  pid_t this_pid = getpid();
 
   int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
   if (rc != 0)
@@ -4436,9 +4435,7 @@ int set_job_cgroup_memory_limits(
       }
     }
 
-  int rank;
   pbs_attribute *pattr;
-  pid_t new_pid = getpid();
 
   /* make sure we don't have an incompatible -l resource request */
   if (have_incompatible_dash_l_resource(pjob) == false)
@@ -6746,7 +6743,7 @@ int send_join_job_to_sisters(
       log_buffer[0] = '\0';
 
       ret = -1;
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {

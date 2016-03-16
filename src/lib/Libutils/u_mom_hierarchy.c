@@ -195,7 +195,7 @@ int rm_establish_connection(
   node_comm_t &nc)
     
   {
-  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr));
+  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr), true);
 
   if (nc.stream < 0)
     {

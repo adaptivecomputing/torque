@@ -283,7 +283,7 @@ int send_task_obit_response(
   for (i = 0; i < 5; i++)
     {
     ret = -1;
-    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr), false);
 
     if (IS_VALID_STREAM(stream))
       {
@@ -1541,7 +1541,6 @@ void *obit_reply(
   int                   irtn;
   job                  *pjob = NULL;
   job                  *pj = NULL;
-  char                  tmp_line[MAXLINE];
 
   batch_request        *preq;
   int                   sock = *(int *)new_sock;
@@ -2135,7 +2134,7 @@ int send_job_obit_to_ms(
 
   for (i = 0; i < 5; i++)
     {
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
       
     if (IS_VALID_STREAM(stream))
       {

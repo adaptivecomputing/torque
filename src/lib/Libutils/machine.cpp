@@ -633,7 +633,6 @@ int Machine::spread_place_pu(
   const char *hostname)
 
   {
-  int   rc;
   int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
   int   tasks_placed = 0;
@@ -897,8 +896,6 @@ int Machine::place_job(
     {
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    bool  change = false;
-    bool  not_placed = true;
     
     a.set_place_type(r.getPlacementType());
     

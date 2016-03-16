@@ -11,10 +11,9 @@ START_TEST(test_keep_comleted_val_check)
   {
 	 pbs_attribute keep;
 	 keep.at_val.at_long = -1;
-	 void *test2;
-	 fail_unless(keep_completed_val_check(&keep, test2, 0) == 1, "keep->at_val.at_long is < 0");
+	 fail_unless(keep_completed_val_check(&keep, NULL, 0) == 1, "keep->at_val.at_long is < 0");
 	 keep.at_val.at_long = 1;
-	 fail_unless(keep_completed_val_check(&keep, test2, 0) == 0, "keep->at_val.at_long is > -1");
+	 fail_unless(keep_completed_val_check(&keep, NULL, 0) == 0, "keep->at_val.at_long is > -1");
   }
 END_TEST
 
