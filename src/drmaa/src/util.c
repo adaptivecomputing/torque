@@ -38,6 +38,8 @@ __attribute__((unused))
 = "$Id: util.c,v 1.6 2006/09/05 13:50:00 ciesnik Exp $";
 #endif
 
+#ifdef __cplusplus
+extern "C" {
 
 int
 drmaa_get_attribute_names(drmaa_attr_names_t **values, char *errmsg, size_t errlen)
@@ -281,4 +283,5 @@ drmaa_replace(char *str, const char *placeholder, const char *value)
   return str;
   }
 
-
+}
+#endif // #ifdef __cplusplus

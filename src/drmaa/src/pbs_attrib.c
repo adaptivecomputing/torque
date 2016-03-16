@@ -1,4 +1,4 @@
-/* C++ code produced by gperf version 3.0.3 */
+/* C++ code produced by gperf version 3.0.4 */
 /* Command-line: /usr/bin/gperf -L C++ --struct-type --readonly-tables --includes --hash-function-name=pbs_attrib_hash --lookup-function-name=pbs_attrib_lookup pbs_attrib.gperf  */
 /* Computed positions: -k'1,3' */
 

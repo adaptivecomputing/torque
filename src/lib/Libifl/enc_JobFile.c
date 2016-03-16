@@ -99,7 +99,7 @@ int encode_DIS_JobFile(
   int   seq,
   char *buf,
   int   len,
-  char *jobid,
+  const char *jobid,
   int   which)
 
   {

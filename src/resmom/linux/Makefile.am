@@ -4,8 +4,6 @@ CHECK_DIR = test
 
 DIST_SUBDIRS =
 
-include_HEADERS = lib_mom.h
-
 AM_CPPFLAGS += -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
 noinst_LIBRARIES = libmommach.a

@@ -92,8 +92,8 @@ char *pbs_submit_err(
 
   int             c,
   struct attropl *attrib,
-  char           *script,
-  char           *destination,
+  const char     *script,
+  const char     *destination,
   char           *extend,       /* (optional) */
   int            *local_errno)
 
@@ -120,7 +120,7 @@ char *pbs_submit_err(
 
   /* Queue job with null string for job id */
 
-  return_jobid = PBSD_queuejob(c, local_errno, (char *)"", destination, attrib, extend);
+  return_jobid = PBSD_queuejob(c, local_errno, "", destination, attrib, extend);
 
   if (return_jobid == NULL)
     {
@@ -168,14 +168,14 @@ char *pbs_submit(
 
   int             c,
   struct attropl *attrib,
-  char           *script,
-  char           *destination,
-  char           *extend)       /* (optional) */
+  char     *script,
+  char     *destination,
+  char     *extend)       /* (optional) */
 
   {
   pbs_errno = 0;
 
-  return(pbs_submit_err(c, attrib, script, destination, extend, &pbs_errno));
+  return(pbs_submit_err(c, attrib, (const char *)script, (const char *)destination, extend, &pbs_errno));
   } /* END pbs_submit() */
 
 

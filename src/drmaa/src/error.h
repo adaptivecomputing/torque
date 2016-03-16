@@ -33,6 +33,8 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
 
 int drmaa_get_errno_error(char *error_diagnosis, size_t error_diag_len);
 int drmaa_get_drmaa_error(char *error_diagnosis, size_t error_diag_len,
@@ -79,3 +81,5 @@ __attribute__((format(printf, 1, 2)));
 
 #endif /* __DRMAA__ERROR_H */
 
+}
+#endif // __cplusplus

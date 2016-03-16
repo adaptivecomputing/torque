@@ -1,4 +1,4 @@
-/* C++ code produced by gperf version 3.0.3 */
+/* C++ code produced by gperf version 3.0.4 */
 /* Command-line: /usr/bin/gperf -L C++ --struct-type --readonly-tables --includes --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup drmaa_attrib.gperf  */
 /* Computed positions: -k'11,16' */
 

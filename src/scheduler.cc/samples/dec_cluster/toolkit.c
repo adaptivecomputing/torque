@@ -298,6 +298,8 @@
 #include "pbs_error.h"
 #include "log.h"
 
+#include "lib_ifl.h"
+
 char schd_VersionString[] = "Custom PBS Cluster Scheduler (version 2.3)\n";
 
 /*
@@ -1874,7 +1876,8 @@ schd_reject_job(Job *job, char *reason)
    * Ask PBS to delete the job from the queue, which should deliver the
    * message to the user.
    */
-  rc = pbs_deljob(connector, job->jobid, message);
+  int local_errno;
+  rc = pbs_deljob_err(connector, job->jobid, message, &local_errno);
 
   if (rc)
     {

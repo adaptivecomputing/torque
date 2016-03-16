@@ -44,7 +44,8 @@ __attribute__((unused))
 = "$Id: wait.c,v 1.13 2006/09/05 07:49:36 ciesnik Exp $";
 #endif
 
-struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+#ifdef __cplusplus
+extern "C" {
 
 int
 drmaa_synchronize(
@@ -275,7 +276,6 @@ drmaa_get_job_rusage(
 )
   {
   int rc = DRMAA_ERRNO_SUCCESS;
-  int local_errno = 0;
 
   struct batch_status *pbs_status  = NULL;
   drmaa_attr_values_t *result = NULL;
@@ -304,7 +304,7 @@ drmaa_get_job_rusage(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, NULL, NULL, &local_errno);
+  pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, NULL, NULL);
 
   if (pbs_status == NULL)
     rc = drmaa_get_pbs_error(errmsg, errlen);
@@ -381,7 +381,6 @@ drmaa_job_wait(
   struct attropl  *attribs = NULL;
   drmaa_session_t *c       = NULL;
   int rc                   = DRMAA_ERRNO_SUCCESS;
-  int              local_errno = 0;
   bool terminated          = false;
 
   DEBUG(("-> drmaa_job_wait(jobid=%s)", jobid));
@@ -395,9 +394,9 @@ drmaa_job_wait(
 
     if (l != NULL)
       {
-      l[0].name     = strdup("exit_status");
+      l[0].name     = (char *)"exit_status";
       l[0].next = &l[1];
-      l[1].name     = strdup("job_state");
+      l[1].name     = (char *)"job_state";
       l[1].next = NULL;
       attribs = l;
       }
@@ -418,7 +417,7 @@ drmaa_job_wait(
       pthread_mutex_lock(&c->conn_mutex);
       DEBUG(("** probing queue: pbs_statjob( %d, %s, %p, NULL )",
              c->pbs_conn, jobid, (void*)attribs));
-      pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL, &local_errno);
+      pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL);
       pthread_mutex_unlock(&c->conn_mutex);
       }
 
@@ -555,8 +554,6 @@ drmaa_job_wait(
     }
   while (!(rc  ||  terminated));
 
-  free(attribs[0].name);
-  free(attribs[1].name);
   free(attribs);
 
   RELEASE_DRMAA_SESSION(c);
@@ -722,3 +719,6 @@ drmaa_wifaborted(int *aborted, int stat, char *errmsg, size_t errlen)
   return DRMAA_ERRNO_SUCCESS;
   }
 
+
+}
+#endif // #ifdef __cplusplus

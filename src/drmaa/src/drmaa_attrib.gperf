@@ -56,4 +56,4 @@ drmaa_wct_slimit,            ATTR_SOFT_WCT_LIMIT
 drmaa_deadline_time,         ATTR_DEADLINE_TIME
 drmaa_job_category,          ATTR_JOB_CATEGORY
 drmaa_native_specification,  ATTR_NATIVE
-# vim: syn=c++
+# vim: syn=c

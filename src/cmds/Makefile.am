@@ -2,7 +2,6 @@ include $(top_srcdir)/buildutils/config.mk
 
 DIST_SUBDIRS=
 
-include_HEADERS = common_cmds.h pbsnodes.h qsub_functions.h
 PBS_LIBS = ../lib/Libpbs/libtorque.la \
 					 ../lib/Libutils/libutils.a
 
