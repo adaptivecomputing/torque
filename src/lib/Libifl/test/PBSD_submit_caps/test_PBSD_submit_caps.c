@@ -7,7 +7,6 @@
 
 #include "pbs_error.h"
 
-int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);
 extern int flush_rc;
 extern int extend_rc;
 extern struct connect_handle connection[];

@@ -515,3 +515,13 @@ void update_failure_counts(
 
   {
   }
+
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
+  {
+  return(0);
+  }
+
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
+  {
+  return(0);
+  }

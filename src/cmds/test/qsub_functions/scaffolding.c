@@ -145,6 +145,12 @@ char * csv_find_string(const char *csv_str, const char *search_str)
   exit(1);
   }
 
+int pbs_deljob_err( int c, const char *jobid, char *extend, int *local_errno)
+  {
+  return(0);
+  }
+
+
 int pbs_deljob( int c, char *jobid, char *extend)
   {
   fprintf(stderr, "The call to pbs_deljob to be mocked!!\n");

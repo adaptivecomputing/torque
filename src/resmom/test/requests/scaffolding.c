@@ -128,10 +128,9 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   exit(1);
   }
 
-int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which)
+int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, const char *jobid, int which)
   {
-  fprintf(stderr, "The call to encode_DIS_JobFile needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void free_br(struct batch_request *preq)

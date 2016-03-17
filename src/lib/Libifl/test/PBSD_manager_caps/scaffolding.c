@@ -7,7 +7,7 @@
 struct connect_handle connection[10];
 
 
-int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, struct attropl *aoplp, char *extend)
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
   {
   fprintf(stderr, "The call to PBSD_mgr_put needs to be mocked!!\n");
   exit(1);
