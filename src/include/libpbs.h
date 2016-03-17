@@ -277,12 +277,12 @@ int
 PBSD_jcred (int connect, char *buf, int len);
 
 int
-PBSD_jscript (int connect, char *script_file, char *jobid);
+PBSD_jscript (int connect, const char *script_file, const char *jobid);
 
 int
-PBSD_mgr_put (int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend);
+PBSD_mgr_put (int connect, int func, int cmd, int objtype, const char *objname, struct attropl *al, char *extend);
 
-int PBSD_manager(int connect, int func, int cmd, int objtype, char *objname, struct attropl *al, char *extend_err, int *);
+int PBSD_manager(int connect, int func, int cmd, int objtype, const char *objname, struct attropl *al, char *extend_err, int *);
 
 int
 PBSD_msg_put (int connect, char *jobid, int fileopt, char *msg, char *extend);
@@ -291,13 +291,13 @@ int
 PBSD_rdytocmt (int connect, char *jobid);
 
 int
-PBSD_sig_put (int connect, char *jobid, char *signal, char *extend);
+PBSD_sig_put (int connect, const char *jobid, const char *signal, char *extend);
 
 int
 PBSD_gpu_put (int connect, char *node, char *id, int mode, int reset_perm, int reset_vol, char *extend);
 
 int
-PBSD_async_sig_put (int connect, char *jobid, char *signal, char *extend);
+PBSD_async_sig_put (int connect, const char *jobid, const char *signal, char *extend);
 
 int
 PBSD_term_put (int connect, int manner, char *extend);
@@ -316,7 +316,7 @@ struct batch_status *PBSD_status(int c, int function, int *, char *id, struct at
 
 struct batch_status *PBSD_status_get(int *local_errno, int c);
 
-char *PBSD_queuejob (int c, int *, char *j, char *d, struct attropl *a, char *ex);
+char *PBSD_queuejob (int c, int *, const char *j, const char *d, struct attropl *a, char *ex);
 int PBSD_QueueJob_hash(int c, char *j, char *d, job_data_container *ja, job_data_container *ra, char *ex, char **job_id, char **msg);
 
 
@@ -325,12 +325,12 @@ extern int decode_DIS_replyCmd (struct tcp_chan *chan, struct batch_reply *);
 
 extern int encode_DIS_GpuCtrl (struct tcp_chan *chan, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol);
 extern int encode_DIS_JobCred (struct tcp_chan *chan, int type, char *cred, int len);
-extern int encode_DIS_JobFile (struct tcp_chan *chan, int, char *, int, char *, int);
+extern int encode_DIS_JobFile (struct tcp_chan *chan, int, char *, int, const char *, int);
 extern int encode_DIS_JobId (struct tcp_chan *chan, char *);
-extern int encode_DIS_Manage (struct tcp_chan *chan, int cmd, int objt, char *, struct attropl *);
+extern int encode_DIS_Manage (struct tcp_chan *chan, int cmd, int objt, const char *, struct attropl *);
 extern int encode_DIS_MoveJob (struct tcp_chan *chan, char *jid, char *dest);
 extern int encode_DIS_MessageJob (struct tcp_chan *chan, char *jid, int fopt, char *m);
-extern int encode_DIS_QueueJob (struct tcp_chan *chan, char *jid, char *dest, struct attropl *);
+extern int encode_DIS_QueueJob (struct tcp_chan *chan, const char *jid, const char *dest, struct attropl *);
 int encode_DIS_QueueJob_hash(struct tcp_chan *chan, char *jid, char *destin, job_data_container *job_attr, job_data_container *res_attr);
 extern int encode_DIS_ReqExtend (struct tcp_chan *chan, char *extend);
 extern int encode_DIS_PowerState (struct tcp_chan *chan, unsigned short power_state);
@@ -338,7 +338,7 @@ extern int encode_DIS_ReqHdr (struct tcp_chan *chan, int reqt, char *user);
 extern int encode_DIS_Rescq (struct tcp_chan *chan, char **rlist, int num);
 extern int encode_DIS_RunJob (struct tcp_chan *chan, char *jid, char *where, unsigned int resch);
 extern int encode_DIS_ShutDown (struct tcp_chan *chan, int manner);
-extern int encode_DIS_SignalJob (struct tcp_chan *chan, char *jid, char *sig);
+extern int encode_DIS_SignalJob (struct tcp_chan *chan, const char *jid, const char *sig);
 extern int encode_DIS_Status (struct tcp_chan *chan, char *objid, struct attrl *);
 extern int encode_DIS_attrl (struct tcp_chan *chan, struct attrl *);
 extern int encode_DIS_attropl (struct tcp_chan *chan, struct attropl *);

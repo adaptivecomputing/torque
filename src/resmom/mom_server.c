@@ -2286,6 +2286,7 @@ void sort_paths()
 void reset_okclients()
 
   {
+  log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "okclients");
   okclients = AVL_clear_tree(okclients);
 
   // re-add each server
@@ -2344,6 +2345,7 @@ int read_cluster_addresses(
   std::string      hierarchy_file = "/n";
   long            list_size;
   long            list_len = 0;
+
   if (mh != NULL)
     free_mom_hierarchy(mh);
 

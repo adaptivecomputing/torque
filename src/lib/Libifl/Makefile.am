@@ -6,8 +6,6 @@ CPPFLAGS = @CPPFLAGS@ -DPBS_DEFAULT_FILE=\"$(PBS_DEFAULT_FILE)\" -DPBS_SERVER_HO
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 
-include_HEADERS = lib_ifl.h
-
 noinst_LIBRARIES = libifl.a
 
 libifl_a_SOURCES = PBSD_gpuctrl2.c PBSD_manage2.c PBSD_manager_caps.c\

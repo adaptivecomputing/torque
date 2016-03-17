@@ -31,6 +31,8 @@
 #include <jobs.h>
 #include <attrib.h>
 
+#include "lib_ifl.h"
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -394,10 +396,12 @@ drmaa_set_vector_attribute(
 
 int
 drmaa_get_vector_attribute(
+
   drmaa_job_template_t *jt,
-  const char *name, drmaa_attr_values_t **out_values,
-  char *errmsg, size_t errlen
-)
+  const char *name, 
+  drmaa_attr_values_t **out_values,
+  char *errmsg, size_t errlen )
+
   {
   const drmaa_attrib_info_t *attr;
   unsigned i, n_values;
@@ -469,6 +473,7 @@ int drmaa_control(
 
   switch (action)
     {
+    int local_errno;
     /*
      * We cannot know whether we did suspend job
      * in other way than remembering this inside DRMAA session.
@@ -476,24 +481,24 @@ int drmaa_control(
 
     case DRMAA_CONTROL_SUSPEND:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_SUSPENDED);
-      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigstop, NULL);
+      rc = pbs_sigjob_err(c->pbs_conn, job_id_cpy, sigstop, NULL, &local_errno);
       break;
 
     case DRMAA_CONTROL_RESUME:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_RESUMED);
-      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigcont, NULL);
+      rc = pbs_sigjob_err(c->pbs_conn, job_id_cpy, sigcont, NULL, &local_errno);
       break;
 
     case DRMAA_CONTROL_HOLD:
-      rc = pbs_holdjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
+      rc = pbs_holdjob_err(c->pbs_conn, job_id_cpy, user_hold, NULL, &local_errno);
       break;
 
     case DRMAA_CONTROL_RELEASE:
-      rc = pbs_rlsjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
+      rc = pbs_rlsjob_err(c->pbs_conn, job_id_cpy, user_hold, NULL, &local_errno);
       break;
 
     case DRMAA_CONTROL_TERMINATE:
-      rc = pbs_deljob(c->pbs_conn, job_id_cpy, NULL); /* deldelay=N
+      rc = pbs_deljob_err(c->pbs_conn, job_id_cpy, NULL, &local_errno); /* deldelay=N
              -- delay between SIGTERM and SIGKILL (default 0)*/
       break;
     }

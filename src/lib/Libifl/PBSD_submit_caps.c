@@ -316,7 +316,7 @@ int PBSD_scbuf(
   int   seq,  /* file chunk sequence number */
   char *buf,  /* file chunk */
   int   len,  /* length of chunk */
-  char *jobid,  /* job id (for types 1 and 2 only) */
+  const char *jobid,  /* job id (for types 1 and 2 only) */
   enum job_file which) /* standard file type, see libpbs.h */
 
   {
@@ -391,8 +391,8 @@ int PBSD_scbuf(
 int PBSD_jscript(
     
   int   c,
-  char *script_file,
-  char *jobid)
+  const char *script_file,
+  const char *jobid)
 
   {
   int  i;
@@ -517,8 +517,8 @@ char *PBSD_queuejob(
 
   int             connect,     /* I */
   int            *local_errno, /* O */
-  char           *jobid,       /* I */
-  char           *destin,
+  const char     *jobid,       /* I */
+  const char     *destin,
   struct attropl *attrib,
   char           *extend)
 

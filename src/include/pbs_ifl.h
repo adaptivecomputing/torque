@@ -659,7 +659,7 @@ int pbs_runjob(int connect, char *jobid, char *loc, char *extend);
 
 char **pbs_selectjob(int connect, struct attropl *select_list, char *extend);
 
-int pbs_sigjob(int connect, char *job_id, char *signal, char *extend);
+int pbs_sigjob(int connect, char *job_id,  char *signal, char *extend);
 
 int pbs_sigjobasync(int connect, char *job_id, char *signal, char *extend);
 

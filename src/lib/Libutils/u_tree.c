@@ -421,6 +421,10 @@ AvlTree AVL_delete_node(
   uint16_t port,
   AvlTree  tree)
   {
+  char buf[256];
+
+  sprintf(buf, "key: %ld - port: %u", key, port);
+  log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, buf);
   pthread_mutex_lock(&AVLMutex);
   AvlTree t = AVL_delete_node_internal(key,port,tree);
   pthread_mutex_unlock(&AVLMutex);
@@ -536,7 +540,12 @@ AvlTree AVL_clear_tree(
     
   AvlTree tree)
 
-  {
+  { 
+  char buf[128];
+
+  sprintf(buf, "key: %ld", tree->key);
+  log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, buf);
+ 
   pthread_mutex_lock(&AVLMutex);
   while (tree != NULL)
     {

@@ -90,8 +90,8 @@
 int pbs_sigjob_err(
     
   int   c,
-  char *jobid,
-  char *signal,
+  const char *jobid,
+  const char *signal,
   char *extend,
   int  *local_errno)
   
@@ -142,7 +142,7 @@ int pbs_sigjob(
   {
   pbs_errno = 0;
 
-  return(pbs_sigjob_err(c, jobid, signal, extend, &pbs_errno));
+  return(pbs_sigjob_err(c, (const char *)jobid, (const char *)signal, extend, &pbs_errno));
   } /* END pbs_sigjob() */
 
 
@@ -151,8 +151,8 @@ int pbs_sigjob(
 int pbs_sigjobasync_err(
 
   int c,
-  char *jobid,
-  char *signal,
+  const char *jobid,
+  const char *signal,
   char *extend,
   int  *local_errno)
 
@@ -204,7 +204,7 @@ int pbs_sigjobasync(
   {
   pbs_errno = 0;
 
-  return(pbs_sigjobasync_err(c, jobid, signal, extend, &pbs_errno));
+  return(pbs_sigjobasync_err(c, (const char *)jobid, (const char *)signal, extend, &pbs_errno));
   } /* END pbs_sigjobasync() */
 
 

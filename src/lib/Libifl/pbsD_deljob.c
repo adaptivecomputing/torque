@@ -137,7 +137,7 @@
 int pbs_deljob_err(
 
   int   c,
-  char *jobid,
+  const char *jobid,
   char *extend,
   int  *local_errno)
 
@@ -187,7 +187,7 @@ int pbs_deljob(
   {
   pbs_errno = 0;
 
-  return(pbs_deljob_err(c, jobid, extend, &pbs_errno));
+  return(pbs_deljob_err(c, (const char *)jobid, extend, &pbs_errno));
   } /* END pbs_deljob() */
 
 

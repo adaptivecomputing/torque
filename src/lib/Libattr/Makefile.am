@@ -6,8 +6,6 @@ CHECK_DIR = test
 
 CLEANFILES = *.gcda *.gcno *.gcov
 
-include_HEADERS = attr_node_func.h
-
 noinst_LIBRARIES = libattr.a
 
 libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \

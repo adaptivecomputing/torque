@@ -56,6 +56,8 @@ struct drmaa_attrib_info_s
   unsigned    flags;
   };
 
+typedef struct drmaa_attrib_info_s drmaa_attrib_info_t;
+
 /** @brief Attributes information table. */
 extern const drmaa_attrib_info_t drmaa_attr_table[];
 

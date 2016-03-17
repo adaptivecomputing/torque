@@ -36,6 +36,8 @@
 #include <attrib.h>
 #include <compat.h>
 
+#include "lib_ifl.h"
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -213,7 +215,8 @@ drmaa_run_job_impl(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_job_id = pbs_submit(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL);
+  int local_errno;
+  pbs_job_id = pbs_submit_err(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL, &local_errno);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -240,9 +243,13 @@ drmaa_run_job_impl(
 
 int
 drmaa_create_submission_context(
+
   drmaa_submission_context_t **c,
-  const drmaa_job_template_t *jt, int bulk_no,
-  char *errmsg, size_t errlen)
+  const drmaa_job_template_t *jt, 
+  int bulk_no,
+  char *errmsg, 
+  size_t errlen)
+
   {
   drmaa_submission_context_t *sc;
   sc = (drmaa_submission_context_t*)malloc(sizeof(drmaa_submission_context_t));

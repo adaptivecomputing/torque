@@ -7,8 +7,6 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 noinst_LIBRARIES = libutils.a
 
-include_HEADERS = u_lock_ctl.h lib_utils.h
-
 libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c \
                      u_threadpool.c \
                      u_lock_ctl.c u_mom_hierarchy.c \
