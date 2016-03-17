@@ -228,7 +228,6 @@ Socket &Socket::operator=(
 
   hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
   hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
-  this->allocations = other.allocations;
 
   return(*this);
   }
