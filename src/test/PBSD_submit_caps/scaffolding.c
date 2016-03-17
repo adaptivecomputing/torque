@@ -41,7 +41,7 @@ int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   exit(1);
   }
 
-int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which)
+int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, const char *jobid, int which)
   {
   fprintf(stderr, "The call to encode_DIS_JobFile needs to be mocked!!\n");
   exit(1);
@@ -54,7 +54,7 @@ struct tcp_chan *DIS_tcp_setup(int fd)
   return(&chan);
   }
 
-int encode_DIS_QueueJob(struct tcp_chan *chan, char *jobid, char *destin, struct attropl *aoplp)
+int encode_DIS_QueueJob(struct tcp_chan *chan, const char *jobid, const char *destin, struct attropl *aoplp)
   {
   fprintf(stderr, "The call to encode_DIS_QueueJob needs to be mocked!!\n");
   exit(1);
@@ -98,6 +98,11 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   }
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
+  {
+  return(0);
+  }
+
+int PBSD_scbuf( int c, int reqtype, int seq, char *buf, int len, const char *jobid, enum job_file which)
   {
   return(0);
   }

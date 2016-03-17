@@ -37,6 +37,8 @@ void send_svr_disconnect(int, const char *);
 int set_trqauthd_addr(void);
 int validate_user(int sock, const char *user_name, int user_pid, char *msg);
 
+/* pbsd_submit_caps.c */
+int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, const char *jobid, enum job_file which);
 /* PBSD_gpuctrl2.c */
 int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, int reset_vol, char *extend);
 

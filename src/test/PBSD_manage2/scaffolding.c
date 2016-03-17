@@ -34,7 +34,7 @@ int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   exit(1);
   }
 
-int encode_DIS_Manage(struct tcp_chan *chan, int command, int objtype, char *objname, struct attropl *aoplp)
+int encode_DIS_Manage(struct tcp_chan *chan, int command, int objtype, const char *objname, struct attropl *aoplp)
   {
   fprintf(stderr, "The call to encode_DIS_Manage needs to be mocked!!\n");
   exit(1);
