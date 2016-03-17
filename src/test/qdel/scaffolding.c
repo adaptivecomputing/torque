@@ -50,6 +50,12 @@ int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *se
   return(PBSE_NONE);
   }
 
+int pbs_deljob_err( int c, const char *jobid, char *extend, int *local_errno)
+  { 
+  return(0);
+  }
+
+
 int pbs_deljob( int c, char *jobid, char *extend)
   { 
   fprintf(stderr, "The call to pbs_deljob needs to be mocked!!\n");

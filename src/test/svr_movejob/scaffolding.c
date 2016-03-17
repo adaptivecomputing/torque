@@ -82,7 +82,7 @@ int svr_job_purge(job *pjob, int leaveSpoolFiles)
   exit(1);
   }
 
-int PBSD_jscript(int c, char *script_file, char *jobid)
+int PBSD_jscript(int c, const char *script_file, const char *jobid)
   {
   if (script_fail == true)
     return(-1);
@@ -245,7 +245,7 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   exit(1);
   }
 
-char *PBSD_queuejob(int connect, int *local_errno, char *jobid, char *destin, struct attropl *attrib, char *extend)
+char *PBSD_queuejob(int connect, int *local_errno, const char *jobid, const char *destin, struct attropl *attrib, char *extend)
   {
   if (expired == true)
     {
@@ -440,5 +440,4 @@ std::string get_path_jobdata(const char *a, const char *b)
   }
 
 void update_failure_counts(const char *node_name, int rc) {}
-
 

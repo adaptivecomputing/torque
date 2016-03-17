@@ -35,7 +35,7 @@ int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   exit(1);
   }
 
-int encode_DIS_SignalJob(struct tcp_chan *chan, char *jobid, char *signal)
+int encode_DIS_SignalJob(struct tcp_chan *chan, const char *jobid, const char *signal)
   {
   fprintf(stderr, "The call to encode_DIS_SignalJob needs to be mocked!!\n");
   exit(1);
