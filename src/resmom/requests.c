@@ -1719,7 +1719,6 @@ static void cray_susp_resum(
   {
   int   i;
   int  ct;
-  task *ptask;
   pid_t  pid;
   long  sess;
   int  sock;
@@ -1764,11 +1763,10 @@ static void cray_susp_resum(
 
   /* child of MOM, cannot update job struct */
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    sess = ptask->ti_qs.ti_sid;
+    task &ptask = pjob->ji_tasks->at(i);
+    sess = ptask.ti_qs.ti_sid;
 
     for (ct = 0;ct < 3;ct++)
       {
@@ -1880,8 +1878,6 @@ static void resume_suspend(
   struct batch_request *preq)
 
   {
-  task *tp;
-
   int   stat = 0;
   int   savederr = 0;
 
@@ -1928,26 +1924,28 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
-    if(tmpTask != NULL)
-      kill_task(pjob, tmpTask, SIGTSTP, 0);
+    if (pjob->ji_tasks->size() != 0)
+      {
+      task &tmpTask = pjob->ji_tasks->at(0);
+      kill_task(pjob, &tmpTask, SIGTSTP, 0);
+      }
 
     sleep(5);
     }
 
-  for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-       tp != NULL;
-       tp = (task *)GET_NEXT(tp->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
+    task &tp = pjob->ji_tasks->at(i);
+
+    if (tp.ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
     DBPRT(("%s: inspecting %d from node %d\n",
            __func__,
-           tp->ti_qs.ti_task,
-           tp->ti_qs.ti_parentnode));
+           tp.ti_qs.ti_task,
+           tp.ti_qs.ti_parentnode));
 
-    stat = kill_task(pjob, tp, signum, 0);
+    stat = kill_task(pjob, &tp, signum, 0);
 
     if (stat < 0)
       {
@@ -1957,7 +1955,7 @@ static void resume_suspend(
 
       break;
       }  /* END if (stat < 0) */
-    }    /* END for (tp) */
+    }    /* END for each task */
 
   if (stat >= 0)
     {
@@ -1994,14 +1992,14 @@ static void resume_suspend(
 
     signum = (susp == 1) ? SIGCONT : SIGSTOP;
 
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-         tp != NULL;
-         tp = (task *)GET_NEXT(tp->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
+      task &tp = pjob->ji_tasks->at(i);
+
+      if (tp.ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      kill_task(pjob, tp, signum, 0);
+      kill_task(pjob, &tp, signum, 0);
       }
 
     if (pjob->ji_numnodes > 1)
@@ -2103,7 +2101,6 @@ void req_signaljob(
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
-  task           *ptask;
 
   struct sig_tbl *psigt;
 
@@ -2259,8 +2256,7 @@ void req_signaljob(
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
         {
-        ptask = (task *)GET_NEXT(pjob->ji_tasks);
-        if (ptask == NULL)
+        if (pjob->ji_tasks->size() == 0)
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",

@@ -18,8 +18,6 @@ int task_save(struct task *ptask);
 
 struct eventent *event_alloc(int command, struct hnodent *pnode, tm_event_t event, tm_task_id taskid);
 
-struct task *pbs_task_create(struct job *pjob, tm_task_id taskid);
-
 struct task *task_find(struct job *pjob, tm_task_id taskid);
 
 struct task *task_check(struct job *pjob, tm_task_id taskid);

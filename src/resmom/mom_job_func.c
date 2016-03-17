@@ -155,6 +155,16 @@
 #include "machine.hpp"
 #endif
 
+#ifdef ENABLE_PMIX
+extern "C"{
+#include "pmix_server.h"
+}
+#include "utils.h"
+
+extern std::string topology_xml;
+extern char        mom_alias[];
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -205,66 +215,15 @@ void       send_update_soon();
 extern int multi_mom;
 extern int pbs_rm_port;
 
-void tasks_free(
 
-  job *pj)
-
+task::~task()
   {
-  task            *tp = (task *)GET_NEXT(pj->ji_tasks);
-  obitent         *op;
-  infoent         *ip;
-  container::item_container<struct tcp_chan *> freed_chans;
-
-  while (tp != NULL)
+  if (this->ti_chan != NULL)
     {
-    op = (obitent *)GET_NEXT(tp->ti_obits);
-
-    while (op != NULL)
-      {
-      delete_link(&op->oe_next);
-
-      free(op);
-
-      op = (obitent *)GET_NEXT(tp->ti_obits);
-      }  /* END while (op != NULL) */
-
-    ip = (infoent *)GET_NEXT(tp->ti_info);
-
-    while (ip != NULL)
-      {
-      delete_link(&ip->ie_next);
-
-      free(ip->ie_name);
-      free(ip->ie_info);
-      free(ip);
-
-      ip = (infoent *)GET_NEXT(tp->ti_info);
-      }
-
-    if (tp->ti_chan != NULL)
-      {
-      char ptr[50];
-      sprintf(ptr,"%p",(void *)tp->ti_chan);
-      freed_chans.lock();
-      if(freed_chans.insert(tp->ti_chan,ptr))
-        {
-        close_conn(tp->ti_chan->sock, FALSE);
-        DIS_tcp_cleanup(tp->ti_chan);
-        }
-      freed_chans.unlock();
-        
-      tp->ti_chan = NULL;
-      }
-
-    delete_link(&tp->ti_jobtask);
-
-    free(tp);
-
-    tp = (task *)GET_NEXT(pj->ji_tasks);
-    }  /* END while (tp != NULL) */
-
-  return;
-  }  /* END tasks_free() */
+    close_conn(this->ti_chan->sock, FALSE);
+    DIS_tcp_cleanup(this->ti_chan);
+    }
+  } // END task destructor
 
 
 
@@ -512,7 +471,7 @@ job *job_alloc(void)
 
   CLEAR_LINK(pj->ji_jobque);
 
-  CLEAR_HEAD(pj->ji_tasks);
+  pj->ji_tasks = new std::vector<task>();
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
@@ -572,7 +531,7 @@ void mom_job_free(
 
   nodes_free(pj);
 
-  tasks_free(pj);
+  delete pj->ji_tasks;
 
   if (pj->ji_resources)
     {
@@ -1130,6 +1089,220 @@ bool am_i_mother_superior(
     
   return(mother_superior);
   }
+
+
+#ifdef ENABLE_PMIX
+const int pmix_info_count = 17;
+
+void free_info_array(
+
+  pmix_status_t  pst,
+  void          *cbdata)
+
+  {
+  pmix_info_t *pmi_array = (pmix_info_t *)cbdata;
+
+  PMIX_INFO_FREE(pmi_array, pmix_info_count);
+  } // END free_info_array()
+
+
+uint32_t local_arch = 0xFFFFFFFF;
+
+void register_jobs_nspace(
+
+  job *pjob)
+
+  {
+  pmix_info_t     *pmi_array;
+  int               es = 0;
+  int               lowest_rank = 0;
+  int               prev_index = -1;
+  int               attr_index;
+  std::vector<int>  ranks;
+  std::string       node_list;
+ 
+  // Get some needed info about ranks / local execution slots 
+  for (int i = 0; i < pjob->ji_numvnod; i++)
+    {
+    if (prev_index != pjob->ji_vnods[i].vn_host->hn_node)
+      {
+      if (node_list.size() != 0)
+        node_list += ",";
+
+      node_list += pjob->ji_vnods[i].vn_host->hn_host;
+      }
+
+    if (pjob->ji_vnods[i].vn_host->hn_node == pjob->ji_nodeid)
+      {
+      es++;
+
+      ranks.push_back(i);
+      }
+    }
+
+  if (ranks.size() != 0)
+    lowest_rank = ranks[0];
+
+  PMIX_INFO_CREATE(pmi_array, pmix_info_count);
+
+  attr_index = 0;
+  strcpy(pmi_array[attr_index].key, PMIX_JOBID);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  std::string jobid(pjob->ji_qs.ji_jobid);
+  std::size_t dot = jobid.find(".");
+
+  if (dot != std::string::npos)
+    jobid.erase(dot);
+
+  // PMIx just wants the numeric portion of the job id
+  pmi_array[attr_index].value.data.string = strdup(jobid.c_str());
+
+  // Add the application information for this job
+  // Get the number of procs for this job
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_UNIV_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+
+  // For now, the job and namespace are the same size
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_JOB_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+  
+  // Max procs for the job is also the same
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_MAX_PROCS);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+
+  // Get the number of procs for this node
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODE_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = es;
+  
+  // Local size is the same as the number for this node
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = es;
+
+  // Mapping information
+  // list of nodes
+  char *node_regex;
+  PMIx_generate_regex(node_list.c_str(), &node_regex);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODE_MAP);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = node_regex;
+
+  // map of process ranks to nodes
+  std::string ppn_list(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  std::replace(ppn_list.begin(), ppn_list.end(), '+', ';');
+  std::replace(ppn_list.begin(), ppn_list.end(), '/', ',');
+  char *ppn_regex;
+  PMIx_generate_ppn(ppn_list.c_str(), &ppn_regex);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_PROC_MAP);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = ppn_regex;
+
+  // Node-level information
+  // Node id
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODEID);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_nodeid;
+
+  // hostname
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_HOSTNAME);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(mom_alias);
+
+  // local peers
+  std::string peer_ranks;
+  translate_vector_to_range_string(peer_ranks, ranks);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_PEERS);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(peer_ranks.c_str());
+
+#ifdef ENABLE_CGROUPS
+  // local cpuset
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)
+    {
+    std::string range;
+    std::string cpu_list(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    find_range_in_cpuset_string(cpu_list, range);
+  
+    attr_index++;
+    strcpy(pmi_array[attr_index].key, PMIX_CPUSET);
+    pmi_array[attr_index].value.type = PMIX_STRING;
+    pmi_array[attr_index].value.data.uint32 = strdup(range.c_str());
+    }
+
+  // node topology
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_TOPO);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(topology_xml.c_str());
+#endif
+
+  // local leader
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCALLDR);
+  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.data.uint64 = lowest_rank;
+
+  // architecture
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_ARCH);
+  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.data.uint64 = local_arch;
+
+  // top level directory for job
+  char *init_dir = get_job_envvar(pjob, "PBS_O_INITDIR");
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NSDIR);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(init_dir);
+
+  // temporary directory for job
+  char tmpdir[MAXPATHLEN];
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_TMPDIR);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  if (TTmpDirName(pjob, tmpdir, sizeof(tmpdir)))
+    pmi_array[attr_index].value.data.string = strdup(tmpdir);
+  else
+    pmi_array[attr_index].value.data.string = strdup(init_dir);
+
+  PMIx_server_register_nspace(pjob->ji_qs.ji_jobid,
+                              es,
+                              pmi_array,
+                              pmix_info_count,
+                              free_info_array,
+                              pmi_array);
+  
+  // Peer-level information - do we provide this at this time?
+  // rank
+  // appnum
+  // application leader
+  // global rank
+  // application rank
+  // local rank
+  // node rank
+  // node id
+  // uri
+  // cpuset for process
+  // spawned - true if launched via a dynamic spawn
+  // temporary dir for this process
+
+  } // END register_jobs_nspace()
+
+#endif
 
 /* END job_func.c */
 

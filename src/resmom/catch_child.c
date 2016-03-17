@@ -523,14 +523,14 @@ void process_tm_obits(
   char *cookie)
 
   {
-  obitent      *pobit;
-
-  while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
+  for (unsigned int i = 0; i < ptask->ti_obits.size(); i++)
     {
+    obitent &pobit = ptask->ti_obits[i];
+
 #ifndef NUMA_SUPPORT
     hnodent *pnode;
 
-    pnode = get_node(pjob, pobit->oe_info.fe_node);
+    pnode = get_node(pjob, pobit.oe_info.fe_node);
 
     /* see if this is me or another MOM */
 
@@ -544,12 +544,12 @@ void process_tm_obits(
 
       /* send event to local child */
 
-      tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
+      tmp_task = task_find(pjob, pobit.oe_info.fe_taskid);
 
       if ((tmp_task != NULL) &&
           (tmp_task->ti_chan != NULL))
         {
-        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
+        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit.oe_info.fe_event);
 
         diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
 
@@ -561,14 +561,10 @@ void process_tm_obits(
       {
       /* Send a response over to MOM whose child sent the request. */
       if (pnode != NULL)
-        send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+        send_task_obit_response(pjob, pnode, cookie, &pobit, ptask->ti_qs.ti_exitstat);
       }
 #endif /* ndef NUMA_SUPPORT */
-
-    delete_link(&pobit->oe_next);
-
-    free(pobit);
-    }  /* END while (pobit) */
+    }  // END for each obit
   } /* END process_tm_obits() */
 
 
@@ -617,8 +613,6 @@ void update_job_based_on_tasks(
   job *pjob)
 
   {
-  task         *ptask;
-
   /* Check each EXITED task.  They transition to DEAD here. */
   if (LOGLEVEL >= 6)
     {
@@ -627,22 +621,21 @@ void update_job_based_on_tasks(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
+    task &ptask = pjob->ji_tasks->at(i);
+
+    if (ptask.ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
     /* Check if it is the main job process */
-    if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
-      check_jobs_main_process(pjob, ptask);
+    if (ptask.ti_qs.ti_parenttask == TM_NULL_TASK)
+      check_jobs_main_process(pjob, &ptask);
 
-    process_tm_obits(pjob, ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
+    process_tm_obits(pjob, &ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
 
-    cleanup_task(pjob, ptask);
-    }  /* END for (ptask) */
+    cleanup_task(pjob, &ptask);
+    }  /* END for each ptask */
   } /* END update_job_based_on_tasks() */
 
 
@@ -684,7 +677,7 @@ bool is_job_state_exiting(
          we have not received a PBS_BATCH_DeleteJob request from the 
          server. If we have tasks to complete continue. But if there
          are no tasks left to run we need to delete the job.*/
-      if (GET_NEXT(pjob->ji_tasks) == NULL)
+      if (pjob->ji_tasks->size() == 0)
         mom_deljob(pjob);
       }
 
@@ -781,7 +774,6 @@ bool mother_superior_cleanup(
   int *found_one)
 
   {
-  task *ptask;
   time_t time_now;
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
@@ -791,11 +783,11 @@ bool mother_superior_cleanup(
     kill_job(pjob, SIGKILL, __func__, "local task termination detected");
   else
     {
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+      task &ptask = pjob->ji_tasks->at(i);
+
+      if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
         {
         if (LOGLEVEL >= 4)
           {
@@ -807,16 +799,14 @@ bool mother_superior_cleanup(
           }
 
         if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
-          ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+          ptask.ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
         else
-          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
+          ptask.ti_qs.ti_exitstat = 0;  /* assume successful completion */
 
-        ptask->ti_qs.ti_status = TI_STATE_EXITED;
+        ptask.ti_qs.ti_status = TI_STATE_EXITED;
 
-        task_save(ptask);
+        task_save(&ptask);
         }
-
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
       }  /* END while (ptask != NULL) */
 
     }
@@ -2038,8 +2028,8 @@ int needs_and_ready_for_reply(
   job *pjob)
 
   {
-  int   needs_and_ready = FALSE;
-  task *ptask;
+  int  needs_and_ready = FALSE;
+  bool running = false;
   
   if (pjob->ji_obit == TM_NULL_EVENT)
     {
@@ -2056,18 +2046,19 @@ int needs_and_ready_for_reply(
   else
     {
     /* Are any tasks running? If so we're not ready */
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-    
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-        break;
+      task &ptask = pjob->ji_tasks->at(i);
       
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+      if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
+        {
+        running = true;
+        break;
+        }
       }
   
     /* Still somebody there so don't send it yet. */
-    if (ptask != NULL)
+    if (running == true)
       {
       if (LOGLEVEL >= 3)
         {

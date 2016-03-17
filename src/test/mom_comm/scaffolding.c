@@ -541,3 +541,5 @@ int trq_cg_add_devices_to_cgroup(job *pjob)
   {
   return(PBSE_NONE);
   }
+
+task::~task() {}

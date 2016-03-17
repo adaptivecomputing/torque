@@ -1249,7 +1249,6 @@ int mom_checkpoint_job(
   char            path[MAXPATHLEN + 1];
   char            oldp[MAXPATHLEN + 1];
   char            file[MAXPATHLEN + 1];
-  task           *ptask;
 
   assert(pjob != NULL);
 
@@ -1292,13 +1291,12 @@ int mom_checkpoint_job(
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) && abort)
     {
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-         ptask != NULL;
-         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      sesid = ptask->ti_qs.ti_sid;
+      task &ptask = pjob->ji_tasks->at(i);
+      sesid = ptask.ti_qs.ti_sid;
 
-      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+      if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
       /* XXX: What to do if some resume work and others don't? */
@@ -1322,16 +1320,15 @@ int mom_checkpoint_job(
 
 #endif /* _CRAY */
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    sesid = ptask->ti_qs.ti_sid;
+    task &ptask = pjob->ji_tasks->at(i);
+    sesid = ptask.ti_qs.ti_sid;
 
-    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+    if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
-    if (mach_checkpoint(ptask, file, abort) == -1)
+    if (mach_checkpoint(&ptask, file, abort) == -1)
       goto fail;
     }
 
@@ -1673,23 +1670,21 @@ void checkpoint_partial(
 
   {
   char  namebuf[MAXPATHLEN];
-  task  *ptask;
   int  texit = 0;
 
   assert(pjob != NULL);
 
   get_jobs_default_checkpoint_dir(pjob->ji_qs.ji_fileprefix, namebuf, sizeof(namebuf));
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task &ptask = pjob->ji_tasks->at(i);
     /*
     ** See if the task was marked as one of those that did
     ** actually checkpoint.
     */
 
-    if ((ptask->ti_flags & TI_FLAGS_CHECKPOINT) == 0)
+    if ((ptask.ti_flags & TI_FLAGS_CHECKPOINT) == 0)
       continue;
 
     texit++;
@@ -1699,23 +1694,23 @@ void checkpoint_partial(
     ** fool with it until we see it die.
     */
 
-    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
+    if (ptask.ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
     texit--;
 
-    if (mach_restart(ptask, namebuf) == -1)
+    if (mach_restart(&ptask, namebuf) == -1)
       {
       pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
       kill_job(pjob, SIGKILL, __func__, "failed to restart");
       return;
       }
 
-    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+    ptask.ti_qs.ti_status = TI_STATE_RUNNING;
 
-    ptask->ti_flags &= ~TI_FLAGS_CHECKPOINT;
+    ptask.ti_flags &= ~TI_FLAGS_CHECKPOINT;
 
-    task_save(ptask);
+    task_save(&ptask);
     }
 
   if (texit == 0)
@@ -1766,7 +1761,6 @@ int blcr_restart_job(
   char           sid[20];
   char          *arg[20];
   extern char    restart_script_name[MAXPATHLEN + 1];
-  task          *ptask;
   char           buf[1024];
   char           namebuf[MAXPATHLEN + 1];
   char           restartfile[MAXPATHLEN + 1];
@@ -1789,28 +1783,25 @@ int blcr_restart_job(
 
   /* BLCR is not for parallel jobs, there can only be one task in the job. */
 
-  ptask = (task *) GET_NEXT(pjob->ji_tasks);
-
-  if (ptask == NULL)
+  if (pjob->ji_tasks->size() == 0)
     {
-
-
-    /* turns out if we are restarting a complete job then ptask will be
+    task *task_ptr;
+    /* turns out if we are restarting a complete job then task_ptr will be
        null and we need to create a task We'll just create one task*/
-    if ((ptask = pbs_task_create(pjob, TM_NULL_TASK)) == NULL)
+    if ((task_ptr = pbs_task_create(pjob, TM_NULL_TASK)) == NULL)
       {
-      log_err(PBSE_RMNOPARAM, __func__, (char *)"Job has no tasks");
+      log_err(PBSE_RMNOPARAM, __func__, "Job has no tasks");
       return(PBSE_RMNOPARAM);
       }
 
-    strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
+    strcpy(task_ptr->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
 
-    ptask->ti_qs.ti_parentnode = 0;
-    ptask->ti_qs.ti_parenttask = 0;
-    ptask->ti_qs.ti_task = 0;
-
-
+    task_ptr->ti_qs.ti_parentnode = 0;
+    task_ptr->ti_qs.ti_parenttask = 0;
+    task_ptr->ti_qs.ti_task = 0;
     }
+
+  task &ptask = pjob->ji_tasks->at(0);
 
 #ifdef USEJOBCREATE
   /*
@@ -1838,10 +1829,10 @@ int blcr_restart_job(
     {
     /* parent */
 
-    ptask->ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
+    ptask.ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
 
-    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
-    task_save(ptask);
+    ptask.ti_qs.ti_status = TI_STATE_RUNNING;
+    task_save(&ptask);
 
     return(PBSE_NONE);
     }

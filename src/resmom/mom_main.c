@@ -227,6 +227,9 @@ mom_hierarchy_t  *mh = NULL;
 #ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
 #endif
+#ifdef ENABLE_PMIX
+std::string      topology_xml;
+#endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -1951,24 +1954,22 @@ void add_diag_jobs_session_ids(
 
   {
   bool  first = true;
-  task *ptask;
 
   output << " sidlist=";
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task &ptask = pjob->ji_tasks->at(i);
     /* only check on tasks that we think should still be around */
-    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
+    if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
     /* NOTE:  on linux systems, the session master should have
        pid == sessionid */
     if (first == true)
-      output << ptask->ti_qs.ti_sid;
+      output << ptask.ti_qs.ti_sid;
     else
-      output << "," << ptask->ti_qs.ti_sid;
+      output << "," << ptask.ti_qs.ti_sid;
 
     first = false;
     }  /* END for (task) */
@@ -3485,7 +3486,6 @@ int kill_job(
   const char *why_killed_reason) /* I - reason for killing */
 
   {
-  task *ptask;
   int   ct = 0;
 
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
@@ -3527,11 +3527,11 @@ int kill_job(
       }
     }
 
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-  while (ptask != NULL)
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+    task &ptask = pjob->ji_tasks->at(i);
+
+    if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
         {
@@ -3542,11 +3542,10 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(pjob, ptask, sig, 0);
+      ct += kill_task(pjob, &ptask, sig, 0);
       }
 
-    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-    }  /* END while (ptask != NULL) */
+    }  /* END for each task */
 
   if (LOGLEVEL >= 6)
     {
@@ -4632,9 +4631,24 @@ int cg_initialize_hwloc_topology()
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    log_err(-1, msg_daemonname, "Unable to initialize machine topology");
     return(-1);
     }
+
+#ifdef ENABLE_PMIX
+  int   topology_size = 0;
+  char *xml_buf = NULL;
+
+  if (hwloc_topology_export_xmlbuffer(topology, &xml_buf, &topology_size) == -1)
+    {
+    log_err(-1, msg_daemonname, "Unable to get an xml representation of the machine topology");
+    return(-1);
+    }
+
+  topology_xml = xml_buf;
+
+  hwloc_free_xmlbuffer(topology, xml_buf);
+#endif
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
@@ -5771,7 +5785,6 @@ void examine_all_running_jobs(void)
 #ifdef _CRAY
   int         c;
 #endif
-  task         *ptask;
   
   std::list<job *>::iterator iter;
 
@@ -5825,10 +5838,9 @@ void examine_all_running_jobs(void)
       {
       pjob->ji_flags &= ~MOM_NO_PROC;
 
-      for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-           ptask != NULL;
-           ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task &ptask = pjob->ji_tasks->at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5838,7 +5850,7 @@ void examine_all_running_jobs(void)
 
         if ((kill((pid_t)c, 0) == -1) && (errno == ESRCH))
 #else /* not cray */
-        if ((kill(ptask->ti_qs.ti_sid, 0) == -1) && (errno == ESRCH))
+        if ((kill(ptask.ti_qs.ti_sid, 0) == -1) && (errno == ESRCH))
 #endif /* not cray */
           {
           if (LOGLEVEL >= 3)
@@ -5850,9 +5862,9 @@ void examine_all_running_jobs(void)
               "no active process found");
             }
 
-          ptask->ti_qs.ti_exitstat = 0;
+          ptask.ti_qs.ti_exitstat = 0;
 
-          ptask->ti_qs.ti_status = TI_STATE_EXITED;
+          ptask.ti_qs.ti_status = TI_STATE_EXITED;
           pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
 
           if (LOGLEVEL >= 6)
@@ -5864,11 +5876,11 @@ void examine_all_running_jobs(void)
               "saving task (main loop)");
             }
 
-          task_save(ptask);
+          task_save(&ptask);
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
-        }    /* END while (ptask != NULL) */
+        }    /* END for each task */
       }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
 
@@ -6265,26 +6277,26 @@ void prepare_child_tasks_for_delete()
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
-    task *pTask;
 
-    for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
+    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
+      task &pTask = pJob->ji_tasks->at(i);
 
       char buf[128];
 
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)pTask->ti_qs.ti_sid,
-              pTask->ti_qs.ti_task,
+              (int)pTask.ti_qs.ti_sid,
+              pTask.ti_qs.ti_task,
               pJob->ji_qs.ji_jobid);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
-      pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
-      pTask->ti_qs.ti_status = TI_STATE_EXITED;
+      pTask.ti_qs.ti_exitstat = 0;  /* actually unknown */
+      pTask.ti_qs.ti_status = TI_STATE_EXITED;
 
-      task_save(pTask);
+      task_save(&pTask);
 
       exiting_tasks = 1;
       }

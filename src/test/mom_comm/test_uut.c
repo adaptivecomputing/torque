@@ -46,7 +46,8 @@ START_TEST(test_find_task_by_pid)
   job   pjob;
   task *tasks[10];
 
-  CLEAR_HEAD(pjob.ji_tasks);
+  pjob.ji_tasks = new std::vector<task>();
+
   for (int i = 0; i < 10; i++)
     {
     task *ptask = pbs_task_create(&pjob, TM_NULL_TASK);
@@ -55,7 +56,10 @@ START_TEST(test_find_task_by_pid)
     }
 
   for (int i = 0; i < 10; i++)
-    fail_unless(find_task_by_pid(&pjob, i + 90) == tasks[i]);
+    {
+    task *ptask = find_task_by_pid(&pjob, i + 90);
+    fail_unless(ptask->ti_qs.ti_sid == tasks[i]->ti_qs.ti_sid);
+    }
 
   fail_unless(find_task_by_pid(&pjob, 1000) == NULL);
   fail_unless(find_task_by_pid(&pjob, 10) == NULL);
@@ -130,13 +134,10 @@ START_TEST(handle_im_obit_task_response_test)
   job             *pjob = (job *)calloc(1, sizeof(job));
   struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
   task             *ptask = (task *)calloc(1,sizeof(task));
-  pjob->ji_tasks.ll_next = &ptask->ti_jobtask;
-  pjob->ji_tasks.ll_prior = &ptask->ti_jobtask;
-  ptask->ti_jobtask.ll_struct = ptask;
-  ptask->ti_jobtask.ll_next = &pjob->ji_tasks;
-  ptask->ti_jobtask.ll_prior = &pjob->ji_tasks;
   ptask->ti_qs.ti_task = TM_INIT;
   ptask->ti_chan = chan;
+  pjob->ji_tasks = new std::vector<task>();
+  pjob->ji_tasks->push_back(*ptask);
 
   disrsi_return_index = 500;
   fail_unless(handle_im_obit_task_response(chan,pjob,TM_NULL_TASK,42) == IM_FAILURE);
@@ -446,8 +447,8 @@ START_TEST(tm_spawn_request_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_hnodent, 0, sizeof(test_hnodent));
 
+  test_job.ji_tasks = new std::vector<task>();
   test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
-  CLEAR_HEAD(test_job.ji_tasks);
 
   result = tm_spawn_request(&test_chan,
                             &test_job,
@@ -467,10 +468,10 @@ END_TEST
 START_TEST(pbs_task_create_test)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_tasks = new std::vector<task>();
 
   /* Check ranning into reserved task IDs */
   pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;
-  CLEAR_HEAD(pjob->ji_tasks);
   fail_unless(pbs_task_create(pjob, TM_NULL_TASK) == NULL, "Reserved task");
 
   /* Success */

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pwd.h> /* gid_t, uid_t */
+#include <pbs_config.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
@@ -37,6 +38,37 @@ bool exit_called = false;
 int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
 pthread_mutex_t *delete_job_files_mutex;
+
+#ifdef ENABLE_PMIX
+char  mom_alias[PBS_MAXHOSTNAME + 1];
+
+char *get_job_envvar(
+
+  job  *pjob,     /* I */
+  const char *variable) /* I */
+
+  {
+  return(NULL);
+  }
+
+int TTmpDirName(
+
+  job  *pjob,   /* I */
+  char *tmpdir, /* O */
+  int   tmpdir_size)
+
+  {
+  return(0);
+  }
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  }
+#endif
 
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
