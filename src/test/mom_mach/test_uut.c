@@ -101,6 +101,7 @@ START_TEST(test_injob)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
@@ -137,9 +138,7 @@ START_TEST(test_injob)
 
   /* populate it */
   tp->ti_qs.ti_sid = 2000;
-
-  /* force scaffolded get_next() to return the task */
-  get_next_return_value = (void *)tp;
+  pjob->ji_tasks->push_back(*tp);
 
   /* expect success since job session id of pid matches the first task sid */
   fail_unless(injob(pjob, 10) == TRUE);
@@ -159,6 +158,7 @@ START_TEST(test_cput_sum)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
@@ -219,6 +219,7 @@ START_TEST(test_overmem_proc)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
@@ -277,6 +278,7 @@ START_TEST(test_overcpu_proc)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
@@ -339,6 +341,7 @@ START_TEST(test_resi_sum)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
@@ -399,6 +402,7 @@ START_TEST(test_mem_sum)
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
   fail_unless(pjob != NULL);
+  pjob->ji_tasks = new std::vector<task>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;

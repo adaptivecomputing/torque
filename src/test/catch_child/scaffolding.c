@@ -1402,3 +1402,4 @@ int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task
   return(0);
   }
 
+task::~task() {}

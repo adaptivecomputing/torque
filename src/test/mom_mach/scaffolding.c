@@ -454,6 +454,8 @@ struct group *getgrnam_ext(
   } /* END getgrnam_ext() */
 
 
+task::~task() {}
+
 
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"

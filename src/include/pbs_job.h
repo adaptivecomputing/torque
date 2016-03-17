@@ -530,6 +530,10 @@ typedef std::set<pid_t> job_pid_set_t;
 
 #endif /* MOM */
 
+#ifdef PBS_MOM
+// forward declare task so it can be part of the job
+class task;
+#endif
 
 #define COUNTED_GLOBALLY 0x0001
 #define COUNTED_IN_QUEUE 0x0010
@@ -702,7 +706,7 @@ struct job
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
-  tlist_head     ji_tasks; /* list of task structs */
+  std::vector<task> *ji_tasks; /* list of tasks */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -842,40 +846,6 @@ void *remove_completed_jobs(void *);
 
 
 #ifdef PBS_MOM
-/*
-** Tasks are sessions belonging to a job, running on one of the
-** nodes assigned to the job.
-*/
-
-
-typedef struct taskfix
-  {
-  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
-  tm_node_id ti_parentnode;
-  tm_task_id ti_parenttask;
-  tm_task_id ti_task; /* task's taskid */
-  int  ti_status; /* status of task */
-  pid_t  ti_sid;  /* session id */
-  int  ti_exitstat; /* exit status */
-  union
-    {
-    int ti_hold[16]; /* reserved space */
-    } ti_u;
-  } taskfix;
-
-typedef struct task
-  {
-  list_link        ti_jobtask; /* links to tasks for this job */
-  struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
-  int              ti_flags; /* task internal flags */
-  tm_event_t       ti_register; /* event if task registers - never used*/
-  tlist_head       ti_obits; /* list of obit events */
-  tlist_head       ti_info; /* list of named info */
-
-  taskfix ti_qs;
-  } task;
-
-
 
 /*
 ** Events need to be linked to either a task or another event
@@ -883,12 +853,15 @@ typedef struct task
 ** we can forward the event to another MOM.
 */
 
-typedef struct fwdevent
+class fwdevent
   {
+  public:
   tm_node_id fe_node; /* where does notification go */
   tm_event_t fe_event; /* event number */
   tm_task_id fe_taskid; /* which task id */
-  } fwdevent;
+
+  fwdevent() : fe_node(0), fe_event(0), fe_taskid(0) {}
+  };
 
 /*
 ** A linked list of eventent structures is maintained for all events
@@ -912,28 +885,78 @@ typedef struct eventent
 ** These are tracked by obitent structures linked to the task.
 */
 
-typedef struct obitent
+class obitent
   {
+  public:
   fwdevent oe_info; /* who gets the event */
   list_link oe_next; /* link to next one */
-  } obitent;
+
+  obitent() : oe_info() {}
+  };
 
 /*
 ** A task can have a list of named infomation which it makes
 ** available to other tasks in the job.
 */
 
-typedef struct infoent
+class infoent
   {
+  public:
   char  *ie_name; /* published name */
   void  *ie_info; /* the glop */
   size_t ie_len;  /* how much glop */
   list_link ie_next; /* link to next one */
-  } infoent;
+
+  infoent() : ie_name(NULL), ie_info(NULL), ie_len(0) {}
+  ~infoent()
+    {
+    free(this->ie_name);
+    free(this->ie_info);
+    }
+  };
 
 
+/*
+** Tasks are sessions belonging to a job, running on one of the
+** nodes assigned to the job.
+*/
 
-#ifdef PBS_MOM
+
+typedef struct taskfix
+  {
+  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
+  tm_node_id ti_parentnode;
+  tm_task_id ti_parenttask;
+  tm_task_id ti_task; /* task's taskid */
+  int  ti_status; /* status of task */
+  pid_t  ti_sid;  /* session id */
+  int  ti_exitstat; /* exit status */
+  union
+    {
+    int ti_hold[16]; /* reserved space */
+    } ti_u;
+  } taskfix;
+
+class task
+  {
+  public:
+  struct tcp_chan    *ti_chan;  /* DIS file descriptor to task */
+  int                 ti_flags; /* task internal flags */
+  tm_event_t          ti_register; /* event if task registers - never used*/
+  std::vector<obitent>  ti_obits; /* list of obit events */
+  std::vector<infoent>  ti_info; /* list of named info */
+
+  taskfix ti_qs;
+
+  task() : ti_chan(NULL), ti_flags(0), ti_register(0), ti_obits(), ti_info()
+    {
+    memset(&this->ti_qs, 0, sizeof(this->ti_qs));
+    }
+
+  ~task();
+
+  };
+
 typedef struct job_file_delete_info
   {
   char           jobid[PBS_MAXSVRJOBID+1];
@@ -946,9 +969,6 @@ typedef struct job_file_delete_info
   bool           cgroups_all_created;
 #endif
   } job_file_delete_info;
-#endif
-
-
 
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */

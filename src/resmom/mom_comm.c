@@ -458,11 +458,11 @@ task *pbs_task_create(
   tm_task_id  taskid)
 
   {
-  task          *ptask;
+  task           ptask;
   pbs_attribute *at;
   resource_def  *rd;
   resource      *pres;
-  u_long         tasks;
+  int            tasks = pjob->ji_tasks->size();
 
   /* DJH 27 feb 2002. Check that we aren't about to run into the */
   /* task IDs that we use to label adopted tasks. */
@@ -475,11 +475,6 @@ task *pbs_task_create(
     log_err(-1, __func__, log_buffer);
     return(NULL);
     }
-
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks), tasks = 0;
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask), tasks++)
-    /* NO-OP, counting */;
 
   at = &pjob->ji_wattr[JOB_ATR_resource];
 
@@ -503,41 +498,25 @@ task *pbs_task_create(
       }
     }
 
-  ptask = (task *)calloc(1, sizeof(task));
-
-  if (ptask == NULL)
-    {
-    log_err(ENOMEM, __func__, "No memory to allocate task! IMMINENT FAILURE");
-
-    return(NULL);
-    }
-
   /* initialize task */
-  CLEAR_LINK(ptask->ti_jobtask);
-  append_link(&pjob->ji_tasks, &ptask->ti_jobtask, ptask);
+  ptask.ti_register = TM_NULL_EVENT;
 
-  ptask->ti_flags = 0;
-  ptask->ti_register = TM_NULL_EVENT;
-  CLEAR_HEAD(ptask->ti_obits);
-  CLEAR_HEAD(ptask->ti_info);
+  strcpy(ptask.ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
 
-  strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
-
-  ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
-  ptask->ti_qs.ti_parenttask = TM_NULL_TASK;
-  ptask->ti_qs.ti_task = ((taskid == TM_NULL_TASK) ?
+  ptask.ti_qs.ti_parentnode = TM_ERROR_NODE;
+  ptask.ti_qs.ti_parenttask = TM_NULL_TASK;
+  ptask.ti_qs.ti_task = ((taskid == TM_NULL_TASK) ?
                           pjob->ji_taskid++ :
                           taskid);
 
-  ptask->ti_qs.ti_status = TI_STATE_EMBRYO;
-  ptask->ti_qs.ti_sid = 0;
-  ptask->ti_qs.ti_exitstat = 0;
+  ptask.ti_qs.ti_status = TI_STATE_EMBRYO;
 
-  memset(ptask->ti_qs.ti_u.ti_hold, 0, sizeof(ptask->ti_qs.ti_u.ti_hold));
+  memset(ptask.ti_qs.ti_u.ti_hold, 0, sizeof(ptask.ti_qs.ti_u.ti_hold));
+  pjob->ji_tasks->push_back(ptask);
 
   /* SUCCESS */
 
-  return(ptask);
+  return(&pjob->ji_tasks->at(tasks));
   }  /* END pbs_task_create() */
 
 
@@ -555,17 +534,19 @@ task *task_find(
   tm_task_id  taskid)
 
   {
-  task *ptask;
+  task *ptask_ptr = NULL;
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    if (ptask->ti_qs.ti_task == taskid)
+    task &ptask = pjob->ji_tasks->at(i);
+    if (ptask.ti_qs.ti_task == taskid)
+      {
+      ptask_ptr = &ptask;
       break;
+      }
     }
 
-  return(ptask);
+  return(ptask_ptr);
   } // END task_find()
 
 
@@ -586,17 +567,19 @@ task *find_task_by_pid(
   int  pid)
 
   {
-  task *ptask;
+  task *ptask_ptr = NULL;
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    if (ptask->ti_qs.ti_sid == pid)
+    task &ptask = pjob->ji_tasks->at(i);
+    if (ptask.ti_qs.ti_sid == pid)
+      {
+      ptask_ptr = &ptask;
       break;
+      }
     }
 
-  return(ptask);
+  return(ptask_ptr);
   } // END find_task_by_pid()
 
 
@@ -715,7 +698,7 @@ int task_recov(
 
       close(fds);
 
-      return -1;
+      return(-1);
       }
 
     pt->ti_qs = task_save;
@@ -1747,17 +1730,18 @@ infoent *task_findinfo(
   char *name)
 
   {
-  infoent  *ip;
+  infoent  *ip = NULL;
 
-  for (ip = (infoent *)GET_NEXT(ptask->ti_info);
-       ip;
-       ip = (infoent *)GET_NEXT(ip->ie_next))
+  for (unsigned int i = 0; i < ptask->ti_info.size(); i++)
     {
-    if (strcmp(ip->ie_name, name) == 0)
+    if (strcmp(ptask->ti_info[i].ie_name, name) == 0)
+      {
+      ip = &ptask->ti_info[i];
       break;
+      }
     }
 
-  return ip;
+  return(ip);
   }
 
 
@@ -1781,16 +1765,11 @@ void task_saveinfo(
   if ((ip = task_findinfo(ptask, name)) == NULL)
     {
     /* new name */
+    infoent ient;
+    ient.ie_name = name;
 
-    ip = (infoent *)calloc(1, sizeof(infoent));
-
-    assert(ip);
-
-    CLEAR_LINK(ip->ie_next);
-
-    append_link(&ptask->ti_info, &ip->ie_next, ip);
-
-    ip->ie_name = name;
+    ptask->ti_info.push_back(ient);
+    ip = &ptask->ti_info[ptask->ti_info.size() - 1];
     }
   else
     {
@@ -2957,7 +2936,6 @@ int im_spawn_task(
   char                *jobid = pjob->ji_qs.ji_jobid;
   char               **argv;
   char               **envp;
-  task                *ptask;
 
   nodeid = disrsi(chan, &ret);
   
@@ -3135,7 +3113,8 @@ int im_spawn_task(
   
   ret = DIS_SUCCESS;
   
-  if ((ptask = pbs_task_create(pjob, taskid)) == NULL)
+  task *ptask = pbs_task_create(pjob, taskid);
+  if (ptask == NULL)
     {
     if (LOGLEVEL >= 0)
       {
@@ -3339,11 +3318,10 @@ int im_signal_task(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-        ptask != NULL;
-        ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      kill_task(pjob, ptask, sig, 0);
+      task &ptask = pjob->ji_tasks->at(i);
+      kill_task(pjob, &ptask, sig, 0);
       }
    
     /* if STOPing all tasks, we're obviously suspending the job */
@@ -3535,22 +3513,13 @@ int im_obit_task(
     {
     /* save obit request with task */
     
-    obitent *op = (obitent *)calloc(1, sizeof(obitent));
-    
-    if (op == NULL)
-      {
-      log_err(ENOMEM, __func__, "Cannot allocate memory for the obit entry");
-      }
-    else
-      {
-      CLEAR_LINK(op->oe_next);
-      
-      append_link(&ptask->ti_obits, &op->oe_next, op);
-      
-      op->oe_info.fe_node = nodeid;
-      op->oe_info.fe_event = event;
-      op->oe_info.fe_taskid = fromtask;
-      }
+    obitent op;
+
+    op.oe_info.fe_node = nodeid;
+    op.oe_info.fe_event = event;
+    op.oe_info.fe_taskid = fromtask;
+
+    ptask->ti_obits.push_back(op);
     }
 
   return(IM_DONE);
@@ -4796,10 +4765,10 @@ int handle_im_get_tid_response(
   if ((ptask = pbs_task_create(pjob, taskid)) != NULL)
     {
     strcpy(ptask->ti_qs.ti_parentjobid, jobid);
-    
+      
     ptask->ti_qs.ti_parentnode = efwd->fe_node;
     ptask->ti_qs.ti_parenttask = efwd->fe_taskid;
-    
+      
     if (LOGLEVEL >= 6)
       {
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"saving task (IM_GET_TID)");
@@ -4817,17 +4786,17 @@ int handle_im_get_tid_response(
 
   taskid = ptask->ti_qs.ti_task;
   
-  ptask = task_check(pjob, efwd->fe_taskid);
+  task *ptask_ptr = task_check(pjob, efwd->fe_taskid);
 
-  if (ptask != NULL)
+  if (ptask_ptr != NULL)
     {
-    tm_reply(ptask->ti_chan, (ret == -1) ? TM_ERROR : TM_OKAY, efwd->fe_event);
+    tm_reply(ptask_ptr->ti_chan, (ret == -1) ? TM_ERROR : TM_OKAY, efwd->fe_event);
     
     diswsi(
-      ptask->ti_chan,
+      ptask_ptr->ti_chan,
       (int)(ret == -1 ?  TM_ESYSTEM : taskid));
     
-    DIS_tcp_wflush(ptask->ti_chan);
+    DIS_tcp_wflush(ptask_ptr->ti_chan);
     }
 
   return(IM_DONE);
@@ -6374,7 +6343,6 @@ void tm_eof(
 
   {
   job  *pjob;
-  task *ptask;
 
   /*
   ** Search though all the jobs looking for this fd.
@@ -6385,14 +6353,14 @@ void tm_eof(
     {
     pjob = *iter;
 
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-      ptask != NULL;
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (ptask->ti_chan == NULL)
+      task &ptask = pjob->ji_tasks->at(i);
+
+      if (ptask.ti_chan == NULL)
         continue;
 
-      if (ptask->ti_chan->sock == fd)
+      if (ptask.ti_chan->sock == fd)
         {
         if (LOGLEVEL >= 6)
           {
@@ -6755,7 +6723,7 @@ int tm_spawn_request(
       if (task_save(ptask) != -1)
         {
         *ret = start_process(ptask, argv, envp);
- 
+
         if (*ret != -1)
           i = TM_OKAY;
         }
@@ -6944,7 +6912,6 @@ int tm_tasks_request(
 
   {
   char     *jobid = pjob->ji_qs.ji_jobid;
-  task     *ptask;
 #ifndef NUMA_SUPPORT
   int local_socket;
   struct tcp_chan *local_chan = NULL;
@@ -7001,11 +6968,11 @@ int tm_tasks_request(
   if (*ret != DIS_SUCCESS)
     return(TM_DONE);
   
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-      ptask;
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    *ret = diswui(chan, ptask->ti_qs.ti_task);
+    task &ptask = pjob->ji_tasks->at(i);
+
+    *ret = diswui(chan, ptask.ti_qs.ti_task);
     
     if (*ret != DIS_SUCCESS)
       return(TM_DONE);
@@ -7268,21 +7235,13 @@ int tm_obit_request(
     }
   else
     {
-    obitent *op = (obitent *)calloc(1, sizeof(obitent));
+    obitent op;
     
-    if (op == NULL)
-      {
-      log_err(ENOMEM, __func__, "No memory! Cannot calloc!");
-      return(TM_ERROR);
-      }
-    
-    CLEAR_LINK(op->oe_next);
-    
-    append_link(&ptask->ti_obits, &op->oe_next, op);
-    
-    op->oe_info.fe_node = nodeid;
-    op->oe_info.fe_event = event;
-    op->oe_info.fe_taskid = fromtask;
+    op.oe_info.fe_node = nodeid;
+    op.oe_info.fe_event = event;
+    op.oe_info.fe_taskid = fromtask;
+
+    ptask->ti_obits.push_back(op);
     
     *reply_ptr = FALSE;
     }
@@ -7764,21 +7723,20 @@ int tm_request(
            (ptask->ti_chan->sock != chan->sock))
     {
     /* someone is already connected, create a new task for the new conn */
- 
-    ptask = pbs_task_create(pjob, TM_NULL_TASK);
- 
-    if (ptask == NULL)
+    task *pt = pbs_task_create(pjob, TM_NULL_TASK);
+
+    if (pt == NULL)
       goto err;
 
-    snprintf(ptask->ti_qs.ti_parentjobid, sizeof(ptask->ti_qs.ti_parentjobid), "%s", jobid);
+    snprintf(pt->ti_qs.ti_parentjobid, sizeof(pt->ti_qs.ti_parentjobid), "%s", jobid);
  
-    ptask->ti_qs.ti_parentnode = pjob->ji_nodeid;
+    pt->ti_qs.ti_parentnode = pjob->ji_nodeid;
  
-    ptask->ti_qs.ti_parenttask = fromtask;
+    pt->ti_qs.ti_parenttask = fromtask;
  
     /* the initial connection is "from" task 1, we set this to not confuse the
        new connection with the old */
-    fromtask = ptask->ti_qs.ti_task;
+    fromtask = pt->ti_qs.ti_task;
  
     if (LOGLEVEL >= 6)
       {
@@ -7789,8 +7747,10 @@ int tm_request(
         "saving task (additional connection)");
       }
  
-    if (task_save(ptask) == -1)
+    if (task_save(pt) == -1)
       goto err;
+
+    ptask = pt;
     }
  
   svr_conn[chan->sock].cn_oncl = tm_eof;
@@ -8205,8 +8165,8 @@ static int adoptSession(
    * going to collide with the ones given to non-adopted tasks.
    */
 
-  if((ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE)) == NULL)
-    return TM_ERROR;
+  if ((ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE)) == NULL)
+    return(TM_ERROR);
 
   pjob->ji_taskid++;
 
