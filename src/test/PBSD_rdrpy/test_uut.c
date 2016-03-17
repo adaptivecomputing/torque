@@ -7,6 +7,8 @@
 #include "dis.h"
 #include "pbs_error.h"
 
+void set_pbs_errno_from_dis_errcode(int *local_errno, int dis_errcode);
+
 extern bool timeout;
 extern bool setup_fail;
 extern int  decode_rc;
@@ -47,10 +49,37 @@ START_TEST(test_PBSD_rdrpy)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(set_pbs_errno_from_dis_errcode_test)
   {
+  int local_error = 0;
 
+  for (int i = 1; i < DIS_INVALID; i++)
+    {
+    set_pbs_errno_from_dis_errcode(&local_error, i);
 
+    switch (i)
+      {
+      case DIS_NOMALLOC:
+
+        fail_unless(local_error == PBSE_MEM_MALLOC);
+        break;
+
+      case DIS_EOF:
+        fail_unless(local_error == PBSE_EOF);
+        break;
+        
+      default:
+        fail_unless(local_error == PBSE_PROTOCOL);
+        break;
+      }
+    }
+  
+  // Make sure PBSE_* is a straight copy
+  for (int i = PBSE_FLOOR + 1; i < PBSE_CEILING; i++)
+    {
+    set_pbs_errno_from_dis_errcode(&local_error, i);
+    fail_unless(local_error == i);
+    }
   }
 END_TEST
 
@@ -61,8 +90,8 @@ Suite *PBSD_rdrpy_suite(void)
   tcase_add_test(tc_core, test_PBSD_rdrpy);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("set_pbs_errno_from_dis_errcode_test");
+  tcase_add_test(tc_core, set_pbs_errno_from_dis_errcode_test);
   suite_add_tcase(s, tc_core);
 
   return s;

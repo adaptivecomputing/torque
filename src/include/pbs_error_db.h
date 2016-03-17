@@ -295,6 +295,7 @@ PbsErrClient(PBSE_GHOSTQUEUE, (char *)"This queue had errors during its recovery
 PbsErrClient(PBSE_GPU_NOT_INITIALIZED, (char *)"NVIDIA GPU not initialized")
 PbsErrClient(PBSE_UNSUPPORTED_DEVICE_VERSION, (char *)"Unsupported device version")
 PbsErrClient(PBSE_CGROUP_CREATE_FAIL, (char *)"Could not create all of the cgroups for this job.")
+PbsErrClient(PBSE_EOF, (char *)"This stream has already been closed. End of File.")
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif

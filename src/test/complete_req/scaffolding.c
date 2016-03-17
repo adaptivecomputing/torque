@@ -80,7 +80,6 @@ void *get_next(
 
   {
   static struct resource_def rd;
-  int save_gn_count;
 
   resource *r = (resource *)calloc(1, sizeof(resource));
   r->rs_defin = &rd;
