@@ -1077,9 +1077,9 @@ bool injob(
   /* Next, check the job's tasks to see if they match the session id */
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
 
-    if (job_sid_of_pid == ptask.ti_qs.ti_sid)
+    if (job_sid_of_pid == ptask->ti_qs.ti_sid)
       return(true);
     }
 
@@ -3951,12 +3951,12 @@ const char *sessions(
 
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks->at(i);
 
-      if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
+      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      sid = ptask.ti_qs.ti_sid;
+      sid = ptask->ti_qs.ti_sid;
 
       if (LOGLEVEL >= 9)
         {
@@ -4848,7 +4848,7 @@ void scan_non_child_tasks(void)
 
     for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
-      task &pTask = pJob->ji_tasks->at(i);
+      task *pTask = pJob->ji_tasks->at(i);
 
 #ifdef PENABLE_LINUX26_CPUSETS
       struct pidl   *pids = NULL;
@@ -4864,26 +4864,26 @@ void scan_non_child_tasks(void)
        * running so we can reprocess them and send the obit
        */
       if ((first_time) &&
-          (pTask.ti_qs.ti_sid != 0) &&
-          ((pTask.ti_qs.ti_status == TI_STATE_EXITED) ||
-           (pTask.ti_qs.ti_status == TI_STATE_DEAD)))
+          (pTask->ti_qs.ti_sid != 0) &&
+          ((pTask->ti_qs.ti_status == TI_STATE_EXITED) ||
+           (pTask->ti_qs.ti_status == TI_STATE_DEAD)))
         {
 
         if (LOGLEVEL >= 7)
           {
           sprintf(log_buffer, "marking task %d as TI_STATE_RUNNING was %d",
-              pTask.ti_qs.ti_task,
-              pTask.ti_qs.ti_status);
+              pTask->ti_qs.ti_task,
+              pTask->ti_qs.ti_status);
 
           log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
           }
 
-        pTask.ti_qs.ti_status = TI_STATE_RUNNING;
+        pTask->ti_qs.ti_status = TI_STATE_RUNNING;
         }
 
       /* only check on tasks that we think should still be around */
 
-      if (pTask.ti_qs.ti_status != TI_STATE_RUNNING)
+      if (pTask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
       /* look for processes with this session id */
@@ -4892,7 +4892,7 @@ void scan_non_child_tasks(void)
 
       /* NOTE:  on linux systems, the session master should have pid == sessionid */
 
-      if (kill(pTask.ti_qs.ti_sid, 0) != -1)
+      if (kill(pTask->ti_qs.ti_sid, 0) != -1)
         {
         if((job_start_time != 0)&&
             (session_start_time != 0))
@@ -4944,7 +4944,7 @@ void scan_non_child_tasks(void)
           if ((ps = get_proc_stat(pid)) == NULL)
             continue;
 
-          if (ps->session == pTask.ti_qs.ti_sid)
+          if (ps->session == pTask->ti_qs.ti_sid)
             {
             if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
               {
@@ -4978,16 +4978,16 @@ void scan_non_child_tasks(void)
         extern int exiting_tasks;
 
         sprintf(buf, "found exited session %d for task %d in job %s",
-            pTask.ti_qs.ti_sid,
-            pTask.ti_qs.ti_task,
+            pTask->ti_qs.ti_sid,
+            pTask->ti_qs.ti_task,
             pJob->ji_qs.ji_jobid);
 
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
-        pTask.ti_qs.ti_exitstat = 0;  /* actually unknown */
-        pTask.ti_qs.ti_status = TI_STATE_EXITED;
+        pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
+        pTask->ti_qs.ti_status = TI_STATE_EXITED;
 
-        task_save(&pTask);
+        task_save(pTask);
 
 #ifdef USESAVEDRESOURCES
         if (first_time)
@@ -4997,7 +4997,7 @@ void scan_non_child_tasks(void)
           if (LOGLEVEL >= 7)
             {
             sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
-                pTask.ti_qs.ti_task);
+                pTask->ti_qs.ti_task);
 
             log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf);
             }

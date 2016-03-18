@@ -1765,8 +1765,8 @@ static void cray_susp_resum(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
-    sess = ptask.ti_qs.ti_sid;
+    task *ptask = pjob->ji_tasks->at(i);
+    sess = ptask->ti_qs.ti_sid;
 
     for (ct = 0;ct < 3;ct++)
       {
@@ -1926,8 +1926,8 @@ static void resume_suspend(
     {
     if (pjob->ji_tasks->size() != 0)
       {
-      task &tmpTask = pjob->ji_tasks->at(0);
-      kill_task(pjob, &tmpTask, SIGTSTP, 0);
+      task *tmpTask = pjob->ji_tasks->at(0);
+      kill_task(pjob, tmpTask, SIGTSTP, 0);
       }
 
     sleep(5);
@@ -1935,17 +1935,17 @@ static void resume_suspend(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &tp = pjob->ji_tasks->at(i);
+    task *tp = pjob->ji_tasks->at(i);
 
-    if (tp.ti_qs.ti_status != TI_STATE_RUNNING)
+    if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
     DBPRT(("%s: inspecting %d from node %d\n",
            __func__,
-           tp.ti_qs.ti_task,
-           tp.ti_qs.ti_parentnode));
+           tp->ti_qs.ti_task,
+           tp->ti_qs.ti_parentnode));
 
-    stat = kill_task(pjob, &tp, signum, 0);
+    stat = kill_task(pjob, tp, signum, 0);
 
     if (stat < 0)
       {
@@ -1994,12 +1994,12 @@ static void resume_suspend(
 
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &tp = pjob->ji_tasks->at(i);
+      task *tp = pjob->ji_tasks->at(i);
 
-      if (tp.ti_qs.ti_status != TI_STATE_RUNNING)
+      if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
-      kill_task(pjob, &tp, signum, 0);
+      kill_task(pjob, tp, signum, 0);
       }
 
     if (pjob->ji_numnodes > 1)

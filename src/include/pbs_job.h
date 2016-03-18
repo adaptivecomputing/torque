@@ -706,7 +706,7 @@ struct job
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
-  std::vector<task> *ji_tasks; /* list of tasks */
+  std::vector<task *> *ji_tasks; /* list of tasks */
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -954,7 +954,6 @@ class task
     }
 
   ~task();
-
   };
 
 typedef struct job_file_delete_info

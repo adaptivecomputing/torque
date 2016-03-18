@@ -1293,10 +1293,10 @@ int mom_checkpoint_job(
     {
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
-      sesid = ptask.ti_qs.ti_sid;
+      task *ptask = pjob->ji_tasks->at(i);
+      sesid = ptask->ti_qs.ti_sid;
 
-      if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
+      if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
       /* XXX: What to do if some resume work and others don't? */
@@ -1322,13 +1322,13 @@ int mom_checkpoint_job(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
-    sesid = ptask.ti_qs.ti_sid;
+    task *ptask = pjob->ji_tasks->at(i);
+    sesid = ptask->ti_qs.ti_sid;
 
-    if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
+    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
-    if (mach_checkpoint(&ptask, file, abort) == -1)
+    if (mach_checkpoint(ptask, file, abort) == -1)
       goto fail;
     }
 
@@ -1678,13 +1678,13 @@ void checkpoint_partial(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
     /*
     ** See if the task was marked as one of those that did
     ** actually checkpoint.
     */
 
-    if ((ptask.ti_flags & TI_FLAGS_CHECKPOINT) == 0)
+    if ((ptask->ti_flags & TI_FLAGS_CHECKPOINT) == 0)
       continue;
 
     texit++;
@@ -1694,23 +1694,23 @@ void checkpoint_partial(
     ** fool with it until we see it die.
     */
 
-    if (ptask.ti_qs.ti_status != TI_STATE_EXITED)
+    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
     texit--;
 
-    if (mach_restart(&ptask, namebuf) == -1)
+    if (mach_restart(ptask, namebuf) == -1)
       {
       pjob->ji_flags &= ~MOM_CHECKPOINT_POST;
       kill_job(pjob, SIGKILL, __func__, "failed to restart");
       return;
       }
 
-    ptask.ti_qs.ti_status = TI_STATE_RUNNING;
+    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
-    ptask.ti_flags &= ~TI_FLAGS_CHECKPOINT;
+    ptask->ti_flags &= ~TI_FLAGS_CHECKPOINT;
 
-    task_save(&ptask);
+    task_save(ptask);
     }
 
   if (texit == 0)
@@ -1801,7 +1801,7 @@ int blcr_restart_job(
     task_ptr->ti_qs.ti_task = 0;
     }
 
-  task &ptask = pjob->ji_tasks->at(0);
+  task *ptask = pjob->ji_tasks->at(0);
 
 #ifdef USEJOBCREATE
   /*
@@ -1829,10 +1829,10 @@ int blcr_restart_job(
     {
     /* parent */
 
-    ptask.ti_qs.ti_sid = pid;  /* Apparently torque doesn't do anything with the session ID that we pass back here... */
+    ptask->ti_qs.ti_sid = pid;
 
-    ptask.ti_qs.ti_status = TI_STATE_RUNNING;
-    task_save(&ptask);
+    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+    task_save(ptask);
 
     return(PBSE_NONE);
     }
