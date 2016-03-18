@@ -259,14 +259,14 @@ void scan_for_terminated(void) /* linux */
       
       for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
-        task &ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks->at(i);
 
-        if (ptask.ti_flags & TI_FLAGS_RECOVERY)
+        if (ptask->ti_flags & TI_FLAGS_RECOVERY)
           {
           if (LOGLEVEL >= 7)
             {
             snprintf(log_buffer, sizeof(log_buffer), "Found match for recovering job task for sid=%d",
-              ptask.ti_qs.ti_sid);
+              ptask->ti_qs.ti_sid);
 
             log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
@@ -343,12 +343,12 @@ void scan_for_terminated(void) /* linux */
       /* locate task with associated process id */
       for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
-        task &ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks->at(i);
 
-        if ((ptask.ti_qs.ti_sid == pid) &&
-            (ptask.ti_qs.ti_status != TI_STATE_EXITED))
+        if ((ptask->ti_qs.ti_sid == pid) &&
+            (ptask->ti_qs.ti_status != TI_STATE_EXITED))
           {
-          matching_task = &ptask;
+          matching_task = ptask;
 
           if (LOGLEVEL >= 7)
             {
@@ -361,7 +361,7 @@ void scan_for_terminated(void) /* linux */
             }
 
           // If this is the top level task then mark the job done.
-          if (ptask.ti_qs.ti_parenttask == TM_NULL_TASK)
+          if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
             pjob->ji_stats_done = true;
 
           break;

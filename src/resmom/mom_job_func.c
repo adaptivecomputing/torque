@@ -471,7 +471,7 @@ job *job_alloc(void)
 
   CLEAR_LINK(pj->ji_jobque);
 
-  pj->ji_tasks = new std::vector<task>();
+  pj->ji_tasks = new std::vector<task *>();
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
@@ -530,6 +530,10 @@ void mom_job_free(
   assert(pj->ji_preq == NULL);
 
   nodes_free(pj);
+
+  // Delete each remaining task
+  for (unsigned int i = 0; i < pj->ji_tasks->size(); i++)
+    delete pj->ji_tasks->at(i);
 
   delete pj->ji_tasks;
 

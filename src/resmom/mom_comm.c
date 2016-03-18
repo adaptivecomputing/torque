@@ -458,7 +458,6 @@ task *pbs_task_create(
   tm_task_id  taskid)
 
   {
-  task           ptask;
   pbs_attribute *at;
   resource_def  *rd;
   resource      *pres;
@@ -497,26 +496,28 @@ task *pbs_task_create(
       return(NULL);
       }
     }
+  
+  task *ptask = new task();
 
   /* initialize task */
-  ptask.ti_register = TM_NULL_EVENT;
+  ptask->ti_register = TM_NULL_EVENT;
 
-  strcpy(ptask.ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
+  strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
 
-  ptask.ti_qs.ti_parentnode = TM_ERROR_NODE;
-  ptask.ti_qs.ti_parenttask = TM_NULL_TASK;
-  ptask.ti_qs.ti_task = ((taskid == TM_NULL_TASK) ?
+  ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
+  ptask->ti_qs.ti_parenttask = TM_NULL_TASK;
+  ptask->ti_qs.ti_task = ((taskid == TM_NULL_TASK) ?
                           pjob->ji_taskid++ :
                           taskid);
 
-  ptask.ti_qs.ti_status = TI_STATE_EMBRYO;
+  ptask->ti_qs.ti_status = TI_STATE_EMBRYO;
 
-  memset(ptask.ti_qs.ti_u.ti_hold, 0, sizeof(ptask.ti_qs.ti_u.ti_hold));
+  memset(ptask->ti_qs.ti_u.ti_hold, 0, sizeof(ptask->ti_qs.ti_u.ti_hold));
   pjob->ji_tasks->push_back(ptask);
 
   /* SUCCESS */
 
-  return(&pjob->ji_tasks->at(tasks));
+  return(ptask);
   }  /* END pbs_task_create() */
 
 
@@ -538,10 +539,10 @@ task *task_find(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
-    if (ptask.ti_qs.ti_task == taskid)
+    task *ptask = pjob->ji_tasks->at(i);
+    if (ptask->ti_qs.ti_task == taskid)
       {
-      ptask_ptr = &ptask;
+      ptask_ptr = ptask;
       break;
       }
     }
@@ -571,10 +572,10 @@ task *find_task_by_pid(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
-    if (ptask.ti_qs.ti_sid == pid)
+    task *ptask = pjob->ji_tasks->at(i);
+    if (ptask->ti_qs.ti_sid == pid)
       {
-      ptask_ptr = &ptask;
+      ptask_ptr = ptask;
       break;
       }
     }
@@ -3320,8 +3321,8 @@ int im_signal_task(
 
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
-      kill_task(pjob, &ptask, sig, 0);
+      task *ptask = pjob->ji_tasks->at(i);
+      kill_task(pjob, ptask, sig, 0);
       }
    
     /* if STOPing all tasks, we're obviously suspending the job */
@@ -6355,12 +6356,12 @@ void tm_eof(
 
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks->at(i);
 
-      if (ptask.ti_chan == NULL)
+      if (ptask->ti_chan == NULL)
         continue;
 
-      if (ptask.ti_chan->sock == fd)
+      if (ptask->ti_chan->sock == fd)
         {
         if (LOGLEVEL >= 6)
           {
@@ -6972,9 +6973,9 @@ int tm_tasks_request(
   
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
 
-    *ret = diswui(chan, ptask.ti_qs.ti_task);
+    *ret = diswui(chan, ptask->ti_qs.ti_task);
     
     if (*ret != DIS_SUCCESS)
       return(TM_DONE);

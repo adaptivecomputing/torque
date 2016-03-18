@@ -623,18 +623,18 @@ void update_job_based_on_tasks(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
 
-    if (ptask.ti_qs.ti_status != TI_STATE_EXITED)
+    if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
     /* Check if it is the main job process */
-    if (ptask.ti_qs.ti_parenttask == TM_NULL_TASK)
-      check_jobs_main_process(pjob, &ptask);
+    if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
+      check_jobs_main_process(pjob, ptask);
 
-    process_tm_obits(pjob, &ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
+    process_tm_obits(pjob, ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
 
-    cleanup_task(pjob, &ptask);
+    cleanup_task(pjob, ptask);
     }  /* END for each ptask */
   } /* END update_job_based_on_tasks() */
 
@@ -785,9 +785,9 @@ bool mother_superior_cleanup(
     {
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks->at(i);
 
-      if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
         {
         if (LOGLEVEL >= 4)
           {
@@ -799,13 +799,13 @@ bool mother_superior_cleanup(
           }
 
         if (pjob->ji_qs.ji_un.ji_momt.ji_exitstat != 0)
-          ptask.ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
+          ptask->ti_qs.ti_exitstat = pjob->ji_qs.ji_un.ji_momt.ji_exitstat;
         else
-          ptask.ti_qs.ti_exitstat = 0;  /* assume successful completion */
+          ptask->ti_qs.ti_exitstat = 0;  /* assume successful completion */
 
-        ptask.ti_qs.ti_status = TI_STATE_EXITED;
+        ptask->ti_qs.ti_status = TI_STATE_EXITED;
 
-        task_save(&ptask);
+        task_save(ptask);
         }
       }  /* END while (ptask != NULL) */
 
@@ -2048,9 +2048,9 @@ int needs_and_ready_for_reply(
     /* Are any tasks running? If so we're not ready */
     for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      task &ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks->at(i);
       
-      if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
         {
         running = true;
         break;

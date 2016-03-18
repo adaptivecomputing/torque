@@ -1959,17 +1959,17 @@ void add_diag_jobs_session_ids(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
     /* only check on tasks that we think should still be around */
-    if (ptask.ti_qs.ti_status != TI_STATE_RUNNING)
+    if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
     /* NOTE:  on linux systems, the session master should have
        pid == sessionid */
     if (first == true)
-      output << ptask.ti_qs.ti_sid;
+      output << ptask->ti_qs.ti_sid;
     else
-      output << "," << ptask.ti_qs.ti_sid;
+      output << "," << ptask->ti_qs.ti_sid;
 
     first = false;
     }  /* END for (task) */
@@ -3529,9 +3529,9 @@ int kill_job(
 
   for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
-    task &ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks->at(i);
 
-    if (ptask.ti_qs.ti_status == TI_STATE_RUNNING)
+    if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
         {
@@ -3542,7 +3542,7 @@ int kill_job(
           "kill_job found a task to kill");
         }
 
-      ct += kill_task(pjob, &ptask, sig, 0);
+      ct += kill_task(pjob, ptask, sig, 0);
       }
 
     }  /* END for each task */
@@ -5840,7 +5840,7 @@ void examine_all_running_jobs(void)
 
       for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
-        task &ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks->at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5850,7 +5850,7 @@ void examine_all_running_jobs(void)
 
         if ((kill((pid_t)c, 0) == -1) && (errno == ESRCH))
 #else /* not cray */
-        if ((kill(ptask.ti_qs.ti_sid, 0) == -1) && (errno == ESRCH))
+        if ((kill(ptask->ti_qs.ti_sid, 0) == -1) && (errno == ESRCH))
 #endif /* not cray */
           {
           if (LOGLEVEL >= 3)
@@ -5862,9 +5862,9 @@ void examine_all_running_jobs(void)
               "no active process found");
             }
 
-          ptask.ti_qs.ti_exitstat = 0;
+          ptask->ti_qs.ti_exitstat = 0;
 
-          ptask.ti_qs.ti_status = TI_STATE_EXITED;
+          ptask->ti_qs.ti_status = TI_STATE_EXITED;
           pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
 
           if (LOGLEVEL >= 6)
@@ -5876,7 +5876,7 @@ void examine_all_running_jobs(void)
               "saving task (main loop)");
             }
 
-          task_save(&ptask);
+          task_save(ptask);
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
@@ -6280,23 +6280,23 @@ void prepare_child_tasks_for_delete()
 
     for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
-      task &pTask = pJob->ji_tasks->at(i);
+      task *pTask = pJob->ji_tasks->at(i);
 
       char buf[128];
 
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)pTask.ti_qs.ti_sid,
-              pTask.ti_qs.ti_task,
+              pTask->ti_qs.ti_sid,
+              pTask->ti_qs.ti_task,
               pJob->ji_qs.ji_jobid);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
-      pTask.ti_qs.ti_exitstat = 0;  /* actually unknown */
-      pTask.ti_qs.ti_status = TI_STATE_EXITED;
+      pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
+      pTask->ti_qs.ti_status = TI_STATE_EXITED;
 
-      task_save(&pTask);
+      task_save(pTask);
 
       exiting_tasks = 1;
       }

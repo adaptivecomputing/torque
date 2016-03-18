@@ -46,7 +46,7 @@ START_TEST(test_find_task_by_pid)
   job   pjob;
   task *tasks[10];
 
-  pjob.ji_tasks = new std::vector<task>();
+  pjob.ji_tasks = new std::vector<task *>();
 
   for (int i = 0; i < 10; i++)
     {
@@ -133,11 +133,11 @@ START_TEST(handle_im_obit_task_response_test)
   {
   job             *pjob = (job *)calloc(1, sizeof(job));
   struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
-  task             *ptask = (task *)calloc(1,sizeof(task));
+  task             *ptask = new task();
   ptask->ti_qs.ti_task = TM_INIT;
   ptask->ti_chan = chan;
-  pjob->ji_tasks = new std::vector<task>();
-  pjob->ji_tasks->push_back(*ptask);
+  pjob->ji_tasks = new std::vector<task *>();
+  pjob->ji_tasks->push_back(ptask);
 
   disrsi_return_index = 500;
   fail_unless(handle_im_obit_task_response(chan,pjob,TM_NULL_TASK,42) == IM_FAILURE);
@@ -447,7 +447,7 @@ START_TEST(tm_spawn_request_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_hnodent, 0, sizeof(test_hnodent));
 
-  test_job.ji_tasks = new std::vector<task>();
+  test_job.ji_tasks = new std::vector<task *>();
   test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
 
   result = tm_spawn_request(&test_chan,
@@ -468,7 +468,7 @@ END_TEST
 START_TEST(pbs_task_create_test)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  pjob->ji_tasks = new std::vector<task>();
+  pjob->ji_tasks = new std::vector<task *>();
 
   /* Check ranning into reserved task IDs */
   pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;
