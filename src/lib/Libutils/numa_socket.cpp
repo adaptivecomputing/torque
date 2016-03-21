@@ -328,12 +328,16 @@ void Socket::setMemory(
   hwloc_uint64_t memory)
 
   {
-  long long per_socket = memory / this->chips.size();
   this->memory = memory;
   this->available_memory = memory;
   
-  for (unsigned int i = 0; i < this->chips.size(); i++)
-    this->chips[i].setMemory(per_socket);
+  if (this->chips.size() != 0)
+    {
+    long long per_chip = memory / this->chips.size();
+  
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      this->chips[i].setMemory(per_chip);
+    }
   }
 
 void Socket::setId(
