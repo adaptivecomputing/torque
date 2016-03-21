@@ -575,7 +575,6 @@ struct array_strings *copy_arst(
     }
 
   size_t need = sizeof(struct array_strings) + (to_copy->as_npointers - 1) * sizeof(char *);
-  size_t bufsize = to_copy->as_bufsize;
 
   if ((arst = (struct array_strings *)calloc(1, need)) != NULL)
     {
