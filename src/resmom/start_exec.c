@@ -6016,15 +6016,12 @@ int start_process(
   char **envp)    /* I */
 
   {
-  char         *idir;
   job          *pjob = mom_find_job(ptask->ti_qs.ti_parentjobid);
   pid_t         pid;
   int           kid_read;
   int           kid_write;
   int           parent_read;
   int           parent_write;
-  int           pts;
-  int           i;
   int           j;
   int           fd0;
   int           fd1;
@@ -6360,6 +6357,7 @@ int start_process(
 
   // This function does not return
   become_the_jobs_subprocess(argv, kid_read, kid_write, &sjr);
+  return(PBSE_NONE);
   }   /* END start_process() */
 
 

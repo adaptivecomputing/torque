@@ -840,7 +840,6 @@ void effective_node_delete(
   pbsnode **ppnode)
 
   {
-  u_long          *up;
   struct pbsnode* pnode = NULL;
 
   if (ppnode == NULL)
@@ -1482,7 +1481,6 @@ static int setup_node_boards(
   char            pname[MAX_LINE];
   const char     *np_ptr = NULL;
   const char     *gp_ptr = NULL;
-  char           *allocd_name;
   int             np = 0;
   int             gpus;
   int             rc = PBSE_NONE;
@@ -3207,7 +3205,6 @@ int create_partial_pbs_node(
   int            perms)
 
   {
-  int              ntype; /* node type; time-shared, not */
   int              rc;
   int              bad = 0;
   svrattrl        *plist = NULL;

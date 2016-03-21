@@ -2498,7 +2498,6 @@ int check_for_node_type(
   int               found_type = FALSE;
   struct pbsnode   *pnode;
   struct pbsnode   *reporter = alps_reporter;
-  struct prop      *p;
 
   if (reporter == NULL)
     {
@@ -5778,7 +5777,6 @@ void update_failure_counts(
   int         rc)
 
   {
-  char     log_buf[LOCAL_LOG_BUF_SIZE];
   pbsnode *pnode = find_nodebyname(node_name);
   bool     held_node = false;
 

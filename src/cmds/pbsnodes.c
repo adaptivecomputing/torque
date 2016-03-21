@@ -447,7 +447,7 @@ static int marknode(
 
   {
   struct attropl  *new_attr = NULL;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
   if ( new_attr == NULL && !quiet )

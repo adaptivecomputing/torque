@@ -805,10 +805,7 @@ int mgr_set_node_attr(
   bool            dont_update_nodes)
 
   {
-  int              i;
   int              index;
-  int              nstatus = 0;
-  int              nprops = 0;
   int              rc = PBSE_NONE;
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
