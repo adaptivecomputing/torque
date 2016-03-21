@@ -178,10 +178,12 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0),
+                                                   totalSockets(0), totalChips(0),
                                                    totalCores(0), totalThreads(0), 
                                                    availableSockets(0), availableChips(0),
-                                                   availableCores(0), availableThreads(0)
+                                                   availableCores(0), availableThreads(0),
+                                                   sockets(), NVIDIA_device(), allocations()
 
   {
   const char *socket_str = "\"socket\":{";
@@ -208,18 +210,22 @@ Machine::Machine(
 
   int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
             totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np)
+            availableCores(np), availableThreads(np), sockets(), NVIDIA_device(), allocations()
 
   {
   Socket s(np);
   this->sockets.push_back(s);
+  
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
 
 
 
-Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
-                     totalThreads(0), availableSockets(0), availableChips(0),
-                     availableCores(0), availableThreads(0)
+Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+                     totalCores(0), totalThreads(0), availableSockets(0), availableChips(0),
+                     availableCores(0), availableThreads(0), sockets(), NVIDIA_device(),
+                     allocations()
   { 
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
