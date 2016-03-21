@@ -267,6 +267,9 @@ Machine::Machine(
   {
   Socket s(np);
   this->sockets.push_back(s);
+  
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
 
 
