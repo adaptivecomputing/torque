@@ -25,8 +25,8 @@ void initialize_connections()
 
 START_TEST(test_PBSD_queuejob)
   {
-  fail_unless(PBSD_queuejob(-1, NULL, NULL, NULL, NULL, NULL) == NULL);
-  fail_unless(PBSD_queuejob(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL, NULL, NULL) == NULL);
+  fail_unless(PBSD_queuejob(-1, NULL, "", "", NULL, NULL) == NULL);
+  fail_unless(PBSD_queuejob(PBS_NET_MAX_CONNECTIONS, NULL, "", "", NULL, NULL) == NULL);
 
   }
 END_TEST

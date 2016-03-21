@@ -756,7 +756,7 @@ int queue_job_on_mom(
   char           *pc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pc = PBSD_queuejob(con, my_err, job_id, job_destin, pqjatr, NULL)) == NULL)
+  if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
     if (*my_err == PBSE_EXPIRED)
       {
