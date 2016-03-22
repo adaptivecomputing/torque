@@ -34,14 +34,12 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
 
 int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend, int *any_failed)
   { 
-  fprintf(stderr, "The call to pbs_rlsjob needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-int pbs_rlsjob_err(int c, char *jobid, char *holdtype, char *extend, int *any_failed)
+int pbs_rlsjob_err(int c, const char *jobid, const char *holdtype, char *extend, int *any_failed)
   { 
-  fprintf(stderr, "The call to pbs_rlsjob_err needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
