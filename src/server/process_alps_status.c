@@ -616,7 +616,7 @@ int set_total_memory(
   const char *mem_str)
 
   {
-  long long mem = strtoll(mem_str, NULL, 10);
+  long long mem = strtoll(mem_str + 6, NULL, 10);
 
   if (pnode->nd_layout != NULL)
     pnode->nd_layout->setMemory(mem);

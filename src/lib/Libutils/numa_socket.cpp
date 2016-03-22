@@ -26,7 +26,7 @@ Socket::Socket(
     
   int execution_slots) : id (0), memory(0), totalCores(execution_slots),
                          totalThreads(execution_slots), availableCores(0), availableThreads(0),
-                         socket_exclusive(false)
+                         chips(), socket_exclusive(false)
 
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -62,7 +62,8 @@ Socket::Socket(
 Socket::Socket(
 
   const std::string &json_layout) : id(0), memory(0), totalCores(0), totalThreads(0),
-                                    availableCores(0), availableThreads(0), socket_exclusive(false)
+                                    availableCores(0), availableThreads(0), chips(),
+                                    socket_exclusive(false)
 
   {
   const char *chip_str = "\"numanode\":{";
