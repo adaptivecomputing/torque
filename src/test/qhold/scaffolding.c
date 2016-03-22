@@ -32,16 +32,14 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_holdjob_err(int c, const char *jobid, const char *holdtype, char *extend, int *local_errno)
   { 
-  fprintf(stderr, "The call to pbs_holdjob needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local_errno)
+int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
   { 
-  fprintf(stderr, "The call to pbs_holdjob_err needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int job_size, char *server_out, int server_size)
