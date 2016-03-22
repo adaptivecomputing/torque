@@ -99,10 +99,9 @@ struct pbsnode *find_nodebyname(const char *nodename)
   exit(1);
   }
 
-pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   {
-  fprintf(stderr, "The call to que_alloc to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
