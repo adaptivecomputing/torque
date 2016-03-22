@@ -798,7 +798,7 @@ int send_job_script_if_needed(
   {
   if (need_to_send_job_script == true)
     {
-    if (PBSD_jscript(con, (char *)script_name, job_id) != PBSE_NONE)
+    if (PBSD_jscript(con, (char *)script_name, (const char *)job_id) != PBSE_NONE)
       return(LOCUTION_RETRY);
     }
 

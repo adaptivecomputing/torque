@@ -107,8 +107,8 @@ END_TEST
 
 START_TEST(test_PBSD_jscript)
   {
-  fail_unless(PBSD_jscript(-1, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript(-1, "", "") == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, "", "") == PBSE_IVALREQ);
   }
 END_TEST
 

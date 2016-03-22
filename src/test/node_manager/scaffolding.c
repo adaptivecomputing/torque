@@ -730,8 +730,6 @@ pbsnode::pbsnode(
                                      nd_requestid(), nd_tmp_unlock_count(0)
 
   {
-  struct addrinfo *pAddrInfo;
-
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = 1;
