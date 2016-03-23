@@ -5,7 +5,12 @@ CHECK_DIR = test
 DIST_SUBDIRS=
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la \
-					 ../lib/Libutils/libutils.a
+           ../lib/Libutils/libutils.a
+
+noinst_HEADERS = common_cmds.h pbsnodes.h pbs_track.h qdisable.h qgpureset.h qmove.h qrerun.h qselect.h qstat.h qterm.h \
+                 MXML.h pbspd.h qalter.h qenable.h qhold.h qmsg.h qrls.h qsig.h qstop.h pbsdsh.h pbspoe.h qchkpt.h \
+                 qgpumode.h qmgr_functions.h qorder.h qrun.h qstart.h qsub_functions.h
+
 
 dist_bin_SCRIPTS = nqs2pbs
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \

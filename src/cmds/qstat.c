@@ -38,7 +38,8 @@
 #include "utils.h"
 #include "libcmds.h" /* TShowAbout_exit */
 #include "net_cache.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "utils.h"
+#include "lib_ifl.h"
 
 using namespace std;
 

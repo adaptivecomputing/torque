@@ -21,7 +21,7 @@
 #include <pbs_error.h>    /* all static defines,  message & error codes */
 #include "qsub_functions.h"
 #include "common_cmds.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>

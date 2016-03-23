@@ -83,7 +83,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 /*

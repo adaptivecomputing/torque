@@ -89,7 +89,7 @@
 #include "check.h"
 #include "config.h"
 #include "globals.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 /*
  *

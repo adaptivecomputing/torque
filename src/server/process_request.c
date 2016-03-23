@@ -97,7 +97,7 @@
 #include <pthread.h>
 
 #include "libpbs.h"
-#include "../lib/Libifl/lib_ifl.h" /* netaddr_long */
+#include "lib_ifl.h" /* netaddr_long */
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "pbs_nodes.h"

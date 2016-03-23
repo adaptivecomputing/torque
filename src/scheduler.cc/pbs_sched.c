@@ -118,7 +118,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "resmon.h"
 #include "sched_cmds.h"
 #include "server_limits.h"

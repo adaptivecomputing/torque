@@ -119,7 +119,7 @@
 #include "log.h"
 #include "../Liblog/pbs_log.h" /* log_err */
 #include "../Liblog/log_event.h" /* log_event */
-#include "../Libifl/lib_ifl.h" /* DIS_* */
+#include "lib_ifl.h" /* DIS_* */
 #include "pbs_error.h" /* PBSE_NONE */
 #include "dis.h"
 

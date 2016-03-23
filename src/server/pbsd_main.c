@@ -111,7 +111,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
 #include "pbs_job.h"
@@ -133,7 +133,7 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
-#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
+#include "lib_ifl.h" /* get_port_from_server_name_file */
 #include "node_manager.h" /* svr_is_request */
 #include "net_connect.h" /* set_localhost_name */
 #include "../lib/Libnet/lib_net.h" /* start_listener_addrinfo */

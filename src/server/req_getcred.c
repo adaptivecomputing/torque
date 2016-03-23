@@ -109,7 +109,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Libnet/lib_net.h" /* global_sock_add */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "req_getcred.h" /* req_altauthenuser */
 #include "net_cache.h"
 

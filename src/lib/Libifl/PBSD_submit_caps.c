@@ -87,7 +87,7 @@
 #include "dis.h"
 #include "u_hash_map_structs.h"
 #include "pbs_ifl.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "server_limits.h"
 
 /* PBSD_submit.c
