@@ -1,6 +1,12 @@
 include $(top_srcdir)/buildutils/config.mk
 
 CHECK_DIR = test
+
+noinst_HEADERS = catch_child.h cray_energy.h mom_job_func.h mom_req_quejob.h requests.h tmsock_recov.h \
+                 checkpoint.h mom_comm.h mom_main.h mom_server_lib.h rm_dep.h \
+                 cray_cpa.h mom_inter.h mom_process_request.h pbs_demux.h start_exec.h
+
+
 SUBDIRS = @PBS_MACH@
 
 DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \

@@ -2,6 +2,8 @@ include $(top_srcdir)/buildutils/config.mk
 
 CHECK_DIR = test
 
+noinst_HEADERS = lib_cmds.h
+
 DIST_SUBDIRS =
 # all compilation happens in lib/Libpbs
 

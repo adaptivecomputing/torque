@@ -108,7 +108,7 @@
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "../Libnet/lib_net.h" /* get_hostaddr_hostent_af */
-#include "../Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "csv.h"
 
 #define CNTRETRYDELAY 5

@@ -12,7 +12,7 @@
 #include "pbs_error.h" /* PBSE_NONE */
 #include "log.h" /* log_event, PBSEVENT_JOB, PBS_EVENTCLASS_JOB */
 #include "../Liblog/log_event.h" /* log_event */
-#include "../Libifl/lib_ifl.h" /* process_svr_conn */
+#include "lib_ifl.h" /* process_svr_conn */
 #include "../Libnet/lib_net.h"
 #include "threadpool.h"
 #include "../Liblog/pbs_log.h"

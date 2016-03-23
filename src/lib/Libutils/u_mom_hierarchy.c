@@ -95,7 +95,7 @@
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */
-#include "../Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #define LOCAL_LOG_BUF 1024
 
 

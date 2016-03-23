@@ -20,7 +20,7 @@
 #include "pbs_job.h"
 #include "array.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 extern char *path_jobs;

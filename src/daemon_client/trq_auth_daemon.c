@@ -23,7 +23,7 @@
 #include "pbs_ifl.h" /* pbs_default, PBS_BATCH_SERVICE_PORT, TRQ_AUTHD_SERVICE_PORT */
 #include "net_connect.h" /* TRQAUTHD_SOCK_NAME */
 #include "../lib/Libnet/lib_net.h" /* start_listener */
-#include "../lib/Libifl/lib_ifl.h" /* process_svr_conn */
+#include "lib_ifl.h" /* process_svr_conn */
 #include "../lib/Liblog/chk_file_sec.h" /* IamRoot */
 #include "../lib/Liblog/pbs_log.h" /* logging stuff */
 #include "../include/log.h"  /* log events and event classes */
