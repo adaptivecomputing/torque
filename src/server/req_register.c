@@ -2422,8 +2422,10 @@ int send_depend_req(
 
   preq->rq_ind.rq_register.rq_owner[i] = '\0';
 
-  strcpy(preq->rq_ind.rq_register.rq_parent, pparent->dc_child.c_str());
-  strcpy(preq->rq_ind.rq_register.rq_child, pjob->ji_qs.ji_jobid);
+  snprintf(preq->rq_ind.rq_register.rq_parent,
+    sizeof(preq->rq_ind.rq_register.rq_parent), "%s", pparent->dc_child.c_str());
+  snprintf(preq->rq_ind.rq_register.rq_child, sizeof(preq->rq_ind.rq_register.rq_child),
+    "%s", pjob->ji_qs.ji_jobid);
 
   /* kludge for server:port follows */
 

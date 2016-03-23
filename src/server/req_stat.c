@@ -630,13 +630,20 @@ void req_stat_job_step2(
   else if (type == tjstJob)
     {
     pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE);
-    
-    if ((rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, cntl->sc_condensed, &bad)))
-      req_reject(rc, bad, preq, NULL, NULL);
-    else
-      reply_send_svr(preq);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    if (pjob != NULL)
+      {
+      if ((rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, cntl->sc_condensed, &bad)))
+        req_reject(rc, bad, preq, NULL, NULL);
+      else
+        reply_send_svr(preq);
+
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+    else
+      {
+      req_reject(PBSE_JOBNOTFOUND, bad, preq, NULL, NULL);
+      }
     }
   else
     {

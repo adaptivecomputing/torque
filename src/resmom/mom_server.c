@@ -3368,7 +3368,7 @@ bool is_for_this_host(
   char  *ptr;
   char  temp_char_string[THIS_HOST_LEN];
 
-  strcpy(temp_char_string, device_spec.c_str());
+  snprintf(temp_char_string, sizeof(temp_char_string), "%s", device_spec.c_str());
 
   /* peel off the -device part of the device_spec */
   ptr = strstr(temp_char_string, suffix);
