@@ -889,7 +889,6 @@ class obitent
   {
   public:
   fwdevent oe_info; /* who gets the event */
-  list_link oe_next; /* link to next one */
 
   obitent() : oe_info() {}
   };
@@ -905,7 +904,6 @@ class infoent
   char  *ie_name; /* published name */
   void  *ie_info; /* the glop */
   size_t ie_len;  /* how much glop */
-  list_link ie_next; /* link to next one */
 
   infoent() : ie_name(NULL), ie_info(NULL), ie_len(0) {}
   ~infoent()

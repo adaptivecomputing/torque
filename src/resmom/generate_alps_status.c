@@ -171,8 +171,8 @@ int process_memory_array(
   unsigned long &memory)
 
   {
-  int            page_size;
-  unsigned long  page_cnt;
+  int            page_size = 0;
+  unsigned long  page_cnt = 0;
   char          *attr_value;
   xmlNode       *child;
 
