@@ -90,7 +90,7 @@
 #include "globals.h"
 #include "fairshare.h"
 #include "node_info.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 /*

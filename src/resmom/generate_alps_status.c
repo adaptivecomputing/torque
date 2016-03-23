@@ -91,7 +91,7 @@
 #include <set>
 #include <time.h>
 
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 std::set<std::string> down_nodes;
 std::map<int, alps_node_info> alps_nodes;

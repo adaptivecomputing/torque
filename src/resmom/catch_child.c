@@ -35,7 +35,7 @@
 #include "mom_comm.h" /* im_compose */
 #include "pbs_error.h"
 #include "pbs_proto.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
