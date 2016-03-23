@@ -88,7 +88,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fcntl.h>
-#include "../lib/Libifl/lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
+#include "lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
 
 
 #if defined(FD_SET_IN_SYS_SELECT_H)

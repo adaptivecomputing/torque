@@ -82,7 +82,7 @@
 #include "pbs_ifl.h"
 #include "alps_constants.h"
 #include "alps_functions.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "mom_config.h"
 
 #define MAX_CONN_RETRY 3

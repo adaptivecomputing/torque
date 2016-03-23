@@ -86,7 +86,7 @@
 
 #include "alps_constants.h"
 #include "utils.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "mom_config.h"
 #include <vector>
 #include <string>

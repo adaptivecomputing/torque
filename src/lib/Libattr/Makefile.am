@@ -4,6 +4,10 @@ DIST_SUBDIRS =
 
 CLEANFILES = *.gcda *.gcno *.gcov
 
+noinst_HEADERS = attr_atomic.h attr_fn_b.h attr_fn_hold.h attr_fn_ll.h attr_fn_size.h attr_fn_tokens.h attr_func.h \
+                 attr_fn_acl.h attr_fn_c.h attr_fn_intr.h attr_fn_nppcu.h attr_fn_str.h attr_fn_tv.h attr_node_func.h \
+                 attr_fn_arst.h attr_fn_freq.h attr_fn_l.h attr_fn_resc.h attr_fn_time.h attr_fn_unkn.h
+
 noinst_LIBRARIES = libattr.a
 
 libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \

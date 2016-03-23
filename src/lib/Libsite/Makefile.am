@@ -1,5 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
+noinst_HEADERS = lib_site.h
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 

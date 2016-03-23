@@ -99,7 +99,7 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "mom_mach.h"
 #include "mom_func.h"

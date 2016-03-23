@@ -4,6 +4,18 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 DIST_SUBDIRS=
 
+noinst_HEADERS = accounting.h job_recov.h queue_recov.h req_manager.h req_select.h svr_connect.h \
+                 array_func.h job_recycler.h queue_recycler.h req_message.h req_shutdown.h svr_format_job.h \
+                 array_upgrade.h job_route.h reply_send.h req_modify.h req_signal.h svr_func.h \
+                 attr_recov.h mom_hierarchy_handler.h req_deletearray.h req_modify_node.h req_stat.h svr_jobfunc.h \
+                 completed_jobs_map.h node_func.h req_delete.h req_movejob.h req_tokens.h svr_mail.h \
+                 dis_read.h node_manager.h req_getcred.h req_quejob.h req_track.h svr_movejob.h \
+                 issue_request.h pbsd_init.h req_holdarray.h req_register.h resc_def_all.h svr_process_request.h \
+                 ji_mutex.h pbsd_main.h req_holdjob.h req_rerun.h run_sched.h svr_recov.h job_func.h process_request.h \
+                 req_jobobit.h req_rescq.h stat_job.h svr_resccost.h job_qs_upgrade.h queue_func.h req_locate.h \
+                 req_runjob.h svr_chk_owner.h
+
+
 PBS_LIBS = ../lib/Libattr/libattr.a \
 	   ../lib/Libsite/libsite.a \
            ../lib/Libutils/libutils.a \

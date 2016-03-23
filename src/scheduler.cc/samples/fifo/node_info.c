@@ -88,7 +88,7 @@
 #include "node_info.h"
 #include "misc.h"
 #include "globals.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 

@@ -89,7 +89,7 @@
 #include "misc.h"
 #include "config.h"
 #include "node_info.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 /*

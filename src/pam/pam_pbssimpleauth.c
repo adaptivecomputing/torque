@@ -21,7 +21,7 @@
 #include "portability.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "attribute.h"
 #include "server_limits.h"
 #include "pbs_job.h"

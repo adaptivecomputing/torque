@@ -1,5 +1,7 @@
 include $(top_srcdir)/buildutils/config.mk
 
+noinst_HEADERS = u_lock_ctl.h lib_utils.h
+
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 

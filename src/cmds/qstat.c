@@ -40,7 +40,7 @@
 #include "net_cache.h"
 #include "utils.h"
 #include "allocation.hpp"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 using namespace std;
 

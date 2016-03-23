@@ -116,7 +116,7 @@
 #include        "mcom.h"
 #include        "cmds.h"
 #include "libcmds.h" /* TShowAbout_exit */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_helper.h"
 
 #define LIST 1

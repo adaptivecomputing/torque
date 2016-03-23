@@ -24,7 +24,7 @@
 
 #include "tm.h"
 #include "mcom.h"
-#include "../lib/Libifl/lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
+#include "lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
 
 extern int *tm_conn;
 extern int event_count;
