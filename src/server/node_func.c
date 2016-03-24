@@ -583,9 +583,6 @@ int status_nodeattrib(
   int   rc = 0;  /*return code, 0 == success*/
   int   index;
   int   nth;  /*tracks list position (ordinal tacker)   */
-#ifdef PENABLE_LINUX_CGROUPS
-  bool  layout_valid = false;
-#endif
 
   pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
 
