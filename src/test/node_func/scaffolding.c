@@ -77,19 +77,39 @@ void attrlist_free()
     }
   }
 
-svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
-  {
-  int namesize = 0;
-  if (aname != NULL)
-    namesize = strlen(aname) + 1;
-  s = (svrattrl *)calloc(1, sizeof(svrattrl) + namesize + vsize);
-  s->al_name = (char *)s + sizeof(svrattrl);
-  s->al_value = s->al_name + namesize;
+svrattrl *attrlist_create(
+  const char *aname, 
+  const char *rname, 
+  int vsize)
 
-  if (aname != NULL)
-    strcpy(s->al_name, aname); /* copy name right after struct */
+  {
+  size_t    asz;
+  size_t    rsz;
+
+  asz = strlen(aname) + 1;     /* pbs_attribute name,allow for null term */
+
+  if (rname == NULL)      /* resource name only if type resource */
+    rsz = 0;
+  else
+    rsz = strlen(rname) + 1;
+
+  s = attrlist_alloc(asz, rsz, vsize);
+
+  strcpy(s->al_name, aname); /* copy name right after struct */
+
+  if (rsz > 0)
+    strcpy(s->al_resc, rname);
+
   return(s);
+}
+
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
+  {
+  svrattrl *pal = (svrattrl *)pobj;
+  attrname = pal->al_name;
+  attrval = pal->al_value;
   }
+
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
   {
