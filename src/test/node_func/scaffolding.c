@@ -156,20 +156,6 @@ void free_attrlist(tlist_head *pattrlisthead)
   {
   }
 
-void append_link(tlist_head *head, list_link *new_link, void *pobj)
-  {
-  svrattrl *pal = (svrattrl *)pobj;
-  attrname = pal->al_name;
-  attrval = pal->al_value;
-  }
-
-void delete_link(
-
-  struct list_link *old) /* ptr to link to delete */
-
-  {
-  }
-
 char *pbs_strerror(int err)
   {
   return(NULL);
