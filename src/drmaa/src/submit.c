@@ -36,6 +36,13 @@
 #include <attrib.h>
 #include <compat.h>
 
+#include "lib_ifl.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -44,8 +51,6 @@ __attribute__((unused))
 = "$Id: submit.c,v 1.16 2006/09/05 07:07:04 ciesnik Exp $";
 #endif
 
-#ifdef __cplusplus
-extern "C" {
 int
 drmaa_run_job(
   char *job_id, size_t job_id_len,
@@ -215,8 +220,8 @@ drmaa_run_job_impl(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_job_id = pbs_submit(c->pbs_conn, sc->pbs_attribs, sc->script_filename,
-                          "", NULL);
+  int local_errno;
+  pbs_job_id = pbs_submit_err(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL, &local_errno);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -325,10 +330,10 @@ drmaa_set_job_std_attribs(
 
   const struct drmaa_def_attr_s *i;
   void **attrib = c->jt->attrib;
-  char *job_name;
+  const char *job_name;
   int rc;
 
-  job_name = (char *)attrib[ATTR_JOB_NAME];
+  job_name = (const char *)attrib[ATTR_JOB_NAME];
 
   if (job_name != NULL)
     {
@@ -368,7 +373,7 @@ drmaa_create_job_script(
   job         = (const char*) attrib[ ATTR_JOB_PATH        ];
   wd          = (const char*) attrib[ ATTR_JOB_WORKING_DIR ];
   argv        = (const char**)attrib[ ATTR_ARGV            ];
-  input_path  = (char *)attrib[ ATTR_INPUT_PATH      ];
+  input_path  = (char *)      attrib[ ATTR_INPUT_PATH      ];
 
   if (job == NULL)
     RAISE_DRMAA(DRMAA_ERRNO_INVALID_ATTRIBUTE_VALUE);
@@ -490,6 +495,7 @@ drmaa_set_job_environment(
   void **attrib = c->jt->attrib;
   size_t s;
   char *env;
+  char *tmp = NULL;
   int rc;
 
   env = strdup("");
@@ -505,7 +511,13 @@ drmaa_set_job_environment(
       RAISE_NO_MEMORY();
       }
 
-    env = (char *)realloc(env, s + strlen(value) + 1);
+    tmp = (char *)realloc(env, s + strlen(value) + 1);
+    if (tmp == NULL)
+      {
+      free(env);
+      return DRMAA_ERRNO_NO_MEMORY;
+      }
+    env = tmp;
 
     strcpy(env + s, value);
     free(value);
@@ -608,9 +620,10 @@ drmaa_translate_staging(const char *stage)
   char hostname[ HOST_NAME_MAX+1 ];
   const char *host = NULL, *filename = NULL;
   int    hostlen = 0;
-  char *result, *p;
+  char *result;
+  const char *p;
 
-  p = strchr((char *)stage, ':');
+  p = strchr(stage, ':');
 
   if (p == NULL)
     {
@@ -984,5 +997,6 @@ drmaa_quote_shell_command(char *word)
 
 #endif
 
+#ifdef __cplusplus
 }
-#endif // #ifdef __cplusplus
+#endif

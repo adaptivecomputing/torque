@@ -34,7 +34,9 @@
 #include <drmaa_impl.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
+#endif 
 
 /**
  * @defgroup jobs  Remembering submitted job in session.
@@ -137,7 +139,8 @@ drmaa_delete_job_hashtab(drmaa_job_t **tab);
 
 /** @} */
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __DRMAA_JOBS_H */
 
-}
-#endif // #ifdef __cplusplus

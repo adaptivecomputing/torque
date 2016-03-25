@@ -1,4 +1,9 @@
-/* C++ code produced by gperf version 3.0.4 */
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
+/* C++ code produced by gperf version 3.0.3 */
 /* Command-line: /usr/bin/gperf -L C++ --struct-type --readonly-tables --includes --hash-function-name=drmaa_attrib_hash --lookup-function-name=drmaa_attrib_lookup drmaa_attrib.gperf  */
 /* Computed positions: -k'11,16' */
 
@@ -210,3 +215,7 @@ Perfect_Hash::drmaa_attrib_lookup (register const char *str, register unsigned i
     }
   return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
