@@ -26,6 +26,11 @@
 #include <string.h>
 #include <attrib.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -34,9 +39,6 @@ __attribute__((unused))
 = "$Id: attrib.c,v 1.5 2006/09/07 15:23:14 ciesnik Exp $";
 #endif
 
-#ifdef __cplusplus
-extern "C"
-{
 struct drmaa_attrib
   {
   const char *name;
@@ -154,5 +156,7 @@ const drmaa_attrib_info_t drmaa_attr_table[] =
   { -1, NULL, NULL, 0 } /* sentinel */
   };
 
+
+#ifdef __cplusplus
 }
-#endif /* #ifdef __cplusplus */
+#endif
