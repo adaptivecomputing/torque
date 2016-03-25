@@ -1,3 +1,4 @@
+#include <pbs_config.h>
 #include <stdio.h>
 
 #include "pbs_nodes.h"
