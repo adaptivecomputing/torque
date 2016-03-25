@@ -1,3 +1,8 @@
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 /* C++ code produced by gperf version 3.0.3 */
 /* Command-line: /usr/bin/gperf -L C++ --struct-type --readonly-tables --includes --hash-function-name=pbs_attrib_hash --lookup-function-name=pbs_attrib_lookup pbs_attrib.gperf  */
 /* Computed positions: -k'1,3' */
@@ -245,3 +250,7 @@ Perfect_Hash::pbs_attrib_lookup (register const char *str, register unsigned int
     }
   return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif

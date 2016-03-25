@@ -26,6 +26,11 @@
 #include <string.h>
 #include <attrib.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -150,3 +155,8 @@ const drmaa_attrib_info_t drmaa_attr_table[] =
 
   { -1, NULL, NULL, 0 } /* sentinel */
   };
+
+
+#ifdef __cplusplus
+  }
+#endif

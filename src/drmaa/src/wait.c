@@ -36,6 +36,11 @@
 #include <drmaa_impl.h>
 #include <jobs.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -722,3 +727,6 @@ drmaa_wifaborted(int *aborted, int stat, char *errmsg, size_t errlen)
   return DRMAA_ERRNO_SUCCESS;
   }
 
+#ifdef __cplusplus
+  }
+#endif

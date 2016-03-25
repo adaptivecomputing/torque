@@ -32,6 +32,10 @@
 #include <attrib.h>
 
 #include "lib_ifl.h"
+#ifdef __cplusplus
+extern "C"
+ {
+#endif
 
 #ifndef lint
 static char rcsid[]
@@ -43,7 +47,7 @@ __attribute__((unused))
 
 pthread_mutex_t drmaa_session_mutex = PTHREAD_MUTEX_INITIALIZER;
 drmaa_session_t *drmaa_session = NULL;
-struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend);
 
 int
 drmaa_init(const char *contact, char *errmsg, size_t errlen)
@@ -473,7 +477,6 @@ int drmaa_control(
 
   switch (action)
     {
-    int local_errno;
     /*
      * We cannot know whether we did suspend job
      * in other way than remembering this inside DRMAA session.
@@ -481,24 +484,24 @@ int drmaa_control(
 
     case DRMAA_CONTROL_SUSPEND:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_SUSPENDED);
-      rc = pbs_sigjob_err(c->pbs_conn, job_id_cpy, sigstop, NULL, &local_errno);
+      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigstop, NULL);
       break;
 
     case DRMAA_CONTROL_RESUME:
       drmaa_find_job(c, job_id, NULL, DRMAA_JOB_RESUMED);
-      rc = pbs_sigjob_err(c->pbs_conn, job_id_cpy, sigcont, NULL, &local_errno);
+      rc = pbs_sigjob(c->pbs_conn, job_id_cpy, sigcont, NULL);
       break;
 
     case DRMAA_CONTROL_HOLD:
-      rc = pbs_holdjob_err(c->pbs_conn, job_id_cpy, user_hold, NULL, &local_errno);
+      rc = pbs_holdjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
       break;
 
     case DRMAA_CONTROL_RELEASE:
-      rc = pbs_rlsjob_err(c->pbs_conn, job_id_cpy, user_hold, NULL, &local_errno);
+      rc = pbs_rlsjob(c->pbs_conn, job_id_cpy, user_hold, NULL);
       break;
 
     case DRMAA_CONTROL_TERMINATE:
-      rc = pbs_deljob_err(c->pbs_conn, job_id_cpy, NULL, &local_errno); /* deldelay=N
+      rc = pbs_deljob(c->pbs_conn, job_id_cpy, NULL); /* deldelay=N
              -- delay between SIGTERM and SIGKILL (default 0)*/
       break;
     }
@@ -543,7 +546,6 @@ int drmaa_job_ps(
   int rc = DRMAA_ERRNO_SUCCESS;
   char pbs_state = 0;
   int exit_status = -1;
-  int local_errno = 0;
 
   struct batch_status *status;
 
@@ -581,7 +583,7 @@ int drmaa_job_ps(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  status = pbs_statjob_err(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL, &local_errno);
+  status = pbs_statjob(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -699,3 +701,6 @@ int drmaa_job_ps(
   }
 
 
+#ifdef __cplusplus
+} 
+#endif

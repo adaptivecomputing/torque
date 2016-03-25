@@ -38,6 +38,11 @@
 
 #include "lib_ifl.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -992,3 +997,6 @@ drmaa_quote_shell_command(char *word)
 
 #endif
 
+#ifdef __cplusplus
+}
+#endif
