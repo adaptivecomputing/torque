@@ -2850,7 +2850,7 @@ void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "mom_main", (char *)"Caught fatal core signal");
+  log_err(sig, __func__, "Caught fatal core signal");
 
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;
