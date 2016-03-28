@@ -597,7 +597,7 @@ int status_nodeattrib(
     }
 
 #ifdef PENABLE_LINUX_CGROUPS
-  layout_valid = pnode->nd_layout.is_initialized();
+  bool layout_valid = pnode->nd_layout.is_initialized();
 #endif
 
   memset(&atemp, 0, sizeof(atemp));
