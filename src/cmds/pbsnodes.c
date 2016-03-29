@@ -475,7 +475,7 @@ static int marknode(
     new_attr->next->op       = op2;
     }
 
-  rc = set_last_attropl(&(node_attr_map[name].pbsmanager_attrs), new_attr);
+  set_last_attropl(&(node_attr_map[name].pbsmanager_attrs), new_attr);
 
   return(rc);
   }  /* END marknode() */
