@@ -112,7 +112,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   availableChips = newMachine.availableChips;
   availableCores = newMachine.availableCores;
   availableThreads = newMachine.availableThreads;
-  this->initialized = true;
+  this->initialized = newMachine.initialized;
   return *this;
   }
 
@@ -261,7 +261,7 @@ Machine::Machine(
 
   int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
             totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(false), sockets(),
+            availableCores(np), availableThreads(np), initialized(true), sockets(),
             NVIDIA_device(), allocations()
 
   {
