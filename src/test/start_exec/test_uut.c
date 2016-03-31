@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string>
 #include <set>
+#include <map>
 #include <sys/types.h>
 #include <signal.h>
 #include <limits.h>
@@ -232,6 +233,7 @@ END_TEST
 START_TEST(job_nodes_test)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_usages = new std::map<std::string, job_host_data>();
 
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
   pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
