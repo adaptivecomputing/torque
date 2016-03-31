@@ -11,6 +11,8 @@
 #include "mail_throttler.hpp"
 #include "work_task.h"
 
+
+
 struct server server;
 
 const char owner[] = "xowner";
@@ -21,6 +23,8 @@ const char outpath[] = "xyz_host.ac:/home/echan/work/dev/torque/trunk/STDIN.o123
 const char mailbuf[] = "Exit_status=271";
 const char msgbuf[]  = "Resources Used: One gallon of diesel; One bag Doritos; 2 liters Pepsi.";
 const char complete[] = "e";
+extern int called;
+
 
 void send_email_batch(struct work_task *pwt);
 extern mail_throttler pending_emails;
@@ -42,6 +46,7 @@ void setup_job(job *pjob)
   pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str = (char *)outpath;
   pjob->ji_wattr[JOB_ATR_mailpnts].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = (char *)complete;
+  
   }
 
 int remove_old_mail(const char *filename)
@@ -80,7 +85,7 @@ void read_file_into_string(
     fclose(fp);
     }
   }
-
+  
 
 START_TEST(test_send_email_batch)
   {
@@ -321,6 +326,24 @@ START_TEST(test_with_eo_when_complete)
   }
 END_TEST
 
+START_TEST(mail_point_p)
+  {	
+  called = 0;
+  job pjob;	
+   
+  char p[]= "p";
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;	  
+  svr_mailowner(&pjob, 1, 1, p);
+  fail_unless((called == 0),"one");
+
+  
+  char a[]= "a";
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = a;	  
+  svr_mailowner(&pjob, 1, 1, p);
+  fail_unless((called == 1),"two");
+  }
+END_TEST
+
 Suite *svr_mail_suite(void)
   {
   Suite *s = suite_create("svr_mail_suite methods");
@@ -336,7 +359,11 @@ Suite *svr_mail_suite(void)
   tc_core = tcase_create("test_with_eo_when_complete");
   tcase_add_test(tc_core, test_with_eo_when_complete);
   suite_add_tcase(s, tc_core);
-
+  
+  tc_core = tcase_create("mail_point_p");
+  tcase_add_test(tc_core, mail_point_p);
+  suite_add_tcase(s, tc_core);
+  
   return s;
   }
 
