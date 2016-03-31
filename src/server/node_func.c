@@ -583,7 +583,6 @@ int status_nodeattrib(
   int   rc = 0;  /*return code, 0 == success*/
   int   index;
   int   nth;  /*tracks list position (ordinal tacker)   */
-  bool  layout_valid = false;
 
   pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
 
