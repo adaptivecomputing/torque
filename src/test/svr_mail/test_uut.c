@@ -338,6 +338,7 @@ START_TEST(mail_point_p)
 
   
   char a[]= "a";
+  setup_job(&pjob);
   pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = a;	  
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 1),"two");
