@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <netdb.h> /* addrinfo */
 #include <netinet/in.h>
+#include <pbs_config.h>
 
 
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
@@ -491,6 +492,7 @@ void mom_hierarchy_handler::reloadHierarchy()
   {
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
 int Machine::getDedicatedSockets() const
   {
   return(0);
@@ -535,6 +537,34 @@ bool Machine::is_initialized() const
   {
   return(true);
   }
+
+Machine &Machine::operator =(const Machine &other)
+  {
+  return(*this);
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+PCI_Device::PCI_Device(const PCI_Device &other)
+  {
+  }
+
+PCI_Device::~PCI_Device() {}
+
+Chip::Chip(const Chip &other)
+  {
+  }
+
+Chip::~Chip() {}
+
+Core::~Core() {}
+
+allocation::allocation(const allocation &other) {}
+
+Socket::~Socket() {}
+
+#endif
 
 void update_node_state(pbsnode *pnode, int state) 
   {
