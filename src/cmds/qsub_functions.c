@@ -2701,12 +2701,27 @@ int process_opt_m(
       {
       if ((*pc != 'a') &&
           (*pc != 'b') &&
-          (*pc != 'e'))
+          (*pc != 'e') &&
+          (*pc != 'p'))
         return(-1);
 
       pc++;
       }
     } /* END if (strcmp(cmd_arg,"n") != 0) */
+  else if (strcmp(cmd_arg, "p") != 0)
+    {
+    const char *pc = cmd_arg;
+    
+    while (*pc)
+      {
+      if ((*pc != 'a') &&
+          (*pc != 'b') &&
+          (*pc != 'e'))
+        return(-1);
+
+      pc++;
+      }
+    } /* END if (strcmp(cmd_arg,"p") != 0) */
           
   hash_add_or_exit(ji->job_attr, ATTR_m, cmd_arg, data_type);
 

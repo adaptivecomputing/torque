@@ -599,7 +599,7 @@ void svr_mailowner(
   get_svr_attr_str(SRV_ATR_MailDomain, &domain);
   if ((domain != NULL) &&
       (!strcasecmp("never", domain)))
-    {
+    {		
     /* never send user mail under any conditions */
     if (LOGLEVEL >= 3) 
       {
@@ -610,6 +610,21 @@ void svr_mailowner(
       }
 
     return;
+    }
+    
+    //check to see if the user does not want any mail sent, not even on job failures
+	if ((pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str != NULL) && 
+	    (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NOJOBMAIL))
+    {
+    if (LOGLEVEL >= 3)
+      {
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "Not sending email: mail option disabled by user for this job \n");			
+      }
+    
+    return;        
     }
 
   if (LOGLEVEL >= 3)
