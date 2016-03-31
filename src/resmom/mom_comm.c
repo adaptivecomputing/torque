@@ -139,6 +139,8 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
+#include "pmix_tracker.hpp"
+#include "pmix_operation.hpp"
 
 #define IM_FINISHED                 1
 #define IM_DONE                     0
@@ -161,6 +163,7 @@ extern AvlTree       okclients;
 extern int           port_care;
 extern char         *path_prologp;
 extern char         *path_prologuserp;
+extern char          mom_alias[];
 extern int           multi_mom;
 char                *stat_string_aggregate = NULL;
 unsigned int         ssa_index;
@@ -190,7 +193,10 @@ const char *PMOMCommand[] =
   "RADIX_ALL_OK",
   "JOIN_JOB_RADIX",
   "KILL_JOB_RADIX",
-  "ERROR",     /* 14+ */
+  "PMIx_FENCE",
+  "PMIx_CONNECT",
+  "PMIx_DISCONNECT",
+  "ERROR",     /* 18+ */
   NULL
   };
 
@@ -763,11 +769,11 @@ int tm_reply(
 int im_compose(
 
   struct tcp_chan *chan,
-  char      *jobid,
-  char      *cookie,
-  int        command,
-  tm_event_t event,
-  tm_task_id taskid)
+  char            *jobid,
+  const char      *cookie,
+  int              command,
+  tm_event_t       event,
+  tm_task_id       taskid)
 
   {
   int ret = PBSE_NONE;
@@ -970,7 +976,13 @@ int send_sisters(
       if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                                  cookie,
+                                                  np,
+                                                  com,
+                                                  TM_NULL_EVENT,
+                                                  TM_NULL_TASK,
+                                                  NULL);
 
         if (mc->mc_struct == NULL)
           free(mc);
@@ -1010,7 +1022,13 @@ int send_sisters(
       if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                                  cookie,
+                                                  np,
+                                                  com,
+                                                  TM_NULL_EVENT,
+                                                  TM_NULL_TASK,
+                                                  NULL);
 
         if (mc->mc_struct == NULL)
           free(mc);
@@ -1120,7 +1138,13 @@ int send_ms(
     if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
       {
       mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                                cookie,
+                                                np,
+                                                com,
+                                                TM_NULL_EVENT,
+                                                TM_NULL_TASK,
+                                                NULL);
 
       if (mc->mc_struct == NULL)
         free(mc);
@@ -1157,7 +1181,13 @@ int send_ms(
     if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
       {
       mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, com, TM_NULL_EVENT, TM_NULL_TASK);
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                                cookie,
+                                                np,
+                                                com,
+                                                TM_NULL_EVENT,
+                                                TM_NULL_TASK,
+                                                NULL);
 
       if (mc->mc_struct == NULL)
         free(mc);
@@ -2110,7 +2140,8 @@ void send_im_error(
             pjob->ji_hosts,
             IM_ERROR,
             TM_NULL_EVENT,
-            TM_NULL_TASK);
+            TM_NULL_TASK,
+            NULL);
 
         if (mc->mc_struct == NULL)
           free(mc);
@@ -2204,7 +2235,13 @@ int reply_to_join_job_as_sister(
 
     if (mc != NULL)
       {
-      ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, pjob->ji_hosts, command, event, fromtask);
+      ici = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                      cookie,
+                                      pjob->ji_hosts,
+                                      command,
+                                      event,
+                                      fromtask,
+                                      NULL);
 
       if (ici != NULL)
         {
@@ -3212,11 +3249,12 @@ int im_spawn_task(
             if (st != NULL)
               {
               st->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
-                cookie,
-                pjob->ji_hosts,
-                IM_SPAWN_TASK,
-                TM_NULL_EVENT,
-                TM_NULL_TASK);
+                                                  cookie,
+                                                  pjob->ji_hosts,
+                                                  IM_SPAWN_TASK,
+                                                  TM_NULL_EVENT,
+                                                  TM_NULL_TASK,
+                                                  NULL);
               
               if (st->ici == NULL)
                 {
@@ -3377,7 +3415,13 @@ int im_signal_task(
 
     if (mc != NULL)
       {
-      mc->mc_struct = create_compose_reply_info(jobid, cookie, pjob->ji_hosts, IM_SIGNAL_TASK, event, fromtask);
+      mc->mc_struct = create_compose_reply_info(jobid,
+                                                cookie,
+                                                pjob->ji_hosts,
+                                                IM_SIGNAL_TASK,
+                                                event,
+                                                fromtask,
+                                                NULL);
 
       if (mc->mc_struct == NULL)
         free(mc);
@@ -3491,7 +3535,13 @@ int im_obit_task(
             }
           else
             {
-            ot->ici = create_compose_reply_info(jobid, cookie, pjob->ji_hosts, IM_OBIT_TASK, event, fromtask);
+            ot->ici = create_compose_reply_info(jobid,
+                                                cookie,
+                                                pjob->ji_hosts,
+                                                IM_OBIT_TASK,
+                                                event,
+                                                fromtask,
+                                                NULL);
 
             if (ot->ici == NULL)
               {
@@ -5756,6 +5806,147 @@ int process_valid_intermediate_response(
 
 
 
+int process_pmix_fence(
+    
+  tcp_chan *chan,
+  job      *pjob)
+
+  {
+  int   rc = IM_DONE;
+  char *data = disrst(chan, &rc);
+
+#ifdef ENABLE_PMIX
+  if (rc == PBSE_NONE)
+    {
+    if (pending_fences.find(pjob->ji_qs.ji_jobid) != pending_fences.end())
+      {
+      pending_fences[pjob->ji_qs.ji_jobid].add_data(data);
+
+      if (am_i_mother_superior(*pjob))
+        {
+        // A sister has replied. Mark this host from the list
+        
+        if (pending_fences[pjob->ji_qs.ji_jobid].mark_reported(mom_alias) == true)
+          pending_fences[pjob->ji_qs.ji_jobid].complete_operation(pjob, 0);
+        }
+      else
+        {
+        // Mother superior is telling me the fence is complete
+        pending_fences[pjob->ji_qs.ji_jobid].execute_callback();
+        }
+      }
+    }
+#endif
+
+  if (data != NULL)
+    free(data);
+  
+  return(rc);
+  } // END process_pmix_fence()
+
+
+
+/*
+ * process_pmix_connect()
+ *
+ * Processes a pmix connect request
+ */
+
+int process_pmix_connect(
+
+  tcp_chan           *chan,
+  job                *pjob,
+  struct sockaddr_in *source_addr)
+
+  {
+  int   rc = IM_DONE;
+  char *data = disrst(chan, &rc);
+
+#ifdef ENABLE_PMIX
+  if (rc == PBSE_NONE)
+    {
+    // Just the operation id says that a task that is part of this connection
+    // has terminated
+    if (strchr(data, ':') == NULL)
+      {
+      unsigned int op_id = strtol(data, NULL, 10);
+      std::map<unsigned int, pmix_operation>::iterator it = existing_connections.find(op_id);
+
+      if (it == existing_connections.end())
+        {
+        if (LOGLEVEL >= 2)
+          {
+          snprintf(log_buffer, sizeof(log_buffer),
+            "Received word that unknown pmix connection %u related to job %s needs to be cleaned up. Ignoring.",
+            op_id, pjob->ji_qs.ji_jobid);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
+      if (am_i_mother_superior(*pjob) == true)
+        {
+        // Mother superior can receive this notification from sisters. Inform all others
+        clean_up_connection(pjob, source_addr, op_id, true);
+        }
+      else if (connection_from_ms(chan, pjob, source_addr) == false)
+        {
+        if (LOGLEVEL >= 1)
+          {
+          snprintf(log_buffer, sizeof(log_buffer),
+            "Request to clean up pmix connection %u related to job %s is not from mother superior. Ignoring.",
+            op_id, pjob->ji_qs.ji_jobid);
+          log_err(-1, __func__, log_buffer);
+          }
+        }
+      else
+        {
+        // Mother superior says I should clean up this connection, kill local tasks
+        clean_up_connection(pjob, source_addr, op_id, false);
+        }
+      }
+    else
+      {
+      pmix_operation connect(data, pjob);
+      existing_connections[connect.get_operation_id()] = connect;
+      }
+    }
+#endif
+
+  if (data != NULL)
+    free(data);
+
+  return(rc);
+  } // END process_pmix_connect()
+
+
+
+int process_pmix_disconnect(
+
+  tcp_chan           *chan,
+  job                *pjob,
+  struct sockaddr_in *source_addr)
+
+  {
+  int   rc = IM_DONE;
+  char *data = disrst(chan, &rc);
+
+#ifdef ENABLE_PMIX
+  if (rc == PBSE_NONE)
+    {
+    // Remove this connect from our group of connections
+    unsigned int op_id = strtol(data, NULL, 10);
+    std::map<unsigned int, pmix_operation>::iterator it = existing_connections.find(op_id);
+    if (it != existing_connections.end())
+      existing_connections.erase(it);
+    }
+#endif
+
+  if (data != NULL)
+    free(data);
+
+  return(rc);
+  } // END process_pmix_disconnect()
+
+
 
 /**
  * Input is coming from another MOM over a DIS rpp stream.
@@ -6298,6 +6489,24 @@ void im_request(
       break;
       }
 
+    case IM_FENCE:
+      {
+      ret = process_pmix_fence(chan, pjob);
+      break;
+      }
+
+    case IM_CONNECT:
+      {
+      ret = process_pmix_connect(chan, pjob, pSockAddr);
+      break;
+      }
+
+    case IM_DISCONNECT:
+      {
+      ret = process_pmix_disconnect(chan, pjob, pSockAddr);
+      break;
+      }
+
     default:
       {
       sprintf(log_buffer, "unknown command %d sent", command);
@@ -6514,6 +6723,113 @@ int tm_postinfo(
 
 
 
+int send_tm_spawn_request(
+
+  job      *pjob,
+  hnodent  *remote_host,
+  char    **argv,
+  char    **env,
+  int       event,
+  int       fromtask,
+  int      *reply_ptr)
+
+  {
+  tcp_chan      *local_chan = NULL;
+  int            rc = TM_DONE;
+  unsigned int   momport = 0;
+  // If I am MS, generate the TID now
+  tm_task_id     taskid = (pjob->ji_nodeid == 0) ? pjob->ji_taskid++ : TM_NULL_TASK;
+  
+  event_alloc(IM_SPAWN_TASK, remote_host, event, fromtask);
+  
+  if (multi_mom)
+    {
+    momport = pbs_rm_port;
+    }
+  
+  job_save(pjob, SAVEJOB_FULL, momport);
+  
+  int local_socket = tcp_connect_sockaddr((struct sockaddr *)&remote_host->sock_addr,
+                                      sizeof(remote_host->sock_addr), true);
+  
+  if (IS_VALID_STREAM(local_socket) == FALSE)
+    {
+    return(TM_DONE);
+    }
+  
+  if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
+    {
+    }
+  else if ((rc = im_compose(local_chan,
+                            pjob->ji_qs.ji_jobid,
+                            pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+                            IM_SPAWN_TASK,
+                            event,
+                            fromtask)) != DIS_SUCCESS)
+    {
+    }
+  else
+    {
+    if (rc == DIS_SUCCESS)
+      {
+      if ((rc = diswui(local_chan, pjob->ji_nodeid)) == DIS_SUCCESS)
+        {
+        if ((rc = diswui(local_chan, taskid)) == DIS_SUCCESS)
+          {
+          if ((rc = diswst(local_chan, pjob->ji_globid)) == DIS_SUCCESS)
+            {
+            for (int i = 0;argv[i];i++)
+              {
+              rc = diswst(local_chan, argv[i]);
+
+              if (rc != DIS_SUCCESS)
+                break;
+              }
+
+            if (rc == DIS_SUCCESS)
+              {
+              if ((rc = diswst(local_chan, "")) == DIS_SUCCESS)
+                {
+                for (int i = 0;env[i];i++)
+                  {
+                  rc = diswst(local_chan, env[i]);
+
+                  if (rc != DIS_SUCCESS)
+                    break;
+                  }
+
+                if (rc == DIS_SUCCESS)
+                  rc = DIS_tcp_wflush(local_chan);
+
+                *reply_ptr = FALSE;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  if (rc != DIS_SUCCESS)
+    {
+    snprintf(log_buffer,sizeof(log_buffer),
+      "Unable to send IM_SPAWN_TASK request to node %s for job %s",
+      remote_host->hn_host,
+      pjob->ji_qs.ji_jobid);
+
+    log_err(-1, __func__, log_buffer);
+
+    /* NYI: shouldn't we kill the job here instead of letting it run forever?? */
+    }
+  
+  close(local_socket);
+
+  if (local_chan != NULL)
+    DIS_tcp_cleanup(local_chan);
+
+  return(rc);
+  } // END send_tm_spawn_request()
+
 
 
 /*
@@ -6554,10 +6870,8 @@ int tm_spawn_request(
   struct tcp_chan *local_chan = NULL;
   int            numele;
   int            i;
-  unsigned int   momport = 0;
  
   vnodent       *pnode;
-  tm_task_id     taskid;
   task          *ptask;
   eventent      *ep;
  
@@ -6788,96 +7102,7 @@ int tm_spawn_request(
     return(TM_DONE);
     }  /* END else if (I'm not MS and task isn't on MS) */
 
-  /*
-   * If I am MS, generate the TID now, otherwise
-   * we are sending to MS who will do it when she gets
-   * the SPAWN.
-   */
-  
-  taskid = (pjob->ji_nodeid == 0) ? pjob->ji_taskid++ : TM_NULL_TASK;
-  
-  event_alloc(IM_SPAWN_TASK, phost, event, fromtask);
-  
-  if (multi_mom)
-    {
-    momport = pbs_rm_port;
-    }
-  
-  job_save(pjob, SAVEJOB_FULL, momport);
-  
-  local_socket = tcp_connect_sockaddr((struct sockaddr *)&phost->sock_addr,sizeof(phost->sock_addr), true);
-  
-  if (IS_VALID_STREAM(local_socket) == FALSE)
-    {
-    arrayfree(argv);
-    arrayfree(envp);
-
-    return(TM_DONE);
-    }
-  
-  if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
-    {
-    }
-  else if ((*ret = im_compose(local_chan,jobid,cookie,IM_SPAWN_TASK,event,fromtask)) != DIS_SUCCESS)
-    {
-    }
-  else
-    {
-    if (*ret == DIS_SUCCESS)
-      {
-      if ((*ret = diswui(local_chan, pjob->ji_nodeid)) == DIS_SUCCESS)
-        {
-        if ((*ret = diswui(local_chan, taskid)) == DIS_SUCCESS)
-          {
-          if ((*ret = diswst(local_chan, pjob->ji_globid)) == DIS_SUCCESS)
-            {
-            for (i = 0;argv[i];i++)
-              {
-              *ret = diswst(local_chan, argv[i]);
-
-              if (*ret != DIS_SUCCESS)
-                break;
-              }
-
-            if (*ret == DIS_SUCCESS)
-              {
-              if ((*ret = diswst(local_chan, "")) == DIS_SUCCESS)
-                {
-                for (i = 0;envp[i];i++)
-                  {
-                  *ret = diswst(local_chan, envp[i]);
-
-                  if (*ret != DIS_SUCCESS)
-                    break;
-                  }
-
-                if (*ret == DIS_SUCCESS)
-                  *ret = DIS_tcp_wflush(local_chan);
-
-                *reply_ptr = FALSE;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-  if (*ret != DIS_SUCCESS)
-    {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "Unable to send IM_SPAWN_TASK request to node %s for job %s",
-      phost->hn_host,
-      pjob->ji_qs.ji_jobid);
-
-    log_err(-1, __func__, log_buffer);
-
-    /* NYI: shouldn't we kill the job here instead of letting it run forever?? */
-    }
-  
-  close(local_socket);
-  if (local_chan != NULL)
-    DIS_tcp_cleanup(local_chan);
+  *ret = send_tm_spawn_request(pjob, phost, argv, envp, event, fromtask, reply_ptr);
   
   if (argv != NULL)
     arrayfree(argv);
@@ -6885,7 +7110,7 @@ int tm_spawn_request(
   if (envp != NULL)
     arrayfree(envp);
  
-  return(TM_DONE);
+  return(*ret);
   } /* END tm_spawn_request() */
 
 
@@ -7114,8 +7339,6 @@ int tm_signal_request(
  
   return(TM_DONE);
   } /* END tm_signal_request() */
-
-
 
 
 
@@ -9090,5 +9313,141 @@ int is_ptask_corrupt(
 
   return 0;
   }
+
+
+
+/*
+ * send_pmix_operation_via_stream()
+ * Sends a pmix_operation over an open socket
+ *
+ * NOTE: closes stream
+ * @param stream - the open socket
+ * @param cookie - the job's cookie
+ * @param pjob - the job in question
+ * @param data - relevant data for the pmix operation
+ * @param pmix_op - the index of this operation in IM_*
+ *
+ */
+
+void send_pmix_operation_via_stream(
+
+  int                stream,
+  const char        *cookie,
+  job               *pjob,
+  const std::string &data,
+  int                pmix_op)
+
+  {
+  struct tcp_chan *local_chan = NULL;
+  int              rc = -1;
+
+  if (stream >= 0)
+    {
+    if ((local_chan = DIS_tcp_setup(stream)) == NULL)
+      {
+      }
+    else if ((rc = im_compose(local_chan,
+                              pjob->ji_qs.ji_jobid,
+                              cookie,
+                              pmix_op,
+                              TM_NULL_EVENT,
+                              TM_NULL_TASK)) != DIS_SUCCESS)
+      {
+      }
+    else if ((rc = diswst(local_chan, data.c_str())) != DIS_SUCCESS)
+      {
+      }
+    else
+      rc = DIS_tcp_wflush(local_chan);
+    
+    close(stream);
+    }
+
+  if (local_chan != NULL)
+    DIS_tcp_cleanup(local_chan);
+
+  if (rc != PBSE_NONE)
+    {
+    // mark for re-sending
+    resend_momcomm *mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm));
+    if (mc != NULL)
+      {
+      mc->mc_type = COMPOSE_REPLY;
+      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                                cookie,
+                                                pjob->ji_hosts,
+                                                pmix_op,
+                                                TM_NULL_EVENT,
+                                                TM_NULL_TASK,
+                                                data.c_str());
+
+      if (mc->mc_struct == NULL)
+        free(mc);
+      else
+        add_to_resend_things(mc);
+      }
+    }
+  } // END send_pmix_operation_via_stream()
+
+
+
+void report_fence_to_ms(
+
+  job  *pjob,
+  char *data)
+
+  {
+  std::string      local_data;
+  int              stream = get_reply_stream(pjob);
+
+  if (data != NULL)
+    local_data = data;
+
+  send_pmix_operation_via_stream(stream, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str, pjob, local_data, IM_FENCE);
+  } // END report_fence_to_ms()
+        
+
+
+void remote_notify_pmix_operation(
+    
+  job                *pjob, 
+  const char         *remote_host,
+  const std::string  &data,
+  int                 pmix_op,
+  struct sockaddr_in *dont_contact)
+
+  {
+  unsigned long ipaddr_dont_contact = 0;
+
+  if (dont_contact != NULL)
+    {
+    ipaddr_dont_contact = ntohl(dont_contact->sin_addr.s_addr);
+    }
+
+  for (int i = 0; i < pjob->ji_numnodes; i++)
+    {
+    if (!strcmp(remote_host, pjob->ji_hosts[i].hn_host))
+      {
+      hnodent *np = pjob->ji_hosts + i;
+
+      if (ipaddr_dont_contact != 0)
+        {
+        unsigned long ipaddr = ntohl(((struct sockaddr_in *)(&np->sock_addr))->sin_addr.s_addr);
+        if (ipaddr_dont_contact == ipaddr)
+          continue;
+        }
+
+      int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,
+                                             sizeof(np->sock_addr), true);
+
+      send_pmix_operation_via_stream(stream, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str, pjob,
+                                     data, pmix_op);
+      break;
+      }
+    }
+  } // END remote_notify_fence_operation()
+
+
+
 /* END mom_comm.c */
 

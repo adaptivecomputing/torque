@@ -99,6 +99,7 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "mom_config.h"
+#include "pmix_operation.hpp"
 
 /* Global Variables */
 
@@ -450,6 +451,11 @@ void scan_for_terminated(void) /* linux */
 
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
+              
+#ifdef ENABLE_PMIX
+      check_and_act_on_obit(pjob, matching_task->ti_qs.ti_task);
+#endif
+
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 

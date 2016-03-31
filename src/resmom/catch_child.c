@@ -38,6 +38,7 @@
 #include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
+#include "mom_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
 #include "cray_energy.h"
 #ifdef PENABLE_LINUX_CGROUPS
@@ -2246,7 +2247,13 @@ int send_job_obit_to_ms(
     mc->mc_type   = KILLJOB_REPLY;
     mc->mc_struct = kj;
     
-    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                        cookie,
+                                        np,
+                                        command,
+                                        event,
+                                        TM_NULL_TASK,
+                                        NULL);
     
     if (kj->ici == NULL)
       {

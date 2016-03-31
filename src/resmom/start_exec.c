@@ -131,6 +131,7 @@ extern "C"
 #include "mom_config.h"
 #include "mom_memory.h"
 #include "node_internals.hpp"
+#include "job_host_data.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
@@ -6354,14 +6355,12 @@ void job_nodes(
 
     host.erase(slash);
 
-
     memset(&hp, 0, sizeof(hp));
 
     hp.hn_node = nhosts;
     hp.hn_sister = SISTER_OKAY;
     hp.hn_host = strdup(host.c_str());
     hp.hn_port = strtol(port_str.c_str(), NULL, 10);
-
 
     CLEAR_HEAD(hp.hn_events);
 
@@ -6383,6 +6382,9 @@ void job_nodes(
       }
 
     translate_range_string_to_vector(range.c_str(), indices);
+
+    job_host_data jdh(hp.hn_host, indices.size());
+    (*pjob.ji_usages)[hp.hn_host] = jdh;
 
     for (unsigned int i = 0; i < indices.size(); i++)
       {

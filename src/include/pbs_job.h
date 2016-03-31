@@ -100,6 +100,7 @@
 #include "mom_hierarchy.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
+#include "job_host_data.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -707,6 +708,7 @@ struct job
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
   std::vector<task *> *ji_tasks; /* list of tasks */
+  std::map<std::string, job_host_data> *ji_usages; // Current proc usage on hosts
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -1002,7 +1004,10 @@ typedef struct job_file_delete_info
 #define IM_RADIX_ALL_OK   12
 #define IM_JOIN_JOB_RADIX 13
 #define IM_KILL_JOB_RADIX 14
-#define IM_MAX            15
+#define IM_FENCE          15
+#define IM_CONNECT        16
+#define IM_DISCONNECT     17
+#define IM_MAX            18
 
 #define IM_ERROR          99
 
