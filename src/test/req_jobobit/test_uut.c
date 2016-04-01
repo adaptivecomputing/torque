@@ -526,6 +526,7 @@ START_TEST(handle_terminating_job_test)
   {
   job  *pjob = new job();
 
+  bad_job = 0;
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
   fail_unless(handle_terminating_job(pjob, 0, "bob") == PBSE_NONE);
