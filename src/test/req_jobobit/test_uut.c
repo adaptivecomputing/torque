@@ -476,6 +476,12 @@ START_TEST(end_of_job_accounting_test)
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
   
+  // Make sure that we'll do end of job accounting for jobs that are deleted while running
+  pjob->ji_being_deleted = true;
+  called_account_jobend = false;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
+  
   usage = 0;
   }
 END_TEST
