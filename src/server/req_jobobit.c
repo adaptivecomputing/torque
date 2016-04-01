@@ -1732,8 +1732,7 @@ int end_of_job_accounting(
   long  events = 0;
 
   // Do not have end of job accounting records for jobs that are deleted and never started
-  if ((pjob->ji_being_deleted == true) &&
-      (pjob->ji_qs.ji_stime == 0))
+  if (pjob->ji_qs.ji_stime == 0)
     {
     return(PBSE_NONE);
     }
