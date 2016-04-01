@@ -1628,8 +1628,12 @@ int move_to_job_cpuset(
     return(FAILURE);
     }
 
-  /* Success */
-  fclose(fd);
+  if (fclose(fd))
+    {
+    sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
+    log_err(errno, __func__, log_buffer);
+    return(FAILURE);
+    }
 
   if (LOGLEVEL >= 4)
     {
