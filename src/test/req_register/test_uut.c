@@ -48,6 +48,7 @@ extern int is_attr_set;
 
 char          *job1 = (char *)"1.napali";
 char          *job2 = (char *)"2.napali";
+const char    *job3 = "3.napali";
 char          *host = (char *)"napali";
 
 
@@ -663,9 +664,11 @@ START_TEST(set_depend_hold_test)
   job            pjob2;
   struct depend *pdep;
  
-  memset(&pjob, 0, sizeof(pjob));
+  strcpy(pjob.ji_qs.ji_jobid, job1);
+  strcpy(pjob2.ji_qs.ji_jobid, job3);
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
+  // Job 2 will be complete with an exit status of 0
   pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pattr);
   make_dependjob(pdep, job2, host);
 
@@ -673,12 +676,11 @@ START_TEST(set_depend_hold_test)
   fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
   fail_unless(pjob.ji_qs.ji_state == JOB_STATE_HELD);
   
-  memset(&pjob2, 0, sizeof(pjob2));
   pjob2.ji_qs.ji_substate = JOB_SUBSTATE_DEPNHOLD;
-  strcpy(pjob2.ji_qs.ji_jobid, job2);
   pattr = &pjob2.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(JOB_DEPEND_TYPE_AFTEROK, pattr);
+  // Job 2 will be complete with an exit status of 0
   make_dependjob(pdep, job2, host);
 
   set_depend_hold(&pjob2, pattr);
