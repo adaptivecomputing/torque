@@ -525,11 +525,16 @@ void Machine::setMemory(
   long long mem)
 
   {
-  long long per_socket = mem / this->sockets.size();
   this->totalMemory = mem;
 
-  for (unsigned int i = 0; i < this->sockets.size(); i++)
-    this->sockets[i].setMemory(per_socket);
+  // Protect against a race condition of initialization
+  if (this->sockets.size() > 0)
+    {
+    long long per_socket = mem / this->sockets.size();
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].setMemory(per_socket);
+    }
   }
 
 void Machine::insertNvidiaDevice(
