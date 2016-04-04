@@ -1492,7 +1492,7 @@ int depend_on_que(
 
       // free the allocated array
       for (unsigned int i = 0; i < pparent.size(); i++)
-        free(pparent[i]);
+        delete pparent[i];
 
       if (rc != PBSE_NONE)
         return(rc);
@@ -3271,7 +3271,7 @@ void clear_depend(
     unsigned int dp_jobs_size = pd->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
-      free(pd->dp_jobs[i]);
+      delete pd->dp_jobs[i];
       }
 
     pd->dp_jobs.clear();
