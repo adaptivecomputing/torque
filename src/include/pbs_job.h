@@ -137,8 +137,8 @@ struct job_array;
 class depend_job
   {
   public:
-  short dc_state; /* released / ready to run (syncct)  */
-  long  dc_cost; /* cost of this child (syncct)   */
+  short       dc_state; /* released / ready to run (syncct)  */
+  long        dc_cost; /* cost of this child (syncct)   */
   std::string dc_child;
   std::string dc_svr;
 
@@ -162,11 +162,11 @@ class depend_job
 class depend
   {
   public:
-  list_link dp_link; /* link to next dependency, if any       */
-  short   dp_type; /* type of dependency (all)           */
-  short   dp_numexp; /* num jobs expected (on or syncct only) */
-  short   dp_numreg; /* num jobs registered (syncct only)     */
-  short   dp_released; /* This job released to run (syncwith)   */
+  list_link                 dp_link; /* link to next dependency, if any       */
+  short                     dp_type; /* type of dependency (all)           */
+  short                     dp_numexp; /* num jobs expected (on or syncct only) */
+  short                     dp_numreg; /* num jobs registered (syncct only)     */
+  short                     dp_released; /* This job released to run (syncwith)   */
   std::vector<depend_job *> dp_jobs;
 
   depend() : dp_type(0), dp_numexp(0), dp_numreg(0), dp_released(0), dp_jobs()
@@ -183,9 +183,7 @@ class depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
@@ -197,7 +195,7 @@ class array_depend_job
   /* in this case, the child is the job depending on the array */
   std::string dc_child;
   std::string dc_svr;
-  int  dc_num;
+  int         dc_num;
 
   array_depend_job() : dc_child(), dc_svr(), dc_num(0)
     {
@@ -207,8 +205,8 @@ class array_depend_job
 class array_depend
   {
   public:
-  list_link  dp_link;
-  short      dp_type;
+  list_link                       dp_link;
+  short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
@@ -220,9 +218,7 @@ class array_depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
