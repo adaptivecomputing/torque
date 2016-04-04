@@ -274,11 +274,11 @@ START_TEST(array_delete_test)
   pa->ai_qs.deps.ll_next = &pdep->dp_link;
   pdep->dp_link.ll_prior = (list_link *)&pa->ai_qs.deps;
   pdep->dp_link.ll_struct = (void *)pdep;
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
 
   array_delete(pa);
 
