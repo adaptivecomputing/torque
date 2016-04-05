@@ -1608,8 +1608,10 @@ job *job_recov(
 #ifndef PBS_MOM
       unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       free(pj->ji_mutex);
+      delete pj;
+#else
+      free(pj);
 #endif
-      free((char *)pj);
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
     }
