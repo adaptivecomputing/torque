@@ -738,7 +738,7 @@ int modify_job(
 /*
  * modify_whole_array()
  * modifies the entire job array 
- * @SEE req_modify_array PARENT
+ * @SEE req_modifyarray PARENT
  */
 
 int modify_whole_array(
@@ -850,8 +850,10 @@ void *modify_array_work(
 
     if ((pcnt = strchr(array_spec,'%')) != NULL)
       {
+      int old_slot_limit = pa->ai_qs.slot_limit;
       int slot_limit = atoi(pcnt+1);
       pa->ai_qs.slot_limit = slot_limit;
+      update_slot_held_jobs(pa, slot_limit - old_slot_limit);
       }
     }
   
