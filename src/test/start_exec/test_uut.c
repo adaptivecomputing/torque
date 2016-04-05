@@ -123,8 +123,8 @@ START_TEST(test_read_launcher_child_status)
   {
   struct startjob_rtn  srj;
   const char          *jobid = "1.napali";
-  int                  parent_read;
-  int                  parent_write;
+  int                  parent_read = 0;
+  int                  parent_write = 0;
 
   ac_errno = 0;
   ac_read_amount = sizeof(startjob_rtn);
@@ -621,6 +621,7 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_check_pwd_euser");
   tcase_add_test(tc_core, test_check_pwd_euser);
+  tcase_add_test(tc_core, test_read_launcher_child_status);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_check_pwd_no_user");
