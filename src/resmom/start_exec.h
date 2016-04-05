@@ -61,8 +61,6 @@ void nodes_free(job *pj);
 
 int add_host_to_sister_list(char *hostname, unsigned short port, struct radix_buf *list);
 
-void job_nodes(job *pjob);
-
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports );
 
 int  start_exec(job *pjob);
