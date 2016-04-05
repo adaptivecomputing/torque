@@ -222,7 +222,7 @@ extern int TMomFinalizeJob2(pjobexec_t *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
-extern void job_nodes(job &);
+extern int job_nodes(job &);
 extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
 extern int TMakeTmpDir(job *, char *);
@@ -2508,7 +2508,24 @@ int im_join_job_as_sister(
     return(IM_DONE);
     }
   
-  job_nodes(*pjob);
+  if ((rc = job_nodes(*pjob)) != PBSE_NONE)
+    {
+    snprintf(log_buffer, sizeof(log_buffer), "Could not parse the exec_host list for %s; aborting.",
+      pjob->ji_qs.ji_jobid);
+    log_err(rc, __func__, log_buffer);
+
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
+    }
   
   /* set remaining job structure elements */
   

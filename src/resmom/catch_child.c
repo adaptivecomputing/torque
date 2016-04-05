@@ -84,7 +84,7 @@ void *obit_reply (void *);
 extern u_long addclient (const char *);
 extern void encode_used (job *, int, std::stringstream *, tlist_head *);
 extern void encode_flagged_attrs (job *, int, std::stringstream *, tlist_head *);
-extern void job_nodes (job &);
+extern int job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);

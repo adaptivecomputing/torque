@@ -13,7 +13,7 @@
 #include "pbs_nodes.h"
 #include "test_uut.h"
 
-void job_nodes(job &pjob);
+int job_nodes(job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
@@ -37,6 +37,7 @@ extern bool bad_pwd;
 extern bool fail_init_groups;
 extern bool fail_site_grp_check;
 extern bool am_ms;
+extern bool addr_fail;
 
 int linux_time;
 
@@ -115,13 +116,20 @@ START_TEST(job_nodes_test)
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
   pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
 
-  job_nodes(*pjob);
+  fail_unless(job_nodes(*pjob) != PBSE_NONE);
   // nothing should've happened since the flag isn't set
   fail_unless(pjob->ji_numnodes == 0);
-
+  
   pjob->ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
 
-  job_nodes(*pjob);
+  // Force it to not resolve the hostname
+  addr_fail = true;
+  int rc = job_nodes(*pjob);
+  fail_unless(rc == PBSE_CANNOT_RESOLVE, "Error is %d", rc);
+  addr_fail = false; // allow things to work normally
+
+
+  fail_unless(job_nodes(*pjob) == PBSE_NONE);
   fail_unless(pjob->ji_numnodes == 2);
   fail_unless(pjob->ji_numvnod == 20);
 

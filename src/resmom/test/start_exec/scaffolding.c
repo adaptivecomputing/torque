@@ -29,6 +29,7 @@
 
 #define LDAP_RETRIES 5
 
+// Sensing and control variables
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -37,6 +38,9 @@ bool am_ms = false;
 bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
+bool addr_fail = false;
+
+
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -677,9 +681,18 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   return(0);
   }
 
-int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **ppAddrInfoOut)
   {
-  return -1;
+  if (addr_fail == true)
+    return(-1);
+  else
+    {
+    char buf[MAXLINE];
+    gethostname(buf, sizeof(buf));
+    getaddrinfo(buf, NULL, NULL, ppAddrInfoOut);
+
+    return(0);
+    }
   }
 
 bool am_i_mother_superior(const job &pjob)

@@ -5842,7 +5842,7 @@ int add_host_to_sister_list(
  * @see start_exec() - parent
  */
 
-void job_nodes(
+int job_nodes(
 
   job &pjob)  /* I */
 
@@ -5859,7 +5859,7 @@ void job_nodes(
       (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL))
     {
     log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
-    return;
+    return(-1);
     }
 
   std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
@@ -5908,6 +5908,16 @@ void job_nodes(
       hp.sock_addr.sin_family = AF_INET;
       hp.sock_addr.sin_port = htons(hp.hn_port);
       }
+    else
+      {
+      // Unable to resolve this sister's hostname; this job should fail
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Unable to resolve host %s requested as a sister node. Aborting job.",
+        hp.hn_host);
+      log_err(PBSE_CANNOT_RESOLVE, __func__, log_buffer);
+
+      return(PBSE_CANNOT_RESOLVE);
+      }
 
     translate_range_string_to_vector(range.c_str(), indices);
 
@@ -5944,7 +5954,7 @@ void job_nodes(
       (pjob.ji_vnods == NULL))
     {
     log_err(-1,__func__,"Out of memory, system failure!\n");
-    return;
+    return(ENOMEM);
     }
 
   for (unsigned int i = 0; i < hosts.size(); i++)
@@ -5995,7 +6005,7 @@ void job_nodes(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  return;
+  return(PBSE_NONE);
   }   /* END job_nodes() */
 
 
@@ -6518,7 +6528,8 @@ int start_exec(
 
   /* Step 2.0 Initialize Job */
   /* update nodes info w/in job based on exec_hosts pbs_attribute */
-  job_nodes(*pjob);
+  if ((ret = job_nodes(*pjob)) != PBSE_NONE)
+    return(ret);
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */
