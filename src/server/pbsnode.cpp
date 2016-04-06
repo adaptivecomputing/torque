@@ -287,22 +287,14 @@ pbsnode::pbsnode(
 #endif
 
   {
-  free_arst_value(this->nd_prop);
   this->nd_prop = copy_arst(other.nd_prop);
-
-  free_arst_value(this->nd_status);
   this->nd_status = copy_arst(other.nd_status);
-
-  free_arst_value(this->nd_gpustatus);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
-
-  free_arst_value(this->nd_micstatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
   this->node_boards = other.node_boards;
   this->alps_subnodes = other.alps_subnodes;
 
-  free_arst_value(this->nd_acl);
   this->nd_acl = copy_arst(other.nd_acl);
 
   memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));
