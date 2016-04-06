@@ -1606,8 +1606,6 @@ job *job_recov(
       log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-      free(pj->ji_mutex);
       delete pj;
 #else
       free(pj);
@@ -1615,7 +1613,6 @@ job *job_recov(
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
     }
-  
   
   pj->ji_commit_done = 1;
 
