@@ -676,28 +676,78 @@ START_TEST(check_node_order_test)
 
   std::list<node_job_add_info>::iterator it = naji_list.begin();
 
-  fail_unless(it->node_id == 4);
+  fail_unless(it->node_id == 4, "id is %d", it->node_id);
+  fail_unless(it->req_order == 0, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 3);
+  fail_unless(it->node_id == 3, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 1);
+  fail_unless(it->node_id == 1, "id is %d", it->node_id);
+  fail_unless(it->req_order == 4, "order is %d", it->req_order);
+  fail_unless(it->req_index == 3, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 5);
+  fail_unless(it->node_id == 5, "id is %d", it->node_id);
+  fail_unless(it->req_order == 5, "order is %d", it->req_order);
+  fail_unless(it->req_index == 4, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 0);
+  fail_unless(it->node_id == 0, "id is %d", it->node_id);
+  fail_unless(it->req_order == 7, "order is %d", it->req_order);
+  fail_unless(it->req_index == 6, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 6);
+  fail_unless(it->node_id == 6, "id is %d", it->node_id);
+  fail_unless(it->req_order == 11, "order is %d", it->req_order);
+  fail_unless(it->req_index == 10, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 2);
+  fail_unless(it->node_id == 2, "id is %d", it->node_id);
+  fail_unless(it->req_order == 12, "order is %d", it->req_order);
+  fail_unless(it->req_index == 11, "index is %d", it->req_index);
   it++;
-  fail_unless(it->node_id == 7);
+  fail_unless(it->node_id == 7, "id is %d", it->node_id);
+  fail_unless(it->req_order == 62, "order is %d", it->req_order);
+  fail_unless(it->req_index == 61, "index is %d", it->req_index);
   
   // Make sure that req_rank -1 is placed at the front. This is how login nodes are 
   // added to jobs
   node.nd_id = 8;
-  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, -1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 8, 0, -1) == PBSE_NONE);
   it = naji_list.begin();
   fail_unless(it->node_id == 8);
+
+  // Now try a more realistic example - usually there are only 1 or 2 reqs in a job
+  naji_list.clear();
+  node.nd_id = 0;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 1;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 2;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 3;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 1) == PBSE_NONE);
+  node.nd_id = 4;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 1) == PBSE_NONE);
+  
+  it = naji_list.begin();
+  fail_unless(it->node_id == 2, "id is %d", it->node_id);
+  fail_unless(it->req_order == 0, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 0, "id is %d", it->node_id);
+  fail_unless(it->req_order == 1, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 1, "id is %d", it->node_id);
+  fail_unless(it->req_order == 1, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 3, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 4, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
   }
 END_TEST
 
@@ -755,7 +805,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   node_job_add_info *naji = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
   naji->node_id = 1;
-  naji->req_rank = 1;
+  naji->req_order = 1;
 
   char buf[10];
   buf[0] = '\0';
