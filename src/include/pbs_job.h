@@ -1106,6 +1106,7 @@ typedef struct send_job_request
 
 #define MAIL_NONE  (int)'n'
 #define MAIL_NOJOBMAIL  (int)'p'
+#define MAIL_NONZERO (int)'f'
 #define MAIL_ABORT (int)'a'
 #define MAIL_BEGIN (int)'b'
 #define MAIL_DEL   (int)'d'

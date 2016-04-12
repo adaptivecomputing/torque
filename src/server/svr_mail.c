@@ -656,7 +656,27 @@ void svr_mailowner(
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
       {
-      if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
+      if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
+          (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == JOB_EXEC_OK))
+        {
+        log_event(PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  "Not sending email: User does not want mail of a zero exit code for a job.\n");
+        return;
+        }
+      else if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
+               (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != JOB_EXEC_OK))
+        {
+        if (LOGLEVEL >= 3)
+          {
+          log_event(PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    "sending email: job requested e-mail on all non-zero exit codes");
+          }
+        }
+      else if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
         {
         /* do not send mail. No mail requested on job */
         log_event(PBSEVENT_JOB,
@@ -666,7 +686,7 @@ void svr_mailowner(
         return;
         }
       /* see if user specified mail of this type */
-      if (strchr(
+      else if (strchr(
             pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str,
             mailpoint) == NULL)
         {
