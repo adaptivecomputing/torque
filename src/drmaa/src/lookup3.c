@@ -46,6 +46,11 @@ Code changed for ANSI C compilers and autotools by Łukasz Cieśnik.
 #include <stdlib.h>
 #endif
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif 
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -53,10 +58,6 @@ static char rcsid[]
 # endif
 = "$Id: lookup3.c,v 1.2 2006/09/08 18:18:08 ciesnik Exp $";
 #endif
-
-#ifdef __cplusplus
-extern "C"
-{
 
 typedef uint32_t uint32;   /* unsigned 4-byte quantities */
 typedef uint16_t uint16;   /* unsigned 2-byte quantities */
@@ -917,5 +918,6 @@ main(void)
 
 #endif  /* SELF_TEST */
 
-}
-#endif // #ifdef __cplusplus
+#ifdef __cplusplus
+  }
+#endif

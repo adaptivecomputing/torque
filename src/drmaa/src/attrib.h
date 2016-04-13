@@ -33,7 +33,11 @@
 #include <drmaa.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
+#endif
+
+typedef struct drmaa_attrib_info_s drmaa_attrib_info_t;
 
 enum
   {
@@ -170,7 +174,8 @@ typedef enum
   N_DRMAA_ATTRIBS = MAX_DRMAA_ATTR + 1
   } drmaa_attribute_t;
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __ATTRIB_H */
 
-}
-#endif // #ifdef __cplusplus

@@ -492,6 +492,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_req_quejob/Makefile
     src/test/parse_config/Makefile
     src/test/pbs_demux/Makefile
+    src/test/pmix_interface/Makefile
+    src/test/pmix_operation/Makefile
+    src/test/pmix_tracker/Makefile
     src/test/prolog/Makefile
     src/test/release_reservation/Makefile
     src/test/requests/Makefile
@@ -1336,6 +1339,7 @@ if test "${build_mom}" = "yes" ; then
     fi
   fi
 fi
+AM_CONDITIONAL([BUILDPMIX], test "${enable_pmix}" = yes)
 
 
 dnl fixes errors relating to unaligned memory accesses

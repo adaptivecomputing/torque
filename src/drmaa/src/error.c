@@ -38,6 +38,11 @@
 #include <error.h>
 #include <drmaa_impl.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -49,9 +54,6 @@ __attribute__((unused))
 
 static FILE *drmaa_logging_output = NULL;
 
-#ifdef __cplusplus
-extern "C"
-{
 /** Gets last system error message and returns its code. */
 int
 drmaa_get_errno_error(char *error_diagnosis, size_t error_diag_len)
@@ -387,5 +389,6 @@ drmaa_map_pbs_error(int pbs_errcode)
     }
   }
 
-}
-#endif // #ifdef __cplusplus
+#ifdef __cplusplus
+  }
+#endif

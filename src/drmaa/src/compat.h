@@ -34,6 +34,11 @@
 #include <stddef.h>
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dest, const char *src, size_t size);
 #endif
@@ -56,6 +61,10 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 # ifndef false
 #  define false 0
 # endif
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* __DRMAA__COMPAT_H */

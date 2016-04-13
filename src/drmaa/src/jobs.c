@@ -30,6 +30,11 @@
 #include <drmaa_impl.h>
 #include <lookup3.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -39,9 +44,6 @@ __attribute__((unused))
 #endif
 
 
-#ifdef __cplusplus
-extern "C"
-{
 void
 drmaa_delete_job_hashtab(drmaa_job_t **tab)
   {
@@ -158,5 +160,6 @@ drmaa_get_next_job(drmaa_job_iter_t *i)
   return result;
   }
 
-}
-#endif // #ifdef __cplusplus
+#ifdef __cplusplus
+  }
+#endif
