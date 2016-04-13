@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
 
 #ifndef lint
 static char rcsid[]
@@ -122,4 +126,7 @@ vasprintf(char **strp, const char *fmt, va_list ap)
 
 #endif /* ! HAVE_VASPRINTF */
 
+#ifdef __cplusplus
+  }
+#endif
 

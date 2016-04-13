@@ -1,3 +1,4 @@
+#include <pbs_config.h>
 #include <stdio.h>
 
 #include "pbs_nodes.h"
@@ -147,6 +148,10 @@ void pbsnode::copy_gpu_subnodes(
 
 
 
+/*
+ * = operator()
+ */
+
 pbsnode &pbsnode::operator =(
 
   const pbsnode &other)
@@ -158,8 +163,13 @@ pbsnode &pbsnode::operator =(
   this->nd_properties = other.nd_properties;
   this->nd_proximal_failures = other.nd_proximal_failures;
   this->nd_consecutive_successes = other.nd_consecutive_successes;
+  
+  free_arst_value(this->nd_prop);
   this->nd_prop = copy_arst(other.nd_prop);
+
+  free_arst_value(this->nd_status);
   this->nd_status = copy_arst(other.nd_status);
+
   this->nd_note = other.nd_note;
   this->nd_addrs = other.nd_addrs;
 
@@ -188,9 +198,14 @@ pbsnode &pbsnode::operator =(
   this->nd_ngpus_free = other.nd_ngpus_free;
   this->nd_ngpus_needed = other.nd_ngpus_needed;
   this->nd_ngpus_to_be_used = other.nd_ngpus_to_be_used;
+
+  free_arst_value(this->nd_gpustatus);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
+
   this->nd_ngpustatus = other.nd_ngpustatus;
   this->nd_nmics = other.nd_nmics;
+
+  free_arst_value(this->nd_micstatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
   for (unsigned int i = 0; i < other.nd_micjobids.size(); i++)
@@ -212,7 +227,10 @@ pbsnode &pbsnode::operator =(
   this->max_subnode_nppn = other.max_subnode_nppn;
   this->nd_power_state = other.nd_power_state;
   this->nd_power_state_change_time = other.nd_power_state_change_time;
+
+  free_arst_value(this->nd_acl);
   this->nd_acl = copy_arst(other.nd_acl);
+
   this->nd_requestid = other.nd_requestid;
   this->nd_tmp_unlock_count = other.nd_tmp_unlock_count;
 #ifdef PENABLE_LINUX_CGROUPS
@@ -223,7 +241,7 @@ pbsnode &pbsnode::operator =(
   memcpy(this->nd_mac_addr, other.nd_mac_addr, sizeof(this->nd_mac_addr));
 
   return(*this);
-  }
+  } // END = operator()
 
 
 
@@ -273,8 +291,10 @@ pbsnode::pbsnode(
   this->nd_status = copy_arst(other.nd_status);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
+
   this->node_boards = other.node_boards;
   this->alps_subnodes = other.alps_subnodes;
+
   this->nd_acl = copy_arst(other.nd_acl);
 
   memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));

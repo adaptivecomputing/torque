@@ -112,7 +112,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   availableChips = newMachine.availableChips;
   availableCores = newMachine.availableCores;
   availableThreads = newMachine.availableThreads;
-  this->initialized = true;
+  this->initialized = newMachine.initialized;
   return *this;
   }
 
@@ -261,7 +261,7 @@ Machine::Machine(
 
   int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
             totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(false), sockets(),
+            availableCores(np), availableThreads(np), initialized(true), sockets(),
             NVIDIA_device(), allocations()
 
   {
@@ -525,11 +525,16 @@ void Machine::setMemory(
   long long mem)
 
   {
-  long long per_socket = mem / this->sockets.size();
   this->totalMemory = mem;
 
-  for (unsigned int i = 0; i < this->sockets.size(); i++)
-    this->sockets[i].setMemory(per_socket);
+  // Protect against a race condition of initialization
+  if (this->sockets.size() > 0)
+    {
+    long long per_socket = mem / this->sockets.size();
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].setMemory(per_socket);
+    }
   }
 
 void Machine::insertNvidiaDevice(

@@ -172,6 +172,7 @@ typedef struct im_compose_info
   int         command;
   tm_event_t  event;
   tm_task_id  taskid;
+  char       *data;
   } im_compose_info;
 
 typedef struct spawn_task_info
@@ -196,11 +197,13 @@ typedef struct obit_task_info
   } obit_task_info;
 
 int add_to_resend_things(resend_momcomm *mc);
-im_compose_info *create_compose_reply_info(char *, char *, hnodent *, int command, tm_event_t, tm_task_id);
+im_compose_info *create_compose_reply_info(const char *, const char *, hnodent *, int command, tm_event_t, tm_task_id, const char *);
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
 
 void exec_bail(job *pjob, int code, std::set<int> *nodes_contacted = NULL);
 int send_sisters(struct job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact = NULL);
+int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie,
+               int command, tm_event_t event, tm_task_id taskid);
 
 /* public funtions within MOM */
 

@@ -18,7 +18,7 @@ std::set<pid_t> global_job_sid_set;
 
 bool am_i_mother_superior(const job &pjob);
 void remove_from_exiting_list(job *pjob);
-job *mom_find_job_by_int_id(int jobid);
+job *mom_find_job_by_int_string(const char *jobint_string);
 job *mom_find_job(const char *jobid);
 void remove_from_job_list(job *pjob);
 
@@ -54,12 +54,12 @@ START_TEST(test_mom_finding_jobs)
   fail_unless(mom_find_job(jobid3) == pjob3);
   fail_unless(mom_find_job(jobid4) == pjob4);
   fail_unless(mom_find_job("4.napali") == NULL);
-  fail_unless(mom_find_job_by_int_id(1) == pjob1);
-  fail_unless(mom_find_job_by_int_id(2) == pjob2);
-  fail_unless(mom_find_job_by_int_id(3) == pjob3);
-  fail_unless(mom_find_job_by_int_id(0) == NULL);
-  fail_unless(mom_find_job_by_int_id(4) == NULL);
-  fail_unless(mom_find_job_by_int_id(40) == pjob4);
+  fail_unless(mom_find_job_by_int_string("1") == pjob1);
+  fail_unless(mom_find_job_by_int_string("2") == pjob2);
+  fail_unless(mom_find_job_by_int_string("3") == pjob3);
+  fail_unless(mom_find_job_by_int_string("0") == NULL);
+  fail_unless(mom_find_job_by_int_string("4") == NULL);
+  fail_unless(mom_find_job_by_int_string("40") == pjob4);
 
   remove_from_job_list(pjob2);
   fail_unless(mom_find_job(jobid1) == pjob1);
@@ -67,12 +67,12 @@ START_TEST(test_mom_finding_jobs)
   fail_unless(mom_find_job(jobid3) == pjob3);
   fail_unless(mom_find_job(jobid4) == pjob4);
   fail_unless(mom_find_job("4.napali") == NULL);
-  fail_unless(mom_find_job_by_int_id(1) == pjob1);
-  fail_unless(mom_find_job_by_int_id(2) == NULL);
-  fail_unless(mom_find_job_by_int_id(3) == pjob3);
-  fail_unless(mom_find_job_by_int_id(0) == NULL);
-  fail_unless(mom_find_job_by_int_id(4) == NULL);
-  fail_unless(mom_find_job_by_int_id(40) == pjob4);
+  fail_unless(mom_find_job_by_int_string("1") == pjob1);
+  fail_unless(mom_find_job_by_int_string("2") == NULL);
+  fail_unless(mom_find_job_by_int_string("3") == pjob3);
+  fail_unless(mom_find_job_by_int_string("0") == NULL);
+  fail_unless(mom_find_job_by_int_string("4") == NULL);
+  fail_unless(mom_find_job_by_int_string("40") == pjob4);
   }
 END_TEST
 

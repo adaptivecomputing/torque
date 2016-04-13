@@ -476,6 +476,12 @@ START_TEST(end_of_job_accounting_test)
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
   
+  // Make sure that we'll do end of job accounting for jobs that are deleted while running
+  pjob->ji_being_deleted = true;
+  called_account_jobend = false;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
+  
   usage = 0;
   }
 END_TEST
@@ -526,6 +532,7 @@ START_TEST(handle_terminating_job_test)
   {
   job  *pjob = new job();
 
+  bad_job = 0;
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
   fail_unless(handle_terminating_job(pjob, 0, "bob") == PBSE_NONE);

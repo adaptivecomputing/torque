@@ -315,3 +315,5 @@ int acl_check(pbs_attribute *pattr, char *name, int type)
 
   return(rc);
   }
+
+void update_slot_held_jobs(job_array *pa, int num_to_release) {}

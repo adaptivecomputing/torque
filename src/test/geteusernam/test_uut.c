@@ -73,13 +73,6 @@ START_TEST(test_node_exception_check)
 END_TEST
 
 
-START_TEST(test_two)
-  {
-
-
-  }
-END_TEST
-
 Suite *geteusernam_suite(void)
   {
   Suite *s = suite_create("geteusernam_suite methods");

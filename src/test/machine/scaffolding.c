@@ -122,6 +122,11 @@ bool Socket::spread_place(
   return(spreaded);
   }
 
+Socket &Socket::operator =(const Socket &other)
+  {
+  return(*this);
+  }
+
 Core::~Core()
   {
   }
