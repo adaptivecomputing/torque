@@ -258,6 +258,7 @@ char *
 drmaa_replace(char *input, const char *placeholder, const char *value);
 
 
+
 #define GET_DRMAA_SESSION( session ) do{            \
     pthread_mutex_lock( &drmaa_session_mutex );       \
     if( drmaa_session == NULL )                       \

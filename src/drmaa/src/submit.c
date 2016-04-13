@@ -221,7 +221,7 @@ drmaa_run_job_impl(
   pthread_mutex_lock(&c->conn_mutex);
 
   int local_errno;
-  pbs_job_id = pbs_submit_err(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL, &local_errno);
+  pbs_job_id = pbs_submit(c->pbs_conn, sc->pbs_attribs, sc->script_filename, NULL, NULL);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
