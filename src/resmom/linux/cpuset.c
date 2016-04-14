@@ -1489,30 +1489,33 @@ int create_job_cpuset(
 #endif /* NUMA_SUPPORT (first section def, second section ndef */
 
   /* Now create cpuset for job */
-  snprintf(log_buffer, sizeof(log_buffer),
+  if (LOGLEVEL >= 6)
+    { 
+    snprintf(log_buffer, sizeof(log_buffer),
       "creating cpuset for job %s: %d cpus (",
       pjob->ji_qs.ji_jobid,
       hwloc_bitmap_weight(cpus));
+    
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
+        sizeof(log_buffer) - strlen(log_buffer),
+        cpus);
 
-  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
-      sizeof(log_buffer) - strlen(log_buffer),
-      cpus);
+    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+        "), %d mems (",
+        hwloc_bitmap_weight(mems));
 
-  snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-      "), %d mems (",
-      hwloc_bitmap_weight(mems));
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
+        sizeof(log_buffer) - strlen(log_buffer),
+        mems);
 
-  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
-      sizeof(log_buffer) - strlen(log_buffer),
-      mems);
-
-  snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), ")");
-  log_ext(-1, __func__, log_buffer, LOG_INFO);
+    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), ")");
+    log_ext(-1, __func__, log_buffer, LOG_INFO);
+    }
 
   if (create_cpuset(pjob->ji_qs.ji_jobid, cpus, mems, O_CREAT) == 0)
     {
     /* Success */
-    if (LOGLEVEL >= 4)
+    if (LOGLEVEL >= 6)
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 
     rc = SUCCESS;
