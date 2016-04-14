@@ -1,11 +1,11 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h
+include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
 		 dis_init.h get_path_jobdata.h libcmds.h libpbs.h list_link.h 	\
-		 license_pbs.h mcom.h md5.h mom_func.h mom_job_cleanup.h		\
+		 mcom.h md5.h mom_func.h mom_job_cleanup.h		\
 		 net_connect.h pbs_assert.h pbs_nodes.h pbs_proto.h	\
 		 pbs_constants.h pbs_cmds.h portability.h qmgr.h qmgr_node_public.h		\
 		 qmgr_node_readonly.h qmgr_que_public.h			\
