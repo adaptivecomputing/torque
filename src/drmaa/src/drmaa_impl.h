@@ -37,6 +37,11 @@
 #include <pthread.h>
 #include "pbs_ifl.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <drmaa.h>
 #include <error.h>
 #include <compat.h>
@@ -256,6 +261,7 @@ char *
 drmaa_replace(char *input, const char *placeholder, const char *value);
 
 
+
 #define GET_DRMAA_SESSION( session ) do{            \
     pthread_mutex_lock( &drmaa_session_mutex );       \
     if( drmaa_session == NULL )                       \
@@ -268,6 +274,10 @@ drmaa_replace(char *input, const char *placeholder, const char *value);
     }while(0)
 
 #define RELEASE_DRMAA_SESSION( session ) /* nothing */
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* __DRMAA_IMPL_H */

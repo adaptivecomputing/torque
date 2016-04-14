@@ -25,8 +25,15 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 int listening_socket;
 threadpool_t *task_pool;
+int called;
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+
+int get_svr_attr_l(int attr_index, long *l)
+  {
+	called = 1;
+	return 0;
+  }  
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
@@ -134,15 +141,6 @@ int get_svr_attr_str(
     *str = bodyfmt;
     }
 
-  return(0);
-  }
-
-int get_svr_attr_l(
-
-  int   index,
-  long *l)
-
-  {
   return(0);
   }
 

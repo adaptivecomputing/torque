@@ -646,10 +646,6 @@ jump:
     if ((pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == false))
       {
-      int        i;
-      int        newstate;
-      int        newsub;
-      job       *tmp;
       job_array *pa = get_jobs_array(&pjob);
 
       if (pjob == NULL)
@@ -661,55 +657,6 @@ jump:
 
       if (pa != NULL)
         {
-        for (i = 0; i < pa->ai_qs.array_size; i++)
-          {
-          if (pa->job_ids[i] == NULL)
-            continue;
-
-          if (!strcmp(pa->job_ids[i], pjob->ji_qs.ji_jobid))
-            continue;
-
-          job_mutex.unlock();
-          
-          if ((tmp = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
-            {
-            free(pa->job_ids[i]);
-            pa->job_ids[i] = NULL;
-            }
-          else
-            {
-            if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
-              {
-              tmp->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-
-              if (tmp->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-                {
-                tmp->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-                }
-
-              svr_evaljobstate(*tmp, newstate, newsub, 1);
-              svr_setjobstate(tmp, newstate, newsub, FALSE);
-              job_save(tmp, SAVEJOB_FULL, 0);
-
-              unlock_ji_mutex(tmp, __func__, "5", LOGLEVEL);
-              pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE);  //Job might have disappeared.
-              job_mutex.set_lock_state(true);
-
-              break;
-              }
-
-            unlock_ji_mutex(tmp, __func__, "6", LOGLEVEL);
-            }
-
-          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL) //Job disappeared.
-            {
-            job_mutex.set_unlock_on_exit(false);
-            return -1;
-            }
-
-          job_mutex.set_lock_state(true);
-          }
-
         if (pjob != NULL)
           {
           if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)

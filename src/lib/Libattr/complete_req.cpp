@@ -24,26 +24,29 @@ void complete_req::set_value_from_nodes(
   const char *node_val)
 
   {
-  char *work_str = strdup(node_val);
-  char *ptr = work_str;
-
-  while (ptr != NULL)
+  if (node_val != NULL)
     {
-    char *next = strchr(ptr, '+');
+    char *work_str = strdup(node_val);
+    char *ptr = work_str;
 
-    if (next != NULL)
+    while (ptr != NULL)
       {
-      *next = '\0';
-      next++;
+      char *next = strchr(ptr, '+');
+
+      if (next != NULL)
+        {
+        *next = '\0';
+        next++;
+        }
+
+      req r(ptr);
+      this->add_req(r);
+
+      ptr = next;
       }
 
-    req r(ptr);
-    this->add_req(r);
-
-    ptr = next;
+    free(work_str);
     }
-
-  free(work_str);
   } // END set_value_from_nodes()
 
 

@@ -7025,12 +7025,13 @@ int main(
 
 im_compose_info *create_compose_reply_info(
     
-  char       *jobid,
-  char       *cookie,
+  const char *jobid,
+  const char *cookie,
   hnodent    *np,
   int         command,
   tm_event_t  event,
-  tm_task_id  taskid)
+  tm_task_id  taskid,
+  const char *data)
 
   {
   im_compose_info *ici = (im_compose_info *)calloc(1, sizeof(im_compose_info));
@@ -7043,6 +7044,9 @@ im_compose_info *create_compose_reply_info(
     ici->command = command;
     ici->event   = event;
     ici->taskid  = taskid;
+
+    if (data != NULL)
+      ici->data = strdup(data);
     }
   else
     log_err(ENOMEM, __func__, "Cannot allocate memory!");

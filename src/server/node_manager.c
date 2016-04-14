@@ -2317,20 +2317,27 @@ int save_node_for_adding(
   else
     pnode->nd_order = 1;
   
-  naji.req_rank = req_rank;
+  naji.req_index = req_rank;
 
   if ((naji_list->size() == 0) ||
       (first == true))
     {
     // first
+    if (first == true)
+      naji.req_order = 0;
+    else
+      naji.req_order = req_rank + 1;
+
     naji_list->push_front(naji);
     }
   else
     {
+    naji.req_order = req_rank + 1;
+
     // Insert into the list in rank order
     for (it = naji_list->begin(); it != naji_list->end(); it++)
       {
-      if (naji.req_rank <= it->req_rank)
+      if (naji.req_order < it->req_order)
         {
         naji_list->insert(it, naji);
         added = true;
@@ -2715,9 +2722,9 @@ void record_fitting_node(
     {
     if ((job_type == JOB_TYPE_heterogeneous) &&
         (node_is_external(pnode) == TRUE))
-      save_node_for_adding(naji_list, pnode, req, first_node_id, TRUE, i+1);
+      save_node_for_adding(naji_list, pnode, req, first_node_id, TRUE, i);
     else
-      save_node_for_adding(naji_list, pnode, req, first_node_id, FALSE, i+1);
+      save_node_for_adding(naji_list, pnode, req, first_node_id, FALSE, i);
 
     if ((num_alps_reqs > 0) &&
         (ard_array != NULL) &&
@@ -2805,7 +2812,7 @@ int select_nodes_using_hostlist(
       break;
       }
     
-    record_fitting_node(num, pnode, naji_list, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
+    record_fitting_node(num, pnode, naji_list, req, first_node_id, req.req_id, num_alps_reqs, job_type, all_reqs, ard_array);
 
     pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
@@ -4012,7 +4019,7 @@ int place_subnodes_in_hostlist(
     if (pnode->nd_layout.is_initialized() == false)
       return(-1);
 
-    update_req_hostlist(pjob, pnode->get_name(), naji.req_rank, naji.ppn_needed);
+    update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed);
 
     rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), (bool)legacy_vmem);
     if (rc != PBSE_NONE)
@@ -4525,7 +4532,13 @@ void add_entry_to_naji_list(
   naji.gpu_needed = r.getGpus() * tasks_placed;
   naji.mic_needed = r.getMics() * tasks_placed;
   naji.is_external = false;
-  naji.req_rank = req_index;
+
+  if (naji_list.size() == 0)
+    naji.req_order = 0;
+  else
+    naji.req_order = req_index + 1;
+
+  naji.req_index = req_index;
   
   pnode->nd_np_to_be_used    += naji.ppn_needed;
   pnode->nd_ngpus_to_be_used += naji.gpu_needed;

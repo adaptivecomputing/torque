@@ -308,8 +308,10 @@ struct batch_request *setup_cpyfiles(
 
 
 
-
-
+/*
+ * is_joined()
+ *
+ */
 
 int is_joined(
 
@@ -425,6 +427,8 @@ struct batch_request *cpy_stdfile(
       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
     /* the job is interactive, don't bother to return output file */
+    if (preq != NULL)
+      free_br(preq);
 
     return(NULL);
     }
@@ -453,6 +457,9 @@ struct batch_request *cpy_stdfile(
       PBS_EVENTCLASS_JOB,
       pjob->ji_qs.ji_jobid,
       log_buf);
+
+    if (preq != NULL)
+      free_br(preq);
 
     return(NULL);
     }
@@ -1364,7 +1371,6 @@ handle_stageout_cleanup:
 
 
 
-
 int handle_stagedel(
 
   job           *pjob,
@@ -1555,8 +1561,8 @@ int handle_exited(
             job_id,
             log_buf);
         }
-
       }
+
     free_br(preq);
     }
   else
@@ -1726,8 +1732,7 @@ int end_of_job_accounting(
   long  events = 0;
 
   // Do not have end of job accounting records for jobs that are deleted and never started
-  if ((pjob->ji_being_deleted == true) ||
-      (pjob->ji_qs.ji_stime == 0))
+  if (pjob->ji_qs.ji_stime == 0)
     {
     return(PBSE_NONE);
     }

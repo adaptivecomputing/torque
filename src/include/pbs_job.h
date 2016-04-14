@@ -100,6 +100,7 @@
 #include "mom_hierarchy.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
+#include "job_host_data.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -136,8 +137,8 @@ struct job_array;
 class depend_job
   {
   public:
-  short dc_state; /* released / ready to run (syncct)  */
-  long  dc_cost; /* cost of this child (syncct)   */
+  short       dc_state; /* released / ready to run (syncct)  */
+  long        dc_cost; /* cost of this child (syncct)   */
   std::string dc_child;
   std::string dc_svr;
 
@@ -161,11 +162,11 @@ class depend_job
 class depend
   {
   public:
-  list_link dp_link; /* link to next dependency, if any       */
-  short   dp_type; /* type of dependency (all)           */
-  short   dp_numexp; /* num jobs expected (on or syncct only) */
-  short   dp_numreg; /* num jobs registered (syncct only)     */
-  short   dp_released; /* This job released to run (syncwith)   */
+  list_link                 dp_link; /* link to next dependency, if any       */
+  short                     dp_type; /* type of dependency (all)           */
+  short                     dp_numexp; /* num jobs expected (on or syncct only) */
+  short                     dp_numreg; /* num jobs registered (syncct only)     */
+  short                     dp_released; /* This job released to run (syncwith)   */
   std::vector<depend_job *> dp_jobs;
 
   depend() : dp_type(0), dp_numexp(0), dp_numreg(0), dp_released(0), dp_jobs()
@@ -182,9 +183,7 @@ class depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
@@ -196,7 +195,7 @@ class array_depend_job
   /* in this case, the child is the job depending on the array */
   std::string dc_child;
   std::string dc_svr;
-  int  dc_num;
+  int         dc_num;
 
   array_depend_job() : dc_child(), dc_svr(), dc_num(0)
     {
@@ -206,8 +205,8 @@ class array_depend_job
 class array_depend
   {
   public:
-  list_link  dp_link;
-  short      dp_type;
+  list_link                       dp_link;
+  short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
@@ -219,9 +218,7 @@ class array_depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
@@ -703,6 +700,7 @@ typedef struct job
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
   std::vector<task *> *ji_tasks; /* list of tasks */
+  std::map<std::string, job_host_data> *ji_usages; // Current proc usage on hosts
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -1041,7 +1039,10 @@ typedef struct job_file_delete_info
 #define IM_RADIX_ALL_OK   12
 #define IM_JOIN_JOB_RADIX 13
 #define IM_KILL_JOB_RADIX 14
-#define IM_MAX            15
+#define IM_FENCE          15
+#define IM_CONNECT        16
+#define IM_DISCONNECT     17
+#define IM_MAX            18
 
 #define IM_ERROR          99
 
@@ -1104,6 +1105,8 @@ typedef struct send_job_request
 #define SAVEJOB_NEW   2
 
 #define MAIL_NONE  (int)'n'
+#define MAIL_NOJOBMAIL  (int)'p'
+#define MAIL_NONZERO (int)'f'
 #define MAIL_ABORT (int)'a'
 #define MAIL_BEGIN (int)'b'
 #define MAIL_DEL   (int)'d'
