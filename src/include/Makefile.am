@@ -1,21 +1,21 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h
+include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
 		 dis_init.h get_path_jobdata.h libcmds.h libpbs.h list_link.h 	\
-		 license_pbs.h mcom.h md5.h mom_func.h mom_job_cleanup.h		\
-		 net_connect.h pbs_assert.h pbs_cmds.h pbs_constants.h pbs_nodes.h pbs_proto.h	\
-		 portability.h qmgr.h qmgr_node_public.h		\
+		 mcom.h md5.h mom_func.h mom_job_cleanup.h		\
+		 net_connect.h pbs_assert.h pbs_nodes.h pbs_proto.h	\
+		 pbs_constants.h pbs_cmds.h portability.h qmgr.h qmgr_node_public.h		\
 		 qmgr_node_readonly.h qmgr_que_public.h			\
 		 qmgr_que_readonly.h qmgr_svr_public.h			\
 		 qmgr_svr_readonly.h queue.h resmon.h resource.h	\
 		 sched_cmds.h server.h server_limits.h svrfunc.h	\
 		 tracking.h work_task.h port_forwarding.h pbs_cpa.h	\
 		 pbs_cpuset.h pbs_batchreqtype_db.h utils.h u_tree.h	\
-		 threadpool.h u_hash_map_structs.h uthash.h tcp.h pbs_job.h  		\
-		 mom_hierarchy.h mom_server.h		\
+		 threadpool.h u_hash_map_structs.h uthash.h pbs_job.h  		\
+		 mom_hierarchy.h dynamic_string.h mom_server.h		\
 		 alps_constants.h alps_functions.h login_nodes.h	\
 		 track_alps_reservations.hpp net_cache.h user_info.h	\
 		 exiting_jobs.h mom_update.h dis_internal.h             \
