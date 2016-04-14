@@ -327,6 +327,7 @@ public:
   int tmp_unlock_node(const char *method_name, const char *msg, int logging);
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
+  int encode_properties(tlist_head *);
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
   };

@@ -565,7 +565,7 @@ int login_encode_jobs(
 
 int status_nodeattrib(
 
-  svrattrl        *pal,    /*an svrattrl from the request  */
+  svrattrl        *pal,    /*a svrattrl from the request  */
   attribute_def   *padef,  /*the defined node attributes   */
   struct pbsnode  *pnode,  /*no longer an pbs_attribute ptr */
   int              limit,  /*number of array elts in padef */
@@ -575,7 +575,7 @@ int status_nodeattrib(
                            /*off the brp_attr member of the status sub*/
                            /*structure in the request's "reply area"  */
 
-  int             *bad)    /*if node-pbs_attribute error, record it's*/
+  int             *bad)    /*if node-pbs_attribute error, record its*/
                            /*list position here                 */
 
   {
@@ -611,7 +611,10 @@ int status_nodeattrib(
     else if (i == ND_ATR_power_state)
       atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
+      {
+      // NOTE: see below for nd_properties encoding
       atemp[i].at_val.at_arst = pnode->nd_prop;
+      }
     else if (i == ND_ATR_status)
       atemp[i].at_val.at_arst = pnode->nd_status;
     else if (i == ND_ATR_ntype)
@@ -793,6 +796,8 @@ int status_nodeattrib(
       if ((index == ND_ATR_jobs) &&
           (pnode->nd_is_alps_login == TRUE))
         rc = login_encode_jobs(pnode, phead);
+      else if (index == ND_ATR_properties)
+        rc = pnode->encode_properties(phead);
       else if (((padef + index)->at_flags & priv) &&
                !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
@@ -2218,7 +2223,6 @@ int record_node_property_list(
 
   return(PBSE_NONE);
   } // END record_node_property_list()
-
 
 
 int create_node_range(

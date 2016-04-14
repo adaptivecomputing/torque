@@ -10,6 +10,9 @@
 
 #define MSG_LEN_LONG 160
 
+void add_to_property_list(std::string &, const char *);
+int record_node_property_list(std::string const &, tlist_head *);
+
 extern AvlTree          ipaddrs;
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
@@ -91,7 +94,6 @@ pbsnode::pbsnode(
   struct addrinfo *pAddrInfo;
 
   this->nd_name            = pname;
-  this->nd_properties.push_back(this->nd_name);
   this->nd_id              = node_mapper.get_new_id(this->nd_name.c_str());
 
   if (pul != NULL)
@@ -465,6 +467,29 @@ bool pbsnode::hasprop(
   }  /* END hasprop() */
 
 
+int pbsnode::encode_properties(tlist_head *phead)
+
+  {
+  std::string prop_str = "";
+
+  if (phead == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  // build property string
+  for (std::vector<std::string>::const_iterator iter = this->nd_properties.begin();
+       iter != this->nd_properties.end(); ++iter)
+    {
+    std::string member_str = *iter;
+    add_to_property_list(prop_str, member_str.c_str());
+    }
+
+  // add it to the list
+  return(record_node_property_list(prop_str, phead));
+  } /* END encode_properties() */
+
 
 void pbsnode::update_properties()
 
@@ -480,11 +505,7 @@ void pbsnode::update_properties()
       this->nd_properties.push_back(this->nd_prop->as_string[i]);
       }
     }
-
-  /* now add in name as last prop */
-  this->nd_properties.push_back(this->nd_name);
   } // END update_prop_list()
-
 
 
 void pbsnode::change_name(

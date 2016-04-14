@@ -100,7 +100,7 @@
  * ----------------------------------------------------------------------------
  * pbs_Attribute functions for attributes with value type "array of strings".
  *
- * The "encoded" or external form of the value is a string with the orginial
+ * The "encoded" or external form of the value is a string with the orginal
  * strings separated by commas (or new-lines) and terminated by a null.
  * Any embedded commas or black-slashes must be escaped by a prefixed back-
  * slash.
