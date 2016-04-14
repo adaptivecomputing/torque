@@ -1874,13 +1874,15 @@ void add_diag_prolog_epilog_info(
   {
   struct stat s;
 
-  int prologfound = 0;
+  bool prologfound = false;
+  bool epilogfound = false;
 
+  //Prolog
   if (stat(path_prolog, &s) != -1)
     {
     output << "Prolog:                 " << path_prolog << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
     }
   else if (verbositylevel >= 2)
     {
@@ -1891,15 +1893,34 @@ void add_diag_prolog_epilog_info(
     {
     output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
+    }  
+
+  //Epilog
+  if (stat(path_epilog, &s) != -1)
+    {
+    output << "Epilog:                 " << path_epilog << " (enabled)\n";
+
+    epilogfound = true;
+    }
+  else if (verbositylevel >= 2)
+    {
+    output << "Epilog:                 " << path_epilog << " (disabled)\n";
     }
 
-  if (prologfound == 1)
+  if (stat(path_epilogp, &s) != -1)
     {
-    output << "Prolog Alarm Time:      " << pe_alarm_time << " seconds\n";
+    output << "Parallel Epilog:        " << path_epilogp << " (enabled)\n";
+
+    epilogfound = true;
+    }
+
+  if ((prologfound == true) ||
+      (epilogfound == true))
+    {
+    output << "Prolog/Epilog Alarm Time:      " << pe_alarm_time << " seconds\n";
     }
   }
-
 
 
 void add_diag_alarm_time(
