@@ -59,6 +59,10 @@
 
 /** @defgroup drmaa  DRMAA interface. */
 /* @{ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -565,6 +569,10 @@ extern "C"
  * @param file   File to write to.
  */
 void drmaa_set_logging_output(FILE *file);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DRMAA_H */
 

@@ -27,6 +27,7 @@
 #include "log.h"
 #include "pbs_cpuset.h"
 #include "mom_memory.h"
+#include "mom_config.h"
 #include "node_internals.hpp"
 
 /* NOTE: move these three things to utils when lib is checked in */
@@ -1444,9 +1445,10 @@ int create_job_cpuset(
     {
     remove_logical_processor_if_requested(&tcpus);
 
-    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
-      /* If job's node_usage is singlejob, simply add all cpus */
+    // If job's node_usage is singlejob, simply add all cpus. Also, for logins, add all cpus
+    if (((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0)) ||
+        (is_login_node == TRUE))
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);
       hwloc_bitmap_or(mems, mems, tmems);
@@ -1609,8 +1611,12 @@ int move_to_job_cpuset(
     return(FAILURE);
     }
 
-  /* Success */
-  fclose(fd);
+  if (fclose(fd))
+    {
+    sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
+    log_err(errno, __func__, log_buffer);
+    return(FAILURE);
+    }
 
   if (LOGLEVEL >= 4)
     {

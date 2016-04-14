@@ -76,6 +76,10 @@ if BUILDCPA
   MOM_UT_DIRS += cray_cpa
 endif
 
+if BUILDPMIX
+  MOM_UT_DIRS += pmix_interface pmix_operation pmix_tracker
+endif
+
 if INCLUDE_PAM
 PAM_DIRS = pam
 endif

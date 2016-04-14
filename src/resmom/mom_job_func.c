@@ -472,6 +472,7 @@ job *job_alloc(void)
   CLEAR_LINK(pj->ji_jobque);
 
   pj->ji_tasks = new std::vector<task *>();
+  pj->ji_usages = new std::map<std::string, job_host_data>();
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
@@ -1045,16 +1046,15 @@ job *mom_find_job(
  * @return the job, or NULL if no local job has that integer id
  */
 
-job *mom_find_job_by_int_id(
+job *mom_find_job_by_int_string(
 
-  int jobid)
+  const char *jobint_string)
 
   {
-  char  job_id_buf[PBS_MAXSVRJOBID + 1];
   job  *pjob;
   int   job_id_buf_len;
 
-  job_id_buf_len = sprintf(job_id_buf, "%d", jobid);
+  job_id_buf_len = strlen(jobint_string);
 
   std::list<job *>::iterator iter;
 
@@ -1063,7 +1063,7 @@ job *mom_find_job_by_int_id(
     pjob = *iter;
 
     // Compare just the numeric portion of the id
-    if (!strncmp(pjob->ji_qs.ji_jobid, job_id_buf, job_id_buf_len))
+    if (!strncmp(pjob->ji_qs.ji_jobid, jobint_string, job_id_buf_len))
       {
       // Make sure the job's numeric portion as ended
       if ((pjob->ji_qs.ji_jobid[job_id_buf_len] == '.') ||
@@ -1075,7 +1075,7 @@ job *mom_find_job_by_int_id(
 
   // Not found - we return from the loop if we find the job
   return(NULL);
-  } // END mom_find_job_by_int_id()
+  } // END mom_find_job_by_int_string()
 
 
 
@@ -1110,6 +1110,7 @@ void free_info_array(
   } // END free_info_array()
 
 
+
 uint32_t local_arch = 0xFFFFFFFF;
 
 void register_jobs_nspace(
@@ -1117,7 +1118,7 @@ void register_jobs_nspace(
   job *pjob)
 
   {
-  pmix_info_t     *pmi_array;
+  pmix_info_t      *pmi_array;
   int               es = 0;
   int               lowest_rank = 0;
   int               prev_index = -1;
