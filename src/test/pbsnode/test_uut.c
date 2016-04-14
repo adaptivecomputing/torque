@@ -11,14 +11,30 @@
 #include "attribute.h" /* svrattrl, struct  */
 #include "work_task.h"
 
+std::string global_string = "";
 
 START_TEST(test_constructors)
   {
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_encode_properties)
   {
+  struct pbsnode pn;
+  tlist_head     tlh;
+  std::string prop1 = "prop1";
+  std::string prop2 = "prop2";
+
+  // check NULL tlist
+  fail_unless(0 != pn.encode_properties(NULL));
+
+  // now add properties
+  pn.add_property(prop1);
+  pn.add_property(prop2);
+
+  // check them
+  global_string = "prop1,prop2";
+  fail_unless(0 == pn.encode_properties(&tlh));
   }
 END_TEST
 
@@ -30,7 +46,7 @@ Suite *pbsnode_suite(void)
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("more_tests");
-  tcase_add_test(tc_core, test_two);
+  tcase_add_test(tc_core, test_encode_properties);
   suite_add_tcase(s, tc_core);
   
   return(s);
