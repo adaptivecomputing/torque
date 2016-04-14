@@ -15,7 +15,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 tracking.h work_task.h port_forwarding.h pbs_cpa.h	\
 		 pbs_cpuset.h pbs_batchreqtype_db.h utils.h u_tree.h	\
 		 threadpool.h u_hash_map_structs.h uthash.h pbs_job.h  		\
-		 mom_hierarchy.h dynamic_string.h mom_server.h		\
+		 mom_hierarchy.h mom_server.h		\
 		 alps_constants.h alps_functions.h login_nodes.h	\
 		 track_alps_reservations.hpp net_cache.h user_info.h	\
 		 exiting_jobs.h mom_update.h dis_internal.h             \
