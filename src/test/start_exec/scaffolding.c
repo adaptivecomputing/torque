@@ -1058,3 +1058,6 @@ req &complete_req::get_req(int i)
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libutils/allocation.cpp"
 
+#ifdef ENABLE_PMIX
+void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
+#endif
