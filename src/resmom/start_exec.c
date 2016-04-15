@@ -2570,6 +2570,23 @@ int TMomFinalizeJob2(
       "about to fork child which will become job");
     }
 
+    /* we have to take care of setting NVIDIA gpus in the parent */
+#ifdef NVIDIA_GPUS
+  if (use_nvidia_gpu)
+    {
+    int rc;
+
+    rc = setup_gpus_for_job(pjob);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Failed to initialize gpus. Job %s failed to start", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      *SC = rc;
+      return(FAILURE);
+      }
+    }
+#endif  /* NVIDIA_GPUS */
+
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
     {
