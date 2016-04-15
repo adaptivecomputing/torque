@@ -879,3 +879,23 @@ void free_pwnam(
 
   {
   }
+
+int check_nvidia_setup()
+  {
+  return(0);
+  }
+
+int init_nvidia_nvml(unsigned int &device_count)
+  {
+  return(0);
+  }
+
+int shut_nvidia_nvml()
+  {
+  return(0);
+  }
+
+int check_ndvidia_setup()
+  {
+  return(TRUE);
+  }

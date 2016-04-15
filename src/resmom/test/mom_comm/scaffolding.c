@@ -18,6 +18,7 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 
+int use_nvidia_gpu = TRUE;
 int              is_reporter_mom = FALSE;
 int              is_login_node   = FALSE;
 int PBSNodeCheckEpilog;
@@ -480,3 +481,11 @@ bool am_i_mother_superior(const job &pjob)
 void create_cpuset_reservation_if_needed(job &pjob){}
 
 void check_state(int Force) {}
+
+int setup_gpus_for_job(
+
+  job *pjob)
+
+  {
+  return(0);
+  }

@@ -12,6 +12,7 @@
 #include "batch_request.h" /* batch_request */
 #include "libpbs.h" /* job_file */
 
+int use_nvidia_gpu = TRUE;
 const char *PJobSubState[10];
 char *path_jobs;
 const char *msg_script_write = "Unable to write script file";
@@ -224,3 +225,10 @@ void remove_from_job_list(job *pjob) {}
 
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
+
+void send_update_soon()
+  {
+  return;
+  }
+
+

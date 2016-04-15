@@ -396,3 +396,9 @@ bool overwrite_cache(
   {
   return(true);
   }
+
+int add_gpu_status(std::vector<std::string> &mom_status)
+  {
+  return(0);
+  }
+

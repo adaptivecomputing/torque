@@ -38,6 +38,11 @@ resource_def *svr_resc_def = NULL; /* resc_def_all.c */
 sem_t *delete_job_files_sem;
 pthread_mutex_t  delete_job_files_mutex;
 
+void send_update_soon()
+  {
+  return;
+  }
+
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");

@@ -214,6 +214,7 @@
 #include <arpa/inet.h>
 #endif
 
+#include <boost/tokenizer.hpp>
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -3328,7 +3329,110 @@ int is_mom_server_down(
   }
 
 
+#define THIS_HOST_LEN 256
+/*
+ * is_for_this_host
+ *
+ * Parses the device_string and compares the host for
+ * the device in the string to see if it is the same
+ * as this host. If yes return true, else return false
+ *
+ * @param device_spec - string with the job specification 
+ *                   indicating the node and device index to be run 
+ *                   in the job.
+ *
+ */
 
+bool is_for_this_host(
+    
+  std::string device_spec, 
+  const char *suffix)
+
+  {
+  char  *ptr;
+  char  temp_char_string[THIS_HOST_LEN];
+
+  snprintf(temp_char_string, sizeof(temp_char_string), "%s", device_spec.c_str());
+
+  /* peel off the -device part of the device_spec */
+  ptr = strstr(temp_char_string, suffix);
+  if (ptr != NULL)
+    *ptr = '\0';
+  else
+    return(false);
+
+  if (!strcmp(mom_alias, temp_char_string))
+    return(true);
+
+  return(false);
+  }
+
+void get_device_indices(
+  
+  const char *device_str, 
+  std::vector<unsigned int> &device_indices, 
+  const char *suffix)
+
+  {
+  std::string device_string = device_str;
+  std::vector<std::string> device_tokens;
+  boost::char_separator<char> sep("+");
+  boost::tokenizer< boost::char_separator<char> > tokens(device_string, sep);
+
+  /* reset device_indices so it is empty */
+  /* The string comes in with the format of
+     <hostname>-gpu/<index1>+<hostname>-gpu/<index2>+...
+   */
+  device_indices.clear();
+
+  /* pull out each element of the device string */
+  //BOOST_FOREACH (const std::string& t, tokens)
+  //  {
+  //  device_tokens.push_back(t);
+  //  }
+
+  for (boost::tokenizer< boost::char_separator<char> >::iterator t=tokens.begin(); t != tokens.end(); ++t)
+    {
+    device_tokens.push_back(*t);
+    }
+
+  /* We now have each device request in the form of <host>-device/x where 
+     x is the indices of the device to allocate. See the spec is for this host
+     and add the index to device_indices if it is. */
+  for (std::vector<std::string>::iterator device_spec = device_tokens.begin(); device_spec != device_tokens.end(); ++device_spec)
+    {
+    std::string host_name_part;
+    std::string device_index_part;
+    std::vector<std::string> parts;
+    boost::char_separator<char> device_sep("/");
+    boost::tokenizer< boost::char_separator<char> > device_spec_parts(*device_spec, device_sep);
+
+/*    BOOST_FOREACH (const std::string& tok, device_spec_parts)
+      {
+      parts.push_back(tok);
+      }*/
+
+    for (boost::tokenizer< boost::char_separator<char> >::iterator tok=device_spec_parts.begin(); tok != device_spec_parts.end(); tok++)
+      {
+      parts.push_back(*tok);
+      }
+
+    /* parts should have two entries. */
+    /* The first part will be the host name */
+    host_name_part = parts[0].c_str();
+    
+    /* The second part will be the index */
+    device_index_part = parts[1].c_str();
+
+    if (is_for_this_host(host_name_part, suffix) == true)
+      {
+      unsigned int device_index = atoi(device_index_part.c_str());
+
+      device_indices.push_back(device_index);
+      }
+
+    }
+  }
 
 
 /**

@@ -40,6 +40,8 @@ bool fail_init_groups = false;
 bool fail_site_grp_check = false;
 bool addr_fail = false;
 
+int use_nvidia_gpu = TRUE;
+
 
 int logged_event;
 int MOMCudaVisibleDevices;
@@ -798,4 +800,9 @@ struct passwd *get_password_entry_by_uid(
 
   {
   return(NULL);
+  }
+
+int setup_gpus_for_job(job *pjob)
+  {
+  return(0);
   }
