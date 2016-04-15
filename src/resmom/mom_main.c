@@ -105,6 +105,9 @@
 #include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
+#ifdef ENABLE_PMIX
+#include "pmix_server.h"
+#endif
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -228,7 +231,8 @@ mom_hierarchy_t  *mh = NULL;
 Machine          this_node;
 #endif
 #ifdef ENABLE_PMIX
-std::string      topology_xml;
+std::string                 topology_xml;
+extern pmix_server_module_t psm;
 #endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -5093,7 +5097,18 @@ int setup_program_environment(void)
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
-
+#ifdef ENABLE_PMIX
+  pmix_status_t pmix_rc;
+  //pmix_info_t   info[1];
+  if ((pmix_rc = PMIx_server_init(&psm, NULL, 0)) != PMIX_SUCCESS)
+    {
+/*  Uncomment once PMIx bug is fixed
+ *  const char *err_msg = PMIx_Error_string(pmix_rc);
+    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
+    fprintf(stderr, "%s", log_buffer);*/
+    return(1);
+    }
+#endif
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -6503,6 +6518,10 @@ void main_loop(void)
       }
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
 
+#ifdef ENABLE_PMIX
+  PMIx_server_finalize();
+#endif
+
   return;
   }        /* END main_loop() */
 
@@ -6912,7 +6931,6 @@ int setup_nodeboards()
   return(PBSE_NONE);
   } /* END setup_nodeboards() */
 #endif /* ifdef NUMA_SUPPORT */
-
 
 
 

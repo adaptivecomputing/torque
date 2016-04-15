@@ -10,7 +10,8 @@
 #include <set>
 #include <netinet/in.h>
 
-#include "pmix_server.h"
+#include <pmix_server.h>
+
 #include "pbs_job.h"
 
 extern const int    FENCE_OPERATION;
