@@ -1063,3 +1063,9 @@ int read_config(
 
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
+
+#ifdef ENABLE_PMIX
+#include <pmix_server.h>
+
+pmix_server_module_t psm;
+#endif
