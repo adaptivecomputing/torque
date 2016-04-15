@@ -132,6 +132,7 @@ extern "C"
 #include "mom_memory.h"
 #include "node_internals.hpp"
 #include "job_host_data.hpp"
+#include "pmix_tracker.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
@@ -341,7 +342,7 @@ int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 int TMomFinalizeJob2(pjobexec_t *, int *);
 int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 int expand_path(job *,char *,int,char *);
-int TMomFinalizeChild(pjobexec_t *);
+int TMomFinalizeChild(pjobexec_t *, char **extra_env);
 
 int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 
@@ -2567,6 +2568,7 @@ int TMomFinalizeJob2(
 #endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
+  char                **pmix_env = NULL;
 
   pjob  = mom_find_job(TJE->jobid);
 
@@ -2596,6 +2598,25 @@ int TMomFinalizeJob2(
     }
 #endif  /* NVIDIA_GPUS */
 
+#ifdef ENABLE_PMIX
+  pmix_proc_t   p;
+  strcpy(p.nspace, TJE->jobid);
+
+  char *dot = strchr(p.nspace, '.');
+  if (dot != NULL)
+    *dot = '\0';
+
+  pmix_status_t pmix_rc = PMIx_server_setup_fork(&p, &pmix_env);
+  if (pmix_rc != PMIX_SUCCESS)
+    {
+    /* Uncomment once PMIx bug is fixed
+     * snprintf(log_buffer, sizeof(log_buffer),
+      "Failed to get PMIx environment variables for job %s: %s",
+      pjob->ji_qs.ji_jobid,
+      PMIx_Error_string(pmix_rc));
+    log_err(-1, __func__, log_buffer);*/
+    }
+#endif
 
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
@@ -2617,7 +2638,7 @@ int TMomFinalizeJob2(
   if (cpid == 0)
     {
     /* CHILD:  handle child activities */
-    TMomFinalizeChild(TJE);
+    TMomFinalizeChild(TJE, pmix_env);
 
     /*NOTREACHED*/
     }
@@ -4501,7 +4522,8 @@ int set_job_cgroup_memory_limits(
 
 int TMomFinalizeChild(
 
-  pjobexec_t *TJE)    /* I */
+  pjobexec_t  *TJE,      // I
+  char       **extra_env) // I
 
   {
   int                    aindex;
@@ -4606,6 +4628,14 @@ int TMomFinalizeChild(
 
   handle_cpuset_creation(pjob, &sjr, TJE);
 
+#ifdef ENABLE_PMIX
+  // Add the extra variables to the job's environment
+  if (extra_env != NULL)
+    {
+    for (int i = 0; extra_env[i] != NULL; i++)
+      bld_env_variables(&vtable, extra_env[i], NULL);
+    }
+#endif
 
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
@@ -9506,6 +9536,10 @@ int exec_job_on_ms(
 
     return(SC);
     }
+
+#ifdef ENABLE_PMIX
+  register_jobs_nspace(pjob, TJE);
+#endif
 
   /* TMomFinalizeJob2() blocks until job is fully launched */
 
