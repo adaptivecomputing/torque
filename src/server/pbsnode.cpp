@@ -94,6 +94,7 @@ pbsnode::pbsnode(
   struct addrinfo *pAddrInfo;
 
   this->nd_name            = pname;
+  this->nd_properties.push_back(this->nd_name);
   this->nd_id              = node_mapper.get_new_id(this->nd_name.c_str());
 
   if (pul != NULL)
@@ -479,11 +480,11 @@ int pbsnode::encode_properties(tlist_head *phead)
     }
 
   // build property string
-  for (std::vector<std::string>::const_iterator iter = this->nd_properties.begin();
-       iter != this->nd_properties.end(); ++iter)
+  for (unsigned int i = 0; i < this->nd_properties.size(); i++)
     {
-    std::string member_str = *iter;
-    add_to_property_list(prop_str, member_str.c_str());
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      add_to_property_list(prop_str, this->nd_properties[i].c_str());
     }
 
   // add it to the list
@@ -505,6 +506,9 @@ void pbsnode::update_properties()
       this->nd_properties.push_back(this->nd_prop->as_string[i]);
       }
     }
+
+  /* now add in name as last prop */
+  this->nd_properties.push_back(this->nd_name);
   } // END update_prop_list()
 
 
@@ -594,13 +598,17 @@ int pbsnode::copy_properties(
   {
   if (dest == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destanation pointer input");
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destination pointer input");
     return(PBSE_BAD_PARAMETER);
     }
 
   /* copy features/properties */
   for (unsigned int i = 0; i < this->nd_properties.size(); i++)
-    dest->nd_properties.push_back(this->nd_properties[i]);
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      dest->nd_properties.push_back(this->nd_properties[i]);
+    }
 
   return(PBSE_NONE);
   } /* END copy_properties() */
