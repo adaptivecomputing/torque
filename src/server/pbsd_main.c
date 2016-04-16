@@ -111,7 +111,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
 #include "pbs_job.h"
@@ -133,7 +133,7 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
-#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
+#include "lib_ifl.h" /* get_port_from_server_name_file */
 #include "node_manager.h" /* svr_is_request */
 #include "net_connect.h" /* set_localhost_name */
 #include "../lib/Libnet/lib_net.h" /* start_listener_addrinfo */
@@ -231,6 +231,7 @@ char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
 char                   *path_arrays;
 char                   *path_credentials;
+char                   *path_pbs_environment;
 char                   *path_jobs;
 char                   *path_queues;
 char                   *path_spool;
@@ -259,6 +260,7 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
+bool                    use_path_home = false;  // set to true if pbs_server is started with a -d option
 bool                    auto_send_hierarchy = true; //If false this directs pbs_server to not send the hierarchy to all the MOMs on startup.
                                                      //Instead, the hierarchy is only sent if a MOM requests it.
                                                      //This flag works only in conjunction with the local MOM hierarchy feature.
@@ -600,6 +602,7 @@ void parse_command_line(
       case 'd':
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -1338,7 +1341,7 @@ void main_loop(void)
     }
 
 #ifdef PBS_VERSION
-  printf("pbs_server is up (svn version - %s, port %d)\n",
+  printf("pbs_server is up (git version - %s, port %d)\n",
       PBS_VERSION, pbs_server_port_dis);
 #else
   printf("pbs_server is up (version - %s, port - %d)\n",

@@ -3,6 +3,8 @@
 #include "u_tree.h"
 #include "mom_hierarchy_handler.h"
 
+extern std::string global_string;
+
 AvlTree                 ipaddrs = NULL;
 int                     LOGLEVEL = 10;
 id_map                  node_mapper;
@@ -87,4 +89,24 @@ job::~job() {}
 void update_node_state(pbsnode *pnode, int newstate)
   {
   pnode->nd_state = newstate;
+  }
+
+void add_to_property_list(std::string &propstr, const char *token)
+  {
+  if (propstr.length() != 0)
+    propstr += ",";
+
+  propstr += token;
+  }
+
+int record_node_property_list(std::string const &propstr, tlist_head *atrlist_ptr)
+  {
+  if ((global_string.length() > 0) && (propstr != global_string))
+    {
+    // no match, return not ok
+    return(1);
+    }
+
+  // return ok
+  return(0);
   }

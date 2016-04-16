@@ -223,6 +223,7 @@ enum srv_atr
   SRV_ATR_node_submit_exceptions,
   SRV_ATR_LegacyVmem,
   SRV_ATR_NoteAppendOnError,
+  SRV_ATR_EmailBatchSeconds,
 
   /* This must be last */
   SRV_ATR_LAST
@@ -307,19 +308,6 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif /* END MAX */
-
-
-typedef struct mail_info
-  {
-  char *mailto;
-  char *exec_host;
-  char *jobid;
-  char *jobname;
-  char *text;        /* additional optional text */
-  char *errFile;
-  char *outFile;
-  int   mail_point;
-  } mail_info;
 
 
 /* maintain a list of new nodes */

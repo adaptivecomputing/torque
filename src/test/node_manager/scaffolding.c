@@ -78,6 +78,7 @@ struct batch_request *alloc_br(int type)
 
   CLEAR_LINK(req->rq_link);
 
+  return(req);
   }
 
 void DIS_tcp_reset(int fd, int i)
@@ -513,7 +514,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
   {
   fprintf(stderr,"ERROR: %s is mocked.\n",__func__);
   return 0;
@@ -729,8 +730,6 @@ pbsnode::pbsnode(
                                      nd_requestid(), nd_tmp_unlock_count(0)
 
   {
-  struct addrinfo *pAddrInfo;
-
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = 1;

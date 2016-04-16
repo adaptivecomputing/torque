@@ -100,6 +100,7 @@
 #include "mom_hierarchy.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
+#include "job_host_data.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -133,13 +134,18 @@ struct job_array;
  * of each job which is involved with the dependency
  */
 
-typedef struct depend_job
+class depend_job
   {
-  short dc_state; /* released / ready to run (syncct)  */
-  long  dc_cost; /* cost of this child (syncct)   */
-  char  dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char  dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
-  } depend_job;
+  public:
+  short       dc_state; /* released / ready to run (syncct)  */
+  long        dc_cost; /* cost of this child (syncct)   */
+  std::string dc_child;
+  std::string dc_svr;
+
+  depend_job() : dc_state(0), dc_cost(0), dc_child(), dc_svr()
+    {
+    }
+  };
 
 /*
  * Dependent Job Structures
@@ -156,11 +162,11 @@ typedef struct depend_job
 class depend
   {
   public:
-  list_link dp_link; /* link to next dependency, if any       */
-  short   dp_type; /* type of dependency (all)           */
-  short   dp_numexp; /* num jobs expected (on or syncct only) */
-  short   dp_numreg; /* num jobs registered (syncct only)     */
-  short   dp_released; /* This job released to run (syncwith)   */
+  list_link                 dp_link; /* link to next dependency, if any       */
+  short                     dp_type; /* type of dependency (all)           */
+  short                     dp_numexp; /* num jobs expected (on or syncct only) */
+  short                     dp_numreg; /* num jobs registered (syncct only)     */
+  short                     dp_released; /* This job released to run (syncwith)   */
   std::vector<depend_job *> dp_jobs;
 
   depend() : dp_type(0), dp_numexp(0), dp_numreg(0), dp_released(0), dp_jobs()
@@ -177,27 +183,30 @@ class depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
   };
 
-typedef struct array_depend_job
+class array_depend_job
   {
+  public:
   /* in this case, the child is the job depending on the array */
-  char dc_child[PBS_MAXSVRJOBID+1];
-  char dc_svr[PBS_MAXSERVERNAME+1];
-  int  dc_num;
-  } array_depend_job;
+  std::string dc_child;
+  std::string dc_svr;
+  int         dc_num;
+
+  array_depend_job() : dc_child(), dc_svr(), dc_num(0)
+    {
+    }
+  };
 
 class array_depend
   {
   public:
-  list_link  dp_link;
-  short      dp_type;
+  list_link                       dp_link;
+  short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
@@ -209,9 +218,7 @@ class array_depend
     {
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
-      {
-      free(this->dp_jobs[i]);
-      }
+      delete this->dp_jobs[i];
 
     delete_link(&this->dp_link);
     }
@@ -520,6 +527,10 @@ typedef std::set<pid_t> job_pid_set_t;
 
 #endif /* MOM */
 
+#ifdef PBS_MOM
+// forward declare task so it can be part of the job
+class task;
+#endif
 
 #define COUNTED_GLOBALLY 0x0001
 #define COUNTED_IN_QUEUE 0x0010
@@ -688,7 +699,8 @@ typedef struct job
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
-  tlist_head     ji_tasks; /* list of task structs */
+  std::vector<task *> *ji_tasks; /* list of tasks */
+  std::map<std::string, job_host_data> *ji_usages; // Current proc usage on hosts
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -871,40 +883,6 @@ void *remove_completed_jobs(void *);
 
 
 #ifdef PBS_MOM
-/*
-** Tasks are sessions belonging to a job, running on one of the
-** nodes assigned to the job.
-*/
-
-
-typedef struct taskfix
-  {
-  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
-  tm_node_id ti_parentnode;
-  tm_task_id ti_parenttask;
-  tm_task_id ti_task; /* task's taskid */
-  int  ti_status; /* status of task */
-  pid_t  ti_sid;  /* session id */
-  int  ti_exitstat; /* exit status */
-  union
-    {
-    int ti_hold[16]; /* reserved space */
-    } ti_u;
-  } taskfix;
-
-typedef struct task
-  {
-  list_link        ti_jobtask; /* links to tasks for this job */
-  struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
-  int              ti_flags; /* task internal flags */
-  tm_event_t       ti_register; /* event if task registers - never used*/
-  tlist_head       ti_obits; /* list of obit events */
-  tlist_head       ti_info; /* list of named info */
-
-  taskfix ti_qs;
-  } task;
-
-
 
 /*
 ** Events need to be linked to either a task or another event
@@ -912,12 +890,15 @@ typedef struct task
 ** we can forward the event to another MOM.
 */
 
-typedef struct fwdevent
+class fwdevent
   {
+  public:
   tm_node_id fe_node; /* where does notification go */
   tm_event_t fe_event; /* event number */
   tm_task_id fe_taskid; /* which task id */
-  } fwdevent;
+
+  fwdevent() : fe_node(0), fe_event(0), fe_taskid(0) {}
+  };
 
 /*
 ** A linked list of eventent structures is maintained for all events
@@ -941,28 +922,75 @@ typedef struct eventent
 ** These are tracked by obitent structures linked to the task.
 */
 
-typedef struct obitent
+class obitent
   {
+  public:
   fwdevent oe_info; /* who gets the event */
-  list_link oe_next; /* link to next one */
-  } obitent;
+
+  obitent() : oe_info() {}
+  };
 
 /*
 ** A task can have a list of named infomation which it makes
 ** available to other tasks in the job.
 */
 
-typedef struct infoent
+class infoent
   {
+  public:
   char  *ie_name; /* published name */
   void  *ie_info; /* the glop */
   size_t ie_len;  /* how much glop */
-  list_link ie_next; /* link to next one */
-  } infoent;
+
+  infoent() : ie_name(NULL), ie_info(NULL), ie_len(0) {}
+  ~infoent()
+    {
+    free(this->ie_name);
+    free(this->ie_info);
+    }
+  };
 
 
+/*
+** Tasks are sessions belonging to a job, running on one of the
+** nodes assigned to the job.
+*/
 
-#ifdef PBS_MOM
+
+typedef struct taskfix
+  {
+  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
+  tm_node_id ti_parentnode;
+  tm_task_id ti_parenttask;
+  tm_task_id ti_task; /* task's taskid */
+  int  ti_status; /* status of task */
+  pid_t  ti_sid;  /* session id */
+  int  ti_exitstat; /* exit status */
+  union
+    {
+    int ti_hold[16]; /* reserved space */
+    } ti_u;
+  } taskfix;
+
+class task
+  {
+  public:
+  struct tcp_chan    *ti_chan;  /* DIS file descriptor to task */
+  int                 ti_flags; /* task internal flags */
+  tm_event_t          ti_register; /* event if task registers - never used*/
+  std::vector<obitent>  ti_obits; /* list of obit events */
+  std::vector<infoent>  ti_info; /* list of named info */
+
+  taskfix ti_qs;
+
+  task() : ti_chan(NULL), ti_flags(0), ti_register(0), ti_obits(), ti_info()
+    {
+    memset(&this->ti_qs, 0, sizeof(this->ti_qs));
+    }
+
+  ~task();
+  };
+
 typedef struct job_file_delete_info
   {
   char           jobid[PBS_MAXSVRJOBID+1];
@@ -975,9 +1003,6 @@ typedef struct job_file_delete_info
   bool           cgroups_all_created;
 #endif
   } job_file_delete_info;
-#endif
-
-
 
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
@@ -1014,7 +1039,10 @@ typedef struct job_file_delete_info
 #define IM_RADIX_ALL_OK   12
 #define IM_JOIN_JOB_RADIX 13
 #define IM_KILL_JOB_RADIX 14
-#define IM_MAX            15
+#define IM_FENCE          15
+#define IM_CONNECT        16
+#define IM_DISCONNECT     17
+#define IM_MAX            18
 
 #define IM_ERROR          99
 
@@ -1077,6 +1105,8 @@ typedef struct send_job_request
 #define SAVEJOB_NEW   2
 
 #define MAIL_NONE  (int)'n'
+#define MAIL_NOJOBMAIL  (int)'p'
+#define MAIL_NONZERO (int)'f'
 #define MAIL_ABORT (int)'a'
 #define MAIL_BEGIN (int)'b'
 #define MAIL_DEL   (int)'d'

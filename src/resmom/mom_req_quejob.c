@@ -102,7 +102,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "mom_job_func.h" /* mom_job_purge */
 

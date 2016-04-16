@@ -111,7 +111,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "server.h"
 #include "alps_constants.h"
@@ -909,7 +909,7 @@ void translate_dependency_to_string(
       unsigned int dp_jobs_size = dep->dp_jobs.size();
       for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
-        struct depend_job *pdjob = dep->dp_jobs[i];
+        depend_job *pdjob = dep->dp_jobs[i];
         value += ":";
         value += pdjob->dc_child;
 
@@ -1606,14 +1606,13 @@ job *job_recov(
       log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-      free(pj->ji_mutex);
+      delete pj;
+#else
+      free(pj);
 #endif
-      free((char *)pj);
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
     }
-  
   
   pj->ji_commit_done = 1;
 

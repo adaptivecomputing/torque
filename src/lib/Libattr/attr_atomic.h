@@ -4,8 +4,6 @@
 
 int attr_atomic_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *newAttr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr);
 
-int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *newAttr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr);
-
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int limit);
 
 

@@ -21,7 +21,7 @@
 #include <pbs_error.h>    /* all static defines,  message & error codes */
 #include "qsub_functions.h"
 #include "common_cmds.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -2701,12 +2701,31 @@ int process_opt_m(
       {
       if ((*pc != 'a') &&
           (*pc != 'b') &&
-          (*pc != 'e'))
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'p'))
         return(-1);
 
       pc++;
       }
     } /* END if (strcmp(cmd_arg,"n") != 0) */
+  if (strcmp(cmd_arg, "p") != 0)
+    {
+    const char *pc = cmd_arg;
+    
+    while (*pc)
+      {
+      if ((*pc != 'a') &&
+          (*pc != 'b') &&
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'n'))
+        return(-1);
+
+      pc++;
+      }
+    } /* END if (strcmp(cmd_arg,"p") != 0) */
+    
           
   hash_add_or_exit(ji->job_attr, ATTR_m, cmd_arg, data_type);
 
@@ -3650,6 +3669,10 @@ void process_opts(
       {
       while (fgets(cline, sizeof(cline), fP) != NULL)
         {
+        // Skip blank lines
+        if (*cline == '\n')
+          continue;
+
         if (strlen(cline) < 5)
           break;
 

@@ -34,26 +34,22 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
 
 int pbs_sigjobasync(int c, char *jobid, char *signal, char *extend)
   {
-  fprintf(stderr, "The call to pbs_sigjobasync needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int pbs_sigjob(int   c, char *jobid, char *signal, char *extend)
   {
-  fprintf(stderr, "The call to pbs_sigjob needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-int pbs_sigjobasync_err(int c, char *jobid, char *signal, char *extend, int *local_err)
+int pbs_sigjobasync_err(int c, const char *jobid, const char *signal, char *extend, int *local_err)
   {
-  fprintf(stderr, "The call to pbs_sigjobasync_err needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-int pbs_sigjob_err(int   c, char *jobid, char *signal, char *extend, int *local_err)
+int pbs_sigjob_err(int   c, const char *jobid, const char *signal, char *extend, int *local_err)
   {
-  fprintf(stderr, "The call to pbs_sigjob_err needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)

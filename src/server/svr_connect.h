@@ -11,5 +11,4 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, int *local_errno, struct 
 void svr_disconnect_sock(int handle);
 void svr_disconnect(int handle);
 int get_connection_entry(int *conn_pos);
-char *parse_servername(char *name, unsigned int *service);
 #endif /* _SVR_CONNECT_H */

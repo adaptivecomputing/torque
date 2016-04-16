@@ -109,7 +109,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Libnet/lib_net.h" /* global_sock_add */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "req_getcred.h" /* req_altauthenuser */
 #include "net_cache.h"
 
@@ -586,7 +586,7 @@ int get_UID(
    * this is for compatibility with --enable-munge-auth in >= 2.5.10
    * 
    * To force more restrictive mode set PBS_MUNGE_STRICT_UID_CHECK 
-   *  environment variable in /var/torque/pbs_environment
+   *  environment variable in /var/spool/torque/pbs_environment
    * 
    */
   if (((passwd_ptr = getpwuid(uid)) == NULL) &&

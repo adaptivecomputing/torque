@@ -90,8 +90,8 @@
 int pbs_rlsjob_err(
     
   int   c,
-  char *jobid,
-  char *holdtype,
+  const char *jobid,
+  const char *holdtype,
   char *extend,
   int  *local_errno)
 
@@ -110,7 +110,7 @@ int pbs_rlsjob_err(
   if ((holdtype == (char *)NULL) || (*holdtype == '\0'))
     aopl.value = (char *)"u";
   else
-    aopl.value = holdtype;
+    aopl.value = (char *)holdtype;
 
   aopl.op = SET;
 
@@ -133,7 +133,7 @@ int pbs_rlsjob(
   {
   pbs_errno = 0;
 
-  return(pbs_rlsjob_err(c, jobid, holdtype, extend, &pbs_errno));
+  return(pbs_rlsjob_err(c, (const char *)jobid, (const char *)holdtype, extend, &pbs_errno));
   } /* END pbs_rlsjob() */
 
 

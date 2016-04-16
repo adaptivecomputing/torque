@@ -101,7 +101,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -199,6 +199,7 @@ extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
+extern char *path_pbs_environment;
 
 extern int                      queue_rank;
 extern char                     server_name[];
@@ -236,6 +237,7 @@ extern int paused;
 extern int LOGLEVEL;
 extern char *plogenv;
 
+extern bool   use_path_home;
 extern struct server server;
 
 
@@ -920,7 +922,11 @@ int initialize_paths()
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-  rc |= chk_file_sec((char *)PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+
+  if (use_path_home == true)
+    rc |= chk_file_sec(path_pbs_environment, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+  else
+    rc |= chk_file_sec((char *)PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
   if (rc != PBSE_NONE)
     {
@@ -2175,7 +2181,15 @@ int pbsd_init(
     hints.ai_flags = AI_CANONNAME;
 
     /* The following is code to reduce security risks */
-    if (setup_env(PBS_ENVIRON) == -1)
+    if (use_path_home == true)
+      {
+      path_pbs_environment = build_path(path_home, "pbs_environment", "");
+      if (setup_env(path_pbs_environment) == -1)
+        {
+        return(-1);
+        }
+      }
+    else if (setup_env(PBS_ENVIRON) == -1)
       {
       return(-1);
       }
@@ -2835,7 +2849,7 @@ void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "mom_main", (char *)"Caught fatal core signal");
+  log_err(sig, __func__, "Caught fatal core signal");
 
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;

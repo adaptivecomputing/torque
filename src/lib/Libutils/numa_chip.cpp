@@ -75,6 +75,9 @@ Chip &Chip::operator =(
   this->cores = other.cores;
   this->devices = other.devices;
   this->allocations = other.allocations;
+  
+  memcpy(chip_cpuset_string, other.chip_cpuset_string, sizeof(chip_cpuset_string));
+  memcpy(chip_nodeset_string, other.chip_nodeset_string, sizeof(chip_nodeset_string));
 
   return(*this);
   }
@@ -116,7 +119,6 @@ void Chip::parse_values_from_json_string(
   char        *work_str = strdup(json_layout.c_str());
   char        *ptr = strstr(work_str, "os_index\":");
   char        *val = work_str;
-  char        *close_quote;
 
   if (ptr != NULL)
     {
@@ -1391,7 +1393,6 @@ bool Chip::reserve_core(
     {
     int os_index = this->cores[core_index].get_id();
     
-    int thread_index;
     while ( this->cores[core_index].get_open_processing_unit() != -1 )
       continue;
 

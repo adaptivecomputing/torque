@@ -96,11 +96,11 @@ fi
 
 if test "X$success" == "X0" ; then
   success=`echo $githash > current_hash`
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository git version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
   dnl containing the most recent hash
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository git version])
 fi
 
 PKG_PROG_PKG_CONFIG
@@ -179,6 +179,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_usage_info/Makefile
     src/test/login_nodes/Makefile
     src/test/mom_hierarchy_handler/Makefile
+    src/test/mail_throttler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
     src/test/pbsnode/Makefile
@@ -492,6 +493,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_req_quejob/Makefile
     src/test/parse_config/Makefile
     src/test/pbs_demux/Makefile
+    src/test/pmix_interface/Makefile
+    src/test/pmix_operation/Makefile
+    src/test/pmix_tracker/Makefile
     src/test/prolog/Makefile
     src/test/release_reservation/Makefile
     src/test/requests/Makefile
@@ -1306,6 +1310,29 @@ if test "${build_mom}" = "yes" ; then
 fi
 
 
+dnl 
+dnl Add the ability to link against the pmix library
+dnl 
+dnl --enable-pmix
+AC_ARG_ENABLE(pmix, [
+  --enable-pmix links pbs_mom against libpmix])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build with pmix support])
+    if test "${enable_pmix}" = "yes"; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([pmix], [PMIx_Finalize], ,
+        [AC_MSG_ERROR([--enable-pmix requires libpmix to be installed]) ])
+      AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      MOMLIBS="$MOMLIBS -lpmix"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+AM_CONDITIONAL([BUILDPMIX], test "${enable_pmix}" = yes)
+
+
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
 dnl 
@@ -1428,7 +1455,7 @@ dnl
 dnl if we're running from a tarball (not checked out) automatically turn off
 dnl the warnings
 dnl
-AC_CHECK_FILE(src/server/test/req_jobobit/scaffolding.c,
+AC_CHECK_FILE(src/test/req_jobobit/scaffolding.c,
   TOM=bob,gccwarnings=no)
 
 
@@ -2381,7 +2408,8 @@ drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
     
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic -Werror -Wno-sign-compare])
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
 fi
 
 

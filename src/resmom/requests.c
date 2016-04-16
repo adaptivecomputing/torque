@@ -110,7 +110,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "checkpoint.h" /* start_checkpoint */
 #include "resmon.h"
@@ -1719,7 +1719,6 @@ static void cray_susp_resum(
   {
   int   i;
   int  ct;
-  task *ptask;
   pid_t  pid;
   long  sess;
   int  sock;
@@ -1764,10 +1763,9 @@ static void cray_susp_resum(
 
   /* child of MOM, cannot update job struct */
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
     sess = ptask->ti_qs.ti_sid;
 
     for (ct = 0;ct < 3;ct++)
@@ -1830,7 +1828,7 @@ int sigalltasks_sisters(
 
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
+    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false)) < 0)
       return(-1);
 
     if ((chan = DIS_tcp_setup(stream)) == NULL)
@@ -1880,8 +1878,6 @@ static void resume_suspend(
   struct batch_request *preq)
 
   {
-  task *tp;
-
   int   stat = 0;
   int   savederr = 0;
 
@@ -1928,17 +1924,19 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
-    if(tmpTask != NULL)
+    if (pjob->ji_tasks->size() != 0)
+      {
+      task *tmpTask = pjob->ji_tasks->at(0);
       kill_task(pjob, tmpTask, SIGTSTP, 0);
+      }
 
     sleep(5);
     }
 
-  for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-       tp != NULL;
-       tp = (task *)GET_NEXT(tp->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *tp = pjob->ji_tasks->at(i);
+
     if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
@@ -1957,7 +1955,7 @@ static void resume_suspend(
 
       break;
       }  /* END if (stat < 0) */
-    }    /* END for (tp) */
+    }    /* END for each task */
 
   if (stat >= 0)
     {
@@ -1994,10 +1992,10 @@ static void resume_suspend(
 
     signum = (susp == 1) ? SIGCONT : SIGSTOP;
 
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-         tp != NULL;
-         tp = (task *)GET_NEXT(tp->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
+      task *tp = pjob->ji_tasks->at(i);
+
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
@@ -2103,7 +2101,6 @@ void req_signaljob(
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
-  task           *ptask;
 
   struct sig_tbl *psigt;
 
@@ -2259,8 +2256,7 @@ void req_signaljob(
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
         {
-        ptask = (task *)GET_NEXT(pjob->ji_tasks);
-        if (ptask == NULL)
+        if (pjob->ji_tasks->size() == 0)
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",

@@ -234,13 +234,13 @@ class Socket
   bool                  socket_exclusive;
   hwloc_const_cpuset_t  socket_cpuset;
   hwloc_const_nodeset_t socket_nodeset;
-  vector<allocation>    allocations;
 
   public:
     Socket();
     Socket(int execution_slots);
     Socket(const std::string &layout);
     ~Socket();
+    Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
     int initializeIntelSocket(hwloc_obj_t obj, Chip &newChip);
     int initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t);

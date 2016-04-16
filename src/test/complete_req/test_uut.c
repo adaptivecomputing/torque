@@ -8,6 +8,22 @@
 extern int called_log_event;
 
 
+START_TEST(test_set_value_from_nodes)
+  {
+  complete_req c;
+
+  // Make sure this doesn't segfault
+  c.set_value_from_nodes(NULL);
+  c.set_value_from_nodes("4");
+  fail_unless(c.req_count() == 1);
+
+  complete_req c2;
+  c2.set_value_from_nodes("bob+tim");
+  fail_unless(c2.req_count() == 2);
+  }
+END_TEST
+
+
 START_TEST(test_set_get_value)
   {
   complete_req c;
@@ -180,7 +196,6 @@ START_TEST(test_get_num_reqs)
   {
   complete_req c;
   std::string hostname = "kmn";
-  unsigned long swap;
 
   req r1;
   req r2;
@@ -327,12 +342,14 @@ Suite *complete_req_suite(void)
 
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
+  tcase_add_test(tc_core, test_set_value_from_nodes);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_to_string");
   tcase_add_test(tc_core, test_to_string);
   tcase_add_test(tc_core, test_set_get_value);
   tcase_add_test(tc_core, test_update_hostlist);
+  tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
   
   return(s);

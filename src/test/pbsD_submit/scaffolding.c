@@ -6,7 +6,7 @@
 
 int pbs_errno = 0;
 
-int PBSD_jscript(int c, char *script_file, char *jobid)
+int PBSD_jscript(int c, const char *script_file, const char *jobid)
   {
   fprintf(stderr, "The call to PBSD_jscript needs to be mocked!!\n");
   exit(1);
@@ -24,7 +24,7 @@ int PBSD_rdytocmt(int connect, char *jobid)
   exit(1);
   }
 
-char *PBSD_queuejob(int connect, int *local_errno, char *jobid, char *destin, struct attropl *attrib, char *extend)
+char *PBSD_queuejob(int connect, int *local_errno, const char *jobid, const char *destin, struct attropl *attrib, char *extend)
   {
   fprintf(stderr, "The call to PBSD_queuejob needs to be mocked!!\n");
   exit(1);

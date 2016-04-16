@@ -181,7 +181,8 @@ struct pbsnode *create_alps_subnode(
       ATR_DFLAG_MGRD | ATR_DFLAG_MGWR,
       &bad,
       (void *)subnode,
-      ATR_ACTION_ALTER);
+      ATR_ACTION_ALTER,
+      false);
 
   if (rc != PBSE_NONE)
     {
@@ -612,7 +613,8 @@ int set_total_memory(
   const char *mem_str)
 
   {
-  long long mem = strtoll(mem_str, NULL, 10);
+  // Advance the string past "totmem=" so add 7
+  long long mem = strtoll(mem_str + 7, NULL, 10);
 
   pnode->nd_layout.setMemory(mem);
 

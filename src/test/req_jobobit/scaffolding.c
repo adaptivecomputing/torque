@@ -78,7 +78,7 @@ struct batch_request *alloc_br(int type)
   return(preq);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   return(strdup(name));
   }
@@ -98,7 +98,7 @@ void svr_mailowner_with_message(job *pjob, int mailpoint, int force, const char 
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   return(0);
   }

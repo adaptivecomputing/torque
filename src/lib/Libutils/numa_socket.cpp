@@ -13,7 +13,8 @@ using namespace std;
 #include "machine.hpp"
 #include <hwloc.h>
 
-Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
+Socket::Socket() : id (0), memory(0), totalCores(0), totalThreads(0), availableCores(0),
+                   availableThreads(0), chips(), socket_exclusive(false)
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -23,8 +24,9 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
 
 Socket::Socket(
     
-  int execution_slots) : id (0), memory(0), totalThreads(execution_slots),
-                         socket_exclusive(false), totalCores(execution_slots)
+  int execution_slots) : id (0), memory(0), totalCores(execution_slots),
+                         totalThreads(execution_slots), availableCores(0), availableThreads(0),
+                         chips(), socket_exclusive(false)
 
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -59,7 +61,9 @@ Socket::Socket(
 
 Socket::Socket(
 
-  const std::string &json_layout) : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
+  const std::string &json_layout) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                    availableCores(0), availableThreads(0), chips(),
+                                    socket_exclusive(false)
 
   {
   const char *chip_str = "\"numanode\":{";
@@ -200,6 +204,36 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   this->chips.push_back(numaChip);
   return(PBSE_NONE);
   }
+    
+
+
+Socket &Socket::operator=(
+    
+  const Socket &other)
+
+  {
+  this->id = other.id;
+  this->memory = other.memory;
+  this->available_memory = other.available_memory;
+  this->totalCores = other.totalCores;
+  this->totalThreads = other.totalThreads;
+  this->availableCores = other.availableCores;
+  this->availableThreads = other.availableThreads;
+  this->chips = other.chips;
+
+  memcpy(this->socket_cpuset_string, other.socket_cpuset_string, sizeof(this->socket_cpuset_string));
+  memcpy(this->socket_nodeset_string, other.socket_nodeset_string, 
+         sizeof(this->socket_nodeset_string));
+
+  this->socket_exclusive = other.socket_exclusive;
+
+  hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
+  hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
+
+  return(*this);
+  }
+
+
 
 hwloc_uint64_t Socket::getMemory()
   {
@@ -297,12 +331,16 @@ void Socket::setMemory(
   hwloc_uint64_t memory)
 
   {
-  long long per_socket = memory / this->chips.size();
   this->memory = memory;
   this->available_memory = memory;
   
-  for (unsigned int i = 0; i < this->chips.size(); i++)
-    this->chips[i].setMemory(per_socket);
+  if (this->chips.size() != 0)
+    {
+    long long per_chip = memory / this->chips.size();
+  
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      this->chips[i].setMemory(per_chip);
+    }
   }
 
 void Socket::setId(
@@ -443,7 +481,6 @@ bool Socket::spread_place_pu(
   int         &mics_remaining)
 
   {
-  int rc;
   bool placed = false;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)

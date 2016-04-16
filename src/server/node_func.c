@@ -326,7 +326,7 @@ struct pbsnode *find_nodebyname(
           /* get the NUMA node */
           numa = AVL_find(numa_index, pnode->nd_mom_port, pnode->node_boards);
           if (numa != NULL)
-            pnode->lock_node(__func__, NULL, LOGLEVEL);
+            numa->lock_node(__func__, NULL, LOGLEVEL);
 
           pnode->unlock_node(__func__, NULL, LOGLEVEL);
           pnode = numa;
@@ -565,7 +565,7 @@ int login_encode_jobs(
 
 int status_nodeattrib(
 
-  svrattrl        *pal,    /*an svrattrl from the request  */
+  svrattrl        *pal,    /*a svrattrl from the request  */
   attribute_def   *padef,  /*the defined node attributes   */
   struct pbsnode  *pnode,  /*no longer an pbs_attribute ptr */
   int              limit,  /*number of array elts in padef */
@@ -575,7 +575,7 @@ int status_nodeattrib(
                            /*off the brp_attr member of the status sub*/
                            /*structure in the request's "reply area"  */
 
-  int             *bad)    /*if node-pbs_attribute error, record it's*/
+  int             *bad)    /*if node-pbs_attribute error, record its*/
                            /*list position here                 */
 
   {
@@ -583,7 +583,6 @@ int status_nodeattrib(
   int   rc = 0;  /*return code, 0 == success*/
   int   index;
   int   nth;  /*tracks list position (ordinal tacker)   */
-  bool  layout_valid = false;
 
   pbs_attribute atemp[ND_ATR_LAST]; /*temporary array of attributes   */
 
@@ -597,7 +596,7 @@ int status_nodeattrib(
     }
 
 #ifdef PENABLE_LINUX_CGROUPS
-  layout_valid = pnode->nd_layout.is_initialized();
+  bool layout_valid = pnode->nd_layout.is_initialized();
 #endif
 
   memset(&atemp, 0, sizeof(atemp));
@@ -612,7 +611,10 @@ int status_nodeattrib(
     else if (i == ND_ATR_power_state)
       atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
+      {
+      // NOTE: see below for nd_properties encoding
       atemp[i].at_val.at_arst = pnode->nd_prop;
+      }
     else if (i == ND_ATR_status)
       atemp[i].at_val.at_arst = pnode->nd_status;
     else if (i == ND_ATR_ntype)
@@ -794,6 +796,8 @@ int status_nodeattrib(
       if ((index == ND_ATR_jobs) &&
           (pnode->nd_is_alps_login == TRUE))
         rc = login_encode_jobs(pnode, phead);
+      else if (index == ND_ATR_properties)
+        rc = pnode->encode_properties(phead);
       else if (((padef + index)->at_flags & priv) &&
                !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
@@ -840,7 +844,6 @@ void effective_node_delete(
   pbsnode **ppnode)
 
   {
-  u_long          *up;
   struct pbsnode* pnode = NULL;
 
   if (ppnode == NULL)
@@ -1482,7 +1485,6 @@ static int setup_node_boards(
   char            pname[MAX_LINE];
   const char     *np_ptr = NULL;
   const char     *gp_ptr = NULL;
-  char           *allocd_name;
   int             np = 0;
   int             gpus;
   int             rc = PBSE_NONE;
@@ -1688,7 +1690,8 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
            perms,
            bad,
            (void *)pnode,
-           ATR_ACTION_ALTER);
+           ATR_ACTION_ALTER,
+           false);
 
     if (rc != 0)
       {
@@ -2222,7 +2225,6 @@ int record_node_property_list(
   } // END record_node_property_list()
 
 
-
 int create_node_range(
 
   char     *nodename,
@@ -2342,7 +2344,7 @@ void handle_cray_specific_node_values(
       // add features
       int bad;
       if (mgr_set_node_attr(np, node_attr_def, ND_ATR_LAST, pal, 
-                            perm, &bad, (void *)np, ATR_ACTION_ALTER) != PBSE_NONE)
+                            perm, &bad, (void *)np, ATR_ACTION_ALTER, false) != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf),
           "Node %s may not have all attributes initialized correctly", nodename);
@@ -3206,7 +3208,6 @@ int create_partial_pbs_node(
   int            perms)
 
   {
-  int              ntype; /* node type; time-shared, not */
   int              rc;
   int              bad = 0;
   svrattrl        *plist = NULL;
@@ -3248,7 +3249,8 @@ int create_partial_pbs_node(
          perms,
          &bad,
          (void *)pnode,
-         ATR_ACTION_ALTER);
+         ATR_ACTION_ALTER,
+         false);
 
   if (rc != 0)
     {

@@ -59,6 +59,13 @@
 
 /** @defgroup drmaa  DRMAA interface. */
 /* @{ */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 
 typedef struct drmaa_job_template_s  drmaa_job_template_t;
 
@@ -563,5 +570,11 @@ extern "C"
  */
 void drmaa_set_logging_output(FILE *file);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __DRMAA_H */
 
+}
+#endif // #ifdef __cplusplus

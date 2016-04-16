@@ -139,7 +139,6 @@ int tcp_read(
   int               tmp_leadp = 0;
   int               tmp_trailp = 0;
   int               tmp_eod = 0;
-  char              err_msg[1024];
 
   tcpData *data = fds[chan->sock];
 
@@ -267,12 +266,9 @@ int DIS_tcp_wflush(
   size_t            ct;
   int               i;
   char             *pb = NULL;
-  char             *pbs_debug = NULL;
 
   struct tcpdisbuf *tp;
   tcpData *data = fds[chan->sock];
-
-  pbs_debug = getenv("PBSDEBUG");
 
   tp = &chan->writebuf;
   pb = tp->tdis_thebuf;

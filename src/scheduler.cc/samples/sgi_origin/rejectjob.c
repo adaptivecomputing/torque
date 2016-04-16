@@ -147,7 +147,8 @@ schd_reject_job(Job *job, char *reason)
      * message to the user.
      */
 
-    rc = pbs_deljob(connector, job->jobid, message);
+    int local_errno;
+    rc = pbs_deljob_err(connector, job->jobid, message, &local_errno);
 
     if (rc)
       {

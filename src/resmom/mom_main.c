@@ -70,7 +70,7 @@
 #include "../lib/Liblog/chk_file_sec.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "net_connect.h"
 #include "dis.h"
@@ -105,6 +105,9 @@
 #include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
+#ifdef ENABLE_PMIX
+#include "pmix_server.h"
+#endif
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -171,6 +174,7 @@ int          num_var_env;
 bool         received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
+char        *path_pbs_environment;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -187,6 +191,8 @@ char        *path_undeliv;
 char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
+
+bool         use_path_home = false;
 
 sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
@@ -223,6 +229,10 @@ mom_hierarchy_t  *mh = NULL;
 
 #ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
+#endif
+#ifdef ENABLE_PMIX
+std::string                 topology_xml;
+extern pmix_server_module_t psm;
 #endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -1868,13 +1878,15 @@ void add_diag_prolog_epilog_info(
   {
   struct stat s;
 
-  int prologfound = 0;
+  bool prologfound = false;
+  bool epilogfound = false;
 
+  //Prolog
   if (stat(path_prolog, &s) != -1)
     {
     output << "Prolog:                 " << path_prolog << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
     }
   else if (verbositylevel >= 2)
     {
@@ -1885,15 +1897,34 @@ void add_diag_prolog_epilog_info(
     {
     output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
+    }  
+
+  //Epilog
+  if (stat(path_epilog, &s) != -1)
+    {
+    output << "Epilog:                 " << path_epilog << " (enabled)\n";
+
+    epilogfound = true;
+    }
+  else if (verbositylevel >= 2)
+    {
+    output << "Epilog:                 " << path_epilog << " (disabled)\n";
     }
 
-  if (prologfound == 1)
+  if (stat(path_epilogp, &s) != -1)
     {
-    output << "Prolog Alarm Time:      " << pe_alarm_time << " seconds\n";
+    output << "Parallel Epilog:        " << path_epilogp << " (enabled)\n";
+
+    epilogfound = true;
+    }
+
+  if ((prologfound == true) ||
+      (epilogfound == true))
+    {
+    output << "Prolog/Epilog Alarm Time:      " << pe_alarm_time << " seconds\n";
     }
   }
-
 
 
 void add_diag_alarm_time(
@@ -1948,14 +1979,12 @@ void add_diag_jobs_session_ids(
 
   {
   bool  first = true;
-  task *ptask;
 
   output << " sidlist=";
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
     /* only check on tasks that we think should still be around */
     if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
@@ -3482,7 +3511,6 @@ int kill_job(
   const char *why_killed_reason) /* I - reason for killing */
 
   {
-  task *ptask;
   int   ct = 0;
 
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
@@ -3524,10 +3552,10 @@ int kill_job(
       }
     }
 
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-  while (ptask != NULL)
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
@@ -3542,8 +3570,7 @@ int kill_job(
       ct += kill_task(pjob, ptask, sig, 0);
       }
 
-    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-    }  /* END while (ptask != NULL) */
+    }  /* END for each task */
 
   if (LOGLEVEL >= 6)
     {
@@ -4279,6 +4306,7 @@ void parse_command_line(
       case 'd': /* directory */
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -4628,9 +4656,24 @@ int cg_initialize_hwloc_topology()
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    log_err(-1, msg_daemonname, "Unable to initialize machine topology");
     return(-1);
     }
+
+#ifdef ENABLE_PMIX
+  int   topology_size = 0;
+  char *xml_buf = NULL;
+
+  if (hwloc_topology_export_xmlbuffer(topology, &xml_buf, &topology_size) == -1)
+    {
+    log_err(-1, msg_daemonname, "Unable to get an xml representation of the machine topology");
+    return(-1);
+    }
+
+  topology_xml = xml_buf;
+
+  hwloc_free_xmlbuffer(topology, xml_buf);
+#endif
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
@@ -4760,7 +4803,15 @@ int setup_program_environment(void)
 
   /* modify program environment */
 
-  if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
+  if (use_path_home == true)
+    {
+    path_pbs_environment = mk_dirs("pbs_environment");
+    if ((num_var_env = setup_env(path_pbs_environment)) == -1)
+      {
+      exit(1);
+      }
+    }
+  else if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
     {
     exit(1);
     }
@@ -4883,7 +4934,10 @@ int setup_program_environment(void)
 
   c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0, NULL);
 
-  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  if (use_path_home == true)
+    c |= chk_file_sec(path_pbs_environment,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  else
+    c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
 
   if (c)
     {
@@ -5043,7 +5097,18 @@ int setup_program_environment(void)
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
-
+#ifdef ENABLE_PMIX
+  pmix_status_t pmix_rc;
+  //pmix_info_t   info[1];
+  if ((pmix_rc = PMIx_server_init(&psm, NULL, 0)) != PMIX_SUCCESS)
+    {
+/*  Uncomment once PMIx bug is fixed
+ *  const char *err_msg = PMIx_Error_string(pmix_rc);
+    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
+    fprintf(stderr, "%s", log_buffer);*/
+    return(1);
+    }
+#endif
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -5756,7 +5821,6 @@ void examine_all_running_jobs(void)
 #ifdef _CRAY
   int         c;
 #endif
-  task         *ptask;
   
   std::list<job *>::iterator iter;
 
@@ -5810,10 +5874,9 @@ void examine_all_running_jobs(void)
       {
       pjob->ji_flags &= ~MOM_NO_PROC;
 
-      for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-           ptask != NULL;
-           ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task *ptask = pjob->ji_tasks->at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5853,7 +5916,7 @@ void examine_all_running_jobs(void)
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
-        }    /* END while (ptask != NULL) */
+        }    /* END for each task */
       }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
 
@@ -5898,7 +5961,7 @@ void resend_waiting_joins(
     if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
       {
       /* we haven't received the reply yet */
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {
@@ -6250,17 +6313,17 @@ void prepare_child_tasks_for_delete()
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
-    task *pTask;
 
-    for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
+    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
+      task *pTask = pJob->ji_tasks->at(i);
 
       char buf[128];
 
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)pTask->ti_qs.ti_sid,
+              pTask->ti_qs.ti_sid,
               pTask->ti_qs.ti_task,
               pJob->ji_qs.ji_jobid);
 
@@ -6454,6 +6517,10 @@ void main_loop(void)
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
+
+#ifdef ENABLE_PMIX
+  PMIx_server_finalize();
+#endif
 
   return;
   }        /* END main_loop() */
@@ -6867,7 +6934,6 @@ int setup_nodeboards()
 
 
 
-
 /* 
  *
  * @see main_loop() - child
@@ -6998,12 +7064,13 @@ int main(
 
 im_compose_info *create_compose_reply_info(
     
-  char       *jobid,
-  char       *cookie,
+  const char *jobid,
+  const char *cookie,
   hnodent    *np,
   int         command,
   tm_event_t  event,
-  tm_task_id  taskid)
+  tm_task_id  taskid,
+  const char *data)
 
   {
   im_compose_info *ici = (im_compose_info *)calloc(1, sizeof(im_compose_info));
@@ -7016,6 +7083,9 @@ im_compose_info *create_compose_reply_info(
     ici->command = command;
     ici->event   = event;
     ici->taskid  = taskid;
+
+    if (data != NULL)
+      ici->data = strdup(data);
     }
   else
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
@@ -7051,7 +7121,7 @@ int resend_compose_reply(
   struct tcp_chan *chan = NULL;
 
   np = &ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -7090,7 +7160,7 @@ int resend_kill_job_reply(
   struct tcp_chan *chan = NULL;
         
   np = &kj->ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -7142,7 +7212,7 @@ int resend_spawn_task_reply(
   int      ret = -1;
   hnodent *np = &st->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -7184,7 +7254,7 @@ int resend_obit_task_reply(
   int              ret = -1;
   hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {

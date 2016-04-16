@@ -57,7 +57,7 @@ pbs_queue *find_queuebyname(const char *quename)
   exit(1);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername to be mocked!!\n");
   exit(1);
@@ -82,7 +82,7 @@ int svr_job_purge(job *pjob, int leaveSpoolFiles)
   exit(1);
   }
 
-int PBSD_jscript(int c, char *script_file, char *jobid)
+int PBSD_jscript(int c, const char *script_file, const char *jobid)
   {
   if (script_fail == true)
     return(-1);
@@ -90,7 +90,7 @@ int PBSD_jscript(int c, char *script_file, char *jobid)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr to be mocked!!\n");
   exit(1);
@@ -245,7 +245,7 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   exit(1);
   }
 
-char *PBSD_queuejob(int connect, int *local_errno, char *jobid, char *destin, struct attropl *attrib, char *extend)
+char *PBSD_queuejob(int connect, int *local_errno, const char *jobid, const char *destin, struct attropl *attrib, char *extend)
   {
   if (expired == true)
     {
@@ -443,5 +443,4 @@ job::job() {}
 job::~job() {}
 
 void update_failure_counts(const char *node_name, int rc) {}
-
 

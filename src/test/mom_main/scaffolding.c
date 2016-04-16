@@ -94,7 +94,7 @@ char             mom_host[PBS_MAXHOSTNAME + 1];
 int       rm_errno;
 int       config_file_specified;
 char             MOMConfigVersion[64];
-struct config common_config[] = {};
+struct config common_config[1];
 char           **ArgV;
 char            *OriginalPath;
 int       resend_join_job_wait_time;
@@ -734,7 +734,7 @@ int diswul(tcp_chan *chan, unsigned long value)
   exit(1);
   }
 
-int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
@@ -1063,3 +1063,9 @@ int read_config(
 
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
+
+#ifdef ENABLE_PMIX
+#include <pmix_server.h>
+
+pmix_server_module_t psm;
+#endif

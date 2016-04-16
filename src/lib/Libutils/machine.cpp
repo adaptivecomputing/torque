@@ -112,7 +112,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   availableChips = newMachine.availableChips;
   availableCores = newMachine.availableCores;
   availableThreads = newMachine.availableThreads;
-  this->initialized = true;
+  this->initialized = newMachine.initialized;
   return *this;
   }
 
@@ -261,12 +261,15 @@ Machine::Machine(
 
   int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
             totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(false), sockets(),
+            availableCores(np), availableThreads(np), initialized(true), sockets(),
             NVIDIA_device(), allocations()
 
   {
   Socket s(np);
   this->sockets.push_back(s);
+  
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
 
 
@@ -522,11 +525,16 @@ void Machine::setMemory(
   long long mem)
 
   {
-  long long per_socket = mem / this->sockets.size();
   this->totalMemory = mem;
 
-  for (unsigned int i = 0; i < this->sockets.size(); i++)
-    this->sockets[i].setMemory(per_socket);
+  // Protect against a race condition of initialization
+  if (this->sockets.size() > 0)
+    {
+    long long per_socket = mem / this->sockets.size();
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].setMemory(per_socket);
+    }
   }
 
 void Machine::insertNvidiaDevice(
@@ -677,7 +685,6 @@ int Machine::spread_place_pu(
   const char *hostname)
 
   {
-  int   rc;
   int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
   int   tasks_placed = 0;
@@ -941,8 +948,6 @@ int Machine::place_job(
     {
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    bool  change = false;
-    bool  not_placed = true;
     
     a.set_place_type(r.getPlacementType());
     

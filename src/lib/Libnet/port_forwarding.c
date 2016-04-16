@@ -16,7 +16,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 #include "port_forwarding.h"

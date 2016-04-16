@@ -40,7 +40,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
   return(0);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   return(NULL);
   }
@@ -55,10 +55,6 @@ int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, in
   return(0);
   }
 
-int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, struct attropl *aoplp, char *extend)
-  {
-  return(0);
-  }
 
 int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
@@ -70,7 +66,7 @@ int encode_DIS_PowerState(struct tcp_chan *chan, unsigned short powerState)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   if (return_addr == true)
     {
@@ -265,11 +261,6 @@ struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   }
 
 int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
-  {
-  return(0);
-  }
-
-int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   {
   return(0);
   }
@@ -539,3 +530,12 @@ void update_failure_counts(
   {
   }
 
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
+  {
+  return(0);
+  }
+
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
+  {
+  return(0);
+  }

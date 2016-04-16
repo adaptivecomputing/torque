@@ -30,6 +30,11 @@
 #include <drmaa_impl.h>
 #include <attrib.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -282,3 +287,6 @@ drmaa_replace(char *str, const char *placeholder, const char *value)
   }
 
 
+#ifdef __cplusplus
+  }
+#endif

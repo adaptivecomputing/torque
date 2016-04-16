@@ -104,12 +104,6 @@ START_TEST(test_string_constructor)
   }
 END_TEST
 
-START_TEST(test_get_task_stats)
-  {
-  }
-END_TEST
-
-
 START_TEST(test_get_set_values)
   {
   req r;

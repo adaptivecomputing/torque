@@ -755,7 +755,7 @@ int queue_job_on_mom(
   char           *pc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pc = PBSD_queuejob(con, my_err, job_id, job_destin, pqjatr, NULL)) == NULL)
+  if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
     if (*my_err == PBSE_EXPIRED)
       {
@@ -798,7 +798,7 @@ int send_job_script_if_needed(
   {
   if (need_to_send_job_script == true)
     {
-    if (PBSD_jscript(con, (char *)script_name, job_id) != PBSE_NONE)
+    if (PBSD_jscript(con, (char *)script_name, (const char *)job_id) != PBSE_NONE)
       return(LOCUTION_RETRY);
     }
 

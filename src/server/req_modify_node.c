@@ -182,11 +182,14 @@ int mgr_modify_node(
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
   pbs_attribute   *pnew;
+  long             dont_update_nodes = FALSE;
 
   if (plist == NULL)
     {
     return(0);  /* nothing to do, return success */
     }
+  
+  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
 
   /* Get heap space for a temporary node-pbs_attribute array and use the
    * various "node-attribute action" functions defined in the file
@@ -213,7 +216,15 @@ int mgr_modify_node(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist,
+                                 unused,
+                                 new_attr,
+                                 pdef,
+                                 limit,
+                                 -1,
+                                 privil,
+                                 bad,
+                                 dont_update_nodes)) != 0)
     {
     attr_atomic_kill(new_attr, pdef, limit);
 

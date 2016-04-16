@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pwd.h> /* gid_t, uid_t */
+#include <pbs_config.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "list_link.h" /* tlist_head, list_link */
@@ -38,12 +39,43 @@ int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
 pthread_mutex_t *delete_job_files_mutex;
 
+#ifdef ENABLE_PMIX
+char  mom_alias[PBS_MAXHOSTNAME + 1];
+
+char *get_job_envvar(
+
+  job  *pjob,     /* I */
+  const char *variable) /* I */
+
+  {
+  return(NULL);
+  }
+
+int TTmpDirName(
+
+  job  *pjob,   /* I */
+  char *tmpdir, /* O */
+  int   tmpdir_size)
+
+  {
+  return(0);
+  }
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  }
+#endif
+
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);
@@ -79,6 +111,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 
 void *get_next(list_link pl, char *file, int line)
   {
+  return(NULL);
   }
 
 void nodes_free(job *pj)

@@ -1075,10 +1075,10 @@ bool injob(
     }
 
   /* Next, check the job's tasks to see if they match the session id */
-  for (task *ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (job_sid_of_pid == ptask->ti_qs.ti_sid)
       return(true);
     }
@@ -3906,7 +3906,6 @@ const char *sessions(
 #ifdef NUMA_SUPPORT
   char               mom_check_name[PBS_MAXSERVERNAME];
   job               *pjob;
-  task              *ptask;
 #else
   proc_stat_t       *ps;
   struct pidl       *sids  = NULL, *sl = NULL, *sp;
@@ -3950,10 +3949,10 @@ const char *sessions(
 
     /* Show all tasks registered for this job */
 
-    for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-         ptask != NULL;
-         ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
+      task *ptask = pjob->ji_tasks->at(i);
+
       if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
@@ -3975,7 +3974,7 @@ const char *sessions(
       s += strlen(s);
       nsids++;
 
-      } /* END for(ptask) */
+      } /* END for each task */
 
     } /* END for(pjob) */
 
@@ -4828,8 +4827,6 @@ void scan_non_child_tasks(void)
     {
     pJob = *iter;
 
-    task *pTask;
-
     long job_start_time = 0;
     long job_session_id = 0;
     long session_start_time = 0;
@@ -4849,10 +4846,10 @@ void scan_non_child_tasks(void)
       session_start_time = (long)ps->start_time;
       }
 
-    for (pTask = (task *)(GET_NEXT(pJob->ji_tasks));
-        pTask != NULL;
-         pTask = (task *)(GET_NEXT(pTask->ti_jobtask)))
+    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
+      task *pTask = pJob->ji_tasks->at(i);
+
 #ifdef PENABLE_LINUX26_CPUSETS
       struct pidl   *pids = NULL;
       struct pidl   *pp;
@@ -4866,9 +4863,10 @@ void scan_non_child_tasks(void)
        * Check for tasks that were exiting when mom went down, set back to
        * running so we can reprocess them and send the obit
        */
-      if ((first_time) && (pTask->ti_qs.ti_sid != 0) &&
-         ((pTask->ti_qs.ti_status == TI_STATE_EXITED) ||
-         (pTask->ti_qs.ti_status == TI_STATE_DEAD)))
+      if ((first_time) &&
+          (pTask->ti_qs.ti_sid != 0) &&
+          ((pTask->ti_qs.ti_status == TI_STATE_EXITED) ||
+           (pTask->ti_qs.ti_status == TI_STATE_DEAD)))
         {
 
         if (LOGLEVEL >= 7)
@@ -4879,6 +4877,7 @@ void scan_non_child_tasks(void)
 
           log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
           }
+
         pTask->ti_qs.ti_status = TI_STATE_RUNNING;
         }
 

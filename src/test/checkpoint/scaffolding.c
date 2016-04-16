@@ -109,6 +109,12 @@ int decode_str(pbs_attribute *patr, const char *name, const char *rescn, const c
  exit(1);
  }
 
+int pbs_rlsjob_err(int c, const char *jobid, const char *holdtype, char *extend, int *local_error)
+ {
+ return(0);
+ }
+
+
 int pbs_rlsjob(int c, char *jobid, char *holdtype, char *extend)
  {
  fprintf(stderr, "The call to pbs_rlsjob needs to be mocked!!\n");

@@ -7,7 +7,6 @@
 
 #include "pbs_error.h"
 
-int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);
 extern int flush_rc;
 extern int extend_rc;
 extern struct connect_handle connection[];
@@ -26,8 +25,8 @@ void initialize_connections()
 
 START_TEST(test_PBSD_queuejob)
   {
-  fail_unless(PBSD_queuejob(-1, NULL, NULL, NULL, NULL, NULL) == NULL);
-  fail_unless(PBSD_queuejob(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL, NULL, NULL) == NULL);
+  fail_unless(PBSD_queuejob(-1, NULL, "", "", NULL, NULL) == NULL);
+  fail_unless(PBSD_queuejob(PBS_NET_MAX_CONNECTIONS, NULL, "", "", NULL, NULL) == NULL);
 
   }
 END_TEST
@@ -108,8 +107,8 @@ END_TEST
 
 START_TEST(test_PBSD_jscript)
   {
-  fail_unless(PBSD_jscript(-1, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript(-1, "", "") == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, "", "") == PBSE_IVALREQ);
   }
 END_TEST
 

@@ -103,6 +103,7 @@
 #include "machine.hpp"
 #endif
 #include "runjob_help.hpp"
+#include "attribute.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -326,6 +327,7 @@ public:
   int tmp_unlock_node(const char *method_name, const char *msg, int logging);
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
+  int encode_properties(tlist_head *);
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
   };
@@ -596,6 +598,7 @@ void             effective_node_delete(pbsnode **);
 void             free_prop_list(struct prop*);
 
 void             reinitialize_node_iterator(node_iterator *);
+int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
 
 #ifdef BATCH_REQUEST_H 
 void             setup_notification(char *);
@@ -605,7 +608,6 @@ void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
 int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
-int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
@@ -613,7 +615,6 @@ node_iterator   *get_node_iterator();
 #endif /* BATCH_REQUEST_H */
 
 struct prop     *init_prop(const char *pname);
-int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, int internal_job_id);
 void            *sync_node_jobs(void *vp);

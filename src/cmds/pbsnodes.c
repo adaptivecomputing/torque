@@ -116,7 +116,7 @@
 #include        "mcom.h"
 #include        "cmds.h"
 #include "libcmds.h" /* TShowAbout_exit */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_helper.h"
 
 #define LIST 1
@@ -447,7 +447,7 @@ static int marknode(
 
   {
   struct attropl  *new_attr = NULL;
-  int             rc;
+  int             rc = PBSE_NONE;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
   if ( new_attr == NULL && !quiet )

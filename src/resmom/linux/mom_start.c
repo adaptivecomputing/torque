@@ -99,6 +99,7 @@
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "mom_config.h"
+#include "pmix_operation.hpp"
 
 /* Global Variables */
 
@@ -221,15 +222,12 @@ void scan_for_terminated(void) /* linux */
   int           exiteval = 0;
   pid_t         pid;
   job          *pjob = NULL;
-  task         *ptask = NULL;
   int           statloc;
   unsigned int  momport = 0;
 
 #ifdef USESAVEDRESOURCES
   int           update_stats = TRUE;
 #endif /* USESAVEDRESOURCES */
-
-  int           tcount;
 
   if (LOGLEVEL >= 9)
     {
@@ -255,15 +253,15 @@ void scan_for_terminated(void) /* linux */
         continue;
 
 #ifdef USESAVEDRESOURCES
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
       /*
        ** check task with associated process id to see if we are recovering
        ** after a mom restart where process completed while we were gone
         */
       
-      while (ptask != NULL)
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task *ptask = pjob->ji_tasks->at(i);
+
         if (ptask->ti_flags & TI_FLAGS_RECOVERY)
           {
           if (LOGLEVEL >= 7)
@@ -278,9 +276,7 @@ void scan_for_terminated(void) /* linux */
           break;
           }
 
-        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-        
-        }  /* END while (ptask) */
+        }  // END for each task
       
       if (update_stats)
         {
@@ -301,6 +297,7 @@ void scan_for_terminated(void) /* linux */
   while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0)
     {
     std::list<job *>::reverse_iterator iter;
+    task *matching_task = NULL;
 
     if (LOGLEVEL >= 8)
       {
@@ -344,47 +341,37 @@ void scan_for_terminated(void) /* linux */
           }
         }
 
-      /* look for task */
-
-      ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
       /* locate task with associated process id */
-
-      tcount = 0;
-
-      while (ptask != NULL)
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task *ptask = pjob->ji_tasks->at(i);
+
         if ((ptask->ti_qs.ti_sid == pid) &&
             (ptask->ti_qs.ti_status != TI_STATE_EXITED))
           {
+          matching_task = ptask;
+
           if (LOGLEVEL >= 7)
             {
             snprintf(log_buffer, sizeof(log_buffer),
-              "Exiting child matches job task %d for pid=%d",
-              tcount,
+              "Exiting child matches job task %u for pid=%d",
+              i,
               pid);
 
             log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
             }
 
+          // If this is the top level task then mark the job done.
+          if (ptask->ti_qs.ti_parenttask == TM_NULL_TASK)
+            pjob->ji_stats_done = true;
+
           break;
           }
+        }  // END for each task
 
-        ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-
-        tcount++;
-        }  /* END while (ptask) */
-
-      // make sure the task is the top level task for the job to mark the job done
-      if ((ptask != NULL) &&
-          (ptask->ti_qs.ti_parenttask == TM_NULL_TASK))
-        {
-        /* pid match located - break out of job loop */
-        pjob->ji_stats_done = true;
-
+      // If we've found the match, break out of the loop.
+      if (matching_task != NULL)
         break;
-        }
-
       }  /* END while (pjob != NULL) */
 
     if (WIFEXITED(statloc))
@@ -449,7 +436,7 @@ void scan_for_terminated(void) /* linux */
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */
 
-    if (ptask == NULL)
+    if (matching_task == NULL)
       continue;
 
     /* what happens if mom PID is reaped before subtask? */
@@ -459,27 +446,32 @@ void scan_for_terminated(void) /* linux */
       sprintf(log_buffer, "pid %d harvested for job %s, task %d, exitcode=%d",
               pid,
               pjob->ji_qs.ji_jobid,
-              ptask->ti_qs.ti_task,
+              matching_task->ti_qs.ti_task,
               exiteval);
 
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
+              
+#ifdef ENABLE_PMIX
+      check_and_act_on_obit(pjob, matching_task->ti_qs.ti_task);
+#endif
+
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
-    kill_task(pjob, ptask, SIGKILL, 0);
+    kill_task(pjob, matching_task, SIGKILL, 0);
 
-    ptask->ti_qs.ti_exitstat = exiteval;
+    matching_task->ti_qs.ti_exitstat = exiteval;
 
-    ptask->ti_qs.ti_status   = TI_STATE_EXITED;
+    matching_task->ti_qs.ti_status   = TI_STATE_EXITED;
 
-    task_save(ptask);
+    task_save(matching_task);
 
     sprintf(log_buffer, "%s: job %s task %d terminated, sid=%d",
       __func__,
       pjob->ji_qs.ji_jobid,
-      ptask->ti_qs.ti_task,
-      ptask->ti_qs.ti_sid);
+      matching_task->ti_qs.ti_task,
+      matching_task->ti_qs.ti_sid);
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 

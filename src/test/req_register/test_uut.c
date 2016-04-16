@@ -12,10 +12,10 @@
 
 int check_dependency_job(char *jobid, batch_request *preq, job **job_ptr);
 void clear_depend(struct depend *pd, int type, int exist);
-struct depend *find_depend(int type, pbs_attribute *pattr);
-struct depend *make_depend(int type, pbs_attribute *pattr);
-struct depend_job *make_dependjob(struct depend *pdep, char *jobid, char *host);
-struct depend_job *find_dependjob(struct depend *pdep, char *name);
+depend *find_depend(int type, pbs_attribute *pattr);
+depend *make_depend(int type, pbs_attribute *pattr);
+depend_job *make_dependjob(struct depend *pdep, const char *jobid, const char *host);
+depend_job *find_dependjob(struct depend *pdep, const char *name);
 int register_sync(struct depend *pdep, char *child, char *host, long cost);
 int register_dep(pbs_attribute *pattr, batch_request *preq, int type, int *made);
 int unregister_dep(pbs_attribute *pattr, batch_request *preq);
@@ -24,7 +24,7 @@ void free_depend(pbs_attribute *pattr);
 int build_depend(pbs_attribute *pattr, const char *value);
 void fast_strcat(char **Dest, const char *Src);
 int dup_depend(pbs_attribute *pattr, struct depend *pd);
-void cat_jobsvr(char **Dest, char *Src);
+void cat_jobsvr(char **Dest, const char *Src);
 int decode_depend(pbs_attribute *pattr, const char *name, const char *rescn, const char *val, int perm);
 int encode_depend(pbs_attribute *pattr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
@@ -48,6 +48,7 @@ extern int is_attr_set;
 
 char          *job1 = (char *)"1.napali";
 char          *job2 = (char *)"2.napali";
+const char    *job3 = "3.napali";
 char          *host = (char *)"napali";
 
 
@@ -177,15 +178,16 @@ START_TEST(clear_depend_test)
   fail_unless(pd.dp_released == 0, "attr not set correctly");
   
   i = 1;
-  memset(&pd, 0, sizeof(pd));
+  depend pd2;
+  clear_depend(&pd2, 0, 0);
 
-  make_dependjob(&pd, job1, host);
-  make_dependjob(&pd, job2, host);
-  clear_depend(&pd, 0, 1);
-  fail_unless(pd.dp_type == 0, "type not set");
-  fail_unless(pd.dp_numexp == 0, "attr not set correctly");
-  fail_unless(pd.dp_numreg == 0, "attr not set correctly");
-  fail_unless(pd.dp_released == 0, "attr not set correctly");
+  make_dependjob(&pd2, job1, host);
+  make_dependjob(&pd2, job2, host);
+  clear_depend(&pd2, 0, 1);
+  fail_unless(pd2.dp_type == 0, "type not set");
+  fail_unless(pd2.dp_numexp == 0, "attr not set correctly");
+  fail_unless(pd2.dp_numreg == 0, "attr not set correctly");
+  fail_unless(pd2.dp_released == 0, "attr not set correctly");
   }
 END_TEST
 
@@ -247,8 +249,8 @@ START_TEST(make_dependjob_test)
   fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
   fail_unless(d1->dc_cost == 0, "bad cost");
   fail_unless(d1->dc_state == 0, "bad state");
-  fail_unless(strcmp(d1->dc_child, job1) == 0, "bad job id1");
-  fail_unless(strcmp(d2->dc_child, job2) == 0, "bad job id2");
+  fail_unless(d1->dc_child == job1, "bad job id1");
+  fail_unless(d2->dc_child == job2, "bad job id2");
   }
 END_TEST
 
@@ -662,9 +664,11 @@ START_TEST(set_depend_hold_test)
   job            pjob2;
   struct depend *pdep;
  
-  memset(&pjob, 0, sizeof(pjob));
+  strcpy(pjob.ji_qs.ji_jobid, job1);
+  strcpy(pjob2.ji_qs.ji_jobid, job3);
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
+  // Job 2 will be complete with an exit status of 0
   pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pattr);
   make_dependjob(pdep, job2, host);
 
@@ -672,11 +676,11 @@ START_TEST(set_depend_hold_test)
   fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
   fail_unless(pjob.ji_qs.ji_state == JOB_STATE_HELD);
   
-  memset(&pjob2, 0, sizeof(pjob2));
   pjob2.ji_qs.ji_substate = JOB_SUBSTATE_DEPNHOLD;
   pattr = &pjob2.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(JOB_DEPEND_TYPE_AFTEROK, pattr);
+  // Job 2 will be complete with an exit status of 0
   make_dependjob(pdep, job2, host);
 
   set_depend_hold(&pjob2, pattr);
@@ -731,10 +735,10 @@ START_TEST(remove_after_any_test)
   pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
   pj = find_dependjob(pdep,pTJob->ji_qs.ji_jobid);
   fail_unless((pj != NULL),"Dependency not found.");
-  fail_unless(!strcmp(pj->dc_child,pTJob->ji_qs.ji_jobid),"Wrong job found.");
+  fail_unless(pj->dc_child == pTJob->ji_qs.ji_jobid, "Wrong job found.");
   pj = find_dependjob(pdep,pOJob->ji_qs.ji_jobid);
   fail_unless((pj != NULL),"Wrong dependency deleted.");
-  fail_unless(!strcmp(pj->dc_child,pOJob->ji_qs.ji_jobid),"Wrong job found.");
+  fail_unless(pj->dc_child == pOJob->ji_qs.ji_jobid,"Wrong job found.");
 
   pGlobalJob = pJob;
 
@@ -748,7 +752,7 @@ START_TEST(remove_after_any_test)
   fail_unless((pj == NULL),"Dependency not deleted.");
   pj = find_dependjob(pdep,pOJob->ji_qs.ji_jobid);
   fail_unless((pj != NULL),"Wrong dependency deleted.");
-  fail_unless(!strcmp(pj->dc_child,pOJob->ji_qs.ji_jobid),"Wrong job found.");
+  fail_unless(pj->dc_child == pOJob->ji_qs.ji_jobid, "Wrong job found.");
 
   pGlobalJob = pJob;
 

@@ -18,6 +18,7 @@
 #include "log.h"
 #include "server.h"
 #include "array.h"
+#include "mail_throttler.hpp"
 
 /* Global Data */
 
@@ -39,7 +40,7 @@ void svr_format_job(
 
   {
   int   mailpoint = mi->mail_point;
-  char *text = mi->text;
+  const char *text = mi->text.c_str();
   const char *p;
   char *stdmessage = NULL;
   char *reason = NULL;
@@ -156,9 +157,9 @@ void svr_format_job(
 
         case 'h':  /* host */
 
-          if (mi->exec_host != NULL)
+          if (mi->exec_host.size() != 0)
             {
-            fprintf(fh, "%s", mi->exec_host);
+            fprintf(fh, "%s", mi->exec_host.c_str());
             }
           p += 2;
 
@@ -166,15 +167,15 @@ void svr_format_job(
 
         case 'i':  /* jobId */
 
-          fprintf(fh, "%s", mi->jobid);
+          fprintf(fh, "%s", mi->jobid.c_str());
           p += 2;
 
           break;
 
         case 'j':  /* jobname */
 
-          if (mi->jobname != NULL)
-            fprintf(fh, "%s", mi->jobname);
+          if (mi->jobname.size() != 0)
+            fprintf(fh, "%s", mi->jobname.c_str());
 
           p += 2;
 
@@ -182,8 +183,8 @@ void svr_format_job(
 
         case 'k':  /* error File */
 
-          if (mi->errFile != NULL)
-            fprintf(fh, "%s", mi->errFile);
+          if (mi->errFile.size() != 0)
+            fprintf(fh, "%s", mi->errFile.c_str());
 
           p += 2;
 
@@ -192,8 +193,8 @@ void svr_format_job(
 
         case 'l':  /* output File */
 
-          if (mi->outFile != NULL)
-            fprintf(fh, "%s", mi->outFile);
+          if (mi->outFile.size() != 0)
+            fprintf(fh, "%s", mi->outFile.c_str());
 
           p += 2;
 

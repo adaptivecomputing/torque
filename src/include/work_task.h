@@ -176,7 +176,7 @@ int        insert_timed_task(all_tasks *, time_t task_time, work_task *);
 
 
 struct batch_request;
-int issue_to_svr(char *server_name, batch_request **preq, void (*f)(struct work_task *));
+int issue_to_svr(const char *server_name, batch_request **preq, void (*f)(struct work_task *));
 
 
 #define TASKS_TO_REMOVE       1000

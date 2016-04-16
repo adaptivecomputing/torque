@@ -1,3 +1,4 @@
+#include <pbs_config.h>
 #include <stdio.h>
 
 #include "pbs_nodes.h"
@@ -8,6 +9,9 @@
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 
 #define MSG_LEN_LONG 160
+
+void add_to_property_list(std::string &, const char *);
+int record_node_property_list(std::string const &, tlist_head *);
 
 extern AvlTree          ipaddrs;
 
@@ -30,7 +34,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                      num_node_boards(0), node_boards(NULL), numa_str(),
                      gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
-                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                     nd_is_alps_login(0), nd_ms_jobs(NULL), alps_subnodes(NULL),
                      max_subnode_nppn(0), nd_power_state(0),
                      nd_power_state_change_time(0), nd_acl(NULL),
                      nd_requestid(), nd_tmp_unlock_count(0)
@@ -45,6 +49,9 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
                                           //the node to be used until an updated node
                                           //list has been send to all nodes.
     }
+  
+  memset(this->nd_ttl, 0, sizeof(this->nd_ttl));
+  memset(this->nd_mac_addr, 0, sizeof(this->nd_mac_addr));
 
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END empty constructor
@@ -75,7 +82,7 @@ pbsnode::pbsnode(
                                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                                      num_node_boards(0), node_boards(NULL), numa_str(),
                                      gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
-                                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                                     nd_is_alps_login(0), nd_ms_jobs(NULL), alps_subnodes(NULL),
                                      max_subnode_nppn(0), nd_power_state(0),
                                      nd_power_state_change_time(0), nd_acl(NULL),
                                      nd_requestid(), nd_tmp_unlock_count(0)
@@ -113,6 +120,9 @@ pbsnode::pbsnode(
       memcpy(&this->nd_sock_addr,pAddrInfo->ai_addr,sizeof(struct sockaddr_in));
     }
 
+  memset(this->nd_ttl, 0, sizeof(this->nd_ttl));
+  memset(this->nd_mac_addr, 0, sizeof(this->nd_mac_addr));
+
   pthread_mutex_init(&this->nd_mutex,NULL);
   } // END constructor
 
@@ -141,6 +151,10 @@ void pbsnode::copy_gpu_subnodes(
 
 
 
+/*
+ * = operator()
+ */
+
 pbsnode &pbsnode::operator =(
 
   const pbsnode &other)
@@ -152,8 +166,13 @@ pbsnode &pbsnode::operator =(
   this->nd_properties = other.nd_properties;
   this->nd_proximal_failures = other.nd_proximal_failures;
   this->nd_consecutive_successes = other.nd_consecutive_successes;
+  
+  free_arst_value(this->nd_prop);
   this->nd_prop = copy_arst(other.nd_prop);
+
+  free_arst_value(this->nd_status);
   this->nd_status = copy_arst(other.nd_status);
+
   this->nd_note = other.nd_note;
   this->nd_addrs = other.nd_addrs;
 
@@ -182,9 +201,14 @@ pbsnode &pbsnode::operator =(
   this->nd_ngpus_free = other.nd_ngpus_free;
   this->nd_ngpus_needed = other.nd_ngpus_needed;
   this->nd_ngpus_to_be_used = other.nd_ngpus_to_be_used;
+
+  free_arst_value(this->nd_gpustatus);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
+
   this->nd_ngpustatus = other.nd_ngpustatus;
   this->nd_nmics = other.nd_nmics;
+
+  free_arst_value(this->nd_micstatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
   for (unsigned int i = 0; i < other.nd_micjobids.size(); i++)
@@ -206,15 +230,21 @@ pbsnode &pbsnode::operator =(
   this->max_subnode_nppn = other.max_subnode_nppn;
   this->nd_power_state = other.nd_power_state;
   this->nd_power_state_change_time = other.nd_power_state_change_time;
+
+  free_arst_value(this->nd_acl);
   this->nd_acl = copy_arst(other.nd_acl);
+
   this->nd_requestid = other.nd_requestid;
   this->nd_tmp_unlock_count = other.nd_tmp_unlock_count;
 #ifdef PENABLE_LINUX_CGROUPS
   this->nd_layout = other.nd_layout;
 #endif
 
+  memcpy(this->nd_ttl, other.nd_ttl, sizeof(this->nd_ttl));
+  memcpy(this->nd_mac_addr, other.nd_mac_addr, sizeof(this->nd_mac_addr));
+
   return(*this);
-  }
+  } // END = operator()
 
 
 
@@ -264,11 +294,15 @@ pbsnode::pbsnode(
   this->nd_status = copy_arst(other.nd_status);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
+
   this->node_boards = other.node_boards;
   this->alps_subnodes = other.alps_subnodes;
+
   this->nd_acl = copy_arst(other.nd_acl);
 
   memcpy(&this->nd_sock_addr, &other.nd_sock_addr, sizeof(this->nd_sock_addr));
+  memcpy(this->nd_ttl, other.nd_ttl, sizeof(this->nd_ttl));
+  memcpy(this->nd_mac_addr, other.nd_mac_addr, sizeof(this->nd_mac_addr));
   this->copy_gpu_subnodes(other);
   }
 
@@ -434,6 +468,29 @@ bool pbsnode::hasprop(
   }  /* END hasprop() */
 
 
+int pbsnode::encode_properties(tlist_head *phead)
+
+  {
+  std::string prop_str = "";
+
+  if (phead == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  // build property string
+  for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      add_to_property_list(prop_str, this->nd_properties[i].c_str());
+    }
+
+  // add it to the list
+  return(record_node_property_list(prop_str, phead));
+  } /* END encode_properties() */
+
 
 void pbsnode::update_properties()
 
@@ -453,7 +510,6 @@ void pbsnode::update_properties()
   /* now add in name as last prop */
   this->nd_properties.push_back(this->nd_name);
   } // END update_prop_list()
-
 
 
 void pbsnode::change_name(
@@ -542,13 +598,17 @@ int pbsnode::copy_properties(
   {
   if (dest == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destanation pointer input");
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destination pointer input");
     return(PBSE_BAD_PARAMETER);
     }
 
   /* copy features/properties */
   for (unsigned int i = 0; i < this->nd_properties.size(); i++)
-    dest->nd_properties.push_back(this->nd_properties[i]);
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      dest->nd_properties.push_back(this->nd_properties[i]);
+    }
 
   return(PBSE_NONE);
   } /* END copy_properties() */
