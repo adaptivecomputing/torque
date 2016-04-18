@@ -495,6 +495,29 @@ job *job_alloc(void)
 
 
 
+#ifdef ENABLE_PMIX
+void deregister_jobs_nspace(
+
+  job *pj)
+
+  {
+  std::string nspace(pj->ji_qs.ji_jobid);
+  size_t      pos = nspace.find(".");
+
+  if (pos != std::string::npos)
+    nspace.erase(pos);
+
+  PMIx_server_deregister_nspace(nspace.c_str());
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "Deregistered the PMIx namespace %s for job %s",
+      nspace.c_str(), pj->ji_qs.ji_jobid);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
+  } // END deregister_jobs_nspace()
+#endif
+
 
 
 /*
@@ -517,6 +540,10 @@ void mom_job_free(
                pj->ji_qs.ji_jobid,
                log_buffer);
     }
+
+#ifdef ENABLE_PMIX
+  deregister_jobs_nspace(pj);
+#endif
 
   /* remove any calloc working attribute space */
 
@@ -1115,7 +1142,8 @@ uint32_t local_arch = 0xFFFFFFFF;
 
 void register_jobs_nspace(
 
-  job *pjob)
+  job        *pjob,
+  pjobexec_t *TJE)
 
   {
   pmix_info_t      *pmi_array;
@@ -1125,6 +1153,8 @@ void register_jobs_nspace(
   int               attr_index;
   std::vector<int>  ranks;
   std::string       node_list;
+  pmix_status_t     rc;
+  std::string       pmix_jobid(pjob->ji_qs.ji_jobid);
  
   // Get some needed info about ranks / local execution slots 
   for (int i = 0; i < pjob->ji_numvnod; i++)
@@ -1269,6 +1299,13 @@ void register_jobs_nspace(
 
   // top level directory for job
   char *init_dir = get_job_envvar(pjob, "PBS_O_INITDIR");
+
+  if (init_dir == NULL)
+    {
+    struct passwd *pwdp = (struct passwd *)TJE->pwdp;
+    init_dir = pwdp->pw_dir;
+    }
+
   attr_index++;
   strcpy(pmi_array[attr_index].key, PMIX_NSDIR);
   pmi_array[attr_index].value.type = PMIX_STRING;
@@ -1284,12 +1321,62 @@ void register_jobs_nspace(
   else
     pmi_array[attr_index].value.data.string = strdup(init_dir);
 
-  PMIx_server_register_nspace(pjob->ji_qs.ji_jobid,
+  size_t pos = pmix_jobid.find(".");
+  if (pos != std::string::npos)
+    pmix_jobid.erase(pos);
+
+  if ((rc = PMIx_server_register_nspace(pmix_jobid.c_str(),
                               es,
                               pmi_array,
                               pmix_info_count,
                               free_info_array,
-                              pmi_array);
+                              pmi_array)) != PMIX_SUCCESS)
+    {
+    /* Uncomment this once the bug in PMIx is fixed
+     * snprintf(log_buffer, sizeof(log_buffer),
+      "Failed to register the namespace for %s with PMIx: %s",
+      pjob->ji_qs.ji_jobid,
+      PMIx_Error_string(rc));
+    log_err(-1, __func__, log_buffer);*/
+    }
+  else 
+    {
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully registered a PMIx namespace '%s' for job '%s'",
+        pmix_jobid.c_str(),
+        pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
+    pmix_proc_t p;
+    strcpy(p.nspace, pmix_jobid.c_str());
+    p.rank = 0;
+
+    rc = PMIx_server_register_client(&p,
+                                     pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+                                     pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+                                     NULL, NULL, NULL);
+
+    if (rc != PMIX_SUCCESS)
+      {
+      /* Uncomment once the PMIx bug is fixed
+       * snprintf(log_buffer, sizeof(log_buffer),
+        "Failed to the client with the namespace for %s with PMIx: %s",
+        pjob->ji_qs.ji_jobid,
+        PMIx_Error_string(rc));
+      log_err(-1, __func__, log_buffer);*/
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully registered the client with PMIx namespace '%s' for job '%s': uid %d, gid %d",
+        pmix_jobid.c_str(), pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+    }
   
   // Peer-level information - do we provide this at this time?
   // rank

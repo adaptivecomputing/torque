@@ -10,6 +10,9 @@
 
 #define MSG_LEN_LONG 160
 
+void add_to_property_list(std::string &, const char *);
+int record_node_property_list(std::string const &, tlist_head *);
+
 extern AvlTree          ipaddrs;
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
@@ -465,6 +468,29 @@ bool pbsnode::hasprop(
   }  /* END hasprop() */
 
 
+int pbsnode::encode_properties(tlist_head *phead)
+
+  {
+  std::string prop_str = "";
+
+  if (phead == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  // build property string
+  for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      add_to_property_list(prop_str, this->nd_properties[i].c_str());
+    }
+
+  // add it to the list
+  return(record_node_property_list(prop_str, phead));
+  } /* END encode_properties() */
+
 
 void pbsnode::update_properties()
 
@@ -484,7 +510,6 @@ void pbsnode::update_properties()
   /* now add in name as last prop */
   this->nd_properties.push_back(this->nd_name);
   } // END update_prop_list()
-
 
 
 void pbsnode::change_name(
@@ -573,13 +598,17 @@ int pbsnode::copy_properties(
   {
   if (dest == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destanation pointer input");
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destination pointer input");
     return(PBSE_BAD_PARAMETER);
     }
 
   /* copy features/properties */
   for (unsigned int i = 0; i < this->nd_properties.size(); i++)
-    dest->nd_properties.push_back(this->nd_properties[i]);
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      dest->nd_properties.push_back(this->nd_properties[i]);
+    }
 
   return(PBSE_NONE);
   } /* END copy_properties() */

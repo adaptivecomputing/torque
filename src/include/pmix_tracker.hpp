@@ -42,6 +42,8 @@ pmix_tracker *get_pmix_tracker(const char *jobint_string);
 void          register_pmix_tracker(pmix_tracker *pt);
 int           remove_pmix_tracker(pmix_tracker *pt);
 
+void          register_jobs_nspace(job *pjob, pjobexec_t *TJE);
+
 #endif // ENABLE_PMIX
 #endif // Header double include protection
 

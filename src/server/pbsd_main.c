@@ -1341,7 +1341,7 @@ void main_loop(void)
     }
 
 #ifdef PBS_VERSION
-  printf("pbs_server is up (svn version - %s, port %d)\n",
+  printf("pbs_server is up (git version - %s, port %d)\n",
       PBS_VERSION, pbs_server_port_dis);
 #else
   printf("pbs_server is up (version - %s, port - %d)\n",
