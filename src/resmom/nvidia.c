@@ -669,7 +669,7 @@ int setgpumode(
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
       break;
     case gpu_prohibited:
-      compute_mode = NVML_COMPUTEMODE_PROHIBITED;
+      return (PBSE_IVALREQ);
       break;
     case gpu_exclusive_process:
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_PROCESS;
