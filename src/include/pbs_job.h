@@ -136,7 +136,6 @@ typedef struct depend_job
   short dc_state; /* released / ready to run (syncct)  */
   long  dc_cost; /* cost of this child (syncct)   */
   char  dc_child[PBS_MAXSVRJOBID+1]; /* child (dependent) job  */
-  char  dc_svr[PBS_MAXSERVERNAME+1]; /* server owning job  */
   } depend_job;
 
 /*
@@ -165,7 +164,6 @@ typedef struct array_depend_job
   {
   /* in this case, the child is the job depending on the array */
   char dc_child[PBS_MAXSVRJOBID+1];
-  char dc_svr[PBS_MAXSERVERNAME+1];
   int  dc_num;
   } array_depend_job;
 

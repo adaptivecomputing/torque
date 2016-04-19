@@ -81,7 +81,6 @@ START_TEST(test_translate_dependency_to_string)
 
   memset(&dj, 0, sizeof(dj));
   strcpy(dj.dc_child, "1.napali");
-  strcpy(dj.dc_svr, "napali");
   
   memset(&dep, 0, sizeof(dep));
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
