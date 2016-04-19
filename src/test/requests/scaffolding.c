@@ -55,6 +55,12 @@ char log_buffer[LOG_BUF_SIZE];
 char checkpoint_run_exe_name[MAXPATHLEN + 1];
 std::list<job *>    alljobs_list;
 
+
+int destroy_alps_rc;
+int killed_a_job;
+int reply_acked;
+int req_rejected;
+
 void log_event(int event, int event_class, char *func_name, char *buf)
   {}
 
@@ -113,8 +119,7 @@ int reply_send_mom(struct batch_request *request)
 
 void reply_ack(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to reply_ack needs to be mocked!!\n");
-  exit(1);
+  reply_acked++;
   }
 
 int replace_checkpoint_path(char *path)
@@ -184,8 +189,7 @@ int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*mes
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
   {
-  fprintf(stderr, "The call to req_reject needs to be mocked!!\n");
-  exit(1);
+  req_rejected++;
   }
 
 int kill_task(job *pjob, struct task *task, int sig, int pg)
@@ -345,8 +349,8 @@ job *job_alloc(void)
 
 int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
-  fprintf(stderr, "The call to kill_job needs to be mocked!!\n");
-  exit(1);
+  killed_a_job++;
+  return(PBSE_NONE);
   }
 
 void reply_text(struct batch_request *preq, int code, const char *text)
@@ -374,7 +378,7 @@ int destroy_alps_reservation(
   int   retries)
 
   {
-  return(0);
+  return(destroy_alps_rc);
   }
 
 int setuid_ext(uid_t uid, int set_euid)
