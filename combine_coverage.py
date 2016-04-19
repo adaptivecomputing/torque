@@ -102,6 +102,7 @@ class CoverageFile:
     def get_filename(self):
         return self.filename
 
+# Get a list of our files so that we aren't reporting coverage for the STL
 def populate_file_set(start_path):
     for root, dirs, files in os.walk(start_path):
         for d in dirs:
