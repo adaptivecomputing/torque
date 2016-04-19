@@ -14,7 +14,7 @@ int check_dependency_job(char *jobid, batch_request *preq, job **job_ptr);
 void clear_depend(struct depend *pd, int type, int exist);
 depend *find_depend(int type, pbs_attribute *pattr);
 depend *make_depend(int type, pbs_attribute *pattr);
-depend_job *make_dependjob(struct depend *pdep, const char *jobid, const char *host);
+depend_job *make_dependjob(struct depend *pdep, const char *jobid);
 depend_job *find_dependjob(struct depend *pdep, const char *name);
 int register_sync(struct depend *pdep, char *child, char *host, long cost);
 int register_dep(pbs_attribute *pattr, batch_request *preq, int type, int *made);
@@ -82,7 +82,7 @@ START_TEST(remove_array_dependency_from_job_test)
 
   initialize_depend_attr(&pjob->ji_wattr[JOB_ATR_depend]);
   pdep = make_depend(JOB_DEPEND_TYPE_AFTEROKARRAY, &pjob->ji_wattr[JOB_ATR_depend]);
-  fail_unless((d1 = make_dependjob(pdep, job1, host)) != NULL, "didn't create dep 1");
+  fail_unless((d1 = make_dependjob(pdep, job1)) != NULL, "didn't create dep 1");
 
   array_dep.dp_type = JOB_DEPEND_TYPE_AFTEROKARRAY;
   fail_unless(remove_array_dependency_job_from_job(&array_dep, pjob, job1) == true);
@@ -181,8 +181,8 @@ START_TEST(clear_depend_test)
   depend pd2;
   clear_depend(&pd2, 0, 0);
 
-  make_dependjob(&pd2, job1, host);
-  make_dependjob(&pd2, job2, host);
+  make_dependjob(&pd2, job1);
+  make_dependjob(&pd2, job2);
   clear_depend(&pd2, 0, 1);
   fail_unless(pd2.dp_type == 0, "type not set");
   fail_unless(pd2.dp_numexp == 0, "attr not set correctly");
@@ -222,8 +222,8 @@ START_TEST(find_dependjob_test)
 
   memset(&pdep, 0, sizeof(pdep));
 
-  fail_unless((d1 = make_dependjob(&pdep, job1, host)) != NULL, "didn't create dep 1");
-  fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
+  fail_unless((d1 = make_dependjob(&pdep, job1)) != NULL, "didn't create dep 1");
+  fail_unless((d2 = make_dependjob(&pdep, job2)) != NULL, "didn't create dep 2");
   fail_unless(d1 == find_dependjob(&pdep, job1), "didn't find job1");
   fail_unless(d2 == find_dependjob(&pdep, job2), "didn't find job2");
   fail_unless(find_dependjob(&pdep, (char *)"bob") == NULL, "found bob?");
@@ -245,8 +245,8 @@ START_TEST(make_dependjob_test)
 
   memset(&pdep, 0, sizeof(pdep));
 
-  fail_unless((d1 = make_dependjob(&pdep, job1, host)) != NULL, "didn't create dep 1");
-  fail_unless((d2 = make_dependjob(&pdep, job2, host)) != NULL, "didn't create dep 2");
+  fail_unless((d1 = make_dependjob(&pdep, job1)) != NULL, "didn't create dep 1");
+  fail_unless((d2 = make_dependjob(&pdep, job2)) != NULL, "didn't create dep 2");
   fail_unless(d1->dc_cost == 0, "bad cost");
   fail_unless(d1->dc_state == 0, "bad state");
   fail_unless(d1->dc_child == job1, "bad job id1");
@@ -311,7 +311,7 @@ START_TEST(unregister_dep_test)
   fail_unless(unregister_dep(&pattr, &preq) == PBSE_IVALREQ, "didn't error on non-existent dep");
 
   pdep = make_depend(5, &pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
 
   fail_unless(unregister_dep(&pattr, &preq) == PBSE_NONE, "didn't unregister");
   }
@@ -335,9 +335,9 @@ START_TEST(free_depend_test)
   
   initialize_depend_attr(&pattr);
   pdep = make_depend(5, &pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   pdep = make_depend(6, &pattr);
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job2);
 
   free_depend(&pattr);
   fail_unless((pattr.at_flags & ATR_VFLAG_SET) == 0, "didn't free?");
@@ -386,8 +386,8 @@ START_TEST(dup_depend_test)
   initialize_depend_attr(&pattr);
   memset(&pdep, 0, sizeof(pdep));
 
-  make_dependjob(&pdep, job1, host);
-  make_dependjob(&pdep, job2, host);
+  make_dependjob(&pdep, job1);
+  make_dependjob(&pdep, job2);
   fail_unless(dup_depend(&pattr, &pdep) == PBSE_NONE, "didn't work");
   }
 END_TEST 
@@ -480,9 +480,9 @@ START_TEST(encode_depend_test)
   fail_unless(encode_depend(&pattr, NULL, NULL, NULL, 0, 0) == 0, "empty");
 
   pdep = make_depend(5, &pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   pdep = make_depend(6, &pattr);
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job2);
 
   fail_unless(encode_depend(&pattr, &phead, "depend", NULL, 0, 0) == 1, "encoding");
   }
@@ -501,9 +501,9 @@ START_TEST(set_depend_test)
   CLEAR_HEAD(phead);
 
   pdep = make_depend(5, &pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   pdep = make_depend(6, &pattr);
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job2);
 
   fail_unless(set_depend(&pa2, &pattr, INCR) == PBSE_IVALREQ, "INCR worked?");
   fail_unless(set_depend(&pa2, &pattr, SET) == PBSE_NONE, "fail set?");
@@ -522,8 +522,8 @@ START_TEST(unregister_sync_test)
   memset(&preq, 0, sizeof(preq));
   
   pdep = make_depend(JOB_DEPEND_TYPE_SYNCCT, &pattr);
-  make_dependjob(pdep, job1, host);
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job1);
+  make_dependjob(pdep, job2);
   pdep->dp_released = 1;
 
   fail_unless(unregister_sync(&pattr, &preq) == PBSE_IVALREQ, "bad name worked?");
@@ -543,7 +543,7 @@ START_TEST(depend_clrrdy_test)
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(JOB_DEPEND_TYPE_SYNCCT, pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   depend_clrrdy(&pjob);
   }
 END_TEST
@@ -568,7 +568,7 @@ START_TEST(register_before_dep_test)
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(1, pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   rc = register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK);
   snprintf(buf, sizeof(buf), "rc = %d", rc);
   fail_unless(rc == PBSE_NONE, "first, rc = %d", rc);
@@ -576,7 +576,7 @@ START_TEST(register_before_dep_test)
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(JOB_DEPEND_TYPE_ON, pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   fail_unless(register_before_dep(&preq, &pjob, 1) == PBSE_NONE, "second");
   }
 END_TEST
@@ -625,7 +625,7 @@ START_TEST(release_before_dependency_test)
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   pdep = make_depend(1, pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK);
 
   fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_NONE);
@@ -649,7 +649,7 @@ START_TEST(release_syncwith_dependency_test)
   fail_unless(release_syncwith_dependency(&preq, &pjob) == PBSE_NOSYNCMSTR);
 
   pdep = make_depend(JOB_DEPEND_TYPE_SYNCWITH, pattr);
-  make_dependjob(pdep, job1, host);
+  make_dependjob(pdep, job1);
   pdep->dp_released = 0;
   
   fail_unless(release_syncwith_dependency(&preq, &pjob) == PBSE_NONE);
@@ -670,7 +670,7 @@ START_TEST(set_depend_hold_test)
   initialize_depend_attr(pattr);
   // Job 2 will be complete with an exit status of 0
   pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pattr);
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job2);
 
   set_depend_hold(&pjob, pattr);
   fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
@@ -681,7 +681,7 @@ START_TEST(set_depend_hold_test)
   initialize_depend_attr(pattr);
   pdep = make_depend(JOB_DEPEND_TYPE_AFTEROK, pattr);
   // Job 2 will be complete with an exit status of 0
-  make_dependjob(pdep, job2, host);
+  make_dependjob(pdep, job2);
 
   set_depend_hold(&pjob2, pattr);
   fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
@@ -727,9 +727,9 @@ START_TEST(remove_after_any_test)
   pbs_attribute *pattr = &pJob->ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   struct depend *pdep = make_depend(JOB_DEPEND_TYPE_AFTERANY, pattr);
-  make_dependjob(pdep, pTJob->ji_qs.ji_jobid, (char *)"SomeHost");
+  make_dependjob(pdep, pTJob->ji_qs.ji_jobid);
 
-  make_dependjob(pdep, pOJob->ji_qs.ji_jobid, (char *)"SomeHost");
+  make_dependjob(pdep, pOJob->ji_qs.ji_jobid);
 
   pattr = &pJob->ji_wattr[JOB_ATR_depend];
   pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
