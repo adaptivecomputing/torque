@@ -80,7 +80,6 @@ START_TEST(test_translate_dependency_to_string)
   depend_job *dj = new depend_job();
 
   dj->dc_child = "1.napali";
-  dj->dc_svr = "napali";
   
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
   CLEAR_LINK(dep.dp_link);
