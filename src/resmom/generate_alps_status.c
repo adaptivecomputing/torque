@@ -349,12 +349,12 @@ int process_node(
   alps_node_info      ani;
   std::set<std::string>::iterator iter;
     
-  ani.index = "node=";
+  ani.node_header = "node=";
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
   if (attr_value != NULL)
     {
     node_id_string = attr_value;
-    ani.index += node_id_string;
+    ani.node_header += node_id_string;
     nid = strtol(attr_value, NULL, 10);
     free(attr_value);
     }
@@ -576,6 +576,10 @@ int process_node(
     ani.features = "feature_list=";
     ani.features += features.c_str();
     }
+
+  char node_index_buf[MAXLINE];
+  snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%lu", alps_nodes.size());
+  ani.node_index = node_index_buf;
 
   alps_nodes[nid] = ani;
 
@@ -908,7 +912,8 @@ void alps_node_info::add_to_status(
   std::vector<std::string> &status)
 
   {
-  status.push_back(this->index);
+  status.push_back(this->node_header);
+  status.push_back(this->node_index);
   status.push_back(this->availmem);
   status.push_back(this->state);
   status.push_back(this->os);

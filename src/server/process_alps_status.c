@@ -635,8 +635,6 @@ int process_alps_status(
   {
   const char    *ccu_p = NULL;
   char           *current_node_id = NULL;
-  char            node_index_buf[MAXLINE];
-  int             node_index = 0;
   struct pbsnode *parent;
   struct pbsnode *current = NULL;
   int             rc;
@@ -657,7 +655,7 @@ int process_alps_status(
     return(PBSE_NONE);
 
   /* loop over each string */
-  for(unsigned int i = 0; i < status_info.size(); i++)
+  for (unsigned int i = 0; i < status_info.size(); i++)
     {
     const char *str = status_info[i].c_str();
 
@@ -665,9 +663,6 @@ int process_alps_status(
       {
       if (i != 0)
         {
-        snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
-        decode_arst(&temp, NULL, NULL, node_index_buf, 0);
-        
         if (current != NULL)
           save_node_status(current, &temp);
         }
@@ -804,8 +799,6 @@ int process_alps_status(
 
   if (current != NULL)
     {
-    snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%d", node_index++);
-    decode_arst(&temp, NULL, NULL, node_index_buf, 0);
     save_node_status(current, &temp);
     unlock_node(current, __func__, NULL, LOGLEVEL);
     }
