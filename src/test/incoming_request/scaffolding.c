@@ -6,6 +6,7 @@
 
 int LOGLEVEL = 10;
 time_t pbs_tcp_timeout = 300;
+time_t pbs_incoming_tcp_timeout = 600;
 int    peek_count;
 bool   busy_pool = false;
 
