@@ -4198,7 +4198,7 @@ job *job_with_reservation_id(
 
 void req_delete_reservation(
     
-  batch_request *request)
+  struct batch_request *request)
 
   {
   char *rsv_id = request->rq_extend;
@@ -4207,24 +4207,18 @@ void req_delete_reservation(
 
   if (rsv_id != NULL)
     {
-    if ((pjob = job_with_reservation_id(rsv_id)) == NULL) 
+    if ((pjob=job_with_reservation_id(rsv_id)) == NULL) 
       {
       if ((rc = destroy_alps_reservation(rsv_id, apbasil_path, apbasil_protocol, 1)) != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer), "Couldn't release reservation id %s",
           rsv_id);
         log_err(-1, __func__, log_buffer);
-
-        // Usually when a release reservation command fails it's because there are straggling
-        // processes, so try to kill them.
-        kill_job(pjob, SIGKILL, __func__,
-                 "Unable to release ALPS reservation - attempt to clean up any remaining processes.");
         }
       }
     else
       {
-      snprintf(log_buffer, sizeof(log_buffer),
-        "Ignored release reservation request from server for reservation id %s because of job %s", 
+      snprintf(log_buffer, sizeof(log_buffer), "Ignored release reservation request from server for reservation id %s because of job %s", 
         rsv_id, pjob->ji_qs.ji_jobid);
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
