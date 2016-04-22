@@ -676,3 +676,57 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+
+int decode_dcgm_gpu_use(
+
+  pbs_attribute *patr,
+  const char    *name,
+  const char    *rescn,
+  const char    *val,
+  int            perm)
+
+  {
+  return(PBSE_NONE);
+  } 
+
+int set_dcgm_gpu_use(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+
+  {
+  return(PBSE_NONE);
+  }
+
+void free_dcgm_gpu_use(
+
+  pbs_attribute *patr)
+
+  {
+  return;
+  }
+
+int encode_dcgm_gpu_use(
+
+  pbs_attribute *attr,
+  tlist_head    *phead,
+  const char    *atname,
+  const char    *rsname,
+  int            mode,
+  int            perm)
+
+  {
+  return(PBSE_NONE);
+  }
+
+int comp_dcgm_gpu_use(
+
+  pbs_attribute *attr,
+  pbs_attribute *with)
+
+  {
+  return(0);
+  } // END comp_dcgm_gpu_use()
+

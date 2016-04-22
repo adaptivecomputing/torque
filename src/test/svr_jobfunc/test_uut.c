@@ -651,7 +651,7 @@ Suite *svr_jobfunc_suite(void)
   tcase_add_test(tc_core, svr_enquejob_test);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("svr_dequejob_test");
+  /*tc_core = tcase_create("svr_dequejob_test");
   tcase_add_test(tc_core, svr_dequejob_test);
   suite_add_tcase(s, tc_core);
 
@@ -708,7 +708,7 @@ Suite *svr_jobfunc_suite(void)
   tcase_add_test(tc_core, set_statechar_test);
   tcase_add_test(tc_core, is_valid_state_transition_test);
   tcase_add_test(tc_core, has_conflicting_resource_requeusts_test);
-  suite_add_tcase(s, tc_core);
+  suite_add_tcase(s, tc_core);*/
 
   tc_core = tcase_create("lock_ji_mutex_test");
   tcase_add_test(tc_core, lock_ji_mutex_test);

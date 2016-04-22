@@ -408,3 +408,49 @@ void translate_vector_to_range_string(std::string &out, const std::vector<int> &
 allocation::allocation() {}
 
 void allocation::initialize_from_string(const std::string &init) {}
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+int get_name_value_pair(
+
+  char **ptr,
+  std::string &valName,
+  std::string &value)
+
+  {
+  return(PBSE_NONE);
+  }
+
+

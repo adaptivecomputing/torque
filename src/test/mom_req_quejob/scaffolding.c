@@ -32,6 +32,8 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int PBSNodeCheckProlog = 0;
 char log_buffer[LOG_BUF_SIZE];
 int reject_job_submit = 0;
+bool use_nvidia_gpu = true;
+int  ForceServerUpdate;
 
 // sensing variables
 char prefix[PBS_JOBBASE+1];
@@ -225,3 +227,10 @@ void remove_from_job_list(job *pjob) {}
 
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
+
+void send_update_soon()
+
+  {
+  ForceServerUpdate = true;
+  } /* END send_update_soon() */
+

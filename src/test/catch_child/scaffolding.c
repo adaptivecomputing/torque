@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <sstream>
 #include <vector>
 #include <stdlib.h>
@@ -1403,3 +1404,15 @@ int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task
   return(0);
   }
 
+int encode_dcgm_gpu_use(
+
+  pbs_attribute *attr, 
+  tlist_head *phead, 
+  const char *atname,
+  const char *rsname, 
+  int mode, 
+  int perm)
+
+  {
+  return(PBSE_NONE);
+  }

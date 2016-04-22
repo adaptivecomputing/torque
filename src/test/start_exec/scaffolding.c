@@ -38,6 +38,7 @@ std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
 #define LDAP_RETRIES 5
 
+int  use_nvidia_gpu = TRUE;
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -1044,3 +1045,13 @@ req &complete_req::get_req(int i)
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libutils/allocation.cpp"
 
+int nvidia_dcgm_create_gpu_job_info(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+
+int setup_gpus_for_job(job *pjob)
+  {
+  return(PBSE_NONE);
+  }

@@ -112,8 +112,7 @@ int action_resc(pbs_attribute *pattr, void *pobject, int actmode)
 
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op)
   {
-  fprintf(stderr, "The call to set_unkn needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int comp_unkn(struct pbs_attribute *attr, struct pbs_attribute *with)

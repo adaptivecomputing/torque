@@ -101,6 +101,11 @@
 #include <arpa/inet.h>
 #endif
 
+#ifdef NVIDIA_DCGM
+#include <dcgm_agent.h>
+#include <dcgm_fields.h>
+#endif
+
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "log.h"
@@ -130,12 +135,19 @@
 #include "req.hpp"
 #include "complete_req.hpp"
 #include "trq_cgroups.h"
+#include "DCGM_job_gpu_stats.hpp"
 
 #define MAX_GPUS  32
 
 #ifdef NVML_API
 #include "nvml.h"
 #endif  /* NVML_API */
+
+#ifdef NVIDIA_DCGM
+extern dcgmHandle_t pDcgmHandle;
+extern unsigned int gpuIdList[];
+extern int          dcgm_gpu_count;
+#endif
 
 extern int    find_file(const char *, const char *);
 extern int    MOMNvidiaDriverVersion;
@@ -296,7 +308,7 @@ int init_nvidia_nvml(unsigned int &device_count)
     if (rc == NVML_SUCCESS)
       {
       if ((int)device_count > 0)
-        return (TRUE);
+        return (NVML_SUCCESS);
 
       sprintf(log_buffer,"No Nvidia gpus detected\n");
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
@@ -305,13 +317,13 @@ int init_nvidia_nvml(unsigned int &device_count)
 
       shut_nvidia_nvml();
 
-      return (FALSE);
+      return (rc);
       }
     }
 
   log_nvml_error (rc, NULL, __func__);
 
-  return (FALSE);
+  return (rc);
   }
 
 /*
@@ -2191,3 +2203,270 @@ int add_gpu_status(
 
   return(PBSE_NONE);
   } /* END add_gpu_status() */
+
+
+#ifdef NVIDIA_DCGM
+
+#define GROUP_SUFFIX "-grp"
+
+/* 
+ * nvidia_dcgm_create_gpu_job_group()
+ *
+ * This function creates a DCGM gpu group for a job
+ *
+ * @param  device_indices  -  A vector of all gpuids which will be in this group
+ * @param  pjob            -  job structure. Will used ji_qs.ji_jobid to name
+ *                            this group and set ji_dcgmGrpId.
+ *
+ */
+dcgmReturn_t nvidia_dcgm_create_gpu_job_group(
+
+  std::vector<unsigned int>& device_indices,
+  job                       *pjob)
+
+  {
+  dcgmReturn_t dcgm_rc;
+  std::string  group_name;
+
+  group_name = pjob->ji_qs.ji_jobid;
+	group_name.append(GROUP_SUFFIX);
+
+  dcgm_rc = dcgmGroupCreate(pDcgmHandle, DCGM_GROUP_EMPTY, (char *)group_name.c_str(), &pjob->ji_dcgmGrpId);
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "Failed to create group for job %s, %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    return(dcgm_rc);
+    }
+
+  for (std::vector<unsigned int>::iterator it = device_indices.begin(); it != device_indices.end(); it++)
+    {
+    dcgm_rc = dcgmGroupAddDevice(pDcgmHandle, pjob->ji_dcgmGrpId, *it);
+    if (dcgm_rc != DCGM_ST_OK)
+      {
+      sprintf(log_buffer, "Failed to add device %d to DCGM Group. %d", *it, dcgm_rc);
+	    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+			break;
+			}
+		}
+
+  if (dcgm_rc != DCGM_ST_OK)
+	  {
+		dcgmReturn_t local_rc;
+
+    /* Something didn't go right after we created the group. We will
+		 * now clean up the group before we go away */
+		local_rc = dcgmGroupDestroy(pDcgmHandle, pjob->ji_dcgmGrpId);
+		if (local_rc != DCGM_ST_OK)
+		  {
+			sprintf(log_buffer, "Failed to destroy group for job %s: %d", pjob->ji_qs.ji_jobid, local_rc);
+	    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+			}
+    }
+	dcgmGroupInfo_t  dcgmGroupData;
+
+ 
+  return(dcgm_rc);
+  }
+
+/*
+ * nvidia_dcgm_start_gpu_job_stats
+ *
+ * This starts the collection of job statistics for a DCGM GPU group.
+ * nvidia_dcgm_create_gpu_job_group must be called before this function 
+ * is called in order to get a group id which is stored in the job structure
+ * in the ji_dcgmGrpId element.
+ *
+ * @param pjob - job structure. For this call the ji_dcgmGrpId is used.
+ *
+ */
+
+dcgmReturn_t nvidia_dcgm_start_gpu_job_stats(
+
+  job *pjob)
+
+	{
+  dcgmReturn_t  dcgm_rc;
+  time_t t;
+
+  pjob->ji_dcgmGpuJobInfo.summary.startTime = time(&t);
+	dcgm_rc = dcgmJobStartStats(pDcgmHandle, pjob->ji_dcgmGrpId, pjob->ji_qs.ji_jobid);
+	if (dcgm_rc != DCGM_ST_OK)
+	  {
+		dcgmReturn_t local_rc;
+
+		sprintf(log_buffer, "Failed to start DCGM job statistics: %d", dcgm_rc);
+	  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
+    /* Something didn't go right after we created the group. We will
+		 * now clean up the group before we go away */
+		local_rc = dcgmGroupDestroy(pDcgmHandle, pjob->ji_dcgmGrpId);
+		if (local_rc != DCGM_ST_OK)
+		  {
+			sprintf(log_buffer, "Failed to destroy group for job %s: %d", pjob->ji_qs.ji_jobid, local_rc);
+	    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+			}
+	  }
+      
+  return(dcgm_rc);
+  }
+
+
+  /*
+   * nvidia_dcgm_create_gpu_job_info()
+   *
+   * Adds allocated gpus to a DCGM group and starts
+   * collection of job statistics.
+   *
+   * @param pjob - job structure which contains job information. 
+   *               The element ji_dcgmGrpId will be set with the
+   *               DCGM group id when successfully done.
+   *
+   */
+
+  int nvidia_dcgm_create_gpu_job_info(
+
+    job *pjob)
+
+    {
+    std::vector<unsigned int> device_indices;
+    char          *device_str;
+    dcgmReturn_t   rc;
+    int            index = JOB_ATR_exec_gpus;
+
+    /* Make sure we have a gpu request */
+    if (((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) == 0) ||
+        (pjob->ji_wattr[index].at_val.at_str == NULL))
+      {
+      /* We don't have any gpus. Just return */
+      return(PBSE_NONE);
+      }
+
+
+    /* We have a gpu request. Go find out which ones we are using */
+    device_str = pjob->ji_wattr[index].at_val.at_str;
+
+    device_indices.clear();
+    get_device_indices(device_str, device_indices, "-gpu");
+
+    rc = nvidia_dcgm_create_gpu_job_group(device_indices, pjob);
+    if (rc != DCGM_ST_OK)
+      {
+      return(PBSE_SYSTEM);
+      }
+
+    rc = nvidia_dcgm_start_gpu_job_stats(pjob);
+    if (rc != DCGM_ST_OK)
+      {
+      return(PBSE_SYSTEM);
+      }
+
+    return(PBSE_NONE);
+
+    }
+
+
+  /*
+   *  nvidia_dcgm_create_job_attr()
+   *
+   *  Allocate a DCGM_job_gpu_stats object and
+   *  initialize it to the dcgmGpuJobInfo. Set the 
+   *  job attr pointer to point to the new object.
+   *
+   *  @param pjob  -  job structure.
+   *
+   */
+
+  int nvidia_dcgm_create_job_attr(
+
+    job  *pjob)
+
+    {
+    int                  rc = PBSE_NONE;
+    DCGM_job_gpu_stats  *gpu_stats = new DCGM_job_gpu_stats;
+
+    if (gpu_stats != NULL)
+      {
+      pjob->ji_wattr[JOB_ATR_dcgm_gpu_use].at_val.at_ptr = (pbs_attribute *)gpu_stats;
+      pjob->ji_wattr[JOB_ATR_dcgm_gpu_use].at_flags = ATR_VFLAG_SET;
+
+      gpu_stats->initializeGpuJobInfo(pjob->ji_dcgmGpuJobInfo);
+      }
+    else
+      {
+      sprintf(log_buffer, "Failed to allocate memory for gpu stats: job %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      pjob->ji_wattr[JOB_ATR_dcgm_gpu_use].at_flags &= ~ATR_VFLAG_SET;
+      rc = PBSE_MEM_MALLOC;
+      }
+
+    return(rc);
+    }
+
+
+  /*
+   * nvidia_dcgm_finalize_gpu_job_info()
+   *
+   * Collect all of the job gpu statistics, add the information
+   * as a JOB_ATR_dcgm_gpu_use attribute to be used to encode 
+   * the stats to be packaged and sent to pbs_server,.
+   *
+   * @param pjob  - pointer to the job structure.
+   *
+   */
+
+
+  int nvidia_dcgm_finalize_gpu_job_info(
+
+    job *pjob)
+
+    {
+    dcgmGroupInfo_t  dcgmGroupData;
+    dcgmReturn_t dcgm_rc;
+    int rc = PBSE_NONE;
+
+    dcgmGroupData.version = dcgmGroupInfo_version;
+    dcgm_rc = dcgmGroupGetInfo(pDcgmHandle, pjob->ji_dcgmGrpId, &dcgmGroupData);
+    /* Get the GPU statistics for this job */
+    pjob->ji_dcgmGpuJobInfo.version = dcgmJobInfo_version;
+    dcgm_rc = dcgmJobGetStats(pDcgmHandle, pjob->ji_qs.ji_jobid, &pjob->ji_dcgmGpuJobInfo);
+    if (dcgm_rc != DCGM_ST_OK)
+      {
+      sprintf(log_buffer, "Failed to get gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      rc = PBSE_SYSTEM;
+      }
+
+    dcgm_rc = dcgmJobStopStats(pDcgmHandle, pjob->ji_qs.ji_jobid);
+    if (dcgm_rc != DCGM_ST_OK)
+      {
+      sprintf(log_buffer, "Failed to stop gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      rc = PBSE_SYSTEM;
+      }
+    else
+      {
+      time_t t;
+      pjob->ji_dcgmGpuJobInfo.summary.endTime = time(&t);
+		}
+
+  /* destroy the gpu group */
+	dcgm_rc = dcgmGroupDestroy(pDcgmHandle, pjob->ji_dcgmGrpId);
+	if (dcgm_rc != DCGM_ST_OK)
+	  {
+		sprintf(log_buffer, "Failed to destroy gpu group for job %s : %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+		rc = PBSE_SYSTEM;
+		}
+
+  if (rc == PBSE_NONE)
+	  {
+		rc = nvidia_dcgm_create_job_attr(pjob);
+		}
+
+
+  return(rc);
+
+	}
+
+#endif /* NVIDIA_DCGM */

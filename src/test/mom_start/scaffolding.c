@@ -91,3 +91,12 @@ int kill_task(job *pjob, struct task *task, int sig, int pg)
   {
   return(0);
   }
+
+
+int nvidia_dcgm_finalize_gpu_job_info(
+
+  job *pjob)
+
+  {
+  return(PBSE_NONE);
+  }

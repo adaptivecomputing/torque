@@ -8,7 +8,7 @@ noinst_LIBRARIES = libutils.a
 include_HEADERS = u_lock_ctl.h lib_utils.h
 
 libutils_a_SOURCES = u_groups.c u_tree.c u_mu.c u_MXML.c u_xml.c \
-                     u_threadpool.c \
+                     u_threadpool.c u_json.c \
                      u_lock_ctl.c u_mom_hierarchy.c \
                      u_hash_map_structs.c u_users.c \
 										 u_constants.c u_mutex_mgr.cpp \
