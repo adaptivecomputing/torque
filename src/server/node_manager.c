@@ -278,7 +278,9 @@ struct pbsnode *tfind_addr(
     numa = AVL_find(index, pn->nd_mom_port, pn->node_boards);
 
     unlock_node(pn, __func__, "pn->numa", LOGLEVEL);
-    lock_node(numa, __func__, "numa", LOGLEVEL);
+
+    if (numa != NULL)
+      lock_node(numa, __func__, "numa", LOGLEVEL);
 
     if (plus != NULL)
       *plus = '+';
