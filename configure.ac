@@ -181,6 +181,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/login_nodes/Makefile
     src/test/mom_hierarchy_handler/Makefile
     src/test/mail_throttler/Makefile
+    src/test/nvidia/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
     src/test/pbsnode/Makefile
@@ -253,6 +254,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/attr_fn_time/Makefile
     src/test/attr_fn_tokens/Makefile
     src/test/attr_fn_tv/Makefile
+    src/test/DCGM_job_gpu_stats/Makefile
+    src/test/DCGM_GpuUsageInfo/Makefile
+    src/test/attr_fn_dcgm_gpu_use/Makefile
     src/test/attr_fn_unkn/Makefile
     src/test/attr_func/Makefile
     src/test/attr_node_func/Makefile

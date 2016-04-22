@@ -16,6 +16,7 @@ libattr_a_SOURCES = attr_atomic.c attr_fn_acl.c attr_fn_arst.c attr_fn_b.c \
 		     attr_fn_str.c attr_fn_time.c attr_fn_unkn.c \
 		     attr_func.c attr_node_func.c attr_fn_tokens.c attr_fn_tv.c \
 	       attr_str_conversion.c attr_fn_freq.c req.cpp complete_req.cpp \
-				 attr_fn_complete_req.c attr_fn_attr_req_info.c attr_req_info.cpp
+				 attr_fn_complete_req.c attr_fn_attr_req_info.c attr_req_info.cpp \
+         attr_fn_dcgm_gpu_use.c DCGM_job_gpu_stats.cpp DCGM_GpuUsageInfo.cpp
 
 

@@ -401,6 +401,7 @@ int  decode_tv(pbs_attribute *patr, const char *name, const char *rescn, const c
 int  decode_nppcu(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int);
 int  decode_frequency(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 int  decode_complete_req(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
+int  decode_dcgm_gpu_use(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 
 int  decode_attr_req_info(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
 int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm);
@@ -441,6 +442,8 @@ int encode_frequency(pbs_attribute *attr, tlist_head *phead, const char *atname,
 void from_frequency(struct cpu_frequency_value *, char *);
 int encode_complete_req(pbs_attribute *attr, tlist_head *phead, const char *atname,
                             const char *rsname, int mode, int perm);
+int encode_dcgm_gpu_use(pbs_attribute *attr, tlist_head *phead, const char *atname,
+                            const char *rsname, int mode, int perm);
 int encode_size(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 
@@ -463,6 +466,7 @@ extern int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_o
 extern int set_tv(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op);
 extern int set_frequency(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 extern int set_complete_req(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
+extern int set_dcgm_gpu_use(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 int  set_attr_req_info(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 int set_size(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);
 
@@ -484,6 +488,7 @@ int comp_hold(pbs_attribute *, pbs_attribute *);
 int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
 int comp_frequency(struct pbs_attribute *attr, struct pbs_attribute *with);
 int comp_complete_req(pbs_attribute *attr, pbs_attribute *with);
+int comp_dcgm_gpu_use(pbs_attribute *attr, pbs_attribute *with);
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with);
 
 
@@ -495,6 +500,7 @@ void free_resc(pbs_attribute *);
 void free_depend(pbs_attribute *);
 void free_unkn(pbs_attribute *);
 void free_complete_req(pbs_attribute *);
+void free_dcgm_gpu_use(pbs_attribute *);
 void free_attr_req_info(pbs_attribute *patr);
 int   parse_equal_string(char *, char **, char **);
 char *parse_comma_string(char *,char **);

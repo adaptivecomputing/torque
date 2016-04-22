@@ -92,6 +92,7 @@
 #include <limits.h>
 #include <map>
 #include <set>
+#include <dcgm_agent.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -435,6 +436,9 @@ enum job_atr
   JOB_ATR_memset_string,
   JOB_ATR_user_kill_delay,
   JOB_ATR_idle_slot_limit,
+#ifdef NVIDIA_DCGM
+  JOB_ATR_dcgm_gpu_use,
+#endif
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -727,7 +731,12 @@ typedef struct job
                                         and tasks from start_process. */
   std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
 #ifdef PENABLE_LINUX_CGROUPS
-  bool             ji_cgroups_created;
+  bool           ji_cgroups_created;
+#endif
+
+#ifdef NVIDIA_DCGM
+  dcgmGpuGrp_t   ji_dcgmGrpId;    /* The group Id for NVIDIA DCGM group jobs */
+  dcgmJobInfo_t  ji_dcgmGpuJobInfo;   /* per job gpu statistics */
 #endif
 
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */

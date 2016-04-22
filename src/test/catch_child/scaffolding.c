@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <sstream>
 #include <vector>
 #include <stdlib.h>
@@ -1417,3 +1418,16 @@ int send_back_std_and_staged_files(job *pjob, int exit_value)
 
 
 task::~task() {}
+
+int encode_dcgm_gpu_use(
+
+  pbs_attribute *attr, 
+  tlist_head *phead, 
+  const char *atname,
+  const char *rsname, 
+  int mode, 
+  int perm)
+
+  {
+  return(PBSE_NONE);
+  }

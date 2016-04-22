@@ -100,6 +100,9 @@
 #include "mom_func.h"
 #include "mom_config.h"
 #include "pmix_operation.hpp"
+#ifdef NVIDIA_DCGM
+#include "nvidia.h"
+#endif
 
 /* Global Variables */
 
@@ -113,8 +116,6 @@ extern unsigned short pbs_rm_port;
 
 #define TMAX_TJCACHESIZE 128
 job *TJCache[TMAX_TJCACHESIZE];
-
-
 
 
 /*
@@ -460,7 +461,8 @@ void scan_for_terminated(void) /* linux */
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
-    kill_task(pjob, matching_task, SIGKILL, 0);
+    nvidia_dcgm_finalize_gpu_job_info(pjob);
+    kill_task(pjob, ptask, SIGKILL, 0);
 
     matching_task->ti_qs.ti_exitstat = exiteval;
 
