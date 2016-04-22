@@ -134,6 +134,10 @@ extern "C"
 #include "job_host_data.hpp"
 #include "pmix_tracker.hpp"
 
+#ifdef NVIDIA_DCGM
+#include "nvidia.h"
+#endif
+
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
 #include "complete_req.hpp"
@@ -2600,6 +2604,21 @@ int TMomFinalizeJob2(
       return(FAILURE);
       }
     }
+
+#ifdef NVIDIA_DCGM
+  int  rc = PBSE_NONE;
+
+  rc = nvidia_dcgm_create_gpu_job_info(pjob);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Failed to setup DCGM job group: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    *SC = rc;
+    return(FAILURE);
+    }
+
+#endif /* NVIDIA_DCGM */
+ 
 #endif  /* NVIDIA_GPUS */
 
 #ifdef ENABLE_PMIX
@@ -4699,7 +4718,7 @@ int TMomFinalizeChild(
 
   if (use_cpusets(pjob) == TRUE)
     {
-    if (LOGLEVEL >= 6)
+    f (LOGLEVEL >= 6)
       {
       sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);

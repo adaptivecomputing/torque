@@ -26,7 +26,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 job_usage_info.hpp machine.hpp req.hpp complete_req.hpp trq_cgroups.h \
 		 job_recovery.h allocation.hpp attr_req_info.hpp acl_special.hpp restricted_host.hpp \
 		 pbs_helper.h mail_throttler.hpp lib_ifl.h runjob_help.hpp pmix_tracker.hpp \
-		 pmix_operation.hpp job_host_data.hpp policy_values.h
+		 pmix_operation.hpp job_host_data.hpp policy_values.h nvidia.h DCGM_job_gpu_stats.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

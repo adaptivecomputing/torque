@@ -4,6 +4,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#ifdef NIC
+#include <hwloc.h>
+#endif
+
+#ifdef NVIDIA_GPUS
+#include <hwloc.h>
+#include <hwloc/nvml.h>
+#endif
+
 #include "u_tree.h"
 #include "tcp.h"
 #include "pbs_job.h"
@@ -913,8 +922,18 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   }
 #endif
 
-#ifdef NVIDIA_GPUS
-int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
-#endif
-
 job::job() {}
+
+#ifdef NVIDIA_GPUS
+
+void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology)
+  {
+  return;
+  }
+
+int Machine::initializeNVIDIADevices(hwloc_obj_t obj, hwloc_topology_t topology)
+  {
+	return(0);
+	}
+
+#endif

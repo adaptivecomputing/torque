@@ -1,4 +1,4 @@
-#include "pbs_config.h"
+nclude <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -32,6 +32,15 @@ void log_err(
   }
 
 #ifdef NVML_API
+void PCI_Device::initializeGpu(
+
+  int    idx,
+  hwloc_topology_t topology)
+
+  {
+  return;
+  }
+
 void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id)
   {
   return;
@@ -42,4 +51,5 @@ void Machine::store_device_on_appropriate_chip( PCI_Device &device)
   {
   return;
   }
+
 

@@ -1,0 +1,10 @@
+{\"gpuId\": 2147483632, \"energyConsumed\" :28723, \"pcieRxBandwidth\": {\"minValue\" : 9223372036854775792,\"
+maxValue\" : 9223372036854775792,\"average\" : 9223372036854775792},\"pcieTxBandwidth\": {\"minValue\":92233720368547
+75792,\"maxValue\":9223372036854775792,\"average\":9223372036854775792},\"pcieReplays\":0,\"startTime\":0,\"endTime\"
+:1461268216,\"smUtilization\": {\"minValue\":2147483632,\"maxValue\":2147483632,\"average\":2147483632},\"memoryUtili
+zation\": {\"minValue\":2147483632,\"maxValue\":2147483632,\"average\":2147483632},\"eccSingleBit\":0,\"eccDoubleBit\
+":0,\"memoryClock\": {\"minValue\":2147483632,\"maxValue\":2147483632,\"average\":2147483632},\"smClock\": {\"minValu
+e\":2147483632,\"maxValue\":2147483632,\"average\":0},\"numXidCriticalErrors\":0,\"numComputePids\":0,\"numGraphicsPi
+ds\":0,\"maxGpuMemoryUsed\":0, \"powerViolationTime\":0, \"thermalViolationTime\":9223372036854775794, \"reliabilityV
+iolationTime\":9223372036854775794, \"boardLimitViolationTime\":9223372036854775794, \"lowUtilizationTime\":922337203
+6854775794, \"syncBoostTime\":0} 
