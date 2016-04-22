@@ -104,6 +104,7 @@ DCGM_GpuUsageInfo::DCGM_GpuUsageInfo(
 
   this->numComputePids = gpuUsageInfo.numComputePids;
 
+<<<<<<< HEAD
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 //					this->computePidInfo[i] = gpuUsageInfo.computePidInfo[i];
 //
@@ -111,6 +112,15 @@ DCGM_GpuUsageInfo::DCGM_GpuUsageInfo(
 //
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 //					this->graphicsPidInfo[i] = gpuUsageInfo.graphicsPidInfo[i];
+=======
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->computePids[i] = gpuUsageInfo.computePids[i];
+
+  this->numGraphicsPids = gpuUsageInfo.numGraphicsPids;
+
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->graphicsPids[i] = gpuUsageInfo.graphicsPids[i];
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
 
   this->maxGpuMemoryUsed = gpuUsageInfo.maxGpuMemoryUsed;
   this->powerViolationTime = gpuUsageInfo.powerViolationTime;
@@ -170,6 +180,7 @@ DCGM_GpuUsageInfo& DCGM_GpuUsageInfo::operator = (
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 					this->xidCriticalErrorsTs[i] = other.xidCriticalErrorsTs[i];
 
+<<<<<<< HEAD
 //  this->numComputePids = other.numComputePids;
 
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
@@ -179,6 +190,17 @@ DCGM_GpuUsageInfo& DCGM_GpuUsageInfo::operator = (
 
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 //					this->graphicsPidInfo[i] = other.graphicsPidInfo[i];
+=======
+  this->numComputePids = other.numComputePids;
+
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->computePids[i] = other.computePids[i];
+
+  this->numGraphicsPids = other.numGraphicsPids;
+
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->graphicsPids[i] = other.graphicsPids[i];
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
 
   this->maxGpuMemoryUsed = other.maxGpuMemoryUsed;
   this->powerViolationTime = other.powerViolationTime;
@@ -242,6 +264,7 @@ void DCGM_GpuUsageInfo::initializeSummary(
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 					this->xidCriticalErrorsTs[i] = gpu_usage_info.xidCriticalErrorsTs[i];
 
+<<<<<<< HEAD
 //  this->numComputePids = gpu_usage_info.numComputePids;
 //
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
@@ -251,6 +274,17 @@ void DCGM_GpuUsageInfo::initializeSummary(
 //
 //	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
 //					this->graphicsPidInfo[i] = gpu_usage_info.graphicsPidInfo[i];
+=======
+  this->numComputePids = gpu_usage_info.numComputePids;
+
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->computePids[i] = gpu_usage_info.computePids[i];
+
+  this->numGraphicsPids = gpu_usage_info.numGraphicsPids;
+
+	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
+					this->graphicsPids[i] = gpu_usage_info.graphicsPids[i];
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
 
   this->maxGpuMemoryUsed = gpu_usage_info.maxGpuMemoryUsed;
   this->powerViolationTime = gpu_usage_info.powerViolationTime;
@@ -364,6 +398,7 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
   snprintf(buf, sizeof(buf), "\"numComputePids\":%ld,", this->numComputePids);
   usage_info += buf;
 
+<<<<<<< HEAD
 //  if (this->numComputePids != 0)
 //   {
 //  snprintf(buf, sizeof(buf), "\"computePidInfo\": [");
@@ -400,6 +435,44 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
 //	  snprintf(buf, sizeof(buf), "],");
 //    usage_info += buf;
 //		}
+=======
+  if (this->numComputePids != 0)
+    {
+    snprintf(buf, sizeof(buf), "\"computePids\": [");
+    usage_info += buf;
+    for (unsigned int i = 0; i < this->numComputePids; i++)
+		  {
+			/* Don't put a comma after the last entry in the array */
+			if (i == this->numComputePids - 1)
+        snprintf(buf, sizeof(buf), "{\"%d\": %ld}", i, this->computePids[i]);
+			else
+        snprintf(buf, sizeof(buf), "{\"%d\": %ld},", i, this->computePids[i]);
+      usage_info += buf;
+			}
+	  snprintf(buf, sizeof(buf), "],");
+    usage_info += buf;
+		}
+ 
+  snprintf(buf, sizeof(buf), "\"numGraphicsPids\":%ld,", this->numGraphicsPids);
+  usage_info += buf;
+
+  if (this->numGraphicsPids != 0)
+    {
+    snprintf(buf, sizeof(buf), "\"graphicsPids\": [");
+    usage_info += buf;
+    for (unsigned int i = 0; i < this->numGraphicsPids; i++)
+		  {
+			/* Don't put a comma after the last entry in the array */
+			if (i == this->numGraphicsPids - 1)
+        snprintf(buf, sizeof(buf), "{\"%d\": %ld}", i, this->graphicsPids[i]);
+			else
+        snprintf(buf, sizeof(buf), "{\"%d\": %ld},", i, this->graphicsPids[i]);
+      usage_info += buf;
+			}
+	  snprintf(buf, sizeof(buf), "],");
+    usage_info += buf;
+		}
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
  
 	snprintf(buf, sizeof(buf), "\"maxGpuMemoryUsed\":%ld, ", this->maxGpuMemoryUsed);
 	usage_info += buf;
@@ -463,12 +536,21 @@ int DCGM_GpuUsageInfo::parse_gpu_usage_array(
 				get_name_value_pair(&objPtr, element_name, element_value);
 
 				index = strtoul(element_name.c_str(), NULL, 10);
+<<<<<<< HEAD
 //				if (name == "computePidInfo")
 //				  computePidInfo[index] = strtol(element_value.c_str(), NULL, 10);
 //        else if (name == "xidCriticalErrorsTs")
 //				  xidCriticalErrorsTs[index] = strtol(element_value.c_str(), NULL, 10);
 //        else if (name == "graphicsPidInfo")
 //				  graphicsPidInfo[index] = strtol(element_value.c_str(), NULL, 9);
+=======
+				if (name == "computePids")
+				  computePids[index] = strtol(element_value.c_str(), NULL, 10);
+        else if (name == "xidCriticalErrorsTs")
+				  xidCriticalErrorsTs[index] = strtol(element_value.c_str(), NULL, 10);
+        else if (name == "graphicsPids")
+				  graphicsPids[index] = strtol(element_value.c_str(), NULL, 9);
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
                 
 
 				/* See if we have another object of if we are done */
@@ -660,18 +742,32 @@ int DCGM_GpuUsageInfo::set_value(
 			  {
 			  this->numComputePids = strtoul(valValue.c_str(), NULL, 10);
 			  }
+<<<<<<< HEAD
 //		  else if (valName == "computePidInfo")
 //			  {
 //       parse_gpu_usage_array(valName, valValue); 
 // 		  }
+=======
+		  else if (valName == "computePids")
+			  {
+        parse_gpu_usage_array(valName, valValue); 
+  		  }
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
       else if (valName == "numGraphicsPids")
         {
         this->numGraphicsPids = strtoul(valValue.c_str(), NULL, 10);
         }
+<<<<<<< HEAD
 //      else if (valName == "graphicsPidInfo")
 //        {
 //        parse_gpu_usage_array(valName, valValue);
 //        }
+=======
+      else if (valName == "graphicsPids")
+        {
+        parse_gpu_usage_array(valName, valValue);
+        }
+>>>>>>> 17f4c78... AC-9129 Implement code to gather and report GPU statistics in Torque
       else if (valName == "maxGpuMemoryUsed")
         {
         this->maxGpuMemoryUsed = strtol(valValue.c_str(), NULL, 10);
