@@ -15,7 +15,7 @@ int record_node_property_list(std::string const &, tlist_head *);
 
 extern AvlTree          ipaddrs;
 
-pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
+pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_failures(0),
                      nd_consecutive_successes(0),
                      nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
@@ -62,9 +62,9 @@ pbsnode::pbsnode(
 
   const char *pname,
   u_long     *pul,
-  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_proximal_failures(0),
-                                     nd_consecutive_successes(0), nd_mutex(), nd_f_st(),
-                                     nd_prop(NULL), nd_status(NULL),
+  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_version(0),
+                                     nd_proximal_failures(0), nd_consecutive_successes(0),
+                                     nd_mutex(), nd_f_st(), nd_prop(NULL), nd_status(NULL),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -164,6 +164,7 @@ pbsnode &pbsnode::operator =(
   this->nd_id = other.nd_id;
   this->nd_f_st = other.nd_f_st;
   this->nd_properties = other.nd_properties;
+  this->nd_version = other.nd_version;
   this->nd_proximal_failures = other.nd_proximal_failures;
   this->nd_consecutive_successes = other.nd_consecutive_successes;
   
@@ -251,6 +252,7 @@ pbsnode &pbsnode::operator =(
 pbsnode::pbsnode(
 
   const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties),
+                          nd_version(other.nd_version),
                           nd_proximal_failures(other.nd_proximal_failures),
                           nd_consecutive_successes(other.nd_consecutive_successes), nd_mutex(),
                           nd_id(other.nd_id), nd_addrs(other.nd_addrs),
@@ -681,6 +683,48 @@ void pbsnode::remove_node_state_flag(
   {
   this->nd_state &= ~flag;
   } // END remove_node_state_flag()
+
+int pbsnode::get_version() const
+  {
+  return(this->nd_version);
+  }
+
+
+
+/*
+ * set_version()
+ *
+ * Sets this node's version from a string in the format version=\d.\d.\d[.hotfixinformation]
+ * The hotfix information, if any, is ignored
+ */
+
+void pbsnode::set_version(
+
+  const char *version_str)
+
+  {
+  if (version_str != NULL)
+    {
+    char *work = strdup(version_str);
+    char *ptr;
+    int   version = strtol(work, &ptr, 10) * 100;
+
+    if (*ptr == '.')
+      {
+      ptr++;
+      version += strtol(ptr, &ptr, 10) * 10;
+
+      if (*ptr == '.')
+        {
+        ptr++;
+        version += strtol(ptr, &ptr, 10);
+
+        // Only set the version if we had the correct format
+        this->nd_version = version;
+        }
+      }
+    }
+  }
 
 
 
