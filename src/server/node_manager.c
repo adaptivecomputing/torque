@@ -2864,7 +2864,7 @@ int select_from_all_nodes(
         {
         if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == true)
           {
-          record_fitting_node(num, pnode, naji_list, req, first_node_id, i, num_alps_reqs, job_type, all_reqs, ard_array);
+          record_fitting_node(num, pnode, naji_list, req, first_node_id, req.req_id, num_alps_reqs, job_type, all_reqs, ard_array);
 
           /* are all reqs satisfied? */
           if (all_reqs.total_nodes == 0)
@@ -2942,6 +2942,9 @@ bool process_as_node_list(
       return(true);
 
     if ((pos = second_node.find("+")) != std::string::npos)
+      second_node.erase(pos);
+
+    if ((pos = second_node.find("|")) != std::string::npos)
       second_node.erase(pos);
 
     if ((pos = second_node.find(":")) != std::string::npos)
