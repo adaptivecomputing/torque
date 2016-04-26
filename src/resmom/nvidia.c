@@ -731,7 +731,7 @@ int setgpumode(
     }
   else /* 270 or greater driver */
     {
-    sprintf(buf, "nvidia-smi -i %s -c %d 2>&1",
+    sprintf(buf, "nvidia-smi -i %d -c %d 2>&1",
       gpuid,
       gpumode);
     }
@@ -868,7 +868,7 @@ int resetgpuecc(
 
   if (MOMNvidiaDriverVersion == 260)
     {
-    sprintf(buf, "nvidia-smi -g %s",
+    sprintf(buf, "nvidia-smi -g %d",
       gpuid);
 
     if (reset_perm == 1)
@@ -885,7 +885,7 @@ int resetgpuecc(
     }
   else /* 270 or greater driver */
     {
-    sprintf(buf, "nvidia-smi -i %s",
+    sprintf(buf, "nvidia-smi -i %d",
       gpuid);
 
     /* 270 can currently reset only 1 at a time */
@@ -1175,9 +1175,7 @@ int setup_gpus_for_job(
 
   {
   char *gpu_str;
-  char *ptr;
   int   gpu_flags = 0;
-  int   gpu_mode = -1;
   int   rc;
 
   /* if node does not have Nvidia recognized driver version then forget it */
