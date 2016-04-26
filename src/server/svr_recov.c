@@ -126,9 +126,8 @@ extern char     *path_svrdb_new;
 extern char     *path_priv;
 extern char     *msg_svdbopen;
 extern char     *msg_svdbnosv;
+extern time_t    pbs_incoming_tcp_timeout;
 
-long             recovered_tcp_timeout = 5000;
-extern int       disable_timeout_check;
 
 
 /**
@@ -405,16 +404,12 @@ int svr_recov_xml(
 
           break;
           }
-        
-        if (!strcmp(parent, ATTR_tcptimeout))
-          recovered_tcp_timeout = strtol(child_attr, NULL, 10);
 
         if (!strcmp(child_parent, ATTR_tcptimeout))
           pbs_tcp_timeout = strtol(child_attr, NULL, 10);
+        else if (!strcmp(child_parent, ATTR_tcpincomingtimeout))
+          pbs_incoming_tcp_timeout = strtol(child_attr, NULL, 10);
         }
-
-      if (recovered_tcp_timeout < 300)
-        disable_timeout_check = TRUE;
       }
     else
       {

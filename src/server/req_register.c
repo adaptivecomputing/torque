@@ -139,13 +139,13 @@ struct depend *make_depend(int type, pbs_attribute *pattr);
 
 depend_job *find_dependjob(struct depend *, const char *name);
 
-depend_job *make_dependjob(struct depend *, const char *jobid, const char *host);
+depend_job *make_dependjob(struct depend *, const char *jobid);
 void   del_depend_job(struct depend *pdep, depend_job *pdj);
 int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
 int    release_cheapest(job *, struct depend *);
 int    send_depend_req(job *, depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
-depend_job *alloc_dependjob(const char *jobid, const char *host);
+depend_job *alloc_dependjob(const char *jobid);
 
 /* External Global Data Items */
 
@@ -313,10 +313,9 @@ int register_before_dep(
 
   {
   int            rc = PBSE_NONE;
-  struct depend *pdep = NULL;
+  depend        *pdep = NULL;
   pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
   int            revtype;
-  depend_job    *pdj = NULL;
   int            made = FALSE;
 
   /*
@@ -347,14 +346,6 @@ int register_before_dep(
         printf("in the on code\n");
         
         rc = PBSE_BADDEPEND;
-        }
-      else if ((pdj = find_dependjob(pdep, preq->rq_ind.rq_register.rq_child)))
-        {
-        /* has prior register, update it */
-        if (server_name[0] != '\0')
-          pdj->dc_svr = server_name;
-        else
-          pdj->dc_svr = preq->rq_ind.rq_register.rq_svr;
         }
       }
     else if ((rc = register_dep(pattr, preq, type, &made)) == PBSE_NONE)
@@ -1048,10 +1039,6 @@ int register_array_depend(
   if (pdj != NULL)
     {
     pdj->dc_child = preq->rq_ind.rq_register.rq_child;
-    if (server_name[0] != '\0')
-      pdj->dc_svr = server_name;
-    else
-      pdj->dc_svr = preq->rq_ind.rq_register.rq_svr;
 
     if (num_jobs == -1)
       {
@@ -1479,7 +1466,7 @@ int depend_on_que(
 
       for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
         {
-        depend_job *dj = alloc_dependjob(pdep->dp_jobs[i]->dc_child.c_str(), pdep->dp_jobs[i]->dc_svr.c_str());
+        depend_job *dj = alloc_dependjob(pdep->dp_jobs[i]->dc_child.c_str());
         pparent.push_back(dj);
         }
 
@@ -1911,7 +1898,7 @@ void set_depend_hold(
           {
           djob = pdp->dp_jobs[0];
 
-          int jobids_match = 0;
+          bool jobids_match = false;
           long displayServerName = 1;
           char *svrName = NULL;
 
@@ -1919,10 +1906,9 @@ void set_depend_hold(
               (!displayServerName) &&
               (pjob->ji_wattr[JOB_ATR_at_server].at_flags&ATR_VFLAG_SET) &&
               (svrName = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str) != NULL &&
-              (djob->dc_svr == svrName) &&
               (!strncmp(djob->dc_child.c_str(), pjob->ji_qs.ji_jobid, strlen(pjob->ji_qs.ji_jobid))))
             {
-            jobids_match = 1;
+            jobids_match = true;
             }
           /* if dc_child is the same job id as pjob don't
              lock the job. It is already locked */
@@ -1931,7 +1917,7 @@ void set_depend_hold(
             if (djob->dc_child == pjob->ji_qs.ji_jobid)
               djp = svr_find_job(djob->dc_child.c_str(), TRUE);
             else
-              jobids_match = 1;
+              jobids_match = true;
             }
 
           if (!djp ||
@@ -2125,17 +2111,12 @@ int register_sync(
     {
     /* existing regist., just update the location of the child */
 
-    if (server_name[0] != '\0')
-      pdj->dc_svr = server_name;
-    else
-      pdj->dc_svr = host;
-
     return(PBSE_NONE);
     }
 
   /* a new registration, create depend_job entry */
 
-  pdj = make_dependjob(pdep, child, host);
+  pdj = make_dependjob(pdep, child);
 
   if (pdj == NULL)
     {
@@ -2190,20 +2171,12 @@ int register_dep(
 
   if ((pdj = find_dependjob(pdep, preq->rq_ind.rq_register.rq_child)))
     {
-    if (server_name[0] != '\0')
-      pdj->dc_svr = server_name;
-    else
-      pdj->dc_svr = preq->rq_ind.rq_register.rq_svr;
-
     *made = 0;
 
     return(PBSE_NONE);
     }
 
-  if (make_dependjob(
-               pdep,
-               preq->rq_ind.rq_register.rq_child,
-               preq->rq_ind.rq_register.rq_svr) == NULL)
+  if (make_dependjob(pdep, preq->rq_ind.rq_register.rq_child) == NULL)
     {
     return(PBSE_SYSTEM);
     }
@@ -2330,19 +2303,13 @@ depend_job *find_dependjob(
 
 depend_job *alloc_dependjob(
 
-  const char *jobid,
-  const char *host)
+  const char *jobid)
 
   {
   depend_job *pdj = new depend_job();
 
   pdj->dc_child = jobid;
   
-  if (server_name[0] != '\0')
-    pdj->dc_svr = server_name;
-  else
-    pdj->dc_svr = host;
-
   return(pdj);
   } // END alloc_dependjob() 
 
@@ -2355,11 +2322,10 @@ depend_job *alloc_dependjob(
 depend_job *make_dependjob(
 
   struct depend *pdep,
-  const char    *jobid,
-  const char    *host)
+  const char    *jobid)
 
   {
-  depend_job *pdj = alloc_dependjob(jobid, host);
+  depend_job *pdj = alloc_dependjob(jobid);
 
   if (pdj != NULL)
     pdep->dp_jobs.push_back(pdj);
@@ -2393,9 +2359,6 @@ int send_depend_req(
 
   struct batch_request *preq;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  pbs_net_t             svraddr1;
-  pbs_net_t             svraddr2;
-  int                   my_err;
 
   preq = alloc_br(PBS_BATCH_RegistDep);
 
@@ -2438,7 +2401,7 @@ int send_depend_req(
   preq->rq_ind.rq_register.rq_dependtype = type;
 
   preq->rq_ind.rq_register.rq_op = op;
-  strcpy(preq->rq_host, pparent->dc_svr.c_str());  /* for issue_to_svr() */
+  strcpy(preq->rq_host, server_name);  /* for issue_to_svr() */
 
   /* if registering sync, include job cost for scheduling */
 
@@ -2466,19 +2429,15 @@ int send_depend_req(
   get_batch_request_id(preq);
   snprintf(br_id, sizeof(br_id), "%s", preq->rq_id);
 
-  svraddr1 = get_hostaddr(&my_err, server_name);
-  svraddr2 = get_hostaddr(&my_err, pparent->dc_svr.c_str());
-
-  if ((svraddr1 == svraddr2) &&
-      (bAsyncOk))
+  if (bAsyncOk)
     {
-    snprintf(preq->rq_host,sizeof(preq->rq_host),"%s",pparent->dc_svr.c_str());
+    snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", server_name);
     rc = que_to_local_svr(preq);
     preq = NULL;
     }
   else
     {
-    rc = issue_to_svr(pparent->dc_svr.c_str(), &preq, NULL);
+    rc = issue_to_svr(server_name, &preq, NULL);
     }
 
   if (rc != PBSE_NONE)
@@ -2775,7 +2734,7 @@ int dup_depend(
     {
     poldj = pd->dp_jobs[i];
 
-    if ((pnwdj = make_dependjob(pnwd, poldj->dc_child.c_str(), poldj->dc_svr.c_str())) == 0)
+    if ((pnwdj = make_dependjob(pnwd, poldj->dc_child.c_str())) == 0)
       {
       return(-1);
       }
@@ -3231,22 +3190,7 @@ int build_depend(
 
         if (pos != std::string::npos)
           {
-          pdjb->dc_svr = pdjb->dc_child.substr(pos+1);
           pdjb->dc_child.erase(pos);
-          }
-
-        if (pdjb->dc_svr.size() == 0)
-          {
-          pos = pdjb->dc_child.find(".");
-
-          if (pos != std::string::npos)
-            pdjb->dc_svr = pdjb->dc_child.substr(pos+1);
-          else
-            {
-            delete pdjb;
-            free(work_val);
-            return(PBSE_BADATVAL);
-            }
           }
 
         pd->dp_jobs.push_back(pdjb);

@@ -116,6 +116,7 @@
 #define PBS_STAGEFAIL_WAIT   1800 /* retry time after stage in failure */
 #define PBS_NORMAL_PING_RATE  300 /* how often to ping the nodes */
 #define PBS_TCPTIMEOUT        300 /* timeout for pbs-mom tcp connections */
+#define PBS_TCPINTIMEOUT      600 /* timeout for incoming tcp connections */
 #define PBS_JOBSTAT_MIN         4 /* minimum time between job stats */
 #define PBS_POLLJOBS         TRUE /* enable pbs_server job polling */
 #define PBS_LOG_CHECK_RATE    300 /* check log size (and log age) every 5 min
