@@ -691,7 +691,7 @@ int process_alps_status(
 
         /* sub-functions will attempt to lock a job, so we must unlock the
          * reporter node */
-        current->unlock_node(__func__, NULL, LOGLEVEL);
+        parent->unlock_node(__func__, NULL, LOGLEVEL);
 
         process_reservation_id(current, str);
 
