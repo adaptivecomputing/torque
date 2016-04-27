@@ -217,7 +217,6 @@ void          restore_attr_default (struct pbs_attribute *);
 
 int                     mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 time_t                  last_task_check_time = 0;
-int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
 int                     high_availability_mode = FALSE;
@@ -1271,13 +1270,11 @@ void main_loop(void)
   job          *pjob;
   all_jobs_iterator  *iter = NULL;
   long          when = 0;
-  long          timeout = 0;
   long          log = 0;
   long          scheduling = FALSE;
   long          sched_iteration = PBS_SCHEDULE_CYCLE;
   time_t        time_now = time(NULL);
 //  time_t        try_hellos = 0;
-  time_t        update_timeout = 0;
   time_t        update_loglevel = 0;
 
   extern char  *msg_startup2; /* log message   */
@@ -1341,7 +1338,7 @@ void main_loop(void)
     }
 
 #ifdef PBS_VERSION
-  printf("pbs_server is up (svn version - %s, port %d)\n",
+  printf("pbs_server is up (git version - %s, port %d)\n",
       PBS_VERSION, pbs_server_port_dis);
 #else
   printf("pbs_server is up (version - %s, port - %d)\n",
@@ -1377,24 +1374,6 @@ void main_loop(void)
     hierarchy_handler.checkAndSendHierarchy(false);
 
     enqueue_threadpool_request(check_tasks, NULL, task_pool);
-
-    if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
-      {
-      update_timeout = time_now + UPDATE_TIMEOUT_INTERVAL;
-      get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
-
-      /* don't allow timeouts to go below 300 seconds - this is a safety
-       * net for an extremely rare error */
-      if (timeout < 300)
-        {
-        snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
-          timeout);
-        timeout = 300;
-        set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-        }
-      DIS_tcp_settimeout(timeout);
-      }
 
     waittime = MAX(1, waittime);
 

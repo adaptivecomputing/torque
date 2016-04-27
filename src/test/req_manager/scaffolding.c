@@ -41,6 +41,7 @@ int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
 bool exit_called = false;
 acl_special limited_acls;
+time_t pbs_incoming_tcp_timeout;
 
 mom_hierarchy_t *mh;
 boost::ptr_vector<std::string> hierarchy_holder;
