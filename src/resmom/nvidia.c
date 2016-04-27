@@ -669,7 +669,7 @@ int setgpumode(
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
       break;
     case gpu_prohibited:
-      return (PBSE_IVALREQ);
+      return (PBSE_GPU_PROHIBITED_MODE);
       break;
     case gpu_exclusive_process:
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_PROCESS;
@@ -681,7 +681,7 @@ int setgpumode(
           rc);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
-      return (PBSE_IVALREQ);
+      return (PBSE_GPU_PROHIBITED_MODE);
     }
 
   /* get the device handle */
