@@ -3679,26 +3679,6 @@ void req_cpyfile(
         snprintf(localname, sizeof(localname), "%s", pair->fp_local);
         }
 
-#if SRFS
-      /* Is this file part of $BIGDIR or $FASTDIR ? */
-
-      if (!strncmp(localname, "/BIGDIR", 7))
-        {
-        snprintf(localname, sizeof(localname), "%s/%s",
-          tmpdirname(var_value("BIGDIR", preq->rq_ind.rq_cpyfile.rq_jobid)),
-          &localname[7]);
-        }
-      else if (!strncmp(localname, "/FASTDIR", 8))
-        {
-        sprintf(tmpname, "%s/%s",
-                tmpdirname(var_value("BIGDIR", preq->rq_ind.rq_cpyfile.rq_jobid)),
-                &localname[8]);
-
-        strcpy(localname, tmpname);
-        }
-
-#endif /* SRFS */
-
       snprintf(arg2, MAXPATHLEN+1, "%s", localname);
 
       /* take (remote) destination name from request */

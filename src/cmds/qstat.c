@@ -67,7 +67,7 @@ static void states(
 #define ALT_DISPLAY_u 8 /* -u option - list user's jobs */
 #define ALT_DISPLAY_n 0x10 /* -n option - add node list */
 #define ALT_DISPLAY_s 0x20 /* -s option - add scheduler comment */
-#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info */
+#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info - unsupported */
 
 #define ALT_DISPLAY_q 0x80 /* -q option - alt queue display */
 

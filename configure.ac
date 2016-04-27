@@ -896,18 +896,6 @@ if test "${enable_pemask}" = "yes" ; then
 fi
 
 
-SRFS=0
-AC_ARG_ENABLE(srfs,
-    [  --enable-srfs           enable support for SRFS on Cray])
-if test "${enable_srfs}" = "yes" ; then
-  case "${PBS_MACH}" in
-    unicos*) SRFS=1 ;;
-    *) AC_MSG_ERROR([Cannot --enable-srfs on a machine not running UNICOS]);;
-  esac
-fi
-AC_DEFINE_UNQUOTED(SRFS, ${SRFS}, [include support for SRFS on Cray])
-
-
 MOMLIBS=""
 
 PBSPOE=""
