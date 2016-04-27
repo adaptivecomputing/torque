@@ -222,6 +222,7 @@ enum srv_atr
   SRV_ATR_acl_groups_hosts,
   SRV_ATR_node_submit_exceptions,
   SRV_ATR_LegacyVmem,
+  SRV_ATR_NoteAppendOnError,
   SRV_ATR_EmailBatchSeconds,
   SRV_ATR_tcp_incoming_timeout,
 

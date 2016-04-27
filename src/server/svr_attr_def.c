@@ -1560,6 +1560,19 @@ attribute_def svr_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER},
 
+  /* SRV_ATR_NoteAppendOnError*/
+  {   (char *)ATTR_note_append_on_error, /* "note_append_on_error" */
+      decode_b,
+      encode_b,
+      set_b,
+      comp_b,
+      free_null,
+      NULL_FUNC,
+      MGR_ONLY_SET,
+      ATR_TYPE_LONG,
+      PARENT_TYPE_SERVER
+  },
+
   // SRV_ATR_EmailBatchSeconds
   {(char *)ATTR_email_batch_seconds, // "email_batch_seconds"
    decode_l,
