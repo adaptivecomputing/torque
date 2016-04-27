@@ -217,7 +217,7 @@ void log_nvml_error(
       break;
       /* this case breaks backward compatibility. Apparently,  NVML_ERROR_GPU_IS_LOST
        * is in nvml.h version 6 but not nvml.h version 4. We don't need it so we will
-       * comment it out for now.
+       * comment it out for now.*/
 /*    case NVML_ERROR_GPU_IS_LOST:
       if (LOGLEVEL >= 1)
         {
