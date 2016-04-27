@@ -215,14 +215,17 @@ void log_nvml_error(
         log_err( PBSE_RMSYSTEM, id, log_buffer);
         }
       break;
-    case NVML_ERROR_GPU_IS_LOST:
+      /* this case breaks backward compatibility. Apparently,  NVML_ERROR_GPU_IS_LOST
+       * is in nvml.h version 6 but not nvml.h version 4. We don't need it so we will
+       * comment it out for now.
+/*    case NVML_ERROR_GPU_IS_LOST:
       if (LOGLEVEL >= 1)
         {
         sprintf(log_buffer, "GPU %s has fallen off the bus or is otherwise inaccessible",
                             (gpuid != NULL) ? gpuid : "NULL");
         log_err( PBSE_RMSYSTEM, id, log_buffer);
         }
-      break;
+      break;*/
     case NVML_ERROR_NOT_FOUND:
       if (LOGLEVEL >= 1)
         {
