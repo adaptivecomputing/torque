@@ -1572,4 +1572,17 @@ attribute_def svr_attr_def[] =
    ATR_TYPE_LONG,
    PARENT_TYPE_SERVER},
 
+  // SRV_ATR_tcp_incoming_timeout
+  {(char *)ATTR_tcpincomingtimeout,         /* "tcp_incoming_timeout" */
+  decode_l,
+  encode_l,
+  set_l,
+  comp_l,
+  free_null,
+  NULL_FUNC,
+  NO_USER_SET,
+  ATR_TYPE_LONG,
+  PARENT_TYPE_SERVER
+  },
+
   };

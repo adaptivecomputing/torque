@@ -1,3 +1,4 @@
+/* C++ code produced by gperf version 3.0.4 */
 #ifdef HAVE_CONFIG_H
 #include <pbs_config.h>
 #endif

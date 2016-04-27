@@ -219,6 +219,7 @@ private:
   std::string                   nd_name;             /* node's host name */
   int                           nd_error;            // set if there's an error
   std::vector<std::string>      nd_properties;       // The node's properties
+  int                           nd_version;          // The node's software version
 
 public:
   // Network failures without two consecutive successive between them.
@@ -317,9 +318,11 @@ public:
   bool        hasprop(std::vector<prop> *props) const;
   void        write_compute_node_properties(FILE *nin) const;
   int         copy_properties(pbsnode *dest) const;
+  int         get_version() const;
 
   // NON-CONST methods
   void change_name(const char *new_name);
+  void set_version(const char *version_str);
   void update_properties();
   bool update_internal_failure_counts(int rc);
   void add_property(const std::string &prop);
@@ -327,6 +330,7 @@ public:
   int tmp_unlock_node(const char *method_name, const char *msg, int logging);
   int lock_node(const char *method_name, const char *msg, int logging);
   int unlock_node(const char *method_name, const char *msg, int logging);
+  int encode_properties(tlist_head *);
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
   };
@@ -614,7 +618,6 @@ node_iterator   *get_node_iterator();
 #endif /* BATCH_REQUEST_H */
 
 struct prop     *init_prop(const char *pname);
-int              hasprop(struct pbsnode *pnode, struct prop *props);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, int internal_job_id);
 void            *sync_node_jobs(void *vp);

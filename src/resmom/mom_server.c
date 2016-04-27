@@ -1065,6 +1065,7 @@ void generate_server_status(
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
+  ss.str("");
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1078,6 +1079,9 @@ void generate_server_status(
 
     alarm(0);
     }  /* END for (i) */
+
+  ss << "version=" << PACKAGE_VERSION;
+  status.push_back(ss.str());
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */

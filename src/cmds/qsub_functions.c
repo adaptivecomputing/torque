@@ -3669,6 +3669,10 @@ void process_opts(
       {
       while (fgets(cline, sizeof(cline), fP) != NULL)
         {
+        // Skip blank lines
+        if (*cline == '\n')
+          continue;
+
         if (strlen(cline) < 5)
           break;
 

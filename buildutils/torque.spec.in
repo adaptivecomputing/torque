@@ -408,7 +408,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{without scp}
 %attr(4755, root, root) %{_sbindir}/pbs_rcp
 %endif
-%{_libdir}/lib%{name}.so.*
+%{_libdir}/lib%{name}.so*
 %{torque_home}/aux
 %{torque_home}/spool
 %{torque_home}/checkpoint

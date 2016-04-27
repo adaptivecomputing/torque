@@ -10,9 +10,12 @@
 
 #define MSG_LEN_LONG 160
 
+void add_to_property_list(std::string &, const char *);
+int record_node_property_list(std::string const &, tlist_head *);
+
 extern AvlTree          ipaddrs;
 
-pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_proximal_failures(0),
+pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_failures(0),
                      nd_consecutive_successes(0),
                      nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
@@ -59,9 +62,9 @@ pbsnode::pbsnode(
 
   const char *pname,
   u_long     *pul,
-  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_proximal_failures(0),
-                                     nd_consecutive_successes(0), nd_mutex(), nd_f_st(),
-                                     nd_prop(NULL), nd_status(NULL),
+  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_version(0),
+                                     nd_proximal_failures(0), nd_consecutive_successes(0),
+                                     nd_mutex(), nd_f_st(), nd_prop(NULL), nd_status(NULL),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -161,6 +164,7 @@ pbsnode &pbsnode::operator =(
   this->nd_id = other.nd_id;
   this->nd_f_st = other.nd_f_st;
   this->nd_properties = other.nd_properties;
+  this->nd_version = other.nd_version;
   this->nd_proximal_failures = other.nd_proximal_failures;
   this->nd_consecutive_successes = other.nd_consecutive_successes;
   
@@ -248,6 +252,7 @@ pbsnode &pbsnode::operator =(
 pbsnode::pbsnode(
 
   const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties),
+                          nd_version(other.nd_version),
                           nd_proximal_failures(other.nd_proximal_failures),
                           nd_consecutive_successes(other.nd_consecutive_successes), nd_mutex(),
                           nd_id(other.nd_id), nd_addrs(other.nd_addrs),
@@ -465,6 +470,29 @@ bool pbsnode::hasprop(
   }  /* END hasprop() */
 
 
+int pbsnode::encode_properties(tlist_head *phead)
+
+  {
+  std::string prop_str = "";
+
+  if (phead == NULL)
+    {
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL input tlist_head pointer");
+    return(PBSE_BAD_PARAMETER);
+    }
+
+  // build property string
+  for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      add_to_property_list(prop_str, this->nd_properties[i].c_str());
+    }
+
+  // add it to the list
+  return(record_node_property_list(prop_str, phead));
+  } /* END encode_properties() */
+
 
 void pbsnode::update_properties()
 
@@ -484,7 +512,6 @@ void pbsnode::update_properties()
   /* now add in name as last prop */
   this->nd_properties.push_back(this->nd_name);
   } // END update_prop_list()
-
 
 
 void pbsnode::change_name(
@@ -573,13 +600,17 @@ int pbsnode::copy_properties(
   {
   if (dest == NULL)
     {
-    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destanation pointer input");
+    log_err(PBSE_BAD_PARAMETER, __func__, "NULL destination pointer input");
     return(PBSE_BAD_PARAMETER);
     }
 
   /* copy features/properties */
   for (unsigned int i = 0; i < this->nd_properties.size(); i++)
-    dest->nd_properties.push_back(this->nd_properties[i]);
+    {
+    // only copy properties not matching the node name
+    if (this->nd_properties[i] != this->nd_name)
+      dest->nd_properties.push_back(this->nd_properties[i]);
+    }
 
   return(PBSE_NONE);
   } /* END copy_properties() */
@@ -652,6 +683,48 @@ void pbsnode::remove_node_state_flag(
   {
   this->nd_state &= ~flag;
   } // END remove_node_state_flag()
+
+int pbsnode::get_version() const
+  {
+  return(this->nd_version);
+  }
+
+
+
+/*
+ * set_version()
+ *
+ * Sets this node's version from a string in the format version=\d.\d.\d[.hotfixinformation]
+ * The hotfix information, if any, is ignored
+ */
+
+void pbsnode::set_version(
+
+  const char *version_str)
+
+  {
+  if (version_str != NULL)
+    {
+    char *work = strdup(version_str);
+    char *ptr;
+    int   version = strtol(work, &ptr, 10) * 100;
+
+    if (*ptr == '.')
+      {
+      ptr++;
+      version += strtol(ptr, &ptr, 10) * 10;
+
+      if (*ptr == '.')
+        {
+        ptr++;
+        version += strtol(ptr, &ptr, 10);
+
+        // Only set the version if we had the correct format
+        this->nd_version = version;
+        }
+      }
+    }
+  }
 
 
 
