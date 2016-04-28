@@ -848,7 +848,7 @@ int trq_cg_get_task_memory_stats(
 
   {
   char               req_and_task[256];
-  int                rc;
+  int                rc = PBSE_NONE;
 
   /* get memory first */
   sprintf(req_and_task, "/%s/R%u.t%u/memory.max_usage_in_bytes", job_id, req_index, task_index);
