@@ -48,12 +48,8 @@ tarball=1
 
 # To be set later
 version=
-release_number=
-revision_number=
-changeset=
-short_changeset=
+release=
 cov_build=
-compile_type=
 
 while [ -n "${1}" ]
 do
@@ -190,8 +186,7 @@ epoch=`date +%s`
 print_build_date="`date --date="@$epoch"`"
 branch=`git branch | awk '/^[*]/ { print $2}'`
 version=`buildutils/determine.version`
-release_number="`buildutils/determine.release_number`"
-changeset=`git rev-parse HEAD`
+release=`buildutils/determine.release`
 distro=`buildutils/determine.distro -c`
 
 if [ -z "${version}" ]
@@ -201,13 +196,13 @@ then
     usage
 fi
 
-if [ "${release_number}" = "_" ]
+if [ "${release}" = "_" ]
 then
     echo "Something went wrong in creating the release number." >&2
     usage
 fi
 
-echo "Started ${0}, version ${version}, release ${release_number}." \
+echo "Started ${0}, version ${version}, release ${release}." \
     ${quiet_redirect}
 
 echo $(git rev-parse HEAD) > current_hash
@@ -241,10 +236,12 @@ fi
 
 if [[ ${version} =~ ^[0-9]+(\.[0-9]+){2,3}$ ]]
 then
-  distdir="torque-${version}"
+  package_version="${version}"
+  release=1
 else
-  distdir="torque-${version}-${release_number}"
+  package_version="${version}-${release}"
 fi
+distdir="torque-${package_version}"
 
 if [ ${tarball} -ne 0 ]
 then
@@ -312,7 +309,7 @@ then
         --define "_specdir ${root_path}/buildutils/rpmbuild/SPECS" \
         --define "_tmppath ${root_path}/buildutils/rpmbuild/tmp" \
         --define "version ${version}" \
-        --define "release_number ${release_number}.${distro}" \
+        --define "release ${release}.${distro}" \
         --define "source_file ${source_file}" \
         --define "base_name ${distdir}"
 fi
