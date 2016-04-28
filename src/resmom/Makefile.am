@@ -7,9 +7,7 @@ noinst_HEADERS = catch_child.h cray_energy.h mom_job_func.h mom_req_quejob.h req
 
 SUBDIRS = @PBS_MACH@
 
-DIST_SUBDIRS = aix4 aix5 cygwin darwin digitalunix freebsd freebsd5 fujitsu \
-	hpux10 hpux11 irix5 irix6 irix6array linux netbsd solaris5 solaris7 sunos4 \
-	unicos8 unicosmk2
+DIST_SUBDIRS = cygwin darwin linux solaris7
 
 CLEANFILES = *.gcda *.gcno *.gcov
 

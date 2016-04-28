@@ -2489,26 +2489,10 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/mom_rcp/Makefile
 	  src/momctl/Makefile
 	  src/resmom/Makefile
-	  src/resmom/aix4/Makefile
-	  src/resmom/aix5/Makefile
 	  src/resmom/cygwin/Makefile
 	  src/resmom/darwin/Makefile
-	  src/resmom/digitalunix/Makefile
-	  src/resmom/freebsd/Makefile
-	  src/resmom/freebsd5/Makefile
-	  src/resmom/fujitsu/Makefile
-	  src/resmom/hpux10/Makefile
-	  src/resmom/hpux11/Makefile
-	  src/resmom/irix5/Makefile
-	  src/resmom/irix6/Makefile
-	  src/resmom/irix6array/Makefile
 	  src/resmom/linux/Makefile
-	  src/resmom/netbsd/Makefile
-	  src/resmom/solaris5/Makefile
 	  src/resmom/solaris7/Makefile
-	  src/resmom/sunos4/Makefile
-	  src/resmom/unicos8/Makefile
-	  src/resmom/unicosmk2/Makefile
 	  src/scheduler.basl/Makefile
 	  src/scheduler.cc/Makefile
 	  src/scheduler.cc/samples/Makefile
