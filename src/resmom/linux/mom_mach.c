@@ -125,6 +125,7 @@ extern  int     LOGLEVEL;
 
 #ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
+extern char    mom_alias[];
 #endif
 
 proc_stat_t   *proc_array = NULL;
@@ -1194,24 +1195,15 @@ unsigned long cput_sum(
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
   if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) == 1)
     {
-    char   this_hostname[PBS_MAXHOSTNAME];
     unsigned int    req_index;
     int    rc;
     const char  *job_id = pjob->ji_qs.ji_jobid;
 
-    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-    if (rc != 0)
-      {
-      sprintf(buf, "failed to get hostname: %s", strerror(errno));
-      log_err(-1, __func__, buf);
-      return(0);
-      }
-
     complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
-    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
       return(cputime);
       }
@@ -1224,7 +1216,7 @@ unsigned long cput_sum(
       std::string   task_host;
 
       host_req.get_task_host_name(task_host, task_index);
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* names don't match. Got to next task */
         continue;
@@ -1549,23 +1541,14 @@ unsigned long long resi_sum(
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
   if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
     {
-    char         this_hostname[256];
     int          rc;
     unsigned int req_index;
 
-    rc = gethostname(this_hostname, 256);
-    if (rc != 0)
-      {
-      sprintf(buf, "failed to get hostname: %s", strerror(errno));
-      log_err(-1, __func__, buf);
-      return(0);
-      }
-
     complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
-    rc = cr->get_req_index_for_host(this_hostname, req_index);
+    rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", this_hostname, pjob->ji_qs.ji_jobid);
+      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
       return(resisize);
       }
@@ -1577,7 +1560,7 @@ unsigned long long resi_sum(
       std::string   task_host;
 
       host_req.get_task_host_name(task_host, task_index);
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* names don't match. Got to next task */
         continue;
