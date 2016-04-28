@@ -24,6 +24,7 @@
 #include "log.h"
 
 extern std::string cg_memory_path;
+char         mom_alias[PBS_MAXHOSTNAME + 1];
 
 Machine this_node;
 std::string cg_cpuacct_path;

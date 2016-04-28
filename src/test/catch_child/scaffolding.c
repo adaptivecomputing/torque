@@ -25,6 +25,8 @@ int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
 
+char         mom_alias[PBS_MAXHOSTNAME + 1];
+
 std::list<job *>              alljobs_list;
 std::vector<exiting_job_info> exiting_job_list;
 
