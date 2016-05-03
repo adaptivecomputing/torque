@@ -2368,6 +2368,7 @@ int split_job(
     {
     cray = copy_job(pjob);
     fix_cray_exec_hosts(cray);
+    cray->ji_internal_id    = pjob->ji_internal_id;
     cray->ji_parent_job     = pjob;
     pjob->ji_cray_clone     = cray;
     unlock_ji_mutex(cray, __func__, NULL, LOGLEVEL);
