@@ -24,12 +24,15 @@ const int ALL_EXECUTION_SLOTS = -1;
 const char *use_cores = "usecores";
 const char *use_threads = "usethreads";
 const char *allow_threads = "allowthreads";
+const char *legacy_threads = "legacythreads"; /* inidicates we have a -l resource request. */
 const char *use_fast_cores = "usefastcores";
 const char *place_node = "node";
 const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
              socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
@@ -94,6 +97,7 @@ req::req(
   this->task_count = node_count;
   this->execution_slots = ppn;
   this->gpus = gpu;
+  this->set_placement_type(place_legacy);
   this->mics = mic;
   } // END Constructor from resource list
 
@@ -240,6 +244,55 @@ int req::set_memory_used(int task_index, const unsigned long long mem_used)
   return(PBSE_NONE);
   }
 
+void req::set_placement_type(
+
+  const std::string &placement_str)
+
+  {
+  if (placement_str == place_node)
+    {
+    this->placement_type = exclusive_node;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str == place_socket)
+    {
+    this->placement_type = exclusive_socket;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_numa_node) == 0)
+    {
+    this->placement_type = exclusive_chip;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_core) == 0)
+    {
+    this->placement_type = exclusive_core;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_thread) == 0)
+    {
+    this->placement_type = exclusive_thread;
+    this->placement_str = placement_str;
+    }
+  /* It is important to check place_legacy2 before place_legacy
+     because the string find method does a substring type of
+     find. legacy will match on legacy2 */
+  else if (placement_str.find(place_legacy2) == 0)
+    {
+    this->placement_type = exclusive_legacy2;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_legacy) == 0)
+    {
+    this->placement_type = exclusive_legacy;
+    this->placement_str = placement_str;
+    }
+ else
+    {
+    this->placement_type = exclusive_none;
+    this->placement_str = placement_str;
+    }
+  } // END set_placement_type()
 
 /*
  * set_place_value()
@@ -2509,4 +2562,10 @@ void req::set_task_usage_stats(
     return;
 
   this->task_allocations[task_index].set_task_usage_stats(cput_used, mem_used);
+  }
+
+int req::get_place_type()
+
+  {
+  return(this->placement_type);
   }
