@@ -62,7 +62,7 @@ const int MEMS = 1;
 const int MAX_WRITE_RETRIES = 5;
 
 #ifdef PENABLE_LINUX_CGROUPS
-std::vector<std::string> incompatible_dash_l_resources;
+//----std::vector<std::string> incompatible_dash_l_resources;
 extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
@@ -80,25 +80,25 @@ void trq_cg_init_subsys_online(bool val)
   return;
   }
 
-void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
-  {
-  /* These are the -l resources that are not compatible with the -L resource request */
-  incompatible_resource_list.clear();
-  incompatible_resource_list.push_back("mem");
-  incompatible_resource_list.push_back("nodes");
-  incompatible_resource_list.push_back("hostlis");
-  incompatible_resource_list.push_back("ncpus");
-  incompatible_resource_list.push_back("procs");
-  incompatible_resource_list.push_back("pvmem");
-  incompatible_resource_list.push_back("pmem");
-  incompatible_resource_list.push_back("vmem");
-  incompatible_resource_list.push_back("reqattr");
-  incompatible_resource_list.push_back("software");
-  incompatible_resource_list.push_back("geometry");
-  incompatible_resource_list.push_back("opsys");
-  incompatible_resource_list.push_back("tpn");
-  incompatible_resource_list.push_back("trl");
-  }
+//----void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
+//----  {
+//----  /* These are the -l resources that are not compatible with the -L resource request */
+//----  incompatible_resource_list.clear();
+//----  incompatible_resource_list.push_back("mem");
+//----  incompatible_resource_list.push_back("nodes");
+//----  incompatible_resource_list.push_back("hostlis");
+//----  incompatible_resource_list.push_back("ncpus");
+//----  incompatible_resource_list.push_back("procs");
+//----  incompatible_resource_list.push_back("pvmem");
+//----  incompatible_resource_list.push_back("pmem");
+//----  incompatible_resource_list.push_back("vmem");
+//----  incompatible_resource_list.push_back("reqattr");
+//----  incompatible_resource_list.push_back("software");
+//----  incompatible_resource_list.push_back("geometry");
+//----  incompatible_resource_list.push_back("opsys");
+//----  incompatible_resource_list.push_back("tpn");
+//----  incompatible_resource_list.push_back("trl");
+//----  }
 
 
 
@@ -973,36 +973,36 @@ int trq_cg_add_process_to_all_cgroups(
  *
  */
    
-bool have_incompatible_dash_l_resource(
-    
-    job *pjob)
-
-  {
-  resource *presl; /* for -l resource request */
-
-  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list); 
-  if (presl != NULL)
-    {
-    std::vector<std::string>::iterator it;
-
-    if (incompatible_dash_l_resources.size() == 0)
-      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
-
-    do
-      {
-      std::string pname = presl->rs_defin->rs_name;
-      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
-      if (it != incompatible_dash_l_resources.end())
-        {
+//----bool have_incompatible_dash_l_resource(
+//----    
+//----    job *pjob)
+//----
+//----  {
+//----  resource *presl; /* for -l resource request */
+//----
+//----  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list); 
+//----  if (presl != NULL)
+//----    {
+//----    std::vector<std::string>::iterator it;
+//----
+//----    if (incompatible_dash_l_resources.size() == 0)
+//----      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
+//----
+//----    do
+//----      {
+//----      std::string pname = presl->rs_defin->rs_name;
+//----      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
+//----      if (it != incompatible_dash_l_resources.end())
+//----        {
         /* pname points to a string of an incompatible -l resource type */
-        return(true);
-        }
-
-      presl = (resource *)GET_NEXT(presl->rs_link);
-      }while(presl != NULL); 
-    }
-  return(false);
-  }
+//----        return(true);
+//----        }
+//----
+//----      presl = (resource *)GET_NEXT(presl->rs_link);
+//----      }while(presl != NULL); 
+//----    }
+//----  return(false);
+//----  }
 
 
 /* 

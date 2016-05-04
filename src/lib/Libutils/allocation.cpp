@@ -89,12 +89,14 @@
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
 
-const int exclusive_none = 0;
-const int exclusive_node = 1;
+const int exclusive_none   = 0;
+const int exclusive_node   = 1;
 const int exclusive_socket = 2;
-const int exclusive_chip = 3;
-const int exclusive_core = 4;
+const int exclusive_chip   = 3;
+const int exclusive_core   = 4;
 const int exclusive_thread = 5;
+const int exclusive_legacy = 6;
+const int exclusive_legacy2 = 7;
 
 allocation::allocation(
 
@@ -225,10 +227,22 @@ void allocation::set_place_type(
     this->place_type = exclusive_core;
   else if (placement_str.find(place_thread) == 0)
     this->place_type = exclusive_thread;
+  else if (placement_str.find(place_legacy2) == 0) // place_legacy2 must be evaluated before place_legacy
+    this->place_type = exclusive_legacy2;
+  else if (placement_str.find(place_legacy) == 0)
+    this->place_type = exclusive_legacy;
   else
     this->place_type = exclusive_none;
   } // END set_place_type()
 
+
+void allocation::get_place_type(
+
+  int &place_type)
+
+  {
+  place_type = this->place_type;
+  }
 
 
 /*

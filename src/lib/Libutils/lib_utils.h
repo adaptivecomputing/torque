@@ -113,3 +113,7 @@ int unescape_xml(char *in, char *out, int size);
 
 /* u_putenv.c */
 int put_env_var(const char *, const char *);
+
+/* u_misc.c */
+bool have_incompatible_dash_l_resource(job *pjob);
+

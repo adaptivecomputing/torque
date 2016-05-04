@@ -191,6 +191,7 @@ class Chip
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
     void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void place_task_for_legacy_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
@@ -210,6 +211,7 @@ class Chip
     void aggregate_allocations(vector<allocation> &master_list);
     bool reserve_core(int core_index, allocation &a);
     bool reserve_chip_core(int core_index, allocation &a);
+    bool getOpenThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousCoreVector(std::vector<int> &slots, int execution_slots_per_task);
     bool reserve_thread(int core_index, allocation &a);
