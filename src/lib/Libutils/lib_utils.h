@@ -8,6 +8,7 @@
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
 #include "threadpool.h" /* threadpool_t */
 #include "u_tree.h" /* NodeEntry, AvlTree */
+#include "pbs_job.h"
 
 /* u_MXML.c */
 int MXMLExtractE(mxml_t *E, mxml_t *C, mxml_t **CP);
