@@ -108,6 +108,8 @@ extern const char *place_socket;
 extern const char *place_numa_node;
 extern const char *place_core;
 extern const char *place_thread;
+extern const char *place_legacy;
+extern const char *place_legacy2;
 
 // This class is to hold all of the information for a single req from a job
 // The concept of req(s) is only available under the new syntax
@@ -152,6 +154,7 @@ class req
     req &operator =(const req &other);
 
     void          insert_hostname(const char *hostlist_name);
+    void          set_placement_type(const std::string& place_type);
     int           set_place_value(const char *value);
     int           set_value_from_string(char *str);
     int           set_attribute(const char *str);
@@ -204,6 +207,7 @@ class req
     int           get_execution_slots() const;
     void          get_task_host_name(std::string &host, unsigned int task_index);
     int           get_req_allocation_count();
+    int           get_place_type();
     int           set_cput_used(int task_index, const unsigned long cput_used);
     int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);
