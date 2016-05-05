@@ -19,6 +19,8 @@ const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
 
 void log_err(int errnum, const char *routine, const char *text)
   {

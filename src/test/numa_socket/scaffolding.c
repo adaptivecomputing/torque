@@ -28,6 +28,7 @@ const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const int   exclusive_legacy = 6;
 
 const int exclusive_none = 0;
 const int exclusive_node = 1;
