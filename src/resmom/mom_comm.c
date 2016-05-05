@@ -6353,7 +6353,7 @@ void im_request(
       chan->sock = -1;
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Error response received from client %s (%d) jobid %s",
+        "response received from client %s (%d) jobid %s",
         netaddr(pSockAddr), sender_port, jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
      
