@@ -59,10 +59,12 @@
 
 /** @defgroup drmaa  DRMAA interface. */
 /* @{ */
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
 
 typedef struct drmaa_job_template_s  drmaa_job_template_t;
 
@@ -155,11 +157,6 @@ typedef struct drmaa_job_ids_s       drmaa_job_ids_t;
 #define DRMAA_ERRNO_EXIT_TIMEOUT                         23
 #define DRMAA_ERRNO_NO_RUSAGE                            24
 #define DRMAA_ERRNO_NO_MORE_ELEMENTS                     25
-
-#if defined(__cplusplus)
-extern "C"
-  {
-#endif
 
 
   /**
@@ -547,11 +544,6 @@ extern "C"
    */
   int drmaa_get_DRMAA_implementation(char *drmaa_impl, size_t drmaa_impl_len,
                                      char *error_diagnosis, size_t error_diag_len);
-
-#if defined(__cplusplus)
-  } /* extern "C" */
-
-#endif
 
 /* @} */
 
