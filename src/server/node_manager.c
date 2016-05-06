@@ -3797,6 +3797,7 @@ int place_gpus_in_hostlist(
     if (pnode->nd_gpus_real)
       {
       if ((gn->state == gpu_unavailable) ||
+          (gn->state == gpu_shared) ||
           (gn->state == gpu_exclusive) ||
           ((((int)gn->mode == gpu_normal)) &&
            (gpu_mode_rqstd != gpu_normal) &&
