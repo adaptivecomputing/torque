@@ -93,6 +93,8 @@ extern const int exclusive_socket;
 extern const int exclusive_chip;
 extern const int exclusive_core;
 extern const int exclusive_thread;
+extern const int exclusive_legacy;
+extern const int exclusive_legacy2;
 extern const int exclusive_none;
 
 // forward declare req
@@ -131,6 +133,7 @@ class allocation
   void set_memory_used(const unsigned long long mem_used);
   void place_indices_in_string(std::string &output, int which);
   void set_place_type(const std::string &place);
+  void get_place_type(int &place_type);
   void write_task_information(std::string &task_info) const;
   void initialize_from_string(const std::string &task_info);
   void set_host(const char *hostname);

@@ -629,12 +629,18 @@ AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
 AC_SUBST(build_drmaa)
 
-if test "x$build_drmaa" = "xyes";then
-  AC_PATH_PROG(GPERF, gperf)
-  if test -z "$GPERF";then
-    AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
-  fi
-fi
+dnl
+dnl #######################################################################
+dnl Starting in version 5.1.3 we are not using the gperf tool to create the
+dnl drmaa source files. However, we want to keep the information around in
+dnl case we ever need to update the perfect hash for drmaa version 2 or later.
+dnl
+dnl if test "x$build_drmaa" = "xyes";then
+dnl   AC_PATH_PROG(GPERF, gperf)
+dnl   if test -z "$GPERF";then
+dnl     AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
+dnl   fi
+dnl fi
 
 
 dnl

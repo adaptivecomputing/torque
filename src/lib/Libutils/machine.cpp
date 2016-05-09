@@ -606,6 +606,10 @@ void Machine::place_remaining(
     allocation remaining(r);
     allocation task_alloc(master.jobid.c_str());
 
+    /* this is for legacy jobs. */
+    if (master.cpus != 0)
+      remaining.cpus = master.cpus;
+
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
       if (remaining.place_type == exclusive_socket)
@@ -622,9 +626,41 @@ void Machine::place_remaining(
         }
       }
 
+    /* This piece of code is meant to finish for the legacy -l requests 
+       where the number of ppn requested is greater than the number of
+       cores on a node.
+     */
+    if ((master.place_type == exclusive_legacy) && (remaining.cpus > 0))
+      {
+      r.set_placement_type(place_legacy2);
+      master.set_place_type(place_legacy2);
+      master.cpus = remaining.cpus;
+      remaining.place_type = master.place_type;
+
+      for (unsigned int j = 0; j < this->sockets.size(); j++)
+        {
+        if (remaining.place_type == exclusive_socket)
+          this->availableSockets--;
+
+        if (this->sockets[j].partially_place(remaining, task_alloc) == true)
+          {
+          fit_somewhere = true;
+
+          task_alloc.set_host(hostname);
+          r.record_allocation(task_alloc);
+          master.add_allocation(task_alloc);
+          break;
+          }
+        }
+
+      //r.record_allocation(task_alloc);
+      //master.add_allocation(task_alloc);
+      }
+
     if (fit_somewhere == false)
       break;
 
+   
     remaining_tasks--;
     }
 
@@ -832,13 +868,13 @@ int Machine::place_job(
   {
   int rc = PBSE_NONE;
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
-    {
+//  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+//    {
     // Initialize a complete_req from the -l resource request
-    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
-    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-    }
+//    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
+//    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+//    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+//    }
 
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
   int           num_reqs = cr->req_count();
@@ -926,9 +962,8 @@ int Machine::place_job(
 
     if (remaining_tasks > 0)
       {
-      // We didn't place all of the tasks, but don't exit yet. We need to mark
-      // this allocation so that the cleanup happens correctly
-      rc = -1;
+       // this allocation so that the cleanup happens correctly
+        rc = -1;
       }
     }
 

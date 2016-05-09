@@ -99,6 +99,10 @@ const int SHORT_TIMEOUT = 5;
 char *netaddr(struct sockaddr_in *ap);
 void netcounter_incr();
 
+// We have now separated into one timeout for incoming connections and a separate one for 
+// outgoing connections.
+time_t pbs_incoming_tcp_timeout = PBS_TCPINTIMEOUT;
+
 int get_protocol_type(
 
   struct tcp_chan *chan,
@@ -107,10 +111,11 @@ int get_protocol_type(
   {
   unsigned int timeout = SHORT_TIMEOUT;
   int          protocol_type;
+
   // we don't want to get all threads stuck polling for input, so make sure that
   // we have a short timeout to start.
-  if (timeout > pbs_tcp_timeout)
-    timeout = pbs_tcp_timeout;
+  if (timeout > pbs_incoming_tcp_timeout)
+    timeout = pbs_incoming_tcp_timeout;
 
   protocol_type = disrui_peek(chan, &rc, timeout);
 
@@ -118,11 +123,11 @@ int get_protocol_type(
     {
     // If we aren't too busy try again. If we are too busy just move on so we
     // don't completely jam ourselves.
-    if ((timeout < pbs_tcp_timeout) &&
+    if ((timeout < pbs_incoming_tcp_timeout) &&
         (threadpool_is_too_busy(request_pool, ATR_DFLAG_MGRD) == false))
       {
       chan->IsTimeout = 0;
-      protocol_type = disrui_peek(chan, &rc, pbs_tcp_timeout - SHORT_TIMEOUT);
+      protocol_type = disrui_peek(chan, &rc, pbs_incoming_tcp_timeout - SHORT_TIMEOUT);
       }
     }
 

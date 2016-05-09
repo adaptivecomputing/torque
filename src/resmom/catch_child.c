@@ -77,6 +77,7 @@ extern int   pbs_rm_port;
 
 extern char  *PJobSubState[];
 extern char  *PMOMCommand[];
+extern char   mom_alias[];
 
 /* external prototypes */
 
@@ -2156,7 +2157,7 @@ int send_job_obit_to_ms(
               unsigned int                    req_index;
 
               complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used);
+              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used, mom_alias);
 
               if (rc == DIS_SUCCESS)
                 rc = diswsi(chan, task_index.size());

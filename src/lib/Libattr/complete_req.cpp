@@ -742,25 +742,17 @@ int complete_req::get_task_stats(
   unsigned int                    &req_index, 
   std::vector<int>                &task_index, 
   std::vector<unsigned long>      &cput_used, 
-  std::vector<unsigned long long> &mem_used)
+  std::vector<unsigned long long> &mem_used,
+  const char                      *hostname)
 
   {
   int rc = PBSE_NONE;
-  char   this_hostname[PBS_MAXHOSTNAME];
   char   buf[LOCAL_LOG_BUF_SIZE];
 
-  rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-  if (rc != 0)
-    {
-    sprintf(buf, "failed to get hostname: %s", strerror(errno));
-    log_err(-1, __func__, buf);
-    return(rc);
-    }
-
-  rc = this->get_req_index_for_host(this_hostname, req_index);
+  rc = this->get_req_index_for_host(hostname, req_index);
   if (rc != PBSE_NONE)
     {
-    sprintf(buf, "Could not find req for host %s", this_hostname);
+    sprintf(buf, "Could not find req for host %s", hostname);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
     return(rc);
     }
