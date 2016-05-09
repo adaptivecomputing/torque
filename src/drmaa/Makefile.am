@@ -49,7 +49,7 @@ doc-timestamp:
 		]; then \
 			rm -rf doc; \
 			echo "$(DOXYGEN)"; \
-			$(DOXYGEN) && touch $@ || exit 1; \
+			$(DOXYGEN) -u && touch $@ || exit 1; \
 			if [ -d doc/latex ]; then \
 				(cd doc/latex && $(MAKE) $(AM_MAKEFLAGS) ) || exit 1; \
 				mv doc/latex/refman.pdf drmaa.pdf; \
