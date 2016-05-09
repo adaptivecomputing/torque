@@ -26,8 +26,8 @@ PBS_LIBS = ../../lib/Libpbs/libtorque.la
 
 AM_CFLAGS  = @PTHREAD_CFLAGS@
 
-GPERF       = @GPERF@
-GPERFFLAGS  = -L ANSI-C --struct-type --readonly-tables --includes 
+#GPERF       = @GPERF@
+#GPERFFLAGS  = -L ANSI-C --struct-type --readonly-tables --includes 
 
 if DRMAA_BUILD
 lib_LTLIBRARIES     = libdrmaa.la

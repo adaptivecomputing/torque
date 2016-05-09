@@ -2357,7 +2357,7 @@ dnl
 if test "$build_drmaa" = "yes" ;then
 gccwarnings=no
 AC_MSG_NOTICE([Configuring DRMAA ...])
-AC_PATH_PROG(GPERF, "gperf")
+#AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
 AC_PATH_PROG(DOXYGEN, "doxygen", "none")
 AC_C_BIGENDIAN_CROSS
@@ -2410,7 +2410,7 @@ else
   build_drmaa_docs=no
   RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
 fi
-AM_CONDITIONAL(DRMAA_BUILD, [test "x$GPERF" != "x"])
+AM_CONDITIONAL(DRMAA_BUILD, [test "x$build_drmaa" == "xyes"])
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa
