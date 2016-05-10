@@ -1888,7 +1888,7 @@ u_long usecp(
 
   *pnxt++ = '\0';
 
-  cph.cph_hosts = value;
+  cph.cph_from = value;
   cph.cph_to = skipwhite(pnxt);
 
   pcphosts.push_back(cph);
