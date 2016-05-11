@@ -4729,7 +4729,18 @@ int TMomFinalizeChild(
   int rc;
 
   // Create the cgroups for this job
-  if ((rc = trq_cg_create_all_cgroups(pjob)) != PBSE_NONE)
+  rc = init_torque_cgroups();
+  if (rc == PBSE_NONE) {
+      rc = trq_cg_create_all_cgroups(pjob);
+  } else {
+      /*
+        Send/log an additional error, cleanup and return as before
+       */
+    sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+  }
+
+  if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
