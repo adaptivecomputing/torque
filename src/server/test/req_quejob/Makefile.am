@@ -1,6 +1,6 @@
 PROG_ROOT = ../..
 
-AM_CFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ --coverage
+AM_CFLAGS = -g -DTEST_FUNCTION -DUT_REQ_QUEJOB -I${PROG_ROOT}/ --coverage
 
 lib_LTLIBRARIES = libreq_quejob.la
 
