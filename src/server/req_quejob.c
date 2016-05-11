@@ -2313,6 +2313,15 @@ int req_commit(
 
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
       {
+      // unlock the queue so it can be purged
+      pque_mutex.unlock();
+#ifdef UT_REQ_QUEJOB
+      // req_quejob unit test
+      rc = pque_mutex.unlock();
+      // expect to return PBSE_MUTEX_ALREADY_UNLOCKED
+      return(rc);
+#endif
+
       rc = PBSE_CAN_NOT_SAVE_FILE;
       if (LOGLEVEL >= 6)
         {
