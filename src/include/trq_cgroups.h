@@ -39,4 +39,5 @@ int trq_cg_get_task_cput_stats(const char *job_id, const unsigned int req_index,
 void trq_cg_delete_job_cgroups(const char *job_id, bool successfully_created);
 bool have_incompatible_dash_l_resource(job *pjob);
 int  trq_cg_add_devices_to_cgroup(job *pjob);
+int init_torque_cgroups();
 #endif /* _TRQ_CGROUPS_H_ */
