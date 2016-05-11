@@ -1756,9 +1756,16 @@ job *chk_job_torun(
     {
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
-
+    /* this is an unsafe assumption so let's be extra sure before doing strdup() */
     if (prun->rq_destin && *prun->rq_destin) /* If a destination has been specified */
       {
+      /* check that execution host is actually set */
+      /* this can happen if running the job failed after stagein */
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+	{
+	req_reject(PBSE_EXECTHERE, 0, preq, NULL, "exec host not set but files staged in");
+	return(NULL);
+	}
       /* specified destination must match exec_host */
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
