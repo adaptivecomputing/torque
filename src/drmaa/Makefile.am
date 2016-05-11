@@ -24,10 +24,10 @@ SUBDIRS = src
 pkgdocdir=@drmaadocdir@
 
 if DRMAA_DOCS
-pdf_doc = drmaa.pdf
+#pdf_doc = drmaa.pdf
 install-data-local: install-doc
 endif
-pkgdoc_DATA = $(pdf_doc)
+#pkgdoc_DATA = $(pdf_doc)
 
 uninstall-hook:
 	rm -rf $(DESTDIR)$(pkgdocdir)
@@ -40,7 +40,7 @@ install-doc: doc
 	( cd doc; find -type f -exec $(INSTALL_DATA) -D '{}' '$(DESTDIR)$(pkgdocdir)/{}' \; )
 
 doc: doc-timestamp
-drmaa.pdf: doc-timestamp
+#drmaa.pdf: doc-timestamp
 doc-timestamp:
 	@if [ ! -f $@ \
 		-o `find $(srcdir)/src \( -name '*.c' -o -name '*.h' \) -a -newer $@ \
@@ -52,12 +52,11 @@ doc-timestamp:
 			$(DOXYGEN) -u && touch $@ || exit 1; \
 			if [ -d doc/latex ]; then \
 				(cd doc/latex && $(MAKE) $(AM_MAKEFLAGS) ) || exit 1; \
-				mv doc/latex/refman.pdf drmaa.pdf; \
 				(cd doc/latex && $(MAKE) $(AM_MAKEFLAGS) clean ); \
 			fi \
 	fi
 
-DISTCLEANFILES = doc-timestamp doc/html/* doc/latex/* doc/man/man*/* drmaa.pdf
+DISTCLEANFILES = doc-timestamp doc/html/* doc/latex/* doc/man/man*/* 
 
 maintainer-clean-local:
 	-rm -rf doc
