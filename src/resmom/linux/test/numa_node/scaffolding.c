@@ -124,5 +124,14 @@ void move_past_whitespace(
   *str = current;
   } // END move_past_whitespace()
 
+void *get_next(
+
+  list_link  pl,   /* I */
+  char     *file, /* I */
+  int      line) /* I */
+
+  {
+  return(NULL);
+  }
 
 #include "../../../src/lib/Libattr/req.cpp"

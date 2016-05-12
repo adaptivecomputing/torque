@@ -594,4 +594,11 @@ int  clean_up_connection(job *pjob, struct sockaddr_in *source_addr, unsigned in
 
 #endif
 
+#ifdef PENABLE_LINUX_CGROUPS
+int init_torque_cgroups()
+  {
+  return(PBSE_NONE);
+  }
+
+#endif
 
