@@ -40,13 +40,47 @@ int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
 int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
+void check_node_jobs_existence(struct work_task *pwt);
+
+
 
 extern std::vector<int> jobsKilled;
 
+extern pbsnode napali_node;
 extern int str_to_attr_count;
 extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
+
+
+START_TEST(check_node_jobs_exitence_test)
+  {
+  memset(&napali_node, 0, sizeof(napali_node));
+  napali_node.nd_name = strdup(napali);
+  std::vector<job_usage_info> usages;
+  
+  for (int i = 5; i < 15; i++)
+    {
+    job_usage_info jui(i);
+    usages.push_back(jui);
+    }
+
+  napali_node.nd_job_usages = usages;
+  fail_unless(napali_node.nd_job_usages.size() == 10);
+
+  work_task *pwt = (work_task *)calloc(1, sizeof(work_task));
+  pwt->wt_parm1 = strdup(napali_node.nd_name);
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+
+  check_node_jobs_existence(pwt);
+
+  // Should have removed all usages 10 and higher -- see scaffolding.c
+  fail_unless(napali_node.nd_job_usages.size() == 5);
+  for (size_t i = 0; i < napali_node.nd_job_usages.size(); i++)
+    fail_unless(napali_node.nd_job_usages[i].internal_job_id < 10);
+
+  }
+END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
 void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
@@ -930,6 +964,7 @@ Suite *node_manager_suite(void)
   tc_core = tcase_create("even more tests");
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  tcase_add_test(tc_core, check_node_jobs_exitence_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

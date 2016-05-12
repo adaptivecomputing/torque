@@ -174,11 +174,11 @@ int completed_jobs_map_class::cleanup_completed_jobs(
 
         if (rc == false)
           {
-            // Job is gone, mark it for removal
-            to_remove.push_back(it->first);
+          // Job is gone, mark it for removal
+          to_remove.push_back(it->first);
 
-            continue;
-            }
+          continue;
+          }
 
       // create a work task struct to be passed to handle_complete_second_time()
       if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)

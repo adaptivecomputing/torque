@@ -52,6 +52,7 @@ const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
 bool             job_mode = false;
 int              can_place = 0;
+pbsnode          napali_node;
 
 
 struct batch_request *alloc_br(int type)
@@ -150,7 +151,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
   if (!strcmp(nodename, "bob"))
     return(&bob);
   else if (!strcmp(nodename, "napali"))
-    return(&bob);
+    return(&napali_node);
   else if (!strcmp(nodename, "waimea"))
     return(&bob);
   else if (!strcmp(nodename, "2"))
@@ -784,5 +785,15 @@ bool task_hosts_match(
     }
 
   return(true);
+  }
+
+
+
+bool internal_job_id_exists(int internal_job_id)
+  {
+  if (internal_job_id < 10)
+    return(true);
+  else
+    return(false);
   }
 

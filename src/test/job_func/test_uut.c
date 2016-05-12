@@ -18,13 +18,33 @@ int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
 int split_job(job *);
 bool add_job_called = false;
+bool internal_job_id_exists(int internal_id);
 void job_free(job *pj, int  use_recycle);
+
 //bool svr_job_purge_called = false;
 extern completed_jobs_map_class completed_jobs_map;
 extern int called_remove_job;
 extern int dequejob_rc;
+extern all_jobs alljobs;
 
 char buf[4096];
+
+START_TEST(internal_job_id_exists_test)
+  {
+  job pjob;
+  alljobs.insert(&pjob, "0.napali");
+  alljobs.insert(&pjob, "1.napali");
+  alljobs.insert(&pjob, "2.napali");
+
+  // internal ids are set to map to %d.napali in scaffolding.c if < 5
+  for (int i = 0; i < 3; i++)
+    fail_unless(internal_job_id_exists(i) == true);
+
+  for (int i = 3; i < 10; i++)
+    fail_unless(internal_job_id_exists(i) == false);
+  }
+END_TEST
+
 
 START_TEST(hostname_in_externals_test)
   {
@@ -474,28 +494,19 @@ Suite *job_func_suite(void)
 
   tc_core = tcase_create("svr_job_purge_test");
   tcase_add_test(tc_core, svr_job_purge_test);
+  tcase_add_test(tc_core, internal_job_id_exists_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("svr_find_job_test");
   tcase_add_test(tc_core, svr_find_job_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("get_jobs_array_test");
-  tcase_add_test(tc_core, get_jobs_array_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("get_jobs_array_test");
   tcase_add_test(tc_core, get_jobs_array_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("get_jobs_queue_test");
   tcase_add_test(tc_core, get_jobs_queue_test);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("handle_aborted_job_test");
   tcase_add_test(tc_core, handle_aborted_job_test);
   suite_add_tcase(s, tc_core);
-  
+
   return(s);
   }
 

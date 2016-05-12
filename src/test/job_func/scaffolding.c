@@ -44,6 +44,7 @@ char *path_spool;
 const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
 all_jobs array_summary;
+all_jobs alljobs;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -607,6 +608,20 @@ id_map::~id_map() {}
 int id_map::get_new_id(const char *id) 
   {
   return(-1);
+  }
+
+const char *id_map::get_name(int internal_job_id)
+  {
+  static char buf[1024];
+
+  if (internal_job_id < 5)
+    {
+    snprintf(buf, sizeof(buf), "%d.napali", internal_job_id);
+
+    return(buf);
+    }
+
+  return(NULL);
   }
 
 id_map job_mapper;
