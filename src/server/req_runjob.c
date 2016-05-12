@@ -738,7 +738,11 @@ void post_stagein(
         else
           {
           /* continue to start job running */
-
+          /* this is actually completely the wrong preq to pass (i.e. type==PBS_BATCH_CopyFiles)
+             as it has already been handled completely by the mom. We should pass the original
+             AsyrunJob request, but we no longer have it. Any acks or denies are potential
+             hazards, so make sure we set noreply. */
+          preq->rq_noreply = 1;
           svr_strtjob2(&pjob, preq);
           
           /* svr_strjob2 would call finish_sendmom which would free preq 
@@ -1542,8 +1546,18 @@ void finish_sendmom(
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HOTSTART;
       
       if (preq != NULL)
-        reply_ack(preq);
-      
+	{
+        if (preq->rq_type == PBS_BATCH_CopyFiles) /* via post_stagein! bad! */
+	  {
+          sprintf(log_buf, "about to ack req type=%d, sock=%d, %s@%s, noreply=%d, but I'm not going to",
+		  preq->rq_type,preq->rq_conn,preq->rq_user,preq->rq_host,preq->rq_noreply);
+	  log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,job_id,log_buf);
+          }
+	else
+	  {
+          reply_ack(preq);
+          }
+	}
       /* record start time for accounting */      
       pjob->ji_qs.ji_stime = time_now;
       
