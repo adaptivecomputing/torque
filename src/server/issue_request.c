@@ -738,7 +738,6 @@ int send_request_to_remote_server(
 
       break;
 
-
     default:
 
       sprintf(log_buf, msg_issuebad, request->rq_type);

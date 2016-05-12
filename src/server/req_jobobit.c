@@ -172,6 +172,7 @@ void        on_job_exit(batch_request *preq, char *jobid);
 int         kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
 void       *on_job_exit_task(struct work_task *vp);
+bool        single_cleanup_transaction(job *pjob);
 
 /*
  * setup_from - setup the "from" name for a standard job file:
@@ -3377,6 +3378,30 @@ int update_substate_from_exit_status(
 
 
 
+bool is_job_finished(
+
+  job *pjob)
+
+  {
+  // First check if the node is compatible
+  pbsnode   *pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  mutex_mgr  node_mutex(&pnode->nd_mutex, true);
+  bool       done = false;
+
+  // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
+  if (pnode->get_version() >= 610)
+    {
+    node_mutex.unlock();
+    rel_resc(pjob);
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    handle_complete_first_time(pjob);
+    done = true;
+    }
+
+  return(done);
+  } // END is_job_finished()
+
+
 
 /*
  * req_jobobit - process the Job Obituary Notice (request) from MOM.
@@ -3664,8 +3689,6 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    
-
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);
     }
@@ -3714,16 +3737,21 @@ int req_jobobit(
   if (rerunning_job == false)
     {
     if (LOGLEVEL >= 7)
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, "Starting job cleanup");
+
+    if (is_job_finished(pjob) == false)
+      set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_exit_task, strdup(job_id), 0);
+    else
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      // If the job is finished, it has been either unlocked or freed at this time
+      job_mutex.set_unlock_on_exit(false);
       }
-    
-    set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_exit_task, strdup(job_id), 0);
     }
 
   return(PBSE_NONE);
   }  /* END req_jobobit() */
+
+
 
 void *remove_completed_jobs(
 

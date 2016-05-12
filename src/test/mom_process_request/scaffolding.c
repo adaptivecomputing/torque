@@ -279,3 +279,5 @@ char * netaddr_long(long ap, char *out)
   {
   return(NULL);
   }
+
+void req_cleanup_job(batch_request *preq) {}

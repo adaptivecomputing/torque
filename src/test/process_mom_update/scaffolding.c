@@ -346,6 +346,8 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
+void pbsnode::set_version(const char *ver_str) {}
+
 pbsnode::pbsnode() : nd_note()
   {
   }

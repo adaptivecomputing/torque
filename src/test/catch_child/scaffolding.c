@@ -808,7 +808,7 @@ int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_kil
   return 0;
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server_with_retries(job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
   {
   called_open_socket++;
   int sock = 1;
@@ -1403,5 +1403,16 @@ int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task
   {
   return(0);
   }
+
+void set_jobs_substate(job *pjob, int substate)
+  {
+  pjob->ji_qs.ji_substate = substate;
+  }
+
+int send_back_std_and_staged_files(job *pjob, int exit_value)
+  {
+  return(PBSE_NONE);
+  }
+
 
 task::~task() {}

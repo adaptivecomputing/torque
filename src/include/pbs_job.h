@@ -721,7 +721,8 @@ typedef struct job
   time_t         ji_obit_busy_time;      // the timestamp of when the obit got a busy message
   time_t         ji_obit_minus_one_time; // the timestamp of when the obit got a -1 
   time_t         ji_exited_time;         // server has indicated that this job has exited 
-  time_t         ji_obit_sent;               // The time the obit was sent
+  time_t         ji_obit_sent;           // The time the obit was sent
+  time_t         ji_state_set;           // The time we set the current state
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
@@ -1174,6 +1175,8 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_RUNNING 42 /* job running */
 #define JOB_SUBSTATE_SUSPEND 43 /* job suspended, CRAY only */
 
+#define JOB_SUBSTATE_PRECLEAN 48
+
 #define JOB_SUBSTATE_MOM_WAIT 49 /* waiting for kill confirm from sister moms */
 #define JOB_SUBSTATE_EXITING 50 /* Start of job exiting processing */
 #define JOB_SUBSTATE_EXIT_WAIT 51 /* Waiting for response from other moms
@@ -1194,10 +1197,11 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_RERUN2 62 /* job is rerun, delete files stage */
 #define JOB_SUBSTATE_RERUN3 63 /* job is rerun, mom delete job */
 
+#define JOB_SUBSTATE_POST_CLEANUP  64 // job has completed cleanup and just needs to tell pbs_server
+
 #define JOB_SUBSTATE_RETURNSTD 70      /* job has checkpoint file, return
 stdout / stderr files to server spool
 dir so that job can be restarted */
-
 #define JOB_SUBSTATE_ARRAY_TEMP 75  /* job is an array template */
 
 /* decriminator for ji_un union type */
@@ -1256,6 +1260,9 @@ job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob,
 bool         job_id_exists(const std::string &job_id_string, int *rcode);
 #else
 extern job  *mom_find_job(const char *);
+int          send_back_std_and_staged_files(job *pjob, int exitstatus);
+int          post_stageout(job *pjob, int exitstatus);
+void         delete_staged_in_files(job *pjob, char *home_dir, char **bad_list);
 #endif
 extern job  *job_recov(const char *);
 extern int   job_save(job *, int, int);

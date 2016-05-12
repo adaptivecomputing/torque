@@ -38,6 +38,8 @@ bool exit_called = false;
 int svr_resc_size = 0; /* resc_def_all.c */
 resource_def *svr_resc_def = NULL; /* resc_def_all.c */
 pthread_mutex_t *delete_job_files_mutex;
+time_t time_now;
+int    saved_job;
 
 #ifdef ENABLE_PMIX
 char  mom_alias[PBS_MAXHOSTNAME + 1];
@@ -207,5 +209,16 @@ int unlink_ext(const char *filename, int retry_limit)
 
 int rmdir_ext(const char *dirname, int retry_limit)
   {
+  return(0);
+  }
+
+int job_save(
+
+  job *pjob,  /* pointer to job structure */
+  int  updatetype, /* 0=quick, 1=full, 2=new     */
+  int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
+
+  {
+  saved_job++;
   return(0);
   }

@@ -302,7 +302,7 @@ void *mom_process_request(
 
 
 /*
- * dispatch_request - Determine the request type and invoke the corresponding
+ * mom_dispatch_request - Determine the request type and invoke the corresponding
  * function.  The function will perform the request action and return the
  * reply.  The function MUST also reply and free the request by calling
  * reply_send().
@@ -465,7 +465,7 @@ void mom_dispatch_request(
     }  /* END switch (request->rq_type) */
 
   return;
-  }  /* END dispatch_request() */
+  }  /* END mom_dispatch_request() */
 
 
 

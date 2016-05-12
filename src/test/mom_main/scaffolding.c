@@ -80,7 +80,7 @@ int       MOMConfigDownOnError;
 int       mask_num;
 extern char      PBSNodeMsgBuf[];
 int       MOMConfigRestart;
-attribute_def    job_attr_def[1];
+attribute_def    job_attr_def[JOB_ATR_LAST];
 int       LOGKEEPDAYS;
 long      log_file_roll_depth;
 char             extra_parm[] = "extra parameter(s)";
@@ -101,6 +101,9 @@ int       resend_join_job_wait_time;
 int       max_join_job_wait_time;
 bool   parsing_hierarchy = false;
 bool received_cluster_addrs;
+bool am_i_ms;
+
+int job_bailed = 0;
 
 int setbool(
 
@@ -180,8 +183,6 @@ int mom_close_poll(void)
 
 void init_abort_jobs(int recover)
   {
-  fprintf(stderr, "The call to init_abort_jobs needs to be mocked!!\n");
-  exit(1);
   }
 
 int mom_server_add(const char *value)
@@ -192,20 +193,15 @@ int mom_server_add(const char *value)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 void mom_job_purge(job *pjob)
   {
-  fprintf(stderr, "The call to job_purge needs to be mocked!!\n");
-  exit(1);
   }
 
 void scan_non_child_tasks(void)
   {
-  fprintf(stderr, "The call to scan_non_child_tasks needs to be mocked!!\n");
-  exit(1);
   }
 
 extern "C"
@@ -255,8 +251,7 @@ void mom_checkpoint_set_directory_path(const char *str)
 
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted)
   {
-  fprintf(stderr, "The call to exec_bail needs to be mocked!!\n");
-  exit(1);
+  job_bailed++;
   }
 
 int AVL_list(AvlTree tree, char **Buf, long *current_len, long *max_len)
@@ -301,10 +296,9 @@ int log_init(const char *suffix, const char *hostname)
   exit(1);
   }
 
-int post_epilogue(job *pjob, int ev)
+int send_job_obit(job *pjob, int ev)
   {
-  fprintf(stderr, "The call to post_epilogue needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 char *get_job_envvar(job *pjob, const char *variable)
@@ -718,8 +712,7 @@ char *netaddr(struct sockaddr_in *sai)
 
 int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   {
-  fprintf(stderr, "The call to tcp_connect_sockaddr needs to be mocked!!\n");
-  exit(1);
+  return(5);
   }
 
 void clear_servers()
@@ -803,7 +796,7 @@ void free_mom_hierarchy(mom_hierarchy_t *nh) {}
 
 bool am_i_mother_superior(const job &pjob)
   {
-  return(false);
+  return(am_i_ms);
   }
 
 char *pbse_to_txt(int err)
@@ -1069,3 +1062,40 @@ void free_pwnam(struct passwd *pwdp, char *buf)
 
 pmix_server_module_t psm;
 #endif
+
+int post_stagedel(
+
+  job *pjob,  
+  int  exit_code)
+
+  {
+  return(PBSE_NONE);
+  }
+
+int post_stageout(
+
+  job *pjob,
+  int  exit_code)
+
+  {
+  return(PBSE_NONE);
+  }
+
+void delete_staged_in_files(
+
+  job   *pjob,
+  char  *home_dir,
+  char **bad_list)
+
+  {
+  }
+
+int send_back_std_and_staged_files(
+
+  job *pjob,
+  int  exit_status)
+
+  {
+  return(PBSE_NONE);
+  }
+

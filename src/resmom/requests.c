@@ -200,6 +200,8 @@ extern char checkpoint_run_exe_name[];
 char *get_job_envvar(job *, const char *);
 int replace_checkpoint_path(char *);
 int in_remote_checkpoint_dir(char *);
+int post_stageout(job *pjob, int exit_code);
+int send_job_obit(job *pjob, int exit_code);
 
 /* loaded in mom_mach.h */
 
@@ -902,14 +904,13 @@ static int told_to_cp(
 
 
 /*
- * local_or_remote() - is the specified path to a local or remote file
+ * is_remote() - is the specified path to a local or remote file
  * checks to see if there is a hostname which matches this host
  *
- * returns: 1 if remote and 0 if local
- * also updates the path pointer to just the path name if local
+ * @return true if path is remote or false if local
  */
 
-static int local_or_remote(
+bool is_remote(
 
   char **path)  /* I */
 
@@ -923,7 +924,7 @@ static int local_or_remote(
     {
     /* local file */
 
-    return(0);
+    return(false);
     }
 
   *pcolon = '\0';
@@ -942,7 +943,7 @@ static int local_or_remote(
 
     /* local file */
 
-    return(0);
+    return(false);
     }
   else if (told_to_cp(*path, pcolon + 1, path))
     {
@@ -950,15 +951,15 @@ static int local_or_remote(
 
     /* local file */
 
-    return(0);
+    return(false);
     }
 
   /* remote file */
 
   *pcolon = ':';
 
-  return(1);
-  }  /* END local_or_remote() */
+  return(true);
+  }  /* END is_remote() */
 
 
 
@@ -2024,7 +2025,7 @@ static void resume_suspend(
 
     pjob->ji_momstat = time_now;
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+    set_jobs_substate(pjob, JOB_SUBSTATE_SUSPEND);
     pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
 
     if (LOGLEVEL >= 1)
@@ -2038,7 +2039,7 @@ static void resume_suspend(
     }
   else
     {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+    set_jobs_substate(pjob, JOB_SUBSTATE_RUNNING);
 
     /* Ok, we resumed'em, we have set ji_momstat to the time we suspended the
        job.  We use this to compute a new start-time for the job, so that
@@ -2275,7 +2276,7 @@ void req_signaljob(
 
         log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+        set_jobs_substate(pjob, JOB_SUBSTATE_EXITING);
 
         if (multi_mom)
           {
@@ -2749,7 +2750,7 @@ int del_files(
 
     replace_checkpoint_path(path);
 
-    if (local_or_remote(&prmt) == 0)
+    if (is_remote(&prmt) == false)
       {
       /* local file, do source and destination match? */
       /* if so, don't delete it       */
@@ -2917,7 +2918,6 @@ void req_rerunjob(
   job           *pjob;
   int            sock;
   int            rc;
-  int            retrycnt = 0;
 
   pjob = mom_find_job(preq->rq_ind.rq_rerun);
 
@@ -2952,22 +2952,13 @@ void req_rerunjob(
    * No message handler function is needed because return_file blocks and waits for reply.
    * This is acceptable because we are a child process, not pbs_mom.
    */
+  sock = mom_open_socket_to_jobs_server_with_retries(pjob, __func__, NULL, 10);
 
-  while ((sock = mom_open_socket_to_jobs_server(pjob, __func__, NULL)) < 0)
-    {
-    retrycnt++;
-    if (retrycnt < 10)
-      {
-      sleep(1);
-      }
-    else
-      {
-      /* FAILURE */
-      
-      req_reject(PBSE_NOSERVER, 0, preq, NULL, NULL);
-      
-      exit(0);
-      }
+  if (sock < 0)
+    { 
+    req_reject(PBSE_NOSERVER, 0, preq, NULL, NULL);
+    
+    exit(0);
     }
 
   bool checkfile_sent_ok = true;
@@ -3041,30 +3032,24 @@ void req_returnfiles(
   {
   struct job  *pjob;
   int          sock;
-  int          retry_attempts = 0;
 
   pjob = mom_find_job(preq->rq_ind.rq_returnfiles.rq_jobid);
 
   if (pjob != NULL)
     {
-    while ((sock = mom_open_socket_to_jobs_server(pjob, __func__, NULL)) < 0)
+    sock = mom_open_socket_to_jobs_server_with_retries(pjob, __func__, NULL, 10);
+
+    if (sock < 0)
       {
-      if (retry_attempts++ >= 10)
-        {
-        req_reject(PBSE_NOSERVER, 0, preq, NULL, (char *)"Unable to open socket to pbs_server");
-
-        break;
-        }
-
       sprintf(log_buffer, "mom_open_socket_to_jobs_server FAILED to get socket: %d for job %s",
         sock,
         pjob->ji_qs.ji_jobid);
       
       log_err(-1, __func__, log_buffer);
-      sleep(1);
+    
+      req_reject(PBSE_SOCKET_FAULT, 0, preq, mom_host, "Cannot open a socket to pbs_server");
       }
-
-    if (sock >= 0)
+    else
       {
       if (preq->rq_ind.rq_returnfiles.rq_return_stdout)
         {
@@ -3263,6 +3248,378 @@ void string_replchar(
     }
   }
 
+
+
+/*
+ * expand_words()
+ *
+ * Replaces the environment variables in source and destination with their actual values
+ * @param source - the source pre-expansion
+ * @param destination - the destination pre-expansion, modified by this function
+ * @param sources - where all of the source expansions are placed
+ * @param bad_list - where any failed arguments are placed
+ */
+
+int expand_words(
+
+  char                      *source,
+  char                      *destination,
+  std::vector<std::string>  &sources,
+  char                     **bad_list)
+
+  {
+#ifdef HAVE_WORDEXP
+  wordexp_t       src_exp;
+  wordexp_t       dest_exp;
+
+  switch (wordexp(source, &src_exp, WRDE_NOCMD | WRDE_UNDEF))
+    {
+
+    case 0:
+
+      break; /* Successful */
+
+    case WRDE_NOSPACE:
+
+      wordfree(&src_exp);
+
+      /* fall through */
+
+    default:
+
+      sprintf(log_buffer, "Failed to expand source path in data staging: %s",
+        source);
+
+      add_bad_list(bad_list, log_buffer, 2);
+
+      return(-1);
+
+      /*NOTREACHED*/
+
+      break;
+    }  /* END switch () */
+
+  // Expand and verify destination
+
+  // translate spaces so wordexp() won't split things up
+  //  on a path containing them
+  string_replchar(destination, ' ', '\001');
+
+  switch (wordexp(destination, &dest_exp, WRDE_NOCMD | WRDE_UNDEF))
+    {
+
+    case 0:
+
+      /* success - allow if word count is 1 */
+
+      if (dest_exp.we_wordc == 1)
+        {
+        snprintf(destination, MAXPATHLEN+1, "%s", dest_exp.we_wordv[0]);
+
+        // restore spaces (if any)
+        string_replchar(destination, '\001', ' ');
+
+        wordfree(&dest_exp);
+
+        break; /* Successful */
+        }
+
+      /* fall through */
+
+    case WRDE_NOSPACE:
+
+      wordfree(&dest_exp);
+
+      /* fall through */
+
+    default:
+
+      sprintf(log_buffer, "Failed to expand destination path in data staging: %s",
+        destination);
+
+      add_bad_list(bad_list, log_buffer, 2);
+
+      return(-1);
+
+      break;
+    }  /* END switch () */
+
+  /* NOTE: more than one word is only allowed for source */
+  for (int i = 0; i < src_exp.we_wordc; i++)
+    sources.push_back(src_exp.we_wordv[i]);
+
+  wordfree(&src_exp);
+
+#else
+  sources.push_back(source);
+#endif
+
+  return(PBSE_NONE);
+  } // END expand_words()
+
+
+
+void copy_file_cleanup(
+    
+  int             dir,
+  int             from_spool,
+  batch_request  *preq,
+  struct rqfpair *pair,
+  char           *localname,
+  int             localname_size,
+  char          **bad_list)
+
+  {
+  if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
+    {
+    /* delete the stage_in files that were just copied in */
+
+    /* NOTE:  running as user in user homedir */
+    if (preq != NULL)
+      del_files(preq, NULL, 1, bad_list);
+
+    }
+#if NO_SPOOL_OUTPUT == 0
+  else if (from_spool == 1)
+    {
+    char undelname[MAXPATHLEN + 1];
+    /* copy out of spool */
+
+    /* Copying out files and in spool area ... */
+    /* move to "undelivered" directory         */
+    snprintf(localname, localname_size, "%s", path_spool);
+    strncat(localname, pair->fp_local, (localname_size - strlen(localname) - 1));
+    snprintf(undelname, sizeof(undelname), "%s", path_undeliv);
+    strncat(undelname, pair->fp_local, (sizeof(undelname) - strlen(undelname) - 1));
+
+    if (rename(localname, undelname) == 0)
+      {
+      add_bad_list(bad_list, output_retained, 1);
+      add_bad_list(bad_list, undelname, 0);
+      }
+    else
+      {
+      sprintf(log_buffer, "Unable to rename %s to %s",
+              localname,
+              undelname);
+
+      log_err(errno, __func__, log_buffer);
+      }
+    }
+#endif /* !NO_SPOOL_OUTPUT */
+
+  if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
+    {
+    unlink(rcperr);
+    }
+  } // END copy_file_cleanup()
+
+
+
+/*
+ * copy_and_process()
+ *
+ * We have a lot of error processing around the call to sys_copy(). As a result, we move
+ * it all into this function
+ */
+
+int copy_and_process(
+    
+  bool  rmtflag,
+  char  *src,
+  char  *dest,
+  int    conn,
+  int    dir,
+  char  *localname,
+  char **bad_list,
+  int   &bad_files)
+
+  {
+  int rc;
+
+  if ((rc = sys_copy(rmtflag, src, dest, conn)) != 0)
+    {
+    FILE *fp;
+
+    /* copy failed */
+
+    bad_files = 1;
+
+    sprintf(log_buffer, "Unable to copy file %s to %s, error %d",
+      src,
+      dest,
+      rc);
+
+    add_bad_list(bad_list, log_buffer, 2);
+
+    log_err(-1, __func__, log_buffer);
+
+    /* copy message from rcp as well */
+
+    if ((fp = fopen(rcperr, "r")) != NULL)
+      {
+      add_bad_list(bad_list, (char *)"*** error from copy", 1);
+
+      while (fgets(log_buffer, LOG_BUF_SIZE, fp) != NULL)
+        {
+        int len = strlen(log_buffer) - 1;
+
+        if (log_buffer[len] == '\n')
+          log_buffer[len] = '\0';
+
+        add_bad_list(bad_list, log_buffer, 1);
+        }
+
+      fclose(fp);
+
+      add_bad_list(bad_list, (char *)"*** end error output", 1);
+      }
+    } /* END if ((rc = sys_copy(...)) != 0) */
+  else
+    {
+    /* Copy in/out succeeded */
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer,"copy succeeded (%s) from (%s) to (%s)\n",
+        (dir == 0)? "In" : "Out", src, dest);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+      }
+
+    if (dir == STAGE_DIR_OUT)
+      {
+      /* have copied out, ok to remove local one */
+
+      if (remtree(localname) < 0)
+        {
+        sprintf(log_buffer, msg_err_unlink,
+                "stage out",
+                localname);
+
+        log_err(errno, __func__, log_buffer);
+
+
+        add_bad_list(bad_list, log_buffer, 2);
+
+        bad_files = 1;
+        }
+      }
+    else if (dir == CKPT_DIR_OUT)
+      {
+      /*
+       * we need to clean up the job checkpoint file
+       * the job directory gets deleted when job is done
+       */
+
+      /*
+       * If the checkpoint file
+       * is in the the TRemChkptDirList then we do not delete since directory
+       * is remotely mounted.
+       */
+      if (!in_remote_checkpoint_dir(localname))
+        {
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buffer,"removing checkpoint file (%s)\n", localname);
+          log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+          }
+
+        /* have copied out, ok to remove local one */
+
+        if (remtree(localname) < 0)
+          {
+          sprintf(log_buffer, msg_err_unlink,
+                  "checkpoint",
+                  localname);
+
+          log_err(errno, __func__, log_buffer);
+
+          add_bad_list(bad_list, log_buffer, 2);
+
+          bad_files = 1;
+          }
+        }
+      }
+    }
+
+  return(rc);
+  } // END copy_and_process()
+
+
+
+/*
+ * determine_spooldir()
+ *
+ * Determines the spool directory used for this job
+ * @param spooldir - populated with the job's spool directory
+ * @param pjob - the job in question
+ */
+
+void determine_spooldir(
+
+  std::string &spooldir,
+  job         *pjob)
+
+  {
+#if NO_SPOOL_OUTPUT == 1
+  spooldir = HDir;
+  spooldir += "/.pbs_spool/";
+
+  rcstat = stat(spooldir.c_str(), &myspooldir);
+
+  if ((rcstat != 0) || 
+      (!S_ISDIR(myspooldir.st_mode)))
+    spooldir.clear();
+
+#else  /* NO_SPOOL_OUTPUT == 1 */
+  spooldir.clear();
+
+#endif /* END NO_SPOOL_OUTPUT == 1 */
+
+  if ((spooldir.size() == 0) &&
+      (TNoSpoolDirList[0] != NULL))
+    {
+    char *wdir = NULL;
+
+    if (pjob != NULL)
+      {
+      wdir = get_job_envvar(pjob, (char *)"PBS_O_WORKDIR");
+      }
+
+    if (wdir != NULL)
+      {
+      /* check if job's work dir matches the no-spool directory list */
+
+      for (int dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
+        {
+        if (TNoSpoolDirList[dindex] == NULL)
+          break;
+
+        if (!strcasecmp(TNoSpoolDirList[dindex], "$WORKDIR") ||
+            !strcmp(TNoSpoolDirList[dindex], "*"))
+          {
+          spooldir = wdir;
+
+          break;
+          }
+
+        if (!strncmp(TNoSpoolDirList[dindex], wdir, strlen(TNoSpoolDirList[dindex])))
+          {
+          spooldir = wdir;
+
+          break;
+          }
+        }  // END for (dindex)
+      }    // END if (wdir != NULL)
+    }      // END if spooldir isn't set yet and we have a no spool dir list
+
+  // If we haven't set it yet, then it should be set to the spool path
+  if (spooldir.size() == 0)
+    spooldir = path_spool;
+
+  } // END determine_spooldir()
+
+
+
 /*
  * req_cpyfile - process the Copy Files request from the server to dispose
  * of output from the job.  This is done by a child of MOM since it
@@ -3307,15 +3664,13 @@ void req_cpyfile(
   char           *bad_list = NULL;
   int             dir = 0;
   int             from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
-  int             len;
   char            localname[MAXPATHLEN + 1];  /* used only for in-bound */
 
   struct rqfpair *pair = NULL;
   char           *prmt;
   int             rc;
-  int             rmtflag = 0;
+  bool            rmtflag = false;
 #if NO_SPOOL_OUTPUT == 0
-  char            undelname[MAXPATHLEN + 1];
 #endif /* !NO_SPOOL_OUTPUT */
 
 #ifdef  _CRAY
@@ -3325,8 +3680,7 @@ void req_cpyfile(
 
   struct stat     myspooldir;
   int             rcstat;
-  char            homespool[MAXPATHLEN + 1];
-  int             havehomespool;
+  std::string     spool_dir;
 
   char            EMsg[1024];
   char            HDir[1024];
@@ -3334,11 +3688,9 @@ void req_cpyfile(
   job            *pjob = NULL;
 
 #ifdef HAVE_WORDEXP
+  std::vector<std::string> sources;
   int             madefaketmpdir = 0;
   int             usedfaketmpdir = 0;
-  wordexp_t       arg2exp;
-  wordexp_t       arg3exp;
-  int             arg2index = -1;
   char            faketmpdir[1024];
   int             wordexperr = 0;
 #endif
@@ -3367,6 +3719,8 @@ void req_cpyfile(
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, preq->rq_ind.rq_cpyfile.rq_jobid, log_buffer);
     }
+  
+  pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid);
 
   rc = (int)fork_to_user(preq, TRUE, HDir, EMsg);
 
@@ -3401,89 +3755,28 @@ void req_cpyfile(
 
   if (rc > 0)
     {
-    /* parent - continue with other tasks */
+    // parent - continue with other tasks. 
+    // In single transaction mode, mark this as a special subtask
+    if (pjob != NULL)
+      {
+      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT)
+        {
+        pjob->ji_momsubt = rc;
+        pjob->ji_mompost = send_job_obit;
+        }
+      }
 
     /* SUCCESS */
 
     return;
     }
 
-  /* child */
-
-  /* now running as user in the user's home directory */
-
-#if NO_SPOOL_OUTPUT == 1
-  snprintf(homespool, sizeof(homespool), "%s/.pbs_spool/",
-    HDir);
-
-  rcstat = stat(homespool, &myspooldir);
-
-  if ((rcstat == 0) && S_ISDIR(myspooldir.st_mode))
-    {
-    havehomespool = 1;
-    }
-  else
-    {
-    havehomespool = 0;
-    }
-
-#else  /* NO_SPOOL_OUTPUT == 1 */
-  homespool[0]  = '\0';
-
-  havehomespool = 0;
-
-#endif /* END NO_SPOOL_OUTPUT == 1 */
-
-  if ((havehomespool == 0) && (TNoSpoolDirList[0] != NULL))
-    {
-    int   dindex;
-
-    char *wdir;
-
-    if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) == NULL)
-      {
-      wdir = NULL;
-      }
-    else
-      {
-      wdir = get_job_envvar(pjob, (char *)"PBS_O_WORKDIR");
-      }
-
-    if (wdir != NULL)
-      {
-      /* check if job's work dir matches the no-spool directory list */
-
-      for (dindex = 0;dindex < TMAX_NSDCOUNT;dindex++)
-        {
-        if (TNoSpoolDirList[dindex] == NULL)
-          break;
-
-        if (!strcasecmp(TNoSpoolDirList[dindex], "$WORKDIR") ||
-            !strcmp(TNoSpoolDirList[dindex], "*"))
-          {
-          havehomespool = 1;
-
-          snprintf(homespool, sizeof(homespool), "%s", wdir);
-
-          break;
-          }
-
-        if (!strncmp(TNoSpoolDirList[dindex], wdir, strlen(TNoSpoolDirList[dindex])))
-          {
-          havehomespool = 1;
-
-          snprintf(homespool, sizeof(homespool), "%s", wdir);
-
-          break;
-          }
-        }  /* END for (dindex) */
-      }    /* END if (wdir != NULL) */
-    }      /* END if ((havehomespool == 0) && (TNoSpoolDirList != NULL)) */
+  // CHILD - now running as user in the user's home directory
 
 #ifdef HAVE_WORDEXP
   faketmpdir[0] = '\0';
 
-  if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) == NULL)
+  if (pjob == NULL)
     {
     /* This is a stagein which happens before the job struct to sent to MOM
      * or a checkpoint file coming in.
@@ -3551,7 +3844,10 @@ void req_cpyfile(
   arg2 = (char *)calloc((MAXPATHLEN + 1), sizeof(char));
   arg3 = (char *)calloc((MAXPATHLEN + 1), sizeof(char));
 
-  if ((arg2==NULL) || (arg3==NULL))
+  dir = preq->rq_ind.rq_cpyfile.rq_dir;
+
+  if ((arg2 == NULL) ||
+      (arg3 == NULL))
     {
     /* FAILURE - in child process */
 
@@ -3562,10 +3858,8 @@ void req_cpyfile(
 
     bad_files = 1;
 
-    goto error;
+    copy_file_cleanup(dir, from_spool, preq, pair, localname, sizeof(localname), &bad_list);
     }
-
-  dir = preq->rq_ind.rq_cpyfile.rq_dir;
 
   for (pair = (struct rqfpair *)GET_NEXT(preq->rq_ind.rq_cpyfile.rq_pair);
        pair != NULL;
@@ -3582,18 +3876,7 @@ void req_cpyfile(
 
     prmt       = pair->fp_rmt;
 
-    if (local_or_remote(&prmt) == 0)
-      {
-      /* destination host is this host, use cp */
-
-      rmtflag = 0;
-      }
-    else
-      {
-      /* destination host is another, use (pbs_)rcp */
-
-      rmtflag = 1;
-      }
+    rmtflag = is_remote(&prmt);
 
     /* which way to copy, in or out? */
 
@@ -3606,56 +3889,18 @@ void req_cpyfile(
 
       if (pair->fp_flag == STDJOBFILE)
         {
-#if NO_SPOOL_OUTPUT == 0
+        snprintf(localname, sizeof(localname), "%s/%s", spool_dir.c_str(), pair->fp_local);
 
-        if (havehomespool == 1)
+        // If we can't find it under the spool we determined, try path_spool
+        rcstat = stat(localname_alt, &myspooldir);
+
+        if ((rcstat != 0) ||
+            (!S_ISREG(myspooldir.st_mode)))
           {
-          /* only use spooldir if the job file exists */
-          snprintf(localname_alt, sizeof(localname_alt), "%s/%s", homespool, pair->fp_local);
-
-          rcstat = stat(localname_alt, &myspooldir);
-
-          if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
-            {
-            snprintf(localname, sizeof(localname), "%s", localname_alt);
-            }
-          else
-            {
-            /* what should be done here??? */
-            snprintf(localname, sizeof(localname), "%s", localname_alt);
-            }
+          if (spool_dir != path_spool)
+            snprintf(localname, sizeof(localname), "%s/%s", path_spool, pair->fp_local);
           }
-        else
-          {
-          /* stdout | stderr from MOM's spool area (ie, /var/spool/torque/spool )
-           * pair->fp_local is the from location */
-          snprintf(localname, sizeof(localname), "%s%s", path_spool, pair->fp_local);
-
-          from_spool = 1; /* flag as being in spool dir */
-          }
-
-#else
-        snprintf(localname, sizeof(localname), "%s", pair->fp_local);
-
-        if (havehomespool)
-          {
-          /* only use ~/.pbs_spool if the file actually exists */
-          snprintf(localname_alt, sizeof(localname_alt), "%s/%s", homespool, pair->fp_local);
-
-          rcstat = stat(localname_alt, &myspooldir);
-
-          if ((rcstat == 0) && S_ISREG(myspooldir.st_mode))
-            {
-            snprintf(localname, sizeof(localname), "%s", localname_alt);
-            }
-          else
-            {
-            /* what should be done here??? */
-            snprintf(localname, sizeof(localname), "%s", localname_alt);
-            }
-          }
-
-#endif /* NO_SPOOL_OUTPUT */
+        
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)
         {
@@ -3755,116 +4000,14 @@ void req_cpyfile(
       }  /* END else (dir == STAGE_DIR_OUT) */
 
 #ifdef HAVE_WORDEXP
-
-    /* Expand and verify arg2 (source path) */
-
-    switch (wordexp(arg2, &arg2exp, WRDE_NOCMD | WRDE_UNDEF))
+    if ((wordexperr = expand_words(arg2, arg3, sources, &bad_list)) != PBSE_NONE)
       {
-
-      case 0:
-
-        wordexperr = 0;
-
-        break; /* Successful */
-
-      case WRDE_NOSPACE:
-
-        wordfree(&arg2exp);
-
-        /* fall through */
-
-      default:
-
-        sprintf(log_buffer, "Failed to expand source path in data staging: %s",
-          arg2);
-
-        add_bad_list(&bad_list, log_buffer, 2);
-
+      if (bad_list != NULL)
         bad_files = 1;
 
-        wordexperr = 1;  /* ensure we don't attempt a second source file */
+      copy_file_cleanup(dir, from_spool, preq, pair, localname, sizeof(localname), &bad_list);
 
-        goto error;
-
-        /*NOTREACHED*/
-
-        break;
-      }  /* END switch () */
-
-    /* Expand and verify arg3 (destination path) */
-
-    // translate spaces so wordexp() won't split things up
-    //  on a path containing them
-    string_replchar(arg3, ' ', '\001');
-
-    switch (wordexp(arg3, &arg3exp, WRDE_NOCMD | WRDE_UNDEF))
-      {
-
-      case 0:
-
-        /* success - allow if word count is 1 */
-
-        if (arg3exp.we_wordc == 1)
-          {
-          snprintf(arg3, MAXPATHLEN+1, "%s", arg3exp.we_wordv[0]);
-
-          // restore spaces (if any)
-          string_replchar(arg3, '\001', ' ');
-
-          wordfree(&arg3exp);
-
-          wordexperr = 0;
-
-          break; /* Successful */
-          }
-
-        /* fall through */
-
-      case WRDE_NOSPACE:
-
-        wordfree(&arg3exp);
-
-        /* fall through */
-
-      default:
-
-        sprintf(log_buffer, "Failed to expand destination path in data staging: %s",
-          arg3);
-
-        add_bad_list(&bad_list, log_buffer, 2);
-
-        bad_files = 1;
-
-        wordexperr = 1;  /* ensure we don't attempt a second destination file */
-
-        goto error;
-
-        break;
-      }  /* END switch () */
-
-    /* NOTE: more than one word is only allowed for arg2 (source) */
-
-
-    arg2index = -1;
-
-nextword:
-
-    arg2index++;
-
-    if (arg2index >= (int)arg2exp.we_wordc)
-      {
-      /* no more words */
-
-      wordfree(&arg2exp);
-
-      continue;
-      }
-
-    strcpy(arg2, arg2exp.we_wordv[arg2index]);
-
-    if (dir == STAGE_DIR_OUT)
-      {
-      snprintf(localname, sizeof(localname), "%s", arg2);
+      break;
       }
 
     /* if we made a fake TMPDIR, and we are using it, don't delete after stagein */
@@ -3882,182 +4025,42 @@ nextword:
 
 #endif /* HAVE_WORDEXP */
 
-    if ((rmtflag == 0) &&
-         ((is_file_same(arg2, arg3) == 1) || (is_file_going_to_dir(arg2, arg3) == 1)))
+    // Apparently we can have more that one source? This doesn't make sense to me, as we're 
+    // copying all of them to the same destination, but I'll preserve the functionality
+    for (size_t i = 0; i < sources.size(); i++)
       {
-      /*
-       * If this is a local file then don't copy it
-       * if source file and destination file are the same file or
-       * if the destination (arg3) is a directory not a file name
-       * and the source file (arg2) is in the destination directory (arg3)
-       */
-
-      continue;
-      }
-
-    if ((rc = sys_copy(rmtflag, arg2, arg3, preq->rq_conn)) != 0)
-      {
-      FILE *fp;
-
-      /* copy failed */
-
-      bad_files = 1;
-
-      sprintf(log_buffer, "Unable to copy file %s to %s, error %d",
-        arg2,
-        arg3,
-        rc);
-
-      add_bad_list(&bad_list, log_buffer, 2);
-
-      log_err(-1, __func__, log_buffer);
-
-      /* copy message from rcp as well */
-
-      if ((fp = fopen(rcperr, "r")) != NULL)
+      if ((rmtflag == 0) &&
+           ((is_file_same(arg2, arg3) == 1) || (is_file_going_to_dir(arg2, arg3) == 1)))
         {
-        add_bad_list(&bad_list, (char *)"*** error from copy", 1);
+        /*
+         * If this is a local file then don't copy it
+         * if source file and destination file are the same file or
+         * if the destination (arg3) is a directory not a file name
+         * and the source file (arg2) is in the destination directory (arg3)
+         */
 
-        while (fgets(log_buffer, LOG_BUF_SIZE, fp) != NULL)
-          {
-          len = strlen(log_buffer) - 1;
-
-          if (log_buffer[len] == '\n')
-            log_buffer[len] = '\0';
-
-          add_bad_list(&bad_list, log_buffer, 1);
-          }
-
-        fclose(fp);
-
-        add_bad_list(&bad_list, (char *)"*** end error output", 1);
+        continue;
         }
 
-
-error:
-      if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
+      if ((rc = copy_and_process(rmtflag,
+                                 arg2,
+                                 arg3,
+                                 preq->rq_conn,
+                                 dir,
+                                 localname,
+                                 &bad_list,
+                                 bad_files)) != PBSE_NONE)
         {
-        /* delete the stage_in files that were just copied in */
-
-        /* NOTE:  running as user in user homedir */
-
-        del_files(preq, NULL, 1, &bad_list);
-
-#if NO_SPOOL_OUTPUT == 0
-        }
-      else if (from_spool == 1)
-        {
-        /* copy out of spool */
-
-        /* Copying out files and in spool area ... */
-        /* move to "undelivered" directory         */
-        snprintf(localname, sizeof(localname), "%s", path_spool);
-        strncat(localname, pair->fp_local, (sizeof(localname) - strlen(localname) - 1));
-        snprintf(undelname, sizeof(undelname), "%s", path_undeliv);
-        strncat(undelname, pair->fp_local, (sizeof(undelname) - strlen(undelname) - 1));
-
-        if (rename(localname, undelname) == 0)
-          {
-          add_bad_list(&bad_list, output_retained, 1);
-          add_bad_list(&bad_list, undelname, 0);
-          }
-        else
-          {
-          sprintf(log_buffer, "Unable to rename %s to %s",
-                  localname,
-                  undelname);
-
-          log_err(errno, __func__, log_buffer);
-          }
-
-#endif /* !NO_SPOOL_OUTPUT */
-        }
-
-      if ((dir == STAGE_DIR_IN) || (dir == CKPT_DIR_IN))
-        {
-        unlink(rcperr);
+        copy_file_cleanup(dir, from_spool, preq, pair, localname, sizeof(localname), &bad_list);
 
         break;
         }
-      }    /* END if ((rc = sys_copy(rmtflag,arg2,arg3,preq->rq_conn)) != 0) */
-    else
-      {
-      /* Copy in/out succeeded */
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buffer,"copy succeeded (%s) from (%s) to (%s)\n",
-          (dir == 0)? "In" : "Out", arg2, arg3);
-        log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-        }
 
-      if (dir == STAGE_DIR_OUT)
-        {
-        /* have copied out, ok to remove local one */
-
-        if (remtree(localname) < 0)
-          {
-          sprintf(log_buffer, msg_err_unlink,
-                  "stage out",
-                  localname);
-
-          log_err(errno, __func__, log_buffer);
-
-
-          add_bad_list(&bad_list, log_buffer, 2);
-
-          bad_files = 1;
-          }
-        }
-      else if (dir == CKPT_DIR_OUT)
-        {
-        /*
-         * we need to clean up the job checkpoint file
-         * the job directory gets deleted when job is done
-         */
-
-        /*
-         * If the checkpoint file
-         * is in the the TRemChkptDirList then we do not delete since directory
-         * is remotely mounted.
-         */
-        if (in_remote_checkpoint_dir(localname))
-          {
-          continue;
-          }
-
-        if (LOGLEVEL >= 7)
-          {
-          sprintf(log_buffer,"removing checkpoint file (%s)\n", localname);
-          log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-          }
-
-        /* have copied out, ok to remove local one */
-
-        if (remtree(localname) < 0)
-          {
-          sprintf(log_buffer, msg_err_unlink,
-                  "checkpoint",
-                  localname);
-
-          log_err(errno, __func__, log_buffer);
-
-          add_bad_list(&bad_list, log_buffer, 2);
-
-          bad_files = 1;
-          }
-        }
-      }
-
-    unlink(rcperr);
-
-#ifdef HAVE_WORDEXP
-
-    if (!wordexperr)
-      goto nextword;  /* ugh, it's hard to use a real loop when your feature is #ifdef's out */
-
-#endif
+      unlink(rcperr);
+      } // END for each source
     }  /* END for (pair) */
 
+error:
 #ifdef HAVE_WORDEXP
   if (madefaketmpdir && !usedfaketmpdir)
     {
@@ -4077,14 +4080,16 @@ error:
     reply_ack(preq);
     }
 
+  // In single transaction mode, delete the staged in files next
+  if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT)
+    delete_staged_in_files(pjob, HDir, &bad_list);
+
   /* we are the child, exit not return */
 
   /* SUCCESS */
 
   exit(0);
   }  /* END req_cpyfile() */
-
-
 
 
 
@@ -4116,10 +4121,8 @@ void req_delfile(
 
   if (rc > 0)
     {
-    /* parent */
 
-    /* continue with other tasks */
-
+    // parent - continue with other tasks
     /* SUCCESS */
 
     return;
@@ -4246,9 +4249,284 @@ void req_change_power_state(
   reply_ack(request); //Reply first, won't be able to after.
   pstate.set_power_state(requested_power_state);
   sleep(10);
-  }
+  } // END req_change_power_state()
 
+
+
+/*
+ * initialize_stageout_request()
+ *
+ * Sets up a stageout request for pjob to be used by req_cpyfile()
+ */
+
+batch_request *initialize_stageout_request(
+
+  job *pjob)
+
+  {
+  batch_request     *preq = alloc_br(PBS_BATCH_CopyFiles);
+  struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
+
+  pcf->rq_dir = STAGE_DIR_OUT;
+  CLEAR_HEAD(pcf->rq_pair);
+  strcpy(pcf->rq_jobid, pjob->ji_qs.ji_jobid);
+  snprintf(pcf->rq_owner, sizeof(pcf->rq_owner),
+           "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  snprintf(pcf->rq_user, sizeof(pcf->rq_user),
+           "%s", pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+
+  char *at;
+
+  if (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != NULL)
+    {
+    snprintf(pcf->rq_group, sizeof(pcf->rq_group),
+             "%s", pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+
+    if ((at = strchr(pcf->rq_group, '@')) != NULL)
+      *at = '\0';
+    }
+
+  if ((at = strchr(pcf->rq_owner, '@')) != NULL)
+    *at = '\0';
+
+  if ((at = strchr(pcf->rq_user, '@')) != NULL)
+    *at = '\0';
+
+  return(preq);
+  } // END initialize_stageout_request()
+
+
+
+/*
+ * get_std_file_info()
+ *
+ * Returns a batch request with the std file information to copy back
+ * @param pjob - the job whose std file info is wanted
+ */
+
+batch_request *get_std_file_info(
+
+  job *pjob)
+
+  {
+  batch_request *preq;
+  bool           copy_stdout = true;
+  bool           copy_stderr = true;
+
+  // Interactive jobs have no std files, and if spoolasfinalname is set the output is already
+  // where it should be
+  if ((spoolasfinalname == TRUE) ||
+      ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long != 0)))
+    return(NULL);
+
+  if (pjob->ji_wattr[JOB_ATR_join].at_val.at_str != NULL)
+    {
+    if (!strcmp(pjob->ji_wattr[JOB_ATR_join].at_val.at_str, "oe"))
+      copy_stderr = false;
+    else if (!strcmp(pjob->ji_wattr[JOB_ATR_join].at_val.at_str, "eo"))
+      copy_stdout = false;
+    }
+
+  preq = initialize_stageout_request(pjob);
+  struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
+    
+  if (copy_stdout)
+    {
+    struct rqfpair *pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
+    std::string local(pjob->ji_qs.ji_fileprefix);
+    local += JOB_STDOUT_SUFFIX;
+
+    pair->fp_local = strdup(local.c_str());
+    pair->fp_rmt = strdup(pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str);
+    pair->fp_flag = STAGE_DIR_OUT;
+    
+    CLEAR_LINK(pair->fp_link);
+    append_link(&pcf->rq_pair, &pair->fp_link, pair);
+    }
+
+  if (copy_stderr)
+    {
+    struct rqfpair *pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
+    std::string local(pjob->ji_qs.ji_fileprefix);
+    local += JOB_STDERR_SUFFIX;
+
+    pair->fp_local = strdup(local.c_str());
+    pair->fp_rmt = strdup(pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str);
+    pair->fp_flag = STAGE_DIR_OUT;
+    
+    CLEAR_LINK(pair->fp_link);
+    append_link(&pcf->rq_pair, &pair->fp_link, pair);
+    }
+
+  return(preq);
+  } // END get_std_file_info()
+
+
+
+/*
+ * place_files_in_preq()
+ *
+ * Takes the files from arst and places them as pairs into preq in the format to be used by
+ * req_cpyfile() or req_delfile()
+ *
+ * @param preq - the batch request we're populating
+ * @param arst - the array_strings that we're pulling file names from
+ */
+void place_files_in_preq(
+
+  batch_request        *preq,
+  struct array_strings *arst)
+
+  {
+  struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
+
+  for (int i = 0; i < arst->as_usedptr; i++)
+    {
+    std::string stage(arst->as_string[i]);
+    std::size_t pos = stage.find("@");
+
+    if (pos != std::string::npos)
+      {
+      struct rqfpair *pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
+      std::string local(stage.substr(0, pos));
+
+      pair->fp_local = strdup(local.c_str());
+      pair->fp_rmt = strdup(stage.c_str() + pos + 1);
+      pair->fp_flag = STAGEFILE;
+    
+      CLEAR_LINK(pair->fp_link);
+      append_link(&pcf->rq_pair, &pair->fp_link, pair);
+      }
+    }
+  } // END place_files_in_preq()
+
+
+
+/*
+ * get_stageout_info()
+ *
+ * Reads the list of stageout files for pjob, if any, and places them in a batch request
+ * @param preq - the batch request to create or add to
+ * @param pjob - the job whose stage out files we're looking for.
+ * @return an appended or created batch request with the stage out information, or NULL if there is
+ * no stage out information an the preq parameter is NULL
+ */
+
+batch_request *get_stageout_info(
+
+  batch_request *preq,
+  job           *pjob)
+
+  {
+  struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stageout].at_val.at_arst;
+
+  // If this isn't set we have nothing to add
+  if (arst == NULL)
+    return(preq);
+
+  if (preq == NULL)
+    preq = initialize_stageout_request(pjob);
+
+  place_files_in_preq(preq, arst);
+
+  return(preq);
+  } // END get_stageout_info()
+
+
+
+/*
+ * send_back_std_and_staged_files()
+ *
+ * Looks at pjob and sends back it's std files and stage out files, if any
+ * @param pjob - the job whose files we're sending back
+ * @param exit_status - ignored
+ */
+
+int send_back_std_and_staged_files(
+
+  job *pjob,
+  int  exit_status)
+
+  {
+  batch_request *preq = get_std_file_info(pjob);
+
+  preq = get_stageout_info(preq, pjob);
+
+  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
+
+  if (preq != NULL)
+    req_cpyfile(preq);
+  else
+    delete_staged_in_files(pjob, NULL, NULL);
+
+  return(PBSE_NONE);
+  } // END send_back_std_and_staged_files()
+
+
+
+/*
+ * delete_staged_in_files()
+ *
+ * Looks at pjob and deletes its staged in files, if any
+ */
+
+void delete_staged_in_files(
+
+  job   *pjob,
+  char  *home_dir,
+  char **bad_list)
+
+  {
+  struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stagein].at_val.at_arst;
+
+  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEDEL);
+
+  if (arst != NULL)
+    {
+    batch_request *preq = initialize_stageout_request(pjob);
+    preq->rq_ind.rq_cpyfile.rq_dir = STAGE_DIR_IN;
+
+    place_files_in_preq(preq, arst);
+
+    if (home_dir == NULL)
+      {
+      char *bad = NULL;
+      home_dir = get_job_envvar(pjob, (char *)"PBS_O_INITDIR");
+      
+      if (home_dir == NULL)
+        home_dir = pjob->ji_grpcache->gc_homedir;
+
+      *bad_list = bad;
+      }
+
+    del_files(preq, home_dir, 1, bad_list);
+    }
+  else
+    send_job_obit(pjob, 0);
+
+  } // END delete_staged_in_files()
+
+
+
+/*
+ * post_stageout()
+ *
+ * We have finished copying back any stdout/stderr files and stage out files. Deleting any
+ * stage in files in the next step.
+ */
+
+int post_stageout(
+
+  job *pjob,  
+  int  exit_code)
+
+  {
+  delete_staged_in_files(pjob, NULL, NULL);
+  return(PBSE_NONE);
+  } // END post_stageout()
 
 
 
 /* END requests.c */
+
