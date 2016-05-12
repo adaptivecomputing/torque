@@ -1258,6 +1258,7 @@ job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
 bool         job_id_exists(const std::string &job_id_string, int *rcode);
+bool         internal_job_id_exists(int internal_id);
 #else
 extern job  *mom_find_job(const char *);
 int          send_back_std_and_staged_files(job *pjob, int exitstatus);

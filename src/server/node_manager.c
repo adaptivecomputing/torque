@@ -289,6 +289,55 @@ struct pbsnode *tfind_addr(
 
 
 
+void check_node_jobs_existence(
+    
+  struct work_task *pwt)
+
+  {
+  char *node_name = (char *)pwt->wt_parm1;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  pbsnode *pnode = find_nodebyname(node_name);
+
+  if (pnode != NULL)
+    {
+    std::vector<int> internal_ids;
+    std::vector<int> indices_to_remove;
+    
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      internal_ids.push_back(pnode->nd_job_usages[i].internal_job_id);
+
+    pnode->unlock_node(__func__, "", LOGLEVEL);
+
+    for (size_t i = 0; i < internal_ids.size(); i++)
+      {
+      // Job doesn't exist, mark this usage record for removal
+      if (internal_job_id_exists(internal_ids[i]) == false)
+        indices_to_remove.push_back(i);
+      }
+
+    if (indices_to_remove.size() > 0)
+      {
+      pbsnode *pnode = find_nodebyname(node_name);
+
+      if (pnode != NULL)
+        {
+        // Erase non-existent job ids
+        for (size_t i = 0; i < indices_to_remove.size(); i++)
+          pnode->nd_job_usages.erase(pnode->nd_job_usages.begin() + indices_to_remove[i] - i);
+    
+        pnode->unlock_node(__func__, "", LOGLEVEL);
+        }
+      }
+    }
+
+  free(node_name);
+  } // END check_node_jobs_existence()
+
+
+
 /* update_node_state - central location for updating node state */
 /* NOTE:  called each time a node is marked down, each time a MOM reports node  */
 /*        status, and when pbs_server sends hello/cluster_addrs */
@@ -371,6 +420,8 @@ void update_node_state(
     np->nd_state &= ~INUSE_BUSY;
     np->nd_state &= ~INUSE_UNKNOWN;
     np->nd_state &= ~INUSE_DOWN;
+
+    set_task(WORK_Immed, 0, check_node_jobs_existence, strdup(np->get_name()), FALSE);
     }    /* END else if (newstate == INUSE_FREE) */
   else if (newstate & INUSE_NETWORK_FAIL)
     {

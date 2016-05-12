@@ -306,6 +306,11 @@ int id_map::get_new_id(const char *job_name)
   return(id++);
   }
 
+const char *id_map::get_name(int internal_job_id)
+  {
+  return("1.napali");
+  }
+
 id_map job_mapper;
 
 char *get_correct_jobname(const char *id)

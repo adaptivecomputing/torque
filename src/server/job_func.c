@@ -2405,9 +2405,38 @@ bool job_id_exists(
   alljobs.unlock();
 
   return(rc);
-  }
+  } // END job_id_exists()
 
 
+
+/*
+ * internal_job_id_exists()
+ *
+ * Checks if a job exists based on the internal id supplied.
+ * @return true if a job exists with that internal id, false otherwise
+ */
+
+bool internal_job_id_exists(
+
+  int internal_id)
+
+  {
+  bool        exists = false;
+  const char *job_id = job_mapper.get_name(internal_id);
+
+  if (job_id != NULL)
+    {
+    alljobs.lock();
+    
+    if (alljobs.find(job_id) != NULL)
+      exists = true;
+
+    alljobs.unlock();
+    }
+
+  return(exists);
+  } // END internal_job_id_exists()
+  
 
 /* END job_func.c */
 
