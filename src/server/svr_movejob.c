@@ -713,6 +713,11 @@ int send_job_work(
     resc_access_perm = ATR_DFLAG_MOM;
     encode_type = ATR_ENCODE_MOM;
     cntype = ToServerDIS;
+    /* node_name is NULL when passed through send_job_to_mom */
+    if (node_name == NULL && strlen(job_destin) > 0)
+	{
+	    node_name = job_destin;
+	}
     }
   else
     {
