@@ -3676,7 +3676,6 @@ void req_cpyfile(
 #ifdef  _CRAY
   char            tmpdirname[MAXPATHLEN + 1];
 #endif  /* _CRAY */
-  char            localname_alt[MAXPATHLEN + 1];
 
   struct stat     myspooldir;
   int             rcstat;
@@ -3892,7 +3891,7 @@ void req_cpyfile(
         snprintf(localname, sizeof(localname), "%s/%s", spool_dir.c_str(), pair->fp_local);
 
         // If we can't find it under the spool we determined, try path_spool
-        rcstat = stat(localname_alt, &myspooldir);
+        rcstat = stat(localname, &myspooldir);
 
         if ((rcstat != 0) ||
             (!S_ISREG(myspooldir.st_mode)))
@@ -4081,7 +4080,8 @@ error:
     }
 
   // In single transaction mode, delete the staged in files next
-  if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT)
+  if ((pjob != NULL) && 
+      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT))
     delete_staged_in_files(pjob, HDir, &bad_list);
 
   /* we are the child, exit not return */
