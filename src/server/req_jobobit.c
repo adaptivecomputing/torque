@@ -3388,14 +3388,17 @@ bool is_job_finished(
   mutex_mgr  node_mutex(&pnode->nd_mutex, true);
   bool       done = false;
 
-  // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
-  if (pnode->get_version() >= 610)
+  if (pnode != NULL)
     {
-    node_mutex.unlock();
-    rel_resc(pjob);
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
-    handle_complete_first_time(pjob);
-    done = true;
+    // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
+    if (pnode->get_version() >= 610)
+      {
+      node_mutex.unlock();
+      rel_resc(pjob);
+      svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+      handle_complete_first_time(pjob);
+      done = true;
+      }
     }
 
   return(done);
