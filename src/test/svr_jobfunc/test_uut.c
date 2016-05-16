@@ -1,4 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
+
+#include <pbs_config.h>
+
 #include "svr_jobfunc.h"
 #include "pbs_job.h"
 #include "server.h"
@@ -18,6 +21,7 @@ int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
 void job_wait_over(struct work_task *);
 bool is_valid_state_transition(job &pjob, int newstate, int newsubstate);
+bool has_conflicting_resource_requests(job *pjob, pbs_queue *pque);
 
 extern int decrement_count;
 extern job napali_job;
@@ -46,6 +50,88 @@ START_TEST(test_numa_task_exceeds_resources)
   possible = true;
   complete_req  cr;
   pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  }
+END_TEST
+
+
+START_TEST(has_conflicting_resource_requeusts_test)
+  {
+  job       *pjob = (job *)calloc(1, sizeof(job));
+  pbs_queue *pque = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+
+  pjob->ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
+  pque->qu_attr[QA_ATR_ResourceDefault].at_flags = ATR_VFLAG_SET;
+
+  set_resource = "nodes";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "trl";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "size";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "mppwidth";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "mem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "hostlist";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "ncpus";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "procs";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "pvmem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "pmem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "vmem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "reqattr";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "software";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "geometry";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "opsys";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "tpn";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "walltime";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+
+  set_resource = "epilogue";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+
+  // Make sure we allow conflicting resources if the queue has 
+  pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
+  set_resource = "tpn";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  set_resource = "vmem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  set_resource = "nodes";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  
+  pque->qu_attr[QA_ATR_ResourceDefault].at_flags = 0;
+  pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
+  set_resource = "nodes";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "walltime";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
   }
 END_TEST
 
@@ -640,6 +726,7 @@ Suite *svr_jobfunc_suite(void)
   tc_core = tcase_create("set_statechar_test");
   tcase_add_test(tc_core, set_statechar_test);
   tcase_add_test(tc_core, is_valid_state_transition_test);
+  tcase_add_test(tc_core, has_conflicting_resource_requeusts_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("lock_ji_mutex_test");
