@@ -166,7 +166,7 @@ int req::getExecutionSlots() const
   return(this->execution_slots);
   }
 
-int req::set_value(const char *name, const char *value)
+int req::set_value(const char *name, const char *value, bool is_default)
   {
   if (!strcmp(name, "lprocs"))
     this->execution_slots = atoi(value);

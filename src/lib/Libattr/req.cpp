@@ -1937,7 +1937,8 @@ void req::set_from_string(
 int req::set_value(
 
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   int rc = PBSE_NONE;
@@ -1961,30 +1962,56 @@ int req::set_value(
     }
   else if (!strncmp(name, "memory", 6))
     {
-    if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->mem == 0))
+      {
+      if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strncmp(name, "swap", 4))
     {
-    if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->swap == 0))
+      {
+      if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strncmp(name, "disk", 4))
     {
-    if ((rc = read_mem_value(value, this->disk)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->disk == 0))
+      {
+      if ((rc = read_mem_value(value, this->disk)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strcmp(name, "node"))
-    this->nodes = strtol(value, NULL, 10);
+    {
+    if ((!is_default) ||
+        (this->nodes == 0))
+      {
+      this->nodes = strtol(value, NULL, 10);
+      }
+    }
   else if (!strncmp(name, "socket", 7))
     {
-    this->socket = strtol(value, NULL, 10);
-    this->placement_str = place_socket;
+    if ((!is_default) ||
+        (this->socket == 0))
+      {
+      this->socket = strtol(value, NULL, 10);
+      this->placement_str = place_socket;
+      }
     }
   else if (!strncmp(name, "numanode", 10))
     {
-    this->numa_nodes = strtol(value, NULL, 10);
-    this->placement_str = place_numa_node;
+    if ((!is_default) ||
+        (this->numa_nodes == 0))
+      {
+      this->numa_nodes = strtol(value, NULL, 10);
+      this->placement_str = place_numa_node;
+      }
     }
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
@@ -2023,15 +2050,23 @@ int req::set_value(
     this->insert_hostname(value);
   else if (!strcmp(name, "core"))
     {
-    int core_count = strtol(value, NULL, 10);
-    if (core_count != 0)
-      this->cores = core_count;
+    if ((!is_default) ||
+        (this->cores == 0))
+      {
+      int core_count = strtol(value, NULL, 10);
+      if (core_count != 0)
+        this->cores = core_count;
+      }
     }
   else if (!strcmp(name, "thread"))
     {
-    int thread_count = strtol(value, NULL, 10);
-    if (thread_count != 0)
-      this->threads = thread_count;
+    if ((!is_default) ||
+        (this->threads == 0))
+      {
+      int thread_count = strtol(value, NULL, 10);
+      if (thread_count != 0)
+        this->threads = thread_count;
+      }
     }
   else
     return(PBSE_BAD_PARAMETER);
@@ -2050,49 +2085,41 @@ int req::set_value(
  * @return PBSE_NONE if the name is valid or PBSE_BAD_PARAMETER for an invalid name
  */
 
-int req::set_value(
+int req::set_task_value(
 
-  const char  *name,
   const char  *value,
   unsigned int task_index)
 
   {
 
-  if (!strcmp(name, "task_usage"))
+  int rc;
+  unsigned int allocations_size = this->task_allocations.size();
+
+  if (allocations_size <= task_index)
     {
-    int rc;
-    unsigned int allocations_size = this->task_allocations.size();
-
-    if (allocations_size <= task_index)
+    // There are fewer tasks than task_index. Add empty tasks until we get to task_index
+       
+    for (unsigned int i = allocations_size; i < task_index; i++)
       {
-      /* There are fewer tasks than task_index. Add empty
-         tasks until we get to task_index */
-         
-      for (unsigned int i = allocations_size; i < task_index; i++)
+      allocation a;
+
+      rc = this->get_task_allocation(task_index, a);
+      if (rc != PBSE_NONE)
         {
-        allocation a;
-
-        rc = this->get_task_allocation(task_index, a);
-        if (rc != PBSE_NONE)
-          {
-          this->task_allocations.push_back(a);
-          }
-        }
-        allocation a;
-        a.initialize_from_string(value);
         this->task_allocations.push_back(a);
+        }
       }
-    else
-      {
-      this->task_allocations[task_index].initialize_from_string(value);
-      }
+      allocation a;
+      a.initialize_from_string(value);
+      this->task_allocations.push_back(a);
     }
   else
-    return(PBSE_BAD_PARAMETER);
+    {
+    this->task_allocations[task_index].initialize_from_string(value);
+    }
 
   return(PBSE_NONE);
-
-  }
+  } // END set_task_value()
  
 
 int req::getExecutionSlots() const

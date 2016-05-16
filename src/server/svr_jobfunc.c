@@ -3381,23 +3381,25 @@ void set_deflt_resc(
       }
     else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
       {
-      std::vector<std::string> req_names, req_values;
-      std::vector<std::string> default_names, default_values;
+      std::vector<std::string> default_names;
+      std::vector<std::string> default_values;
       complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
       attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
       int req_count;
 
       if (cr == NULL)
         return;
-      cr->get_values(req_names, req_values);
+
       req_count = cr->req_count();
-      ari->add_default_values(req_names, req_values, default_names, default_values);
+
+      ari->get_default_values(default_names, default_values);
 
       for (unsigned int i = 0; i < default_names.size(); i++)
         {
         for (unsigned int j = 0; j < (unsigned int)req_count; j++)
           {
-          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          // Let the complete req know this is a default so it won't overwrite an existing value.
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str(), true);
           }
         }
       }

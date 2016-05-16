@@ -380,7 +380,8 @@ int complete_req::set_value(
 
   int         index,
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   if (index < 0)
@@ -393,7 +394,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[index].set_value(name, value));
+  return(this->reqs[index].set_value(name, value, is_default));
   } // END set_value()
 
 

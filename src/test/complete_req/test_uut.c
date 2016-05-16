@@ -28,11 +28,11 @@ START_TEST(test_set_get_value)
   {
   complete_req c;
 
-  fail_unless(c.set_value(1, "task_count", "5") == PBSE_NONE);
-  fail_unless(c.set_value(0, "task_count", "4") == PBSE_NONE);
-  fail_unless(c.set_value(0, "lprocs", "4") == PBSE_NONE);
-  fail_unless(c.set_value(1, "gpus", "2") == PBSE_NONE);
-  fail_unless(c.set_value(-1, "blah", "blah") == PBSE_BAD_PARAMETER);
+  fail_unless(c.set_value(1, "task_count", "5", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "task_count", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "lprocs", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(1, "gpus", "2", false) == PBSE_NONE);
+  fail_unless(c.set_value(-1, "blah", "blah", false) == PBSE_BAD_PARAMETER);
   fail_unless(c.req_count() == 2);
 
   std::vector<std::string> names;
