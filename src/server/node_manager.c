@@ -4821,7 +4821,10 @@ int locate_resource_request_20_nodes(
       if (used_nodes.find(pnode->nd_id) != used_nodes.end())
         continue;
 
-      int can_place = pnode->nd_layout->how_many_tasks_can_be_placed(r);
+      int can_place = 0;
+
+      if (pnode->nd_layout != NULL)
+        can_place = pnode->nd_layout->how_many_tasks_can_be_placed(r);
 
       if (can_place != 0)
         {

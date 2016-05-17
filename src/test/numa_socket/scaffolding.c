@@ -208,7 +208,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r, int place_type) const
+float Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }
