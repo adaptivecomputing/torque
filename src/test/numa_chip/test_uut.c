@@ -603,6 +603,10 @@ START_TEST(test_how_many_tasks_fit)
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
   r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
+
+  // Make sure we can do fractional fits
+  c.setCores(1);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
   }
 END_TEST
 

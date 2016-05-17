@@ -930,16 +930,16 @@ void Chip::aggregate_allocation(
  * @return the number of tasks that fit. This can be 0
  */
 
-int Chip::how_many_tasks_fit(
+float Chip::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  int cpu_tasks;
-  int gpu_tasks;
-  int mic_tasks;
-  int mem_tasks = 0;
+  float cpu_tasks;
+  float gpu_tasks;
+  float mic_tasks;
+  float mem_tasks = 0;
 
   // Consider exclusive socket and node the same as exclusive chip for our purposes
   if ((place_type == exclusive_socket) ||
@@ -951,7 +951,7 @@ int Chip::how_many_tasks_fit(
        (this->chipIsAvailable()) == true))
     {
     // Need to handle place={core|thread}[=x]
-    int max_cpus = r.getExecutionSlots();
+    float max_cpus = r.getExecutionSlots();
     if (r.getPlaceCores() > 0)
       max_cpus = r.getPlaceCores();
     else if (r.getPlaceThreads() > 0)
@@ -969,7 +969,7 @@ int Chip::how_many_tasks_fit(
     // Memory isn't required for submission
     if (memory != 0)
       {
-      mem_tasks = this->available_memory / memory;
+      mem_tasks = this->available_memory * 1.0 / memory;
 
       // return the lower of the two values
       if (mem_tasks > cpu_tasks)
@@ -978,7 +978,7 @@ int Chip::how_many_tasks_fit(
     else
       mem_tasks = cpu_tasks;
 
-    int gpus = r.getGpus();
+    float gpus = r.getGpus();
     if (gpus > 0)
       {
       gpu_tasks = this->available_gpus / gpus;
@@ -986,7 +986,7 @@ int Chip::how_many_tasks_fit(
         mem_tasks = gpu_tasks;
       }
 
-    int mics = r.getMics();
+    float mics = r.getMics();
     if (mics > 0)
       {
       mic_tasks = this->available_mics / mics;
