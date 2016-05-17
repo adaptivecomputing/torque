@@ -171,7 +171,7 @@ int  decode_complete_req(
     
     if (!strncmp(attr_name, "task_usage", strlen("task_usage")))
       {
-      rc = cr->set_value(attr_name, val);
+      rc = cr->set_task_value(attr_name, val);
       }
     else
       {
@@ -294,7 +294,7 @@ void overwrite_complete_req(
     {
     if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
       {
-      cr->set_value(names[i].c_str(), values[i].c_str());
+      cr->set_task_value(names[i].c_str(), values[i].c_str());
       }
     else
       {

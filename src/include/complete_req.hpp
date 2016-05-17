@@ -101,7 +101,7 @@ class complete_req
     void           add_req(req &r);
     void           set_from_string(const std::string &obj_string);
     int            set_value(int index, const char *name, const char *value, bool is_default);
-    int            set_value(const char *name, const char *value);
+    int            set_task_value(const char *name, const char *value);
     void           toString(std::string &output) const;
     int            req_count() const;
     void           get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
