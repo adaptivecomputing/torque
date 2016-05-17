@@ -891,6 +891,8 @@ void release_node_allocation(
     free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
     pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    /* additionally clear the StagedIn flag if set */
+    pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
     }
   } /* END release_node_allocation() */
 
