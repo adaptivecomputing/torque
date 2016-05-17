@@ -11,7 +11,7 @@ AM_LDFLAGS = @CHECK_LIBS@ ${lib_LTLIBRARIES}
 
 check_PROGRAMS = test_get_server
 
-libget_server_la_SOURCES = scaffolding.c ${PROG_ROOT}/get_server.c
+libget_server_la_SOURCES = scaffolding.c ${PROG_ROOT}/get_server.c ${PROG_ROOT}/parse_jobid.c
 libget_server_la_LDFLAGS = @CHECK_LIBS@ -shared -lgcov
 
 test_get_server_SOURCES = test_get_server.c
