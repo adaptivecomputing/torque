@@ -848,6 +848,11 @@ int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
   return(PBSE_NONE);
   }
 
+int init_torque_cgroups()
+  {
+  return(PBSE_NONE);
+  }
+
 int trq_cg_add_devices_to_cgroup(job *pjob)
   {
   return(PBSE_NONE);
