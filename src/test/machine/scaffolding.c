@@ -250,7 +250,7 @@ void complete_req::set_hostlists(const char *job_id, const char *hostlists)
   {
   }
 
-complete_req::complete_req(list_link &l, bool legacy) {}
+complete_req::complete_req(list_link &l, int num_ppn, bool legacy) {}
 
 req::req() {}
 req::req(const req &other) {}

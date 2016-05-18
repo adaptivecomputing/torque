@@ -3064,9 +3064,9 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
 
 #ifdef PENABLE_LINUX_CGROUPS
 // Stub out some functions for NUMA
-#ifdef NVML_API
+#ifdef NVIDIA_GPUS
 int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
-void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology) {}
+//extern void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology) {}
 #endif
 #ifdef MIC
 int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology) {return(0);}

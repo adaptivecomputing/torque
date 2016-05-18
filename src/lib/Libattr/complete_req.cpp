@@ -54,6 +54,7 @@ void complete_req::set_value_from_nodes(
 complete_req::complete_req(
 
   tlist_head &resources,
+  int         ppn_needed,
   bool        legacy_vmem) : reqs()
 
   {
@@ -61,6 +62,7 @@ complete_req::complete_req(
   int            task_count = 0;
   int            execution_slots = 0;
   unsigned long  mem = 0;
+  std::string    mem_type;
 
   while (pr != NULL)
     {
@@ -84,6 +86,7 @@ complete_req::complete_req(
              (!strcmp(pr->rs_defin->rs_name, "mem")) ||
              (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
+      mem_type = pr->rs_defin->rs_name;
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
@@ -121,6 +124,7 @@ complete_req::complete_req(
     if (task_count != 0)
       r.set_task_count(task_count);
 
+
     r.set_memory(mem);
     r.set_swap(mem);
 
@@ -141,13 +145,36 @@ complete_req::complete_req(
         total_tasks += this->reqs[i].getTaskCount();
 
       mem_per_task /= total_tasks;
-      }
 
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+        r.set_memory(mem_per_task);
+        r.set_swap(mem_per_task);
+        }
+
+      }
+    else
       {
-      req &r = this->reqs[i];
-      r.set_memory(mem_per_task);
-      r.set_swap(mem_per_task);
+      if ((mem_type == "mem") || (mem_type == "vmem"))
+        mem_per_task = mem;
+      else if ((mem_type == "pmem") || (mem_type == "pvmem"))
+        {
+        mem_per_task = mem * ppn_needed;
+        }
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+
+        if ((mem_type == "mem") || (mem_type == "pmem"))
+          r.set_memory(mem_per_task);
+        else if ((mem_type == "vmem") || (mem_type == "pvmem"))
+          {
+          r.set_memory(mem_per_task);
+          r.set_swap(mem_per_task);
+          }
+        }
       }
     }
   } // END constructor from resource list

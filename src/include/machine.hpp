@@ -54,7 +54,7 @@ class PCI_Device
     PCI_Device &operator=(const PCI_Device &other);
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
-#ifdef NVML_API
+#ifdef NVIDIA_GPUS
     void initializeGpu(int idx, hwloc_topology_t topology);
 #endif
 #ifdef MIC

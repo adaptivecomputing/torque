@@ -4381,11 +4381,6 @@ unsigned long long get_swap_limit_for_this_host(
   if (cr != NULL)
     swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
 
-  if (swap_limit == 0)
-    {
-    swap_limit = get_memory_limit_from_resource_list(pjob);
-    }
-
   return(swap_limit);
   } // END get_swap_limit_for_this_host()
 

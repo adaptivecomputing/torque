@@ -1033,3 +1033,7 @@ job::job()
 
 job::~job() {}
 
+bool have_incompatible_dash_l_resource(job *pjob)
+  {
+  return(true);
+  }

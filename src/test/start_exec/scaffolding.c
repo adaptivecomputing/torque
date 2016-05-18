@@ -51,6 +51,7 @@ bool fail_site_grp_check = false;
 bool addr_fail = false;
 
 
+int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -1067,3 +1068,9 @@ req &complete_req::get_req(int i)
 #ifdef ENABLE_PMIX
 void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
 #endif
+
+int setup_gpus_for_job(job *pjob)
+  {return(0);}
+
+int init_torque_cgroups()
+  {return(0);}
