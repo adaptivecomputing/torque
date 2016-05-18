@@ -1122,6 +1122,31 @@ bool am_i_mother_superior(
   }
 
 
+void set_jobs_substate(
+
+  job *pjob,
+  int  new_substate)
+
+  {
+  if (pjob != NULL)
+    {
+    if (pjob->ji_qs.ji_substate != new_substate)
+      {
+      time_now = time(NULL);
+      unsigned int momport = 0;
+
+      pjob->ji_qs.ji_substate = new_substate;
+      pjob->ji_state_set = time_now;
+
+      if (multi_mom)
+        momport = pbs_rm_port;
+        
+      job_save(pjob, SAVEJOB_QUICK, momport);
+      }
+    }
+  } // END set_jobs_substate()
+
+
 #ifdef ENABLE_PMIX
 const int pmix_info_count = 17;
 

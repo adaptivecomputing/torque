@@ -21,10 +21,12 @@ class tcpData
   std::deque<char> data;
 
   public:
-  tcpData()
+  tcpData() : data()
     {
     memset(&mutex,0,sizeof(mutex));
     }
+
+  ~tcpData() {}
 
   int read(char **bf,long long *len)
     {
@@ -676,8 +678,11 @@ void DIS_tcp_cleanup(
 
   tp = &chan->writebuf;
   free(tp->tdis_thebuf);
-  tcpData *data = fds[chan->sock];
-  if(data != NULL) delete data;
+  std::map<int,tcpData *>::iterator it = fds.find(chan->sock);
+
+  if (it != fds.end())
+    fds.erase(it);
+
   free(chan);
   }
 

@@ -262,8 +262,11 @@ extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, const char *);
-extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
+int          mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
+int          mom_open_socket_to_jobs_server_with_retries(job* pjob, const char *id, void *(*message_hander)(void *), int retry_limit);
 void         clear_servers();
+
+void         set_jobs_substate(job *pjob, int new_substate);
 
 int          become_the_user(job *pjob);
 

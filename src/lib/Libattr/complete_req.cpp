@@ -348,33 +348,30 @@ int complete_req::set_task_cput_used(
  */
 
 
-int complete_req::set_value(
+int complete_req::set_task_value(
 
   const char *name,
   const char *value)
   
   {
   int   rc = PBSE_NONE;
-  char *attr_name = strdup(name);
-  char *dot1;
-  char *dot2;
+  const char *dot1;
+  const char *dot2;
   unsigned int   req_index;
   unsigned int   task_index;
 
-  dot1 = strchr(attr_name, '.');
-  dot2 = strrchr(attr_name, '.');
+  dot1 = strchr(name, '.');
+  dot2 = strrchr(name, '.');
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
-    free(attr_name);
     return(PBSE_BAD_PARAMETER);
     }
 
   req_index = strtol(dot1 + 1, NULL, 10);
-  *dot1 = '\0';
   task_index = strtol(dot2 + 1, NULL, 10);
-  *dot2 = '\0';
 
+  // Add new reqs if needed
   while (this->reqs.size() <= req_index)
     {
     req r;
@@ -382,9 +379,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  rc = this->reqs[req_index].set_value(attr_name, value, task_index);
-
-  free(attr_name);
+  rc = this->reqs[req_index].set_task_value(value, task_index);
 
   return(rc);
  
@@ -407,7 +402,8 @@ int complete_req::set_value(
 
   int         index,
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   if (index < 0)
@@ -420,7 +416,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[index].set_value(name, value));
+  return(this->reqs[index].set_value(name, value, is_default));
   } // END set_value()
 
 

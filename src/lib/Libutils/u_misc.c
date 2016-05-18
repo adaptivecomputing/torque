@@ -536,30 +536,36 @@ bool have_incompatible_dash_l_resource(
 
   {
   resource *presl; /* for -l resource request */
+  bool      found_incompatible_resource = false;
 
-  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-  if (presl != NULL)
+  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {
-    std::vector<std::string>::iterator it;
-
-    if (incompatible_dash_l_resources.size() == 0)
-      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
-
-    do
+    presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    if (presl != NULL)
       {
-      std::string pname = presl->rs_defin->rs_name;
-      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
-      if (it != incompatible_dash_l_resources.end())
-        {
-        /* pname points to a string of an incompatible -l resource type */
-        return(true);
-        }
+      std::vector<std::string>::iterator it;
 
-      presl = (resource *)GET_NEXT(presl->rs_link);
-      }while(presl != NULL);
-                              }
-    return(false);
+      if (incompatible_dash_l_resources.size() == 0)
+        initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
+
+      do
+        {
+        std::string pname = presl->rs_defin->rs_name;
+        it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
+        if (it != incompatible_dash_l_resources.end())
+          {
+          /* pname points to a string of an incompatible -l resource type */
+          found_incompatible_resource = true;
+          break;
+          }
+
+        presl = (resource *)GET_NEXT(presl->rs_link);
+        } while(presl != NULL);
+      }
     }
+
+  return(found_incompatible_resource);
+  }
 
 
 #endif /* PENABLE_LINUX_CGROUPS */

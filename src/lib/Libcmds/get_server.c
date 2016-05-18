@@ -127,7 +127,6 @@ int get_server(
   char *parent_server = NULL;
   char *current_server = NULL;
   char def_server[PBS_MAXSERVERNAME + 1];
-  char host_server[PBS_MAXSERVERNAME + 1];
   char *c;
 
   /* parse the job_id_in into components */
@@ -152,18 +151,12 @@ int get_server(
       /* @server found */
       snprintf(server_out, server_out_size, "%s", current_server);
       }
-    else if (notNULL(parent_server))
-      {
-      /* .server found */
-      snprintf(server_out, server_out_size, "%s", parent_server);
-      }
     else
       {
       /* can't locate a server, so return a NULL to tell pbs_connect to use default */
       server_out[0] = '\0';
       }
     
-    /* Make a fully qualified name of the job id. */  
     if (notNULL(parent_server))
       {
       if (notNULL(current_server))
@@ -173,20 +166,7 @@ int get_server(
         }
       else
         {
-        if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
-         {
-         /* FAILURE */
-         return(1);
-         }
-        
-        if (!strncmp(parent_server, host_server, strlen(parent_server)))
-          {
-          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
-          }
-        else
-          {
-          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
-          }
+        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
         }
       
       if ((c = strchr(parent_server, ':')) != 0)
@@ -210,28 +190,12 @@ int get_server(
       
       c = def_server;
       
-      while ((*c != '\n') && (*c != '\0') && (*c != ':'))
+      while ((*c != '\n') && (*c != '\0'))
         c++;
       
       *c = '\0';
       
-      if (get_fullhostname(def_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
-        {
-        /* FAILURE */
-        
-        return(1);
-        }
-      
-      if ((c = strchr(def_server, ':')) != 0)
-        {
-        if (*(c - 1) == '\\')
-          c--;
-        
-        snprintf(job_id_out, job_id_out_size, "%s.%s%s", seq_number, host_server, c);
-        }
-      else
-        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
-
+      snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, def_server);
       }    /* END else */
     }
   

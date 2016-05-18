@@ -891,6 +891,8 @@ void pbsnode::change_name(const char *hostname)
   this->nd_name = hostname;
   }
 
+void pbsnode::set_version(const char *) {}
+
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
 #include "../../src/lib/Libutils/machine.cpp"

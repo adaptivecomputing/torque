@@ -3301,6 +3301,45 @@ int mom_open_socket_to_jobs_server(
   }  /* END mom_open_socket_to_jobs_server() */
 
 
+int mom_open_socket_to_jobs_server_with_retries(
+
+  job        *pjob,
+  const char *caller_id,
+  void       *(*message_handler)(void *),
+  int         retry_limit)
+
+  {
+  int retries = -1;
+  int sock = -1;
+
+  while ((sock < 0) &&
+         (retries < retry_limit))
+    {
+    sock = mom_open_socket_to_jobs_server(pjob, __func__, message_handler);
+
+    switch (errno)
+      {
+      case EINTR:
+      case ETIMEDOUT:
+      case EINPROGRESS:
+
+        retries++;
+
+        break;
+
+      default:
+
+        retries = retry_limit;
+
+        break;
+      }
+    }
+
+  return(sock);
+  } // END mom_open_socket_to_jobs_server_with_retries()
+
+
+
 /**
  * clear_down_mom_servers
  *

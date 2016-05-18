@@ -886,10 +886,11 @@ int process_status_info(
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
-	if (note_append_on_error == TRUE)
-	  {
-            set_note_error(current, str);
-	  }
+
+        if (note_append_on_error == TRUE)
+          {
+          set_note_error(current, str);
+          }
         }
       }
     else if (!strncmp(str,"macaddr=",8))
@@ -938,6 +939,10 @@ int process_status_info(
         {
         handle_auto_np(current, str);
         }
+      }
+    else if (!strncmp(str, "version=", 8))
+      {
+      current->set_version(str + 8);
       }
     } /* END processing strings */
 

@@ -101,6 +101,7 @@ extern int no_mom_servers_down();
 extern char *get_local_script_path(job *pjob, char *base);
 u_long gettime(resource *);
 u_long getsize(resource *);
+int send_back_std_and_staged_files(job *pjob, int exit_status);
 
 
 /* END external prototypes */
@@ -1119,6 +1120,7 @@ int run_epilogues(
 
 
 /**
+ * send_job_obit()
  * Send obit to server.
  *
  * @see scan_for_terminated() - calls post_epilog() via ji_mompost job pbs_attribute
@@ -1128,7 +1130,7 @@ int run_epilogues(
  * @see scan_for_exiting() for Obit overview
  */
 
-int post_epilogue(
+int send_job_obit(
 
   job *pjob,  /* I */
   int  ev)    /* I exit value (only used to determine if retrying obit) */
@@ -1149,32 +1151,12 @@ int post_epilogue(
 
   /* This is the child code */
   /* open new connection - register obit_reply as handler */
-  sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
+  sock = mom_open_socket_to_jobs_server_with_retries(pjob, __func__, obit_reply, 2);
 
   if (sock < 0)
     {
-    /* FAILURE */
-
-    if ((errno == EINTR) || (errno == ETIMEDOUT) || (errno == EINPROGRESS))
-      {
-      /* transient failure - server/network up but busy... retry */
-
-      int retrycount;
-
-      for (retrycount = 0;retrycount < 2;retrycount++)
-        {
-        sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
-
-        if (sock >= 0)
-          break;
-        }  /* END for (retrycount) */
-      }
-
-    if (sock < 0)
-      {
-      // jobs stuck in JOB_SUBSTATE_PREOBIT are retried
-      return(1);
-      }
+    // jobs stuck in JOB_SUBSTATE_PREOBIT are retried
+    return(1);
     }
 
   /* send the job obiturary notice to the server */
@@ -1251,7 +1233,7 @@ int post_epilogue(
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
   return(0);
-  } /* END post_epilogue() */
+  } /* END send_job_obit() */
 
 
 
@@ -1265,7 +1247,7 @@ int post_epilogue(
  * This function is run from scan_for_exiting().
  * It will fork:
  * - the child will run the epilogues and release the ALPS reservation if this is a login node.
- * - the parent will mark this job as ready to send the obit and mark post_epilogue as the 
+ * - the parent will mark this job as ready to send the obit and mark send_job_obit as the 
  *   next step for its processing.
  *
  * @pre-cond:  pjob must be a valid job
@@ -1303,15 +1285,15 @@ void preobit_preparation(
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
     exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
+    set_jobs_substate(pjob, JOB_SUBSTATE_PRECLEAN);
     pjob->ji_momsubt = cpid;
-    pjob->ji_mompost = post_epilogue;
+    pjob->ji_mompost = send_back_std_and_staged_files;
     pjob->ji_momhandle = -1;
 
     if (LOGLEVEL >= 2)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "epilog subtask created with pid %d - substate set to JOB_SUBSTATE_OBIT - registered post_epilogue",
+        "epilog subtask created with pid %d - substate set to JOB_SUBSTATE_OBIT - registered send_job_obit",
         cpid);
 
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
@@ -1351,7 +1333,6 @@ int process_jobs_obit_reply(
 
   {
   int          rc = preq->rq_reply.brp_code;
-  unsigned int momport = 0;
   char         tmp_line[MAXLINE];
 
   // Make sure we have cleared a previous busy reply from the server.
@@ -1359,69 +1340,19 @@ int process_jobs_obit_reply(
 
   switch (rc)
     {
-
-    case PBSE_NONE:
-
-      /* normal ack, mark job as exited */
-      pjob->ji_qs.ji_destin[0] = '\0';
-
-      pjob->ji_exited_time = time(NULL);
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-      if (multi_mom)
-        {
-        momport = pbs_rm_port;
-        }
-
-      job_save(pjob, SAVEJOB_QUICK, momport);
-
-      if (LOGLEVEL >= 4)
-        {
-        log_event(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
-        }
-
-      break;
-      
     case PBSE_UNKJOBID:
 
       // pbs_server doesn't know this job, get rid of it
       sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-      mom_deljob(pjob);
 
-      break;
-
+      // Fall through
+    
+    case PBSE_NONE:
     case PBSE_ALRDYEXIT:
 
-      /* have already told the server before recovery */
-      /* the server will contact us to continue       */
-
-      if (LOGLEVEL >= 7)
-        {
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "setting already exited job substate to EXITED");
-        }
-
-      pjob->ji_qs.ji_destin[0] = '\0';
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-      pjob->ji_exited_time = time(NULL);
-
-      if (multi_mom)
-        {
-        momport = pbs_rm_port;
-        }
-
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      mom_deljob(pjob);
 
       break;
 
@@ -1457,7 +1388,7 @@ int process_jobs_obit_reply(
 
     case - 1:
 
-      /* FIXME - causes epilogue to be run twice! */
+      // Try again soon
       pjob->ji_obit_minus_one_time = time(NULL);
 
       pjob->ji_qs.ji_destin[0] = '\0';
@@ -1471,6 +1402,7 @@ int process_jobs_obit_reply(
     default:
 
       {
+      // Random other cases, also delete
 
       switch (preq->rq_reply.brp_code)
         {
@@ -1498,11 +1430,11 @@ int process_jobs_obit_reply(
       log_ext(-1,__func__,tmp_line,LOG_ALERT);
 
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+
+      mom_deljob(pjob);
+
+      break;
       }  /* END BLOCK */
-
-    mom_deljob(pjob);
-
-    break;
     }  /* END switch (preq->rq_reply.brp_code) */
 
   return(rc);
@@ -1514,7 +1446,7 @@ int process_jobs_obit_reply(
  * obit_reply
  *
  * This function is a message handler that is hooked to a server connection.
- * The connection is established in post_epilogue().
+ * The connection is established in send_job_obit().
  *
  * A socket connection to the server is opened, a job obituary notice
  * message is sent to the server, and then at some later time, the server
@@ -1522,7 +1454,7 @@ int process_jobs_obit_reply(
  *
  * On success, this routine sets the job's substate to EXITED
  *
- * @see post_epilogue() - registers obit_reply via add_conn()
+ * @see send_job_obit() - registers obit_reply via add_conn()
  */
 
 void *obit_reply(

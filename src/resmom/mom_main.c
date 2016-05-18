@@ -150,6 +150,7 @@ const int      OBIT_RETRY_LIMIT = 5;
 const int      ALREADY_EXITED_RETRY_TIME = 30;
 const int      OBIT_SENT_WAIT_TIME = 10;
 const int      MINUS_ONE_RETRY_TIME = 15;
+const int      STAGE_WAIT_TIME = 180;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -287,7 +288,7 @@ extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 void            empty_received_nodes();
-extern int      post_epilogue(job *, int);
+extern int      send_job_obit(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(const char *str);
@@ -5983,40 +5984,6 @@ void resend_waiting_joins(
 
 
 
-void check_jobs_awaiting_join_job_reply()
-
-  {
-  job    *pjob;
-  time_now = time(NULL);
-  
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
-    {
-    pjob = *iter;
-
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
-        (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (am_i_mother_superior(*pjob) == true))
-      {
-      /* these jobs have sent out join requests but haven't received all replies */
-      if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
-        {
-        exec_bail(pjob, JOB_EXEC_RETRY);
-        }
-      else if ((time_now - pjob->ji_joins_sent > resend_join_job_wait_time) &&
-               (pjob->ji_joins_resent == FALSE))
-        {
-        pjob->ji_joins_resent = TRUE;
-        resend_waiting_joins(pjob);
-        }
-      }
-    } /* END for each job */
-
-  } /* END check_jobs_awaiting_join_job_reply() */
-
-
-
 bool should_resend_obit(
 
   job *pjob,
@@ -6094,102 +6061,208 @@ bool should_resend_obit(
 
 
 
-void check_jobs_in_obit()
+/*
+ * resend_obit_if_needed()
+ *
+ * Checks different information about the job and re-sends the job's obit to pbs_server if we're past
+ * timeouts or had other failures.
+ *
+ * @param pjob - the job whose obit we're considering sending again.
+ * @return true if the obit was re-sent, false otherwise
+ */
+
+bool resend_obit_if_needed(
+    
+  job *pjob)
 
   {
-  job    *pjob;
-  time_now = time(NULL);
-  std::list<job *>::iterator iter;
   // Add a random element for retries so that all moms aren't retrying at the same time
-  int diff = OBIT_BUSY_RETRY + (rand() % 5);
-  int retried = 0;
+  static int diff = OBIT_BUSY_RETRY + (rand() % 5);
+  bool       retried = false;
 
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end() && retried < OBIT_RETRY_LIMIT; iter++)
+  time_now = time(NULL);
+
+  if (am_i_mother_superior(*pjob))
     {
-    pjob = *iter;
-
-    if (am_i_mother_superior(*pjob))
+    if (should_resend_obit(pjob, diff) == true)
       {
-      if (should_resend_obit(pjob, diff) == true)
-        {
-        // retry sending the obit for this job
-        post_epilogue(pjob, MOM_OBIT_RETRY);
-        retried++;
-        }
+      // retry sending the obit for this job
+      send_job_obit(pjob, MOM_OBIT_RETRY);
+      retried = true;
       }
     }
-  }
+
+  return(retried);
+  } // END resend_obit_if_needed
 
 
 
-void check_jobs_in_mom_wait()
+/*
+ * check_job_in_mom_wait()
+ *
+ * Checks a job in the mom wait state and moves it to exiting if we have passed the exit wait timeout
+ *
+ * NOTE: Do not call this function with jobs not in the JOB_SUBSTATE_MOM_WAIT
+ * @param pjob - the job we're checking to see if it has passed the timeout
+ * @post-cond: pjob will transition to exiting the timeout for waiting for sisters to exit has passed
+ */
+
+void check_job_in_mom_wait(
+    
+  job *pjob)
 
   {
-  job    *pjob;
   unsigned int momport = 0;
 
   if (multi_mom)
     momport = pbs_rm_port;
   
-  time_now = time(NULL);
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  if ((pjob->ji_kill_started != 0) &&
+      (time_now - pjob->ji_kill_started > job_exit_wait_time))
     {
-    pjob = *iter;
+    /* job has exceeded the time to wait for all sisters 
+     * to report that the job is killed. Go ahead and finish
+     * it anyway */
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
+      pjob->ji_qs.ji_jobid, job_exit_wait_time);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+
+    exiting_tasks = 1;
+    }
+
+  } /* END check_job_in_mom_wait() */
+
+
+
+void evaluate_job_in_prerun(
+
+  job *pjob)
+
+  {
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      (am_i_mother_superior(*pjob) == true))
+    {
+    /* these jobs have sent out join requests but haven't received all replies */
+    if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
       {
-      if ((pjob->ji_kill_started != 0) &&
-          (time_now - pjob->ji_kill_started > job_exit_wait_time))
-        {
-        /* job has exceeded the time to wait for all sisters 
-         * to report that the job is killed. Go ahead and finish
-         * it anyway */
-        snprintf(log_buffer, sizeof(log_buffer),
-          "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
-          pjob->ji_qs.ji_jobid, job_exit_wait_time);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-        job_save(pjob, SAVEJOB_QUICK, momport);
-
-        exiting_tasks = 1;
-        }
+      exec_bail(pjob, JOB_EXEC_RETRY);
       }
-    
-    } /* END loop over all jobs */
-
-  } /* END check_jobs_in_mom_wait() */
+    else if ((time_now - pjob->ji_joins_sent > resend_join_job_wait_time) &&
+             (pjob->ji_joins_resent == FALSE))
+      {
+      pjob->ji_joins_resent = TRUE;
+      resend_waiting_joins(pjob);
+      }
+    }
+  } // END evaluate_job_in_prerun()
 
 
 
 /*
- * call_scan_for_exiting()
+ * check_job_substates()
  *
- * Checks for any exiting jobs. If they exist, we'll call scan_for_exiting.
+ * Iterates over each job on this mom to check its substate and takes any required actions. Mainly this
+ * is checking the timeouts or other things that can get stuck at the various substates, and then retry
+ * or force it to move on as required by the state machine.
+ *
+ * @param should_scan_for_exiting - set to true if we should call scan_for_exiting() after this function.
  */
 
-bool call_scan_for_exiting()
+void check_job_substates(
+    
+  bool &should_scan_for_exiting)
+
   {
+  job                        *pjob;
+  int                         retried = 0;
+  std::list<job *>::iterator  iter;
+
+  time_now = time(NULL);
+
+  should_scan_for_exiting = false;
+
   if (exiting_tasks)
-    return(true);
-
-  job          *pjob;
-
-  //NOTE: May want to put some kind of timeout so we only call this once in a while.
-  std::list<job *>::iterator iter;
+    should_scan_for_exiting = true;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
-      return(true);
-    }
 
-  return(false);
-  }
+    switch (pjob->ji_qs.ji_substate)
+      {
+      case JOB_SUBSTATE_EXITING:
+
+        should_scan_for_exiting = true;
+
+        break;
+
+      case JOB_SUBSTATE_PRERUN:
+
+        evaluate_job_in_prerun(pjob);
+
+        break;
+
+      case JOB_SUBSTATE_MOM_WAIT:
+
+        check_job_in_mom_wait(pjob);
+
+        break;
+
+      case JOB_SUBSTATE_STAGEOUT:
+
+        if (pjob->ji_momsubt == 0)
+          {
+          // We must have restarted mid-cleanup. Start this step over to be thorough.
+          send_back_std_and_staged_files(pjob, 0);
+          }
+        else if (time_now - pjob->ji_state_set > STAGE_WAIT_TIME)
+          {
+          // If we are past our timeout, move to the next step
+          send_job_obit(pjob, 0);
+          }
+
+        break;
+
+      case JOB_SUBSTATE_STAGEDEL:
+
+        if (pjob->ji_momsubt == 0)
+          {
+          // We must have restarted mid-cleanup. Start this step over to be thorough.
+          delete_staged_in_files(pjob, NULL, NULL);
+          }
+        else if (time_now - pjob->ji_state_set > STAGE_WAIT_TIME)
+          {
+          // If we are past our timeout, move on to the next step
+          send_job_obit(pjob, 0);
+          }
+
+        break;
+
+      case JOB_SUBSTATE_POST_CLEANUP:
+
+        // If we are still in this state then we need to retry. Nothing is left pending here.
+        send_job_obit(pjob, 0);
+
+        break;
+
+      default:
+
+        if (retried < OBIT_RETRY_LIMIT)
+          {
+          if (resend_obit_if_needed(pjob))
+            retried++;
+          }
+
+        break;
+      }
+
+    }
+  } // END check_job_substates()
 
 
 
@@ -6218,14 +6291,14 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRECLEAN) &&
           (pjob->ji_momsubt != 0) &&
           (kill(pjob->ji_momsubt, 0)))
         {
         if (errno == ESRCH)
           {
           // The epilog is gone but we didn't catch it
-          post_epilogue(pjob, 0);
+          send_back_std_and_staged_files(pjob, 0);
           eji.obit_sent = time_now;
           to_reinsert.push_back(eji);
           continue;
@@ -6239,7 +6312,7 @@ void check_exiting_jobs()
         continue;
         }
          
-      post_epilogue(pjob, 0);
+      send_back_std_and_staged_files(pjob, 0);
       eji.obit_sent = time_now;
       to_reinsert.push_back(eji);
       }
@@ -6370,6 +6443,7 @@ void main_loop(void)
   {
   double        myla;
   time_t        tmpTime;
+  bool          should_scan_for_exiting;
 #ifdef USESAVEDRESOURCES
   int           check_dead = TRUE;
 #endif    /* USESAVEDRESOURCES */
@@ -6466,14 +6540,9 @@ void main_loop(void)
         recover = JOB_RECOV_RUNNING;
       }
 
-    check_jobs_awaiting_join_job_reply();
+    check_job_substates(should_scan_for_exiting);
 
-    check_jobs_in_mom_wait();
-
-    check_jobs_in_obit();
-
-
-    if (call_scan_for_exiting())
+    if (should_scan_for_exiting)
       scan_for_exiting();
 
     check_exiting_jobs();

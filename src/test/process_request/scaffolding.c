@@ -537,3 +537,9 @@ bool acl_special::is_authorized(const std::string &host, const std::string &user
     return(false);
   return(true);
   }
+
+int req_job_cleanup_done(batch_request *preq)
+
+  {
+  return(PBSE_NONE);
+  }

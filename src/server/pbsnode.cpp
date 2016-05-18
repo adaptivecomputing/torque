@@ -723,6 +723,12 @@ void pbsnode::set_version(
         this->nd_version = version;
         }
       }
+    else if (!strcmp(version_str, "master"))
+      {
+      this->nd_version = 1000;
+      }
+
+    free(work);
     }
   }
 
