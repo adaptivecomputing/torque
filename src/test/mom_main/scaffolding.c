@@ -1069,3 +1069,18 @@ void free_pwnam(struct passwd *pwdp, char *buf)
 
 pmix_server_module_t psm;
 #endif
+
+int check_nvidia_setup()
+  {
+  return(1);
+  }
+
+int init_nvidia_nvml(unsigned int &count)
+ {
+ return(1);
+ }
+
+int shut_nvidia_nvml()
+  {
+  return(1);
+  }

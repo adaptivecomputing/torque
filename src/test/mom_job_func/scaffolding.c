@@ -209,3 +209,8 @@ int rmdir_ext(const char *dirname, int retry_limit)
   {
   return(0);
   }
+
+void send_update_soon()
+  {
+  return;
+  }
