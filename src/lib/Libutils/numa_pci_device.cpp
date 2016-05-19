@@ -66,6 +66,7 @@ PCI_Device::~PCI_Device()
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
 
+#ifdef NVIDIA_GPUS
 void PCI_Device::initializeGpu(
 
   int              idx,
@@ -107,6 +108,7 @@ void PCI_Device::initializeGpu(
     this->type = GPU;
 
   }
+#endif
 
 int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
   {
