@@ -1941,7 +1941,10 @@ void display_statjob(
   /* XML only support for full output */
 
   if (DisplayXML == true)
+    {
+    printf("<?xml version=\"1.0\"?>\n");
     full = true;
+    }
 
   if (!full)
     {
@@ -3203,6 +3206,10 @@ int run_job_mode(
           pbs_disconnect(connect);
           continue;
           }
+        
+        // If it's XML output display an empty XML document
+        if (DisplayXML)
+          display_statjob(p_status, print_header, f_opt, user);
 
         tcl_stat("job", NULL, f_opt);
 
