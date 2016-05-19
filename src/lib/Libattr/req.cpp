@@ -1947,17 +1947,21 @@ int req::set_value(
     this->index = strtol(value, NULL, 10);
   else if (!strncmp(name, "task_count", 10))
     {
-    if (this->task_count <=1)
+    if (this->task_count <= 1)
       this->task_count = strtol(value, NULL, 10);
     }
   else if (!strncmp(name, "lprocs", 6))
     {
-    if (value[0] == 'a')
-      this->execution_slots = ALL_EXECUTION_SLOTS;
-    else
+    if ((this->execution_slots <= 1) &&
+        (this->execution_slots != ALL_EXECUTION_SLOTS))
       {
-      if (this->execution_slots <= 1)
-        this->execution_slots = strtol(value, NULL, 10);
+      if (value[0] == 'a')
+        this->execution_slots = ALL_EXECUTION_SLOTS;
+      else
+        {
+        if (this->execution_slots <= 1)
+          this->execution_slots = strtol(value, NULL, 10);
+        }
       }
     }
   else if (!strncmp(name, "memory", 6))

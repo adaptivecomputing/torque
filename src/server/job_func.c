@@ -668,13 +668,12 @@ int job_abt(
   }  /* END job_abt() */
 
 
+
 /*
  * conn_qsub - connect to the qsub that submitted this interactive job
  * return >= 0 on SUCCESS, < 0 on FAILURE
  * (this was moved from resmom/mom_inter.c)
  */
-
-
 
 int conn_qsub(
 
@@ -742,7 +741,6 @@ int conn_qsub(
 
   return(s);
   }  /* END conn_qsub() */
-
 
 
 
@@ -864,8 +862,6 @@ job *copy_job(
 
   return(pnewjob);
   } /* END copy_job() */
-
-
 
 
 
