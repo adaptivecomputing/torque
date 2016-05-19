@@ -1131,7 +1131,6 @@ int update_nodes_file(
 
   {
   struct pbsnode     *np;
-  int                 j;
   all_nodes_iterator *iter = NULL;
   FILE               *nin;
   long                cray_enabled = FALSE;
