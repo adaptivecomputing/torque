@@ -7,6 +7,7 @@
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
+#include "alps_constants.h"
 
 #define MSG_LEN_LONG 160
 
@@ -582,6 +583,91 @@ void pbsnode::write_compute_node_properties(
   if (iter != NULL)
     delete iter;
   } /* END write_compute_node_properties() */
+
+
+
+void pbsnode::write_to_nodes_file(
+    
+  FILE *nin,
+  bool  cray_enabled) const
+
+  {
+  /* ... write its name, and if time-shared, append :ts */
+  fprintf(nin, "%s", this->nd_name.c_str()); /* write name */
+
+  /* if number of subnodes is gt 1, write that; if only one,   */
+  /* don't write to maintain compatability with old style file */
+  if (this->nd_slots.get_total_execution_slots() > 1)
+    fprintf(nin, " %s=%d", ATTR_NODE_np, this->nd_slots.get_total_execution_slots());
+
+  /* if number of gpus is gt 0, write that; if none,   */
+  /* don't write to maintain compatability with old style file */
+  if (this->nd_ngpus > 0)
+    fprintf(nin, " %s=%d", ATTR_NODE_gpus, this->nd_ngpus);
+
+  /* write out the numa attributes if needed */
+  if (this->num_node_boards > 0)
+    {
+    fprintf(nin, " %s=%d",
+      ATTR_NODE_num_node_boards,
+      this->num_node_boards);
+    }
+
+  if (this->numa_str.size() != 0)
+    fprintf(nin, " %s=%s", ATTR_NODE_numa_str, this->numa_str.c_str());
+
+  /* write out the ports if needed */
+  if (this->nd_mom_port != PBS_MOM_SERVICE_PORT)
+    fprintf(nin, " %s=%d", ATTR_NODE_mom_port, this->nd_mom_port);
+
+  if (this->nd_mom_rm_port != PBS_MANAGER_SERVICE_PORT)
+    fprintf(nin, " %s=%d", ATTR_NODE_mom_rm_port, this->nd_mom_rm_port);
+
+  if (this->gpu_str.size() != 0)
+    fprintf(nin, " %s=%s", ATTR_NODE_gpus_str, this->gpu_str.c_str());
+
+  if(this->nd_ttl[0] != '\0')
+    fprintf(nin, " %s=%s", ATTR_NODE_ttl, this->nd_ttl);
+
+  if ((this->nd_acl != NULL) &&
+      (this->nd_acl->as_usedptr != 0))
+    {
+    fprintf(nin, " %s=",ATTR_NODE_acl);
+    for (int j = 0; j < this->nd_acl->as_usedptr; j++)
+      {
+      fprintf(nin, "%s", this->nd_acl->as_string[j]);
+      if ((j + 1) != this->nd_acl->as_usedptr)
+        fprintf(nin, ",");
+      }
+    }
+
+  if (this->nd_requestid.length() != 0)
+    fprintf(nin, " %s=%s", ATTR_NODE_requestid, this->nd_requestid.c_str());
+
+  /* write out properties */
+  for (int j = 0;j < this->nd_properties.size() - 1; j++)
+    {
+    /* Don't write out the cray_enabled features here */
+    if ((this->nd_properties[j] != "cray_compute") &&
+        (this->nd_properties[j] != alps_reporter_feature) &&
+        (this->nd_properties[j] != alps_starter_feature))
+      fprintf(nin, " %s", this->nd_properties[j].c_str());
+    }
+
+  if (this->nd_is_alps_reporter == TRUE)
+    fprintf(nin, " %s", alps_reporter_feature);
+
+  if (this->nd_is_alps_login == TRUE)
+    fprintf(nin, " %s", alps_starter_feature);
+
+  /* finish off line with new-line */
+  fprintf(nin, "\n");
+
+  if ((cray_enabled == true) &&
+      (this == alps_reporter))
+    this->write_compute_node_properties(nin);
+
+  } // END write_to_nodes_file()
 
 
 
