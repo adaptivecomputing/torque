@@ -584,7 +584,7 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int log
 
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   return(NULL);

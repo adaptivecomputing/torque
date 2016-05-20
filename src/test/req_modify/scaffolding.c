@@ -78,7 +78,7 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   fprintf(stderr, "The call to get_array to be mocked!!\n");
   exit(1);

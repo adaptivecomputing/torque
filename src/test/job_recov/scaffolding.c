@@ -63,7 +63,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   return(PBSE_NONE);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   return(NULL);
   }

@@ -180,10 +180,9 @@ void initialize_all_tasks_array(all_tasks *at)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 job *get_recycled_job()

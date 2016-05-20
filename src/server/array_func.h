@@ -10,8 +10,6 @@
 
 int is_array(char *id);
 
-job_array *get_array(char *id);
-
 int array_save(job_array *pa);
 
 void array_get_parent_id(char *job_id, char *parent_id);

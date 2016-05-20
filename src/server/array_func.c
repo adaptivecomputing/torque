@@ -170,12 +170,10 @@ int is_array(
 
 
 
-
-
 /* return a server's array info struct corresponding to an array id */
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   job_array *pa;

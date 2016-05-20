@@ -653,7 +653,15 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      try
+        {
+        rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+        }
+      catch (int pbs_errcode)
+        {
+        rc = pbs_errcode;
+        }
+
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
