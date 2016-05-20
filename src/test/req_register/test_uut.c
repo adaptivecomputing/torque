@@ -371,7 +371,7 @@ START_TEST(build_depend_test)
 
   initialize_depend_attr(&pattr);
   fail_unless(build_depend(&pattr, strdup("beforeok:2.napali@bob")) == PBSE_NONE, "@server");
-  fail_unless(build_depend(&pattr, strdup("afterokarray:10[].napali")) == PBSE_BADATVAL, "array combo didn't fail");
+  fail_unless(build_depend(&pattr, strdup("afterokarray:10[].napali")) == PBSE_NONE, "array combo is now allowed");
   }
 END_TEST
 

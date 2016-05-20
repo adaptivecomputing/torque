@@ -179,7 +179,7 @@ int  array_save(job_array *pa);
 int  array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
 
-job_array *get_array(char *id);
+job_array *get_array(const char *id);
 int array_recov(const char *path, job_array **pa);
 
 int delete_array_range(job_array *pa, char *range);

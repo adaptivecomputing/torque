@@ -180,7 +180,7 @@ void initialize_all_tasks_array(all_tasks *at)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   return(NULL);
   }

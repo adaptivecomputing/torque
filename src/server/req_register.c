@@ -767,52 +767,60 @@ int req_register(
     }
  
   /* Handle the dependency */
-  switch (preq->rq_ind.rq_register.rq_op)
+  try
     {
-    case JOB_DEPEND_OP_REGISTER:
+    switch (preq->rq_ind.rq_register.rq_op)
+      {
+      case JOB_DEPEND_OP_REGISTER:
 
-      rc = register_dependency(preq, pjob, type);
+        rc = register_dependency(preq, pjob, type);
 
-      break;
-      
-    case JOB_DEPEND_OP_RELEASE:
+        break;
+        
+      case JOB_DEPEND_OP_RELEASE:
 
-      rc = release_dependency(preq, pjob, type);
+        rc = release_dependency(preq, pjob, type);
 
-      break;
+        break;
 
-    case JOB_DEPEND_OP_READY:
+      case JOB_DEPEND_OP_READY:
 
-      rc = ready_dependency(preq, pjob);
- 
-      break;
- 
-    case JOB_DEPEND_OP_DELETE:
- 
-      rc = delete_dependency_job(preq, &pjob);
- 
-      break;
- 
-    case JOB_DEPEND_OP_UNREG:
+        rc = ready_dependency(preq, pjob);
+   
+        break;
+   
+      case JOB_DEPEND_OP_DELETE:
+   
+        rc = delete_dependency_job(preq, &pjob);
+   
+        break;
+   
+      case JOB_DEPEND_OP_UNREG:
 
-      rc =  unregister_dependency(preq, pjob, type);
+        rc =  unregister_dependency(preq, pjob, type);
 
-      break;
+        break;
 
-    default:
+      default:
 
-      sprintf(log_buf, msg_illregister, preq->rq_ind.rq_register.rq_parent);
+        sprintf(log_buf, msg_illregister, preq->rq_ind.rq_register.rq_parent);
 
-      log_event(
-        PBSEVENT_DEBUG | PBSEVENT_SYSTEM | PBSEVENT_ERROR,
-        PBS_EVENTCLASS_REQUEST,
-        preq->rq_host,
-        log_buf);
+        log_event(
+          PBSEVENT_DEBUG | PBSEVENT_SYSTEM | PBSEVENT_ERROR,
+          PBS_EVENTCLASS_REQUEST,
+          preq->rq_host,
+          log_buf);
 
-      rc = PBSE_IVALREQ;
+        rc = PBSE_IVALREQ;
 
-      break;
-    }  /* END switch (preq->rq_ind.rq_register.rq_op) */
+        break;
+      }  /* END switch (preq->rq_ind.rq_register.rq_op) */
+    }
+  catch (int pbs_errcode)
+    {
+    if (pbs_errcode == PBSE_JOBNOTFOUND)
+      pjob = NULL;
+    }
 
   if (rc)
     {
@@ -1227,7 +1235,14 @@ bool set_array_depend_holds(
           /* release the array's hold - set_depend_hold
            * will clear holds if there are no other dependencies
            * logged in set_depend_hold */
-          set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend]);
+          try 
+            {
+            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend]);
+            }
+          catch (int err)
+            {
+            job_mutex.set_unlock_on_exit(false);
+            }
           }
         }
 
@@ -1305,7 +1320,14 @@ void post_doq(
           pjob->ji_modified = 1;
           }
 
-        set_depend_hold(pjob, pattr);
+        try
+          {
+          set_depend_hold(pjob, pattr);
+          }
+        catch (int err)
+          {
+          job_mutex.set_unlock_on_exit(false);
+          }
         }
       }
     }
@@ -1861,6 +1883,8 @@ void set_depend_hold(
   struct job        *djp = NULL;
   int                substate = -1;
 
+  std::vector<std::string>  array_names;
+
   if (pattr->at_flags & ATR_VFLAG_SET)
     pdp = (struct depend *)GET_NEXT(pattr->at_val.at_list);
 
@@ -1936,6 +1960,13 @@ void set_depend_hold(
           substate = JOB_SUBSTATE_DEPNHOLD;
 
         break;
+
+      default:
+
+        if (pdp->dp_type >= JOB_DEPEND_TYPE_AFTERSTARTARRAY)
+          {
+          array_names.push_back(pdp->dp_jobs[0]->dc_child);
+          }
       }  /* END switch (pdp->dp_type) */
 
     pdp = (struct depend *)GET_NEXT(pdp->dp_link);
@@ -1963,6 +1994,31 @@ void set_depend_hold(
 
       svr_evaljobstate(*pjob, newstate, newsubst, 0);
       svr_setjobstate(pjob, newstate, newsubst, FALSE);
+      }
+
+    // If we have array dependencies, we need to update them
+    if (array_names.size() != 0)
+      {
+      std::string jobid(pjob->ji_qs.ji_jobid);
+      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+
+      for (size_t i = 0; i < array_names.size(); i++)
+        {
+        job_array *pa = get_array(array_names[i].c_str());
+
+        if (pa != NULL)
+          {
+          set_array_depend_holds(pa);
+          unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+          }
+        }
+
+      pjob = svr_find_job(jobid.c_str(), TRUE);
+
+      if (pjob == NULL)
+        {
+        throw PBSE_JOBNOTFOUND;
+        }
       }
     }
   else
@@ -3093,20 +3149,6 @@ int build_depend(
 
       break;
 
-    default:
-
-      if (type >= JOB_DEPEND_TYPE_AFTERSTARTARRAY)
-        {
-        for (i = 0; i < JOB_DEPEND_TYPE_AFTERSTARTARRAY; i++)
-          {
-          /* do not mix array dependencies with other deps */
-          if (have[i])
-            {
-            free(work_val);
-            return(PBSE_BADATVAL);
-            }
-          }
-        }
     }
 
   if ((pd = have[type]) == NULL)
@@ -3292,7 +3334,16 @@ void removeAfterAnyDependency(
     if (pDepJob != NULL)
       {
       del_depend_job(pDep, pDepJob);
-      set_depend_hold(pLockedJob,pattr);
+
+      try
+        {
+        set_depend_hold(pLockedJob, pattr);
+        }
+
+      catch (int e)
+        {
+        job_mutex.set_unlock_on_exit(false);
+        }
       }
     }
   }
