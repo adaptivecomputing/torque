@@ -24,6 +24,7 @@
 int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
+bool check_rur = true;
 
 char         mom_alias[PBS_MAXHOSTNAME + 1];
 
