@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h
+include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h log.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
@@ -25,7 +25,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 node_frequency.hpp cpu_frequency.hpp sys_file.hpp power_state.hpp \
 		 job_usage_info.hpp machine.hpp req.hpp complete_req.hpp trq_cgroups.h \
 		 job_recovery.h allocation.hpp attr_req_info.hpp acl_special.hpp restricted_host.hpp \
-		 pbs_helper.h mail_throttler.hpp lib_ifl.h runjob_help.hpp log.h pmix_tracker.hpp \
+		 pbs_helper.h mail_throttler.hpp lib_ifl.h runjob_help.hpp pmix_tracker.hpp \
 		 pmix_operation.hpp job_host_data.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
