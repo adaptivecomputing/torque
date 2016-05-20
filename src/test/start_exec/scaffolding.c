@@ -1077,5 +1077,3 @@ void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
 int setup_gpus_for_job(job *pjob)
   {return(0);}
 
-int init_torque_cgroups()
-  {return(0);}
