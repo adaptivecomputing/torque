@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h
+include_HEADERS = pbs_error.h pbs_error_db.h pbs_ifl.h tm.h tm_.h rpp.h rm.h license_pbs.h tcp.h log.h
 
 noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 batch_request.h cmds.h credential.h csv.h dis.h	\
@@ -24,7 +24,7 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 delete_all_tracker.hpp timer.hpp id_map.hpp container.hpp \
 		 node_frequency.hpp cpu_frequency.hpp sys_file.hpp power_state.hpp \
 		 job_usage_info.hpp job_recovery.h acl_special.hpp restricted_host.hpp \
-		 mail_throttler.hpp u_hash_map_structs.h uthash.h log.h pbs_job.h
+		 mail_throttler.hpp u_hash_map_structs.h uthash.h pbs_job.h
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \
