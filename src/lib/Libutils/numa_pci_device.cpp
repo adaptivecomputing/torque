@@ -36,7 +36,7 @@ PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), nearest_cp
   }
 
 PCI_Device::PCI_Device(
-    
+
   const PCI_Device &other) : name(other.name), id(other.id), info_name(other.info_name),
                              info_value(other.info_value), type(other.type), busy(other.busy)
 
@@ -140,9 +140,9 @@ void PCI_Device::displayAsString(
   {
   out << "      pci " << this->id << " " << this->name << "\n";
   } // end displayasstring()
-  
+
 void PCI_Device::setName(
-    
+
   const string &name)
 
   {
@@ -150,7 +150,7 @@ void PCI_Device::setName(
   }
 
 void PCI_Device::setId(
-  
+
   int id)
 
   {
@@ -197,4 +197,4 @@ int PCI_Device::get_id() const
   return(this->id);
   }
 
-#endif /* PENABLE_LINUX_CGROUPS */   
+#endif /* PENABLE_LINUX_CGROUPS */
