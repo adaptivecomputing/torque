@@ -69,6 +69,7 @@ extern tlist_head mom_polljobs;
 extern int  exiting_tasks;
 extern char  *msg_daemonname;
 extern int  termin_child;
+extern bool check_rur;
 
 extern char  *path_aux;
 
@@ -1207,8 +1208,11 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  get_energy_used(pjob);
-
+  if (check_rur == true)
+    {
+    get_energy_used(pjob);
+    }
+  
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
   encode_flagged_attrs(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
