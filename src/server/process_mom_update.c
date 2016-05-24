@@ -639,7 +639,7 @@ int process_state_str(
 
   if (np->nd_state & INUSE_NOHIERARCHY)
     {
-    sprintf(log_buf, "node %s has not received its hiearachy yet.",
+    sprintf(log_buf, "node %s has not received its hierarchy yet.",
       (np->nd_name != NULL) ? np->nd_name : "NULL");
 
     log_err(-1, __func__, log_buf);
