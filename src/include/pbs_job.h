@@ -1038,22 +1038,43 @@ typedef struct send_job_request
 /*
  * server flags (in ji_svrflags)
  */
-#define JOB_SVFLG_HERE     0x01 /* SERVER: job created here */
-/* MOM: set for Mother Superior */
-#define JOB_SVFLG_HASWAIT  0x02 /* job has timed task entry for wait time */
-#define JOB_SVFLG_HASRUN   0x04 /* job has been run before (being rerun */
-#define JOB_SVFLG_CHECKPOINT_FILE    0x10 /* job has checkpoint file for restart */
-#define JOB_SVFLG_SCRIPT   0x20 /* job has a Script file */
-#define JOB_SVFLG_OVERLMT1 0x40 /* job over limit first time, MOM only */
-#define JOB_SVFLG_OVERLMT2 0x80 /* job over limit second time, MOM only */
-#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100 /* job has migratable checkpoint */
-#define JOB_SVFLG_Suspend  0x200 /* job suspended (signal suspend) */
-#define JOB_SVFLG_StagedIn 0x400 /* job has files that have been staged in */
-#define JOB_SVFLG_JOB_ABORTED 0x800 /* Job has been aborted for some reason */
-#define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
-#define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
-#define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
-#define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
+
+// For Server:
+#ifndef PBS_MOM
+#define JOB_SVFLG_HERE                   0x01   // SERVER: job created here
+#define JOB_SVFLG_HASWAIT                0x02   // job has timed task entry for wait time
+#define JOB_SVFLG_HASRUN                 0x04   // job has been run before (being rerun
+#define JOB_SVFLG_CHECKPOINT_FILE        0x10   // job has checkpoint file for restart
+#define JOB_SVFLG_SCRIPT                 0x20   // job has a Script file
+//#define JOB_SVFLG_OVERLMT1             0x40   // MOM only 
+//#define JOB_SVFLG_OVERLMT2             0x80   // MOM only
+#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100  // job has migratable checkpoint
+#define JOB_SVFLG_Suspend                0x200  // job suspended (signal suspend)
+#define JOB_SVFLG_StagedIn               0x400  // job has files that have been staged in
+//#define JOB_SVFLG_JOB_ABORTED          0x800  // MOM only
+#define JOB_SVFLG_HasNodes               0x1000 // job has nodes allocated to it
+#define JOB_SVFLG_RescAssn               0x2000 // job resources accumulated in server/que
+#define JOB_SVFLG_CHECKPOINT_COPIED      0x4000 // job checkpoint file that has been copied 
+#define JOB_ACCOUNTED_FOR                0x8000 // End of job accounting has happened
+
+#else
+// For MOM:
+#define JOB_SVFLG_HERE                   0x01   // set on mother superior
+//#define JOB_SVFLG_HASWAIT              0x02   // Not used on the mom
+//#define JOB_SVFLG_HASRUN               0x04   // Not used on the mom
+#define JOB_SVFLG_CHECKPOINT_FILE        0x10   // job has checkpoint file for restart
+#define JOB_SVFLG_SCRIPT                 0x20   // job has a Script file
+#define JOB_SVFLG_OVERLMT1               0x40   // job over limit first time, MOM only
+#define JOB_SVFLG_OVERLMT2               0x80   // job over limit second time, MOM only
+#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100  // job has migratable checkpoint 
+#define JOB_SVFLG_Suspend                0x200  // job suspended (signal suspend)
+//#define JOB_SVFLG_StagedIn             0x400  // Not used on the mom
+#define JOB_SVFLG_JOB_ABORTED            0x800  // Job has been aborted for some reason 
+//#define JOB_SVFLG_HasNodes             0x1000 // Not used on the mom
+//#define JOB_SVFLG_RescAssn             0x2000 // Not used on the mom
+//#define JOB_SVFLG_CHECKPOINT_COPIED    0x4000 // Not used on the mom
+#define JOB_SVFLG_INTERMEDIATE_MOM       0x8000 // This is for job_radix. I am an intermediate mom
+#endif
 
 
 /*
