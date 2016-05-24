@@ -475,10 +475,17 @@ START_TEST(end_of_job_accounting_test)
   pjob->ji_qs.ji_stime = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
+  // Make sure this is set - should cause the next call to not execute
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0);
   
   // Make sure that we'll do end of job accounting for jobs that are deleted while running
+  // First call doesn't do account_jobend due to svrflags
   pjob->ji_being_deleted = true;
   called_account_jobend = false;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  pjob->ji_qs.ji_svrflags = 0;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
   

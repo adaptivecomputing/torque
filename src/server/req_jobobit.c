@@ -1732,8 +1732,10 @@ int end_of_job_accounting(
   {
   long  events = 0;
 
-  // Do not have end of job accounting records for jobs that are deleted and never started
-  if (pjob->ji_qs.ji_stime == 0)
+  // Do not have end of job accounting records for jobs that are deleted and never started, or
+  // have had end of job accounting previously
+  if ((pjob->ji_qs.ji_stime == 0) ||
+      ((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0))
     {
     return(PBSE_NONE);
     }
@@ -1760,6 +1762,8 @@ int end_of_job_accounting(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
     }
 
+  pjob->ji_qs.ji_svrflags |= JOB_ACCOUNTED_FOR;
+
   return(PBSE_NONE);
   } /* END end_of_job_accounting() */
 
@@ -1767,6 +1771,15 @@ int end_of_job_accounting(
 
 /*
  * handle_complete_first_time()
+ *
+ * The job has entered the completed state. If there is no keep_completed requirement, the
+ * job will be deleted. If there is a keep_completed time the job will be marked for future
+ * deletion.
+ *
+ * @postcond: the job's mutex is no longer held. Since it may get deleted during this function,
+ * we always unlock the mutex.
+ * @param pjob - the job that is now completed.
+ * @return PBSE_NONE on SUCCESS or some other error.
  */
 
 int handle_complete_first_time(
@@ -1894,7 +1907,16 @@ int handle_complete_first_time(
 
 
 
-
+/*
+ * handle_complete_second_time()
+ *
+ * Deletes the job. We arrive at this function because keep_completed was set, and it has now
+ * been roughly keep_completed seconds since the job entered a completed state.
+ * The only way it doesn't get deleted is if the job must report and hasn't yet, then we'll 
+ * wait up to that timeout before deleting the job. This is usually not set.
+ *
+ * @param ptask - the task containing the job's name so we can end it.
+ */
 
 void handle_complete_second_time(
 
