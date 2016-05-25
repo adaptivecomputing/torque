@@ -371,6 +371,7 @@ int trq_cg_mkdir(const char* pathname, mode_t mode) {
     if(buf.st_mode != mode) {
         rc = chmod(pathname, mode);
     }
+    return rc;
 
 } 
 
