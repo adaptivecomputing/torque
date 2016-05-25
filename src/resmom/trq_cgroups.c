@@ -355,7 +355,25 @@ int trq_cg_initialize_cpuset_string(
   return(rc);
   } // END trq_cg_initialize_cpuset_string()
 
+/* make sure that the cgroup directories have the correct mode, in case 
+ * they get created from a thread that has a non-zero umask set. */
+int trq_cg_mkdir(const char* pathname, mode_t mode) {
 
+    struct stat buf;
+    int rc = mkdir(pathname, mode);
+    if(rc != 0) {
+        return rc;
+    }
+    rc = stat(pathname, &buf);
+    if(rc != 0) {
+        return rc;
+    }
+    if(buf.st_mode != mode) {
+        rc = chmod(pathname, mode);
+    }
+    return rc;
+
+} 
 
 /* We need to add a torque directory to each subsystem mount point
  * so we have a place to put the jobs */
@@ -372,17 +390,18 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
+    
 
   torque_path = cg_cpuacct_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     }
@@ -392,7 +411,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
      /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       {
       sprintf(log_buf, "Could not create %s for cgroups: error %d", torque_path.c_str(), errno);
@@ -417,7 +436,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -427,7 +446,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -1078,7 +1097,7 @@ int trq_cg_create_task_cgroups(
       req_task_path = cgroup_path + req_task_number;
       /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
          req and task reference */
-      rc = mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+      rc = trq_cg_mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
       if ((rc != 0) &&
           (errno != EEXIST))
         {
@@ -1126,7 +1145,7 @@ int trq_cg_create_cgroup(
   full_cgroup_path += job_id;
 
   /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
-  rc = mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
       (errno != EEXIST))
     {
@@ -1900,7 +1919,7 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
 
   devices_deny = job_devices_path + '/' + "devices.deny";
 
-  rc = mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
        (errno != EEXIST))
     {
