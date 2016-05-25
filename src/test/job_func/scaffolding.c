@@ -25,6 +25,8 @@
 int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
+int called_remove_job;
+int dequejob_rc;
 
 bool exit_called = false;
 
@@ -42,6 +44,7 @@ char *path_spool;
 const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
 all_jobs array_summary;
+all_jobs alljobs;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -114,7 +117,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
     }
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   pbs_net_t loopback = ntohl(INADDR_LOOPBACK);
   return(loopback);
@@ -162,8 +165,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
 
 int svr_dequejob(job *pjob, int val)
   {
-  fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
-  exit(1);
+  return(dequejob_rc);
   }
 
 ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
@@ -178,10 +180,9 @@ void initialize_all_tasks_array(all_tasks *at)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 job *get_recycled_job()
@@ -218,7 +219,7 @@ int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *),
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation, bool recov)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
@@ -513,6 +514,7 @@ job *svr_find_job(const char *jobid, int sub)
 
 int remove_job(all_jobs *aj, job             *pjob, bool b)
   {
+  called_remove_job++;
   return(0);
   }
 
@@ -605,6 +607,20 @@ id_map::~id_map() {}
 int id_map::get_new_id(const char *id) 
   {
   return(-1);
+  }
+
+const char *id_map::get_name(int internal_job_id)
+  {
+  static char buf[1024];
+
+  if (internal_job_id < 5)
+    {
+    snprintf(buf, sizeof(buf), "%d.napali", internal_job_id);
+
+    return(buf);
+    }
+
+  return(NULL);
   }
 
 id_map job_mapper;

@@ -111,7 +111,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
 #include "pbs_job.h"
@@ -133,7 +133,7 @@
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
 #include "svr_func.h" /* get_svr_attr_* */
-#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
+#include "lib_ifl.h" /* get_port_from_server_name_file */
 #include "node_manager.h" /* svr_is_request */
 #include "net_connect.h" /* set_localhost_name */
 #include "../lib/Libnet/lib_net.h" /* start_listener_addrinfo */
@@ -146,7 +146,6 @@
 #include "server_comm.h"
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
-#include "track_alps_reservations.h"
 #include "completed_jobs_map.h"
 
 
@@ -218,7 +217,6 @@ void          restore_attr_default (struct pbs_attribute *);
 
 int                     mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 time_t                  last_task_check_time = 0;
-int                     disable_timeout_check = FALSE;
 int                     lockfds = -1;
 int                     ForceCreation = FALSE;
 int                     high_availability_mode = FALSE;
@@ -232,6 +230,7 @@ char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
 char                   *path_arrays;
 char                   *path_credentials;
+char                   *path_pbs_environment;
 char                   *path_jobs;
 char                   *path_queues;
 char                   *path_spool;
@@ -260,6 +259,7 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
+bool                    use_path_home = false;  // set to true if pbs_server is started with a -d option
 bool                    auto_send_hierarchy = true; //If false this directs pbs_server to not send the hierarchy to all the MOMs on startup.
                                                      //Instead, the hierarchy is only sent if a MOM requests it.
                                                      //This flag works only in conjunction with the local MOM hierarchy feature.
@@ -318,7 +318,8 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
-sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+sem_t                  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+acl_special             limited_acls;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -600,6 +601,7 @@ void parse_command_line(
       case 'd':
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -1268,13 +1270,11 @@ void main_loop(void)
   job          *pjob;
   all_jobs_iterator  *iter = NULL;
   long          when = 0;
-  long          timeout = 0;
   long          log = 0;
   long          scheduling = FALSE;
   long          sched_iteration = PBS_SCHEDULE_CYCLE;
   time_t        time_now = time(NULL);
 //  time_t        try_hellos = 0;
-  time_t        update_timeout = 0;
   time_t        update_loglevel = 0;
 
   extern char  *msg_startup2; /* log message   */
@@ -1293,6 +1293,8 @@ void main_loop(void)
   sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
+    
+  hierarchy_handler.checkAndSendHierarchy(true);
 
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
@@ -1336,7 +1338,7 @@ void main_loop(void)
     }
 
 #ifdef PBS_VERSION
-  printf("pbs_server is up (svn version - %s, port %d)\n",
+  printf("pbs_server is up (git version - %s, port %d)\n",
       PBS_VERSION, pbs_server_port_dis);
 #else
   printf("pbs_server is up (version - %s, port - %d)\n",
@@ -1369,28 +1371,9 @@ void main_loop(void)
       }
 #endif
 
-    hierarchy_handler.checkAndSendHierarchy();
+    hierarchy_handler.checkAndSendHierarchy(false);
 
-      enqueue_threadpool_request(check_tasks, NULL, task_pool);
-
-    if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
-      {
-      update_timeout = time_now + UPDATE_TIMEOUT_INTERVAL;
-      get_svr_attr_l(SRV_ATR_tcp_timeout, &timeout);
-
-      /* don't allow timeouts to go below 300 seconds - this is a safety
-       * net for an extremely rare error */
-      if (timeout < 300)
-        {
-        snprintf(log_buf, sizeof(log_buf), "tcp timeout was %ld resetting to 300",
-          timeout);
-        timeout = 300;
-        set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
-        log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
-        }
-      
-      DIS_tcp_settimeout(timeout);
-      }
+    enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     waittime = MAX(1, waittime);
 
@@ -1960,8 +1943,6 @@ int main(
   pthread_mutex_lock(&job_log_mutex);
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
-
-  clear_all_alps_reservations();
 
   /* at this point kill the threadpool */
   destroy_request_pool(task_pool);
@@ -3083,9 +3064,9 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string)
 
 #ifdef PENABLE_LINUX_CGROUPS
 // Stub out some functions for NUMA
-#ifdef NVML_API
+#ifdef NVIDIA_GPUS
 int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
-void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology) {}
+//extern void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology) {}
 #endif
 #ifdef MIC
 int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology) {return(0);}

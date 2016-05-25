@@ -89,7 +89,7 @@
 #include "complete_req.hpp"
 #include "attribute.h"
 #include "pbs_ifl.h"
-
+#include "pbs_helper.h"
 
 
 void free_complete_req(
@@ -125,10 +125,10 @@ void free_complete_req(
 int  decode_complete_req(
     
   pbs_attribute *patr,
-  const char    *name,
+  const char    * UNUSED(name),
   const char    *rescn,
   const char    *val,
-  int            perm)
+  int            UNUSED(perm))
 
   {
   if (val == NULL)
@@ -171,7 +171,7 @@ int  decode_complete_req(
     
     if (!strncmp(attr_name, "task_usage", strlen("task_usage")))
       {
-      rc = cr->set_value(attr_name, val);
+      rc = cr->set_task_value(attr_name, val);
       }
     else
       {
@@ -180,7 +180,7 @@ int  decode_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        rc = cr->set_value(index, attr_name, val);
+        rc = cr->set_value(index, attr_name, val, false);
         }
       }
 
@@ -218,7 +218,7 @@ int encode_complete_req(
   pbs_attribute *attr,
   tlist_head    *phead,
   const char    *atname,
-  const char    *rsname,
+  const char    * UNUSED(rsname),
   int            mode,
   int            perm)
 
@@ -294,7 +294,7 @@ void overwrite_complete_req(
     {
     if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
       {
-      cr->set_value(names[i].c_str(), values[i].c_str());
+      cr->set_task_value(names[i].c_str(), values[i].c_str());
       }
     else
       {
@@ -306,7 +306,7 @@ void overwrite_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        cr->set_value(index, attr_name, values[i].c_str());
+        cr->set_value(index, attr_name, values[i].c_str(), false);
         }
 
       free(attr_name);
@@ -378,8 +378,8 @@ int set_complete_req(
 
 int comp_complete_req(
    
-  pbs_attribute *attr,
-  pbs_attribute *with)
+  pbs_attribute * UNUSED(attr),
+  pbs_attribute * UNUSED(with))
 
   {
   return(0);

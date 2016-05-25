@@ -100,6 +100,7 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#include "attribute.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -146,7 +147,8 @@ enum gpmodeit
   gpu_exclusive_thread,
   gpu_prohibited,
   gpu_exclusive_process,
-  gpu_unknown
+  gpu_unknown,
+  gpu_mode_not_set
   };
 
 enum gpstatit
@@ -185,6 +187,7 @@ typedef struct single_spec_data
   int          gpu;     /* gpus for this req */
   int          mic;   /* mics for this req */
   int          req_id;  /* the id of this alps req - used only for cray */
+  int          req_index; /* index into complete_req req vector */
   struct prop *prop;    /* node properties needed */
   } single_spec_data;
 
@@ -199,31 +202,20 @@ typedef struct complete_spec_data
 
 
 
-typedef struct node_job_add_info
+class node_job_add_info
   {
+  public:
   int                       node_id;
   int                       ppn_needed;
   int                       gpu_needed;
   int                       mic_needed;
   int                       is_external;
-  int                       req_rank;
-  struct node_job_add_info *next;
-  } node_job_add_info;
+  int                       req_order;
+  int                       req_index; /* indicates which req class index for when cgroups are enabled */
 
+  node_job_add_info() : node_id(-1), ppn_needed(0), gpu_needed(0),
+                        mic_needed(0), is_external(0), req_order(0), req_index(0) {}
 
-
-struct pbssubn
-  {
-  struct pbsnode *host;
-
-  struct pbssubn *next;
-
-  struct jobinfo *jobs;     /* list of jobs allocating resources within subnode */
-  /* does this include suspended jobs? */
-  resource_t      allocto;
-  enum psit      flag;  /* XXX */
-  unsigned short  inuse;
-  short           index;  /* subnode index */
   };
 
 
@@ -235,7 +227,7 @@ struct gpusubn
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
-  enum psit       flag;   /* same as for pbssubn */
+  enum psit       flag;
   short           index;  /* gpu index */
   char           *gpuid;  /* gpu id */
   int             job_count;
@@ -357,6 +349,10 @@ struct pbsnode
                                                        deleted while it is temporarily locked. */
 
   pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
+  // Network failures without two consecutive successive between them.
+  int                           nd_proximal_failures;
+  // Consecutive succesful network transactions
+  int                           nd_consecutive_successes;
 
   /* numa hardware configuration information */
 #ifdef PENABLE_LINUX_CGROUPS
@@ -385,6 +381,8 @@ int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
+bool            node_exists(const char *node_name);
+void            update_failure_counts(const char *node_name, int rc);
 
 
 #if 0
@@ -420,14 +418,17 @@ void       *send_hierarchy_threadtask(void *);
 
 
 
-struct howl
+class howl
   {
-  char           *name;
+  public:
+  std::string     hostname;
   int             order;
   int             index;
   unsigned short  port;
-
-  struct howl    *next;
+  howl(const std::string &name) : hostname(name) {}
+  howl(const std::string &name, int o, int i, unsigned int p) : hostname(name), order(o), index(i),
+                                                                port(p) {}
+  howl() : hostname(), order(-1), index(-1), port(0) {}
   };
 
 
@@ -485,7 +486,8 @@ int tlist(tree *, char *, int);
 #define INUSE_NOT_READY       (INUSE_DOWN|INUSE_NOHIERARCHY)
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
-#define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
+#define INUSE_NETWORK_FAIL     0x200 /* Node has had too many network failures */
+#define INUSE_SUBNODE_MASK     0xfff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 
 /* Node power state defines */
@@ -621,13 +623,11 @@ int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
 
 void             reinitialize_node_iterator(node_iterator *);
+int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
 
 #ifdef BATCH_REQUEST_H 
-void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
 void             effective_node_delete(struct pbsnode *);
 void             setup_notification(char *);
-
-struct pbssubn  *find_subnodebyname(char *);
 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_list(struct prop*);
@@ -635,7 +635,6 @@ void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
 int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
-int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();

@@ -21,7 +21,7 @@
 #include <pbs_error.h>    /* all static defines,  message & error codes */
 #include "qsub_functions.h"
 #include "common_cmds.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -59,11 +59,12 @@
 #include "common_cmds.h" 
 #include "utils.h"
 #include "complete_req.hpp"
+#include "pbs_helper.h"
 
 #if defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
+#define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:K:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
 #define MAXBUF 2048
@@ -892,10 +893,10 @@ int are_mpp_present(
 
 
 
+bool is_resource_request_valid(
 
-void validate_basic_resourcing(
-
-  job_info *ji)
+  job_info    *ji,
+  std::string &err_msg)
 
   {
   job_data_container *resources = ji->res_attr;
@@ -903,18 +904,24 @@ void validate_basic_resourcing(
   bool               nodes = false;
   bool               size = false;
   bool               mpp = false;
+  bool               ncpus = false;
 
   nodes = hash_find(resources, "nodes", &dummy);
   size  = hash_find(resources, "size", &dummy);
+  ncpus  = hash_find(resources, "ncpus", &dummy);
 
-  if ((nodes == true) &&
-      (size == true))
+  if (((nodes == true) &&
+      ((size == true) ||
+       (ncpus == true))) ||
+      ((size == true) &&
+       (ncpus == true)))
     {
-    fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l size\n");
-    exit(4);
+    err_msg =  "qsub: Jobs may not mix -l nodes with -l size or -l ncpus\n";
+    return(false);
     }
   else if ((nodes == true) ||
-           (size == true))
+           (size == true) ||
+           (ncpus == true))
     {
     mpp = are_mpp_present(resources, &dummy);
 
@@ -922,13 +929,18 @@ void validate_basic_resourcing(
       {
       if (nodes == true)
         {
-        fprintf(stderr, "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n");
-        exit(4);
+        err_msg = "qsub: Specifying -l nodes is incompatible with specifying -l mppwidth\n";
+        return(false);
+        }
+      else if (size == TRUE)
+        {
+        err_msg = "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n";
+        return(false);
         }
       else
         {
-        fprintf(stderr, "qsub: Specifying -l size is incompatible with specifying -l mppwidth\n");
-        exit(4);
+        err_msg = "qsub: Specifying -l ncpus is incompatible with specifying -l mppwidth\n";
+        return(false);
         }
       }
     }
@@ -940,8 +952,8 @@ void validate_basic_resourcing(
         (size == true) ||
         (mpp == true))
       {
-      fprintf(stderr, "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n");
-      exit(4);
+      err_msg = "qsub: resource requests cannot combine -L with -l nodes, size, or mppwidth\n";
+      return(false);
       }
 
     if ((hash_find(resources, "mem", &dummy)) ||
@@ -958,12 +970,32 @@ void validate_basic_resourcing(
         (hash_find(resources, "tpn", &dummy)) ||
         (hash_find(resources, "trl", &dummy)))
       {
-      fprintf(stderr, "qsub: resource requests cannot combine -L with -l memory, gres, geometry, opsys, reqattr, hostlist, or proc count requests\n");
-      exit(4);
+      err_msg = "qsub: resource requests cannot combine -L with -l memory, gres, geometry, opsys, reqattr, hostlist, or proc count requests\n";
+      return(false);
       }
     }
 
+  return(true);
+  } // is_resource_request_valid()
+
+
+
+void validate_basic_resourcing(
+
+  job_info *ji)
+
+  {
+  std::string err_msg;
+
+  if (is_resource_request_valid(ji, err_msg) == false)
+    {
+    fprintf(stderr, "%s", err_msg.c_str());
+    exit(4);
+    }
+
   } /* END validate_basic_resourcing() */
+
+
 
 /*
  * Set up (or enforce) errpath or outpath when join option specified
@@ -971,7 +1003,7 @@ void validate_basic_resourcing(
  */
 void validate_join_options (
   job_data_container *job_attr,
-  char               *script_tmp)
+  char               * UNUSED(script_tmp))
 
   {
 
@@ -1882,7 +1914,7 @@ void send_term(
 
 void catchchild(
 
-  int sig)
+  int UNUSED(sig) )
 
   {
   int status;
@@ -1931,7 +1963,7 @@ void catchchild(
 
 void no_suspend(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   fprintf(stderr, "Sorry, you cannot suspend qsub until the job is started\n");
@@ -1990,7 +2022,7 @@ void bailout(void)
 
 void toolong(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   printf("Timeout -- deleting job\n");
@@ -2006,7 +2038,7 @@ void toolong(
 
 void catchint(
 
-  int sig)
+  int UNUSED(sig))
 
   {
   int c;
@@ -2612,6 +2644,29 @@ int process_opt_k(
 
 
 
+int process_opt_K(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg == NULL)
+    return(-1);
+
+  long delay = strtol(cmd_arg, NULL, 10);
+
+  // Must be a positive number
+  if (delay < 1)
+    return(-1);
+  
+  hash_add_or_exit(ji->job_attr, ATTR_user_kill_delay, cmd_arg, data_type);
+
+  return(PBSE_NONE);
+  } // END process_opt_K()
+
+
+
 /*
  * process_opt_m()
  *
@@ -2646,12 +2701,31 @@ int process_opt_m(
       {
       if ((*pc != 'a') &&
           (*pc != 'b') &&
-          (*pc != 'e'))
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'p'))
         return(-1);
 
       pc++;
       }
     } /* END if (strcmp(cmd_arg,"n") != 0) */
+  if (strcmp(cmd_arg, "p") != 0)
+    {
+    const char *pc = cmd_arg;
+    
+    while (*pc)
+      {
+      if ((*pc != 'a') &&
+          (*pc != 'b') &&
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'n'))
+        return(-1);
+
+      pc++;
+      }
+    } /* END if (strcmp(cmd_arg,"p") != 0) */
+    
           
   hash_add_or_exit(ji->job_attr, ATTR_m, cmd_arg, data_type);
 
@@ -2950,6 +3024,13 @@ void process_opts(
         /* FORMAT:  {o|e} */
         if (process_opt_k(ji, optarg, data_type) != PBSE_NONE)
           print_qsub_usage_exit("qsub: illegal -k value");
+
+        break;
+
+      case 'K':
+        
+        if (process_opt_K(ji, optarg, data_type) != PBSE_NONE)
+          print_qsub_usage_exit("qsub: illegal -K value");
 
         break;
 
@@ -3588,6 +3669,10 @@ void process_opts(
       {
       while (fgets(cline, sizeof(cline), fP) != NULL)
         {
+        // Skip blank lines
+        if (*cline == '\n')
+          continue;
+
         if (strlen(cline) < 5)
           break;
 
@@ -3868,15 +3953,15 @@ void print_qsub_usage_exit(const char *error_msg)
     [-c [ none | { enabled | periodic | shutdown |\n\
     depth=<int> | dir=<path> | interval=<minutes>}... ]\n\
     [-C directive_prefix] [-d path] [-D path]\n\
-    [-e path] [-h] [-I] [-j oe|eo|n] [-k {oe}] [-l resource_list] [-m n|{abe}]\n\
-    [-M user_list] [-N jobname] [-o path] [-p priority] [-P proxy_user [-J <jobid]]\n\
-    [-q queue] [-r y|n] [-S path] [-t number_to_submit] [-T type]  [-u user_list]\n\
-    [-w] path\n";
+    [-e path] [-h] [-I] [-j oe|eo|n] [-k {oe}] [-K <kill delay seconds>] \n\
+    [-l resource_list] [-m n|{abe}] [-M user_list] [-N jobname] [-o path] \n\
+    [-p priority] [-P proxy_user [-J <jobid]] [-q queue] [-r y|n] \n\
+    [-S path] [-t number_to_submit] [-T type]  [-u user_list] [-w] path\n";
 
   /* need secondary usage since there appears to be a 512 byte size limit */
 
   static char usage2[] =
-    "      [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
+    "    [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
     
   fprintf(stderr,"[%s]\n\n%s%s\n", error_msg, usage, usage2);
 

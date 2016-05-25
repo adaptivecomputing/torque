@@ -94,14 +94,14 @@ class complete_req
   public:
 
     complete_req();
-    complete_req(tlist_head &at_list);
+    complete_req(tlist_head &at_list, int ppn_needed, bool legacy_vmem);
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
     void           add_req(req &r);
     void           set_from_string(const std::string &obj_string);
-    int            set_value(int index, const char *name, const char *value);
-    int            set_value(const char *name, const char *value);
+    int            set_value(int index, const char *name, const char *value, bool is_default);
+    int            set_task_value(const char *name, const char *value);
     void           toString(std::string &output) const;
     int            req_count() const;
     void           get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
@@ -121,8 +121,9 @@ class complete_req
     void           clear_reqs();
     int            get_task_stats(unsigned int &req_index, std::vector<int> &task_index,
                                   std::vector<unsigned long> &cput_used,
-                                  std::vector<unsigned long long> &mem_used);
+                                  std::vector<unsigned long long> &mem_used, const char *hostname);
     void           set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used);
+    unsigned int   get_num_reqs();
   };
 
 #endif

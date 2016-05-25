@@ -130,7 +130,6 @@ extern unsigned int pbs_server_port_dis;
 
 extern int       LOGLEVEL;
 
-int issue_to_svr(char *, struct batch_request *, void (*f)(struct work_task *));
 int issue_Drequest(int conn, struct batch_request  *request);
 
 /*
@@ -163,6 +162,7 @@ int relay_to_mom(
 
   struct pbsnode *node;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string     node_name;
  
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
     {
@@ -206,6 +206,8 @@ int relay_to_mom(
     free(tmp);
     }
 
+  node_name = node->nd_name;
+
   unlock_node(node, __func__, "after svr_connect", LOGLEVEL);
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
@@ -215,6 +217,7 @@ int relay_to_mom(
 
   if (handle < 0)
     {
+    update_failure_counts(node_name.c_str(), -1);
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_REQUEST,"",msg_norelytomom);
 
     return(PBSE_NORELYMOM);
@@ -223,6 +226,11 @@ int relay_to_mom(
   request->rq_orgconn = request->rq_conn; /* save client socket */
 
   rc = issue_Drequest(handle, request, true);
+  
+  if (request->rq_reply.brp_code == PBSE_TIMEOUT)
+    update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
+  else
+    update_failure_counts(node_name.c_str(), 0);
 
   *pjob_ptr = svr_find_job(jobid, TRUE);
 
@@ -266,7 +274,7 @@ void reissue_to_svr(
      }
 
    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-        (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
+        (issue_to_svr(serverName, &preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
       
@@ -322,18 +330,19 @@ void queue_a_retry_task(
 
 int issue_to_svr(
 
-  char                 *servern,                  /* I */
-  struct batch_request *preq,                     /* I */
-  void (*replyfunc)    (struct work_task *))      /* I */
+  const char            *servern,                  /* I */
+  struct batch_request **preq_ptr,                 /* I */
+  void (*replyfunc)      (struct work_task *))     /* I */
 
   {
   int             rc = PBSE_NONE;
-  int             do_retry = 0;
+  bool            do_retry = false;
   int             handle;
   int             my_err = 0;
   pbs_net_t       svraddr;
   char           *svrname;
   unsigned int    port = pbs_server_port_dis;
+  batch_request  *preq = *preq_ptr;
 
   snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", servern);
 
@@ -351,7 +360,7 @@ int issue_to_svr(
       {
       /* Non fatal error - retry */
 
-      do_retry = 1;
+      do_retry = true;
       }
     }
   else
@@ -367,13 +376,13 @@ int issue_to_svr(
          * has always been sent */
         rc = preq->rq_reply.brp_code;
         }
+      else if (handle == PBS_LOCAL_CONNECTION)
+        *preq_ptr = NULL;
 
       return(rc);
       }
     else if (handle == PBS_NET_RC_RETRY)
-      {
-      do_retry = 1;
-      }
+      do_retry = true;
     }
 
   /* if reached here, it didn`t go, do we retry? */
@@ -414,7 +423,7 @@ int que_to_local_svr(struct batch_request *preq)                     /* I */
 
   set_task(WORK_Immed, 0, reissue_to_svr, preq->rq_id, TRUE);
   return(PBSE_NONE);
-  }  /* END issue_to_svr() */
+  }  /* END que_to_local_svr() */
 
 
 
@@ -745,7 +754,12 @@ int send_request_to_remote_server(
     {
     sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    request->rq_reply.brp_code = tmp_rc;
+
+    if (chan->IsTimeout)
+      request->rq_reply.brp_code = PBSE_TIMEOUT;
+    else
+      request->rq_reply.brp_code = tmp_rc;
+
     request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
     }
 

@@ -4,7 +4,7 @@ CHECK_DIR = test
 
 DIST_SUBDIRS =
 
-include_HEADERS = lib_mom.h
+noinst_HEADERS = lib_mom.h mom_mach.h
 
 AM_CPPFLAGS += -DPBS_MOM -DDEMUX=\"$(DEMUX_PATH)\" 
 
@@ -19,8 +19,7 @@ if HAVE_CHECK
 check:
 	$(MAKE) -C $(CHECK_DIR) $(MAKECMDGOALS)
 
-.PHONY: cleancheck
-cleancheck:
+clean-local:
 	cd $(CHECK_DIR) && $(MAKE) cleancheck
 endif
 

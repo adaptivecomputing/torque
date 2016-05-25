@@ -90,7 +90,7 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "tm.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 void prt_job_struct(

@@ -32,6 +32,8 @@ extern time_t LastServerUpdateTime;
 extern int    is_reporter_mom;
 extern mom_server mom_servers[PBS_MAXSERVER];
 
+bool is_for_this_host(std::string gpu_spec, const char *suffix);
+void get_device_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices, const char *suffix);
 
 START_TEST(test_sort_paths)
   {
@@ -218,6 +220,50 @@ START_TEST(test_mom_server_all_update_stat_clear_force)
   }
 END_TEST
 
+START_TEST(test_is_for_this_host)
+  {
+  std::string spec;
+  std::string suffix;
+  extern char mom_alias[];
+
+  sprintf(mom_alias, "fattony3.ac");
+
+  suffix = "-gpu";
+  /* test the positive case */
+  spec =  "fattony3.ac-gpu/0";
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
+
+  /* test the negative case */
+  spec =  "numa3.ac-gpu/0";
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
+
+  /* test the negative case bad input*/
+  spec =  "fattony3.ac/0";
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
+
+  }
+END_TEST
+
+
+START_TEST(test_get_device_indices)
+  {
+  std::string spec;
+  std::vector<unsigned int> gpu_indices;
+  char suffix[10];
+  extern char mom_alias[];
+
+  sprintf(mom_alias, "fattony3.ac");
+
+  strcpy(suffix, "-gpu");
+  spec = "fattony3.ac-gpu/0+fattony3.ac-gpu/1+numa3.ac-gpu/0";
+  get_device_indices(spec.c_str(), gpu_indices, suffix);
+  fail_unless(gpu_indices.size() == 2);
+  fail_unless(gpu_indices[0] == 0);
+  fail_unless(gpu_indices[1] == 1);
+
+  }
+END_TEST
+
 
 Suite *mom_server_suite(void)
   {
@@ -236,6 +282,15 @@ Suite *mom_server_suite(void)
 
   tc_core = tcase_create("test_send_update_force_flag");
   tcase_add_test(tc_core, test_send_update_force_flag);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_is_for_this_host");
+  tcase_add_test(tc_core, test_is_for_this_host);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_device_indices");
+  tcase_add_test(tc_core, test_get_device_indices);
+  tcase_add_test(tc_core, test_mom_server_all_update_stat_clear_force);
   suite_add_tcase(s, tc_core);
 
   return s;

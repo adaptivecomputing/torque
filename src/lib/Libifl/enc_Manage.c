@@ -95,7 +95,7 @@ int encode_DIS_Manage(
   struct tcp_chan *chan,
   int              command,
   int              objtype,
-  char            *objname,
+  const char      *objname,
   struct attropl  *aoplp)
 
   {

@@ -162,7 +162,7 @@ extern char          *msg_man_cre;
 extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
-extern int            disable_timeout_check;
+extern time_t         pbs_incoming_tcp_timeout;
 //extern mom_hierarchy_t *mh;
 
 
@@ -391,6 +391,81 @@ static void mgr_log_attr(
 
 
 
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  enum batch_op  op)
+
+  {
+  int                   rc = PBSE_NONE;
+  struct array_strings *pstr = pattr->at_val.at_arst;
+
+  if ((op == UNSET) ||
+      (op == SET))
+    limited_acls.clear_users();
+
+  if (pstr == NULL)
+    {
+    return(rc);
+    }
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if (op == DECR)
+      limited_acls.remove_user_configuration(pstr->as_string[i]);
+    else if ((op == INCR) ||
+             (op == SET))
+      limited_acls.add_user_configuration(pstr->as_string[i]);
+    }
+
+  return(rc);
+  } // END update_user_acls()
+
+
+
+void decrement_ident_acls(
+
+  svrattrl *plist,
+  int       which)
+
+  {
+  if (which == USER)
+    limited_acls.remove_user_configuration(plist->al_value);
+  else
+    limited_acls.remove_group_configuration(plist->al_value);
+  } // END decrement_ident_acls()
+
+
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  enum batch_op  op)
+
+  {
+  int rc = PBSE_NONE;
+  struct array_strings *pstr = pattr->at_val.at_arst;
+
+  if (pstr == NULL)
+    {
+    return(rc);
+    }
+
+  if ((op == UNSET) ||
+      (op == SET))
+    limited_acls.clear_groups();
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if ((op == INCR) ||
+             (op == SET))
+      limited_acls.add_group_configuration(pstr->as_string[i]);
+    }
+
+  return(rc);
+  }
+
+
 
 /*
  * mgr_set_attr - set attributes for manager function
@@ -470,9 +545,25 @@ static int mgr_set_attr(
           }
         }
 
-      if ((index == SRV_ATR_tcp_timeout) &&
-          (pnew->at_val.at_long < 300))
-        disable_timeout_check = TRUE;
+      if (pdef == svr_attr_def)
+        {
+        if (index == SRV_ATR_acl_users_hosts)
+          {
+          if (plist->al_op == DECR)
+            decrement_ident_acls(plist, USER);
+          else 
+            update_user_acls(pnew, plist->al_op);
+          }
+        else if (index == SRV_ATR_acl_groups_hosts)
+          {
+          if (plist->al_op == DECR)
+            decrement_ident_acls(plist, GROUP);
+          else
+            update_group_acls(pnew, plist->al_op);
+          }
+        else if (index == SRV_ATR_tcp_incoming_timeout)
+          pbs_incoming_tcp_timeout = pnew->at_val.at_long;
+        }
 
       /* now replace the old values with any modified new values */
 
@@ -591,6 +682,14 @@ int mgr_unset_attr(
   while (plist != NULL)
     {
     index = find_attr(pdef, plist->al_name, limit);
+      
+    if (pdef == svr_attr_def)
+      {
+      if (index == SRV_ATR_acl_users_hosts)
+        update_user_acls(pattr + index, UNSET);
+      else if (index == SRV_ATR_acl_groups_hosts)
+        update_group_acls(pattr + index, UNSET);
+      }
 
     if (((pdef + index)->at_type == ATR_TYPE_RESC) &&
         (plist->al_resc != NULL))
@@ -703,8 +802,9 @@ int mgr_set_node_attr(
   int            *bad,    /* if there is a "bad pbs_attribute" pass back 
                              position via this loc */
   void           *parent, /*may go unused in this function */
-  int             mode)  /*passed to attrib's action func not used by 
+  int             mode,  /*passed to attrib's action func not used by 
                            this func at this time*/
+  bool            dont_update_nodes)
 
   {
   int              i;
@@ -770,7 +870,15 @@ int mgr_set_node_attr(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist,
+                                 unused,
+                                 new_attr,
+                                 pdef,
+                                 limit,
+                                 -1,
+                                 privil,
+                                 bad,
+                                 dont_update_nodes)) != 0)
     {
     attr_atomic_kill(new_attr, pdef, limit);
 
@@ -1681,11 +1789,6 @@ void mgr_node_set(
   long              dont_update_nodes = FALSE;
 
   get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
-    {
-    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
-    return;
-    }
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
@@ -1768,7 +1871,8 @@ void mgr_node_set(
              preq->rq_perm,
              &bad,
              (void *)pnode,
-             ATR_ACTION_ALTER);
+             ATR_ACTION_ALTER,
+             dont_update_nodes);
 
       if (rc != 0)
         {
@@ -1806,7 +1910,8 @@ void mgr_node_set(
            preq->rq_perm,
            &bad,
            (void *)pnode,
-           ATR_ACTION_ALTER);
+           ATR_ACTION_ALTER,
+           dont_update_nodes);
 
     if (rc != 0)
       {
@@ -2302,7 +2407,6 @@ void mgr_node_create(
 
   return;
   }
-
 
 
 

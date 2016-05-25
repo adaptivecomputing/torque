@@ -8,13 +8,13 @@
 int pbs_errno = 0;
 struct connect_handle connection[10];
 
-int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
   {
   fprintf(stderr, "The call to PBSD_sig_put needs to be mocked!!\n");
   exit(1);
   }
 
-int PBSD_async_sig_put( int   c, char *jobid, char *signal, char *extend)
+int PBSD_async_sig_put( int   c, const char *jobid, const char *signal, char *extend)
   {
   fprintf(stderr, "The call to PBSD_async_sig_put needs to be mocked!!\n");
   exit(1);

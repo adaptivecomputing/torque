@@ -14,9 +14,129 @@ int num_array_jobs(const char *str);
 int array_recov_binary(const char *path, job_array **new_pa, char *log_buf, size_t buflen);
 int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status);
+void release_slot_hold(job *pjob, int &difference);
+int update_slot_values(job_array *pa, int actually_running, int number_queued, job *held, std::vector<std::string> &candidates);
+bool need_to_update_slot_limits(job_array *pa);
+void set_slot_hold(job *pjob, int &difference);
+
 extern std::string get_path_jobdata(const char *, const char *);
 const char *array_sample = "<array>\n</array>";
 extern char *path_arrays;
+
+extern bool place_hold;
+extern int  unlocked;
+
+
+job_array *get_job_array(
+
+  int size)
+
+  {
+  char       buf[1024];
+  job_array *pa = (job_array *)calloc(1, sizeof(job_array));
+  pa->ai_qs.num_jobs = size;
+  pa->job_ids = (char **)calloc(size, sizeof(char *));
+
+  for (int i = 0; i < size; i++)
+    {
+    snprintf(buf, sizeof(buf), "0[%d].napali", i);
+    pa->job_ids[i] = strdup(buf);
+    }
+
+  return(pa);
+  }
+
+
+START_TEST(need_to_update_slot_limits_test)
+  {
+  job_array pa;
+
+  memset(&pa, 0, sizeof(pa));
+
+  pa.ai_qs.slot_limit = 2;
+  pa.ai_qs.jobs_running = 2;
+
+  fail_unless(need_to_update_slot_limits(&pa) == false);
+  pa.ai_qs.jobs_running = 3;
+  fail_unless(need_to_update_slot_limits(&pa) == false);
+  pa.ai_qs.jobs_running = 1;
+  fail_unless(need_to_update_slot_limits(&pa) == true);
+  pa.ai_qs.jobs_running = 0;
+  fail_unless(need_to_update_slot_limits(&pa) == true);
+  }
+END_TEST
+
+
+START_TEST(set_slot_hold_test)
+  {
+  job pjob;
+  int difference = -2;
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+
+  // slot hold is already set, so we shouldn't change
+  set_slot_hold(&pjob, difference);
+  fail_unless(difference == -2);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == 0);
+  
+  // unset the slot hold to see a change
+  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = 0;
+  set_slot_hold(&pjob, difference);
+  fail_unless(difference == -1);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == ATR_VFLAG_SET);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_l);
+  }
+END_TEST
+
+
+START_TEST(release_slot_hold_test)
+  {
+  int difference = 2;
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+
+  // Make sure that we release the hold and decrement difference
+  release_slot_hold(&pjob, difference);
+  fail_unless(difference == 1);
+  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == 0);
+
+  // Make sure calling this with a job that isn't set does nothing
+  long current_hold = pjob.ji_wattr[JOB_ATR_hold].at_val.at_long;
+  release_slot_hold(&pjob, difference);
+  fail_unless(difference == 1);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_val.at_long == current_hold);
+  }
+END_TEST
+
+
+START_TEST(update_slot_values_test)
+  {
+  std::vector<std::string>  candidates;
+  char                      buf[1024];
+  job                      *pjob = (job *)calloc(1, sizeof(job));
+  job_array                *pa = get_job_array(10);
+
+  sprintf(pjob->ji_qs.ji_jobid, "0[0].napali");
+  pa->ai_qs.slot_limit = 2;
+  pa->ai_qs.jobs_running = 2;
+
+  for (int i = 0; i < 2; i++)
+    {
+    sprintf(buf, "0[%d].napali", i);
+    candidates.push_back(buf);
+    }
+
+  place_hold = true;
+  unlocked = 0;
+
+  // Make sure the counts are corrected after calling update_slot_values()
+  fail_unless(update_slot_values(pa, 0, 1, pjob, candidates) == PBSE_NONE);
+  fail_unless(pa->ai_qs.jobs_running == 0);
+  fail_unless(unlocked == 1);
+  }
+END_TEST
 
 
 START_TEST(update_array_values_test)
@@ -198,11 +318,11 @@ START_TEST(array_delete_test)
   pa->ai_qs.deps.ll_next = &pdep->dp_link;
   pdep->dp_link.ll_prior = (list_link *)&pa->ai_qs.deps;
   pdep->dp_link.ll_struct = (void *)pdep;
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
-  pdep->dp_jobs.push_back((array_depend_job *)calloc(1,sizeof(array_depend_job)));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
+  pdep->dp_jobs.push_back(new (array_depend_job));
 
   array_delete(pa);
 
@@ -247,6 +367,7 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("num_array_jobs_test");
   tcase_add_test(tc_core, num_array_jobs_test);
+  tcase_add_test(tc_core, need_to_update_slot_limits_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("first_job_index_test");
@@ -256,11 +377,14 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("array_delete_test");
   tcase_add_test(tc_core,array_delete_test);
+  tcase_add_test(tc_core, release_slot_hold_test);
+  tcase_add_test(tc_core, set_slot_hold_test);
   suite_add_tcase(s,tc_core);
 
   tc_core = tcase_create("array_recov_binary_test");
   tcase_add_test(tc_core, array_recov_binary_test);
   tcase_add_test(tc_core, update_array_values_test);
+  tcase_add_test(tc_core, update_slot_values_test);
   suite_add_tcase(s, tc_core);
 
   return s;

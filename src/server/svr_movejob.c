@@ -373,7 +373,7 @@ int local_move(
 
   pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation)) == PBSE_JOB_RECYCLED)
+  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
     return(-1);
 
   if (*my_err != PBSE_NONE)
@@ -756,7 +756,7 @@ int queue_job_on_mom(
   char           *pc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pc = PBSD_queuejob(con, my_err, job_id, job_destin, pqjatr, NULL)) == NULL)
+  if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
     if (*my_err == PBSE_EXPIRED)
       {
@@ -1274,6 +1274,8 @@ int send_job_work(
     {
     if (rc == PBSE_JOB_RECYCLED)
       job_mutex.set_unlock_on_exit(false);
+  
+    free_server_attrs(&attrl);
 
     return(rc);
     }
@@ -1338,6 +1340,14 @@ int send_job_work(
       }
     else
       rc = LOCUTION_REQUEUE;
+    }
+  
+  if (type == MOVE_TYPE_Exec)
+    {
+    if (node_name != NULL)
+      update_failure_counts(node_name, rc);
+    else
+      update_failure_counts(job_destin, rc);
     }
 
 send_job_work_end:
@@ -1429,8 +1439,8 @@ void *send_job(
       }
 
     node_name = get_ms_name(*pjob);
-    
-    send_job_work(job_id,node_name,type,&local_errno,preq);
+
+    send_job_work(job_id, node_name, type, &local_errno, preq);
 
     free(node_name);
     }

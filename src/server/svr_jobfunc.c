@@ -379,22 +379,24 @@ int insert_into_alljobs_by_rank(
  * @param have_reservation - indicates whether or not this job already has spaced 
  * reserved for it in the queue, used to help keep max queuable parameters enforced 
  * correctly.
+ * @param being_recovered - true if this job is being recovered from disk, else false
  *
  * @return PBSE_NONE - the job was correctly queued.
  */
 
 int svr_enquejob(
 
-  job        *pjob,            /* I */
-  int         has_sv_qs_mutex, /* I */
-  const char *prev_job_id,  /* I */
-  bool        have_reservation)
+  job        *pjob,             /* I */
+  int         has_sv_qs_mutex,  /* I */
+  const char *prev_job_id,      /* I */
+  bool        have_reservation, /* I */
+  bool        being_recovered)  /* I */
 
   {
   pbs_attribute *pattrjb;
   attribute_def *pdef;
   pbs_queue     *pque;
-  int            rc = -1;
+  int            rc = PBSE_NONE;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
   char           job_id[PBS_MAXSVRJOBID+1];
@@ -405,6 +407,7 @@ int svr_enquejob(
 
   if (pjob == NULL)
     {
+    rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "NULL job pointer input");
     return(rc);
     }
@@ -431,6 +434,13 @@ int svr_enquejob(
     }
 
   mutex_mgr que_mgr(pque->qu_mutex, true);
+
+  if ((pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long == TRUE) &&
+      (being_recovered == false))
+    {
+    return(PBSE_GHOSTQUEUE);
+    }
+
   if (have_reservation)
     {
     if (LOGLEVEL >= 6)
@@ -594,7 +604,9 @@ int svr_enquejob(
 
   pjob->ji_wattr[JOB_ATR_queuetype].at_flags |= ATR_VFLAG_SET;
 
-  if ((pjob->ji_wattr[JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0)
+  // The array template isn't a real job so it shouldn't have a queued accounting record.
+  if (((pjob->ji_wattr[JOB_ATR_qtime].at_flags & ATR_VFLAG_SET) == 0) &&
+      (!pjob->ji_is_array_template))
     {
     pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long = time_now;
     pjob->ji_wattr[JOB_ATR_qtime].at_flags |= ATR_VFLAG_SET;
@@ -614,6 +626,8 @@ int svr_enquejob(
 
   /* set any "unspecified" checkpoint with queue default values, if any */
   set_chkpt_deflt(pjob, pque);
+
+  rc = PBSE_NONE;
 
   /* See if we need to do anything special based on type of queue */
   if (pque->qu_qs.qu_type == QTYPE_Execution)
@@ -639,11 +653,19 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      try
+        {
+        rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+        }
+      catch (int pbs_errcode)
+        {
+        rc = pbs_errcode;
+        }
+
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
-        return(PBSE_BADDEPEND);
+        rc = PBSE_BADDEPEND;
       }
 
     /* set eligible time */
@@ -669,10 +691,8 @@ int svr_enquejob(
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     }
 
-  return(PBSE_NONE);
+  return(rc);
   }  /* END svr_enquejob() */
-
-
 
 
 
@@ -804,44 +824,6 @@ int svr_dequejob(
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
 
-#ifndef NDEBUG
-
-  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
-    pque ? pque->qu_qs.qu_name : "unknown queue",
-    PJobState[pjob->ji_qs.ji_state]);
-
-  log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-
-  if (bad_ct)   /* state counts are all messed up */
-    {
-    char queue_name[PBS_MAXQUEUENAME+1];
-    char           job_id[PBS_MAXSVRJOBID+1];
-
-    strcpy(job_id, pjob->ji_qs.ji_jobid);
-
-    /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-
-    if (parent_queue_mutex_held == TRUE)
-      {
-      strcpy(queue_name, pque->qu_qs.qu_name);
-      unlock_queue(pque, __func__, NULL, LOGLEVEL);
-      }
-
-    correct_ct();
-
-    /* lock queue then job */
-    if (parent_queue_mutex_held == TRUE)
-      {
-      pque = find_queuebyname(queue_name);
-      }
-
-    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
-      return(PBSE_JOBNOTFOUND);
-    }
-
-#endif /* NDEBUG */
-
   pjob->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
 
   /* clear any default resource values.  */
@@ -899,6 +881,42 @@ int svr_dequejob(
     log_ext(-1, __func__, log_buf, LOG_WARNING);
     }
 
+#ifndef NDEBUG
+  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
+    pque ? pque->qu_qs.qu_name : "unknown queue",
+    PJobState[pjob->ji_qs.ji_state]);
+
+  log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
+  if (bad_ct)   /* state counts are all messed up */
+    {
+    char queue_name[PBS_MAXQUEUENAME+1];
+    char           job_id[PBS_MAXSVRJOBID+1];
+
+    strcpy(job_id, pjob->ji_qs.ji_jobid);
+
+    /* this function will lock queues and jobs */
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+    if (parent_queue_mutex_held == TRUE)
+      {
+      strcpy(queue_name, pque->qu_qs.qu_name);
+      unlock_queue(pque, __func__, NULL, LOGLEVEL);
+      }
+
+    correct_ct();
+
+    /* lock queue then job */
+    if (parent_queue_mutex_held == TRUE)
+      {
+      pque = find_queuebyname(queue_name);
+      }
+
+    if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+      return(PBSE_JOBNOTFOUND);
+    }
+#endif /* NDEBUG */
+
   /* notify scheduler a job has been removed */
 
   pthread_mutex_lock(svr_do_schedule_mutex);
@@ -937,6 +955,8 @@ void release_node_allocation(
     free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
     pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    /* additionally clear the StagedIn flag if set */
+    pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
     }
   } /* END release_node_allocation() */
 
@@ -2618,7 +2638,8 @@ bool do_nodes_exist(
   /* iterate over all nodes */
   while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
     {
-    pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
+    if (pnode->nd_layout != NULL)
+      pnode->nd_layout->check_if_possible(sockets, numa_nodes, cores, threads);
 
     if ((sockets == 0) &&
         (numa_nodes == 0) &&
@@ -2760,13 +2781,16 @@ bool has_conflicting_resource_requests(
   pbs_queue *pque)
 
   {
-  // check to make sure we don't have certain -l defaults and a -L request
+  static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                    "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                    "software", "geometry", "opsys", "tpn", "trl", NULL };
+
+  bool conflict = false;
+
   if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+      ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET) == 0) &&
       (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
     {
-    static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
-                                      "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
-                                      "software", "geometry", "opsys", "tpn", "trl", NULL };
     pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
 
     // Return true if the queue has any of the conflicting_types in its -l defaults
@@ -2774,11 +2798,28 @@ bool has_conflicting_resource_requests(
       {
       resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
       if (find_resc_entry(pattr, prd) != NULL)
-        return(true);
+        {
+        conflict = true;
+        break;
+        }
+      }
+    }
+  else if (((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) == 0) &&
+           ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET)))
+    {
+    pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_resource];
+    for (int i = 0; conflicting_types[i] != NULL; i++)
+      {
+      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      if (find_resc_entry(pattr, prd) != NULL)
+        {
+        conflict = true;
+        break;
+        }
       }
     }
 
-  return(false);
+  return(conflict);
   } /* END has_conflicting_resource_requests() */
 
 
@@ -3370,23 +3411,25 @@ void set_deflt_resc(
       }
     else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
       {
-      std::vector<std::string> req_names, req_values;
-      std::vector<std::string> default_names, default_values;
+      std::vector<std::string> default_names;
+      std::vector<std::string> default_values;
       complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
       attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
       int req_count;
 
       if (cr == NULL)
         return;
-      cr->get_values(req_names, req_values);
+
       req_count = cr->req_count();
-      ari->add_default_values(req_names, req_values, default_names, default_values);
+
+      ari->get_default_values(default_names, default_values);
 
       for (unsigned int i = 0; i < default_names.size(); i++)
         {
         for (unsigned int j = 0; j < (unsigned int)req_count; j++)
           {
-          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          // Let the complete req know this is a default so it won't overwrite an existing value.
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str(), true);
           }
         }
       }
@@ -3527,11 +3570,23 @@ void set_resc_deflt(
   else
     pque = pjob->ji_qhdr;
 
-  /* apply queue defaults first since they take precedence */
+  // apply queue defaults first since they take precedence
   if (pque != NULL)
     {
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+    if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
     
     pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
@@ -3539,9 +3594,21 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
     
 #ifdef RESOURCEMAXDEFAULT
-    /* apply queue max limits first since they take precedence */
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+    // apply queue max limits first since they take precedence
+    if ((pque->qu_attr[QA_ATR_ResourceMax].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
     
     /* server max limits will only be applied to attributes which have
        not yet been set */

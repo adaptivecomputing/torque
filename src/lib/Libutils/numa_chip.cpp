@@ -81,6 +81,25 @@ Chip &Chip::operator =(
 
 
 
+Chip::Chip(
+
+  int execution_slots) : id(0), totalCores(execution_slots), totalThreads(execution_slots),
+                         availableCores(execution_slots), availableThreads(execution_slots),
+                         total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
+                         chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
+                         allocations()
+
+  {
+  for (int i = 0; i < execution_slots; i++)
+    {
+    Core c;
+    c.add_processing_unit(CORE, execution_slots);
+    this->cores.push_back(c);
+    }
+  }
+
+
+
 /*
  * parse_values_from_json_string()
  */
@@ -97,7 +116,6 @@ void Chip::parse_values_from_json_string(
   char        *work_str = strdup(json_layout.c_str());
   char        *ptr = strstr(work_str, "os_index\":");
   char        *val = work_str;
-  char        *close_quote;
 
   if (ptr != NULL)
     {
@@ -909,16 +927,16 @@ void Chip::aggregate_allocation(
  * @return the number of tasks that fit. This can be 0
  */
 
-int Chip::how_many_tasks_fit(
+float Chip::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  int cpu_tasks;
-  int gpu_tasks;
-  int mic_tasks;
-  int mem_tasks = 0;
+  float cpu_tasks;
+  float gpu_tasks;
+  float mic_tasks;
+  float mem_tasks = 0;
 
   // Consider exclusive socket and node the same as exclusive chip for our purposes
   if ((place_type == exclusive_socket) ||
@@ -929,17 +947,26 @@ int Chip::how_many_tasks_fit(
       ((place_type != exclusive_chip) ||
        (this->chipIsAvailable()) == true))
     {
+    // Need to handle place={core|thread}[=x]
+    float max_cpus = r.getExecutionSlots();
+    if (r.getPlaceCores() > 0)
+      max_cpus = r.getPlaceCores();
+    else if (r.getPlaceThreads() > 0)
+      max_cpus = r.getPlaceThreads();
+
     if (r.getThreadUsageString() == use_cores)
-      cpu_tasks = this->availableCores / r.getExecutionSlots();
+      cpu_tasks = this->availableCores / max_cpus;
+    else if (place_type == exclusive_legacy) // This is a -l resource request
+      cpu_tasks = this->availableCores / max_cpus;
     else
-      cpu_tasks = this->availableThreads / r.getExecutionSlots();
+      cpu_tasks = this->availableThreads / max_cpus;
 
     long long memory = r.getMemory();
 
     // Memory isn't required for submission
     if (memory != 0)
       {
-      mem_tasks = this->available_memory / memory;
+      mem_tasks = this->available_memory * 1.0 / memory;
 
       // return the lower of the two values
       if (mem_tasks > cpu_tasks)
@@ -948,7 +975,7 @@ int Chip::how_many_tasks_fit(
     else
       mem_tasks = cpu_tasks;
 
-    int gpus = r.getGpus();
+    float gpus = r.getGpus();
     if (gpus > 0)
       {
       gpu_tasks = this->available_gpus / gpus;
@@ -956,7 +983,7 @@ int Chip::how_many_tasks_fit(
         mem_tasks = gpu_tasks;
       }
 
-    int mics = r.getMics();
+    float mics = r.getMics();
     if (mics > 0)
       {
       mic_tasks = this->available_mics / mics;
@@ -972,15 +999,74 @@ int Chip::how_many_tasks_fit(
   return(mem_tasks);
   } // END how_many_tasks_fit()
 
+
+/*
+ * getOpenThreadVector
+ *
+ * get a vector of thread indices for placing threads
+ * from a numanode. Return true if all threads have been placed and
+ * false if it is not.
+ *
+ * @param slots  - A vector of integers containing the indices
+ *                 of the thread candidates for allocation.
+ * @param execution_slots_per_task - The number of threads needed.
+ */
+
+bool Chip::getOpenThreadVector(
+
+  std::vector<int> &slots,
+  int               execution_slots_per_task)
+
+  {
+  unsigned int j = 0;
+  int i = execution_slots_per_task;
+  bool fits = false;
+
+  /* this makes it so users can request gpus and mics 
+     from numanodes which are not where the cores or threads
+     are allocated */
+  if (execution_slots_per_task == 0)
+    return(true);
+  slots.clear();
+  i = execution_slots_per_task;
+  j = 0;
+  /* Can't get contiguous threads. Just get them where you can find them */
+  // Get the thread indices we will use
+  do
+    {
+    for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+      {
+      int thread_index;
+      if (this->cores[j].is_index_busy[x] == true)
+        continue;
+
+      thread_index = this->cores[j].indices[x];
+
+      slots.push_back(thread_index);
+      i--;
+      if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
+        {
+        /* We fit if all of the execution slots have been filled
+           or it we have used all the chip */
+        fits = true;
+        break;
+        }
+      }
+    j++;
+
+    }while((i != 0) && (j < this->cores.size()));
+  
+  return(fits);
+  }
 /*
  * getContiguousThreadVector
  *
- * get a vector of core indices for placing cores
+ * get a vector of thread indices for placing threads
  * from a numanode. Return true if it is contiguous.
  * false if it is not.
  *
  * @param slots  - A vector of integers containing the indices
- *                 of the core candidates for allocation.
+ *                 of the thread candidates for allocation.
  */
 
 bool Chip::getContiguousThreadVector(
@@ -999,21 +1085,57 @@ bool Chip::getContiguousThreadVector(
   if (execution_slots_per_task == 0)
     return(true);
 
-  /* First try to get contiguous cores */
+  /* First try to get contiguous threads */
   do
     {
-    if (this->cores[j].is_free() == true)
+    for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+      {
+      int thread_index;
+
+      /* if this thread is busy and we have already started creating a list,
+           clear the list and start over; otherwise, continue to the next thread */
+      if (this->cores[j].is_index_busy[x] == true)
+        {
+        if (slots.size() > 0)
+          {
+          i = execution_slots_per_task;
+          slots.clear();
+          }
+        else
+          continue;
+        }
+
+      thread_index = this->cores[j].indices[x];
+
+      slots.push_back(thread_index);
+      i--;
+      if (i == 0)
+        {
+        // We fit if all of the execution slots have been filled
+        fits = true;
+        break;
+        }
+      }
+    j++;
+    
+    }while((i != 0) && (j < this->cores.size()));
+
+  if (fits == false)
+    {
+    slots.clear();
+    i = execution_slots_per_task;
+    j = 0;
+    /* Can't get contiguous threads. Just get them where you can find them */
+    // Get the thread indices we will use
+    do
       {
       for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
         {
         int thread_index;
+        if (this->cores[j].is_index_busy[x] == true)
+          continue;
 
-        thread_index = this->cores[j].get_thread_index(x);
-        if (thread_index == -1)
-          {
-          fits = false;
-          return(fits);
-          }
+        thread_index = this->cores[j].indices[x];
 
         slots.push_back(thread_index);
         i--;
@@ -1026,47 +1148,7 @@ bool Chip::getContiguousThreadVector(
           }
         }
       j++;
-      }
-    else
-      {
-      i = execution_slots_per_task;
-      j++;
-      fits = false;
-      slots.clear();
-      }
-    }while((i != 0) && (j < this->cores.size()));
 
-  if (fits == false)
-    {
-    slots.clear();
-    i = execution_slots_per_task;
-    j = 0;
-    /* Can't get contiguous cores. Just get them where you can find them */
-    // Get the core indices we will use
-    do
-      {
-      if (this->cores[j].is_free() == true)
-        {
-        for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
-          {
-          int thread_index;
-
-          thread_index = this->cores[j].get_thread_index(x);
-
-          slots.push_back(thread_index);
-          i--;
-          if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
-            {
-            /* We fit if all of the execution slots have been filled
-               or it we have used all the chip */
-            fits = true;
-            break;
-            }
-          }
-        j++;
-        }
-      else
-          j++;
       }while((i != 0) && (j < this->cores.size()));
     }
   return(fits);
@@ -1152,30 +1234,106 @@ bool Chip::getContiguousCoreVector(
  *
  * places the task, knowing that we must use only cores
  *
- * @param lprocs                   - for place=core=x. Number of lprocs to be bound to cpuset
- * @param execution_slots_per_task - the number of cores to place for this task
+ * @param execution_slots_per_task - for place=core=x. Number of lprocs to be bound to cpuset
+ * @param cores_to_rsv - the number of cores to reserve for this task
+ * @param master - the allocation that has already been made
  * @param a - the allocation we're marking these used for
  */
 
 void Chip::place_task_by_cores(
-
   int         execution_slots_per_task,
+  int         cores_to_rsv,
+  allocation &master,
   allocation &a)
 
   {
   std::vector<int> slots;
+  float step = 1.0;
+  float pin_index = 0.0;
+  int num_cores = execution_slots_per_task;
+  int total_rsvd_cores = 0;
 
-  this->getContiguousCoreVector(slots, execution_slots_per_task);
+  if (cores_to_rsv > execution_slots_per_task)
+    {
+    /* with place=core=x we must reserve more cores than we pin to the cpuset.
+       When the reserved cpu pool spans chips, we need to keep track of the
+       current index of the entire pool by offsetting the pin index and current index of
+       this chip with how many cores have already been pinned/reserved on other chips */
+    int num_pinned_cores = master.cpu_indices.size();
+    int req_lprocs = execution_slots_per_task + num_pinned_cores;
+    total_rsvd_cores = master.cpu_place_indices.size() + num_pinned_cores;
+    
+    step = cores_to_rsv / (float)req_lprocs;
+    pin_index = num_pinned_cores * step;
+    num_cores = cores_to_rsv - total_rsvd_cores;
+    }
+  
+  this->getContiguousCoreVector(slots, num_cores);
+  
   for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
     {
-    this->reserve_core(*it, a);
+    if (it - slots.begin() == floor(pin_index + 0.5) - total_rsvd_cores)
+      {
+      this->reserve_core(*it, a);
+      pin_index += step;
+      }
+    else
+      {
+      this->reserve_chip_core(*it, a);
+      }
     }
 
+  return;
+  } // END place_task_by_cores()
+
+
+/*
+ * place_task_for_legacy_threads()
+ *
+ * places the task, knowing that we can use threads
+ *
+ * @param execution_slots_per_task - the number of threads to bind for this task's cpuset
+ * @param threads_to_rsv - the number of threads to reserve for this task
+ * @param master - the allocation that has already been made
+ * @param a - the allocation we're marking these used for
+ */
+
+void Chip::place_task_for_legacy_threads(
+
+  int         execution_slots_per_task,
+  int         threads_to_rsv,
+  allocation &master,
+  allocation &a)
+
+  {
+  std::vector<int> slots;
+  float step = 1.0;
+  float pin_index = 0.0;
+  int num_threads = execution_slots_per_task;
+  int total_rsvd_threads = 0;
+
+  if (master.place_type == exclusive_legacy)
+    this->getContiguousCoreVector(slots, num_threads);
+  else
+    this->getOpenThreadVector(slots, num_threads);
+  
+  for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
+    {
+    if (it - slots.begin() == floor(pin_index + 0.5) - total_rsvd_threads)
+      {
+      if (master.place_type == exclusive_legacy)
+        {
+        int os_index = this->cores[*it].get_id();
+        this->reserve_place_thread(os_index, a);
+        }
+      else
+        this->reserve_place_thread(*it, a);
+      pin_index += step;
+      }
+    }
 
   return;
-
-
-  } // END place_task_by_cores()
+  } // END place_task_for_legacy_threads()
 
 
 
@@ -1184,29 +1342,57 @@ void Chip::place_task_by_cores(
  *
  * places the task, knowing that we can use threads
  *
- * @param execution_slots_per_task - the number of cores to place for this task
+ * @param execution_slots_per_task - the number of threads to bind for this task's cpuset
+ * @param threads_to_rsv - the number of threads to reserve for this task
+ * @param master - the allocation that has already been made
  * @param a - the allocation we're marking these used for
  */
 
 void Chip::place_task_by_threads(
 
   int         execution_slots_per_task,
+  int         threads_to_rsv,
+  allocation &master,
   allocation &a)
 
   {
-  // Place for being able to use threads
-  int slots_left = execution_slots_per_task;
-  // Get the core indices we will use
-  for (unsigned int j = 0; j < this->cores.size() && slots_left > 0; j++)
-    {
-    int index;
+  std::vector<int> slots;
+  float step = 1.0;
+  float pin_index = 0.0;
+  int num_threads = execution_slots_per_task;
+  int total_rsvd_threads = 0;
 
-    while ((slots_left > 0) &&
-           (this->reserve_thread(j, a) == true))
+  if (threads_to_rsv > execution_slots_per_task)
+    {
+    /* with place=thread=x we must reserve more threads than we pin to the cpuset.
+       When the reserved cpu pool spans chips, we need to keep track of the
+       current index of the entire pool by offsetting the pin index and current index of
+       this chip with how many threads have already been pinned/reserved on other chips */
+    int num_pinned_threads = master.cpu_indices.size();
+    int req_lprocs = execution_slots_per_task + num_pinned_threads;
+    total_rsvd_threads = master.cpu_place_indices.size() + num_pinned_threads;
+    
+    step = threads_to_rsv / (float)req_lprocs;
+    pin_index = num_pinned_threads * step;
+    num_threads = threads_to_rsv - total_rsvd_threads;
+    }
+ 
+  this->getContiguousThreadVector(slots, num_threads);
+  
+  for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
+    {
+    if (it - slots.begin() == floor(pin_index + 0.5) - total_rsvd_threads)
       {
-      slots_left--;
+      this->reserve_place_thread(*it, a);
+      pin_index += step;
+      }
+    else
+      {
+      this->reserve_chip_place_thread(*it, a);
       }
     }
+
+  return;
   } // END place_task_by_threads()
 
 
@@ -1229,11 +1415,16 @@ bool Chip::task_will_fit(
 
   {
   bool           fits = false;
-  int            execution_slots_per_task = r.getExecutionSlots();
+  int            max_cpus = r.getExecutionSlots();
   hwloc_uint64_t mem_per_task = r.getMemory();
   int            gpus_per_task = r.getGpus();
   int            mics_per_task = r.getMics();
   bool           cores_only = (r.getThreadUsageString() == use_cores);
+
+  if (r.getPlaceCores() > 0)
+    max_cpus = r.getPlaceCores();
+  else if (r.getPlaceThreads() > 0)
+    max_cpus = r.getPlaceThreads();
 
   if ((this->available_memory >= mem_per_task) &&
       (this->available_gpus >= gpus_per_task) &&
@@ -1241,12 +1432,17 @@ bool Chip::task_will_fit(
     {
     if (cores_only == true)
       {
-      if (this->availableCores >= execution_slots_per_task)
+      if (this->availableCores >= max_cpus)
+        fits = true;
+      }
+    else if (r.getPlacementType() == place_legacy)
+      {
+      if (this->availableCores >= max_cpus)
         fits = true;
       }
     else
       {
-      if (this->availableThreads >= execution_slots_per_task)
+      if (this->availableThreads >= max_cpus)
         fits = true;
       }
     }
@@ -1274,11 +1470,13 @@ bool Chip::reserve_chip_core(
   if (this->cores[core_index].is_free())
     {
     int os_index = this->cores[core_index].get_id();
-    this->cores[core_index].mark_as_busy(os_index);
+   
+    while ( this->cores[core_index].get_open_processing_unit() != -1 )
+      continue;
+
     this->availableCores--;
     this->availableThreads -= this->cores[core_index].totalThreads;
     a.cpu_place_indices.push_back(os_index);
-    a.cpus++;
     a.cores++;
     a.threads += this->cores[core_index].totalThreads;
     return(true);
@@ -1306,7 +1504,10 @@ bool Chip::reserve_core(
   if (this->cores[core_index].is_free())
     {
     int os_index = this->cores[core_index].get_id();
-    this->cores[core_index].mark_as_busy(os_index);
+    
+    while ( this->cores[core_index].get_open_processing_unit() != -1 )
+      continue;
+
     this->availableCores--;
     this->availableThreads -= this->cores[core_index].totalThreads;
     a.cpu_indices.push_back(os_index);
@@ -1348,14 +1549,11 @@ bool Chip::reserve_chip_place_thread(
   allocation &a)
 
   {
-  int core_index;
-
   for (unsigned int i = 0; i < this->cores.size(); i++)
     {
     if (this->cores[i].reserve_processing_unit(thread_index) == true)
       {
       a.threads++;
-      a.cpus++;
       a.cpu_place_indices.push_back(thread_index);
       this->availableThreads--;
       return(true);
@@ -1374,6 +1572,7 @@ bool Chip::reserve_chip_place_thread(
  * @param core_index - the index of the core whose thread we wish to reserve
  * @param a - the allocation where we should record our reservation
  * @return true if a thread was reserved, false otherwise.
+ * DEPRECATED- reserve_place_thread() is the proper implementation for now
  */
 
 bool Chip::reserve_thread(
@@ -1404,6 +1603,7 @@ bool Chip::reserve_thread(
  * @param core_index - the index of the core whose thread we wish to reserve
  * @param a - the allocation where we should record our reservation
  * @return true if a thread was reserved, false otherwise.
+ * DEPRECATED- reserve_chip_place_thread() is the proper implementation for now
  */
 
 bool Chip::reserve_chip_thread(
@@ -1417,7 +1617,6 @@ bool Chip::reserve_chip_thread(
   if (index >= 0)
     {
     a.threads++;
-    a.cpus++;
     a.cpu_place_indices.push_back(index);
     this->availableThreads--;
     return(true);
@@ -1656,7 +1855,7 @@ bool Chip::spread_place_cores(
       {
       if (step >= 2)
         {
-        if (step_count == step)
+        if ((step_count == step) && (lprocs_per_task_remaining > 0))
           {
           this->reserve_core(*it, from_this_chip);
           step_count = 1;
@@ -1742,34 +1941,32 @@ bool Chip::spread_place(
     {
     allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
+    int        to_add = 0;
+
+    if (execution_slots_remainder > 0)
+      to_add = 1;
 
     from_this_chip.place_type = task_alloc.place_type;
 
-    if (this->totalCores >= execution_slots_per)
+    if (this->totalCores >= execution_slots_per + to_add)
       {
+      if (to_add == 1)
+        {
+        execution_slots_per++;
+        execution_slots_remainder--;
+        }
+
       // Spread over just the cores
-      int step = 1;
+      float step = 1.0;
       if (execution_slots_per > 0)
-       step = this->totalCores / execution_slots_per;
+       step = this->totalCores / (float)execution_slots_per;
 
       from_this_chip.cores_only = true;
 
-      for (unsigned int i = 0; placed < execution_slots_per; i+= step)
+      for (float i = 0.0; placed < execution_slots_per; i+= step)
         {
-        this->reserve_core(i, from_this_chip);
+        this->reserve_core(std::floor(i + 0.5), from_this_chip);
         placed++;
-        }
-
-      if (execution_slots_remainder > 0)
-        {
-        for (unsigned int i = this->cores.size() - 1; i >= 0; i--)
-          {
-          if (this->reserve_core(i, from_this_chip) == true)
-            {
-            execution_slots_remainder--;
-            break;
-            }
-          }
         }
       }
     else
@@ -1847,6 +2044,7 @@ int Chip::place_task(
   int            practical_place = master.place_type;
 
   a.place_type = master.place_type;
+  a.place_cpus = master.place_cpus;
 
   // Practically, we should treat place=node, place=socket, and
   // place=numanode as the same
@@ -1871,15 +2069,35 @@ int Chip::place_task(
 
         allocation task_alloc(master.jobid.c_str());
         task_alloc.cores_only = a.cores_only;
+        task_alloc.place_cpus = a.place_cpus;
 
         this->available_memory -= mem_per_task;
         task_alloc.memory += mem_per_task;
-        task_alloc.cpus += execution_slots_per_task;
         
         if (task_alloc.cores_only == true)
-          place_task_by_cores(execution_slots_per_task, task_alloc);
+          {
+          int cores_to_rsv = execution_slots_per_task;
+          if(r.getPlaceCores() > 0)
+            cores_to_rsv = r.getPlaceCores();
+
+          place_task_by_cores(execution_slots_per_task, cores_to_rsv, master, task_alloc);
+          }
+        else if ((a.place_type == exclusive_legacy) || (a.place_type == exclusive_legacy2))
+          {
+          int threads_to_rsv = execution_slots_per_task;
+          if(r.getPlaceThreads() > 0)
+            threads_to_rsv = r.getPlaceThreads();
+
+          place_task_for_legacy_threads(execution_slots_per_task, threads_to_rsv, master, task_alloc);
+          }
         else
-          place_task_by_threads(execution_slots_per_task, task_alloc);
+          {
+          int threads_to_rsv = execution_slots_per_task;
+          if(r.getPlaceThreads() > 0)
+            threads_to_rsv = r.getPlaceThreads();
+
+          place_task_by_threads(execution_slots_per_task, threads_to_rsv, master, task_alloc);
+          }
 
         allocation remaining(r);
 
@@ -2064,10 +2282,18 @@ void Chip::place_all_execution_slots(
   a.cores_only = master.cores_only;
   this->chip_exclusive = true;
 
-  if (a.cores_only == true)
-    place_task_by_cores(this->totalCores, a);
-  else
-    place_task_by_threads(this->totalThreads, a);
+  for (int c=0; c < this->cores.size(); c++)
+    {
+    if (a.cores_only == true)
+      {
+      reserve_core(c, a);
+      }
+    else
+      {
+      for (int t=0; t < this->cores[c].indices.size(); t++)
+        reserve_place_thread(this->cores[c].indices[t], a);
+      }
+    }
   
   a.mem_indices.push_back(this->id);
   this->allocations.push_back(a);
@@ -2090,7 +2316,12 @@ void Chip::partially_place_task(
   allocation &master)
 
   {
-  allocation     a(master.jobid.c_str());
+  int         place_type;
+  allocation  a(master.jobid.c_str());
+  
+  int max_cpus = remaining.cpus;
+  if (remaining.place_cpus > 0)
+    max_cpus = remaining.place_cpus;
 
   // handle memory
   if (remaining.memory > this->available_memory)
@@ -2106,23 +2337,30 @@ void Chip::partially_place_task(
     remaining.memory = 0;
     }
 
+  remaining.get_place_type(place_type);
+  master.place_type = place_type;
   if (remaining.cores_only == true)
     {
-    place_task_by_cores(remaining.cpus, a);
+    place_task_by_cores(remaining.cpus, max_cpus, master, a);
     a.cores_only = true;
     }
+  else if ((place_type == exclusive_legacy) || (place_type == exclusive_legacy2))
+    {
+    place_task_for_legacy_threads(remaining.cpus, max_cpus, master, a);
+    }
   else
-    place_task_by_threads(remaining.cpus, a);
+    place_task_by_threads(remaining.cpus, max_cpus, master, a);
 
   place_accelerators(remaining, a);
   
-  if ((a.cpus > 0) ||
+  if ((a.cpu_indices.size() > 0) ||
+      (a.cpu_place_indices.size() > 0) ||
       (a.memory > 0) ||
       (a.gpu_indices.size() > 0) ||
       (a.mic_indices.size() > 0))
     {
     a.mem_indices.push_back(this->id);
-    remaining.cpus -= a.cpus;
+    remaining.cpus -= a.cpu_indices.size();
 
     this->allocations.push_back(a);
     master.add_allocation(a);
@@ -2155,13 +2393,29 @@ void Chip::free_cpu_index(
     {
     if (this->cores[i].free == true)
       continue;
-
-    if (this->cores[i].free_pu_index(index, core_is_now_free) == true)
+      
+    if (increment_available_cores == true)
       {
-      if (increment_available_cores == true)
-        this->availableCores++;
+      // For cores_only, the passed-in index should be the core's index
+      if (this->cores[i].get_id() != index)
+        continue;
 
-      return;
+      // Free the entire core (including all its threads)
+      for( unsigned int j = 0; j < this->cores[i].indices.size(); j++)
+        {
+        this->cores[i].free_pu_index(this->cores[i].indices[j], core_is_now_free);
+        }
+
+      if (core_is_now_free == true)
+        {
+        this->availableCores++;
+        return;
+        }
+      }
+    else
+      {
+      if (this->cores[i].free_pu_index(index, core_is_now_free) == true)
+        return;
       }
     }
 
@@ -2203,7 +2457,6 @@ bool Chip::free_task(
 
       free_accelerators(this->allocations[i]);
       
-      break;
       }
     }
 

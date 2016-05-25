@@ -108,6 +108,8 @@ extern const char *place_socket;
 extern const char *place_numa_node;
 extern const char *place_core;
 extern const char *place_thread;
+extern const char *place_legacy;
+extern const char *place_legacy2;
 
 // This class is to hold all of the information for a single req from a job
 // The concept of req(s) is only available under the new syntax
@@ -152,6 +154,7 @@ class req
     req &operator =(const req &other);
 
     void          insert_hostname(const char *hostlist_name);
+    void          set_placement_type(const std::string& place_type);
     int           set_place_value(const char *value);
     int           set_value_from_string(char *str);
     int           set_attribute(const char *str);
@@ -159,8 +162,8 @@ class req
     void          set_from_string(const std::string &req_str);
     int           set_from_submission_string(char *submission_str, std::string &error);
     void          set_index(int index);
-    int           set_value(const char *name, const char *value);
-    int           set_value(const char *name, const char *value, unsigned int task_index);
+    int           set_value(const char *name, const char *value, bool is_default);
+    int           set_task_value(const char *value, unsigned int task_index);
     int           submission_string_precheck(char *str, std::string &error);
     bool          submission_string_has_duplicates(char *str, std::string &error);
     bool          has_conflicting_values(std::string &error);
@@ -186,6 +189,7 @@ class req
     std::string   getNodeAccessPolicy() const;
     std::string   getPlacementType() const;
     std::string   getReqAttr() const;
+    std::string   get_gpu_mode() const;
     int           getTaskCount() const;
     int           getIndex() const;
     int           getHostlist(std::vector<std::string> &list) const;
@@ -203,11 +207,13 @@ class req
     int           get_execution_slots() const;
     void          get_task_host_name(std::string &host, unsigned int task_index);
     int           get_req_allocation_count();
+    int           get_place_type();
     int           set_cput_used(int task_index, const unsigned long cput_used);
     int           set_memory_used(int task_index, const unsigned long long mem_used);
     void          set_hostlist(const char *hostlist);
     void          update_hostlist(const std::string &host_spec);
     void          set_memory(unsigned long mem);
+    void          set_swap(unsigned long mem);
     void          set_execution_slots(int execution_slots);
     void          set_task_count(int task_count);
     void          record_allocation(const allocation &a);

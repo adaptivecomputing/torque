@@ -110,7 +110,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "checkpoint.h" /* start_checkpoint */
 #include "resmon.h"
@@ -254,12 +254,11 @@ static pid_t fork_to_user(
   struct group   *grpp;
   pid_t           pid;
   job            *pjob;
-
   struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
-
   char           *idir;
-
+  char           *pw_buf = NULL;
+  char           *gr_buf = NULL;
   std::string     hdir;
 
   struct stat     sb;
@@ -292,9 +291,8 @@ static pid_t fork_to_user(
     }
   else
     {
-    char *buf = NULL;
 
-    if ((pwdp = getpwnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    if ((pwdp = getpwnam_ext(&pw_buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
@@ -316,10 +314,10 @@ static pid_t fork_to_user(
       {
       usergid = pwdp->pw_gid;   /* default to login group */
       }
-    else if ((grpp = getgrnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
+    else if ((grpp = getgrnam_ext(&gr_buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
       {
       usergid = grpp->gr_gid;
-      free_grname(grpp, buf);
+      free_grname(grpp, gr_buf);
       }
     else
       {
@@ -332,7 +330,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      free_pwnam(pwdp, buf);
+      free_pwnam(pwdp, pw_buf);
       return(-PBSE_BADUSER);
       }
 
@@ -354,7 +352,7 @@ static pid_t fork_to_user(
       hdir = pwdp->pw_dir;
       }
 
-    free_pwnam(pwdp, buf);
+    free_pwnam(pwdp, pw_buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
   if (hdir.size() == 0)
@@ -774,7 +772,7 @@ static int told_to_cp(
 
   {
   int    i;
-  int    nh;
+  unsigned int    nh;
 
   static char newp[MAXPATHLEN + 1];
   char linkpath[MAXPATHLEN + 1];
@@ -782,9 +780,9 @@ static int told_to_cp(
 
   for (max_links = 16;max_links > 0;max_links--)
     {
-    for (nh = 0;nh < cphosts_num;nh++)
+    for (nh = 0;nh < pcphosts.size(); nh++)
       {
-      if (wchost_match(host, pcphosts[nh].cph_hosts))
+      if (wchost_match(host, pcphosts[nh].cph_hosts.c_str()))
         {
 
         if (LOGLEVEL >= 5)
@@ -792,24 +790,24 @@ static int told_to_cp(
           sprintf(log_buffer, "host '%s' pcphosts[%d].cph_hosts: %s",
                   host,
                   nh,
-                  pcphosts[nh].cph_hosts);
+                  pcphosts[nh].cph_hosts.c_str());
 
           log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
-        i = strlen(pcphosts[nh].cph_from);
+        i = pcphosts[nh].cph_from.size();
 
-        if (strncmp(pcphosts[nh].cph_from, oldpath, i) == 0)
+        if (strncmp(pcphosts[nh].cph_from.c_str(), oldpath, i) == 0)
           {
           int nchars, link_size;
           nchars = snprintf(newp, sizeof(newp), "%s%s",
-                            pcphosts[nh].cph_to, oldpath + i);
+                            pcphosts[nh].cph_to.c_str(), oldpath + i);
 
           if (nchars >= (int)sizeof(newp))
             {
             snprintf(log_buffer, sizeof(log_buffer),
                      "too long string when transforming path '%s' to '%s%s'\n",
-                     oldpath, pcphosts[nh].cph_to, oldpath + i);
+                     oldpath, pcphosts[nh].cph_to.c_str(), oldpath + i);
             log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
             return(0);
             }
@@ -872,8 +870,8 @@ static int told_to_cp(
                 host,
                 oldpath,
                 nh,
-                (pcphosts + nh)->cph_hosts,
-                (pcphosts + nh)->cph_from);
+                pcphosts[nh].cph_hosts.c_str(),
+                pcphosts[nh].cph_from.c_str());
 
         log_record(
           PBSEVENT_SYSTEM,
@@ -1721,7 +1719,6 @@ static void cray_susp_resum(
   {
   int   i;
   int  ct;
-  task *ptask;
   pid_t  pid;
   long  sess;
   int  sock;
@@ -1766,10 +1763,9 @@ static void cray_susp_resum(
 
   /* child of MOM, cannot update job struct */
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
     sess = ptask->ti_qs.ti_sid;
 
     for (ct = 0;ct < 3;ct++)
@@ -1832,7 +1828,7 @@ int sigalltasks_sisters(
 
     ep = event_alloc(IM_SIGNAL_TASK, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr))) < 0)
+    if ((stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false)) < 0)
       return(-1);
 
     if ((chan = DIS_tcp_setup(stream)) == NULL)
@@ -1882,8 +1878,6 @@ static void resume_suspend(
   struct batch_request *preq)
 
   {
-  task *tp;
-
   int   stat = 0;
   int   savederr = 0;
 
@@ -1930,17 +1924,19 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    task *tmpTask = (task *)GET_NEXT(pjob->ji_tasks);
-    if(tmpTask != NULL)
+    if (pjob->ji_tasks->size() != 0)
+      {
+      task *tmpTask = pjob->ji_tasks->at(0);
       kill_task(pjob, tmpTask, SIGTSTP, 0);
+      }
 
     sleep(5);
     }
 
-  for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-       tp != NULL;
-       tp = (task *)GET_NEXT(tp->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *tp = pjob->ji_tasks->at(i);
+
     if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
 
@@ -1959,7 +1955,7 @@ static void resume_suspend(
 
       break;
       }  /* END if (stat < 0) */
-    }    /* END for (tp) */
+    }    /* END for each task */
 
   if (stat >= 0)
     {
@@ -1996,10 +1992,10 @@ static void resume_suspend(
 
     signum = (susp == 1) ? SIGCONT : SIGSTOP;
 
-    for (tp = (task *)GET_NEXT(pjob->ji_tasks);
-         tp != NULL;
-         tp = (task *)GET_NEXT(tp->ti_jobtask))
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
+      task *tp = pjob->ji_tasks->at(i);
+
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
 
@@ -2105,7 +2101,6 @@ void req_signaljob(
   int             numprocs=0;
   char           *sname;
   unsigned int   momport = 0;
-  task           *ptask;
 
   struct sig_tbl *psigt;
 
@@ -2261,8 +2256,7 @@ void req_signaljob(
       {
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
         {
-        ptask = (task *)GET_NEXT(pjob->ji_tasks);
-        if (ptask == NULL)
+        if (pjob->ji_tasks->size() == 0)
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
@@ -4182,7 +4176,7 @@ job *job_with_reservation_id(
   const char *rsv_id)
 
   {
-  job *pjob, *nxjob;
+  job *pjob;
   std::list<job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)

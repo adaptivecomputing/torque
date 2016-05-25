@@ -52,7 +52,7 @@ int release_array_range(job_array *pa, struct batch_request *preq, char *range_s
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   fprintf(stderr, "The call to get_array to be mocked!!\n");
   exit(1);
@@ -155,4 +155,9 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
 batch_request *duplicate_request(batch_request *preq, int type) 
   {
   return(NULL);
+  }
+
+int check_array_slot_limits(job *pjob, job_array *pa)
+  {
+  return(0);
   }

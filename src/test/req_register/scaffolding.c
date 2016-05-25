@@ -105,10 +105,9 @@ long calc_job_cost(job *pjob)
   return(0);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
@@ -167,7 +166,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
   {
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);
@@ -337,7 +336,7 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);

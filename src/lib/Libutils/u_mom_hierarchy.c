@@ -95,7 +95,7 @@
 #include "utils.h"
 #include "../Liblog/pbs_log.h"
 #include "../Libnet/lib_net.h" /* socket_get_tcp_priv, socket_connect_addr */
-#include "../Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #define LOCAL_LOG_BUF 1024
 
 
@@ -195,7 +195,7 @@ int rm_establish_connection(
   node_comm_t &nc)
     
   {
-  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr));
+  nc.stream = tcp_connect_sockaddr((struct sockaddr *)&nc.sock_addr,sizeof(nc.sock_addr), true);
 
   if (nc.stream < 0)
     {

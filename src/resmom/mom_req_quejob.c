@@ -102,7 +102,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "mom_job_func.h" /* mom_job_purge */
 
@@ -299,7 +299,7 @@ void mom_req_quejob(
     else
       {
       /* reject the job. It is already working here. */
-      sprintf(log_buffer, "Job already exits. State: %d substate: %d", pj->ji_qs.ji_state, pj->ji_qs.ji_substate);
+      sprintf(log_buffer, "Job already exists. State: %d substate: %d", pj->ji_qs.ji_state, pj->ji_qs.ji_substate);
       log_err(-1, __func__, log_buffer);
       sprintf(log_buffer, "Job %s already on mom", pj->ji_qs.ji_jobid);
       req_reject(PBSE_JOBEXIST, 0, preq, NULL, log_buffer);

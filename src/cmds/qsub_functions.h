@@ -95,7 +95,6 @@
 #endif /* HAVE_SYS_IOCTL_H */
 
 #ifdef TEST_FUNCTION
-#define PBS_SERVER_HOME "./pbshome"
 #define SUBMIT_FILTER_PATH "./submitFilter"
 #endif /* TEST_FUNCTION */
 

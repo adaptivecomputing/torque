@@ -368,7 +368,7 @@ int job_route(
       /* job may be acceptable */
 
       /* change for trq-2788, reroute even if -h */
-      if (!qp->qu_qs.qu_type == QTYPE_RoutePush)
+      if (qp->qu_qs.qu_type != QTYPE_RoutePush)
         bad_state = !qp->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
 
       break;

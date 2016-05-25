@@ -42,11 +42,10 @@ void gen_gen(const char *name, char **BPtr, int *BSpace);
 #if defined(NVIDIA_GPUS) && defined(NVML_API)
 void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 
-int init_nvidia_nvml();
+int init_nvidia_nvml(unsigned int &gpu_count);
 
 int shut_nvidia_nvml();
 
-nvmlDevice_t get_nvml_device_handle(char *gpuid);
 #endif /* NVIDIA_GPUS and NVML_API */
 
 #ifdef NVIDIA_GPUS
@@ -65,8 +64,10 @@ int setup_gpus_for_job(job *pjob);
 void generate_server_gpustatus_smi(std::vector<std::string>& gpu_status);
 
 void mom_server_update_gpustat(mom_server *pms, char *status_strings);
+
 #endif /* NVIDIA_GPUS */
 
+void get_device_indices(const char *device_str, std::vector<unsigned int> &device_indices, const char *suffix);
 void generate_server_status(std::vector<std::string>& status);
 
 #ifdef NVML_API

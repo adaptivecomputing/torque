@@ -1,4 +1,3 @@
-/* $Id: wait.c,v 1.13 2006/09/05 07:49:36 ciesnik Exp $ */
 /*
  *  DRMAA library for Torque/PBS
  *  Copyright (C) 2006  Poznan Supercomputing and Networking Center
@@ -36,6 +35,11 @@
 #include <drmaa_impl.h>
 #include <jobs.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -44,7 +48,7 @@ __attribute__((unused))
 = "$Id: wait.c,v 1.13 2006/09/05 07:49:36 ciesnik Exp $";
 #endif
 
-struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend);
 
 int
 drmaa_synchronize(
@@ -304,7 +308,7 @@ drmaa_get_job_rusage(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, NULL, NULL, &local_errno);
+  pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, NULL, NULL);
 
   if (pbs_status == NULL)
     rc = drmaa_get_pbs_error(errmsg, errlen);
@@ -418,7 +422,7 @@ drmaa_job_wait(
       pthread_mutex_lock(&c->conn_mutex);
       DEBUG(("** probing queue: pbs_statjob( %d, %s, %p, NULL )",
              c->pbs_conn, jobid, (void*)attribs));
-      pbs_status = pbs_statjob_err(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL, &local_errno);
+      pbs_status = pbs_statjob(c->pbs_conn, (char*)jobid, (struct attrl*)attribs, NULL);
       pthread_mutex_unlock(&c->conn_mutex);
       }
 
@@ -722,3 +726,6 @@ drmaa_wifaborted(int *aborted, int stat, char *errmsg, size_t errlen)
   return DRMAA_ERRNO_SUCCESS;
   }
 
+#ifdef __cplusplus
+  }
+#endif

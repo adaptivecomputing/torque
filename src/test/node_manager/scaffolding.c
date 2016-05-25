@@ -23,6 +23,8 @@
 #include "complete_req.hpp"
 
 
+bool conn_success = true;
+bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
 int str_to_attr_count;
 int decode_resc_count;
@@ -49,12 +51,35 @@ const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
 bool             job_mode = false;
+int              can_place = 0;
+pbsnode          napali_node;
 
 
 struct batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");
-  exit(1);
+  struct batch_request *req = NULL;
+
+  if (alloc_br_success == false)
+    return(NULL);
+
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
+
+  if (req == NULL)
+    {
+    return(NULL);
+    }
+
+  req->rq_type = type;
+
+  req->rq_conn = -1;  /* indicate not connected */
+  req->rq_orgconn = -1;  /* indicate not connected */
+  req->rq_time = 9877665;
+  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  req->rq_noreply = FALSE;  /* indicate reply is needed */
+
+  CLEAR_LINK(req->rq_link);
+
+  return(req);
   }
 
 void DIS_tcp_reset(int fd, int i)
@@ -111,22 +136,36 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *t
 struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
+  static struct pbsnode other;
+  static int    called = 0;
+
+  if (called == 0)
+    {
+    memset(&other, 0, sizeof(other));
+    other.nd_name = strdup("lihue");
+    called++;
+    }
 
   memset(&bob, 0, sizeof(bob));
 
   if (!strcmp(nodename, "bob"))
     return(&bob);
   else if (!strcmp(nodename, "napali"))
-    return(&bob);
+    return(&napali_node);
   else if (!strcmp(nodename, "waimea"))
     return(&bob);
   else if (!strcmp(nodename, "2"))
     return(&bob);
   else if (!strcmp(nodename, "3"))
     return(&bob);
+  else if (!strcmp(nodename, "lihue"))
+    {
+    return(&other);
+    }
   else
     return(NULL);
   }
+
 
 struct pbsnode *find_nodebyid(int id)
   {
@@ -154,8 +193,7 @@ struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 unsigned disrui(int stream, int *retval)
@@ -166,8 +204,7 @@ unsigned disrui(int stream, int *retval)
 
 void svr_disconnect(int handle)
   {
-  fprintf(stderr, "The call to svr_disconnect needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
@@ -178,8 +215,7 @@ struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsno
 
 struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, node_iterator *iter)
   {
-  fprintf(stderr, "The call to next_node needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int DIS_tcp_wflush(int fd)
@@ -208,8 +244,7 @@ int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int comman
 
 int issue_Drequest(int conn, batch_request *br, bool close_handle)
   {
-  fprintf(stderr, "The call to issue_Drequest needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
@@ -262,8 +297,10 @@ void free_arst(struct pbs_attribute *attr)
 
 int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
-  fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
-  exit(1);
+  if (conn_success == true)
+    return(10);
+  else
+    return(-1);
   }
 
 int PNodeStateToString(int SBM, char *Buf, int BufSize)
@@ -524,7 +561,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
   {
   fprintf(stderr,"ERROR: %s is mocked.\n",__func__);
   return 0;
@@ -695,10 +732,16 @@ int Machine::place_job(
   job        *pjob,
   string     &cpu_string,
   string     &mem_string,
-  const char *hostname)
+  const char *hostname,
+  bool        legacy_vmem)
 
   {
   return(0);
+  }
+
+int Machine::how_many_tasks_can_be_placed(req &r) const
+  {
+  return(can_place);
   }
 
 Socket::Socket() {}
@@ -744,3 +787,17 @@ bool task_hosts_match(
   return(true);
   }
 
+
+
+bool internal_job_id_exists(int internal_job_id)
+  {
+  if (internal_job_id < 10)
+    return(true);
+  else
+    return(false);
+  }
+
+bool have_incompatible_dash_l_resource(job *pjob)
+  {
+  return(true);
+  }

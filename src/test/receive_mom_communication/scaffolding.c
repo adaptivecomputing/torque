@@ -908,3 +908,13 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"
+#ifdef MIC
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+
+#ifdef NVIDIA_GPUS
+int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
+#endif

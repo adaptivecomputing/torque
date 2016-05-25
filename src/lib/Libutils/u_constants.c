@@ -88,6 +88,8 @@ const char *compute_unit_array     = "ComputeUnitArray";
 const char *compute_unit           = "ComputeUnit";
 const char *socket_array           = "SocketArray";
 const char *socket_name            = "Socket";
+const char *system_tag             = "System";
+const char *nodes_element          = "Nodes";
 const char *node_array             = "NodeArray";
 const char *node_name              = "Node";
 const char *reservation_array      = "ReservationArray";
@@ -128,3 +130,10 @@ const char *reserved               = "Reserved";
 const char *pagg_id                = "pagg_id";
 const char *admin_cookie           = "admin_cookie";
 const char *error_class            = "error_class";
+const char *numa_config            = "numa_cfg";
+const char *hbm_cache_pct          = "hbm_cache_pct";
+const char *hbm_size               = "hbm_size_mb";
+const char *page_size_kb           = "page_size_kb";
+const char *page_count             = "page_count";
+
+

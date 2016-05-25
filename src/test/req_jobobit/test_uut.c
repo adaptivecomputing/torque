@@ -35,6 +35,7 @@ int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *
 int handle_stageout(job *pjob, int type, batch_request *preq);
 int handle_stagedel(job *pjob,int type,batch_request *preq);
 int get_used(job *pjob, std::string &data);
+void set_job_comment(job *pjob, const char *cmt);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -64,6 +65,23 @@ void init_server()
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
+
+
+START_TEST(set_job_comment_test)
+  {
+  job pjob;
+  memset(&pjob, 0, sizeof(pjob));
+
+  set_job_comment(&pjob, "bob");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "bob"));
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+ 
+  // Overwrite, do not append
+  set_job_comment(&pjob, "tim");
+  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "tim"));
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  }
+END_TEST
 
 
 START_TEST(get_used_test)
@@ -455,14 +473,44 @@ END_TEST
 
 START_TEST(end_of_job_accounting_test)
   {
+  extern bool called_account_jobend;
   char *str = strdup("bob tom");
   std::string acct_data(str);
   job  *pjob = (job *)calloc(1, sizeof(job));
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   size_t accttail = acct_data.length();
+
+  // Make sure we aren't doing end of job accounting on jobs that are being deleted 
+  // and never started
+  called_account_jobend = false;
+  pjob->ji_being_deleted = true;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  pjob->ji_being_deleted = false;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  // We need to also set a start time to call this.
+  pjob->ji_qs.ji_stime = 1;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
+  // Make sure this is set - should cause the next call to not execute
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0);
+  
+  // Make sure that we'll do end of job accounting for jobs that are deleted while running
+  // First call doesn't do account_jobend due to svrflags
+  pjob->ji_being_deleted = true;
+  called_account_jobend = false;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  pjob->ji_qs.ji_svrflags = 0;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
+  
   usage = 0;
   }
 END_TEST
@@ -639,6 +687,7 @@ Suite *req_jobobit_suite(void)
   tcase_add_test(tc_core, update_substate_from_exit_status_test);
   tcase_add_test(tc_core, handle_stagedel_test);
   tcase_add_test(tc_core, get_used_test);
+  tcase_add_test(tc_core, set_job_comment_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

@@ -33,6 +33,9 @@ long     pe_alarm_time = PBS_PROLOG_TIME;
 char *path_epilogp;
 long TJobStartTimeout = 300;
 std::map<std::string, std::string> env_map;
+char *path_jobs;
+int multi_mom;
+unsigned int pbs_rm_port = 0;
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {

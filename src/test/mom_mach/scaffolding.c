@@ -24,6 +24,7 @@
 #include "log.h"
 
 extern std::string cg_memory_path;
+char         mom_alias[PBS_MAXHOSTNAME + 1];
 
 Machine this_node;
 std::string cg_cpuacct_path;
@@ -415,7 +416,6 @@ struct group *getgrnam_ext(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "failed to allocate memory");
     return(NULL);
     }
-  int buf_size = sizeof(struct group);
   int alloc_size = sizeof(struct group);
   grp = (struct group *)calloc(1, alloc_size);
   if (grp == NULL)
@@ -454,6 +454,8 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+
+task::~task() {}
 
 
 #include "../../src/lib/Libattr/req.cpp"

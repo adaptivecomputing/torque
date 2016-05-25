@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "resource.h"
 
+int gn_count = 0;
+
 int called_log_event;
 
 int is_whitespace(
@@ -77,7 +79,6 @@ void *get_next(
   int      line) /* I */
 
   {
-  static int gn_count = 0;
   static struct resource_def rd;
 
   resource *r = (resource *)calloc(1, sizeof(resource));
@@ -115,6 +116,7 @@ void *get_next(
 
       rd.rs_name = strdup("mem");
       r->rs_value.at_val.at_size.atsv_num = 40;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
 
       break;
 
@@ -133,7 +135,73 @@ void *get_next(
 
       rd.rs_name = strdup("mem");
       r->rs_value.at_val.at_size.atsv_num = 40;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
 
+      break;
+
+    case 8:
+
+      r = NULL;
+      break;
+
+
+    case 9:
+      rd.rs_name = strdup("nodes");
+      r->rs_value.at_val.at_str = strdup("1:ppn=2");
+      break;
+
+    case 10:
+
+      rd.rs_name = strdup("pmem");
+      r->rs_value.at_val.at_size.atsv_num = 80;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 11:
+
+      r = NULL;
+      break;
+
+    case 12:
+      rd.rs_name = strdup("nodes");
+      r->rs_value.at_val.at_str = strdup("1:ppn=2");
+      break;
+
+    case 13:
+
+      rd.rs_name = strdup("pvmem");
+      r->rs_value.at_val.at_size.atsv_num = 80;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 14:
+
+      r = NULL;
+      break;
+
+    case 15:
+      rd.rs_name = strdup("nodes");
+      r->rs_value.at_val.at_str = strdup("1:ppn=2");
+      break;
+
+    case 16:
+
+      rd.rs_name = strdup("vmem");
+      r->rs_value.at_val.at_size.atsv_num = 80;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 17:
+
+      r = NULL;
+      break;
+
+
+    case 18:
+
+      rd.rs_name = strdup("vmem");
+      r->rs_value.at_val.at_size.atsv_num = 2048;
+      r->rs_value.at_val.at_size.atsv_shift = 0;
       break;
 
     default:

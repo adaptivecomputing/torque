@@ -26,6 +26,11 @@
 #include <string.h>
 #include <attrib.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -84,7 +89,7 @@ attr_by_pbs_name(const char *pbs_name)
 const drmaa_attrib_info_t drmaa_attr_table[] =
   {
   /* DRMAA 1.0 attributes: */
-    { ATTR_JOB_NAME,            "drmaa_job_name"             , "Job_Name"      , OK | ATTR_F_STR   },
+  { ATTR_JOB_NAME,            "drmaa_job_name"             , "Job_Name"      , OK | ATTR_F_STR   },
   { ATTR_JOB_PATH,            "drmaa_remote_command"       , NULL            , OK | ATTR_F_PATH  },
   { ATTR_ARGV,                "drmaa_v_argv"               , NULL            , OK | ATTR_F_VECTOR | ATTR_F_STR  },
   { ATTR_ENV,                 "drmaa_v_env"                , "Variable_List" , OK | ATTR_F_VECTOR | ATTR_F_STR  },
@@ -150,3 +155,8 @@ const drmaa_attrib_info_t drmaa_attr_table[] =
 
   { -1, NULL, NULL, 0 } /* sentinel */
   };
+
+
+#ifdef __cplusplus
+}
+#endif

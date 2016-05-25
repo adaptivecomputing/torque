@@ -27,6 +27,7 @@
 #include "log.h"
 #include "pbs_cpuset.h"
 #include "mom_memory.h"
+#include "mom_config.h"
 #include "node_internals.hpp"
 
 /* NOTE: move these three things to utils when lib is checked in */
@@ -784,10 +785,11 @@ int delete_cpuset(
        */
       else if (!strcmp(pdirent->d_name, "tasks"))
         {
+        slept = 0;
+
         do
           {
           npids = 0;
-          slept = 0;
           if ((fd = fopen(path, "r")) != NULL)
             {
             while ((fgets(tid, sizeof(tid), fd)) != NULL)
@@ -1280,26 +1282,6 @@ long long get_memory_requested_in_kb(
 
 
 
-int get_cpu_count_requested_on_this_node(
-
-  job &pjob)
-
-  {
-  int      cpus = 0;
-  vnodent *np = pjob.ji_vnods;
-
-  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
-    {
-    /* Add core at position vn_index in TORQUE cpuset */
-    if (pjob.ji_nodeid == np->vn_host->hn_node)
-      cpus++;
-    }
-
-  return(cpus);
-  }
-
-
-
 /**
  * Creates cpuset for a job.
  *
@@ -1463,9 +1445,10 @@ int create_job_cpuset(
     {
     remove_logical_processor_if_requested(&tcpus);
 
-    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
-      /* If job's node_usage is singlejob, simply add all cpus */
+    // If job's node_usage is singlejob, simply add all cpus. Also, for logins, add all cpus
+    if (((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0)) ||
+        (is_login_node == TRUE))
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);
       hwloc_bitmap_or(mems, mems, tmems);
@@ -1480,36 +1463,42 @@ int create_job_cpuset(
       
       for (unsigned int i = 0; i < mem_indices->size(); i++)
         hwloc_bitmap_set(mems, mem_indices->at(i));
+
+      delete mem_indices;
+      delete cpu_indices;
       }
     }
 
 #endif /* NUMA_SUPPORT (first section def, second section ndef */
 
   /* Now create cpuset for job */
-  snprintf(log_buffer, sizeof(log_buffer),
+  if (LOGLEVEL >= 6)
+    { 
+    snprintf(log_buffer, sizeof(log_buffer),
       "creating cpuset for job %s: %d cpus (",
       pjob->ji_qs.ji_jobid,
       hwloc_bitmap_weight(cpus));
+    
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
+        sizeof(log_buffer) - strlen(log_buffer),
+        cpus);
 
-  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
-      sizeof(log_buffer) - strlen(log_buffer),
-      cpus);
+    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
+        "), %d mems (",
+        hwloc_bitmap_weight(mems));
 
-  snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer),
-      "), %d mems (",
-      hwloc_bitmap_weight(mems));
+    hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
+        sizeof(log_buffer) - strlen(log_buffer),
+        mems);
 
-  hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
-      sizeof(log_buffer) - strlen(log_buffer),
-      mems);
-
-  snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), ")");
-  log_ext(-1, __func__, log_buffer, LOG_INFO);
+    snprintf(log_buffer + strlen(log_buffer), sizeof(log_buffer) - strlen(log_buffer), ")");
+    log_ext(-1, __func__, log_buffer, LOG_INFO);
+    }
 
   if (create_cpuset(pjob->ji_qs.ji_jobid, cpus, mems, O_CREAT) == 0)
     {
     /* Success */
-    if (LOGLEVEL >= 4)
+    if (LOGLEVEL >= 6)
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
 
     rc = SUCCESS;
@@ -1625,8 +1614,12 @@ int move_to_job_cpuset(
     return(FAILURE);
     }
 
-  /* Success */
-  fclose(fd);
+  if (fclose(fd))
+    {
+    sprintf(log_buffer, "failed to move pid %d to cpuset %s", pid, cpuset_path);
+    log_err(errno, __func__, log_buffer);
+    return(FAILURE);
+    }
 
   if (LOGLEVEL >= 4)
     {

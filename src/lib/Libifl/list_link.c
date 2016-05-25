@@ -222,7 +222,8 @@ void append_link(
 
   new_link->ll_next  = head;
   head->ll_prior = new_link;
-  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
+  if(new_link->ll_prior != NULL)
+    new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
 
   return;
   }  /* END append_link() */

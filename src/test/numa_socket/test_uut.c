@@ -104,6 +104,18 @@ START_TEST(test_accelerators_remaining)
 END_TEST
 
 
+START_TEST(test_basic_constructor)
+  {
+  Socket s(5);
+  s.setMemory(50);
+
+  fail_unless(s.getTotalChips() == 1);
+  fail_unless(s.getAvailableChips() == 1);
+  fail_unless(s.getMemory() == 50);
+  }
+END_TEST
+
+
 START_TEST(test_json_constructor)
   {
   const char *j1 = "\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
@@ -134,7 +146,7 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   std::stringstream out;
-  Socket s;
+  Socket s(1);
   s.setMemory(2);
   s.setId(0);
 
@@ -298,6 +310,7 @@ START_TEST(test_partial_place)
   remaining.cores_only = true;
   remaining.memory = 1;
   remaining.cpus = 1;
+  remaining.place_cpus = 0;
 
   fail_unless(s.fits_on_socket(remaining) == true);
   remaining.cores_only = false;
@@ -349,9 +362,11 @@ START_TEST(test_how_many_tasks_fit)
 
   // should get the number of chips * tasks for how many fit
   tasks = 2;
-  fail_unless(s.how_many_tasks_fit(r, 0) == 4);
+  int fit = s.how_many_tasks_fit(r, 0);
+  fail_unless(fit == 4, "Only %d tasks fit", fit);
   tasks = 4;
-  fail_unless(s.how_many_tasks_fit(r, 0) == 8);
+  fit = s.how_many_tasks_fit(r, 0);
+  fail_unless(fit == 8, "Only %d tasks fit, expected 8", fit);
   my_placement_type = place_socket;
   fail_unless(s.how_many_tasks_fit(r, 0) == 1);
   }
@@ -366,6 +381,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_task);
   tcase_add_test(tc_core, test_free_task);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
   suite_add_tcase(s, tc_core);
   

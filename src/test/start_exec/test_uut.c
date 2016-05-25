@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string>
 #include <set>
+#include <map>
 #include <sys/types.h>
 #include <signal.h>
 #include <limits.h>
@@ -13,7 +14,7 @@
 #include "pbs_nodes.h"
 #include "test_uut.h"
 
-void job_nodes(job &pjob);
+int job_nodes(job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
@@ -37,12 +38,44 @@ extern bool bad_pwd;
 extern bool fail_init_groups;
 extern bool fail_site_grp_check;
 extern bool am_ms;
+extern bool addr_fail;
 
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
 
+#ifdef PENABLE_LINUX_CGROUPS
+unsigned long long get_memory_limit_from_resource_list(job *pjob);
+#endif
+
 int jobstarter_privileged = 0;
+
+#ifdef PENABLE_LINUX_CGROUPS
+START_TEST(get_memory_limit_from_resource_list_test)
+  {
+  job pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_vnods = (vnodent *)calloc(4, sizeof(vnodent));
+  pjob.ji_numvnod = 4;
+
+  for (int i = 0; i < pjob.ji_numvnod; i++)
+    pjob.ji_vnods[i].vn_host = (hnodent *)calloc(1, sizeof(hnodent));
+
+  // Do the full case
+  unsigned long long mem_limit = get_memory_limit_from_resource_list(&pjob);
+  fail_unless(mem_limit == 4 * 1024 * 1024);
+  
+  // Test where only half the vnods are on this node
+  for (int i = pjob.ji_numvnod / 2; i < pjob.ji_numvnod; i++)
+    pjob.ji_vnods[i].vn_host->hn_node = 1;
+
+  mem_limit = get_memory_limit_from_resource_list(&pjob);
+  fail_unless(mem_limit == 2 * 1024 * 1024);
+  }
+END_TEST
+#endif
+
 
 START_TEST(remove_leading_hostname_test)
   {
@@ -110,17 +143,25 @@ END_TEST
 START_TEST(job_nodes_test)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
+  pjob->ji_usages = new std::map<std::string, job_host_data>();
 
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
   pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
 
-  job_nodes(*pjob);
+  fail_unless(job_nodes(*pjob) != PBSE_NONE);
   // nothing should've happened since the flag isn't set
   fail_unless(pjob->ji_numnodes == 0);
-
+  
   pjob->ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
 
-  job_nodes(*pjob);
+  // Force it to not resolve the hostname
+  addr_fail = true;
+  int rc = job_nodes(*pjob);
+  fail_unless(rc == PBSE_CANNOT_RESOLVE, "Error is %d", rc);
+  addr_fail = false; // allow things to work normally
+
+
+  fail_unless(job_nodes(*pjob) == PBSE_NONE);
   fail_unless(pjob->ji_numnodes == 2);
   fail_unless(pjob->ji_numvnod == 20);
 
@@ -506,6 +547,9 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_get_num_nodes_ppn");
   tcase_add_test(tc_core, test_get_num_nodes_ppn);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, get_memory_limit_from_resource_list_test);
+#endif
   suite_add_tcase(s, tc_core);
 
   return s;

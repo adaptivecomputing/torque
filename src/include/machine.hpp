@@ -54,7 +54,7 @@ class PCI_Device
     PCI_Device &operator=(const PCI_Device &other);
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
-#ifdef NVML_API
+#ifdef NVIDIA_GPUS
     void initializeGpu(int idx, hwloc_topology_t topology);
 #endif
 #ifdef MIC
@@ -102,7 +102,6 @@ class Core
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
     std::vector<int> getPU();
     void displayAsString(stringstream &out) const;
-    void mark_as_busy(int index);
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
     bool is_free() const;
@@ -139,6 +138,7 @@ class Chip
 
   public:
     Chip();
+    Chip(int execution_slots);
     Chip(const std::string &layout);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
@@ -179,7 +179,7 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    int  how_many_tasks_fit(const req &r, int place_type) const;
+    float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r) const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
@@ -188,8 +188,9 @@ class Chip
     bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
-    void place_task_by_cores(int cores_to_place, allocation &a);
-    void place_task_by_threads(int threads_to_place, allocation &a);
+    void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
+    void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void place_task_for_legacy_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
@@ -209,6 +210,7 @@ class Chip
     void aggregate_allocations(vector<allocation> &master_list);
     bool reserve_core(int core_index, allocation &a);
     bool reserve_chip_core(int core_index, allocation &a);
+    bool getOpenThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousCoreVector(std::vector<int> &slots, int execution_slots_per_task);
     bool reserve_thread(int core_index, allocation &a);
@@ -234,10 +236,10 @@ class Socket
   bool                  socket_exclusive;
   hwloc_const_cpuset_t  socket_cpuset;
   hwloc_const_nodeset_t socket_nodeset;
-  vector<allocation>    allocations;
 
   public:
     Socket();
+    Socket(int execution_slots);
     Socket(const std::string &layout);
     ~Socket();
     int initializeSocket(hwloc_obj_t obj);
@@ -259,7 +261,7 @@ class Socket
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void setId(int id);
     void addChip(); // used for unit tests
-    int  how_many_tasks_fit(const req &r, int place_type) const;
+    float how_many_tasks_fit(const req &r, int place_type) const;
     void place_all_execution_slots(req &r, allocation &task_alloc);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
     bool spread_place_pu(req &r, allocation &task_alloc, int &cores, int &lprocs, int &gpus, int &mics);
@@ -302,6 +304,7 @@ class Machine
   public:
     Machine& operator=(const Machine& newMachine);
     Machine(const std::string &layout);
+    Machine(int execution_slots);
     Machine();
     ~Machine();
     Socket getSocket();
@@ -331,13 +334,14 @@ class Machine
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
-    int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname);
-    void setMemory(long long mem); // used for unit tests
+    int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname, bool legacy_vmem);
+    void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
+    int  how_many_tasks_can_be_placed(req &r) const;
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;

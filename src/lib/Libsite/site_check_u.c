@@ -101,6 +101,7 @@
 #include "../Liblog/log_event.h"
 #include "batch_request.h"
 #include "pbs_nodes.h"
+#include "svrfunc.h"
 #include "../Libutils/u_lock_ctl.h" /* unlock_node */
 
 #ifndef TRUE
@@ -125,6 +126,46 @@ int initialize_ruserok_mutex()
   rc = pthread_mutex_init(&ruserok_mutex, NULL);
   return(rc);
   }
+
+
+
+bool is_permitted_by_node_submit(
+    
+  const char *orighost,
+  int         logging)
+
+  {
+  long allow_node_submit = FALSE;
+
+  get_svr_attr_l(SRV_ATR_AllowNodeSubmit, &allow_node_submit);
+
+  if ((allow_node_submit == TRUE) &&
+      (node_exists(orighost) == true))
+    {
+    /* job submitted from compute host, access allowed */
+    struct array_strings *arst = NULL;
+
+    get_svr_attr_arst(SRV_ATR_node_submit_exceptions, &arst);
+
+    if (arst != NULL)
+      {
+      // If we find this node's name in the disallowed nodes for submission, forbid it.
+      for (int i = 0; i < arst->as_usedptr; i++)
+        {
+        if (!strcmp(orighost, arst->as_string[i]))
+          {
+          return(false);
+          }
+        }
+      }
+
+    return(true);
+    }
+
+  return(false);
+  } // END is_permitted_by_node_submit()
+
+
 
 /*
  * site_check_u - site_check_user_map()
@@ -158,7 +199,6 @@ int site_check_user_map(
 
   char  *dptr;
 
-  struct pbsnode *tmp;
   char   log_buf[256];
 
 #ifdef MUNGE_AUTH
@@ -238,13 +278,9 @@ int site_check_user_map(
     }
 
   if ((HostAllowed == 0) &&
-      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_AllowNodeSubmit].at_val.at_long == 1) &&
-      ((tmp = find_nodebyname(orighost)) != NULL))
+      (is_permitted_by_node_submit(orighost, logging) == true))
     {
     /* job submitted from compute host, access allowed */
-    unlock_node(tmp, "site_check_user_map", NULL, logging);
-
     if (dptr != NULL)
       *dptr = '.';
 
@@ -301,6 +337,10 @@ int site_check_user_map(
         }
       }  /* END for (hostnum) */
     }    /* END if (SRV_ATR_SubmitHosts) */
+
+  // Check limited acls
+  if (limited_acls.is_authorized(orighost, owner) == true)
+    return(0);
 
   if (dptr != NULL)
     *dptr = '.';

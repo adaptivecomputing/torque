@@ -8,7 +8,7 @@
 int pbs_errno = 0;
 struct connect_handle connection[10];
 
-int PBSD_jscript(int c, char *script_file, char *jobid)
+int PBSD_jscript(int c, const char *script_file, const char *jobid)
  {
  fprintf(stderr, "The call to PBSD_jscript needs to be mocked!!\n");
  exit(1);

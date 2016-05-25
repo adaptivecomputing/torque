@@ -101,7 +101,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -125,7 +125,7 @@
 #include "queue_recycler.h" /* queue_recycler */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "login_nodes.h"
-#include "track_alps_reservations.h"
+#include "track_alps_reservations.hpp"
 #include "job_func.h" /* svr_job_purge */
 #include "net_cache.h"
 #include "ji_mutex.h"
@@ -200,6 +200,7 @@ extern char *path_nodenote;
 extern char *path_nodenote_new;
 extern char *path_checkpoint;
 extern char *path_jobinfo_log;
+extern char *path_pbs_environment;
 
 extern int                      queue_rank;
 extern char                     server_name[];
@@ -237,6 +238,7 @@ extern int paused;
 extern int LOGLEVEL;
 extern char *plogenv;
 
+extern bool   use_path_home;
 extern struct server server;
 
 
@@ -251,6 +253,8 @@ extern int    set_old_nodes(job *);
 extern struct work_task *apply_job_delete_nanny(struct job *, int);
 extern int     net_move(job *, struct batch_request *);
 void          on_job_exit_task(struct work_task *);
+int           update_user_acls(pbs_attribute *pattr, enum batch_op  op);
+int           update_group_acls(pbs_attribute *pattr, enum batch_op  op);
 
 /* Private functions in this file */
 
@@ -919,7 +923,11 @@ int initialize_paths()
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
   rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
-  rc |= chk_file_sec((char *)PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+
+  if (use_path_home == true)
+    rc |= chk_file_sec(path_pbs_environment, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
+  else
+    rc |= chk_file_sec((char *)PBS_ENVIRON, 0, 0, S_IWGRP | S_IWOTH, 1, EMsg);
 
   if (rc != PBSE_NONE)
     {
@@ -1072,6 +1080,12 @@ int setup_server_attrs(
       {
       cpy_stdout_err_on_rerun = true;
       }
+
+    if (server.sv_attr[SRV_ATR_acl_users_hosts].at_flags & ATR_VFLAG_SET)
+      update_user_acls(server.sv_attr + SRV_ATR_acl_users_hosts, SET);
+
+    if (server.sv_attr[SRV_ATR_acl_groups_hosts].at_flags & ATR_VFLAG_SET)
+      update_group_acls(server.sv_attr + SRV_ATR_acl_groups_hosts, SET);
     }
   else
     {
@@ -1137,6 +1151,7 @@ void remove_invalid_allocations(
   pbsnode *pnode)
 
   {
+  int retcode;
 
   if (pnode->nd_layout != NULL)
     {
@@ -1146,7 +1161,15 @@ void remove_invalid_allocations(
 
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
-      if (job_id_exists(job_ids[i]) == false)
+      bool exists;
+      do
+        {
+        /* job_id_exists will return false if it can't
+           get a mutex lock. Check the recode first
+           if it returns false */
+        exists = job_id_exists(job_ids[i], &retcode);
+        }while(exists == false && retcode != 0);
+      if (exists == false)
         pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
       }
     }
@@ -2159,7 +2182,15 @@ int pbsd_init(
     hints.ai_flags = AI_CANONNAME;
 
     /* The following is code to reduce security risks */
-    if (setup_env(PBS_ENVIRON) == -1)
+    if (use_path_home == true)
+      {
+      path_pbs_environment = build_path(path_home, "pbs_environment", "");
+      if (setup_env(path_pbs_environment) == -1)
+        {
+        return(-1);
+        }
+      }
+    else if (setup_env(PBS_ENVIRON) == -1)
       {
       return(-1);
       }
@@ -2656,6 +2687,49 @@ int pbsd_init_job(
 
 
 
+/*
+ * check_jobs_queue()
+ *
+ * This ensures that a queue is created for pjob. If the queue isn't present,
+ * a ghost queue is created so that the job isn't deleted. This queue won't be
+ * able to enqueue new jobs, only jobs that are being recovered.
+ */
+
+void check_jobs_queue(
+
+  job *pjob)
+
+  {
+  std::string queue_name(pjob->ji_qs.ji_queue);
+  std::string job_id(pjob->ji_qs.ji_jobid);
+
+  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+
+  pbs_queue *pque = find_queuebyname(queue_name.c_str());
+
+  if (pque == NULL)
+    {
+    // Create the queue but flag it as a ghost queue
+    pque = que_alloc(queue_name.c_str(), TRUE);
+    pque->qu_attr[QA_ATR_QType].at_val.at_str = strdup("Execution");
+    pque->qu_attr[QA_ATR_QType].at_flags |= ATR_VFLAG_SET;
+    pque->qu_qs.qu_type = QTYPE_Execution;
+
+    pque->qu_attr[QA_ATR_Started].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Started].at_flags |= ATR_VFLAG_SET;
+
+    pque->qu_attr[QA_ATR_Enabled].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Enabled].at_flags |= ATR_VFLAG_SET;
+
+    pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_GhostQueue].at_flags |= ATR_VFLAG_SET;
+    }
+
+  unlock_queue(pque, __func__, NULL, LOGLEVEL);
+
+  pjob = svr_find_job(job_id.c_str(), TRUE);
+  } // END check_jobs_queue()
+
 
 
 int pbsd_init_reque(
@@ -2673,7 +2747,15 @@ int pbsd_init_reque(
 
   sprintf(log_buf, "%s:1", __func__);
   lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-  if ((rc = svr_enquejob(pjob, TRUE, NULL, false)) == PBSE_NONE)
+
+  check_jobs_queue(pjob);
+
+  rc = svr_enquejob(pjob, TRUE, NULL, false, true);
+
+  // Since we aren't aborting jobs that receive PBSD_BADDEPEND, 
+  // we need to set them up properly, inside this if statement.
+  if ((rc == PBSE_NONE) ||
+      (rc == PBSE_BADDEPEND))
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,
@@ -2701,12 +2783,13 @@ int pbsd_init_reque(
       {
       set_statechar(pjob);
       }
+
+    rc = PBSE_NONE;
     }
   else
     {
     /* Oops, this should never happen */
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       {
       snprintf(log_buf, sizeof(log_buf), "%s; job %s queue %s",
         msg_err_noqueue,
@@ -2718,8 +2801,7 @@ int pbsd_init_reque(
 
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
-    if ((rc != PBSE_JOB_RECYCLED) &&
-        (rc != PBSE_BADDEPEND))
+    if (rc != PBSE_JOB_RECYCLED)
       job_abt(&pjob, log_buf);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
@@ -2768,7 +2850,7 @@ void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "mom_main", (char *)"Caught fatal core signal");
+  log_err(sig, __func__, "Caught fatal core signal");
 
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;

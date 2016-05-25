@@ -27,7 +27,7 @@
 
 char *apbasil_protocol;
 char *apbasil_path;
-struct cphosts *pcphosts = NULL;
+std::vector<cphosts> pcphosts;
 char *path_undeliv;
 const char *msg_err_unlink = "Unlink of %s file %s failed";
 time_t time_now;
@@ -129,10 +129,9 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   exit(1);
   }
 
-int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which)
+int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, const char *jobid, int which)
   {
-  fprintf(stderr, "The call to encode_DIS_JobFile needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void free_br(struct batch_request *preq)
@@ -314,7 +313,7 @@ job *mom_find_job(char const *jobid)
   exit(1);
   }
 
-int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);

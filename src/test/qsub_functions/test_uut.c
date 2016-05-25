@@ -11,11 +11,13 @@
 
 void process_opt_L(const char *str);
 void validate_basic_resourcing(job_info *ji);
+bool is_resource_request_valid(job_info *ji, std::string &err_msg);
 void add_new_request_if_present(job_info *ji);
 bool retry_submit_error(int error);
 int  process_opt_d(job_info *ji, const char *cmd_arg, int data_type, job_data *tmp_job_info);
 int  process_opt_j(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_k(job_info *ji, const char *cmd_arg, int data_type);
+int  process_opt_K(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
 
@@ -40,6 +42,22 @@ bool are_we_forking()
   
   return(true);
   }
+
+
+START_TEST(test_process_opt_K)
+  {
+  job_info ji;
+
+  // Must be a positive number
+  fail_unless(process_opt_K(&ji, NULL, 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "-1", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "abc", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "0", 1) != PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE);
+  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE);
+  }
+END_TEST
 
 
 START_TEST(test_process_opt_p)
@@ -236,6 +254,45 @@ END_TEST
 
 
 
+extern std::vector<std::string> in_hash;
+
+START_TEST(test_is_resource_request_valid)
+  {
+  job_info     ji;
+  std::string  err_msg;
+  const char  *resc_array[] = {"nodes", "mppwidth", "ncpus", "size"};
+
+  // Empty shouldn't fail
+  in_hash.clear();
+  fail_unless(is_resource_request_valid(&ji, err_msg) == true);
+
+  // Any one of these should work
+  for (int i = 0; i < 4; i++)
+    {
+    in_hash.clear();
+    in_hash.push_back(resc_array[i]);
+    fail_unless(is_resource_request_valid(&ji, err_msg) == true);
+    }
+
+  // Any two of these should fail
+  for (int i = 0; i < 4; i++)
+    {
+    in_hash.clear();
+    in_hash.push_back(resc_array[i]);
+
+    for (int j = 0; j < 4; j++)
+      {
+      if (j != i)
+        {
+        in_hash.push_back(resc_array[j]);
+        fail_unless(is_resource_request_valid(&ji, err_msg) == false);
+        in_hash.pop_back();
+        }
+      }
+    }
+  }
+END_TEST
+
 
 START_TEST(test_x11_get_proto_1)
   {
@@ -329,6 +386,7 @@ Suite *qsub_functions_suite(void)
   tcase_add_test(tc_core, test_process_opt_d);
   tcase_add_test(tc_core, test_process_opt_j);
   tcase_add_test(tc_core, test_process_opt_k);
+  tcase_add_test(tc_core, test_process_opt_K);
   tcase_add_test(tc_core, test_process_opt_m);
   tcase_add_test(tc_core, test_process_opt_p);
   tcase_add_test(tc_core, test_retry_submit_error);
@@ -351,6 +409,7 @@ Suite *qsub_functions_suite(void)
 
   tc_core = tcase_create("test_make_argv");
   tcase_add_test(tc_core, test_make_argv);
+  tcase_add_test(tc_core, test_is_resource_request_valid);
   suite_add_tcase(s, tc_core);
 
   return s;

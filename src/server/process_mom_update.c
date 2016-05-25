@@ -79,6 +79,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -501,6 +502,9 @@ int set_note_error(
   std::string errmsg = std::string(str).substr(8, std::string::npos);
   std::string oldnote = "";
 
+  // remove newlines from string
+  errmsg.erase(std::remove(errmsg.begin(), errmsg.end(), '\n'), errmsg.end());
+
   // If a note already exists, append the error; otherwise, create a new note
   if (np->nd_note != NULL)
     {
@@ -512,11 +516,12 @@ int set_note_error(
       return(PBSE_NONE);
       }
 
+    // append message
     message = oldnote + " - " + errmsg;
     free(np->nd_note);
     }
   else
-    message = std::string(str).substr(8, std::string::npos);
+    message = errmsg;
 
   np->nd_note = strdup(message.c_str());
 
@@ -540,22 +545,26 @@ int restore_note(
   std::string message;
   std::string oldnote;
   std::size_t found;
+  std::size_t found_appendage;
 
   // If a note exists, strip it of any error message
   if (np->nd_note != NULL)
     {
     oldnote = np->nd_note;
 
-    found = oldnote.find(" - ERROR");
+    found = oldnote.find("ERROR");
 
     if (found == std::string::npos)
       {
-      found = oldnote.find("ERROR");
+      return(PBSE_NONE);
+      }
 
-      if (found == std::string::npos)
-        {
-        return(PBSE_NONE);
-        }
+    found_appendage = oldnote.find(" - ERROR");
+
+    // adjust the found index to the first of "ERROR" or " - ERROR"
+    if ((found_appendage != std::string::npos) && (found_appendage < found))
+      {
+      found = found_appendage;
       }
 
     // If the note would be empty after removing the error message,
@@ -630,7 +639,7 @@ int process_state_str(
 
   if (np->nd_state & INUSE_NOHIERARCHY)
     {
-    sprintf(log_buf, "node %s has not received its hiearachy yet.",
+    sprintf(log_buf, "node %s has not received its hierarchy yet.",
       (np->nd_name != NULL) ? np->nd_name : "NULL");
 
     log_err(-1, __func__, log_buf);

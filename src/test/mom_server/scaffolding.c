@@ -465,3 +465,14 @@ bool overwrite_cache(
   return(true);
   }
 
+/*int gethostname(char *name, size_t len)
+  {
+  strcpy(name, "fattony3.ac");
+  return(0);
+  }*/
+
+int add_gpu_status(std::vector<std::string> &mom_status)
+  {
+  return(0);
+  }
+

@@ -13,6 +13,7 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "attribute.h" /* svrattrl */
 #include "work_task.h"
+#include "mail_throttler.hpp"
 
 extern void *send_the_mail(void *vp);
 
@@ -25,8 +26,15 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 int listening_socket;
 threadpool_t *task_pool;
+int called;
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+
+int get_svr_attr_l(int attr_index, long *l)
+  {
+	called = 1;
+	return 0;
+  }  
 
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
@@ -115,4 +123,22 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
+bool empty_body = false;
+
+int get_svr_attr_str(
+    
+  int    index,
+  char **str)
+
+  {
+  static char *bodyfmt = strdup("Zaphod");
+
+  if ((index == SRV_ATR_MailBodyFmt) &&
+      (empty_body == true))
+    {
+    *str = bodyfmt;
+    }
+
+  return(0);
+  }
 

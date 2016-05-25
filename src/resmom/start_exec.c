@@ -110,7 +110,7 @@ extern "C"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "pbs_error.h"
@@ -131,6 +131,8 @@ extern "C"
 #include "mom_config.h"
 #include "mom_memory.h"
 #include "node_internals.hpp"
+#include "job_host_data.hpp"
+#include "pmix_tracker.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
@@ -325,6 +327,7 @@ job_pid_set_t    global_job_sid_set; /* This contains the session id of each job
 
 static void starter_return(int, int, int, struct startjob_rtn *);
 static void catchinter(int);
+int get_process_rank(int&);
 int expand_vtable(struct var_table *vtable);
 int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
@@ -339,7 +342,7 @@ int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 int TMomFinalizeJob2(pjobexec_t *, int *);
 int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 int expand_path(job *,char *,int,char *);
-int TMomFinalizeChild(pjobexec_t *);
+int TMomFinalizeChild(pjobexec_t *, char **extra_env);
 
 int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 
@@ -1937,7 +1940,7 @@ int open_tcp_stream_to_sisters(
 
     pjob->ji_outstanding++;
 
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
     if (IS_VALID_STREAM(stream) == FALSE)
       {
@@ -2565,6 +2568,7 @@ int TMomFinalizeJob2(
 #endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
+  char                **pmix_env = NULL;
 
   pjob  = mom_find_job(TJE->jobid);
 
@@ -2576,6 +2580,43 @@ int TMomFinalizeJob2(
       pjob->ji_qs.ji_jobid,
       "about to fork child which will become job");
     }
+
+  /* we have to take care of setting NVIDIA gpus in the parent */
+#ifdef NVIDIA_GPUS
+  if (use_nvidia_gpu) 
+    {
+    int rc;
+
+    rc = setup_gpus_for_job(pjob);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Failed to initialize gpus. Job %s failed to start", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      *SC = rc;
+      return(FAILURE);
+      }
+    }
+#endif  /* NVIDIA_GPUS */
+
+#ifdef ENABLE_PMIX
+  pmix_proc_t   p;
+  strcpy(p.nspace, TJE->jobid);
+
+  char *dot = strchr(p.nspace, '.');
+  if (dot != NULL)
+    *dot = '\0';
+
+  pmix_status_t pmix_rc = PMIx_server_setup_fork(&p, &pmix_env);
+  if (pmix_rc != PMIX_SUCCESS)
+    {
+    /* Uncomment once PMIx bug is fixed
+     * snprintf(log_buffer, sizeof(log_buffer),
+      "Failed to get PMIx environment variables for job %s: %s",
+      pjob->ji_qs.ji_jobid,
+      PMIx_Error_string(pmix_rc));
+    log_err(-1, __func__, log_buffer);*/
+    }
+#endif
 
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
@@ -2597,7 +2638,7 @@ int TMomFinalizeJob2(
   if (cpid == 0)
     {
     /* CHILD:  handle child activities */
-    TMomFinalizeChild(TJE);
+    TMomFinalizeChild(TJE, pmix_env);
 
     /*NOTREACHED*/
     }
@@ -3102,10 +3143,6 @@ void take_care_of_nodes_file(
     if (write_attr_to_file(pjob, JOB_ATR_exec_mics, "mic") == -1)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
-#ifdef NVIDIA_GPUS
-    if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
-#endif  /* NVIDIA_GPUS */
     }   /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
   if (LOGLEVEL >= 10)
@@ -4178,6 +4215,300 @@ void source_login_shells_or_not(
 
 
 
+/*
+ * get_memory_in_kilobytes_from_size()
+ */
+
+unsigned long long get_memory_in_kilobytes_from_size(
+
+  struct size_value sz)
+
+  {
+  int shift = sz.atsv_shift;
+  
+  unsigned long long mem = sz.atsv_num;
+
+  /* make sure that the requested memory is in kb */
+  if (shift < 10)
+    {
+    mem /= 1024;
+    }
+  else
+    {
+    while (shift > 10)
+      {
+      mem *= 1024;
+      shift -= 10;
+      }
+    }
+
+  return(mem);
+  } // END get_memory_in_kilobytes_from_size()
+
+
+
+#if defined(PENABLE_LINUX_CGROUPS) || defined(PENABLE_LINUX26_CPUSETS)
+int get_cpu_count_requested_on_this_node(
+
+  job &pjob)
+
+  {
+  int      cpus = 0;
+  vnodent *np = pjob.ji_vnods;
+
+  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
+    {
+    /* Add core at position vn_index in TORQUE cpuset */
+    if (pjob.ji_nodeid == np->vn_host->hn_node)
+      cpus++;
+    }
+
+  return(cpus);
+  } 
+
+
+
+/*
+ * get_memory_limit_from_resource_list()
+ *
+ * @param pjob (I) - the job whose resource list we're checking
+ * @return the memory limit from the resource list
+ */
+
+unsigned long long get_memory_limit_from_resource_list(
+
+  job *pjob)
+
+  {
+  unsigned long long mem_limit = 0;
+  
+  resource  *mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                                   find_resc_def(svr_resc_def, "mem", svr_resc_size));
+
+  if (mem == NULL)
+    {
+    mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                          find_resc_def(svr_resc_def, "vmem", svr_resc_size));
+    }
+
+  if ((mem != NULL) &&
+      (mem->rs_value.at_val.at_size.atsv_num != 0))
+    {
+    mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
+
+    // Figure out how much memory should be used on this host
+    int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+    // make sure the memory is evenly set over the job.
+    double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
+    mem_limit = mem_limit * mem_pcnt;
+    }
+  else
+    {
+    /* pmem and vmem */
+    mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                          find_resc_def(svr_resc_def, "pmem", svr_resc_size));
+
+    if (mem == NULL)
+      {
+      mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                            find_resc_def(svr_resc_def, "pvmem", svr_resc_size));
+      }
+    
+    if (mem != NULL)
+      {
+      mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
+
+      // Figure out how much memory should be used on this host
+      int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+      // Since this is per process, multiply by the number of execution slots
+      mem_limit = mem_limit * cpu_count;
+      }
+    }
+
+  return(mem_limit);
+  } // END get_memory_limit_from_resource_list()
+#endif
+
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * get_memory_limit_for_this_host()
+ *
+ * @param pjob - the job whose limits we're setting
+ * @param cr - the complete_req for the job, if there is one
+ */
+
+unsigned long long get_memory_limit_for_this_host(
+
+  job          *pjob,
+  complete_req *cr,
+  std::string  &string_hostname)
+
+  {
+  unsigned long long mem_limit = 0;
+
+  if (cr != NULL)
+    mem_limit = cr->get_memory_for_this_host(string_hostname);
+
+  if (mem_limit == 0)
+    {
+    mem_limit = get_memory_limit_from_resource_list(pjob);
+    }
+
+  return(mem_limit);
+  } // END get_memory_limit_for_this_host()
+
+
+
+/*
+ * get_swap_limit_for_this_host()
+ *
+ *
+ */
+
+unsigned long long get_swap_limit_for_this_host(
+
+  job          *pjob,
+  complete_req *cr,
+  std::string  &string_hostname)
+
+  {
+  unsigned long long swap_limit = 0;
+
+  if (cr != NULL)
+    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
+
+  return(swap_limit);
+  } // END get_swap_limit_for_this_host()
+
+
+
+/*
+ * set_job_cgroup_memory_limits()
+ *
+ */
+
+int set_job_cgroup_memory_limits(
+
+  job *pjob)
+
+  {
+  /* See if the memory attribute was requested and then add it to
+     memory.limit_in_bytes of the cgroup */
+  char          this_hostname[PBS_MAXHOSTNAME];
+  unsigned long long mem_limit;
+  unsigned long long swap_limit;
+  complete_req *cr = NULL;
+
+  int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+  if (rc != 0)
+    {
+    sprintf(log_buffer, "failed to get host name: %d", errno);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    return(rc);
+    }
+
+  std::string string_hostname = this_hostname;
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+
+  if ((mem_limit = get_memory_limit_for_this_host(pjob, cr, string_hostname)) != 0)
+    {
+    rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      return(rc);
+      }
+    }
+
+  if ((swap_limit = get_swap_limit_for_this_host(pjob, cr, string_hostname)) != 0)
+    {
+    if (mem_limit == 0)
+      {
+      /* memory.memsw.limit_in_bytes cannot be set unless memory.limit_in_bytes is set */
+      mem_limit = swap_limit;
+      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "Could not set resident memory limits for  %s. swap", pjob->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buffer, LOG_ERR);
+        return(rc);
+        }
+      }
+ 
+    rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not set swap memory limits for  %s.", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      return(rc);
+      }
+    }
+
+  pbs_attribute *pattr;
+
+  /* make sure we don't have an incompatible -l resource request */
+  if (have_incompatible_dash_l_resource(pjob) == false)
+    {
+
+    /* if JOB_ATR_req_information is set then this was a -L request */
+    pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+    if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+      {
+      unsigned int req_index;
+      unsigned int task_index;
+      unsigned int num_reqs;
+      int          num_tasks;
+
+      cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+      num_reqs = cr->req_count();
+
+      for(req_index = 0; req_index < num_reqs; req_index++)
+        {
+        req r;
+
+        mem_limit = cr->get_memory_per_task(req_index);
+        swap_limit = cr->get_swap_per_task(req_index);
+        if ((mem_limit == 0) &&
+            (swap_limit != 0))
+          mem_limit = swap_limit;
+
+        if (mem_limit != 0)
+          {
+          r = cr->get_req(req_index);
+          num_tasks = r.getTaskCount();
+          for (task_index = 0; task_index < num_tasks; task_index++)
+            {
+            rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
+            if (rc != PBSE_NONE)
+              {
+              /* It may be this task does not belong on the sister node. continue */
+              continue;
+              }
+
+            rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
+            if (rc != PBSE_NONE)
+              {
+              /* It may be this task does not belong on the sister node. continue */
+              continue;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  return(rc);
+  } // END set_job_cgroup_memory_limits()
+#endif
+
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
@@ -4186,7 +4517,8 @@ void source_login_shells_or_not(
 
 int TMomFinalizeChild(
 
-  pjobexec_t *TJE)    /* I */
+  pjobexec_t  *TJE,      // I
+  char       **extra_env) // I
 
   {
   int                    aindex;
@@ -4291,6 +4623,14 @@ int TMomFinalizeChild(
 
   handle_cpuset_creation(pjob, &sjr, TJE);
 
+#ifdef ENABLE_PMIX
+  // Add the extra variables to the job's environment
+  if (extra_env != NULL)
+    {
+    for (int i = 0; extra_env[i] != NULL; i++)
+      bld_env_variables(&vtable, extra_env[i], NULL);
+    }
+#endif
 
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
@@ -4363,6 +4703,7 @@ int TMomFinalizeChild(
       }
     }
 
+#ifndef PENABLE_LINUX_CGROUPS
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
 
@@ -4377,86 +4718,57 @@ int TMomFinalizeChild(
     }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+#endif
 
 #ifdef PENABLE_LINUX_CGROUPS
   int rc;
 
   // Create the cgroups for this job
-  if ((rc = trq_cg_create_all_cgroups(pjob)) != PBSE_NONE)
+  rc = init_torque_cgroups();
+  if (rc == PBSE_NONE) {
+      rc = trq_cg_create_all_cgroups(pjob);
+  } else {
+      /*
+        Send/log an additional error, cleanup and return as before
+       */
+    sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+  }
+
+  if (rc != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
-  /* Add this process to the cpuacct and memory subsystems */
-  rc = trq_cg_add_process_to_cgroup_accts(pjob->ji_qs.ji_jobid, getpid());
+  pjob->ji_cgroups_created = true;
+
+  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
+    {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  rc = trq_cg_add_devices_to_cgroup(pjob);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
-  /* See if the memory attribute was requested and then add it to
-     memory.limit_in_bytes of the cgroup */
-  if ((pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+  rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
+  if (rc != PBSE_NONE)
     {
-    char          this_hostname[PBS_MAXHOSTNAME];
-    unsigned long long mem_limit;
-    unsigned long long swap_limit;
-    complete_req *cr;
-    pid_t this_pid = getpid();
-
-    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-    if (rc != 0)
-      {
-      sprintf(log_buffer, "failed to get host name: %d", errno);
-      log_ext(-1, __func__, log_buffer, LOG_ERR);
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-      exit(-1);
-      }
-
-    std::string string_hostname = this_hostname;
-
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    mem_limit = cr->get_memory_for_this_host(string_hostname);
-    if (mem_limit != 0)
-      {
-      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit * KB);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buffer, LOG_ERR);
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-        exit(-1);
-        }
-      }
-
-    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
-    if (swap_limit != 0)
-      {
-      rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit * KB);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buffer, LOG_ERR);
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-        exit(-1);
-        }
-      }
-
-    if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
-      {
-      sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
-      log_ext(-1, __func__, log_buffer, LOG_ERR);
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-      exit(-1);
-      }
+    sprintf(log_buffer, "failed to add pid to all cgroups: %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
     }
-#endif
+
+
+#endif /* PENABLE_LINUX_CGROUPS */
 
   if (site_job_setup(pjob) != 0)
     {
@@ -5548,57 +5860,47 @@ int start_process(
   pbs_attribute *pattr;
   pid_t new_pid = getpid();
 
-  /* if JOB_ATR_req_information is set then this was a -L request */
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+  /* make sure we don't have an incompatible -l resource request */
+  if (have_incompatible_dash_l_resource(pjob) == false)
     {
-    rc = get_process_rank(rank);
-    if (rc == PBSE_NONE)
+
+    /* if JOB_ATR_req_information is set then this was a -L request */
+    pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+    if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
       {
-      unsigned int req_index;
-      unsigned int task_index;
-      unsigned long long mem_limit;
-      unsigned long long swap_limit;
-
-      complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-
-      rc = cr->get_req_and_task_index(rank, req_index, task_index);
+      rc = get_process_rank(rank);
       if (rc == PBSE_NONE)
         {
-        mem_limit = cr->get_memory_per_task(req_index);
-        swap_limit = cr->get_swap_per_task(req_index);
+        unsigned int req_index;
+        unsigned int task_index;
 
-        rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
-        if (rc != PBSE_NONE)
-          {
-          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-          exit(1);
-          }
+        complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
 
-        rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
-        if (rc != PBSE_NONE)
-          {
-          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-          exit(1);
-          }
-
-        rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+        rc = cr->get_req_and_task_index(rank, req_index, task_index);
         if (rc == PBSE_NONE)
           {
-          rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+
+          rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
           if (rc == PBSE_NONE)
             {
-            rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            if (rc == PBSE_NONE)
+              {
+              rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              if (rc == PBSE_NONE)
+                rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              }
             }
           }
         }
       }
     }
 
-  /* if rc is not PBSE_NONE just add the process id to the main cgroup. We sill not
+  /* if rc is not PBSE_NONE just add the process id to the main cgroup. We still will not 
      fail the job. This will work for -l requests as well */
   if (rc != PBSE_NONE)
     {
@@ -6049,7 +6351,7 @@ int add_host_to_sister_list(
  * @see start_exec() - parent
  */
 
-void job_nodes(
+int job_nodes(
 
   job &pjob)  /* I */
 
@@ -6066,7 +6368,7 @@ void job_nodes(
       (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL))
     {
     log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
-    return;
+    return(-1);
     }
 
   std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
@@ -6098,15 +6400,37 @@ void job_nodes(
 
     CLEAR_HEAD(hp.hn_events);
 
+#ifdef NUMA_SUPPORT
+    /* if this is a SGI UV or other shared memory system 
+       remove the suffix for the node name before resolving the address */
+    std::size_t last_dash = host.find_last_of("-");
+    if (last_dash != std::string::npos)
+      host.erase(last_dash);
+#endif
+
+
     /* set up the socket address information */
-    if (pbs_getaddrinfo(hp.hn_host, NULL, &addr_info) == 0)
+    if (pbs_getaddrinfo(host.c_str(), NULL, &addr_info) == 0)
       {
       hp.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
       hp.sock_addr.sin_family = AF_INET;
       hp.sock_addr.sin_port = htons(hp.hn_port);
       }
+    else
+      {
+      // Unable to resolve this sister's hostname; this job should fail
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Unable to resolve host %s requested as a sister node. Aborting job.",
+        hp.hn_host);
+      log_err(PBSE_CANNOT_RESOLVE, __func__, log_buffer);
+
+      return(PBSE_CANNOT_RESOLVE);
+      }
 
     translate_range_string_to_vector(range.c_str(), indices);
+
+    job_host_data jdh(hp.hn_host, indices.size());
+    (*pjob.ji_usages)[hp.hn_host] = jdh;
 
     for (unsigned int i = 0; i < indices.size(); i++)
       {
@@ -6141,7 +6465,7 @@ void job_nodes(
       (pjob.ji_vnods == NULL))
     {
     log_err(-1,__func__,"Out of memory, system failure!\n");
-    return;
+    return(ENOMEM);
     }
 
   for (unsigned int i = 0; i < hosts.size(); i++)
@@ -6192,7 +6516,7 @@ void job_nodes(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  return;
+  return(PBSE_NONE);
   }   /* END job_nodes() */
 
 
@@ -6467,7 +6791,7 @@ int send_join_job_to_sisters(
       log_buffer[0] = '\0';
 
       ret = -1;
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {
@@ -6613,16 +6937,12 @@ void create_cpuset_reservation_if_needed(
       (presc->rs_value.at_flags & ATR_VFLAG_SET) == FALSE)
     {
     /* this means there is no geometry request */
-    long long mem_requested = get_memory_requested_in_kb(pjob);
+    long long mem_requested = get_memory_limit_from_resource_list(&pjob);
     int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
-
-    // make sure the memory is evenly set over the job.
-    double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
-    mem_requested = mem_requested * (long long)mem_pcnt;
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
-  }
+  } // END create_cpuset_reservation_if_needed()
 
 
 
@@ -6715,7 +7035,8 @@ int start_exec(
 
   /* Step 2.0 Initialize Job */
   /* update nodes info w/in job based on exec_hosts pbs_attribute */
-  job_nodes(*pjob);
+  if ((ret = job_nodes(*pjob)) != PBSE_NONE)
+    return(ret);
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */
@@ -7805,13 +8126,16 @@ int open_std_file(
     /* errno can change in functions called between here and the if check below */
     int local_errno = errno;
 
-    sprintf(log_buffer,
-      "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
-      path,
-      mode,
-      (keeping == 0) ? "FALSE" : "TRUE");
+    if (am_i_mother_superior(*pjob))
+      {
+      sprintf(log_buffer,
+        "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
+        path,
+        mode,
+        (keeping == 0) ? "FALSE" : "TRUE");
 
-    log_err(local_errno, __func__, log_buffer);
+      log_err(local_errno, __func__, log_buffer);
+      }
 
     if (local_errno == ENOENT)
       {
@@ -9218,6 +9542,10 @@ int exec_job_on_ms(
 
     return(SC);
     }
+
+#ifdef ENABLE_PMIX
+  register_jobs_nspace(pjob, TJE);
+#endif
 
   /* TMomFinalizeJob2() blocks until job is fully launched */
 

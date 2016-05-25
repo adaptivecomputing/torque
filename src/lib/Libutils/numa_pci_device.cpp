@@ -29,8 +29,8 @@ using namespace std;
 const int MIC_TYPE = 0;
 const int GPU = 1;
 
-PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), type(-1), busy(false),
-                           nearest_cpuset(NULL)
+PCI_Device::PCI_Device() : name(), id(-1), info_name(), info_value(), nearest_cpuset(NULL),
+                           type(-1), busy(false)
   {
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
@@ -41,14 +41,6 @@ PCI_Device::PCI_Device(
                              info_value(other.info_value), type(other.type), busy(other.busy)
 
   {
-  if (other.nearest_cpuset != NULL)
-    {
-    this->nearest_cpuset = hwloc_bitmap_alloc();
-    memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
-    }
-  else
-    this->nearest_cpuset = NULL;
-
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   }
 
@@ -62,12 +54,6 @@ PCI_Device &PCI_Device::operator =(
   this->info_name = other.info_name;
   this->info_value = other.info_value;
 
-  if (other.nearest_cpuset != NULL)
-    {
-    this->nearest_cpuset = hwloc_bitmap_alloc();
-    memcpy(this->nearest_cpuset, other.nearest_cpuset, sizeof(hwloc_cpuset_t));
-    }
-
   memcpy(this->cpuset_string, other.cpuset_string, sizeof(this->cpuset_string));
   this->type = other.type;
 
@@ -79,6 +65,50 @@ PCI_Device::~PCI_Device()
   id = -1;
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
+
+#ifdef NVIDIA_GPUS
+void PCI_Device::initializeGpu(
+
+  int              idx,
+  hwloc_topology_t topology)
+
+  {
+  int rc;
+  nvmlDevice_t  gpu_device;
+
+  id = idx;
+  rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
+  if (rc != NVML_SUCCESS)
+    {
+    string buf;
+
+    buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
+    buf = buf + name.c_str();
+    log_err(-1, __func__, buf.c_str());
+    }
+  else
+    {
+    nearest_cpuset = hwloc_bitmap_alloc();
+    if (nearest_cpuset != NULL)
+      {
+      rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
+      if (rc != 0)
+        {
+        string  buf;
+
+        buf = "could not get cpuset of ";
+        buf = buf + name.c_str();
+        log_err(-1, __func__, buf.c_str());
+        }
+
+      hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
+      }
+    }
+
+    this->type = GPU;
+
+  }
+#endif
 
 int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
   {

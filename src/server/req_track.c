@@ -104,12 +104,10 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "mutex_mgr.hpp"
 
 /* External functions */
-
-int issue_to_svr(char *svr, struct batch_request *, void (*func)(struct work_task *));
 
 /* Global Data Items: */
 
@@ -378,6 +376,7 @@ void issue_track(
   while (*pc != '.')
     pc++;
 
-  issue_to_svr(++pc, preq, NULL);
-  free_br(preq);
-  }
+  issue_to_svr(++pc, &preq, NULL);
+  if (preq != NULL)
+    free_br(preq);
+  } // END issue_track()

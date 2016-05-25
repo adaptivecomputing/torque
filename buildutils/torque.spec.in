@@ -13,9 +13,19 @@
 %define bcond_without() %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
 %endif
 
+# some binaries under /bin in el5|6 are only provided in /usr/bin in el7+.
+# the el7 rpms actually provide the old location, but can't be used as a rpm requirement
+# introducing the rootbin macro for this, as none seems to exists
+%if 0%{?el6:1} || 0%{?el5:1}
+%define rootbin /bin
+%else
+%define rootbin /usr/bin
+%endif
+
 ### Features disabled by default
 %bcond_with    blcr
 %bcond_with    cpuset
+%bcond_with    cgroups
 %bcond_with    debug
 %bcond_with    drmaa
 %bcond_with    gui
@@ -35,6 +45,7 @@
 ### Autoconf macro expansions
 %define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
+%define ac_with_cgroups     --%{?with_cgroups:en}%{!?with_cgroups:dis}able-cgroups
 %define ac_with_debug      --with%{!?with_debug:out}-debug %{?with_debug:CFLAGS="-O0 -g3" CXXFLAGS="-O0 -g3"}
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_gui        --%{?with_gui:en}%{!?with_gui:dis}able-gui --with%{!?with_gui:out}-tcl
@@ -57,6 +68,9 @@
 %define breq_pam      %{?with_pam:pam-devel}
 %define breq_readline %{?with_readline:readline-devel}
 %define breq_scp      %{?with_scp:/usr/bin/scp}
+
+# Requirements
+%define req_cgroups   %{?with_cgroups:%{rootbin}/lssubsys}
 
 ### Macro variables
 %{!?torque_user:%global torque_user torque}
@@ -142,6 +156,9 @@ A simple FIFO scheduler for TORQUE
 Summary: TORQUE Client
 Group: Applications/System
 Requires: %{name} = %{version}-%{release}
+%if %{with cgroups}
+Requires: %{req_cgroups}
+%endif
 Provides: pbs-client pbs-mom %{?with_pam:pbs-pam}
 Provides: %{name}-mom = %{version}-%{release}
 Obsoletes: %{name}-mom < %{version}-%{release}
@@ -181,20 +198,33 @@ This package contains a DRMAA 1.0 implementation for use with TORQUE.
 CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
 CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
 export CFLAGS CXXFLAGS
-
+# use cached configure DOXYGEN
+export ac_cv_path_DOXYGEN=none
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} %{ac_with_debug} %{ac_with_libcpuset} \
     --with-sendmail=%{sendmail_path} %{ac_with_numa} %{ac_with_memacct} %{ac_with_top} \
     --with-trqauthd-sock-dir=%{ac_trqauthd_sock_dir} \
     --disable-dependency-tracking %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} \
     --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} \
-    --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
+    --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_cgroups} %{ac_with_spool} %{?acflags}
 %{__make} %{?_smp_mflags} %{?mflags}
 
 %install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
 %{__rm} -rf $RPM_BUILD_ROOT/%{_lib}/security/*a $RPM_BUILD_ROOT%{_sysconfdir}/modulefiles
 
+
+%if %{?_unitdir:1}0
+# systemd unit files
+%{__mkdir_p} $RPM_BUILD_ROOT%{_unitdir}
+for UNITFILE in pbs_mom.service pbs_sched.service pbs_server.service trqauthd.service ; do
+    %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
+             -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
+             -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/$UNITFILE \
+        > $RPM_BUILD_ROOT%{_unitdir}/$UNITFILE
+done
+%else
+%if %{?_initrddir:1}0
 # init.d scripts
 %{__mkdir_p} $RPM_BUILD_ROOT%{_initrddir}
 INIT_PREFIX=""
@@ -207,15 +237,8 @@ for PROG in pbs_mom pbs_sched pbs_server trqauthd ; do
         > $RPM_BUILD_ROOT%{_initrddir}/$PROG
     %{__chmod} 0755 $RPM_BUILD_ROOT%{_initrddir}/$PROG
 done
-
-# systemd unit files
-%{__mkdir_p} $RPM_BUILD_ROOT%{_unitdir}
-for UNITFILE in pbs_mom.service pbs_sched.service pbs_server.service trqauthd.service ; do
-    %{__sed} -e 's|^PBS_HOME=.*|PBS_HOME=%{torque_home}|' \
-             -e 's|^BIN_PATH=.*|BIN_PATH=%{_bindir}|' \
-             -e 's|^SBIN_PATH=.*|SBIN_PATH=%{_sbindir}|' contrib/systemd/$UNITFILE \
-        > $RPM_BUILD_ROOT%{_unitdir}/$UNITFILE
-done
+%endif
+%endif
 
 # Configuration
 echo %{torque_server} > $RPM_BUILD_ROOT%{torque_home}/server_priv/nodes
@@ -241,7 +264,7 @@ if [ $1 -eq 1 ]; then
     chkconfig trqauthd on >/dev/null 2>&1 || :
     service trqauthd start >/dev/null 2>&1 || :
 else
-    service trqauthd condrestart >/dev/null 2>&1 || :
+    service trqauthd try-restart >/dev/null 2>&1 || :
 fi
 
 %preun
@@ -296,7 +319,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_server on >/dev/null 2>&1 || :
     service pbs_server start >/dev/null 2>&1 || :
 else
-    service pbs_server condrestart >/dev/null 2>&1 || :
+    service pbs_server try-restart >/dev/null 2>&1 || :
 fi
 
 %preun server
@@ -329,7 +352,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_mom on >/dev/null 2>&1 || :
     service pbs_mom start >/dev/null 2>&1 || :
 else
-    service pbs_mom condrestart >/dev/null 2>&1 || :
+    service pbs_mom try-restart >/dev/null 2>&1 || :
 fi
 
 %preun client
@@ -345,7 +368,7 @@ if [ $1 -eq 1 ]; then
     chkconfig pbs_sched on >/dev/null 2>&1 || :
     service pbs_sched start >/dev/null 2>&1 || :
 else
-    service pbs_sched condrestart >/dev/null 2>&1 || :
+    service pbs_sched try-restart >/dev/null 2>&1 || :
 fi
 
 %preun scheduler
@@ -364,8 +387,13 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
 %config(noreplace) %{torque_home}/pbs_environment
 %config(noreplace) %{torque_home}/server_name
-%{_initrddir}/trqauthd
+%if %{?_unitdir:1}0
 %{_unitdir}/trqauthd.service
+%else
+%if %{?_initrddir:1}0
+%{_initrddir}/trqauthd
+%endif
+%endif
 %{_bindir}/chk_tree
 %{_bindir}/hostn
 %{_bindir}/nqs2pbs
@@ -381,9 +409,10 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{without scp}
 %attr(4755, root, root) %{_sbindir}/pbs_rcp
 %endif
-%{_libdir}/lib%{name}.so.*
+%{_libdir}/lib%{name}.so*
 %{torque_home}/aux
 %{torque_home}/spool
+%{torque_home}/checkpoint
 %{_mandir}/man*/*
 
 %files server
@@ -391,8 +420,13 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %doc torque.setup doc/admin_guide.ps
 %dir %{torque_home}/server_priv
 %config(noreplace) %{torque_home}/server_priv/nodes
-%{_initrddir}/pbs_server
+%if %{?_unitdir:1}0
 %{_unitdir}/pbs_server.service
+%else
+%if %{?_initrddir:1}0
+%{_initrddir}/pbs_server
+%endif
+%endif
 %{_sbindir}/momctl
 %{_sbindir}/pbs_server
 %{_sbindir}/qserverd
@@ -419,16 +453,26 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{torque_home}/sched_priv/*
 %{_sbindir}/pbs_sched
 %{_sbindir}/qschedd
-%{_initrddir}/pbs_sched
+%if %{?_unitdir:1}0
 %{_unitdir}/pbs_sched.service
+%else
+%if %{?_initrddir:1}0
+%{_initrddir}/pbs_sched
+%endif
+%endif
 %{torque_home}/sched_logs
 
 %files client
 %defattr(-, root, root)
 %dir %{torque_home}/mom_priv
 %config(noreplace) %{torque_home}/mom_priv/config
-%{_initrddir}/pbs_mom
+%if %{?_unitdir:1}0
 %{_unitdir}/pbs_mom.service
+%else
+%if %{?_initrddir:1}0
+%{_initrddir}/pbs_mom
+%endif
+%endif
 %{_sbindir}/momctl
 %{_sbindir}/pbs_demux
 %{_sbindir}/pbs_mom
@@ -436,7 +480,6 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{with pam}
 /%{_lib}/security/pam_pbssimpleauth.so
 %endif
-%{torque_home}/checkpoint
 %{torque_home}/mom_logs
 %{torque_home}/mom_priv/jobs/
 %{torque_home}/undelivered

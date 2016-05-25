@@ -97,6 +97,7 @@
 
 #include "server_limits.h"
 #include "attribute.h" /* attribute_def */
+#include "acl_special.hpp"
 
 #define DEFAULT_KILL_DELAY 2
 #define NO_BUFFER_SPACE -2
@@ -120,6 +121,7 @@ enum srv_atr
   SRV_ATR_AclUserEnabled,
   SRV_ATR_AclUsers,              /* 10 */
   SRV_ATR_AclRoot,
+  SRV_ATR_Gres_modifiers,
   SRV_ATR_managers,
   SRV_ATR_operators,
   SRV_ATR_dflt_que,
@@ -218,6 +220,12 @@ enum srv_atr
   SRV_ATR_TimeoutForJobDelete,
   SRV_ATR_TimeoutForJobRequeue,
   SRV_ATR_DontWriteNodesFile,
+  SRV_ATR_acl_users_hosts,
+  SRV_ATR_acl_groups_hosts,
+  SRV_ATR_node_submit_exceptions,
+  SRV_ATR_LegacyVmem,
+  SRV_ATR_EmailBatchSeconds,
+  SRV_ATR_tcp_incoming_timeout,
 
   /* This must be last */
   SRV_ATR_LAST
@@ -260,6 +268,7 @@ struct server
 
 extern struct server server;
 
+extern acl_special limited_acls;
 
 /*
  * server state values
@@ -276,6 +285,7 @@ extern struct server server;
  */
 #define SVR_HOSTACL "svr_hostacl"
 #define PBS_DEFAULT_NODE "1"
+#define RESOURCE_20_FIND "L"
 
 #define SVR_SAVE_QUICK 0
 #define SVR_SAVE_FULL  1
@@ -300,19 +310,6 @@ int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string);
 #ifndef MAX
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif /* END MAX */
-
-
-typedef struct mail_info
-  {
-  char *mailto;
-  char *exec_host;
-  char *jobid;
-  char *jobname;
-  char *text;        /* additional optional text */
-  char *errFile;
-  char *outFile;
-  int   mail_point;
-  } mail_info;
 
 
 /* maintain a list of new nodes */

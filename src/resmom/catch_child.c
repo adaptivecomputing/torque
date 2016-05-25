@@ -35,9 +35,10 @@
 #include "mom_comm.h" /* im_compose */
 #include "pbs_error.h"
 #include "pbs_proto.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
+#include "mom_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
 #include "cray_energy.h"
 #ifdef PENABLE_LINUX_CGROUPS
@@ -68,6 +69,7 @@ extern tlist_head mom_polljobs;
 extern int  exiting_tasks;
 extern char  *msg_daemonname;
 extern int  termin_child;
+extern bool check_rur;
 
 extern char  *path_aux;
 
@@ -76,6 +78,7 @@ extern int   pbs_rm_port;
 
 extern char  *PJobSubState[];
 extern char  *PMOMCommand[];
+extern char   mom_alias[];
 
 /* external prototypes */
 
@@ -86,7 +89,7 @@ void *obit_reply (void *);
 extern u_long addclient (const char *);
 extern void encode_used (job *, int, std::stringstream *, tlist_head *);
 extern void encode_flagged_attrs (job *, int, std::stringstream *, tlist_head *);
-extern void job_nodes (job &);
+extern int job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
@@ -283,7 +286,7 @@ int send_task_obit_response(
   for (i = 0; i < 5; i++)
     {
     ret = -1;
-    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr), false);
 
     if (IS_VALID_STREAM(stream))
       {
@@ -523,14 +526,14 @@ void process_tm_obits(
   char *cookie)
 
   {
-  obitent      *pobit;
-
-  while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
+  for (unsigned int i = 0; i < ptask->ti_obits.size(); i++)
     {
+    obitent &pobit = ptask->ti_obits[i];
+
 #ifndef NUMA_SUPPORT
     hnodent *pnode;
 
-    pnode = get_node(pjob, pobit->oe_info.fe_node);
+    pnode = get_node(pjob, pobit.oe_info.fe_node);
 
     /* see if this is me or another MOM */
 
@@ -544,12 +547,12 @@ void process_tm_obits(
 
       /* send event to local child */
 
-      tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
+      tmp_task = task_find(pjob, pobit.oe_info.fe_taskid);
 
       if ((tmp_task != NULL) &&
           (tmp_task->ti_chan != NULL))
         {
-        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
+        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit.oe_info.fe_event);
 
         diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
 
@@ -561,14 +564,10 @@ void process_tm_obits(
       {
       /* Send a response over to MOM whose child sent the request. */
       if (pnode != NULL)
-        send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+        send_task_obit_response(pjob, pnode, cookie, &pobit, ptask->ti_qs.ti_exitstat);
       }
 #endif /* ndef NUMA_SUPPORT */
-
-    delete_link(&pobit->oe_next);
-
-    free(pobit);
-    }  /* END while (pobit) */
+    }  // END for each obit
   } /* END process_tm_obits() */
 
 
@@ -617,8 +616,6 @@ void update_job_based_on_tasks(
   job *pjob)
 
   {
-  task         *ptask;
-
   /* Check each EXITED task.  They transition to DEAD here. */
   if (LOGLEVEL >= 6)
     {
@@ -627,11 +624,10 @@ void update_job_based_on_tasks(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
@@ -642,7 +638,7 @@ void update_job_based_on_tasks(
     process_tm_obits(pjob, ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
 
     cleanup_task(pjob, ptask);
-    }  /* END for (ptask) */
+    }  /* END for each ptask */
   } /* END update_job_based_on_tasks() */
 
 
@@ -684,7 +680,7 @@ bool is_job_state_exiting(
          we have not received a PBS_BATCH_DeleteJob request from the 
          server. If we have tasks to complete continue. But if there
          are no tasks left to run we need to delete the job.*/
-      if (GET_NEXT(pjob->ji_tasks) == NULL)
+      if (pjob->ji_tasks->size() == 0)
         mom_deljob(pjob);
       }
 
@@ -781,7 +777,6 @@ bool mother_superior_cleanup(
   int *found_one)
 
   {
-  task *ptask;
   time_t time_now;
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
@@ -791,10 +786,10 @@ bool mother_superior_cleanup(
     kill_job(pjob, SIGKILL, __func__, "local task termination detected");
   else
     {
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
+      task *ptask = pjob->ji_tasks->at(i);
+
       if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
         {
         if (LOGLEVEL >= 4)
@@ -815,8 +810,6 @@ bool mother_superior_cleanup(
 
         task_save(ptask);
         }
-
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
       }  /* END while (ptask != NULL) */
 
     }
@@ -973,7 +966,6 @@ bool mother_superior_cleanup(
 void scan_for_exiting(void)
 
   {
-  job          *nextjob;
   job          *pjob = NULL;
   int           found_one = 0;
 
@@ -1148,6 +1140,8 @@ int post_epilogue(
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
 
+  pjob->ji_obit_sent = time(NULL);
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
@@ -1214,8 +1208,11 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  get_energy_used(pjob);
-
+  if (check_rur == true)
+    {
+    get_energy_used(pjob);
+    }
+  
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
   encode_flagged_attrs(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
@@ -1247,6 +1244,7 @@ int post_epilogue(
     {
     DIS_tcp_wflush(chan);
     DIS_tcp_cleanup(chan);
+    pjob->ji_obit_sent = time(NULL);
     }
 
   free_br(preq);
@@ -1360,6 +1358,9 @@ int process_jobs_obit_reply(
   unsigned int momport = 0;
   char         tmp_line[MAXLINE];
 
+  // Make sure we have cleared a previous busy reply from the server.
+  pjob->ji_obit_busy_time = 0;
+
   switch (rc)
     {
 
@@ -1368,6 +1369,7 @@ int process_jobs_obit_reply(
       /* normal ack, mark job as exited */
       pjob->ji_qs.ji_destin[0] = '\0';
 
+      pjob->ji_exited_time = time(NULL);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
       if (multi_mom)
@@ -1385,6 +1387,16 @@ int process_jobs_obit_reply(
           pjob->ji_qs.ji_jobid,
           "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
         }
+
+      break;
+      
+    case PBSE_UNKJOBID:
+
+      // pbs_server doesn't know this job, get rid of it
+      sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+      mom_deljob(pjob);
 
       break;
 
@@ -1405,6 +1417,8 @@ int process_jobs_obit_reply(
       pjob->ji_qs.ji_destin[0] = '\0';
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+      pjob->ji_exited_time = time(NULL);
 
       if (multi_mom)
         {
@@ -1440,13 +1454,15 @@ int process_jobs_obit_reply(
 
     case PBSE_SERVER_BUSY:
 
-      // NO-OP, handled later
+      // We need to force this to retry quickly
+      pjob->ji_obit_busy_time = time(NULL);
 
       break;
 
     case - 1:
 
       /* FIXME - causes epilogue to be run twice! */
+      pjob->ji_obit_minus_one_time = time(NULL);
 
       pjob->ji_qs.ji_destin[0] = '\0';
 
@@ -1521,7 +1537,6 @@ void *obit_reply(
   int                   irtn;
   job                  *pjob = NULL;
   job                  *pj = NULL;
-  char                  tmp_line[MAXLINE];
 
   batch_request        *preq;
   int                   sock = *(int *)new_sock;
@@ -1583,29 +1598,8 @@ void *obit_reply(
 
   if (pjob != NULL)
     {
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT)
-      {
-      if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
-        not_deleted = true;
-      }
-    else
-      {
-      if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
-        {
-        sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        /* This means the server has no idea what this job is
-         * and it should be deleted!!! */
-        mom_deljob(pjob);
-        }
-      else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
-        {
-        sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        }
-      }
+    if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
+      not_deleted = true;
     }
   else
     {
@@ -2040,8 +2034,8 @@ int needs_and_ready_for_reply(
   job *pjob)
 
   {
-  int   needs_and_ready = FALSE;
-  task *ptask;
+  int  needs_and_ready = FALSE;
+  bool running = false;
   
   if (pjob->ji_obit == TM_NULL_EVENT)
     {
@@ -2058,18 +2052,19 @@ int needs_and_ready_for_reply(
   else
     {
     /* Are any tasks running? If so we're not ready */
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-    
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-        break;
+      task *ptask = pjob->ji_tasks->at(i);
       
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+        {
+        running = true;
+        break;
+        }
       }
   
     /* Still somebody there so don't send it yet. */
-    if (ptask != NULL)
+    if (running == true)
       {
       if (LOGLEVEL >= 3)
         {
@@ -2103,7 +2098,6 @@ int send_job_obit_to_ms(
   u_long       cput = resc_used(pjob, "cput", gettime);
   u_long       mem = resc_used(pjob, "mem", getsize);
   u_long       vmem = resc_used(pjob, "vmem", getsize);
-  u_long       joules = resc_used(pjob, "energy_used", gettime);
   int          command;
   tm_event_t   event;
   hnodent     *np;
@@ -2137,7 +2131,7 @@ int send_job_obit_to_ms(
 
   for (i = 0; i < 5; i++)
     {
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
       
     if (IS_VALID_STREAM(stream))
       {
@@ -2167,7 +2161,7 @@ int send_job_obit_to_ms(
               unsigned int                    req_index;
 
               complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used);
+              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used, mom_alias);
 
               if (rc == DIS_SUCCESS)
                 rc = diswsi(chan, task_index.size());
@@ -2258,7 +2252,13 @@ int send_job_obit_to_ms(
     mc->mc_type   = KILLJOB_REPLY;
     mc->mc_struct = kj;
     
-    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                        cookie,
+                                        np,
+                                        command,
+                                        event,
+                                        TM_NULL_TASK,
+                                        NULL);
     
     if (kj->ici == NULL)
       {

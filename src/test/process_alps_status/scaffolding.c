@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <pbs_config.h>
 
 #include "utils.h"
 #include "batch_request.h"
@@ -9,6 +10,7 @@
 #include "u_tree.h"
 #include "threadpool.h"
 #include "resource.h"
+#include "track_alps_reservations.hpp"
 
 #define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)
 #define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
@@ -318,8 +320,9 @@ int mgr_set_node_attr(
   int            *bad,    /* if there is a "bad pbs_attribute" pass back 
                                position via this loc */
   void           *parent, /*may go unused in this function */
-  int             mode)  /*passed to attrib's action func not used by 
+  int             mode,  /*passed to attrib's action func not used by 
                              this func at this time*/
+  bool            dont_update)
 
   {
   mgr_count++;
@@ -353,7 +356,8 @@ int attr_atomic_node_set(
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
-  int             *badattr)  /* return list position wher bad   */
+  int             *badattr,  /* return list position wher bad   */
+  bool             update_nodes_file)
 
   {
   int           acc;
@@ -1569,14 +1573,26 @@ int encode_arst( pbs_attribute *attr, tlist_head *phead, const char *atname, con
 
 void free_null(struct pbs_attribute *attr) {}
 
-bool is_orphaned(
+bool reservation_holder::is_orphaned(
 
-  char *rsv_id,
-  char *job_id)
+  const char *rsv_id,
+  std::string &job_id)
 
   {
   return(true);
   }
+  
+bool reservation_holder::already_recorded(const char *rsv_id)
+  {
+  return(true);
+  }
+  
+int reservation_holder::remove_alps_reservation(const char *rsv_id)
+  {
+  return(0);
+  }
+  
+void reservation_holder::remove_from_orphaned_list(const char *rsv_id) {}
 
 job *svr_find_job(char *jobid, int get_subjob)
   {
@@ -1622,16 +1638,20 @@ int issue_Drequest(
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);
   }
 
-int track_alps_reservation(job *pjob)
+int reservation_holder::track_alps_reservation(job *pjob)
   {
   return(0);
   }
+
+reservation_holder::reservation_holder() {}
+
+reservation_holder alps_reservations;
 
 int svr_connect(
 
@@ -1853,3 +1873,26 @@ int set_complete_req(
   {
   return(0);
   }
+
+#ifdef PENABLE_LINUX_CGROUPS
+int Machine::getTotalThreads() const
+  {
+  return(this->totalThreads);
+  }
+
+Machine::~Machine() {}
+Socket::~Socket() {}
+PCI_Device::~PCI_Device() {}
+Chip::~Chip() {}
+Core::~Core() {}
+
+Machine::Machine(int np)
+  {
+  }
+
+void Machine::setMemory(long long mem)
+  {
+  this->totalMemory = mem;
+  }
+#endif
+

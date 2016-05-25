@@ -29,11 +29,17 @@
 #include "node_internals.hpp"
 #endif
 
+#include "complete_req.hpp"
+#include "req.hpp"
+#include "allocation.hpp"
+
 std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
+std::string cg_devices_path;
 #define LDAP_RETRIES 5
 
+// Sensing and control variables
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -42,6 +48,10 @@ bool am_ms = false;
 bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
+bool addr_fail = false;
+
+
+int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -109,7 +119,7 @@ int DIS_tcp_wflush (struct tcp_chan *chan) { return 0; }
 int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
-int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
+int im_compose(tcp_chan *chan, char *arg2, const char *a3, int a4, int a5, unsigned int a6) { return 0; }
 int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11, std::string& cray_frequency) { return 0; }
 int mom_close_poll(void)
   {
@@ -408,8 +418,7 @@ int site_mom_chkuser(job *pjob)
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   {
-  fprintf(stderr, "The call to find_resc_def needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int mom_checkpoint_job_is_checkpointable(job *pjob)
@@ -607,8 +616,13 @@ char *pbs_strerror(int err)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  fprintf(stderr, "The call to find_resc_entry needs to be mocked!!\n");
-  exit(1);
+  static resource mem;
+  
+  memset(&mem, 0, sizeof(mem));
+  mem.rs_value.at_val.at_size.atsv_num = 4;
+  mem.rs_value.at_val.at_size.atsv_shift = 30;
+  
+  return(&mem);
   }
 
 int im_compose(int stream, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
@@ -647,7 +661,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
   exit(1);
   }
 
-int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
+int get_hostaddr_hostent_af(int *local_errno, const char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
   {
   fprintf(stderr, "The call to get_hostaddr_hostent_af needs to be mocked!!\n");
   exit(1);
@@ -680,9 +694,18 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   return(0);
   }
 
-int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **ppAddrInfoOut)
   {
-  return -1;
+  if (addr_fail == true)
+    return(-1);
+  else
+    {
+    char buf[MAXLINE];
+    gethostname(buf, sizeof(buf));
+    getaddrinfo(buf, NULL, NULL, ppAddrInfoOut);
+
+    return(0);
+    }
   }
 
 bool am_i_mother_superior(const job &pjob)
@@ -762,6 +785,39 @@ job *mom_find_job(const char *jobid)
   return(NULL);
   }
 
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+       (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+
+void translate_vector_to_range_string(
+
+  std::string            &range_string,
+  const std::vector<int> &indices)
+
+  {
+  } // END translate_vector_to_range_string()
+
+
 
 char * csv_find_string(const char *csv_str, const char *search_str)
   {
@@ -782,6 +838,21 @@ int csv_length(const char *csv_str)
   }
 
 #ifdef PENABLE_LINUX_CGROUPS
+int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
+  {
+  return(PBSE_NONE);
+  }
+
+int init_torque_cgroups()
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_devices_to_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
 int trq_cg_add_process_to_cgroup_accts(pid_t job_pid ) 
   {
   return(PBSE_NONE);
@@ -924,6 +995,11 @@ bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
   }
+    
+int complete_req::req_count() const
+  {
+  return(0);
+  }
 
 unsigned long long complete_req::get_swap_memory_for_this_host( const std::string &hostname) const
   {
@@ -963,3 +1039,35 @@ struct passwd *get_password_entry_by_uid(
   {
   return(NULL);
   }
+
+bool have_incompatible_dash_l_resource(
+    
+    job *pjob)
+
+  {
+  return(false);
+  }
+
+
+unsigned int complete_req::get_num_reqs()
+  {
+  return(1);
+  }
+
+req &complete_req::get_req(int i)
+  {
+  static req r;
+
+  return(r);
+  }
+
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"
+
+#ifdef ENABLE_PMIX
+void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
+#endif
+
+int setup_gpus_for_job(job *pjob)
+  {return(0);}
+

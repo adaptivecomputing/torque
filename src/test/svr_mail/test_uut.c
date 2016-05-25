@@ -8,6 +8,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include "test_svr_mail.h"
+#include "mail_throttler.hpp"
+#include "work_task.h"
+
+
 
 struct server server;
 
@@ -19,6 +23,12 @@ const char outpath[] = "xyz_host.ac:/home/echan/work/dev/torque/trunk/STDIN.o123
 const char mailbuf[] = "Exit_status=271";
 const char msgbuf[]  = "Resources Used: One gallon of diesel; One bag Doritos; 2 liters Pepsi.";
 const char complete[] = "e";
+extern int called;
+
+
+void send_email_batch(struct work_task *pwt);
+extern mail_throttler pending_emails;
+extern bool empty_body;
 
 void init_server()
   {
@@ -36,6 +46,7 @@ void setup_job(job *pjob)
   pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str = (char *)outpath;
   pjob->ji_wattr[JOB_ATR_mailpnts].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = (char *)complete;
+  
   }
 
 int remove_old_mail(const char *filename)
@@ -45,6 +56,77 @@ int remove_old_mail(const char *filename)
 
   return 0;
   }
+
+void read_file_into_string(
+
+  const char  *filename,
+  std::string &output)
+
+  {
+  FILE *fp = fopen(filename, "r");
+  char  buf[1024];
+
+  memset(&buf, 0, sizeof(buf));
+  output.clear();
+
+  if (fp == NULL)
+    {
+    sleep(1);
+    fp = fopen(filename, "r");
+    }
+  
+  if (fp != NULL)
+    {
+    while (fgets(buf, sizeof(buf) - 1, fp) != NULL)
+      {
+      output += buf;
+      }
+  
+    fclose(fp);
+    }
+  }
+  
+
+START_TEST(test_send_email_batch)
+  {
+  mail_info    mi;
+  char         buf[1024];
+  const char  *addressee = "dbeer@adaptivecomputing.com";
+  const char  *filename = "./output.dbeer@adaptivecomputing.com";
+  std::string  output;
+  work_task   *pwt = (work_task *)calloc(1, sizeof(work_task));
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pwt->wt_parm1 = strdup(addressee);
+
+  mi.mailto = addressee;
+
+  for (int i = 0; i < 10; i++)
+    {
+    sprintf(buf, "%d.napali", i);
+    mi.jobid = buf;
+    pending_emails.add_email_entry(mi);
+    }
+  
+  remove_old_mail(filename);
+
+  // Make svr_format_job() do nothing
+  empty_body = true;
+  send_email_batch(pwt);
+  read_file_into_string(filename, output);
+  empty_body = false;
+
+  // Check the file for the header "Job '<jobid>'" for each job
+  for (int i = 0; i < 10; i++)
+    {
+    sprintf(buf, "Job '%d.napali'", i);
+    fail_unless(output.find(buf) != std::string::npos, "output contains: '%s'", output.c_str());
+    }
+
+  fail_unless(output.find("Subject: Summary Email for 10 Torque Jobs") != std::string::npos);
+  
+  remove_old_mail(filename);
+  }
+END_TEST
 
 
 START_TEST(test_with_default_files_when_complete)
@@ -60,13 +142,13 @@ START_TEST(test_with_default_files_when_complete)
   int rc = 0;
 
   setup_job(&pjob);
-  rc = remove_old_mail("./mail.out");
+  rc = remove_old_mail("./output.xowner");
   fail_unless((rc == 0), "unable to remove old mail output file");
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", outpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -80,7 +162,7 @@ START_TEST(test_with_default_files_when_complete)
     fail_unless(errFile_found, "No error file path was found in the mail");
     fail_unless(outFile_found, "No output file path was found in the mail");
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
 
   errFile_found = false;
@@ -88,7 +170,7 @@ START_TEST(test_with_default_files_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -105,7 +187,7 @@ START_TEST(test_with_default_files_when_complete)
     fail_unless(outFile_found, "No output file path was found in the mail");
     fail_unless(msg_found,"The additional message was not found in the mail.");
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
   }
 END_TEST
@@ -127,13 +209,13 @@ START_TEST(test_with_oe_when_complete)
   pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
   pjob.ji_wattr[JOB_ATR_join].at_val.at_str = (char *)attr_join_oe;
 
-  rc = remove_old_mail("./mail.out");
+  rc = remove_old_mail("./output.xowner");
   fail_unless((rc == 0), "unable to remove old mail output file");
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", outpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", outpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -147,7 +229,7 @@ START_TEST(test_with_oe_when_complete)
     fail_unless(errFile_found, "No error file path was found in the mail");
     fail_unless(outFile_found, "No output file path was found in the mail");
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
 
   errFile_found = false;
@@ -155,7 +237,7 @@ START_TEST(test_with_oe_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -172,7 +254,7 @@ START_TEST(test_with_oe_when_complete)
     fail_unless(outFile_found, "No output file path was found in the mail");
     fail_unless(msg_found,"The additional message was not found in the mail.");
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
 
   }
@@ -195,13 +277,13 @@ START_TEST(test_with_eo_when_complete)
   pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
   pjob.ji_wattr[JOB_ATR_join].at_val.at_str = (char *)attr_join_oe;
 
-  rc = remove_old_mail("./mail.out");
+  rc = remove_old_mail("./output.xowner");
   fail_unless((rc == 0), "unable to remove old mail output file");
   snprintf(correct_outfilepath, sizeof(correct_outfilepath), "Output_Path: %s", errpath);
   snprintf(correct_errfilepath, sizeof(correct_errfilepath), "Error_Path: %s", errpath);
   svr_mailowner(&pjob, MAIL_END, MAIL_NORMAL, mailbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -215,7 +297,7 @@ START_TEST(test_with_eo_when_complete)
     fail_unless(errFile_found, "No error file path was found in the mail");
     fail_unless(outFile_found, "No output file path was found in the mail", buf);
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
 
   errFile_found = false;
@@ -223,7 +305,7 @@ START_TEST(test_with_eo_when_complete)
 
   svr_mailowner_with_message(&pjob, MAIL_END, MAIL_NORMAL, mailbuf,msgbuf);
   sleep(1);
-  fp = fopen("./mail.out", "r");
+  fp = fopen("./output.xowner", "r");
   fail_unless((fp != NULL), "No output file was found");
   if (fp)
     {
@@ -240,9 +322,28 @@ START_TEST(test_with_eo_when_complete)
     fail_unless(outFile_found, "No output file path was found in the mail");
     fail_unless(msg_found,"The additional message was not found in the mail.");
     fclose(fp);
-    remove_old_mail("./mail.out");
+    remove_old_mail("./output.xowner");
     }
 
+  }
+END_TEST
+
+START_TEST(mail_point_p)
+  {	
+  called = 0;
+  job pjob;	
+   
+  char p[]= "p";
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;	  
+  svr_mailowner(&pjob, 1, 1, p);
+  fail_unless((called == 0),"one");
+
+  
+  char a[]= "a";
+  setup_job(&pjob);
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = a;	  
+  svr_mailowner(&pjob, 1, 1, p);
+  fail_unless((called == 1),"two");
   }
 END_TEST
 
@@ -255,12 +356,17 @@ Suite *svr_mail_suite(void)
 
   tc_core = tcase_create("test_with_oe_when_complete");
   tcase_add_test(tc_core, test_with_oe_when_complete);
+  tcase_add_test(tc_core, test_send_email_batch);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_with_eo_when_complete");
   tcase_add_test(tc_core, test_with_eo_when_complete);
   suite_add_tcase(s, tc_core);
-
+  
+  tc_core = tcase_create("mail_point_p");
+  tcase_add_test(tc_core, mail_point_p);
+  suite_add_tcase(s, tc_core);
+  
   return s;
   }
 

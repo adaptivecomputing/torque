@@ -95,7 +95,7 @@ int PBSD_mgr_put(
   int             function, /* I */
   int             command,  /* I */
   int             objtype,  /* I */
-  char           *objname,  /* I */
+  const char     *objname,  /* I */
   struct attropl *aoplp,    /* I */
   char           *extend)   /* I */
 

@@ -24,6 +24,9 @@
 int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
+bool check_rur = true;
+
+char         mom_alias[PBS_MAXHOSTNAME + 1];
 
 std::list<job *>              alljobs_list;
 std::vector<exiting_job_info> exiting_job_list;
@@ -702,7 +705,7 @@ int DIS_tcp_wflush(struct tcp_chan *chan)
   return 0;
   }
 
-int im_compose(struct tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   return 0;
   }
@@ -1308,7 +1311,6 @@ void mom_job_purge(job *pjob)
 
 bool check_pwd(job *pjob)
   {
-  struct passwd *respass = NULL;
   return false;
   }
 
@@ -1349,7 +1351,7 @@ int add_to_resend_things(resend_momcomm *mc)
   return(0);
   }
 
-im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
+im_compose_info *create_compose_reply_info(const char *jobid, const char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid, const char *data)
   {
   return(NULL);
   }
@@ -1368,7 +1370,7 @@ bool am_i_mother_superior(const job &pjob)
 void get_energy_used(job *pjob)
   {}
 
-int init_nvidia_nvml() 
+int init_nvidia_nvml(unsigned int device_count) 
   {
   return(0);
   }
@@ -1398,8 +1400,9 @@ int encode_complete_req(
 
 int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task_index,
                                  std::vector<unsigned long> &cput_used,
-                                 std::vector<unsigned long long> &mem_used)
+                                 std::vector<unsigned long long> &mem_used, const char *hostname)
   {
   return(0);
   }
 
+task::~task() {}

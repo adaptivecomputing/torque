@@ -136,7 +136,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "acct.h"
@@ -672,13 +672,12 @@ int job_abt(
   }  /* END job_abt() */
 
 
+
 /*
  * conn_qsub - connect to the qsub that submitted this interactive job
  * return >= 0 on SUCCESS, < 0 on FAILURE
  * (this was moved from resmom/mom_inter.c)
  */
-
-
 
 int conn_qsub(
 
@@ -746,7 +745,6 @@ int conn_qsub(
 
   return(s);
   }  /* END conn_qsub() */
-
 
 
 
@@ -924,8 +922,6 @@ job *copy_job(
 
   return(pnewjob);
   } /* END copy_job() */
-
-
 
 
 
@@ -1307,9 +1303,12 @@ void *job_clone_wt(
       pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
       pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
+      // Clear this so that the jobs get a queued entry in the accounting file
+      pjobclone->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
+
       array_mgr.unlock();
 
-      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false)))
+      if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false)))
         {
         /* XXX need more robust error handling */
         clone_mgr.set_unlock_on_exit(false);
@@ -2011,8 +2010,11 @@ int svr_job_purge(
     if (rc != PBSE_JOBNOTFOUND)
       {
       /* we came out of svr_dequejob with pjob locked. Our pointer is still good */
-      /* job_free will unlock the mutex for us */
-      if (pjob->ji_being_recycled == FALSE)
+      /* job_free will unlock the mutex for us.
+       * If rc == PBSE_JOB_NOT_IN_QUEUE, it is because another thread is simultaneously
+       * deleting this job. We'll quit for them. */
+      if ((pjob->ji_being_recycled == FALSE) &&
+          (rc != PBSE_JOB_NOT_IN_QUEUE))
         {
         job_free(pjob, TRUE);
         pjob_mutex.set_unlock_on_exit(false);  /* job_free will release lock */
@@ -2447,6 +2449,7 @@ int split_job(
     {
     cray = copy_job(pjob);
     fix_cray_exec_hosts(cray);
+    cray->ji_internal_id    = pjob->ji_internal_id;
     cray->ji_parent_job     = pjob;
     pjob->ji_cray_clone     = cray;
     unlock_ji_mutex(cray, __func__, NULL, LOGLEVEL);
@@ -2456,14 +2459,24 @@ int split_job(
   } /* END split_job() */
 
 
+
 bool job_id_exists(
 
-  const std::string job_id_string)
+  const  std::string &job_id_string,
+  int   *rcode)
 
   {
+  int ret;
   bool rc = false;
 
-  alljobs.lock();
+  ret = alljobs.trylock();
+  if (ret != 0)
+    {
+    *rcode = ret;
+    return(false);
+    }
+
+  *rcode = ret;
 
   if (alljobs.find(job_id_string) != NULL)
     {
@@ -2473,7 +2486,37 @@ bool job_id_exists(
   alljobs.unlock();
 
   return(rc);
-  }
+  } // END job_id_exists()
+
+
+
+/*
+ * internal_job_id_exists()
+ *
+ * Checks if a job exists based on the internal id supplied.
+ * @return true if a job exists with that internal id, false otherwise
+ */
+
+bool internal_job_id_exists(
+
+  int internal_id)
+
+  {
+  bool        exists = false;
+  const char *job_id = job_mapper.get_name(internal_id);
+
+  if (job_id != NULL)
+    {
+    alljobs.lock();
+    
+    if (alljobs.find(job_id) != NULL)
+      exists = true;
+
+    alljobs.unlock();
+    }
+
+  return(exists);
+  } // END internal_job_id_exists()
   
 
 /* END job_func.c */

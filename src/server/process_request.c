@@ -97,7 +97,7 @@
 #include <pthread.h>
 
 #include "libpbs.h"
-#include "../lib/Libifl/lib_ifl.h" /* netaddr_long */
+#include "lib_ifl.h" /* netaddr_long */
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "pbs_nodes.h"
@@ -460,11 +460,15 @@ batch_request *read_request_from_socket(
 
   if (request_passes_acl_check(request, conn_addr) == false)
     {
-    char tmpLine[MAXLINE];
-    snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-      request->rq_host);
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    return(NULL);
+    /* See if the request is in the limited acl list */
+    if (limited_acls.is_authorized(request->rq_host, request->rq_user) == false)
+      {
+      char tmpLine[MAXLINE];
+      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
+        request->rq_host);
+      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+      return(NULL);
+      }
     }
 
   return(request);
@@ -1077,7 +1081,7 @@ void close_quejob(
           pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-          int rc = svr_enquejob(pjob, FALSE, NULL, false);
+          int rc = svr_enquejob(pjob, FALSE, NULL, false, false);
           
           if ((rc == PBSE_JOBNOTFOUND) ||
               (rc == PBSE_JOB_RECYCLED))

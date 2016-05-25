@@ -22,7 +22,7 @@ void account_record(int acctype, job *pjob, const char *text)
   exit(1);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername to be mocked!!\n");
   exit(1);

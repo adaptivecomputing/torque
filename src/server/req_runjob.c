@@ -197,7 +197,6 @@ int check_and_run_job_work(
   char             job_id[PBS_MAXSVRJOBID+1];
   char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
-  rc = PBSE_NONE;
   pjob = svr_find_job(preq->rq_ind.rq_run.rq_jid, FALSE);
 
   if (pjob == NULL)
@@ -373,10 +372,8 @@ int req_runjob(
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    /* reply_ack will free preq. We need to copy it before we call reply_ack */
-    batch_request *new_preq;
+    batch_request *new_preq = duplicate_request(preq, -1);
 
-    new_preq = duplicate_request(preq, -1);
     if (new_preq == NULL)
       {
       sprintf(log_buf, "failed to duplicate batch request");
@@ -385,9 +382,8 @@ int req_runjob(
       return(PBSE_MEM_MALLOC);
       }
 
-    get_batch_request_id(new_preq);
-
     reply_ack(new_preq);
+    free_br(new_preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
@@ -1753,9 +1749,16 @@ job *chk_job_torun(
     {
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
-
+    /* this is an unsafe assumption so let's be extra sure before doing strdup() */
     if (prun->rq_destin && *prun->rq_destin) /* If a destination has been specified */
       {
+      /* check that execution host is actually set */
+      /* this can happen if running the job failed after stagein */
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+	{
+	req_reject(PBSE_EXECTHERE, 0, preq, NULL, "exec host not set but files staged in");
+	return(NULL);
+	}
       /* specified destination must match exec_host */
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
@@ -2175,6 +2178,16 @@ int assign_hosts(
         return(PBSE_UNKNODEATR);
         }
       }
+    }
+
+  // RESOURCE_20_FIND means interpret the -L request and find nodes that fit it. Only attempt this
+  // if no hostlist was specified.
+  if ((hosttoalloc == NULL) &&
+      (procs == 0) &&
+      (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL))
+    {
+    hosttoalloc = strdup(RESOURCE_20_FIND);
+    to_free = hosttoalloc;
     }
 
   get_svr_attr_str(SRV_ATR_DefNode, &def_node);

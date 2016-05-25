@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread_mutex_t */
@@ -21,7 +22,11 @@
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
 #include "machine.hpp"
+#include "queue.h"
+#include "track_alps_reservations.hpp"
 
+bool  use_path_home = false;
+char *path_pbs_environment;
 char *path_node_usage;
 threadpool_t *task_pool;
 int paused;
@@ -105,6 +110,11 @@ id_map job_mapper;
 threadpool_t *async_pool;
 bool exit_called = false;
 char *path_nodepowerstate;
+struct pbs_queue *allocd_queue = NULL;
+
+int enque_rc;
+int evaluated;
+int aborted;
 
 char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
 
@@ -125,7 +135,7 @@ int set_old_nodes(job *pjob)
   return(0);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername needs to be mocked!!\n");
   exit(1);
@@ -163,8 +173,6 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
 
 void set_statechar(job *pjob)
   {
-  fprintf(stderr, "The call to set_statechar needs to be mocked!!\n");
-  exit(1);
   }
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
@@ -173,7 +181,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);
@@ -315,8 +323,8 @@ void initialize_all_jobs_array(all_jobs *aj)
 
 int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
-  fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
-  exit(1);
+  aborted++;
+  return(0);
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -331,10 +339,9 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recovery)
   {
-  fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
-  exit(1);
+  return(enque_rc);
   }
 
 int initialize_threadpool(threadpool_t **pool, int min_threads, int max_threads, int max_idle_time)
@@ -423,8 +430,7 @@ int array_recov(const char *path, job_array **pa)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void track_save(struct work_task *pwt)
@@ -441,8 +447,7 @@ void acct_close(bool acct_mutex_locked)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int svr_save(struct server *ps, int mode)
@@ -459,14 +464,12 @@ int acct_open(char *filename, bool acct_mutex_locked)
 
 void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
-  fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
-  exit(1);
+  evaluated++;
   }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_queue needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 
@@ -564,8 +567,6 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   return(0);
   }
 
-
-
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -583,7 +584,7 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int log
 
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   return(NULL);
@@ -711,10 +712,10 @@ void translate_range_string_to_vector(
   return;
   }
 
-
 bool job_id_exists(
 
-  const std::string job_id_string)
+  const std::string &job_id_string,
+  int   *rcode)
 
   {
   return(true);
@@ -762,3 +763,50 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
+
+#ifdef NVML_API
+int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+
+#endif
+
+#ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+
+int update_user_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
+
+int update_group_acls(pbs_attribute *pattr, batch_op op_type)
+  {
+  return(0);
+  }
+
+pbs_queue *find_queuebyname(const char *name)
+  {
+  return(NULL);
+  }
+
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
+  {
+  pbs_queue *pq;
+
+  pq = (pbs_queue *)calloc(1, sizeof(pbs_queue));
+  sprintf(pq->qu_qs.qu_name, "%s", name);
+  allocd_queue = pq;
+  return(pq);
+  }
+
+reservation_holder::reservation_holder() {}

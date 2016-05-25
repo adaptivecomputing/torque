@@ -22,6 +22,7 @@
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
 #include "resource.h"
+#include "track_alps_reservations.hpp"
 
 
 int  attr_count = 0;
@@ -60,6 +61,7 @@ int usage;
 bool purged = false;
 bool completed = false;
 bool exited = false;
+bool called_account_jobend = false;
 long disable_requeue = 0;
 completed_jobs_map_class completed_jobs_map;
 
@@ -76,7 +78,7 @@ struct batch_request *alloc_br(int type)
   return(preq);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   return(strdup(name));
   }
@@ -96,7 +98,7 @@ void svr_mailowner_with_message(job *pjob, int mailpoint, int force, const char 
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   return(0);
   }
@@ -337,7 +339,10 @@ void log_err(int error, const char *func_id, const char *msg) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void account_jobend(job *pjob, std::string &data) {}
+void account_jobend(job *pjob, std::string &data) 
+  {
+  called_account_jobend = true;
+  }
 
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}
 
@@ -444,3 +449,20 @@ void *get_next(
   }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+int get_time_string(char *buf, int bufsize, long timeval)
+  {
+  return(0);
+  }
+
+reservation_holder alps_reservations;
+
+reservation_holder::reservation_holder() {}
+
+int reservation_holder::remove_alps_reservation(
+
+  const char *rsv_id)
+
+  {
+  return(PBSE_NONE);
+  }

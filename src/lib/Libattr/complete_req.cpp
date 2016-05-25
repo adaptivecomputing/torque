@@ -24,39 +24,45 @@ void complete_req::set_value_from_nodes(
   const char *node_val)
 
   {
-  char *work_str = strdup(node_val);
-  char *ptr = work_str;
-
-  while (ptr != NULL)
+  if (node_val != NULL)
     {
-    char *next = strchr(ptr, '+');
+    char *work_str = strdup(node_val);
+    char *ptr = work_str;
 
-    if (next != NULL)
+    while (ptr != NULL)
       {
-      *next = '\0';
-      next++;
+      char *next = strchr(ptr, '+');
+
+      if (next != NULL)
+        {
+        *next = '\0';
+        next++;
+        }
+
+      req r(ptr);
+      this->add_req(r);
+
+      ptr = next;
       }
 
-    req r(ptr);
-    this->add_req(r);
-
-    ptr = next;
+    free(work_str);
     }
-
-  free(work_str);
   } // END set_value_from_nodes()
 
 
 
 complete_req::complete_req(
 
-  tlist_head &resources) : reqs()
+  tlist_head &resources,
+  int         ppn_needed,
+  bool        legacy_vmem) : reqs()
 
   {
   resource      *pr = (resource *)GET_NEXT(resources);
   int            task_count = 0;
   int            execution_slots = 0;
   unsigned long  mem = 0;
+  std::string    mem_type;
 
   while (pr != NULL)
     {
@@ -77,16 +83,27 @@ complete_req::complete_req(
       }
     else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")))
+             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
+      mem_type = pr->rs_defin->rs_name;
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
-      // Convert to kb
-      while (shift > 10)
+      if (shift == 0)
         {
-        mem *= 1024;
-        shift -= 10;
+        // -l used in submission so convert
+        //   bytes to kb
+        mem /= 1024;
+        }
+      else    
+        {
+        // Convert to kb
+        while (shift > 10) 
+          {
+          mem *= 1024;
+          shift -= 10;  
+          }
         }
       }
 
@@ -97,14 +114,19 @@ complete_req::complete_req(
     {
     // Handle the case where no -lnodes request was made
     // Distribute the memory across the tasks as -l memory is per job
-    if (task_count > 1)
-      mem /= task_count;
+    if (legacy_vmem == false)
+      {
+      if (task_count > 1)
+        mem /= task_count;
+      }
     
     req r;
     if (task_count != 0)
       r.set_task_count(task_count);
 
+
     r.set_memory(mem);
+    r.set_swap(mem);
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
@@ -114,17 +136,45 @@ complete_req::complete_req(
   else if (mem != 0)
     {
     // Handle the case where a -lnodes request was made
-    int           total_tasks = 0;
-    unsigned long mem_per_task;
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
-      total_tasks += this->reqs[i].getTaskCount();
+    unsigned long mem_per_task = mem;
 
-    mem_per_task = mem / total_tasks;
-
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
+    if (legacy_vmem == false)
       {
-      req &r = this->reqs[i];
-      r.set_memory(mem_per_task);
+      int           total_tasks = 0;
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        total_tasks += this->reqs[i].getTaskCount();
+
+      mem_per_task /= total_tasks;
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+        r.set_memory(mem_per_task);
+        r.set_swap(mem_per_task);
+        }
+
+      }
+    else
+      {
+      if ((mem_type == "mem") || (mem_type == "vmem"))
+        mem_per_task = mem;
+      else if ((mem_type == "pmem") || (mem_type == "pvmem"))
+        {
+        mem_per_task = mem * ppn_needed;
+        }
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+
+        if ((mem_type == "mem") || (mem_type == "pmem"))
+          r.set_memory(mem_per_task);
+        else if ((mem_type == "vmem") || (mem_type == "pvmem"))
+          {
+          r.set_memory(mem_per_task);
+          r.set_swap(mem_per_task);
+          }
+        }
       }
     }
   } // END constructor from resource list
@@ -298,21 +348,20 @@ int complete_req::set_task_cput_used(
  */
 
 
-int complete_req::set_value(
+int complete_req::set_task_value(
 
   const char *name,
   const char *value)
   
   {
   int   rc = PBSE_NONE;
-  char *attr_name = strdup(name);
-  char *dot1;
-  char *dot2;
+  const char *dot1;
+  const char *dot2;
   unsigned int   req_index;
   unsigned int   task_index;
 
-  dot1 = strchr(attr_name, '.');
-  dot2 = strrchr(attr_name, '.');
+  dot1 = strchr(name, '.');
+  dot2 = strrchr(name, '.');
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
@@ -320,10 +369,9 @@ int complete_req::set_value(
     }
 
   req_index = strtol(dot1 + 1, NULL, 10);
-  *dot1 = '\0';
   task_index = strtol(dot2 + 1, NULL, 10);
-  *dot2 = '\0';
 
+  // Add new reqs if needed
   while (this->reqs.size() <= req_index)
     {
     req r;
@@ -331,9 +379,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  rc = this->reqs[req_index].set_value(attr_name, value, task_index);
-
-  free(attr_name);
+  rc = this->reqs[req_index].set_task_value(value, task_index);
 
   return(rc);
  
@@ -356,7 +402,8 @@ int complete_req::set_value(
 
   int         index,
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   if (index < 0)
@@ -369,7 +416,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[index].set_value(name, value));
+  return(this->reqs[index].set_value(name, value, is_default));
   } // END set_value()
 
 
@@ -416,6 +463,8 @@ unsigned long long complete_req::get_swap_per_task(
 
 /* 
  * get_swap_memory_for_this_host()
+ *
+ * @return the amount of swap requested for this host in kb
  */
 
 unsigned long long complete_req::get_swap_memory_for_this_host(
@@ -429,12 +478,14 @@ unsigned long long complete_req::get_swap_memory_for_this_host(
     mem += this->reqs[i].get_swap_for_host(hostname);
 
   return(mem);
-  } // END get_memory_for_host()
+  } // END get_swap_memory_for_this_host()
 
 
 
 /* 
  * get_memory_for_this_host()
+ *
+ * @return the amount of memory requested for this host in kb
  */
 
 unsigned long long complete_req::get_memory_for_this_host(
@@ -714,25 +765,17 @@ int complete_req::get_task_stats(
   unsigned int                    &req_index, 
   std::vector<int>                &task_index, 
   std::vector<unsigned long>      &cput_used, 
-  std::vector<unsigned long long> &mem_used)
+  std::vector<unsigned long long> &mem_used,
+  const char                      *hostname)
 
   {
   int rc = PBSE_NONE;
-  char   this_hostname[PBS_MAXHOSTNAME];
   char   buf[LOCAL_LOG_BUF_SIZE];
 
-  rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-  if (rc != 0)
-    {
-    sprintf(buf, "failed to get hostname: %s", strerror(errno));
-    log_err(-1, __func__, buf);
-    return(rc);
-    }
-
-  rc = this->get_req_index_for_host(this_hostname, req_index);
+  rc = this->get_req_index_for_host(hostname, req_index);
   if (rc != PBSE_NONE)
     {
-    sprintf(buf, "Could not find req for host %s", this_hostname);
+    sprintf(buf, "Could not find req for host %s", hostname);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
     return(rc);
     }
@@ -759,3 +802,7 @@ void complete_req::set_task_usage_stats(
 
   }
 
+unsigned int complete_req::get_num_reqs()
+  {
+  return(this->reqs.size());
+  }

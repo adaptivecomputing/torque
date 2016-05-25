@@ -179,7 +179,7 @@ int  array_save(job_array *pa);
 int  array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
 
-job_array *get_array(char *id);
+job_array *get_array(const char *id);
 int array_recov(const char *path, job_array **pa);
 
 int delete_array_range(job_array *pa, char *range);
@@ -192,12 +192,13 @@ void hold_job(pbs_attribute *,void *);
 int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int);
 int modify_job(void **,svrattrl *,struct batch_request *,int, int);
 
+void update_slot_held_jobs(job_array *pa, int num_to_release);
 void update_array_values(job_array *,int,enum ArrayEventsEnum, const char *job_id, long job_atr_hold, int job_exit_status);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
 bool set_array_depend_holds(job_array *);
 
-int release_job(struct batch_request *,void *);
+int release_job(struct batch_request *,void *, job_array *pa);
 int release_array_range(job_array *,struct batch_request *,char *);
 
 int first_job_index(job_array *);
@@ -208,6 +209,7 @@ int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);
+int        check_array_slot_limits(job *pjob, job_array *pa);
 job_array *next_array(all_arrays_iterator **);
 
 job_array *get_jobs_array(job **);

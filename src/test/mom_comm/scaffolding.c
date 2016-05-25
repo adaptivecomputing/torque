@@ -18,6 +18,8 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 #include "complete_req.hpp"
+#include "pmix_operation.hpp"
+#include "pmix_tracker.hpp"
 
 
 #ifdef NVIDIA_GPUS
@@ -26,6 +28,8 @@ int             use_nvidia_gpu = TRUE;
 #endif  /* NVIDIA_GPUS */
 
 std::list<job *> alljobs_list;
+int              is_reporter_mom = FALSE;
+int              is_login_node   = FALSE;
 int PBSNodeCheckEpilog;
 int PBSNodeCheckProlog;
 int internal_state;
@@ -59,6 +63,8 @@ char log_buffer[LOG_BUF_SIZE];
 int log_event_counter;
 bool exit_called = false;
 bool ms_val = true;
+job_pid_set_t    global_job_sid_set;
+char             mom_alias[PBS_MAXHOSTNAME + 1];
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)
@@ -284,7 +290,28 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t sa_size, bool use_log)
   return(10);
   }
 
-void append_link(tlist_head *head, list_link *new_link, void *pobj) {}
+void append_link(tlist_head *head, list_link *new_link, void *pobj) 
+  {
+  if (pobj != NULL)
+    {
+    new_link->ll_struct = pobj;
+    }
+  else
+    {
+    /* WARNING: This mixes list_link pointers and ll_struct
+         pointers, and may break if the list_link we are operating
+         on is not the first embeded list_link in the surrounding
+         structure, e.g. work_task.wt_link_obj */
+
+    new_link->ll_struct = (void *)new_link;
+    }
+
+  new_link->ll_prior = head->ll_prior;
+
+  new_link->ll_next  = head;
+  head->ll_prior = new_link;
+  new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
+  }
 
 void sister_job_nodes(job *pjob, char *radix_hosts, char *radix_ports )
   {
@@ -367,12 +394,12 @@ int add_to_resend_things(resend_momcomm *mc)
   return(0);
   }
 
-im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
+im_compose_info *create_compose_reply_info(const char *jobid, const char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid, const char *data)
   {
   return(0);
   }
 
-int get_hostaddr_hostent_af(int *local_errno, char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
+int get_hostaddr_hostent_af(int *local_errno, const char *hostname, unsigned short *af_family, char **host_addr, int *host_addr_len)
   {
   return(0);
   }
@@ -507,3 +534,71 @@ void check_state(int Force) {}
 void complete_req::set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used)
   {
   }
+
+int set_job_cgroup_memory_limits(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_devices_to_cgroup(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
+
+task::~task() {}
+
+#ifdef ENABLE_PMIX
+std::map<unsigned int, pmix_operation> existing_connections;
+std::map<std::string, pmix_operation>  pending_fences;
+
+pmix_operation::pmix_operation() {}
+pmix_operation::pmix_operation(const pmix_operation &other) {}
+pmix_operation::pmix_operation(char *rank_str, job *pjob) {}
+
+pmix_operation &pmix_operation::operator =(const pmix_operation &other)
+  {
+  return(*this);
+  }
+
+pmix_status_t pmix_operation::complete_operation(job *pjob, long timeout)
+  {
+  return(PMIX_SUCCESS);
+  }
+
+bool pmix_operation::mark_reported(
+
+  const std::string &hostname)
+
+  {
+  return(true);
+  }
+
+void pmix_operation::execute_callback() {}
+
+unsigned int pmix_operation::get_operation_id() const
+  {
+  return(this->op_id);
+  }
+
+void pmix_operation::add_data(const std::string &add_data)
+  {
+  if (this->data.size() != 0)
+    this->data += ",";
+  this->data += add_data;
+  }
+
+int  clean_up_connection(job *pjob, struct sockaddr_in *source_addr, unsigned int op_id, bool ms)
+  {
+  return(0);
+  }
+
+#endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+int init_torque_cgroups()
+  {
+  return(PBSE_NONE);
+  }
+
+#endif
+

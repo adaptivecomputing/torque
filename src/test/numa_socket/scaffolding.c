@@ -28,6 +28,7 @@ const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const int   exclusive_legacy = 6;
 
 const int exclusive_none = 0;
 const int exclusive_node = 1;
@@ -79,6 +80,14 @@ PCI_Device &PCI_Device::operator=(const PCI_Device &other)
   }
 
 Core::~Core()
+  {
+  }
+
+Chip::Chip(int np)
+  {
+  }
+
+void Chip::setMemory(hwloc_uint64_t mem)
   {
   }
 
@@ -199,7 +208,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r, int place_type) const
+float Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }
@@ -250,11 +259,16 @@ int allocation::add_allocation(const allocation &other)
   return(0);
   }
 
-req::req() {}
+req::req() : numa_nodes(1) {}
 std::string req::getPlacementType() const
 
   {
   return(my_placement_type);
+  }
+
+int req::get_numa_nodes() const
+  {
+  return(this->numa_nodes);
   }
 
 allocation::allocation() {}

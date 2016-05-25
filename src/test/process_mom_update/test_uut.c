@@ -26,6 +26,10 @@ START_TEST(test_set_note_error)
   
   fail_unless(set_note_error(pnode, "message=ERROR - the system is down") == PBSE_NONE);
   fail_unless(!strcmp(pnode->nd_note, "yay - ERROR - the system is down"));
+
+  // make sure newline stripped 
+  fail_unless(set_note_error(pnode, "message=ERROR - the system is down\n") == PBSE_NONE);
+  fail_unless(strcmp(pnode->nd_note, "yay - ERROR - the system is down") == 0);
   }
 END_TEST
 

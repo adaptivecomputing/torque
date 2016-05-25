@@ -1,4 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
+
+#include <pbs_config.h>
+
 #include "svr_jobfunc.h"
 #include "pbs_job.h"
 #include "server.h"
@@ -113,6 +116,22 @@ START_TEST(has_conflicting_resource_requeusts_test)
   set_resource = "epilogue";
   fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
 
+  // Make sure we allow conflicting resources if the queue has 
+  pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
+  set_resource = "tpn";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  set_resource = "vmem";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  set_resource = "nodes";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  
+  pque->qu_attr[QA_ATR_ResourceDefault].at_flags = 0;
+  pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
+  set_resource = "nodes";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+
+  set_resource = "walltime";
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
   }
 END_TEST
 
@@ -176,10 +195,10 @@ START_TEST(svr_enquejob_test)
 
   memset(&test_job, 0, sizeof(test_job));
 
-  result = svr_enquejob(NULL, 0, NULL, false);
+  result = svr_enquejob(NULL, 0, NULL, false, false);
   fail_unless(result != PBSE_NONE, "NULL input pointer fail");
 
-  result = svr_enquejob(&test_job, 0, NULL, false);
+  result = svr_enquejob(&test_job, 0, NULL, false, false);
   /*Need more complicated mocking in order to have other result than PBSE_JOBNOTFOUND*/
   fail_unless(result == PBSE_JOBNOTFOUND, "svr_enquejob fail: %d", result);
 

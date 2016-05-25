@@ -447,16 +447,16 @@ void svr_disconnect(
  */
 char *parse_servername(
 
-  char         *name,   /* server name in form name[:port] */
+  const char   *name,   /* server name in form name[:port] */
   unsigned int *service)  /* RETURN: service_port if :port */
 
   {
   char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
   char *val;
 
-  int   i = 0;
-  char *pc;
-  char *tmp_val = NULL;
+  int         i = 0;
+  const char *pc;
+  char       *tmp_val = NULL;
 
   buf[0] = '\0';
 

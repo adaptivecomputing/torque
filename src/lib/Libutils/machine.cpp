@@ -16,7 +16,6 @@
 #include <hwloc/nvml.h>
 #include <nvml.h>
 
-void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 #endif
 #endif
 
@@ -179,10 +178,12 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0),
+                                                   totalSockets(0), totalChips(0),
                                                    totalCores(0), totalThreads(0), 
                                                    availableSockets(0), availableChips(0),
-                                                   availableCores(0), availableThreads(0)
+                                                   availableCores(0), availableThreads(0),
+                                                   sockets(), NVIDIA_device(), allocations()
 
   {
   const char *socket_str = "\"socket\":{";
@@ -203,13 +204,33 @@ Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory
   update_internal_counts();
   }
 
-Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
-                     totalThreads(0), availableSockets(0), availableChips(0),
-                     availableCores(0), availableThreads(0)
+
+
+Machine::Machine(
+
+  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
+            totalThreads(np), availableSockets(1), availableChips(1),
+            availableCores(np), availableThreads(np), sockets(), NVIDIA_device(), allocations()
+
+  {
+  Socket s(np);
+  this->sockets.push_back(s);
+  
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  }
+
+
+
+Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+                     totalCores(0), totalThreads(0), availableSockets(0), availableChips(0),
+                     availableCores(0), availableThreads(0), sockets(), NVIDIA_device(),
+                     allocations()
   { 
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
+
 
 
 Machine::~Machine()
@@ -463,7 +484,11 @@ void Machine::setMemory(
   long long mem)
 
   {
+  long long per_socket = mem / this->sockets.size();
   this->totalMemory = mem;
+
+  for (unsigned int i = 0; i < this->sockets.size(); i++)
+    this->sockets[i].setMemory(per_socket);
   }
 
 void Machine::insertNvidiaDevice(
@@ -581,6 +606,10 @@ void Machine::place_remaining(
     allocation remaining(r);
     allocation task_alloc(master.jobid.c_str());
 
+    /* this is for legacy jobs. */
+    if (master.cpus != 0)
+      remaining.cpus = master.cpus;
+
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
       if (remaining.place_type == exclusive_socket)
@@ -597,9 +626,41 @@ void Machine::place_remaining(
         }
       }
 
+    /* This piece of code is meant to finish for the legacy -l requests 
+       where the number of ppn requested is greater than the number of
+       cores on a node.
+     */
+    if ((master.place_type == exclusive_legacy) && (remaining.cpus > 0))
+      {
+      r.set_placement_type(place_legacy2);
+      master.set_place_type(place_legacy2);
+      master.cpus = remaining.cpus;
+      remaining.place_type = master.place_type;
+
+      for (unsigned int j = 0; j < this->sockets.size(); j++)
+        {
+        if (remaining.place_type == exclusive_socket)
+          this->availableSockets--;
+
+        if (this->sockets[j].partially_place(remaining, task_alloc) == true)
+          {
+          fit_somewhere = true;
+
+          task_alloc.set_host(hostname);
+          r.record_allocation(task_alloc);
+          master.add_allocation(task_alloc);
+          break;
+          }
+        }
+
+      //r.record_allocation(task_alloc);
+      //master.add_allocation(task_alloc);
+      }
+
     if (fit_somewhere == false)
       break;
 
+   
     remaining_tasks--;
     }
 
@@ -614,10 +675,10 @@ int Machine::spread_place_pu(
   const char *hostname)
 
   {
-  int   rc;
   int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
   int   tasks_placed = 0;
+  int   tasks_for_this_node = tasks_for_node;
 
   if (pu_per_task > this->totalCores)
     return(PBSE_IVALREQ);
@@ -645,7 +706,7 @@ int Machine::spread_place_pu(
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
       {
-      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_node)
+      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_this_node)
         continue;
 
       bool fits = false;
@@ -690,6 +751,7 @@ int Machine::spread_place_pu(
     task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);
     master.add_allocation(task_alloc);
+    tasks_for_this_node--;
     }
 
   if (tasks_placed != tasks_for_node)
@@ -697,6 +759,8 @@ int Machine::spread_place_pu(
 
   return(PBSE_NONE);
   } /* END spread_place_pu() */
+
+
 
 /*
  * spread_place()
@@ -767,11 +831,13 @@ int Machine::spread_place(
       }
 
     if (partial_place == true)
+      {
       tasks_placed++;
 
-    task_alloc.set_host(hostname);
-    r.record_allocation(task_alloc);
-    master.add_allocation(task_alloc);
+      task_alloc.set_host(hostname);
+      r.record_allocation(task_alloc);
+      master.add_allocation(task_alloc);
+      }
     }
 
   if (tasks_placed != tasks_for_node)
@@ -796,18 +862,19 @@ int Machine::place_job(
   job        *pjob,
   string     &cpu_string,
   string     &mem_string,
-  const char *hostname)
+  const char *hostname,
+  bool        legacy_vmem)
 
   {
   int rc = PBSE_NONE;
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
-    {
+//  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+//    {
     // Initialize a complete_req from the -l resource request
-    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-    }
+//    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
+//    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+//    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+//    }
 
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
   int           num_reqs = cr->req_count();
@@ -836,12 +903,6 @@ int Machine::place_job(
              (a.place_type == exclusive_chip))
       {
       if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
-        return(rc);
-      }
-    else if ((a.place_type == exclusive_core) ||
-             (a.place_type == exclusive_thread))
-      {
-      if ((rc = spread_place_pu(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else
@@ -877,8 +938,6 @@ int Machine::place_job(
     {
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    bool  change = false;
-    bool  not_placed = true;
     
     a.set_place_type(r.getPlacementType());
     
@@ -903,9 +962,8 @@ int Machine::place_job(
 
     if (remaining_tasks > 0)
       {
-      // We didn't place all of the tasks, but don't exit yet. We need to mark
-      // this allocation so that the cleanup happens correctly
-      rc = -1;
+       // this allocation so that the cleanup happens correctly
+        rc = -1;
       }
     }
 
@@ -1049,6 +1107,35 @@ bool Machine::check_if_possible(
 
   return(possible);
   } // END check_if_possible()
+
+
+
+int Machine::how_many_tasks_can_be_placed(
+
+  req &r) const
+
+  {
+  float         can_place = 0.0;
+  allocation    a;
+  int           sockets = r.get_sockets();
+  a.set_place_type(r.getPlacementType());
+
+  if (sockets > 1)
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      if (this->sockets[j].how_many_tasks_fit(r, a.place_type) > 0)
+        can_place += 1;
+
+    can_place /= sockets;
+    }
+  else
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      can_place += this->sockets[j].how_many_tasks_fit(r, a.place_type);
+    }
+
+  return(can_place);
+  } // END place_as_many_as_possible()
 
 
 

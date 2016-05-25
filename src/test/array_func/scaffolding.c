@@ -19,6 +19,8 @@ const char *pbs_o_host = "PBS_O_HOST";
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int array_259_upgrade = 0;
+bool place_hold;
+int  unlocked;
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
@@ -44,10 +46,9 @@ void hold_job(pbs_attribute *temphold, void *j)
   exit(1);
   }
 
-int release_job(struct batch_request *preq, void *j)
+int release_job(struct batch_request *preq, void *j, job_array *pa)
   {
-  fprintf(stderr, "The call to release_job needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void post_modify_arrayreq(batch_request *br)
@@ -217,7 +218,11 @@ int is_svr_attr_set(int attr_index)
 job *svr_find_job(const char *name, int get_subjob)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  strcpy(pjob->ji_qs.ji_jobid, name);
+
+  if (place_hold)
+    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+
   return(pjob);
   }
 
@@ -228,6 +233,7 @@ int svr_job_purge(job *pjob, int leaveSpoolFiles)
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
+  unlocked++;
   return(0);
   }
 

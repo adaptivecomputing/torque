@@ -40,7 +40,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) throw()
   return(0);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   return(NULL);
   }
@@ -70,7 +70,7 @@ int encode_DIS_PowerState(struct tcp_chan *chan, unsigned short powerState)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   if (return_addr == true)
     {
@@ -261,6 +261,7 @@ struct pbsnode dummynode;
 struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   {
   memset(&dummynode,0,sizeof(dummynode));
+  dummynode.nd_name = strdup("tmp");
   return &dummynode;
   }
 
@@ -505,4 +506,22 @@ batch_request *duplicate_request(batch_request *preq, int job_index)
       }
   
     return(preq_tmp);
+  }
+
+void update_failure_counts(
+
+  const char *node_name,
+  int         rc)
+
+  {
+  }
+
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
+  {
+  return(0);
+  }
+
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
+  {
+  return(0);
   }

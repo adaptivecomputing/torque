@@ -195,7 +195,6 @@ START_TEST(check_orphaned_test)
   state_updated = 0;
 
   fail_unless(check_if_orphaned(strdup(rsv_id)) == 0, "bad return code");
-  fail_unless(removed_reservation == 1);
   fail_unless(issued_request == 1);
   fail_unless(state_updated == 1);
   }

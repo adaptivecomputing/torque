@@ -33,7 +33,7 @@ dnl added library functionality to testing
 dnl by John Rosenquist (jrosenquist@adaptivecomputing.com)
 
 AC_PREREQ(2.53)
-AC_INIT([torque], [master], [torqueusers@supercluster.org])
+AC_INIT([torque], [6.0], [torqueusers@supercluster.org])
 AC_REVISION($Revision$)
 AC_CONFIG_SRCDIR([src/cmds/qrun.c])
 AC_CONFIG_AUX_DIR([buildutils])
@@ -96,11 +96,11 @@ fi
 
 if test "X$success" == "X0" ; then
   success=`echo $githash > current_hash`
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository git version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
   dnl containing the most recent hash
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository git version])
 fi
 
 PKG_PROG_PKG_CONFIG
@@ -153,6 +153,7 @@ m4_ifdef([AM_SILENT_RULES],[
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
     src/test/accounting/Makefile
+    src/test/acl_special/Makefile
     src/test/array_func/Makefile
     src/test/array_upgrade/Makefile
     src/test/attr_recov/Makefile
@@ -178,6 +179,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_usage_info/Makefile
     src/test/login_nodes/Makefile
     src/test/mom_hierarchy_handler/Makefile
+    src/test/mail_throttler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
     src/test/pbsd_init/Makefile
@@ -214,6 +216,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/req_tokens/Makefile
     src/test/req_track/Makefile
     src/test/resc_def_all/Makefile
+    src/test/restricted_host/Makefile
     src/test/run_sched/Makefile
     src/test/stat_job/Makefile
     src/test/svr_chk_owner/Makefile
@@ -489,6 +492,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_req_quejob/Makefile
     src/test/parse_config/Makefile
     src/test/pbs_demux/Makefile
+    src/test/pmix_interface/Makefile
+    src/test/pmix_operation/Makefile
+    src/test/pmix_tracker/Makefile
     src/test/prolog/Makefile
     src/test/release_reservation/Makefile
     src/test/requests/Makefile
@@ -623,12 +629,18 @@ AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
 AC_SUBST(build_drmaa)
 
-if test "x$build_drmaa" = "xyes";then
-  AC_PATH_PROG(GPERF, gperf)
-  if test -z "$GPERF";then
-    AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
-  fi
-fi
+dnl
+dnl #######################################################################
+dnl Starting in version 5.1.3 we are not using the gperf tool to create the
+dnl drmaa source files. However, we want to keep the information around in
+dnl case we ever need to update the perfect hash for drmaa version 2 or later.
+dnl
+dnl if test "x$build_drmaa" = "xyes";then
+dnl   AC_PATH_PROG(GPERF, gperf)
+dnl   if test -z "$GPERF";then
+dnl     AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
+dnl   fi
+dnl fi
 
 
 dnl
@@ -1095,22 +1107,41 @@ should be the path to the directory containing the boost/ directory
 for your version of boost.
 ])])
 
-AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
-AC_RUN_IFELSE([AC_LANG_PROGRAM(
-[[#include <boost/version.hpp>
+if test "$build_linux_cgroups" = "yes"; then
+  AC_MSG_CHECKING([for minimum boost version (>=1.41.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
 #ifdef BOOST_VERSION
 #if (BOOST_VERSION < 103600)
-  error: incorrect boost version
+    error: incorrect boost version
 #endif
 #else
-  error: no boost found
+    error: no boost found
 #endif
-  ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.41.0 of Boost to build with cgroups enabled.
 
-This can be solved by configuring with --with-boost-path=<path>. This path
-should be the path to the directory containing the boost/ directory
-for your version of boost.
-])])
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+else
+  AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
+#ifdef BOOST_VERSION
+#if (BOOST_VERSION < 103600)
+    error: incorrect boost version
+#endif
+#else
+    error: no boost found
+#endif
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+fi
 
 
 
@@ -1294,6 +1325,29 @@ if test "${build_mom}" = "yes" ; then
 fi
 
 
+dnl 
+dnl Add the ability to link against the pmix library
+dnl 
+dnl --enable-pmix
+AC_ARG_ENABLE(pmix, [
+  --enable-pmix links pbs_mom against libpmix])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build with pmix support])
+    if test "${enable_pmix}" = "yes"; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([pmix], [PMIx_Finalize], ,
+        [AC_MSG_ERROR([--enable-pmix requires libpmix to be installed]) ])
+      AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      MOMLIBS="$MOMLIBS -lpmix"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+AM_CONDITIONAL([BUILDPMIX], test "${enable_pmix}" = yes)
+
+
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
 dnl 
@@ -1416,7 +1470,7 @@ dnl
 dnl if we're running from a tarball (not checked out) automatically turn off
 dnl the warnings
 dnl
-AC_CHECK_FILE(src/server/test/req_jobobit/scaffolding.c,
+AC_CHECK_FILE(src/test/req_jobobit/scaffolding.c,
   TOM=bob,gccwarnings=no)
 
 
@@ -2309,7 +2363,7 @@ dnl
 if test "$build_drmaa" = "yes" ;then
 gccwarnings=no
 AC_MSG_NOTICE([Configuring DRMAA ...])
-AC_PATH_PROG(GPERF, "gperf")
+#AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
 AC_PATH_PROG(DOXYGEN, "doxygen", "none")
 AC_C_BIGENDIAN_CROSS
@@ -2362,14 +2416,15 @@ else
   build_drmaa_docs=no
   RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
 fi
-AM_CONDITIONAL(DRMAA_BUILD, [test "x$GPERF" != "x"])
+AM_CONDITIONAL(DRMAA_BUILD, [test "x$build_drmaa" == "xyes"])
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
     
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
 fi
 
 

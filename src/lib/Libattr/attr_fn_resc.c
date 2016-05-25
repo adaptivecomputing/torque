@@ -90,6 +90,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of type
@@ -850,7 +851,7 @@ resource *add_resource_entry(
 int action_resc(
 
   pbs_attribute *pattr,
-  void          *pobject,
+  void          * UNUSED(pobject),
   int            actmode)
 
   {

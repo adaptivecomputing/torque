@@ -373,7 +373,7 @@ int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
                            int unkn, int privil, int *badattr);
 int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                 pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                int unkn, int privil, int *badattr);
+                                int unkn, int privil, int *badattr, bool dont_update_nodes_file);
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 void overwrite_complete_req(pbs_attribute *attr, pbs_attribute *new_attr);
@@ -404,6 +404,7 @@ int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const 
 
 
  
+int get_time_string(char *time_string, int string_size, long timeval);
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
 int encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,

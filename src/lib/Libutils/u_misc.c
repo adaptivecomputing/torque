@@ -86,9 +86,15 @@
 #include <vector>
 
 #include "utils.h"
+#include "resource.h"
 
 #ifndef MAX_CMD_ARGS
 #define MAX_CMD_ARGS 10
+#endif
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+std::vector<std::string> incompatible_dash_l_resources;
 #endif
 
 int    ArgC = 0;
@@ -335,6 +341,9 @@ void translate_range_string_to_vector(
   int   prev = 0;
   int   curr;
 
+  while (is_whitespace(*ptr))
+    ptr++;
+
   while (*ptr != '\0')
     {
     prev = strtol(ptr, &ptr, 10);
@@ -351,7 +360,7 @@ void translate_range_string_to_vector(
         prev++;
         }
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
@@ -359,7 +368,7 @@ void translate_range_string_to_vector(
       {
       indices.push_back(prev);
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
@@ -419,6 +428,44 @@ bool task_hosts_match(
   const char *this_hostname)
  
   {
+#ifdef NUMA_SUPPORT
+  char *real_task_host = strdup(task_host);
+  char *last_dash = NULL;
+
+  if (real_task_host == NULL)
+    return(false);
+
+  last_dash = strrchr(real_task_host, '-');
+  if (last_dash != NULL)
+    *last_dash = '\0';
+    
+  if (strcmp(real_task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, real_task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+
+
+#else
   if (strcmp(task_host, this_hostname))
     {
     /* see if the short name might match */
@@ -443,11 +490,82 @@ bool task_hosts_match(
       return(false);
       }
     }
+#endif
 
   return(true);
   }
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+
+void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
+  {
+  /* These are the -l resources that are not compatible with the -L resource request */
+  incompatible_resource_list.clear();
+  incompatible_resource_list.push_back("mem");
+  incompatible_resource_list.push_back("nodes");
+  incompatible_resource_list.push_back("hostlist");
+  incompatible_resource_list.push_back("ncpus");
+  incompatible_resource_list.push_back("procs");
+  incompatible_resource_list.push_back("pvmem");
+  incompatible_resource_list.push_back("pmem");
+  incompatible_resource_list.push_back("vmem");
+  incompatible_resource_list.push_back("reqattr");
+  incompatible_resource_list.push_back("software");
+  incompatible_resource_list.push_back("geometry");
+  incompatible_resource_list.push_back("opsys");
+  incompatible_resource_list.push_back("tpn");
+  incompatible_resource_list.push_back("trl");
+  }
 
 
 
+/* 
+ * have_incompatible_dash_l_resource
+ *
+ * Check to see if this is an incompatile -l resource
+ * request for a -L syntax
+ *
+ * @param pjob  - the job structure we are working with
+ *
+ */
+
+bool have_incompatible_dash_l_resource(
+
+  job *pjob)
+
+  {
+  resource *presl; /* for -l resource request */
+  bool      found_incompatible_resource = false;
+
+  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+    {
+    presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    if (presl != NULL)
+      {
+      std::vector<std::string>::iterator it;
+
+      if (incompatible_dash_l_resources.size() == 0)
+        initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
+
+      do
+        {
+        std::string pname = presl->rs_defin->rs_name;
+        it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
+        if (it != incompatible_dash_l_resources.end())
+          {
+          /* pname points to a string of an incompatible -l resource type */
+          found_incompatible_resource = true;
+          break;
+          }
+
+        presl = (resource *)GET_NEXT(presl->rs_link);
+        } while(presl != NULL);
+      }
+    }
+
+  return(found_incompatible_resource);
+  }
+
+
+#endif /* PENABLE_LINUX_CGROUPS */

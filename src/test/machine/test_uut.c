@@ -77,7 +77,7 @@ START_TEST(test_place_all_execution_slots)
   numa_node_count = 0;
   placed_all = 0;
   exec_slots = -1;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(placed_all == 2);
   }
 END_TEST
@@ -102,12 +102,12 @@ START_TEST(test_spread_place)
   spreaded = true;
 
   // Make sure we call spread place once for each successfully placed task
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 1, "called %d", called_spread_place);
 
   num_for_host = 3;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 3);
 
   // Now we're multiple instead of one so it should multiply the calls
@@ -116,7 +116,7 @@ START_TEST(test_spread_place)
   numa_node_count = 2;
   num_for_host = 2;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 4, "called %d times", called_spread_place);
   
   sockets = 2;
@@ -124,45 +124,32 @@ START_TEST(test_spread_place)
   numa_node_count = 0;
   num_for_host = 3;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 6);
-  }
-END_TEST
-
-START_TEST(test_spread_place_pu)
-  {
-  Machine m;
-  job     pjob;
-  std::string cpu;
-  std::string mem;
-  complete_req cr;
-  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
-
-  m.addSocket(2);
-
-  sockets = 1;
-  my_placement_type = 4;
-  numa_node_count = 0;
-  called_spread_place_cores = 0;
-  num_for_host = 1;
-  spreaded = true;
-
-  // Make sure we call spread place once for each successfully placed task
-  m.place_job(&pjob, cpu, mem, "napali");
-  fail_unless(called_spread_place_cores == 1, "called %d", called_spread_place_cores);
-
   }
 END_TEST
 
 
 START_TEST(test_displayAsString)
   {
-  Machine           new_machine;
+  Machine           new_machine(1);
   std::stringstream out;
 
   new_machine.setMemory(2);
   new_machine.displayAsString(out);
   fail_unless(out.str() == "Machine (2KB)\n", out.str().c_str());
+  }
+END_TEST
+
+
+START_TEST(test_basic_constructor)
+  {
+  Machine m(3);
+
+  fail_unless(m.getTotalSockets() == 1);
+  fail_unless(m.getAvailableSockets() == 1);
+  fail_unless(m.getTotalCores() == 3);
+  fail_unless(m.getTotalThreads() == 3);
   }
 END_TEST
 
@@ -296,13 +283,20 @@ START_TEST(test_place_and_free_job)
   pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
+  // Check how many tasks fit
+  req r;
+  num_tasks_fit = 8;
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 16);
+  num_tasks_fit = 2;
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 4);
+
   // Make the job fit on one socket so we call place once per task
   called_place_task = 0;
   my_req_count = 2;
   num_for_host = 4;
   num_tasks_fit = 4;
   num_placed = 4;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   std::vector<std::string> job_ids;
@@ -321,7 +315,7 @@ START_TEST(test_place_and_free_job)
   num_tasks_fit = 4;
   num_placed = 4;
   called_place_task = 0;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   num_tasks_fit = 0;
@@ -332,7 +326,7 @@ START_TEST(test_place_and_free_job)
   partially_placed = true;
   called_partially_place = 0;
   called_fits_on_socket = 0;
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_partially_place == 1, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 1);
   
@@ -342,7 +336,7 @@ START_TEST(test_place_and_free_job)
   my_req_count = 1;
   num_for_host = 1;
 
-  m.place_job(&pjob, cpu, mem, "napali");
+  m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_partially_place == 2, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 3, "called %d times", called_fits_on_socket);
   }
@@ -361,6 +355,7 @@ Suite *machine_suite(void)
   tcase_add_test(tc_core, test_initializeMachine);
   tcase_add_test(tc_core, test_displayAsString);
   tcase_add_test(tc_core, test_json_constructor);
+  tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_check_if_possible);
   suite_add_tcase(s, tc_core);
   

@@ -38,6 +38,11 @@
 #include <error.h>
 #include <drmaa_impl.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -70,15 +75,13 @@ drmaa_get_drmaa_error(char *error_diagnosis, size_t error_diag_len,
   return error_code;
   }
 
-/** Retrieves last PBS error message. - no longer viable in multi-threaded torque */
-int drmaa_get_pbs_error(
-    
-  char   *error_diagnosis,
-  size_t  error_diag_len)
+/** Retrieves last PBS error message. */
+int
+drmaa_get_pbs_error(char *error_diagnosis, size_t error_diag_len)
   {
   snprintf(error_diagnosis, error_diag_len,
-           "pbs-drm: %s", "unknown error");
-  return 1;
+           "pbs-drm: %s", pbse_to_txt(pbs_errno));
+  return drmaa_map_pbs_error(pbs_errno);
   }
 
 
@@ -386,4 +389,6 @@ drmaa_map_pbs_error(int pbs_errcode)
     }
   }
 
-
+#ifdef __cplusplus
+  }
+#endif

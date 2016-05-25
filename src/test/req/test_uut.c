@@ -15,23 +15,72 @@ START_TEST(test_get_cores_threads)
   {
   req r;
 
-  r.set_value("lprocs", "2");
+  r.set_value("lprocs", "2", false);
 
   fail_unless(r.get_threads() == 2);
   fail_unless(r.get_cores() == 0);
 
-  r.set_value("placement_type", "core");
+  r.set_value("placement_type", "core", false);
+  fail_unless(r.get_threads() == 2);
+  fail_unless(r.get_cores() == 2);
+
+  // Make sure setting a default doesn't override
+  r.set_value("lprocs", "3", true);
   fail_unless(r.get_threads() == 2);
   fail_unless(r.get_cores() == 2);
   }
 END_TEST
+
+START_TEST(test_get_gpu_mode)
+  {
+  req r;
+  std::string gpu_mode;
+
+  r.set_value("gpus", "1", false);
+  r.set_value("gpu_mode", "exclusive_thread", false);
+  fail_unless(r.getGpus() == 1);
+  gpu_mode = r.get_gpu_mode();
+  fail_unless(gpu_mode.compare("exclusive_thread") == 0);
+  }
+END_TEST
+
+START_TEST(test_has_conflicting_values)
+  {
+  req r;
+  std::string error;
+  bool has_conflict;
+
+  /* lprocs and cores are equal. return false */
+  r.set_value("task_count", "1", false);
+  r.set_value("lprocs", "4", false);
+  r.set_value("core", "4", false);
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == false, "expected false");
+
+  /* cores = 1, cores will be set equal to lprocs. return false */
+  r.set_value("task_count", "1", false);
+  r.set_value("lprocs", "4", false);
+  r.set_value("core", "1", false);
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == false, "expected false");
+
+
+  /* lprocs is greater than core. return true */
+  r.set_value("task_count", "1", false);
+  r.set_value("lprocs", "4", false);
+  r.set_value("core", "3", false);
+  has_conflict = r.has_conflicting_values(error);
+  fail_unless(has_conflict == true, "expected true");
+  }
+END_TEST
+
 
 
 START_TEST(test_append_gres)
   {
   req r;
 
-  r.set_value("gres", "A=3");
+  r.set_value("gres", "A=3", false);
 
   fail_unless(r.append_gres("B=2") == PBSE_NONE);
   fail_unless(r.append_gres("B=2") == PBSE_NONE);
@@ -60,34 +109,28 @@ START_TEST(test_string_constructor)
   }
 END_TEST
 
-START_TEST(test_get_task_stats)
-  {
-  }
-END_TEST
-
-
 START_TEST(test_get_set_values)
   {
   req r;
 
-  r.set_value("index", "0");
-  r.set_value("lprocs", "all");
-  r.set_value("memory", "1024mb");
-  r.set_value("swap", "1024kb");
-  r.set_value("disk", "10000000kb");
-  r.set_value("socket", "1");
-  r.set_value("gpus", "2");
-  r.set_value("task_count", "5");
-  r.set_value("gpu_mode", "exclusive_thread");
-  r.set_value("mics", "1");
-  r.set_value("thread_usage_policy", "use threads");
-  r.set_value("reqattr", "matlab>7");
-  r.set_value("gres", "gresA");
-  r.set_value("opsys", "ubuntu");
-  r.set_value("arch", "64bit");
-  r.set_value("hostlist", "napali:ppn=32");
-  r.set_value("features", "fast");
-  r.set_value("single_job_access", "true");
+  r.set_value("index", "0", false);
+  r.set_value("lprocs", "all", false);
+  r.set_value("memory", "1024mb", false);
+  r.set_value("swap", "1024kb", false);
+  r.set_value("disk", "10000000kb", false);
+  r.set_value("socket", "1", false);
+  r.set_value("gpus", "2", false);
+  r.set_value("task_count", "5", false);
+  r.set_value("gpu_mode", "exclusive_thread", false);
+  r.set_value("mics", "1", false);
+  r.set_value("thread_usage_policy", "use threads", false);
+  r.set_value("reqattr", "matlab>7", false);
+  r.set_value("gres", "gresA", false);
+  r.set_value("opsys", "ubuntu", false);
+  r.set_value("arch", "64bit", false);
+  r.set_value("hostlist", "napali:ppn=32", false);
+  r.set_value("features", "fast", false);
+  r.set_value("single_job_access", "true", false);
 
   std::vector<std::string> names;
   std::vector<std::string> values;
@@ -133,11 +176,11 @@ START_TEST(test_get_set_values)
   fail_unless(values[16] == "napali:ppn=32");
 
   req r2;
-  r2.set_value("lprocs", "2");
-  r2.set_value("numanode", "1");
-  r2.set_value("maxtpn", "1");
-  r2.set_value("placement_type", "core");
-  r2.set_value("pack", "true");
+  r2.set_value("lprocs", "2", false);
+  r2.set_value("numanode", "1", false);
+  r2.set_value("maxtpn", "1", false);
+  r2.set_value("placement_type", "core", false);
+  r2.set_value("pack", "true", false);
 
   names.clear();
   values.clear();
@@ -161,15 +204,15 @@ START_TEST(test_get_set_values)
   fail_unless(values[5] == "usecores", values[5].c_str());
   fail_unless(values[6] == "true");
 
-  fail_unless(r2.set_value("bob", "tom") != PBSE_NONE);
+  fail_unless(r2.set_value("bob", "tom", false) != PBSE_NONE);
 
   int i;
   fail_unless(parse_positive_integer("1.0", i) != PBSE_NONE);
 
   req r3;
-  r3.set_value("task_count", "1");
-  r3.set_value("placement_type", "place node");
-  r3.set_value("lprocs", "all");
+  r3.set_value("task_count", "1", false);
+  r3.set_value("placement_type", "place node", false);
+  r3.set_value("lprocs", "all", false);
   allocation a;
   a.cores = 8;
   a.threads = 16;
@@ -197,8 +240,9 @@ START_TEST(test_get_set_values)
   std::vector<std::string> values_clone;
 
   for (unsigned int i = 0; i < names.size() - 1; i++)
-    clone.set_value(names[i].c_str(), values[i].c_str());
-  clone.set_value("task_usage", values[names.size() - 1].c_str(), 0);
+    clone.set_value(names[i].c_str(), values[i].c_str(), false);
+
+  clone.set_task_value(values[names.size() - 1].c_str(), 0);
 
   clone.get_values(names_clone, values_clone);
   
@@ -505,13 +549,13 @@ START_TEST(test_get_memory_for_host)
   std::string host = "napali";
   unsigned long mem;
 
-  r.set_value("index", "0");
-  r.set_value("lprocs", "all");
-  r.set_value("memory", "1024kb");
-  r.set_value("swap", "1024kb");
-  r.set_value("task_count", "5");
-  r.set_value("thread_usage_policy", "use threads");
-  r.set_value("hostlist", "napali:ppn=32");
+  r.set_value("index", "0", false);
+  r.set_value("lprocs", "all", false);
+  r.set_value("memory", "1024kb", false);
+  r.set_value("swap", "1024kb", false);
+  r.set_value("task_count", "5", false);
+  r.set_value("thread_usage_policy", "use threads", false);
+  r.set_value("hostlist", "napali:ppn=32", false);
 
   mem = r.get_memory_for_host(host);
   fail_unless(mem != 0);
@@ -573,40 +617,44 @@ START_TEST(test_get_num_tasks_for_host)
   {
   req r;
 
-  r.set_value("index", "0");
-  r.set_value("lprocs", "2");
-  r.set_value("task_count", "8");
-  r.set_value("hostlist", "napali:ppn=16");
-  r.set_value("placement_type", "core");
+  r.set_value("index", "0", false);
+  r.set_value("lprocs", "2", false);
+  r.set_value("task_count", "8", false);
+  r.set_value("hostlist", "napali:ppn=16", false);
+  r.set_value("placement_type", "core", false);
   int tasks = r.get_num_tasks_for_host("napali");
   fail_unless(tasks == 8, "Expected 8, got %d", tasks);
   fail_unless(r.get_num_tasks_for_host(16) == 8);
 
   req r2;
-  r2.set_value("lprocs", "1");
+  r2.set_value("lprocs", "1", false);
   r2.set_hostlist("napali");
   tasks = r2.get_num_tasks_for_host("napali");
   fail_unless(tasks == 1, "Expected 1, got %d", tasks);
   fail_unless(r2.get_num_tasks_for_host(1) == 1);
+
+  // Make sure we can override lrpocs = 1 with a default
+  r2.set_value("lprocs", "2", true);
+  fail_unless(r2.getExecutionSlots() == 2);
   
   req r3;
-  r3.set_value("hostlist", "napali/0-15");
+  r3.set_value("hostlist", "napali/0-15", false);
   tasks = r3.get_num_tasks_for_host("napali");
   fail_unless(tasks == 16, "Expected 16, got %d", tasks);
   fail_unless(r3.get_num_tasks_for_host(16) == 16);
  
   req r4;
-  r4.set_value("hostlist", "napali/0-15+wailua/0-15");
-  r4.set_value("lprocs", "4");
-  r4.set_value("task_count", "8");
+  r4.set_value("hostlist", "napali/0-15+wailua/0-15", false);
+  r4.set_value("lprocs", "4", false);
+  r4.set_value("task_count", "8", false);
   tasks = r4.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
   fail_unless(r4.get_num_tasks_for_host(16) == 4);
   
   req r5;
-  r5.set_value("hostlist", "waimea/0-16+napali/0-15");
-  r5.set_value("lprocs", "4");
-  r5.set_value("task_count", "8");
+  r5.set_value("hostlist", "waimea/0-16+napali/0-15", false);
+  r5.set_value("lprocs", "4", false);
+  r5.set_value("task_count", "8", false);
   tasks = r5.get_num_tasks_for_host("napali");
   fail_unless(tasks == 4, "Expected 4, got %d", tasks);
   fail_unless(r5.get_num_tasks_for_host(16) == 4);
@@ -647,13 +695,13 @@ START_TEST(test_get_swap_for_host)
   std::string host = "napali";
   unsigned long mem;
 
-  r.set_value("index", "0");
-  r.set_value("lprocs", "all");
-  r.set_value("memory", "1024kb");
-  r.set_value("swap", "1024kb");
-  r.set_value("task_count", "5");
-  r.set_value("thread_usage_policy", "use threads");
-  r.set_value("hostlist", "napali:ppn=32");
+  r.set_value("index", "0", false);
+  r.set_value("lprocs", "all", false);
+  r.set_value("memory", "1024kb", false);
+  r.set_value("swap", "1024kb", false);
+  r.set_value("task_count", "5", false);
+  r.set_value("thread_usage_policy", "use threads", false);
+  r.set_value("hostlist", "napali:ppn=32", false);
 
   mem = r.get_swap_for_host(host);
   fail_unless(mem != 0);
@@ -671,9 +719,9 @@ START_TEST(test_get_task_allocation)
   req r3;
   allocation a1;
 
-  r3.set_value("task_count", "1");
-  r3.set_value("placement_type", "place node");
-  r3.set_value("lprocs", "all");
+  r3.set_value("task_count", "1", false);
+  r3.set_value("placement_type", "place node", false);
+  r3.set_value("lprocs", "all", false);
   allocation a;
   a.cores = 8;
   a.threads = 16;
@@ -709,6 +757,7 @@ Suite *req_suite(void)
 
   tc_core = tcase_create("test_set_from_string");
   tcase_add_test(tc_core, test_set_from_string);
+  tcase_add_test(tc_core, test_has_conflicting_values);
   tcase_add_test(tc_core, test_set_attribute);
   tcase_add_test(tc_core, test_submission_string_has_duplicates);
   tcase_add_test(tc_core, test_get_set_values);
@@ -716,6 +765,10 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_get_swap_for_host);
   tcase_add_test(tc_core, test_get_task_allocation);
   tcase_add_test(tc_core, test_update_hostlist);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_gpu_mode");
+  tcase_add_test(tc_core, test_get_gpu_mode);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_setters");

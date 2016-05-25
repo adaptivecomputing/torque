@@ -217,8 +217,8 @@ void PCI_Device::initializeMic(
 
 
 
-#ifdef NVML_API
-void PCI_Device::initializeGpu(
+#ifdef NVIDIA_GPUS
+/*void PCI_Device::initializeGpu(
 
   int              idx,
   hwloc_topology_t topology)
@@ -227,6 +227,7 @@ void PCI_Device::initializeGpu(
   int rc;
   nvmlDevice_t  gpu_device;
   
+  id = idx;
   rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
   if (rc != NVML_SUCCESS)
     {
@@ -257,7 +258,7 @@ void PCI_Device::initializeGpu(
 
   this->type = GPU;
 
-  }
+  }*/
 #endif
 
 #endif

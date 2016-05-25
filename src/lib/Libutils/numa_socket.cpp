@@ -13,10 +13,27 @@ using namespace std;
 #include "machine.hpp"
 #include <hwloc.h>
 
-Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
+Socket::Socket() : id (0), memory(0), totalCores(0), totalThreads(0), availableCores(0),
+                   availableThreads(0), chips(), socket_exclusive(false)
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+  }
+
+
+
+Socket::Socket(
+    
+  int execution_slots) : id (0), memory(0), totalCores(execution_slots),
+                         totalThreads(execution_slots), availableCores(0), availableThreads(0),
+                         chips(), socket_exclusive(false)
+
+  {
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+    
+  Chip c(execution_slots);
+  this->chips.push_back(c);
   }
 
 
@@ -44,7 +61,9 @@ Socket::Socket() : id (0), memory(0), totalThreads(0), socket_exclusive(false), 
 
 Socket::Socket(
 
-  const std::string &json_layout) : id (0), memory(0), totalThreads(0), socket_exclusive(false), totalCores(0)
+  const std::string &json_layout) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                    availableCores(0), availableThreads(0), chips(),
+                                    socket_exclusive(false)
 
   {
   const char *chip_str = "\"numanode\":{";
@@ -282,7 +301,12 @@ void Socket::setMemory(
   hwloc_uint64_t memory)
 
   {
+  long long per_socket = memory / this->chips.size();
   this->memory = memory;
+  this->available_memory = memory;
+  
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    this->chips[i].setMemory(per_socket);
   }
 
 void Socket::setId(
@@ -356,24 +380,38 @@ void Socket::update_internal_counts(
  * @return - the number of tasks from r that could be placed on this socket
  */
 
-int Socket::how_many_tasks_fit(
+float Socket::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  int num_that_fit = 0;
+  float num_that_fit = 0;
 
   if ((this->socket_exclusive == false) &&
       ((place_type != exclusive_socket) ||
        (this->is_available() == true)))
     {
-    for (unsigned int i = 0; i < this->chips.size(); i++)
-      num_that_fit += this->chips[i].how_many_tasks_fit(r, place_type);
+    int numa = r.get_numa_nodes();
 
-    if ((num_that_fit > 1) &&
-        (r.getPlacementType() == place_socket))
-      num_that_fit = 1;
+    if (numa > 1)
+      {
+      // If numa > 1, place_type = exclusive_numa, so each chip is 1 piece at most.
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        if (this->chips[i].how_many_tasks_fit(r, place_type) > 0)
+          num_that_fit += 1;
+
+      num_that_fit /= numa;
+      }
+    else
+      {
+      for (unsigned int i = 0; i < this->chips.size(); i++)
+        num_that_fit += this->chips[i].how_many_tasks_fit(r, place_type);
+
+      if ((num_that_fit > 1) &&
+          (r.getPlacementType() == place_socket))
+        num_that_fit = 1;
+      }
     }
 
   return(num_that_fit);
@@ -409,7 +447,6 @@ bool Socket::spread_place_pu(
   int         &mics_remaining)
 
   {
-  int rc;
   bool placed = false;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)
@@ -639,11 +676,20 @@ bool Socket::fits_on_socket(
   bool fits = false;
   if (this->getAvailableMemory() >= remaining.memory)
     {
+    int max_cpus = remaining.cpus;
+    if (remaining.place_cpus > 0)
+      max_cpus = remaining.place_cpus;
+
     if ((remaining.cores_only == true) &&
-        (this->getAvailableCores() >= remaining.cpus))
+        (this->getAvailableCores() >= max_cpus))
       fits = true;
+    else if (remaining.place_type == exclusive_legacy)
+      {
+      if (this->getAvailableCores() >= max_cpus)
+        fits = true;
+      }
     else if ((remaining.cores_only == false) &&
-             (this->getAvailableThreads() >= remaining.cpus))
+             (this->getAvailableThreads() >= max_cpus))
       fits = true;
     }
 

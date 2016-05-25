@@ -8,6 +8,7 @@
 #include "mom_hierarchy.h" /* mom_hierarchy_t */
 #include "threadpool.h" /* threadpool_t */
 #include "u_tree.h" /* NodeEntry, AvlTree */
+#include "pbs_job.h"
 
 /* u_MXML.c */
 int MXMLExtractE(mxml_t *E, mxml_t *C, mxml_t **CP);
@@ -113,3 +114,7 @@ int unescape_xml(char *in, char *out, int size);
 
 /* u_putenv.c */
 int put_env_var(const char *, const char *);
+
+/* u_misc.c */
+bool have_incompatible_dash_l_resource(job *pjob);
+

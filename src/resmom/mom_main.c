@@ -70,7 +70,7 @@
 #include "../lib/Liblog/chk_file_sec.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "net_connect.h"
 #include "dis.h"
@@ -105,6 +105,9 @@
 #include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
+#ifdef ENABLE_PMIX
+#include "pmix_server.h"
+#endif
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -141,6 +144,12 @@ char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
 char           Torque_Info_SysVersion[MAX_LINE];
 int            MOMJobDirStickySet = FALSE;
+const int      OBIT_BUSY_RETRY = 6;
+const int      OBIT_RETRY_LIMIT = 5;
+// The server should reply to an obit within 30 seconds even when it's extremely busy
+const int      ALREADY_EXITED_RETRY_TIME = 30;
+const int      OBIT_SENT_WAIT_TIME = 10;
+const int      MINUS_ONE_RETRY_TIME = 15;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -165,6 +174,7 @@ int          num_var_env;
 bool         received_cluster_addrs;
 time_t       requested_cluster_addrs;
 time_t       first_update_time = 0;
+char        *path_pbs_environment;
 char        *path_epilog;
 char        *path_epilogp;
 char        *path_epiloguser;
@@ -182,11 +192,15 @@ char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
 
+bool         use_path_home = false;
+
 sem_t *delete_job_files_sem;
 extern std::vector<std::string> mom_status;
 #ifdef NVIDIA_GPUS
 extern std::vector<std::string> global_gpu_status;
+unsigned int global_gpu_count;
 #endif
+uint32_t     global_mic_count;
 extern int  multi_mom;
 char        *path_layout;
 extern char *msg_daemonname;          /* for logs     */
@@ -216,6 +230,10 @@ mom_hierarchy_t  *mh = NULL;
 #ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
 #endif
+#ifdef ENABLE_PMIX
+std::string                 topology_xml;
+extern pmix_server_module_t psm;
+#endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -226,11 +244,12 @@ hwloc_topology_t topology = NULL;       /* system topology */
 #endif
 
 
+
 /* externs */
 
 extern long     MaxConnectTimeout;
 
-time_t          pbs_tcp_timeout = PMOMTCPTIMEOUT;
+extern time_t   pbs_tcp_timeout;
 
 time_t          LastServerUpdateTime = 0;  /* NOTE: all servers updated together */
 bool            ForceServerUpdate = false;
@@ -259,6 +278,7 @@ pjobexec_t      TMOMStartInfo[TMAX_JE];
 
 /* prototypes */
 
+void            read_mom_hierarchy();
 void            sort_paths();
 void            resend_things();
 extern void     add_resc_def(char *, char *);
@@ -271,10 +291,11 @@ extern int      post_epilogue(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(const char *str);
+extern int      check_for_mics(uint32_t& mic_count);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
-extern int      init_nvidia_nvml();
+extern int      init_nvidia_nvml(unsigned int &device_count);
 extern int      shut_nvidia_nvml();
 #endif  /* NVML_API */
 extern int      check_nvidia_setup();
@@ -1265,6 +1286,7 @@ void process_hup(void)
   clear_servers();
   reset_config_vars();
   read_config(NULL);
+  read_mom_hierarchy();
   check_log();
   cleanup();
 
@@ -1856,13 +1878,15 @@ void add_diag_prolog_epilog_info(
   {
   struct stat s;
 
-  int prologfound = 0;
+  bool prologfound = false;
+  bool epilogfound = false;
 
+  //Prolog
   if (stat(path_prolog, &s) != -1)
     {
     output << "Prolog:                 " << path_prolog << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
     }
   else if (verbositylevel >= 2)
     {
@@ -1873,15 +1897,34 @@ void add_diag_prolog_epilog_info(
     {
     output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
+    }  
+
+  //Epilog
+  if (stat(path_epilog, &s) != -1)
+    {
+    output << "Epilog:                 " << path_epilog << " (enabled)\n";
+
+    epilogfound = true;
+    }
+  else if (verbositylevel >= 2)
+    {
+    output << "Epilog:                 " << path_epilog << " (disabled)\n";
     }
 
-  if (prologfound == 1)
+  if (stat(path_epilogp, &s) != -1)
     {
-    output << "Prolog Alarm Time:      " << pe_alarm_time << " seconds\n";
+    output << "Parallel Epilog:        " << path_epilogp << " (enabled)\n";
+
+    epilogfound = true;
+    }
+
+  if ((prologfound == true) ||
+      (epilogfound == true))
+    {
+    output << "Prolog/Epilog Alarm Time:      " << pe_alarm_time << " seconds\n";
     }
   }
-
 
 
 void add_diag_alarm_time(
@@ -1936,14 +1979,12 @@ void add_diag_jobs_session_ids(
 
   {
   bool  first = true;
-  task *ptask;
 
   output << " sidlist=";
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
     /* only check on tasks that we think should still be around */
     if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
@@ -2786,8 +2827,12 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    sprintf(log_buffer, "write request response failed: %s",
-      dis_emsg[ret]);
+    if (ret <= DIS_INVALID)
+      sprintf(log_buffer, "write request response failed: %s",
+        dis_emsg[ret]);
+    else
+      sprintf(log_buffer, "write request response failed with rc: %d", ret);
+
     log_err(errno, __func__, log_buffer);
 
     return(ret);
@@ -3032,6 +3077,11 @@ int rm_request(
       shut_nvidia_nvml();
 #endif  /* NVIDIA_GPUS and NVML_API */
 
+      /* We use delete_job_files_sem to make sure
+         there are no outstanding job cleanup routines
+         in progress before we exit. delete_job_files_sem
+         must be 0 before we quit
+       */
       if (thread_unlink_calls == true)
         {
         int sem_val;
@@ -3461,7 +3511,6 @@ int kill_job(
   const char *why_killed_reason) /* I - reason for killing */
 
   {
-  task *ptask;
   int   ct = 0;
 
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
@@ -3503,10 +3552,10 @@ int kill_job(
       }
     }
 
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-  while (ptask != NULL)
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
@@ -3521,8 +3570,7 @@ int kill_job(
       ct += kill_task(pjob, ptask, sig, 0);
       }
 
-    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-    }  /* END while (ptask != NULL) */
+    }  /* END for each task */
 
   if (LOGLEVEL >= 6)
     {
@@ -4258,6 +4306,7 @@ void parse_command_line(
       case 'd': /* directory */
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -4607,9 +4656,24 @@ int cg_initialize_hwloc_topology()
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    log_err(-1, msg_daemonname, "Unable to initialize machine topology");
     return(-1);
     }
+
+#ifdef ENABLE_PMIX
+  int   topology_size = 0;
+  char *xml_buf = NULL;
+
+  if (hwloc_topology_export_xmlbuffer(topology, &xml_buf, &topology_size) == -1)
+    {
+    log_err(-1, msg_daemonname, "Unable to get an xml representation of the machine topology");
+    return(-1);
+    }
+
+  topology_xml = xml_buf;
+
+  hwloc_free_xmlbuffer(topology, xml_buf);
+#endif
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
@@ -4739,7 +4803,15 @@ int setup_program_environment(void)
 
   /* modify program environment */
 
-  if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
+  if (use_path_home == true)
+    {
+    path_pbs_environment = mk_dirs("pbs_environment");
+    if ((num_var_env = setup_env(path_pbs_environment)) == -1)
+      {
+      exit(1);
+      }
+    }
+  else if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
     {
     exit(1);
     }
@@ -4862,7 +4934,10 @@ int setup_program_environment(void)
 
   c |= chk_file_sec(path_undeliv, 1, 1, S_IWOTH,         0, NULL);
 
-  c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  if (use_path_home == true)
+    c |= chk_file_sec(path_pbs_environment,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
+  else
+    c |= chk_file_sec(PBS_ENVIRON,  0, 0, S_IWGRP | S_IWOTH, 0, NULL);
 
   if (c)
     {
@@ -4874,6 +4949,9 @@ int setup_program_environment(void)
   if (hostname_specified == 0)
     {
     hostc = gethostname(mom_host, PBS_MAXHOSTNAME);
+    hostname_specified = 1;
+    if (hostc == 0)
+      hostc = 1;
     }
 
   if (!multi_mom)
@@ -5019,7 +5097,18 @@ int setup_program_environment(void)
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
-
+#ifdef ENABLE_PMIX
+  pmix_status_t pmix_rc;
+  //pmix_info_t   info[1];
+  if ((pmix_rc = PMIx_server_init(&psm, NULL, 0)) != PMIX_SUCCESS)
+    {
+/*  Uncomment once PMIx bug is fixed
+ *  const char *err_msg = PMIx_Error_string(pmix_rc);
+    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
+    fprintf(stderr, "%s", log_buffer);*/
+    return(1);
+    }
+#endif
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -5732,7 +5821,6 @@ void examine_all_running_jobs(void)
 #ifdef _CRAY
   int         c;
 #endif
-  task         *ptask;
   
   std::list<job *>::iterator iter;
 
@@ -5786,10 +5874,9 @@ void examine_all_running_jobs(void)
       {
       pjob->ji_flags &= ~MOM_NO_PROC;
 
-      for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-           ptask != NULL;
-           ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task *ptask = pjob->ji_tasks->at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5829,7 +5916,7 @@ void examine_all_running_jobs(void)
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
-        }    /* END while (ptask != NULL) */
+        }    /* END for each task */
       }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
 
@@ -5874,7 +5961,7 @@ void resend_waiting_joins(
     if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
       {
       /* we haven't received the reply yet */
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {
@@ -5930,22 +6017,105 @@ void check_jobs_awaiting_join_job_reply()
 
 
 
+bool should_resend_obit(
+
+  job *pjob,
+  int  diff)
+
+  {
+  bool resend = false;
+
+  // Only check jobs in substates that have to do with exiting.
+  if (pjob->ji_qs.ji_substate < JOB_SUBSTATE_MOM_WAIT)
+    return(resend);
+      
+  if ((pjob->ji_obit_busy_time != 0) &&
+      (time_now - pjob->ji_obit_busy_time >= diff))
+    resend = true;
+  
+  switch (pjob->ji_qs.ji_substate)
+    {
+    case JOB_SUBSTATE_PREOBIT:
+
+      // This means we never sent an obit
+      resend = true;
+      break;
+
+    case JOB_SUBSTATE_OBIT:
+
+      // This means we sent the obit but didn't get a reply.
+      if ((pjob->ji_obit_sent != 0) &&
+          (time_now - pjob->ji_obit_sent >= OBIT_SENT_WAIT_TIME))
+        resend = true;
+      else
+        {
+        // Make sure this job is in the exiting job list
+        bool found = false;
+
+        for (unsigned int i = 0; i < exiting_job_list.size(); i++)
+          {
+          if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+            {
+            found = true;
+            break;
+            }
+          }
+
+        if (found == false)
+          {
+          exiting_job_info e(pjob->ji_qs.ji_jobid);
+          exiting_job_list.push_back(e);
+          }
+        }
+
+      break;
+
+    case JOB_SUBSTATE_EXITED:
+      
+      // We have passed the time we're willing to wait for the server to clean us up.
+      if ((pjob->ji_exited_time != 0) &&
+          (time_now - pjob->ji_exited_time > ALREADY_EXITED_RETRY_TIME))
+        resend = true;
+
+      break;
+
+    case JOB_SUBSTATE_EXITING:
+      
+      // Make sure we aren't stuck in exiting
+      if ((pjob->ji_obit_minus_one_time != 0) &&
+          (time_now - pjob->ji_obit_minus_one_time > MINUS_ONE_RETRY_TIME))
+        resend = true;
+
+      break;
+    }
+
+  return(resend);
+  } // END should_resend_obit()
+
+
+
 void check_jobs_in_obit()
 
   {
   job    *pjob;
   time_now = time(NULL);
   std::list<job *>::iterator iter;
+  // Add a random element for retries so that all moms aren't retrying at the same time
+  int diff = OBIT_BUSY_RETRY + (rand() % 5);
+  int retried = 0;
 
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end() && retried < OBIT_RETRY_LIMIT; iter++)
     {
     pjob = *iter;
 
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PREOBIT) &&
-        (am_i_mother_superior(*pjob) == true))
+    if (am_i_mother_superior(*pjob))
       {
-      // retry sending the obit for this job
-      post_epilogue(pjob, MOM_OBIT_RETRY);
+      if (should_resend_obit(pjob, diff) == true)
+        {
+        // retry sending the obit for this job
+        post_epilogue(pjob, MOM_OBIT_RETRY);
+        retried++;
+        }
       }
     }
   }
@@ -5956,6 +6126,11 @@ void check_jobs_in_mom_wait()
 
   {
   job    *pjob;
+  unsigned int momport = 0;
+
+  if (multi_mom)
+    momport = pbs_rm_port;
+  
   time_now = time(NULL);
   std::list<job *>::iterator iter;
 
@@ -5978,7 +6153,7 @@ void check_jobs_in_mom_wait()
 
         pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-        job_save(pjob, SAVEJOB_QUICK, pbs_rm_port);
+        job_save(pjob, SAVEJOB_QUICK, momport);
 
         exiting_tasks = 1;
         }
@@ -6021,20 +6196,21 @@ bool call_scan_for_exiting()
 void check_exiting_jobs()
 
   {
-  job                      *pjob;
-  time_t                    time_now = time(NULL);
-  std::vector<std::string>  to_remove;
+  job                           *pjob;
+  std::vector<std::string>       to_remove;
+  std::vector<exiting_job_info>  to_reinsert;
+  time_now = time(NULL);
 
   for (unsigned int i = 0; i < exiting_job_list.size(); i++)
     {
     exiting_job_info eji = exiting_job_list.back();
     exiting_job_list.pop_back();
 
-    if ((time_now - eji.obit_sent) < pe_alarm_time)
+    if ((time_now - eji.obit_sent) < pe_alarm_time / 10)
       {
       /* insert this back at the front */
-      exiting_job_list.insert(exiting_job_list.begin(), eji);
-      break;
+      to_reinsert.insert(to_reinsert.begin(), eji);
+      continue;
       }
 
     pjob = mom_find_job(eji.jobid.c_str());
@@ -6042,11 +6218,35 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+          (pjob->ji_momsubt != 0) &&
+          (kill(pjob->ji_momsubt, 0)))
+        {
+        if (errno == ESRCH)
+          {
+          // The epilog is gone but we didn't catch it
+          post_epilogue(pjob, 0);
+          eji.obit_sent = time_now;
+          to_reinsert.push_back(eji);
+          continue;
+          }
+        }
+      
+      if ((time_now - eji.obit_sent) < pe_alarm_time)
+        {
+        /* insert this back at the front */
+        to_reinsert.insert(to_reinsert.begin(), eji);
+        continue;
+        }
+         
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
-      exiting_job_list.push_back(eji);
+      to_reinsert.push_back(eji);
       }
     }
+
+  for (unsigned int i = 0; i < to_reinsert.size(); i++)
+    exiting_job_list.push_back(to_reinsert[i]);
   } /* END check_exiting_jobs() */
 
 
@@ -6113,17 +6313,17 @@ void prepare_child_tasks_for_delete()
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
-    task *pTask;
 
-    for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
+    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
+      task *pTask = pJob->ji_tasks->at(i);
 
       char buf[128];
 
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)pTask->ti_qs.ti_sid,
+              pTask->ti_qs.ti_sid,
               pTask->ti_qs.ti_task,
               pJob->ji_qs.ji_jobid);
 
@@ -6214,8 +6414,7 @@ void main_loop(void)
 
 #ifdef USESAVEDRESOURCES
     /* if -p, must poll tasks inside jobs to look for completion */
-    if ((check_dead) &&
-        (recover == JOB_RECOV_RUNNING))
+    if ((check_dead))
       scan_non_child_tasks();
 #endif
 
@@ -6249,14 +6448,22 @@ void main_loop(void)
 
     /* if -p, must poll tasks inside jobs to look for completion */
 
-    if (recover == JOB_RECOV_RUNNING)
-      scan_non_child_tasks();
 
     if (recover == JOB_RECOV_DELETE)
       {
       prepare_child_tasks_for_delete();
       /* we can only do this once so set recover back to the default */
       recover = JOB_RECOV_RUNNING;
+      }
+    else if (recover != JOB_RECOV_TERM_REQUE)
+      {
+      scan_non_child_tasks();
+      }
+    else
+      { /* recover is set to JOB_RECOV_TERM_REQUE. Wait for all
+           the jobs to be removed before starting to run more jobs. */
+      if (alljobs_list.size() == 0)
+        recover = JOB_RECOV_RUNNING;
       }
 
     check_jobs_awaiting_join_job_reply();
@@ -6310,6 +6517,10 @@ void main_loop(void)
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
+
+#ifdef ENABLE_PMIX
+  PMIx_server_finalize();
+#endif
 
   return;
   }        /* END main_loop() */
@@ -6723,7 +6934,6 @@ int setup_nodeboards()
 
 
 
-
 /* 
  *
  * @see main_loop() - child
@@ -6776,12 +6986,16 @@ int main(
     return -1;
     }
 
+#ifdef MIC
+  check_for_mics(global_mic_count);
+#endif
+
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
 /* Due to differences in the NVIDIA libraries, NVML initialization must be done 
  * after the MOM is daemonized which happens in setup_program_environment.
  * */
-  if (!init_nvidia_nvml())
+  if (!init_nvidia_nvml(global_gpu_count))
     {
     use_nvidia_gpu = FALSE;
     }
@@ -6850,12 +7064,13 @@ int main(
 
 im_compose_info *create_compose_reply_info(
     
-  char       *jobid,
-  char       *cookie,
+  const char *jobid,
+  const char *cookie,
   hnodent    *np,
   int         command,
   tm_event_t  event,
-  tm_task_id  taskid)
+  tm_task_id  taskid,
+  const char *data)
 
   {
   im_compose_info *ici = (im_compose_info *)calloc(1, sizeof(im_compose_info));
@@ -6868,6 +7083,9 @@ im_compose_info *create_compose_reply_info(
     ici->command = command;
     ici->event   = event;
     ici->taskid  = taskid;
+
+    if (data != NULL)
+      ici->data = strdup(data);
     }
   else
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
@@ -6903,7 +7121,7 @@ int resend_compose_reply(
   struct tcp_chan *chan = NULL;
 
   np = &ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -6942,7 +7160,7 @@ int resend_kill_job_reply(
   struct tcp_chan *chan = NULL;
         
   np = &kj->ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -6994,7 +7212,7 @@ int resend_spawn_task_reply(
   int      ret = -1;
   hnodent *np = &st->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -7036,7 +7254,7 @@ int resend_obit_task_reply(
   int              ret = -1;
   hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {

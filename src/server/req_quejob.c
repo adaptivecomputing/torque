@@ -116,7 +116,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
@@ -2249,16 +2249,16 @@ int req_commit(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, NULL, false)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
     if (rc != PBSE_JOB_RECYCLED)
       {
       if (LOGLEVEL >= 6)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot queue job %s",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
           pj->ji_qs.ji_jobid);
         
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
         }
 
       svr_job_purge(pj);
@@ -2313,6 +2313,15 @@ int req_commit(
 
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
       {
+      // unlock the queue so it can be purged
+      pque_mutex.unlock();
+#ifdef UT_REQ_QUEJOB
+      // req_quejob unit test
+      rc = pque_mutex.unlock();
+      // expect to return PBSE_MUTEX_ALREADY_UNLOCKED
+      return(rc);
+#endif
+
       rc = PBSE_CAN_NOT_SAVE_FILE;
       if (LOGLEVEL >= 6)
         {
