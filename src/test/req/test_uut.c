@@ -770,6 +770,7 @@ Suite *req_suite(void)
   tc_core = tcase_create("test_setters");
   tcase_add_test(tc_core, test_set_place_value);
   tcase_add_test(tc_core, test_set_hostlist);
+  tcase_add_test(tc_core, test_get_task_stats);
   suite_add_tcase(s, tc_core);
   
   return(s);

@@ -110,3 +110,7 @@ int record_node_property_list(std::string const &propstr, tlist_head *atrlist_pt
   // return ok
   return(0);
   }
+
+pbsnode *alps_reporter;
+const char *alps_reporter_feature  = "alps_reporter";
+const char *alps_starter_feature   = "alps_login";

@@ -180,7 +180,6 @@ START_TEST(test_get_num_reqs)
   {
   complete_req c;
   std::string hostname = "kmn";
-  unsigned long swap;
 
   req r1;
   req r2;
@@ -327,6 +326,7 @@ Suite *complete_req_suite(void)
 
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
+  tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_to_string");
