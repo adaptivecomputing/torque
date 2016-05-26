@@ -975,8 +975,10 @@ if test "x$enable_cpuset" = "xyes" ; then
   AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
   dnl define geometry requests to allow these to be requested here
   dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+  RPM_AC_OPTS="$RPM_AC_OPTS --with cpuset"
 else
   AC_MSG_RESULT([no])
+  RPM_AC_OPTS="$RPM_AC_OPTS --without cpuset"
 fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
