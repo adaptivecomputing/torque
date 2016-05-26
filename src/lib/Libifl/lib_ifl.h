@@ -69,6 +69,7 @@ int PBSD_status_put(int c, int function, char *id, struct attrl *attrib, char *e
 int PBSD_rdytocmt(int connect, char *jobid);
 int PBSD_commit_get_sid(int connect, long *sid, char *jobid); 
 int PBSD_commit(int connect, char *jobid); 
+int PBSD_commit2(int connect, char *jobid); 
 int pbs_submit_hash(
   int                socket,
   job_data_container *job_attr,
@@ -362,6 +363,7 @@ struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *exten
 
 /* pbsD_submit.c */
 char *pbs_submit_err(int c, struct attropl *attrib, char *script, char *destination, char *extend, int *); 
+char *pbs_submit2_err(int c, struct attropl *attrib, char *script, char *destination, char *extend, int *); 
 
 /* pbsD_termin.c */
 int pbs_terminate_err(int c, int manner, char *extend, int *);

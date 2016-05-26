@@ -682,9 +682,11 @@ int process_request(
       case PBS_BATCH_JobCred:
       case PBS_BATCH_MoveJob:
       case PBS_BATCH_QueueJob:
+      case PBS_BATCH_QueueJob2:
       case PBS_BATCH_RunJob:
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
+      case PBS_BATCH_jobscript2:
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
 
@@ -733,6 +735,12 @@ int dispatch_request(
 
   switch (request->rq_type)
     {
+    case PBS_BATCH_QueueJob2:
+
+      net_add_close_func(sfds, close_quejob);
+      rc = req_quejob2(request);
+      
+      break;
     case PBS_BATCH_QueueJob:
 
       net_add_close_func(sfds, close_quejob);
@@ -743,6 +751,12 @@ int dispatch_request(
 
     case PBS_BATCH_JobCred:
       rc = req_jobcredential(request);
+      break;
+
+    case PBS_BATCH_jobscript2:
+     
+      rc = req_jobscript2(request);
+      
       break;
 
 
@@ -759,6 +773,12 @@ int dispatch_request(
       
       break;
 
+
+    case PBS_BATCH_Commit2:
+      
+      rc = req_commit2(request);
+      
+      break;
 
     case PBS_BATCH_Commit:
       
@@ -1164,6 +1184,16 @@ void free_br(
       break;
 
     case PBS_BATCH_MvJobFile:
+
+    case PBS_BATCH_jobscript2:
+
+      if (preq->rq_ind.rq_jobfile.rq_data)
+        {
+        free(preq->rq_ind.rq_jobfile.rq_data);
+        preq->rq_ind.rq_jobfile.rq_data = NULL;
+        }
+      break;
+
 
     case PBS_BATCH_jobscript:
 

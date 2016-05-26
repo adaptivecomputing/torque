@@ -82,8 +82,10 @@ int pbs_submit_hash(
   char              **msg);
 /* static int PBSD_scbuf(int c, int reqtype, int seq, char *buf, int len, char *jobid, enum job_file which);  */
 int PBSD_jscript(int c, const char *script_file, const char *jobid);
+int PBSD_jscript2(int c, const char *script_file, const char *jobid);
 int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file which);
 char *PBSD_queuejob(int connect, int *, const char *jobid, const char *destin, struct attropl *attrib, char *extend);
+char *PBSD_queuejob2(int connect, int *, const char *jobid, const char *destin, struct attropl *attrib, char *extend);
 int PBSD_QueueJob_hash(int connect, char *jobid, char *destin, job_data *job_attr, job_data *res_attr, char *extend, char **job_id, char **msg);
 
 /* PBS_attr.c */
@@ -364,6 +366,7 @@ struct batch_status *pbs_statserver_err(int c, struct attrl *attrib, char *exten
 
 /* pbsD_submit.c */
 char *pbs_submit_err(int c, struct attropl *attrib, char *script, char *destination, char *extend, int *); 
+char *pbs_submit2_err(int c, struct attropl *attrib, char *script, char *destination, char *extend, int *); 
 
 /* pbsD_termin.c */
 int pbs_terminate_err(int c, int manner, char *extend, int *);

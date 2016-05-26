@@ -6,6 +6,7 @@
 #include "u_hash_map_structs.h" /* job_data */
 #include "attribute.h" /* attropl */
 
+bool exit_called = false;
 struct connect_handle connection[10];
 char pbs_current_user[PBS_MAXUSER];
 const char *dis_emsg[] =

@@ -271,6 +271,9 @@ PBS_free_aopl (struct attropl * aoplp);
 
 
 int
+PBSD_commit2 (int connect, char *jobid);
+
+int
 PBSD_commit (int connect, char *jobid);
 
 int
@@ -278,6 +281,7 @@ PBSD_jcred (int connect, char *buf, int len);
 
 int
 PBSD_jscript (int connect, const char *script_file, const char *jobid);
+int PBSD_jscript2 (int connect, const char *script_file, const char *jobid);
 
 int
 PBSD_mgr_put (int connect, int func, int cmd, int objtype, const char *objname, struct attropl *al, char *extend);
@@ -317,7 +321,9 @@ struct batch_status *PBSD_status(int c, int function, int *, char *id, struct at
 struct batch_status *PBSD_status_get(int *local_errno, int c);
 
 char *PBSD_queuejob (int c, int *, const char *j, const char *d, struct attropl *a, char *ex);
+char *PBSD_queuejob2 (int c, int *, const char *j, const char *d, struct attropl *a, char *ex);
 int PBSD_QueueJob_hash(int c, char *j, char *d, job_data_container *ja, job_data_container *ra, char *ex, char **job_id, char **msg);
+int PBSD_QueueJob2_hash(int c, const char *j, const char *d, job_data_container *ja, job_data_container *ra, const char *ex, char **job_id, char **msg);
 
 
 extern int decode_DIS_JobId (struct tcp_chan *chan, char *jobid);

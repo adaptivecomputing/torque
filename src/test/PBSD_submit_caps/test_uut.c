@@ -31,6 +31,20 @@ START_TEST(test_PBSD_queuejob)
   }
 END_TEST
 
+START_TEST(test_PBSD_QueueJob2_hash)
+  {
+  char *msg;
+  char *jobid;
+  job_data_container job_attr;
+  job_data_container res_attr;
+
+  fail_unless(PBSD_QueueJob2_hash(-1, "", "", &job_attr, &res_attr, "", &jobid, &msg) == PBSE_IVALREQ);
+  fail_unless(PBSD_QueueJob2_hash(PBS_NET_MAX_CONNECTIONS, "", "", &job_attr, &res_attr, "", &jobid, &msg) == PBSE_IVALREQ);
+
+  }
+END_TEST
+
+
 
 START_TEST(test_PBSD_scbuf)
   {
@@ -44,6 +58,13 @@ START_TEST(test_PBSD_commit)
   {
   fail_unless(PBSD_commit(-1, NULL) == PBSE_IVALREQ);
   fail_unless(PBSD_commit(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ);
+  }
+END_TEST
+
+START_TEST(test_PBSD_commit2)
+  {
+  fail_unless(PBSD_commit2(-1, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_commit2(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ);
   }
 END_TEST
 
@@ -112,20 +133,30 @@ START_TEST(test_PBSD_jscript)
   }
 END_TEST
 
+START_TEST(test_PBSD_jscript2)
+  {
+  fail_unless(PBSD_jscript2(-1, "", "") == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript2(PBS_NET_MAX_CONNECTIONS, "", "") == PBSE_IVALREQ);
+  }
+END_TEST
+
 
 Suite *PBSD_submit_caps_suite(void)
   {
   Suite *s = suite_create("PBSD_submit_caps_suite methods");
   TCase *tc_core = tcase_create("test_PBSD_queuejob");
   tcase_add_test(tc_core, test_PBSD_queuejob);
+  tcase_add_test(tc_core, test_PBSD_QueueJob2_hash);
   tcase_add_test(tc_core, test_PBSD_jobfile);
   tcase_add_test(tc_core, test_PBSD_jscript);
+  tcase_add_test(tc_core, test_PBSD_jscript2);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_PBSD_QueueJob_hash");
   tcase_add_test(tc_core, test_PBSD_QueueJob_hash);
   tcase_add_test(tc_core, test_PBSD_scbuf);
   tcase_add_test(tc_core, test_PBSD_commit);
+  tcase_add_test(tc_core, test_PBSD_commit2);
   tcase_add_test(tc_core, test_PBSD_commit_get_sid);
   tcase_add_test(tc_core, test_PBSD_rdytocmt);
   suite_add_tcase(s, tc_core);

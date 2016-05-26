@@ -45,9 +45,9 @@ PbsBatchReqType(PBS_BATCH_ReserveResc,          "ReserveResource")
 PbsBatchReqType(PBS_BATCH_ReleaseResc,          "ReleaseResource")
 PbsBatchReqType(PBS_BATCH_CheckpointJob,        "CheckpointJob")
 PbsBatchReqType(PBS_BATCH_AsyModifyJob,         "AsyncModifyJob")
-PbsBatchReqType(PBS_BATCH_GAP029,               "NONE")
-PbsBatchReqType(PBS_BATCH_GAP030,               "NONE")               /* = 30 */
-PbsBatchReqType(PBS_BATCH_GAP031,               "NONE")
+PbsBatchReqType(PBS_BATCH_QueueJob2,            "QueueJob2")
+PbsBatchReqType(PBS_BATCH_Commit2,              "Commit2")               /* = 30 */
+PbsBatchReqType(PBS_BATCH_jobscript2,           "JobScript2")
 PbsBatchReqType(PBS_BATCH_GAP032,               "NONE")
 PbsBatchReqType(PBS_BATCH_GAP033,               "NONE")
 PbsBatchReqType(PBS_BATCH_GAP034,               "NONE")

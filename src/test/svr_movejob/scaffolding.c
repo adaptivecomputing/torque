@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+#include "pbs_config.h"
 #include "libpbs.h" /* connect_handle */
 #include "attribute.h" /* attribute */
 #include "net_connect.h" /* pbs_net_t */
@@ -12,6 +13,11 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "threadpool.h"
 #include "array.h"
+#include "pbsnodes.h"
+#include "machine.hpp"
+#include "mom_hierarchy_handler.h"
+#include "id_map.hpp"
+
 
 threadpool_t *request_pool;
 char *path_jobs = strdup("/var/spool/torque/server_priv/jobs/");
@@ -35,6 +41,61 @@ bool jobfile_fail = false;
 bool rdycommit_fail = false;
 int  retry;
 bool connect_fail = false;
+
+mom_hierarchy_handler hierarchy_handler;
+std::string global_string;
+id_map node_mapper;
+struct pbsnode reporter;
+struct pbsnode *alps_reporter = &reporter;
+const char *alps_reporter_feature  = "alps_reporter";
+const char *alps_starter_feature   = "alps_login";
+
+void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices)
+  {
+  return;
+  }
+
+void capture_until_close_character(
+
+  char        **start,
+  std::string  &storage,
+  char          end)
+
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  } // capture_until_close_character()
+
+
+bool task_hosts_match(const char *one, const char *two)
+  {
+  return(true);
+  }
+
+void add_to_property_list(std::string &propstr, const char *token)
+  {
+  if (propstr.length() != 0)
+    propstr += ",";
+
+  propstr += token;
+  }
+
+
+
+
 
 void finish_sendmom(char *job_id, batch_request *preq, long start_time, char *node_name, int status, int o)
   {
@@ -443,4 +504,140 @@ job::job() {}
 job::~job() {}
 
 void update_failure_counts(const char *node_name, int rc) {}
+
+int pbs_getaddrinfo(const char *pNode, struct addrinfo  *pHints, struct addrinfo **ppAddrInfoOut)
+  {
+  return(0);
+  }
+
+int record_node_property_list(std::string const &propstr, tlist_head *atrlist_ptr)
+  {
+  if ((global_string.length() > 0) && (propstr != global_string))
+    {
+    // no match, return not ok
+    return(1);
+    }
+
+  // return ok
+  return(0);
+  }
+
+
+struct pbsnode *next_host(
+
+  all_nodes           *an,    /* I */
+  all_nodes_iterator **iter,  /* M */
+  struct pbsnode      *held)  /* I */
+
+  {
+  static struct pbsnode pnode;
+
+  return(&pnode);
+  }
+
+
+int is_whitespace(
+
+  char c)
+
+  {
+  if ((c == ' ')  ||
+      (c == '\n') ||
+      (c == '\t') ||
+      (c == '\r') ||
+      (c == '\f'))
+    return(TRUE);
+  else
+    return(FALSE);
+  } /* END is_whitespace */
+
+
+
+void move_past_whitespace(
+
+  char **str)
+
+  {
+  if ((str == NULL) ||
+      (*str == NULL))
+    return;
+
+  char *current = *str;
+
+  while (is_whitespace(*current) == TRUE)
+    current++;
+
+  *str = current;
+  } // END move_past_whitespace()
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev;
+  int   curr;
+
+  while (*ptr != '\0')
+    {
+    prev = strtol(ptr, &ptr, 10);
+
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
+  } /* END translate_range_string_to_vector() */
+
+#include "../../src/lib/Libutils/machine.cpp"
+#include "../../src/lib/Libutils/numa_socket.cpp"
+#include "../../src/lib/Libutils/numa_chip.cpp"
+#include "../../src/lib/Libutils/numa_core.cpp"
+#include "../../src/lib/Libutils/numa_pci_device.cpp"
+#include "../../src/lib/Libattr/req.cpp"
+#include "../../src/lib/Libattr/complete_req.cpp"
+#include "../../src/lib/Libutils/allocation.cpp"
+#include "../../src/server/pbsnode.cpp"
+#include "../../src/server/id_map.cpp"
+
+struct pbsnode *find_nodebyname(
+
+  const char *nodename)
+
+  {
+  static struct pbsnode pnode;
+
+  return(&pnode);
+  }
+
+void update_node_state(pbsnode *pnode, int state) 
+  {
+  pnode->nd_state = state;
+  }
+
 

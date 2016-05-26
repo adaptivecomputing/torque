@@ -250,6 +250,7 @@ int mutex_mgr::lock(){return 0;}
 int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *)) {return 0;}
 int  decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
+int req_runjob(batch_request *preq) {return(0);}
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq) {}
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 void free_unkn(pbs_attribute *pattr) {}
@@ -423,4 +424,16 @@ job::job()
   }
 
 job::~job() {}
+
+int node_avail_complex(
+
+  char *spec,   /* I - node spec */
+  int  *navail, /* O - number available */
+  int  *nalloc, /* O - number allocated */
+  int  *nresvd, /* O - number reserved  */
+  int  *ndown)  /* O - number down      */
+
+  {
+  return(0);
+  }
 

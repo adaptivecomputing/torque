@@ -199,6 +199,7 @@ int dis_request_read(
       break;
 
     case PBS_BATCH_QueueJob:
+    case PBS_BATCH_QueueJob2:
 
       CLEAR_HEAD(request->rq_ind.rq_queuejob.rq_attr);
 
@@ -213,6 +214,7 @@ int dis_request_read(
       break;
 
     case PBS_BATCH_jobscript:
+    case PBS_BATCH_jobscript2:
 
     case PBS_BATCH_MvJobFile:
 
@@ -223,6 +225,7 @@ int dis_request_read(
     case PBS_BATCH_RdytoCommit:
 
     case PBS_BATCH_Commit:
+    case PBS_BATCH_Commit2:
 
     case PBS_BATCH_Rerun:
 

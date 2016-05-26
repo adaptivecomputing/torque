@@ -997,6 +997,33 @@ int commit_job_on_mom(
   } /* END commit_job_on_mom() */
 
 
+int get_mom_node_version(
+  
+  char *job_id, 
+  int& version)
+
+  {
+  job *pjob;
+  pbsnode *pnode;
+  
+
+  pjob = svr_find_job(job_id, FALSE);
+  if (pjob == NULL)
+    return(PBSE_UNKJOBID);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  if (pnode == NULL)
+    return(PBSE_UNKNODE);
+
+  mutex_mgr node_mutex(&pnode->nd_mutex, true);
+  version = pnode->get_version();
+
+  return(PBSE_NONE);
+  }
+
+
 
 int send_job_over_network(
 
@@ -1020,6 +1047,7 @@ int send_job_over_network(
 
   {
   int  rc;
+  int  node_version;
 
   if (attempt_to_queue_job == true)
     {
@@ -1045,9 +1073,16 @@ int send_job_over_network(
       return(rc);
     }
 
-  if (PBSD_rdytocmt(con, job_id) != 0)
+  rc = get_mom_node_version(job_id, node_version);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  if (node_version < 610)
     {
-    return(LOCUTION_RETRY);
+    if (PBSD_rdytocmt(con, job_id) != 0)
+      {
+      return(LOCUTION_RETRY);
+      }
     }
 
   rc = commit_job_on_mom(con, job_id, timeout,mom_err);

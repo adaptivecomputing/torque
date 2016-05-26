@@ -40,15 +40,14 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_fa
                      nd_power_state_change_time(0), nd_acl(NULL),
                      nd_requestid(), nd_tmp_unlock_count(0)
 #ifdef PENABLE_LINUX_CGROUPS
-                     , nd_layout()
+                    , nd_layout()
 #endif
-
   {
   if (hierarchy_handler.isHiearchyLoaded())
     {
     this->nd_state |= INUSE_NOHIERARCHY; //This is a dynamic add so don't allow
                                           //the node to be used until an updated node
-                                          //list has been send to all nodes.
+                                          //list has been sent to all nodes.
     }
   
   memset(this->nd_ttl, 0, sizeof(this->nd_ttl));
