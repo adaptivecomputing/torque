@@ -414,8 +414,6 @@ void acct_close(
 
 
 
-
-
 /*
  * account_record - write basic accounting record
  */
@@ -637,6 +635,8 @@ void account_jobend(
 
   return;
   }  /* END account_jobend() */
+
+
 
 /*
  * acct_cleanup - remove the old accounting files

@@ -15,7 +15,7 @@ int get_svr_attr_arst(int index, struct array_strings **arst);
 
 extern int   chk_hold_priv(long hold, int priv);
 extern void  get_jobowner(char *from, char *to); 
-extern char *parse_servername(char *, unsigned int *);
+extern char *parse_servername(const char *, unsigned int *);
 extern void  process_Areply(int);
 extern void  *mom_process_request(void *);
 extern void  process_dis_request(int);

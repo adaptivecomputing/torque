@@ -18,4 +18,5 @@ int set_null(pbs_attribute *pattr, pbs_attribute *new_attr, enum batch_op op);
 
 int poke_scheduler(pbs_attribute *pattr, void *pobj, int actmode);
 
+int keep_completed_val_check(pbs_attribute *pattr, void *pobject, int actmode);
 #endif /* _SVR_FUNC_H */

@@ -130,3 +130,6 @@ char * netaddr_long(long ap, char *out)
   return(NULL);
   }
 
+job::job() {}
+job::~job() {}
+

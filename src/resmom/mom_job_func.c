@@ -116,6 +116,7 @@
 #include <pthread.h>
 #include <set>
 #include <semaphore.h>
+#include <arpa/inet.h>
 
 #include "pbs_ifl.h"
 #include "list_link.h"
@@ -159,7 +160,7 @@
 #define FALSE 0
 #endif
 
-extern pthread_mutex_t  *delete_job_files_mutex;
+extern pthread_mutex_t  delete_job_files_mutex;
 
 int conn_qsub(char *, long, char *);
 
@@ -365,7 +366,7 @@ int remtree(
 
     closedir(dir);
 
-    if (rmdir_ext(dirname) < 0)
+    if (rmdir_ext(dirname, 10) < 0)
       {
       if ((errno != ENOENT) && (errno != EINVAL))
         {
@@ -456,6 +457,16 @@ int conn_qsub(
   if (s < 0)
     {
     /* FAILURE */
+    char remote_addr[128];
+    socklen_t  size = 128;
+    uint32_t net_order = ntohl(hostaddr);
+
+    inet_ntop(AF_INET, (const void *)&net_order, remote_addr, size);
+
+    snprintf(EMsg, 1024, "Failed to connect to %s at address %s:%d",
+             hostname,
+             remote_addr,
+             (int)port);
 
     return(-1);
     }
@@ -508,6 +519,9 @@ job *job_alloc(void)
   pj->ji_stats_done = false;
 
   pj->ji_momhandle = -1;  /* mark mom connection invalid */
+#ifdef PENABLE_LINUX_CGROUPS
+  pj->ji_cgroups_created = false;
+#endif
 
   pj->ji_sigtermed_processes = new std::set<int>();
 
@@ -699,17 +713,23 @@ void *delete_job_files(
   char                  namebuf[MAXPATHLEN];
   int                   rc = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  mutex_mgr             sem_mutex(delete_job_files_mutex);
 
   if (thread_unlink_calls == true)
     {
+    /* this algorithm needs to make sure the 
+       thread for delete_job_files posts to the 
+       semaphore before it tries to lock the
+       delete_job_files_mutex. posting to delete_job_files_sem
+       lets other processes know there are threads still
+       cleaning up jobs
+     */
     rc = sem_post(delete_job_files_sem);
     if (rc)
       {
       log_err(-1, __func__, "failed to post delete_job_files_sem");
       }
     
-    sem_mutex.lock();
+    pthread_mutex_lock(&delete_job_files_mutex);
     }
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Delete the cpuset for the job. */
@@ -718,7 +738,7 @@ void *delete_job_files(
 
 #ifdef PENABLE_LINUX_CGROUPS
   /* We need to remove the cgroup hierarchy for this job */
-  trq_cg_delete_job_cgroups(jfdi->jobid);
+  trq_cg_delete_job_cgroups(jfdi->jobid, jfdi->cgroups_all_created);
 
   if (LOGLEVEL >=6)
     {
@@ -820,8 +840,12 @@ void *delete_job_files(
 
   if (thread_unlink_calls == true)
     {
+    /* decrement the delte_job_files_sem so 
+       other threads know this job is done
+       cleaning up 
+     */
     sem_wait(delete_job_files_sem);
-    sem_mutex.unlock();
+    pthread_mutex_unlock(&delete_job_files_mutex);
     }
   return(NULL);
   } /* END delete_job_files() */
@@ -930,6 +954,10 @@ void mom_job_purge(
 
   jfdi->gid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
   jfdi->uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  jfdi->cgroups_all_created = pjob->ji_cgroups_created;
+#endif
 
   /* remove each pid in ji_job_pid_set from the global_job_sid_set */
   for (job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->begin();
@@ -1044,6 +1072,47 @@ job *mom_find_job(
 
   return(NULL);
   }   /* END mom_find_job() */
+
+
+
+/*
+ * mom_find_job_by_int_id()
+ *
+ * Finds a job using just the integer portion of the job id
+ * @return the job, or NULL if no local job has that integer id
+ */
+
+job *mom_find_job_by_int_id(
+
+  int jobid)
+
+  {
+  char  job_id_buf[PBS_MAXSVRJOBID + 1];
+  job  *pjob;
+  int   job_id_buf_len;
+
+  job_id_buf_len = sprintf(job_id_buf, "%d", jobid);
+
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+    {
+    pjob = *iter;
+
+    // Compare just the numeric portion of the id
+    if (!strncmp(pjob->ji_qs.ji_jobid, job_id_buf, job_id_buf_len))
+      {
+      // Make sure the job's numeric portion as ended
+      if ((pjob->ji_qs.ji_jobid[job_id_buf_len] == '.') ||
+          (pjob->ji_qs.ji_jobid[job_id_buf_len] == '\0'))
+      // Found the job
+      return(pjob);
+      }
+    }
+
+  // Not found - we return from the loop if we find the job
+  return(NULL);
+  } // END mom_find_job_by_int_id()
 
 
 

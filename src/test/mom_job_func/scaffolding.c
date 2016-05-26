@@ -41,11 +41,9 @@ pthread_mutex_t *delete_job_files_mutex;
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   {
-  fprintf(stderr, "The call to clear_attr needs to be mocked!!\n");
-  exit(1);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr needs to be mocked!!\n");
   exit(1);
@@ -53,14 +51,10 @@ pbs_net_t get_hostaddr(int *local_errno, char *hostname)
 
 void delete_link(struct list_link *old)
   {
-  fprintf(stderr, "The call to delete_link needs to be mocked!!\n");
-  exit(1);
   }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text)
   {
-  fprintf(stderr, "The call to log_record needs to be mocked!!\n");
-  exit(1);
   }
 
 int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp)
@@ -71,14 +65,10 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp
 
 void log_ext(int errnum, const char *routine, const char *text, int severity)
   {
-  fprintf(stderr, "The call to log_ext needs to be mocked!!\n");
-  exit(1);
   }
 
 void MOMCheckRestart(void)
   {
-  fprintf(stderr, "The call to MOMCheckRestart needs to be mocked!!\n");
-  exit(1);
   }
 
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg)
@@ -89,32 +79,23 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 
 void *get_next(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void nodes_free(job *pj)
   {
-  fprintf(stderr, "The call to nodes_free needs to be mocked!!\n");
-  exit(1);
   }
 
 void mom_checkpoint_delete_files(job_file_delete_info *jfdi)
   {
-  fprintf(stderr, "The call to mom_checkpoint_delete_files needs to be mocked!!\n");
-  exit(1);
   }
 
 void log_err(int errnum, const char *routine, const char *text)
   {
-  fprintf(stderr, "The call to log_err needs to be mocked!!\n");
-  exit(1);
   }
 
 void close_conn(int sd, int has_mutex)
   {
-  fprintf(stderr, "The call to close_conn needs to be mocked!!\n");
-  exit(1);
   }
 
 void DIS_tcp_cleanup(struct tcp_chan *chan) {}
@@ -181,7 +162,8 @@ Machine          this_node;
 
 void trq_cg_delete_job_cgroups(
         
-      const char *job_id)
+  const char *job_id,
+  bool        successfully_created)
 
   {
   }

@@ -171,6 +171,7 @@ extern struct connection svr_conn[];
 extern bool          ForceServerUpdate;
 extern int           use_nvidia_gpu;
 extern int           internal_state;
+extern job_pid_set_t    global_job_sid_set;
 
 const char *PMOMCommand[] =
   {
@@ -215,6 +216,9 @@ extern void free_sisterlist(struct radix_buf **list, int radix);
 extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 int start_process(task *, char **, char **);
+#ifdef PENABLE_LINUX_CGROUPS
+int set_job_cgroup_memory_limits(job *pjob);
+#endif
  
 int allocate_demux_sockets(job *pjob, int flag);
 
@@ -538,7 +542,12 @@ task *pbs_task_create(
 
 
 
-
+/*
+ * task_find() 
+ *
+ * Finds a task based on its task id
+ * @return - the task, or NULL if not found
+ */
 
 task *task_find(
 
@@ -557,9 +566,38 @@ task *task_find(
     }
 
   return(ptask);
-  }
+  } // END task_find()
 
 
+
+/*
+ * find_task_by_pid()
+ *
+ * Looks at all tasks for one with a matching pid and returns that if found
+ *
+ * @param pjob - the job whose tasks we're inspecting
+ * @param pid - the pid we're looking for
+ * @return - the task, or NULL if not found
+ */
+
+task *find_task_by_pid(
+
+  job *pjob,
+  int  pid)
+
+  {
+  task *ptask;
+
+  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
+       ptask != NULL;
+       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+    {
+    if (ptask->ti_qs.ti_sid == pid)
+      break;
+    }
+
+  return(ptask);
+  } // END find_task_by_pid()
 
 
 
@@ -824,6 +862,13 @@ int send_sisters(
   eventent        *ep;
   char            *cookie;
   resend_momcomm  *mc;
+
+  // These moms have no sisters
+  if ((is_login_node == TRUE) ||
+      (is_reporter_mom == TRUE))
+    {
+    return(0);
+    }
 
   if (LOGLEVEL >= 4)
     {
@@ -2464,7 +2509,7 @@ int im_join_job_as_sister(
     }  /* END for (psatl) */
   
 #ifdef NVIDIA_GPUS
-  if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
+  if ((use_nvidia_gpu) && (setup_gpus_for_job(pjob) != PBSE_NONE))
     {
     sprintf(log_buffer, "%s: Could not set gpus mode for the job",
       __func__);
@@ -2614,11 +2659,62 @@ int im_join_job_as_sister(
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
 
 #ifdef PENABLE_LINUX_CGROUPS
-  if (trq_cg_create_all_cgroups(pjob) != PBSE_NONE)
+  ret = trq_cg_create_all_cgroups(pjob);
+  if (ret != PBSE_NONE)
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
     }
+
+  pjob->ji_cgroups_created = true;
+
+  ret = set_job_cgroup_memory_limits(pjob);
+  if (ret != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(errno, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
+    }
+
+  ret = trq_cg_add_devices_to_cgroup(pjob);
+  if (ret != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create device limits cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_err(errno, __func__, log_buffer);
+    send_im_error(ret, 1, pjob, cookie, event, fromtask);
+    
+    mom_job_purge(pjob);
+    
+    if (radix_hosts != NULL)
+      free(radix_hosts);
+
+    if (radix_ports != NULL)
+      free(radix_ports);
+
+    return(IM_DONE);
+    }
+
 #endif
     
   ret = run_prologue_scripts(pjob);
@@ -8125,6 +8221,9 @@ static int adoptSession(
   ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
   (void)task_save(ptask);
+
+  // Add the sid to our global job set
+  global_job_sid_set.insert(sid);
 
   /* Mark the job as running if we need to. This is copied from start_process() */
   if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)

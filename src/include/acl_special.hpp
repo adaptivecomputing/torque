@@ -1,3 +1,6 @@
+#ifndef ACL_SPECIAL_HPP
+#define ACL_SPECIAL_HPP
+
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
@@ -77,53 +80,31 @@
 * without reference to its choice of law rules.
 */
 
+#include "restricted_host.hpp"
 
-#include <pthread.h>
-#include "container.hpp"
-#include <vector>
 #include <string>
-#include "pbs_job.h"
+#include <map>
 
-#define INITIAL_NODE_LIST_SIZE          10
-#define INITIAL_RESERVATION_HOLDER_SIZE 100
+#define GROUP 0
+#define USER 1
 
-
-class alps_reservation
+class acl_special
   {
-public:
-  char            *rsv_id;         /* the reservation id */
-  std::vector<std::string> ar_node_names;/* the node ids associated with this reservation */
-  int              internal_job_id; /* the job id associated with this reservation */
+  // In ug_acls: string is the hostname
+  // restricted host holds user/group information for that hostname
+  std::map<std::string, restricted_host> ug_acls; // user/group acls
 
-  alps_reservation() : rsv_id(NULL), internal_job_id(-1)
-    {
-    }
-
-  alps_reservation(int job_int_id, const char *new_rsvid) : internal_job_id(job_int_id)
-    {
-    rsv_id = strdup(new_rsvid);
-    }
-
-  ~alps_reservation()
-    {
-    if (rsv_id != NULL)
-      free(rsv_id);
-    }
+  public:
+  acl_special();
+  void parse_qmgr_input(const std::string &qmgr_input, std::string &ident, std::string &host) const;
+  void add_user_configuration(const std::string &qmgr_input);
+  void add_group_configuration(const std::string &qmgr_input);
+  void remove_user_configuration(const std::string &qmgr_input);
+  void remove_group_configuration(const std::string &qmgr_input);
+  bool is_authorized(const std::string &host, const std::string &user) const;
+  void clear_users();
+  void clear_groups();
   };
 
-
-  typedef container::item_container<alps_reservation *>                 reservation_holder;
-  typedef container::item_container<alps_reservation *>::item_iterator  reservation_holder_iterator;
-
-extern reservation_holder alps_reservations;
-
-
-void initialize_alps_reservations();
-
-int track_alps_reservation(job *pjob);
-int remove_alps_reservation(char *rsv_id);
-bool is_orphaned(char *rsv_id, char *job_id);
-int already_recorded(const char *rsv_id);
-int insert_alps_reservation(alps_reservation *ar);
-void clear_all_alps_reservations();
+#endif
 

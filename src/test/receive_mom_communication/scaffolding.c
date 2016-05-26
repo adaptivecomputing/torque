@@ -5,9 +5,9 @@
 #include <netdb.h>
 
 #include "u_tree.h"
-#include "dynamic_string.h"
 #include "tcp.h"
 #include "pbs_job.h"
+#include "pbs_nodes.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "execution_slot_tracker.hpp"
@@ -88,15 +88,6 @@ int insert_addr_name_info(
   return(0);
   }
 
-dynamic_string *get_dynamic_string(
-    
-  int         initial_size, /* I (-1 means default) */
-  const char *str)          /* I (optional) */
-
-  {
-  return(0);
-  }
-
 int enqueue_threadpool_request(
 
   void *(*func)(void *),
@@ -142,8 +133,6 @@ struct pbsnode *find_nodebyname(
   {
   return(NULL);
   }
-
-void free_dynamic_string(dynamic_string *ds) {}
 
 int unlock_node(
     
@@ -216,11 +205,6 @@ long disrsl(
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
-
-int copy_to_end_of_dynamic_string(dynamic_string *ds, const char *to_copy) 
-  {
-  return(0);
-  }
 
 job *get_job_from_jobinfo(
     
@@ -345,16 +329,7 @@ struct prop *init_prop(
   char *pname) /* I */
 
   {
-  struct prop *pp;
-
-  if ((pp = (struct prop *)calloc(1, sizeof(struct prop))) != NULL)
-    {
-    pp->name    = pname;
-    pp->mark    = 0;
-    pp->next    = 0;
-    }
-
-  return(pp);
+  return(new prop(pname));
   }  /* END init_prop() */
 
 
@@ -896,6 +871,25 @@ bool task_hosts_match(const char *one, const char *two)
   return(true);
   }
 
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::lock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *hostname)
+  {
+  this->nd_name = hostname;
+  }
 
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
@@ -908,3 +902,15 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"
+#ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+

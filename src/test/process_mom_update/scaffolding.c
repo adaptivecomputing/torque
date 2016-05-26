@@ -341,6 +341,34 @@ id_map::id_map(){}
 
 id_map::~id_map(){}
 
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+pbsnode::pbsnode() : nd_note()
+  {
+  }
+
+pbsnode::~pbsnode() 
+  {
+  }
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *id)
+  {
+  this->nd_name = id;
+  }
+
 bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
@@ -354,3 +382,28 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
+
+#ifdef NVML_API
+void PCI_Device::initializeGpu(int x, hwloc_topology *fred)
+  { 
+  return;
+  } 
+  
+int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+
+#ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif
+

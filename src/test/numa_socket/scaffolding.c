@@ -82,6 +82,14 @@ Core::~Core()
   {
   }
 
+Chip::Chip(int np)
+  {
+  }
+
+void Chip::setMemory(hwloc_uint64_t mem)
+  {
+  }
+
 Chip::Chip(const std::string &json_layout)
   {
   json_chip++;
@@ -250,11 +258,16 @@ int allocation::add_allocation(const allocation &other)
   return(0);
   }
 
-req::req() {}
+req::req() : numa_nodes(1) {}
 std::string req::getPlacementType() const
 
   {
   return(my_placement_type);
+  }
+
+int req::get_numa_nodes() const
+  {
+  return(this->numa_nodes);
   }
 
 allocation::allocation() {}

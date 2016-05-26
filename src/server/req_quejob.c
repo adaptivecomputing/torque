@@ -126,7 +126,6 @@
 #include "threadpool.h"
 #include "job_func.h" /* svr_job_purge */
 #include "pbs_nodes.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "work_task.h"
@@ -725,7 +724,7 @@ int decode_attributes_into_job(
       {
       if (strcmp(psatl->al_atopl.resource, "nodes") == 0)
         {
-        pj->ji_have_nodes_request = 1;
+        pj->ji_have_nodes_request = true;
         }
       else if (!passCpu)
         {
@@ -1476,7 +1475,7 @@ int req_quejob(
     char  *oldid;
     char  *hostname;
     
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
     
     /* rewrite jobid to include empty brackets
        this causes arrays to show up as id[].host in qstat output, and 
@@ -1961,7 +1960,7 @@ int req_rdytocommit(
    */
   if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
     {
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
 
     // get adjusted path_jobs path
     adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
@@ -2042,9 +2041,9 @@ int set_interactive_job_roaming_policy(
         if (pnode != NULL)
           {
           pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = strdup(pnode->nd_name);
+          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = strdup(pnode->get_name());
           
-          unlock_node(pnode, __func__, NULL, LOGLEVEL);
+          pnode->unlock_node(__func__, NULL, LOGLEVEL);
           }
         else
           {
@@ -2155,7 +2154,7 @@ int req_commit(
     {
     std::string adjusted_path_jobs;
 
-    pj->ji_is_array_template = TRUE;
+    pj->ji_is_array_template = true;
     
     // get adjusted path_jobs path
     adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
@@ -2249,16 +2248,16 @@ int req_commit(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, NULL, false)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
     if (rc != PBSE_JOB_RECYCLED)
       {
       if (LOGLEVEL >= 6)
         {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot queue job %s",
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
           pj->ji_qs.ji_jobid);
         
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
         }
 
       svr_job_purge(pj);
@@ -2313,6 +2312,15 @@ int req_commit(
 
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
       {
+      // unlock the queue so it can be purged
+      pque_mutex.unlock();
+#ifdef UT_REQ_QUEJOB
+      // req_quejob unit test
+      rc = pque_mutex.unlock();
+      // expect to return PBSE_MUTEX_ALREADY_UNLOCKED
+      return(rc);
+#endif
+
       rc = PBSE_CAN_NOT_SAVE_FILE;
       if (LOGLEVEL >= 6)
         {

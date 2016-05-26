@@ -7,6 +7,7 @@
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <list>
 #include "pbs_error.h"
 #include "server.h" /* server */
 
@@ -16,38 +17,40 @@ const char *napali = "napali";
 const char *l11 =    "l11";
 struct server server;
 
+int   kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 bool  node_in_exechostlist(const char *, char *, const char *);
 char *get_next_exec_host(char **);
 int   job_should_be_killed(std::string &, int, struct pbsnode *);
-int   check_for_node_type(complete_spec_data *, enum node_types);
+int   check_for_node_type(complete_spec_data &, enum node_types);
 int   record_external_node(job *, struct pbsnode *);
-int save_node_for_adding(node_job_add_info *naji, struct pbsnode *pnode, single_spec_data *req, int first_node_id, int is_external_node, int req_rank);
+int save_node_for_adding(std::list<node_job_add_info> *naji_list, struct pbsnode *pnode, single_spec_data &req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
 void process_job_attribute_information(std::string &job_id, std::string &attributes);
-bool process_as_node_list(const char *spec, const node_job_add_info *naji);
-bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
+bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_list);
+bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data &spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
-int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info *naji, job_reservation_info &jri, char *ProcBMStr);
-int initialize_alps_req_data(alps_req_data **, int num_reqs);
-void free_alps_req_data_array(alps_req_data *, int num_reqs);
-void record_fitting_node(int &num, struct pbsnode *pnode, node_job_add_info *naji, single_spec_data *req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data *all_reqs, alps_req_data **ard_array);
+int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info &naji, job_reservation_info &jri, char *ProcBMStr);
+void record_fitting_node(int &num, struct pbsnode *pnode, std::list<node_job_add_info> *naji_list, single_spec_data &req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data &all_reqs, alps_req_data **ard_array);
 int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
 int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
+void update_failure_counts(const char *node_name, int rc);
 
 extern std::vector<int> jobsKilled;
 
 extern int str_to_attr_count;
 extern int decode_resc_count;
+extern bool conn_success;
+extern bool alloc_br_success;
 
 #ifdef PENABLE_LINUX_CGROUPS
 void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
 START_TEST(test_save_cpus_and_memory_cpusets)
   {
-  job         *pjob = (job *)calloc(1, sizeof(job));
+  job         *pjob = new job();
   std::string  cpus("0-3");
   std::string  mems("0");
 
@@ -68,19 +71,71 @@ END_TEST
 #endif
 
 
+START_TEST(test_update_failure_counts)
+  {
+  const char *name = "lihue";
+  struct pbsnode *pnode = find_nodebyname(name);
+  update_failure_counts(name, -1);
+  update_failure_counts(name, -1);
+
+  // Make sure the two failures are correctly counted
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // One success shouldn't reset the failure counts
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 1);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  
+  // Two should
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_proximal_failures == 0);
+  fail_unless(pnode->nd_consecutive_successes == 2);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // One failure should reset the success count
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_proximal_failures == 1);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+
+  // State shouldn't change until there are 3 proximal failures
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_proximal_failures == 2);
+  fail_unless(pnode->nd_consecutive_successes == 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  
+  update_failure_counts(name, 1);
+  fail_unless(pnode->nd_state != INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 3);
+
+  // State shouldn't reset until there are 2 consecutive successes
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_state != INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 3);
+  fail_unless(pnode->nd_consecutive_successes == 1);
+  
+  update_failure_counts(name, 0);
+  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 0);
+  fail_unless(pnode->nd_consecutive_successes == 2);
+  }
+END_TEST
+
+
 START_TEST(test_add_remove_mic_jobs)
   {
   struct pbsnode      pnode;
-  job                *pjobs = (job *)calloc(3, sizeof(job));
+  job                *pjobs = new job();
   
-  memset(&pnode, 0, sizeof(pnode));
-  pnode.nd_micjobs = (struct jobinfo *)calloc(5, sizeof(struct jobinfo));
   pnode.nd_nmics = 5;
   pnode.nd_nmics_free = 5;
   pnode.nd_nmics_to_be_used = 3;
 
   for (short i = 0; i < pnode.nd_nmics; i++)
-    pnode.nd_micjobs[i].internal_job_id = -1;
+    pnode.nd_micjobids.push_back(-1);
 
   pjobs[0].ji_internal_id = 0;
   pjobs[1].ji_internal_id = 1;
@@ -119,56 +174,80 @@ START_TEST(test_add_remove_mic_jobs)
 END_TEST
 
 
+START_TEST(test_kill_job_on_mom)
+  {
+  struct pbsnode  pnode;
+  char            job_id[20];
+  int             rc;
+  unsigned long   addr = 4567;
+
+  strcpy(job_id, "33.torque-devtest-03");
+
+  pnode.change_name("numa3.ac");
+  pnode.nd_mom_port = 1234;
+  pnode.nd_addrs.push_back(addr);
+
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == PBSE_NONE); 
+
+  alloc_br_success = false;
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == -1); 
+
+  alloc_br_success = true;;
+  conn_success = false;
+  rc = kill_job_on_mom(job_id, &pnode);
+  fail_unless(rc == -1); 
+
+  }
+END_TEST
+
 START_TEST(test_initialize_alps_req_data)
   {
   alps_req_data      *ard;
-  node_job_add_info  *naji = (node_job_add_info *)calloc(1, sizeof(node_job_add_info));
+  std::list<node_job_add_info> naji_list;
   single_spec_data    req;
   complete_spec_data  csd;
   int                 num = 0;
   struct pbsnode      pnode;
 
-  memset(&req, 0, sizeof(req));
-  memset(&csd, 0, sizeof(csd));
-  memset(&pnode, 0, sizeof(pnode));
-
-  fail_unless(initialize_alps_req_data(&ard, 3) == PBSE_NONE);
-
   pnode.nd_id = 0;
-  pnode.nd_name = strdup("napali");
+  pnode.change_name("napali");
   req.req_id = 0;
   req.ppn = 32;
 
-  record_fitting_node(num, &pnode, naji, &req, 0, 0, 3, JOB_TYPE_cray, &csd, &ard);
+  ard = new alps_req_data[3];
+
+  record_fitting_node(num, &pnode, &naji_list, req, 0, 0, 3, JOB_TYPE_cray, csd, &ard);
 
   pnode.nd_id = 1;
-  pnode.nd_name = strdup("waimea");
+  pnode.change_name("waimea");
   req.req_id = 1;
   req.ppn = 1;
   
-  record_fitting_node(num, &pnode, naji, &req, 0, 1, 3, JOB_TYPE_cray, &csd, &ard);
+  record_fitting_node(num, &pnode, &naji_list, req, 0, 1, 3, JOB_TYPE_cray, csd, &ard);
 
   pnode.nd_id = 4;
-  pnode.nd_name = strdup("wailua");
+  pnode.change_name("wailua");
   req.ppn = 2;
   
-  record_fitting_node(num, &pnode, naji, &req, 0, 2, 3, JOB_TYPE_cray, &csd, &ard);
+  record_fitting_node(num, &pnode, &naji_list, req, 0, 2, 3, JOB_TYPE_cray, csd, &ard);
 
   pnode.nd_id = 2;
-  pnode.nd_name = strdup("lihue");
+  pnode.change_name("lihue");
   req.req_id = 2;
   req.ppn = 12;
   
-  record_fitting_node(num, &pnode, naji, &req, 0, 3, 3, JOB_TYPE_cray, &csd, &ard);
+  record_fitting_node(num, &pnode, &naji_list, req, 0, 3, 3, JOB_TYPE_cray, csd, &ard);
 
-  fail_unless(!strcmp(ard[0].node_list->c_str(), "napali"), ard[0].node_list->c_str());
+  fail_unless(!strcmp(ard[0].node_list.c_str(), "napali"), ard[0].node_list.c_str());
   fail_unless(ard[0].ppn == 32);
-  fail_unless(!strcmp(ard[1].node_list->c_str(), "waimea,wailua"));
+  fail_unless(!strcmp(ard[1].node_list.c_str(), "waimea,wailua"));
   fail_unless(ard[1].ppn == 2);
-  fail_unless(!strcmp(ard[2].node_list->c_str(), "lihue"));
+  fail_unless(!strcmp(ard[2].node_list.c_str(), "lihue"));
   fail_unless(ard[2].ppn == 12);
 
-  job *pjob = (job *)calloc(1, sizeof(job));
+  job *pjob = new job();
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
   fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
   fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
@@ -176,8 +255,6 @@ START_TEST(test_initialize_alps_req_data)
   fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str, "napali*32|waimea,wailua*2|lihue*12"));
 
-  // make sure this doesn't segfault
-  free_alps_req_data_array(ard, 3);
   }
 END_TEST
 
@@ -261,12 +338,9 @@ START_TEST(node_is_spec_acceptable_test)
   single_spec_data spec;
   int              eligible_nodes = 0;
 
-  memset(&pnode, 0, sizeof(pnode));
-  memset(&spec, 0, sizeof(spec));
-
   spec.ppn = 10;
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes, false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, spec, NULL, &eligible_nodes, false) == false);
   fail_unless(eligible_nodes == 0);
 
   for (int i = 0; i < 10; i++)
@@ -274,18 +348,18 @@ START_TEST(node_is_spec_acceptable_test)
     
   pnode.nd_slots.mark_as_used(4);
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, spec, NULL, &eligible_nodes,false) == false);
   fail_unless(eligible_nodes == 1);
 
   eligible_nodes = 0;
   pnode.nd_slots.mark_as_free(4);
   pnode.nd_state |= INUSE_DOWN;  
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, spec, NULL, &eligible_nodes,false) == false);
   fail_unless(eligible_nodes == 1);
   
   eligible_nodes = 0;
   pnode.nd_state = INUSE_FREE;
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true);
+  fail_unless(node_is_spec_acceptable(&pnode, spec, NULL, &eligible_nodes,false) == true);
   fail_unless(eligible_nodes == 1);
   }
 END_TEST
@@ -293,27 +367,28 @@ END_TEST
 
 START_TEST(process_as_node_list_test)
   {
-  node_job_add_info naji;
+  std::list<node_job_add_info> naji_list;
 
   fail_unless(process_as_node_list("", NULL) == false);
-  fail_unless(process_as_node_list(NULL, &naji) == false);
+  fail_unless(process_as_node_list(NULL, &naji_list) == false);
 
-  fail_unless(process_as_node_list("bob:ppn=10", &naji) == true);
+  fail_unless(process_as_node_list("bob:ppn=10", &naji_list) == true);
   fail_unless(process_as_node_list("bob:ppn=12", NULL) == false);
 
   // cray can have numeric node names so it should attempt to find the node 2 
   // and 10 in the following tests to know if they exist
-  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji) == true);
-  fail_unless(process_as_node_list("2:ppn=10", &naji) == true);
-  fail_unless(process_as_node_list("10:ppn=10", &naji) == false);
+  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji_list) == true);
+  fail_unless(process_as_node_list("2:ppn=10", &naji_list) == true);
+  fail_unless(process_as_node_list("10:ppn=10", &naji_list) == false);
 
   // should now check the first two nodes so that it doesn't think things 
   // like nodes=bob+10:ppn=10 are hostlists
-  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji) == false);
-  fail_unless(process_as_node_list("bob+10:ppn=10", &naji) == false);
-  fail_unless(process_as_node_list("bob+10", &naji) == false);
+  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji_list) == false);
+  fail_unless(process_as_node_list("bob+10:ppn=10", &naji_list) == false);
+  fail_unless(process_as_node_list("bob+10", &naji_list) == false);
 
-  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji) == true);
+  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji_list) == true);
+  fail_unless(process_as_node_list("bob+waimea|napali", &naji_list) == true);
   }
 END_TEST
 
@@ -374,11 +449,12 @@ START_TEST(remove_job_from_already_killed_list_test)
   }
 END_TEST
 
+
 START_TEST(remove_job_from_node_test)
   {
   job_usage_info jui(1);
-  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
-  pnode->nd_name = strdup("napali");
+  struct pbsnode *pnode = new pbsnode();
+  pnode->change_name("napali");
 
   for (int i = 0; i < 10; i++)
     pnode->nd_slots.add_execution_slot();
@@ -394,6 +470,7 @@ START_TEST(remove_job_from_node_test)
   fail_unless(pnode->nd_slots.get_number_free() == 10);
   }
 END_TEST
+
 
 START_TEST(get_next_exec_host_test)
   {
@@ -429,10 +506,10 @@ END_TEST
 
 START_TEST(sync_node_jobs_with_moms_test)
   {
-  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  struct pbsnode *pnode = new pbsnode();
   extern bool     job_mode;
 
-  pnode->nd_name = strdup("napali");
+  pnode->change_name("napali");
 
   job_mode = true;
   for (int i = 0; i < 9; i++)
@@ -482,14 +559,9 @@ END_TEST
 START_TEST(job_should_be_killed_test)
   {
   struct pbsnode pnode;
-  struct jobinfo jinfo;
   std::string    job_id;
 
-  memset(&pnode, 0, sizeof(pnode));
-  memset(&jinfo, 0, sizeof(jinfo));
-
-  pnode.nd_name = (char *)"tom";
-  jinfo.internal_job_id = 1;
+  pnode.change_name("tom");
 
   fail_unless(job_should_be_killed(job_id, 2, &pnode) == true, "non-existent job shouldn't be on node");
   fail_unless(job_should_be_killed(job_id, 3, &pnode) == true, "non-existent job shouldn't be on node");
@@ -541,93 +613,145 @@ START_TEST(check_for_node_type_test)
   complete_spec_data all_reqs;
   single_spec_data   req;
   enum node_types    nt = ND_TYPE_CRAY;
-  struct prop        p;
+  prop               p;
 
   memset(&all_reqs, 0, sizeof(all_reqs));
-  memset(&req, 0, sizeof(req));
-  memset(&p, 0, sizeof(p));
 
   all_reqs.num_reqs = 1;
-  all_reqs.reqs = &req;
+  all_reqs.reqs.push_back(req);
 
-  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "empty prop should always return false");
+  fail_unless(check_for_node_type(all_reqs, nt) == FALSE, "empty prop should always return false");
   nt = ND_TYPE_EXTERNAL;
   
   p.name = (char *)"bob";
-  req.prop = &p;
+  req.plist.push_back(p);
+  all_reqs.reqs.pop_back();
+  all_reqs.reqs.push_back(req);
 
-  fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "didn't find the external node");
+  fail_unless(check_for_node_type(all_reqs, nt) == TRUE, "didn't find the external node");
   nt = ND_TYPE_CRAY;
-  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
+  fail_unless(check_for_node_type(all_reqs, nt) == FALSE, "found a cray when only the external was requested");
 
   p.name = (char *)"cray";
-  fail_unless(check_for_node_type(&all_reqs, nt) == TRUE, "found a cray when only the external was requested");
+  req.plist.pop_back();
+  req.plist.push_back(p);
+  all_reqs.reqs.pop_back();
+  all_reqs.reqs.push_back(req);
+
+  fail_unless(check_for_node_type(all_reqs, nt) == TRUE, "found a cray when only the external was requested");
   nt = ND_TYPE_EXTERNAL;
-  fail_unless(check_for_node_type(&all_reqs, nt) == FALSE, "found a cray when only the external was requested");
+  fail_unless(check_for_node_type(all_reqs, nt) == FALSE, "found a cray when only the external was requested");
 
   }
 END_TEST
 
 START_TEST(check_node_order_test)
   {
-  node_job_add_info *pBase = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
+  std::list<node_job_add_info> naji_list;
   struct pbsnode     node;
   single_spec_data   req;
 
-  memset(&req,0,sizeof(single_spec_data));
-  pBase->node_id = -1;
-
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 0;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,6) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 6) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 1;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,3) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 3) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 2;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,11) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 11) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 3;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 1) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 4;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,15) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 15) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 5;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,4) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 4) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 6;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,10) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 10) == PBSE_NONE);
 
-  memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 7;
-  fail_unless(save_node_for_adding(pBase,&node,&req,4,0,61) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 4, 0, 61) == PBSE_NONE);
 
-  node_job_add_info *index = pBase;
+  std::list<node_job_add_info>::iterator it = naji_list.begin();
 
-  fail_unless(index->node_id == 4);
-  index = index->next;
-  fail_unless(index->node_id == 3);
-  index = index->next;
-  fail_unless(index->node_id == 1);
-  index = index->next;
-  fail_unless(index->node_id == 5);
-  index = index->next;
-  fail_unless(index->node_id == 0);
-  index = index->next;
-  fail_unless(index->node_id == 6);
-  index = index->next;
-  fail_unless(index->node_id == 2);
-  index = index->next;
-  fail_unless(index->node_id == 7);
+  fail_unless(it->node_id == 4, "id is %d", it->node_id);
+  fail_unless(it->req_order == 0, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 3, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 1, "id is %d", it->node_id);
+  fail_unless(it->req_order == 4, "order is %d", it->req_order);
+  fail_unless(it->req_index == 3, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 5, "id is %d", it->node_id);
+  fail_unless(it->req_order == 5, "order is %d", it->req_order);
+  fail_unless(it->req_index == 4, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 0, "id is %d", it->node_id);
+  fail_unless(it->req_order == 7, "order is %d", it->req_order);
+  fail_unless(it->req_index == 6, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 6, "id is %d", it->node_id);
+  fail_unless(it->req_order == 11, "order is %d", it->req_order);
+  fail_unless(it->req_index == 10, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 2, "id is %d", it->node_id);
+  fail_unless(it->req_order == 12, "order is %d", it->req_order);
+  fail_unless(it->req_index == 11, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 7, "id is %d", it->node_id);
+  fail_unless(it->req_order == 62, "order is %d", it->req_order);
+  fail_unless(it->req_index == 61, "index is %d", it->req_index);
+  
+  // Make sure that req_rank -1 is placed at the front. This is how login nodes are 
+  // added to jobs
+  node.nd_id = 8;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 8, 0, -1) == PBSE_NONE);
+  it = naji_list.begin();
+  fail_unless(it->node_id == 8);
+
+  // Now try a more realistic example - usually there are only 1 or 2 reqs in a job
+  naji_list.clear();
+  node.nd_id = 0;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 1;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 2;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 0) == PBSE_NONE);
+  node.nd_id = 3;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 1) == PBSE_NONE);
+  node.nd_id = 4;
+  fail_unless(save_node_for_adding(&naji_list, &node, req, 2, 0, 1) == PBSE_NONE);
+  
+  it = naji_list.begin();
+  fail_unless(it->node_id == 2, "id is %d", it->node_id);
+  fail_unless(it->req_order == 0, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 0, "id is %d", it->node_id);
+  fail_unless(it->req_order == 1, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 1, "id is %d", it->node_id);
+  fail_unless(it->req_order == 1, "order is %d", it->req_order);
+  fail_unless(it->req_index == 0, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 3, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
+  it++;
+  fail_unless(it->node_id == 4, "id is %d", it->node_id);
+  fail_unless(it->req_order == 2, "order is %d", it->req_order);
+  fail_unless(it->req_index == 1, "index is %d", it->req_index);
   }
 END_TEST
+
 
 START_TEST(record_external_node_test)
   {
@@ -637,14 +761,9 @@ START_TEST(record_external_node_test)
   struct pbsnode pnode3;
   char           buf[4096];
 
-  memset(&pjob, 0, sizeof(pjob));
-  memset(&pnode1, 0, sizeof(pnode1));
-  memset(&pnode2, 0, sizeof(pnode2));
-  memset(&pnode3, 0, sizeof(pnode3));
-
-  pnode1.nd_name = (char *)"tom";
-  pnode2.nd_name = (char *)"bob";
-  pnode3.nd_name = (char *)"jim";
+  pnode1.change_name("tom");
+  pnode2.change_name("bob");
+  pnode3.change_name("jim");
 
   record_external_node(&pjob, &pnode1);
   snprintf(buf, sizeof(buf), "attr should be tom but is %s",
@@ -663,16 +782,19 @@ START_TEST(record_external_node_test)
   }
 END_TEST
 
+
 START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   {
   job pjob;
-  memset(&pjob, 0, sizeof(job));
   strcpy(pjob.ji_qs.ji_jobid, "1.lei");
 
-  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
-  pnode->nd_name = strdup("napali");
+  struct pbsnode *pnode = new pbsnode();
+  pnode->change_name("napali");
+
   for (int i = 0; i < 9; i++)
     pnode->nd_slots.add_execution_slot();
+
+  pnode->nd_state = INUSE_FREE;
 
   job_usage_info *jui = (job_usage_info *)calloc(1, sizeof(job_usage_info));
   jui->internal_job_id = 1;
@@ -684,7 +806,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   node_job_add_info *naji = (node_job_add_info *)calloc(1,sizeof(node_job_add_info));
   naji->node_id = 1;
-  naji->req_rank = 1;
+  naji->req_order = 1;
 
   char buf[10];
   buf[0] = '\0';
@@ -694,10 +816,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
 
   job_reservation_info jri;
-#ifdef PENABLE_LINUX_CGROUPS
-  pnode->nd_layout = new Machine();
-#endif
-  int rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri, buf);
+  int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, buf);
 
   fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
@@ -708,7 +827,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   pnode->nd_state = 0;
 
   job_reservation_info jri2;
-  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri2, buf);
+  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri2, buf);
   fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
 
@@ -718,11 +837,12 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   pnode->nd_state = 0;
 
   job_reservation_info jri3;
-  rc = place_subnodes_in_hostlist(&pjob, pnode, naji, jri3, buf);
+  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri3, buf);
   fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
   }
 END_TEST
+
 
 Suite *node_manager_suite(void)
   {
@@ -736,6 +856,10 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, job_should_be_killed_test);
   tcase_add_test(tc_core, remove_job_from_already_killed_list_test);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_kill_job_on_mom");
+  tcase_add_test(tc_core, test_kill_job_on_mom);
+  suite_add_tcase(s, tc_core); 
 
   tc_core = tcase_create("node_in_exechostlist_test");
   tcase_add_test(tc_core, node_in_exechostlist_test);
@@ -766,6 +890,7 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("record_external_node_test");
   tcase_add_test(tc_core, record_external_node_test);
+  tcase_add_test(tc_core, test_update_failure_counts);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("more tests");

@@ -90,8 +90,10 @@
 #include "resource.h"
 #include "pbs_error.h"
 #include "pbs_job.h"
+#include "pbs_helper.h"
 
 #include "complete_req.hpp"
+#include "pbs_nodes.h"
 
 /*
  * This file contains general functions for manipulating an pbs_attribute array.
@@ -325,13 +327,14 @@ int attr_atomic_set(
 int attr_atomic_node_set(
 
   struct svrattrl *plist,    /* list of pbs_attribute modif structs */
-  pbs_attribute   *old,      /* unused */
+  pbs_attribute   * UNUSED(old),
   pbs_attribute   *new_attr,      /* new pbs_attribute array begins here */
   attribute_def   *pdef,     /* begin array  definition structs */
   int              limit,    /* number elts in definition array */
   int              unkn,     /* <0 unknown attrib not permitted */
   int              privil,   /* requester's access privileges   */
-  int             *badattr)  /* return list position wher bad   */
+  int             *badattr,  /* return list position where bad   */
+  bool             dont_update_nodes_file)
 
   {
   int           acc;
@@ -357,6 +360,19 @@ int attr_atomic_node_set(
         }
       else
         index = unkn;  /*if unknown attr are allowed*/
+      }
+    else if (dont_update_nodes_file == true)
+      {
+      // These attributes cannot edit the nodes file
+      if ((index == ND_ATR_properties) ||
+          (index == ND_ATR_ntype) ||
+          (index == ND_ATR_ttl) ||
+          (index == ND_ATR_acl) ||
+          (index == ND_ATR_requestid))
+        {
+        rc = PBSE_CANT_EDIT_NODES;
+        break;
+        }
       }
 
 

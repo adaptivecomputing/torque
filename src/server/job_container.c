@@ -342,14 +342,13 @@ job *find_job_by_array(
   
   pj = aj->find(job_id);
 
-  if (pj != NULL)
-    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
-
   if (locked == false)
     aj->unlock();
-  
+
   if (pj != NULL)
     {
+    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+
     if (get_subjob == TRUE)
       {
       if (pj->ji_cray_clone != NULL)
@@ -360,7 +359,7 @@ job *find_job_by_array(
         }
       }
 
-    if (pj->ji_being_recycled == TRUE)
+    if (pj->ji_being_recycled == true)
       {
       unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
       pj = NULL;
@@ -487,7 +486,7 @@ job *svr_find_job(
         lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
         unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
 
-        if (pj->ji_being_recycled == TRUE)
+        if (pj->ji_being_recycled == true)
           {
           unlock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
           pj = NULL;
@@ -766,7 +765,7 @@ int has_job(
     aj->lock();
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    if (pjob->ji_being_recycled == TRUE)
+    if (pjob->ji_being_recycled == true)
       {
       aj->unlock();
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -885,7 +884,7 @@ job *next_job(
     {
     lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
-    if (pjob->ji_being_recycled == TRUE)
+    if (pjob->ji_being_recycled == true)
       {
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 

@@ -325,6 +325,7 @@ job_pid_set_t    global_job_sid_set; /* This contains the session id of each job
 
 static void starter_return(int, int, int, struct startjob_rtn *);
 static void catchinter(int);
+int get_process_rank(int&);
 int expand_vtable(struct var_table *vtable);
 int copy_data(struct var_table *tmp_vtable, struct var_table *vtable, int expand_bsize, int expand_ensize);
 
@@ -2577,6 +2578,24 @@ int TMomFinalizeJob2(
       "about to fork child which will become job");
     }
 
+  /* we have to take care of setting NVIDIA gpus in the parent */
+#ifdef NVIDIA_GPUS
+  if (use_nvidia_gpu) 
+    {
+    int rc;
+
+    rc = setup_gpus_for_job(pjob);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Failed to initialize gpus. Job %s failed to start", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      *SC = rc;
+      return(FAILURE);
+      }
+    }
+#endif  /* NVIDIA_GPUS */
+
+
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
     {
@@ -3102,10 +3121,6 @@ void take_care_of_nodes_file(
     if (write_attr_to_file(pjob, JOB_ATR_exec_mics, "mic") == -1)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
-#ifdef NVIDIA_GPUS
-    if ((use_nvidia_gpu) && setup_gpus_for_job(pjob) == -1)
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
-#endif  /* NVIDIA_GPUS */
     }   /* END if (pjob->ji_flags & MOM_HAS_NODEFILE) */
 
   if (LOGLEVEL >= 10)
@@ -4178,6 +4193,305 @@ void source_login_shells_or_not(
 
 
 
+/*
+ * get_memory_in_kilobytes_from_size()
+ */
+
+unsigned long long get_memory_in_kilobytes_from_size(
+
+  struct size_value sz)
+
+  {
+  int shift = sz.atsv_shift;
+  
+  unsigned long long mem = sz.atsv_num;
+
+  /* make sure that the requested memory is in kb */
+  if (shift < 10)
+    {
+    mem /= 1024;
+    }
+  else
+    {
+    while (shift > 10)
+      {
+      mem *= 1024;
+      shift -= 10;
+      }
+    }
+
+  return(mem);
+  } // END get_memory_in_kilobytes_from_size()
+
+
+
+#if defined(PENABLE_LINUX_CGROUPS) || defined(PENABLE_LINUX26_CPUSETS)
+int get_cpu_count_requested_on_this_node(
+
+  job &pjob)
+
+  {
+  int      cpus = 0;
+  vnodent *np = pjob.ji_vnods;
+
+  for (int i = 0; i < pjob.ji_numvnod; ++i, np++)
+    {
+    /* Add core at position vn_index in TORQUE cpuset */
+    if (pjob.ji_nodeid == np->vn_host->hn_node)
+      cpus++;
+    }
+
+  return(cpus);
+  } 
+
+
+
+/*
+ * get_memory_limit_from_resource_list()
+ *
+ * @param pjob (I) - the job whose resource list we're checking
+ * @return the memory limit from the resource list
+ */
+
+unsigned long long get_memory_limit_from_resource_list(
+
+  job *pjob)
+
+  {
+  unsigned long long mem_limit = 0;
+  
+  resource  *mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                                   find_resc_def(svr_resc_def, "mem", svr_resc_size));
+
+  if (mem == NULL)
+    {
+    mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                          find_resc_def(svr_resc_def, "vmem", svr_resc_size));
+    }
+
+  if ((mem != NULL) &&
+      (mem->rs_value.at_val.at_size.atsv_num != 0))
+    {
+    mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
+
+    // Figure out how much memory should be used on this host
+    int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+    // make sure the memory is evenly set over the job.
+    double    mem_pcnt = ((double)cpu_count) / pjob->ji_numvnod;
+    mem_limit = mem_limit * mem_pcnt;
+    }
+  else
+    {
+    /* pmem and vmem */
+    mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                          find_resc_def(svr_resc_def, "pmem", svr_resc_size));
+
+    if (mem == NULL)
+      {
+      mem = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
+                            find_resc_def(svr_resc_def, "pvmem", svr_resc_size));
+      }
+    
+    if (mem != NULL)
+      {
+      mem_limit = get_memory_in_kilobytes_from_size(mem->rs_value.at_val.at_size);
+
+      // Figure out how much memory should be used on this host
+      int       cpu_count = get_cpu_count_requested_on_this_node(*pjob);
+
+      // Since this is per process, multiply by the number of execution slots
+      mem_limit = mem_limit * cpu_count;
+      }
+    }
+
+  return(mem_limit);
+  } // END get_memory_limit_from_resource_list()
+#endif
+
+
+
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * get_memory_limit_for_this_host()
+ *
+ * @param pjob - the job whose limits we're setting
+ * @param cr - the complete_req for the job, if there is one
+ */
+
+unsigned long long get_memory_limit_for_this_host(
+
+  job          *pjob,
+  complete_req *cr,
+  std::string  &string_hostname)
+
+  {
+  unsigned long long mem_limit = 0;
+
+  if (cr != NULL)
+    mem_limit = cr->get_memory_for_this_host(string_hostname);
+
+  if (mem_limit == 0)
+    {
+    mem_limit = get_memory_limit_from_resource_list(pjob);
+    }
+
+  return(mem_limit);
+  } // END get_memory_limit_for_this_host()
+
+
+
+/*
+ * get_swap_limit_for_this_host()
+ *
+ *
+ */
+
+unsigned long long get_swap_limit_for_this_host(
+
+  job          *pjob,
+  complete_req *cr,
+  std::string  &string_hostname)
+
+  {
+  unsigned long long swap_limit = 0;
+
+  if (cr != NULL)
+    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
+
+  if (swap_limit == 0)
+    {
+    swap_limit = get_memory_limit_from_resource_list(pjob);
+    }
+
+  return(swap_limit);
+  } // END get_swap_limit_for_this_host()
+
+
+
+/*
+ * set_job_cgroup_memory_limits()
+ *
+ */
+
+int set_job_cgroup_memory_limits(
+
+  job *pjob)
+
+  {
+  /* See if the memory attribute was requested and then add it to
+     memory.limit_in_bytes of the cgroup */
+  char          this_hostname[PBS_MAXHOSTNAME];
+  unsigned long long mem_limit;
+  unsigned long long swap_limit;
+  complete_req *cr = NULL;
+
+  int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
+  if (rc != 0)
+    {
+    sprintf(log_buffer, "failed to get host name: %d", errno);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    return(rc);
+    }
+
+  std::string string_hostname = this_hostname;
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    {
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    }
+
+  if ((mem_limit = get_memory_limit_for_this_host(pjob, cr, string_hostname)) != 0)
+    {
+    rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      return(rc);
+      }
+    }
+
+  if ((swap_limit = get_swap_limit_for_this_host(pjob, cr, string_hostname)) != 0)
+    {
+    if (mem_limit == 0)
+      {
+      /* memory.memsw.limit_in_bytes cannot be set unless memory.limit_in_bytes is set */
+      mem_limit = swap_limit;
+      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
+      if (rc != PBSE_NONE)
+        {
+        sprintf(log_buffer, "Could not set resident memory limits for  %s. swap", pjob->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buffer, LOG_ERR);
+        return(rc);
+        }
+      }
+ 
+    rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not set swap memory limits for  %s.", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_ERR);
+      return(rc);
+      }
+    }
+
+  pbs_attribute *pattr;
+
+  /* make sure we don't have an incompatible -l resource request */
+  if (have_incompatible_dash_l_resource(pjob) == false)
+    {
+
+    /* if JOB_ATR_req_information is set then this was a -L request */
+    pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+    if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+      {
+      unsigned int req_index;
+      unsigned int task_index;
+      unsigned int num_reqs;
+      int          num_tasks;
+
+      cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+      num_reqs = cr->req_count();
+
+      for(req_index = 0; req_index < num_reqs; req_index++)
+        {
+        req r;
+
+        mem_limit = cr->get_memory_per_task(req_index);
+        swap_limit = cr->get_swap_per_task(req_index);
+        if ((mem_limit == 0) &&
+            (swap_limit != 0))
+          mem_limit = swap_limit;
+
+        if (mem_limit != 0)
+          {
+          r = cr->get_req(req_index);
+          num_tasks = r.getTaskCount();
+          for (task_index = 0; task_index < num_tasks; task_index++)
+            {
+            rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
+            if (rc != PBSE_NONE)
+              {
+              /* It may be this task does not belong on the sister node. continue */
+              continue;
+              }
+
+            rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
+            if (rc != PBSE_NONE)
+              {
+              /* It may be this task does not belong on the sister node. continue */
+              continue;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  return(rc);
+  } // END set_job_cgroup_memory_limits()
+#endif
+
 
 
 /* child portion of job launch executed as user - called by TMomFinalize2() */
@@ -4363,6 +4677,7 @@ int TMomFinalizeChild(
       }
     }
 
+#ifndef PENABLE_LINUX_CGROUPS
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
 
@@ -4377,6 +4692,7 @@ int TMomFinalizeChild(
     }
 
 #endif  /* (PENABLE_LINUX26_CPUSETS) */
+#endif
 
 #ifdef PENABLE_LINUX_CGROUPS
   int rc;
@@ -4386,77 +4702,36 @@ int TMomFinalizeChild(
     {
     sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
-  /* Add this process to the cpuacct and memory subsystems */
-  rc = trq_cg_add_process_to_cgroup_accts(pjob->ji_qs.ji_jobid, getpid());
+  pjob->ji_cgroups_created = true;
+
+  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
+    {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  rc = trq_cg_add_devices_to_cgroup(pjob);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not add job %s to cgroups.", pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
     exit(-1);
     }
 
-  /* See if the memory attribute was requested and then add it to
-     memory.limit_in_bytes of the cgroup */
-  if ((pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
+  rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
+  if (rc != PBSE_NONE)
     {
-    char          this_hostname[PBS_MAXHOSTNAME];
-    unsigned long long mem_limit;
-    unsigned long long swap_limit;
-    complete_req *cr;
-    pid_t this_pid = getpid();
-
-    rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-    if (rc != 0)
-      {
-      sprintf(log_buffer, "failed to get host name: %d", errno);
-      log_ext(-1, __func__, log_buffer, LOG_ERR);
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-      exit(-1);
-      }
-
-    std::string string_hostname = this_hostname;
-
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    mem_limit = cr->get_memory_for_this_host(string_hostname);
-    if (mem_limit != 0)
-      {
-      rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit * KB);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buffer, LOG_ERR);
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-        exit(-1);
-        }
-      }
-
-    swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
-    if (swap_limit != 0)
-      {
-      rc = trq_cg_set_swap_memory_limit(pjob->ji_qs.ji_jobid, swap_limit * KB);
-      if (rc != PBSE_NONE)
-        {
-        sprintf(log_buffer, "Could not set resident memory limits for  %s.", pjob->ji_qs.ji_jobid);
-        log_ext(-1, __func__, log_buffer, LOG_ERR);
-        starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-        exit(-1);
-        }
-      }
-
-    if ((rc = trq_cg_add_process_to_cgroup(pjob->ji_qs.ji_jobid, this_pid)) != PBSE_NONE)
-      {
-      sprintf(log_buffer, "Could not add job's pid to cgroup for job  %s.", pjob->ji_qs.ji_jobid);
-      log_ext(-1, __func__, log_buffer, LOG_ERR);
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, &sjr);
-      exit(-1);
-      }
+    sprintf(log_buffer, "failed to add pid to all cgroups: %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
     }
-#endif
+
+
+#endif /* PENABLE_LINUX_CGROUPS */
 
   if (site_job_setup(pjob) != 0)
     {
@@ -5035,49 +5310,32 @@ int get_process_rank(
   return(PBSE_NO_PROCESS_RANK);
   }
 
-
-/**
- * Start a process for a spawn request.  This will be different from
- * a job's initial shell task in that the environment will be specified
- * and no interactive code need be included.
+/*
+ * setup_process_launch_pipes()
  *
- * NOTE:  Called for sisters after mother superior receives IM_SPAWN_TASK request
+ * Sets up 2 sets of pipes for interprocess communication.
+ * This allows the child to write it's status to the parent
+ *
+ * @param kid_read - where the child reads
+ * @param kid_write - where the child writes
+ * @param parent_read - where the parent reads
+ * @param parent_write - where the parent writes
+ * @return PBSE_NONE on success
  */
 
-int start_process(
+int setup_process_launch_pipes(
 
-  task  *ptask,   /* I */
-  char **argv,    /* I */
-  char **envp)    /* I */
+  int &kid_read,
+  int &kid_write,
+  int &parent_read,
+  int &parent_write)
 
   {
-  char         *idir;
-  job          *pjob = mom_find_job(ptask->ti_qs.ti_parentjobid);
-  pid_t         pid;
   int           pipes[2];
-  int           kid_read;
-  int           kid_write;
-  int           parent_read;
-  int           parent_write;
-  int           pts;
-  int           i;
-  int           j;
-  int           fd0;
-  int           fd1;
-  int           fd2;
-  u_long        ipaddr;
-  unsigned int  momport = 0;
-
-  struct  startjob_rtn sjr =
-    {
-    0, 0, 0, 0
-    };
-
-  if (pjob == NULL)
-    return(-1);
 
   if (pipe(pipes) == -1)
     {
+    log_err(errno, __func__, "Call to pipe failed");
     return(-1);
     }
 
@@ -5096,6 +5354,7 @@ int start_process(
 
   if (pipe(pipes) == -1)
     {
+    log_err(errno, __func__, "Call to pipe failed");
     return(-1);
     }
 
@@ -5115,276 +5374,233 @@ int start_process(
   if ((kid_read < 0) ||
       (kid_write < 0))
     {
-    log_err(-1, __func__, log_buffer);
-
+    log_err(-1, __func__, "Couldn't set up pipes to monitor launching a process");
+ 
     return(-1);
     }
+ 
+  return(PBSE_NONE);
+  } // END setup_process_launch_pipes()
 
-  /*
-  ** Get ipaddr to Mother Superior.
-  */
 
-  if (am_i_mother_superior(*pjob) == true)
+
+/*
+ * read_launcher_child_status()
+ *
+ */
+ 
+int read_launcher_child_status(
+ 
+  struct startjob_rtn *sjr,
+  const char          *job_id,
+  int                  parent_read,
+  int                  parent_write)
+ 
+  {
+  int amount_read;
+  int got_success = 0;
+  int saved_errno;
+  int rc = PBSE_NONE;
+ 
+  for (;;)
     {
-    ipaddr = htonl(localaddr);
-    }
-  else if (pjob->ji_radix > 1)
-    {
-    ipaddr = pjob->ji_sisters[0].sock_addr.sin_addr.s_addr;
-    }
-  else
-    {
-    ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
-    }
-
-  /* A restarted mom will not have called this yet, but it is needed
-   * to spawn tasks (ji_grpcache).
-   */
-
-  bool good;
-
-  good= check_pwd(pjob);
-  if (good == false)
-    {
-    log_err(-1, __func__, log_buffer);
-
-    return(-1);
-    }
-
-  /*
-  ** Begin a new process for the fledgling task.
-  */
-
-  if ((pid = fork_me(-1)) == -1)
-    {
-    /* fork failed */
-
-    return(-1);
-    }
-
-  if (pid != 0)
-    {
-    /* parent */
-    int gotsuccess = 0;
-
-    close(kid_read);
-    close(kid_write);
-
-    /* read sid */
-
-    for (;;)
+    amount_read = read_ac_socket(parent_read, (char *)sjr, sizeof(*sjr));
+ 
+    if ((amount_read == -1) && (errno == EINTR))
+      continue;
+ 
+    if ((amount_read == sizeof(*sjr)) && (sjr->sj_code == 0) && !got_success)
       {
-      i = read_ac_socket(parent_read, (char *) & sjr, sizeof(sjr));
+      got_success = 1;
 
-      if ((i == -1) && (errno == EINTR))
-        continue;
-
-      if ((i == sizeof(sjr)) && (sjr.sj_code == 0) && !gotsuccess)
+      if (write_ac_socket(parent_write, sjr, sizeof(*sjr)) == -1)
         {
-        gotsuccess = 1;
-
-        if (write_ac_socket(parent_write, &sjr, sizeof(sjr)) == -1)
-          {
-          }
-
         continue;
         }
-
-      if (gotsuccess)
-        {
-        i = sizeof(sjr);
-        }
-
-      break;
-      }   /* END for(;;) */
-
-    j = errno;
-
-    close(parent_read);
-
-    if (i != sizeof(sjr))
-      {
-      sprintf(log_buffer, "read of pipe for sid job %s got %d not %ld (errno: %d, %s)",
-        pjob->ji_qs.ji_jobid,
-        i,
-        (long)sizeof(sjr),
-        j,
-        strerror(j));
-
-      log_err(j, __func__, log_buffer);
-
-      close(parent_write);
-
-      return(-1);
       }
-
-    close(parent_write);
-
-    DBPRT(("%s: read start return %d %ld\n",
-      __func__,
-      sjr.sj_code,
-      (long)sjr.sj_session))
-
-    if (sjr.sj_code < 0)
+ 
+    if (got_success)
       {
-      char tmpLine[MAXLINE];
-
-      tmpLine[0] = '\0';
-
-      switch (sjr.sj_code)
-        {
-        case JOB_EXEC_OK:   /* 0 */
-
-          /* NO-OP */
-
-          break;
-
-        case JOB_EXEC_FAIL1:  /* -1 */
-        case JOB_EXEC_STDOUTFAIL:  /* -9 */
-
-          strcpy(tmpLine, "stdio setup failed");
-
-          break;
-
-        case JOB_EXEC_FAIL2:  /* -2 */
-
-          strcpy(tmpLine, "env setup or user dir problem");
-
-          break;
-
-        case JOB_EXEC_RETRY: /* -3 */
-
-          strcpy(tmpLine, "unable to set limits, retry will be attempted");
-
-          break;
-
-        case JOB_EXEC_CMDFAIL: /* -8 */
-
-          strcpy(tmpLine, "command exec failed");
-
-          break;
-
-        default:
-
-          sprintf(tmpLine, "code=%d", sjr.sj_code);
-
-          break;
-        }   /* END switch (sjr.sj_code) */
-
-      sprintf(log_buffer, "task not started, '%s', %s (see syslog)",
-        argv[0],
-        tmpLine);
-
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-
-      return(-1);
-      }   /* END if (sjr.sj_code < 0) */
-
-    set_globid(pjob, &sjr);
-
-    ptask->ti_qs.ti_sid = sjr.sj_session;
-
-    /* if the new pid is not in the job set then this */
-    /* is a new session and we need to insert it */
-    job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(pid);
-    if (job_pid_set_iter == pjob->ji_job_pid_set->end())
-      {
-      /* put the job pid in the job structure */
-      pjob->ji_job_pid_set->insert(pid);
+      amount_read = sizeof(*sjr);
       }
-    
-    /* put the new pid in the pid to job session id map */
-    pid2jobsid_map[pid] = pid;
-    
-    /* put the new pid in the global_job_sid_set set */
-    global_job_sid_set.insert(pid);
+ 
+    break;
+    }   /* END for(;;) */
+ 
+  saved_errno = errno;
+ 
+  close(parent_read);
+  close(parent_write);
+ 
+  if (amount_read != sizeof(*sjr))
+    {
+    sprintf(log_buffer, "read of pipe for sid job %s got %d not %d",
+      job_id,
+      amount_read,
+      (int)sizeof(*sjr));
+ 
+    log_err(saved_errno, __func__, log_buffer);
 
-    /* we now need to add the task to the cgroup */
-    
-    ptask->ti_qs.ti_status = TI_STATE_RUNNING;
+    rc = -1;
+    }
 
-    if (LOGLEVEL >= 6)
+  return(rc);
+  } // END read_launcher_child_status()
+
+
+
+/*
+ * process_launcher_child_status()
+ *
+ */
+ 
+int process_launcher_child_status(
+
+  struct startjob_rtn *sjr,
+  const char          *job_id,
+  const char          *application_name)
+
+  {
+  if (sjr->sj_code < 0)
+    {
+    char tmpLine[MAXLINE];
+
+    tmpLine[0] = '\0';
+
+    switch (sjr->sj_code)
       {
-      log_record(
-        PBSEVENT_ERROR,
-        PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
-        "task set to running/saving task (start_process)");
-      }
+      case JOB_EXEC_FAIL1:  /* -1 */
+      case JOB_EXEC_STDOUTFAIL:  /* -9 */
 
-    task_save(ptask);
+        strcpy(tmpLine, "stdio setup failed");
 
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
-      {
-      pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+        break;
 
-      if (multi_mom)
-        {
-        momport = pbs_rm_port;
-        }
+      case JOB_EXEC_FAIL2:  /* -2 */
 
-      job_save(pjob, SAVEJOB_QUICK,momport);
-      }
+        strcpy(tmpLine, "env setup or user dir problem");
 
-    sprintf(log_buffer, "%s: task started, tid %d, sid %ld, cmd %s",
-      __func__,
-      ptask->ti_qs.ti_task,
-      (long)ptask->ti_qs.ti_sid,
-      argv[0]);
+        break;
 
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      case JOB_EXEC_RETRY: /* -3 */
 
-    return(0);
-    }   /* END else if (pid != 0) */
+        strcpy(tmpLine, "unable to set limits, retry will be attempted");
 
-  /************************************************/
-  /* The child process - will become the TASK   */
-  /************************************************/
+        break;
+
+      case JOB_EXEC_CMDFAIL: /* -8 */
+
+        strcpy(tmpLine, "command exec failed");
+
+        break;
+
+      default:
+
+        sprintf(tmpLine, "code=%d", sjr->sj_code);
+
+        break;
+      }   /* END switch (sjr->sj_code) */
+
+    sprintf(log_buffer, "task not started, '%s', %s (see syslog)",
+      application_name,
+      tmpLine);
+
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, job_id, log_buffer);
+
+    return(-1);
+    }   /* END if (sjr->sj_code < 0) */
+
+  return(PBSE_NONE);
+  } // END process_launcher_child_status()
+
+
+
+/*
+ * update_task_and_job_states_after_launch()
+ */
+ 
+void update_task_and_job_states_after_launch(
+
+  task       *ptask,
+  job        *pjob,
+  const char *application_name)
+
+  {
+  unsigned int momport = 0;
+
+  ptask->ti_qs.ti_status = TI_STATE_RUNNING;
 
   if (LOGLEVEL >= 6)
-    log_ext(-1, __func__, "child starting", LOG_DEBUG);
-
-  if (lockfds >= 0)
     {
-    close(lockfds);
-
-    lockfds = -1;
+    log_record(
+      PBSEVENT_ERROR,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      "task set to running/saving task (start_process)");
     }
 
-  close(parent_read);
+  task_save(ptask);
 
-  close(parent_write);
+  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+    {
+    pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
 
-  /* set up the environmental variables to be given to the job */
+    if (multi_mom)
+      {
+      momport = pbs_rm_port;
+      }
 
+    job_save(pjob, SAVEJOB_QUICK,momport);
+    }
+
+  sprintf(log_buffer, "%s: task started, tid %d, sid %ld, cmd %s",
+    __func__,
+    ptask->ti_qs.ti_task,
+    (long)ptask->ti_qs.ti_sid,
+    application_name);
+
+  log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+  } // END update_task_and_job_states_after_launch()
+
+
+
+/*
+ * initialize_subprocess_environment()
+ *
+ * Sets up the environment for the subprocess.
+ *
+ * @param pjob - the job whose subprocess it is
+ * @param ptask - the task associated with this subprocess
+ * @param envp - the environment
+ *
+ * @return PBSE_NONE on success
+ */
+ 
+int initialize_subprocess_environment(
+
+  job   *pjob,
+  task  *ptask,
+  char **envp)
+
+  {
   /* NOTE:  use log_err beyond this point to write messages to syslog */
 
   if (InitUserEnv(pjob, ptask, envp, NULL, NULL) < 0)
     {
     log_err(errno, __func__, "failed to setup user env");
 
-    starter_return(kid_write, kid_read, JOB_EXEC_RETRY, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_RETRY);
     }
-
+ 
   if (LOGLEVEL >= 10)
     log_ext(-1, __func__, "user env initialized", LOG_DEBUG);
 
   if (set_mach_vars(pjob, &vtable) != 0)
     {
-    strcpy(log_buffer, "PBS: machine dependent environment variable setup failed\n");
+    log_err(errno, __func__, "PBS: machine dependent environment variable setup failed");
 
-    log_err(errno, __func__, log_buffer);
-
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_FAIL1);
     }
 
   if (LOGLEVEL >= 10)
@@ -5399,23 +5615,34 @@ int start_process(
   bld_env_variables(&vtable, "ENVIRONMENT",    "BATCH");
 
   /* Set limits for the child */
-    if (mom_set_limits(pjob, SET_LIMIT_SET) != PBSE_NONE)
-      {
-      strcpy(log_buffer, "PBS: resource limits setup failed\n");
+  if (mom_set_limits(pjob, SET_LIMIT_SET) != PBSE_NONE)
+    {
+    log_err(errno, __func__, "PBS: resource limits setup failed");
 
-      log_err(errno, __func__, log_buffer);
-
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
-      }
+    return(JOB_EXEC_FAIL1);
+    }
 
   /* NULL terminate the envp array, This is MUST DO */
 
   *(vtable.v_envp + vtable.v_used) = NULL;
 
+  return(PBSE_NONE);
+  } // END initialize_subprocess_environment()
+
+
+
+/*
+ * setup_subprocess_file_descriptors()
+ */
+
+int setup_subprocess_file_descriptors(
+    
+  int    &fd0,
+  int    &fd1,
+  int    &fd2,
+  u_long  ipaddr)
+
+  {
   /*
   ** Set up stdin.
   */
@@ -5426,22 +5653,14 @@ int start_process(
     {
     log_err(errno, __func__, "cannot locate MPIEXEC_STDIN_PORT");
 
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_FAIL1);
     }
 
   if ((fd0 < 0) && ((fd0 = search_env_and_open("TM_STDIN_PORT", ipaddr)) == -2))
     {
     log_err(errno, __func__, "cannot locate TM_STDIN_PORT");
 
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_FAIL1);
     }
 
   /* use /dev/null if no env var found */
@@ -5466,11 +5685,7 @@ int start_process(
     {
     log_err(errno, __func__, "cannot locate MPIEXEC_STDOUT_PORT");
 
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_FAIL1);
     }
 
   if (fd1 < 0)
@@ -5479,11 +5694,7 @@ int start_process(
       {
       log_err(errno, __func__, "cannot locate TM_STDOUT_PORT");
 
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
+      return(JOB_EXEC_FAIL1);
       }
     }
 
@@ -5491,11 +5702,7 @@ int start_process(
     {
     log_err(errno, __func__, "cannot locate MPIEXEC_STDERR_PORT");
 
-    starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-    /*NOTREACHED*/
-
-    exit(1);
+    return(JOB_EXEC_FAIL1);
     }
 
   if (fd2 < 0)
@@ -5504,294 +5711,160 @@ int start_process(
       {
       log_err(errno, __func__, "cannot locate TM_STDERR_PORT");
 
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
+      return(JOB_EXEC_FAIL1);
       }
     }
 
   if (LOGLEVEL >= 10)
     log_ext(-1, __func__, "MPI/TM variables set", LOG_DEBUG);
 
-#ifdef PENABLE_LINUX26_CPUSETS
-  if (use_cpusets(pjob) == TRUE)
+  return(PBSE_NONE);
+  } // END setup_subprocess_file_descriptors()
+
+
+
+int open_subprocess_demux_sockets(
+
+  job    *pjob,
+  int    &fd1,
+  int    &fd2,
+  u_long  ipaddr)
+
+  {
+  if ((fd1 < 0) &&
+      ((fd1 = open_demux(ipaddr, pjob->ji_portout)) == -1))
     {
-    int j;
+    log_err(errno, __func__, "cannot open mux stdout port");
 
-    /* FIXME: vnodenum needs to be stored in the task struct so that we don't
-     * have to fish it out here. */
-
-    for (j = 0;j < vtable.v_used;j++)
-      {
-      if (!strncmp(vtable.v_envp[j], "PBS_VNODENUM=", strlen("PBS_VNODENUM=")))
-        {
-        if (LOGLEVEL >= 6)
-          {
-          sprintf(log_buffer, "about to move to cpuset for job %s.\n",
-            pjob->ji_qs.ji_jobid);
-
-          log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-          }
-
-        /* Move this mom process into the cpuset so the job will start in it. */
-        move_to_job_cpuset(getpid(), pjob);
-        }
-      }
-    }
-#endif  /* (PENABLE_LINUX26_CPUSETS) */
-
-#ifdef PENABLE_LINUX_CGROUPS
-  int rank;
-  int rc = PBSE_NO_PROCESS_RANK;
-  pbs_attribute *pattr;
-  pid_t new_pid = getpid();
-
-  /* if JOB_ATR_req_information is set then this was a -L request */
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
-    {
-    rc = get_process_rank(rank);
-    if (rc == PBSE_NONE)
-      {
-      unsigned int req_index;
-      unsigned int task_index;
-      unsigned long long mem_limit;
-      unsigned long long swap_limit;
-
-      complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-
-      rc = cr->get_req_and_task_index(rank, req_index, task_index);
-      if (rc == PBSE_NONE)
-        {
-        mem_limit = cr->get_memory_per_task(req_index);
-        swap_limit = cr->get_swap_per_task(req_index);
-
-        rc = trq_cg_set_task_resident_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, mem_limit);
-        if (rc != PBSE_NONE)
-          {
-          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-          exit(1);
-          }
-
-        rc = trq_cg_set_task_swap_memory_limit(pjob->ji_qs.ji_jobid, req_index, task_index, swap_limit);
-        if (rc != PBSE_NONE)
-          {
-          starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-          exit(1);
-          }
-
-        rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
-        if (rc == PBSE_NONE)
-          {
-          rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
-          if (rc == PBSE_NONE)
-            {
-            rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
-                            pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
-            }
-          }
-        }
-      }
+    return(JOB_EXEC_FAIL1);
     }
 
-  /* if rc is not PBSE_NONE just add the process id to the main cgroup. We sill not
-     fail the job. This will work for -l requests as well */
-  if (rc != PBSE_NONE)
-    {
-    rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, new_pid);
-    if (rc != PBSE_NONE)
-      {
-      sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
-      log_err(rc, __func__, log_buffer);
+  dup2(fd1, 1);
 
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-      exit(1);
+  if (fd1 > 1)
+    close(fd1);
+
+  if ((fd2 < 0) && ((fd2 = open_demux(ipaddr, pjob->ji_porterr)) == -1))
+    {
+    log_err(errno, __func__, "cannot open mux stderr port");
+
+    return(JOB_EXEC_FAIL1);
+    }
+
+  dup2(fd2, 2);
+
+  if (fd2 > 2)
+    close(fd2);
+  
+  return(PBSE_NONE);
+  } // END open_subprocess_demux_sockets()
+
+
+
+/*
+ * open_subprocess_pty()
+ *
+ */
+
+int open_subprocess_pty(
+
+  job *pjob,
+  int &fd1,
+  int &fd2)
+
+  {
+  /* interactive job, single node, write to pty */
+
+  int pts = -1;
+
+  if ((fd1 < 0) || (fd2 < 0))
+    {
+    if ((pts = open_pty(pjob)) < 0)
+      {
+      log_err(errno, __func__, "cannot open slave pty");
+
+      return(JOB_EXEC_FAIL1);
+      }
+
+    if (fd1 < 0)
+      fd1 = pts;
+
+    if (fd2 < 0)
+      fd2 = pts;
+    }
+
+  dup2(fd1, 1);
+
+  dup2(fd2, 2);
+
+  if (fd1 != pts)
+    close(fd1);
+
+  if (fd2 != pts)
+    close(fd2);
+
+  return(PBSE_NONE);
+  } // END open_subprocess_pty()
+
+
+
+/*
+ * setup_subprocess_std_files()
+ */
+
+int setup_subprocess_std_files(
+
+  job *pjob,
+  int &fd1,
+  int &fd2)
+
+  {
+  if ((fd1 < 0) || (fd2 < 0))
+    {
+    if (open_std_out_err(pjob, -1) == -1)
+      {
+      log_err(errno, __func__, "cannot open job stderr/stdout files");
+
+      return(JOB_EXEC_FAIL1);
       }
     }
-#endif
 
-  if (pjob->ji_numnodes > 1)
+  if (fd1 >= 0)
     {
-    /*
-    ** Open sockets to demux proc for stdout and stderr.
-    */
-
-    if ((fd1 < 0) &&
-        ((fd1 = open_demux(ipaddr, pjob->ji_portout)) == -1))
-      {
-      log_err(errno, __func__, "cannot open mux stdout port");
-
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
-      }
-
+    close(1);
     dup2(fd1, 1);
 
     if (fd1 > 1)
       close(fd1);
+    }
 
-    if ((fd2 < 0) && ((fd2 = open_demux(ipaddr, pjob->ji_porterr)) == -1))
-      {
-      log_err(errno, __func__, "cannot open mux stderr port");
-
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-
-      /*NOTREACHED*/
-
-      exit(1);
-      }
-
+  if (fd2 >= 0)
+    {
+    close(2);
     dup2(fd2, 2);
 
     if (fd2 > 2)
       close(fd2);
-
-    /* never send cookie - PW mpiexec patch */
-
-    /*
-    if (write_ac_socket(1,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-      strlen(pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str)) == -1) {}
-
-    if (write_ac_socket(2,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
-      strlen(pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str)) == -1) {}
-    */
     }
-  else if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-               (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
-    {
-    /* interactive job, single node, write to pty */
+  
+  return(PBSE_NONE);
+  } // END setup_subprocess_std_files()
 
-    pts = -1;
 
-    if ((fd1 < 0) || (fd2 < 0))
-      {
-      if ((pts = open_pty(pjob)) < 0)
-        {
-        log_err(errno, __func__, "cannot open slave pty");
 
-        starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+/*
+ * set_subprocess_root_dir()
+ *
+ */
 
-        /*NOTREACHED*/
+int set_subprocess_root_dir(
 
-        exit(1);
-        }
+  job *pjob)
 
-      if (fd1 < 0)
-        fd1 = pts;
+  {
+  char *idir = get_job_envvar(pjob, "PBS_O_ROOTDIR");
 
-      if (fd2 < 0)
-        fd2 = pts;
-      }
-
-    dup2(fd1, 1);
-
-    dup2(fd2, 2);
-
-    if (fd1 != pts)
-      close(fd1);
-
-    if (fd2 != pts)
-      close(fd2);
-    }
-  else
-    {
-    /* This code block may be dead (may never be run). This is due to the fact that
-     * start_process() is only called by a sister who has received a IM_SPAWN_TASK,
-     * but the below comment states that the code only runs for a "single node" job,
-     * and all sisters are part of a multi-node job. */
-
-    /* normal batch job, single node, write straight to files */
-
-    pts = -1;
-
-    if ((fd1 < 0) || (fd2 < 0))
-      {
-      if (open_std_out_err(pjob, -1) == -1)
-        {
-        log_err(errno, __func__, "cannot open job stderr/stdout files");
-
-        starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
-        }
-      }
-
-    if (fd1 >= 0)
-      {
-      close(1);
-      dup2(fd1, 1);
-
-      if (fd1 > 1)
-        close(fd1);
-      }
-
-    if (fd2 >= 0)
-      {
-      close(2);
-      dup2(fd2, 2);
-
-      if (fd2 > 2)
-        close(fd2);
-      }
-    }     /* END else */
-
-  /*******************************************************
-   * At this point, output fds are setup for the job,
-   * any further error messages should be written
-   * directly to fd 2, with a \n, and ended with fsync(2)
-   *******************************************************/
-
-  sjr.sj_session = setsid();
-
-  ptask->ti_qs.ti_sid = sjr.sj_session;
-
-  proc_stat_t *ps = get_proc_stat((int)sjr.sj_session);
-  if(ps != NULL)
-    {
-    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
-    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
-    }
-
-  log_buffer[0] = '\0';
-
-  if ((i = mom_set_limits(pjob, SET_LIMIT_SET)) != PBSE_NONE)
-    {
-    if (log_buffer[0] != '\0')
-      {
-      /* report error to user via stderr file */
-      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
-        {
-        }
-
-      fsync(2);
-      }
-
-    sprintf(log_buffer, "PBS: unable to set limits, err=%d\n",
-
-            i);
-
-    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
-      {
-      }
-
-    fsync(2);
-
-    if (i == PBSE_RESCUNAV)   /* resource temp unavailable */
-      j = JOB_EXEC_RETRY;
-    else
-      j  = JOB_EXEC_FAIL2;
-
-    log_err(errno, __func__, log_buffer);
-
-    starter_return(kid_write, kid_read, j, &sjr);
-    }
-
-  if ((idir = get_job_envvar(pjob, "PBS_O_ROOTDIR")) != NULL)
+  if (idir != NULL)
     {
     if (chroot(idir) == -1)
       {
@@ -5807,21 +5880,26 @@ int start_process(
 
       log_err(errno, __func__, log_buffer);
 
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
+      return(JOB_EXEC_FAIL2);
       }
     }
 
-  /* become the user (if necessary) and execv the shell and become the real job */
+  return(PBSE_NONE);
+  } // END set_subprocess_root_dir()
 
-  // see if we need to run a non-privileged jobstarter
-  if ((!jobstarter_set) || (jobstarter_privileged != TRUE))
-    {
-    // not privileged
 
-    /* NOTE: must set groups before setting the user because not all users can
-     * call setgid and setgroups, even if its their group, see setgid's man page */
-    become_the_user_sjr(pjob, kid_write, kid_read, &sjr);
-    }
+
+/*
+ * change_to_subprocess_directory()
+ *
+ */
+
+int change_to_subprocess_directory(
+
+  job *pjob)
+
+  {
+  char *idir;
 
   /* cwd to PBS_O_INITDIR if specified, otherwise User's Home */
   if ((idir = get_job_envvar(pjob, "PBS_O_INITDIR")) != NULL)
@@ -5832,15 +5910,7 @@ int start_process(
         idir,
         strerror(errno));
 
-      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
-        {
-        }
-
-      fsync(2);
-
-      log_err(errno, __func__, log_buffer);
-
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
+      return(JOB_EXEC_FAIL2);
       }
     }
   else
@@ -5851,29 +5921,35 @@ int start_process(
         pjob->ji_grpcache->gc_homedir,
         strerror(errno));
 
-      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
-        {
-        }
-
-      fsync(2);
-
-      log_err(errno, __func__, log_buffer);
-
-      starter_return(kid_write, kid_read, JOB_EXEC_FAIL2, &sjr);
+      return(JOB_EXEC_FAIL2);
       }
     }
 
-  if (LOGLEVEL >= 10)
-    log_ext(-1, __func__, "done - writing pipe and exec'ing", LOG_DEBUG);
+  return(PBSE_NONE);
+  } // END change_to_subprocess_directory()
 
-  starter_return(
-    kid_write,
-    kid_read,
-    JOB_EXEC_OK,
-    &sjr);
 
-  fcntl(kid_write, F_SETFD, FD_CLOEXEC);
 
+/*
+ * become_the_jobs_subprocess()
+ *
+ * execs to become the job's subprocess, or fails.
+ * NEVER RETURNS
+ * @param argv - argv to the subprocess executable
+ * @param kid_read - the read portion of the pipe
+ * @param kid_write - the write portion of the pipe
+ * @param sjr - the struct to write back any pertinent information
+ *
+ */
+
+void become_the_jobs_subprocess(
+    
+  char                **argv,
+  int                   kid_read,
+  int                   kid_write,
+  struct startjob_rtn  *sjr)
+
+  {
   environ = vtable.v_envp;
 
   if (jobstarter_set)
@@ -5918,10 +5994,370 @@ int start_process(
 
   log_err(errno, __func__, log_buffer);
 
-  starter_return(kid_write, kid_read, JOB_EXEC_CMDFAIL, &sjr);
+  starter_return(kid_write, kid_read, JOB_EXEC_CMDFAIL, sjr);
 
   exit(254);
+  } // END become_the_jobs_subprocess()
 
+
+
+/**
+ * Start a process for a spawn request.  This will be different from
+ * a job's initial shell task in that the environment will be specified
+ * and no interactive code need be included.
+ *
+ * NOTE:  Called for sisters after mother superior receives IM_SPAWN_TASK request
+ */
+
+int start_process(
+
+  task  *ptask,   /* I */
+  char **argv,    /* I */
+  char **envp)    /* I */
+
+  {
+  job          *pjob = mom_find_job(ptask->ti_qs.ti_parentjobid);
+  pid_t         pid;
+  int           kid_read;
+  int           kid_write;
+  int           parent_read;
+  int           parent_write;
+  int           j;
+  int           fd0;
+  int           fd1;
+  int           fd2;
+  int           rc;
+  u_long        ipaddr;
+
+  struct  startjob_rtn sjr =
+    {
+    0, 0, 0, 0
+    };
+
+  if (pjob == NULL)
+    return(-1);
+
+  if (setup_process_launch_pipes(kid_read, kid_write, parent_read, parent_write) != PBSE_NONE)
+    return(-1);
+
+  /*
+  ** Get ipaddr to Mother Superior.
+  */
+
+  if (am_i_mother_superior(*pjob) == true)
+    {
+    ipaddr = htonl(localaddr);
+    }
+  else if (pjob->ji_radix > 1)
+    {
+    ipaddr = pjob->ji_sisters[0].sock_addr.sin_addr.s_addr;
+    }
+  else
+    {
+    ipaddr = pjob->ji_hosts[0].sock_addr.sin_addr.s_addr;
+    }
+
+  /* A restarted mom will not have called this yet, but it is needed
+   * to spawn tasks (ji_grpcache).
+   */
+
+  if (!check_pwd(pjob))
+    {
+    log_err(-1, __func__, log_buffer);
+
+    return(-1);
+    }
+
+  /*
+  ** Begin a new process for the fledgling task.
+  */
+
+  if ((pid = fork_me(-1)) == -1)
+    {
+    /* fork failed */
+
+    return(-1);
+    }
+
+  if (pid != 0)
+    {
+    /* parent */
+    close(kid_read);
+    close(kid_write);
+
+    if (read_launcher_child_status(&sjr, pjob->ji_qs.ji_jobid, parent_read, parent_write))
+      return(-1);
+
+    DBPRT(("%s: read start return %d %ld\n",
+      __func__,
+      sjr.sj_code,
+      (long)sjr.sj_session))
+
+    if (process_launcher_child_status(&sjr, pjob->ji_qs.ji_jobid, argv[0]))
+      return(-1);
+
+    set_globid(pjob, &sjr);
+
+    ptask->ti_qs.ti_sid = sjr.sj_session;
+
+    /* if the new pid is not in the job set then this */
+    /* is a new session and we need to insert it */
+    job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(pid);
+    if (job_pid_set_iter == pjob->ji_job_pid_set->end())
+      {
+      /* put the job pid in the job structure */
+      pjob->ji_job_pid_set->insert(pid);
+      }
+
+    /* put the new pid in the pid to job session id map */
+    pid2jobsid_map[pid] = pid;
+
+    /* put the new pid in the global_job_sid_set set */
+    global_job_sid_set.insert(pid);
+
+    update_task_and_job_states_after_launch(ptask, pjob, argv[0]);
+
+    return(PBSE_NONE);
+    }   /* END else if (pid != 0) */
+
+  /************************************************/
+  /* The child process - will become the TASK   */
+  /************************************************/
+
+  if (LOGLEVEL >= 6)
+    log_ext(-1, __func__, "child starting", LOG_DEBUG);
+
+  if (lockfds >= 0)
+    {
+    close(lockfds);
+
+    lockfds = -1;
+    }
+
+  close(parent_read);
+
+  close(parent_write);
+
+  /* set up the environmental variables to be given to the job */
+  if ((rc = initialize_subprocess_environment(pjob, ptask, envp)) != PBSE_NONE)
+    {
+    starter_return(kid_write, kid_read, rc, &sjr);
+
+    exit(1);
+    }
+
+  if ((rc = setup_subprocess_file_descriptors(fd0, fd1, fd2, ipaddr)) != PBSE_NONE)
+    {
+    starter_return(kid_write, kid_read, rc, &sjr);
+
+    exit(1);
+    }
+
+#ifdef PENABLE_LINUX26_CPUSETS
+  if (use_cpusets(pjob) == TRUE)
+    {
+    int j;
+
+    /* FIXME: vnodenum needs to be stored in the task struct so that we don't
+     * have to fish it out here. */
+
+    for (j = 0;j < vtable.v_used;j++)
+      {
+      if (!strncmp(vtable.v_envp[j], "PBS_VNODENUM=", strlen("PBS_VNODENUM=")))
+        {
+        if (LOGLEVEL >= 6)
+          {
+          sprintf(log_buffer, "about to move to cpuset for job %s.\n",
+            pjob->ji_qs.ji_jobid);
+
+          log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+          }
+
+        /* Move this mom process into the cpuset so the job will start in it. */
+        move_to_job_cpuset(getpid(), pjob);
+        }
+      }
+    }
+#endif  /* (PENABLE_LINUX26_CPUSETS) */
+
+#ifdef PENABLE_LINUX_CGROUPS
+  int rank;
+  rc = PBSE_NO_PROCESS_RANK;
+  pbs_attribute *pattr;
+  pid_t new_pid = getpid();
+
+  /* make sure we don't have an incompatible -l resource request */
+  if (have_incompatible_dash_l_resource(pjob) == false)
+    {
+
+    /* if JOB_ATR_req_information is set then this was a -L request */
+    pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+    if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+      {
+      rc = get_process_rank(rank);
+      if (rc == PBSE_NONE)
+        {
+        unsigned int req_index;
+        unsigned int task_index;
+
+        complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+
+        rc = cr->get_req_and_task_index(rank, req_index, task_index);
+        if (rc == PBSE_NONE)
+          {
+
+          rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+          if (rc == PBSE_NONE)
+            {
+            rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            if (rc == PBSE_NONE)
+              {
+              rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              if (rc == PBSE_NONE)
+                rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              }
+            }
+          }
+        }
+      }
+    }
+
+  /* if rc is not PBSE_NONE just add the process id to the main cgroup. We still will not 
+     fail the job. This will work for -l requests as well */
+  if (rc != PBSE_NONE)
+    {
+    rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, new_pid);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buffer, "Could not add process to cgroup. Job id %s", pjob->ji_qs.ji_jobid);
+      log_err(rc, __func__, log_buffer);
+
+      starter_return(kid_write, kid_read, JOB_EXEC_FAIL1, &sjr);
+      exit(1);
+      }
+    }
+#endif
+
+  if (pjob->ji_numnodes > 1)
+    {
+    if ((rc = open_subprocess_demux_sockets(pjob, fd1, fd2, ipaddr)) != PBSE_NONE)
+      {
+      starter_return(kid_write, kid_read, rc, &sjr);
+
+      exit(1);
+      }
+    }
+  else if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
+               (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
+    {
+    if ((rc = open_subprocess_pty(pjob, fd1, fd2)) != PBSE_NONE)
+      {
+      starter_return(kid_write, kid_read, rc, &sjr);
+
+      exit(1);
+      }
+    }
+  else
+    {
+    /* This code block may be dead (may never be run). This is due to the fact that
+     * start_process() is only called by a sister who has received a IM_SPAWN_TASK,
+     * but the below comment states that the code only runs for a "single node" job,
+     * and all sisters are part of a multi-node job. */
+
+    /* normal batch job, single node, write straight to files */
+    if ((rc = setup_subprocess_std_files(pjob, fd1, fd2)) != PBSE_NONE)
+      {
+      starter_return(kid_write, kid_read, rc, &sjr);
+
+      exit(1); // not reached
+      }
+    }     /* END else */
+
+  /*******************************************************
+   * At this point, output fds are setup for the job,
+   * any further error messages should be written
+   * directly to fd 2, with a \n, and ended with fsync(2)
+   *******************************************************/
+
+  sjr.sj_session = setsid();
+
+  log_buffer[0] = '\0';
+
+  if ((rc = mom_set_limits(pjob, SET_LIMIT_SET)) != PBSE_NONE)
+    {
+    if (log_buffer[0] != '\0')
+      {
+      /* report error to user via stderr file */
+      if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
+        {
+        }
+
+      fsync(2);
+      }
+
+    sprintf(log_buffer, "PBS: unable to set limits, err=%d\n", rc);
+
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
+      {
+      }
+
+    fsync(2);
+
+    if (rc == PBSE_RESCUNAV)   /* resource temp unavailable */
+      j = JOB_EXEC_RETRY;
+    else
+      j  = JOB_EXEC_FAIL2;
+
+    log_err(errno, __func__, log_buffer);
+
+    starter_return(kid_write, kid_read, j, &sjr);
+    }
+
+  if ((rc = set_subprocess_root_dir(pjob)) != PBSE_NONE)
+    {
+    starter_return(kid_write, kid_read, rc, &sjr);
+    }
+
+  /* become the user (if necessary) and execv the shell and become the real job */
+
+  // see if we need to run a non-privileged jobstarter
+  if ((!jobstarter_set) || (jobstarter_privileged != TRUE))
+    {
+    // not privileged
+
+    /* NOTE: must set groups before setting the user because not all users can
+     * call setgid and setgroups, even if its their group, see setgid's man page */
+    become_the_user_sjr(pjob, kid_write, kid_read, &sjr);
+    }
+
+  if ((rc = change_to_subprocess_directory(pjob)) != PBSE_NONE)
+    {
+    if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
+      {
+      }
+
+    fsync(2);
+
+    log_err(errno, __func__, log_buffer);
+
+    starter_return(kid_write, kid_read, rc, &sjr);
+    }
+
+  // Let pbs_mom (parent) know we're done launching
+  if (LOGLEVEL >= 10)
+    log_ext(-1, __func__, "done - writing pipe and exec'ing", LOG_DEBUG);
+
+  starter_return(kid_write, kid_read, JOB_EXEC_OK, &sjr);
+
+  fcntl(kid_write, F_SETFD, FD_CLOEXEC);
+
+  // This function does not return
+  become_the_jobs_subprocess(argv, kid_read, kid_write, &sjr);
+  return(PBSE_NONE);
   }   /* END start_process() */
 
 
@@ -6089,6 +6525,7 @@ void job_nodes(
 
     host.erase(slash);
 
+
     memset(&hp, 0, sizeof(hp));
 
     hp.hn_node = nhosts;
@@ -6096,10 +6533,20 @@ void job_nodes(
     hp.hn_host = strdup(host.c_str());
     hp.hn_port = strtol(port_str.c_str(), NULL, 10);
 
+
     CLEAR_HEAD(hp.hn_events);
 
+#ifdef NUMA_SUPPORT
+    /* if this is a SGI UV or other shared memory system 
+       remove the suffix for the node name before resolving the address */
+    std::size_t last_dash = host.find_last_of("-");
+    if (last_dash != std::string::npos)
+      host.erase(last_dash);
+#endif
+
+
     /* set up the socket address information */
-    if (pbs_getaddrinfo(hp.hn_host, NULL, &addr_info) == 0)
+    if (pbs_getaddrinfo(host.c_str(), NULL, &addr_info) == 0)
       {
       hp.sock_addr.sin_addr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
       hp.sock_addr.sin_family = AF_INET;
@@ -6613,16 +7060,12 @@ void create_cpuset_reservation_if_needed(
       (presc->rs_value.at_flags & ATR_VFLAG_SET) == FALSE)
     {
     /* this means there is no geometry request */
-    long long mem_requested = get_memory_requested_in_kb(pjob);
+    long long mem_requested = get_memory_limit_from_resource_list(&pjob);
     int       cpu_count = get_cpu_count_requested_on_this_node(pjob);
-
-    // make sure the memory is evenly set over the job.
-    double    mem_pcnt = ((double)cpu_count) / pjob.ji_numvnod;
-    mem_requested = mem_requested * (long long)mem_pcnt;
 
     internal_layout.reserve(cpu_count, mem_requested, pjob.ji_qs.ji_jobid);
     }
-  }
+  } // END create_cpuset_reservation_if_needed()
 
 
 
@@ -6724,10 +7167,7 @@ int start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-  bool good;
-  
-  good = check_pwd(pjob);
-  if (good == false)
+  if (check_pwd(pjob) == false)
     {
     sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
@@ -7805,13 +8245,16 @@ int open_std_file(
     /* errno can change in functions called between here and the if check below */
     int local_errno = errno;
 
-    sprintf(log_buffer,
-      "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
-      path,
-      mode,
-      (keeping == 0) ? "FALSE" : "TRUE");
+    if (am_i_mother_superior(*pjob))
+      {
+      sprintf(log_buffer,
+        "cannot open/create stdout/stderr file '%s' (mode: %o, keeping: %s)",
+        path,
+        mode,
+        (keeping == 0) ? "FALSE" : "TRUE");
 
-    log_err(local_errno, __func__, log_buffer);
+      log_err(local_errno, __func__, log_buffer);
+      }
 
     if (local_errno == ENOENT)
       {

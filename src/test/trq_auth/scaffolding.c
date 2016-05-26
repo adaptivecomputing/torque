@@ -319,7 +319,7 @@ void PBSD_FreeReply(batch_reply *br) {}
   return;
   }*/
 
-int get_hostaddr_hostent(int *local_errno, char *hostname, char **host_addr, int *host_addr_len)
+int get_hostaddr_hostent(int *local_errno, const char *hostname, char **host_addr, int *host_addr_len)
   {
   fprintf(stderr, "The call to get_hostaddr_hostent needs to be mocked!!\n");
   return(1);
@@ -328,7 +328,7 @@ int get_hostaddr_hostent(int *local_errno, char *hostname, char **host_addr, int
 int  get_hostaddr_hostent_af(
 
   int             *rc,
-  char            *hostname,
+  const char      *hostname,
   unsigned short  *af_family,
   char           **host_addr,
   int             *host_addr_len)
@@ -638,7 +638,7 @@ char * pbs_default(void)
 pbs_net_t get_hostaddr(
 
   int *local_errno,
-  char *hostname)
+  const char *hostname)
 
   {
   pbs_net_t rval = 10101010;

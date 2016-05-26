@@ -98,6 +98,7 @@
 #include "array.h"
 #include "utils.h"
 #include "svrfunc.h" /* get_svr_attr_* */
+#include "pbs_helper.h"
 
 extern struct server server;
 
@@ -723,7 +724,7 @@ resource_def svr_resc_def_const[] =
   { "gattr", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "geometry", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "gmetric", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
-  { "gres", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG, ATR_TYPE_STR },
+  { "gres", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE | ATR_DFLAG_ALTRUN | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG, ATR_TYPE_STR },
   { "hostlist", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "image", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "jgroup", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
@@ -769,7 +770,7 @@ resource_def svr_resc_def_const[] =
   { "wcrequeue", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "cpuclock", decode_frequency, encode_frequency, set_frequency, comp_frequency, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_MOM , ATR_TYPE_FREQ},    /* cpu frequency to run  job at */
   { "energy_used", decode_l, encode_l, set_l, comp_l, free_null, NULL_FUNC, NO_USER_SET | ATR_DFLAG_MOM, ATR_TYPE_LONG},
-
+  { "maxmem", decode_size, encode_size, set_size, comp_size, free_null, NULL_FUNC, READ_WRITE | ATR_DFLAG_ALTRUN, ATR_TYPE_SIZE},
 
   /* the definition for the "unknown" resource MUST be last */
 
@@ -1278,9 +1279,9 @@ int set_tokens_nodect(
 
 int set_mppnodect(
 
-  resource      *res,
+  resource      * UNUSED(res),
   pbs_attribute *attr,
-  int            op)
+  int             UNUSED(op))
 
   {
   int           width;
@@ -1368,10 +1369,10 @@ int set_mppnodect(
 int decode_procct(
 
   pbs_attribute *patr,
-  const char  *name,  /* pbs_attribute name */
-  const char *rescn,  /* resource name, unused here */
+  const char * UNUSED(name),  /* pbs_attribute name */
+  const char * UNUSED(rescn),  /* resource name, unused here */
   const char    *val,  /* pbs_attribute value */
-  int            perm) /* only used for resources */
+  int          UNUSED(perm)) /* only used for resources */
 
   {
     const char *pc;
@@ -1412,8 +1413,8 @@ int encode_procct(
   tlist_head     *phead,  /* head of attrlist list */
   const char    *atname, /* pbs_attribute name */
   const char    *rsname, /* resource name or null */
-  int             mode,   /* encode mode, unused here */
-  int             perm)   /* only used for resources */
+  int            UNUSED(mode),   /* encode mode, unused here */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   size_t   ct;

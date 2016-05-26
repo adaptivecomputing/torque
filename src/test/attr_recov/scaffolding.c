@@ -8,6 +8,7 @@
 #include "attribute.h" /* pbs_attribute, attribute_def */
 #include <string>
 
+int    LOGLEVEL = 10;
 
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
@@ -50,28 +51,6 @@ int attr_to_str(std::string&, attribute_def *at_def, struct pbs_attribute attr, 
   fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
   }
-#if 0
-
-
-void clear_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-
-void free_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-#endif
-
 
 int ctnodes(
   char *spec

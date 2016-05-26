@@ -356,6 +356,13 @@ If any of the options \-a, \-i, \-r, \-u, \-n, \-s, \-G or \-M are provided,
 the alternative display format for jobs is used.
 The following items are displayed on a single
 line, in the specified order, separated by white space:
+.LP
+When any of the above options or the -R option is used to request an alternative 
+display format, a column with the requested memory for the job is displayed. 
+If more than one type of memory is requested for the job, either through server 
+or queue parameters or command line, only one value can be displayed.  The value 
+displayed depends on the order the memory types are evaluated with the last type 
+evaluated being the value displayed. The order of evaluation is dmem, mem, pmem, pvmem, vmem.
 .RS
 .IP \- 3
 the job identifier assigned by PBS.

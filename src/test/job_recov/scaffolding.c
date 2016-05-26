@@ -7,7 +7,6 @@
 #include "pbs_job.h" /* job */
 #include "array.h" /* job_array */
 #include "mutex_mgr.hpp"
-#include "dynamic_string.h"
 #include "net_connect.h" /* pbs_net_t */
 #include "user_info.h"
 #include "server.h" /* server */
@@ -15,6 +14,7 @@
 #include "threadpool.h"
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
+#include "pbs_nodes.h"
 
 const char *text_name              = "text";
 const char *PJobSubState[10];
@@ -142,7 +142,7 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
   return(PBSE_NONE);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recov)
   {
   return(PBSE_NONE);
   }
@@ -193,7 +193,7 @@ job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
 const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return ""; }
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, job       **pjob_ptr){return(NULL);}
-pbs_net_t get_hostaddr(int *local_errno, char *hostname) {return 0;}
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname) {return 0;}
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
 pbs_queue *get_dfltque(void) {return NULL;}
 int log_job_record(const char *buf){return 0;}
@@ -281,7 +281,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
 batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *)) {return 0;}
+int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
 int que_to_local_svr(struct batch_request *preq) {return 0;}
 int job_set_wait(pbs_attribute *pattr, void *pjob, int mode) {return 0;}
 int get_batch_request_id(batch_request *preq) {return 0;}
@@ -371,3 +371,51 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t) {return false;}
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
 
 void add_to_completed_jobs(work_task *wt) {}
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
+int node_exception_check(
+
+  pbs_attribute *pattr,
+  void          *pobject,
+  int            actmode)
+
+  {
+  return(0);
+  }
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}
+

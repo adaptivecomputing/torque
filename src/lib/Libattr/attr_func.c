@@ -87,6 +87,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains general functions for manipulating attributes.
@@ -262,7 +263,7 @@ void free_null(
 
 void free_noop(
 
-  pbs_attribute *attr)
+  pbs_attribute * UNUSED(attr))
 
   {
   /* no nothing */
@@ -280,8 +281,8 @@ void free_noop(
 
 int comp_null(
 
-  pbs_attribute *attr,   /* I */
-  pbs_attribute *with)   /* I */
+  pbs_attribute * UNUSED(attr),   /* I */
+  pbs_attribute * UNUSED(with))   /* I */
 
   {
   /* SUCCESS */

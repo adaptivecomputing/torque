@@ -1,10 +1,10 @@
-#ifndef DYNAMIC_STRING_H
-#define DYNAMIC_STRING_H
+#ifndef RESTRICTED_HOST_HPP
+#define RESTRICTED_HOST_HPP
 
 /*
 *         OpenPBS (Portable Batch System) v2.3 Software License
 *
-* Copyright (c) 1999-2010 Veridian Information Solutions, Inc.
+* Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
 * All rights reserved.
 *
 * ---------------------------------------------------------------------------
@@ -80,27 +80,28 @@
 * without reference to its choice of law rules.
 */
 
-#define DS_INITIAL_SIZE 1024
+#include <string>
+#include <set>
 
-typedef struct dynamic_string
+class restricted_host
   {
-  char   *str;  /* the string */
-  size_t  size; /* amount of space available */
-  size_t  used; /* amount of space currently used */
-  } dynamic_string;
+  std::string           hostname;
+  std::set<std::string> users;
+  std::set<std::string> groups;
 
-struct size_value;
+  public:
+  restricted_host(const std::string &hostname, const std::string &user, const std::string &group);
+  restricted_host();
+  bool operator==(const restricted_host &other) const;
+  void add_user(const std::string &user);
+  void add_group(const std::string &group);
+  void remove_user(const std::string &user);
+  void remove_group(const std::string &group);
+  bool has_user(const std::string &user) const;
+  bool authorize_by_group(const std::string &user) const;
+  bool has_group(const std::string &group) const;
+  void clear_users();
+  void clear_groups();
+  };
 
-int             copy_to_end_of_dynamic_string(dynamic_string *, const char *);
-int             append_dynamic_string(dynamic_string *, const char *);
-int             append_dynamic_string_xml(dynamic_string *, const char *);
-dynamic_string *get_dynamic_string(int initial_size, const char *initial_string);
-void            free_dynamic_string(dynamic_string *);
-void            clear_dynamic_string(dynamic_string *);
-char           *get_string(dynamic_string *);
-int             delete_last_word_from_dynamic_string(dynamic_string *);
-int             append_char_to_dynamic_string(dynamic_string *, char );
-
-#endif /* ifdef DYNAMIC_STRING_H */
-
-
+#endif

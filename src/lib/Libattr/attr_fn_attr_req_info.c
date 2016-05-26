@@ -91,6 +91,7 @@
 #include "pbs_error.h"
 #include "attribute.h"
 #include "attr_req_info.hpp"
+#include "pbs_helper.h"
 
 /*
  * decode_attr_req_info()
@@ -112,7 +113,7 @@ int  decode_attr_req_info(
   const char    *name,
   const char    *rescn,
   const char    *val,
-  int            perm)
+  int            UNUSED(perm))
 
   {
   int rc = PBSE_NONE;
@@ -171,7 +172,7 @@ int encode_attr_req_info(
   pbs_attribute *attr,
   tlist_head    *phead,
   const char    *atname,
-  const char    *rsname,
+  const char    *UNUSED(rsname),
   int            mode,
   int            perm)
 

@@ -99,6 +99,11 @@ This defines the number of days that accounting files will be kept.
 Default value: unset - pbs_server will never delete accounting files
 Format: integer
 .Ig
+.Al acl_group_hosts
+List of group/host combinations that authorize users to submit jobs.
+Groups are expanded on the server.
+Format: "group@hostname.domain[,...]"; default value: defer to acl_users.
+.Ig
 .Al acl_group_sloppy 
 This is a default value for the queue attribute of the same name.
 Format: boolean, "TRUE", "True", "true", "Y", "y", "1", "FALSE", "False",
@@ -145,6 +150,10 @@ Format: boolean (see acl_group_enable); default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al acl_user_hosts
+List of user/host combinations that authorize users to submit jobs.
+Format: "user@hostname.domain[,...]"; default value: defer to acl_users.
+.Ig
 .Al acl_users
 List of users allowed or denied the ability to make any requests of this 
 server.
@@ -183,6 +192,13 @@ Format: boolean; default value: disabled.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al automatic_requeue_exit_code
+This is an exit code, defined by the admin, that tells pbs_server to requeue the job
+instead of considering it as completed. This allows the user to add some additional
+checks that the job can run meaningfully, and if not, then the job script exits with
+the specified code to be requeued.
+Format: long; default value: none.
+.Ig
 .Al clone_batch_delay
 Number of seconds to delay between cloning a batch for a job array.
 Format: integer; default value: 1.
@@ -205,6 +221,16 @@ Format: any string; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al copy_on_rerun
+When set to true, copy the output and error files over to the user-specified directory when
+a job is rerun.
+Format: boolean; default value: false.
+.Ig
+.Al cray_enabled
+When set to true, specifies that this instance of pbs_server has Cray hardware that
+reports to it.
+Format: boolean; default value: false.
+.Ig
 .Al default_node
 A node specification to use if there is no other supplied specification.
 This attribute is only used by servers where a
@@ -225,6 +251,22 @@ default value: none, must be set to an existing queue.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al disable_automatic_requeue
+Normally, if a job cannot start due to a transient error, the MOM returns a special exit
+code to the server so that the job is requeued instead of completed. When this
+parameter is set, the special exit code is ignored and the job is completed.
+Format: boolean; default value: false.
+.Ig
+.Al display_job_server_suffix
+When set to TRUE, Torque will display both the job ID and the host name. When set to
+FALSE, only the job ID will be displayed.
+Format: boolean; default value: true.
+.Ig
+.Al dont_write_nodes_file
+When set to TRUE, the nodes file cannot be overwritten for any reason; qmgr
+commands to edit nodes will be rejected.
+Format: boolean; default value: false.
+.Ig
 .Al down_on_error
 Set a node's state to "down" if MOM reports a message beginning with the string
 "ERROR".  This might interfere with moab's node error handling.  See the HEALTH
@@ -244,9 +286,51 @@ resources_default/min/max.  Format: list; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: list]
 .Ig
+.Al interactive_jobs_can_roam
+By default, interactive jobs run from the login node that they submitted from. When
+TRUE, interactive jobs may run on login nodes other than the one where the jobs were
+submitted to.  Only applies when cray_enabled is set.
+Format: boolean; default value: false.
+.Ig
+.Al job_exclusive_on_use
+When job_exclusive_on_use is set to TRUE, pbsnodes will show job-exclusive on a
+node when there's at least one of its processors running a job. This differs with the
+default behavior which is to show job-exclusive on a node when all of its processors
+are running a job.
+Format: boolean; default value: false.
+.Ig
 .Al job_force_cancel_time
 If configured, number of seconds after a delete where a job will be purged by the server. If not configured, no such thing happens.
 Format: integer; default value: not used.
+.Ig
+.Al job_full_report_time
+Sets the time in seconds that a job should be fully reported after any kind of change
+to the job, even if condensed output was requested.
+Format: integer; default value: 300 seconds.
+.Ig
+.Al job_log_file_max_size
+This specifies a soft limit (in kilobytes) for the job log's maximum size. The file size 
+is checked every five minutes and if the current day file size is greater than or equal
+to this value, it is rolled from <filename> to <filename.1> and a new empty log is
+opened. If the current day file size exceeds the maximum size a second time, the
+<filename.1> log file is rolled to <filename.2>, the current log is rolled to
+<filename.1>, and a new empty log is opened. Each new log causes all other logs to
+roll to an extension that is one greater than its current number. Any value less than 0
+is ignored by pbs_server (meaning the log will not be rolled).
+Format: integer; default value: none.
+.Ig
+.Al job_log_file_roll_depth
+This sets the maximum number of new log files that are kept in a day if the
+job_log_file_max_size parameter is set. For example, if the roll depth is set to 3, no
+file can roll higher than <filename.3>. If a file is already at the specified depth, such
+as <filename.3>, the file is deleted so it can be replaced by the incoming file roll,
+<filename.2>.
+Format: integer; default value: none.
+.Ig
+.Al job_log_keep_days
+This maintains job logs for the number of days designated. If set to 4, any job log file older
+than 4 days old is deleted.
+Format: integer; default value: none.
 .Ig
 .Al job_nanny
 Enables the "job deletion nanny" feature.  All job cancels will
@@ -276,6 +360,12 @@ Default value: 45 seconds  (PBS_RESTAT_JOB in server_limits.h)
 Minimum value: 4 seconds  (PBS_JOBSTAT_MIN in server_limits.h)
 .if !\n(Pb .ig Ig
 [internal type: integer]
+.Ig
+.Al job_sync_timeout
+When a stray job is reported on multiple nodes, the server sends a kill signal to one
+node at a time. This timeout determines how long the server waits between kills if the
+job is still being reported on any nodes.
+Format: integer; default value: 60.
 .Ig
 .Al keep_completed
 Number of seconds to retain completed jobs in the C state.  This is overridden
@@ -492,6 +582,27 @@ Format: integer; default value: none.
 .if !\n(Pb .ig Ig
 [internal type: integer]
 .Ig
+.Al max_threads
+This is the maximum number of threads that should exist in the thread pool at any 
+time.
+Format: integer; default value: ((2 * the number of procs listed in /proc/cpuinfo) + 1) * 20
+.Ig
+.Al max_user_queuable
+When set, max_user_queuable places a system-wide limit on the amount of jobs that
+an individual user can queue.
+Format: integer; default value: unlimited.
+.Ig
+.Al min_threads
+This is the minimum number of threads that should exist in the thread pool at any
+time.
+Format: integer; default value: (2 * the number of procs listed in /proc/cpuinfo) + 1.
+.Ig
+.Al moab_array_compatible
+This parameter places a hold on jobs that exceed the slot limit in a job array. When
+one of the active jobs is completed or deleted, one of the held jobs goes to a queued
+state.
+Format: boolean; default value: true.
+.Ig
 .Al mom_job_sync
 Enables the "job sync on MOM" feature.   When MOMs send a status
 update, and it includes a list of jobs, server will issue job deletes for any
@@ -579,6 +690,20 @@ Default value: unset
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig
+.Al pass_cpuclock
+If set to TRUE, the pbs_server daemon passes the option and its value to the
+pbs_mom daemons for direct implementation by the daemons, making the
+CPU frequency adjustable as part of a resource request by a job submission.
+If set to FALSE, the pbs_server daemon creates and passes a PBS_CPUCLOCK job
+ environment variable to the pbs_mom daemons that contains the value of the 
+cpuclock attribute used as part of a resource request by a job submission. 
+The CPU frequencies on the MOMs are not adjusted. The environment variable is 
+for use by prologue and epilogue scripts, enabling administrators to log and 
+research when users are making cpuclock requests, as well as researchers and 
+developers to perform CPU clock frequency changes using a method outside of 
+that employed by the Torque pbs_mom daemons.
+Format: boolean;  default value: true.
+.Ig
 .Al poll_jobs
 Controls how pbs_server will send job status requests to MOMs.  When unset or
 false, statjob requests from clients (ie: qstat(1B) or the scheduler) may
@@ -599,6 +724,15 @@ Requires full manager privilege to set or alter.
 default value: false \- users may not query or select jobs owned by other users.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
+.Ig
+.Al record_job_info
+This must be set to TRUE in order for job logging to be enabled.
+Format: boolean;  default value: false.
+.Ig
+.Al record_job_script
+If set to TRUE, this adds the contents of the script executed by a job to the log.
+For record_job_script to take effect, record_job_info must be set to TRUE.
+Format: boolean;  default value: false.
 .Ig
 .Al "resources_available"
 The list of resource and amounts available to jobs run by this server.
@@ -708,6 +842,32 @@ Specifies the pbs_server to pbs_mom TCP socket timeout in seconds.
 Format: integer; default value: 6.
 .if !\n(Pb .ig Ig
 [internal type: integer]
+.Ig
+.Al thread_idle_seconds
+This is the number of seconds a thread can be idle in the thread pool before it is
+deleted. If threads should not be deleted, set to -1. Torque will always maintain at
+least min_threads number of threads, even if all are idle.
+Format: integer; default value: 300.
+.Ig
+.Al timeout_for_job_delete
+The specific timeout used when deleting jobs because the node they are executing on
+is being deleted.
+Format: integer; default value: 120.
+.Ig
+.Al timeout_for_job_requeue
+The specific timeout used when requeuing jobs because the node they are executing
+on is being deleted.
+Format: integer; default value: 120.
+.Ig
+.Al use_jobs_subdirs
+Lets an administrator direct the way pbs_server will store its job-related files.
+When use_jobs_subdirs is unset (or set to FALSE), job and job array files will be
+stored directly under $PBS_HOME/server_priv/jobs and
+$PBS_HOME/server_priv/arrays. 
+When use_job_subdirs is set to TRUE, job and job array files will be distributed
+over 10 subdirectories under their respective parent directories. This method
+helps to keep a smaller number of files in a given directory. 
+Format: boolean; default value: false.
 .Ig
 .RE
 .LP

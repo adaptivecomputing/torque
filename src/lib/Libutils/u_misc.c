@@ -335,6 +335,9 @@ void translate_range_string_to_vector(
   int   prev = 0;
   int   curr;
 
+  while (is_whitespace(*ptr))
+    ptr++;
+
   while (*ptr != '\0')
     {
     prev = strtol(ptr, &ptr, 10);
@@ -351,7 +354,7 @@ void translate_range_string_to_vector(
         prev++;
         }
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
@@ -359,7 +362,7 @@ void translate_range_string_to_vector(
       {
       indices.push_back(prev);
 
-      if ((*ptr == ',') ||
+      while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
         ptr++;
       }
@@ -419,6 +422,44 @@ bool task_hosts_match(
   const char *this_hostname)
  
   {
+#ifdef NUMA_SUPPORT
+  char *real_task_host = strdup(task_host);
+  char *last_dash = NULL;
+
+  if (real_task_host == NULL)
+    return(false);
+
+  last_dash = strrchr(real_task_host, '-');
+  if (last_dash != NULL)
+    *last_dash = '\0';
+    
+  if (strcmp(real_task_host, this_hostname))
+    {
+    /* see if the short name might match */
+    char task_hostname[PBS_MAXHOSTNAME];
+    char local_hostname[PBS_MAXHOSTNAME];
+    char *dot_ptr;
+
+    strcpy(task_hostname, real_task_host);
+    strcpy(local_hostname, this_hostname);
+
+    dot_ptr = strchr(task_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    dot_ptr = strchr(local_hostname, '.');
+    if (dot_ptr != NULL)
+      *dot_ptr = '\0';
+
+    if (strcmp(task_hostname, local_hostname))
+      {
+      /* this task does not belong to this host. Go to the next one */
+      return(false);
+      }
+    }
+
+
+#else
   if (strcmp(task_host, this_hostname))
     {
     /* see if the short name might match */
@@ -443,6 +484,7 @@ bool task_hosts_match(
       return(false);
       }
     }
+#endif
 
   return(true);
   }

@@ -107,20 +107,9 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   return(0);
   }
 
-int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode)
+int mgr_set_node_attr(struct pbsnode *pnode, attribute_def *pdef, int limit, svrattrl *plist, int privil, int *bad, void *parent, int mode, bool dont_update)
   {
   return(0);
-  }
-
-void free_prop_list(struct prop *prop)
-  {
-  struct prop *pp;
-  while (prop)
-    {
-    pp = prop->next;
-    free(prop);
-    prop = pp;
-    }
   }
 
 void *get_next(list_link pl, char *file, int line)
@@ -138,15 +127,13 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   else
     {
     sprintf(buf, "%lu", key);
-    numa.nd_name = buf;
+    numa.change_name(buf);
     return(&numa);
     }
   }
 
 void free_attrlist(tlist_head *pattrlisthead)
   {
-  fprintf(stderr, "The call to free_attrlist needs to be mocked!!\n");
-  exit(1);
   }
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
@@ -154,6 +141,13 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   svrattrl *pal = (svrattrl *)pobj;
   attrname = pal->al_name;
   attrval = pal->al_value;
+  }
+
+void delete_link(
+
+  struct list_link *old) /* ptr to link to delete */
+
+  {
   }
 
 char *pbs_strerror(int err)
@@ -335,7 +329,7 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
 struct pbsnode *create_alps_subnode(struct pbsnode *parent, const char *node_id)
   {
   created_subnode++;
-  return(NULL);
+  return(new pbsnode());
   }
 
 id_map::id_map() : counter(0) {}
@@ -531,3 +525,12 @@ int Machine::getTotalChips() const
   return(0);
   }
 
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
+
+void update_node_state(pbsnode *pnode, int state) 
+  {
+  pnode->nd_state = state;
+  }

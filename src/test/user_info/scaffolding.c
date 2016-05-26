@@ -31,3 +31,6 @@ int num_array_jobs(const char *array_req)
 
 
 void log_err(int error, const char *func_id, const char *msg) {}
+
+job::job() {}
+job::~job() {}

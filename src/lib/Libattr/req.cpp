@@ -294,8 +294,6 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, place_core))
     {
-    int count;
-
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->cores);
     else
@@ -306,8 +304,6 @@ int req::set_place_value(
     }
   else if (!strcmp(work_str, place_thread))
     {
-    int count;
-
     if (numeric_value != NULL)
       rc = parse_positive_integer(numeric_value, this->threads);
     else
@@ -875,18 +871,36 @@ bool req::has_conflicting_values(
     }
   else
     {
-    if ((this->execution_slots > this->cores) &&
-        (this->cores > 1))
+    if ((this->execution_slots > this->cores))
       {
-      error = "place=core=x must be >= lprocs";
-      bad_syntax = true;
+      if (this->cores > 1)
+        {
+        error = "place=core=x must be >= lprocs";
+        bad_syntax = true;
+        }
+      else if (this->cores == 1)
+        {
+        /* A core value of one is a default or even if set by the user
+           will be considered the default. lprocs was greater than 1 so 
+           we will set cores equal to lprocs */
+        this->cores = this->execution_slots;
+        }
       }
 
-    if ((this->execution_slots > this->threads) &&
-        (this->threads > 1))
+    if ((this->execution_slots > this->threads))
       {
-      error = "place=thread=x must be >= lprocs";
-      bad_syntax = true;
+      if (this->threads > 1)
+        {
+        error = "place=thread=x must be >= lprocs";
+        bad_syntax = true;
+        }
+      else if (this->threads == 1)
+        {
+         /* A thread value of one is a default or even if set by the user
+           will be considered the default. lprocs was greater than 1 so 
+           we will set thread equal to lprocs */
+        this->threads = this->execution_slots;
+        }
       }
     }
 
@@ -1583,7 +1597,10 @@ void req::set_from_string(
   char *current = strchr(req, '[');
 
   if (current == NULL)
+    {
+    free(req);
     return;
+    }
 
   current++;
 
@@ -1592,7 +1609,10 @@ void req::set_from_string(
   // read the task count
   current = strchr(current, ':');
   if (current == NULL)
+    {
+    free(req);
     return;
+    }
 
   current += 2; // move past the ': '
   this->task_count = strtol(current, &current, 10);
@@ -1916,7 +1936,7 @@ int req::set_value(
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
   else if (!strncmp(name, "gpu_mode", 8))
-    this->gpu_mode += value;
+    this->gpu_mode = value;
   else if (!strncmp(name, "mics", 4))
     this->mics = strtol(value, NULL, 10);
   else if (!strncmp(name, "maxtpn", 6))
@@ -2128,6 +2148,12 @@ std::string req::getReqAttr() const
 
   {
   return(this->req_attr);
+  }
+
+std::string req::get_gpu_mode() const
+
+  {
+  return(this->gpu_mode);
   }
 
 int req::getIndex() const
@@ -2396,6 +2422,14 @@ void req::set_memory(
 
   {
   this->mem = mem;
+  }
+
+void req::set_swap(
+
+  unsigned long swap)
+
+  {
+  this->swap = swap;
   }
 
 int req::get_execution_slots() const

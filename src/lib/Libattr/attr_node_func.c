@@ -104,6 +104,7 @@
 #include <syslog.h>
 #endif
 #include "id_map.hpp"
+#include "pbs_helper.h"
 
 extern int LOGLEVEL;
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
@@ -137,7 +138,6 @@ void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, 
  * node_ntype()
  * node_prop_list()
  *
- * free_prop_list()
  * free_prop_attr()  "function for at_free func pointer"
  *
  * local:
@@ -330,8 +330,8 @@ int encode_state(
                        which are to be returned*/
   const char   *aname, /*pbs_attribute's name    */
   const char   *rname, /*resource's name (null if none)  */
-  int            mode, /*mode code, unused here   */
-  int            perm) /* only used for resources */
+  int            UNUSED(mode), /*mode code, unused here   */
+  int            UNUSED(perm)) /* only used for resources */
 
   {
   int       i;
@@ -353,6 +353,11 @@ int encode_state(
     }
 
   state = pattr->at_val.at_short & (INUSE_SUBNODE_MASK | INUSE_UNKNOWN);
+
+  if (pattr->at_val.at_short & INUSE_NETWORK_FAIL)
+    {
+    state |= INUSE_DOWN;
+    }
 
   if (!state)
     {
@@ -413,8 +418,8 @@ int encode_power_state(
                        which are to be returned*/
   const char   *aname, /*pbs_attribute's name    */
   const char   *rname, /*resource's name (null if none)  */
-  int            mode, /*mode code, unused here   */
-  int            perm) /* only used for resources */
+  int            UNUSED(mode), /*mode code, unused here   */
+  int            UNUSED(perm)) /* only used for resources */
 
   {
   svrattrl *pal;
@@ -499,8 +504,8 @@ int encode_ntype(
   tlist_head     *ph,    /*head of a list of  "svrattrl"   */
   const char    *aname, /*pbs_attribute's name    */
   const char    *rname, /*resource's name (null if none)  */
-  int             mode,  /*mode code, unused here   */
-  int             perm)  /* only used for resources */
+  int             UNUSED(mode),  /*mode code, unused here   */
+  int             UNUSED(perm))  /* only used for resources */
 
   {
   svrattrl *pal;
@@ -556,8 +561,8 @@ int encode_jobs(
                            which are to be returned*/
   const char    *aname, /*pbs_attribute's name    */
   const char    *rname, /*resource's name (null if none)  */
-  int             mode,  /*mode code, unused here   */
-  int             perm)  /* only used for resources */
+  int             UNUSED(mode),  /*mode code, unused here   */
+  int             UNUSED(perm))  /* only used for resources */
 
   {
   FUNCTION_TIMER
@@ -632,10 +637,10 @@ int encode_jobs(
 int decode_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  const char   *name,    /* pbs_attribute name */
-  const char *rescn,   /* resource name, unused here */
+  const char * UNUSED(name),    /* pbs_attribute name */
+  const char * UNUSED(rescn),   /* resource name, unused here */
   const char    *val,     /* pbs_attribute value */
-  int            perm)    /* only used for resources */
+  int          UNUSED(perm))    /* only used for resources */
 
   {
   int   rc = 0;  /*return code; 0==success*/
@@ -735,10 +740,10 @@ int decode_state(
 int decode_power_state(
 
   pbs_attribute *pattr,   /* I (modified) */
-  const char   *name,    /* pbs_attribute name */
-  const char *rescn,   /* resource name, unused here */
+  const char * UNUSED(name),    /* pbs_attribute name */
+  const char * UNUSED(rescn),   /* resource name, unused here */
   const char    *val,     /* pbs_attribute value */
-  int            perm)    /* only used for resources */
+  int          UNUSED(perm))    /* only used for resources */
 
   {
   int   flag = -1;
@@ -865,10 +870,10 @@ int decode_utc(
 int decode_ntype(
 
   pbs_attribute *pattr,
-  const char   *name,   /* pbs_attribute name */
-  const char *rescn,  /* resource name, unused here */
+  const char * UNUSED(name),   /* pbs_attribute name */
+  const char * UNUSED(rescn),  /* resource name, unused here */
   const char    *val,    /* pbs_attribute value */
-  int            perm)   /* only used for resources */
+  int          UNUSED(perm))   /* only used for resources */
 
 
   {
@@ -892,29 +897,6 @@ int decode_ntype(
 
   return rc;
   }
-
-
-/*
- * free_prop_list
- * For each element of a null terminated prop list call free
- * to clean up any string buffer that hangs from the element.
- * After this, call free to remove the struct prop.
- */
-
-void
-free_prop_list(struct prop *prop)
-  {
-
-  struct prop *pp;
-
-  while (prop)
-    {
-    pp = prop->next;
-    free(prop);
-    prop = pp;
-    }
-  }
-
 
 
 
@@ -1258,7 +1240,7 @@ int node_ttl(
     {
     case ATR_ACTION_NEW:
 
-      if(np->nd_ttl[0] != '\0')
+      if (np->nd_ttl[0] != '\0')
         {
         temp.at_val.at_str = (char *)np->nd_ttl;
         temp.at_flags = ATR_VFLAG_SET;
@@ -1316,9 +1298,9 @@ int node_requestid(
     {
     case ATR_ACTION_NEW:
 
-      if(np->nd_requestid->size() != 0)
+      if (np->nd_requestid.size() != 0)
         {
-        temp.at_val.at_str = (char *)np->nd_requestid->c_str();
+        temp.at_val.at_str = (char *)np->nd_requestid.c_str();
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_STR;
 
@@ -1336,11 +1318,11 @@ int node_requestid(
 
       if(new_attr->at_val.at_str != NULL)
         {
-        *np->nd_requestid = new_attr->at_val.at_str;
+        np->nd_requestid = new_attr->at_val.at_str;
         }
       else
         {
-        np->nd_requestid->clear();
+        np->nd_requestid.clear();
         }
 
       break;
@@ -1813,11 +1795,11 @@ int node_note(
       /* if node has a note, then copy string into temp  */
       /* to use to setup a copy, otherwise setup empty   */
 
-      if (np->nd_note != NULL)
+      if (np->nd_note.size() != 0)
         {
         /* setup temporary pbs_attribute with the string from the node */
 
-        temp.at_val.at_str = np->nd_note;
+        temp.at_val.at_str = (char *)np->nd_note.c_str();
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_STR;
 
@@ -1836,18 +1818,16 @@ int node_note(
 
     case ATR_ACTION_ALTER:
 
-      if (np->nd_note != NULL)
-        {
-        free(np->nd_note);
-
-        np->nd_note = NULL;
-        }
-
       /* update node with new string */
+      if (new_attr->at_val.at_str != NULL)
+        {
+        np->nd_note = new_attr->at_val.at_str;
 
-      np->nd_note = new_attr->at_val.at_str;
-
-      new_attr->at_val.at_str = NULL;
+        free(new_attr->at_val.at_str);
+        new_attr->at_val.at_str = NULL;
+        }
+      else
+        np->nd_note.clear();
 
       break;
 
@@ -1874,40 +1854,27 @@ int set_note_str(
   enum batch_op  op)
 
   {
-  static char id[] = "set_note_str";
-  size_t      nsize;
-  int         rc = 0;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-
   assert(attr && new_attr && new_attr->at_val.at_str && (new_attr->at_flags & ATR_VFLAG_SET));
-  nsize = strlen(new_attr->at_val.at_str);    /* length of new note */
 
-  if (nsize > MAX_NOTE)
-    {
-    sprintf(log_buf, "Warning: Client attempted to set note with len (%d) > MAX_NOTE (%d)",
-      (int)nsize,
-      MAX_NOTE);
-
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
-
-    rc = PBSE_BADNDATVAL;
-    }
-
+  // if newlines are in the note string, remove them
   if (strchr(new_attr->at_val.at_str, '\n') != NULL)
     {
-    sprintf(log_buf, "Warning: Client attempted to set note with a newline char");
+    std::string new_note = new_attr->at_val.at_str;
+    
+    // remove newline(s) from string                                                                                     
+    new_note.erase(std::remove(new_note.begin(), new_note.end(), '\n'), new_note.end());
 
-    log_record(PBSEVENT_SECURITY,PBS_EVENTCLASS_REQUEST,id,log_buf);
+    // now reassign string
 
-    rc = PBSE_BADNDATVAL;
+    // remove the old one if present
+    if (new_attr->at_val.at_str != NULL)
+      free(new_attr->at_val.at_str);
+
+    // assign the new one
+    new_attr->at_val.at_str = strdup(new_note.c_str());
     }
 
-  if (rc != 0)
-    return(rc);
-
-  rc = set_str(attr, new_attr, op);
-
-  return(rc);
+  return(set_str(attr, new_attr, op));
   }  /* END set_note_str() */
 
 /* END attr_node_func.c */

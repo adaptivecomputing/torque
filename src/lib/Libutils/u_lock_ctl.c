@@ -13,7 +13,6 @@
 lock_ctl *locks = NULL;
 lock_cntr *cntr = NULL;
 #define MSG_LEN_SHORT 60
-#define MSG_LEN_LONG 160
 
 /* additional lock, unlock method exist in queue_func.*, node_func.* */
 int lock_init()
@@ -185,110 +184,6 @@ int unlock_ss()
   return(PBSE_NONE);
   } /* END unlock_ss() */
 
-
-
-
-int lock_node(
-    
-  struct pbsnode *the_node,
-  const char     *id,
-  const char     *msg,
-  int             logging)
-
-  {
-  int   rc = PBSE_NONE;
-  char  err_msg[MSG_LEN_LONG + 1];
-  char  stub_msg[] = "no pos";
-  
-  if (logging >= 10)
-    {
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "locking start %s in method %s-%s", the_node->nd_name, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
-    }
-
-  
-  if (pthread_mutex_lock(the_node->nd_mutex) != 0)
-    {
-    if (logging >= 10)
-      {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock node %s mutex in method %s",
-          the_node->nd_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
-      }
-    rc = PBSE_MUTEX;
-    }
-  
-  if (logging >= 10)
-    {
-    snprintf(err_msg, MSG_LEN_LONG, "locking complete %s in method %s", the_node->nd_name, id);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
-    }
-
-  return rc;
-  } /* END lock_node() */
-
-int tmp_lock_node(
-
-  struct pbsnode *the_node,
-  const char     *id,
-  const char     *msg,
-  int             logging)
-  {
-  int rc = lock_node(the_node,id,msg,logging);
-  if(rc == PBSE_NONE)
-    {
-    the_node->nd_tmp_unlock_count--;
-    }
-  return(rc);
-  }
-
-
-int unlock_node(
-    
-  struct pbsnode *the_node,
-  const char     *id,
-  const char     *msg,
-  int             logging)
-
-  {
-  int   rc = PBSE_NONE;
-  char  err_msg[MSG_LEN_LONG + 1];
-  char  stub_msg[] = "no pos";
-
-  if (logging >= 10)
-    {
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", the_node->nd_name, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
-    }
-
-  if (pthread_mutex_unlock(the_node->nd_mutex) != 0)
-    {
-    if (logging >= 10)
-      {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock node %s mutex in method %s",
-          the_node->nd_name, id);
-      log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, err_msg);
-      }
-    rc = PBSE_MUTEX;
-    }
-
-  return rc;
-  } /* END unlock_node() */
-
-int tmp_unlock_node(
-
-  struct pbsnode *the_node,
-  const char     *id,
-  const char     *msg,
-  int             logging)
-  {
-  the_node->nd_tmp_unlock_count++;
-  return(unlock_node(the_node,id,msg,logging));
-  }
 
 
 int lock_cntr_init()

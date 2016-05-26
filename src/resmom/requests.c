@@ -254,12 +254,11 @@ static pid_t fork_to_user(
   struct group   *grpp;
   pid_t           pid;
   job            *pjob;
-
   struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
-
   char           *idir;
-
+  char           *pw_buf = NULL;
+  char           *gr_buf = NULL;
   std::string     hdir;
 
   struct stat     sb;
@@ -292,9 +291,8 @@ static pid_t fork_to_user(
     }
   else
     {
-    char *buf = NULL;
 
-    if ((pwdp = getpwnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
+    if ((pwdp = getpwnam_ext(&pw_buf, preq->rq_ind.rq_cpyfile.rq_user)) == NULL)
       {
       if (MOMUNameMissing[0] == '\0')
         snprintf(MOMUNameMissing, 64, "%s", preq->rq_ind.rq_cpyfile.rq_user);
@@ -316,10 +314,10 @@ static pid_t fork_to_user(
       {
       usergid = pwdp->pw_gid;   /* default to login group */
       }
-    else if ((grpp = getgrnam_ext(&buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
+    else if ((grpp = getgrnam_ext(&gr_buf, preq->rq_ind.rq_cpyfile.rq_group)) != NULL)
       {
       usergid = grpp->gr_gid;
-      free_grname(grpp, buf);
+      free_grname(grpp, gr_buf);
       }
     else
       {
@@ -332,7 +330,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      free_pwnam(pwdp, buf);
+      free_pwnam(pwdp, pw_buf);
       return(-PBSE_BADUSER);
       }
 
@@ -354,7 +352,7 @@ static pid_t fork_to_user(
       hdir = pwdp->pw_dir;
       }
 
-    free_pwnam(pwdp, buf);
+    free_pwnam(pwdp, pw_buf);
     }    /* END if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) && ...) */
 
   if (hdir.size() == 0)
@@ -774,7 +772,7 @@ static int told_to_cp(
 
   {
   int    i;
-  int    nh;
+  unsigned int    nh;
 
   static char newp[MAXPATHLEN + 1];
   char linkpath[MAXPATHLEN + 1];
@@ -782,9 +780,9 @@ static int told_to_cp(
 
   for (max_links = 16;max_links > 0;max_links--)
     {
-    for (nh = 0;nh < cphosts_num;nh++)
+    for (nh = 0;nh < pcphosts.size(); nh++)
       {
-      if (wchost_match(host, pcphosts[nh].cph_hosts))
+      if (wchost_match(host, pcphosts[nh].cph_hosts.c_str()))
         {
 
         if (LOGLEVEL >= 5)
@@ -792,24 +790,24 @@ static int told_to_cp(
           sprintf(log_buffer, "host '%s' pcphosts[%d].cph_hosts: %s",
                   host,
                   nh,
-                  pcphosts[nh].cph_hosts);
+                  pcphosts[nh].cph_hosts.c_str());
 
           log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
           }
 
-        i = strlen(pcphosts[nh].cph_from);
+        i = pcphosts[nh].cph_from.size();
 
-        if (strncmp(pcphosts[nh].cph_from, oldpath, i) == 0)
+        if (strncmp(pcphosts[nh].cph_from.c_str(), oldpath, i) == 0)
           {
           int nchars, link_size;
           nchars = snprintf(newp, sizeof(newp), "%s%s",
-                            pcphosts[nh].cph_to, oldpath + i);
+                            pcphosts[nh].cph_to.c_str(), oldpath + i);
 
           if (nchars >= (int)sizeof(newp))
             {
             snprintf(log_buffer, sizeof(log_buffer),
                      "too long string when transforming path '%s' to '%s%s'\n",
-                     oldpath, pcphosts[nh].cph_to, oldpath + i);
+                     oldpath, pcphosts[nh].cph_to.c_str(), oldpath + i);
             log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
             return(0);
             }
@@ -872,8 +870,8 @@ static int told_to_cp(
                 host,
                 oldpath,
                 nh,
-                (pcphosts + nh)->cph_hosts,
-                (pcphosts + nh)->cph_from);
+                pcphosts[nh].cph_hosts.c_str(),
+                pcphosts[nh].cph_from.c_str());
 
         log_record(
           PBSEVENT_SYSTEM,
@@ -4182,7 +4180,7 @@ job *job_with_reservation_id(
   const char *rsv_id)
 
   {
-  job *pjob, *nxjob;
+  job *pjob;
   std::list<job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)

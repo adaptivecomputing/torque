@@ -84,6 +84,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 
 extern int LOGLEVEL;
+const unsigned int  JOB_USAGE_THRESHOLD = 50;
 
 login_holder logins;
 
@@ -125,15 +126,15 @@ int add_to_login_holder(
  */
 struct pbsnode *check_node(
 
-  login_node  *ln,
-  struct prop *needed)
+  login_node        *ln,
+  std::vector<prop> *needed)
 
   {
   struct pbsnode *pnode = ln->pnode;
 
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->lock_node(__func__, NULL, LOGLEVEL);
 
-  if ((hasprop(pnode, needed) == TRUE) &&
+  if ((pnode->hasprop(needed) == true) &&
       (pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used >= 1) &&
       ((pnode->nd_state & INUSE_NOT_READY) == 0) &&
       ((pnode->nd_state & INUSE_OFFLINE) == 0) &&
@@ -141,7 +142,7 @@ struct pbsnode *check_node(
     return(pnode);
   else
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return(NULL);
     }
   } /* END check_node() */
@@ -151,7 +152,7 @@ struct pbsnode *check_node(
 
 struct pbsnode *find_fitting_node(
 
-  struct prop *needed)
+  std::vector<prop> *needed)
 
   {
   struct pbsnode  *pnode = NULL;
@@ -196,10 +197,54 @@ struct pbsnode *find_fitting_node(
 
 
 
+/*
+ * update_next_node_by_usage
+ *
+ * @param held - a pointer to a node whose mutex we own
+ */
+
+void update_next_node_by_usage(
+    
+  struct pbsnode *held)
+
+  {
+  unsigned int    jobs_to_beat = -1;
+  struct pbsnode *pnode = logins.nodes[logins.next_node].pnode;
+
+  if (pnode != held)
+    pnode->lock_node(__func__, NULL, LOGLEVEL);
+  jobs_to_beat = pnode->nd_job_usages.size();
+  if (pnode != held)
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
+
+  // If we have more than 50 jobs on the next login to use, then we should load balance 
+  // instead of round-robin
+  if (jobs_to_beat > JOB_USAGE_THRESHOLD)
+    {
+    for (unsigned int i = 0; i < logins.nodes.size(); i++)
+      {
+      struct pbsnode *pnode = logins.nodes[i].pnode;
+      if (pnode != held)
+        pnode->lock_node(__func__, NULL, LOGLEVEL);
+
+      if (pnode->nd_job_usages.size() < jobs_to_beat)
+        {
+        logins.next_node = i;
+        jobs_to_beat = pnode->nd_job_usages.size();
+        }
+
+      if (pnode != held)
+        pnode->unlock_node(__func__, NULL, LOGLEVEL);
+      }
+    }
+  } // END update_next_node_by_usage()
+
+
 
 void update_next_node_index(
 
-  unsigned int to_beat)
+  unsigned int    to_beat,
+  struct pbsnode *held)
 
   {
   int         prev_index = 0;
@@ -216,6 +261,7 @@ void update_next_node_index(
     prev_index++;
     }
 
+  update_next_node_by_usage(held);
   } /* END update_next_node_index() */
 
 
@@ -224,7 +270,7 @@ void update_next_node_index(
 
 struct pbsnode *get_next_login_node(
 
-  struct prop *needed)
+  std::vector<prop> *needed)
 
   {
   struct pbsnode *pnode = NULL;
@@ -234,11 +280,11 @@ struct pbsnode *get_next_login_node(
   login_node &ln = logins.nodes[logins.next_node];
 
   pnode = ln.pnode;
-  lock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->lock_node(__func__, NULL, LOGLEVEL);
   
   if (needed != NULL)
     {
-    if (hasprop(pnode, needed) == FALSE)
+    if (pnode->hasprop(needed) == false)
       {
       node_fits = FALSE;
       }
@@ -255,13 +301,13 @@ struct pbsnode *get_next_login_node(
   
   if (node_fits == FALSE)
     {
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     pnode = find_fitting_node(needed);
     }
   else
     {
     ln.times_used++;
-    update_next_node_index(ln.times_used);
+    update_next_node_index(ln.times_used, pnode);
     }
 
   pthread_mutex_unlock(logins.ln_mutex);

@@ -1,6 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <string>
+#include <vector>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "pbs_nodes.h" /* all_nodes, pbsnode, node_check_info, prop */
 #include "queue.h" /* all_queues, pbs_queue */
@@ -12,9 +15,7 @@
 #include "list_link.h" /* list_link */
 #include "work_task.h" /* work_type */
 #include "mom_hierarchy_handler.h"
-#include <string>
-#include <vector>
-#include <boost/ptr_container/ptr_vector.hpp>
+#include "acl_special.hpp"
 
 
 all_nodes allnodes;
@@ -62,10 +63,9 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
   exit(1);
   }
 
-int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr)
+int attr_atomic_node_set(struct svrattrl *plist, pbs_attribute *old, pbs_attribute *new_attr, attribute_def *pdef, int limit, int unkn, int privil, int *badattr, bool update_nodes_file)
   {
-  fprintf(stderr, "The call to attr_atomic_node_set to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void reply_ack(struct batch_request *preq)
@@ -98,7 +98,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
   exit(1);
   }
 
-pbs_queue *que_alloc(char *name, int sv_qs_mutex_held)
+pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   {
   fprintf(stderr, "The call to que_alloc to be mocked!!\n");
   exit(1);
@@ -200,12 +200,6 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
 void recompute_ntype_cnts(void)
   {
   fprintf(stderr, "The call to recompute_ntype_cnts to be mocked!!\n");
-  exit(1);
-  }
-
-int hasprop(struct pbsnode *pnode, struct prop *props)
-  {
-  fprintf(stderr, "The call to hasprop to be mocked!!\n");
   exit(1);
   }
 
@@ -431,3 +425,83 @@ int get_svr_attr_l(
   {
   return(0);
   }
+
+void pbsnode::update_properties() {}
+
+const char *pbsnode::get_name() const 
+  {
+  return(this->nd_name.c_str());
+  }
+
+bool pbsnode::hasprop(std::vector<prop> *needed) const
+  {
+  return(true);
+  }
+
+int pbsnode::tmp_lock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::tmp_unlock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *caller, const char *msg, int level)
+  {
+  return(0);
+  }
+
+struct prop *init_prop(
+
+  const char *pname) /* I */
+
+  {
+  return(NULL);
+  }
+
+pbsnode &pbsnode::operator =(
+
+  const pbsnode &other)
+
+  {
+  return(*this);
+  }
+
+pbsnode::pbsnode()
+  {
+  }
+
+pbsnode::~pbsnode()
+  {
+  }
+
+void acl_special::add_user_configuration(const std::string &qmgr_input)
+  {
+  }
+
+void acl_special::add_group_configuration(const std::string &qmgr_input)
+  {
+  }
+
+void acl_special::clear_users()
+  {
+  }
+
+void acl_special::clear_groups()
+  {
+  }
+
+void acl_special::remove_user_configuration(const std::string &qmgr_input)
+  {
+  }
+
+void acl_special::remove_group_configuration(const std::string &qmgr_input)
+  {
+  }
+
+acl_special::acl_special() {}
+
+acl_special limited_acls;
+

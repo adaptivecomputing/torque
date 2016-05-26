@@ -5,6 +5,17 @@
 # chkconfig: 345 95 05
 # description: TORQUE/PBS is a versatile batch system for SMPs and clusters
 #
+#### BEGIN INIT INFO 
+# Provides: pbs_mom 
+# Required-Start: $local_fs $network $syslog 
+# Required-Stop: $local_fs $network $syslog 
+# Default-Start: 2 3 4 5 
+# Default-Stop: 0 1 6 
+# Short-Description: Start up the pbs_mom daemon 
+# Description: pbs_mom is part of a batch scheduler 
+# This service starts up the compute node. 
+### END INIT INFO 
+
 ulimit -n 32768
 # Source the library functions
 . /etc/rc.d/init.d/functions
@@ -13,6 +24,7 @@ ulimit -n 32768
 SBIN_PATH=@sbindir@
 PBS_DAEMON="$SBIN_PATH/pbs_mom"
 PBS_HOME=@PBS_HOME@
+PBS_ARGS=""
 
 SUBSYS_LOCK="/var/lock/subsys/pbs_mom"
 
@@ -98,7 +110,7 @@ case "$1" in
 		fi
 
 		# ulimit -c unlimited  # Uncomment this to preserve core files
-		daemon $PBS_DAEMON $args -d $PBS_HOME
+		daemon $PBS_DAEMON $args -d $PBS_HOME $PBS_ARGS
 		RET=$?
 		touch $SUBSYS_LOCK
 		echo
@@ -132,7 +144,7 @@ case "$1" in
 			pid=-1
 		fi
 
-                # Return codes per Linux Standard Base (LSB) Core Specificiation 3.1
+		# Return codes per Linux Standard Base (LSB) Core Specificiation 3.1
 		[ $pid -eq -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom dead but subsys locked" && failure && echo && exit 2
 		[ $pid -eq -1 ] && echo -n "pbs_mom already stopped" && success && echo && exit 3
 		[ $pid -ne -1 -a $lock_present -eq 0 ] && echo -n "pbs_mom already running" && success && echo && exit 0
@@ -142,6 +154,10 @@ case "$1" in
 		$0 stop
 		sleep 1
 		$0 start
+		;;
+	condrestart|try-restart)
+		$0 status || exit 0
+		$0 restart
 		;;
 	reload)
 		echo -n "Re-reading TORQUE Mom config file: "

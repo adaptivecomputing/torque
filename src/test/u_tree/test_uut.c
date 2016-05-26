@@ -16,8 +16,6 @@ START_TEST(test_one)
   long len = 0;
   long maxLen = 0;
 
-  memset(node,0,sizeof(node));
-
   tree = AVL_insert(500,500,node,NULL);
 
   tree = AVL_insert(499,499,node + 1,tree);

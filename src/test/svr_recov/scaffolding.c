@@ -4,7 +4,6 @@
 
 #include "server.h" /* server */
 #include "attribute.h" /* pbs_attribute, attribute_def */
-#include "dynamic_string.h" /* dynamic_string */
 
 char *path_priv = NULL;
 const char *msg_svdbopen = "Unable to open server data base";
@@ -12,6 +11,7 @@ char *path_svrdb = NULL;
 struct server server;
 attribute_def svr_attr_def[10];
 int disable_timeout_check;
+time_t pbs_tcp_timeout;
 
 
 
@@ -90,24 +90,6 @@ int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int 
 int escape_xml(char *in, char *out, int size)
  {
  fprintf(stderr, "The call to escape_xml to be mocked!!\n");
- exit(1);
- }
-
-int append_dynamic_string(dynamic_string *ds, const char *to_append)
- {
- fprintf(stderr, "The call to append_dynamic_string to be mocked!!\n");
- exit(1);
- }
-
-int size_to_dynamic_string(dynamic_string *ds, struct size_value *szv)
- {
- fprintf(stderr, "The call to size_to_dynamic_string to be mocked!!\n");
- exit(1);
- }
-
-int append_dynamic_string_xml(dynamic_string *ds, const char *str)
- {
- fprintf(stderr, "The call to append_dynamic_string_xml to be mocked!!\n");
  exit(1);
  }
 

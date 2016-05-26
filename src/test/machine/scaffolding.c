@@ -46,6 +46,14 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
+Socket::Socket(int np)
+  {
+  }
+
+void Socket::setMemory(hwloc_uint64_t mem)
+  {
+  }
+
 Socket::Socket(const std::string &json_layout)
   {
   json_socket++;
@@ -165,7 +173,7 @@ int Socket::getAvailableChips() const
   return(1);
   }
 
-int Socket::how_many_tasks_fit(const req &r, int place_type) const
+float Socket::how_many_tasks_fit(const req &r, int place_type) const
 
   {
   return(num_tasks_fit);
@@ -229,7 +237,7 @@ void complete_req::set_hostlists(const char *job_id, const char *hostlists)
   {
   }
 
-complete_req::complete_req(list_link &l) {}
+complete_req::complete_req(list_link &l, bool legacy) {}
 
 req::req() {}
 req::req(const req &other) {}
@@ -296,7 +304,12 @@ void allocation::set_place_type(const std::string &place)
   }
 
 void allocation::place_indices_in_string(std::string &out, int which) {}
-int allocation::add_allocation(allocation const &a) {}
+
+int allocation::add_allocation(allocation const &a) 
+  {
+  return(0);
+  }
+
 void allocation::set_host(const char *hostname)
   {
   this->hostname = hostname;
@@ -322,4 +335,11 @@ int req::getGpus() const
   return(0);
   }
 
+job::job() {}
+job::~job() {}
+
+int  Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
 

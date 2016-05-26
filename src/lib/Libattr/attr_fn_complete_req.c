@@ -89,7 +89,7 @@
 #include "complete_req.hpp"
 #include "attribute.h"
 #include "pbs_ifl.h"
-
+#include "pbs_helper.h"
 
 
 void free_complete_req(
@@ -125,10 +125,10 @@ void free_complete_req(
 int  decode_complete_req(
     
   pbs_attribute *patr,
-  const char    *name,
+  const char    * UNUSED(name),
   const char    *rescn,
   const char    *val,
-  int            perm)
+  int            UNUSED(perm))
 
   {
   if (val == NULL)
@@ -218,7 +218,7 @@ int encode_complete_req(
   pbs_attribute *attr,
   tlist_head    *phead,
   const char    *atname,
-  const char    *rsname,
+  const char    * UNUSED(rsname),
   int            mode,
   int            perm)
 
@@ -378,8 +378,8 @@ int set_complete_req(
 
 int comp_complete_req(
    
-  pbs_attribute *attr,
-  pbs_attribute *with)
+  pbs_attribute * UNUSED(attr),
+  pbs_attribute * UNUSED(with))
 
   {
   return(0);

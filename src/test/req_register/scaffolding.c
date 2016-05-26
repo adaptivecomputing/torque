@@ -167,7 +167,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int issue_to_svr(char *servern, struct batch_request *preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
   {
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);
@@ -337,7 +337,7 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */    
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
 
   {
   return(0);
@@ -345,23 +345,7 @@ pbs_net_t get_hostaddr(
 
 job *job_alloc(void)
   {
-  job *pj = (job *)calloc(1, sizeof(job));
-
-  if (pj == NULL)
-    {
-    return(NULL);
-    }
-
-  pj->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-
-  pj->ji_qs.qs_version = PBS_QS_VERSION;
-
-  pj->ji_rejectdest = new std::vector<std::string>();
-
-  pj->ji_is_array_template = FALSE;
-
-  pj->ji_momhandle = -1;
-
+  job *pj =  new job();
   return(pj);
   }
 
@@ -383,3 +367,8 @@ int is_svr_attr_set(int index)
   return(is_attr_set);
   }
 
+job::job() : ji_rejectdest()
+  {
+  }
+
+job::~job() {}

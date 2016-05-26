@@ -12,7 +12,6 @@
 #include "list_link.h" /* list_link, tlist_head */
 #include "queue.h" /* pbs_queue */
 #include "work_task.h" /* work_task */
-#include "dynamic_string.h"
 #include "threadpool.h"
 
 const char *PJobSubState[10];
@@ -25,6 +24,8 @@ resource_def *svr_resc_def;
 const char *PJobState[] = {"hi", "hello"};
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
+
+static int acl_check_n = 0;
 
 char *get_correct_jobname_return;
 
@@ -210,11 +211,6 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  return(NULL);
-  }
-
 batch_request *get_remove_batch_request(
 
   char *br_id)
@@ -292,3 +288,30 @@ void overwrite_complete_req(
 
   pbs_attribute *attr,
   pbs_attribute *new_attr) {}
+
+int acl_check(pbs_attribute *pattr, char *name, int type)
+  {
+  bool rc;
+
+  switch(acl_check_n)
+    {
+    case 0:
+      rc = true;
+      break;
+
+    case 1:
+      rc = false;
+      break;
+
+    case 2:
+      rc = true;
+      break;
+
+    default:
+      rc = false;
+   }
+
+  acl_check_n++;
+
+  return(rc);
+  }

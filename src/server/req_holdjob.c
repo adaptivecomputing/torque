@@ -395,12 +395,14 @@ void *req_checkpointjob(
 /*
  * release_job - releases the hold on job j
  * @param j - the job to modify
+ * @param pa - a pointer to an array whose mutex we hold - always this job's array
  * @return 0 if successful, a PBS error on failure
  */
 int release_job(
 
   struct batch_request *preq, /* I */
-  void                 *j)    /* I/O */
+  void                 *j,    /* I/O */
+  job_array            *pa)   /* I */
 
   {
   long           old_hold;
@@ -438,6 +440,12 @@ int release_job(
   if ((rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold], &temphold, DECR)))
     {
     return(rc);
+    }
+
+  if (pjob->ji_arraystructid[0] != '\0')
+    {
+    // Make sure our slot limit counts are correct
+    check_array_slot_limits(pjob, pa);
     }
 
   /* everything went well, if holds changed, update the job state */
@@ -489,7 +497,7 @@ int req_releasejob(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  if ((rc = release_job(preq, pjob)) != 0)
+  if ((rc = release_job(preq, pjob, NULL)) != 0)
     {
     req_reject(rc,0,preq,NULL,NULL);
     }
@@ -527,7 +535,7 @@ int release_whole_array(
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-      if ((rc = release_job(preq, pjob)) != 0)
+      if ((rc = release_job(preq, pjob, pa)) != 0)
         return(rc);
       }
     }

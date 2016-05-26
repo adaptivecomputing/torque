@@ -40,7 +40,6 @@ START_TEST(test_one)
   job *pTestJob;
   struct batch_request request;
 
-  memset(&testJob,0,sizeof(job));
   memset(&request,0,sizeof(request));
   pTestJob = &testJob;
 
@@ -48,7 +47,7 @@ START_TEST(test_one)
   net_rc_retry = false; /* Keep this false for svr_connect except for one case with issue_to_svr */
   fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_BADSTATE);
 
-  decode_str(&testJob.ji_wattr[JOB_ATR_exec_host],NULL,NULL,"Sherrie",0);
+  testJob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("Sherrie");
 
   fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_NONE);
 
@@ -244,27 +243,30 @@ START_TEST(test_issue_to_svr)
 
   return_addr = true;
   local_connect = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
+  // local connect should cause preq to be set to NULL
+  fail_unless(preq == NULL);
 
   return_addr = false;
-  rc = issue_to_svr(server_name, preq, NULL);
+  preq = alloc_br(PBS_BATCH_StatusJob);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   return_addr = true;
   local_connect = false;
   net_rc_retry = false;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   net_rc_retry = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_NONE);
 
   local_connect = false;
   net_rc_retry = false;
   connect_error = true;
-  rc = issue_to_svr(server_name, preq, NULL);
+  rc = issue_to_svr(server_name, &preq, NULL);
   fail_unless(rc==PBSE_INTERNAL);
 
   }

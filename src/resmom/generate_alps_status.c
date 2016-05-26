@@ -85,6 +85,7 @@
 #include <libxml/tree.h>
 #include "utils.h"
 #include "alps_constants.h"
+#include "alps_functions.h"
 #include <string>
 #include <vector>
 #include <set>
@@ -93,6 +94,7 @@
 #include "../lib/Libifl/lib_ifl.h"
 
 std::set<std::string> down_nodes;
+std::map<int, alps_node_info> alps_nodes;
 
 
 /*
@@ -100,7 +102,6 @@ std::set<std::string> down_nodes;
  */
 int process_reservations(
 
-  std::vector<std::string> &status,
   xmlNode                  *node)
 
   {
@@ -167,11 +168,11 @@ int process_processor_array(
 int process_memory_array(
 
   xmlNode       *node,
-  unsigned long *memory)
+  unsigned long &memory)
 
   {
   int            page_size;
-  unsigned long  page_count;
+  unsigned long  page_cnt;
   char          *attr_value;
   xmlNode       *child;
 
@@ -180,22 +181,24 @@ int process_memory_array(
     {
     if (!strcmp((const char *)child->name, memory_name))
       {
-      attr_value = (char *)xmlGetProp(child, (const xmlChar *)"page_size_kb");
+      attr_value = (char *)xmlGetProp(child, (const xmlChar *)page_size_kb);
       page_size  = atoi(attr_value);
       free(attr_value);
       
-      attr_value = (char *)xmlGetProp(child, (const xmlChar *)"page_count");
-      page_count = strtol(attr_value, NULL, 10);
-      free(attr_value);
-      
+      attr_value = (char *)xmlGetProp(child, (const xmlChar *)page_count);
+      if (attr_value != NULL)
+        {
+        page_cnt = strtol(attr_value, NULL, 10);
+        free(attr_value);
+        }
+
       /* note: CMEMORY is in megabytes */
-      *memory += page_size * (page_count / 1024);
+      memory += page_size * (page_cnt / 1024);
       }
     }
 
   return(PBSE_NONE);
   } /* END process_memory_array() */
-
 
 
 
@@ -260,8 +263,8 @@ int process_label_array(
 
 int process_accelerator_array(
 
-  std::vector<std::string> &status,
-  xmlNode                  *node)
+  alps_node_info &ani,
+  xmlNode        *node)
 
   {
   xmlNode       *child;
@@ -269,61 +272,54 @@ int process_accelerator_array(
   char          *attr_value2;
   char           buf[MAXLINE];
 
-  status.push_back(CRAY_GPU_STATUS_START);
-
   for (child = node->children; child != NULL; child = child->next)
     {
     if (!strcmp((const char *)child->name, accelerator))
       {
+      alps_accelerator_info aai;
+
       std::string str;
       /* write the gpu id */
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)type);
       attr_value2 = (char *)xmlGetProp(child, (const xmlChar *)ordinal);
       snprintf(buf, sizeof(buf), "%s-%d", attr_value, atoi(attr_value2));
-      str = "gpu_id=";
-      str += buf;
-      status.push_back(str);
+      aai.accel_id = "gpu_id=";
+      aai.accel_id += buf;
       free(attr_value);
       free(attr_value2);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)state);
-      str = "state=";
-      str += attr_value;
-      status.push_back(str);
+      aai.accel_state = "state=";
+      aai.accel_state += attr_value;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)family);
-      str = "family=";
-      str += attr_value;
-      status.push_back(str);
+      aai.family = "family=";
+      aai.family += attr_value;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)memory_mb);
-      str = "memory=";
-      str += attr_value;
-      str += "mb";
-      status.push_back(str);
+      aai.memory = "memory=";
+      aai.memory += attr_value;
+      aai.memory += "mb";
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)clock_mhz);
-      str = "clock_mhz=";
-      str += attr_value;
-      status.push_back(str);
+      aai.clock_mhz = "clock_mhz=";
+      aai.clock_mhz += attr_value;
       free(attr_value);
+
+      ani.accelerators.push_back(aai);
       }
     }
-  
-  status.push_back(CRAY_GPU_STATUS_END);
 
   return(PBSE_NONE);
   } /* END process_accelerator_array() */
 
 
 
-
 int process_node(
 
-  std::vector<std::string> &status,
   xmlNode                  *node)
 
   {
@@ -336,10 +332,13 @@ int process_node(
   xmlNode            *socket_child;
   xmlNode            *compute_units;
   xmlNode            *compute_unit_child;
-  std::string        features = "";
-  std::string        node_state = "";
-  std::string        node_name = "";
-  std::string        node_id_string  = "";
+  std::string         features = "";
+  std::string         node_state = "";
+  std::string         node_name;
+  std::string         node_id_string;
+  int                 nid;
+  std::string         numa_cfg_val;
+  std::string         mcdram_cfg_val;
   char                buf[MAXLINE];
   int                 num_procs         = 0;
   int                 avail_procs       = 0;
@@ -347,34 +346,36 @@ int process_node(
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
+  alps_node_info      ani;
   std::set<std::string>::iterator iter;
-
+    
+  ani.index = "node=";
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
+  if (attr_value != NULL)
     {
-    std::string str("node=");
-    attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
     node_id_string = attr_value;
-    str += attr_value;
-    status.push_back(str);
+    ani.index += node_id_string;
+    nid = strtol(attr_value, NULL, 10);
     free(attr_value);
     }
 
   /* check to see if the role is interactive - report these as down */
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
 
+  ani.arch = "ARCH=";
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
+  if (attr_value != NULL)
     {
-    std::string str("ARCH=");
-    attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
-    str += attr_value;
-    status.push_back(str);
+    ani.arch += attr_value;
     free(attr_value);
     }
 
+  ani.name = "name=";
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
+  if (attr_value != NULL)
     {
-    std::string str("name=");
-    attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
     node_name = attr_value;
-    str += attr_value;
-    status.push_back(str);
+    ani.name += node_name;
     free(attr_value);
     }
 
@@ -387,33 +388,36 @@ int process_node(
       {
       for (sockets = child->children; sockets != NULL; sockets = sockets->next)
         {
-        for (socket_child = sockets->children; socket_child != NULL; socket_child = socket_child->next)
+        if (!strcmp((const char *)sockets->name, socket_name))
           {
-          if (!strcmp((const char *)socket_child->name, segment_array))
+          for (socket_child = sockets->children; socket_child != NULL; socket_child = socket_child->next)
             {
-            for (segments = socket_child->children; segments != NULL; segments = segments->next)
+            if (!strcmp((const char *)socket_child->name, segment_array))
               {
-              for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
+              for (segments = socket_child->children; segments != NULL; segments = segments->next)
                 {
-                if (!strcmp((const char *)segment_child->name, compute_unit_array))
+                for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
                   {
-                  for (compute_units = segment_child->children; compute_units != NULL; compute_units = compute_units->next)
+                  if (!strcmp((const char *)segment_child->name, compute_unit_array))
                     {
-                    /* tally compute units */
-                    if (!strcmp((const char *)compute_units->name, compute_unit))
-                      num_compute_units++;
-
-                    for (compute_unit_child = compute_units->children; compute_unit_child != NULL; compute_unit_child = compute_unit_child->next)
+                    for (compute_units = segment_child->children; compute_units != NULL; compute_units = compute_units->next)
                       {
-                      if (!strcmp((const char *)compute_unit_child->name, processor_array))
-                        process_processor_array(compute_unit_child, &num_procs, &avail_procs, &rsv_id);
+                      /* tally compute units */
+                      if (!strcmp((const char *)compute_units->name, compute_unit))
+                        num_compute_units++;
+
+                      for (compute_unit_child = compute_units->children; compute_unit_child != NULL; compute_unit_child = compute_unit_child->next)
+                        {
+                        if (!strcmp((const char *)compute_unit_child->name, processor_array))
+                          process_processor_array(compute_unit_child, &num_procs, &avail_procs, &rsv_id);
+                        }
                       }
                     }
+                  else if (!strcmp((const char *)segment_child->name, memory_array))
+                    process_memory_array(segment_child, memory);
+                  else if (!strcmp((const char *)segment_child->name, label_array))
+                    process_label_array(features, segment_child);
                   }
-                else if (!strcmp((const char *)segment_child->name, memory_array))
-                  process_memory_array(segment_child, &memory);
-                else if (!strcmp((const char *)segment_child->name, label_array))
-                  process_label_array(features, segment_child);
                 }
               }
             }
@@ -431,7 +435,7 @@ int process_node(
           if (!strcmp((const char *)segment_child->name, processor_array))
             process_processor_array(segment_child, &num_procs, &avail_procs, &rsv_id);
           else if (!strcmp((const char *)segment_child->name, memory_array))
-            process_memory_array(segment_child, &memory);
+            process_memory_array(segment_child, memory);
           else if (!strcmp((const char *)segment_child->name, label_array))
             process_label_array(features, segment_child);
           }
@@ -445,7 +449,7 @@ int process_node(
       }
     else if (!strcmp((const char *)child->name, memory_array))
       {
-      process_memory_array(child, &memory);
+      process_memory_array(child, memory);
       }
     else if (!strcmp((const char *)child->name, label_array))
       {
@@ -455,7 +459,7 @@ int process_node(
     /* 1.0-1.3 */
     else if (!strcmp((const char *)child->name, accelerator_array))
       {
-      process_accelerator_array(status, child);
+      process_accelerator_array(ani, child);
       }
     } /* END the loop for processing the children */
 
@@ -463,24 +467,24 @@ int process_node(
 
   /* note that CCU should come before CPROC */
   snprintf(buf, sizeof(buf), "CCU=%d", num_compute_units);
-  status.push_back(buf);
+  ani.ccu = buf;
 
   snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
-  status.push_back(buf);
+  ani.cproc = buf;
 
   snprintf(buf, sizeof(buf), "APROC=%d", avail_procs);
-  status.push_back(buf);
+  ani.aproc = buf;
 
   snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
-  status.push_back(buf);
+  ani.cmem = buf;
 
   mem_kb = memory * 1024;
 
   snprintf(buf, sizeof(buf), "totmem=%llukb", mem_kb);
-  status.push_back(buf);
+  ani.totmem = buf;
 
   snprintf(buf, sizeof(buf), "physmem=%llukb", mem_kb);
-  status.push_back(buf);
+  ani.physmem = buf;
 
   if (rsv_id != NULL)
     {
@@ -488,48 +492,39 @@ int process_node(
     if ((role_value == NULL) ||
         (!strcmp(role_value, batch_caps)))
       {
-      std::string str("reservation_id=");
-      str += rsv_id;
-      status.push_back(str);
+      ani.rsv = "reservation_id=";
+      ani.rsv += rsv_id;
       }
 
     free(rsv_id);
 
-    /* if there's a reservation on this node, the state is busy */
+    // if there's a reservation on this node, the state is busy and no memory is available
     node_state = "BUSY";
-    status.push_back("state=BUSY");
-    
-    snprintf(buf, sizeof(buf), "availmem=0kb");
-    status.push_back("availmem=0kb");
+    ani.state = "state=BUSY";
+    ani.availmem = "availmem=0kb";
     }
   else
     {
     /* no reservation, evaluate the state normally */
-    std::string str("state=");
+    ani.state = "state=";
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
-    
 
     /* state is down if we're not in batch mode */
     if ((role_value != NULL) &&
         (strcmp(role_value, batch_caps)))
       {
       node_state = "DOWN";
-      str += "DOWN";
-      status.push_back(str);
-      
-
-
-      snprintf(buf, sizeof(buf), "availmem=0kb");
-      status.push_back(buf);
+      ani.state += "DOWN";
+    
+      ani.availmem = "availmem=0kb";
       }
     else
       {
-      str += attr_value;
+      ani.state += attr_value;
       node_state = attr_value;
-      status.push_back(str);
      
       snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
-      status.push_back(buf);
+      ani.availmem = buf;
       }
 
     free(attr_value);
@@ -578,21 +573,19 @@ int process_node(
 
   if (features.length() > 0)
     {
-    std::string str("feature_list=");
-    str += features.c_str();
-    status.push_back(str);
+    ani.features = "feature_list=";
+    ani.features += features.c_str();
     }
+
+  alps_nodes[nid] = ani;
 
   return(PBSE_NONE);
   } /* END process_node() */
 
 
 
-
-
 int process_nodes(
 
-  std::vector<std::string> &status,
   xmlNode                  *node)
 
   {
@@ -601,7 +594,7 @@ int process_nodes(
   for (current = node; current != NULL; current = current->next)
     {
     if (!strcmp((const char *)current->name, node_name))
-      process_node(status, current);
+      process_node(current);
     }
 
   return(PBSE_NONE);
@@ -609,11 +602,127 @@ int process_nodes(
 
 
 
+void get_os_value(
+
+  std::string       &os_value,
+  const std::string &numa_cfg_val,
+  std::string       &mcdram_cfg_val)
+
+  {
+
+  if ((numa_cfg_val.size() != 0) &&
+      (mcdram_cfg_val.size() != 0))
+    {
+    os_value = "opsys=CLE_";
+
+    if (mcdram_cfg_val == "0")
+      mcdram_cfg_val = "flat";
+    else if (mcdram_cfg_val == "25")
+      mcdram_cfg_val = "split";
+    else if (mcdram_cfg_val == "50")
+      mcdram_cfg_val = "equal";
+    else if (mcdram_cfg_val == "100")
+      mcdram_cfg_val = "cache";
+
+    os_value += numa_cfg_val + "_";
+    os_value += mcdram_cfg_val;
+    }
+  else
+    os_value = "opsys=";
+
+  } // END get_os_value()
+
+
+
+int get_node_info(
+
+  xmlNode        *node,
+  alps_node_info &ani)
+
+  {
+  char           *attr_value;
+  std::string    numa_cfg_val;
+  std::string    mcdram_cfg_val;
+  unsigned long  hbm_size_in_mb = 0;
+  char           buf[MAXLINE];
+  
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)numa_config);
+  if (attr_value != NULL)
+    {
+    numa_cfg_val = attr_value;
+    free(attr_value);
+    }
+          
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)hbm_cache_pct);
+  if (attr_value != NULL)
+    {
+    mcdram_cfg_val = attr_value;
+    free(attr_value);
+    }
+  
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)hbm_size);
+  if (attr_value != NULL)
+    {
+    hbm_size_in_mb = strtol(attr_value, NULL, 10);
+    free(attr_value);
+    }
+
+  get_os_value(ani.os, numa_cfg_val, mcdram_cfg_val);
+
+  snprintf(buf, sizeof(buf), "hbmem=%lukb", hbm_size_in_mb * 1024);
+  ani.hbm = buf;
+
+  return(PBSE_NONE);
+  } // END get_node_info()
+
+
+
+int process_system(
+
+  xmlNode *node)
+
+  {
+  std::string cpus_per_cu;
+  xmlNode        *child;
+  alps_node_info  ani;
+	  
+  for (child = node->children; child != NULL; child = child->next)
+    {
+    if (!strcmp((const char *)child->name, nodes_element))
+      {
+      // Get information for this batch of nodes
+      get_node_info(child, ani);
+
+      // Get the range of nodes this information applies to
+      char *content = (char *)xmlNodeGetContent(child);
+      if (content != NULL)
+        {
+        std::vector<int> node_ids;
+        translate_range_string_to_vector(content, node_ids);
+
+        for (unsigned int i = 0; i < node_ids.size(); i++)
+          {
+          if (alps_nodes.find(node_ids[i]) != alps_nodes.end())
+            {
+            alps_nodes[node_ids[i]].os = ani.os;
+            alps_nodes[node_ids[i]].hbm = ani.hbm;
+            }
+          else
+            alps_nodes[node_ids[i]] = ani;
+          }
+
+        free(content);
+        }
+      }
+    }
+  
+  return(PBSE_NONE);  
+  } // END process_system()
+
 
 
 int process_element(
 
-  std::vector<std::string> &status,
   xmlNode                  *node)
 
   {
@@ -632,27 +741,31 @@ int process_element(
       return(ALPS_QUERY_FAILURE);
       }
     else
-      rc = process_element(status, node->children);
+      rc = process_element(node->children);
 
     free(str);
     }
   else if (!strcmp((const char *)node->name, node_array))
     {
-    rc = process_nodes(status, node->children);
-    rc = process_element(status, node->next);
+    rc = process_nodes(node->children);
+    rc = process_element(node->next);
     }
   else if (!strcmp((const char *)node->name, reservation_array))
     {
-    rc = process_reservations(status, node->children);
+    rc = process_reservations(node->children);
     }
   else if (!strcmp((const char *)node->name, text_name))
     {
-    rc = process_element(status, node->next);
+    rc = process_element(node->next);
+    }
+  else if (!strcmp((const char *)node->name, system_tag))
+    {
+    rc = process_system(node);
     }
   else
     {
     /* move on to the next child */
-    rc = process_element(status, node->children);
+    rc = process_element(node->children);
     }
 
   return(rc);
@@ -660,14 +773,13 @@ int process_element(
 
 
 
-
 int parse_alps_output(
 
-  std::string              &alps_output,
-  std::vector<std::string> &status)
+  std::string              &alps_output)
 
   {
   xmlDocPtr  doc;
+  xmlNode   *child;
 
   if ((doc = xmlReadMemory(alps_output.c_str(), alps_output.length(), "apbasil", NULL, 0)) == NULL)
     {
@@ -678,10 +790,26 @@ int parse_alps_output(
     return(ALPS_PARSING_ERROR);
     }
 
-  if (process_element(status, xmlDocGetRootElement(doc)) == ALPS_QUERY_FAILURE)
+  if (process_element(xmlDocGetRootElement(doc)) == ALPS_QUERY_FAILURE)
     {
-  	snprintf(log_buffer, sizeof(log_buffer), "Failed to query alps");
-	  log_err(-1, __func__, log_buffer);
+    xmlNode   *root = xmlDocGetRootElement(doc);
+	  // Verbose debug output for ALPS_QUERY_FAILURE node error message
+	  for (child = root->children; child != NULL; child = child->next)
+	    {
+	    if (!strcmp((const char *)child->name, response_data))
+	      {
+        for (xmlNode *gchild = child->children; gchild != NULL; gchild = gchild->next)
+          {
+          if (!strcmp((const char *)gchild->name, "Message"))
+            {
+            snprintf(log_buffer, sizeof(log_buffer),
+              "Failed to query ALPS: %s", (const char *)xmlNodeGetContent(gchild));
+            log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+            }
+          }
+	      }
+	    }
+
   	return(ALPS_QUERY_FAILURE);
     }
 
@@ -694,51 +822,40 @@ int parse_alps_output(
 
 
 
+int get_command_output(
 
-int generate_alps_status(
-
-  std::vector<std::string> &status,
-  const char               *apbasil_path,
-  const char               *apbasil_protocol)
+  const char  *command,
+  std::string &output)
 
   {
   FILE           *alps_pipe;
   int             fd;
-  int             rc;
+  int             rc = PBSE_NONE;
+  char            input_buffer[MAXLINE];
+  time_t          time_to_respond = time(0);
+  char           *ptr;
   int             bytes_read;
   int             total_bytes_read = 0;
-  char            inventory_command[MAXLINE * 2];
-  char            input_buffer[MAXLINE];
-  char           *ptr;
-  std::string     alps_output = "";
 
-  status.clear();
-
-  snprintf(inventory_command, sizeof(inventory_command), APBASIL_QUERY,
-    (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
-    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
-
-  time_t time_to_respond = time(0);
-
-  if ((alps_pipe = popen(inventory_command, "r")) == NULL)
+  if ((alps_pipe = popen(command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "Unable to open command %s for apbasil",
-      inventory_command);
+      command);
     log_err(errno, __func__, log_buffer);
 
     return(WRITING_PIPE_ERROR);
     }
 
   fd = fileno(alps_pipe);
-
+  
   /* now read from the pipe */
   ptr = input_buffer;
   memset(input_buffer, 0, sizeof(input_buffer));
 
   while ((bytes_read = read(fd, ptr, sizeof(input_buffer) - 1)) > 0)
     {
-    alps_output += ptr;
+    output += ptr;
     memset(input_buffer, 0, sizeof(input_buffer));
     total_bytes_read += bytes_read;
     }
@@ -759,14 +876,139 @@ int generate_alps_status(
     rc = READING_PIPE_ERROR;
   else
     {
-    int index = alps_output.length() - 1;
-    while (alps_output.c_str()[index] != '>')
+    int index = output.length() - 1;
+    while (output.c_str()[index] != '>')
       {
-      alps_output.resize(index);
+      output.resize(index);
       index--;
       }
+    }
 
-    rc = parse_alps_output(alps_output, status);
+  return(rc);
+  } // END get_command_output()
+
+
+
+void alps_accelerator_info::add_to_status(
+
+  std::vector<std::string> &status)
+
+  {
+  status.push_back(this->accel_id);
+  status.push_back(this->accel_state);
+  status.push_back(this->family);
+  status.push_back(this->memory);
+  status.push_back(this->clock_mhz);
+  } // END add_to_status()
+
+
+
+void alps_node_info::add_to_status(
+
+  std::vector<std::string> &status)
+
+  {
+  status.push_back(this->index);
+  status.push_back(this->availmem);
+  status.push_back(this->state);
+  status.push_back(this->os);
+  status.push_back(this->physmem);
+  status.push_back(this->totmem);
+  status.push_back(this->cmem);
+  status.push_back(this->aproc);
+  status.push_back(this->cproc);
+  status.push_back(this->ccu);
+  status.push_back(this->name);
+  status.push_back(this->arch);
+
+  // The following attributes only exist conditionally
+  if (this->hbm.size() > 0)
+    status.push_back(this->hbm);
+
+  if (this->rsv.size() > 0)
+    status.push_back(this->rsv);
+
+  if (this->features.size() > 0)
+    status.push_back(this->features);
+
+  if (this->accelerators.size() > 0)
+    {
+    status.push_back(CRAY_GPU_STATUS_START);
+
+    for (unsigned int i = 0; i < this->accelerators.size(); i++)
+      this->accelerators[i].add_to_status(status);
+
+    status.push_back(CRAY_GPU_STATUS_END);
+    }
+
+  } // END add_to_status()
+
+
+
+void update_status(
+
+  std::vector<std::string> &status)
+
+  {
+  for (std::map<int, alps_node_info>::iterator it = alps_nodes.begin(); it != alps_nodes.end(); it++)
+    {
+    it->second.add_to_status(status);
+    }
+  } // END update_status
+
+
+
+/*
+ * get_knl_information()
+ *
+ */
+
+int get_knl_information(
+
+  const char *apbasil_path)
+
+  {
+  int         rc;
+  std::string knl_output;
+  char        system_command[MAXLINE * 2];
+
+  snprintf(system_command, sizeof(system_command), APBASIL_SYSTEM,
+    "1.7",
+    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+
+  rc = get_command_output(system_command, knl_output);
+
+  if (rc == PBSE_NONE)
+    rc = parse_alps_output(knl_output);
+
+  return(rc);
+  } // END get_knl_information()
+
+
+
+int generate_alps_status(
+
+  std::vector<std::string> &status,
+  const char               *apbasil_path,
+  const char               *apbasil_protocol)
+
+  {
+  int             rc;
+  char            inventory_command[MAXLINE * 2];
+  std::string     alps_output;
+
+  status.clear();
+  alps_nodes.clear();
+
+  snprintf(inventory_command, sizeof(inventory_command), APBASIL_QUERY,
+    (apbasil_protocol != NULL) ? apbasil_protocol : DEFAULT_APBASIL_PROTOCOL,
+    (apbasil_path != NULL) ? apbasil_path : DEFAULT_APBASIL_PATH);
+
+  rc = get_command_output(inventory_command, alps_output);
+
+  if (rc == PBSE_NONE)
+    {
+    rc = parse_alps_output(alps_output);
 
     if (rc == PBSE_NONE)
       {
@@ -777,6 +1019,12 @@ int generate_alps_status(
           "Successful inventory command is: %s", inventory_command);
         log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
+
+      if (!strcmp(apbasil_protocol, "1.7"))
+        rc = get_knl_information(apbasil_path);
+        
+      if (rc == PBSE_NONE)
+        update_status(status);
       }
     }
 

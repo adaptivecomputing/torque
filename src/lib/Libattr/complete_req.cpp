@@ -50,7 +50,8 @@ void complete_req::set_value_from_nodes(
 
 complete_req::complete_req(
 
-  tlist_head &resources) : reqs()
+  tlist_head &resources,
+  bool        legacy_vmem) : reqs()
 
   {
   resource      *pr = (resource *)GET_NEXT(resources);
@@ -77,16 +78,26 @@ complete_req::complete_req(
       }
     else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")))
+             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
-      // Convert to kb
-      while (shift > 10)
+      if (shift == 0)
         {
-        mem *= 1024;
-        shift -= 10;
+        // -l used in submission so convert
+        //   bytes to kb
+        mem /= 1024;
+        }
+      else    
+        {
+        // Convert to kb
+        while (shift > 10) 
+          {
+          mem *= 1024;
+          shift -= 10;  
+          }
         }
       }
 
@@ -97,14 +108,18 @@ complete_req::complete_req(
     {
     // Handle the case where no -lnodes request was made
     // Distribute the memory across the tasks as -l memory is per job
-    if (task_count > 1)
-      mem /= task_count;
+    if (legacy_vmem == false)
+      {
+      if (task_count > 1)
+        mem /= task_count;
+      }
     
     req r;
     if (task_count != 0)
       r.set_task_count(task_count);
 
     r.set_memory(mem);
+    r.set_swap(mem);
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
@@ -114,17 +129,22 @@ complete_req::complete_req(
   else if (mem != 0)
     {
     // Handle the case where a -lnodes request was made
-    int           total_tasks = 0;
-    unsigned long mem_per_task;
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
-      total_tasks += this->reqs[i].getTaskCount();
+    unsigned long mem_per_task = mem;
 
-    mem_per_task = mem / total_tasks;
+    if (legacy_vmem == false)
+      {
+      int           total_tasks = 0;
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        total_tasks += this->reqs[i].getTaskCount();
+
+      mem_per_task /= total_tasks;
+      }
 
     for (unsigned int i = 0; i < this->reqs.size(); i++)
       {
       req &r = this->reqs[i];
       r.set_memory(mem_per_task);
+      r.set_swap(mem_per_task);
       }
     }
   } // END constructor from resource list
@@ -316,6 +336,7 @@ int complete_req::set_value(
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
+    free(attr_name);
     return(PBSE_BAD_PARAMETER);
     }
 
@@ -416,6 +437,8 @@ unsigned long long complete_req::get_swap_per_task(
 
 /* 
  * get_swap_memory_for_this_host()
+ *
+ * @return the amount of swap requested for this host in kb
  */
 
 unsigned long long complete_req::get_swap_memory_for_this_host(
@@ -429,12 +452,14 @@ unsigned long long complete_req::get_swap_memory_for_this_host(
     mem += this->reqs[i].get_swap_for_host(hostname);
 
   return(mem);
-  } // END get_memory_for_host()
+  } // END get_swap_memory_for_this_host()
 
 
 
 /* 
  * get_memory_for_this_host()
+ *
+ * @return the amount of memory requested for this host in kb
  */
 
 unsigned long long complete_req::get_memory_for_this_host(
@@ -714,25 +739,17 @@ int complete_req::get_task_stats(
   unsigned int                    &req_index, 
   std::vector<int>                &task_index, 
   std::vector<unsigned long>      &cput_used, 
-  std::vector<unsigned long long> &mem_used)
+  std::vector<unsigned long long> &mem_used,
+  const char                      *hostname)
 
   {
   int rc = PBSE_NONE;
-  char   this_hostname[PBS_MAXHOSTNAME];
   char   buf[LOCAL_LOG_BUF_SIZE];
 
-  rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-  if (rc != 0)
-    {
-    sprintf(buf, "failed to get hostname: %s", strerror(errno));
-    log_err(-1, __func__, buf);
-    return(rc);
-    }
-
-  rc = this->get_req_index_for_host(this_hostname, req_index);
+  rc = this->get_req_index_for_host(hostname, req_index);
   if (rc != PBSE_NONE)
     {
-    sprintf(buf, "Could not find req for host %s", this_hostname);
+    sprintf(buf, "Could not find req for host %s", hostname);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
     return(rc);
     }
@@ -759,3 +776,7 @@ void complete_req::set_task_usage_stats(
 
   }
 
+unsigned int complete_req::get_num_reqs()
+  {
+  return(this->reqs.size());
+  }

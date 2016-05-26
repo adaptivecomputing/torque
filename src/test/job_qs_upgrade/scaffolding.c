@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 
+int LOGLEVEL = 10;
+
 ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   {
   fprintf(stderr, "The call to read_nonblocking_socket needs to be mocked!!\n");

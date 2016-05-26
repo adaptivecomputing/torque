@@ -57,7 +57,7 @@ pbs_queue *find_queuebyname(const char *quename)
   exit(1);
   }
 
-char *parse_servername(char *name, unsigned int *service)
+char *parse_servername(const char *name, unsigned int *service)
   {
   fprintf(stderr, "The call to parse_servername to be mocked!!\n");
   exit(1);
@@ -90,7 +90,7 @@ int PBSD_jscript(int c, char *script_file, char *jobid)
   return(0);
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   fprintf(stderr, "The call to get_hostaddr to be mocked!!\n");
   exit(1);
@@ -165,7 +165,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool have_reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool have_reservation, bool recov)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
@@ -438,5 +438,10 @@ std::string get_path_jobdata(const char *a, const char *b)
   std::string ret_string = path_jobs;
   return ret_string;
   }
+
+job::job() {}
+job::~job() {}
+
+void update_failure_counts(const char *node_name, int rc) {}
 
 

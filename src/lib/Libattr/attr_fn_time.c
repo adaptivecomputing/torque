@@ -89,6 +89,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of type
@@ -125,10 +126,10 @@
 int decode_time(
 
   pbs_attribute *patr,  /* I/O (modified) */
-  const char   *name,  /* I - pbs_attribute name (not used) */
-  const char *rescn, /* I - resource name (not used) */
+  const char * UNUSED(name),  /* I - pbs_attribute name (not used) */
+  const char * UNUSED(rescn), /* I - resource name (not used) */
   const char    *val,   /* I - pbs_attribute value */
-  int            perm)  /* only used for resources */
+  int          UNUSED(perm))  /* only used for resources */
 
   {
   int   i;
@@ -248,6 +249,39 @@ badval:
 
 
 
+/* 
+ * get_time_string()
+ *
+ * Takes a number in seconds and translates it into days:minutes:seconds
+ *
+ * @param time_string (O) - the string where the time should be written
+ * @param string_size (I) - the size of the output string
+ * @param timeval (I) - the number of seconds in the time
+ * @return PBSE_NONE
+ */
+
+int get_time_string(
+
+  char *time_string,
+  int   string_size,
+  long  timeval)
+
+  {
+  int       hr;
+  int       min;
+  int       sec;
+  
+  hr      = timeval / 3600;
+  timeval = timeval % 3600;
+  min     = timeval / 60;
+  timeval = timeval % 60;
+  sec = timeval;
+  
+  snprintf(time_string, string_size, "%02d:%02d:%02d", hr, min, sec);
+
+  return(PBSE_NONE);
+  } // END get_time_string()
+
 
 
 /*
@@ -270,17 +304,13 @@ int encode_time(
   tlist_head     *phead,  /* head of attrlist list (optional) */
   const char    *atname, /* pbs_attribute name */
   const char    *rsname, /* resource name (optional) */
-  int             mode,   /* encode mode (not used) */
-  int             perm)  /* only used for resources */
+  int            UNUSED(mode),   /* encode mode (not used) */
+  int            UNUSED(perm))  /* only used for resources */
 
   {
   size_t    ct;
   char      cvnbuf[ENCODE_TIME_SIZE];
-  int       hr;
-  int       min;
-  long      n;
   svrattrl *pal;
-  int       sec;
 
   if ((attr == NULL)||(phead == NULL))
     {
@@ -294,17 +324,7 @@ int encode_time(
     return(0);
     }
 
-  n   = attr->at_val.at_long;
-
-  hr  = n / 3600;
-  n   = n % 3600;
-  min = n / 60;
-  n   = n % 60;
-  sec = n;
-
-
-  sprintf(cvnbuf, "%02d:%02d:%02d",
-          hr, min, sec);
+  get_time_string(cvnbuf, sizeof(cvnbuf), attr->at_val.at_long);
 
   ct = strlen(cvnbuf);
 
@@ -325,7 +345,9 @@ int encode_time(
   /* SUCCESS */
 
   return(1);
-  }
+  } // END encode_time()
+
+
 
 /*
  * set_time  - use the function set_l()

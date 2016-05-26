@@ -652,4 +652,19 @@ int poke_scheduler(
 
   return(0);
   }  /* END poke_scheduler() */
+//keep_completed_val_check - action routine for the server's "Keep Completed" pbs_attribute.
+//checks to make sure keep completed's value is greater than -1
+//returns a 1 if the number is negative
+int keep_completed_val_check(
 
+	 pbs_attribute *pattr,
+     void          *pobj,
+     int            actmode)
+     
+  {
+    if(pattr->at_val.at_long < 0)
+     {
+	   return(1);
+	 }
+  return (0);
+  } 

@@ -15,7 +15,7 @@ int connect_while_handling_mutex(pbs_net_t hostaddr, unsigned int port, char *EM
 
 START_TEST(test_connect_while_handling_mutex)
   {
-  struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(struct pbsnode));
+  struct pbsnode *pnode = new pbsnode();
 
   find_node_called = 0;
   node_unlocked = 0;

@@ -81,7 +81,6 @@
 
 #include "log.h"
 #include "attribute.h"
-#include "server.h"
 #include "utils.h"
 #include "resource.h"
 #include "attr_req_info.hpp"

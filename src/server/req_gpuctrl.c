@@ -99,7 +99,6 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "pbs_nodes.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "svr_connect.h" /* svr_connect, svr_disconnect_sock */
 
 /* External Functions */
@@ -180,9 +179,9 @@ int req_gpuctrl_svr(
   if ((pnode->nd_state & (INUSE_NOT_READY | INUSE_OFFLINE | INUSE_UNKNOWN))||(pnode->nd_power_state != POWER_STATE_RUNNING))
     {
     rc = PBSE_UNKREQ;
-    sprintf(log_buf,"Node %s is not available",pnode->nd_name);
+    sprintf(log_buf, "Node %s is not available", pnode->get_name());
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -192,7 +191,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "Not allowed for virtual gpus");
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -202,7 +201,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "GPU ID does not exist on node");
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -212,7 +211,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "No action specified");
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -222,7 +221,7 @@ int req_gpuctrl_svr(
     {
     rc = PBSE_UNKREQ;
     req_reject(rc, 0, preq, NULL, "GPU driver version does not support mode 3");
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     return rc;
     }
 
@@ -231,7 +230,7 @@ int req_gpuctrl_svr(
 
   preq->rq_orgconn = preq->rq_conn;  /* restore client socket */
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->unlock_node(__func__, NULL, LOGLEVEL);
   conn = svr_connect(
            pnode->nd_addrs[0],
            pbs_mom_port,

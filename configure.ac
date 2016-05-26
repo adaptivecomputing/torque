@@ -153,6 +153,7 @@ m4_ifdef([AM_SILENT_RULES],[
     AC_CONFIG_FILES(src/test/scaffold_fail/Makefile
     src/test/torque_test_lib/Makefile
     src/test/accounting/Makefile
+    src/test/acl_special/Makefile
     src/test/array_func/Makefile
     src/test/array_upgrade/Makefile
     src/test/attr_recov/Makefile
@@ -178,8 +179,10 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/job_usage_info/Makefile
     src/test/login_nodes/Makefile
     src/test/mom_hierarchy_handler/Makefile
+    src/test/mail_throttler/Makefile
     src/test/node_func/Makefile
     src/test/node_manager/Makefile
+    src/test/pbsnode/Makefile
     src/test/pbsd_init/Makefile
     src/test/pbsd_main/Makefile
     src/test/process_alps_status/Makefile
@@ -214,6 +217,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/req_tokens/Makefile
     src/test/req_track/Makefile
     src/test/resc_def_all/Makefile
+    src/test/restricted_host/Makefile
     src/test/run_sched/Makefile
     src/test/stat_job/Makefile
     src/test/svr_chk_owner/Makefile
@@ -773,16 +777,6 @@ AC_CHECK_LIB(pthread, pthread_create,
 LIBS="$LIBS $PTHREAD_LIBS"
 
 
-dnl we need -lssl and -lcrypto, lets make sure they exist
-AC_CHECK_LIB(ssl, SSL_accept,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib openssl-devel in order to build]) ])
-AC_CHECK_LIB(crypto, BN_init,
-  [],
-  [AC_MSG_ERROR([TORQUE needs lib crypto (often openssl-devel) in order to build]) ])
-
-
-
 dnl
 dnl we need libxml2
 dnl 
@@ -1095,22 +1089,41 @@ should be the path to the directory containing the boost/ directory
 for your version of boost.
 ])])
 
-AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
-AC_RUN_IFELSE([AC_LANG_PROGRAM(
-[[#include <boost/version.hpp>
+if test "$build_linux_cgroups" = "yes"; then
+  AC_MSG_CHECKING([for minimum boost version (>=1.41.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
 #ifdef BOOST_VERSION
 #if (BOOST_VERSION < 103600)
-  error: incorrect boost version
+    error: incorrect boost version
 #endif
 #else
-  error: no boost found
+    error: no boost found
 #endif
-  ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.41.0 of Boost to build with cgroups enabled.
 
-This can be solved by configuring with --with-boost-path=<path>. This path
-should be the path to the directory containing the boost/ directory
-for your version of boost.
-])])
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+else
+  AC_MSG_CHECKING([for minimum boost version (>=1.36.0)])
+  AC_RUN_IFELSE([AC_LANG_PROGRAM(
+  [[#include <boost/version.hpp>
+#ifdef BOOST_VERSION
+#if (BOOST_VERSION < 103600)
+    error: incorrect boost version
+#endif
+#else
+    error: no boost found
+#endif
+    ]])], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR([Torque requires at least version 1.36.0 of Boost
+
+  This can be solved by configuring with --with-boost-path=<path>. This path
+  should be the path to the directory containing the boost/ directory
+  for your version of boost.
+  ])])
+fi
 
 
 
@@ -1416,7 +1429,7 @@ dnl
 dnl if we're running from a tarball (not checked out) automatically turn off
 dnl the warnings
 dnl
-AC_CHECK_FILE(src/server/test/req_jobobit/scaffolding.c,
+AC_CHECK_FILE(src/test/req_jobobit/scaffolding.c,
   TOM=bob,gccwarnings=no)
 
 
@@ -2369,7 +2382,8 @@ drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
     
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -pedantic -Werror])
+  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
 fi
 
 

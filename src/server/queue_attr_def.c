@@ -94,6 +94,8 @@
 extern int set_null (pbs_attribute * patr, pbs_attribute * new_attr, enum batch_op op);
 extern int disallowed_types_chk (pbs_attribute * pattr, void *pobject,
 				 int actmode);
+extern int keep_completed_val_check(pbs_attribute * pattr, void *pobject,
+                                 int actmode);
 
 /* array of allowable strings in queue pbs_attribute disallowed_types */
 char *array_disallowed_types[] = {
@@ -577,7 +579,7 @@ attribute_def que_attr_def[] =
     set_l,
     comp_l,
     free_null,
-    NULL_FUNC,
+    keep_completed_val_check,
     NO_USER_SET,
     ATR_TYPE_LONG,
     PARENT_TYPE_QUE_EXC
@@ -753,6 +755,18 @@ attribute_def que_attr_def[] =
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM,
     ATR_TYPE_ATTR_REQ_INFO,
+    PARENT_TYPE_QUE_ALL
+  },
+  /* QA_ATR_GhostQueue */
+  { (char *)ATTR_ghost_queue, /* "ghost_queue" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG,
     PARENT_TYPE_QUE_ALL
   },
   };

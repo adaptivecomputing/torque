@@ -3,6 +3,7 @@
 
 bool get_svr_attr_l_valset = true;
 long get_svr_attr_l_val = 1;
+int    LOGLEVEL = 10;
 
 int get_svr_attr_l(
 

@@ -17,16 +17,17 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 tracking.h work_task.h port_forwarding.h pbs_cpa.h	\
 		 pbs_cpuset.h pbs_batchreqtype_db.h utils.h u_tree.h	\
 		 threadpool.h                            		\
-		 mom_hierarchy.h dynamic_string.h mom_server.h		\
+		 mom_hierarchy.h mom_server.h	\
 		 alps_constants.h alps_functions.h login_nodes.h	\
-		 track_alps_reservations.h net_cache.h user_info.h	\
+		 track_alps_reservations.hpp net_cache.h user_info.h	\
 		 exiting_jobs.h mom_update.h dis_internal.h             \
 		 mutex_mgr.hpp mom_memory.h execution_slot_tracker.hpp  \
 		 mom_config.h node_internals.hpp numa_node.hpp server_comm.h \
 		 delete_all_tracker.hpp timer.hpp id_map.hpp container.hpp \
 		 node_frequency.hpp cpu_frequency.hpp sys_file.hpp power_state.hpp \
-		 job_usage_info.hpp machine.hpp req.hpp complete_req.hpp trq_cgroups.h \
-		 job_recovery.h allocation.hpp attr_req_info.hpp
+		 job_usage_info.hpp job_recovery.h acl_special.hpp restricted_host.hpp \
+		 machine.hpp req.hpp complete_req.hpp trq_cgroups.h allocation.hpp attr_req_info.hpp \
+		 runjob_help.hpp pbs_helper.h mail_throttler.hpp
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \
