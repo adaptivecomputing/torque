@@ -959,8 +959,10 @@ if test "x$enable_cgroups" = "xyes"; then
   AC_MSG_RESULT([yes])
   build_linux_cgroups=yes
   AC_DEFINE(PENABLE_LINUX_CGROUPS, 1, [Define to enable Linux cgroups])
+  RPM_AC_OPTS="$RPM_AC_OPTS --with cgroups"
 else
   AC_MSG_RESULT([no])
+  RPM_AC_OPTS="$RPM_AC_OPTS --without cgroups"
 fi
 AM_CONDITIONAL([BUILD_LINUX_CGROUPS], test "$build_linux_cgroups" = yes)
 
