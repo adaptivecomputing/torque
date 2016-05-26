@@ -118,7 +118,7 @@ static bool print_header = true;
 #define DEFTASKSIZE 6
 
 int   tasksize = DEFTASKSIZE;
-int   alias_opt = FALSE;
+int                  alias_opt = FALSE;
 
 string get_err_msg(
   int   any_failed,
@@ -1512,43 +1512,6 @@ void display_job_summary(
 
   if (p->name != NULL)
     {
-    c = p->name;
-
-    while ((*c != '.') && (*c != '\0'))
-      c++;
-
-    if (alias_opt == TRUE)
-      {
-      /* show the alias as well as the first part of the server name */
-      if (*c == '.')
-        {
-        c++;
-
-        while((*c != '.') && (*c != '\0'))
-          c++;
-        }
-      }
-
-    if (alias_opt == TRUE)
-      {
-      /* show the alias as well as the first part of the server name */
-      if (*c == '.')
-        {
-        c++;
-
-        while((*c != '.') && (*c != '\0'))
-          c++;
-        }
-      }
-
-    if (*c != '\0')
-      c++;    /* List the first part of the server name, too. */
-
-    while ((*c != '.') && (*c != '\0'))
-      c++;
-
-    *c = '\0';
-
     len = strlen(p->name);
 
     if (len > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8))
