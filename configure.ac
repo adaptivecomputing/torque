@@ -1079,6 +1079,21 @@ then configuring again.
   fi
 fi 
 
+dnl
+dnl add an option to specify a different path where TORQUE should look for uthash.h
+dnl
+AC_ARG_WITH(uthash-path, [
+  --with-uthash-path=PATH
+                       Specifies the path to the uthash include file.
+                       Example: ./configure --with-uthash-path=/usr/local/uthash-1.1
+                       Will specify that the include file is in /usr/local/uthash-1.1/include],
+    [], [with_uthash_path=no])
+
+AS_IF([test "x$with_uthash_path" != "xno"],
+    [CFLAGS="$CFLAGS -I${with_uthash_path}/include" CXXFLAGS="$CXXFLAGS -I${with_uthash_path}/include"],
+    [incdir='-I$(top_srcdir)/src/include/3rdparty/uthash' CFLAGS="$CFLAGS $incdir" CXXFLAGS="$CXXFLAGS $incdir"])
+
+AM_CONDITIONAL([INTERNAL_UTHASH], [test "x$with_uthash_path" = "xno"])
 
 dnl enable pbs_mom to use the cpuset API from libcpuset
 dnl only makes sense with cpusets enabled 
