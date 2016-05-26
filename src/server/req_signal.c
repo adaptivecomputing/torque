@@ -104,6 +104,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
+#include "req_jobobit.h" /* rel_resc() */
 
 /* Private Function local to this file */
 
@@ -285,6 +286,7 @@ int issue_signal(
     newreq->rq_extsz = strlen(extend);
     }
 
+  strcpy(jobid, pjob->ji_qs.ji_jobid);
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 
   snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", signame);
@@ -301,6 +303,55 @@ int issue_signal(
     func(newreq);
 
     *pjob_ptr = svr_find_job((char *)jobid, TRUE);
+    }
+  else if ((extend != NULL) && 
+      (!strcmp(extend, RERUNFORCE)))
+    {
+    if (pjob == NULL)
+      {
+      *pjob_ptr = svr_find_job((char *)jobid, TRUE);
+      pjob = *pjob_ptr;
+      }
+    /* The job state is normally set when the obit arrives. But since the 
+       MOM is not responding we need to set the state here */
+
+    /* Rerunning job, if not checkpointed, clear "resources_used and requeue job */
+    if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
+      {
+      job_attr_def[JOB_ATR_resc_used].at_free(&pjob->ji_wattr[JOB_ATR_resc_used]);
+      }
+    else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
+      {
+      /* non-migratable checkpoint (cray), leave there */
+      /* and just requeue the job         */
+
+      rel_resc(pjob);
+
+      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
+
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+
+      pjob->ji_momhandle = -1;
+
+      unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
+
+      return(PBSE_SYSTEM);
+      }
+
+    rel_resc(pjob); /* free resc assigned to job */
+
+    /* Now re-queue the job */
+
+    pjob->ji_modified = 1; /* force full job save */
+
+    pjob->ji_momhandle = -1;
+    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+
+    svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+    func(newreq);
+
+    rc = PBSE_NONE;
     }
   else
     {
