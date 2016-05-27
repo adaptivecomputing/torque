@@ -218,7 +218,7 @@ void PCI_Device::initializeMic(
 
 
 #ifdef NVIDIA_GPUS
-/*void PCI_Device::initializeGpu(
+void PCI_Device::initializeGpu(
 
   int              idx,
   hwloc_topology_t topology)
@@ -258,7 +258,7 @@ void PCI_Device::initializeMic(
 
   this->type = GPU;
 
-  }*/
+  }
 #endif
 
 #endif

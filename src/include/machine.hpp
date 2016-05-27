@@ -54,11 +54,12 @@ class PCI_Device
     PCI_Device &operator=(const PCI_Device &other);
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
-#ifdef NVIDIA_GPUS
-    void initializeGpu(int idx, hwloc_topology_t topology);
-#endif
 #ifdef MIC
     void initializeMic(int idx, hwloc_topology_t topology);
+#endif
+
+#ifdef NVIDIA_GPUS
+    void initializeGpu(int idx, hwloc_topology_t topology);
 #endif
     void displayAsString(stringstream &out) const;
     void setName(const string &name);
