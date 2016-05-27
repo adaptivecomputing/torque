@@ -2002,6 +2002,8 @@ int req_quejob2(
   insert_job(&newjobs,pj);
 
   rc = do_quejob_commit(preq, pj);
+  if (rc != PBSE_NONE)
+    return(rc);
 
   /* acknowledge the request with the job id */
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
