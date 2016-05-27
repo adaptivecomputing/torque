@@ -66,50 +66,6 @@ PCI_Device::~PCI_Device()
   memset(cpuset_string, 0, MAX_CPUSET_SIZE);
   }
 
-#ifdef NVIDIA_GPUS
-void PCI_Device::initializeGpu(
-
-  int              idx,
-  hwloc_topology_t topology)
-
-  {
-  int rc;
-  nvmlDevice_t  gpu_device;
-
-  id = idx;
-  rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
-  if (rc != NVML_SUCCESS)
-    {
-    string buf;
-
-    buf = "nvmlDeviceGetHandleByIndex failed for nvidia gpus";
-    buf = buf + name.c_str();
-    log_err(-1, __func__, buf.c_str());
-    }
-  else
-    {
-    nearest_cpuset = hwloc_bitmap_alloc();
-    if (nearest_cpuset != NULL)
-      {
-      rc = hwloc_nvml_get_device_cpuset(topology, gpu_device, nearest_cpuset);
-      if (rc != 0)
-        {
-        string  buf;
-
-        buf = "could not get cpuset of ";
-        buf = buf + name.c_str();
-        log_err(-1, __func__, buf.c_str());
-        }
-
-      hwloc_bitmap_list_snprintf(cpuset_string, MAX_CPUSET_SIZE, nearest_cpuset);
-      }
-    }
-
-    this->type = GPU;
-
-  }
-#endif
-
 int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
   {
 
@@ -129,7 +85,6 @@ int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topol
 #ifdef NVIDIA_GPUS
   this->initializeGpu(idx, topology);
 #endif
-
   return(PBSE_NONE);
   }
 
