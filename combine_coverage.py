@@ -84,7 +84,11 @@ class CoverageFile:
        
         for line in content:
             l = LineInfo(line)
-            self.lines[current_line].add_to_exercized_count(l.exercized_times())
+            if current_line >= len(self.lines):
+                self.lines.append(l);
+            else:
+                self.lines[current_line].add_to_exercized_count(l.exercized_times())
+
             current_line += 1
 
     def get_total_executable_lines(self):
