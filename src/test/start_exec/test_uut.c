@@ -642,6 +642,7 @@ Suite *start_exec_suite(void)
   tc_core = tcase_create("test_get_num_nodes_ppn");
   tcase_add_test(tc_core, test_get_num_nodes_ppn);
   tcase_add_test(tc_core, test_setup_process_launch_pipes);
+  tcase_add_test(tc_core, test_read_launcher_child_status);
 #ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, get_memory_limit_from_resource_list_test);
 #endif

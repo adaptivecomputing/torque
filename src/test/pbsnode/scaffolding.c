@@ -140,3 +140,7 @@ Core::Core() {}
 Core::~Core() {}
 
 #endif
+
+pbsnode *alps_reporter;
+const char *alps_reporter_feature  = "alps_reporter";
+const char *alps_starter_feature   = "alps_login";

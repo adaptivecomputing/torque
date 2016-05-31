@@ -364,13 +364,13 @@ Suite *complete_req_suite(void)
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
   tcase_add_test(tc_core, test_set_value_from_nodes);
+  tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_to_string");
   tcase_add_test(tc_core, test_to_string);
   tcase_add_test(tc_core, test_set_get_value);
   tcase_add_test(tc_core, test_update_hostlist);
-  tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
   
   return(s);
