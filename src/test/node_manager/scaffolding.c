@@ -23,6 +23,8 @@
 #include "complete_req.hpp"
 
 
+bool conn_success = true;
+bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
 int str_to_attr_count;
 int decode_resc_count;
@@ -49,12 +51,34 @@ const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
 bool             job_mode = false;
+int              can_place = 0;
 
 
 struct batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br needs to be mocked!!\n");
-  exit(1);
+  struct batch_request *req = NULL;
+
+  if (alloc_br_success == false)
+    return(NULL);
+
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
+
+  if (req == NULL)
+    {
+    return(NULL);
+    }
+
+  req->rq_type = type;
+
+  req->rq_conn = -1;  /* indicate not connected */
+  req->rq_orgconn = -1;  /* indicate not connected */
+  req->rq_time = 9877665;
+  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  req->rq_noreply = FALSE;  /* indicate reply is needed */
+
+  CLEAR_LINK(req->rq_link);
+
+  return(req);
   }
 
 void DIS_tcp_reset(int fd, int i)
@@ -111,8 +135,14 @@ int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *t
 struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
+  static struct pbsnode other;
+  static int    called = 0;
 
-  memset(&bob, 0, sizeof(bob));
+  if (called == 0)
+    {
+    other.change_name("lihue");
+    called++;
+    }
 
   if (!strcmp(nodename, "bob"))
     return(&bob);
@@ -124,15 +154,18 @@ struct pbsnode *find_nodebyname(const char *nodename)
     return(&bob);
   else if (!strcmp(nodename, "3"))
     return(&bob);
+  else if (!strcmp(nodename, "lihue"))
+    {
+    return(&other);
+    }
   else
     return(NULL);
   }
 
+
 struct pbsnode *find_nodebyid(int id)
   {
   static struct pbsnode bob;
-
-  memset(&bob, 0, sizeof(bob));
 
   if (id == 1)
     return(&bob);
@@ -140,11 +173,9 @@ struct pbsnode *find_nodebyid(int id)
     return(NULL);
   }
 
-struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
+struct pbsnode *find_node_in_allnodes(all_nodes *an, const char *nodename)
   {
   static struct pbsnode cray;
-
-  memset(&cray, 0, sizeof(cray));
 
   if (!strcmp(nodename, "cray"))
     return(&cray);
@@ -154,8 +185,7 @@ struct pbsnode *find_node_in_allnodes(all_nodes *an, char *nodename)
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock)
   {
-  fprintf(stderr, "The call to set_task needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 unsigned disrui(int stream, int *retval)
@@ -166,8 +196,7 @@ unsigned disrui(int stream, int *retval)
 
 void svr_disconnect(int handle)
   {
-  fprintf(stderr, "The call to svr_disconnect needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsnode *held)
@@ -178,8 +207,7 @@ struct pbsnode *next_host(all_nodes *an, all_nodes_iterator **iter, struct pbsno
 
 struct pbsnode *next_node(all_nodes *an, struct pbsnode *current, node_iterator *iter)
   {
-  fprintf(stderr, "The call to next_node needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 int DIS_tcp_wflush(int fd)
@@ -208,8 +236,7 @@ int write_tcp_reply(struct tcp_chan *chan, int protocol, int version, int comman
 
 int issue_Drequest(int conn, batch_request *br, bool close_handle)
   {
-  fprintf(stderr, "The call to issue_Drequest needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
@@ -262,8 +289,10 @@ void free_arst(struct pbs_attribute *attr)
 
 int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
   {
-  fprintf(stderr, "The call to svr_connect needs to be mocked!!\n");
-  exit(1);
+  if (conn_success == true)
+    return(10);
+  else
+    return(-1);
   }
 
 int PNodeStateToString(int SBM, char *Buf, int BufSize)
@@ -402,45 +431,6 @@ void *send_hierarchy_threadtask(void *vp)
   exit(1);                            
   }
 
-char *threadsafe_tokenizer(char **str, const char *delims)
-  {
-  char *current_char;
-  char *start;
-
-  if ((str == NULL) ||
-      (*str == NULL))
-    return(NULL);
-
-  /* save start position */
-  start = *str;
-
-  /* return NULL at the end of the string */
-  if (*start == '\0')
-    return(NULL);
-
-  /* begin at the start */
-  current_char = start;
-
-  /* advance to the end of the string or until you find a delimiter */
-  while ((*current_char != '\0') &&
-         (!strchr(delims, *current_char)))
-    current_char++;
-
-  /* advance str */
-  if (*current_char != '\0')
-    {
-    /* not at the end of the string */
-    *str = current_char + 1;
-    *current_char = '\0';
-    }
-  else
-    {
-    /* at the end of the string */
-    *str = current_char;
-    }
-
-  return(start);
-  }
 
 int get_svr_attr_l(int index, long *l)
   {
@@ -461,7 +451,7 @@ int process_alps_status(
 
 struct pbsnode *get_next_login_node(
 
-  struct prop *needed)
+  std::vector<prop> *need)
 
   {
   return(NULL);
@@ -524,7 +514,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 pbs_net_t get_hostaddr(
 
   int  *local_errno, /* O */
-  char *hostname)    /* I */
+  const char *hostname)    /* I */
   {
   fprintf(stderr,"ERROR: %s is mocked.\n",__func__);
   return 0;
@@ -681,6 +671,289 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
   return(0);
   }
 
+
+pbsnode::pbsnode() : nd_error(0), nd_properties(),
+                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
+                     nd_note(),
+                     nd_stream(-1),
+                     nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
+                     nd_mom_rm_port(PBS_MANAGER_SERVICE_PORT), nd_sock_addr(),
+                     nd_nprops(0), nd_nstatus(0),
+                     nd_slots(), nd_job_usages(), nd_needed(0), nd_np_to_be_used(0),
+                     nd_state(INUSE_FREE), nd_ntype(0), nd_order(0),
+                     nd_warnbad(0),
+                     nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
+                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
+                     nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
+                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                     nd_micstatus(NULL), nd_nmics_alloced(0),
+                     nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
+                     num_node_boards(0), node_boards(NULL), numa_str(),
+                     gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
+                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                     max_subnode_nppn(0), nd_power_state(0),
+                     nd_power_state_change_time(0), nd_acl(NULL),
+                     nd_requestid(), nd_tmp_unlock_count(0)
+
+  {
+  pthread_mutex_init(&this->nd_mutex,NULL);
+  } // END empty constructor
+
+
+
+pbsnode::pbsnode(
+
+  const char *pname,
+  u_long     *pul,
+  bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_prop(NULL),
+                                     nd_status(NULL),
+                                     nd_note(),
+                                     nd_stream(-1),
+                                     nd_flag(okay),
+                                     nd_mom_port(PBS_MOM_SERVICE_PORT),
+                                     nd_mom_rm_port(PBS_MANAGER_SERVICE_PORT), nd_sock_addr(),
+                                     nd_nprops(0), nd_nstatus(0),
+                                     nd_slots(), nd_job_usages(), nd_needed(0), nd_np_to_be_used(0),
+                                     nd_state(INUSE_DOWN), nd_ntype(0), nd_order(0),
+                                     nd_warnbad(0),
+                                     nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
+                                     nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
+                                     nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
+                                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                                     nd_micstatus(NULL), nd_nmics_alloced(0),
+                                     nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
+                                     num_node_boards(0), node_boards(NULL), numa_str(),
+                                     gpu_str(), nd_mom_reported_down(0), nd_is_alps_reporter(0),
+                                     nd_is_alps_login(0), nd_ms_jobs(), alps_subnodes(NULL),
+                                     max_subnode_nppn(0), nd_power_state(0),
+                                     nd_power_state_change_time(0), nd_acl(NULL),
+                                     nd_requestid(), nd_tmp_unlock_count(0)
+
+  {
+  struct addrinfo *pAddrInfo;
+
+  this->nd_name            = pname;
+  this->nd_properties.push_back(this->nd_name);
+  this->nd_id              = 1;
+
+  pthread_mutex_init(&this->nd_mutex,NULL);
+  } // END constructor
+
+
+
+pbsnode::~pbsnode()
+
+  {
+  } // END destructor
+
+
+
+/*
+ * lock_node()
+ *
+ * Locks this node
+ */
+
+int pbsnode::lock_node(
+    
+  const char     *id,
+  const char     *msg,
+  int             logging)
+
+  {
+  return(PBSE_NONE);
+  } /* END lock_node() */
+
+
+
+int pbsnode::tmp_lock_node(
+
+  const char     *id,
+  const char     *msg,
+  int             logging)
+
+  {
+  return(PBSE_NONE);
+  }
+
+
+
+int pbsnode::unlock_node(
+    
+  const char     *id,
+  const char     *msg,
+  int             logging)
+
+  {
+  return(PBSE_NONE);
+  } /* END unlock_node() */
+
+
+
+int pbsnode::tmp_unlock_node(
+
+  const char     *id,
+  const char     *msg,
+  int             logging)
+
+  {
+  return(PBSE_NONE);
+  }
+
+
+
+const char *pbsnode::get_name() const
+  
+  {
+  return(this->nd_name.c_str());
+  }
+
+
+
+int pbsnode::get_error() const
+
+  {
+  return(this->nd_error);
+  }
+
+
+
+bool pbsnode::hasprop(
+
+  std::vector<prop> *plist) const
+
+  {
+  if (plist == NULL)
+    return(true);
+
+  for (unsigned int i = 0; i < plist->size(); i++)
+    {
+    prop &need = plist->at(i);
+
+    if (need.mark == 0) /* not marked, skip */
+      continue;
+
+    bool found = false;
+
+    for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+      {
+      if (this->nd_properties[i] == need.name)
+        {
+        found = true;
+        break;
+        }
+      }
+
+    if (found == false)
+      return(found);
+    }
+
+  return(true);
+  }  /* END hasprop() */
+
+
+
+void pbsnode::update_properties()
+
+  {
+  this->nd_properties.clear();
+
+  if (this->nd_prop)
+    {
+    int nprops = this->nd_prop->as_usedptr;
+
+    for (int i = 0; i < nprops; i++)
+      {
+      this->nd_properties.push_back(this->nd_prop->as_string[i]);
+      }
+    }
+
+  /* now add in name as last prop */
+  this->nd_properties.push_back(this->nd_name);
+  } // END update_prop_list()
+
+
+
+void pbsnode::change_name(
+
+  const char *name)
+
+  {
+  // Overwrite the old property
+  for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+    {
+    if (this->nd_name == this->nd_properties[i])
+      this->nd_properties[i] = name;
+    }
+
+  this->nd_name = name;
+  }
+
+
+
+void pbsnode::add_property(
+
+  const std::string &prop)
+
+  {
+  this->nd_properties.push_back(prop);
+  }
+
+bool pbsnode::update_internal_failure_counts(
+
+  int rc)
+
+  {
+  bool held = false;
+  char log_buf[2048];
+
+  if (rc == PBSE_NONE)
+    {
+    this->nd_consecutive_successes++;
+
+    if (this->nd_consecutive_successes > 1)
+      {
+      this->nd_proximal_failures = 0;
+
+      if (this->nd_state & INUSE_NETWORK_FAIL)
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "Node '%s' has had two or more consecutive network successes, marking online.",
+          this->nd_name.c_str());
+        log_record(1, 2, __func__, log_buf);
+        this->remove_node_state_flag(INUSE_NETWORK_FAIL);
+        }
+      }
+    }
+  else
+    {
+    this->nd_proximal_failures++;
+    this->nd_consecutive_successes = 0;
+
+    if ((this->nd_proximal_failures > 2) &&
+        ((this->nd_state & INUSE_NETWORK_FAIL) == 0))
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Node '%s' has had %d failures in close proximity, marking offline.",
+        this->nd_name.c_str(), this->nd_proximal_failures);
+      log_record(1, 2, __func__, log_buf);
+
+      update_node_state(this, INUSE_NETWORK_FAIL);
+      held = true;
+      }
+    }
+
+  return(held);
+  }
+
+void pbsnode::remove_node_state_flag(
+
+  int flag)
+
+  {
+  this->nd_state &= ~flag;
+  }
+
 Machine::Machine() {}
 Machine::~Machine() {}
 
@@ -695,10 +968,21 @@ int Machine::place_job(
   job        *pjob,
   string     &cpu_string,
   string     &mem_string,
-  const char *hostname)
+  const char *hostname,
+  bool        legacy_vmem)
 
   {
   return(0);
+  }
+
+int Machine::how_many_tasks_can_be_placed(req &r) const
+  {
+  return(can_place);
+  }
+
+bool Machine::is_initialized() const
+  {
+  return(true);
   }
 
 Socket::Socket() {}
@@ -743,4 +1027,11 @@ bool task_hosts_match(
 
   return(true);
   }
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}
 

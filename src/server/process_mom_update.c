@@ -79,6 +79,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -203,17 +204,8 @@ int process_mic_status(
 
     if (mic_count > pnode->nd_nmics_alloced)
       {
-      struct jobinfo *tmp = (struct jobinfo *)calloc(mic_count, sizeof(struct jobinfo));
-      
-      if (tmp == NULL)
-        return(ENOMEM);
-
-      memcpy(tmp, pnode->nd_micjobs, sizeof(struct jobinfo) * pnode->nd_nmics_alloced);
-      free(pnode->nd_micjobs);
-      pnode->nd_micjobs = tmp;
-          
-      for (int j = pnode->nd_nmics_alloced; j < mic_count; j++)
-        pnode->nd_micjobs[j].internal_job_id = -1;
+      for (int i = 0; i < mic_count - pnode->nd_nmics_alloced; i++)
+        pnode->nd_micjobids.push_back(-1);
 
       pnode->nd_nmics_alloced = mic_count;
       }
@@ -250,10 +242,10 @@ struct pbsnode *get_numa_from_str(
     /* ERROR */
     snprintf(log_buf,sizeof(log_buf),
       "Node %s isn't declared to be NUMA, but mom is reporting\n",
-      np->nd_name);
+      np->get_name());
     log_err(-1, __func__, log_buf);
   
-    unlock_node(np, __func__, "np numa update", LOGLEVEL);
+    np->unlock_node(__func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
@@ -269,17 +261,17 @@ struct pbsnode *get_numa_from_str(
     snprintf(log_buf,sizeof(log_buf),
       "Could not find NUMA index %lu for node %s\n",
       numa_index,
-      np->nd_name);
+      np->get_name());
     log_err(-1, __func__, log_buf);
     
-    unlock_node(np, __func__, "np numa update", LOGLEVEL);
+    np->unlock_node(__func__, "np numa update", LOGLEVEL);
     
     return(NULL);
     }
  
   /* SUCCESS */
-  unlock_node(np, __func__, "np numa update", LOGLEVEL);
-  lock_node(numa, __func__, "numa numa update", LOGLEVEL);
+  np->unlock_node(__func__, "np numa update", LOGLEVEL);
+  numa->lock_node(__func__, "numa numa update", LOGLEVEL);
   
   numa->nd_lastupdate = time(NULL);
   
@@ -305,9 +297,9 @@ struct pbsnode *get_node_from_str(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
  
   /* don't do anything if the name is the same as this node's name */
-  if (strcmp(node_id, np->nd_name))
+  if (strcmp(node_id, np->get_name()))
     {
-    unlock_node(np, __func__, "np not numa update", LOGLEVEL);
+    np->unlock_node(__func__, "np not numa update", LOGLEVEL);
     
     next = find_nodebyname(node_id);
     
@@ -469,7 +461,7 @@ void update_job_data(
       if (on_node == FALSE)
         {
         /* job is reported by mom but server has no record of job */
-        sprintf(log_buf, "stray job %s reported on %s", jobidstr, np->nd_name);
+        sprintf(log_buf, "stray job %s reported on %s", jobidstr, np->get_name());
 
         log_err(-1, __func__, log_buf);
         }
@@ -501,8 +493,11 @@ int set_note_error(
   std::string errmsg = std::string(str).substr(8, std::string::npos);
   std::string oldnote = "";
 
+  // remove newlines from string
+  errmsg.erase(std::remove(errmsg.begin(), errmsg.end(), '\n'), errmsg.end());
+
   // If a note already exists, append the error; otherwise, create a new note
-  if (np->nd_note != NULL)
+  if (np->nd_note.size() != 0)
     {
     oldnote = np->nd_note;
 
@@ -512,13 +507,13 @@ int set_note_error(
       return(PBSE_NONE);
       }
 
+    // append message
     message = oldnote + " - " + errmsg;
-    free(np->nd_note);
     }
   else
-    message = std::string(str).substr(8, std::string::npos);
+    message = errmsg;
 
-  np->nd_note = strdup(message.c_str());
+  np->nd_note = message.c_str();
 
   return(PBSE_NONE);
   }  /* END set_note() */
@@ -540,36 +535,38 @@ int restore_note(
   std::string message;
   std::string oldnote;
   std::size_t found;
+  std::size_t found_appendage;
 
   // If a note exists, strip it of any error message
-  if (np->nd_note != NULL)
+  if (np->nd_note.size() != 0)
     {
     oldnote = np->nd_note;
 
-    found = oldnote.find(" - ERROR");
+    found = oldnote.find("ERROR");
 
     if (found == std::string::npos)
       {
-      found = oldnote.find("ERROR");
-
-      if (found == std::string::npos)
-        {
-        return(PBSE_NONE);
-        }
+      return(PBSE_NONE);
       }
+
+     found_appendage = oldnote.find(" - ERROR");
+
+     // adjust the found index to the first of "ERROR" or " - ERROR"
+     if ((found_appendage != std::string::npos) && (found_appendage < found))
+       {
+       found = found_appendage;
+       }
 
     // If the note would be empty after removing the error message,
     // simply remove the entire note
     if (found == 0)
       {
-      free(np->nd_note);
-      np->nd_note = NULL;
+      np->nd_note.clear();
       }
     else
       {
       message = oldnote.substr(0, found);
-      free(np->nd_note);
-      np->nd_note = strdup(message.c_str());
+      np->nd_note = message;
       }
     }
 
@@ -586,7 +583,7 @@ int process_uname_str(
   {
   /* for any mom mode if an address did not succeed at getnameinfo it was
    * given the hex value of its ip address */
-  if (!strncmp(np->nd_name, "0x", 2))
+  if (!strncmp(np->get_name(), "0x", 2))
     {
     const char *cp;
     char  node_name[PBS_MAXHOSTNAME + 1];
@@ -604,13 +601,8 @@ int process_uname_str(
       } while (*cp != ' ' && count < PBS_MAXHOSTNAME);
     
     node_name[count-1] = 0;
-    cp = strdup(node_name);
-    free(np->nd_name);
-    np->nd_name = (char *)cp;
-    np->nd_first = init_prop(np->nd_name);
-    np->nd_last = np->nd_first;
-    np->nd_f_st = init_prop(np->nd_name);
-    np->nd_l_st = np->nd_f_st;
+    
+    np->change_name(node_name);
     }
 
   return(PBSE_NONE);
@@ -631,7 +623,7 @@ int process_state_str(
   if (np->nd_state & INUSE_NOHIERARCHY)
     {
     sprintf(log_buf, "node %s has not received its hiearachy yet.",
-      (np->nd_name != NULL) ? np->nd_name : "NULL");
+      np->get_name());
 
     log_err(-1, __func__, log_buf);
     return PBSE_HIERARCHY_NOT_SENT;
@@ -662,7 +654,7 @@ int process_state_str(
     {
     sprintf(log_buf, "unknown %s from node %s",
       str,
-      (np->nd_name != NULL) ? np->nd_name : "NULL");
+      np->get_name());
     
     log_err(-1, __func__, log_buf);
     
@@ -672,7 +664,7 @@ int process_state_str(
   if (LOGLEVEL >= 9)
     {
     sprintf(log_buf, "node '%s' is at state '0x%x'\n",
-      np->nd_name,
+      np->get_name(),
       np->nd_state);
     
     log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
@@ -849,9 +841,9 @@ int process_status_info(
 #ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
-      if (current->nd_layout == NULL)
+      if (current->nd_layout.is_initialized() == false)
         {
-        current->nd_layout = new Machine(status_info[i]);
+        current->nd_layout.reinitialize_from_json(status_info[i]);
         }
 
       continue;
@@ -909,14 +901,14 @@ int process_status_info(
              (!strncmp(str, "jobs=", 5)))
       {
       /* walk job list reported by mom */
-      size_t         len = strlen(str) + strlen(current->nd_name) + 2;
+      size_t         len = strlen(str) + strlen(current->get_name()) + 2;
       char          *jobstr = (char *)calloc(1, len);
       sync_job_info *sji = (sync_job_info *)calloc(1, sizeof(sync_job_info));
 
       if ((jobstr != NULL) &&
           (sji != NULL))
         {
-        sprintf(jobstr, "%s:%s", current->nd_name, str+5);
+        sprintf(jobstr, "%s:%s", current->get_name(), str+5);
         sji->input = jobstr;
         sji->timestamp = time(NULL);
 
@@ -947,7 +939,7 @@ int process_status_info(
   if (current != NULL)
     {
     save_node_status(current, &temp);
-    unlock_node(current, __func__, NULL, LOGLEVEL);
+    current->unlock_node(__func__, NULL, LOGLEVEL);
     }
   
   if ((rc == PBSE_NONE) &&
@@ -1007,7 +999,7 @@ int is_gpustat_get(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "received gpu status from node %s", np->nd_name);
+    sprintf(log_buf, "received gpu status from node %s", np->get_name());
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
@@ -1112,7 +1104,7 @@ int is_gpustat_get(
           sprintf(log_buf,
             "Failed to get/create entry for gpu %s on node %s\n",
             gpuid,
-            np->nd_name);
+            np->get_name());
 
           log_ext(-1, __func__, log_buf, LOG_DEBUG);
           }
@@ -1135,9 +1127,10 @@ int is_gpustat_get(
        * if we have not filled in the gpu_id returned by the mom node
        * then fill it in
        */
-      if ((gpuidx >= 0) && (np->nd_gpusn[gpuidx].gpuid == NULL))
+      if ((gpuidx >= 0) &&
+          (np->nd_gpusn[gpuidx].gpuid.size() == 0))
         {
-        np->nd_gpusn[gpuidx].gpuid = strdup(gpuid);
+        np->nd_gpusn[gpuidx].gpuid = gpuid;
         }      
 
       }
@@ -1212,7 +1205,7 @@ int is_gpustat_get(
           sprintf(log_buf,
             "GPU %s has unknown mode on node %s",
             gpuid,
-            np->nd_name);
+            np->get_name());
 
           log_ext(-1, __func__, log_buf, LOG_DEBUG);
           }

@@ -186,6 +186,7 @@ class req
     std::string   getNodeAccessPolicy() const;
     std::string   getPlacementType() const;
     std::string   getReqAttr() const;
+    std::string   get_gpu_mode() const;
     int           getTaskCount() const;
     int           getIndex() const;
     int           getHostlist(std::vector<std::string> &list) const;
@@ -208,6 +209,7 @@ class req
     void          set_hostlist(const char *hostlist);
     void          update_hostlist(const std::string &host_spec);
     void          set_memory(unsigned long mem);
+    void          set_swap(unsigned long mem);
     void          set_execution_slots(int execution_slots);
     void          set_task_count(int task_count);
     void          record_allocation(const allocation &a);

@@ -207,14 +207,21 @@ void delay_and_send_sig_kill(
     return;
     }
 
+  // Apply the user delay first so it takes precedence.
+  if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
+    delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
+
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
 
-    delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
-                           &server.sv_attr[SRV_ATR_KillDelay],
-                           0);
+    if (delay == 0)
+      {
+      delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
+                             &server.sv_attr[SRV_ATR_KillDelay],
+                             0);
+      }
     }
   else
     {
@@ -480,15 +487,22 @@ int req_rerunjob(
     /* ask MOM to kill off the job if it is running */
     int                 delay = 0;
     pbs_queue          *pque;
+  
+    // Apply the user delay first so it takes precedence.
+    if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
+      delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
 
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
       mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
       mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
 
-      delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
-                             &server.sv_attr[SRV_ATR_KillDelay],
-                             0);
+      if (delay == 0)
+        {
+        delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
+                               &server.sv_attr[SRV_ATR_KillDelay],
+                               0);
+        }
       }
     else
       {

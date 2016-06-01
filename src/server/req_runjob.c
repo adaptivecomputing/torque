@@ -113,7 +113,6 @@
 #include "array.h"
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_stat.h" /* stat_mom_job */
 #include "ji_mutex.h"
@@ -197,7 +196,6 @@ int check_and_run_job_work(
   char             job_id[PBS_MAXSVRJOBID+1];
   char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
-  rc = PBSE_NONE;
   pjob = svr_find_job(preq->rq_ind.rq_run.rq_jid, FALSE);
 
   if (pjob == NULL)
@@ -213,7 +211,7 @@ int check_and_run_job_work(
 
   /* if the job is part of an array, check the slot limit */
   if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == FALSE))
+      (pjob->ji_is_array_template == false))
     {
     job_array *pa = get_jobs_array(&pjob);
 
@@ -279,9 +277,9 @@ int check_and_run_job_work(
     free_nodes(pjob);
 
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
-    if (pjob->ji_rejectdest->size() > 0)
+    if (pjob->ji_rejectdest.size() > 0)
       {
-      req_reject(rc, 0, preq, pjob->ji_rejectdest->at(0).c_str(), "could not contact host");
+      req_reject(rc, 0, preq, pjob->ji_rejectdest[0].c_str(), "could not contact host");
       }
     else
       {
@@ -373,10 +371,8 @@ int req_runjob(
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    /* reply_ack will free preq. We need to copy it before we call reply_ack */
-    batch_request *new_preq;
+    batch_request *new_preq = duplicate_request(preq, -1);
 
-    new_preq = duplicate_request(preq, -1);
     if (new_preq == NULL)
       {
       sprintf(log_buf, "failed to duplicate batch request");
@@ -385,9 +381,8 @@ int req_runjob(
       return(PBSE_MEM_MALLOC);
       }
 
-    get_batch_request_id(new_preq);
-
     reply_ack(new_preq);
+    free_br(new_preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
@@ -919,7 +914,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot lookup master compute host */
       return(PBSE_RESCUNAV);
@@ -944,7 +939,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot create socket for master compute host */
       return(PBSE_RESCUNAV);
@@ -972,7 +967,7 @@ int verify_moms_up(
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-      pjob->ji_rejectdest->push_back(nodestr);
+      pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot connect to master compute host */
       return(PBSE_RESCUNAV);
@@ -1305,7 +1300,7 @@ int requeue_job(
     retry++;
     }
 
-  unlock_node(pnode, __func__, NULL, LOGLEVEL);
+  pnode->unlock_node(__func__, NULL, LOGLEVEL);
 
   /* set the job's state to queued */
   svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
@@ -1924,7 +1919,7 @@ int set_job_exec_info(
     memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
     pjob->ji_qs.ji_un.ji_exect.ji_momaddr = ntohl(hostaddr.s_addr);
 
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     
     return(PBSE_NONE);
     }
@@ -2175,6 +2170,16 @@ int assign_hosts(
         return(PBSE_UNKNODEATR);
         }
       }
+    }
+
+  // RESOURCE_20_FIND means interpret the -L request and find nodes that fit it. Only attempt this
+  // if no hostlist was specified.
+  if ((hosttoalloc == NULL) &&
+      (procs == 0) &&
+      (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL))
+    {
+    hosttoalloc = strdup(RESOURCE_20_FIND);
+    to_free = hosttoalloc;
     }
 
   get_svr_attr_str(SRV_ATR_DefNode, &def_node);

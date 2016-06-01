@@ -171,7 +171,7 @@ int insert_into_recycler(
 
   pthread_mutex_lock(recycler.rc_mutex);
 
-  if (pjob->ji_being_recycled == TRUE)
+  if (pjob->ji_being_recycled == true)
     {
     pthread_mutex_unlock(recycler.rc_mutex);
     return(PBSE_NONE);
@@ -185,7 +185,7 @@ int insert_into_recycler(
     }
 
   sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
-  pjob->ji_being_recycled = TRUE;
+  pjob->ji_being_recycled = true;
     
   rc = insert_job(&recycler.rc_jobs, pjob);
   pjob->ji_momstat = time(NULL);

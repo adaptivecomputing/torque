@@ -116,6 +116,9 @@
 #define ATRTYPE  6  /* sync w/ATR_TYPE_*  (see #defines below) */
 #define ATRPART  3
 
+#define NO_ATTR_DATA    1
+#define ATTR_NOT_FOUND  -2
+
 /*
  * The svrattrl structure is used to hold the external form of attributes.
  */
@@ -373,7 +376,7 @@ int  attr_atomic_set(svrattrl *plist, pbs_attribute *old,
                            int unkn, int privil, int *badattr);
 int  attr_atomic_node_set(svrattrl *plist, pbs_attribute *old,
                                 pbs_attribute *new_attr, attribute_def *pdef, int limit,
-                                int unkn, int privil, int *badattr);
+                                int unkn, int privil, int *badattr, bool dont_update_nodes_file);
 void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 void overwrite_complete_req(pbs_attribute *attr, pbs_attribute *new_attr);
@@ -404,6 +407,7 @@ int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const 
 
 
  
+int get_time_string(char *time_string, int string_size, long timeval);
 int encode_b(pbs_attribute *attr, tlist_head *phead, const char *atname,
                            const char *rsname, int mode, int perm);
 int encode_c(pbs_attribute *attr, tlist_head *phead, const char *atname,
@@ -495,6 +499,9 @@ void free_attr_req_info(pbs_attribute *patr);
 int   parse_equal_string(char *, char **, char **);
 char *parse_comma_string(char *,char **);
 
+void                  free_arst_value(struct array_strings *arst);
+struct array_strings *copy_arst(struct array_strings *to_copy);
+
 // More for size
 int normalize_size(struct size_value *a, struct size_value *b, struct size_value *ta, struct size_value *tb);
 int to_size(const char *val, struct size_value *psize);
@@ -554,7 +561,7 @@ int      node_gpustatus_list(pbs_attribute*, void*, int);
 int      node_micstatus_list(pbs_attribute *, void *, int);
 int      node_note(pbs_attribute*, void*, int);
 int      node_alt_name(pbs_attribute*, void*, int);
-int      set_note_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int      set_note_str(pbs_attribute *attr, pbs_attribute *, enum batch_op);
 int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 void     replace_attr_string(pbs_attribute*, char*);
 int      job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);

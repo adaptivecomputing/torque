@@ -94,7 +94,7 @@ class complete_req
   public:
 
     complete_req();
-    complete_req(tlist_head &at_list);
+    complete_req(tlist_head &at_list, bool legacy_vmem);
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
@@ -121,8 +121,9 @@ class complete_req
     void           clear_reqs();
     int            get_task_stats(unsigned int &req_index, std::vector<int> &task_index,
                                   std::vector<unsigned long> &cput_used,
-                                  std::vector<unsigned long long> &mem_used);
+                                  std::vector<unsigned long long> &mem_used, const char *hostname);
     void           set_task_usage_stats(int req_index, int task_index, unsigned long cput_used, unsigned long long mem_used);
+    unsigned int   get_num_reqs();
   };
 
 #endif

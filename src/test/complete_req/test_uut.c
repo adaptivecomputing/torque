@@ -77,28 +77,41 @@ START_TEST(test_constructor)
   fail_unless(equals_out == c_out);
 
   tlist_head h;
-  complete_req list1(h);
+  complete_req list1(h, false);
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
-  complete_req list2(h);
+  complete_req list2(h, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
-  fail_unless(r.getMemory() == 2);
+  fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
  
-  complete_req list3(h);
+  complete_req list3(h, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
-  fail_unless(rl.getMemory() == 40);
+  fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
   }
 END_TEST
 
+
+START_TEST(test_constructor_oldstyle_req)
+  {
+  tlist_head h;
+  extern int gn_count;
+  gn_count = 9;
+  complete_req list1(h, false);
+
+  fail_unless(list1.req_count() == 1);
+  const req &rm1 = list1.get_req(0);
+  fail_unless(rm1.getMemory() == 2, "mem is %lu", rm1.getMemory());
+  }
+END_TEST
 
 
 START_TEST(test_to_string)
@@ -160,6 +173,24 @@ START_TEST(test_get_swap_memory_for_this_host)
   swap = c.get_swap_memory_for_this_host(hostname);
   fail_unless(swap == 0);
 
+  }
+END_TEST
+
+START_TEST(test_get_num_reqs)
+  {
+  complete_req c;
+  std::string hostname = "kmn";
+
+  req r1;
+  req r2;
+
+  r1.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1");
+  r2.set_from_string("req[1]\ntask count: 6\nlprocs: 1\n swap: 1048576\n thread usage policy: usethreads\nplacement type: place numa\nhostlist: kmn:ppn=1:gpus=1");
+
+  c.add_req(r1);
+  c.add_req(r2);
+
+  fail_unless(c.get_num_reqs() == 2);
   }
 END_TEST
 
@@ -279,14 +310,23 @@ Suite *complete_req_suite(void)
   TCase *tc_core = tcase_create("test_constructor");
   tcase_add_test(tc_core, test_constructor);
   suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_constructor_oldstyle_req");
+  tcase_add_test(tc_core, test_constructor_oldstyle_req);
+  suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_get_swap_memory_for_this_host");
   tcase_add_test(tc_core, test_get_swap_memory_for_this_host);
   tcase_add_test(tc_core, test_set_hostlists);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_get_num_reqs");
+  tcase_add_test(tc_core, test_get_num_reqs);
+  suite_add_tcase(s, tc_core);
+
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
+  tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_to_string");

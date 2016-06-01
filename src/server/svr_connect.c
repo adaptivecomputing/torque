@@ -155,8 +155,8 @@ int connect_while_handling_mutex(
   if ((pnode != NULL) &&
       (*pnode != NULL))
     {
-    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->nd_name);
-    unlock_node(*pnode, __func__, NULL, LOGLEVEL);
+    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->get_name());
+    (*pnode)->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   /* establish socket connection to specified host */
@@ -447,16 +447,16 @@ void svr_disconnect(
  */
 char *parse_servername(
 
-  char         *name,   /* server name in form name[:port] */
+  const char   *name,   /* server name in form name[:port] */
   unsigned int *service)  /* RETURN: service_port if :port */
 
   {
   char  buf[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
   char *val;
 
-  int   i = 0;
-  char *pc;
-  char *tmp_val = NULL;
+  int         i = 0;
+  const char *pc;
+  char       *tmp_val = NULL;
 
   buf[0] = '\0';
 

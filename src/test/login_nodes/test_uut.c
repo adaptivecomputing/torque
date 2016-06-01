@@ -1,14 +1,17 @@
 #include <stdio.h>
+#include <vector>
 
 #include "login_nodes.h"
 #include "pbs_nodes.h"
 #include "attribute.h"
+#include "job_usage_info.hpp"
 #include <check.h>
 
 extern login_holder logins;
 char                buf[4096];
-int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req);
-struct pbsnode *check_node(login_node *ln, struct prop *needed);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
+struct pbsnode *check_node(login_node *ln, std::vector<prop> *needed);
+void update_next_node_index(unsigned int to_beat, struct pbsnode *held);
 
 
 void initialize_node_for_testing(
@@ -16,7 +19,6 @@ void initialize_node_for_testing(
   struct pbsnode *pnode)
 
   {
-  memset(pnode, 0, sizeof(struct pbsnode));
   for (int i = 0; i < 5; i++)
     pnode->nd_slots.add_execution_slot();
   }
@@ -89,16 +91,16 @@ void increment_counts(
 
 START_TEST(retrieval_test)
   {
-  struct pbsnode  n1;
-  struct pbsnode  n2;
-  struct pbsnode  n3;
-  struct pbsnode  n4;
-  struct pbsnode *rtd;
-  int             rc;
-  int             n1_rtd = 0;
-  int             n2_rtd = 0;
-  int             n3_rtd = 0;
-  int             n4_rtd = 0;
+  pbsnode  n1;
+  pbsnode  n2;
+  pbsnode  n3;
+  pbsnode  n4;
+  pbsnode *rtd;
+  int      rc;
+  int      n1_rtd = 0;
+  int      n2_rtd = 0;
+  int      n3_rtd = 0;
+  int      n4_rtd = 0;
 
   initialize_login_holder();
   initialize_node_for_testing(&n1);
@@ -147,10 +149,10 @@ START_TEST(retrieval_test)
   /* Set a node down and make sure it doesn't get used */
   n2.nd_state = INUSE_DOWN;
 
-  n1.nd_name = strdup("n1");
-  n2.nd_name = strdup("n2");
-  n3.nd_name = strdup("n3");
-  n4.nd_name = strdup("n4");
+  n1.change_name("n1");
+  n2.change_name("n2");
+  n3.change_name("n3");
+  n4.change_name("n4");
 
   rtd = get_next_login_node(NULL);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
@@ -161,6 +163,76 @@ START_TEST(retrieval_test)
   fail_unless(((n1_rtd == 3) && (n2_rtd == 2) && (n3_rtd == 3) && (n4_rtd == 3)),
     "Should have used n1,n2,n3,n4 3,2,3,3 times but found %d,%d,%d,%d",
     n1_rtd, n2_rtd, n3_rtd, n4_rtd);
+  
+  // Make sure load balancing works
+  n2.nd_state = INUSE_FREE;
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n1.nd_job_usages.push_back(ju);
+    }
+  
+  // Make sure we don't pick n1 as the next node 
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node != 0);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n2.nd_job_usages.push_back(ju);
+    }
+  
+  // make sure we're excluding n1 and n2
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node != 0);
+    fail_unless(logins.next_node != 1);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n3.nd_job_usages.push_back(ju);
+    }
+
+  // Make sure we use n4, the only empty node
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node == 3);
+    }
+  
+  for (int i = 0; i < 51; i++)
+    {
+    job_usage_info ju(i);
+    n4.nd_job_usages.push_back(ju);
+    }
+
+  n1.nd_job_usages.clear();
+  // now n1 is empty 
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node == 0);
+    }
+
+  n2.nd_job_usages.clear();
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1);
+    }
+
+  n3.nd_job_usages.clear();
+  for (int i = 0; i < 200; i++)
+    {
+    update_next_node_index(0, NULL);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1 || logins.next_node == 2);
+    }
   }
 END_TEST
 
@@ -169,8 +241,6 @@ START_TEST(check_node_test)
   {
   struct pbsnode pnode;
   login_node ln(&pnode);
-
-  memset(&pnode, 0, sizeof(pnode));
 
   pnode.nd_slots.add_execution_slot();
   fail_unless(check_node(&ln, NULL) != NULL);
@@ -191,25 +261,26 @@ START_TEST(prop_test)
   int                   rc;
   int                   dummy1;
   int                   dummy2;
+  int                   dummy3;
   int                   n1_rtd = 0;
   int                   n2_rtd = 0;
   int                   n3_rtd = 0;
   int                   n4_rtd = 0;
   char                 *feature = (char *)"tom";
   char                 *feature2 = (char *)"bob";
-  struct prop          *props = NULL;
-  struct prop          *props2 = NULL;
+  std::vector<prop>     props;
+  std::vector<prop>     props2;
 
   initialize_node_for_testing(&n1);
   initialize_node_for_testing(&n2);
   initialize_node_for_testing(&n3);
   initialize_node_for_testing(&n4);
 
-  proplist(&feature, &props, &dummy1, &dummy2);
-  proplist(&feature2, &props2, &dummy1, &dummy2);
+  n1.add_property(feature);
+  n2.add_property(feature);
 
-  n1.nd_first = props;
-  n2.nd_first = props;
+  proplist(&feature, props, &dummy1, &dummy2, &dummy3);
+  proplist(&feature2, props2, &dummy1, &dummy2, &dummy3);
 
   initialize_login_holder();
   rc = add_to_login_holder(&n1);
@@ -221,9 +292,9 @@ START_TEST(prop_test)
   rc = add_to_login_holder(&n4);
   fail_unless(rc == 0);
 
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   snprintf(buf, sizeof(buf), "Should have used n1 once but is %d", n1_rtd);
   fail_unless(n1_rtd == 1, buf);
@@ -234,16 +305,16 @@ START_TEST(prop_test)
   snprintf(buf, sizeof(buf), "Shouldn't have used n4 but is %d", n4_rtd);
   fail_unless(n4_rtd == 0, buf);
 
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
-  rtd = get_next_login_node(props);
+  rtd = get_next_login_node(&props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
   fail_unless(n1_rtd == 2, "Should have used n1 twice");
   fail_unless(n2_rtd == 2, "Should have used n2 twice");
   fail_unless(n3_rtd == 0, "Shouldn't have used n3");
   fail_unless(n4_rtd == 0, "Shouldn't have used n4");
 
-  fail_unless(get_next_login_node(props2) == NULL, "Somehow found a node when none have the property");
+  fail_unless(get_next_login_node(&props2) == NULL, "Somehow found a node when none have the property");
   }
 END_TEST
 

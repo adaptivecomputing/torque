@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #include "pbs_nodes.h"
+#include "job_usage_info.hpp"
 
 int LOGLEVEL = 5;
 
@@ -11,36 +12,6 @@ int LOGLEVEL = 5;
 int lock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 int unlock_node(struct pbsnode *pnode, const char *caller, const char *msg, int level) {return(0);}
 
-int hasprop(
-
-  struct pbsnode *pnode,
-  struct prop    *props)
-
-  {
-  struct  prop    *need;
-
-  for (need = props;need;need = need->next)
-    {
-
-    struct prop *pp;
-
-    if (need->mark == 0) /* not marked, skip */
-      continue;
-
-    for (pp = pnode->nd_first;pp != NULL;pp = pp->next)
-      {
-      if (strcmp(pp->name, need->name) == 0)
-        break;  /* found it */
-      }
-
-    if (pp == NULL)
-      {
-      return(0);
-      }
-    }
-
-  return(1);
-  }  /* END hasprop() */
 
 
 int number(
@@ -108,12 +79,20 @@ int property(
   return(0);
   }  /* END property() */
 
-int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
+
+int proplist(
+
+  char              **str,
+  std::vector<prop>  &plist,
+  int                *node_req,
+  int                *gpu_req,
+  int                *mic_req)
+
   {
-  struct prop *pp;
   char         name_storage[80];
   char        *pname;
   char        *pequal;
+  int          have_gpus = FALSE;
 
   *node_req = 1; /* default to 1 processor per node */
 
@@ -148,6 +127,16 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
           return(1);
           }
         }
+      else if (strcmp(pname, "mics") == 0)
+        {
+        pequal++;
+
+        if ((number(&pequal, mic_req) != PBSE_NONE) ||
+            (*pequal != '\0'))
+          {
+          return(1);
+          }
+        }
       else if (strcmp(pname, "gpus") == 0)
         {
         pequal++;
@@ -156,6 +145,10 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
           {
           return(1);
           }
+
+        have_gpus = TRUE;
+
+        /* default value if no other gets specified */
         }
       else
         {
@@ -164,13 +157,8 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
       }
     else
       {
-      pp = (struct prop *)calloc(1, sizeof(struct prop));
-
-      pp->mark = 1;
-      pp->name = strdup(pname);
-      pp->next = *plist;
-
-      *plist = pp;
+      prop p(pname);
+      plist.push_back(p);
       }
 
     if (**str != ':')
@@ -180,5 +168,100 @@ int proplist(char **str, struct prop **plist, int *node_req, int *gpu_req)
     }  /* END for(;;) */
 
   return(PBSE_NONE);
-  } /* END proplist() */
+  }  /* END proplist() */
 
+
+pbsnode::pbsnode(): nd_properties(), nd_mutex(), nd_state(INUSE_FREE), nd_needed(0),
+                    nd_np_to_be_used(0),
+                    nd_power_state(0)
+  {}
+
+pbsnode::~pbsnode() {}
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+void pbsnode::change_name(const char *name)
+  {
+  this->nd_name = name;
+  this->nd_properties.push_back(this->nd_name);
+  }
+
+
+
+bool pbsnode::hasprop(
+
+  std::vector<prop> *props) const
+
+  {
+  if (props == NULL)
+    return(true);
+
+  for (unsigned int i = 0; i < props->size(); i++)
+    {
+    prop &need = props->at(i);
+    if (need.mark == 0) /* not marked, skip */
+      continue;
+    
+    bool found = false;
+
+    for (unsigned int i = 0; i < this->nd_properties.size(); i++)
+      {
+      if (this->nd_properties[i] == need.name)
+        {
+        found = true;
+        break;
+        }
+      }
+
+    if (found == false)
+      return(found);
+    }
+
+  return(true);
+  }
+
+void pbsnode::add_property(
+
+  const std::string &prop)
+
+  {
+  this->nd_properties.push_back(prop);
+  }
+
+job_usage_info::job_usage_info(int internal_id)
+  {
+  this->internal_job_id = internal_job_id;
+  }
+
+bool job_usage_info::operator ==(
+
+  const job_usage_info &jui)
+
+  {
+  if (this->internal_job_id == jui.internal_job_id)
+    return(true);
+  else
+    return(false);
+  }
+   
+job_usage_info &job_usage_info::operator= (
+    
+  const job_usage_info &other_jui)
+
+  {
+  if (this == &other_jui)
+    return(*this);
+
+  this->internal_job_id = other_jui.internal_job_id;
+  this->est = other_jui.est;
+
+  return(*this);
+  }

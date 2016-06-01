@@ -3,6 +3,7 @@
 #include "machine.hpp"
 #include "log.h"
 #include "pbs_error.h"
+#include "machine.hpp"
 
 const char  *use_cores = "usecores";
 std::string  my_placement_type;
@@ -130,11 +131,21 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-req::req() : mem(0), gpus(0), mics(0) {}
+req::req() : mem(0), cores(0), threads(0), gpus(0), mics(0) {}
 
 unsigned long req::getMemory() const
   {
   return(this->mem);
+  }
+
+int req::getPlaceCores() const
+  {
+  return(this->cores);
+  }
+
+int req::getPlaceThreads() const
+  {
+  return(this->threads);
   }
 
 std::string req::getPlacementType() const
@@ -197,3 +208,9 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
+#ifdef MIC
+int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
+  {
+  return(0);
+  }
+#endif

@@ -116,7 +116,10 @@ extern int set_tokens (struct pbs_attribute *attr, struct pbs_attribute *new_att
 extern int extra_resc_chk (pbs_attribute * pattr, void *pobject, int actmode);
 extern void free_extraresc (pbs_attribute * attr);
 extern void restore_attr_default (struct pbs_attribute *);
-
+int         update_user_acls(pbs_attribute *pattr, void *pobject, int actmode);
+int         update_group_acls(pbs_attribute *pattr, void *pobject, int actmode);
+int         node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
+extern int  keep_completed_val_check(pbs_attribute *pattr,void *pobj,int actmode);
 /* DIAGTODO: write diag_attr_def.c */
 
 /*
@@ -285,6 +288,19 @@ attribute_def svr_attr_def[] =
 
   /* SRV_ATR_AclRoot */  /* List of which roots may execute jobs */
   { (char *)ATTR_aclroot,  /* "acl_roots"    */
+    decode_arst,
+    encode_arst,
+    set_uacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_Gres_modifiers */  /* List of users who may modify the GRES for their own running jobs */
+  { (char *)ATTR_gresmodifiers,  /* "acl_users" */
     decode_arst,
     encode_arst,
     set_uacl,
@@ -745,7 +761,7 @@ attribute_def svr_attr_def[] =
       set_l,
       comp_l,
       free_null,
-      NULL_FUNC,
+      keep_completed_val_check,//in svr_func.c line 657
       NO_USER_SET,
       ATR_TYPE_LONG,
       PARENT_TYPE_SERVER
@@ -1492,5 +1508,68 @@ attribute_def svr_attr_def[] =
      MGR_ONLY_SET,
      ATR_TYPE_LONG,
      PARENT_TYPE_SERVER},
+
+  /* SRV_ATR_acl_users_hosts */
+  { (char *)ATTR_aclusershosts,  /* "acl_user_hosts" */
+    decode_arst,
+    encode_arst,
+    set_hostacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_acl_groups_hosts */
+  { (char *)ATTR_aclgroupshosts,  /* "acl_group_hosts" */
+    decode_arst,
+    encode_arst,
+    set_hostacl,
+    comp_arst,
+    free_arst,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  /* SRV_ATR_node_submit_exceptions */
+  { (char *)ATTR_nodesubmitexceptions,  /* "node_submit_exceptions" */
+    decode_arst,
+    encode_arst,
+    set_arst,
+    comp_arst,
+    free_arst,
+    node_exception_check,
+    MGR_ONLY_SET,
+    ATR_TYPE_ACL,
+    PARENT_TYPE_SERVER
+  },
+
+  // SRV_ATR_LegacyVmem 
+  {(char *)ATTR_legacy_vmem, // "legacy_vmem"
+   decode_b,
+   encode_b,
+   set_b,
+   comp_b,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
+
+  // SRV_ATR_EmailBatchSeconds
+  {(char *)ATTR_email_batch_seconds, // "email_batch_seconds"
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER},
 
   };

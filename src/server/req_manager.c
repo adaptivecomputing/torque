@@ -130,10 +130,8 @@
 #include "pbs_nodes.h"
 #include "work_task.h"
 #include "mcom.h"
-#include "../lib/Libattr/attr_node_func.h" /* free_prop_list */
 #include "node_func.h" /* init_prop, find_nodebyname, reinitialize_node_iterator, recompute_ntype_cnts, effective_node_delete, create_pbs_dynamic_node */
 #include "node_manager.h" /* setup_notification */
-#include "../lib/Libutils/u_lock_ctl.h" /* unlock_node */
 #include "queue_func.h" /* find_queuebyname, que_alloc, que_free */
 #include "queue_recov.h" /* que_save */
 #include "mutex_mgr.hpp"
@@ -169,7 +167,6 @@ extern int            disable_timeout_check;
 extern int que_purge(pbs_queue *);
 extern void save_characteristic(struct pbsnode *, node_check_info *);
 extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
-extern int hasprop(struct pbsnode *, struct prop *);
 extern int PNodeStateToString(int, char *, int);
 extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -348,12 +345,12 @@ int set_queue_type(
  * mgr_log_attr - log the change of an pbs_attribute
  */
 
-static void mgr_log_attr(
+void mgr_log_attr(
 
-  char *msg,
+  const char      *msg,
   struct svrattrl *plist,
-  int logclass,           /* see log.h */
-  char *objname)          /* object being modified */
+  int              logclass,           /* see log.h */
+  const char      *objname)          /* object being modified */
 
   {
   const char *pstr;
@@ -389,6 +386,81 @@ static void mgr_log_attr(
     }
   } /* END mgr_log_attr() */
 
+
+
+int update_user_acls(
+
+  pbs_attribute *pattr,
+  enum batch_op  op)
+
+  {
+  int                   rc = PBSE_NONE;
+  struct array_strings *pstr = pattr->at_val.at_arst;
+
+  if ((op == UNSET) ||
+      (op == SET))
+    limited_acls.clear_users();
+
+  if (pstr == NULL)
+    {
+    return(rc);
+    }
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if (op == DECR)
+      limited_acls.remove_user_configuration(pstr->as_string[i]);
+    else if ((op == INCR) ||
+             (op == SET))
+      limited_acls.add_user_configuration(pstr->as_string[i]);
+    }
+
+  return(rc);
+  } // END update_user_acls()
+
+
+
+void decrement_ident_acls(
+
+  svrattrl *plist,
+  int       which)
+
+  {
+  if (which == USER)
+    limited_acls.remove_user_configuration(plist->al_value);
+  else
+    limited_acls.remove_group_configuration(plist->al_value);
+  } // END decrement_ident_acls()
+
+
+
+int update_group_acls(
+
+  pbs_attribute *pattr,
+  enum batch_op  op)
+
+  {
+  int rc = PBSE_NONE;
+  struct array_strings *pstr = pattr->at_val.at_arst;
+
+  if (pstr == NULL)
+    {
+    return(rc);
+    }
+
+  if ((op == UNSET) ||
+      (op == SET))
+    limited_acls.clear_groups();
+
+  for (int i = 0; i < pstr->as_usedptr; i++)
+    {
+    if ((op == INCR) ||
+             (op == SET))
+      limited_acls.add_group_configuration(pstr->as_string[i]);
+    }
+
+  return(rc);
+  }
 
 
 
@@ -473,6 +545,23 @@ static int mgr_set_attr(
       if ((index == SRV_ATR_tcp_timeout) &&
           (pnew->at_val.at_long < 300))
         disable_timeout_check = TRUE;
+      else if (pdef == svr_attr_def)
+        {
+        if (index == SRV_ATR_acl_users_hosts)
+          {
+          if (plist->al_op == DECR)
+            decrement_ident_acls(plist, USER);
+          else 
+            update_user_acls(pnew, plist->al_op);
+          }
+        else if (index == SRV_ATR_acl_groups_hosts)
+          {
+          if (plist->al_op == DECR)
+            decrement_ident_acls(plist, GROUP);
+          else
+            update_group_acls(pnew, plist->al_op);
+          }
+        }
 
       /* now replace the old values with any modified new values */
 
@@ -591,6 +680,14 @@ int mgr_unset_attr(
   while (plist != NULL)
     {
     index = find_attr(pdef, plist->al_name, limit);
+      
+    if (pdef == svr_attr_def)
+      {
+      if (index == SRV_ATR_acl_users_hosts)
+        update_user_acls(pattr + index, UNSET);
+      else if (index == SRV_ATR_acl_groups_hosts)
+        update_group_acls(pattr + index, UNSET);
+      }
 
     if (((pdef + index)->at_type == ATR_TYPE_RESC) &&
         (plist->al_resc != NULL))
@@ -703,14 +800,12 @@ int mgr_set_node_attr(
   int            *bad,    /* if there is a "bad pbs_attribute" pass back 
                              position via this loc */
   void           *parent, /*may go unused in this function */
-  int             mode)  /*passed to attrib's action func not used by 
+  int             mode,  /*passed to attrib's action func not used by 
                            this func at this time*/
+  bool            dont_update_nodes)
 
   {
-  int              i;
   int              index;
-  int              nstatus = 0;
-  int              nprops = 0;
   int              rc = PBSE_NONE;
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
@@ -718,9 +813,6 @@ int mgr_set_node_attr(
 
   struct pbsnode   tnode;  /*temporary node*/
 
-  struct prop     *pdest;
-
-  struct prop    **plink;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (plist == NULL)
@@ -770,7 +862,15 @@ int mgr_set_node_attr(
    * return code (rc) shapes caller's reply
    */
 
-  if ((rc = attr_atomic_node_set(plist, unused, new_attr, pdef, limit, -1, privil, bad)) != 0)
+  if ((rc = attr_atomic_node_set(plist,
+                                 unused,
+                                 new_attr,
+                                 pdef,
+                                 limit,
+                                 -1,
+                                 privil,
+                                 bad,
+                                 dont_update_nodes)) != 0)
     {
     attr_atomic_kill(new_attr, pdef, limit);
 
@@ -855,11 +955,11 @@ int mgr_set_node_attr(
       PNodeStateToString(tnode.nd_state, FinalState, sizeof(FinalState));
 
       sprintf(log_buf, "node %s state changed from %s to %s",
-        pnode->nd_name,
+        pnode->get_name(),
         OrigState,
         FinalState);
 
-      log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_NODE,pnode->nd_name,log_buf);
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, pnode->get_name(), log_buf);
       }
     }
 
@@ -884,63 +984,8 @@ int mgr_set_node_attr(
   /*dispense with the pbs_attribute array itself*/
 
   /* update prop list based on new prop array */
-
-  free_prop_list(pnode->nd_first);
-
-  plink = &pnode->nd_first;
-
-  if (pnode->nd_prop)
-    {
-    nprops = pnode->nd_prop->as_usedptr;
-
-    for (i = 0;i < nprops;++i)
-      {
-      pdest = init_prop(pnode->nd_prop->as_string[i]);
-
-      *plink = pdest;
-      plink  = &pdest->next;
-      }
-    }
-
-  /* now add in name as last prop */
-
-  pdest  = init_prop(pnode->nd_name);
-
-  *plink = pdest;
-
-  pnode->nd_last = pdest;
-
-  pnode->nd_nprops = nprops + 1;
-
-  /* update status list based on new status array */
-
-  free_prop_list(pnode->nd_f_st);
-
-  plink = &pnode->nd_f_st;
-
-  if (pnode->nd_status != NULL)
-    {
-    nstatus = pnode->nd_status->as_usedptr;
-
-    for (i = 0;i < nstatus;++i)
-      {
-      pdest = init_prop(pnode->nd_status->as_string[i]);
-
-      *plink = pdest;
-      plink  = &pdest->next;
-      }
-    }
-
-  /* now add in name as last status */
-
-  pdest  = init_prop(pnode->nd_name);
-
-  *plink = pdest;
-
-  pnode->nd_l_st = pdest;
-
-  pnode->nd_nstatus = nstatus + 1;
-
+  pnode->update_properties();
+  
   /* now update subnodes */
 
   update_subnode(pnode);
@@ -1677,15 +1722,10 @@ void mgr_node_set(
 
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
-  struct prop       props;
+  prop              props;
   long              dont_update_nodes = FALSE;
 
   get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
-    {
-    req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
-    return;
-    }
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
@@ -1708,9 +1748,8 @@ void mgr_node_set(
         {
         propnodes = 1;
         nodename = preq->rq_ind.rq_manager.rq_objname;
-        props.name = (char *)nodename + 1;
+        props.name = nodename + 1;
         props.mark = 1;
-        props.next = NULL;
         }
       else
         {
@@ -1749,11 +1788,13 @@ void mgr_node_set(
   
     reinitialize_node_iterator(&iter);
     pnode = NULL;
+    std::vector<prop> prop_list;
+    prop_list.push_back(props);
 
     while ((pnode = next_node(&allnodes,pnode,&iter)) != NULL)
       {
       if ((propnodes == TRUE) && 
-          (!hasprop(pnode, &props)))
+          (!pnode->hasprop(&prop_list)))
         {
         continue;
         }
@@ -1768,7 +1809,8 @@ void mgr_node_set(
              preq->rq_perm,
              &bad,
              (void *)pnode,
-             ATR_ACTION_ALTER);
+             ATR_ACTION_ALTER,
+             dont_update_nodes);
 
       if (rc != 0)
         {
@@ -1782,7 +1824,7 @@ void mgr_node_set(
         /* modifications succeeded for this node */
         chk_characteristic(pnode, &nci, &need_todo);
 
-        mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
+        mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->get_name());
         }
       }  /* END for each node */
 
@@ -1806,7 +1848,8 @@ void mgr_node_set(
            preq->rq_perm,
            &bad,
            (void *)pnode,
-           ATR_ACTION_ALTER);
+           ATR_ACTION_ALTER,
+           dont_update_nodes);
 
     if (rc != 0)
       {
@@ -1841,7 +1884,7 @@ void mgr_node_set(
           break;
         }
 
-      unlock_node(pnode, __func__, "error", LOGLEVEL);
+      pnode->unlock_node(__func__, "error", LOGLEVEL);
       
       return;
       } /* END if (rc != 0) */ 
@@ -1850,10 +1893,10 @@ void mgr_node_set(
       /* modifications succeeded for this node */
       chk_characteristic(pnode, &nci, &need_todo);
       
-      mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->nd_name);
+      mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_NODE, pnode->get_name());
       }
 
-    unlock_node(pnode, __func__, "single_node", LOGLEVEL);
+    pnode->unlock_node(__func__, "single_node", LOGLEVEL);
     } /* END single node case */
 
   if (need_todo & WRITENODE_STATE)
@@ -1895,7 +1938,7 @@ void mgr_node_set(
       /* one or more problems encountered */
 
       for (len = 0, i = 0;i < problem_cnt;i++)
-        len += strlen(problem_nodes[i]->nd_name) + 3;
+        len += strlen(problem_nodes[i]->get_name()) + 3;
 
       len += strlen(pbse_to_txt(PBSE_GMODERR));
 
@@ -1908,7 +1951,7 @@ void mgr_node_set(
           if (i)
             strcat(problem_names, ", ");
 
-          strcat(problem_names, problem_nodes[i]->nd_name);
+          strcat(problem_names, problem_nodes[i]->get_name());
           }
 
         reply_text(preq, PBSE_GMODERR, problem_names);
@@ -1976,9 +2019,10 @@ static bool requeue_or_delete_jobs(
     }
   for(std::vector<int>::iterator jid = jids.begin();jid != jids.end();jid++)
     {
-    tmp_unlock_node(pnode,__func__,NULL,LOGLEVEL);
+    pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
     job *pjob = svr_find_job_by_id(*jid);
-    tmp_lock_node(pnode,__func__,NULL,LOGLEVEL);
+    pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
+
     if(pjob != NULL)
       {
       char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
@@ -2000,7 +2044,7 @@ static bool requeue_or_delete_jobs(
       brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
       brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
       unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
-      tmp_unlock_node(pnode, __func__, NULL, LOGLEVEL);
+      pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
       int rc = req_rerunjob(brRerun);
       if(rc != PBSE_NONE)
         {
@@ -2029,7 +2073,7 @@ static bool requeue_or_delete_jobs(
           requeue_rc = false; //Timing out with the MOMs is the only error we care about.
           }
         }
-      tmp_lock_node(pnode, __func__, NULL, LOGLEVEL);
+      pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
       if(dup_jobid != NULL)
         {
         free(dup_jobid);
@@ -2150,7 +2194,7 @@ static void mgr_node_delete(
 
     while ((pnode = next_host(&allnodes,&iter,NULL)) != NULL)
       {
-      snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
+      snprintf(log_buf, sizeof(log_buf), "%s", pnode->get_name());
 
       effective_node_delete(&pnode);
 
@@ -2163,7 +2207,7 @@ static void mgr_node_delete(
   else
     {
     /* handle single nodes */
-    snprintf(log_buf,sizeof(log_buf),"%s",pnode->nd_name);
+    snprintf(log_buf, sizeof(log_buf), "%s", pnode->get_name());
 
     effective_node_delete(&pnode);
 
@@ -2302,7 +2346,6 @@ void mgr_node_create(
 
   return;
   }
-
 
 
 

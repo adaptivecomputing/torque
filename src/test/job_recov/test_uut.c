@@ -1,4 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
+#include "pbs_config.h"
 #include "job_recov.h"
 #include "test_job_recov.h"
 #include <stdlib.h>
@@ -21,12 +22,15 @@ extern attribute_def job_attr_def[];
 extern void free_server_attrs(tlist_head *att_head);
 extern completed_jobs_map_class completed_jobs_map;
 int fill_resource_list(job **pj, xmlNodePtr resource_list_node, char *log_buf, size_t buflen, const char *aname);
+void init_resc_defs();
 
 char  server_name[] = "lei.ac";
 
 int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
 void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
 int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen);
+svrattrl *fill_svrattr_info(const char *aname, const char *avalue, const char *rname, char *log_buf, size_t      buf_len);
+void decode_attribute(svrattrl *pal, job **pjob, bool freeExisting);
 
 void init()
   {
@@ -34,9 +38,23 @@ void init()
   }
 
 
+START_TEST(test_decode_attribute)
+  {
+  char      buf[1024];
+  job      *pjob = new job();
+  svrattrl *pal = fill_svrattr_info("Hold_Types", "1", "", buf, sizeof(buf));
+  pal->al_flags = ATR_VFLAG_SET;
+
+  decode_attribute(pal, &pjob, false);
+  fail_unless(pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 1, "val: %d", (int)pjob->ji_wattr[JOB_ATR_hold].at_val.at_long);
+  fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
+  }
+END_TEST
+
+
 START_TEST(test_set_array_jobs_ids)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  job  *pjob = new job();
   char  buf[1024];
 
   init();
@@ -47,6 +65,11 @@ START_TEST(test_set_array_jobs_ids)
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+
+  pjob = new job();
+  sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(pjob->ji_is_array_template == TRUE);
   }
 END_TEST
 
@@ -54,17 +77,15 @@ END_TEST
 START_TEST(test_translate_dependency_to_string)
   {
   pbs_attribute dep_attr;
-  struct depend dep;
-  struct depend_job dj;
+  depend dep;
+  depend_job *dj = new depend_job();
 
-  memset(&dj, 0, sizeof(dj));
-  strcpy(dj.dc_child, "1.napali");
-  strcpy(dj.dc_svr, "napali");
+  dj->dc_child = "1.napali";
+  dj->dc_svr = "napali";
   
-  memset(&dep, 0, sizeof(dep));
   dep.dp_type = JOB_DEPEND_TYPE_AFTEROK;
   CLEAR_LINK(dep.dp_link);
-  dep.dp_jobs.push_back(&dj);
+  dep.dp_jobs.push_back(dj);
 
   dep_attr.at_flags = ATR_VFLAG_SET;
   CLEAR_HEAD(dep_attr.at_val.at_list);
@@ -303,9 +324,11 @@ START_TEST(fill_resource_list_test)
   {
   const char *rl_sample = "<Resource_List>\n  <neednodes flags=\"1\">2</neednodes>\n  <nodect flags=\"1\">2</nodect>\n  <nodes flags=\"1\">2</nodes>\n  </Resource_List>";
   xmlDocPtr   doc = xmlReadMemory(rl_sample, strlen(rl_sample), "Resource List", NULL, 0);
-  job        *pjob = (job *)calloc(1, sizeof(job));
+  job        *pjob = new job();
   char        buf[1024];
   svr_resc_def = svr_resc_def_const;
+  init();
+  init_resc_defs();
 
   fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0);
   
@@ -351,6 +374,7 @@ Suite *job_recov_suite(void)
 
   tc_core = tcase_create("test_moar");
   tcase_add_test(tc_core, test_set_array_jobs_ids);
+  tcase_add_test(tc_core, test_decode_attribute);
   suite_add_tcase(s, tc_core);
 
   return s;

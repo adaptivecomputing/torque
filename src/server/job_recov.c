@@ -485,18 +485,26 @@ void decode_attribute(
     job_attr_def[index].at_free(&pj->ji_wattr[index]);
     }
 
-  job_attr_def[index].at_decode(
-    &pj->ji_wattr[index],
-     pal->al_name,
-     pal->al_resc,
-     pal->al_value,
-     ATR_DFLAG_ACCESS);
+  if (index == JOB_ATR_hold)
+    {
+    // JOB_ATR_hold is written to file as a number so it won't decode correctly
+    pj->ji_wattr[index].at_val.at_long = strtol(pal->al_value, NULL, 10);
+    }
+  else
+    {
+    job_attr_def[index].at_decode(
+      &pj->ji_wattr[index],
+       pal->al_name,
+       pal->al_resc,
+       pal->al_value,
+       ATR_DFLAG_ACCESS);
+    }
 
   if (job_attr_def[index].at_action != NULL)
     job_attr_def[index].at_action(&pj->ji_wattr[index], pj, ATR_ACTION_RECOV);
 
   pj->ji_wattr[index].at_flags =  pal->al_flags & ~ATR_VFLAG_MODIFY;
-  }
+  } // END decode_attribute()
 
 
 int fill_resource_list(
@@ -901,7 +909,7 @@ void translate_dependency_to_string(
       unsigned int dp_jobs_size = dep->dp_jobs.size();
       for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
-        struct depend_job *pdjob = dep->dp_jobs[i];
+        depend_job *pdjob = dep->dp_jobs[i];
         value += ":";
         value += pdjob->dc_child;
 
@@ -1205,7 +1213,7 @@ int job_save(
 #ifdef PBS_MOM
   tmp_ptr = JOB_FILE_SUFFIX;
 #else
-  if (pjob->ji_is_array_template == TRUE)
+  if (pjob->ji_is_array_template == true)
     tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
   else
     tmp_ptr = (char *)JOB_FILE_SUFFIX;
@@ -1291,10 +1299,20 @@ int set_array_job_ids(
   job *pj = *pjob;
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
-      
+
   // If this variable isn't set this job isn't actually an array subjob.
   if ((pj->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0)
-   return(PBSE_NONE);
+    {
+    // Check and set if this is the array template job
+    char *open_bracket = strchr(pj->ji_qs.ji_jobid, '[');
+    if (open_bracket != NULL)
+      {
+      if (*(open_bracket + 1) == ']')
+        pj->ji_is_array_template = true;
+      }
+
+    return(rc);
+    }
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
     {
@@ -1315,7 +1333,7 @@ int set_array_job_ids(
 
     if (strcmp(parent_id, pj->ji_qs.ji_jobid) == 0)
       {
-      pj->ji_is_array_template = TRUE;
+      pj->ji_is_array_template = true;
       }
     else
       {
@@ -1588,14 +1606,13 @@ job *job_recov(
       log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-      free(pj->ji_mutex);
+      delete pj;
+#else
+      free(pj);
 #endif
-      free((char *)pj);
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
     }
-  
   
   pj->ji_commit_done = 1;
 

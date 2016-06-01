@@ -45,8 +45,6 @@ void *node_unreserve_work(void *vp);
 
 void node_unreserve(resource_t handle);
 
-int hasprop(struct pbsnode *pnode, struct prop *props);
-
 int search_acceptable(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq);
 
 int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq, int gpureq, int pass);
@@ -59,13 +57,7 @@ int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
 int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-int add_job_to_node(struct pbsnode *pnode, struct pbssubn *snp, short newstate, job *pjob);
-
 int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
-
-int build_host_list(struct howl **hlistptr, struct pbssubn *snp, struct pbsnode *pnode);
-
-int add_gpu_to_hostlist(struct howl **hlistptr, struct gpusubn *gn, struct pbsnode *pnode);
 
 int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg);
 

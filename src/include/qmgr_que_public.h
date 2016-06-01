@@ -136,4 +136,5 @@ ATTR_req_login_property,
 ATTR_req_infomax,
 ATTR_req_infomin,
 ATTR_req_infodefault, 
+ATTR_ghost_queue,
 

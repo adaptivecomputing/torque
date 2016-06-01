@@ -140,21 +140,23 @@ int rmdir_ext(
   int rc;
   int retry_count = 0;
 
-  while ((rc = remove(dir)) &&
-         (retry_count < retry_limit))
+  while ((retry_count < retry_limit) &&
+         (rc = remove(dir)))
     {
     switch (errno)
       {
       case EINTR:
       case EBUSY:
+      case EPERM:
 
         retry_count++;
-        usleep(200000);
+        sleep(1);
         rc = PBSE_NONE;
 
         break;
 
       case ENOENT:
+      case EISDIR:
 
         rc = PBSE_NONE;
         retry_count += retry_limit;
@@ -163,7 +165,7 @@ int rmdir_ext(
 
       default:
 
-        retry_count += retry_limit;
+        retry_count++;
         rc = -1;
 
         break;
@@ -187,8 +189,8 @@ int unlink_ext(
   int rc;
   int retry_count = 0;
 
-  while ((rc = unlink(filename)) &&
-         (retry_count < retry_limit))
+  while ((retry_count < retry_limit) &&
+         (rc = unlink(filename)))
     {
     switch (errno)
       {

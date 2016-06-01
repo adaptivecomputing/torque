@@ -152,11 +152,6 @@ void numa_node::get_cpuinfo(
   if (path == NULL)
     return;
 
-  unsigned int       total_cpus;
-  unsigned long      total_memory;
-  unsigned long      available_memory;
-  unsigned int       available_cpus;
-
   std::string   line;
   std::ifstream myfile(path);
 

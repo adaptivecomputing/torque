@@ -30,6 +30,7 @@ extern long long_to_set;
 extern bool default_queue;
 extern bool mem_fail;
 extern char *path_jobs;
+extern bool set_ji_substate;
 
 
 START_TEST(test_create_and_initialize_job_structure)
@@ -192,6 +193,20 @@ START_TEST(test_get_job_id)
 END_TEST
 
 
+START_TEST(test_req_commit)
+  {
+  struct batch_request *preq;
+
+  fail_unless((preq = (struct batch_request *)calloc(1, sizeof(struct batch_request))) != NULL);
+
+  strcpy(preq->rq_ind.rq_commit, "1.napali");
+  default_queue = false;
+  set_ji_substate = true;
+  fail_unless(PBSE_MUTEX_ALREADY_UNLOCKED == req_commit(preq));
+  }
+END_TEST
+
+
 Suite *req_quejob_suite(void)
   {
   Suite *s = suite_create("req_quejob_suite methods");
@@ -205,6 +220,10 @@ Suite *req_quejob_suite(void)
   tcase_add_test(tc_core, test_get_queue_for_job);
   tcase_add_test(tc_core, test_determine_job_file_name);
   tcase_add_test(tc_core, test_create_and_initialize_job_structure);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_req_commit");
+  tcase_add_test(tc_core, test_req_commit);
   suite_add_tcase(s, tc_core);
 
   return s;

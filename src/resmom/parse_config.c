@@ -89,6 +89,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <sstream>
 
@@ -163,7 +164,7 @@ int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
 int              MOMCudaVisibleDevices     = 1;
 double           wallfactor = 1.00;
-struct cphosts  *pcphosts = NULL;
+std::vector<cphosts> pcphosts;
 long             pe_alarm_time = PBS_PROLOG_TIME;
 char             DEFAULT_UMASK[1024];
 char             PRE_EXEC[1024];
@@ -1121,7 +1122,10 @@ unsigned long setapbasilprotocol(
          (value[2] != '1') &&
          (value[2] != '2') &&
          (value[2] != '3') &&
-         (value[2] != '4')))
+         (value[2] != '4') &&
+         (value[2] != '5') &&
+         (value[2] != '6') &&
+         (value[2] != '7')))
       {
       snprintf(log_buffer, sizeof(log_buffer), 
         "Value must be 1.[0-4] but is %s", value);
@@ -1834,9 +1838,8 @@ u_long usecp(
 
   {
   char        *pnxt;
-  static int   cphosts_max = 0;
 
-  struct cphosts   *newp = NULL;
+  cphosts cph;
 
   /* FORMAT:  <HOST>:<FROM> <TO> */
 
@@ -1845,45 +1848,6 @@ u_long usecp(
    */
 
   log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
-
-  if (cphosts_max == 0)
-    {
-    pcphosts = (struct cphosts *)calloc(2, sizeof(struct cphosts));
-
-    if (pcphosts == NULL)
-      {
-      sprintf(log_buffer, "%s: out of memory while allocating pcphosts",
-        __func__);
-
-      log_err(-1, __func__, log_buffer);
-
-      return(0);
-      }
-
-    cphosts_max = 2;
-    }
-  else if (cphosts_max == cphosts_num)
-    {
-    newp = (struct cphosts *)realloc(
-      pcphosts,
-      (cphosts_max + 2) * sizeof(struct cphosts));
-
-    if (newp == NULL)
-      {
-      /* FAILURE */
-
-      sprintf(log_buffer,"%s: out of memory while reallocating pcphosts",
-        __func__);
-
-      log_err(-1, __func__, log_buffer);
-
-      return(0);
-      }
-
-    pcphosts = newp;
-
-    cphosts_max += 2;
-    }
 
   pnxt = strchr((char *)value, (int)':');
 
@@ -1901,19 +1865,7 @@ u_long usecp(
 
   *pnxt++ = '\0';
 
-  pcphosts[cphosts_num].cph_hosts = strdup(value);
-
-  if (pcphosts[cphosts_num].cph_hosts == NULL)
-    {
-    /* FAILURE */
-
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_hosts)",
-      __func__);
-
-    log_err(-1, __func__, log_buffer);
-
-    return(0);
-    }
+  cph.cph_hosts = value;
 
   value = pnxt; /* now ptr to path */
 
@@ -1928,8 +1880,6 @@ u_long usecp(
 
       log_err(-1, __func__, log_buffer);
 
-      free(pcphosts[cphosts_num].cph_hosts);
-
       return(0);
       }
 
@@ -1938,42 +1888,19 @@ u_long usecp(
 
   *pnxt++ = '\0';
 
-  pcphosts[cphosts_num].cph_from = strdup(value);
+  cph.cph_hosts = value;
+  cph.cph_to = skipwhite(pnxt);
 
-  if (pcphosts[cphosts_num].cph_from == NULL)
-    {
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_from)",
-      __func__);
-
-    log_err(-1, __func__, log_buffer);
-
-    free(pcphosts[cphosts_num].cph_hosts);
-
-    return(0);
-    }
-
-  pcphosts[cphosts_num].cph_to = strdup(skipwhite(pnxt));
-
-  if (pcphosts[cphosts_num].cph_to == NULL)
-    {
-    sprintf(log_buffer, "%s: out of memory in strdup(cph_to)",
-      __func__);
-
-    log_err(-1, __func__, log_buffer);
-
-    free(pcphosts[cphosts_num].cph_hosts);
-    free(pcphosts[cphosts_num].cph_from);
-
-    return(0);
-    }
-
-  cphosts_num++;
+  pcphosts.push_back(cph);
 
   return(1);
   }  /* END usecp() */
 
 
 
+/*
+ * prologalarm()
+ */
 
 unsigned long prologalarm(
 
@@ -2260,7 +2187,7 @@ void add_static(
 
 
 /*
- * reset_config() - reset all config variables to defaults
+ * reset_config_vars() - reset all config variables to defaults
  *
  * When pbs_mom receives a HUP signal, the configuration file
  * needs to be reloaded. In order for that to be successful,
@@ -2273,7 +2200,7 @@ void reset_config_vars()
   ignwalltime = 0;
   ignmem = 0;
   igncput = 0;
-  ignvmem = 0;
+  ignvmem = 0; 
   /* end policies */
   spoolasfinalname = 0;
   maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
@@ -2326,7 +2253,7 @@ void reset_config_vars()
   MOMConfigRestart = 0;
   MOMCudaVisibleDevices = 1;
   wallfactor = 1.00;
-  pcphosts = NULL;
+  pcphosts.clear();
   pe_alarm_time = PBS_PROLOG_TIME;
   DEFAULT_UMASK[0] = '\0';
   PRE_EXEC[0] = '\0';
@@ -2344,6 +2271,7 @@ void reset_config_vars()
   max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
+  LOGLEVEL = 0;
   }
 
 
@@ -3039,6 +2967,7 @@ const char *reqvarattr(
       else
         {
         fd = fileno(child);
+        fcntl(fd, F_SETFL, O_NONBLOCK);
 
         child_spot = tmpBuf;
         child_len  = 0;
@@ -3061,12 +2990,12 @@ const char *reqvarattr(
         if (len == -1)
           {
           /* FAILURE - cannot read var script output */
-          log_err(errno, __func__, "pipe read");
+          log_err(errno, __func__, "Cannot read pipe for reqvarattr script. Please check!");
 
           sprintf(pva->va_value, "? %d",
             RM_ERR_SYSTEM);
 
-          pclose(child);
+          // Do not plose here as it will hang until the child exits.
 
           continue;
           }

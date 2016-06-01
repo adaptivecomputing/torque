@@ -25,6 +25,8 @@
 int func_num = 0; /* Suite number being run */
 int tc = 0; /* Used for test routining */
 int iter_num = 0;
+int called_remove_job;
+int dequejob_rc;
 
 bool exit_called = false;
 
@@ -114,7 +116,7 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
     }
   }
 
-pbs_net_t get_hostaddr(int *local_errno, char *hostname)
+pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   {
   pbs_net_t loopback = ntohl(INADDR_LOOPBACK);
   return(loopback);
@@ -162,8 +164,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
 
 int svr_dequejob(job *pjob, int val)
   {
-  fprintf(stderr, "The call to svr_dequejob needs to be mocked!!\n");
-  exit(1);
+  return(dequejob_rc);
   }
 
 ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
@@ -180,8 +181,7 @@ void initialize_all_tasks_array(all_tasks *at)
 
 job_array *get_array(char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 job *get_recycled_job()
@@ -218,7 +218,7 @@ int issue_signal(job **pjob, const char *signame, void (*func)(batch_request *),
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool reservation, bool recov)
   {
   fprintf(stderr, "The call to svr_enquejob needs to be mocked!!\n");
   exit(1);
@@ -513,6 +513,7 @@ job *svr_find_job(const char *jobid, int sub)
 
 int remove_job(all_jobs *aj, job             *pjob, bool b)
   {
+  called_remove_job++;
   return(0);
   }
 
@@ -674,3 +675,13 @@ bool completed_jobs_map_class::add_job(char const* s, time_t t)
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
 void add_to_completed_jobs(work_task *ptask) {}
+
+job::job() 
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  memset(&this->ji_qs, 0, sizeof(struct jobfix));
+  }
+
+job::~job() 
+  {
+  }

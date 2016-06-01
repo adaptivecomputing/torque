@@ -1,15 +1,31 @@
 [Unit]
 Description=TORQUE pbs_server daemon
-Requires=trqauthd.service network.target
-After=trqauthd.service network.target
+Requires=trqauthd.service network.target local-fs.target
+Wants=syslog.target
+After=trqauthd.service network.target local-fs.target syslog.target
 
 [Service]
 Type=forking
 User=root
 
+# Do not set PIDFile via enviroment PBS_HOME
+# better to change to PIDFile=/var/run/%i.pid
+# and cleanup all code that relies on the current location of the PIDFile
 PIDFile=@PBS_HOME@/server_priv/server.lock
 
-ExecStart=@sbindir@/pbs_server -d @PBS_HOME@
+# There is also no way to test PBS_SERVERDB as was done in the sysvinit
+# because the location can be changed via PBS_HOME enviroment.
+# However, if you use the PBS_HOME as defined during compilation,
+# you can create a unit /etc/systemd/system/pbs_server.service.d/test_serverdb.conf
+# with content
+#[Unit]
+#ConditionPathExists=@PBS_HOME@/server_priv/serverdb
+
+Environment=PBS_HOME=@PBS_HOME@
+Environment=PBS_ARGS=
+EnvironmentFile=-/etc/sysconfig/pbs_server
+
+ExecStart=@sbindir@/pbs_server -d $PBS_HOME $PBS_ARGS
 ExecStop=@bindir@/qterm
 
 [Install]

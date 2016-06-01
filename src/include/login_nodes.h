@@ -110,5 +110,5 @@ extern login_holder logins;
 int  login_node_count();
 void initialize_login_holder();
 int  add_to_login_holder(struct pbsnode *pnode);
-struct pbsnode *get_next_login_node(struct prop *needed);
+struct pbsnode *get_next_login_node(std::vector<prop> *needed);
 

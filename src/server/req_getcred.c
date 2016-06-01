@@ -586,7 +586,7 @@ int get_UID(
    * this is for compatibility with --enable-munge-auth in >= 2.5.10
    * 
    * To force more restrictive mode set PBS_MUNGE_STRICT_UID_CHECK 
-   *  environment variable in /var/torque/pbs_environment
+   *  environment variable in /var/spool/torque/pbs_environment
    * 
    */
   if (((passwd_ptr = getpwuid(uid)) == NULL) &&

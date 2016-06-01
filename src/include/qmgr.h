@@ -289,6 +289,7 @@ void disconnect_from_server();
   "acl_users - list of users allowed/denied access to server\n" \
   "comment - informational text string about the server\n" \
   "default_queue - default queue used when a queue is not specified\n" \
+  "gres_modifiers - list of users granted permission to modify their own running jobs' gres resource\n" \
   "log_events - a bit string which specfiies what is logged\n"
 
 #define HELP_SERVERPUBLIC2 \

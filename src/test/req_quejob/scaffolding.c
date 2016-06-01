@@ -11,11 +11,11 @@
 #include "queue.h" /* pbs_queue */
 #include "batch_request.h" /* batch_request */
 #include "work_task.h" /* work_task, work_type */
-#include "dynamic_string.h"
 #include "user_info.h"
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "id_map.hpp"
+#include "pbs_nodes.h"
 
 bool exit_called = false;
 const char *PJobSubState[10];
@@ -40,6 +40,7 @@ char str_to_set[1024];
 long long_to_set = -1;
 bool default_queue = false;
 bool mem_fail = false;
+bool set_ji_substate = false;
 
 
 int setup_array_struct(job *pjob)
@@ -58,14 +59,12 @@ pbs_queue *find_queuebyname(const char *quename)
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save to be mocked!!\n");
-  exit(1);
+  return(1);
   }
 
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
-  fprintf(stderr, "The call to job_purge to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void set_chkpt_deflt(job *pjob, pbs_queue *pque)
@@ -82,8 +81,15 @@ void clear_attr(pbs_attribute *pattr, attribute_def *pdef)
 
 pbs_queue *get_jobs_queue(job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
-  exit(1);
+  pbs_queue *pque = (pbs_queue *)calloc(sizeof(pbs_queue), 1);
+
+  // create space for mutex
+  pque->qu_mutex = (pthread_mutex_t *)calloc(sizeof(pthread_mutex_t), 1);
+  pthread_mutex_init(pque->qu_mutex, NULL);
+
+  strcpy(pque->qu_qs.qu_name, "foo");
+
+  return(pque);
   }
 
 void reply_ack(struct batch_request *preq)
@@ -164,7 +170,7 @@ int job_route(job *jobp)
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation)
+int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recov)
   {
   return(0);
   }
@@ -189,8 +195,7 @@ int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg)
 
 int remove_job(all_jobs *aj, job *pjob, bool b)
   {
-  fprintf(stderr, "The call to remove_job to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int reply_jobid(struct batch_request *preq, char *jobid, int which)
@@ -213,8 +218,7 @@ void close_conn(int sd, int has_mutex)
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
@@ -254,8 +258,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
 
 void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   {
-  fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 pbs_queue *get_dfltque(void)
@@ -299,11 +302,6 @@ int get_svr_attr_str(int index, char **str)
     *str = str_to_set;
 
   return(0);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  return(NULL);
   }
 
 int enqueue_threadpool_request(
@@ -418,6 +416,8 @@ job *find_job_by_array(all_jobs *aj, const char *jobid, int get_subjob, bool loc
     {
     job *pj = (job *)calloc(1, sizeof(job));
     strcpy(pj->ji_qs.ji_fileprefix, "1.napali");
+    if (set_ji_substate)
+      pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
     return(pj);
     }
 
@@ -441,3 +441,16 @@ void log_ext(int i, char const* s, char const* s2, int i2)
   }
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+  return(0);
+  }
+
+job::job() {}
+job::~job() {}

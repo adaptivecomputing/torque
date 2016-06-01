@@ -91,6 +91,7 @@
 #include "attribute.h"
 #include "resource.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of an
@@ -132,7 +133,7 @@ int decode_unkn(
   const char   *name,
   const char *rescn,
   const char    *value,
-  int            perm)  /* only used for resources */
+  int           UNUSED(perm))  /* only used for resources */
 
   {
   svrattrl *entry;
@@ -193,10 +194,10 @@ int encode_unkn(
 
   pbs_attribute  *attr,   /* ptr to pbs_attribute to encode */
   tlist_head     *phead,   /* list to place entry in */
-  const char    *atname,  /* pbs_attribute name, not used here */
-  const char    *rsname,  /* resource name, not used here */
-  int             mode,   /* encode mode, unused here */
-  int             perm)  /* only used for resources */
+  const char    * UNUSED(atname),  /* pbs_attribute name, not used here */
+  const char    * UNUSED(rsname),  /* resource name, not used here */
+  int             UNUSED(mode),   /* encode mode, unused here */
+  int             UNUSED(perm))  /* only used for resources */
 
   {
   svrattrl *plist;
@@ -278,7 +279,7 @@ int set_unkn(
    
   pbs_attribute *old,
   pbs_attribute *new_attr,
-  enum batch_op  op)
+  enum batch_op  UNUSED(op))
 
   {
   svrattrl *plist;
@@ -311,8 +312,8 @@ int set_unkn(
 
 int comp_unkn(
    
-  pbs_attribute *attr,
-  pbs_attribute *with)
+  pbs_attribute * UNUSED(attr),
+  pbs_attribute * UNUSED(with))
 
   {
   return (1);

@@ -12,6 +12,7 @@ int    LOGLEVEL = 10;
 
 const char *pbs_o_host = "PBS_O_HOST";
 const char *msg_orighost = "Job missing PBS_O_HOST value";
+bool        exists = true;
 
 char *get_variable(job *pjob, const char *variable)
   { 
@@ -36,3 +37,5 @@ int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int l
   {
   return(0);
   }
+
+

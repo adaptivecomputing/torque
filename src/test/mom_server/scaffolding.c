@@ -12,7 +12,6 @@
 #include "mom_main.h" /* DEFAULT_SERVER_STAT_UPDATES */
 #include "log.h" /* MAXLINE, LOG_BUF_SIZE */
 #include "pbs_ifl.h" /* PBS_MAXHOSTNAME */
-#include "dynamic_string.h" /* dynamic_string */
 #include "u_tree.h" /* AvlTree */
 #include "net_connect.h" /* conn_type */
 #include "server_limits.h" /* pbs_net_t. Also defined in net_connect.h */
@@ -151,12 +150,6 @@ int read_tcp_reply(struct tcp_chan *chan, int protocol, int version, int command
 char *conf_res(char *resline, struct rm_attribute *attr)
   {
   fprintf(stderr, "The call to conf_res needs to be mocked!!\n");
-  exit(1);
-  }
-
-void clear_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to clear_dynamic_string needs to be mocked!!\n");
   exit(1);
   }
 
@@ -356,30 +349,6 @@ mom_hierarchy_t *initialize_mom_hierarchy()
   return(nt);
   }
 
-int append_dynamic_string(dynamic_string *ds, const char *to_append)
-  {
-  fprintf(stderr, "The call to append_dynamic_string to be mocked!!\n");
-  exit(1);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  fprintf(stderr, "The call to get_dynamic_string needs to be mocked!!\n");
-  exit(1);
-  }
-
-void free_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-
-int delete_last_word_from_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to delete_last_word_from_dynamic_string needs to be mocked!!\n");
-  exit(1);
-  }
-
 void send_update_soon()
   {
   fprintf(stderr, "The call to send_update_soon needs to be mocked!!\n");
@@ -463,5 +432,16 @@ bool overwrite_cache(
 
   {
   return(true);
+  }
+
+/*int gethostname(char *name, size_t len)
+  {
+  strcpy(name, "fattony3.ac");
+  return(0);
+  }*/
+
+int add_gpu_status(std::vector<std::string> &mom_status)
+  {
+  return(0);
   }
 

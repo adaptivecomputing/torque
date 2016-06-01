@@ -102,7 +102,7 @@ int attempt_delete(
     {
     /* set up nanny */
     
-    if (pjob->ji_has_delete_nanny == FALSE)
+    if (pjob->ji_has_delete_nanny == false)
       {
       setup_apply_job_delete_nanny(pjob, time_now);
 
@@ -152,6 +152,15 @@ int req_deletearray(
   time_t            time_now = time(NULL);
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+
+  // Do not attempt to delete the array while it is still cloning
+  while ((pa != NULL) &&
+         (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs))
+    {
+    unlock_ai_mutex(pa, __func__, NULL, 10);
+    sleep(1);
+    pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+    }
 
   if (pa == NULL)
     {

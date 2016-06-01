@@ -76,6 +76,7 @@ extern int   pbs_rm_port;
 
 extern char  *PJobSubState[];
 extern char  *PMOMCommand[];
+extern char   mom_alias[];
 
 /* external prototypes */
 
@@ -973,7 +974,6 @@ bool mother_superior_cleanup(
 void scan_for_exiting(void)
 
   {
-  job          *nextjob;
   job          *pjob = NULL;
   int           found_one = 0;
 
@@ -1148,6 +1148,8 @@ int post_epilogue(
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
 
+  pjob->ji_obit_sent = time(NULL);
+
   if (LOGLEVEL >= 2)
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
@@ -1247,6 +1249,7 @@ int post_epilogue(
     {
     DIS_tcp_wflush(chan);
     DIS_tcp_cleanup(chan);
+    pjob->ji_obit_sent = time(NULL);
     }
 
   free_br(preq);
@@ -1360,6 +1363,9 @@ int process_jobs_obit_reply(
   unsigned int momport = 0;
   char         tmp_line[MAXLINE];
 
+  // Make sure we have cleared a previous busy reply from the server.
+  pjob->ji_obit_busy_time = 0;
+
   switch (rc)
     {
 
@@ -1368,6 +1374,7 @@ int process_jobs_obit_reply(
       /* normal ack, mark job as exited */
       pjob->ji_qs.ji_destin[0] = '\0';
 
+      pjob->ji_exited_time = time(NULL);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
 
       if (multi_mom)
@@ -1385,6 +1392,16 @@ int process_jobs_obit_reply(
           pjob->ji_qs.ji_jobid,
           "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
         }
+
+      break;
+      
+    case PBSE_UNKJOBID:
+
+      // pbs_server doesn't know this job, get rid of it
+      sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+      mom_deljob(pjob);
 
       break;
 
@@ -1405,6 +1422,8 @@ int process_jobs_obit_reply(
       pjob->ji_qs.ji_destin[0] = '\0';
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+
+      pjob->ji_exited_time = time(NULL);
 
       if (multi_mom)
         {
@@ -1440,13 +1459,15 @@ int process_jobs_obit_reply(
 
     case PBSE_SERVER_BUSY:
 
-      // NO-OP, handled later
+      // We need to force this to retry quickly
+      pjob->ji_obit_busy_time = time(NULL);
 
       break;
 
     case - 1:
 
       /* FIXME - causes epilogue to be run twice! */
+      pjob->ji_obit_minus_one_time = time(NULL);
 
       pjob->ji_qs.ji_destin[0] = '\0';
 
@@ -1521,7 +1542,6 @@ void *obit_reply(
   int                   irtn;
   job                  *pjob = NULL;
   job                  *pj = NULL;
-  char                  tmp_line[MAXLINE];
 
   batch_request        *preq;
   int                   sock = *(int *)new_sock;
@@ -1583,29 +1603,8 @@ void *obit_reply(
 
   if (pjob != NULL)
     {
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT)
-      {
-      if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
-        not_deleted = true;
-      }
-    else
-      {
-      if (preq->rq_reply.brp_code == PBSE_UNKJOBID)
-        {
-        sprintf(tmp_line, "Unknown job id on server. Setting to exited and deleting");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        /* This means the server has no idea what this job is
-         * and it should be deleted!!! */
-        mom_deljob(pjob);
-        }
-      else if (preq->rq_reply.brp_code == PBSE_ALRDYEXIT)
-        {
-        sprintf(tmp_line, "Job already in exit state on server. Setting to exited");
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-        }
-      }
+    if (process_jobs_obit_reply(pjob, preq) == PBSE_SERVER_BUSY)
+      not_deleted = true;
     }
   else
     {
@@ -2103,7 +2102,6 @@ int send_job_obit_to_ms(
   u_long       cput = resc_used(pjob, "cput", gettime);
   u_long       mem = resc_used(pjob, "mem", getsize);
   u_long       vmem = resc_used(pjob, "vmem", getsize);
-  u_long       joules = resc_used(pjob, "energy_used", gettime);
   int          command;
   tm_event_t   event;
   hnodent     *np;
@@ -2167,7 +2165,7 @@ int send_job_obit_to_ms(
               unsigned int                    req_index;
 
               complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used);
+              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used, mom_alias);
 
               if (rc == DIS_SUCCESS)
                 rc = diswsi(chan, task_index.size());

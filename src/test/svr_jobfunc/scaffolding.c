@@ -592,6 +592,15 @@ bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &
   return(possible);
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
+pbsnode::pbsnode() : nd_layout()
+#else
+pbsnode::pbsnode()
+#endif
+
+  {
+  }
+
 struct pbsnode *next_node(
     
   all_nodes     *an,
@@ -600,14 +609,7 @@ struct pbsnode *next_node(
 
   {
   static int next_node_count = 0;
-  static pbsnode *pn = (pbsnode *)calloc(1, sizeof(pbsnode));
-
-#ifdef PENABLE_LINUX_CGROUPS
-  if (pn->nd_layout == NULL)
-    {
-    pn->nd_layout = new Machine();
-    }
-#endif
+  static pbsnode *pn = new pbsnode();
 
   if (next_node_count++ % 2 == 0)
     return(pn);
@@ -704,6 +706,22 @@ struct group *getgrnam_ext(
 
 Machine::Machine() {}
 
+
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+
+  return(0);
+  }
+
+
+int pbsnode::unlock_node(const char *id, const char *msg, int level)
+  {
+
+  return(0);
+  }
+
+job::job() {}
+job::~job() {}
 
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"

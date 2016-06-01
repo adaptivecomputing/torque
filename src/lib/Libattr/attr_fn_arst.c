@@ -79,6 +79,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains general function for attributes of type
@@ -99,7 +100,7 @@
  * ----------------------------------------------------------------------------
  * pbs_Attribute functions for attributes with value type "array of strings".
  *
- * The "encoded" or external form of the value is a string with the orginial
+ * The "encoded" or external form of the value is a string with the orginal
  * strings separated by commas (or new-lines) and terminated by a null.
  * Any embedded commas or black-slashes must be escaped by a prefixed back-
  * slash.
@@ -269,10 +270,10 @@ int decode_arst_direct(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  const char   *name,    /* I pbs_attribute name (notused) */
-  const char *rescn,   /* I resource name (notused) */
+  const char *  UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char *  UNUSED(rescn),   /* I resource name (notused) */
   const char    *val,     /* I pbs_attribute value */
-  int            perm) /* only used for resources */
+  int           UNUSED(perm)) /* only used for resources */
 
   {
   int           rc;
@@ -353,8 +354,8 @@ int decode_acl_arst(
 int decode_arst_merge(
 
   pbs_attribute *patr,    /* O (modified) */
-  const char   *name,    /* I pbs_attribute name (notused) */
-  const char *rescn,   /* I resource name (notused) */
+  const char * UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char * UNUSED(rescn),   /* I resource name (notused) */
   const char    *val)     /* I pbs_attribute value */
 
   {
@@ -444,7 +445,7 @@ int encode_arst(
   const char   *atname, /* I pbs_attribute name */
   const char   *rsname, /* I resource name or NULL (optional) */
   int             mode,   /* I encode mode */
-  int             perm)   /* only used for resources */
+  int            UNUSED(perm))   /* only used for resources */
 
   {
   char     *end;
@@ -558,6 +559,46 @@ int encode_arst(
   }  /* END encode_arst() */
 
 
+
+struct array_strings *copy_arst(
+
+  struct array_strings *to_copy)
+
+  {
+  struct array_strings *arst;
+
+  // Check for validity
+  if ((to_copy == NULL) ||
+      (to_copy->as_npointers < 1))
+    {
+    return(NULL);
+    }
+
+  size_t need = sizeof(struct array_strings) + (to_copy->as_npointers - 1) * sizeof(char *);
+
+  if ((arst = (struct array_strings *)calloc(1, need)) != NULL)
+    {
+    arst->as_npointers = to_copy->as_npointers;
+    arst->as_usedptr = to_copy->as_usedptr;
+    arst->as_bufsize = to_copy->as_bufsize;
+    if ((arst->as_buf = (char *)calloc(1, arst->as_bufsize)) != NULL)
+      {
+      memcpy(arst->as_buf, to_copy->as_buf, arst->as_bufsize);
+
+      arst->as_next = arst->as_buf + (to_copy->as_next - to_copy->as_buf);
+
+      for (int i = 0; i < to_copy->as_usedptr; i++)
+        arst->as_string[i] = arst->as_buf + (to_copy->as_string[i] - to_copy->as_buf);
+      }
+    else
+      {
+      free(arst);
+      arst = NULL;
+      }
+    }
+
+  return(arst);
+  } // END copy_arst()
 
 
 
@@ -1031,6 +1072,25 @@ int comp_arst(
 
 
 
+void free_arst_value(
+
+  struct array_strings *arst)
+
+  {
+  
+  if (arst != NULL)
+    {
+    if (arst->as_buf != NULL)
+      {
+      free(arst->as_buf);
+      arst->as_buf = NULL;
+      }
+
+    free(arst);
+    }
+  } // END free_arst_value()
+
+
 
 void free_arst(
 
@@ -1039,13 +1099,7 @@ void free_arst(
   {
   if ((attr->at_flags & ATR_VFLAG_SET) && (attr->at_val.at_arst))
     {
-    if (attr->at_val.at_arst->as_buf)
-      {
-      (void)free(attr->at_val.at_arst->as_buf);
-      attr->at_val.at_arst->as_buf = NULL;
-      }
-
-    (void)free((char *)attr->at_val.at_arst);
+    free_arst_value(attr->at_val.at_arst);
     }
 
   attr->at_val.at_arst = (struct array_strings *)0;

@@ -16,7 +16,6 @@
 #include <hwloc/nvml.h>
 #include <nvml.h>
 
-void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 #endif
 #endif
 
@@ -113,6 +112,7 @@ Machine& Machine::operator= (const Machine& newMachine)
   availableChips = newMachine.availableChips;
   availableCores = newMachine.availableCores;
   availableThreads = newMachine.availableThreads;
+  this->initialized = newMachine.initialized;
   return *this;
   }
 
@@ -154,6 +154,58 @@ void Machine::update_internal_counts()
 
 
 
+void Machine::initialize_from_json(
+
+  const std::string &json_layout)
+
+  {
+  const char *socket_str = "\"socket\":{";
+  std::size_t socket_begin = json_layout.find(socket_str);
+
+  while (socket_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
+    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
+
+    Socket s(one_socket);
+    this->sockets.push_back(s);
+    this->totalSockets++;
+
+    socket_begin = next;
+    }
+
+  update_internal_counts();
+  this->initialized = true;
+  } // END initialize_from_json()
+
+
+
+void Machine::reinitialize_from_json(
+
+  const std::string &json_layout)
+
+  {
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  this->hardwareStyle = 0;
+  this->totalMemory = 0;
+  this->totalSockets = 0;
+  this->totalChips = 0;
+  this->totalCores = 0;
+  this->totalThreads = 0;
+  this->availableSockets = 0;
+  this->availableChips = 0;
+  this->availableCores = 0;
+  this->availableThreads = 0;
+  this->sockets.clear();
+  this->NVIDIA_device.clear();
+  this->allocations.clear();
+
+  this->initialize_from_json(json_layout);
+  } // END reinitialize_from_json()
+
+
+
 /*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
@@ -179,37 +231,47 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
-                                                   totalCores(0), totalThreads(0), 
-                                                   availableSockets(0), availableChips(0),
-                                                   availableCores(0), availableThreads(0)
+Machine::Machine(
+    
+  const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0),
+                                    totalChips(0), totalCores(0), totalThreads(0), 
+                                    availableSockets(0), availableChips(0),
+                                    availableCores(0), availableThreads(0), initialized(true),
+                                    sockets(), NVIDIA_device(), allocations()
 
   {
-  const char *socket_str = "\"socket\":{";
-  std::size_t socket_begin = json_layout.find(socket_str);
+  this->initialize_from_json(json_layout);
+  } // END json constructor
 
-  while (socket_begin != std::string::npos)
-    {
-    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
-    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
-    this->sockets.push_back(s);
-    this->totalSockets++;
 
-    socket_begin = next;
-    }
-
-  update_internal_counts();
-  }
-
-Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0), totalCores(0),
-                     totalThreads(0), availableSockets(0), availableChips(0),
-                     availableCores(0), availableThreads(0)
+Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChips(0),
+                     totalCores(0), totalThreads(0), availableSockets(0), availableChips(0),
+                     availableCores(0), availableThreads(0), initialized(false), sockets(),
+                     NVIDIA_device(), allocations()
+  
   { 
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  } // END default constructor
+
+
+
+Machine::Machine(
+
+  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
+            totalThreads(np), availableSockets(1), availableChips(1),
+            availableCores(np), availableThreads(np), initialized(true), sockets(),
+            NVIDIA_device(), allocations()
+
+  {
+  Socket s(np);
+  this->sockets.push_back(s);
+  
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
   }
+
 
 
 Machine::~Machine()
@@ -464,6 +526,15 @@ void Machine::setMemory(
 
   {
   this->totalMemory = mem;
+
+  // Protect against a race condition of initialization
+  if (this->sockets.size() > 0)
+    {
+    long long per_socket = mem / this->sockets.size();
+
+    for (unsigned int i = 0; i < this->sockets.size(); i++)
+      this->sockets[i].setMemory(per_socket);
+    }
   }
 
 void Machine::insertNvidiaDevice(
@@ -614,10 +685,10 @@ int Machine::spread_place_pu(
   const char *hostname)
 
   {
-  int   rc;
   int   pu_per_task = 0;
   int   lprocs_per_task = r.getExecutionSlots();
   int   tasks_placed = 0;
+  int   tasks_for_this_node = tasks_for_node;
 
   if (pu_per_task > this->totalCores)
     return(PBSE_IVALREQ);
@@ -645,7 +716,7 @@ int Machine::spread_place_pu(
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
       {
-      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_node)
+      if (this->sockets[j].how_many_tasks_fit(r, master.place_type) < tasks_for_this_node)
         continue;
 
       bool fits = false;
@@ -690,6 +761,7 @@ int Machine::spread_place_pu(
     task_alloc.set_host(hostname);
     r.record_allocation(task_alloc);
     master.add_allocation(task_alloc);
+    tasks_for_this_node--;
     }
 
   if (tasks_placed != tasks_for_node)
@@ -697,6 +769,8 @@ int Machine::spread_place_pu(
 
   return(PBSE_NONE);
   } /* END spread_place_pu() */
+
+
 
 /*
  * spread_place()
@@ -767,11 +841,13 @@ int Machine::spread_place(
       }
 
     if (partial_place == true)
+      {
       tasks_placed++;
 
-    task_alloc.set_host(hostname);
-    r.record_allocation(task_alloc);
-    master.add_allocation(task_alloc);
+      task_alloc.set_host(hostname);
+      r.record_allocation(task_alloc);
+      master.add_allocation(task_alloc);
+      }
     }
 
   if (tasks_placed != tasks_for_node)
@@ -796,7 +872,8 @@ int Machine::place_job(
   job        *pjob,
   string     &cpu_string,
   string     &mem_string,
-  const char *hostname)
+  const char *hostname,
+  bool        legacy_vmem)
 
   {
   int rc = PBSE_NONE;
@@ -804,7 +881,7 @@ int Machine::place_job(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     // Initialize a complete_req from the -l resource request
-    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
     cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     }
@@ -836,12 +913,6 @@ int Machine::place_job(
              (a.place_type == exclusive_chip))
       {
       if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
-        return(rc);
-      }
-    else if ((a.place_type == exclusive_core) ||
-             (a.place_type == exclusive_thread))
-      {
-      if ((rc = spread_place_pu(r, a, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else
@@ -877,8 +948,6 @@ int Machine::place_job(
     {
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    bool  change = false;
-    bool  not_placed = true;
     
     a.set_place_type(r.getPlacementType());
     
@@ -1049,6 +1118,42 @@ bool Machine::check_if_possible(
 
   return(possible);
   } // END check_if_possible()
+
+
+
+int Machine::how_many_tasks_can_be_placed(
+
+  req &r) const
+
+  {
+  float         can_place = 0.0;
+  allocation    a;
+  int           sockets = r.get_sockets();
+  a.set_place_type(r.getPlacementType());
+
+  if (sockets > 1)
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      if (this->sockets[j].how_many_tasks_fit(r, a.place_type) > 0)
+        can_place += 1;
+
+    can_place /= sockets;
+    }
+  else
+    {
+    for (unsigned int j = 0; j < this->totalSockets; j++)
+      can_place += this->sockets[j].how_many_tasks_fit(r, a.place_type);
+    }
+
+  return(can_place);
+  } // END place_as_many_as_possible()
+
+
+
+bool Machine::is_initialized() const
+  {
+  return(this->initialized);
+  }
 
 
 

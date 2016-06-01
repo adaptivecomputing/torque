@@ -178,7 +178,7 @@ job *svr_find_job(const char *jobid, int get_subjob)
   {
   if (strcmp(jobid, "1.napali") == 0)
     {
-    job *pjob = (job *)calloc(1, sizeof(job));
+    job *pjob = new job();
     strcpy(pjob->ji_qs.ji_jobid, jobid);
     pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
     return(pjob);
@@ -566,5 +566,12 @@ int depend_on_term(
   depend_term_called++;
   return(0);
   }
+
+job::job() : ji_has_delete_nanny(false)
+  {
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
+job::~job() {}
 
 

@@ -156,3 +156,8 @@ batch_request *duplicate_request(batch_request *preq, int type)
   {
   return(NULL);
   }
+
+int check_array_slot_limits(job *pjob, job_array *pa)
+  {
+  return(0);
+  }

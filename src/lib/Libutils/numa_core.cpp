@@ -78,28 +78,6 @@ int Core::initializeCore(hwloc_obj_t core_obj, hwloc_topology_t topology)
   }
 
 
-/*
- * mark_as_busy()
- *
- */
-
-void Core::mark_as_busy(
-    
-  int index)
-
-  {
-  for (unsigned int i = 0; i < this->indices.size(); i++)
-    {
-    if (this->indices[i] == index)
-      {
-      this->is_index_busy[i] = true;
-      this->free = false;
-      this->processing_units_open--;
-      }
-    }
-  }
-
-
 
 /*
  * reserve_processing_unit()
@@ -172,25 +150,36 @@ bool Core::free_pu_index(
   bool &core_is_now_free)
 
   {
-  core_is_now_free = false;
+  bool freed_index = false;
 
-  for (unsigned int i = 0; i < this->indices.size(); i++)
+  if (this->free == true)
     {
-    if (this->indices[i] == index)
-      {
-      this->is_index_busy[i] = false;
-      this->processing_units_open++;
-      if (this->totalThreads == this->processing_units_open)
-        {
-        this->free = true;
-        core_is_now_free = true;
-        }
+    freed_index = true;
+    core_is_now_free = true;
+    }
+  else
+    {
+    core_is_now_free = false;
 
-      return(true);
+    for (unsigned int i = 0; i < this->indices.size(); i++)
+      {
+      if (this->indices[i] == index && this->is_index_busy[i] == true)
+        {
+        this->is_index_busy[i] = false;
+        this->processing_units_open++;
+        if (this->totalThreads == this->processing_units_open)
+          {
+          this->free = true;
+          core_is_now_free = true;
+          }
+
+        freed_index = true;
+        break;
+        }
       }
     }
 
-  return(false);
+  return(freed_index);
   } // END free_pu_index()
 
 

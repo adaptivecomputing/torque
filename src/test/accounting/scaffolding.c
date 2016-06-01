@@ -4,7 +4,6 @@
 #include <limits.h> /* _POSIX_PATH_MAX */
 
 #include "attribute.h" /* attribute_def */
-#include "dynamic_string.h" /* dynamic_string */
 #include "pbs_job.h"
 #include "queue.h"
 
@@ -28,24 +27,6 @@ void delete_link(struct list_link *old)
 void *get_next(list_link pl, char *file, int line)
   {
   fprintf(stderr, "The call to get_next needs to be mocked!!\n");
-  exit(1);
-  }
-
-int append_dynamic_string(dynamic_string *ds, const char *to_append)
-  {
-  fprintf(stderr, "The call to append_dynamic_string needs to be mocked!!\n");
-  exit(1);
-  }
-
-dynamic_string *get_dynamic_string(int initial_size, const char *str)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
-  exit(1);
-  }
-
-void free_dynamic_string(dynamic_string *ds)
-  {
-  fprintf(stderr, "The call to attr_to_str needs to be mocked!!\n");
   exit(1);
   }
 
@@ -126,3 +107,16 @@ void translate_range_string_to_vector(
 
   free(str);
   } /* END translate_range_string_to_vector() */
+
+int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+  {
+  return(0);
+  }
+
+job::job() {}
+job::~job() {}

@@ -103,6 +103,7 @@
 #  include <sys/select.h>
 #endif
 #include "../lib/Libifl/lib_ifl.h"
+#include "pbs_helper.h"
 
 
 enum rwhere {invalid, new_out, new_err, old_out, old_err};
@@ -188,7 +189,7 @@ static int demux_callback(void* arg)
 
 int main(
 
-  int   argc,
+  int   UNUSED(argc),
   char *argv[])
 
   {

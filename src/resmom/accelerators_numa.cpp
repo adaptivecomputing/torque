@@ -227,6 +227,7 @@ void PCI_Device::initializeGpu(
   int rc;
   nvmlDevice_t  gpu_device;
   
+  id = idx;
   rc = nvmlDeviceGetHandleByIndex(idx, &gpu_device);
   if (rc != NVML_SUCCESS)
     {

@@ -146,7 +146,6 @@
 #include "server_comm.h"
 #include "node_func.h"
 #include "mom_hierarchy_handler.h"
-#include "track_alps_reservations.h"
 #include "completed_jobs_map.h"
 
 
@@ -232,6 +231,7 @@ char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
 char                   *path_arrays;
 char                   *path_credentials;
+char                   *path_pbs_environment;
 char                   *path_jobs;
 char                   *path_queues;
 char                   *path_spool;
@@ -260,6 +260,7 @@ unsigned int            pbs_scheduler_port;
 extern pbs_net_t        pbs_server_addr;
 unsigned int            pbs_server_port_dis;
 
+bool                    use_path_home = false;  // set to true if pbs_server is started with a -d option
 bool                    auto_send_hierarchy = true; //If false this directs pbs_server to not send the hierarchy to all the MOMs on startup.
                                                      //Instead, the hierarchy is only sent if a MOM requests it.
                                                      //This flag works only in conjunction with the local MOM hierarchy feature.
@@ -318,7 +319,8 @@ int                     MultiMomMode = 0;
 int                     allow_any_mom = FALSE;
 int                     array_259_upgrade = FALSE;
 
-sem_t  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+sem_t                  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
+acl_special             limited_acls;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
@@ -600,6 +602,7 @@ void parse_command_line(
       case 'd':
 
         path_home = optarg;
+        use_path_home = true;
 
         break;
 
@@ -1293,6 +1296,8 @@ void main_loop(void)
   sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
+    
+  hierarchy_handler.checkAndSendHierarchy(true);
 
   /* do not check nodes immediately as they will initially be marked
      down unless they have already reported in */
@@ -1369,9 +1374,9 @@ void main_loop(void)
       }
 #endif
 
-    hierarchy_handler.checkAndSendHierarchy();
+    hierarchy_handler.checkAndSendHierarchy(false);
 
-      enqueue_threadpool_request(check_tasks, NULL, task_pool);
+    enqueue_threadpool_request(check_tasks, NULL, task_pool);
 
     if ((disable_timeout_check == FALSE) && (time_now > update_timeout))
       {
@@ -1388,7 +1393,6 @@ void main_loop(void)
         set_svr_attr(SRV_ATR_tcp_timeout, &timeout);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
         }
-      
       DIS_tcp_settimeout(timeout);
       }
 
@@ -1960,8 +1964,6 @@ int main(
   pthread_mutex_lock(&job_log_mutex);
   job_log_close(1);
   pthread_mutex_unlock(&job_log_mutex);
-
-  clear_all_alps_reservations();
 
   /* at this point kill the threadpool */
   destroy_request_pool(task_pool);

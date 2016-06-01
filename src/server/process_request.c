@@ -119,7 +119,6 @@
 #include "dis.h"
 #include "array.h"
 #include "req_stat.h"
-#include "../lib/Libutils/u_lock_ctl.h" /* lock_node, unlock_node */
 #include "../lib/Libnet/lib_net.h" /* globalset_del_sock */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "req_getcred.h" /* req_altauthenuer */ 
@@ -325,7 +324,7 @@ bool request_passes_acl_check(
       }
 
     if (isanode != NULL)
-      unlock_node(isanode, __func__, NULL, LOGLEVEL);
+      isanode->unlock_node(__func__, NULL, LOGLEVEL);
     }
   
   return(true);
@@ -460,11 +459,15 @@ batch_request *read_request_from_socket(
 
   if (request_passes_acl_check(request, conn_addr) == false)
     {
-    char tmpLine[MAXLINE];
-    snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-      request->rq_host);
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    return(NULL);
+    /* See if the request is in the limited acl list */
+    if (limited_acls.is_authorized(request->rq_host, request->rq_user) == false)
+      {
+      char tmpLine[MAXLINE];
+      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
+        request->rq_host);
+      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
+      return(NULL);
+      }
     }
 
   return(request);
@@ -1077,7 +1080,7 @@ void close_quejob(
           pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
           pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-          int rc = svr_enquejob(pjob, FALSE, NULL, false);
+          int rc = svr_enquejob(pjob, FALSE, NULL, false, false);
           
           if ((rc == PBSE_JOBNOTFOUND) ||
               (rc == PBSE_JOB_RECYCLED))

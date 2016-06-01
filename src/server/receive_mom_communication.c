@@ -157,7 +157,7 @@ int is_reporter_node(
   if (pnode != NULL)
     {
     rc = pnode->nd_is_alps_reporter;
-    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+    pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
   return(rc);
@@ -229,7 +229,7 @@ int gpu_has_job(
         if (gpu_str != NULL)
           {
           snprintf(tmp_str, sizeof(tmp_str), "%s-gpu/%d",
-            pnode->nd_name, gpuid);
+            pnode->get_name(), gpuid);
           
           /* look thru the string and see if it has this host and gpuid.
            * exec_gpus string should be in format of 
@@ -382,7 +382,7 @@ void *svr_is_request(
   
   if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
     {
-    lock_node(node, __func__, "AVL_find", LOGLEVEL);
+    node->lock_node(__func__, "AVL_find", LOGLEVEL);
     } /* END if AVL_find != NULL) */
   else if (allow_any_mom)
     {
@@ -404,7 +404,7 @@ void *svr_is_request(
       {
       node = AVL_find(ipaddr, 0, ipaddrs);
        
-      lock_node(node, __func__, "no error", LOGLEVEL);
+      node->lock_node(__func__, "no error", LOGLEVEL);
       }                                                         
     }
     
@@ -441,14 +441,14 @@ void *svr_is_request(
      "message %s (%d) received from mom on host %s (%s) (sock %d)",
      PBSServerCmds2[command],
      command,
-     node->nd_name,
+     node->get_name(),
      msg_buf,
      chan->sock);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
-  mutex_mgr node_mutex(node->nd_mutex, true);
+  mutex_mgr node_mutex(&node->nd_mutex, true);
 
   switch (command)
     {
@@ -469,7 +469,7 @@ void *svr_is_request(
         if (LOGLEVEL >= 1)
           {
           snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-              "IS_UPDATE error %d on node %s\n", ret, node->nd_name);
+              "IS_UPDATE error %d on node %s\n", ret, node->get_name());
 
           log_err(ret, __func__, log_buf);
           }
@@ -477,7 +477,7 @@ void *svr_is_request(
         goto err;
         }
 
-      DBPRT(("%s: IS_UPDATE %s 0x%x\n", __func__, node->nd_name, i))
+      DBPRT(("%s: IS_UPDATE %s 0x%x\n", __func__, node->get_name(), i))
 
       update_node_state(node, i);
 
@@ -491,12 +491,12 @@ void *svr_is_request(
     case IS_STATUS:
 
       {
-      std::string node_name = node->nd_name;
+      std::string node_name = node->get_name();
      
       if (LOGLEVEL >= 2)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-            "IS_STATUS received from %s", node->nd_name);
+            "IS_STATUS received from %s", node->get_name());
 
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
@@ -545,7 +545,7 @@ void *svr_is_request(
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
           "unknown command %d sent from %s",
         command,
-        node->nd_name);
+        node->get_name());
 
       log_err(-1, __func__, log_buf);
 
@@ -570,7 +570,7 @@ err:
       {
       DBPRT(("%s: error processing node %s\n",
             __func__,
-            node->nd_name))
+            node->get_name()))
       }
 
     netaddr_long(args[1], tmp);
@@ -578,7 +578,7 @@ err:
 
     sprintf(log_buf, "%s from %s(%s)",
       dis_emsg[ret],
-      node->nd_name,
+      node->get_name(),
       msg_buf);
     }
   else

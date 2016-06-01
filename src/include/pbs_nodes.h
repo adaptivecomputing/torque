@@ -86,6 +86,7 @@
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
 #include <set>
+#include <sys/types.h>
 
 #include "execution_slot_tracker.hpp"
 #include "net_connect.h" /* pbs_net_t */
@@ -97,9 +98,12 @@
 #include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
+#include "attribute.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#include "runjob_help.hpp"
+#include "attribute.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -146,7 +150,8 @@ enum gpmodeit
   gpu_exclusive_thread,
   gpu_prohibited,
   gpu_exclusive_process,
-  gpu_unknown
+  gpu_unknown,
+  gpu_mode_not_set
   };
 
 enum gpstatit
@@ -157,90 +162,19 @@ enum gpstatit
   gpu_unavailable
   };
 
-struct prop
+class gpusubn
   {
-  char *name;
-  short mark;
-
-  struct prop *next;
-  };
-
-struct jobinfo
-  {
-  int internal_job_id;
-
-  struct jobinfo *next;
-  };
-
-typedef struct alps_req_data
-  {
-  std::string *node_list;
-  int          ppn;
-  } alps_req_data;
-
-typedef struct single_spec_data
-  {
-  int          nodes;   /* nodes needed for this req */
-  int          ppn;     /* ppn for this req */
-  int          gpu;     /* gpus for this req */
-  int          mic;   /* mics for this req */
-  int          req_id;  /* the id of this alps req - used only for cray */
-  struct prop *prop;    /* node properties needed */
-  } single_spec_data;
-
-typedef struct complete_spec_data
-  {
-  single_spec_data  *reqs;        /* array of data for each req */
-  int                num_reqs;    /* number of reqs (number of '+' in spec + 1) */
-  int                total_nodes; /* number of nodes for all reqs in a spec */
-  /* pointer to start of req in spec, only valid until call of parse_req_data() */
-  char             **req_start;   
-  } complete_spec_data;
-
-
-
-typedef struct node_job_add_info
-  {
-  int                       node_id;
-  int                       ppn_needed;
-  int                       gpu_needed;
-  int                       mic_needed;
-  int                       is_external;
-  int                       req_rank;
-  struct node_job_add_info *next;
-  } node_job_add_info;
-
-
-
-struct pbssubn
-  {
-  struct pbsnode *host;
-
-  struct pbssubn *next;
-
-  struct jobinfo *jobs;     /* list of jobs allocating resources within subnode */
-  /* does this include suspended jobs? */
-  resource_t      allocto;
-  enum psit      flag;  /* XXX */
-  unsigned short  inuse;
-  short           index;  /* subnode index */
-  };
-
-
-
-struct gpusubn
-  {
+  public:
   int             job_internal_id; /* internal id of job on gpu */
-  unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
+  bool            inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
-  enum psit       flag;   /* same as for pbssubn */
+  enum psit       flag;
   short           index;  /* gpu index */
-  char           *gpuid;  /* gpu id */
+  std::string     gpuid;  /* gpu id */
   int             job_count;
   };
-
 
 
 
@@ -279,22 +213,30 @@ class received_node
   };
 
 
-struct pbsnode
+class pbsnode
   {
-  char                         *nd_name;             /* node's host name */
+private:
+  std::string                   nd_name;             /* node's host name */
+  int                           nd_error;            // set if there's an error
+  std::vector<std::string>      nd_properties;       // The node's properties
+
+public:
+  // Network failures without two consecutive successive between them.
+  int                           nd_proximal_failures;
+  // Consecutive succesful network transactions
+  int                           nd_consecutive_successes;
+  pthread_mutex_t               nd_mutex;            // mutex for accessing this node 
   int                           nd_id;               /* node's id */
 
-  struct prop                  *nd_first;            /* first and last property */
-  struct prop                  *nd_last;
-  struct prop                  *nd_f_st;             /* first and last status */
-  struct prop                  *nd_l_st;
-  
-  u_long                       *nd_addrs;            /* IP addresses of host */
+  std::vector<prop>             nd_f_st;
+ 
+
+  std::vector<u_long>           nd_addrs;            /* IP addresses of host */
 
   struct array_strings         *nd_prop;             /* array of properities */
 
   struct array_strings         *nd_status;
-  char                         *nd_note;             /* note set by administrator */
+  std::string                   nd_note;             /* note set by administrator */
   int                           nd_stream;           /* stream to Mom on host */
   enum psit                     nd_flag;
   unsigned short                nd_mom_port;         /* For multi-mom-mode unique port value PBS_MOM_SERVICE_PORT*/
@@ -317,7 +259,7 @@ struct pbsnode
 
   short                         nd_ngpus;            /* number of gpus */ 
   short                         nd_gpus_real;        /* gpus are real not virtual */ 
-  struct gpusubn               *nd_gpusn;            /* gpu subnodes */
+  std::vector<gpusubn>          nd_gpusn;            /* gpu subnodes */
   short                         nd_ngpus_free;       /* number of free gpus */
   short                         nd_ngpus_needed;     /* number of gpus needed */
   short                         nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
@@ -326,16 +268,16 @@ struct pbsnode
 
   short                         nd_nmics;            /* number of mics */
   struct array_strings         *nd_micstatus;        /* string array of MIC status */
-  struct jobinfo               *nd_micjobs;          /* array for the jobs on the mic(s) */
+  std::vector<int>              nd_micjobids;        /* ids for the jobs on the mic(s) */
   short                         nd_nmics_alloced;    /* number of mic slots alloc'ed */
   short                         nd_nmics_free;       /* number of free mics */
   short                         nd_nmics_to_be_used; /* number of mics marked for a job but not yet assigned */
  
-  struct pbsnode               *parent;              /* pointer to the node holding this node, or NULL */
+  pbsnode                      *parent;              /* pointer to the node holding this node, or NULL */
   unsigned short                num_node_boards;     /* number of numa nodes */
   struct AvlNode               *node_boards;         /* private tree of numa nodes */
-  char                         *numa_str;            /* comma-delimited string of processor values */
-  char                         *gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
+  std::string                   numa_str;            /* comma-delimited string of processor values */
+  std::string                   gpu_str;             /* comma-delimited string of the number of gpus for each nodeboard */
 
   unsigned char                 nd_mom_reported_down;/* notes that the mom reported its own shutdown */
   
@@ -349,20 +291,48 @@ struct pbsnode
   time_t                        nd_power_state_change_time; //
   char                          nd_ttl[32];
   struct array_strings         *nd_acl;
-  std::string                  *nd_requestid;
+  std::string                   nd_requestid;
   unsigned char               nd_tmp_unlock_count;    /*Nodes will get temporarily unlocked so that
                                                        further processing can happen, but the function
                                                        doing the unlock intends to lock it again
                                                        so we need a flag here to prevent a node from being
                                                        deleted while it is temporarily locked. */
 
-  pthread_mutex_t              *nd_mutex;            /* semaphore for accessing this node's data */
-
   /* numa hardware configuration information */
 #ifdef PENABLE_LINUX_CGROUPS
-  Machine *nd_layout;
+  Machine                    nd_layout;
 #endif
- };
+
+
+  pbsnode();
+  pbsnode(const pbsnode &other);
+  pbsnode(const char *pname, u_long *pul, bool skip_address_lookup);
+  ~pbsnode();
+  pbsnode &operator =(const pbsnode &other);
+  bool operator ==(const pbsnode &other);
+
+  // CONST methods
+  int         get_error() const;
+  const char *get_name() const;
+  bool        hasprop(std::vector<prop> *props) const;
+  void        write_compute_node_properties(FILE *nin) const;
+  void        write_to_nodes_file(FILE *nin, bool cray_enabled) const;
+  int         copy_properties(pbsnode *dest) const;
+
+  // NON-CONST methods
+  void change_name(const char *new_name);
+  void update_properties();
+  bool update_internal_failure_counts(int rc);
+  void add_property(const std::string &prop);
+  int tmp_lock_node(const char *method_name, const char *msg, int logging);
+  int tmp_unlock_node(const char *method_name, const char *msg, int logging);
+  int lock_node(const char *method_name, const char *msg, int logging);
+  int unlock_node(const char *method_name, const char *msg, int logging);
+  int encode_properties(tlist_head *);
+  void copy_gpu_subnodes(const pbsnode &src);
+  void remove_node_state_flag(int flag);
+  };
+
 
 typedef container::item_container<struct pbsnode *>                all_nodes;
 typedef container::item_container<struct pbsnode *>::item_iterator all_nodes_iterator;
@@ -385,6 +355,8 @@ int             remove_node(all_nodes *,struct pbsnode *);
 struct pbsnode *next_node(all_nodes *,struct pbsnode *,node_iterator *);
 struct pbsnode *next_host(all_nodes *,all_nodes_iterator **,struct pbsnode *);
 int             copy_properties(struct pbsnode *dest, struct pbsnode *src);
+bool            node_exists(const char *node_name);
+void            update_failure_counts(const char *node_name, int rc);
 
 
 #if 0
@@ -420,14 +392,17 @@ void       *send_hierarchy_threadtask(void *);
 
 
 
-struct howl
+class howl
   {
-  char           *name;
+  public:
+  std::string     hostname;
   int             order;
   int             index;
   unsigned short  port;
-
-  struct howl    *next;
+  howl(const std::string &name) : hostname(name) {}
+  howl(const std::string &name, int o, int i, unsigned int p) : hostname(name), order(o), index(i),
+                                                                port(p) {}
+  howl() : hostname(), order(-1), index(-1), port(0) {}
   };
 
 
@@ -485,7 +460,8 @@ int tlist(tree *, char *, int);
 #define INUSE_NOT_READY       (INUSE_DOWN|INUSE_NOHIERARCHY)
 
 #define INUSE_UNKNOWN          0x100 /* Node has not been heard from yet */
-#define INUSE_SUBNODE_MASK     0xff /* bits both in nd_state and inuse */
+#define INUSE_NETWORK_FAIL     0x200 /* Node has had too many network failures */
+#define INUSE_SUBNODE_MASK     0xfff /* bits both in nd_state and inuse */
 #define INUSE_COMMON_MASK  (INUSE_OFFLINE|INUSE_DOWN)
 
 /* Node power state defines */
@@ -579,13 +555,13 @@ enum node_types
 class node_check_info
   {
 public:
-  struct prop *first;
-  struct prop *first_status;
+  std::vector<std::string>  properties;
+  prop                     *first_status;
   short        state;
   short        ntype;
   int          nprops;
   int          nstatus;
-  char        *note;
+  std::string  note;
   short        power_state;
   unsigned char ttl[32];
   int          acl_size;
@@ -615,36 +591,31 @@ extern int update_nodes_file(struct pbsnode *);
 struct pbsnode  *tfind_addr(const u_long key, uint16_t port, char *job_momname);
 struct pbsnode  *find_nodebyname(const char *);
 struct pbsnode  *find_nodebyid(int);
-struct pbsnode  *find_node_in_allnodes(all_nodes *an, char *nodename);
+struct pbsnode  *find_node_in_allnodes(all_nodes *an, const char *nodename);
 int              create_partial_pbs_node(char *, unsigned long, int);
 int              add_execution_slot(struct pbsnode *pnode);
 extern void      delete_a_subnode(struct pbsnode *pnode);
+void             effective_node_delete(pbsnode **);
+void             free_prop_list(struct prop*);
 
 void             reinitialize_node_iterator(node_iterator *);
+int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
 
 #ifdef BATCH_REQUEST_H 
-void             initialize_pbssubn(struct pbsnode *, struct pbssubn *, struct prop *);
-void             effective_node_delete(struct pbsnode *);
 void             setup_notification(char *);
 
-struct pbssubn  *find_subnodebyname(char *);
-
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
-void             free_prop_list(struct prop*);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();
 int              create_pbs_node(char *, svrattrl *, int, int *);
 int              create_pbs_dynamic_node(char *, svrattrl *, int, int *);
-int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int);
 void            *send_hierarchy_file(void *);
 
 node_iterator   *get_node_iterator();
 
 #endif /* BATCH_REQUEST_H */
 
-struct prop     *init_prop(char *pname);
-int              initialize_pbsnode(struct pbsnode *, char *pname, u_long *pul, int ntype, bool isNUMANode);
-int              hasprop(struct pbsnode *pnode, struct prop *props);
+struct prop     *init_prop(const char *pname);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, int internal_job_id);
 void            *sync_node_jobs(void *vp);

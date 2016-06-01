@@ -88,6 +88,7 @@
 #include "list_link.h"
 #include "attribute.h"
 #include "pbs_error.h"
+#include "pbs_helper.h"
 
 /*
  * This file contains functions for manipulating attributes of type
@@ -129,10 +130,10 @@ int normalize_size(struct size_value *a, struct size_value *b,
 int decode_size(
 
   pbs_attribute *patr,
-  const char   *name, /* pbs_attribute name */
-  const char *rescn, /* resource name, unused here */
+  const char * UNUSED(name), /* pbs_attribute name */
+  const char * UNUSED(rescn), /* resource name, unused here */
   const char    *val, /* pbs_attribute value */
-  int            perm)  /* only used for resources */
+  int          UNUSED(perm))  /* only used for resources */
 
   {
 
@@ -176,8 +177,8 @@ int encode_size(
   tlist_head     *phead,   /* head of attrlist list */
   const char    *atname,  /* pbs_attribute name */
   const char    *rsname,  /* resource name (optional) */
-  int             mode,    /* encode mode (not used) */
-  int             perm)    /* only used for resources */
+  int            UNUSED(mode),    /* encode mode (not used) */
+  int            UNUSED(perm))    /* only used for resources */
 
   {
   size_t    ct;

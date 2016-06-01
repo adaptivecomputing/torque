@@ -153,7 +153,7 @@ void add_dest(
     return;
     }
 
-  jobp->ji_rejectdest->push_back(jobp->ji_qs.ji_destin);
+  jobp->ji_rejectdest.push_back(jobp->ji_qs.ji_destin);
   }  /* END add_dest() */
 
 
@@ -173,8 +173,8 @@ bool is_bad_dest(
   {
   /* ji_rejectdest is set in add_dest if approved in ??? */
 
-  for (unsigned int i = 0; i < jobp->ji_rejectdest->size(); i++)
-    if (jobp->ji_rejectdest->at(i) == dest)
+  for (unsigned int i = 0; i < jobp->ji_rejectdest.size(); i++)
+    if (jobp->ji_rejectdest.at(i) == dest)
       return(true);
 
   return(false);
@@ -368,7 +368,7 @@ int job_route(
       /* job may be acceptable */
 
       /* change for trq-2788, reroute even if -h */
-      if (!qp->qu_qs.qu_type == QTYPE_RoutePush)
+      if (qp->qu_qs.qu_type != QTYPE_RoutePush)
         bad_state = !qp->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
 
       break;
