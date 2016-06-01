@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
 #include <vector>
+#include <string>
 
 #include "u_hash_map_structs.h"
 
@@ -103,4 +104,14 @@ void hash_add_or_exit(job_data_container *head, const char *name, const char *va
 
 void set_env_opts(job_data_container *env_attr, char **envp)
   {
+  }
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
   }
