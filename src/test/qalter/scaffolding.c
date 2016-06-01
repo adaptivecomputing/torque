@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <vector>
+#include <string>
 
 #include "pbs_ifl.h" /* attrl */
 
@@ -126,3 +128,13 @@ int parse_at_list(char *list, int use_count, int abs_path)
   }
 
 void initialize_network_info() {}
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
+  }

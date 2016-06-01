@@ -2997,6 +2997,9 @@ int run_job_mode(
 
   struct batch_status *p_server;
   struct batch_status *p_status;
+    
+  std::string server_name;
+  std::vector<std::string> id_list;
 
   if (have_args == true)
     {
@@ -3013,7 +3016,7 @@ int run_job_mode(
 
       snprintf(job_id, sizeof(job_id), "%s", operand);
 
-      any_failed = get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size);
+      any_failed = get_server_and_job_ids(job_id, id_list, server_name);
       if (any_failed != PBSE_NONE)
         {
         fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
@@ -3025,6 +3028,8 @@ int run_job_mode(
 
         return(any_failed);
         }
+
+      snprintf(server_out, server_out_size, "%s", server_name.c_str());
       }
     else
       {
@@ -3066,6 +3071,8 @@ int run_job_mode(
         }
       }    /* END else */
     }
+  else
+    id_list.push_back("");
 
   while (retry_count < MAX_RETRIES)
     {
@@ -3111,12 +3118,20 @@ int run_job_mode(
 
     if ((stat_single_job == 1) || (p_atropl == 0))
       {
-      p_status = pbs_statjob_err(
-                   connect,
-                   job_id_out,
-                   attrib,
-                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
-                   &any_failed);
+      for (size_t i = 0; i < id_list.size(); i++)
+        {
+        snprintf(job_id_out, job_id_out_size, "%s", id_list[i].c_str());
+
+        p_status = pbs_statjob_err(
+                     connect,
+                     job_id_out,
+                     attrib,
+                     exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
+                     &any_failed);
+
+        if (any_failed != PBSE_UNKJOBID)
+          break;
+        }
       }
     else
       {

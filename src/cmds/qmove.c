@@ -52,10 +52,12 @@ int main(int argc, char **argv) /* qmove */
     int connect;
     int stat = 0;
     int located = FALSE;
+    std::string server_name;
+    std::vector<std::string> id_list;
 
     snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
 
-    if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+    if (get_server_and_job_ids(job_id, id_list, server_name))
       {
       fprintf(stderr, "qmove: illegally formed job identifier: %s\n", job_id);
       any_failed = 1;
@@ -64,22 +66,30 @@ int main(int argc, char **argv) /* qmove */
 
 cnt:
 
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_name.c_str());
 
     if (connect <= 0)
       {
       any_failed = -1 * connect;
 
-      if (server_out[0] != 0)
+      if (server_name.size() != 0)
         fprintf(stderr, "qmove: cannot connect to server %s (errno=%d) %s\n",
-          server_out, any_failed, pbs_strerror(any_failed));
+          server_name.c_str(), any_failed, pbs_strerror(any_failed));
       else
         fprintf(stderr, "qmove: cannot connect to server %s (errno=%d) %s\n",
           pbs_server, any_failed, pbs_strerror(any_failed));
       continue;
       }
 
-    stat = pbs_movejob_err(connect, job_id_out, destination, NULL, &any_failed);
+    for (size_t i = 0; i < id_list.size(); i++)
+      {
+      snprintf(job_id_out, sizeof(job_id_out), "%s", id_list[i].c_str());
+
+      stat = pbs_movejob_err(connect, job_id_out, destination, NULL, &any_failed);
+
+      if (any_failed != PBSE_UNKJOBID)
+        break;
+      }
 
     if (stat &&
         (any_failed != PBSE_UNKJOBID))
@@ -87,6 +97,8 @@ cnt:
       if (!located)
         {
         located = TRUE;
+
+        snprintf(server_out, sizeof(server_out), "%s", server_name.c_str());
         
         if (locate_job(job_id_out, server_out, rmt_server))
           {

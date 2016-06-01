@@ -73,15 +73,19 @@ int main(
     int connect;
     int stat = 0;
     int located = FALSE;
+    std::string server_name;
+    std::vector<std::string> id_list;
 
     snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
 
-    if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+    if (get_server_and_job_ids(job_id, id_list, server_name))
       {
       fprintf(stderr, "qsig: illegally formed job identifier: %s\n", job_id);
       any_failed = 1;
       continue;
       }
+
+    snprintf(server_out, sizeof(server_out), "%s", server_name.c_str());
 
 cnt:
 
@@ -101,13 +105,21 @@ cnt:
       continue;
       }
 
-    if (runAsync == TRUE)
+    for (size_t i  = 0; i < id_list.size(); i++)
       {
-      stat = pbs_sigjobasync_err(connect,job_id_out,sig_string,NULL, &any_failed);
-      }
-    else
-      {
-      stat = pbs_sigjob_err(connect, job_id_out, sig_string, NULL, &any_failed);
+      snprintf(job_id_out, sizeof(job_id_out), "%s", id_list[i].c_str());
+  
+      if (runAsync == TRUE)
+        {
+        stat = pbs_sigjobasync_err(connect,job_id_out,sig_string,NULL, &any_failed);
+        }
+      else
+        {
+        stat = pbs_sigjob_err(connect, job_id_out, sig_string, NULL, &any_failed);
+        }
+
+      if (any_failed != PBSE_UNKJOBID)
+        break;
       }
 
     if (stat && (any_failed != PBSE_UNKJOBID))

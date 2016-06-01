@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
+#include <vector>
+#include <string>
 
 int pbs_errno = 0;
 char *pbs_server = NULL;
@@ -62,4 +64,14 @@ void prt_job_err(const char *cmd, int connect, const char *id)
   { 
   fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
   exit(1);
+  }
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
   }

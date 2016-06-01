@@ -92,6 +92,8 @@ int qdel_main(
 
   char job_id_out[PBS_MAXCLTJOBID];
   char server_out[MAXSERVERNAME] = "";
+  std::string server_name;
+  std::vector<std::string> id_list;
   char rmt_server[MAXSERVERNAME] = "";
 
   char extend[1024];
@@ -256,7 +258,7 @@ int qdel_main(
 
   if (purge_completed)
     {
-    snprintf(server_out, sizeof(server_out), "%s", pbs_default());
+    server_name = pbs_default();
     goto cnt;
     }
   
@@ -283,40 +285,39 @@ int qdel_main(
 
     /* check to see if user specified 'all' to delete all jobs */
 
-   snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
+    snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
    
-   if ((dash_t == true) && 
-       is_array(job_id) == false)
-     {
-     fprintf(stderr, "qdel: Error: job id '%s' isn't a job array but -t was specified.\n",
-       job_id);
+    if ((dash_t == true) && 
+        (is_array(job_id) == false))
+      {
+      fprintf(stderr, "qdel: Error: job id '%s' isn't a job array but -t was specified.\n",
+        job_id);
 
-     any_failed = 1;
+      any_failed = 1;
 
-     exit(any_failed);
-     }
+      exit(any_failed);
+      }
    
-   if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
-     {
-     fprintf(stderr, "qdel: illegally formed job identifier: %s\n",
-             job_id);
+    if (get_server_and_job_ids(job_id, id_list, server_name))
+      {
+      fprintf(stderr, "qdel: illegally formed job identifier: %s\n", job_id);
       
-     any_failed = 1;
-
-     exit(any_failed);
-     }
-
+      any_failed = 1;
+      
+      exit(any_failed);
+      }
+    
 cnt:
-
-    connect = cnt2server(server_out);
-
+    
+    connect = cnt2server(server_name.c_str());
+    
     if (connect <= 0)
       {
       any_failed = -1 * connect;
-
-      if(server_out[0] != 0)
+      
+      if (server_name.size() != 0)
         fprintf(stderr, "qdel: cannot connect to server %s (errno=%d) %s\n",
-              server_out,
+              server_name.c_str(),
               any_failed,
               pbs_strerror(any_failed));
       else
@@ -331,7 +332,16 @@ cnt:
     int retries = 0;
     do
       {
-      stat = pbs_deljob_err(connect, job_id_out, extend, &any_failed);
+      for (size_t i  = 0; i < id_list.size(); i++)
+        {
+        snprintf(job_id_out, sizeof(job_id_out), "%s", id_list[i].c_str());
+
+        stat = pbs_deljob_err(connect, job_id_out, extend, &any_failed);
+
+        if (any_failed != PBSE_UNKJOBID)
+          break;
+        }
+
       if (any_failed == PBSE_TIMEOUT)
         {
         sleep(1);
@@ -348,6 +358,7 @@ cnt:
       if (!located)
         {
         located = TRUE;
+        snprintf(server_out, sizeof(server_out), "%s", server_name.c_str());
 
         if (locate_job(job_id_out, server_out, rmt_server))
           {
