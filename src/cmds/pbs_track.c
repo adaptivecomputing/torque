@@ -302,7 +302,9 @@ int main(
   std::string tmpAdopteeID;
 
   char JobID[PBS_MAXCLTJOBID];  /* modified job ID for MOM/server consumption */
-  char ServerName[MAXSERVERNAME];
+
+  std::vector<std::string> id_list;
+  std::string              server_name;
 
   int  DoBackground = 0;
 
@@ -324,7 +326,7 @@ int main(
     }
   else
     {
-    if (get_server(tmpJobID.c_str(), JobID, sizeof(JobID), ServerName, sizeof(ServerName)))
+    if (get_server_and_job_ids(tmpJobID.c_str(), id_list, server_name))
       {
       fprintf(stderr, "pbs_track: illegally formed job identifier: '%s'\n", JobID);
       exit(1);
@@ -338,7 +340,13 @@ int main(
    */
   if (tmpAdopteeID.size() > 0)
     {
-    rc = adopt_process(JobID, tmpAdopteeID);
+    for (size_t i = 0; i < id_list.size(); i++)
+      {
+      snprintf(JobID, sizeof(JobID), "%s", id_list[i].c_str());
+      if ((rc = adopt_process(JobID, tmpAdopteeID)) != PBSE_UNKJOBID)
+        break;
+      }
+
     if (rc == PBSE_RMBADPARAM)
       {
       return 1;

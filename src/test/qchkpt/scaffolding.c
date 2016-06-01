@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
+#include <vector>
+#include <string>
 
 int pbs_errno = 0;
 char *pbs_server = NULL;
@@ -51,3 +53,13 @@ int pbs_checkpointjob_err(int c, char *jobid, char *extend, int *local_err)
   }
 
 void initialize_network_info() {}
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
+  }

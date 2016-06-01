@@ -96,6 +96,8 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <vector>
+#include <string>
 
 #include "pbs_error.h"
 #include "pbs_ifl.h"
@@ -118,6 +120,7 @@ extern char *optarg;
 int check_job_name(char *name, int);
 time_t cvtdate(char *);
 int get_server(const char *, char *, int, char *, int);
+int get_server_and_job_ids(const char *job_id_in, std::vector<std::string> &potential_ids, std::string &server_out);
 int locate_job(char *, char *, char *);
 int parse_destination_id(char *, char **, char **);
 int parse_equal_string(char *, char **, char **);

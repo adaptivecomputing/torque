@@ -659,13 +659,15 @@ int main(
 
   for (;optind < argc;optind++)
     {
-    int connect;
-    int stat = 0;
-    int located = FALSE;
+    int         connect;
+    int         stat = 0;
+    int         located = FALSE;
+    std::string server_name;
+    std::vector<std::string> id_list;
 
     snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
 
-    if (get_server(job_id, job_id_out, sizeof(job_id_out), server_out, sizeof(server_out)))
+    if (get_server_and_job_ids(job_id, id_list, server_name))
       {
       fprintf(stderr, "qalter: illegally formed job identifier: %s\n",
               job_id);
@@ -677,7 +679,7 @@ int main(
 
 cnt:
 
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_name.c_str());
 
     if (connect <= 0)
       {
@@ -699,13 +701,21 @@ cnt:
       continue;
       }
 
-    if (asynch)
+    for (size_t c = 0; c < id_list.size(); c++)
       {
-      stat = pbs_alterjob_async_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
-      }
-    else
-      {
-      stat = pbs_alterjob_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
+      snprintf(job_id_out, sizeof(job_id_out), "%s", id_list[c].c_str());
+
+      if (asynch)
+        {
+        stat = pbs_alterjob_async_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
+        }
+      else
+        {
+        stat = pbs_alterjob_err(connect, job_id_out, attrib, extend_ptr, &any_failed);
+        }
+
+      if (any_failed != PBSE_UNKJOBID)
+        break;
       }
 
     if ((stat != 0) &&
