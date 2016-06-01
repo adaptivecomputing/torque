@@ -3407,11 +3407,12 @@ bool is_job_finished(
   {
   // First check if the node is compatible
   pbsnode   *pnode = find_nodebyname(pjob->ji_qs.ji_destin);
-  mutex_mgr  node_mutex(&pnode->nd_mutex, true);
   bool       done = false;
 
   if (pnode != NULL)
     {
+    mutex_mgr  node_mutex(&pnode->nd_mutex, true);
+
     // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
     if (pnode->get_version() >= 610)
       {
