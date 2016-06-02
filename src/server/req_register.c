@@ -127,7 +127,7 @@ char *get_correct_jobname(const char *jobid);
 
 /* Local Private Functions */
 
-void set_depend_hold(job *, pbs_attribute *);
+void set_depend_hold(job *, pbs_attribute *, job_array *);
 int register_sync(struct depend *,  char *child, char *host, long);
 int register_dep(pbs_attribute *, struct batch_request *, int, int *);
 int unregister_dep(pbs_attribute *, struct batch_request *);
@@ -490,7 +490,7 @@ int release_before_dependency(
         /* no more dependencies of this type */
         delete pdep;
         
-        set_depend_hold(pjob, pattr);
+        set_depend_hold(pjob, pattr, NULL);
         }
       
       return(rc);
@@ -526,7 +526,7 @@ int release_syncwith_dependency(
     {
     pdep->dp_released = 1;
     
-    set_depend_hold(pjob, pattr);
+    set_depend_hold(pjob, pattr, NULL);
     
     sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
 
@@ -702,7 +702,7 @@ int unregister_dependency(
     unregister_dep(pattr, preq);
     }
   
-  set_depend_hold(pjob, pattr);
+  set_depend_hold(pjob, pattr, NULL);
 
   return(rc);
   } /* END unregister_dependency() */
@@ -1237,7 +1237,7 @@ bool set_array_depend_holds(
            * logged in set_depend_hold */
           try 
             {
-            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend]);
+            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend], pa);
             }
           catch (int err)
             {
@@ -1322,7 +1322,7 @@ void post_doq(
 
         try
           {
-          set_depend_hold(pjob, pattr);
+          set_depend_hold(pjob, pattr, NULL);
           }
         catch (int err)
           {
@@ -1450,7 +1450,7 @@ int depend_on_que(
     }
 
   /* First set a System hold if required */
-  set_depend_hold(pjob, pattr);
+  set_depend_hold(pjob, pattr, NULL);
 
   /* Check if there are dependencies that require registering */
 
@@ -1865,12 +1865,17 @@ int release_cheapest(
  * set_depend_hold - set a hold on the job required by the type of dependency
  *
  * NOTE:  determine where dependency hold is cleared and comment
+ *
+ * @param pjob - the job whose dependency hold we're checking out
+ * @param pattr - the job's dependency attribute
+ * @param pa - optional, if non NULL then array's lock is already held and shouldn't be re-locked
  */
 
 void set_depend_hold(
 
   job           *pjob,
-  pbs_attribute *pattr)
+  pbs_attribute *pattr, 
+  job_array     *pa)
 
   {
   int                loop = 1;
@@ -2004,12 +2009,21 @@ void set_depend_hold(
 
       for (size_t i = 0; i < array_names.size(); i++)
         {
-        job_array *pa = get_array(array_names[i].c_str());
+        job_array *to_update;
 
-        if (pa != NULL)
+        if ((pa != NULL) &&
+            (array_names[i] == pa->ai_qs.parent_id))
           {
-          set_array_depend_holds(pa);
-          unlock_ai_mutex(pa, __func__, "2", LOGLEVEL);
+          continue;
+          }
+          
+        to_update = get_array(array_names[i].c_str());
+
+        if (to_update != NULL)
+          {
+          set_array_depend_holds(to_update);
+
+          unlock_ai_mutex(to_update, __func__, "2", LOGLEVEL);
           }
         }
 
@@ -3337,7 +3351,7 @@ void removeAfterAnyDependency(
 
       try
         {
-        set_depend_hold(pLockedJob, pattr);
+        set_depend_hold(pLockedJob, pattr, NULL);
         }
 
       catch (int e)

@@ -33,7 +33,7 @@ int register_before_dep(batch_request *preq, job *pjob, int type);
 int register_dependency(batch_request *preq, job *pjob, int type);
 int release_before_dependency(batch_request *preq, job *pjob, int type);
 int release_syncwith_dependency(batch_request *preq, job *pjob);
-void set_depend_hold(job *pjob, pbs_attribute *pattr);
+void set_depend_hold(job *pjob, pbs_attribute *pattr, job_array *);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
 int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
@@ -672,7 +672,7 @@ START_TEST(set_depend_hold_test)
   pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pattr);
   make_dependjob(pdep, job2);
 
-  set_depend_hold(&pjob, pattr);
+  set_depend_hold(&pjob, pattr, NULL);
   fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
   fail_unless(pjob.ji_qs.ji_state == JOB_STATE_HELD);
   
@@ -683,7 +683,7 @@ START_TEST(set_depend_hold_test)
   // Job 2 will be complete with an exit status of 0
   make_dependjob(pdep, job2);
 
-  set_depend_hold(&pjob2, pattr);
+  set_depend_hold(&pjob2, pattr, NULL);
   fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
   fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD);
   }
