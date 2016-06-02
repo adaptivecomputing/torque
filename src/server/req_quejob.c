@@ -2245,7 +2245,9 @@ int req_jobscript2(
 
   /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
 
-  if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && (pj->ji_qs.ji_state != JOB_STATE_HELD))
+  if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && 
+      (pj->ji_qs.ji_state != JOB_STATE_HELD) &&
+      (pj->ji_qs.ji_state != JOB_STATE_WAITING))
     {
     rc = PBSE_IVALREQ;
     if (errno == 0)
