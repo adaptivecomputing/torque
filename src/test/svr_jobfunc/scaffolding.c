@@ -48,9 +48,9 @@ user_info_holder users;
 int decrement_count;
 job napali_job;
 std::string set_resource;
-const char *my_conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
-                                       "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
-                                       "software", "geometry", "opsys", "tpn", "trl", NULL };
+const char *incompatible_l[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                 "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                 "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 
 void remove_server_suffix(
@@ -247,8 +247,8 @@ int site_acl_check(job *pjob, pbs_queue *pque)
 
 resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   {
-  for (int i = 0; my_conflicting_types[i] != NULL; i++)
-    if (set_resource == my_conflicting_types[i])
+  for (int i = 0; incompatible_l[i] != NULL; i++)
+    if (set_resource == incompatible_l[i])
       return((resource *)1);
 
   return(NULL);
