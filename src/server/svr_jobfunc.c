@@ -199,6 +199,8 @@ extern int procs_requested(char *spec);
 static void correct_ct();
 #endif  /* NDEBUG */
 
+extern const char *incompatible_l[];
+
 /* sync w/#define JOB_STATE_XXX */
 
 const char *PJobState[] =
@@ -2781,9 +2783,6 @@ bool has_conflicting_resource_requests(
   pbs_queue *pque)
 
   {
-  static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
-                                    "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
-                                    "software", "geometry", "opsys", "tpn", "trl", NULL };
 
   bool conflict = false;
 
@@ -2793,10 +2792,10 @@ bool has_conflicting_resource_requests(
     {
     pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
 
-    // Return true if the queue has any of the conflicting_types in its -l defaults
-    for (int i = 0; conflicting_types[i] != NULL; i++)
+    // Return true if the queue has any of the incompatible_l in its -l defaults
+    for (int i = 0; incompatible_l[i] != NULL; i++)
       {
-      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
       if (find_resc_entry(pattr, prd) != NULL)
         {
         conflict = true;
@@ -2808,9 +2807,9 @@ bool has_conflicting_resource_requests(
            ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET)))
     {
     pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_resource];
-    for (int i = 0; conflicting_types[i] != NULL; i++)
+    for (int i = 0; incompatible_l[i] != NULL; i++)
       {
-      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
       if (find_resc_entry(pattr, prd) != NULL)
         {
         conflict = true;
