@@ -4642,44 +4642,6 @@ int TMomFinalizeChild(
     exit(1);
     }
 
-  if (LOGLEVEL >= 6)
-    log_ext(-1, __func__, "system vars set", LOG_DEBUG);
-
-  umask(determine_umask(pjob->ji_qs.ji_un.ji_momt.ji_exuid));
-
-  if (TJE->is_interactive == TRUE)
-    {
-    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock, qsubhostname, sizeof(qsubhostname));
-    }     /* END if (TJE->is_interactive == TRUE) */
-  else
-    {
-    setup_batch_job(pjob, &sjr, TJE, &pts, &qsub_sock);
-    }     /* END else (TJE->is_interactive == TRUE) */
-
-  /***********************************************************************/
-  /* Set resource limits        */
-  /* Both normal batch and interactive job come through here   */
-  /*                                                                     */
-  /*    output fds to the user are setup at this point, so write() all   */
-  /*    errors (with a \n) directly to the user on fd 2 and fscync(2) it */
-  /***********************************************************************/
-
-  pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
-  pjob->ji_wattr[JOB_ATR_session_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
-
-  ps = get_proc_stat((int)sjr.sj_session);
-  if (ps != NULL)
-    {
-    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
-    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
-
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buffer, "DRIFT debug: job start time = %ld, linux_time = %u", ps->start_time, linux_time);
-      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
-      }
-    }
-
 #ifndef PENABLE_LINUX_CGROUPS
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Move this mom process into the cpuset so the job will start in it. */
@@ -4735,6 +4697,45 @@ int TMomFinalizeChild(
 
 
 #endif /* PENABLE_LINUX_CGROUPS */
+
+
+  if (LOGLEVEL >= 6)
+    log_ext(-1, __func__, "system vars set", LOG_DEBUG);
+
+  umask(determine_umask(pjob->ji_qs.ji_un.ji_momt.ji_exuid));
+
+  if (TJE->is_interactive == TRUE)
+    {
+    setup_interactive_job(pjob, &sjr, TJE, &pts, &qsub_sock, qsubhostname, sizeof(qsubhostname));
+    }     /* END if (TJE->is_interactive == TRUE) */
+  else
+    {
+    setup_batch_job(pjob, &sjr, TJE, &pts, &qsub_sock);
+    }     /* END else (TJE->is_interactive == TRUE) */
+
+  /***********************************************************************/
+  /* Set resource limits        */
+  /* Both normal batch and interactive job come through here   */
+  /*                                                                     */
+  /*    output fds to the user are setup at this point, so write() all   */
+  /*    errors (with a \n) directly to the user on fd 2 and fscync(2) it */
+  /***********************************************************************/
+
+  pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sjr.sj_session;
+  pjob->ji_wattr[JOB_ATR_session_id].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND;
+
+  ps = get_proc_stat((int)sjr.sj_session);
+  if (ps != NULL)
+    {
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long = ps->start_time;
+    pjob->ji_wattr[JOB_ATR_system_start_time].at_flags |= ATR_VFLAG_SET;
+
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "DRIFT debug: job start time = %ld, linux_time = %u", ps->start_time, linux_time);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      }
+    }
 
   if (site_job_setup(pjob) != 0)
     {
