@@ -93,9 +93,9 @@
 #endif
 
 
-#ifdef PENABLE_LINUX_CGROUPS
-std::vector<std::string> incompatible_dash_l_resources;
-#endif
+const char *incompatible_l[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                 "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                 "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 int    ArgC = 0;
 char **ArgV = NULL;
@@ -496,28 +496,8 @@ bool task_hosts_match(
   }
 
 
+
 #ifdef PENABLE_LINUX_CGROUPS
-
-void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
-  {
-  /* These are the -l resources that are not compatible with the -L resource request */
-  incompatible_resource_list.clear();
-  incompatible_resource_list.push_back("mem");
-  incompatible_resource_list.push_back("nodes");
-  incompatible_resource_list.push_back("hostlist");
-  incompatible_resource_list.push_back("ncpus");
-  incompatible_resource_list.push_back("procs");
-  incompatible_resource_list.push_back("pvmem");
-  incompatible_resource_list.push_back("pmem");
-  incompatible_resource_list.push_back("vmem");
-  incompatible_resource_list.push_back("reqattr");
-  incompatible_resource_list.push_back("software");
-  incompatible_resource_list.push_back("geometry");
-  incompatible_resource_list.push_back("opsys");
-  incompatible_resource_list.push_back("tpn");
-  incompatible_resource_list.push_back("trl");
-  }
-
 
 
 /* 
@@ -541,31 +521,25 @@ bool have_incompatible_dash_l_resource(
   if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
     {
     presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-    if (presl != NULL)
+
+    while ((presl != NULL) &&
+           (found_incompatible_resource == false))
       {
-      std::vector<std::string>::iterator it;
-
-      if (incompatible_dash_l_resources.size() == 0)
-        initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
-
-      do
+      for (int i = 0; incompatible_l[i] != NULL; i++)
         {
-        std::string pname = presl->rs_defin->rs_name;
-        it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
-        if (it != incompatible_dash_l_resources.end())
+        if (!strcmp(incompatible_l[i], presl->rs_defin->rs_name))
           {
-          /* pname points to a string of an incompatible -l resource type */
           found_incompatible_resource = true;
           break;
           }
+        }
 
-        presl = (resource *)GET_NEXT(presl->rs_link);
-        } while(presl != NULL);
+      presl = (resource *)GET_NEXT(presl->rs_link);
       }
     }
 
   return(found_incompatible_resource);
-  }
+  } // END have_incompatible_dash_l_resource()
 
 
 #endif /* PENABLE_LINUX_CGROUPS */
