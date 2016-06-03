@@ -2115,6 +2115,7 @@ void x11handler(
   if (!display)
     {
     fprintf(stderr, "DISPLAY not set.");
+    free(socks);
     return;
     }
 
