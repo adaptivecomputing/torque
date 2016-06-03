@@ -135,7 +135,7 @@ int cnt2server(const char *server);
 int set_resources(struct attrl **, char *, int);
 void prt_job_err(const char *, int, const char *);
 int parse_at_list(char *, int, int);
-int parse_depend_list(char *, char *, int);
+int parse_depend_list(char *, std::vector<std::string> &);
 int parse_stage_list(char *);
 int cnt2server_conf(long);
 

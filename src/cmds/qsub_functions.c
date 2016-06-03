@@ -87,6 +87,8 @@ int    J_opt = FALSE;
 int    P_opt = FALSE;
 
 const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+char       *alternate_dependency;
+int         alternate_data_type;
 
 /* adapted from openssh */
 /* The parameter was EMsg, but was never used.
@@ -2405,16 +2407,15 @@ void process_opts(
   int        data_type)
 
   {
-  int i;
-  int c;
-  int rc = 0;
-  int errflg = 0;
-  time_t after;
-  char a_value[80];
-  char *keyword;
-  char *valuewd;
-  char *pc;
-  char *pdepend;
+  int          i;
+  int          c;
+  int          rc = 0;
+  int          errflg = 0;
+  time_t       after;
+  char         a_value[80];
+  char        *keyword;
+  char        *valuewd;
+  char        *pc;
 
   FILE *fP = NULL;
 
@@ -2983,34 +2984,38 @@ void process_opts(
           {
           if (!strcmp(keyword, ATTR_depend))
             {
-/*            if_cmd_line(Depend_opt)
+            std::vector<std::string> dependency_options;
+
+            if (((rc = parse_depend_list(valuewd, dependency_options)) != PBSE_NONE) ||
+                (dependency_options.size() == 0))
               {
-              int rtn = 0;
-              Depend_opt = passet;
-              */
+              /* cannot parse 'depend' value */
+              char err_msg[MAXLINE];
 
-              pdepend = (char *)calloc(1, PBS_DEPEND_LEN);
-
-              if ((pdepend == NULL) ||
-                   (rc = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
+              if (rc == 2)
                 {
-                /* cannot parse 'depend' value */
+                snprintf(err_msg, sizeof(err_msg),
+                  "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
+                print_qsub_usage_exit(err_msg);
+                }
+              else
+                {
+                snprintf(err_msg, sizeof(err_msg),
+                  "qsub: illegal -W dependency value: '%s'", valuewd);
 
-                if (rc == 2)
-                  {
-                  char *err_msg = NULL;
-                  alloc_len =  80;
-                  calloc_or_fail(&err_msg, alloc_len, " -W attribute");
-                  snprintf(err_msg, alloc_len, "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
-                  print_qsub_usage_exit(err_msg);
-                  }
-                else
-                  print_qsub_usage_exit("qsub: illegal -W value");
-
-                break;
+                print_qsub_usage_exit(err_msg);
                 }
 
-              hash_add_or_exit(ji->job_attr, ATTR_depend, pdepend, data_type);
+              break;
+              }
+
+            hash_add_or_exit(ji->job_attr, ATTR_depend, dependency_options[0].c_str(), data_type);
+
+            if (dependency_options.size() > 1)
+              {
+              alternate_dependency = strdup(dependency_options[1].c_str());
+              alternate_data_type = data_type;
+              }
             }
           else if (!strcmp(keyword, ATTR_job_radix))
             {
@@ -3866,6 +3871,7 @@ void process_early_opts(
  *
  * @see process_opts() - child
  */
+
 void main_func(
 
   int    argc,  /* I */
@@ -4254,7 +4260,13 @@ void main_func(
     /* If we get a timeout the server is busy. Let the user 
        know what is taking so long */
     if (local_errno == PBSE_TIMEOUT)
-      fprintf(stdout, "Connection to server timed out. Trying again");
+      fprintf(stderr, "Connection to server timed out. Trying again");
+    else if ((local_errno == PBSE_BADDEPEND) &&
+             (alternate_dependency != NULL))
+      {
+      // Replace the old dependency string with the new one
+      hash_add_or_exit(ji.job_attr, ATTR_depend, alternate_dependency, alternate_data_type);
+      }
     else if ((local_errno != PBSE_STAGEIN) &&
 	           (local_errno != PBSE_NOCOPYFILE) &&
 	           (local_errno != PBSE_DISPROTO) &&
@@ -4265,6 +4277,9 @@ void main_func(
 
 
     } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
+
+  if (alternate_dependency != NULL)
+    free(alternate_dependency);
 
   if (local_errno != PBSE_NONE)
     {
