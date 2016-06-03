@@ -1124,6 +1124,7 @@ static int get_script(
   FILE        *filter_pipe;
   int          rc;
   job_data    *tmp_job_info = NULL;
+  bool         directive_prefix_on = false;
 
   /* if the submit_filter exists, run it.                               */
 
@@ -1165,6 +1166,26 @@ static int get_script(
       if (ArgV[index] != NULL)
         {
         cfilter += " ";
+
+        /* This is ugly. But we have to escape the '#' character
+           of a -C directive prefix otherwise scripts interpret this
+           as a comment and the rest of the qsub line is deleted */
+        if (directive_prefix_on == true)
+          {
+          char directive_prefix[PBS_MAXHOSTNAME];
+
+          memset(directive_prefix, 0, PBS_MAXHOSTNAME);
+          directive_prefix[0] = '\\';
+          strcat(directive_prefix, ArgV[index]);
+          directive_prefix_on = false;
+          continue;
+          }
+
+        if (!strcmp(ArgV[index], "-C"))
+          {
+          directive_prefix_on = true;
+          }
+
         cfilter += ArgV[index];
         }
       }    /* END for (index) */
