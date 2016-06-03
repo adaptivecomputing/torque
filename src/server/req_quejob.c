@@ -1580,7 +1580,6 @@ int do_quejob_commit(
   char       log_buf[LOCAL_LOG_BUF_SIZE] = {0};
   char       namebuf[MAXPATHLEN+1];
 
-  mutex_mgr job_mutex = mutex_mgr(pj->ji_mutex, true); 
 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
@@ -1608,7 +1607,6 @@ int do_quejob_commit(
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-    job_mutex.unlock();
     return(rc);
     }
 
@@ -1685,8 +1683,6 @@ int do_quejob_commit(
 
       svr_job_purge(pj);
       }
-    else
-      job_mutex.unlock();
 
     req_reject(rc, 0, preq, NULL, log_buf);
 
@@ -1796,10 +1792,9 @@ int do_quejob_commit(
     issue_track(pj);
     }
 
-  job_mutex.unlock();
 
   return(rc);
-  }  /* END req_commit() */
+  }  /* END do_quejob_commit() */
 
 
 
@@ -2226,7 +2221,6 @@ int req_jobscript2(
   int   filemode = 0600;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  std::string adjusted_path_jobs;
 
   errno = 0;
 
@@ -2247,6 +2241,7 @@ int req_jobscript2(
 
   if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && 
       (pj->ji_qs.ji_state != JOB_STATE_HELD) &&
+      ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)) &&
       (pj->ji_qs.ji_state != JOB_STATE_WAITING))
     {
     rc = PBSE_IVALREQ;
@@ -2285,7 +2280,7 @@ int req_jobscript2(
     }
 
   // get adjusted path_jobs path
-  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  std::string adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
   snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
     pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
 
