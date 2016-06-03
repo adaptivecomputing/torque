@@ -3416,7 +3416,18 @@ bool is_job_finished(
     // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
     if (pnode->get_version() >= 610)
       {
+      /* see if job has any dependencies */
+      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+        {
+        if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+          {
+          done = true;
+          return(done);
+          }
+        }
+
       node_mutex.unlock();
+
       rel_resc(pjob);
       svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
       handle_complete_first_time(pjob);
