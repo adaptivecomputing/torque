@@ -198,10 +198,9 @@ void calloc_or_fail(char **dest, int alloc_size, const char *err_msg)
   exit(1);
   }
 
-int parse_depend_list( char *list, char *rtn_list,  int rtn_size )
-  {
-  fprintf(stderr, "The call to parse_depend_list to be mocked!!\n");
-  exit(1);
+int parse_depend_list(char *list, std::vector<std::string> &dep_list)
+  { 
+  return(PBSE_NONE);
   }
 
 void parse_variable_list(

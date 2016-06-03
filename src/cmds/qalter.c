@@ -44,7 +44,7 @@ int main(
 
   struct attrl *attrib = NULL;
   char *keyword;
-  char *pdepend;
+  char *pdepend = NULL;
   char *valuewd;
   time_t after;
   char a_value[80];
@@ -547,10 +547,9 @@ int main(
           if (strcmp(keyword, ATTR_depend) == 0)
             {
             int rtn = 0;
-            pdepend = (char *)calloc(1, PBS_DEPEND_LEN);
+            std::vector<std::string> dep_list;
 
-            if ((pdepend == NULL) ||
-                 (rtn = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
+            if ((rtn = parse_depend_list(valuewd, dep_list)) != PBSE_NONE)
               {
               if (rtn == 2)
                 {
@@ -567,7 +566,10 @@ int main(
               break;
               }
 
-            valuewd = pdepend;
+            valuewd = strdup(dep_list[0].c_str());
+
+            if (dep_list.size() > 1)
+              pdepend = strdup(dep_list[1].c_str());
             }
           else if (strcmp(keyword, ATTR_stagein) == 0)
             {
@@ -704,6 +706,12 @@ cnt:
     for (size_t c = 0; c < id_list.size(); c++)
       {
       snprintf(job_id_out, sizeof(job_id_out), "%s", id_list[c].c_str());
+
+      if ((c > 0) &&
+          (pdepend != NULL))
+        {
+        set_attr(&attrib, ATTR_depend, pdepend);
+        }
 
       if (asynch)
         {
