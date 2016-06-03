@@ -2187,10 +2187,8 @@ int mom_set_limits(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s(%s,%s) completed",
-            __func__,
-            (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
-            (set_mode == SET_LIMIT_SET) ? "set" : "alter");
+    sprintf(log_buffer, "%s(%s,%s) completed", __func__, pjob->ji_qs.ji_jobid,
+      (set_mode == SET_LIMIT_SET) ? "set" : "alter");
 
     log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 

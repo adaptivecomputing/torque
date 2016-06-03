@@ -147,9 +147,9 @@ static void execute(
   int  async)     /* I */
 
   {
-  int ct;         /* Connection to the server */
-  int err;        /* Error return from pbs_run */
-  int located = FALSE;
+  int  ct;         /* Connection to the server */
+  int  err = -1;        /* Error return from pbs_run */
+  int  located = FALSE;
   char rmt_server[MAXSERVERNAME];
   int  local_errno = 0;
 

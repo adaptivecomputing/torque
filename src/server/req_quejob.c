@@ -2065,7 +2065,6 @@ int set_interactive_job_roaming_policy(
 
 
 
-
 /*
  * req_commit - commit ownership of job
  *
@@ -2424,7 +2423,7 @@ int req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+        pj->ji_qs.ji_jobid,
         log_buf);
       }
 

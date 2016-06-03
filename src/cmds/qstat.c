@@ -2996,7 +2996,7 @@ int run_job_mode(
   char   rmt_server[MAXSERVERNAME];
 
   struct batch_status *p_server;
-  struct batch_status *p_status;
+  struct batch_status *p_status = NULL;
     
   std::string server_name;
   std::vector<std::string> id_list;

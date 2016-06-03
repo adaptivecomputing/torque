@@ -7135,11 +7135,8 @@ int tm_spawn_request(
 
   *ret = send_tm_spawn_request(pjob, phost, argv, envp, event, fromtask, reply_ptr);
   
-  if (argv != NULL)
-    arrayfree(argv);
- 
-  if (envp != NULL)
-    arrayfree(envp);
+  arrayfree(argv);
+  arrayfree(envp);
  
   return(*ret);
   } /* END tm_spawn_request() */
