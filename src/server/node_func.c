@@ -3157,6 +3157,8 @@ int create_partial_pbs_node(
   *pul = addr;
 
   pnode = new pbsnode(nodename, pul, false);
+    
+  free(pul);
 
   if ((rc = pnode->get_error()) != PBSE_NONE)
     {
