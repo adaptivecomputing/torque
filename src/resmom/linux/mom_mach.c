@@ -878,16 +878,10 @@ static int oom_adj(int score)
   /* if it fails to open then try oom_adj */
   if ((fd = open(oom_adj_path, O_RDWR)) == -1 )
     {
-    close(fd);
-	 
     if (score < -17)
       score = -17;
     else if (score > 15)
       score = 15;
-   
-    /* valid values for oom_adj are -17 to 15 */
-    if ( score > 15 || score < -17 )
-      return -1;
      
     snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_adj", pid);
 
