@@ -236,7 +236,7 @@
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
@@ -1065,6 +1065,7 @@ void generate_server_status(
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
+  ss.str("");
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1078,6 +1079,9 @@ void generate_server_status(
 
     alarm(0);
     }  /* END for (i) */
+
+  ss << "version=" << PACKAGE_VERSION;
+  status.push_back(ss.str());
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */
@@ -2360,7 +2364,6 @@ int read_cluster_addresses(
   std::string      hierarchy_file = "/n";
   long            list_size;
   long            list_len = 0;
-
   if (mh != NULL)
     free_mom_hierarchy(mh);
 
@@ -3091,7 +3094,7 @@ void state_to_server(
     return;    /* Do nothing, just return */
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -3298,6 +3301,45 @@ int mom_open_socket_to_jobs_server(
   }  /* END mom_open_socket_to_jobs_server() */
 
 
+int mom_open_socket_to_jobs_server_with_retries(
+
+  job        *pjob,
+  const char *caller_id,
+  void       *(*message_handler)(void *),
+  int         retry_limit)
+
+  {
+  int retries = -1;
+  int sock = -1;
+
+  while ((sock < 0) &&
+         (retries < retry_limit))
+    {
+    sock = mom_open_socket_to_jobs_server(pjob, __func__, message_handler);
+
+    switch (errno)
+      {
+      case EINTR:
+      case ETIMEDOUT:
+      case EINPROGRESS:
+
+        retries++;
+
+        break;
+
+      default:
+
+        retries = retry_limit;
+
+        break;
+      }
+    }
+
+  return(sock);
+  } // END mom_open_socket_to_jobs_server_with_retries()
+
+
+
 /**
  * clear_down_mom_servers
  *
@@ -3369,7 +3411,7 @@ bool is_for_this_host(
   char  *ptr;
   char  temp_char_string[THIS_HOST_LEN];
 
-  strcpy(temp_char_string, device_spec.c_str());
+  snprintf(temp_char_string, sizeof(temp_char_string), "%s", device_spec.c_str());
 
   /* peel off the -device part of the device_spec */
   ptr = strstr(temp_char_string, suffix);

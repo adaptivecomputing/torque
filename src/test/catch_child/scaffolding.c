@@ -24,6 +24,7 @@
 int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
+bool check_rur = true;
 
 char         mom_alias[PBS_MAXHOSTNAME + 1];
 
@@ -704,7 +705,7 @@ int DIS_tcp_wflush(struct tcp_chan *chan)
   return 0;
   }
 
-int im_compose(struct tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   return 0;
   }
@@ -808,7 +809,7 @@ int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_kil
   return 0;
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server_with_retries(job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
   {
   called_open_socket++;
   int sock = 1;
@@ -1350,7 +1351,7 @@ int add_to_resend_things(resend_momcomm *mc)
   return(0);
   }
 
-im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
+im_compose_info *create_compose_reply_info(const char *jobid, const char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid, const char *data)
   {
   return(NULL);
   }
@@ -1404,3 +1405,15 @@ int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task
   return(0);
   }
 
+void set_jobs_substate(job *pjob, int substate)
+  {
+  pjob->ji_qs.ji_substate = substate;
+  }
+
+int send_back_std_and_staged_files(job *pjob, int exit_value)
+  {
+  return(PBSE_NONE);
+  }
+
+
+task::~task() {}

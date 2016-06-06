@@ -199,6 +199,8 @@ extern int procs_requested(char *spec);
 static void correct_ct();
 #endif  /* NDEBUG */
 
+extern const char *incompatible_l[];
+
 /* sync w/#define JOB_STATE_XXX */
 
 const char *PJobState[] =
@@ -654,7 +656,15 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      try
+        {
+        rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+        }
+      catch (int pbs_errcode)
+        {
+        rc = pbs_errcode;
+        }
+
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
@@ -948,6 +958,8 @@ void release_node_allocation(
     free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
     pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    /* additionally clear the StagedIn flag if set */
+    pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
     }
   } /* END release_node_allocation() */
 
@@ -2771,25 +2783,42 @@ bool has_conflicting_resource_requests(
   pbs_queue *pque)
 
   {
-  // check to make sure we don't have certain -l defaults and a -L request
+
+  bool conflict = false;
+
   if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+      ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET) == 0) &&
       (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
     {
-    static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
-                                      "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
-                                      "software", "geometry", "opsys", "tpn", "trl", NULL };
     pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
 
-    // Return true if the queue has any of the conflicting_types in its -l defaults
-    for (int i = 0; conflicting_types[i] != NULL; i++)
+    // Return true if the queue has any of the incompatible_l in its -l defaults
+    for (int i = 0; incompatible_l[i] != NULL; i++)
       {
-      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
       if (find_resc_entry(pattr, prd) != NULL)
-        return(true);
+        {
+        conflict = true;
+        break;
+        }
+      }
+    }
+  else if (((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) == 0) &&
+           ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET)))
+    {
+    pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_resource];
+    for (int i = 0; incompatible_l[i] != NULL; i++)
+      {
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
+      if (find_resc_entry(pattr, prd) != NULL)
+        {
+        conflict = true;
+        break;
+        }
       }
     }
 
-  return(false);
+  return(conflict);
   } /* END has_conflicting_resource_requests() */
 
 
@@ -3381,23 +3410,25 @@ void set_deflt_resc(
       }
     else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
       {
-      std::vector<std::string> req_names, req_values;
-      std::vector<std::string> default_names, default_values;
+      std::vector<std::string> default_names;
+      std::vector<std::string> default_values;
       complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
       attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
       int req_count;
 
       if (cr == NULL)
         return;
-      cr->get_values(req_names, req_values);
+
       req_count = cr->req_count();
-      ari->add_default_values(req_names, req_values, default_names, default_values);
+
+      ari->get_default_values(default_names, default_values);
 
       for (unsigned int i = 0; i < default_names.size(); i++)
         {
         for (unsigned int j = 0; j < (unsigned int)req_count; j++)
           {
-          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          // Let the complete req know this is a default so it won't overwrite an existing value.
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str(), true);
           }
         }
       }
@@ -3538,11 +3569,23 @@ void set_resc_deflt(
   else
     pque = pjob->ji_qhdr;
 
-  /* apply queue defaults first since they take precedence */
+  // apply queue defaults first since they take precedence
   if (pque != NULL)
     {
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+    if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
     
     pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
@@ -3550,9 +3593,21 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
     
 #ifdef RESOURCEMAXDEFAULT
-    /* apply queue max limits first since they take precedence */
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+    // apply queue max limits first since they take precedence
+    if ((pque->qu_attr[QA_ATR_ResourceMax].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
     
     /* server max limits will only be applied to attributes which have
        not yet been set */

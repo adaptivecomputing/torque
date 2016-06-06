@@ -532,7 +532,16 @@ int req_rerunjob(
       static const char *rerun = "rerun";
       char               *extra = strdup(rerun);
 
-      rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL);
+      /* If a qrerun -f is given requeue the job regardless of the outcome of issue_signal*/
+      if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
+        {
+        std::string extend = RERUNFORCE;
+        rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, strdup(extend.c_str()));
+        if (rc == PBSE_NORELYMOM)
+          rc = PBSE_NONE;
+        }
+      else
+        rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL);
       }
     }
   else

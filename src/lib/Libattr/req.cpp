@@ -24,12 +24,15 @@ const int ALL_EXECUTION_SLOTS = -1;
 const char *use_cores = "usecores";
 const char *use_threads = "usethreads";
 const char *allow_threads = "allowthreads";
+const char *legacy_threads = "legacythreads"; /* inidicates we have a -l resource request. */
 const char *use_fast_cores = "usefastcores";
 const char *place_node = "node";
 const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
              socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
@@ -94,6 +97,7 @@ req::req(
   this->task_count = node_count;
   this->execution_slots = ppn;
   this->gpus = gpu;
+  this->set_placement_type(place_legacy);
   this->mics = mic;
   } // END Constructor from resource list
 
@@ -240,6 +244,55 @@ int req::set_memory_used(int task_index, const unsigned long long mem_used)
   return(PBSE_NONE);
   }
 
+void req::set_placement_type(
+
+  const std::string &placement_str)
+
+  {
+  if (placement_str == place_node)
+    {
+    this->placement_type = exclusive_node;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str == place_socket)
+    {
+    this->placement_type = exclusive_socket;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_numa_node) == 0)
+    {
+    this->placement_type = exclusive_chip;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_core) == 0)
+    {
+    this->placement_type = exclusive_core;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_thread) == 0)
+    {
+    this->placement_type = exclusive_thread;
+    this->placement_str = placement_str;
+    }
+  /* It is important to check place_legacy2 before place_legacy
+     because the string find method does a substring type of
+     find. legacy will match on legacy2 */
+  else if (placement_str.find(place_legacy2) == 0)
+    {
+    this->placement_type = exclusive_legacy2;
+    this->placement_str = placement_str;
+    }
+  else if (placement_str.find(place_legacy) == 0)
+    {
+    this->placement_type = exclusive_legacy;
+    this->placement_str = placement_str;
+    }
+ else
+    {
+    this->placement_type = exclusive_none;
+    this->placement_str = placement_str;
+    }
+  } // END set_placement_type()
 
 /*
  * set_place_value()
@@ -1884,7 +1937,8 @@ void req::set_from_string(
 int req::set_value(
 
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   int rc = PBSE_NONE;
@@ -1893,45 +1947,75 @@ int req::set_value(
     this->index = strtol(value, NULL, 10);
   else if (!strncmp(name, "task_count", 10))
     {
-    if (this->task_count <=1)
+    if (this->task_count <= 1)
       this->task_count = strtol(value, NULL, 10);
     }
   else if (!strncmp(name, "lprocs", 6))
     {
-    if (value[0] == 'a')
-      this->execution_slots = ALL_EXECUTION_SLOTS;
-    else
+    if ((this->execution_slots <= 1) &&
+        (this->execution_slots != ALL_EXECUTION_SLOTS))
       {
-      if (this->execution_slots <= 1)
-        this->execution_slots = strtol(value, NULL, 10);
+      if (value[0] == 'a')
+        this->execution_slots = ALL_EXECUTION_SLOTS;
+      else
+        {
+        if (this->execution_slots <= 1)
+          this->execution_slots = strtol(value, NULL, 10);
+        }
       }
     }
   else if (!strncmp(name, "memory", 6))
     {
-    if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->mem == 0))
+      {
+      if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strncmp(name, "swap", 4))
     {
-    if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->swap == 0))
+      {
+      if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strncmp(name, "disk", 4))
     {
-    if ((rc = read_mem_value(value, this->disk)) != PBSE_NONE)
-      return(rc);
+    if ((!is_default) ||
+        (this->disk == 0))
+      {
+      if ((rc = read_mem_value(value, this->disk)) != PBSE_NONE)
+        return(rc);
+      }
     }
   else if (!strcmp(name, "node"))
-    this->nodes = strtol(value, NULL, 10);
+    {
+    if ((!is_default) ||
+        (this->nodes == 0))
+      {
+      this->nodes = strtol(value, NULL, 10);
+      }
+    }
   else if (!strncmp(name, "socket", 7))
     {
-    this->socket = strtol(value, NULL, 10);
-    this->placement_str = place_socket;
+    if ((!is_default) ||
+        (this->socket == 0))
+      {
+      this->socket = strtol(value, NULL, 10);
+      this->placement_str = place_socket;
+      }
     }
   else if (!strncmp(name, "numanode", 10))
     {
-    this->numa_nodes = strtol(value, NULL, 10);
-    this->placement_str = place_numa_node;
+    if ((!is_default) ||
+        (this->numa_nodes == 0))
+      {
+      this->numa_nodes = strtol(value, NULL, 10);
+      this->placement_str = place_numa_node;
+      }
     }
   else if (!strncmp(name, "gpus", 4))
     this->gpus = strtol(value, NULL, 10);
@@ -1970,15 +2054,23 @@ int req::set_value(
     this->insert_hostname(value);
   else if (!strcmp(name, "core"))
     {
-    int core_count = strtol(value, NULL, 10);
-    if (core_count != 0)
-      this->cores = core_count;
+    if ((!is_default) ||
+        (this->cores == 0))
+      {
+      int core_count = strtol(value, NULL, 10);
+      if (core_count != 0)
+        this->cores = core_count;
+      }
     }
   else if (!strcmp(name, "thread"))
     {
-    int thread_count = strtol(value, NULL, 10);
-    if (thread_count != 0)
-      this->threads = thread_count;
+    if ((!is_default) ||
+        (this->threads == 0))
+      {
+      int thread_count = strtol(value, NULL, 10);
+      if (thread_count != 0)
+        this->threads = thread_count;
+      }
     }
   else
     return(PBSE_BAD_PARAMETER);
@@ -1997,49 +2089,41 @@ int req::set_value(
  * @return PBSE_NONE if the name is valid or PBSE_BAD_PARAMETER for an invalid name
  */
 
-int req::set_value(
+int req::set_task_value(
 
-  const char  *name,
   const char  *value,
   unsigned int task_index)
 
   {
 
-  if (!strcmp(name, "task_usage"))
+  int rc;
+  unsigned int allocations_size = this->task_allocations.size();
+
+  if (allocations_size <= task_index)
     {
-    int rc;
-    unsigned int allocations_size = this->task_allocations.size();
-
-    if (allocations_size <= task_index)
+    // There are fewer tasks than task_index. Add empty tasks until we get to task_index
+       
+    for (unsigned int i = allocations_size; i < task_index; i++)
       {
-      /* There are fewer tasks than task_index. Add empty
-         tasks until we get to task_index */
-         
-      for (unsigned int i = allocations_size; i < task_index; i++)
+      allocation a;
+
+      rc = this->get_task_allocation(task_index, a);
+      if (rc != PBSE_NONE)
         {
-        allocation a;
-
-        rc = this->get_task_allocation(task_index, a);
-        if (rc != PBSE_NONE)
-          {
-          this->task_allocations.push_back(a);
-          }
-        }
-        allocation a;
-        a.initialize_from_string(value);
         this->task_allocations.push_back(a);
+        }
       }
-    else
-      {
-      this->task_allocations[task_index].initialize_from_string(value);
-      }
+      allocation a;
+      a.initialize_from_string(value);
+      this->task_allocations.push_back(a);
     }
   else
-    return(PBSE_BAD_PARAMETER);
+    {
+    this->task_allocations[task_index].initialize_from_string(value);
+    }
 
   return(PBSE_NONE);
-
-  }
+  } // END set_task_value()
  
 
 int req::getExecutionSlots() const
@@ -2509,4 +2593,10 @@ void req::set_task_usage_stats(
     return;
 
   this->task_allocations[task_index].set_task_usage_stats(cput_used, mem_used);
+  }
+
+int req::get_place_type()
+
+  {
+  return(this->placement_type);
   }

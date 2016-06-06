@@ -70,7 +70,7 @@
 #include "../lib/Liblog/chk_file_sec.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Libnet/lib_net.h" /* socket_avail_bytes_on_descriptor */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "net_connect.h"
 #include "dis.h"
@@ -105,6 +105,9 @@
 #include "trq_cgroups.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/exception/exception.hpp>
+#ifdef ENABLE_PMIX
+#include "pmix_server.h"
+#endif
 
 #ifdef NOPOSIXMEMLOCK
 #undef _POSIX_MEMLOCK
@@ -147,6 +150,7 @@ const int      OBIT_RETRY_LIMIT = 5;
 const int      ALREADY_EXITED_RETRY_TIME = 30;
 const int      OBIT_SENT_WAIT_TIME = 10;
 const int      MINUS_ONE_RETRY_TIME = 15;
+const int      STAGE_WAIT_TIME = 180;
 
 /* mom data items */
 #ifdef NUMA_SUPPORT
@@ -227,6 +231,10 @@ mom_hierarchy_t  *mh = NULL;
 #ifdef PENABLE_LINUX_CGROUPS
 Machine          this_node;
 #endif
+#ifdef ENABLE_PMIX
+std::string                 topology_xml;
+extern pmix_server_module_t psm;
+#endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
 node_internals   internal_layout;
@@ -280,7 +288,7 @@ extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 void            empty_received_nodes();
-extern int      post_epilogue(job *, int);
+extern int      send_job_obit(job *, int);
 extern int      mom_checkpoint_init(void);
 extern void     mom_checkpoint_check_periodic_timer(job *pjob);
 extern void     mom_checkpoint_set_directory_path(const char *str);
@@ -1871,13 +1879,15 @@ void add_diag_prolog_epilog_info(
   {
   struct stat s;
 
-  int prologfound = 0;
+  bool prologfound = false;
+  bool epilogfound = false;
 
+  //Prolog
   if (stat(path_prolog, &s) != -1)
     {
     output << "Prolog:                 " << path_prolog << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
     }
   else if (verbositylevel >= 2)
     {
@@ -1888,15 +1898,34 @@ void add_diag_prolog_epilog_info(
     {
     output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
 
-    prologfound = 1;
+    prologfound = true;
+    }  
+
+  //Epilog
+  if (stat(path_epilog, &s) != -1)
+    {
+    output << "Epilog:                 " << path_epilog << " (enabled)\n";
+
+    epilogfound = true;
+    }
+  else if (verbositylevel >= 2)
+    {
+    output << "Epilog:                 " << path_epilog << " (disabled)\n";
     }
 
-  if (prologfound == 1)
+  if (stat(path_epilogp, &s) != -1)
     {
-    output << "Prolog Alarm Time:      " << pe_alarm_time << " seconds\n";
+    output << "Parallel Epilog:        " << path_epilogp << " (enabled)\n";
+
+    epilogfound = true;
+    }
+
+  if ((prologfound == true) ||
+      (epilogfound == true))
+    {
+    output << "Prolog/Epilog Alarm Time:      " << pe_alarm_time << " seconds\n";
     }
   }
-
 
 
 void add_diag_alarm_time(
@@ -1951,14 +1980,12 @@ void add_diag_jobs_session_ids(
 
   {
   bool  first = true;
-  task *ptask;
 
   output << " sidlist=";
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
     /* only check on tasks that we think should still be around */
     if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
@@ -3485,7 +3512,6 @@ int kill_job(
   const char *why_killed_reason) /* I - reason for killing */
 
   {
-  task *ptask;
   int   ct = 0;
 
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
@@ -3527,10 +3553,10 @@ int kill_job(
       }
     }
 
-  ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-  while (ptask != NULL)
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
       if (LOGLEVEL >= 4)
@@ -3545,8 +3571,7 @@ int kill_job(
       ct += kill_task(pjob, ptask, sig, 0);
       }
 
-    ptask = (task *)GET_NEXT(ptask->ti_jobtask);
-    }  /* END while (ptask != NULL) */
+    }  /* END for each task */
 
   if (LOGLEVEL >= 6)
     {
@@ -4632,9 +4657,24 @@ int cg_initialize_hwloc_topology()
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
     {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
+    log_err(-1, msg_daemonname, "Unable to initialize machine topology");
     return(-1);
     }
+
+#ifdef ENABLE_PMIX
+  int   topology_size = 0;
+  char *xml_buf = NULL;
+
+  if (hwloc_topology_export_xmlbuffer(topology, &xml_buf, &topology_size) == -1)
+    {
+    log_err(-1, msg_daemonname, "Unable to get an xml representation of the machine topology");
+    return(-1);
+    }
+
+  topology_xml = xml_buf;
+
+  hwloc_free_xmlbuffer(topology, xml_buf);
+#endif
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
@@ -5058,7 +5098,18 @@ int setup_program_environment(void)
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
-
+#ifdef ENABLE_PMIX
+  pmix_status_t pmix_rc;
+  //pmix_info_t   info[1];
+  if ((pmix_rc = PMIx_server_init(&psm, NULL, 0)) != PMIX_SUCCESS)
+    {
+/*  Uncomment once PMIx bug is fixed
+ *  const char *err_msg = PMIx_Error_string(pmix_rc);
+    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
+    fprintf(stderr, "%s", log_buffer);*/
+    return(1);
+    }
+#endif
 
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
@@ -5771,7 +5822,6 @@ void examine_all_running_jobs(void)
 #ifdef _CRAY
   int         c;
 #endif
-  task         *ptask;
   
   std::list<job *>::iterator iter;
 
@@ -5825,10 +5875,9 @@ void examine_all_running_jobs(void)
       {
       pjob->ji_flags &= ~MOM_NO_PROC;
 
-      for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-           ptask != NULL;
-           ptask = (task *)GET_NEXT(ptask->ti_jobtask))
+      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
         {
+        task *ptask = pjob->ji_tasks->at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5868,7 +5917,7 @@ void examine_all_running_jobs(void)
 
           exiting_tasks = 1;
           }  /* END if ((kill == -1) && ...) */
-        }    /* END while (ptask != NULL) */
+        }    /* END for each task */
       }      /* END if (pjob->ji_flags & MOM_NO_PROC) */
 
 
@@ -5913,7 +5962,7 @@ void resend_waiting_joins(
     if ((ep = (eventent *)GET_NEXT(np->hn_events)) != NULL)
       {
       /* we haven't received the reply yet */
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {
@@ -5932,40 +5981,6 @@ void resend_waiting_joins(
 
   free_attrlist(&phead);
   } /* END resend_waiting_joins() */
-
-
-
-void check_jobs_awaiting_join_job_reply()
-
-  {
-  job    *pjob;
-  time_now = time(NULL);
-  
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
-    {
-    pjob = *iter;
-
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) &&
-        (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-        (am_i_mother_superior(*pjob) == true))
-      {
-      /* these jobs have sent out join requests but haven't received all replies */
-      if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
-        {
-        exec_bail(pjob, JOB_EXEC_RETRY);
-        }
-      else if ((time_now - pjob->ji_joins_sent > resend_join_job_wait_time) &&
-               (pjob->ji_joins_resent == FALSE))
-        {
-        pjob->ji_joins_resent = TRUE;
-        resend_waiting_joins(pjob);
-        }
-      }
-    } /* END for each job */
-
-  } /* END check_jobs_awaiting_join_job_reply() */
 
 
 
@@ -6046,102 +6061,208 @@ bool should_resend_obit(
 
 
 
-void check_jobs_in_obit()
+/*
+ * resend_obit_if_needed()
+ *
+ * Checks different information about the job and re-sends the job's obit to pbs_server if we're past
+ * timeouts or had other failures.
+ *
+ * @param pjob - the job whose obit we're considering sending again.
+ * @return true if the obit was re-sent, false otherwise
+ */
+
+bool resend_obit_if_needed(
+    
+  job *pjob)
 
   {
-  job    *pjob;
-  time_now = time(NULL);
-  std::list<job *>::iterator iter;
   // Add a random element for retries so that all moms aren't retrying at the same time
-  int diff = OBIT_BUSY_RETRY + (rand() % 5);
-  int retried = 0;
+  static int diff = OBIT_BUSY_RETRY + (rand() % 5);
+  bool       retried = false;
 
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end() && retried < OBIT_RETRY_LIMIT; iter++)
+  time_now = time(NULL);
+
+  if (am_i_mother_superior(*pjob))
     {
-    pjob = *iter;
-
-    if (am_i_mother_superior(*pjob))
+    if (should_resend_obit(pjob, diff) == true)
       {
-      if (should_resend_obit(pjob, diff) == true)
-        {
-        // retry sending the obit for this job
-        post_epilogue(pjob, MOM_OBIT_RETRY);
-        retried++;
-        }
+      // retry sending the obit for this job
+      send_job_obit(pjob, MOM_OBIT_RETRY);
+      retried = true;
       }
     }
-  }
+
+  return(retried);
+  } // END resend_obit_if_needed
 
 
 
-void check_jobs_in_mom_wait()
+/*
+ * check_job_in_mom_wait()
+ *
+ * Checks a job in the mom wait state and moves it to exiting if we have passed the exit wait timeout
+ *
+ * NOTE: Do not call this function with jobs not in the JOB_SUBSTATE_MOM_WAIT
+ * @param pjob - the job we're checking to see if it has passed the timeout
+ * @post-cond: pjob will transition to exiting the timeout for waiting for sisters to exit has passed
+ */
+
+void check_job_in_mom_wait(
+    
+  job *pjob)
 
   {
-  job    *pjob;
   unsigned int momport = 0;
 
   if (multi_mom)
     momport = pbs_rm_port;
   
-  time_now = time(NULL);
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  if ((pjob->ji_kill_started != 0) &&
+      (time_now - pjob->ji_kill_started > job_exit_wait_time))
     {
-    pjob = *iter;
+    /* job has exceeded the time to wait for all sisters 
+     * to report that the job is killed. Go ahead and finish
+     * it anyway */
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
+      pjob->ji_qs.ji_jobid, job_exit_wait_time);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT)
+    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+
+    job_save(pjob, SAVEJOB_QUICK, momport);
+
+    exiting_tasks = 1;
+    }
+
+  } /* END check_job_in_mom_wait() */
+
+
+
+void evaluate_job_in_prerun(
+
+  job *pjob)
+
+  {
+  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+      (am_i_mother_superior(*pjob) == true))
+    {
+    /* these jobs have sent out join requests but haven't received all replies */
+    if (time_now - pjob->ji_joins_sent > max_join_job_wait_time)
       {
-      if ((pjob->ji_kill_started != 0) &&
-          (time_now - pjob->ji_kill_started > job_exit_wait_time))
-        {
-        /* job has exceeded the time to wait for all sisters 
-         * to report that the job is killed. Go ahead and finish
-         * it anyway */
-        snprintf(log_buffer, sizeof(log_buffer),
-          "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
-          pjob->ji_qs.ji_jobid, job_exit_wait_time);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-
-        job_save(pjob, SAVEJOB_QUICK, momport);
-
-        exiting_tasks = 1;
-        }
+      exec_bail(pjob, JOB_EXEC_RETRY);
       }
-    
-    } /* END loop over all jobs */
-
-  } /* END check_jobs_in_mom_wait() */
+    else if ((time_now - pjob->ji_joins_sent > resend_join_job_wait_time) &&
+             (pjob->ji_joins_resent == FALSE))
+      {
+      pjob->ji_joins_resent = TRUE;
+      resend_waiting_joins(pjob);
+      }
+    }
+  } // END evaluate_job_in_prerun()
 
 
 
 /*
- * call_scan_for_exiting()
+ * check_job_substates()
  *
- * Checks for any exiting jobs. If they exist, we'll call scan_for_exiting.
+ * Iterates over each job on this mom to check its substate and takes any required actions. Mainly this
+ * is checking the timeouts or other things that can get stuck at the various substates, and then retry
+ * or force it to move on as required by the state machine.
+ *
+ * @param should_scan_for_exiting - set to true if we should call scan_for_exiting() after this function.
  */
 
-bool call_scan_for_exiting()
+void check_job_substates(
+    
+  bool &should_scan_for_exiting)
+
   {
+  job                        *pjob;
+  int                         retried = 0;
+  std::list<job *>::iterator  iter;
+
+  time_now = time(NULL);
+
+  should_scan_for_exiting = false;
+
   if (exiting_tasks)
-    return(true);
-
-  job          *pjob;
-
-  //NOTE: May want to put some kind of timeout so we only call this once in a while.
-  std::list<job *>::iterator iter;
+    should_scan_for_exiting = true;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
-      return(true);
-    }
 
-  return(false);
-  }
+    switch (pjob->ji_qs.ji_substate)
+      {
+      case JOB_SUBSTATE_EXITING:
+
+        should_scan_for_exiting = true;
+
+        break;
+
+      case JOB_SUBSTATE_PRERUN:
+
+        evaluate_job_in_prerun(pjob);
+
+        break;
+
+      case JOB_SUBSTATE_MOM_WAIT:
+
+        check_job_in_mom_wait(pjob);
+
+        break;
+
+      case JOB_SUBSTATE_STAGEOUT:
+
+        if (pjob->ji_momsubt == 0)
+          {
+          // We must have restarted mid-cleanup. Start this step over to be thorough.
+          send_back_std_and_staged_files(pjob, 0);
+          }
+        else if (time_now - pjob->ji_state_set > STAGE_WAIT_TIME)
+          {
+          // If we are past our timeout, move to the next step
+          send_job_obit(pjob, 0);
+          }
+
+        break;
+
+      case JOB_SUBSTATE_STAGEDEL:
+
+        if (pjob->ji_momsubt == 0)
+          {
+          // We must have restarted mid-cleanup. Start this step over to be thorough.
+          delete_staged_in_files(pjob, NULL, NULL);
+          }
+        else if (time_now - pjob->ji_state_set > STAGE_WAIT_TIME)
+          {
+          // If we are past our timeout, move on to the next step
+          send_job_obit(pjob, 0);
+          }
+
+        break;
+
+      case JOB_SUBSTATE_POST_CLEANUP:
+
+        // If we are still in this state then we need to retry. Nothing is left pending here.
+        send_job_obit(pjob, 0);
+
+        break;
+
+      default:
+
+        if (retried < OBIT_RETRY_LIMIT)
+          {
+          if (resend_obit_if_needed(pjob))
+            retried++;
+          }
+
+        break;
+      }
+
+    }
+  } // END check_job_substates()
 
 
 
@@ -6170,14 +6291,14 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_OBIT) &&
+      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRECLEAN) &&
           (pjob->ji_momsubt != 0) &&
           (kill(pjob->ji_momsubt, 0)))
         {
         if (errno == ESRCH)
           {
           // The epilog is gone but we didn't catch it
-          post_epilogue(pjob, 0);
+          send_back_std_and_staged_files(pjob, 0);
           eji.obit_sent = time_now;
           to_reinsert.push_back(eji);
           continue;
@@ -6191,7 +6312,7 @@ void check_exiting_jobs()
         continue;
         }
          
-      post_epilogue(pjob, 0);
+      send_back_std_and_staged_files(pjob, 0);
       eji.obit_sent = time_now;
       to_reinsert.push_back(eji);
       }
@@ -6265,17 +6386,17 @@ void prepare_child_tasks_for_delete()
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
-    task *pTask;
 
-    for (pTask = (task *)GET_NEXT(pJob->ji_tasks);pTask != NULL;pTask = (task *)GET_NEXT(pTask->ti_jobtask))
+    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
+      task *pTask = pJob->ji_tasks->at(i);
 
       char buf[128];
 
       extern int exiting_tasks;
 
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              (int)pTask->ti_qs.ti_sid,
+              pTask->ti_qs.ti_sid,
               pTask->ti_qs.ti_task,
               pJob->ji_qs.ji_jobid);
 
@@ -6322,6 +6443,7 @@ void main_loop(void)
   {
   double        myla;
   time_t        tmpTime;
+  bool          should_scan_for_exiting;
 #ifdef USESAVEDRESOURCES
   int           check_dead = TRUE;
 #endif    /* USESAVEDRESOURCES */
@@ -6418,14 +6540,9 @@ void main_loop(void)
         recover = JOB_RECOV_RUNNING;
       }
 
-    check_jobs_awaiting_join_job_reply();
+    check_job_substates(should_scan_for_exiting);
 
-    check_jobs_in_mom_wait();
-
-    check_jobs_in_obit();
-
-
-    if (call_scan_for_exiting())
+    if (should_scan_for_exiting)
       scan_for_exiting();
 
     check_exiting_jobs();
@@ -6469,6 +6586,10 @@ void main_loop(void)
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
+
+#ifdef ENABLE_PMIX
+  PMIx_server_finalize();
+#endif
 
   return;
   }        /* END main_loop() */
@@ -6882,7 +7003,6 @@ int setup_nodeboards()
 
 
 
-
 /* 
  *
  * @see main_loop() - child
@@ -7013,12 +7133,13 @@ int main(
 
 im_compose_info *create_compose_reply_info(
     
-  char       *jobid,
-  char       *cookie,
+  const char *jobid,
+  const char *cookie,
   hnodent    *np,
   int         command,
   tm_event_t  event,
-  tm_task_id  taskid)
+  tm_task_id  taskid,
+  const char *data)
 
   {
   im_compose_info *ici = (im_compose_info *)calloc(1, sizeof(im_compose_info));
@@ -7031,6 +7152,9 @@ im_compose_info *create_compose_reply_info(
     ici->command = command;
     ici->event   = event;
     ici->taskid  = taskid;
+
+    if (data != NULL)
+      ici->data = strdup(data);
     }
   else
     log_err(ENOMEM, __func__, "Cannot allocate memory!");
@@ -7066,7 +7190,7 @@ int resend_compose_reply(
   struct tcp_chan *chan = NULL;
 
   np = &ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -7105,7 +7229,7 @@ int resend_kill_job_reply(
   struct tcp_chan *chan = NULL;
         
   np = &kj->ici->np;
-  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
   
   if (IS_VALID_STREAM(stream))
     {
@@ -7157,7 +7281,7 @@ int resend_spawn_task_reply(
   int      ret = -1;
   hnodent *np = &st->ici->np;
   struct tcp_chan *chan = NULL;
-  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -7199,7 +7323,7 @@ int resend_obit_task_reply(
   int              ret = -1;
   hnodent         *np = &ot->ici->np;
   struct tcp_chan *chan = NULL;
-  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr));
+  int              stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {

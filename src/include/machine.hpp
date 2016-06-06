@@ -54,11 +54,12 @@ class PCI_Device
     PCI_Device &operator=(const PCI_Device &other);
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
-#ifdef NVML_API
-    void initializeGpu(int idx, hwloc_topology_t topology);
-#endif
 #ifdef MIC
     void initializeMic(int idx, hwloc_topology_t topology);
+#endif
+
+#ifdef NVIDIA_GPUS
+    void initializeGpu(int idx, hwloc_topology_t topology);
 #endif
     void displayAsString(stringstream &out) const;
     void setName(const string &name);
@@ -179,7 +180,7 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    int  how_many_tasks_fit(const req &r, int place_type) const;
+    float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r) const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
@@ -190,6 +191,7 @@ class Chip
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
     void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void place_task_for_legacy_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
     bool free_task(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
@@ -209,6 +211,7 @@ class Chip
     void aggregate_allocations(vector<allocation> &master_list);
     bool reserve_core(int core_index, allocation &a);
     bool reserve_chip_core(int core_index, allocation &a);
+    bool getOpenThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousCoreVector(std::vector<int> &slots, int execution_slots_per_task);
     bool reserve_thread(int core_index, allocation &a);

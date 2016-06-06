@@ -96,11 +96,11 @@ fi
 
 if test "X$success" == "X0" ; then
   success=`echo $githash > current_hash`
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["$githash"], [repository git version])
 else
   dnl current hash is a file checked in to the git repo in the base directory
   dnl containing the most recent hash
-  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository svn version])
+  AC_DEFINE_UNQUOTED(GIT_HASH, ["`cat current_hash`"], [repository git version])
 fi
 
 PKG_PROG_PKG_CONFIG
@@ -493,6 +493,9 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_req_quejob/Makefile
     src/test/parse_config/Makefile
     src/test/pbs_demux/Makefile
+    src/test/pmix_interface/Makefile
+    src/test/pmix_operation/Makefile
+    src/test/pmix_tracker/Makefile
     src/test/prolog/Makefile
     src/test/release_reservation/Makefile
     src/test/requests/Makefile
@@ -627,12 +630,18 @@ AC_MSG_RESULT($build_drmaa)
 AM_CONDITIONAL(INCLUDE_DRMAA, [test "x$build_drmaa" = "xyes"])
 AC_SUBST(build_drmaa)
 
-if test "x$build_drmaa" = "xyes";then
-  AC_PATH_PROG(GPERF, gperf)
-  if test -z "$GPERF";then
-    AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
-  fi
-fi
+dnl
+dnl #######################################################################
+dnl Starting in version 5.1.3 we are not using the gperf tool to create the
+dnl drmaa source files. However, we want to keep the information around in
+dnl case we ever need to update the perfect hash for drmaa version 2 or later.
+dnl
+dnl if test "x$build_drmaa" = "xyes";then
+dnl   AC_PATH_PROG(GPERF, gperf)
+dnl   if test -z "$GPERF";then
+dnl     AC_MSG_ERROR([When building with drmaa, gperf must be installed. Please install gperf and then continue.])
+dnl   fi
+dnl fi
 
 
 dnl
@@ -887,18 +896,6 @@ if test "${enable_pemask}" = "yes" ; then
 fi
 
 
-SRFS=0
-AC_ARG_ENABLE(srfs,
-    [  --enable-srfs           enable support for SRFS on Cray])
-if test "${enable_srfs}" = "yes" ; then
-  case "${PBS_MACH}" in
-    unicos*) SRFS=1 ;;
-    *) AC_MSG_ERROR([Cannot --enable-srfs on a machine not running UNICOS]);;
-  esac
-fi
-AC_DEFINE_UNQUOTED(SRFS, ${SRFS}, [include support for SRFS on Cray])
-
-
 MOMLIBS=""
 
 PBSPOE=""
@@ -941,8 +938,10 @@ if test "x$enable_cgroups" = "xyes"; then
   AC_MSG_RESULT([yes])
   build_linux_cgroups=yes
   AC_DEFINE(PENABLE_LINUX_CGROUPS, 1, [Define to enable Linux cgroups])
+  RPM_AC_OPTS="$RPM_AC_OPTS --with cgroups"
 else
   AC_MSG_RESULT([no])
+  RPM_AC_OPTS="$RPM_AC_OPTS --without cgroups"
 fi
 AM_CONDITIONAL([BUILD_LINUX_CGROUPS], test "$build_linux_cgroups" = yes)
 
@@ -957,8 +956,10 @@ if test "x$enable_cpuset" = "xyes" ; then
   AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
   dnl define geometry requests to allow these to be requested here
   dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+  RPM_AC_OPTS="$RPM_AC_OPTS --with cpuset"
 else
   AC_MSG_RESULT([no])
+  RPM_AC_OPTS="$RPM_AC_OPTS --without cpuset"
 fi
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
@@ -1305,6 +1306,29 @@ if test "${build_mom}" = "yes" ; then
     fi
   fi
 fi
+
+
+dnl 
+dnl Add the ability to link against the pmix library
+dnl 
+dnl --enable-pmix
+AC_ARG_ENABLE(pmix, [
+  --enable-pmix links pbs_mom against libpmix])
+if test "${build_mom}" = "yes" ; then
+  if test "x$GCC" = "xyes"; then
+    AC_MSG_CHECKING([whether to build with pmix support])
+    if test "${enable_pmix}" = "yes"; then
+      AC_MSG_RESULT([yes])
+      AC_CHECK_LIB([pmix], [PMIx_Finalize], ,
+        [AC_MSG_ERROR([--enable-pmix requires libpmix to be installed]) ])
+      AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      MOMLIBS="$MOMLIBS -lpmix"
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+AM_CONDITIONAL([BUILDPMIX], test "${enable_pmix}" = yes)
 
 
 dnl fixes errors relating to unaligned memory accesses
@@ -2322,7 +2346,7 @@ dnl
 if test "$build_drmaa" = "yes" ;then
 gccwarnings=no
 AC_MSG_NOTICE([Configuring DRMAA ...])
-AC_PATH_PROG(GPERF, "gperf")
+#AC_PATH_PROG(GPERF, "gperf")
 AX_PROG_DOT
 AC_PATH_PROG(DOXYGEN, "doxygen", "none")
 AC_C_BIGENDIAN_CROSS
@@ -2375,7 +2399,7 @@ else
   build_drmaa_docs=no
   RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
 fi
-AM_CONDITIONAL(DRMAA_BUILD, [test "x$GPERF" != "x"])
+AM_CONDITIONAL(DRMAA_BUILD, [test "x$build_drmaa" == "xyes"])
 AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa
@@ -2469,26 +2493,10 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 	  src/mom_rcp/Makefile
 	  src/momctl/Makefile
 	  src/resmom/Makefile
-	  src/resmom/aix4/Makefile
-	  src/resmom/aix5/Makefile
 	  src/resmom/cygwin/Makefile
 	  src/resmom/darwin/Makefile
-	  src/resmom/digitalunix/Makefile
-	  src/resmom/freebsd/Makefile
-	  src/resmom/freebsd5/Makefile
-	  src/resmom/fujitsu/Makefile
-	  src/resmom/hpux10/Makefile
-	  src/resmom/hpux11/Makefile
-	  src/resmom/irix5/Makefile
-	  src/resmom/irix6/Makefile
-	  src/resmom/irix6array/Makefile
 	  src/resmom/linux/Makefile
-	  src/resmom/netbsd/Makefile
-	  src/resmom/solaris5/Makefile
 	  src/resmom/solaris7/Makefile
-	  src/resmom/sunos4/Makefile
-	  src/resmom/unicos8/Makefile
-	  src/resmom/unicosmk2/Makefile
 	  src/scheduler.basl/Makefile
 	  src/scheduler.cc/Makefile
 	  src/scheduler.cc/samples/Makefile

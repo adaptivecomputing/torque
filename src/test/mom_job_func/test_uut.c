@@ -18,14 +18,43 @@ std::set<pid_t> global_job_sid_set;
 
 bool am_i_mother_superior(const job &pjob);
 void remove_from_exiting_list(job *pjob);
-job *mom_find_job_by_int_id(int jobid);
+job *mom_find_job_by_int_string(const char *jobint_string);
 job *mom_find_job(const char *jobid);
 void remove_from_job_list(job *pjob);
+void set_jobs_substate(job *pjob, int new_substate);
 
 std::vector<exiting_job_info> exiting_job_list;
 extern std::list<job *> alljobs_list;
 
 sem_t *delete_job_files_sem;
+
+extern int saved_job;
+
+
+START_TEST(test_set_jobs_substate)
+  {
+  job *pjob = job_alloc();
+  saved_job = 0;
+
+  // Make sure we don't segfault
+  set_jobs_substate(NULL, JOB_SUBSTATE_STAGEOUT);
+
+  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
+  time_t transition = pjob->ji_state_set;
+  fail_unless(transition != 0);
+  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
+  // A new state should save the job
+  fail_unless(saved_job == 1);
+
+  // Make sure we didn't save the job for the same state
+  fail_unless(saved_job == 1);
+  
+  // Make sure we did save the job again for a new substate
+  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEDEL);
+  fail_unless(saved_job == 2);
+  }
+END_TEST
+
 
 START_TEST(test_mom_finding_jobs)
   {
@@ -54,12 +83,12 @@ START_TEST(test_mom_finding_jobs)
   fail_unless(mom_find_job(jobid3) == pjob3);
   fail_unless(mom_find_job(jobid4) == pjob4);
   fail_unless(mom_find_job("4.napali") == NULL);
-  fail_unless(mom_find_job_by_int_id(1) == pjob1);
-  fail_unless(mom_find_job_by_int_id(2) == pjob2);
-  fail_unless(mom_find_job_by_int_id(3) == pjob3);
-  fail_unless(mom_find_job_by_int_id(0) == NULL);
-  fail_unless(mom_find_job_by_int_id(4) == NULL);
-  fail_unless(mom_find_job_by_int_id(40) == pjob4);
+  fail_unless(mom_find_job_by_int_string("1") == pjob1);
+  fail_unless(mom_find_job_by_int_string("2") == pjob2);
+  fail_unless(mom_find_job_by_int_string("3") == pjob3);
+  fail_unless(mom_find_job_by_int_string("0") == NULL);
+  fail_unless(mom_find_job_by_int_string("4") == NULL);
+  fail_unless(mom_find_job_by_int_string("40") == pjob4);
 
   remove_from_job_list(pjob2);
   fail_unless(mom_find_job(jobid1) == pjob1);
@@ -67,12 +96,12 @@ START_TEST(test_mom_finding_jobs)
   fail_unless(mom_find_job(jobid3) == pjob3);
   fail_unless(mom_find_job(jobid4) == pjob4);
   fail_unless(mom_find_job("4.napali") == NULL);
-  fail_unless(mom_find_job_by_int_id(1) == pjob1);
-  fail_unless(mom_find_job_by_int_id(2) == NULL);
-  fail_unless(mom_find_job_by_int_id(3) == pjob3);
-  fail_unless(mom_find_job_by_int_id(0) == NULL);
-  fail_unless(mom_find_job_by_int_id(4) == NULL);
-  fail_unless(mom_find_job_by_int_id(40) == pjob4);
+  fail_unless(mom_find_job_by_int_string("1") == pjob1);
+  fail_unless(mom_find_job_by_int_string("2") == NULL);
+  fail_unless(mom_find_job_by_int_string("3") == pjob3);
+  fail_unless(mom_find_job_by_int_string("0") == NULL);
+  fail_unless(mom_find_job_by_int_string("4") == NULL);
+  fail_unless(mom_find_job_by_int_string("40") == pjob4);
   }
 END_TEST
 
@@ -123,6 +152,7 @@ Suite *mom_job_func_suite(void)
 
   tc_core = tcase_create("test_mom_finding_jobs");
   tcase_add_test(tc_core, test_mom_finding_jobs);
+  tcase_add_test(tc_core, test_set_jobs_substate);
   suite_add_tcase(s, tc_core);
 
   return s;

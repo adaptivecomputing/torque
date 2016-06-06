@@ -3,6 +3,8 @@
 #include "u_tree.h"
 #include "mom_hierarchy_handler.h"
 
+#include <pbs_config.h>
+
 extern std::string global_string;
 
 AvlTree                 ipaddrs = NULL;
@@ -110,6 +112,34 @@ int record_node_property_list(std::string const &propstr, tlist_head *atrlist_pt
   // return ok
   return(0);
   }
+
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#include "allocation.hpp"
+
+PCI_Device::PCI_Device(PCI_Device const &other) {}
+PCI_Device::~PCI_Device() {}
+
+Machine &Machine::operator =(const Machine &other)
+  {
+  return(*this);
+  }
+
+Machine::~Machine() {}
+Machine::Machine() {}
+
+Chip::Chip(const Chip &other) {}
+Chip::~Chip() {}
+
+allocation::allocation(const allocation &other) {}
+
+Socket::~Socket() {}
+Socket::Socket() {}
+
+Core::Core() {}
+Core::~Core() {}
+
+#endif
 
 pbsnode *alps_reporter;
 const char *alps_reporter_feature  = "alps_reporter";

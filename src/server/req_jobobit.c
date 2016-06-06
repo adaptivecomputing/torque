@@ -172,6 +172,7 @@ void        on_job_exit(batch_request *preq, char *jobid);
 int         kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
 void       *on_job_exit_task(struct work_task *vp);
+bool        single_cleanup_transaction(job *pjob);
 
 /*
  * setup_from - setup the "from" name for a standard job file:
@@ -1731,9 +1732,10 @@ int end_of_job_accounting(
   {
   long  events = 0;
 
-  // Do not have end of job accounting records for jobs that are deleted and never started
-  if ((pjob->ji_being_deleted == true) ||
-      (pjob->ji_qs.ji_stime == 0))
+  // Do not have end of job accounting records for jobs that are deleted and never started, or
+  // have had end of job accounting previously
+  if ((pjob->ji_qs.ji_stime == 0) ||
+      ((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0))
     {
     return(PBSE_NONE);
     }
@@ -1760,6 +1762,8 @@ int end_of_job_accounting(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, noacctail.c_str());
     }
 
+  pjob->ji_qs.ji_svrflags |= JOB_ACCOUNTED_FOR;
+
   return(PBSE_NONE);
   } /* END end_of_job_accounting() */
 
@@ -1767,6 +1771,15 @@ int end_of_job_accounting(
 
 /*
  * handle_complete_first_time()
+ *
+ * The job has entered the completed state. If there is no keep_completed requirement, the
+ * job will be deleted. If there is a keep_completed time the job will be marked for future
+ * deletion.
+ *
+ * @postcond: the job's mutex is no longer held. Since it may get deleted during this function,
+ * we always unlock the mutex.
+ * @param pjob - the job that is now completed.
+ * @return PBSE_NONE on SUCCESS or some other error.
  */
 
 int handle_complete_first_time(
@@ -1894,7 +1907,16 @@ int handle_complete_first_time(
 
 
 
-
+/*
+ * handle_complete_second_time()
+ *
+ * Deletes the job. We arrive at this function because keep_completed was set, and it has now
+ * been roughly keep_completed seconds since the job entered a completed state.
+ * The only way it doesn't get deleted is if the job must report and hasn't yet, then we'll 
+ * wait up to that timeout before deleting the job. This is usually not set.
+ *
+ * @param ptask - the task containing the job's name so we can end it.
+ */
 
 void handle_complete_second_time(
 
@@ -3378,6 +3400,45 @@ int update_substate_from_exit_status(
 
 
 
+bool is_job_finished(
+
+  job *pjob)
+
+  {
+  // First check if the node is compatible
+  pbsnode   *pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  bool       done = false;
+
+  if (pnode != NULL)
+    {
+    mutex_mgr  node_mutex(&pnode->nd_mutex, true);
+
+    // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
+    if (pnode->get_version() >= 610)
+      {
+      /* see if job has any dependencies */
+      if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+        {
+        if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+          {
+          done = true;
+          return(done);
+          }
+        }
+
+      node_mutex.unlock();
+
+      rel_resc(pjob);
+      svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+      handle_complete_first_time(pjob);
+      done = true;
+      }
+    }
+
+  return(done);
+  } // END is_job_finished()
+
+
 
 /*
  * req_jobobit - process the Job Obituary Notice (request) from MOM.
@@ -3665,8 +3726,6 @@ int req_jobobit(
   if ((pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN) &&
       (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RERUN1))
     {
-    
-
     if ((rc = handle_terminating_job(pjob, alreadymailed, mailbuf)) != PBSE_NONE)
       return(rc);
     }
@@ -3715,16 +3774,21 @@ int req_jobobit(
   if (rerunning_job == false)
     {
     if (LOGLEVEL >= 7)
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, "Starting job cleanup");
+
+    if (is_job_finished(pjob) == false)
+      set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_exit_task, strdup(job_id), 0);
+    else
       {
-      sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      // If the job is finished, it has been either unlocked or freed at this time
+      job_mutex.set_unlock_on_exit(false);
       }
-    
-    set_task(WORK_Immed, 0, (void (*)(struct work_task *))on_job_exit_task, strdup(job_id), 0);
     }
 
   return(PBSE_NONE);
   }  /* END req_jobobit() */
+
+
 
 void *remove_completed_jobs(
 

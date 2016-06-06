@@ -135,7 +135,7 @@ int pbs_submit_hash(
 
   /* Queue job with null string for job id */
 
-  rc = PBSD_QueueJob_hash(socket, (char *)"", destination, job_attr, res_attr, extend, return_jobid, msg);
+  rc = PBSD_QueueJob2_hash(socket, (char *)"", destination, job_attr, res_attr, extend, return_jobid, msg);
 
   if (rc != PBSE_NONE)
     {
@@ -146,7 +146,7 @@ int pbs_submit_hash(
 
   if ((script != NULL) && (*script != '\0'))
     {
-    if (PBSD_jscript(socket, script, (*return_jobid==NULL)?NULL:*return_jobid) != 0)
+    if (PBSD_jscript2(socket, script, (*return_jobid==NULL)?NULL:(const char *)*return_jobid) != 0)
       {
       rc = PBSE_BADSCRIPT;
       if (connection[socket].ch_errtxt != NULL)
@@ -158,12 +158,8 @@ int pbs_submit_hash(
       }
     }
 
-  /* OK, the script got across, apparently, so we are */
-  /* ready to commit         */
-
-#ifndef PBS_MOM
-#ifndef QUICKCOMMIT
-  if ((rc = PBSD_rdytocmt(socket, *return_jobid)) != 0)
+#ifdef AUTORUN_JOBS
+  if ((rc = PBSD_commit2(socket, *return_jobid)) != 0)
     {
       if (connection[socket].ch_errtxt != NULL)
         {
@@ -171,21 +167,12 @@ int pbs_submit_hash(
         }
     return rc;
     }
-
-#endif
 #endif
 
-  if ((rc = PBSD_commit(socket, *return_jobid)) != 0)
-    {
-      if (connection[socket].ch_errtxt != NULL)
-        {
-        *msg = strdup(connection[socket].ch_errtxt);
-        }
-    return rc;
-    }
 
-  return rc;
-  }  /* END pbs_submit() */
+  return(rc);
+
+  }  /* END pbs_submit_hash() */
 
 int pbs_submit_hash_ext(
   int                socket,

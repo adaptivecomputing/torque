@@ -38,7 +38,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -170,12 +170,10 @@ int is_array(
 
 
 
-
-
 /* return a server's array info struct corresponding to an array id */
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   job_array *pa;
@@ -623,8 +621,8 @@ int assign_array_info_fields(
   else if ((nameLen == strlen(SUBMIT_HOST_TAG)) &&
     (!(strcmp((char *)xml_node->name, SUBMIT_HOST_TAG)))) 
     snprintf(pa->ai_qs.submit_host, PBS_MAXSERVERNAME + 1, "%s", (const char *)content);
-  else if ((nameLen == strlen(NUM_SUCCESSFUL_TAG)) &&
-    (!(strcmp((char *)xml_node->name, NUM_SUCCESSFUL_TAG)))) 
+  else if (((nameLen - strlen(NUM_SUCCESSFUL_TAG) < 2) &&
+    (!(strncmp((char *)xml_node->name, NUM_SUCCESSFUL_TAG, strlen(NUM_SUCCESSFUL_TAG)))))) 
     pa->ai_qs.num_successful = atoi((const char *)content);
   else if ((nameLen == strlen(NUM_TOKENS_TAG)) &&
     (!(strcmp((char *)xml_node->name, NUM_TOKENS_TAG)))) 
@@ -991,14 +989,17 @@ void free_array_job_sub_struct(
     free(rn);
     }
 
-  /* free the memory for the job pointers */
-  for (int i = 0; i < pa->ai_qs.array_size; i++)
+  if (pa->job_ids != NULL)
     {
-    if (pa->job_ids[i] != NULL)
-      free(pa->job_ids[i]);
-    }
+    /* free the memory for the job pointers */
+    for (int i = 0; i < pa->ai_qs.array_size; i++)
+      {
+      if (pa->job_ids[i] != NULL)
+        free(pa->job_ids[i]);
+      }
 
-  free(pa->job_ids);
+    free(pa->job_ids);
+    }
   }
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
@@ -2053,6 +2054,33 @@ int modify_array_range(
 
   return(rc);
   } /* END modify_array_range() */
+      
+
+
+/*
+ * set_slot_hold()
+ *
+ * Sets a hold on pjob if it isn't NULL and isn't held, incrementing difference, which should be negative
+ * when passed into this function.
+ */
+
+void set_slot_hold(
+    
+  job *pjob,
+  int &difference)
+
+  {
+  if (pjob != NULL)
+    {
+    if ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == 0)
+      {
+      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
+      pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+
+      difference++;
+      }
+    }
+  } // END set_slot_hold()
 
 
 
@@ -2069,13 +2097,16 @@ void release_slot_hold(
   int &difference)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+  if (pjob != NULL)
     {
-    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-      pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+      {
+      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
 
-    difference--;
+      difference--;
+      }
     }
   } // END release_slot_hold()
 
@@ -2117,8 +2148,11 @@ int update_slot_values(
       {
       for (; i < candidates.size(); i++)
         {
-        if (held->ji_qs.ji_jobid == candidates[i])
-          continue;
+        if (held != NULL)
+          {
+          if (held->ji_qs.ji_jobid == candidates[i])
+            continue;
+          }
         
         job *pj = svr_find_job(pa->job_ids[i], TRUE);
         
@@ -2237,6 +2271,62 @@ int check_array_slot_limits(
 
 
 
+/*
+ * update_slot_held_jobs()
+ *
+ * Set or release up to num_to_release jobs that are currently held for slot limits in pa
+ *
+ * @param pa - the array whose jobs we are releasing
+ * @param num_to_release - the maximum number of jobs whose slot limits should be released, or if negative,
+ *                         the maximum number of jobs whose slot limits should be set.
+ */
+
+void update_slot_held_jobs(
+    
+  job_array *pa,
+  int        num_to_release)
+
+  {
+  for (int i = 0; i < pa->ai_qs.num_jobs && num_to_release > 0; i++)
+    {
+    job *pjob = svr_find_job(pa->job_ids[i], TRUE);
+
+    if (pjob != NULL)
+      {
+      release_slot_hold(pjob, num_to_release);
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      }
+    }
+  
+  for (int i = 0; i < pa->ai_qs.num_jobs && num_to_release < 0; i++)
+    {
+    job *pjob = svr_find_job(pa->job_ids[i], TRUE);
+
+    if (pjob != NULL)
+      {
+      set_slot_hold(pjob, num_to_release);
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      }
+    }
+  } // END update_slot_held_jobs()
+
+
+
+bool need_to_update_slot_limits(
+
+  job_array *pa)
+
+  {
+  bool update_required = false;
+
+  if (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running)
+    update_required = true;
+
+  return(update_required);
+  } // END need_to_update_slot_limits()
+
+
+
 /**
  * update_array_values()
  *
@@ -2306,8 +2396,7 @@ void update_array_values(
 
       if (moab_compatible != FALSE)
         {
-        /* only need to update if the job wasn't previously held */
-        if ((job_atr_hold & HOLD_l) == FALSE)
+        if (need_to_update_slot_limits(pa) == true)
           {
           int  i;
           int  newstate;

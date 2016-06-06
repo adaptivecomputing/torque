@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <ctype.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_job.h" /* all_jobs, job */
@@ -42,6 +43,7 @@ bool default_queue = false;
 bool mem_fail = false;
 bool set_ji_substate = false;
 
+time_t time_now;
 
 int setup_array_struct(job *pjob)
   {
@@ -229,7 +231,22 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  return(NULL);
+  job *pjob;
+
+  pjob = (job *)malloc(sizeof(job));
+  if (pjob == NULL)
+    return(NULL);
+
+  if (isalpha(jobid[0]))
+    return(NULL);
+
+  if (jobid[0] == '0')
+    return(NULL);
+
+  strcpy(pjob->ji_qs.ji_jobid, jobid);
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+  strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
+  return(pjob);
   }
 
 int svr_save(struct server *ps, int mode)
@@ -454,3 +471,52 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
 
 job::job() {}
 job::~job() {}
+
+int node_avail_complex(
+
+  char *spec,   /* I - node spec */
+  int  *navail, /* O - number available */
+  int  *nalloc, /* O - number allocated */
+  int  *nresvd, /* O - number reserved  */
+  int  *ndown)  /* O - number down      */
+
+  {
+  return(0);
+  }
+
+struct batch_request *alloc_br(
+
+  int type)
+
+  {
+
+  struct batch_request *req = NULL;
+
+  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
+
+  if (req == NULL)
+    {
+    return(NULL);
+    }
+
+  req->rq_type = type;
+
+  req->rq_conn = -1;  /* indicate not connected */
+  req->rq_orgconn = -1;  /* indicate not connected */
+  req->rq_time = time_now;
+  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  req->rq_noreply = FALSE;  /* indicate reply is needed */
+
+
+  return(req);
+  }
+
+
+int req_runjob(batch_request *preq)
+  {
+  return(0);
+  }
+
+
+
+

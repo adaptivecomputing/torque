@@ -81,6 +81,8 @@
 
 #include "execution_slot_tracker.hpp"
 
+
+
 /* Make a class to cover this in case we need special functionality such as being able 
  * to match this is stdlib containers. 
  * This class is stored on the node to keep track of jobs and what they're using on the node. */
@@ -93,6 +95,8 @@ class job_usage_info
     bool operator ==(const job_usage_info &jui);
     job_usage_info &operator= (const job_usage_info &other_jui);
   };
+
+
 
 // class used while running a job
 class job_reservation_info
@@ -108,3 +112,4 @@ class job_reservation_info
   };
 
 #endif
+

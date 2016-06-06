@@ -171,7 +171,7 @@ int  decode_complete_req(
     
     if (!strncmp(attr_name, "task_usage", strlen("task_usage")))
       {
-      rc = cr->set_value(attr_name, val);
+      rc = cr->set_task_value(attr_name, val);
       }
     else
       {
@@ -180,7 +180,7 @@ int  decode_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        rc = cr->set_value(index, attr_name, val);
+        rc = cr->set_value(index, attr_name, val, false);
         }
       }
 
@@ -294,7 +294,7 @@ void overwrite_complete_req(
     {
     if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
       {
-      cr->set_value(names[i].c_str(), values[i].c_str());
+      cr->set_task_value(names[i].c_str(), values[i].c_str());
       }
     else
       {
@@ -306,7 +306,7 @@ void overwrite_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        cr->set_value(index, attr_name, values[i].c_str());
+        cr->set_value(index, attr_name, values[i].c_str(), false);
         }
 
       free(attr_name);

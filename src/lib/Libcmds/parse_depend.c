@@ -127,20 +127,19 @@ static char *arraydeptypes[] =
  *
  */
 
-int
-parse_depend_item(
-  char *depend_list,
-  char *rtn_list,  /* expanded jobids appended here */
-  int rtn_size  /* size of above    */
-)
+int parse_depend_item(
+
+  char                     *depend_list,
+  std::vector<std::string> &dependency_list)
+
   {
-  char *at;
-  int i = 0;
-  int first = 1;
-  int array = 0;
-  char *s = NULL, *c;
-  char full_job_id[PBS_MAXCLTJOBID+1];
-  char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+  char        *at;
+  int          i = 0;
+  int          first = 1;
+  int          array = 0;
+  char        *s = NULL;
+  char        *c;
+  std::string  dep_string;
 
   /* Begin the parse */
   c = depend_list;
@@ -189,35 +188,51 @@ parse_depend_item(
           array = 1;
           }
 
-        strcat(rtn_list,arraydeptypes[i]);
+        if (dependency_list.size() == 0)
+          {
+          dep_string += arraydeptypes[i];
+          dependency_list.push_back(dep_string);
+          }
+        else
+          {
+          for (size_t j = 0; j < dependency_list.size(); j++)
+            dependency_list[j] += arraydeptypes[i];
+          }
         }
       else
         {
-        strcat(rtn_list, deptypes[i]);
+        if (dependency_list.size() == 0)
+          {
+          dep_string += deptypes[i];
+          dependency_list.push_back(dep_string);
+          }
+        else
+          {
+          for (size_t j = 0; j < dependency_list.size(); j++)
+            dependency_list[j] += deptypes[i];
+          }
         }
 
       }
     else
       {
+      std::vector<std::string> id_list;
+      std::string              server_name;
 
       /* for "on" and "synccount", number */
       if ((i < 2) ||
           (array))
         {
-        if (strlen(rtn_list) + strlen(s) > (size_t)rtn_size)
-          {
-          return 2;
-          }
-        strcat(rtn_list, s);
+        for (size_t j = 0; j < dependency_list.size(); j++)
+          dependency_list[j] += s;
 
         if (array)
           {
           /* append '.server_name' for arrays */
-          char *dot;
           char *open_square_bracket;
 
           /* only do this if the server isn't already there */
-          if (strchr(rtn_list,'.') == NULL)
+          if (dependency_list[0].find('.') == std::string::npos)
             {
             /* fix open_square_bracket for server search */
             open_square_bracket = strchr(s,'[');
@@ -226,7 +241,7 @@ parse_depend_item(
               *open_square_bracket = '\0';
               }
 
-            if (get_server(s, full_job_id, sizeof(full_job_id), server_out, sizeof(server_out)) != PBSE_NONE)
+            if (get_server_and_job_ids(s, id_list, server_name))
               return 1;
 
             /* now put it back */
@@ -234,18 +249,20 @@ parse_depend_item(
               {
               *open_square_bracket = '[';
               }
+                
+            while (id_list.size() > dependency_list.size())
+              dependency_list.push_back(dependency_list[0]);
 
-            /* check if we will exceed the length of the return string size */
-            if (strlen(rtn_list) + strlen(full_job_id) > (size_t)rtn_size)
+            for (size_t j = 0; j < id_list.size(); j++)
               {
-              return 2;
+              size_t pos = id_list[j].find('.');
+
+              // Just concatenate the .server_name piece
+              if (pos != std::string::npos)
+                {
+                dependency_list[j] += id_list[j].substr(pos);
+                }
               }
-
-            /* get just the '.server_name' */
-            dot = strchr(full_job_id,'.');
-            if (dot != NULL)
-              strcat(rtn_list,dot);
-
             }
           }
         }
@@ -253,38 +270,39 @@ parse_depend_item(
         {
         at = strchr(s, (int)'@');
 
-        if (get_server(s, full_job_id, sizeof(full_job_id), server_out, sizeof(server_out)) != PBSE_NONE)
+        if (get_server_and_job_ids(s, id_list, server_name))
           return 1;
+          
+        while (id_list.size() > dependency_list.size())
+          dependency_list.push_back(dependency_list[0]);
 
-        /* check if we will exceed the length of the return string size */
-        if (strlen(rtn_list) + strlen(full_job_id) > (size_t)rtn_size)
+        for (size_t j = 0; j < id_list.size(); j++)
           {
-          return 2;
-          }
+          dependency_list[j] += id_list[j];
 
-        (void)strcat(rtn_list, full_job_id);
-
-        if (at)
-          {
-          /* check if we will exceed the length of the return string size */
-          if (strlen(rtn_list) + strlen(server_out) + 1 > (size_t)rtn_size)
+          if (at)
             {
-            return 2;
+            dependency_list[j] += "@";
+            dependency_list[j] += server_name;
             }
-          (void)strcat(rtn_list, "@");
-          (void)strcat(rtn_list, server_out);
           }
         }
       }
 
     if (*c)
-      (void)strcat(rtn_list, ":");
+      {
+      for (size_t j = 0; j < dependency_list.size(); j++)
+        {
+        dependency_list[j] += ":";
+        }
+      }
     }
 
-  if (s == c) return 1;
+  if (s == c)
+    return 1;
 
-  return 0;
-  }
+  return(PBSE_NONE);
+  } // END parse_depend_item()
 
 
 
@@ -305,8 +323,7 @@ parse_depend_item(
 int parse_depend_list(
 
   char *list,
-  char *rtn_list,  /* expanded list returned here */
-  int   rtn_size)  /* size of above array */
+  std::vector<std::string> &dependency_list)
 
   {
   char *b = NULL;
@@ -327,7 +344,6 @@ int parse_depend_list(
   strcpy(lc, list);
 
   c = lc;
-  *rtn_list = '\0';
 
   while (*c != '\0')
     {
@@ -350,7 +366,7 @@ int parse_depend_list(
 
 
     /* Parse the individual list item */
-    rtn = parse_depend_item(s, rtn_list, rtn_size);
+    rtn = parse_depend_item(s, dependency_list);
 
     if (rtn)
       {
@@ -361,7 +377,10 @@ int parse_depend_list(
     if (comma)
       {
       c++;
-      (void)strcat(rtn_list, ",");
+      for (size_t i = 0; i < dependency_list.size(); i++)
+        {
+        dependency_list[i] += ",";
+        }
       }
     }
 

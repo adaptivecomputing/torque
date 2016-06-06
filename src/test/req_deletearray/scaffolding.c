@@ -74,10 +74,9 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(stru
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)

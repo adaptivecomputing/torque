@@ -160,7 +160,7 @@ extern char          *msg_man_cre;
 extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
-extern int            disable_timeout_check;
+extern time_t         pbs_incoming_tcp_timeout;
 //extern mom_hierarchy_t *mh;
 
 
@@ -542,10 +542,7 @@ static int mgr_set_attr(
           }
         }
 
-      if ((index == SRV_ATR_tcp_timeout) &&
-          (pnew->at_val.at_long < 300))
-        disable_timeout_check = TRUE;
-      else if (pdef == svr_attr_def)
+      if (pdef == svr_attr_def)
         {
         if (index == SRV_ATR_acl_users_hosts)
           {
@@ -561,6 +558,8 @@ static int mgr_set_attr(
           else
             update_group_acls(pnew, plist->al_op);
           }
+        else if (index == SRV_ATR_tcp_incoming_timeout)
+          pbs_incoming_tcp_timeout = pnew->at_val.at_long;
         }
 
       /* now replace the old values with any modified new values */

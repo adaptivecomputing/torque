@@ -52,7 +52,7 @@ int release_array_range(job_array *pa, struct batch_request *preq, char *range_s
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   fprintf(stderr, "The call to get_array to be mocked!!\n");
   exit(1);

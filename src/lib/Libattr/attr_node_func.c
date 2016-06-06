@@ -1865,10 +1865,8 @@ int set_note_str(
     new_note.erase(std::remove(new_note.begin(), new_note.end(), '\n'), new_note.end());
 
     // now reassign string
-
-    // remove the old one if present
-    if (new_attr->at_val.at_str != NULL)
-      free(new_attr->at_val.at_str);
+    // remove the old one
+    free(new_attr->at_val.at_str);
 
     // assign the new one
     new_attr->at_val.at_str = strdup(new_note.c_str());

@@ -102,7 +102,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "mom_job_func.h" /* mom_job_purge */
 
@@ -1021,14 +1021,19 @@ void req_commit(
     return;
     }
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
+  pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
+  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
+  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
+  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+
+/*  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
     {
     log_err(errno, "req_commit", (char *)"cannot commit job in unexpected state");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
 
     return;
-    }
+    }*/
 
   /* move job from new job list to "all" job list, set to running state */
 

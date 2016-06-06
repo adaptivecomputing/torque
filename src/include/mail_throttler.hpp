@@ -1,4 +1,6 @@
 
+#ifndef MAIL_THROTTLER_HPP
+#define MAIL_THROTTLER_HPP
 
 #include <map>
 #include <string>
@@ -33,4 +35,6 @@ class mail_throttler
     int  get_email_list(const std::string &addressee, std::vector<mail_info> &list);
     bool add_email_entry(mail_info &mi);
   };
+
+#endif
 

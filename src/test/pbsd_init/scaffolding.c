@@ -584,7 +584,7 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int log
 
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   return(NULL);
@@ -781,12 +781,6 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libattr/complete_req.cpp"
 
 #ifdef NVML_API
-void PCI_Device::initializeGpu(int x, hwloc_topology *fred)
-  {
-  return;
-  }
-
-
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
   return(0);

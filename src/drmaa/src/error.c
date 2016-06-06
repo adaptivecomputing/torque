@@ -38,6 +38,11 @@
 #include <error.h>
 #include <drmaa_impl.h>
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -387,3 +392,6 @@ drmaa_map_pbs_error(int pbs_errcode)
   }
 
 
+#ifdef __cplusplus
+  }
+#endif

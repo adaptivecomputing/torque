@@ -39,6 +39,7 @@ std::string cg_cpuset_path;
 std::string cg_devices_path;
 #define LDAP_RETRIES 5
 
+// Sensing and control variables
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -47,6 +48,10 @@ bool am_ms = false;
 bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
+bool addr_fail = false;
+
+
+int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -118,7 +123,7 @@ int DIS_tcp_wflush (struct tcp_chan *chan) { return 0; }
 int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
-int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
+int im_compose(tcp_chan *chan, char *arg2, const char *a3, int a4, int a5, unsigned int a6) { return 0; }
 int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11, std::string& cray_frequency) { return 0; }
 int mom_close_poll(void)
   {
@@ -695,9 +700,18 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   return(0);
   }
 
-int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **ppAddrInfoOut)
   {
-  return -1;
+  if (addr_fail == true)
+    return(-1);
+  else
+    {
+    char buf[MAXLINE];
+    gethostname(buf, sizeof(buf));
+    getaddrinfo(buf, NULL, NULL, ppAddrInfoOut);
+
+    return(0);
+    }
   }
 
 bool am_i_mother_superior(const job &pjob)
@@ -831,6 +845,11 @@ int csv_length(const char *csv_str)
 
 #ifdef PENABLE_LINUX_CGROUPS
 int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
+  {
+  return(PBSE_NONE);
+  }
+
+int init_torque_cgroups()
   {
   return(PBSE_NONE);
   }
@@ -1050,4 +1069,11 @@ req &complete_req::get_req(int i)
 
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libutils/allocation.cpp"
+
+#ifdef ENABLE_PMIX
+void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
+#endif
+
+int setup_gpus_for_job(job *pjob)
+  {return(0);}
 

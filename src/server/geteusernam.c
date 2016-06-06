@@ -1032,7 +1032,7 @@ int node_exception_check(
 
   pstr = pattr->at_val.at_arst;
 
-  for (int i = 0; i < pstr->as_usedptr; i++)
+  for (int i = 0; pstr != NULL && i < pstr->as_usedptr; i++)
     {
     if (node_exists(pstr->as_string[i]) == false)
       {

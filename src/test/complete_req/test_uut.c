@@ -8,15 +8,31 @@
 extern int called_log_event;
 
 
+START_TEST(test_set_value_from_nodes)
+  {
+  complete_req c;
+
+  // Make sure this doesn't segfault
+  c.set_value_from_nodes(NULL);
+  c.set_value_from_nodes("4");
+  fail_unless(c.req_count() == 1);
+
+  complete_req c2;
+  c2.set_value_from_nodes("bob+tim");
+  fail_unless(c2.req_count() == 2);
+  }
+END_TEST
+
+
 START_TEST(test_set_get_value)
   {
   complete_req c;
 
-  fail_unless(c.set_value(1, "task_count", "5") == PBSE_NONE);
-  fail_unless(c.set_value(0, "task_count", "4") == PBSE_NONE);
-  fail_unless(c.set_value(0, "lprocs", "4") == PBSE_NONE);
-  fail_unless(c.set_value(1, "gpus", "2") == PBSE_NONE);
-  fail_unless(c.set_value(-1, "blah", "blah") == PBSE_BAD_PARAMETER);
+  fail_unless(c.set_value(1, "task_count", "5", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "task_count", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "lprocs", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(1, "gpus", "2", false) == PBSE_NONE);
+  fail_unless(c.set_value(-1, "blah", "blah", false) == PBSE_BAD_PARAMETER);
   fail_unless(c.req_count() == 2);
 
   std::vector<std::string> names;
@@ -77,26 +93,47 @@ START_TEST(test_constructor)
   fail_unless(equals_out == c_out);
 
   tlist_head h;
-  complete_req list1(h, false);
+  complete_req list1(h, 2, false);
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
-  complete_req list2(h, true);
+  complete_req list2(h, 2, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
   fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
  
-  complete_req list3(h, false);
+  complete_req list3(h, 2, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
   fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
-  }
+
+  complete_req list4(h, 2, true);
+  fail_unless(list4.req_count() == 1);
+  const req &rl2 = list4.get_req(0);
+  fail_unless(rl2.getTaskCount() == 1);
+  fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl.getMemory());
+
+  complete_req list5(h, 2, true);
+  fail_unless(list5.req_count() == 1);
+  const req &rl3 = list5.get_req(0);
+  fail_unless(rl3.getTaskCount() == 1);
+  fail_unless(rl3.getMemory() == 160, "pvmem is %lu", rl.getMemory());
+  fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl.getSwap());
+
+  complete_req list6(h, 2, true);
+  fail_unless(list6.req_count() == 1);
+  const req &rl4 = list6.get_req(0);
+  fail_unless(rl4.getTaskCount() == 1);
+  fail_unless(rl4.getMemory() == 80, "pvmem is %lu", rl.getMemory());
+  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl.getSwap());
+
+ }
 END_TEST
 
 
@@ -104,8 +141,8 @@ START_TEST(test_constructor_oldstyle_req)
   {
   tlist_head h;
   extern int gn_count;
-  gn_count = 9;
-  complete_req list1(h, false);
+  gn_count = 18;
+  complete_req list1(h, 2, false);
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);
@@ -326,6 +363,7 @@ Suite *complete_req_suite(void)
 
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
+  tcase_add_test(tc_core, test_set_value_from_nodes);
   tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
 

@@ -112,6 +112,7 @@ int              ignmem = 0;
 int              igncput = 0;
 int              ignvmem = 0; 
 /* end policies */
+bool             check_rur = true; /* on by default */
 int              spoolasfinalname = 0;
 int              maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
 char            *apbasil_path     = NULL;
@@ -217,6 +218,7 @@ struct passwd *getpwnam_ext(char **user_buffer, char *user_name);
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
 
+unsigned long setrur(const char *);
 unsigned long setxauthpath(const char *);
 unsigned long setrcpcmd(const char *);
 unsigned long setpbsclient(const char *);
@@ -377,6 +379,7 @@ struct specials special[] = {
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { "jobdirectory_sticky", setjobdirectorysticky},
   { "cuda_visible_devices", setcudavisibledevices},
+  { "cray_check_rur",       setrur },
   { NULL,                  NULL }
   };
 
@@ -480,6 +483,21 @@ char *tokcpy(
   }  /* END tokcpy() */
 
 
+unsigned long setrur(
+
+  const char *value)
+  
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    check_rur = true;
+    return(1);
+    }
+    
+  return(0); /* error */
+  }/* end setrur() */
 
 
 unsigned long setidealload(
@@ -1888,7 +1906,7 @@ u_long usecp(
 
   *pnxt++ = '\0';
 
-  cph.cph_hosts = value;
+  cph.cph_from = value;
   cph.cph_to = skipwhite(pnxt);
 
   pcphosts.push_back(cph);

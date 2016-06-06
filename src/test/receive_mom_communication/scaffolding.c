@@ -891,6 +891,8 @@ void pbsnode::change_name(const char *hostname)
   this->nd_name = hostname;
   }
 
+void pbsnode::set_version(const char *) {}
+
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
 #include "../../src/lib/Libutils/machine.cpp"
@@ -903,14 +905,12 @@ void pbsnode::change_name(const char *hostname)
 #include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"
 #ifdef MIC
-void PCI_Device::initializeMic(int x, hwloc_topology *fred)
-  {
-  return;
-  }
-
 int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   {
   return(0);
   }
 #endif
 
+#ifdef NVIDIA_GPUS
+int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
+#endif

@@ -86,10 +86,16 @@
 #include <vector>
 
 #include "utils.h"
+#include "resource.h"
 
 #ifndef MAX_CMD_ARGS
 #define MAX_CMD_ARGS 10
 #endif
+
+
+const char *incompatible_l[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                 "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                 "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 int    ArgC = 0;
 char **ArgV = NULL;
@@ -491,5 +497,49 @@ bool task_hosts_match(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 
 
+/* 
+ * have_incompatible_dash_l_resource
+ *
+ * Check to see if this is an incompatile -l resource
+ * request for a -L syntax
+ *
+ * @param pjob  - the job structure we are working with
+ *
+ */
+
+bool have_incompatible_dash_l_resource(
+
+  job *pjob)
+
+  {
+  resource *presl; /* for -l resource request */
+  bool      found_incompatible_resource = false;
+
+  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+    {
+    presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+
+    while ((presl != NULL) &&
+           (found_incompatible_resource == false))
+      {
+      for (int i = 0; incompatible_l[i] != NULL; i++)
+        {
+        if (!strcmp(incompatible_l[i], presl->rs_defin->rs_name))
+          {
+          found_incompatible_resource = true;
+          break;
+          }
+        }
+
+      presl = (resource *)GET_NEXT(presl->rs_link);
+      }
+    }
+
+  return(found_incompatible_resource);
+  } // END have_incompatible_dash_l_resource()
+
+
+#endif /* PENABLE_LINUX_CGROUPS */

@@ -92,8 +92,8 @@ char *pbs_submit_err(
 
   int             c,
   struct attropl *attrib,
-  char           *script,
-  char           *destination,
+  const char     *script,
+  const char     *destination,
   char           *extend,       /* (optional) */
   int            *local_errno)
 
@@ -120,7 +120,7 @@ char *pbs_submit_err(
 
   /* Queue job with null string for job id */
 
-  return_jobid = PBSD_queuejob(c, local_errno, (char *)"", destination, attrib, extend);
+  return_jobid = PBSD_queuejob(c, local_errno, "", destination, attrib, extend);
 
   if (return_jobid == NULL)
     {
@@ -131,7 +131,7 @@ char *pbs_submit_err(
 
   if ((script != NULL) && (*script != '\0'))
     {
-    if (PBSD_jscript(c, script, return_jobid) != 0)
+    if (PBSD_jscript(c, script, (const char *)return_jobid) != 0)
       {
       *local_errno = PBSE_BADSCRIPT;
 
@@ -161,6 +161,66 @@ char *pbs_submit_err(
   }  /* END pbs_submit_err() */
 
 
+char *pbs_submit2_err(
+
+  int             c,
+  struct attropl *attrib,
+  const char     *script,
+  const char     *destination,
+  char           *extend,       /* (optional) */
+  int            *local_errno)
+  
+  {
+  struct attropl *pal;
+  char * return_jobid = NULL;
+
+  /* first be sure that the script is readable if specified ... */
+
+  if ((script != NULL) && (*script != '\0'))
+    { 
+    if (access(script, R_OK) != 0)
+      {
+      *local_errno = PBSE_BADSCRIPT;
+
+      return(NULL);
+      }
+    }
+
+  /* initiate the queueing of the job */
+
+  for (pal = attrib;pal != NULL;pal = pal->next)
+  pal->op = SET;  /* force operator to SET */
+
+  /* Queue job with null string for job id */
+
+  return_jobid = PBSD_queuejob2(c, local_errno, "", destination, attrib, extend);
+
+  if (return_jobid == NULL)
+    {
+    return(NULL);
+    }
+
+  /* send script across */
+
+  if ((script != NULL) && (*script != '\0'))
+    { 
+    if (PBSD_jscript2(c, script, (const char *)return_jobid) != 0)
+      {
+      *local_errno = PBSE_BADSCRIPT;
+
+      return(NULL);
+      }
+    }
+
+#ifdef AUTORUN_JOBS
+  if (PBSD_commit2(c, return_jobid) != 0)
+    {
+    return(NULL);
+    }
+#endif
+
+  return(return_jobid);
+  }  /* END pbs_submit_err() */
 
 
 
@@ -168,14 +228,14 @@ char *pbs_submit(
 
   int             c,
   struct attropl *attrib,
-  char           *script,
-  char           *destination,
-  char           *extend)       /* (optional) */
+  char     *script,
+  char     *destination,
+  char     *extend)       /* (optional) */
 
   {
   pbs_errno = 0;
 
-  return(pbs_submit_err(c, attrib, script, destination, extend, &pbs_errno));
+  return(pbs_submit2_err(c, attrib, (const char *)script, (const char *)destination, extend, &pbs_errno));
   } /* END pbs_submit() */
 
 

@@ -62,7 +62,6 @@ const int MEMS = 1;
 const int MAX_WRITE_RETRIES = 5;
 
 #ifdef PENABLE_LINUX_CGROUPS
-std::vector<std::string> incompatible_dash_l_resources;
 extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
@@ -78,26 +77,6 @@ void trq_cg_init_subsys_online(bool val)
   subsys_online[cg_subsys_count] = true;
 
   return;
-  }
-
-void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
-  {
-  /* These are the -l resources that are not compatible with the -L resource request */
-  incompatible_resource_list.clear();
-  incompatible_resource_list.push_back("mem");
-  incompatible_resource_list.push_back("nodes");
-  incompatible_resource_list.push_back("hostlis");
-  incompatible_resource_list.push_back("ncpus");
-  incompatible_resource_list.push_back("procs");
-  incompatible_resource_list.push_back("pvmem");
-  incompatible_resource_list.push_back("pmem");
-  incompatible_resource_list.push_back("vmem");
-  incompatible_resource_list.push_back("reqattr");
-  incompatible_resource_list.push_back("software");
-  incompatible_resource_list.push_back("geometry");
-  incompatible_resource_list.push_back("opsys");
-  incompatible_resource_list.push_back("tpn");
-  incompatible_resource_list.push_back("trl");
   }
 
 
@@ -355,7 +334,25 @@ int trq_cg_initialize_cpuset_string(
   return(rc);
   } // END trq_cg_initialize_cpuset_string()
 
+/* make sure that the cgroup directories have the correct mode, in case 
+ * they get created from a thread that has a non-zero umask set. */
+int trq_cg_mkdir(const char* pathname, mode_t mode) {
 
+    struct stat buf;
+    int rc = mkdir(pathname, mode);
+    if(rc != 0) {
+        return rc;
+    }
+    rc = stat(pathname, &buf);
+    if(rc != 0) {
+        return rc;
+    }
+    if(buf.st_mode != mode) {
+        rc = chmod(pathname, mode);
+    }
+    return rc;
+
+} 
 
 /* We need to add a torque directory to each subsystem mount point
  * so we have a place to put the jobs */
@@ -372,17 +369,18 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
+    
 
   torque_path = cg_cpuacct_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     }
@@ -392,7 +390,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
      /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       {
       sprintf(log_buf, "Could not create %s for cgroups: error %d", torque_path.c_str(), errno);
@@ -417,7 +415,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -427,7 +425,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -958,47 +956,6 @@ int trq_cg_add_process_to_all_cgroups(
   } // END trq_cg_add_process_to_all_cgroups()
 
 
-/* 
- * have_incompatible_dash_l_resource
- *
- * Check to see if this is an incompatile -l resource
- * request for a -L syntax
- *
- * @param pjob  - the job structure we are working with
- *
- */
-   
-bool have_incompatible_dash_l_resource(
-    
-    job *pjob)
-
-  {
-  resource *presl; /* for -l resource request */
-
-  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list); 
-  if (presl != NULL)
-    {
-    std::vector<std::string>::iterator it;
-
-    if (incompatible_dash_l_resources.size() == 0)
-      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
-
-    do
-      {
-      std::string pname = presl->rs_defin->rs_name;
-      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
-      if (it != incompatible_dash_l_resources.end())
-        {
-        /* pname points to a string of an incompatible -l resource type */
-        return(true);
-        }
-
-      presl = (resource *)GET_NEXT(presl->rs_link);
-      }while(presl != NULL); 
-    }
-  return(false);
-  }
-
 
 /* 
  * trq_cg_create_task_cgroups
@@ -1078,7 +1035,7 @@ int trq_cg_create_task_cgroups(
       req_task_path = cgroup_path + req_task_number;
       /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
          req and task reference */
-      rc = mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+      rc = trq_cg_mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
       if ((rc != 0) &&
           (errno != EEXIST))
         {
@@ -1126,7 +1083,7 @@ int trq_cg_create_cgroup(
   full_cgroup_path += job_id;
 
   /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
-  rc = mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
       (errno != EEXIST))
     {
@@ -1900,7 +1857,7 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
 
   devices_deny = job_devices_path + '/' + "devices.deny";
 
-  rc = mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
        (errno != EEXIST))
     {

@@ -24,26 +24,29 @@ void complete_req::set_value_from_nodes(
   const char *node_val)
 
   {
-  char *work_str = strdup(node_val);
-  char *ptr = work_str;
-
-  while (ptr != NULL)
+  if (node_val != NULL)
     {
-    char *next = strchr(ptr, '+');
+    char *work_str = strdup(node_val);
+    char *ptr = work_str;
 
-    if (next != NULL)
+    while (ptr != NULL)
       {
-      *next = '\0';
-      next++;
+      char *next = strchr(ptr, '+');
+
+      if (next != NULL)
+        {
+        *next = '\0';
+        next++;
+        }
+
+      req r(ptr);
+      this->add_req(r);
+
+      ptr = next;
       }
 
-    req r(ptr);
-    this->add_req(r);
-
-    ptr = next;
+    free(work_str);
     }
-
-  free(work_str);
   } // END set_value_from_nodes()
 
 
@@ -51,6 +54,7 @@ void complete_req::set_value_from_nodes(
 complete_req::complete_req(
 
   tlist_head &resources,
+  int         ppn_needed,
   bool        legacy_vmem) : reqs()
 
   {
@@ -58,6 +62,7 @@ complete_req::complete_req(
   int            task_count = 0;
   int            execution_slots = 0;
   unsigned long  mem = 0;
+  std::string    mem_type;
 
   while (pr != NULL)
     {
@@ -81,6 +86,7 @@ complete_req::complete_req(
              (!strcmp(pr->rs_defin->rs_name, "mem")) ||
              (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
+      mem_type = pr->rs_defin->rs_name;
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
@@ -118,6 +124,7 @@ complete_req::complete_req(
     if (task_count != 0)
       r.set_task_count(task_count);
 
+
     r.set_memory(mem);
     r.set_swap(mem);
 
@@ -138,13 +145,36 @@ complete_req::complete_req(
         total_tasks += this->reqs[i].getTaskCount();
 
       mem_per_task /= total_tasks;
-      }
 
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+        r.set_memory(mem_per_task);
+        r.set_swap(mem_per_task);
+        }
+
+      }
+    else
       {
-      req &r = this->reqs[i];
-      r.set_memory(mem_per_task);
-      r.set_swap(mem_per_task);
+      if ((mem_type == "mem") || (mem_type == "vmem"))
+        mem_per_task = mem;
+      else if ((mem_type == "pmem") || (mem_type == "pvmem"))
+        {
+        mem_per_task = mem * ppn_needed;
+        }
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+
+        if ((mem_type == "mem") || (mem_type == "pmem"))
+          r.set_memory(mem_per_task);
+        else if ((mem_type == "vmem") || (mem_type == "pvmem"))
+          {
+          r.set_memory(mem_per_task);
+          r.set_swap(mem_per_task);
+          }
+        }
       }
     }
   } // END constructor from resource list
@@ -318,33 +348,30 @@ int complete_req::set_task_cput_used(
  */
 
 
-int complete_req::set_value(
+int complete_req::set_task_value(
 
   const char *name,
   const char *value)
   
   {
   int   rc = PBSE_NONE;
-  char *attr_name = strdup(name);
-  char *dot1;
-  char *dot2;
+  const char *dot1;
+  const char *dot2;
   unsigned int   req_index;
   unsigned int   task_index;
 
-  dot1 = strchr(attr_name, '.');
-  dot2 = strrchr(attr_name, '.');
+  dot1 = strchr(name, '.');
+  dot2 = strrchr(name, '.');
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
-    free(attr_name);
     return(PBSE_BAD_PARAMETER);
     }
 
   req_index = strtol(dot1 + 1, NULL, 10);
-  *dot1 = '\0';
   task_index = strtol(dot2 + 1, NULL, 10);
-  *dot2 = '\0';
 
+  // Add new reqs if needed
   while (this->reqs.size() <= req_index)
     {
     req r;
@@ -352,9 +379,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  rc = this->reqs[req_index].set_value(attr_name, value, task_index);
-
-  free(attr_name);
+  rc = this->reqs[req_index].set_task_value(value, task_index);
 
   return(rc);
  
@@ -377,7 +402,8 @@ int complete_req::set_value(
 
   int         index,
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   if (index < 0)
@@ -390,7 +416,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[index].set_value(name, value));
+  return(this->reqs[index].set_value(name, value, is_default));
   } // END set_value()
 
 

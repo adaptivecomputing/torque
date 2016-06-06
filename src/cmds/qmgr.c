@@ -70,7 +70,7 @@
 #include "cmds.h"
 #include "qmgr.h"
 #include "net_cache.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_helper.h"
 
 

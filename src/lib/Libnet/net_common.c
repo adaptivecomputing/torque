@@ -30,7 +30,7 @@
 
 #include "pbs_error.h" /* torque error codes */
 
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 using std::cerr;
 

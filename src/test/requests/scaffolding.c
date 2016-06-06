@@ -42,7 +42,7 @@ int cphosts_num = 0;
 struct var_table vtable; 
 char mom_host[PBS_MAXHOSTNAME + 1];
 int spoolasfinalname = 0;
-char *path_spool;
+char *path_spool = strdup("/var/spool/torque/spool/");
 unsigned int pbs_rm_port = 0;
 unsigned int alarm_time = 10;
 char *TNoSpoolDirList[TMAX_NSDCOUNT];
@@ -54,6 +54,8 @@ char MOMUNameMissing[64];
 char log_buffer[LOG_BUF_SIZE];
 char checkpoint_run_exe_name[MAXPATHLEN + 1];
 std::list<job *>    alljobs_list;
+
+const char *wdir_ret;
 
 void log_event(int event, int event_class, char *func_name, char *buf)
   {}
@@ -71,8 +73,7 @@ struct batch_request *alloc_br(int type)
 
 char *arst_string(const char *str, pbs_attribute *pattr)
   {
-  fprintf(stderr, "The call to arst_string needs to be mocked!!\n");
-  exit(1);
+  return(strdup(wdir_ret));
   }
 
 char *std_file_name(job *pjob, enum job_file which, int *keeping)
@@ -129,10 +130,9 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
   exit(1);
   }
 
-int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, char *jobid, int which)
+int encode_DIS_JobFile(struct tcp_chan *chan, int seq, char *buf, int len, const char *jobid, int which)
   {
-  fprintf(stderr, "The call to encode_DIS_JobFile needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void free_br(struct batch_request *preq)
@@ -177,10 +177,9 @@ int in_remote_checkpoint_dir(char *ckpt_path)
   exit(1);
   }
 
-int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server_with_retries(job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
   {
-  fprintf(stderr, "The call to mom_open_socket_to_jobs_server needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
@@ -314,7 +313,7 @@ job *mom_find_job(char const *jobid)
   exit(1);
   }
 
-int im_compose(tcp_chan *chan, char *jobid, char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
@@ -517,4 +516,23 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+int pbs_disconnect_socket(
 
+  int sock)  /* I (socket descriptor) */
+
+  {
+  return(0);
+  }
+
+void set_jobs_substate(
+
+  job *pjob,
+  int  new_substate)
+
+  {
+  }
+
+int send_job_obit(job *pjob, int exit_status)
+  {
+  return(PBSE_NONE);
+  }

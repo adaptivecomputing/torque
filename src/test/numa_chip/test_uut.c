@@ -564,8 +564,8 @@ END_TEST
 START_TEST(test_how_many_tasks_fit)
   {
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   Chip c;
   c.setThreads(12);
@@ -592,17 +592,21 @@ START_TEST(test_how_many_tasks_fit)
 
   // make sure that we can handle a request without memory
   req r2;
-  r2.set_value("lprocs", "2");
+  r2.set_value("lprocs", "2", false);
   c.setCores(10);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
 
   // make sure we account for gpus and mics
-  r2.set_value("gpus", "1");
+  r2.set_value("gpus", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
-  r2.set_value("gpus", "0");
+  r2.set_value("gpus", "0", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
-  r2.set_value("mics", "1");
+  r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
+
+  // Make sure we can do fractional fits
+  c.setCores(1);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
   }
 END_TEST
 
@@ -612,8 +616,8 @@ START_TEST(test_exclusive_place)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   allocation a(jobid);
   a.place_type = exclusive_chip;
@@ -683,7 +687,7 @@ START_TEST(test_exclusive_place)
   req r2;
   allocation a3(jobid);
   a3.place_type = exclusive_none;
-  r2.set_value("lprocs", "32");
+  r2.set_value("lprocs", "32", false);
   thread_type.clear();
   recorded = 0;
   tasks = c3.place_task(r2, a3, 1, host);
@@ -704,7 +708,7 @@ START_TEST(test_exclusive_place)
   thread_type = use_cores;
 
   req r3;
-  r3.set_value("lprocs", "16");
+  r3.set_value("lprocs", "16", false);
   allocation remaining(r3);
   allocation master("2.napali");
 
@@ -867,8 +871,8 @@ START_TEST(test_place_and_free_task)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   allocation a(jobid);
 

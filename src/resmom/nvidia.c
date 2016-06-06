@@ -124,7 +124,7 @@
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "mom_config.h"
 #include "req.hpp"
@@ -215,14 +215,17 @@ void log_nvml_error(
         log_err( PBSE_RMSYSTEM, id, log_buffer);
         }
       break;
-    case NVML_ERROR_GPU_IS_LOST:
+      /* this case breaks backward compatibility. Apparently,  NVML_ERROR_GPU_IS_LOST
+       * is in nvml.h version 6 but not nvml.h version 4. We don't need it so we will
+       * comment it out for now.*/
+/*    case NVML_ERROR_GPU_IS_LOST:
       if (LOGLEVEL >= 1)
         {
         sprintf(log_buffer, "GPU %s has fallen off the bus or is otherwise inaccessible",
                             (gpuid != NULL) ? gpuid : "NULL");
         log_err( PBSE_RMSYSTEM, id, log_buffer);
         }
-      break;
+      break;*/
     case NVML_ERROR_NOT_FOUND:
       if (LOGLEVEL >= 1)
         {
@@ -669,7 +672,7 @@ int setgpumode(
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
       break;
     case gpu_prohibited:
-      compute_mode = NVML_COMPUTEMODE_PROHIBITED;
+      return (PBSE_IVALREQ);
       break;
     case gpu_exclusive_process:
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_PROCESS;
@@ -731,7 +734,7 @@ int setgpumode(
     }
   else /* 270 or greater driver */
     {
-    sprintf(buf, "nvidia-smi -i %s -c %d 2>&1",
+    sprintf(buf, "nvidia-smi -i %d -c %d 2>&1",
       gpuid,
       gpumode);
     }
@@ -868,7 +871,7 @@ int resetgpuecc(
 
   if (MOMNvidiaDriverVersion == 260)
     {
-    sprintf(buf, "nvidia-smi -g %s",
+    sprintf(buf, "nvidia-smi -g %d",
       gpuid);
 
     if (reset_perm == 1)
@@ -885,7 +888,7 @@ int resetgpuecc(
     }
   else /* 270 or greater driver */
     {
-    sprintf(buf, "nvidia-smi -i %s",
+    sprintf(buf, "nvidia-smi -i %d",
       gpuid);
 
     /* 270 can currently reset only 1 at a time */
@@ -1175,9 +1178,7 @@ int setup_gpus_for_job(
 
   {
   char *gpu_str;
-  char *ptr;
   int   gpu_flags = 0;
-  int   gpu_mode = -1;
   int   rc;
 
   /* if node does not have Nvidia recognized driver version then forget it */

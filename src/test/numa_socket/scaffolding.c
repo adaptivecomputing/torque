@@ -28,6 +28,7 @@ const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const int   exclusive_legacy = 6;
 
 const int exclusive_none = 0;
 const int exclusive_node = 1;
@@ -207,7 +208,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-int Chip::how_many_tasks_fit(req const &r, int place_type) const
+float Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }

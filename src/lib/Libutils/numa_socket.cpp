@@ -717,6 +717,11 @@ bool Socket::fits_on_socket(
     if ((remaining.cores_only == true) &&
         (this->getAvailableCores() >= max_cpus))
       fits = true;
+    else if (remaining.place_type == exclusive_legacy)
+      {
+      if (this->getAvailableCores() >= max_cpus)
+        fits = true;
+      }
     else if ((remaining.cores_only == false) &&
              (this->getAvailableThreads() >= max_cpus))
       fits = true;

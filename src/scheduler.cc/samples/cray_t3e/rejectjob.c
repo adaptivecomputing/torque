@@ -87,6 +87,8 @@
 #include "toolkit.h"
 #include "gblxvars.h"
 
+#include "lib_ifl.h"
+
 /*
  * The size of the buffer to allocate to hold the message that will be
  * sent to the user.  This is dynamically allocated (once) since it may
@@ -147,7 +149,9 @@ schd_reject_job(Job *job, char *reason)
      * message to the user.
      */
 
-    rc = pbs_deljob(connector, job->jobid, message);
+    int local_errno;
+
+    rc = pbs_deljob_err(connector, job->jobid, message, &local_errno);
 
     if (rc)
       {

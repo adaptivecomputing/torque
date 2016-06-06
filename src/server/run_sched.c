@@ -93,7 +93,7 @@
 #include "sched_cmds.h"
 #include "pbs_error.h"
 #include "dis_internal.h" /* DIS_tcp_setup */
-#include "../lib/Libifl/lib_ifl.h" /* get_port_from_server_name_file */
+#include "lib_ifl.h" /* get_port_from_server_name_file */
 #include "pbsd_main.h" /* process_pbs_server_port */
 #include "process_request.h" /*process_request */
 

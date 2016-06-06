@@ -101,7 +101,7 @@
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/setup_env.h"
 #include "../lib/Liblog/chk_file_sec.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -1050,6 +1050,9 @@ int setup_server_attrs(
 
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
+
+  server.sv_attr[SRV_ATR_NoteAppendOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_NoteAppendOnError].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_DownOnError].at_val.at_long = TRUE;
   server.sv_attr[SRV_ATR_DownOnError].at_flags = ATR_VFLAG_SET;
@@ -2846,7 +2849,7 @@ void catch_abort(
   sigaction(SIGTRAP, &act, NULL);
   sigaction(SIGSYS, &act, NULL);
 
-  log_err(sig, "mom_main", (char *)"Caught fatal core signal");
+  log_err(sig, __func__, "Caught fatal core signal");
 
   rlimit.rlim_cur = RLIM_INFINITY;
   rlimit.rlim_max = RLIM_INFINITY;

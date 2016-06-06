@@ -55,10 +55,6 @@ int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, in
   return(0);
   }
 
-int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, struct attropl *aoplp, char *extend)
-  {
-  return(0);
-  }
 
 int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
@@ -265,11 +261,6 @@ struct pbsnode *tfind_addr(const u_long key, uint16_t port, char *job_momname)
   }
 
 int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
-  {
-  return(0);
-  }
-
-int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
   {
   return(0);
   }
@@ -539,3 +530,12 @@ void update_failure_counts(
   {
   }
 
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
+  {
+  return(0);
+  }
+
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
+  {
+  return(0);
+  }

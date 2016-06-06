@@ -622,7 +622,7 @@ int process_state_str(
 
   if (np->nd_state & INUSE_NOHIERARCHY)
     {
-    sprintf(log_buf, "node %s has not received its hiearachy yet.",
+    sprintf(log_buf, "node %s has not received its hierarchy yet.",
       np->get_name());
 
     log_err(-1, __func__, log_buf);
@@ -744,6 +744,7 @@ int process_status_info(
   long            mom_job_sync = FALSE;
   long            auto_np = FALSE;
   long            down_on_error = FALSE;
+  long            note_append_on_error = FALSE;
   int             dont_change_state = FALSE;
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
@@ -751,6 +752,7 @@ int process_status_info(
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_l(SRV_ATR_NoteAppendOnError, &note_append_on_error);
   get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
 
   /* Before filling the "temp" pbs_attribute, initialize it.
@@ -884,7 +886,11 @@ int process_status_info(
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
-        set_note_error(current, str);
+
+        if (note_append_on_error == TRUE)
+          {
+          set_note_error(current, str);
+          }
         }
       }
     else if (!strncmp(str,"macaddr=",8))
@@ -933,6 +939,10 @@ int process_status_info(
         {
         handle_auto_np(current, str);
         }
+      }
+    else if (!strncmp(str, "version=", 8))
+      {
+      current->set_version(str + 8);
       }
     } /* END processing strings */
 

@@ -41,6 +41,10 @@ const int MEM_INDICES = 1;
 const int CPU_INDICES = 1;
 const char *use_cores = "usecores";
 const int ALL_EXECUTION_SLOTS = -1;
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
+const int exclusive_legacy = 6;
+const int exclusive_legacy2 = 7;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -120,6 +124,11 @@ bool Socket::spread_place(
   called_spread_place++;
 
   return(spreaded);
+  }
+
+Socket &Socket::operator =(const Socket &other)
+  {
+  return(*this);
   }
 
 Core::~Core()
@@ -233,11 +242,15 @@ req &complete_req::get_req(int index)
   return(r);
   }
 
+void req::set_placement_type(const std::string &type)
+  {
+  }
+
 void complete_req::set_hostlists(const char *job_id, const char *hostlists)
   {
   }
 
-complete_req::complete_req(list_link &l, bool legacy) {}
+complete_req::complete_req(list_link &l, int num_ppn, bool legacy) {}
 
 req::req() {}
 req::req(const req &other) {}

@@ -16,7 +16,8 @@ int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status);
 void release_slot_hold(job *pjob, int &difference);
 int update_slot_values(job_array *pa, int actually_running, int number_queued, job *held, std::vector<std::string> &candidates);
-
+bool need_to_update_slot_limits(job_array *pa);
+void set_slot_hold(job *pjob, int &difference);
 
 extern std::string get_path_jobdata(const char *, const char *);
 const char *array_sample = "<array>\n</array>";
@@ -44,6 +45,48 @@ job_array *get_job_array(
 
   return(pa);
   }
+
+
+START_TEST(need_to_update_slot_limits_test)
+  {
+  job_array pa;
+
+  memset(&pa, 0, sizeof(pa));
+
+  pa.ai_qs.slot_limit = 2;
+  pa.ai_qs.jobs_running = 2;
+
+  fail_unless(need_to_update_slot_limits(&pa) == false);
+  pa.ai_qs.jobs_running = 3;
+  fail_unless(need_to_update_slot_limits(&pa) == false);
+  pa.ai_qs.jobs_running = 1;
+  fail_unless(need_to_update_slot_limits(&pa) == true);
+  pa.ai_qs.jobs_running = 0;
+  fail_unless(need_to_update_slot_limits(&pa) == true);
+  }
+END_TEST
+
+
+START_TEST(set_slot_hold_test)
+  {
+  job pjob;
+  int difference = -2;
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+
+  // slot hold is already set, so we shouldn't change
+  set_slot_hold(&pjob, difference);
+  fail_unless(difference == -2);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == 0);
+  
+  // unset the slot hold to see a change
+  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = 0;
+  set_slot_hold(&pjob, difference);
+  fail_unless(difference == -1);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == ATR_VFLAG_SET);
+  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_l);
+  }
+END_TEST
 
 
 START_TEST(release_slot_hold_test)
@@ -323,6 +366,7 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("num_array_jobs_test");
   tcase_add_test(tc_core, num_array_jobs_test);
+  tcase_add_test(tc_core, need_to_update_slot_limits_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("first_job_index_test");
@@ -333,6 +377,7 @@ Suite *array_func_suite(void)
   tc_core = tcase_create("array_delete_test");
   tcase_add_test(tc_core,array_delete_test);
   tcase_add_test(tc_core, release_slot_hold_test);
+  tcase_add_test(tc_core, set_slot_hold_test);
   suite_add_tcase(s,tc_core);
 
   tc_core = tcase_create("array_recov_binary_test");

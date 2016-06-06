@@ -138,8 +138,12 @@ void delete_link(struct list_link *old)
 
 void req_jobscript(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_jobscript needs to be mocked!!\n");
-  exit(1);
+  return;
+  }
+
+void req_jobscript2(struct batch_request *preq)
+  {
+  return;
   }
 
 int svr_get_privilege(char *user, char *host)
@@ -537,3 +541,20 @@ bool acl_special::is_authorized(const std::string &host, const std::string &user
     return(false);
   return(true);
   }
+
+int req_job_cleanup_done(batch_request *preq)
+
+  {
+  return(PBSE_NONE);
+  }
+
+int req_quejob2(batch_request *preq)
+    {
+      return(0);
+        }
+
+int req_commit2(batch_request *preq)
+    {
+      return(0);
+        }
+

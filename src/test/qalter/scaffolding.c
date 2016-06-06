@@ -1,8 +1,11 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
+#include <vector>
+#include <string>
 
 #include "pbs_ifl.h" /* attrl */
+#include "pbs_error.h"
 
 int pbs_errno = 0;
 char *pbs_server = NULL;
@@ -89,10 +92,9 @@ int get_server(const char *job_id_in, char *job_id_out, int job_size, char *serv
   exit(1);
   }
 
-int parse_depend_list(char *list, char *rtn_list, int rtn_size)
+int parse_depend_list(char *list, std::vector<std::string> &dep_list)
   { 
-  fprintf(stderr, "The call to parse_depend_list needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 void prt_job_err(const char *cmd, int connect, const char *id)
@@ -126,3 +128,13 @@ int parse_at_list(char *list, int use_count, int abs_path)
   }
 
 void initialize_network_info() {}
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
+  }

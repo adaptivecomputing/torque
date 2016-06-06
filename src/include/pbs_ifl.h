@@ -285,6 +285,7 @@
 #define ATTR_tcptimeout  "tcp_timeout"
 #define ATTR_jobstatrate "job_stat_rate"
 #define ATTR_polljobs    "poll_jobs"
+#define ATTR_note_append_on_error   "note_append_on_error"
 #define ATTR_downonerror "down_on_error"
 #define ATTR_disableserveridcheck "disable_server_id_check"
 #define ATTR_jobnanny    "job_nanny"
@@ -392,6 +393,7 @@
 #define ATTR_nodesubmitexceptions       "node_submit_exceptions"
 #define ATTR_legacy_vmem                "legacy_vmem"
 #define ATTR_email_batch_seconds        "email_batch_seconds"
+#define ATTR_tcpincomingtimeout        "tcp_incoming_timeout"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"

@@ -46,6 +46,11 @@ Code changed for ANSI C compilers and autotools by Łukasz Cieśnik.
 #include <stdlib.h>
 #endif
 
+#ifdef __cplusplus
+extern "C"
+  {
+#endif 
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -912,3 +917,7 @@ main(void)
   }
 
 #endif  /* SELF_TEST */
+
+#ifdef __cplusplus
+  }
+#endif

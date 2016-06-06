@@ -435,7 +435,7 @@ extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);
 extern void  req_returnfiles (struct batch_request *req);
 extern void  req_delete_reservation(struct batch_request *preq);
-extern void req_change_power_state(struct batch_request *request);
+extern void  req_change_power_state(struct batch_request *request);
 #endif
 
 #ifdef SERVER_LIMITS_H

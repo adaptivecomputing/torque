@@ -116,7 +116,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "csv.h"
 #include "array.h"
@@ -180,6 +180,7 @@ extern int    LOGLEVEL;
 extern  char *msg_daemonname;
 
 
+int set_interactive_job_roaming_policy(job *pjob);
 
 /* Private Functions in this file */
 
@@ -1565,7 +1566,464 @@ int req_quejob(
   }  /* END req_quejob() */
 
 
+int do_quejob_commit(
 
+  struct batch_request *preq,
+  job *pj)  /* I */
+
+  {
+  int rc = PBSE_NONE;
+
+  int        newstate;
+  int        newsub;
+  pbs_queue *pque;
+  char       log_buf[LOCAL_LOG_BUF_SIZE] = {0};
+  char       namebuf[MAXPATHLEN+1];
+
+
+  pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
+  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
+  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
+  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+    {
+    std::string adjusted_path_jobs;
+
+    pj->ji_is_array_template = TRUE;
+
+    // get adjusted path_jobs path
+    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+              pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+    unlink(namebuf);
+    }
+
+  if (svr_authorize_jobreq(preq, pj) == -1)
+    {
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
+        pj->ji_qs.ji_jobid);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    if (LOGLEVEL >= 6)
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+    return(rc);
+    }
+
+  /* remove job from the server new job list, set state, and enqueue it */
+  if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
+    {
+    if (LOGLEVEL >= 8)
+      {
+      char  log_buf[LOCAL_LOG_BUF_SIZE];
+      snprintf(log_buf,sizeof(log_buf),
+            "WARNING:  could not remove job %s from newjobs container\n",
+            pj->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
+    }
+  
+  /* job array, setup the array task
+     *** job array under development */
+  if (pj->ji_is_array_template)
+    {
+    long max_size = 0;
+    long max_slot = 0;
+
+    if ((rc = setup_array_struct(pj)))
+      {
+      if (rc == ARRAY_TOO_LARGE)
+        {
+        get_svr_attr_l(SRV_ATR_MaxArraySize, &max_size);
+        snprintf(log_buf,sizeof(log_buf),
+          "Requested array size too large, limit is %ld",
+           max_size);
+
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
+        }
+      else if (rc == INVALID_SLOT_LIMIT)
+        {
+        get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_slot);
+        snprintf(log_buf,sizeof(log_buf),
+          "Requested slot limit invalid, limit is %ld",
+          max_slot);
+
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, log_buf);
+        }
+      else
+        {
+        req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
+        }
+
+      svr_job_purge(pj);
+      return(PBSE_BAD_ARRAY_REQ);
+      }
+    }  /* end if (pj->ji_is_array_template) */
+
+  svr_evaljobstate(*pj, newstate, newsub, 1);
+  svr_setjobstate(pj, newstate, newsub, FALSE);
+
+  set_interactive_job_roaming_policy(pj);
+
+  /* set the queue rank attribute */
+  pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
+    {
+    if (rc != PBSE_JOB_RECYCLED)
+      {
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
+          pj->ji_qs.ji_jobid);
+        
+        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
+        }
+
+      svr_job_purge(pj);
+      }
+
+    req_reject(rc, 0, preq, NULL, log_buf);
+
+    return(rc);
+    }
+
+  /*
+   * if the job went into a Route (push) queue that has been started,
+   * try once to route it to give immediate feedback as a courtsey
+   * to the user.
+   */
+
+  if ((pque = get_jobs_queue(&pj)) != NULL)
+    {
+    mutex_mgr pque_mutex(pque->qu_mutex,true);
+    std::string queue_name(pque->qu_qs.qu_name);
+
+    if ((preq->rq_fromsvr == 0) &&
+        (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
+        (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
+      {
+      /* job_route expects the queue to be unlocked */
+      pque_mutex.unlock();
+      if ((rc = job_route(pj)))
+        {
+        if (LOGLEVEL >= 6)
+          {
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s",
+              pj->ji_qs.ji_jobid);
+
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
+            log_buf);
+          }
+
+        if (!pj->ji_is_array_template)
+          {
+          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          }
+
+        svr_job_purge(pj);
+        req_reject(rc, 0, preq, NULL, log_buf);
+        return(rc);
+        }
+      }
+
+    if (job_save(pj, SAVEJOB_FULL, 0) != 0)
+      {
+      // unlock the queue so it can be purged
+      pque_mutex.unlock();
+#ifdef UT_REQ_QUEJOB
+      // req_quejob unit test
+      rc = pque_mutex.unlock();
+      // expect to return PBSE_MUTEX_ALREADY_UNLOCKED
+      return(rc);
+#endif
+
+      rc = PBSE_CAN_NOT_SAVE_FILE;
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot save job %s",
+          pj->ji_qs.ji_jobid);
+        
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        }
+      
+       if (!pj->ji_is_array_template)
+         {
+         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         }
+
+      svr_job_purge(pj);
+      req_reject(rc, 0, preq, NULL, log_buf);
+      return(rc);
+      }
+    
+    /* this needs to be done if there are routing queues. queue_route checks to see if req_commit 
+       is done routing the job with this flag */
+    pj->ji_commit_done = 1;
+
+    /* need to format message first, before request goes away - 
+     * moved here because we have the queue name */
+    snprintf(log_buf, sizeof(log_buf),
+      msg_jobnew,
+      preq->rq_user, preq->rq_host,
+      pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+      pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+      queue_name.c_str());
+    }
+
+  /* if job array, setup the cloning work task */
+  if (pj->ji_is_array_template)
+    {
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
+    }
+    
+  sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
+
+  if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    /* notify creator where job is */
+
+    issue_track(pj);
+    }
+
+
+  return(rc);
+  }  /* END do_quejob_commit() */
+
+
+
+
+/*
+ * req_quejob - Queue Job Batch Request processing routine
+ *  NOTE:  calls svr_chkque() to validate queue access
+ *
+ */
+
+int req_quejob2(
+
+  batch_request *preq)
+
+  {
+  int                   created_here = 0;
+  int                   sock = preq->rq_conn;
+  int                   rc = PBSE_NONE;
+  /* set basic (user) level access permission */
+  int                   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
+
+  char                  EMsg[MAXPATHLEN];
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  time_t                time_now = time(NULL);
+
+  job                  *pj;
+  pbs_queue            *pque;
+  std::string           jobid;
+  std::string           filename;
+  
+
+  if ((rc = get_job_id(preq, resc_access_perm, created_here, jobid)) != PBSE_NONE)
+    return(rc);
+
+  if (job_exists(jobid.c_str()) == true)
+    {
+    log_err(PBSE_JOBEXIST, __func__, "cannot queue new job, job already exists");
+    req_reject(PBSE_JOBEXIST, 0, preq, NULL, NULL);
+    return(PBSE_JOBEXIST);
+    }
+
+  pque = get_queue_for_job(preq->rq_ind.rq_queuejob.rq_destin, rc);
+
+  if (pque == NULL)
+    {
+    /* FAILURE */
+
+    snprintf(log_buf, sizeof(log_buf), "requested queue not found");
+    log_err(-1, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf); /* not there   */
+    return rc;
+    }
+
+  mutex_mgr que_mgr(pque->qu_mutex, true);
+
+  /* unlock the queue. We validated that it was there, now let someone else
+     use it until we need it */
+  sprintf(log_buf, "Just validated queue");
+
+  que_mgr.unlock();
+
+  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+
+  if ((pj = create_and_initialize_job_structure(created_here, filename, jobid)) == NULL)
+    {
+    unlink(filename.c_str());
+    req_reject(PBSE_SYSTEM, 0, preq, NULL, "");
+    return(PBSE_MEM_MALLOC);
+    }
+
+  mutex_mgr job_mutex(pj->ji_mutex, true);
+  std::string  cpuClock = "";
+  rc = decode_attributes_into_job(pj, resc_access_perm, preq, job_mutex, pque, cpuClock);
+
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  rc = set_nodes_attr(pj);
+  if (rc)
+    {
+    /* just record that we could not set node count */
+    snprintf(log_buf, sizeof(log_buf),
+      "Could not set default node count. Error not fatal. Will continue submitting job: %d",
+      rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+  if ((rc = perform_attribute_post_actions(pj, preq, job_mutex)) != PBSE_NONE)
+    {
+    job_mutex.set_unlock_on_exit(false);
+    return(rc);
+    }
+
+  sum_select_mem_request(pj);
+
+  rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock);
+  if (rc != PBSE_NONE)
+    {
+    job_mutex.set_unlock_on_exit(false);
+    return(rc);
+    }
+
+  /* make sure its okay to submit this job */
+  if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)
+    {
+    long max_queuable;
+
+    get_svr_attr_l(SRV_ATR_MaxUserQueuable, &max_queuable);
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s violates the global server limit of %ld jobs queued per user",
+      pj->ji_qs.ji_jobid,
+      max_queuable);
+
+    svr_job_purge(pj);
+    job_mutex.set_unlock_on_exit(false);
+
+    req_reject(PBSE_MAXQUED, 0, preq, NULL, log_buf);
+    
+    return(PBSE_MAXQUED);
+    }
+
+  /*
+   * See if the job is qualified to go into the requested queue.
+   * Note, if an execution queue, then ji_qs.ji_un.ji_exect is set up
+   *
+   * svr_chkque() is called way down here because it needs to have the
+   * job structure and attributes already set up.
+   */
+  /* set ji_is_array_template before calling */
+  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+    {
+    char  *oldid;
+    char  *hostname;
+    
+    pj->ji_is_array_template = TRUE;
+    
+    /* rewrite jobid to include empty brackets
+       this causes arrays to show up as id[].host in qstat output, and 
+       actions applied to id[] are applied to the entire array */
+    oldid = strdup(pj->ji_qs.ji_jobid);
+
+    hostname = index(oldid, '.');
+
+    if (hostname != NULL)
+      {
+      *(hostname++) = '\0';
+      
+      snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
+        oldid,
+        hostname);
+      }
+    else
+      snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s[]", oldid);
+
+    free(oldid);    
+    }
+
+  que_mgr.lock();
+  if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
+    {
+    que_mgr.unlock();
+    svr_job_purge(pj);
+    job_mutex.set_unlock_on_exit(false);
+    req_reject(rc, 0, preq, NULL, EMsg);
+    return(rc);
+    }
+  que_mgr.unlock();
+
+  /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
+
+  strcpy(pj->ji_qs.ji_queue, pque->qu_qs.qu_name);
+
+  pj->ji_wattr[JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
+  pj->ji_wattr[JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
+
+  /* set remaining job structure elements */
+
+  pj->ji_qs.ji_state =    JOB_STATE_TRANSIT;
+
+  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
+
+  pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
+
+  pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+
+  pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
+
+  pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+
+  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,TRUE);
+
+  pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+
+  pj->ji_internal_id = job_mapper.get_new_id(pj->ji_qs.ji_jobid);
+
+  /* link job into server's new jobs list request  */
+  insert_job(&newjobs,pj);
+
+  rc = do_quejob_commit(preq, pj);
+  if (rc != PBSE_NONE)
+    return(rc);
+
+  /* acknowledge the request with the job id */
+  if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
+    {
+    /* reply failed, purge the job and close the connection */
+    rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
+    if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
+      {
+      if (LOGLEVEL >= 8)
+        {
+        char  log_buf[LOCAL_LOG_BUF_SIZE];
+        snprintf(log_buf,sizeof(log_buf),
+            "Could not remove job %s from newjobs\n",
+            pj->ji_qs.ji_jobid);
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
+    
+    svr_job_purge(pj);
+    job_mutex.set_unlock_on_exit(false);
+    return(rc);
+    }
+
+  return(rc);
+  }  /* END req_quejob2() */
 
 
 /*
@@ -1604,9 +2062,6 @@ int req_jobcredential(
   unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
   return rc;
   }  /* END req_jobcredential() */
-
-
-
 
 /*
  * req_jobscript - receive job script section
@@ -1745,6 +2200,149 @@ int req_jobscript(
 
   return(rc);
   }  /* END req_jobscript() */
+
+
+
+
+/*
+ * req_jobscript2 - receive job script section
+ *
+ * Each section is appended to the file
+ */
+
+int req_jobscript2(
+
+  struct batch_request *preq)
+
+  {
+  int   fds;
+  char  namebuf[MAXPATHLEN];
+  job  *pj;
+  int   filemode = 0600;
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  int   rc = PBSE_NONE;
+
+  errno = 0;
+
+
+  pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, FALSE);
+
+  if (pj == NULL)
+    {
+    rc = PBSE_IVALREQ;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
+        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+    log_err(rc, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    return(rc);
+    }
+
+  /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
+
+  if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && 
+      (pj->ji_qs.ji_state != JOB_STATE_HELD) &&
+      ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)) &&
+      (pj->ji_qs.ji_state != JOB_STATE_WAITING))
+    {
+    rc = PBSE_IVALREQ;
+    if (errno == 0)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "job %s in unexpected state '%s'",
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate]);
+      }
+    else
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "job %s in unexpected state '%s' (errno=%d - %s)",
+        pj->ji_qs.ji_jobid,
+        PJobSubState[pj->ji_qs.ji_substate],
+        errno,
+        strerror(errno));
+      }
+    log_err(rc, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+    return(rc);
+    }
+
+  if (svr_authorize_jobreq(preq, pj) == -1)
+    {
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "cannot authorize request %s (%d-%s)",
+        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+    log_err(rc, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
+    return rc;
+    }
+
+  // get adjusted path_jobs path
+  std::string adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+
+  if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
+    {
+    /* NOTE:  fail is job script already exists */
+
+    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
+    }
+  else
+    {
+    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
+    }
+
+  if (fds < 0)
+    {
+    rc = PBSE_CAN_NOT_OPEN_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
+             namebuf,
+             errno,
+             strerror(errno),
+             msg_script_open);
+    log_err(rc, __func__, log_buf);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
+    return rc;
+    }
+
+  if (write_ac_socket(
+        fds,
+        preq->rq_ind.rq_jobfile.rq_data,
+        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
+    {
+    rc = PBSE_CAN_NOT_WRITE_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
+        namebuf,
+        errno,
+        strerror(errno),
+        msg_script_write);
+    log_err(rc, __func__, log_buf);
+    req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
+    close(fds);
+    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
+    return rc;
+    }
+
+  close(fds);
+
+  pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
+
+  /* job has a script file */
+
+  pj->ji_qs.ji_svrflags =
+    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
+
+  /* SUCCESS */
+  unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
+
+  reply_ack(preq);
+
+  return(rc);
+  }  /* END req_jobscript2() */
 
 
 
@@ -2063,6 +2661,155 @@ int set_interactive_job_roaming_policy(
   } /* END set_interactive_job_roaming_policy() */
 
 
+/*
+ * req_commit - commit ownership of job
+ *
+ * Set state of job to JOB_STATE_QUEUED (or Held or Waiting) and
+ * enqueue the job into its destination queue.
+ */
+
+int req_commit2(
+
+  struct batch_request *preq)  /* I */
+
+  {
+  int rc = PBSE_NONE;
+  job       *pj;
+
+  char       log_buf[LOCAL_LOG_BUF_SIZE] = {0};
+
+
+  struct batch_request *preq_run = NULL;
+  pbs_attribute        *pattr;
+  int                   nodes_avail = -1;
+  int                   dummy;
+  char                  spec[MAXPATHLEN];
+  char                  *rq_destin = NULL;
+
+  pj = svr_find_job(preq->rq_ind.rq_commit, FALSE);
+
+  if (LOGLEVEL >= 6)
+    {
+    log_record(
+      PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      "committing job");
+    }
+
+  if (pj == NULL)
+    {
+    rc = PBSE_UNKJOBID;
+    req_reject(rc, 0, preq, NULL, NULL);
+    return(rc);
+    }
+
+  if (LOGLEVEL >= 10)
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->ji_qs.ji_jobid);
+
+  mutex_mgr job_mutex = mutex_mgr(pj->ji_mutex, true); 
+
+  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_QUEUED)
+    {
+    rc = PBSE_IVALREQ;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "cannot commit job in unexpected state (%d-%s)",
+        errno, strerror(errno));
+    log_err(rc, __func__, "cannot commit job in unexpected state");
+    req_reject(rc, 0, preq, NULL, NULL);
+    job_mutex.unlock();
+    return(rc);
+    }
+
+  if (svr_authorize_jobreq(preq, pj) == -1)
+    {
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
+        pj->ji_qs.ji_jobid);
+    req_reject(rc, 0, preq, NULL, log_buf);
+    if (LOGLEVEL >= 6)
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+    job_mutex.unlock();
+    return(rc);
+    }
+
+  /* If we are auto running jobs with start_count = 0 then the
+   * branch_request needs re creation since reply_jobid will free
+   * the passed in one
+  */
+  pattr = &pj->ji_wattr[JOB_ATR_start_count];
+
+  snprintf(spec, sizeof(spec), PBS_DEFAULT_NODE);
+
+  node_avail_complex(spec, &nodes_avail, &dummy, &dummy, &dummy);
+
+  if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
+    {
+    /* Create a new batch request and fill it in */
+    preq_run = alloc_br(PBS_BATCH_RunJob);
+    preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
+    preq_run->rq_ind.rq_run.rq_resch = 0;
+    preq_run->rq_ind.rq_run.rq_destin = rq_destin;
+    preq_run->rq_fromsvr = preq->rq_fromsvr;
+    preq_run->rq_noreply = TRUE; /* set for no replies */
+    strcpy(preq_run->rq_user, preq->rq_user);
+    strcpy(preq_run->rq_host, preq->rq_host);
+    strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);
+    }
+
+
+  /* acknowledge the request with the job id */
+
+  reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
+  
+  /* if job array, setup the cloning work task */
+  if (pj->ji_is_array_template)
+    {
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
+    }
+    
+  sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
+
+  if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    {
+    /* notify creator where job is */
+
+    issue_track(pj);
+    }
+
+  job_mutex.unlock();
+
+  /* If we are auto running jobs with start_count = 0 then the
+   * branch_request was re created. Now we run the job if any nodes
+   * are available
+  */
+
+  if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
+    {
+    if (LOGLEVEL >= 7)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Trying to AUTORUN job %s",
+        pj->ji_qs.ji_jobid);
+
+      log_record(
+        PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pj->ji_qs.ji_jobid,
+        log_buf);
+      }
+
+    req_runjob(preq_run);
+    }
+
+
+  return(rc);
+  }  /* END req_commit2() */
+
+
 
 
 /*
@@ -2130,7 +2877,7 @@ int req_commit(
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
     rc = PBSE_IVALREQ;
-    snprint(log_buf, LOCAL_LOG_BUF_SIZE,
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "cannot commit job in unexpected state (%d - %s)",
         errno, strerror(errno));
     log_err(rc, __func__, log_buf);
@@ -2423,7 +3170,7 @@ int req_commit(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+        pj->ji_qs.ji_jobid,
         log_buf);
       }
 

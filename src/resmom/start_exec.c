@@ -110,7 +110,7 @@ extern "C"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "mom_mach.h"
 #include "mom_func.h"
 #include "pbs_error.h"
@@ -131,6 +131,8 @@ extern "C"
 #include "mom_config.h"
 #include "mom_memory.h"
 #include "node_internals.hpp"
+#include "job_host_data.hpp"
+#include "pmix_tracker.hpp"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
@@ -340,7 +342,7 @@ int TMomFinalizeJob1(job *, pjobexec_t *, int *);
 int TMomFinalizeJob2(pjobexec_t *, int *);
 int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
 int expand_path(job *,char *,int,char *);
-int TMomFinalizeChild(pjobexec_t *);
+int TMomFinalizeChild(pjobexec_t *, char **extra_env);
 
 int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
 
@@ -1938,7 +1940,7 @@ int open_tcp_stream_to_sisters(
 
     pjob->ji_outstanding++;
 
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
     if (IS_VALID_STREAM(stream) == FALSE)
       {
@@ -2566,6 +2568,7 @@ int TMomFinalizeJob2(
 #endif  /* !SHELL_USE_ARGV */
 
   job                  *pjob;
+  char                **pmix_env = NULL;
 
   pjob  = mom_find_job(TJE->jobid);
 
@@ -2595,6 +2598,25 @@ int TMomFinalizeJob2(
     }
 #endif  /* NVIDIA_GPUS */
 
+#ifdef ENABLE_PMIX
+  pmix_proc_t   p;
+  strcpy(p.nspace, TJE->jobid);
+
+  char *dot = strchr(p.nspace, '.');
+  if (dot != NULL)
+    *dot = '\0';
+
+  pmix_status_t pmix_rc = PMIx_server_setup_fork(&p, &pmix_env);
+  if (pmix_rc != PMIX_SUCCESS)
+    {
+    /* Uncomment once PMIx bug is fixed
+     * snprintf(log_buffer, sizeof(log_buffer),
+      "Failed to get PMIx environment variables for job %s: %s",
+      pjob->ji_qs.ji_jobid,
+      PMIx_Error_string(pmix_rc));
+    log_err(-1, __func__, log_buffer);*/
+    }
+#endif
 
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
@@ -2616,7 +2638,7 @@ int TMomFinalizeJob2(
   if (cpid == 0)
     {
     /* CHILD:  handle child activities */
-    TMomFinalizeChild(TJE);
+    TMomFinalizeChild(TJE, pmix_env);
 
     /*NOTREACHED*/
     }
@@ -4359,11 +4381,6 @@ unsigned long long get_swap_limit_for_this_host(
   if (cr != NULL)
     swap_limit = cr->get_swap_memory_for_this_host(string_hostname);
 
-  if (swap_limit == 0)
-    {
-    swap_limit = get_memory_limit_from_resource_list(pjob);
-    }
-
   return(swap_limit);
   } // END get_swap_limit_for_this_host()
 
@@ -4500,7 +4517,8 @@ int set_job_cgroup_memory_limits(
 
 int TMomFinalizeChild(
 
-  pjobexec_t *TJE)    /* I */
+  pjobexec_t  *TJE,      // I
+  char       **extra_env) // I
 
   {
   int                    aindex;
@@ -4605,6 +4623,14 @@ int TMomFinalizeChild(
 
   handle_cpuset_creation(pjob, &sjr, TJE);
 
+#ifdef ENABLE_PMIX
+  // Add the extra variables to the job's environment
+  if (extra_env != NULL)
+    {
+    for (int i = 0; extra_env[i] != NULL; i++)
+      bld_env_variables(&vtable, extra_env[i], NULL);
+    }
+#endif
 
 #ifdef ENABLE_CPA
   /* Cray CPA setup */
@@ -4638,6 +4664,74 @@ int TMomFinalizeChild(
 
     exit(1);
     }
+
+#ifndef PENABLE_LINUX_CGROUPS
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* Move this mom process into the cpuset so the job will start in it. */
+
+  if (use_cpusets(pjob) == TRUE)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+      }
+    move_to_job_cpuset(getpid(), pjob);
+    }
+
+#endif  /* (PENABLE_LINUX26_CPUSETS) */
+#endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+  int rc;
+
+  // Create the cgroups for this job
+  rc = init_torque_cgroups();
+  if (rc == PBSE_NONE) {
+      rc = trq_cg_create_all_cgroups(pjob);
+  } else {
+      /*
+        Send/log an additional error, cleanup and return as before
+       */
+    sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+  }
+
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    log_ext(-1, __func__, log_buffer, LOG_ERR);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  pjob->ji_cgroups_created = true;
+
+  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
+    {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  rc = trq_cg_add_devices_to_cgroup(pjob);
+  if (rc != PBSE_NONE)
+    {
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+  rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "failed to add pid to all cgroups: %s", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
+    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
+    exit(-1);
+    }
+
+
+#endif /* PENABLE_LINUX_CGROUPS */
+
 
   if (LOGLEVEL >= 6)
     log_ext(-1, __func__, "system vars set", LOG_DEBUG);
@@ -4676,62 +4770,6 @@ int TMomFinalizeChild(
       log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }
     }
-
-#ifndef PENABLE_LINUX_CGROUPS
-#ifdef PENABLE_LINUX26_CPUSETS
-  /* Move this mom process into the cpuset so the job will start in it. */
-
-  if (use_cpusets(pjob) == TRUE)
-    {
-    if (LOGLEVEL >= 6)
-      {
-      sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
-      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-      }
-    move_to_job_cpuset(getpid(), pjob);
-    }
-
-#endif  /* (PENABLE_LINUX26_CPUSETS) */
-#endif
-
-#ifdef PENABLE_LINUX_CGROUPS
-  int rc;
-
-  // Create the cgroups for this job
-  if ((rc = trq_cg_create_all_cgroups(pjob)) != PBSE_NONE)
-    {
-    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
-    exit(-1);
-    }
-
-  pjob->ji_cgroups_created = true;
-
-  if (set_job_cgroup_memory_limits(pjob) != PBSE_NONE)
-    {
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
-    exit(-1);
-    }
-
-  rc = trq_cg_add_devices_to_cgroup(pjob);
-  if (rc != PBSE_NONE)
-    {
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
-    exit(-1);
-    }
-
-  rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, getpid());
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buffer, "failed to add pid to all cgroups: %s", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
-    starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_CGROUP, &sjr);
-    exit(-1);
-    }
-
-
-#endif /* PENABLE_LINUX_CGROUPS */
 
   if (site_job_setup(pjob) != 0)
     {
@@ -6485,7 +6523,7 @@ int add_host_to_sister_list(
  * @see start_exec() - parent
  */
 
-void job_nodes(
+int job_nodes(
 
   job &pjob)  /* I */
 
@@ -6502,7 +6540,7 @@ void job_nodes(
       (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL))
     {
     log_err(-1, __func__, "Cannot parse the nodes for a job without exec hosts being set");
-    return;
+    return(-1);
     }
 
   std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
@@ -6525,14 +6563,12 @@ void job_nodes(
 
     host.erase(slash);
 
-
     memset(&hp, 0, sizeof(hp));
 
     hp.hn_node = nhosts;
     hp.hn_sister = SISTER_OKAY;
     hp.hn_host = strdup(host.c_str());
     hp.hn_port = strtol(port_str.c_str(), NULL, 10);
-
 
     CLEAR_HEAD(hp.hn_events);
 
@@ -6552,8 +6588,21 @@ void job_nodes(
       hp.sock_addr.sin_family = AF_INET;
       hp.sock_addr.sin_port = htons(hp.hn_port);
       }
+    else
+      {
+      // Unable to resolve this sister's hostname; this job should fail
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Unable to resolve host %s requested as a sister node. Aborting job.",
+        hp.hn_host);
+      log_err(PBSE_CANNOT_RESOLVE, __func__, log_buffer);
+
+      return(PBSE_CANNOT_RESOLVE);
+      }
 
     translate_range_string_to_vector(range.c_str(), indices);
+
+    job_host_data jdh(hp.hn_host, indices.size());
+    (*pjob.ji_usages)[hp.hn_host] = jdh;
 
     for (unsigned int i = 0; i < indices.size(); i++)
       {
@@ -6588,7 +6637,7 @@ void job_nodes(
       (pjob.ji_vnods == NULL))
     {
     log_err(-1,__func__,"Out of memory, system failure!\n");
-    return;
+    return(ENOMEM);
     }
 
   for (unsigned int i = 0; i < hosts.size(); i++)
@@ -6639,7 +6688,7 @@ void job_nodes(
     log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  return;
+  return(PBSE_NONE);
   }   /* END job_nodes() */
 
 
@@ -6914,7 +6963,7 @@ int send_join_job_to_sisters(
       log_buffer[0] = '\0';
 
       ret = -1;
-      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
 
       if (IS_VALID_STREAM(stream))
         {
@@ -7158,7 +7207,8 @@ int start_exec(
 
   /* Step 2.0 Initialize Job */
   /* update nodes info w/in job based on exec_hosts pbs_attribute */
-  job_nodes(*pjob);
+  if ((ret = job_nodes(*pjob)) != PBSE_NONE)
+    return(ret);
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */
@@ -9661,6 +9711,10 @@ int exec_job_on_ms(
 
     return(SC);
     }
+
+#ifdef ENABLE_PMIX
+  register_jobs_nspace(pjob, TJE);
+#endif
 
   /* TMomFinalizeJob2() blocks until job is fully launched */
 

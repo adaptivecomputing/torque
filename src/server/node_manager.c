@@ -123,6 +123,7 @@
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
+#include "../lib/Libutils/lib_utils.h" /* have_incompatible_dash_l_resource */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_functions.h"
 #include "login_nodes.h"
@@ -276,7 +277,9 @@ struct pbsnode *tfind_addr(
     numa = AVL_find(index, pn->nd_mom_port, pn->node_boards);
 
     pn->unlock_node(__func__, "pn->numa", LOGLEVEL);
-    numa->lock_node(__func__, "numa", LOGLEVEL);
+
+    if (numa != NULL)
+      numa->lock_node(__func__, "numa", LOGLEVEL);
 
     if (plus != NULL)
       *plus = '+';
@@ -284,6 +287,55 @@ struct pbsnode *tfind_addr(
     return(numa);
     }
   } /* END tfind_addr() */
+
+
+
+void check_node_jobs_existence(
+    
+  struct work_task *pwt)
+
+  {
+  char *node_name = (char *)pwt->wt_parm1;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  pbsnode *pnode = find_nodebyname(node_name);
+
+  if (pnode != NULL)
+    {
+    std::vector<int> internal_ids;
+    std::vector<int> ids_to_remove;
+    
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      internal_ids.push_back(pnode->nd_job_usages[i].internal_job_id);
+
+    pnode->unlock_node(__func__, "", LOGLEVEL);
+
+    for (size_t i = 0; i < internal_ids.size(); i++)
+      {
+      // Job doesn't exist, mark this usage record for removal
+      if (internal_job_id_exists(internal_ids[i]) == false)
+        ids_to_remove.push_back(internal_ids[i]);
+      }
+
+    if (ids_to_remove.size() > 0)
+      {
+      pbsnode *pnode = find_nodebyname(node_name);
+
+      if (pnode != NULL)
+        {
+        // Erase non-existent job ids
+        for (size_t i = 0; i < ids_to_remove.size(); i++)
+          remove_job_from_node(pnode, ids_to_remove[i]);
+    
+        pnode->unlock_node(__func__, "", LOGLEVEL);
+        }
+      }
+    }
+
+  free(node_name);
+  } // END check_node_jobs_existence()
 
 
 
@@ -369,6 +421,8 @@ void update_node_state(
     np->nd_state &= ~INUSE_BUSY;
     np->nd_state &= ~INUSE_UNKNOWN;
     np->nd_state &= ~INUSE_DOWN;
+
+    set_task(WORK_Immed, 0, check_node_jobs_existence, strdup(np->get_name()), FALSE);
     }    /* END else if (newstate == INUSE_FREE) */
   else if (newstate & INUSE_NETWORK_FAIL)
     {
@@ -3647,6 +3701,7 @@ int place_gpus_in_hostlist(
     if (pnode->nd_gpus_real)
       {
       if ((gn.state == gpu_unavailable) ||
+          (gn.state == gpu_shared) ||
           (gn.state == gpu_exclusive) ||
           ((((int)gn.mode == gpu_normal)) &&
            (gpu_mode_rqstd != gpu_normal) &&
@@ -3929,8 +3984,9 @@ void update_req_hostlist(
 
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
-    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, (bool)legacy_vmem);
+    if (have_incompatible_dash_l_resource(pjob) == true)
+      legacy_vmem = TRUE;
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, ppn_needed, (bool)legacy_vmem);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     }
   else

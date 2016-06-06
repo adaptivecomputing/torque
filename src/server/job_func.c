@@ -133,7 +133,7 @@
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_error.h"
 #include "svrfunc.h"
 #include "acct.h"
@@ -668,13 +668,12 @@ int job_abt(
   }  /* END job_abt() */
 
 
+
 /*
  * conn_qsub - connect to the qsub that submitted this interactive job
  * return >= 0 on SUCCESS, < 0 on FAILURE
  * (this was moved from resmom/mom_inter.c)
  */
-
-
 
 int conn_qsub(
 
@@ -742,7 +741,6 @@ int conn_qsub(
 
   return(s);
   }  /* END conn_qsub() */
-
 
 
 
@@ -864,8 +862,6 @@ job *copy_job(
 
   return(pnewjob);
   } /* END copy_job() */
-
-
 
 
 
@@ -2405,9 +2401,38 @@ bool job_id_exists(
   alljobs.unlock();
 
   return(rc);
-  }
+  } // END job_id_exists()
 
 
+
+/*
+ * internal_job_id_exists()
+ *
+ * Checks if a job exists based on the internal id supplied.
+ * @return true if a job exists with that internal id, false otherwise
+ */
+
+bool internal_job_id_exists(
+
+  int internal_id)
+
+  {
+  bool        exists = false;
+  const char *job_id = job_mapper.get_name(internal_id);
+
+  if (job_id != NULL)
+    {
+    alljobs.lock();
+    
+    if (alljobs.find(job_id) != NULL)
+      exists = true;
+
+    alljobs.unlock();
+    }
+
+  return(exists);
+  } // END internal_job_id_exists()
+  
 
 /* END job_func.c */
 

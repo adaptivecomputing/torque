@@ -94,7 +94,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pbs_ifl.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 int locate_job(
 
