@@ -402,9 +402,7 @@ void *svr_is_request(
 
     if (err == PBSE_NONE)
       {
-      node = AVL_find(ipaddr, 0, ipaddrs);
-       
-      node->lock_node(__func__, "no error", LOGLEVEL);
+      node = find_nodebyname(nodename);
       }                                                         
     }
     
