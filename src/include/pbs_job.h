@@ -452,6 +452,9 @@ enum job_atr
 extern attribute_def job_attr_def[];
 
 #ifdef PBS_MOM
+
+#define COPY_FILE_FAIL 1
+
 #include "tm_.h"
 
 /*

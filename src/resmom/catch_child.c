@@ -1134,7 +1134,7 @@ int run_epilogues(
 int send_job_obit(
 
   job *pjob,  /* I */
-  int  ev)    /* I exit value (only used to determine if retrying obit) */
+  int  ev)    /* I exit value (COPY_FILE_FAIL means we didn't copy the output files successfully) */
 
   {
   int                   sock;
@@ -1148,6 +1148,12 @@ int send_job_obit(
     {
     sprintf(log_buffer, "preparing obit message for job %s", pjob->ji_qs.ji_jobid);
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
+    }
+
+  if (ev == COPY_FILE_FAIL)
+    {
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_SEND;
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str = strdup("Unable to copy files back - please see the mother superior's log for exact details.");
     }
 
   /* This is the child code */

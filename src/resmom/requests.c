@@ -3669,6 +3669,7 @@ void req_cpyfile(
   struct rqfpair *pair = NULL;
   char           *prmt;
   int             rc;
+  int             exitcode = 0;
   bool            rmtflag = false;
 #if NO_SPOOL_OUTPUT == 0
 #endif /* !NO_SPOOL_OUTPUT */
@@ -4051,6 +4052,7 @@ void req_cpyfile(
                                  bad_files)) != PBSE_NONE)
         {
         copy_file_cleanup(dir, from_spool, preq, pair, localname, sizeof(localname), &bad_list);
+        exitcode = COPY_FILE_FAIL;
 
         break;
         }
@@ -4068,27 +4070,36 @@ error:
 
 #endif
 
-  if (bad_files)
-    {
-    reply_text(preq, PBSE_NOCOPYFILE, bad_list);
-
-    log_err(-1, __func__, bad_list);
-    }
-  else
-    {
-    reply_ack(preq);
-    }
-
   // In single transaction mode, delete the staged in files next
   if ((pjob != NULL) && 
       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT))
+    {
+    if (bad_files)
+      log_err(-1, __func__, bad_list);
+
     delete_staged_in_files(pjob, HDir, &bad_list);
+
+    free_br(preq);
+    }
+  else
+    {
+    if (bad_files)
+      {
+      reply_text(preq, PBSE_NOCOPYFILE, bad_list);
+
+      log_err(-1, __func__, bad_list);
+      }
+    else
+      {
+      reply_ack(preq);
+      }
+    }
 
   /* we are the child, exit not return */
 
   /* SUCCESS */
 
-  exit(0);
+  exit(exitcode);
   }  /* END req_cpyfile() */
 
 
@@ -4449,14 +4460,19 @@ int send_back_std_and_staged_files(
   int  exit_status)
 
   {
-  batch_request *preq = get_std_file_info(pjob);
+  if (pjob->ji_job_is_being_rerun == FALSE)
+    {
+    batch_request *preq = get_std_file_info(pjob);
 
-  preq = get_stageout_info(preq, pjob);
+    preq = get_stageout_info(preq, pjob);
 
-  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
+    set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
 
-  if (preq != NULL)
-    req_cpyfile(preq);
+    if (preq != NULL)
+      req_cpyfile(preq);
+    else
+      delete_staged_in_files(pjob, NULL, NULL);
+    }
   else
     delete_staged_in_files(pjob, NULL, NULL);
 
@@ -4478,31 +4494,40 @@ void delete_staged_in_files(
   char **bad_list)
 
   {
-  struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stagein].at_val.at_arst;
-
-  set_jobs_substate(pjob, JOB_SUBSTATE_STAGEDEL);
-
-  if (arst != NULL)
+  if (pjob->ji_job_is_being_rerun == FALSE)
     {
-    batch_request *preq = initialize_stageout_request(pjob);
-    preq->rq_ind.rq_cpyfile.rq_dir = STAGE_DIR_IN;
+    struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stagein].at_val.at_arst;
 
-    place_files_in_preq(preq, arst);
+    set_jobs_substate(pjob, JOB_SUBSTATE_STAGEDEL);
 
-    if (home_dir == NULL)
+    if (arst != NULL)
       {
-      char *bad = NULL;
-      home_dir = get_job_envvar(pjob, (char *)"PBS_O_INITDIR");
-      
+      batch_request *preq = initialize_stageout_request(pjob);
+      preq->rq_ind.rq_cpyfile.rq_dir = STAGE_DIR_IN;
+
+      place_files_in_preq(preq, arst);
+
       if (home_dir == NULL)
-        home_dir = pjob->ji_grpcache->gc_homedir;
+        {
+        char *bad = NULL;
+        home_dir = get_job_envvar(pjob, (char *)"PBS_O_INITDIR");
+        
+        if (home_dir == NULL)
+          home_dir = pjob->ji_grpcache->gc_homedir;
 
-      *bad_list = bad;
+        *bad_list = bad;
+        }
+
+      del_files(preq, home_dir, 1, bad_list);
       }
-
-    del_files(preq, home_dir, 1, bad_list);
+    // If we have forked, we are the user and not root, and we don't want to send the obit.
+    // The obit gets sent once this child process exits.
+    else if (getuid() == 0)
+      send_job_obit(pjob, 0);
     }
-  else
+  // If we have forked, we are the user and not root, and we don't want to send the obit.
+  // The obit gets sent once this child process exits.
+  else if (getuid() == 0)
     send_job_obit(pjob, 0);
 
   } // END delete_staged_in_files()
