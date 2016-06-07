@@ -42,8 +42,7 @@ int cnt2server(const char *SpecServer)
 
 int locate_job(char *job_id, char *parent_server, char *located_server)
   { 
-  fprintf(stderr, "The call to locate_job needs to be mocked!!\n");
-  exit(1);
+  return(TRUE);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
@@ -70,8 +69,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
 
 void prt_job_err(const char *cmd, int connect, const char *id)
   { 
-  fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 void initialize_network_info() {}
