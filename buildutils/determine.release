@@ -11,5 +11,5 @@ then
     exit 1
 fi
 
-release_number=`git log --pretty=format:%ct_%h -1`
-echo "${release_number}"
+release=`git log --pretty=format:%ct_%h -1`
+echo "${release}"
