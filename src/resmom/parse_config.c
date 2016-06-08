@@ -1456,7 +1456,7 @@ u_long setjoboomscoreadjust(
   v = atoi(value);
 
   /* check for allowed value range */
-  if( v >= -17 && v <= 15 ) 
+  if( v >= -1000 && v <= 1000 ) 
     {
     job_oom_score_adjust = v;
     /* ok */

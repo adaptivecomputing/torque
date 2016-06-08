@@ -457,14 +457,24 @@ int release_job(
     svr_evaljobstate(*pjob, newstate, newsub, 0);
 
     svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+    sprintf(log_buf, msg_jobholdrel,
+        pset,
+        preq->rq_user,
+        preq->rq_host);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+
+   }
+  else
+    {
+    sprintf(log_buf, "Holds %s cannot be released as requested by %s@%s. Check array slot limits or other restrictions which prevent the hold from being released",
+        pset,
+        preq->rq_user,
+        preq->rq_host);
+
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      rc = PBSE_BAD_JOB_STATE_TRANSITION;
     }
-
-  sprintf(log_buf, msg_jobholdrel,
-    pset,
-    preq->rq_user,
-    preq->rq_host);
-
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
   return(rc);
   } /* END release_job() */

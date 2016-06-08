@@ -856,34 +856,54 @@ proc_mem_t *get_proc_mem(void)
  */
 
 static int oom_adj(int score)
-{
+  
+  {
+  pid_t pid;
+  int   rc;
+  int   fd;
 
-   pid_t pid;
-   int rc,fd;
+  char oom_adj_path[PATH_MAX] = "";
+  char adj_value[128] = "";
+   
+  /* max valid values are -1000 to 1000 */
+  if ((score > 1000) ||
+      (score < -1000))
+    return -1;
+  
+  pid = getpid();
+  
+  snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_score_adj", pid);
+   
+  /* try and open the oom_score_adj file for writing first */
+  /* if it fails to open then try oom_adj */
+  if ((fd = open(oom_adj_path, O_RDWR)) == -1 )
+    {
+    if (score < -17)
+      score = -17;
+    else if (score > 15)
+      score = 15;
+     
+    snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_adj", pid);
 
-   char oom_adj_path[PATH_MAX] = "";
-   char adj_value[128] = "";
-   /* valid values are -17 to 15 */
-   if ( score > 15 || score < -17 )
+    if ((fd = open(oom_adj_path, O_RDWR)) == -1)
       return -1;
-
-   pid = getpid();
-
-   if ( snprintf(oom_adj_path, sizeof(oom_adj_path), "/proc/%d/oom_adj", pid) < 0 )
+     
+    if (snprintf(adj_value,sizeof(adj_value),"%d",score) < 0)
       return -1;
+     
+    rc = write(fd,adj_value,strlen(adj_value));
+     
+    close(fd);
+    return rc;   
+    }
 
-   if ( ( fd = open(oom_adj_path, O_RDWR) ) == -1 )
-      return -1;
+  snprintf(adj_value,sizeof(adj_value),"%d",score);
 
-   if (snprintf(adj_value,sizeof(adj_value),"%d",score) < 0)
-      return -1;
+  rc = write(fd,adj_value,strlen(adj_value));
 
-   rc = write(fd,adj_value,strlen(adj_value));
-
-   close(fd);
-   return rc;
-
-}
+  close(fd);
+  return rc;
+  }
 
 
 void dep_initialize(void)
@@ -904,7 +924,7 @@ void dep_initialize(void)
   if (mom_oom_immunize != 0)
     {
 
-    if (oom_adj(-17) < 0)
+    if (oom_adj(-1000) < 0)
       {
       log_record(
         PBSEVENT_SYSTEM,

@@ -73,6 +73,7 @@ START_TEST(test_evaluate_job_in_prerun)
   pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
   pjob.ji_joins_sent = time_now - max_join_job_wait_time - 1;
+  pjob.ji_joins_resent = FALSE;
   am_i_ms = false;
   job_bailed = 0;
 
@@ -82,11 +83,13 @@ START_TEST(test_evaluate_job_in_prerun)
 
   // Make me mother superior, now we should do something
   am_i_ms = true;
+  pjob.ji_joins_resent = FALSE;
   evaluate_job_in_prerun(&pjob);
   fail_unless(job_bailed == 1);
   
   // If my state isn't running, we shouldn't do anything
   pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
+  pjob.ji_joins_resent = FALSE;
   evaluate_job_in_prerun(&pjob);
   fail_unless(job_bailed == 1); // shouldn't change
 
@@ -97,6 +100,7 @@ START_TEST(test_evaluate_job_in_prerun)
   // Now make me re-send the joins
   pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
   pjob.ji_joins_sent = time_now - resend_join_job_wait_time - 1;
+  pjob.ji_joins_resent = FALSE;
   evaluate_job_in_prerun(&pjob);
   fail_unless(pjob.ji_joins_resent == TRUE);
   fail_unless(job_bailed == 1); // shouldn't change

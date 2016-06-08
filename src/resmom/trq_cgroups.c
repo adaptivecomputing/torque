@@ -978,8 +978,10 @@ int trq_cg_create_task_cgroups(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattrL; /* for -L req_information request */
 
-
-  if (have_incompatible_dash_l_resource(pjob) == true)
+  // For -l requests we want to make only one cgroup per host
+  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     return(PBSE_NONE);
 
   pattrL = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1283,7 +1285,10 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  if ( have_incompatible_dash_l_resource(pjob) == true)
+  // For -l requests we want to make only one cgroup per host
+  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     {
     /* this is not a -L request or there are incompatible
        -l resources requested */
@@ -1440,6 +1445,32 @@ int find_range_in_cpuset_string(
 
 
 
+/*
+ * add_all_cpus_and_memory()
+ *
+ */
+
+void add_all_cpus_and_memory(
+
+  std::string &cpu_string,
+  std::string &mem_string)
+
+  {
+  char buf[MAXLINE];
+  sprintf(buf, "0-%d", this_node.getTotalThreads() - 1);
+  cpu_string = buf;
+
+  sprintf(buf, "0-%d", this_node.getTotalChips() - 1);
+  mem_string = buf;
+  } // END add_all_cpus_and_memory()
+
+
+
+/*
+ * trq_cg_get_cpuset_and_mem()
+ *
+ */
+
 int trq_cg_get_cpuset_and_mem(
 
   job         *pjob, 
@@ -1459,14 +1490,25 @@ int trq_cg_get_cpuset_and_mem(
     }
 
   std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-
-  if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
-    return(-1);
-
   std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-  
-  if (find_range_in_cpuset_string(mems, mem_string) != 0)
-    return(-1);
+
+  // If a job is using resource request syntax 1.0 and has specified that it is node 
+  // exclusive, then just give all of the cpus and memory to the job
+  if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+      (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+    {
+    add_all_cpus_and_memory(cpuset_string, mem_string);
+    }
+  else
+    {
+    if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+      return(-1);
+    
+    if (find_range_in_cpuset_string(mems, mem_string) != 0)
+      return(-1);
+    }
 
   return(rc);
   } // END trq_cg_get_cpuset_and_mem()
