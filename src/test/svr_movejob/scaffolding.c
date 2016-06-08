@@ -13,7 +13,6 @@
 #include "list_link.h" /* tlist_head, list_link */
 #include "threadpool.h"
 #include "array.h"
-#include "pbsnodes.h"
 #include "machine.hpp"
 #include "mom_hierarchy_handler.h"
 #include "id_map.hpp"
