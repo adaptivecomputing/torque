@@ -2242,6 +2242,7 @@ int req_jobscript2(
   if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && 
       (pj->ji_qs.ji_state != JOB_STATE_HELD) &&
       ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)) &&
+      ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUTCM)) &&
       (pj->ji_qs.ji_state != JOB_STATE_WAITING))
     {
     rc = PBSE_IVALREQ;
@@ -2802,7 +2803,7 @@ int req_commit2(
         log_buf);
       }
 
-    req_runjob(preq_run);
+    rc = req_runjob(preq_run);
     }
 
 
@@ -3174,7 +3175,7 @@ int req_commit(
         log_buf);
       }
 
-    req_runjob(preq_run);
+    rc = req_runjob(preq_run);
     }
 
 #endif /* AUTORUN_JOBS */
