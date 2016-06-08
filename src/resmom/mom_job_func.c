@@ -264,9 +264,12 @@ int remtree(
     {
 
     if (errno != ENOENT)
+      {
       log_err(errno, __func__, (char *)"stat");
-
-    return(-1);
+      return(-1);
+      }
+    else
+      return(PBSE_NONE);
     }
 
   if (S_ISDIR(sb.st_mode))
