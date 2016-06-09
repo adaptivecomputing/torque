@@ -105,7 +105,8 @@ START_TEST(test_translate_range_string_to_vector)
 
   indices.clear();
   translate_range_string_to_vector("qt32", indices);
-  fail_unless(indices.size() == 1);
+  // Invalid, should give us a vector of 0
+  fail_unless(indices.size() == 0);
 
   indices.clear();
   translate_range_string_to_vector("\n       6142-6143\n     ", indices);
