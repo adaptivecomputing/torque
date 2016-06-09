@@ -30,16 +30,3 @@ char *PBSD_queuejob(int connect, int *local_errno, const char *jobid, const char
   exit(1);
   }
 
-char *PBSD_queuejob2(int connect, int *local_errno, const char *jobid, const char *destin, struct attropl *attrib, char *extend)
-  {
-  fprintf(stderr, "The call to PBSD_queuejob2 needs to be mocked!!\n");
-  exit(1);
-  }
-
-int PBSD_jscript2(int c, const char *script_file, const char *jobid)
-  {
-  fprintf(stderr, "The call to PBSD_jscript2 needs to be mocked!!\n");
-  exit(1);
-  }
-
-
