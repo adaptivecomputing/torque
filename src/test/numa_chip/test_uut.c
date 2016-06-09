@@ -12,6 +12,22 @@ extern int recorded;
 extern std::string my_placement_type;
 extern std::string thread_type;
 
+const char *alloc_json = "\"allocation\":{\"jobid\":\"666979[0].mgr.bwfor.privat\",\"cpus\":\"\",\"mem\":4203424,\"exclusive\":0,\"cores_only\":0}";
+
+START_TEST(test_initialize_allocation)
+  {
+  Chip c;
+  std::stringstream out;
+
+  // Make sure this doesn't last forever - we need to handle empty cpus: values
+  c.initialize_allocation(strdup(alloc_json));
+  c.displayAllocationsAsJson(out);
+
+  fail_unless(out.str().find(alloc_json) != std::string::npos, "'%s' does not contain '%s'", out.str().c_str(), alloc_json);
+
+  }
+END_TEST
+
 
 START_TEST(test_place_all_execution_slots)
   {
@@ -973,6 +989,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_json_constructor);
   tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
+  tcase_add_test(tc_core, test_initialize_allocation);
   suite_add_tcase(s, tc_core);
   
   return(s);

@@ -340,7 +340,14 @@ void translate_range_string_to_vector(
 
   while (*ptr != '\0')
     {
+    char *old_ptr = ptr;
     prev = strtol(ptr, &ptr, 10);
+
+    if (ptr == old_ptr)
+      {
+      // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      break;
+      }
     
     if (*ptr == '-')
       {
@@ -363,12 +370,9 @@ void translate_range_string_to_vector(
       indices.push_back(prev);
 
       while ((*ptr == ',') ||
-          (is_whitespace(*ptr)))
+             (is_whitespace(*ptr)))
         ptr++;
       }
-
-    if (str == ptr)
-      break;
     }
 
   free(str);
@@ -401,6 +405,11 @@ void capture_until_close_character(
     storage = val;
     storage.erase(ptr - val);
     *start = ptr + 1; // add 1 to move past the character
+    }
+  else
+    {
+    // Make sure we aren't returning stale values
+    storage.clear();
     }
   } // capture_until_close_character()
 
