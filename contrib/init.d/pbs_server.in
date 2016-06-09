@@ -39,7 +39,15 @@ pidof_pbs_server() {
 
 	lockfile_info=`stat -Lc "%d:%i" $SERVER_LOCK 2>/dev/null`
 	if [ $? -ne 0 ]; then
-		return 1
+                # server may have been started with "-t create" and
+                # not have a $SERVER_LOCK file so try to find
+                # the pid without it
+                server_pid=`pidof -s $SBIN_PATH/pbs_server`
+                if [ $? -ne 0 ]; then
+		        return 1
+                fi
+                echo $server_pid
+                return 0
 	fi
 
 	# now we are sure the $SERVER_LOCK file exists
