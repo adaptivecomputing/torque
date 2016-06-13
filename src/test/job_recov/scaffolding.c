@@ -427,3 +427,22 @@ int insert_array(
   {
   return(0);
   }
+
+void clear_attr(
+
+  pbs_attribute *pattr, /* O */
+  attribute_def *pdef)  /* I */
+
+  {
+  memset(pattr, 0, sizeof(pbs_attribute));
+
+  pattr->at_type = pdef->at_type;
+
+  if ((pattr->at_type == ATR_TYPE_RESC) ||
+      (pattr->at_type == ATR_TYPE_LIST))
+    {
+    CLEAR_HEAD(pattr->at_val.at_list);
+    }
+
+  return;
+  }  /*END clear_attr() */

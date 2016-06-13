@@ -35,6 +35,8 @@ job_array *ghost_create_jobs_array(job *pjob, const char *array_id);
 void check_and_reallocate_job_ids(job_array *pa, int index);
 void update_recovered_array_values(job_array *pa, job *pjob);
 
+void clear_attr(pbs_attribute *pattr, attribute_def *def);
+
 void init()
   {
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -46,6 +48,14 @@ START_TEST(ghost_array_test)
   const char *array_id = "10[].napali";
   job *pjob = (job *)calloc(1, sizeof(job));
   snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "%s", "10[0].napali");
+
+  init();
+  
+  for (int i = 0;i < JOB_ATR_LAST;i++)
+    {
+    clear_attr(&pjob->ji_wattr[i], &job_attr_def[i]);
+    }
+
   pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@napali");
   pjob->ji_wattr[JOB_ATR_job_owner].at_flags = ATR_VFLAG_SET;
 
@@ -374,6 +384,11 @@ START_TEST(fill_resource_list_test)
   job        *pjob = (job *)calloc(1, sizeof(job));
   char        buf[1024];
   svr_resc_def = svr_resc_def_const;
+  
+  for (int i = 0;i < JOB_ATR_LAST;i++)
+    {
+    clear_attr(&pjob->ji_wattr[i], &job_attr_def[i]);
+    }
 
   fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0);
   
@@ -411,6 +426,7 @@ Suite *job_recov_suite(void)
   Suite *s = suite_create("job_recov_suite methods");
 
   TCase *tc_core = tcase_create("test_job_recover");
+  tcase_add_test(tc_core, ghost_array_test);
   tcase_add_test(tc_core, test_job_recover);
   tcase_add_test(tc_core, fill_resource_list_test);
   tcase_add_test(tc_core, test_add_encoded_attributes);
@@ -420,7 +436,6 @@ Suite *job_recov_suite(void)
   tc_core = tcase_create("test_moar");
   tcase_add_test(tc_core, test_set_array_jobs_ids);
   tcase_add_test(tc_core, test_decode_attribute);
-  tcase_add_test(tc_core, ghost_array_test);
   suite_add_tcase(s, tc_core);
 
   return s;
