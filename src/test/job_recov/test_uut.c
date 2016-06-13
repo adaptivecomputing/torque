@@ -14,6 +14,7 @@
 #include "resource.h"
 #include "completed_jobs_map.h"
 #include "server.h"
+#include "array.h"
 
 sem_t *job_clone_semaphore;
 extern int set_nodes_attr(job *pjob);
@@ -31,11 +32,59 @@ void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
 int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen);
 svrattrl *fill_svrattr_info(const char *aname, const char *avalue, const char *rname, char *log_buf, size_t      buf_len);
 void decode_attribute(svrattrl *pal, job **pjob, bool freeExisting);
+job_array *ghost_create_jobs_array(job *pjob, const char *array_id);
+void check_and_reallocate_job_ids(job_array *pa, int index);
+void update_recovered_array_values(job_array *pa, job *pjob);
 
 void init()
   {
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   }
+
+
+START_TEST(ghost_array_test)
+  {
+  const char *array_id = "10[].napali";
+  job *pjob = (job *)calloc(1, sizeof(job));
+  snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "%s", "10[0].napali");
+  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@napali");
+  pjob->ji_wattr[JOB_ATR_job_owner].at_flags = ATR_VFLAG_SET;
+
+  job_array *pa = ghost_create_jobs_array(pjob, array_id);
+  fail_unless(!strcmp(pa->ai_qs.parent_id, array_id));
+  fail_unless(!strcmp(pa->ai_qs.fileprefix, "10.napali.AR"), "prefix=%s", pa->ai_qs.fileprefix);
+  fail_unless(pa->job_ids[0] != NULL);
+  fail_unless(!strcmp(pa->job_ids[0], pjob->ji_qs.ji_jobid));
+  fail_unless(pa->ai_qs.array_size == 101); // DEFAULT_ARRAY_RECOV_SIZE
+
+  pa->job_ids[50] = strdup("10[50].napali");
+
+  check_and_reallocate_job_ids(pa, 210);
+  fail_unless(!strcmp(pa->job_ids[0], "10[0].napali"));
+  fail_unless(!strcmp(pa->job_ids[50], "10[50].napali"));
+  fail_unless(pa->ai_qs.array_size == 404); // should have doubled twice to accomodate index 210
+
+  pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
+  update_recovered_array_values(pa, pjob);
+  fail_unless(pa->ai_qs.num_jobs == 1);
+  fail_unless(pa->ai_qs.num_started == 1);
+  fail_unless(pa->ai_qs.jobs_running == 1);
+      
+  pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  update_recovered_array_values(pa, pjob);
+  fail_unless(pa->ai_qs.num_jobs == 2, "%d jobs", pa->ai_qs.num_jobs);
+  fail_unless(pa->ai_qs.num_started == 2);
+  fail_unless(pa->ai_qs.jobs_done == 1);
+  fail_unless(pa->ai_qs.jobs_running == 1);
+  
+  pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+  update_recovered_array_values(pa, pjob);
+  fail_unless(pa->ai_qs.num_jobs == 3);
+  fail_unless(pa->ai_qs.num_started == 2);
+  fail_unless(pa->ai_qs.jobs_done == 1);
+  fail_unless(pa->ai_qs.jobs_running == 1);
+  }
+END_TEST
 
 
 START_TEST(test_decode_attribute)
@@ -68,7 +117,7 @@ START_TEST(test_set_array_jobs_ids)
 
   pjob = new job();
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == -1); // We should delete template jobs that don't have an array
   fail_unless(pjob->ji_is_array_template == TRUE);
   }
 END_TEST
@@ -374,6 +423,7 @@ Suite *job_recov_suite(void)
   tc_core = tcase_create("test_moar");
   tcase_add_test(tc_core, test_set_array_jobs_ids);
   tcase_add_test(tc_core, test_decode_attribute);
+  tcase_add_test(tc_core, ghost_array_test);
   suite_add_tcase(s, tc_core);
 
   return s;

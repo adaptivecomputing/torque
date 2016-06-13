@@ -139,6 +139,9 @@ struct job_array
                          is restarted (cleanly) before the array is 
                          completely setup */
 
+  bool   ai_ghost_recovered; // true if the array file couldn't be recovered but we made this in 
+                             // order to not lose sub-jobs
+
   pthread_mutex_t *ai_mutex;
 
   /* this info is saved in the array file */

@@ -225,6 +225,7 @@ enum srv_atr
   SRV_ATR_NoteAppendOnError,
   SRV_ATR_EmailBatchSeconds,
   SRV_ATR_tcp_incoming_timeout,
+  SRV_ATR_GhostArrayRecovery,
 
   /* This must be last */
   SRV_ATR_LAST
