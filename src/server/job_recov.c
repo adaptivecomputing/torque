@@ -128,6 +128,7 @@
 #include "array.h"
 #include "ji_mutex.h"
 #include "job_recov.h"
+#include "policy_values.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -140,9 +141,12 @@
 
 #ifdef PBS_MOM
 int recov_tmsock(int, job *);
-extern unsigned int pbs_mom_port;
-extern unsigned int pbs_rm_port;
+extern unsigned int  pbs_mom_port;
+extern unsigned int  pbs_rm_port;
 extern int           multi_mom;
+#else
+extern char         *pbs_o_host;
+extern char          server_name[];
 #endif
 
 extern int job_qs_upgrade(job *, int, char *, int);
@@ -152,6 +156,8 @@ extern int job_qs_upgrade(job *, int, char *, int);
 extern char  *path_jobs;
 extern const char *PJobSubState[];
 extern int LOGLEVEL;
+
+const int DEFAULT_ARRAY_RECOV_SIZE = 101;
 
 /* data global only to this file */
 
@@ -1286,6 +1292,173 @@ int job_save(
   }  /* END job_save() */
 
 
+#ifndef PBS_MOM
+/*
+ * ghost_create_jobs_array()
+ *
+ * Automatically creates an array for pjob so that it doesn't have to be deleted. This job's array
+ * was not properly recovered, and we don't want to lose the jobs.
+ *
+ * @param pjob - the job whose array wasn't recovered.
+ * @param array_id - the id of the array to be created.
+ * @return - a pointer to the new job array
+ */
+
+job_array *ghost_create_jobs_array(
+
+  job        *pjob,
+  const char *array_id)
+
+  {
+  job_array   *pa = (job_array *)calloc(1,sizeof(job_array));
+  long         array_size = DEFAULT_ARRAY_RECOV_SIZE;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  char         file_prefix_work[PBS_JOBBASE + 1];
+  long         slot_limit = NO_SLOT_LIMIT;
+
+  if (LOGLEVEL >= 2)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Array %s was not successfully recovered, but we are creating it automatically to not lose the sub-jobs. Slot limits and or dependencies may not work correctly. This behavior can be disabled by setting ghost_array_recovery to false in qmgr.", array_id);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    }
+  
+  pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
+  CLEAR_HEAD(pa->request_tokens);
+  CLEAR_HEAD(pa->ai_qs.deps);
+  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(pa->ai_mutex,NULL);
+
+  lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+
+  strcpy(pa->ai_qs.parent_id, array_id);
+  
+  get_svr_attr_l(SRV_ATR_MaxSlotLimit, &slot_limit);
+  pa->ai_qs.slot_limit = slot_limit;
+
+  // Remove the [] from the file prefix
+  snprintf(file_prefix_work, sizeof(file_prefix_work), "%s", array_id);
+  char *open = strchr(file_prefix_work, '[');
+  char *dot = strchr(file_prefix_work, '.');
+
+  if (open != NULL)
+    {
+    *open = '\0';
+    if (dot != NULL)
+      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s%s.AR", file_prefix_work, dot);
+    else
+      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s.AR", file_prefix_work);
+    }
+  else
+    snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s.AR", file_prefix_work);
+
+  snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", 
+    pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s",
+    get_variable(pjob, pbs_o_host));
+    
+  if (pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long > array_size)
+    array_size = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+
+  pa->job_ids = (char **)calloc(array_size, sizeof(char *));
+  pa->job_ids[(int)pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pjob->ji_qs.ji_jobid);
+
+  pa->ai_qs.array_size = array_size;
+  array_save(pa);
+
+  /* link the struct into the servers list of job arrays */
+  insert_array(pa);
+
+  return(pa);
+  } // END ghost_create_jobs_array()
+
+
+
+/*
+ * check_and_reallocate_job_ids()
+ *
+ * Reallocates the job_ids array of pa if necessary to make space for the new job id at index
+ *
+ * @param pa - the job array that we're checking to make sure has enough space for this job id
+ * @param index - the index of the new job id
+ */
+
+void check_and_reallocate_job_ids(
+
+  job_array *pa,
+  int        index)
+
+  {
+  if (pa->ai_qs.array_size <= index)
+    {
+    int new_size = pa->ai_qs.array_size * 2;
+
+    while (new_size <= index)
+      new_size *= 2;
+
+    char **new_ids = (char **)calloc(new_size, sizeof(char *));
+    memcpy(new_ids, pa->job_ids, (sizeof(char *) * pa->ai_qs.array_size));
+    free(pa->job_ids);
+
+    pa->job_ids = new_ids;
+    pa->ai_qs.array_size = new_size;
+    }
+  } // END check_and_reallocate_job_ids()
+
+
+
+/*
+ * update_recovered_array_values()
+ *
+ * Updates the internal counts for pa to account for this job
+ *
+ * @param pa - the array
+ * @param pjob - the job
+ */
+void update_recovered_array_values(
+
+  job_array *pa,
+  job       *pjob)
+
+  {
+  pa->ai_qs.num_jobs++;
+
+  switch (pjob->ji_qs.ji_state)
+    {
+    case JOB_STATE_RUNNING:
+
+      pa->ai_qs.num_started++;
+      pa->ai_qs.jobs_running++;
+
+      break;
+
+    case JOB_STATE_COMPLETE:
+
+      pa->ai_qs.num_started++;
+      pa->ai_qs.jobs_done++;
+
+      if (pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long == 0)
+        pa->ai_qs.num_successful++;
+      else
+        pa->ai_qs.num_failed++;
+
+      break;
+    }
+
+  } // END update_recovered_array_values()
+#endif
+
+
+
+/*
+ * set_array_job_ids()
+ *
+ * Updates the array struct with pjob's information
+ *
+ * @param pjob - a pointer to the pointer to the job
+ * @param log_buf - a buffer for logging
+ * @param buflen - the size of the buffer
+ */
 
 int set_array_job_ids(
 
@@ -1309,9 +1482,11 @@ int set_array_job_ids(
       {
       if (*(open_bracket + 1) == ']')
         pj->ji_is_array_template = TRUE;
+      else
+        return(rc);
       }
-
-    return(rc);
+    else
+      return(rc);
     }
 
   if (strchr(pj->ji_qs.ji_jobid, '[') != NULL)
@@ -1324,9 +1499,16 @@ int set_array_job_ids(
     pa = get_array(parent_id);
     if (pa == NULL)
       {
-      job_abt(&pj, (char *)"Array job missing array struct, aborting job");
-      snprintf(log_buf, buflen, "Array job missing array struct %s", __func__);
-      return(-1);
+      if (ghost_array_recovery)
+        {
+        pa = ghost_create_jobs_array(pj, parent_id);
+        }
+      else
+        {
+        job_abt(&pj, "Array job missing array struct, aborting job");
+        snprintf(log_buf, buflen, "Array job missing array struct %s", __func__);
+        return(-1);
+        }
       }
 
     strcpy(pj->ji_arraystructid, parent_id);
@@ -1337,6 +1519,14 @@ int set_array_job_ids(
       }
     else
       {
+      // If the original array wasn't recovered, then we don't know if we have the right size for
+      // job_ids. Check and ensure that it's big enough.
+      if (pa->ai_ghost_recovered)
+        {
+        check_and_reallocate_job_ids(pa, pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long);
+        update_recovered_array_values(pa, pj);
+        }
+
       pa->job_ids[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pj->ji_qs.ji_jobid);
       pa->jobs_recovered++;
 
@@ -1366,10 +1556,11 @@ int set_array_job_ids(
 
 int job_recov_xml(
 
-  const char *filename,  /* I */   /* pathname to job save file */
-  job  **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
-  char *log_buf,   /* O */   /* buffer to hold error message */
-  size_t buf_len)  /* I */   /* len of the error buffer */
+  const char  *filename,  /* I */   /* pathname to job save file */
+  job        **pjob,     /* M */   /* pointer to a pointer of job structure to fill info */
+  char        *log_buf,   /* O */   /* buffer to hold error message */
+  size_t       buf_len)  /* I */   /* len of the error buffer */
+
   {
   xmlDoc *doc = NULL;
   xmlNode *root_element = NULL;

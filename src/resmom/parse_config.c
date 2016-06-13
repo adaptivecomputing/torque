@@ -3083,8 +3083,6 @@ const char *reqvarattr(
 
 
 
-
-
 const char *reqgres(
 
   struct rm_attribute *attrib)  /* I (ignored) */

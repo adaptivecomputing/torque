@@ -393,6 +393,7 @@
 #define ATTR_legacy_vmem                "legacy_vmem"
 #define ATTR_email_batch_seconds        "email_batch_seconds"
 #define ATTR_tcpincomingtimeout        "tcp_incoming_timeout"
+#define ATTR_ghost_array_recovery      "ghost_array_recovery"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
