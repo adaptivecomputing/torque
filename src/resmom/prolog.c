@@ -924,8 +924,6 @@ void setup_pelog_outputs(
           (strlen(specpelog) == strlen(path_epilogp)) &&
           (strcmp(path_epilogp, specpelog) == 0))
         dupeStdFiles = 0;
-      else
-        exit(-1);
       }
     }
 
