@@ -2242,13 +2242,13 @@ int pbsd_init(
     if ((ret = initialize_paths()) != PBSE_NONE)
       return(ret);
 
+    set_server_policies();
+
     initialize_data_structures_and_mutexes();
 
     /* 3. Set default server attibutes values */
     if ((ret = setup_server_attrs(type)) != PBSE_NONE)
       return(ret);
-
-    set_server_policies();
 
     /* Open and read in node list if one exists */
     if ((ret = initialize_nodes()) != PBSE_NONE)
