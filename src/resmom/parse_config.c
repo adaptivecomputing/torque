@@ -3173,9 +3173,12 @@ const char *reqgres(
       strncat(GResBuf, "+", sizeof(GResBuf) - 1 - strlen(GResBuf));
       }
 
-    snprintf(tmpLine, 1024, "%s:%s",
-             cp->c_name,
-             cp->c_u.c_value);
+    {
+      // check if shell escape needed
+      char *p = conf_res(cp->c_u.c_value, NULL);
+      snprintf(tmpLine, 1024, "%s:%s",
+               cp->c_name, p);
+    }
 
     strncat(GResBuf, tmpLine, (sizeof(GResBuf) - strlen(GResBuf) - 1));
     }  /* END for (cp) */
