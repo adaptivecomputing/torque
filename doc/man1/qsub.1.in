@@ -527,57 +527,37 @@ requested value. No white space is allowed in the value.
 Other than syntax, qsub performs no resource or value
 checking.  The checking is performed by the execution server.
 .Ig
+.RE
 .IP "\-m mail_options " 8
 Defines the set of conditions under which the execution server will
 send a mail message about the job.  The
 .Ar mail_options
-argument is a string which consists of either the single character "\fBn\fP",
-or one or more of the characters "\fBa\fP", "\fBb\fP", and "\fBe\fP".
-.if !\n(Pb .ig Ig
-Repeated letters are accepted, but \fBn\fP cannot be mixed with the other
-characters.
-.Ig
-.IP
-If the character "\fBn\fP" is specified, no mail will be sent.
-.if !\n(Pb .ig Ig
-The
-.At Mail_Points
-attribute is set to NONE, "n".
-.Ig
-.IP
-For the letters "\fBa\fP", "\fBb\fP", and "\fBe\fP":
+argument is a string which consists of either the single character "\fBn\fP" or "\fBp\fP",
+or one or more of the characters "\fBa\fP", "\fBb\fP", "\fBe\fP", and "\fBf\fP".
+
+If the character "\fBn\fP" is specified, no normal mail is sent. Mail for job cancels and other events outside of normal job processing are still sent.
+If the character "\fBp\fP" is specified, mail will never be sent for the job.
+
+For the characters "\fBa\fP", "\fBb\fP", "\fBe\fP", and "\fBf\fP":
 .RS
 .IP a 3
-mail is sent when the job is aborted by the batch system.
-.if !\n(Pb .ig Ig
-The
-.At Mail_Points
-attribute is set to ABORT, "a".
+Mail is sent when the job is aborted by the batch system.
 .Ig
 .IP b 3
-mail is sent when the job begins execution.
-.if !\n(Pb .ig Ig
-The
-.At Mail_Points
-attribute is set to BEGINNING, "b".
+Mail is sent when the job begins execution.
 .Ig
 .IP e 3
-mail is sent when the job terminates.
-.if !\n(Pb .ig Ig
-The
-.At Mail_Points
-attribute is set to EXIT, "e".
+Mail is sent when the job terminates.
 .Ig
+.IP f 3
+Mail is sent when the job terminates with a non-zero exit code.
 .RE
 .IP
 If the
 .Ar \-m
 option is not specified, mail will be sent if the job is aborted.
-.if !\n(Pb .ig Ig
-The
-.At Mail_Points
-attribute is set to ABORT, "a".
-.Ig
+
+.RE
 .IP "\-M user_list" 8
 Declares the list of users to whom mail is sent by the execution server
 when it sends mail about the job.
