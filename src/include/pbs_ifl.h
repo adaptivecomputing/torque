@@ -395,6 +395,7 @@
 #define ATTR_email_batch_seconds        "email_batch_seconds"
 #define ATTR_tcpincomingtimeout        "tcp_incoming_timeout"
 #define ATTR_ghost_array_recovery      "ghost_array_recovery"
+#define ATTR_cgroup_per_task           "cgroup_per_task"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
