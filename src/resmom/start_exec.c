@@ -5862,7 +5862,9 @@ int start_process(
   pid_t new_pid = getpid();
 
   /* make sure we don't have an incompatible -l resource request */
-  if (have_incompatible_dash_l_resource(pjob) == false)
+  if ((have_incompatible_dash_l_resource(pjob) == false) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET))
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */
@@ -5878,25 +5880,30 @@ int start_process(
         complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
 
         rc = cr->get_req_and_task_index(rank, req_index, task_index);
-        if (rc == PBSE_NONE)
-          {
 
-          rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
-                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+        if (cr->get_req(req_index).is_per_task())
+          {
           if (rc == PBSE_NONE)
             {
-            rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
-                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
             if (rc == PBSE_NONE)
               {
-              rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
-                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
               if (rc == PBSE_NONE)
-                rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
-                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+                {
+                rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+                if (rc == PBSE_NONE)
+                  rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
+                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+                }
               }
             }
           }
+        else
+          rc = -1;
         }
       }
     }

@@ -1598,4 +1598,18 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER
   },
 
+  // SRV_ATR_CgroupPerTask
+  {(char *)ATTR_cgroup_per_task, /* "cgroup_per_task" */
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
+    free_null,
+    NULL_FUNC,
+    MGR_ONLY_SET,
+    ATR_TYPE_LONG,
+    PARENT_TYPE_SERVER
+  },
+
+
   };
