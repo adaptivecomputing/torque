@@ -140,7 +140,8 @@ int start_process(
 
   task  *ptask,   /* I */
   char **argv,    /* I */
-  char **envp)    /* I */
+  char **envp,    /* I */
+  bool   start_daemon)
 
   {
   return(0);

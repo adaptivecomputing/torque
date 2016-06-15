@@ -11,7 +11,7 @@
 
 job *mom_find_job_by_int_string(const char *);
 void report_fence_to_ms(job *pjob, char *data);
-int start_process(task *ptask, char **argv, char **envp);
+int start_process(task *ptask, char **argv, char **envp, bool spawn_daemon);
 int send_tm_spawn_request(job *pjob, hnodent *remote_host, char **argv, char **env, int event, int fromtask, int *reply_ptr);
 
 extern char   mom_alias[];
@@ -346,7 +346,7 @@ int launch_pmix_requested_application_locally(
 
   if (ptask != NULL)
     {
-    if ((rc = start_process(ptask, application.argv, application.env)) == PBSE_NONE)
+    if ((rc = start_process(ptask, application.argv, application.env, false)) == PBSE_NONE)
       {
       (*pjob->ji_usages)[mom_alias].increment_usage(application.maxprocs);
       }

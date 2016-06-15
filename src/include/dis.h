@@ -258,6 +258,7 @@ extern const char *dis_emsg[];
 /* the following routines set/control DIS over tcp */
 
 extern struct tcp_chan * DIS_tcp_setup (int fd);
+extern struct tcp_chan * DIS_tcp_dup_chan (struct tcp_chan *chan);
 extern int  DIS_tcp_wflush (struct tcp_chan *chan);
 extern void DIS_tcp_settimeout (long timeout);
 extern void DIS_tcp_cleanup(struct tcp_chan *chan);

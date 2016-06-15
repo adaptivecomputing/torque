@@ -232,7 +232,7 @@ char *disrcs(struct tcp_chan * chan, size_t *nchars, int *retval)
   return(0);
   }
 
-int start_process(task *tsk, char **argv, char **envp)
+int start_process(task *tsk, char **argv, char **envp, bool start_daemon)
   {
   return(0);
   }

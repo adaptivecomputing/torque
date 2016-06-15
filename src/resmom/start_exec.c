@@ -5349,6 +5349,8 @@ int get_process_rank(
   }
 
 
+
+
 /**
  * Start a process for a spawn request.  This will be different from
  * a job's initial shell task in that the environment will be specified
@@ -5361,7 +5363,8 @@ int start_process(
 
   task  *ptask,   /* I */
   char **argv,    /* I */
-  char **envp)    /* I */
+  char **envp,    /* I */
+  bool   start_daemon) /* I */
 
   {
   char         *idir;
@@ -5862,7 +5865,7 @@ int start_process(
   pid_t new_pid = getpid();
 
   /* make sure we don't have an incompatible -l resource request */
-  if (have_incompatible_dash_l_resource(pjob) == false)
+  if ((have_incompatible_dash_l_resource(pjob) == false) && (start_daemon == false))
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */

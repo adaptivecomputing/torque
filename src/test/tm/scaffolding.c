@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include "tcp.h"
+#include "tm.h"
+
+#define DIS_SUCCESS 0 
 
 time_t pbs_tcp_timeout = 20;
 const char *dis_emsg[] =
@@ -88,3 +91,12 @@ int pbs_getaddrinfo(const char *,struct addrinfo *,struct addrinfo **)
   return -1;
   }
 
+int startcom(
+
+  int              com,
+  tm_event_t       event,
+  struct tcp_chan *pchan)
+
+  {
+  return(DIS_SUCCESS);
+  }

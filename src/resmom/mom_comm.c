@@ -221,7 +221,7 @@ extern int add_host_to_sister_list(char *, unsigned short , struct radix_buf *);
 extern void free_sisterlist(struct radix_buf **list, int radix);
 extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
-int start_process(task *, char **, char **);
+int start_process(task *, char **, char **, bool);
 #ifdef PENABLE_LINUX_CGROUPS
 int set_job_cgroup_memory_limits(job *pjob);
 #endif
@@ -2961,6 +2961,150 @@ void im_kill_job_as_sister(
   } /* END im_kill_job_as_sister() */
 
 
+/*
+ * populate_argv
+ *
+ * Place arguments passed in over the network 
+ * into the argv array
+ *
+ * @param chan  - pointer to structure containing network connection
+ *                and data information
+ * @param argv  - array of arguments to be populated from incoming data
+ *
+ */
+
+int populate_argv(
+
+  struct tcp_chan *chan,
+  char           **argv)
+
+  {
+  int   i;
+  int   num;
+  int   ret;
+  char *cp;
+
+
+  num = 4;
+
+  argv = (char **)calloc(sizeof(char *), num);
+
+  if (argv == NULL)
+    return(IM_FAILURE);
+
+  for (i = 0;;i++)
+    {
+    if ((cp = disrst(chan, &ret)) == NULL)
+      break;
+
+    if (ret != DIS_SUCCESS)
+      break;
+
+    if (*cp == '\0')
+      {
+      free(cp);
+      cp = NULL;
+
+      break;
+      }
+
+    if (i == num - 1)
+      {
+      char **tmpArgV;
+
+      num *= 2;
+
+      tmpArgV = (char **)realloc(argv,num * sizeof(char *));
+
+      if (tmpArgV == NULL)
+        {
+        free(cp);
+        return(IM_FAILURE);
+        }
+
+      argv = tmpArgV;
+      }
+
+    argv[i] = cp;
+    }  /* END for (i) */
+
+  argv[i] = NULL;
+
+  if (ret != DIS_SUCCESS)
+    {
+    arrayfree(argv);
+    if(cp != NULL)
+      free(cp);
+
+      return(IM_FAILURE);
+    }
+
+  return(PBSE_NONE);
+  }
+
+
+int populate_envp(
+
+  struct tcp_chan *chan,
+  char           **envp)
+
+  {
+  int   i;
+  int   num;
+  int   ret = PBSE_NONE;
+  char *cp;
+
+
+  num = 8;
+  
+  envp = (char **)calloc(sizeof(char *), num);
+  
+  assert(envp);
+  
+  for (i = 0;;i++)
+    {
+    if ((cp = disrst(chan, &ret)) == NULL)
+      break;
+    
+    if (ret != DIS_SUCCESS)
+      break;
+    
+    if (*cp == '\0')
+      {
+      free(cp);
+      cp = NULL;
+      
+      break;
+      }
+    
+    if (i == num - 1)
+      {
+      char **tmp = (char **)calloc(num * 2, sizeof(char *));
+
+      if (tmp == NULL)
+        {
+        return(ENOMEM);
+        }
+      else
+        {
+        memcpy(tmp, envp, sizeof(char *) * num);
+        free(envp);
+        envp = tmp;
+        num *= 2;
+        }
+      }
+    
+    envp[i] = cp;
+    }  /* END for (i) */
+
+  if (cp != NULL)
+    free(cp);
+
+  envp[i] = NULL;
+
+  return(ret);
+  }
+ 
 
 
 /* 
@@ -2995,16 +3139,13 @@ int im_spawn_task(
   {
   int                  ret;
   int                  taskid;
-  int                  num;
-  int                  i;
   int                  local_socket;
   struct tcp_chan     *local_chan = NULL;
   tm_node_id           nodeid;
   char                *globid = NULL;
-  char                *cp = NULL;
   char                *jobid = pjob->ji_qs.ji_jobid;
-  char               **argv;
-  char               **envp;
+  char                *argv;
+  char                *envp;
 
   nodeid = disrsi(chan, &ret);
   
@@ -3061,123 +3202,22 @@ int im_spawn_task(
 
   free(globid);
   globid = NULL;
+
+  ret = populate_argv(chan, &argv);
+  if (ret != PBSE_NONE)
+    return(ret);
   
-  num = 4;
-  
-  argv = (char **)calloc(sizeof(char *), num);
  
-  if (argv == NULL)
-    return(IM_FAILURE);
-  
-  for (i = 0;;i++)
-    {
-    if ((cp = disrst(chan, &ret)) == NULL)
-      break;
-    
-    if (ret != DIS_SUCCESS)
-      break;
-    
-    if (*cp == '\0')
-      {
-      free(cp);
-      cp = NULL;
-      
-      break;
-      }
-    
-    if (i == num - 1)
-      {
-      char **tmpArgV;
-      
-      num *= 2;
-      
-      tmpArgV = (char **)realloc(argv,num * sizeof(char *));
-      
-      if (tmpArgV == NULL)
-        {
-        free(cp);
-        return(IM_FAILURE);
-        }
-      
-      argv = tmpArgV;
-      }
-    
-    argv[i] = cp;
-    }  /* END for (i) */
-  
-  argv[i] = NULL;
-  
-  if (ret != DIS_SUCCESS)
-    {
-    arrayfree(argv);
-    if(cp != NULL)
-      free(cp);
-    
-    return(IM_FAILURE);
-    }
-  
-  num = 8;
-  
-  envp = (char **)calloc(sizeof(char *), num);
-  
-  assert(envp);
-  
-  for (i = 0;;i++)
-    {
-    if ((cp = disrst(chan, &ret)) == NULL)
-      break;
-    
-    if (ret != DIS_SUCCESS)
-      break;
-    
-    if (*cp == '\0')
-      {
-      free(cp);
-      cp = NULL;
-      
-      break;
-      }
-    
-    if (i == num - 1)
-      {
-      char **tmp = (char **)calloc(num * 2, sizeof(char *));
-
-      if (tmp == NULL)
-        {
-        if (envp != NULL)
-          free(envp);
-
-        arrayfree(argv);
-        free(cp);
-
-        return(ENOMEM);
-        }
-      else
-        {
-        memcpy(tmp, envp, sizeof(char *) * num);
-        free(envp);
-        envp = tmp;
-        num *= 2;
-        }
-      }
-    
-    envp[i] = cp;
-    }  /* END for (i) */
-
-  if (cp != NULL)
-    free(cp);
-
-  envp[i] = NULL;
-  
+  ret = populate_envp(chan, &envp);
   if ((ret != DIS_EOD) &&
       (ret != DIS_EOF))
     {
-    arrayfree(argv);
-    arrayfree(envp);
+    arrayfree(&argv);
+    arrayfree(&envp);
     
     return(IM_FAILURE);
     }
-  
+ 
   /* do the spawn */
   
   ret = DIS_SUCCESS;
@@ -3229,7 +3269,7 @@ int im_spawn_task(
       }
     else
       {
-      if (start_process(ptask, argv, envp) == -1)
+      if (start_process(ptask, &argv, &envp, false) == -1)
         {
         if (LOGLEVEL >= 0)
           {
@@ -3316,8 +3356,8 @@ int im_spawn_task(
       }
     }
   
-  arrayfree(argv);
-  arrayfree(envp);
+  arrayfree(&argv);
+  arrayfree(&envp);
 
   return(IM_DONE);
   } /* END im_spawn_task() */
@@ -4857,7 +4897,7 @@ int handle_im_get_tid_response(
       }
     
     if (task_save(ptask) != -1)
-      ret = start_process(ptask, argv, envp);
+      ret = start_process(ptask, argv, envp, false);
     }
   else
     return(PBSE_SYSTEM);
@@ -6882,15 +6922,16 @@ int send_tm_spawn_request(
 int tm_spawn_request(
     
   struct tcp_chan *chan,
-  job       *pjob,        /* I */
-  int        prev_error,  /* I */
-  int        event,       /* I */
-  char       *cookie,     /* I */
-  int        *reply_ptr,  /* O */
-  int        *ret,        /* O */
-  tm_task_id  fromtask,   /* I */
-  hnodent    *phost,      /* M */
-  int         nodeid)     /* I */
+  job       *pjob,          /* I */
+  int        prev_error,    /* I */
+  int        event,         /* I */
+  char       *cookie,       /* I */
+  int        *reply_ptr,    /* O */
+  int        *ret,          /* O */
+  tm_task_id  fromtask,     /* I */
+  hnodent    *phost,        /* M */
+  int         nodeid,       /* I */
+  bool        spawn_daemon) /* I */
  
   {
   char         **argv = NULL;
@@ -7068,7 +7109,7 @@ int tm_spawn_request(
       
       if (task_save(ptask) != -1)
         {
-        *ret = start_process(ptask, argv, envp);
+        *ret = start_process(ptask, argv, envp, spawn_daemon);
 
         if (*ret != -1)
           i = TM_OKAY;
@@ -8012,6 +8053,8 @@ int tm_request(
     DIS_tcp_cleanup(ptask->ti_chan);
  
   ptask->ti_chan = chan;
+  if (chan->reused == true)
+    ptask->ti_chan_reused = true;
  
   reply = TRUE;
  
@@ -8128,7 +8171,13 @@ int tm_request(
  
     case TM_SPAWN:
 
-      rc = tm_spawn_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid);
+      rc = tm_spawn_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid, false);
+
+      break;
+
+     case TM_SPAWN_DAEMON:
+
+      rc = tm_spawn_request(ptask->ti_chan,pjob,prev_error,event,cookie,&reply,&ret,fromtask,phost,nodeid, true);
 
       break;
  

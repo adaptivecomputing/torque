@@ -105,20 +105,21 @@ typedef unsigned int tm_task_id;
 /*
 ** Protocol message type defines
 */
-#define TM_INIT  100 /* tm_init request */
-#define TM_TASKS 101 /* tm_taskinfo request */
-#define TM_SPAWN 102 /* tm_spawn request */
-#define TM_SIGNAL 103 /* tm_signal request */
-#define TM_OBIT  104 /* tm_obit request */
-#define TM_RESOURCES 105 /* tm_rescinfo request */
-#define TM_POSTINFO 106 /* tm_publish request */
-#define TM_GETINFO 107 /* tm_subscribe request */
-#define TM_GETTID 108 /* tm_gettasks request */
-#define TM_REGISTER 109 /* tm_register request */
-#define TM_RECONFIG 110 /* tm_register deferred reply */
-#define TM_ACK  111 /* tm_register event acknowledge */
-#define TM_FINALIZE 112 /* tm_finalize request, there is no reply */
-#define TM_OKAY    0
+#define TM_INIT          100 /* tm_init request */
+#define TM_TASKS         101 /* tm_taskinfo request */
+#define TM_SPAWN         102 /* tm_spawn request */
+#define TM_SIGNAL        103 /* tm_signal request */
+#define TM_OBIT          104 /* tm_obit request */
+#define TM_RESOURCES     105 /* tm_rescinfo request */
+#define TM_POSTINFO      106 /* tm_publish request */
+#define TM_GETINFO       107 /* tm_subscribe request */
+#define TM_GETTID        108 /* tm_gettasks request */
+#define TM_REGISTER      109 /* tm_register request */
+#define TM_RECONFIG      110 /* tm_register deferred reply */
+#define TM_ACK           111 /* tm_register event acknowledge */
+#define TM_FINALIZE      112 /* tm_finalize request, there is no reply */
+#define TM_SPAWN_DAEMON  113 /* tm_spawn_user_daemon request */
+#define TM_OKAY            0
 
 
 #define TM_ERROR 999
@@ -172,8 +173,8 @@ typedef unsigned int tm_task_id;
  * . TM_ADOPT_JOBID  identifies task directly by PBS jobid
  */
 
-#define TM_ADOPT_ALTID    113    /* tm_adopt request with alternative management system task id */
-#define TM_ADOPT_JOBID    114     /* tm_adopt with jobid */
+#define TM_ADOPT_ALTID    120    /* tm_adopt request with alternative management system task id */
+#define TM_ADOPT_JOBID    121     /* tm_adopt with jobid */
 
 /*
  * Timeout parameter for tm_poll()

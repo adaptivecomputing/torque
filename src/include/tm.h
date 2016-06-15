@@ -63,6 +63,12 @@ int tm_poll(tm_event_t poll_event,
 
 int tm_notify(int  tm_signal);
 
+int tm_spawn_user_daemon(int   argc,
+             char  *argv[],
+             char  *envp[],
+             tm_task_id *tid,
+             tm_event_t *event);
+
 int tm_spawn(int   argc,
              char  *argv[],
              char  *envp[],

@@ -100,7 +100,7 @@ void tm_request_init(struct job *pjob, struct task *ptask, int *ret, int event, 
 
 int tm_postinfo(char *name, char *info, char *jobid, int fromtask, int prev_error, int event, int *ret, struct task *ptask, size_t *len);
 
-int tm_spawn_request(struct tcp_chan *chan, struct job *pjob, int prev_error, int event, char *cookie, int *reply_ptr, int *ret, tm_task_id fromtask, struct hnodent *phost, int nodeid);
+int tm_spawn_request(struct tcp_chan *chan, struct job *pjob, int prev_error, int event, char *cookie, int *reply_ptr, int *ret, tm_task_id fromtask, struct hnodent *phost, int nodeid, bool spawn_daemon);
 
 int tm_tasks_request(struct tcp_chan *chan, struct job *pjob, int prev_error, int event, char *cookie, int *reply_ptr, int *ret, tm_task_id fromtask, struct hnodent *phost, int nodeid);
 

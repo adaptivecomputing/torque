@@ -61,6 +61,54 @@ START_TEST(test_tm_adopt_ispidowner)
   }
 END_TEST
 
+START_TEST(test_tm_spawn_user_daemon)
+  {
+  struct tm_roots roots;
+  int    rc;
+  int    argc = 0;
+  char   **argv;
+  char   **envp;
+  tm_task_id  *tid;
+  tm_event_t  *event;
+
+  roots.tm_ntasks = 0;
+
+  argv = (char **)calloc(10, sizeof(char));
+  envp = (char **)calloc(10, sizeof(char));
+  tid = (tm_task_id *)calloc(2, sizeof(tm_task_id));
+  event = (tm_event_t *)calloc(2, sizeof(tm_event_t));
+  /* tm not initialized */
+  init_done = 0;
+  rc = tm_spawn_user_daemon(argc, argv, envp, tid, event);
+  fail_unless(rc == TM_BADINIT);
+
+  fake_tm_init(NULL, &roots);
+  argc = -1;
+  rc = tm_spawn_user_daemon(argc, argv, envp, tid, event);
+  fail_unless(rc == TM_ENOTFOUND);
+
+  argc = 3;
+  rc = tm_spawn_user_daemon(argc, NULL, envp, tid, event);
+  fail_unless(rc == TM_ENOTFOUND);
+
+  argv[0] = '\0';
+  rc = tm_spawn_user_daemon(argc, argv, envp, tid, event);
+  fail_unless(rc == TM_ENOTFOUND);
+
+
+  argv[0] = NULL;
+  rc = tm_spawn_user_daemon(argc, argv, envp, tid, event);
+  fail_unless(rc == TM_ENOTFOUND);
+
+  argv[0] = strdup("app");
+  argv[1] = strdup("arg1");
+  argv[2] = strdup("arg2");
+  rc = tm_spawn_user_daemon(argc, argv, envp, tid, event);
+  fail_unless(rc == TM_ENOTCONNECTED);
+
+  }
+END_TEST
+
 Suite *tm_suite(void)
   {
   Suite *s = suite_create("tm_suite methods");
@@ -70,6 +118,9 @@ Suite *tm_suite(void)
   tcase_add_test(tc, test_tm_poll_bad_result);
   tcase_add_test(tc, test_tm_adopt_ispidowner);
   
+  tc = tcase_create("test_tm_spawn_user_daemon");
+  tcase_add_test(tc, test_tm_spawn_user_daemon);
+
   suite_add_tcase(s, tc);
   return s;
   }

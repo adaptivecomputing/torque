@@ -222,6 +222,7 @@ task::~task()
     {
     close_conn(this->ti_chan->sock, FALSE);
     DIS_tcp_cleanup(this->ti_chan);
+    this->ti_chan = NULL;
     }
   } // END task destructor
 
@@ -560,8 +561,15 @@ void mom_job_free(
   nodes_free(pj);
 
   // Delete each remaining task
-  for (unsigned int i = 0; i < pj->ji_tasks->size(); i++)
-    delete pj->ji_tasks->at(i);
+  for (std::vector<task *>::iterator it = pj->ji_tasks->begin(); it != pj->ji_tasks->end(); it++)
+    {
+    task *ptask = *it;
+    if (ptask->ti_chan_reused == true)
+      ptask->ti_chan = NULL;
+    delete ptask;
+    }
+  /*for (unsigned int i = 0; i < pj->ji_tasks->size(); i++)
+    delete pj->ji_tasks->at(i);*/
 
   delete pj->ji_tasks;
 

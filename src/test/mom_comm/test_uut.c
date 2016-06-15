@@ -459,9 +459,35 @@ START_TEST(tm_spawn_request_test)
                             &ret,
                             0,
                             &test_hnodent,
-                            0);
+                            0,
+                            false);
 
   fail_unless(result == TM_DONE, "tm_spawn_request fail: %d", result);
+
+  /* test for tm_spawn_user_daemon type reqeust. */
+  memset(&test_chan, 0, sizeof(test_chan));
+  memset(&test_job, 0, sizeof(test_job));
+  memset(&test_hnodent, 0, sizeof(test_hnodent));
+
+  test_job.ji_tasks = new std::vector<task *>();
+  test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
+
+  result = tm_spawn_request(&test_chan,
+                            &test_job,
+                            0,
+                            0,
+                            (char *)test_cookie,
+                            &reply,
+                            &ret,
+                            0,
+                            &test_hnodent,
+                            0,
+                            true);
+
+  fail_unless(result == TM_DONE, "tm_spawn_request fail: %d", result);
+
+
+
   }
 END_TEST
 
