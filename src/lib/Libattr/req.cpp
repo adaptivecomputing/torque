@@ -2456,7 +2456,7 @@ int req::get_num_tasks_for_host(
 int req::get_task_allocation(
 
   unsigned int  index,
-  allocation &task_allocation)
+  allocation &task_allocation) const
 
   {
   unsigned int size = this->task_allocations.size();
