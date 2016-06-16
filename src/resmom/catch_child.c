@@ -969,6 +969,7 @@ void scan_for_exiting(void)
   {
   job          *pjob = NULL;
   int           found_one = 0;
+  bool          finished_checking = true;
 
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int    ObitsAllowed = 1;
@@ -1033,12 +1034,14 @@ void scan_for_exiting(void)
       if (mother_superior_cleanup(pjob, ObitsAllowed, &found_one) == true)
         {
         /* returning true means we can't process any more jobs this iteration */
+        finished_checking = false;
         break;
         }
       }
+
     }  /* END for (pjob) */
 
-  if ((pjob == NULL) &&
+  if ((finished_checking == true) &&
       (no_mom_servers_down()))
     {
     /* search finished */
