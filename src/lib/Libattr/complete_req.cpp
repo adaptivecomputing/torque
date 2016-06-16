@@ -63,6 +63,9 @@ complete_req::complete_req(
   int            execution_slots = 0;
   unsigned long  mem = 0;
   std::string    mem_type;
+  unsigned long  swap = 0;
+  std::string    swap_type;
+
 
   while (pr != NULL)
     {
@@ -82,9 +85,7 @@ complete_req::complete_req(
       execution_slots = pr->rs_value.at_val.at_long;
       }
     else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
+             (!strcmp(pr->rs_defin->rs_name, "mem")))
       {
       mem_type = pr->rs_defin->rs_name;
       mem = pr->rs_value.at_val.at_size.atsv_num;
@@ -106,6 +107,30 @@ complete_req::complete_req(
           }
         }
       }
+    else if ((!strcmp(pr->rs_defin->rs_name, "vmem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
+      {
+      swap_type = pr->rs_defin->rs_name;
+      swap = pr->rs_value.at_val.at_size.atsv_num;
+      int shift = pr->rs_value.at_val.at_size.atsv_shift;
+
+      if (shift == 0)
+        {
+        // -l used in submission so convert
+        //   bytes to kb
+        swap /= 1024;
+        }
+      else    
+        {
+        // Convert to kb
+        while (shift > 10) 
+          {
+          swap *= 1024;
+          shift -= 10;  
+          }
+        }
+      }
+
 
     pr = (resource *)GET_NEXT(pr->rs_link);
     }
@@ -117,7 +142,10 @@ complete_req::complete_req(
     if (legacy_vmem == false)
       {
       if (task_count > 1)
+        {
         mem /= task_count;
+        swap /= task_count;
+        }
       }
     
     req r;
@@ -126,13 +154,14 @@ complete_req::complete_req(
 
 
     r.set_memory(mem);
-    r.set_swap(mem);
+    r.set_swap(swap);
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
 
     this->add_req(r);
     }
+  /* We can have only one memory directive per -l request. So either mem is set or swap is set */
   else if (mem != 0)
     {
     // Handle the case where a -lnodes request was made
@@ -150,15 +179,14 @@ complete_req::complete_req(
         {
         req &r = this->reqs[i];
         r.set_memory(mem_per_task);
-        r.set_swap(mem_per_task);
         }
 
       }
     else
       {
-      if ((mem_type == "mem") || (mem_type == "vmem"))
+      if (mem_type == "mem")
         mem_per_task = mem;
-      else if ((mem_type == "pmem") || (mem_type == "pvmem"))
+      else if (mem_type == "pmem")
         {
         mem_per_task = mem * ppn_needed;
         }
@@ -169,11 +197,43 @@ complete_req::complete_req(
 
         if ((mem_type == "mem") || (mem_type == "pmem"))
           r.set_memory(mem_per_task);
-        else if ((mem_type == "vmem") || (mem_type == "pvmem"))
-          {
-          r.set_memory(mem_per_task);
-          r.set_swap(mem_per_task);
-          }
+        }
+      }
+    }
+  else if (swap != 0)
+    {
+    // Handle the case where a -lnodes request was made
+    unsigned long swap_per_task = swap;
+
+    if (legacy_vmem == false)
+      {
+      int           total_tasks = 0;
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        total_tasks += this->reqs[i].getTaskCount();
+
+      swap_per_task /= total_tasks;
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+        r.set_swap(swap_per_task);
+        }
+      }
+    else
+      {
+      if (mem_type == "vmem")
+        swap_per_task = swap;
+      else if (mem_type == "pvmem")
+        {
+        swap_per_task = swap * ppn_needed;
+        }
+
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        {
+        req &r = this->reqs[i];
+
+        if ((mem_type == "vmem") || (mem_type == "pvmem"))
+          r.set_swap(swap_per_task);
         }
       }
     }
