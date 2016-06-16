@@ -1345,12 +1345,12 @@ job_array *ghost_create_jobs_array(
     {
     *open = '\0';
     if (dot != NULL)
-      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s%s.AR", file_prefix_work, dot);
+      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s%s", file_prefix_work, dot);
     else
-      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s.AR", file_prefix_work);
+      snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s", file_prefix_work);
     }
   else
-    snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s.AR", file_prefix_work);
+    snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s", file_prefix_work);
 
   snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", 
     pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
