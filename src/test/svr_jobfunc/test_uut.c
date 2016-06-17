@@ -257,6 +257,7 @@ START_TEST(svr_setjobstate_test)
   result = svr_setjobstate(&test_job, 1, 2, 3);
   fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
 
+  get_jobs_queue_force_null = false;
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);

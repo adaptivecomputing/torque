@@ -569,7 +569,7 @@ void mom_job_free(
     task *ptask = *it;
     if (ptask->ti_chan_reused == true)
       ptask->ti_chan = NULL;
-      delete ptask;
+    delete ptask;
     }
 
   delete pj->ji_tasks;
