@@ -3304,7 +3304,10 @@ int do_tcp(
              (tcp_chan_has_data(chan) == TRUE))
         {
         if ((rc = tcp_read_proto_version(chan, &proto, &version)) == DIS_SUCCESS)
+          {
+          chan->reused = true;
           rc = tm_request(chan, version);
+          }
         }
 
       /* chan will be freed by the task that was initiated in tm_request */

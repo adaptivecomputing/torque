@@ -681,6 +681,8 @@ struct tcp_chan * DIS_tcp_setup(
   /* Assign socket to struct */
   chan->sock = fd;
 
+  chan->reused = false;
+
   /* Setting up the read buffer */
   tp = &chan->readbuf;
   if ((tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1)) == NULL)
@@ -721,12 +723,15 @@ void DIS_tcp_cleanup(
   if (chan == NULL)
     return;
   tp = &chan->readbuf;
-  free(tp->tdis_thebuf);
+  if (tp->tdis_thebuf != NULL)
+    free(tp->tdis_thebuf);
 
   tp = &chan->writebuf;
-  free(tp->tdis_thebuf);
+  if (tp->tdis_thebuf != NULL)
+    free(tp->tdis_thebuf);
 
   free(chan);
+  chan = NULL;
   }
 
 void DIS_tcp_close(
