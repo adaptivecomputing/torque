@@ -8253,6 +8253,44 @@ err:
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+int get_req_and_task_index_from_local_rank(
+
+  job          *pjob,
+  int           local_rank,
+  unsigned int &req_index,
+  unsigned int &task_index)
+
+  {
+  int rc = PBSE_NO_PROCESS_RANK;
+
+  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+    {
+    return(rc);
+    }
+  
+  complete_req *cr = NULL;
+
+  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+  if (cr != NULL)
+    {
+    rc = cr->get_req_and_task_index_from_local_rank(local_rank, req_index, task_index, mom_alias);
+
+    if (rc == PBSE_NONE)
+      {
+      if (cr->get_req(req_index).is_per_task() == false)
+        rc = PBSE_NO_PROCESS_RANK;
+      }
+    }
+
+  return(rc);
+  } // END get_req_and_task_index_from_local_rank()
+#endif
+
 
 
 /*
@@ -8420,6 +8458,14 @@ static int adoptSession(
   if ((ptask = pbs_task_create(pjob, (pjob->ji_taskid - 1) + TM_ADOPTED_TASKID_BASE)) == NULL)
     return(TM_ERROR);
 
+#ifdef PENABLE_LINUX_CGROUPS
+  int local_task_id = pjob->ji_taskid;
+
+  // If I'm mother superior, take 1 away for the master task
+  if (am_i_mother_superior(*pjob) == true)
+    local_task_id--;
+#endif
+
   pjob->ji_taskid++;
 
   /* ti_parenttask not used but avoiding using TM_NULL_TASK
@@ -8453,6 +8499,63 @@ static int adoptSession(
     (void)mom_set_use(pjob);
     }
 
+#ifdef PENABLE_LINUX_CGROUPS
+  unsigned int req_index = 0;
+  unsigned int task_index = 0;
+
+  errno = 0;
+
+  int rc = get_req_and_task_index_from_local_rank(pjob, local_task_id, req_index, task_index);
+
+  if (rc == PBSE_NONE)
+    {
+    rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+    if (rc == PBSE_NONE)
+      {
+      rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+      if (rc == PBSE_NONE)
+        {
+        rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+        if (rc == PBSE_NONE)
+          rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
+                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+        }
+      }
+
+    if (rc != PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Couldn't add adopted pid %d to cgroup R%u.t%u for job %s. Attempting to add it to the host-level cgroup.",
+        pid, req_index, task_index, pjob->ji_qs.ji_jobid);
+      log_err(errno, __func__, log_buffer);
+
+      rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, pid);
+      
+      if (rc != PBSE_NONE)
+        {
+        snprintf(log_buffer, sizeof(log_buffer),
+          "Couldn't add adopted pid %d to the host-level cgroup for job %s. This process will not be restricted by cgroups.",
+          pid, pjob->ji_qs.ji_jobid);
+        log_err(errno, __func__, log_buffer);
+        }
+      }
+    }
+  else
+    {
+    rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, pid);
+      
+    if (rc != PBSE_NONE)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Couldn't add adopted pid %d to the host-level cgroup for job %s. This process will not be restricted by cgroups.",
+        pid, pjob->ji_qs.ji_jobid);
+      log_err(errno, __func__, log_buffer);
+      }
+    }
+#else
 #ifdef PENABLE_LINUX26_CPUSETS
   /* add to the cpuset */
   snprintf(cpuset_path,sizeof(cpuset_path),
@@ -8487,6 +8590,7 @@ static int adoptSession(
     log_err(-1, __func__, log_buffer);
     }
 #endif /* def PENABLE_LINUX26_CPUSETS */
+#endif
 
   /* next_sample_time = 45; */
 

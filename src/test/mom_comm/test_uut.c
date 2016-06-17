@@ -12,6 +12,7 @@
 #include "test_mom_comm.h"
 #include "resmon.h"
 #include "mom_server.h"
+#include "complete_req.hpp"
 
 extern int disrsi_return_index;
 extern int disrst_return_index;
@@ -39,6 +40,35 @@ int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, h
 received_node *get_received_node_entry(char *str);
 bool is_nodeid_on_this_host(job *pjob, tm_node_id nodeid);
 task *find_task_by_pid(job *pjob, int pid);
+
+#ifdef PENABLE_LINUX_CGROUPS
+int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
+
+extern bool per_task;
+
+START_TEST(test_get_req_and_task_index_from_local_rank)
+  {
+  job *pjob = (job *)calloc(1, sizeof(job));
+  complete_req cr;
+  unsigned int req_index = 0;
+  unsigned int task_index = 0;
+
+  // If this attribute isn't set, we should do nothing
+  pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long = 2;
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
+
+  pjob->ji_wattr[JOB_ATR_request_version].at_flags = ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  per_task = false; // Setting this means I should get PBSE_NO_PROCESS_RANK
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
+
+  per_task = true;
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NONE);
+  }
+END_TEST
+
+#endif
 
 
 START_TEST(test_find_task_by_pid)
@@ -586,6 +616,9 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("get_stat_update_interval_test");
   tcase_add_test(tc_core, get_stat_update_interval_test);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, test_get_req_and_task_index_from_local_rank);
+#endif
   suite_add_tcase(s, tc_core);
 
   return(s);

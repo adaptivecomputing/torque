@@ -61,7 +61,7 @@ START_TEST(ghost_array_test)
 
   job_array *pa = ghost_create_jobs_array(pjob, array_id);
   fail_unless(!strcmp(pa->ai_qs.parent_id, array_id));
-  fail_unless(!strcmp(pa->ai_qs.fileprefix, "10.napali.AR"), "prefix=%s", pa->ai_qs.fileprefix);
+  fail_unless(!strcmp(pa->ai_qs.fileprefix, "10.napali"), "prefix=%s", pa->ai_qs.fileprefix);
   fail_unless(pa->job_ids[0] != NULL);
   fail_unless(!strcmp(pa->job_ids[0], pjob->ji_qs.ji_jobid));
   fail_unless(pa->ai_qs.array_size == 101); // DEFAULT_ARRAY_RECOV_SIZE
