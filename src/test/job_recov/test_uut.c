@@ -115,6 +115,7 @@ START_TEST(test_set_array_jobs_ids)
   {
   job  *pjob = new job();
   char  buf[1024];
+  std::string expected_err_msg;
 
   init();
 
@@ -124,6 +125,11 @@ START_TEST(test_set_array_jobs_ids)
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+
+  // check the returned error message
+  expected_err_msg = "array struct missing for array job ";
+  expected_err_msg.append(pjob->ji_qs.ji_jobid);
+  fail_unless(strcmp(buf, expected_err_msg.c_str()) == 0);
 
   pjob = new job();
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
