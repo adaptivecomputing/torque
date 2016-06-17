@@ -64,7 +64,6 @@ complete_req::complete_req(
   unsigned long  mem = 0;
   std::string    mem_type;
   unsigned long  swap = 0;
-  std::string    swap_type;
 
 
   while (pr != NULL)
@@ -110,7 +109,7 @@ complete_req::complete_req(
     else if ((!strcmp(pr->rs_defin->rs_name, "vmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
-      swap_type = pr->rs_defin->rs_name;
+      mem_type = pr->rs_defin->rs_name;
       swap = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
