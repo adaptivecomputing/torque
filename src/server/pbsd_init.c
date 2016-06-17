@@ -2041,6 +2041,11 @@ int cleanup_recovered_arrays()
 
 
 
+/*
+ * handle_job_and_array_recovery()
+ *
+ * Recovers the job arrays and jobs, and then cleans up the job arrays
+ */
 
 int handle_job_and_array_recovery(
 
@@ -2048,13 +2053,20 @@ int handle_job_and_array_recovery(
 
   {
   int rc;
+  int tmp_rc;
 
-  if ((rc = handle_array_recovery(type)) != PBSE_NONE)
-    return(rc);
-  else if ((rc = handle_job_recovery(type)) != PBSE_NONE)
-    return(rc);
-  else
-    rc = cleanup_recovered_arrays();
+  rc = handle_array_recovery(type);
+  
+  if ((tmp_rc = handle_job_recovery(type)) != PBSE_NONE)
+    {
+    if (rc == PBSE_NONE)
+      rc = tmp_rc;
+    }
+
+  tmp_rc = cleanup_recovered_arrays();
+    
+  if (rc == PBSE_NONE)
+    rc = tmp_rc;
 
   return(rc);
   } /* END handle_job_and_array_recovery() */
