@@ -755,7 +755,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      snprintf(log_buf, sizeof(log_buf), "Job %s has no queue", pjob->ji_qs.ji_jobid);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, log_buf);
       return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
