@@ -8012,6 +8012,8 @@ int tm_request(
     DIS_tcp_cleanup(ptask->ti_chan);
  
   ptask->ti_chan = chan;
+  if (chan->reused == true)
+    ptask->ti_chan_reused = true;
  
   reply = TRUE;
  
