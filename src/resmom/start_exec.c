@@ -5874,31 +5874,33 @@ int start_process(
       rc = get_process_rank(rank);
       if (rc == PBSE_NONE)
         {
-        unsigned int req_index;
-        unsigned int task_index;
-
         complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+        unsigned int  req_index = 0;
+        unsigned int  task_index = 0;
 
-        rc = cr->get_req_and_task_index(rank, req_index, task_index);
-
-        if (cr->get_req(req_index).is_per_task())
+        if ((cr->get_num_reqs() < 0) ||
+            (cr->get_req(0).is_per_task() == false))
           {
+          rc = PBSE_NO_PROCESS_RANK;
+          }
+        else
+          rc = cr->get_req_and_task_index(rank, req_index, task_index);
+
+        if (rc == PBSE_NONE)
+          {
+          rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
           if (rc == PBSE_NONE)
             {
-            rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
-                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+            rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
             if (rc == PBSE_NONE)
               {
-              rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
-                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
+              rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
               if (rc == PBSE_NONE)
-                {
-                rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
-                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
-                if (rc == PBSE_NONE)
-                  rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
-                                pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
-                }
+                rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
+                              pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
               }
             }
           }
