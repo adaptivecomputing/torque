@@ -117,21 +117,21 @@ START_TEST(test_constructor)
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
-  fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl.getMemory());
+  fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
 
   complete_req list5(h, 2, true);
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
-  fail_unless(rl3.getMemory() == 160, "pvmem is %lu", rl.getMemory());
-  fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl.getSwap());
+  fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
+  fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
   complete_req list6(h, 2, true);
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
-  fail_unless(rl4.getMemory() == 80, "pvmem is %lu", rl.getMemory());
-  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl.getSwap());
+  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
+  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
 
  }
 END_TEST
@@ -146,7 +146,7 @@ START_TEST(test_constructor_oldstyle_req)
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);
-  fail_unless(rm1.getMemory() == 2, "mem is %lu", rm1.getMemory());
+  fail_unless(rm1.getMemory() == 0, "mem is %lu", rm1.getMemory());
   }
 END_TEST
 
