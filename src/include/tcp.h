@@ -25,7 +25,7 @@ struct tcp_chan
   int              ReadErrno;
   int              SelectErrno;
   int              sock;
-  bool             reused; /* do_tcp() may call tm_request more than once with the same tcp_chan structure
+  int              reused; /* do_tcp() may call tm_request more than once with the same tcp_chan structure
                               We need to mark it when it does */
   };
 

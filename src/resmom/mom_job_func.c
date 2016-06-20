@@ -564,7 +564,7 @@ void mom_job_free(
   for (std::vector<task *>::iterator it = pj->ji_tasks->begin(); it != pj->ji_tasks->end(); it++)
     {
     task *ptask = *it;
-    if (ptask->ti_chan_reused == true)
+    if (ptask->ti_chan_reused == TRUE)
       ptask->ti_chan = NULL;
     delete ptask;
     }
