@@ -6241,7 +6241,7 @@ int start_process(
         unsigned int  req_index = 0;
         unsigned int  task_index = 0;
 
-        if ((cr->get_num_reqs() < 0) ||
+        if ((cr->get_num_reqs() == 0) ||
             (cr->get_req(0).is_per_task() == false))
           {
           rc = PBSE_NO_PROCESS_RANK;
