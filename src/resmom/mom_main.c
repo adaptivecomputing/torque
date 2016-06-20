@@ -3305,7 +3305,7 @@ int do_tcp(
         {
         if ((rc = tcp_read_proto_version(chan, &proto, &version)) == DIS_SUCCESS)
           {
-          chan->reused = true;
+          chan->reused = TRUE;
           rc = tm_request(chan, version);
           }
         }

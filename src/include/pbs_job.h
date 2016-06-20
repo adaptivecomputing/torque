@@ -979,7 +979,7 @@ class task
   public:
   struct tcp_chan    *ti_chan;  /* DIS file descriptor to task */
   int                 ti_flags; /* task internal flags */
-  bool                ti_chan_reused; /* do_tcp for tm_requests will reuse the chan and 
+  int                 ti_chan_reused; /* do_tcp for tm_requests will reuse the chan and 
                                       make a second call to tm_request where the same
                                       chan is added to a task for the job. When the job
                                       is deleted the same chan is in two tasks and the secon
@@ -991,7 +991,7 @@ class task
 
   taskfix ti_qs;
 
-  task() : ti_chan(NULL), ti_flags(0), ti_chan_reused(false), ti_register(0), ti_obits(), ti_info()
+  task() : ti_chan(NULL), ti_flags(0), ti_chan_reused(0), ti_register(0), ti_obits(), ti_info()
     {
     memset(&this->ti_qs, 0, sizeof(this->ti_qs));
     }

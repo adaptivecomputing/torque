@@ -681,7 +681,7 @@ struct tcp_chan * DIS_tcp_setup(
   /* Assign socket to struct */
   chan->sock = fd;
 
-  chan->reused = false;
+  chan->reused = FALSE;
 
   /* Setting up the read buffer */
   tp = &chan->readbuf;
