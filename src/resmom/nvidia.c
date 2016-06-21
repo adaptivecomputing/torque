@@ -1086,12 +1086,14 @@ int set_gpu_req_modes(
     job *pjob)
 
   {
+  pbs_attribute *pattr;
   int rc;
   unsigned int gpu_indices_size = gpu_indices.size();
   std::vector<unsigned int>::iterator it = gpu_indices.begin();
 
   /* Is the a -l resource request or a -L resource request */
-  if (have_incompatible_dash_l_resource(pjob) == true)
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if (have_incompatible_dash_l_resource(pattr) == true)
     {
     rc = set_gpu_modes(gpu_indices, gpu_flags);
     

@@ -976,10 +976,12 @@ int trq_cg_create_task_cgroups(
   {
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr; /* for -L req_information request */
   pbs_attribute *pattrL; /* for -L req_information request */
 
   // For -l requests we want to make only one cgroup per host
-  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
       ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     return(PBSE_NONE);
@@ -1286,7 +1288,8 @@ int trq_cg_populate_task_cgroups(
     }
 
   // For -l requests we want to make only one cgroup per host
-  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
       ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     {
