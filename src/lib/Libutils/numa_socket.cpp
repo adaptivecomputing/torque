@@ -227,8 +227,11 @@ Socket &Socket::operator=(
 
   this->socket_exclusive = other.socket_exclusive;
 
-  hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
-  hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
+  if (strlen(this->socket_cpuset_string))
+      hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
+
+  if (strlen(this->socket_nodeset_string))
+    hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
 
   return(*this);
   }

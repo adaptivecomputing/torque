@@ -733,6 +733,53 @@ int save_node_status(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
+/*
+ * update_layout_if_needed()
+ *
+ * Updates the layout of pnode if 1) we don't have one or 2) the thread count has changed
+ *
+ * @param pnode - the node in question
+ * @param layout - the string specifying the layout
+ */
+
+void update_layout_if_needed(
+
+  pbsnode           *pnode,
+  const std::string &layout)
+
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (pnode->nd_layout.is_initialized() == false)
+    {
+    pnode->nd_layout.reinitialize_from_json(layout);
+    }
+  else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
+           (pnode->nd_job_usages.size() == 0))
+    {
+    int old_count = pnode->nd_layout.getTotalThreads();
+    int new_count = pnode->nd_slots.get_total_execution_slots();
+
+    // If the number of np for the node has changed, then we should get a new layout as long
+    // as we don't have active jobs
+    Machine m(layout);
+    pnode->nd_layout = m;
+
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Node %s appears to have had it's core/thread count updated. The layout has now also been updated from %d to %d.",
+        pnode->get_name(), old_count, new_count);
+
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buf);
+      }
+    }
+  } // END update_layout_if_needed()
+#endif
+
+
+
 int process_status_info(
 
   const char               *nd_name,
@@ -843,10 +890,7 @@ int process_status_info(
 #ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
-      if (current->nd_layout.is_initialized() == false)
-        {
-        current->nd_layout.reinitialize_from_json(status_info[i]);
-        }
+      update_layout_if_needed(current, status_info[i]);
 
       continue;
       }
