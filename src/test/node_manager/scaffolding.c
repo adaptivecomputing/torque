@@ -797,7 +797,7 @@ bool internal_job_id_exists(int internal_job_id)
     return(false);
   }
 
-bool have_incompatible_dash_l_resource(job *pjob)
+bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
   {
   return(true);
   }

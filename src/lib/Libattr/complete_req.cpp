@@ -172,17 +172,29 @@ complete_req::complete_req(
       for (unsigned int i = 0; i < this->reqs.size(); i++)
         total_tasks += this->reqs[i].getTaskCount();
 
-      mem_per_task /= total_tasks;
+      if (mem_type == "mem")
+        {
+	mem_per_task /= total_tasks;
+        }
+     else if (mem_type == "pmem")
+       {
+       mem_per_task = mem * ppn_needed;
+       }
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
         {
         req &r = this->reqs[i];
         r.set_memory(mem_per_task);
+        r.set_swap(0);
         }
 
       }
     else
       {
+      int total_tasks = 0;
+      for (unsigned int i = 0; i < this->reqs.size(); i++)
+        total_tasks += this->reqs[i].getTaskCount();
+      
       if (mem_type == "mem")
         mem_per_task = mem;
       else if (mem_type == "pmem")
@@ -196,6 +208,7 @@ complete_req::complete_req(
 
         if ((mem_type == "mem") || (mem_type == "pmem"))
           r.set_memory(mem_per_task);
+	  r.set_swap(0);
         }
       }
     }
@@ -203,19 +216,23 @@ complete_req::complete_req(
     {
     // Handle the case where a -lnodes request was made
     unsigned long swap_per_task = swap;
+    int           total_tasks = 0;
+    for (unsigned int i = 0; i < this->reqs.size(); i++)
+      total_tasks += this->reqs[i].getTaskCount();
+
 
     if (legacy_vmem == false)
       {
-      int           total_tasks = 0;
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        total_tasks += this->reqs[i].getTaskCount();
-
-      swap_per_task /= total_tasks;
+      if (mem_type == "vmem")
+        swap_per_task /= total_tasks;
+      else if (mem_type == "pvmem")
+        swap_per_task = (swap * ppn_needed);
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
         {
         req &r = this->reqs[i];
         r.set_swap(swap_per_task);
+        r.set_memory(swap_per_task);
         }
       }
     else
@@ -224,7 +241,7 @@ complete_req::complete_req(
         swap_per_task = swap;
       else if (mem_type == "pvmem")
         {
-        swap_per_task = swap * ppn_needed;
+        swap_per_task = (swap * ppn_needed);
         }
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
@@ -232,7 +249,10 @@ complete_req::complete_req(
         req &r = this->reqs[i];
 
         if ((mem_type == "vmem") || (mem_type == "pvmem"))
+          {
           r.set_swap(swap_per_task);
+          r.set_memory(swap_per_task);
+          }
         }
       }
     }

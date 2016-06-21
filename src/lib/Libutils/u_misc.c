@@ -521,15 +521,15 @@ bool task_hosts_match(
 
 bool have_incompatible_dash_l_resource(
 
-  job *pjob)
+  pbs_attribute *pattr)
 
   {
   resource *presl; /* for -l resource request */
   bool      found_incompatible_resource = false;
 
-  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+  if (pattr->at_flags & ATR_VFLAG_SET)
     {
-    presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    presl = (resource *)GET_NEXT(pattr->at_val.at_list);
 
     while ((presl != NULL) &&
            (found_incompatible_resource == false))

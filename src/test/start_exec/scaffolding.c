@@ -1042,7 +1042,7 @@ struct passwd *get_password_entry_by_uid(
 
 bool have_incompatible_dash_l_resource(
     
-    job *pjob)
+    pbs_attribute *pattr)
 
   {
   return(false);

@@ -8265,8 +8265,10 @@ int get_req_and_task_index_from_local_rank(
 
   {
   int rc = PBSE_NO_PROCESS_RANK;
+  pbs_attribute *pattr;
 
-  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
       ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     {
