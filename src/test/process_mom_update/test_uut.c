@@ -50,6 +50,7 @@ START_TEST(test_update_layout_if_needed)
   update_layout_if_needed(pnode, with_threads);
   
   fail_unless(event_logged == 1);
+  fail_unless(pnode->nd_layout->getTotalThreads() == 32);
 
   // Calling again without changing the number of slots should do nothing
   update_layout_if_needed(pnode, with_threads);
@@ -120,7 +121,9 @@ Suite *process_mom_update_suite(void)
   Suite *s = suite_create("process_mom_update test suite methods");
   TCase *tc_core = tcase_create("test_set_note_error");
   tcase_add_test(tc_core, test_set_note_error);
+#ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, test_update_layout_if_needed);
+#endif
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_two");
