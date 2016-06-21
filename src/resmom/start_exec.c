@@ -4455,7 +4455,8 @@ int set_job_cgroup_memory_limits(
   pbs_attribute *pattr;
 
   /* make sure we don't have an incompatible -l resource request */
-  if (have_incompatible_dash_l_resource(pjob) == false)
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if (have_incompatible_dash_l_resource(pattr) == false)
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */
@@ -6225,7 +6226,8 @@ int start_process(
   pid_t new_pid = getpid();
 
   /* make sure we don't have an incompatible -l resource request */
-  if ((have_incompatible_dash_l_resource(pjob) == false) &&
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == false) &&
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
       (pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET))
     {

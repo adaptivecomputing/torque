@@ -116,5 +116,5 @@ int unescape_xml(char *in, char *out, int size);
 int put_env_var(const char *, const char *);
 
 /* u_misc.c */
-bool have_incompatible_dash_l_resource(job *pjob);
+bool have_incompatible_dash_l_resource(pbs_attribute *pattr);
 

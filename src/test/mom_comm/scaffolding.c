@@ -641,7 +641,7 @@ int complete_req::get_req_and_task_index_from_local_rank(
 
 bool have_incompatible_dash_l_resource(
 
-  job *pjob)
+  pbs_attribute *pattr)
 
   {
   return(false);
