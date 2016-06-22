@@ -1278,15 +1278,6 @@ int trq_cg_populate_task_cgroups(
   char          *job_id = pjob->ji_qs.ji_jobid;
   pbs_attribute *pattr;
 
-  /* See if the JOB_ATR_req_information is set. If not
-     This was not a -L request */
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-
-  if (pattr == NULL)
-    {
-    return(PBSE_NONE);
-    }
-
   // For -l requests we want to make only one cgroup per host
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if ((have_incompatible_dash_l_resource(pattr) == true) ||
@@ -1297,6 +1288,16 @@ int trq_cg_populate_task_cgroups(
        -l resources requested */
     return(PBSE_NONE);
     }
+
+  /* See if the JOB_ATR_req_information is set. If not
+     This was not a -L request */
+  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
+
+  if (pattr == NULL)
+    {
+    return(PBSE_NONE);
+    }
+
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
