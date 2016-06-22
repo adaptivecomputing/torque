@@ -17,7 +17,8 @@
 
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
-int         LOGLEVEL;
+int         LOGLEVEL = 10;
+int         event_logged;
 const char *dis_emsg[] =
   {
   "No error",
@@ -40,7 +41,10 @@ attribute_def node_attr_def[1];
 
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
-void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+void log_event(int eventtype, int objclass, const char *objname, const char *text) 
+  {
+  event_logged++;
+  }
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 id_map job_mapper;
@@ -321,21 +325,141 @@ void move_past_whitespace(
   *str = current;
   } // END move_past_whitespace()
 
+void add_range_to_string(
+
+  std::string &range_string,
+  int          begin,
+  int          end)
+
+  {
+  char buf[1024];
+
+  if (begin == end)
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d", begin);
+    else
+      sprintf(buf, ",%d", begin);
+    }
+  else
+    {
+    if (range_string.size() == 0)
+      sprintf(buf, "%d-%d", begin, end);
+    else
+      sprintf(buf, ",%d-%d", begin, end);
+    }
+
+  range_string += buf;
+  } // END add_range_to_string()
+
 void translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices)
   {
-  return;
+  // range_string starts empty
+  range_string.clear();
+
+  if (indices.size() == 0)
+    return;
+
+  int first = indices[0];
+  int prev = first;
+
+  for (unsigned int i = 1; i < indices.size(); i++)
+    {
+    if (indices[i] == prev + 1)
+      {
+      // Still in a consecutive range
+      prev = indices[i];
+      }
+    else
+      {
+      add_range_to_string(range_string, first, prev);
+
+      first = prev = indices[i];
+      }
+    }
+
+  // output final piece
+  add_range_to_string(range_string, first, prev);
   }
 
 void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
   {
-  return;
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev = 0;
+  int   curr;
+
+  while (is_whitespace(*ptr))
+    ptr++;
+
+  while (*ptr != '\0')
+    {
+    char *old_ptr = ptr;
+    prev = strtol(ptr, &ptr, 10);
+
+    if (ptr == old_ptr)
+      {
+      // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      break;
+      }
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      while ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      while ((*ptr == ',') ||
+             (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
+
+  free(str);
   }
 
 void capture_until_close_character(
 
   char        **start,
   std::string  &storage,
-  char          end) {}
+  char          end) 
+  
+  {
+  if ((start == NULL) ||
+      (*start == NULL))
+    return;
+
+  char *val = *start;
+  char *ptr = strchr(val, end);
+
+  // Make sure we found a close quote and this wasn't an empty string
+  if ((ptr != NULL) &&
+      (ptr != val))
+    {
+    storage = val;
+    storage.erase(ptr - val);
+    *start = ptr + 1; // add 1 to move past the character
+    }
+  else
+    {
+    // Make sure we aren't returning stale values
+    storage.clear();
+    }
+  }
 
 id_map::id_map(){}
 
