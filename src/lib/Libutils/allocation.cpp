@@ -118,7 +118,7 @@ allocation &allocation::operator =(
 
   {
   this->cpu_place_indices = other.cpu_place_indices;
-  this->cpu_indices = other.cpu_place_indices;
+  this->cpu_indices = other.cpu_indices;
   this->mem_indices = other.mem_indices;
   this->gpu_indices = other.gpu_indices;
   this->mic_indices = other.mic_indices;
