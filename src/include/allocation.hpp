@@ -128,6 +128,7 @@ class allocation
   allocation(const req &r);
   allocation();
   allocation(const char *jobid);
+  allocation &operator =(const allocation &other);
   int  add_allocation(const allocation &other);
   void set_cput_used(const unsigned long cput_used);
   void set_memory_used(const unsigned long long mem_used);
