@@ -112,6 +112,34 @@ allocation::allocation(
   {
   }
 
+allocation &allocation::operator =(
+
+  const allocation &other)
+
+  {
+  this->cpu_place_indices = other.cpu_place_indices;
+  this->cpu_indices = other.cpu_place_indices;
+  this->mem_indices = other.mem_indices;
+  this->gpu_indices = other.gpu_indices;
+  this->mic_indices = other.mic_indices;
+
+  this->memory = other.memory;
+  this->cpus = other.cpus;
+  this->cores = other.cores;
+  this->threads = other.threads;
+  this->place_cpus = other.place_cpus;
+  this->place_type = other.place_type;
+  this->cores_only = other.cores_only;
+  this->jobid = other.jobid;
+  this->hostname = other.hostname;
+  this->gpus = other.gpus;
+  this->mics = other.mics;
+  this->task_cput_used = other.task_cput_used;
+  this->task_memory_used = other.task_memory_used;
+
+  return(*this);
+  }
+
 allocation::allocation() : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(), memory(0),
                            cpus(0), cores(0), threads(0), place_cpus(0), place_type(exclusive_none),
                            cores_only(false), jobid(), hostname(), gpus(0), mics(0), task_cput_used(0),
@@ -122,7 +150,8 @@ allocation::allocation() : cpu_place_indices(), cpu_indices(), mem_indices(), gp
 
 allocation::allocation(
 
-  const req &r) : cpu_place_indices(), cpu_indices(), mem_indices(), cores(0), threads(0),
+  const req &r) : cpu_place_indices(), cpu_indices(), mem_indices(), gpu_indices(), mic_indices(),
+                  cores(0), threads(0),
                   place_cpus(0), place_type(exclusive_none), cores_only(false), jobid(), hostname(),
                   task_cput_used(0), task_memory_used(0)
 
