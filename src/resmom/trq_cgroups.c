@@ -999,10 +999,13 @@ int trq_cg_create_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattrL->at_val.at_ptr;
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1028,7 +1031,7 @@ int trq_cg_create_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1305,11 +1308,13 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-  
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1332,7 +1337,7 @@ int trq_cg_populate_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
