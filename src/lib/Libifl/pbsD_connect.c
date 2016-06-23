@@ -1024,7 +1024,7 @@ int pbs_original_connect(
 
   if (!strcmp(server, "localhost"))
     use_unixsock = 1;
-  else if ((gethostname(hnamebuf, sizeof(hnamebuf) - 1) == 0) && !strcmp(hnamebuf, server))
+  else if ((alias_gethostname(hnamebuf, sizeof(hnamebuf) - 1) == 0) && !strcmp(hnamebuf, server))
     use_unixsock = 1;
 
   /* NOTE: if any part of using unix domain sockets fails,

@@ -290,6 +290,7 @@ int                     HALockFD;
 
 struct server           server;  /* the server structure */
 char                    server_host[PBS_MAXHOSTNAME + 1]; /* host_name */
+int                     server_host_set = 0;
 char                   *mom_host = server_host;
 int                     server_init_type = RECOV_WARM;
 char                    server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
@@ -323,6 +324,22 @@ acl_special             limited_acls;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
+
+
+int server_gethostname(char* hostname, size_t len) {
+    if(server_host_set == 1) {
+        strncpy(hostname, server_host, len - 1);
+        if(strlen(server_host) > len - 1) {
+            hostname[len - 1] = '\0';
+        }
+        return 0;
+    } else {
+        return gethostname(hostname, len);
+    }
+}
+
+
+
 /*
  * need_y_response - on create/clean initialization that would delete
  * information, obtain the operator approval first.
@@ -397,7 +414,7 @@ static void need_y_response(
 
   return;
   }  /* END need_y_response() */
- 
+
 
 completed_jobs_map_class completed_jobs_map;
 
@@ -635,6 +652,7 @@ void parse_command_line(
         /*  (used for multi-homed hosts) */
 
         snprintf(server_host, PBS_MAXHOSTNAME, "%s", optarg);
+        server_host_set = 1;
 
         if (get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, EMsg) == -1)
           {
@@ -753,15 +771,15 @@ void parse_command_line(
           }
 
         break;
-        
-      case 'P':    
-    	  
+
+      case 'P':
+
         paused = TRUE;
-        
+
         fprintf(stderr, "Server paused\n");
-        
+
         break;
-        
+
       case 't':
         if (strcmp(optarg, "create") == 0)
           {
@@ -920,10 +938,10 @@ void *check_tasks(void *notUsed)
     {
     rc = dispatch_timed_task(ptask); /* will delete link */
 
-    /* if dispatch_task does not return PBSE_NONE 
+    /* if dispatch_task does not return PBSE_NONE
        it is because we have used up our alotment of threads.
-       Break for now and come back to this next time 
-       through the main_loop 
+       Break for now and come back to this next time
+       through the main_loop
      */
     if (rc != PBSE_NONE)
       {
@@ -996,7 +1014,7 @@ void *handle_queue_routing_retries(
   int        rc;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pthread_attr_t  routing_attr;
- 
+
   route_thread_active = true;
   pthread_cleanup_push(route_listener_cleanup, vp);
 
@@ -1029,7 +1047,7 @@ void *handle_queue_routing_retries(
           {
           queuename = strdup(pque->qu_qs.qu_name); /* make sure this gets freed inside queue_route */
           /* thread not yet started. Let's start the route retry thread for this routing queue */
-          
+
           rc = pthread_create(&pque->route_retry_thread_id, &routing_attr, queue_route, queuename);
           if (rc != 0)
             {
@@ -1055,7 +1073,7 @@ void *handle_queue_routing_retries(
               snprintf(log_buf, sizeof(log_buf), "pthread_attr_init failed: %d  in %s. Will try next iteration",
                 rc,  __func__);
               log_err(-1, msg_daemonname, log_buf);
-              
+
               free(queuename);
               /* Just go on to the next queue. do not return NULL here */
               }
@@ -1095,7 +1113,7 @@ void *handle_scheduler_contact(
 
 
 /*
- * accept_listener_cleanup() 
+ * accept_listener_cleanup()
  */
 
 void accept_listener_cleanup(
@@ -1110,7 +1128,7 @@ void accept_listener_cleanup(
 
 
 void *start_accept_listener(
-    
+
   void *vp)
 
   {
@@ -1136,7 +1154,7 @@ void *start_accept_listener(
 
 
 void start_generic_thread(
-    
+
   pthread_t *tid,
   void      *(*func)(void *))
 
@@ -1293,7 +1311,7 @@ void main_loop(void)
   sprintf(log_buf, msg_startup2, sid, LOGLEVEL);
 
   log_event(PBSEVENT_SYSTEM | PBSEVENT_FORCE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buf);
-    
+
   hierarchy_handler.checkAndSendHierarchy(true);
 
   /* do not check nodes immediately as they will initially be marked
@@ -1410,9 +1428,9 @@ void main_loop(void)
       LOGLEVEL = log;
       }
 
-    /* 
+    /*
      * Can we comment this out? Would anything above change the
-     * server state without setting the 'state' variable? 
+     * server state without setting the 'state' variable?
      */
     get_svr_attr_l(SRV_ATR_State, &state);
     if (state == SV_STATE_SHUTSIG)
@@ -1582,7 +1600,7 @@ void initialize_xmllib()
   {
   LIBXML_TEST_VERSION;
   /* not reentrant; called once before processing, set up multithreading */
-  xmlInitParser(); 
+  xmlInitParser();
   } /* END of initialize_xmllib */
 
 
@@ -1610,6 +1628,8 @@ int main(
   extern char *msg_startup1; /* log message   */
 
   FILE      *fp;
+
+  alias_gethostname = &server_gethostname;
 
   /* populate a variable useful when analyzing a core file */
   memset(Torque_Info_SysVersion, 0, sizeof(Torque_Info_SysVersion));
@@ -1649,7 +1669,7 @@ int main(
 
   EMsg[0] = '\0';
 
-  if ((gethostname(server_host, PBS_MAXHOSTNAME) == -1) ||
+  if ((alias_gethostname(server_host, PBS_MAXHOSTNAME) == -1) ||
       (get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, EMsg) == -1))
     {
     snprintf(tmpLine, sizeof(tmpLine), "unable to determine local server hostname %c %s",
@@ -1671,7 +1691,7 @@ int main(
   if (server_name_file_port != 0)
     pbs_server_port_dis = server_name_file_port;
 
-  /* initialize job clone semaphore so we can track the number of outstanding 
+  /* initialize job clone semaphore so we can track the number of outstanding
      job array creation requests */
   job_clone_semaphore = (sem_t *)malloc(sizeof(sem_t));
   if (job_clone_semaphore == NULL)
@@ -1709,7 +1729,7 @@ int main(
     {
     return(1);
     }
-  
+
   if ((check_network_port(pbs_server_port_dis) != PBSE_NONE) &&
       (!high_availability_mode))
     {
@@ -3075,4 +3095,3 @@ void PCI_Device::initializeMic(int idx, hwloc_topology_t topology) {}
 #endif
 
 /* END pbsd_main.c */
-

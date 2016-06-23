@@ -128,4 +128,6 @@ int setup_nodeboards();
 int parse_mom_hierarchy_file(char *path, mom_hierarchy_t *nt);
 
 void get_mom_job_dir_sticky_config(char *file);
+
+int mom_alias_gethostname(char *name, size_t len);
 #endif /* _MOM_MAIN_H */

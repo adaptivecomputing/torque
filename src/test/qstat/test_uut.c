@@ -412,7 +412,7 @@ START_TEST(test_run_job_mode)
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
   fail_unless(pbs_server != NULL);
   
-  rc = gethostname(pbs_server, len);
+  rc = alias_gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
   rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
@@ -457,7 +457,7 @@ START_TEST(test_run_queue_mode)
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
   fail_unless(pbs_server != NULL);
   
-  rc = gethostname(pbs_server, len);
+  rc = alias_gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
@@ -499,7 +499,7 @@ START_TEST(test_run_server_mode)
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
   fail_unless(pbs_server != NULL);
   
-  rc = gethostname(pbs_server, len);
+  rc = alias_gethostname(pbs_server, len);
   fail_unless(rc == 0);
 
   rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);

@@ -465,7 +465,7 @@ bool overwrite_cache(
   return(true);
   }
 
-/*int gethostname(char *name, size_t len)
+/*int alias_gethostname(char *name, size_t len)
   {
   strcpy(name, "fattony3.ac");
   return(0);

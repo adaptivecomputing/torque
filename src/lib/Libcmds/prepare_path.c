@@ -97,7 +97,7 @@
 
 #include "pbs_ifl.h"
 #include "net_connect.h"
-
+#include "utils.h"
 
 int prepare_path(
 
@@ -216,7 +216,7 @@ int prepare_path(
     if (host != NULL)
       snprintf(host_name,sizeof(host_name),"%s",host);
 
-    else if (gethostname(host_name, PBS_MAXSERVERNAME) != 0)
+    else if (alias_gethostname(host_name, PBS_MAXSERVERNAME) != 0)
       {
       /* FAILURE */
 
@@ -239,8 +239,8 @@ int prepare_path(
 
   strcat(path_out, ":");
 
-  if ((path_name[0] != '/') && 
-      (strncmp(path_name,"$HOME",strlen("$HOME")) != 0) && 
+  if ((path_name[0] != '/') &&
+      (strncmp(path_name,"$HOME",strlen("$HOME")) != 0) &&
       (strncmp(path_name,"${HOME}",strlen("${HOME}")) != 0) &&
       (host_given == NULL))
     {
@@ -270,7 +270,7 @@ int prepare_path(
           return(1);
           }
         }
-     
+
       if (c != NULL)
         {
           if ((!memcmp(&dev, &statbuf.st_dev, sizeof(dev_t))) &&
@@ -306,7 +306,7 @@ int prepare_path(
     }
 
   /* try to determine if this is a directory, if it is end it with a '/' */
-  
+
   if ((host_given == NULL) && (path_name[strlen(path_name) - 1] != '/'))
     {
     if ((stat(path_name, &statbuf) == 0) && (S_ISDIR(statbuf.st_mode)))
@@ -340,7 +340,7 @@ int prepare_path(
     {
     strcat(path_out, path_name);
     }
-  
+
   /* SUCCESS */
 
   return(0);
@@ -348,6 +348,3 @@ int prepare_path(
 
 
 /* END prepare_path.c */
-
-
-

@@ -94,6 +94,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libnet/server_core.c \
 		    ../Libnet/rm.c ../Libnet/port_forwarding.c \
         ../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
+		../Libnet/gethostname.c \
         ../Libutils/u_hash_map_structs.c \
         ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c \
         ../Libattr/req.cpp ../Libattr/complete_req.cpp ../Libutils/u_mu.c \

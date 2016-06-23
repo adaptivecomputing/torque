@@ -215,7 +215,7 @@ and
 .Ty hostname
 are separated by white space.
 Two host names are always allowed to connection to pbs_sched: "localhost"
-and the name returned to pbs_sched by the system call gethostname().  These
+and the name returned to pbs_sched by the system call alias_gethostname().  These
 names need not be specified in the configuration file.
 .IP "(2) specifying list of servers:" 6
 The list of servers is specified in a one host per line manner, using the

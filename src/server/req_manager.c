@@ -2678,7 +2678,7 @@ int servername_chk(
 
   if (actmode == ATR_ACTION_FREE)
     {
-    if ((gethostname(hostname, PBS_MAXHOSTNAME) == -1) ||
+    if ((alias_gethostname(hostname, PBS_MAXHOSTNAME) == -1) ||
         (get_fullhostname(hostname, hostname, PBS_MAXHOSTNAME, NULL) == -1))
       {
       return(PBSE_BADHOST);

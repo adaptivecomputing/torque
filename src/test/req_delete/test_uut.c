@@ -55,7 +55,7 @@ int set_pbs_server_name()
 
   char hostname[1024];
   hostname[1023] = '\0';
-  gethostname(hostname, 1023);
+  alias_gethostname(hostname, 1023);
 
   memset(&hints, 0, sizeof hints);
   hints.ai_flags = AI_CANONNAME;

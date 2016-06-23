@@ -486,7 +486,7 @@ host with the syntax:
 where clienthost and hostname are separated by white space.
 .LP
 Two host names are always allowed to connection to pbs_sched, "localhost"
-and the name returned to pbs_sched by the system call gethostname().  These
+and the name returned to pbs_sched by the system call alias_gethostname().  These
 names need not be specified in the configuration file.
 .LP
 The configuration file must be "secure".  It must be owned by a user id and

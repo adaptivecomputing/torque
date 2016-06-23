@@ -35,7 +35,7 @@ const char *place_legacy = "legacy";
 const char *place_legacy2 = "legacy2";
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
-             socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
+             socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
              thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), os(), arch(),
              node_access_policy(), features(), placement_str(), req_attr(), gpu_mode(),
              placement_type(exclusive_none), task_count(1), pack(false), single_job_access(false),
@@ -54,7 +54,7 @@ req::req(
                     os(), arch(), node_access_policy(), features(), placement_str(), gpu_mode(),
                     task_count(1), pack(false), single_job_access(false), per_task_cgroup(-1),
                     index(0), hostlist(), task_allocations()
-  
+
   {
   char *ptr = work_str;
   int   node_count = strtol(ptr, &ptr, 10);
@@ -105,34 +105,34 @@ req::req(
   } // END Constructor from resource list
 
 
-    
+
 req::req(
-    
-  const req &other) : execution_slots(other.execution_slots), 
-                      mem(other.mem), 
+
+  const req &other) : execution_slots(other.execution_slots),
+                      mem(other.mem),
                       swap(other.swap),
-                      disk(other.disk), 
-                      nodes(other.nodes), 
-                      socket(other.socket), 
-                      numa_nodes(other.numa_nodes), 
-                      cores(other.cores), 
-                      threads(other.threads), 
+                      disk(other.disk),
+                      nodes(other.nodes),
+                      socket(other.socket),
+                      numa_nodes(other.numa_nodes),
+                      cores(other.cores),
+                      threads(other.threads),
                       thread_usage_policy(other.thread_usage_policy),
-                      thread_usage_str(other.thread_usage_str), 
-                      gpus(other.gpus), 
-                      mics(other.mics), 
-                      maxtpn(other.maxtpn), 
-                      gres(other.gres), 
-                      os(other.os), 
-                      arch(other.arch), 
-                      node_access_policy(other.node_access_policy), 
-                      features(other.features), 
+                      thread_usage_str(other.thread_usage_str),
+                      gpus(other.gpus),
+                      mics(other.mics),
+                      maxtpn(other.maxtpn),
+                      gres(other.gres),
+                      os(other.os),
+                      arch(other.arch),
+                      node_access_policy(other.node_access_policy),
+                      features(other.features),
                       placement_str(other.placement_str),
                       req_attr(other.req_attr),
                       gpu_mode(other.gpu_mode),
                       placement_type(other.placement_type),
                       task_count(other.task_count),
-                      pack(other.pack), 
+                      pack(other.pack),
                       single_job_access(other.single_job_access),
                       per_task_cgroup(other.per_task_cgroup),
                       index(other.index),
@@ -148,7 +148,7 @@ req::req(
  * insert_hostname()
  *
  * insert hostlist_name into req. But first check that it is
- * not already in the list 
+ * not already in the list
  *
  * @param hostlist_name - Name to be added to req
  *
@@ -358,7 +358,7 @@ int req::set_place_value(
       rc = parse_positive_integer(numeric_value, this->cores);
     else
       this->cores = 1;
- 
+
     this->thread_usage_policy = USE_CORES;
     this->thread_usage_str = use_cores;
     }
@@ -368,7 +368,7 @@ int req::set_place_value(
       rc = parse_positive_integer(numeric_value, this->threads);
     else
       this->threads = 1;
-      
+
     this->thread_usage_policy = USE_THREADS;
     this->thread_usage_str = use_threads;
     }
@@ -378,7 +378,7 @@ int req::set_place_value(
   free(work_str);
 
   return(rc);
-  } // END set_place_value() 
+  } // END set_place_value()
 
 
 
@@ -400,10 +400,10 @@ int read_mem_value(
 
   if (memval < 1)
     return(PBSE_BAD_PARAMETER);
-  
+
   switch (*suffix)
     {
-      /* We will multiply by 1024 later as well. Default 
+      /* We will multiply by 1024 later as well. Default
          multiplier for memory is kilobytes. */
     case 't':
     case 'T':
@@ -502,7 +502,7 @@ int req::append_gres(
 
   free(work_str);
   free(current_gres);
-  
+
   return(PBSE_NONE);
   } // END append_gres()
 
@@ -512,7 +512,7 @@ int req::append_gres(
  * set_name_value_pair()
  *
  * Sets lprocs, memory, gpus, mics, place, maxtpn (ignored), gres,
- * features, disk, opsys, mode, or reqattr for this req. 
+ * features, disk, opsys, mode, or reqattr for this req.
  *
  * @param name - the name of the value we're setting
  * @param value - the string to parse for the value
@@ -565,7 +565,7 @@ int req::set_name_value_pair(
     return(PBSE_BAD_PARAMETER);
 
   return(rc);
-  } // END set_name_value_pair() 
+  } // END set_name_value_pair()
 
 
 
@@ -574,7 +574,7 @@ int req::set_name_value_pair(
  *
  * Sets an attribute that doesn't require a value. It has to be
  * in this format:
- * 
+ *
  * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:{cpt|cgroup_per_task}]
  * [:{cph|cgroup_per_host}]
  * [:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
@@ -742,7 +742,7 @@ char *check_for_parameter(
  *
  * @param str - the c string to check against
  * @param conflicting_params - a list of values that cannot co-exit or be duplicated
- * @param error - the string to populate with more detailed information about the error 
+ * @param error - the string to populate with more detailed information about the error
  * if an error exists
  * @return - true if anything in conflicting_params is duplicated or if multiple values
  * from conflicting_params are present
@@ -764,7 +764,7 @@ bool are_conflicting_params_present(
 
     if (found != NULL)
       {
-      // Two of the conflicting values were found 
+      // Two of the conflicting values were found
       if (first_found.size() != 0)
         {
         // reseterr may be used in conjunction with exclusive_process and exclusive_thread
@@ -798,7 +798,7 @@ bool are_conflicting_params_present(
         }
       }
     }
-  
+
   return(false);
   } // END are_conflicting_params_present()
 
@@ -807,7 +807,7 @@ bool are_conflicting_params_present(
 /*
  * is_present_twice()
  *
- * Checks str to see if check_for_me is in there twice and 
+ * Checks str to see if check_for_me is in there twice and
  * returns true if the string is duplicated
  */
 
@@ -911,7 +911,7 @@ bool req::submission_string_has_duplicates(
     {
     return(true);
     }
-  
+
   return(false);
   } // END submission_string_has_duplicates()
 
@@ -952,7 +952,7 @@ bool req::has_conflicting_values(
       else if (this->cores == 1)
         {
         /* A core value of one is a default or even if set by the user
-           will be considered the default. lprocs was greater than 1 so 
+           will be considered the default. lprocs was greater than 1 so
            we will set cores equal to lprocs */
         this->cores = this->execution_slots;
         }
@@ -968,7 +968,7 @@ bool req::has_conflicting_values(
       else if (this->threads == 1)
         {
          /* A thread value of one is a default or even if set by the user
-           will be considered the default. lprocs was greater than 1 so 
+           will be considered the default. lprocs was greater than 1 so
            we will set thread equal to lprocs */
         this->threads = this->execution_slots;
         }
@@ -996,8 +996,8 @@ int req::submission_string_precheck(
     return(PBSE_BAD_PARAMETER);
 
   return(PBSE_NONE);
-  } // END submission_string_precheck() 
-    
+  } // END submission_string_precheck()
+
 
 
 /*
@@ -1018,7 +1018,7 @@ int req::submission_string_precheck(
  */
 
 int req::set_from_submission_string(
-    
+
   char        *submission_str,
   std::string &error)
 
@@ -1048,7 +1048,7 @@ int req::set_from_submission_string(
     return(PBSE_BAD_PARAMETER);
     }
 
-  while ((current != NULL) && 
+  while ((current != NULL) &&
          (*current != '\0'))
     {
     char *ptr = strchr(current, ':');
@@ -1090,7 +1090,7 @@ int req::set_from_submission_string(
     }
 
   return(rc);
-  } // END set_from_submission_string() 
+  } // END set_from_submission_string()
 
 
 
@@ -1106,7 +1106,7 @@ int req::set_from_submission_string(
  * We will get only the part after tasks=
  *
  * Sets the default values in the constructor before parsing so that values
- * which aren't requested are 
+ * which aren't requested are
  */
 
 req::req(
@@ -1116,7 +1116,7 @@ req::req(
                                          cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
                                          thread_usage_str(allow_threads), gpus(0), mics(0),
                                          maxtpn(0), gres(), os(), arch(), node_access_policy(),
-                                         features(), placement_str(), req_attr(), gpu_mode(), 
+                                         features(), placement_str(), req_attr(), gpu_mode(),
                                          task_count(1), pack(false), single_job_access(false),
                                          per_task_cgroup(-1), index(-1), hostlist(),
                                          task_allocations()
@@ -1137,7 +1137,7 @@ req::req(
  */
 
 req &req::operator =(
-    
+
   const req &other)
 
   {
@@ -1188,7 +1188,7 @@ req &req::operator =(
  */
 
 void req::toString(
-    
+
   std::string &str) const
 
   {
@@ -1351,7 +1351,7 @@ void req::toString(
 
   if (this->per_task_cgroup == FALSE)
     str += "      cph\n";
-  } // END toString() 
+  } // END toString()
 
 
 
@@ -1370,7 +1370,7 @@ void req::toString(
  */
 
 void req::get_values(
-    
+
   std::vector<std::string> &names,
   std::vector<std::string> &values) const
 
@@ -1381,7 +1381,7 @@ void req::get_values(
   names.push_back(buf);
   snprintf(buf, sizeof(buf), "%d", this->task_count);
   values.push_back(buf);
-  
+
   if (this->execution_slots != 0)
     {
     snprintf(buf, sizeof(buf), "lprocs.%d", this->index);
@@ -1574,7 +1574,7 @@ void req::get_values(
     names.push_back(buf);
     values.push_back("false");
     }
-  } // END get_values() 
+  } // END get_values()
 
 
 void req::get_task_stats(
@@ -1621,7 +1621,7 @@ void req::get_task_stats(
       continue;
       }
 
-    this->task_allocations[task_count].get_stats_used(cputime_used, memory_used);   
+    this->task_allocations[task_count].get_stats_used(cputime_used, memory_used);
 
     task_index.push_back(task_count);
     cput_used.push_back(cputime_used);
@@ -1730,9 +1730,9 @@ void req::set_from_string(
     else
       this->execution_slots = strtol(current, &current, 10);
 
-    move_past_whitespace(&current); 
+    move_past_whitespace(&current);
     }
-  
+
   if (!strncmp(current, "mem", 3))
     {
     // found mem
@@ -1740,7 +1740,7 @@ void req::set_from_string(
     this->mem = strtoll(current, &current, 10);
     current += 2; // move past 'kb'
 
-    move_past_whitespace(&current); 
+    move_past_whitespace(&current);
     }
 
   if (!strncmp(current, "swap", 4))
@@ -1749,7 +1749,7 @@ void req::set_from_string(
     current += 6; // move past 'swap: '
     this->swap = strtoll(current, &current, 10);
     current += 2; // move past kb
-    
+
     move_past_whitespace(&current);
     }
 
@@ -1774,7 +1774,7 @@ void req::set_from_string(
     {
     current += 8; // move past 'socket: '
     this->socket = strtol(current, &current, 10);
-    
+
     move_past_whitespace(&current);
     }
 
@@ -1835,7 +1835,7 @@ void req::set_from_string(
     {
     current += 9; // move past 'max tpn: '
     this->maxtpn = strtol(current, &current, 10);
-    
+
     move_past_whitespace(&current);
     }
 
@@ -1858,7 +1858,7 @@ void req::set_from_string(
   if (!strncmp(current, "placement type", 14))
     {
     current += 16; // move past 'placement type: '
-    
+
     this->placement_str = capture_until_newline_and_advance(&current);
 
     if (current == NULL)
@@ -1963,10 +1963,10 @@ void req::set_from_string(
     {
     current += 4;
     this->pack = true;
-    
+
     move_past_whitespace(&current);
     }
-  
+
   if ((current != NULL) &&
       ((!strncmp(current, "cpt", 3)) ||
        (!strncmp(current, "cgroup_per_task", 15))))
@@ -1982,7 +1982,7 @@ void req::set_from_string(
     }
 
   free(req);
-  } // END set_from_string() 
+  } // END set_from_string()
 
 
 
@@ -2174,7 +2174,7 @@ int req::set_task_value(
   if (allocations_size <= task_index)
     {
     // There are fewer tasks than task_index. Add empty tasks until we get to task_index
-       
+
     for (unsigned int i = allocations_size; i < task_index; i++)
       {
       allocation a;
@@ -2196,7 +2196,7 @@ int req::set_task_value(
 
   return(PBSE_NONE);
   } // END set_task_value()
- 
+
 
 int req::getExecutionSlots() const
 
@@ -2204,7 +2204,7 @@ int req::getExecutionSlots() const
   return(this->execution_slots);
   }
 
-unsigned long req::getMemory() const 
+unsigned long req::getMemory() const
 
   {
   return(this->mem);
@@ -2253,7 +2253,7 @@ int req::getTaskCount() const
   }
 
 int req::getHostlist(
-    
+
   std::vector<std::string> &list) const
 
   {
@@ -2287,7 +2287,7 @@ void req::set_index(
   {
   this->index = index;
   }
-    
+
 int req::getMaxtpn() const
 
   {
@@ -2345,7 +2345,7 @@ bool req::cgroup_preference_set() const
 
 /*
  * get_num_tasks_for_host()
- * Based on the hostlist, determines the number of tasks from this req assigned 
+ * Based on the hostlist, determines the number of tasks from this req assigned
  * to this host
  * hostlist is in the format:
  * hostname1/<index range[+hostname2/<index range>[...]]
@@ -2399,7 +2399,7 @@ int req::get_num_tasks_for_host(
           char             *ptr;
           std::vector<int>  indices;
 
-          // truncate any further entries 
+          // truncate any further entries
           if ((ptr = strchr(range_str, '+')) != NULL)
             *ptr = '\0';
 
@@ -2412,14 +2412,14 @@ int req::get_num_tasks_for_host(
           {
           std::string  ppn_val = this->hostlist[i].substr(offset + 5);
           char        *ppn_str = strdup(ppn_val.c_str());
-          
+
           num_ppn = strtol(ppn_str, NULL, 10);
 
           free(ppn_str);
           }
-          
+
         task_count = num_ppn / this->execution_slots;
- 
+
         }
       }
     }
@@ -2582,9 +2582,9 @@ void req::update_hostlist(
   this->insert_hostname(host_spec.c_str());
   } // END update_hostlist()
 
-    
+
 void req::set_memory(
-    
+
   unsigned long mem)
 
   {
@@ -2607,7 +2607,7 @@ int req::get_execution_slots() const
 
 
 void req::set_execution_slots(
-    
+
   int execution_slots)
 
   {
@@ -2615,7 +2615,7 @@ void req::set_execution_slots(
   }
 
 void req::set_task_count(
-    
+
   int task_count)
 
   {
@@ -2667,8 +2667,8 @@ int req::get_threads() const
 
 void req::set_task_usage_stats(
 
-  int task_index, 
-  unsigned long cput_used, 
+  int task_index,
+  unsigned long cput_used,
   unsigned long long mem_used)
 
   {

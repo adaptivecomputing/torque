@@ -127,6 +127,8 @@
 #define MAX_JOIN_WAIT_TIME          600
 #define RESEND_WAIT_TIME            300
 
+#define MOM_GETHOSTNAME 1
+
 /* Global Data Items */
 
 int    MOMIsLocked = 0;
@@ -154,7 +156,7 @@ const int      MINUS_ONE_RETRY_TIME = 15;
 /* mom data items */
 #ifdef NUMA_SUPPORT
 int            num_node_boards;
-nodeboard      node_boards[MAX_NODE_BOARDS]; 
+nodeboard      node_boards[MAX_NODE_BOARDS];
 int            numa_index;
 #else
 char           path_meminfo[MAX_LINE];
@@ -168,6 +170,7 @@ int          lockfds = -1;
 int          multi_mom = 0;
 time_t       loopcnt;  /* used for MD5 calc */
 char         mom_alias[PBS_MAXHOSTNAME + 1];
+int          mom_alias_set = 0;
 char         TMOMRejectConn[MAXLINE];   /* most recent rejected connection */
 char         mom_short_name[PBS_MAXHOSTNAME + 1];
 int          num_var_env;
@@ -313,6 +316,18 @@ void recover_cpuset_reservation(job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
+
+int mom_gethostname(char* hostname, size_t len) {
+    if(mom_alias_set == 1) {
+        strncpy(hostname, mom_alias, len - 1);
+        if(strlen(mom_alias) > len - 1) {
+            hostname[len - 1] = '\0';
+        }
+        return 0;
+    } else {
+        return gethostname(hostname, len);
+    }
+}
 
 
 /* Local Data Items */
@@ -485,11 +500,6 @@ unsigned long  gettime(resource *);
 /* Local private functions */
 
 void check_log(void);
-
-
-
-
-
 const char *nullproc(
 
   struct rm_attribute *attrib)
@@ -1537,7 +1547,7 @@ void clear_jobs(
 
   tlist_head job_queue,
   std::stringstream &output)
- 
+
   {
   std::string tmpLine;
   job  *pjobnext = NULL;
@@ -1559,7 +1569,7 @@ void clear_jobs(
       pjob = pjobnext;
       output << tmpLine << "\n";
       }
-    }  
+    }
   } /* clear_jobs */
 
 
@@ -1570,7 +1580,7 @@ job *mom_find_newjobs(
 
   {
   job *pj = NULL;
- 
+
   pj = (job *)GET_NEXT(svr_newjobs);
   while (pj != NULL)
     {
@@ -1613,7 +1623,7 @@ int process_clear_job_request(
       alljobs_list.clear();
       output << "clear completed";
       }
-    else 
+    else
       {
       std::string tmpLine;
       pjob = mom_find_job(ptr);
@@ -1670,7 +1680,7 @@ void add_diag_remaining_spool_space(
 
   {
   struct statvfs VFSStat;
-  
+
   if (statvfs((const char *)path_spool, &VFSStat) < 0)
     {
     output << "ALERT:  cannot stat stdout/stderr spool directory '" << path_spool;
@@ -1776,7 +1786,7 @@ void add_diag_mom_message(
 
 
 void add_diag_mom_name_error_if_needed(
-    
+
   std::stringstream &output)
 
   {
@@ -1791,7 +1801,7 @@ void add_diag_mom_name_error_if_needed(
 
 
 void add_diag_prolog_timeout_count(
-    
+
   std::stringstream &output)
 
   {
@@ -1898,7 +1908,7 @@ void add_diag_prolog_epilog_info(
     output << "Parallel Prolog:        " << path_prologp << " (enabled)\n";
 
     prologfound = true;
-    }  
+    }
 
   //Epilog
   if (stat(path_epilog, &s) != -1)
@@ -1948,7 +1958,7 @@ void add_diag_okclient_list(
   long max_len = 1024;
   long final_len = 0;
   char *tmp_line = (char *)calloc(1, max_len + 1);
-  
+
   if (tmp_line != NULL)
     {
     int ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
@@ -2010,7 +2020,7 @@ void add_diag_jobs_memory_info(
   resource      *pres;
   const char    *resname;
   unsigned long  resvalue;
-  
+
   /* Selected resources used by job (on this node) */
   if (verbositylevel >= 2)
     {
@@ -2023,7 +2033,7 @@ void add_diag_jobs_memory_info(
     pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
     for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
       {
-      if (pres->rs_defin == NULL) 
+      if (pres->rs_defin == NULL)
         {
         continue;
         }
@@ -2192,7 +2202,7 @@ void add_diag_var_attrs(
       output << "  ttl=" << pva->va_ttl << "  last=" << ctime(&pva->va_lasttime);
       output << "  cmd=" << pva->va_cmd << "\n  value=";
 
-      if (pva->va_value != NULL) 
+      if (pva->va_value != NULL)
        output << pva->va_value;
       else
        output << "NULL";
@@ -2229,7 +2239,7 @@ void set_verbosity_level(
 
 
 int process_diag_request(
-    
+
   std::stringstream &output,
   const char        *name)
 
@@ -2262,7 +2272,7 @@ int process_diag_request(
   if (verbositylevel >= 1)
     {
     add_diag_check_poll_time(output);
-    
+
     add_diag_status_update_interval(output);
     }
 
@@ -2290,20 +2300,20 @@ int process_diag_request(
       {
       add_diag_alarm_time(output);
       }
-    
+
     add_diag_okclient_list(output);
-    
+
     add_diag_copy_command(output);
     }
 
   add_diag_job_list(output);
 
   add_diag_var_attrs(output);
-  
+
   output << "\ndiagnostics complete\n";
 
   log_record(PBSEVENT_SYSTEM, 0, __func__, "internal diagnostics complete");
-  
+
   return(PBSE_NONE);
   } /* END process_diag_request() */
 
@@ -2332,8 +2342,8 @@ void clear_rm_messages(
 /*
  * force_status_update()
  * forces an update to pbs_server
- * @see mom_server_all_update_stat() - this calls send_update() to 
- * determine whether or not to send an update. 
+ * @see mom_server_all_update_stat() - this calls send_update() to
+ * determine whether or not to send an update.
  */
 
 void force_status_update(
@@ -2477,8 +2487,8 @@ void set_report_mom_rolling_restart(
 
 
 void set_report_mom_cuda_visible_devices(
-    
-    std::stringstream &output, 
+
+    std::stringstream &output,
     char              *curr)
 
   {
@@ -2615,15 +2625,15 @@ void report_other_configured_attribute(
 
 /*
  * process_rm_cmd_request()
- * 
+ *
  * @pre-condition: chan must have a pointer to a valid socket from which
- * @pre-condition: num_queries indicates the number of queries the rm 
+ * @pre-condition: num_queries indicates the number of queries the rm
  * will execute
  * the request can be read and to which the response can be written.
  */
 
 int process_rm_cmd_request(
-  
+
   struct tcp_chan   *chan,        /* I */
   int                num_queries, /* I */
   bool               restrictrm)
@@ -2768,7 +2778,7 @@ int process_rm_cmd_request(
       {
       sprintf(log_buffer, "write string failed %s",
         dis_emsg[ret]);
-      
+
       return(ret);
       }
 
@@ -2815,7 +2825,7 @@ int process_layout_request(
 #ifdef PENABLE_LINUX_CGROUPS
   this_node.displayAsString(output);
 #endif
-    
+
   if ((ret = diswst(chan, output.str().c_str())) != DIS_SUCCESS)
     {
     sprintf(log_buffer, "write request response failed: %s",
@@ -2824,7 +2834,7 @@ int process_layout_request(
 
     return(ret);
     }
-  
+
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
     if (ret <= DIS_INVALID)
@@ -2929,7 +2939,7 @@ int rm_request(
 
       if (process_rm_cmd_request(chan, num_queries, restrictrm) != DIS_SUCCESS)
         goto bad;
-      
+
       break;
 
     case RM_CMD_CONFIG:
@@ -3055,10 +3065,10 @@ int rm_request(
         }
 
       DIS_tcp_wflush(chan);
- 
+
       close_conn(chan->sock, FALSE);
       DIS_tcp_cleanup(chan);
-      
+
       mom_lock(lockfds, F_UNLCK);
       close(lockfds);
 
@@ -3234,7 +3244,7 @@ int tcp_read_proto_version(
 
 
 int do_tcp(
-    
+
   int                 socket,
   struct sockaddr_in *pSockAddr)
 
@@ -3335,7 +3345,7 @@ int do_tcp(
       struct sockaddr_in *addr = NULL;
       struct sockaddr     s_addr;
       unsigned int        len = sizeof(s_addr);
-      
+
       if (getpeername(chan->sock, &s_addr, &len) == 0)
         {
         addr = (struct sockaddr_in *)&s_addr;
@@ -3349,13 +3359,13 @@ int do_tcp(
 
       svr_conn[chan->sock].cn_stay_open = FALSE;
       }
-    
+
     goto do_tcp_cleanup;
 
     break;
     }  /* END switch (proto) */
 
-  /* don't close these connections -- the pointer is saved in 
+  /* don't close these connections -- the pointer is saved in
    * the tasks for MPI jobs */
   if ((chan != NULL) &&
       (((chan->sock >= 0) && (svr_conn[chan->sock].cn_stay_open == FALSE)) ||
@@ -3366,7 +3376,7 @@ int do_tcp(
   return(rc);
 
 do_tcp_cleanup:
-  
+
   if (chan != NULL)
     DIS_tcp_cleanup(chan);
 
@@ -3435,14 +3445,14 @@ void *tcp_request(
 
   while (rc == RM_PROTOCOL * -1)
     rc = do_tcp(socket,&sockAddr);
-  
+
   switch (rc)
     {
     case PBSE_NONE:
 
       if (svr_conn[socket].cn_stay_open == FALSE)
         close_conn(socket, FALSE);
-      
+
       break;
 
     case DIS_EOF:
@@ -3710,7 +3720,7 @@ int job_over_limit(
     return(1);
     }
 
-#ifndef NUMA_SUPPORT 
+#ifndef NUMA_SUPPORT
   /* cannot perform this check with NUMA, numnodes always is 1 and
    * you'll never have job stats */
   if ((pjob->ji_numnodes == 1) ||
@@ -3824,7 +3834,7 @@ int job_over_limit(
 
     total = (index == 0) ? gettime(useresc) : getsize(useresc);
 
-#ifndef NUMA_SUPPORT 
+#ifndef NUMA_SUPPORT
     for (i = 0;i < pjob->ji_numnodes - 1;i++)
       {
       noderes *nr = &pjob->ji_resources[i];
@@ -3953,7 +3963,7 @@ void MOMCheckRestart(void)
 
   newmtime = MOMGetFileMtime(ArgV[0]);
 
-  if ((newmtime > 0) && 
+  if ((newmtime > 0) &&
       (newmtime != MOMExeTime))
     {
     if (mom_run_state == MOM_RUN_STATE_RUNNING)
@@ -4273,6 +4283,7 @@ void parse_command_line(
         /* mom's alias name - used for multi-mom */
 
         snprintf(mom_alias, sizeof(mom_alias), "%s", optarg);
+        mom_alias_set = 1;
 
         break;
 
@@ -4454,7 +4465,7 @@ void parse_command_line(
 
       case 'w':
 
-        /* wait 10 minutes or until you get the mom hierarchy file from the 
+        /* wait 10 minutes or until you get the mom hierarchy file from the
          * server to send your first update */
         first_update_time = time(NULL) + 600;
 
@@ -4530,10 +4541,10 @@ bool verify_mom_hierarchy()
           unsigned long  ipaddr = ntohl(nc.sock_addr.sin_addr.s_addr);
           okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
           }
-            
+
         legitimate_hierarchy = true;
         }
-      
+
       if (continue_on_path == true)
         {
         for (unsigned int k = 0; k < nodes.size(); k++)
@@ -4586,21 +4597,21 @@ void read_mom_hierarchy()
 
   {
   int  fds;
-    
+
   mh = initialize_mom_hierarchy();
-  
+
   if ((fds = open(path_mom_hierarchy, O_RDONLY, 0)) < 0)
     {
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__,
       "No local mom hierarchy file found, will request from server.");
-  
+
     received_cluster_addrs = false;
     }
   else
     {
     parse_mom_hierarchy(fds);
- 
-    // if we read something successfully, we have the cluster addresses and don't 
+
+    // if we read something successfully, we have the cluster addresses and don't
     // need to request them.
     received_cluster_addrs = verify_mom_hierarchy();
 
@@ -4756,7 +4767,7 @@ int initialize_hwloc_topology()
   return(PBSE_NONE);
   }
 #endif
- 
+
 /**
  * setup_program_environment
  */
@@ -4951,7 +4962,7 @@ int setup_program_environment(void)
 
   if (hostname_specified == 0)
     {
-    hostc = gethostname(mom_host, PBS_MAXHOSTNAME);
+    hostc = alias_gethostname(mom_host, PBS_MAXHOSTNAME);
     hostname_specified = 1;
     if (hostc == 0)
       hostc = 1;
@@ -4966,7 +4977,7 @@ int setup_program_environment(void)
     sprintf(logSuffix, "%d", pbs_mom_port);
     log_init(logSuffix, mom_host);
     }
- 
+
   /* open log file while std in,out,err still open, forces to fd 4 */
   pthread_mutex_lock(&log_mutex);
   if ((c = log_open(log_file, path_log)) != 0)
@@ -5413,12 +5424,13 @@ int setup_program_environment(void)
 
   addclient(mom_host);
 
-  if (gethostname(ret_string, ret_size) == 0)
+  if (alias_gethostname(ret_string, ret_size) == 0)
     addclient(ret_string);
 
   /* if no alias is specified, make mom_alias the same as mom_host */
   if (mom_alias[0] == '\0')
     strcpy(mom_alias,mom_short_name);
+    mom_alias_set = 1;
 
   initialize();  /* init RM code */
 
@@ -5438,7 +5450,7 @@ int setup_program_environment(void)
 
     return(3);
     }
-  
+
   /* recover & abort jobs which were under MOM's control */
   log_record(
     PBSEVENT_DEBUG,
@@ -5824,7 +5836,7 @@ void examine_all_running_jobs(void)
 #ifdef _CRAY
   int         c;
 #endif
-  
+
   std::list<job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
@@ -5839,7 +5851,7 @@ void examine_all_running_jobs(void)
         long real_alarm_time;
 
         /* TJobStartTimeout is set to the default prologue/epilogue
-           timeout. (PBS_PROLOG_TIME). We will wait a minimum 
+           timeout. (PBS_PROLOG_TIME). We will wait a minimum
            of TJobStartTimeout and longer if pe_alarm_time (set by $prologalarm)
            is greater than the TJobStartTimeout */
         if (pe_alarm_time > TJobStartTimeout)
@@ -5854,7 +5866,7 @@ void examine_all_running_jobs(void)
                   pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
           /* This is the second time through examine_all_running_jobs for
-             this job while in a PRERUN state. Something is wrong. 
+             this job while in a PRERUN state. Something is wrong.
              kill the job. */
           exec_bail(pjob, JOB_EXEC_INITABT);
           }
@@ -5991,7 +6003,7 @@ void check_jobs_awaiting_join_job_reply()
   {
   job    *pjob;
   time_now = time(NULL);
-  
+
   std::list<job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
@@ -6031,11 +6043,11 @@ bool should_resend_obit(
   // Only check jobs in substates that have to do with exiting.
   if (pjob->ji_qs.ji_substate < JOB_SUBSTATE_MOM_WAIT)
     return(resend);
-      
+
   if ((pjob->ji_obit_busy_time != 0) &&
       (time_now - pjob->ji_obit_busy_time >= diff))
     resend = true;
-  
+
   switch (pjob->ji_qs.ji_substate)
     {
     case JOB_SUBSTATE_PREOBIT:
@@ -6074,7 +6086,7 @@ bool should_resend_obit(
       break;
 
     case JOB_SUBSTATE_EXITED:
-      
+
       // We have passed the time we're willing to wait for the server to clean us up.
       if ((pjob->ji_exited_time != 0) &&
           (time_now - pjob->ji_exited_time > ALREADY_EXITED_RETRY_TIME))
@@ -6083,7 +6095,7 @@ bool should_resend_obit(
       break;
 
     case JOB_SUBSTATE_EXITING:
-      
+
       // Make sure we aren't stuck in exiting
       if ((pjob->ji_obit_minus_one_time != 0) &&
           (time_now - pjob->ji_obit_minus_one_time > MINUS_ONE_RETRY_TIME))
@@ -6133,7 +6145,7 @@ void check_jobs_in_mom_wait()
 
   if (multi_mom)
     momport = pbs_rm_port;
-  
+
   time_now = time(NULL);
   std::list<job *>::iterator iter;
 
@@ -6146,7 +6158,7 @@ void check_jobs_in_mom_wait()
       if ((pjob->ji_kill_started != 0) &&
           (time_now - pjob->ji_kill_started > job_exit_wait_time))
         {
-        /* job has exceeded the time to wait for all sisters 
+        /* job has exceeded the time to wait for all sisters
          * to report that the job is killed. Go ahead and finish
          * it anyway */
         snprintf(log_buffer, sizeof(log_buffer),
@@ -6161,7 +6173,7 @@ void check_jobs_in_mom_wait()
         exiting_tasks = 1;
         }
       }
-    
+
     } /* END loop over all jobs */
 
   } /* END check_jobs_in_mom_wait() */
@@ -6234,14 +6246,14 @@ void check_exiting_jobs()
           continue;
           }
         }
-      
+
       if ((time_now - eji.obit_sent) < pe_alarm_time)
         {
         /* insert this back at the front */
         to_reinsert.insert(to_reinsert.begin(), eji);
         continue;
         }
-         
+
       post_epilogue(pjob, 0);
       eji.obit_sent = time_now;
       to_reinsert.push_back(eji);
@@ -6424,17 +6436,17 @@ void main_loop(void)
     if (time_now >= (last_poll_time + CheckPollTime))
       {
       last_poll_time = time_now;
-      
+
       if (alljobs_list.size() != 0)
         {
         /* There are jobs, update process status from the OS */
-        
+
         if (mom_get_sample() == PBSE_NONE)
           {
           /* no errors in getting process status information */
-          
+
           examine_all_running_jobs();
-          
+
           examine_all_polled_jobs();
           }
         }
@@ -6641,7 +6653,7 @@ int read_layout_file()
   int            i = 0;
   int            empty_line;
   hwloc_bitmap_t nodeset = NULL;
-  
+
   if ((layout = fopen(path_layout, "r")) == NULL)
     {
     snprintf(log_buffer,sizeof(log_buffer),
@@ -6653,13 +6665,13 @@ int read_layout_file()
     }
 
   /* parse lines. format is:
-   * nodes=<X>  
+   * nodes=<X>
    * extra key=value pairs are ignored by TORQUE but don't cause a failure */
   while (fgets(line, sizeof(line), layout) != NULL)
     {
     empty_line = TRUE;
     /* initialize the end to -1 while start defaults to zero
-     * so that add_mic_status() skips over the nodeboard if not 
+     * so that add_mic_status() skips over the nodeboard if not
      * configured */
     node_boards[i].mic_end_index = -1;
     node_boards[i].gpu_end_index = -1;
@@ -6673,7 +6685,7 @@ int read_layout_file()
     /* find the specifications */
     while (tok != NULL)
       {
-      /* do general error checking on each pair, should be in 
+      /* do general error checking on each pair, should be in
        * the format name=val, spacing optional */
       val = strtok(NULL,delims);
 
@@ -6684,7 +6696,7 @@ int read_layout_file()
           line);
         goto failure;
         }
-     
+
       empty_line = FALSE;
 
       if (strcmp(tok,"nodes") == 0)
@@ -6751,7 +6763,7 @@ int read_layout_file()
         /* Store nodeset of node_boards[i], may be empty */
         if ((node_boards[i].nodeset = hwloc_bitmap_dup(nodeset)) == NULL)
           {
-          log_err(errno, __func__, "failed to duplicate nodeset");      
+          log_err(errno, __func__, "failed to duplicate nodeset");
           return(-1);
           }
 
@@ -6790,7 +6802,7 @@ int read_layout_file()
   return(PBSE_NONE);
 
 failure:
- 
+
   log_err(-1, __func__, log_buffer);
 
   if (nodeset)
@@ -6804,7 +6816,7 @@ failure:
 
 
 
-/* 
+/*
  * Parses mom.layout, registers procs/mem. Dies if there's a problem.
  * Currently we allow nodeset and/or cpuset to be empty.
  * We also do not check if nodesets/cpusets of nodeboards overlap.
@@ -6827,10 +6839,10 @@ int setup_nodeboards()
   if ((rc = read_layout_file()) != PBSE_NONE)
     {
     log_err(-1, __func__, "Could not read layout file!\n");
-    
+
     exit(rc);
-    } 
-  
+    }
+
   /*
    * Walk through nodeboards
    * - set up cpuset and nodeset
@@ -6848,7 +6860,7 @@ int setup_nodeboards()
 
     /* Derive cpuset from nodeset */
     hwloc_cpuset_from_nodeset_strict(topology, node_boards[i].cpuset, node_boards[i].nodeset);
-    
+
     /*
      * Handle SMT CPUs.
      * If a system has SMT enabled, there are more than one logical CPU per physical core.
@@ -6871,7 +6883,7 @@ int setup_nodeboards()
           hwloc_bitmap_andnot(node_boards[i].cpuset, node_boards[i].cpuset, pu->cpuset);
         }
       }
-    
+
     /* Number of CPUs in cpuset */
     node_boards[i].num_cpus = hwloc_bitmap_weight(node_boards[i].cpuset);
 
@@ -6882,13 +6894,13 @@ int setup_nodeboards()
      */
     hwloc_cpuset_to_nodeset_strict(topology, node_boards[i].cpuset, node_boards[i].nodeset);
     node_boards[i].num_nodes = hwloc_bitmap_weight(node_boards[i].nodeset);
-    
+
     /* Set up meminfo paths */
     if (node_boards[i].num_nodes)
       {
       if ((node_boards[i].path_meminfo = (char **)calloc(node_boards[i].num_nodes, sizeof(char *))) == NULL)
         {
-        log_err(errno, __func__, "failed to allocate memory");   
+        log_err(errno, __func__, "failed to allocate memory");
         exit(-1);
         }
 
@@ -6897,7 +6909,7 @@ int setup_nodeboards()
         {
         if ((node_boards[i].path_meminfo[k] = (char *)calloc(1, mempath_len)) == NULL)
           {
-          log_err(errno, __func__, "failed to allocate memory");   
+          log_err(errno, __func__, "failed to allocate memory");
           exit(-1);
           }
 
@@ -6910,7 +6922,7 @@ int setup_nodeboards()
 
       hwloc_bitmap_foreach_end();
       }
-    
+
     /* Show what we have */
     snprintf(log_buffer, sizeof(log_buffer),
       "nodeboard %2d: %d cpus (",
@@ -6937,7 +6949,7 @@ int setup_nodeboards()
 
 
 
-/* 
+/*
  *
  * @see main_loop() - child
  */
@@ -6951,6 +6963,8 @@ int main(
   int       rc;
   int       tmpFD;
   FILE      *fp;
+
+  alias_gethostname = &mom_gethostname;
 
   /* populate a variable useful when analyzing a core file */
   memset(Torque_Info_SysVersion, 0, sizeof(Torque_Info_SysVersion));
@@ -6975,7 +6989,7 @@ int main(
   parse_command_line(argc, argv); /* Calls exit on command line error */
 
   try
-    {   
+    {
     if ((rc = setup_program_environment()) != 0)
       {
       return(rc);
@@ -6995,7 +7009,7 @@ int main(
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
-/* Due to differences in the NVIDIA libraries, NVML initialization must be done 
+/* Due to differences in the NVIDIA libraries, NVML initialization must be done
  * after the MOM is daemonized which happens in setup_program_environment.
  * */
   if (!init_nvidia_nvml(global_gpu_count))
@@ -7066,7 +7080,7 @@ int main(
 
 
 im_compose_info *create_compose_reply_info(
-    
+
   const char *jobid,
   const char *cookie,
   hnodent    *np,
@@ -7125,7 +7139,7 @@ int resend_compose_reply(
 
   np = &ici->np;
   stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
-  
+
   if (IS_VALID_STREAM(stream))
     {
     if ((chan = DIS_tcp_setup(stream)) == NULL)
@@ -7140,7 +7154,7 @@ int resend_compose_reply(
         free(ici);
         }
       }
-    
+
     close(stream);
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
@@ -7161,10 +7175,10 @@ int resend_kill_job_reply(
   int      ret = -1;
   hnodent *np;
   struct tcp_chan *chan = NULL;
-        
+
   np = &kj->ici->np;
   stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr, sizeof(np->sock_addr), true);
-  
+
   if (IS_VALID_STREAM(stream))
     {
     if ((chan = DIS_tcp_setup(stream)) == NULL)
@@ -7180,7 +7194,7 @@ int resend_kill_job_reply(
             {
             if (kj->node_id >= 0)
               ret = diswsi(chan, kj->node_id);
-            
+
             if (ret == DIS_SUCCESS)
               {
               if ((ret = DIS_tcp_wflush(chan)) == DIS_SUCCESS)
@@ -7208,7 +7222,7 @@ int resend_kill_job_reply(
 
 
 int resend_spawn_task_reply(
-    
+
   spawn_task_info *st)
 
   {
@@ -7285,7 +7299,7 @@ int resend_obit_task_reply(
     if (chan != NULL)
       DIS_tcp_cleanup(chan);
     }
-  
+
   return(ret);
   } /* END resend_obit_task_reply() */
 
@@ -7344,7 +7358,7 @@ void resend_things()
 
       default:
 
-        snprintf(log_buffer, sizeof(log_buffer), 
+        snprintf(log_buffer, sizeof(log_buffer),
           "I don't recognize send mom communication of type %d",
           mc->mc_type);
         log_err(-1, __func__, log_buffer);
@@ -7428,5 +7442,3 @@ void get_mom_job_dir_sticky_config(
 
 
 /* END mom_main.c */
-
-

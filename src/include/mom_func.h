@@ -136,7 +136,7 @@ struct radix_buf
   int current_port_str_len;
   int max_port_str_len;
   int count;
-  };				  
+  };
 
 extern int cphosts_num;
 

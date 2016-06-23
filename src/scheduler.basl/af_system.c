@@ -649,7 +649,7 @@ SystemInit(int argc, char *argv[])
   static  char id[] = "SystemInit";
   pid_t           pid;
   int  lockfds;
-  int  gethostname();
+  int  alias_gethostname();
 
 #ifndef DEBUG
   if (IamRoot() == 0)
@@ -658,7 +658,7 @@ SystemInit(int argc, char *argv[])
     }
 #endif  /* DEBUG */
 
-  if (gethostname(host, sizeof(host)) == -1)
+  if (alias_gethostname(host, sizeof(host)) == -1)
     {
     char    *prob = "gethostname";
 
