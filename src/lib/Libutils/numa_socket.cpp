@@ -70,6 +70,9 @@ Socket::Socket(
   const char *os_str = "\"os_index\":";
   std::size_t chip_begin = json_layout.find(chip_str);
   std::size_t os_begin = json_layout.find(os_str);
+  
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
 
   if ((os_begin == std::string::npos) ||
       (os_begin > chip_begin))
@@ -102,7 +105,11 @@ Socket::~Socket()
  * numa_nodes per socket. This method works on the assumption of this type
  * of architecture
  */
-int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topology)
+int Socket::initializeAMDSocket(
+    
+  hwloc_obj_t      socket_obj,
+  hwloc_topology_t topology)
+
   {
   hwloc_obj_t chip_obj;
   hwloc_obj_t prev = NULL;
@@ -142,7 +149,11 @@ int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topolog
 
 /* Intel NUMA sockets have a hierarchy of numa_node->socket. Usually just one socket per
    numa->node. This method works on this assumption for the hardware setup. */
-int Socket::initializeIntelSocket(hwloc_obj_t socket_obj, hwloc_topology_t topology)
+int Socket::initializeIntelSocket(
+    
+  hwloc_obj_t      socket_obj,
+  hwloc_topology_t topology)
+
   {
   hwloc_obj_t chip_obj;
   hwloc_obj_t prev = NULL;
@@ -204,7 +215,7 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   this->chips.push_back(numaChip);
   return(PBSE_NONE);
   }
-    
+
 
 
 Socket &Socket::operator=(
@@ -228,7 +239,7 @@ Socket &Socket::operator=(
   this->socket_exclusive = other.socket_exclusive;
 
   if (strlen(this->socket_cpuset_string))
-      hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
+    hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
 
   if (strlen(this->socket_nodeset_string))
     hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
