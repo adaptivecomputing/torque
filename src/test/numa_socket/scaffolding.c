@@ -8,7 +8,7 @@
 #include "allocation.hpp"
 
 int hardware_style;
-int tasks;
+float tasks;
 int placed;
 int called_place;
 int called_store_pci;
@@ -21,6 +21,7 @@ bool make_socket_exclusive = true;
 int place_amount = 1;
 int json_chip;
 int placed_all;
+int partially_placed;
 std::string my_placement_type;
 
 const char *place_node = "node";
@@ -152,6 +153,27 @@ void Chip::partially_place_task(
     remaining.memory /= 2;
     remaining.cpus /= 2;
     }
+  else if (place_amount == 3)
+    {
+    // place in two tries
+    if (master.cpus == 0)
+      {
+      int half = remaining.cpus / 2;
+      master.cpus = half;
+      remaining.cpus -= half;
+      
+      half = remaining.memory / 2;
+      master.memory = half;
+      remaining.memory -= half;
+      }
+    else
+      {
+      remaining.cpus -= master.cpus;
+      remaining.memory -= master.memory;
+      }
+    }
+
+  partially_placed++;
   }
 
 int Chip::initializeNonNUMAChip(hwloc_obj_t obj, hwloc_topology_t topology)
@@ -251,15 +273,36 @@ bool Chip::has_socket_exclusive_allocation() const
   return(make_socket_exclusive);
   }
 
-allocation::allocation(const allocation &other) {}
-allocation::allocation(const char *jobid) {}
+allocation::allocation(const allocation &other) : memory(0), cpus(0), gpus(0), mics(0) {}
+allocation::allocation(const char *jobid) : memory(0), cpus(0), gpus(0), mics(0) {}
 int allocation::add_allocation(const allocation &other) 
   
   {
   return(0);
   }
 
+allocation::allocation(const req &r) : memory(1024), cpus(4), gpus(0), mics(0)
+  {
+  }
+
+void allocation::set_host(const char *hostname) {}
+
+bool allocation::fully_placed() const
+  {
+  return((this->cpus == 0) && (this->memory == 0) && (this->mics == 0) && (this->gpus == 0));
+  }
+
+bool allocation::partially_placed(
+    
+  const req &r) const
+
+  {
+  return (false);
+  }
+
 req::req() : numa_nodes(1) {}
+
+void req::record_allocation(const allocation &a) {}
 std::string req::getPlacementType() const
 
   {
@@ -271,7 +314,7 @@ int req::get_numa_nodes() const
   return(this->numa_nodes);
   }
 
-allocation::allocation() {}
+allocation::allocation() : memory(0), cpus(0), gpus(0), mics(0) {}
 
 void allocation::set_place_type(
 

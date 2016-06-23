@@ -145,6 +145,8 @@ class allocation
   void get_gpus_remaining(int &gpus);
   void set_mics_remaining(int mics);
   void get_mics_remaining(int &mics);
+  bool fully_placed() const;
+  bool partially_placed(const req &r) const;
   void clear();
   };
 

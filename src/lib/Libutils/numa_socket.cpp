@@ -570,7 +570,7 @@ int Socket::place_task(
     {
     if (this->socket_exclusive == false)
       {
-      // Attempt to fit all of tasks on a single numa chip if possible
+      // Attempt to fit all tasks from this req on a single numa chip if possible
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
         {
         if (this->chips[i].how_many_tasks_fit(r, master.place_type) >= to_place)
@@ -584,9 +584,10 @@ int Socket::place_task(
           }
         }
 
-      // place tasks if they didn't fit in a single numa chip
+      // Place remaining tasks
       if (tasks_to_place > 0)
         {
+        // This loop places all tasks from the req that fit inside a single chip
         for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
           {
           int placed = this->chips[i].place_task(r, a, tasks_to_place, hostname);
@@ -595,6 +596,37 @@ int Socket::place_task(
           if ((placed != 0) &&
               (master.place_type == exclusive_socket))
             break;
+          }
+
+        // Finally, place tasks that must span numa chips
+        while (tasks_to_place > 0)
+          {
+          allocation task_alloc(master.jobid.c_str());
+          allocation remaining(r);
+
+          task_alloc.cores_only = master.cores_only;
+
+          for (unsigned int i = 0; i < this->chips.size() && remaining.fully_placed() == false; i++)
+            this->chips[i].partially_place_task(remaining, task_alloc);
+
+          if (remaining.fully_placed() == true)
+            {
+            tasks_to_place--;
+            task_alloc.set_host(hostname);
+            a.add_allocation(task_alloc);
+            r.record_allocation(task_alloc);
+            }
+          else
+            {
+            if (remaining.partially_placed(r) == true)
+              {
+              // remove this task 
+              this->free_task(master.jobid.c_str());
+              }
+
+            // We aren't going to make any more progress, move on
+            break;
+            }
           }
         }
 
@@ -613,7 +645,7 @@ int Socket::place_task(
     }
 
   return(to_place - tasks_to_place);
-  } // END place_task
+  } // END place_task()
 
 
 
@@ -720,8 +752,7 @@ bool Socket::partially_place(
     {
     this->chips[i].partially_place_task(remaining, master);
 
-    if ((remaining.cpus == 0) &&
-        (remaining.memory == 0))
+    if (remaining.fully_placed() == true)
       {
       fully_placed = true;
       break;

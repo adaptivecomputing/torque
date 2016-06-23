@@ -63,6 +63,11 @@ allocation::allocation() : cpu_indices(), memory(0), cpus(0)
   this->jobid[0] = '\0';
   }
 
+allocation &allocation::operator =(const allocation &other)
+  {
+  return(*this);
+  }
+
 void numa_node::reserve(
     
   int            num_cpus,

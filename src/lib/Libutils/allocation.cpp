@@ -520,5 +520,37 @@ void allocation::get_mics_remaining(
   mics_remaining = this->mics;
   }
 
+/*
+ * fully_placed()
+ *
+ * Returns true if this allocation has nothing left to place
+ * Nothing means no cpus, memory, mics, or gpus
+ *
+ * @return true if this allocation has nothing left to place, else false
+ */
 
+bool allocation::fully_placed() const
+  {
+  return((this->cpus == 0) && (this->memory == 0) && (this->mics == 0) && (this->gpus == 0));
+  }
 
+/*
+ * partially_placed()
+ *
+ * Tells if this allocation has been partially placed or not
+ * Should be used with allocations contructed using allocation(req) constructor
+ *
+ * @param r - the req used to construct this allocation object
+ * @return true if part of this allocation has been placed, false otherwise
+ */
+
+bool allocation::partially_placed(
+    
+  const req &r) const
+
+  {
+  return ((this->cpus != r.getExecutionSlots()) ||
+          (this->memory != r.getMemory()) ||
+          (this->gpus != r.getGpus()) ||
+          (this->mics != r.getMics()));
+  }

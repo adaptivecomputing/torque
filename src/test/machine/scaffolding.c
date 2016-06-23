@@ -323,6 +323,11 @@ void allocation::set_host(const char *hostname)
   this->hostname = hostname;
   }
 
+allocation &allocation::operator =(const allocation &other)
+  {
+  return(*this);
+  }
+
 PCI_Device::~PCI_Device() {}
 PCI_Device::PCI_Device() {}
 PCI_Device::PCI_Device(const PCI_Device &other) {}
