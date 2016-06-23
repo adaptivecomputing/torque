@@ -212,13 +212,42 @@ START_TEST(test_accelerators_remaining)
 END_TEST
 
 
+START_TEST(test_fully_placed)
+  {
+  allocation a;
+
+  fail_unless(a.fully_placed() == true);
+
+  a.cpus = 1;
+  fail_unless(a.fully_placed() == false);
+
+  a.cpus = 0;
+  a.memory = 1;
+  fail_unless(a.fully_placed() == false);
+
+  a.memory = 0;
+  a.gpus = 1;
+  fail_unless(a.fully_placed() == false);
+
+  a.gpus = 0;
+  a.mics = 1;
+  fail_unless(a.fully_placed() == false);
+
+  a.mics = 0;
+  fail_unless(a.fully_placed() == true);
+  }
+END_TEST
+
+
 Suite *allocation_suite(void)
   {
   Suite *s = suite_create("allocation test suite methods");
   TCase *tc_core = tcase_create("test_allocation_constructors");
   tcase_add_test(tc_core, test_allocation_constructors);
   tcase_add_test(tc_core, test_set_place_type);
+  tcase_add_test(tc_core, test_fully_placed);
   suite_add_tcase(s, tc_core); 
+  
   tc_core = tcase_create("test_add_allocation");
   tcase_add_test(tc_core, test_add_allocation);
   tcase_add_test(tc_core, test_place_indices_in_string);

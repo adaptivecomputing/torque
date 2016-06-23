@@ -9,7 +9,7 @@
 #include "allocation.hpp"
 #include "req.hpp"
 
-extern int tasks;
+extern float tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
@@ -20,6 +20,7 @@ extern int called_spread_place_threads;
 extern int place_amount;
 extern int json_chip;
 extern int placed_all;
+extern int partially_placed;
 extern std::string my_placement_type;
 
 
@@ -286,8 +287,9 @@ START_TEST(test_place_task)
   a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
+  place_amount = 4; // make partially place do nothing
   int num = s.place_task(r, a, 3, "napali");
-  fail_unless(num == 1, "Expected 2, got %d", num);
+  fail_unless(num == 1, "Expected 1, got %d", num);
   fail_unless(called_place = 1);
 
   fail_unless(s.is_available() == false);
@@ -295,6 +297,14 @@ START_TEST(test_place_task)
   fail_unless(s.free_task("1.napali") == true);
   fail_unless(s.is_available() == true);
 
+  // Make sure we'll place a task that fits on this socket but has to span numa nodes
+  tasks = 0.5;
+  placed = 0;
+  place_amount = 3;
+  partially_placed = 0;
+  num = s.place_task(r, a, 1, "napali");
+  fail_unless(num == 1, "Expected 1, got %d", num);
+  fail_unless(partially_placed == 2);
   }
 END_TEST
 
