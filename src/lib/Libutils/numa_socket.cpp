@@ -446,7 +446,7 @@ float Socket::how_many_tasks_fit(
       {
       // If numa > 1, place_type = exclusive_numa, so each chip is 1 piece at most.
       for (unsigned int i = 0; i < this->chips.size(); i++)
-        if (this->chips[i].how_many_tasks_fit(r, place_type) > 0)
+        if (this->chips[i].how_many_tasks_fit(r, place_type) >= 1.0)
           num_that_fit += 1;
 
       num_that_fit /= numa;
