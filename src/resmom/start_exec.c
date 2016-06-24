@@ -4398,20 +4398,12 @@ int set_job_cgroup_memory_limits(
   {
   /* See if the memory attribute was requested and then add it to
      memory.limit_in_bytes of the cgroup */
-  char          this_hostname[PBS_MAXHOSTNAME];
-  unsigned long long mem_limit;
-  unsigned long long swap_limit;
-  complete_req *cr = NULL;
+  unsigned long long  mem_limit;
+  unsigned long long  swap_limit;
+  complete_req       *cr = NULL;
+  int                 rc = PBSE_NONE;
 
-  int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-  if (rc != 0)
-    {
-    sprintf(log_buffer, "failed to get host name: %d", errno);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    return(rc);
-    }
-
-  std::string string_hostname = this_hostname;
+  std::string string_hostname = mom_alias;
   if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
     {
     cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
