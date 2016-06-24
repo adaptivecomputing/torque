@@ -317,6 +317,10 @@ void recover_cpuset_reservation(job &pjob);
 #endif /* NUMA_SUPPORT */
 
 
+/* Check if the hostname has been set on the command line or other means
+ * and is available in mom_alias. If this is not the case, make an actual
+ * system call and fetch it. Otherwise, use the preset value.
+ */
 int mom_gethostname(char* hostname, size_t len) {
     if(mom_alias_set == 1) {
         strncpy(hostname, mom_alias, len - 1);

@@ -76,6 +76,16 @@
 * This license will be governed by the laws of the Commonwealth of Virginia,
 * without reference to its choice of law rules.
 */
+
+/*
+ * This file provides a function pointer that can be used to direct the functionality
+ * of looking up a hostname, in the case where a host can have multiples FQDNs, and
+ * e.g., the one provided on the command line of both pbs_mom and pbs_server should
+ * have priority over what the gethostname system call actually returns.
+ *
+ * The pointer should be set to the correct implementation, on both the mom and the
+ * server.
+ */
 #include <stddef.h>
 
 int (*alias_gethostname)(char* hostname, size_t len);

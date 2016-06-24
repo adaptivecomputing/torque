@@ -325,7 +325,10 @@ acl_special             limited_acls;
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;
 
-
+/* Check if the hostname has been set on the command line or other means
+ * and is available in server_host. If this is not the case, make an actual
+ * system call and fetch it. Otherwise, use the preset value.
+ */
 int server_gethostname(char* hostname, size_t len) {
     if(server_host_set == 1) {
         strncpy(hostname, server_host, len - 1);
