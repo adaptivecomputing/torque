@@ -583,6 +583,9 @@ void mom_job_free(
   delete pj->ji_job_pid_set;
   delete pj->ji_sigtermed_processes;
 
+  if (pj->ji_usages != NULL)
+    delete pj->ji_usages;
+
   /* now free the main structure */
   free(pj);
 

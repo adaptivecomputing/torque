@@ -713,6 +713,12 @@ struct tcp_chan * DIS_tcp_setup(
 
 
 
+/*
+ * DIS_tcp_cleanup()
+ *
+ * The desctructor for tcp_chan - frees it and its members
+ */
+
 void DIS_tcp_cleanup(
     
   struct tcp_chan *chan)
@@ -731,8 +737,9 @@ void DIS_tcp_cleanup(
     free(tp->tdis_thebuf);
 
   free(chan);
-  chan = NULL;
-  }
+  } // END DIS_tcp_cleanup()
+
+
 
 void DIS_tcp_close(
     
