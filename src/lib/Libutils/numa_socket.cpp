@@ -598,34 +598,44 @@ int Socket::place_task(
             break;
           }
 
-        // Finally, place tasks that must span numa chips
-        while (tasks_to_place > 0)
+        // Finally, place tasks that must span numa chips. Let's only try if there's more than
+        // one chip
+        if (this->chips.size() > 1)
           {
-          allocation task_alloc(master.jobid.c_str());
-          allocation remaining(r);
-
-          task_alloc.cores_only = master.cores_only;
-
-          for (unsigned int i = 0; i < this->chips.size() && remaining.fully_placed() == false; i++)
-            this->chips[i].partially_place_task(remaining, task_alloc);
-
-          if (remaining.fully_placed() == true)
+          while (tasks_to_place > 0)
             {
-            tasks_to_place--;
-            task_alloc.set_host(hostname);
-            a.add_allocation(task_alloc);
-            r.record_allocation(task_alloc);
-            }
-          else
-            {
-            if (remaining.partially_placed(r) == true)
+            allocation task_alloc(master.jobid.c_str());
+            allocation remaining(r);
+
+            std::vector<int> partially_placed_indices;
+
+            task_alloc.cores_only = master.cores_only;
+
+            for (unsigned int i = 0; i < this->chips.size() && remaining.fully_placed() == false; i++)
               {
-              // remove this task 
-              this->free_task(master.jobid.c_str());
+              if (this->chips[i].partially_place_task(remaining, task_alloc) == true)
+                partially_placed_indices.push_back(i);
               }
 
-            // We aren't going to make any more progress, move on
-            break;
+            if (remaining.fully_placed() == true)
+              {
+              tasks_to_place--;
+              task_alloc.set_host(hostname);
+              a.add_allocation(task_alloc);
+              r.record_allocation(task_alloc);
+              }
+            else
+              {
+              if (remaining.partially_placed(r) == true)
+                {
+                // Just remove the last task in order to not remove other, valid tasks from the chip
+                for (size_t i = 0; i < partially_placed_indices.size(); i++)
+                  this->chips[partially_placed_indices[i]].remove_last_allocation(master.jobid.c_str());
+                }
+
+              // We aren't going to make any more progress, move on
+              break;
+              }
             }
           }
         }

@@ -137,7 +137,9 @@ bool Chip::spread_place(
   return(true);
   }
 
-void Chip::partially_place_task(
+void Chip::remove_last_allocation(const char *jobid) {}
+
+bool Chip::partially_place_task(
 
   allocation &remaining,
   allocation &master)
@@ -174,6 +176,8 @@ void Chip::partially_place_task(
     }
 
   partially_placed++;
+
+  return(true);
   }
 
 int Chip::initializeNonNUMAChip(hwloc_obj_t obj, hwloc_topology_t topology)
