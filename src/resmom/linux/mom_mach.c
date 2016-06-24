@@ -3221,17 +3221,17 @@ int kill_task(
                 sprintf(log_buffer, "%s: killing pid %d task %d with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, sig);
 
-                log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
-
                 if (pg == 0)
                   {
                   if (sig != SIGTERM)
                     {
+                    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     kill(ps->pid, sig);
                     }
                   /* make sure we only send a SIGTERM one time */
                   else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
+                    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, SIGTERM);
                     pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
@@ -3240,10 +3240,12 @@ int kill_task(
                   {
                   if (sig != SIGTERM)
                     {
+                    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, sig);
                     }
                   else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
                     {
+                    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, SIGTERM);
                     pjob->ji_sigtermed_processes->insert(ps->pid);
                     }
