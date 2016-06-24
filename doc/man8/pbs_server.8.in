@@ -156,9 +156,9 @@ PBS_HOME/server_priv/accounting directory.
 Debug mode.
 .IP "\-H hostname"
 Causes the server to start under a different hostname as obtained from
-alias_gethostname(2). Useful for servers with multiple network interfaces to support
+gethostname(2). Useful for servers with multiple network interfaces to support
 connections from clients over an interface that has a hostname assigned
-that differs from the one that is returned by alias_gethostname(2).
+that differs from the one that is returned by gethostname(2).
 .IP "\-L logfile"
 Specifies an absolute path name of the file to use as the log file.
 If not specified, the file is one named for the current date in the

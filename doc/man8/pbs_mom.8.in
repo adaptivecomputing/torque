@@ -432,7 +432,7 @@ to connect:
 .Ty "$pbsclient      wilma"
 .IP
 Two host name are always allowed to connection to pbs_mom, "localhost" and the
-name returned to pbs_mom by the system call alias_gethostname().  These names need
+name returned to pbs_mom by the system call gethostname().  These names need
 not be specified in the configuration file.  The hosts listed as "clients" can
 issue Resource Monitor (RM) requests.  Other MOM nodes and servers do not need
 to be listed as clients.
