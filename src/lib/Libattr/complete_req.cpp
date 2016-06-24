@@ -232,7 +232,7 @@ complete_req::complete_req(
         {
         req &r = this->reqs[i];
         r.set_swap(swap_per_task);
-        r.set_memory(swap_per_task);
+        r.set_memory(0); /* The value of memory will be set on the MOM */
         }
       }
     else
@@ -251,7 +251,7 @@ complete_req::complete_req(
         if ((mem_type == "vmem") || (mem_type == "pvmem"))
           {
           r.set_swap(swap_per_task);
-          r.set_memory(swap_per_task);
+          r.set_memory(0); /* The value of memory will be set on the MOM */
           }
         }
       }

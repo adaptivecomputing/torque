@@ -4432,8 +4432,13 @@ int set_job_cgroup_memory_limits(
     {
     if (mem_limit == 0)
       {
-      /* memory.memsw.limit_in_bytes cannot be set unless memory.limit_in_bytes is set */
-      mem_limit = swap_limit;
+      unsigned long long max_mem_limit = this_node.getTotalMemory();
+
+      if (swap_limit >= max_mem_limit)
+        mem_limit = max_mem_limit;
+      else
+        mem_limit = swap_limit;
+
       rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
       if (rc != PBSE_NONE)
         {
@@ -4479,7 +4484,14 @@ int set_job_cgroup_memory_limits(
         swap_limit = cr->get_swap_per_task(req_index);
         if ((mem_limit == 0) &&
             (swap_limit != 0))
-          mem_limit = swap_limit;
+          {
+          unsigned long long max_mem_limit = this_node.getTotalMemory();
+
+          if (swap_limit >= max_mem_limit)
+            mem_limit = max_mem_limit; 
+          else
+            mem_limit = swap_limit;
+          }
 
         if (mem_limit != 0)
           {
