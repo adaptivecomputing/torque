@@ -498,6 +498,8 @@ int send_request_to_remote_server(
   
   request->rq_conn = sock;
   
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     log_err(PBSE_MEM_MALLOC, __func__,
@@ -767,6 +769,8 @@ int send_request_to_remote_server(
 
   if (close_handle == true)
     svr_disconnect(conn);
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return(rc);
   } /* END send_request_to_remote_server() */
