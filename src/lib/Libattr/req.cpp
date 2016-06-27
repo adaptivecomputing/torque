@@ -2336,6 +2336,11 @@ bool req::is_per_task() const
   return(this->per_task_cgroup == TRUE);
   }
 
+bool req::cgroup_preference_set() const
+  {
+  return(this->per_task_cgroup != -1);
+  }
+
 
 
 /*
