@@ -123,14 +123,14 @@ START_TEST(test_constructor)
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
-  fail_unless(rl3.getMemory() == 160, "pvmem is %lu", rl3.getMemory());
+  fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
   fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
   complete_req list6(h, 2, true);
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
-  fail_unless(rl4.getMemory() == 80, "pvmem is %lu", rl4.getMemory());
+  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
   fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
 
  }
