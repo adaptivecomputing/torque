@@ -38,7 +38,6 @@ std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
 std::string cg_devices_path;
 
-Machine this_node;
 #define LDAP_RETRIES 5
 
 // Sensing and control variables
@@ -846,6 +845,8 @@ int csv_length(const char *csv_str)
   }
 
 #ifdef PENABLE_LINUX_CGROUPS
+Machine this_node;
+
 int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
   {
   return(PBSE_NONE);
