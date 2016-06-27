@@ -16,8 +16,10 @@ START_TEST(test_cpt)
   req r;
 
   fail_unless(r.is_per_task() == false);
+  fail_unless(r.cgroup_preference_set() == false);
   r.set_attribute("cpt");
   fail_unless(r.is_per_task() == true);
+  fail_unless(r.cgroup_preference_set() == true);
 
   std::string out;
   r.toString(out);

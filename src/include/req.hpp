@@ -199,6 +199,7 @@ class req
     int           get_num_tasks_for_host(int num_ppn) const;
     int           get_num_tasks_for_host(const std::string &host) const;
     bool          is_per_task() const;
+    bool          cgroup_preference_set() const;
     int           get_task_allocation(unsigned int index, allocation &task_allocation) const;
     unsigned long long get_memory_for_host(const std::string &host) const;
     unsigned long long get_memory_per_task();

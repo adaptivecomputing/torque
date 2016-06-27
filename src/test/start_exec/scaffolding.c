@@ -37,6 +37,8 @@ std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
 std::string cg_devices_path;
+
+Machine this_node;
 #define LDAP_RETRIES 5
 
 // Sensing and control variables
@@ -954,6 +956,20 @@ int trq_cg_set_resident_memory_limit(
   {
   return(PBSE_NONE);
   }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+hwloc_uint64_t Machine::getTotalMemory() const
+  {
+  return(this->totalMemory);
+  }
+
+PCI_Device::~PCI_Device() {}
+Socket::~Socket() {}
+Chip::~Chip() {}
+Core::~Core() {}
+
 #endif
 
 
