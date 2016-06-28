@@ -205,9 +205,46 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   return(PBSE_NONE);
   }
 
-hwloc_uint64_t Socket::getMemory()
+hwloc_uint64_t Socket::getMemory() const
   {
-  return(this->memory);
+  hwloc_uint64_t mem = 0;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    mem += this->chips[i].getMemory();
+
+  return(mem);
+  }
+
+
+
+/*
+ * get_memory_for_completely_free_chips()
+ *
+ * Figures out how much memory this socket has in completely free chips
+ *
+ * @param mem_required - the amount of memory needed
+ * @param numa_count - a count of the free nodes used
+ */
+
+hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
+    
+  unsigned long  mem_required,
+  int           &numa_count) const
+  {
+  hwloc_uint64_t mem = 0;
+
+  numa_count = 0;
+
+  for (size_t i = 0; i < this->chips.size() && mem < mem_required; i++)
+    {
+    if (this->chips[i].is_completely_free())
+      {
+      mem += this->chips[i].getMemory();
+      numa_count++;
+      }
+    }
+
+  return(mem);
   }
 
 int Socket::getTotalCores() const
@@ -492,12 +529,12 @@ bool Socket::spread_place(
 
   {
   bool placed = false;
-  int  count  = 1;
+  int  numa_nodes_required  = 1;
   int  per_numa = execution_slots_per;
   int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
-  if ((this->getAvailableChips() == this->chips.size()) ||
+  if ((this->is_completely_free()) ||
       (chip == true))
     {
     if (chip == false)
@@ -506,12 +543,12 @@ bool Socket::spread_place(
       // of chips and place multiple times
       per_numa_remainder = per_numa % this->chips.size();
       per_numa /= this->chips.size();
-      count = this->chips.size();
+      numa_nodes_required = this->chips.size();
     
       this->socket_exclusive = true;
       }
 
-    for (int c = 0; c < count; c++)
+    for (int c = 0; c < numa_nodes_required; c++)
       {
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
@@ -700,6 +737,29 @@ bool Socket::is_available() const
   {
   return(!this->socket_exclusive);
   } // END is_available()
+
+
+
+/*
+ * is_completely_free()
+ *
+ * @return true if there are no jobs using any part of this socket
+ */
+
+bool Socket::is_completely_free() const
+  {
+  bool completely_free = true;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    if (this->chips[i].is_completely_free() == false)
+      {
+      completely_free = false;
+      break;
+      }
+    }
+
+  return(completely_free);
+  } // END is_completely_free()
 
 
 

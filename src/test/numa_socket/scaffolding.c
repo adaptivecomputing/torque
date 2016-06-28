@@ -18,6 +18,7 @@ int called_spread_place_threads;
 bool oscillate = false;
 bool avail_oscillate = false;
 bool make_socket_exclusive = true;
+bool completely_free = true;
 int place_amount = 1;
 int json_chip;
 int placed_all;
@@ -92,6 +93,11 @@ void Chip::setMemory(hwloc_uint64_t mem)
   {
   }
 
+hwloc_uint64_t Chip::getMemory() const
+  {
+  return(this->memory);
+  }
+
 Chip::Chip(const std::string &json_layout)
   {
   json_chip++;
@@ -135,6 +141,11 @@ bool Chip::spread_place(
   {
   called_spread_place++;
   return(true);
+  }
+
+bool Chip::is_completely_free() const
+  {
+  return(completely_free);
   }
 
 void Chip::remove_last_allocation(const char *jobid) {}
