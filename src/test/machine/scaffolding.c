@@ -34,6 +34,8 @@ bool socket_fit;
 bool partially_placed;
 bool spreaded = true;
 int my_placement_type;
+int req_mem;
+int sock_mem;
 
 char mom_alias[1024];
 
@@ -56,6 +58,27 @@ Socket::Socket(int np)
 
 void Socket::setMemory(hwloc_uint64_t mem)
   {
+  this->memory = mem;
+  }
+
+hwloc_uint64_t Socket::getMemory() const
+  {
+  return(sock_mem);
+  }
+
+hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
+
+  unsigned long diff,
+  int           &count) const
+
+  {
+  count = 1;
+  return(diff);
+  }
+
+bool Socket::is_completely_free() const
+  {
+  return(true);
   }
 
 Socket::Socket(const std::string &json_layout)
@@ -216,6 +239,11 @@ bool Socket::is_available() const
   }
 
 void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
+
+unsigned long req::getMemory() const
+  {
+  return(req_mem);
+  }
 
 int req::getPlaceCores() const
   {

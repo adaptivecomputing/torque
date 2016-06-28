@@ -670,6 +670,11 @@ bool Chip::chipIsAvailable() const
   return(!this->chip_exclusive);
   }
 
+bool Chip::is_completely_free() const
+  {
+  return(this->allocations.size() == 0);
+  }
+
 
 
 int Chip::initializePCIDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
@@ -2488,8 +2493,7 @@ bool Chip::free_task(
   for (size_t i = 0; i < to_remove.size(); i++)
     this->allocations.erase(this->allocations.begin() + to_remove[i]);
 
-  if ((this->availableThreads == this->totalThreads) &&
-      (this->availableCores == this->totalCores))
+  if (this->allocations.size() == 0)
     {
     this->chip_exclusive = false;
     totally_free = true;

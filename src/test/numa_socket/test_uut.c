@@ -21,6 +21,7 @@ extern int place_amount;
 extern int json_chip;
 extern int placed_all;
 extern int partially_placed;
+extern bool completely_free;
 extern std::string my_placement_type;
 
 
@@ -68,13 +69,16 @@ START_TEST(test_spread_place)
   s.addChip();
   s.addChip();
 
+  completely_free = true;
   called_spread_place = 0;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
   fail_unless(called_spread_place == 2);
   
+  completely_free = false;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
   fail_unless(called_spread_place == 2);
 
+  completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
@@ -108,11 +112,9 @@ END_TEST
 START_TEST(test_basic_constructor)
   {
   Socket s(5);
-  s.setMemory(50);
 
   fail_unless(s.getTotalChips() == 1);
   fail_unless(s.getAvailableChips() == 1);
-  fail_unless(s.getMemory() == 50);
   }
 END_TEST
 
@@ -196,8 +198,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeNonNUMASocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize non NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -212,8 +212,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeIntelSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc == 0, "failed to get socket memory");
       }
     else
       {
@@ -228,8 +226,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeAMDSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {

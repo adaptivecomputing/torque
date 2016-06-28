@@ -159,6 +159,7 @@ class Chip
     void initialize_cores_from_strings(std::string &cores, std::string &threads);
     void initialize_accelerators_from_strings(std::string &gpus, std::string &mics);
     bool chipIsAvailable() const;
+    bool is_completely_free() const;
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
@@ -257,7 +258,8 @@ class Socket
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
     int getid();
-    hwloc_uint64_t getMemory();
+    hwloc_uint64_t getMemory() const;
+    hwloc_uint64_t get_memory_for_completely_free_chips(unsigned long diff, int &count) const;
     int initializeAMDSocket(hwloc_obj_t, hwloc_topology_t);
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
@@ -272,6 +274,7 @@ class Socket
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;
+    bool is_completely_free() const;
     bool fits_on_socket(const allocation &remaining) const;
     bool partially_place(allocation &remaining, allocation &a);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);

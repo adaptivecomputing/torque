@@ -843,6 +843,39 @@ int Machine::spread_place(
     quantity = this->sockets.size();
     chips = false;
     }
+  else
+    {
+    // Make sure we are grabbing enough memory
+    unsigned long mem_needed = r.getMemory();
+    unsigned long mem_count = 0;
+    int           mem_quantity = 0;
+
+    for (size_t i = 0; i < this->sockets.size() && mem_needed > mem_count; i++)
+      {
+      if (chips == true)
+        {
+        unsigned long diff = mem_needed - mem_count;
+        int           numa_nodes_required = 0;
+        mem_count += this->sockets[i].get_memory_for_completely_free_chips(diff, numa_nodes_required);
+        mem_quantity += numa_nodes_required;
+        }
+      else if (this->sockets[i].is_completely_free())
+        {
+        mem_count += this->sockets[i].getMemory();
+
+        mem_quantity++;
+        }
+
+      if (mem_quantity > quantity)
+        quantity = mem_quantity;
+      }
+
+    // If we don't have enough memory, reject the job
+    if (mem_needed > mem_count)
+      {
+      return(PBSE_RESCUNAV);
+      }
+    }
 
   // Spread the placement evenly across the number of sockets or numa nodes
   int execution_slots_per = r.getExecutionSlots() / quantity;
