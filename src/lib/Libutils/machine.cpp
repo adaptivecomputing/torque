@@ -914,14 +914,6 @@ int Machine::place_job(
   {
   int rc = PBSE_NONE;
 
-//  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
-//    {
-    // Initialize a complete_req from the -l resource request
-//    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
-//    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-//    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-//    }
-
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
   int           num_reqs = cr->req_count();
   vector<int>   partially_place;

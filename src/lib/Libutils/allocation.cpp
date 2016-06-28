@@ -531,7 +531,11 @@ void allocation::get_mics_remaining(
 
 bool allocation::fully_placed() const
   {
-  return((this->cpus == 0) && (this->memory == 0) && (this->mics == 0) && (this->gpus == 0));
+  return((this->cpus == 0) &&
+         (this->memory == 0) &&
+         (this->mics == 0) &&
+         (this->gpus == 0) &&
+         (this->place_cpus == 0));
   }
 
 /*
@@ -552,5 +556,9 @@ bool allocation::partially_placed(
   return ((this->cpus != r.getExecutionSlots()) ||
           (this->memory != r.getMemory()) ||
           (this->gpus != r.getGpus()) ||
-          (this->mics != r.getMics()));
+          (this->mics != r.getMics()) ||
+          ((r.getPlaceCores() > 0) &&
+           (this->place_cpus != r.getPlaceCores())) ||
+          ((r.getPlaceThreads() > 0) &&
+           (this->place_cpus != r.getPlaceThreads())));
   }

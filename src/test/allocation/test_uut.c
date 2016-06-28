@@ -235,6 +235,11 @@ START_TEST(test_fully_placed)
 
   a.mics = 0;
   fail_unless(a.fully_placed() == true);
+
+  a.place_cpus = 1;
+  fail_unless(a.fully_placed() == false);
+  a.place_cpus = 0;
+  fail_unless(a.fully_placed() == true);
   }
 END_TEST
 
