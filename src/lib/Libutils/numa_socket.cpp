@@ -746,21 +746,21 @@ bool Socket::fits_on_socket(
  * Partially places the task whose needs are identified by remaining on the 
  * chips that are part of this socket.
  * @param remaining (I/O) - the amount remaining to place for this task
- * @param master (O) - the complete allocation for this job
+ * @param task_alloc (O) - the complete allocation for this task
  * @return - true if the task was fully placed, false if partially placed
  */
 
 bool Socket::partially_place(
 
   allocation &remaining,
-  allocation &master)
+  allocation &task_alloc)
 
   {
   bool fully_placed = false;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)
     {
-    this->chips[i].partially_place_task(remaining, master);
+    this->chips[i].partially_place_task(remaining, task_alloc);
 
     if (remaining.fully_placed() == true)
       {

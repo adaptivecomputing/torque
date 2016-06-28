@@ -14,6 +14,34 @@ extern std::string thread_type;
 
 const char *alloc_json = "\"allocation\":{\"jobid\":\"666979[0].mgr.bwfor.privat\",\"cpus\":\"\",\"mem\":4203424,\"exclusive\":0,\"cores_only\":0}";
 
+
+START_TEST(place_task_by_cores_test)
+  {
+  const char        *jobid = "1.napali";
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  a.cores_only = true;
+
+  c.place_task_by_cores(2, 8, a);
+  fail_unless(a.cpu_indices.size() == 2);
+  fail_unless(a.cpu_place_indices.size() == 6);
+  
+  c.place_task_by_cores(2, 8, a);
+  fail_unless(a.cpu_indices.size() == 4);
+  fail_unless(a.cpu_place_indices.size() == 12);
+  }
+END_TEST
+
+
 START_TEST(test_initialize_allocation)
   {
   Chip c;
@@ -994,6 +1022,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
   tcase_add_test(tc_core, test_initialize_allocation);
+  tcase_add_test(tc_core, place_task_by_cores_test);
   suite_add_tcase(s, tc_core);
   
   return(s);
