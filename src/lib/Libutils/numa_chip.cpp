@@ -2365,10 +2365,13 @@ bool Chip::partially_place_task(
     chip_alloc.mem_indices.push_back(this->id);
     remaining.cpus -= chip_alloc.cpu_indices.size();
     
-    // place_cpus = total number of cpus to be placed, but cpu_place_indices 
-    // only has the one that won't go into the cpuset, so we need to subtract both
-    remaining.place_cpus -= chip_alloc.cpu_place_indices.size();
-    remaining.place_cpus -= chip_alloc.cpu_indices.size();
+    if (remaining.place_cpus > 0)
+      {
+      // place_cpus = total number of cpus to be placed, but cpu_place_indices 
+      // only has the one that won't go into the cpuset, so we need to subtract both
+      remaining.place_cpus -= chip_alloc.cpu_place_indices.size();
+      remaining.place_cpus -= chip_alloc.cpu_indices.size();
+      }
 
     this->allocations.push_back(chip_alloc);
     task_alloc.add_allocation(chip_alloc);
