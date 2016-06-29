@@ -93,40 +93,40 @@ START_TEST(test_constructor)
   fail_unless(equals_out == c_out);
 
   tlist_head h;
-  complete_req list1(h, 2, false);
+  complete_req list1(h, 2, 1, false);
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
-  complete_req list2(h, 2, true);
+  complete_req list2(h, 2, 1, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
   fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
  
-  complete_req list3(h, 2, false);
+  complete_req list3(h, 2, 1, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
   fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
 
-  complete_req list4(h, 2, true);
+  complete_req list4(h, 2, 1, true);
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
   fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
 
-  complete_req list5(h, 2, true);
+  complete_req list5(h, 2, 1, true);
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
   fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
   fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
-  complete_req list6(h, 2, true);
+  complete_req list6(h, 2, 1, true);
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
@@ -142,7 +142,7 @@ START_TEST(test_constructor_oldstyle_req)
   tlist_head h;
   extern int gn_count;
   gn_count = 18;
-  complete_req list1(h, 2, false);
+  complete_req list1(h, 2, 1, false);
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);

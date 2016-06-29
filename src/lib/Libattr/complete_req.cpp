@@ -49,21 +49,21 @@ void complete_req::set_value_from_nodes(
     }
   } // END set_value_from_nodes()
 
-
-
 complete_req::complete_req(
 
   tlist_head &resources,
-  int         ppn_needed,
+  int         ppn_needed, /* This is the ppn allocated to the node from the qrun operation */
+  int         total_ppn_in_job, /* this is the total ppn of the job as requested in qsub */
   bool        legacy_vmem) : reqs()
 
   {
   resource      *pr = (resource *)GET_NEXT(resources);
   int            task_count = 0;
   int            execution_slots = 0;
-  unsigned long  mem = 0;
+  int            ppn_per_task = 0;
   std::string    mem_type;
-  unsigned long  swap = 0;
+  unsigned long long  swap = 0;
+  unsigned long long  mem = 0;
 
 
   while (pr != NULL)
@@ -174,11 +174,17 @@ complete_req::complete_req(
 
       if (mem_type == "mem")
         {
-	mem_per_task /= total_tasks;
+        mem_per_task /= total_tasks;
         }
      else if (mem_type == "pmem")
        {
-       mem_per_task = mem * ppn_needed;
+       if (total_tasks == 1)
+         mem_per_task = mem * ppn_needed;
+       else
+         {
+         ppn_per_task = total_ppn_in_job / total_tasks;
+         mem_per_task = mem * ppn_per_task;
+         }
        }
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
@@ -196,10 +202,20 @@ complete_req::complete_req(
         total_tasks += this->reqs[i].getTaskCount();
       
       if (mem_type == "mem")
+        {
         mem_per_task = mem;
+        }
       else if (mem_type == "pmem")
         {
-        mem_per_task = mem * ppn_needed;
+        if (total_tasks == 1)
+          {
+          mem_per_task = mem * ppn_needed;
+          }
+       else
+         {
+         ppn_per_task = total_ppn_in_job / total_tasks;
+         mem_per_task = mem * ppn_per_task;
+         }
         }
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
@@ -226,7 +242,15 @@ complete_req::complete_req(
       if (mem_type == "vmem")
         swap_per_task /= total_tasks;
       else if (mem_type == "pvmem")
-        swap_per_task = (swap * ppn_needed);
+        {
+        if (total_tasks == 1)
+          swap_per_task = swap * ppn_needed;
+        else
+          {
+          ppn_per_task = total_ppn_in_job / total_tasks;
+          swap_per_task = swap * ppn_per_task;
+          }
+        }
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
         {
@@ -238,11 +262,22 @@ complete_req::complete_req(
     else
       {
       if (mem_type == "vmem")
+        {
         swap_per_task = swap;
+        }
       else if (mem_type == "pvmem")
         {
-        swap_per_task = (swap * ppn_needed);
+        if (total_tasks == 1)
+          {
+          swap_per_task = swap * ppn_needed;
+          }
+        else
+          {
+          ppn_per_task = total_ppn_in_job / total_tasks;
+          swap_per_task = swap * ppn_per_task;
+          }
         }
+
 
       for (unsigned int i = 0; i < this->reqs.size(); i++)
         {

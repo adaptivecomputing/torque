@@ -32,7 +32,7 @@ bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_l
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data *spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
-int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info &naji, job_reservation_info &jri, char *ProcBMStr);
+int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info &naji, job_reservation_info &jri, int ppn_in_job, char *ProcBMStr);
 int initialize_alps_req_data(alps_req_data **, int num_reqs);
 void free_alps_req_data_array(alps_req_data *, int num_reqs);
 void record_fitting_node(int &num, struct pbsnode *pnode, std::list<node_job_add_info> *naji_list, single_spec_data *req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data *all_reqs, alps_req_data **ard_array);
@@ -880,7 +880,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 #ifdef PENABLE_LINUX_CGROUPS
   pnode->nd_layout = new Machine();
 #endif
-  int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, buf);
+  int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, 1, buf);
 
   fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
@@ -891,7 +891,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   pnode->nd_state = 0;
 
   job_reservation_info jri2;
-  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri2, buf);
+  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri2, 1,  buf);
   fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
 
@@ -901,7 +901,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   pnode->nd_state = 0;
 
   job_reservation_info jri3;
-  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri3, buf);
+  rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri3, 1, buf);
   fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlit failed");
   fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
   }

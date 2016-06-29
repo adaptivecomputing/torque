@@ -1,10 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
-#include <pbs_config.h>
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <pthread.h> /* pthread_mutex_t */
 #include <limits.h> /* _POSIX_PATH_MAX */
 
+#include "pbs_config.h"
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
 #include "attribute.h" /* attribute_def, pbs_attribute, batch_op */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME, MAXPATHLEN */
@@ -783,6 +783,16 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   return(0);
   }
 #endif
+
+#ifdef NVIDIA_GPUS
+void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology)
+  { 
+  return;
+  }
+
+#endif
+
+
 
 int update_user_acls(pbs_attribute *pattr, batch_op op_type)
   {

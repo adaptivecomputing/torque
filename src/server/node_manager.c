@@ -4121,7 +4121,8 @@ void update_req_hostlist(
   job        *pjob,
   const char *host_name,
   int         req_index,
-  int         ppn_needed)
+  int         ppn_needed,
+  int         total_ppn_in_job)
 
   {
   long          cray_enabled = FALSE;
@@ -4134,7 +4135,11 @@ void update_req_hostlist(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, ppn_needed, (bool)legacy_vmem);
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, 
+                          ppn_needed, 
+                          total_ppn_in_job, 
+                          (bool)legacy_vmem);
+
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     }
   else
@@ -4174,6 +4179,7 @@ int place_subnodes_in_hostlist(
   struct pbsnode       *pnode,
   node_job_add_info    &naji,
   job_reservation_info &node_info,
+  int                   total_ppn_in_job,
   char                 *ProcBMStr)
 
   {
@@ -4226,7 +4232,7 @@ int place_subnodes_in_hostlist(
     if (pnode->nd_layout == NULL)
       return(-1);
 
-    update_req_hostlist(pjob, pnode->nd_name, naji.req_index, naji.ppn_needed);
+    update_req_hostlist(pjob, pnode->nd_name, naji.req_index, naji.ppn_needed, total_ppn_in_job);
 
     rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name, (bool)legacy_vmem);
     if (rc != PBSE_NONE)
@@ -4523,10 +4529,16 @@ int build_hostlist_nodes_req(
 
   {
   struct pbsnode                         *pnode = NULL;
-
   std::list<node_job_add_info>::iterator  it;
   char                                    log_buf[LOCAL_LOG_BUF_SIZE];
   bool                                    failure = false;
+  int                                     total_ppn_in_job = 0;
+
+
+  for (it = naji_list->begin(); it != naji_list->end(); it++)
+    {
+    total_ppn_in_job += it->ppn_needed;
+    }
 
   for (it = naji_list->begin(); it != naji_list->end(); it++)
     {
@@ -4546,7 +4558,7 @@ int build_hostlist_nodes_req(
         int rc = PBSE_NONE;
 
         job_reservation_info host_single;
-        rc = place_subnodes_in_hostlist(pjob, pnode, *it, host_single, ProcBMStr);
+        rc = place_subnodes_in_hostlist(pjob, pnode, *it, host_single, total_ppn_in_job, ProcBMStr);
         if (rc == PBSE_NONE)
           {
           host_info.push_back(host_single);

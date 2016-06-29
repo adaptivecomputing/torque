@@ -1,3 +1,4 @@
+#include "pbs_config.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 #include "pbs_nodes.h"
 #include "alps_constants.h"
 #include "alps_functions.h"
+#include "machine.hpp"
 #include <check.h>
 
 int set_ncpus(struct pbsnode *,struct pbsnode *, int);
@@ -49,8 +51,10 @@ START_TEST(set_ncpus_test)
   {
   struct pbsnode  pnode;
   struct pbsnode  parent;
+  
 
   memset(&parent,0,sizeof(pbsnode));
+  memset(&pnode, 0, sizeof(pbsnode));
   fail_unless(set_ncpus(&pnode,&parent, 2) == 0, "Couldn't set ncpus to 2");
   snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_slots.get_total_execution_slots());
   fail_unless(pnode.nd_slots.get_total_execution_slots() == 2, buf);

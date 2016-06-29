@@ -801,3 +801,4 @@ bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
   {
   return(true);
   }
+

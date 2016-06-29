@@ -917,4 +917,10 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
 
 #ifdef NVIDIA_GPUS
 int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
+
+void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology)
+  {
+  return;
+  }
+
 #endif
