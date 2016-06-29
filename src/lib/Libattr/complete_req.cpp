@@ -693,14 +693,14 @@ int complete_req::get_req_and_task_index(
 
       for (unsigned int cpus_per_task = 0; cpus_per_task < al.cpu_indices.size(); cpus_per_task++)
         {
-        tasks_counted++;
-
         if (tasks_counted == rank)
           {
           req_index = req_count;
           task_index = task_count;
           return(PBSE_NONE);
           }
+
+        tasks_counted++;
         }
       }
     }
@@ -748,14 +748,14 @@ int complete_req::get_req_and_task_index_from_local_rank(
 
       for (unsigned int cpus_per_task = 0; cpus_per_task < al.cpu_indices.size(); cpus_per_task++)
         {
-        tasks_counted++;
-
         if (tasks_counted == local_rank)
           {
           req_index = req_count;
           task_index = task_count;
           return(PBSE_NONE);
           }
+
+        tasks_counted++;
         }
       }
     }

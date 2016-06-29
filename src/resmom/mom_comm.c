@@ -8463,7 +8463,7 @@ static int adoptSession(
     return(TM_ERROR);
 
 #ifdef PENABLE_LINUX_CGROUPS
-  int local_task_id = pjob->ji_taskid;
+  int local_task_id = ptask->ti_qs.ti_task - TM_ADOPTED_TASKID_BASE;
 
   // If I'm mother superior, take 1 away for the master task
   if (am_i_mother_superior(*pjob) == true)
