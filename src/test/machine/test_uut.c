@@ -35,7 +35,8 @@ extern bool socket_fit;
 extern bool partially_placed;
 extern bool spreaded;
 extern int  my_placement_type;
-
+extern int  req_mem;
+extern int  sock_mem;
 
 START_TEST(test_check_if_possible)
   {
@@ -126,6 +127,20 @@ START_TEST(test_spread_place)
   called_spread_place = 0;
   m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 6);
+  
+  called_spread_place = 0;
+  sockets = 1;
+  req_mem = 10;
+  sock_mem = 5;
+  num_for_host = 1;
+
+  // the req is set to need 10 memory and each socket is set to only have 5, so even
+  // though we set the req to need one socket, we should get two
+  m.place_job(&pjob, cpu, mem, "napali", false);
+  fail_unless(called_spread_place == 2, "called %d times", called_spread_place);
+  
+  req_mem = 0;
+  sock_mem = 0;
   }
 END_TEST
 
