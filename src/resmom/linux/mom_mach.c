@@ -2568,7 +2568,9 @@ int mom_over_limit(
   int                retval;
   unsigned long      value;
   unsigned long      num;
+#ifndef PENABLE_LINUX_CGROUPS
   unsigned long long numll;
+#endif
 
   resource *pres;
 
@@ -2620,6 +2622,10 @@ int mom_over_limit(
       }
     else if (strcmp(pname, "vmem") == 0)
       {
+#ifdef PENABLE_LINUX_CGROUPS
+      /* cgroups will let us know if we are over the limit. No need to check */
+      continue;
+#else
       retval = mm_getsize(pres, &value);
 
       if (retval != PBSE_NONE)
@@ -2633,9 +2639,14 @@ int mom_over_limit(
 
         return(JOB_EXEC_OVERLIMIT_MEM);
         }
+#endif
       }
     else if (strcmp(pname, "pvmem") == 0)
       {
+#ifdef PENABLE_LINUX_CGROUPS
+      /* cgroups will let us know if we are over the limit. No need to check */
+      continue;
+#else
       unsigned long long valuell;
 
       retval = mm_getsize(pres, &value);
@@ -2652,6 +2663,7 @@ int mom_over_limit(
 
         return(JOB_EXEC_OVERLIMIT_MEM);
         }
+#endif
       }
     else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
       {

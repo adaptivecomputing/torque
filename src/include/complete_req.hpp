@@ -94,7 +94,7 @@ class complete_req
   public:
 
     complete_req();
-    complete_req(tlist_head &at_list, int ppn_needed, int total_ppn_in_job, bool legacy_vmem);
+    complete_req(tlist_head &at_list, bool legacy_vmem);
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
