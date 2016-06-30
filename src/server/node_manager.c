@@ -4141,6 +4141,7 @@ void update_req_hostlist(
                           (bool)legacy_vmem);
 
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    pjob->ji_wattr[JOB_ATR_req_information].at_flags |= ATR_VFLAG_SET;
     }
   else
     {
