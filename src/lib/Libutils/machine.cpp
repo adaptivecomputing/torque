@@ -653,7 +653,9 @@ void Machine::place_remaining(
     allocation task_alloc(master.jobid.c_str());
 
     /* this is for legacy jobs. */
-    if (master.cpus != 0)
+    if ((master.cpus != 0) &&
+        ((master.place_type == exclusive_legacy2) ||
+         (master.place_type == exclusive_legacy)))
       remaining.cpus = master.cpus;
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)

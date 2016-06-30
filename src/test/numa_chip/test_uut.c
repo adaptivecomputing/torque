@@ -15,7 +15,7 @@ extern std::string thread_type;
 const char *alloc_json = "\"allocation\":{\"jobid\":\"666979[0].mgr.bwfor.privat\",\"cpus\":\"\",\"mem\":4203424,\"exclusive\":0,\"cores_only\":0}";
 
 
-START_TEST(place_task_by_cores_test)
+START_TEST(test_place_tasks_execution_slots)
   {
   const char        *jobid = "1.napali";
 
@@ -31,13 +31,27 @@ START_TEST(place_task_by_cores_test)
 
   a.cores_only = true;
 
-  c.place_task_by_cores(2, 8, a);
+  c.place_tasks_execution_slots(2, 8, a, CORE);
   fail_unless(a.cpu_indices.size() == 2);
   fail_unless(a.cpu_place_indices.size() == 6);
   
-  c.place_task_by_cores(2, 8, a);
+  c.place_tasks_execution_slots(2, 8, a, CORE);
   fail_unless(a.cpu_indices.size() == 4);
   fail_unless(a.cpu_place_indices.size() == 12);
+
+  Chip               c2;
+  c2.setId(0);
+  c2.setThreads(32);
+  c2.setCores(16);
+  c2.setMemory(6);
+  c2.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c2.make_core(i);
+
+  allocation b(jobid);
+  c2.place_tasks_execution_slots(0, 2, b, THREAD);
+  fail_unless(b.cpu_indices.size() == 0);
+  fail_unless(b.cpu_place_indices.size() == 2, "size is %u", b.cpu_place_indices.size());
   }
 END_TEST
 
@@ -1022,7 +1036,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
   tcase_add_test(tc_core, test_initialize_allocation);
-  tcase_add_test(tc_core, place_task_by_cores_test);
+  tcase_add_test(tc_core, test_place_tasks_execution_slots);
   suite_add_tcase(s, tc_core);
   
   return(s);

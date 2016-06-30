@@ -1238,7 +1238,7 @@ bool Chip::getContiguousCoreVector(
 
 
 /*
- * place_task_by_cores()
+ * place_tasks_execution_slots()
  *
  * places the task, knowing that we must use only cores
  *
@@ -1247,49 +1247,61 @@ bool Chip::getContiguousCoreVector(
  * @param chip_alloc - the allocation for this chip
  */
 
-void Chip::place_task_by_cores(
+void Chip::place_tasks_execution_slots(
 
   int         execution_slots_per_task,
-  int         cores_to_rsv,
-  allocation &chip_alloc)
+  int         to_rsv,
+  allocation &chip_alloc,
+  int         type)
 
   {
   std::vector<int> slots;
-  float step = 1.0;
-  float pin_index = 0.0;
-  int num_cores = execution_slots_per_task;
+  float            step = 1.0;
+  float            pin_index = 0.0;
+  int              total_needed = execution_slots_per_task;
 
-  if (cores_to_rsv > execution_slots_per_task)
+  if (to_rsv > execution_slots_per_task)
     {
-    /* with place=core=x we must reserve more cores than we pin to the cpuset.
+    /* with place=core|thread=x we must reserve more cores|threads than we pin to the cpuset.
        When the reserved cpu pool spans chips, we need to keep track of the
        current index of the entire pool by offsetting the pin index and current index of
-       this chip with how many cores have already been pinned/reserved on other chips */
+       this chip with how many cores|threads have already been pinned/reserved on other chips */
     if (execution_slots_per_task > 0)
-      step = cores_to_rsv / (float)execution_slots_per_task;
+      step = to_rsv / (float)execution_slots_per_task;
     else
-      step = cores_to_rsv;
+      step = to_rsv;
 
-    num_cores = cores_to_rsv;
+    total_needed = to_rsv;
     }
-  
-  this->getContiguousCoreVector(slots, num_cores);
+ 
+  if (type == CORE)
+    this->getContiguousCoreVector(slots, total_needed);
+  else
+    this->getContiguousThreadVector(slots, total_needed);
   
   for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
     {
-    if (it - slots.begin() == floor(pin_index + 0.5))
+    if ((it - slots.begin() == floor(pin_index + 0.5)) &&
+        (execution_slots_per_task > 0))
       {
-      this->reserve_core(*it, chip_alloc);
+      if (type == CORE)
+        this->reserve_core(*it, chip_alloc);
+      else
+        this->reserve_place_thread(*it, chip_alloc);
+        
       pin_index += step;
       }
     else
       {
-      this->reserve_chip_core(*it, chip_alloc);
+      if (type == CORE)
+        this->reserve_chip_core(*it, chip_alloc);
+      else
+        this->reserve_chip_place_thread(*it, chip_alloc);
       }
     }
 
   return;
-  } // END place_task_by_cores()
+  } // END place_tasks_execution_slots()
 
 
 /*
@@ -1339,61 +1351,6 @@ void Chip::place_task_for_legacy_threads(
 
   return;
   } // END place_task_for_legacy_threads()
-
-
-
-/*
- * place_task_by_threads()
- *
- * places the task, knowing that we can use threads
- *
- * @param execution_slots_per_task - the number of threads to bind for this task's cpuset
- * @param threads_to_rsv - the number of threads to reserve for this task
- * @param chip_alloc - the allocation specifically for this chip
- */
-
-void Chip::place_task_by_threads(
-
-  int         execution_slots_per_task,
-  int         threads_to_rsv,
-  allocation &chip_alloc)
-
-  {
-  std::vector<int> slots;
-  float step = 1.0;
-  float pin_index = 0.0;
-  int num_threads = execution_slots_per_task;
-
-  if (threads_to_rsv > execution_slots_per_task)
-    {
-    /* with place=thread=x we must reserve more threads than we pin to the cpuset.
-       When the reserved cpu pool spans chips, we need to keep track of the
-       current index of the entire pool by offsetting the pin index and current index of
-       this chip with how many threads have already been pinned/reserved on other chips */
-    if (execution_slots_per_task > 0)
-      step = threads_to_rsv / (float)execution_slots_per_task;
-    else
-      step = threads_to_rsv;
-    num_threads = threads_to_rsv;
-    }
- 
-  this->getContiguousThreadVector(slots, num_threads);
-  
-  for (std::vector<int>::iterator it = slots.begin(); it != slots.end(); it++)
-    {
-    if (it - slots.begin() == floor(pin_index + 0.5))
-      {
-      this->reserve_place_thread(*it, chip_alloc);
-      pin_index += step;
-      }
-    else
-      {
-      this->reserve_chip_place_thread(*it, chip_alloc);
-      }
-    }
-
-  return;
-  } // END place_task_by_threads()
 
 
 
@@ -1521,6 +1478,7 @@ bool Chip::reserve_core(
   } // END reserve_core()
 
 
+
 bool Chip::reserve_place_thread(
 
   int         thread_index,
@@ -1623,7 +1581,7 @@ bool Chip::reserve_chip_thread(
     }
 
   return(false);
-  } // END reserve_thread()
+  } // END reserve_chip_thread()
 
 
 void Chip::calculateStepCounts(
@@ -2080,7 +2038,7 @@ int Chip::place_task(
           if(r.getPlaceCores() > 0)
             cores_to_rsv = r.getPlaceCores();
 
-          place_task_by_cores(execution_slots_per_task, cores_to_rsv, task_alloc);
+          place_tasks_execution_slots(execution_slots_per_task, cores_to_rsv, task_alloc, CORE);
           }
         else if ((chip_alloc.place_type == exclusive_legacy) || 
                  (chip_alloc.place_type == exclusive_legacy2))
@@ -2097,7 +2055,7 @@ int Chip::place_task(
           if(r.getPlaceThreads() > 0)
             threads_to_rsv = r.getPlaceThreads();
 
-          place_task_by_threads(execution_slots_per_task, threads_to_rsv, task_alloc);
+          place_tasks_execution_slots(execution_slots_per_task, threads_to_rsv, task_alloc, THREAD);
           }
 
         allocation remaining(r);
@@ -2344,7 +2302,7 @@ bool Chip::partially_place_task(
 
   if (remaining.cores_only == true)
     {
-    place_task_by_cores(remaining.cpus, max_cpus, chip_alloc);
+    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, CORE);
     chip_alloc.cores_only = true;
     }
   else if ((place_type == exclusive_legacy) || (place_type == exclusive_legacy2))
@@ -2352,7 +2310,7 @@ bool Chip::partially_place_task(
     place_task_for_legacy_threads(remaining.cpus, max_cpus, task_alloc, chip_alloc);
     }
   else
-    place_task_by_threads(remaining.cpus, max_cpus, chip_alloc);
+    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, THREAD);
 
   place_accelerators(remaining, chip_alloc);
   
