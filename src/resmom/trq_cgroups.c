@@ -30,6 +30,7 @@
 #include "complete_req.hpp"
 #include "resource.h" /* struct resource */
 #endif
+#include "mom_config.h"
 
 using namespace std;
 using namespace boost;
@@ -979,6 +980,9 @@ int trq_cg_create_task_cgroups(
   pbs_attribute *pattr; /* for -L req_information request */
   pbs_attribute *pattrL; /* for -L req_information request */
 
+  if (is_login_node == TRUE)
+    return(PBSE_NONE);
+
   // For -l requests we want to make only one cgroup per host
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if ((have_incompatible_dash_l_resource(pattr) == true) ||
@@ -1489,34 +1493,43 @@ int trq_cg_get_cpuset_and_mem(
   {
   int rc = PBSE_NONE;
 
-  if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
-      (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
-    {
-    sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
-
-    return(-1);
-    }
-
-  std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-  std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-
-  // If a job is using resource request syntax 1.0 and has specified that it is node 
-  // exclusive, then just give all of the cpus and memory to the job
-  if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
-      (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
-       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+  // Login nodes don't have a cpuset assignment, but they should just put all of the cpus and memory
+  // controllers in the cgroup
+  if (is_login_node == TRUE)
     {
     add_all_cpus_and_memory(cpuset_string, mem_string);
     }
   else
     {
-    if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+    if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
+        (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+      {
+      sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
+
       return(-1);
-    
-    if (find_range_in_cpuset_string(mems, mem_string) != 0)
-      return(-1);
+      }
+
+    std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+
+    // If a job is using resource request syntax 1.0 and has specified that it is node 
+    // exclusive, then just give all of the cpus and memory to the job
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+      {
+      add_all_cpus_and_memory(cpuset_string, mem_string);
+      }
+    else
+      {
+      if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+        return(-1);
+      
+      if (find_range_in_cpuset_string(mems, mem_string) != 0)
+        return(-1);
+      }
     }
 
   return(rc);

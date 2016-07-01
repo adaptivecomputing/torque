@@ -6229,11 +6229,12 @@ int start_process(
   pbs_attribute *pattr;
   pid_t new_pid = getpid();
 
-  /* make sure we don't have an incompatible -l resource request */
+  // make sure we don't have an incompatible -l resource request and we aren't a login node
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
   if ((have_incompatible_dash_l_resource(pattr) == false) &&
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
-      (pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET))
+      (pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) &&
+      (is_login_node == FALSE))
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */
