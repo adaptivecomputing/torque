@@ -8509,7 +8509,10 @@ static int adoptSession(
 
   errno = 0;
 
-  int rc = get_req_and_task_index_from_local_rank(pjob, local_task_id, req_index, task_index);
+  int rc = PBSE_NO_PROCESS_RANK;
+  
+  if (is_login_node == FALSE)
+    get_req_and_task_index_from_local_rank(pjob, local_task_id, req_index, task_index);
 
   if (rc == PBSE_NONE)
     {
