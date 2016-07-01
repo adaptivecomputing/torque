@@ -38,6 +38,7 @@ START_TEST(test_place_tasks_execution_slots)
   c.place_tasks_execution_slots(2, 8, a, CORE);
   fail_unless(a.cpu_indices.size() == 4);
   fail_unless(a.cpu_place_indices.size() == 12);
+  fail_unless(c.free_core_count() == 0);
 
   Chip               c2;
   c2.setId(0);
@@ -52,6 +53,7 @@ START_TEST(test_place_tasks_execution_slots)
   c2.place_tasks_execution_slots(0, 2, b, THREAD);
   fail_unless(b.cpu_indices.size() == 0);
   fail_unless(b.cpu_place_indices.size() == 2, "size is %u", b.cpu_place_indices.size());
+  fail_unless(c2.free_core_count() == 15, "%d are free", c2.free_core_count());
   }
 END_TEST
 
@@ -644,14 +646,24 @@ START_TEST(test_how_many_tasks_fit)
   tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
 
+  // Make sure we can do fractional fits
+  c.setCores(1);
+  for (int i = 0; i < 1; i++)
+    c.make_core(i);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
+
   c.setCores(2);
+  for (int i = 1; i < 2; i++)
+    c.make_core(i);
   tasks = c.how_many_tasks_fit(r, 0);
-  fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
+  fail_unless(tasks == 1, "%d tasks fit, expected 1", tasks);
 
   // make sure that we can handle a request without memory
   req r2;
   r2.set_value("lprocs", "2", false);
   c.setCores(10);
+  for (int i = 2; i < 10; i++)
+    c.make_core(i);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
 
   // make sure we account for gpus and mics
@@ -661,10 +673,6 @@ START_TEST(test_how_many_tasks_fit)
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
   r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
-
-  // Make sure we can do fractional fits
-  c.setCores(1);
-  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
   }
 END_TEST
 

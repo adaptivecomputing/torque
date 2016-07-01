@@ -925,6 +925,25 @@ void Chip::aggregate_allocation(
 
 
 /*
+ * free_core_count()
+ *
+ * Returns the number of cores that are completely free on this numa node
+ *
+ */
+int Chip::free_core_count() const
+
+  {
+  int free_count = 0;
+  for (size_t i = 0; i < this->cores.size(); i++)
+    if (this->cores[i].is_free())
+      free_count++;
+
+  return(free_count);
+  } // END free_core_count()
+
+
+
+/*
  * how_many_tasks_fit()
  *
  * Determines how many tasks from req r fit on this chip
@@ -960,9 +979,9 @@ float Chip::how_many_tasks_fit(
       max_cpus = r.getPlaceThreads();
 
     if (r.getThreadUsageString() == use_cores)
-      cpu_tasks = this->availableCores / max_cpus;
+      cpu_tasks = this->free_core_count() / max_cpus;
     else if (place_type == exclusive_legacy) // This is a -l resource request
-      cpu_tasks = this->availableCores / max_cpus;
+      cpu_tasks = this->free_core_count() / max_cpus;
     else
       cpu_tasks = this->availableThreads / max_cpus;
 
@@ -1386,12 +1405,12 @@ bool Chip::task_will_fit(
     {
     if (cores_only == true)
       {
-      if (this->availableCores >= max_cpus)
+      if (this->free_core_count() >= max_cpus)
         fits = true;
       }
     else if (r.getPlacementType() == place_legacy)
       {
-      if (this->availableCores >= max_cpus)
+      if (this->free_core_count() >= max_cpus)
         fits = true;
       }
     else
