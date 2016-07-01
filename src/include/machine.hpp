@@ -184,6 +184,7 @@ class Chip
     float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r) const;
+    int  free_core_count() const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
