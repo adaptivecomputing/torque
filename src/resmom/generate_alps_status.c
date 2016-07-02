@@ -920,9 +920,10 @@ void alps_node_info::add_to_status(
   status.push_back(this->physmem);
   status.push_back(this->totmem);
   status.push_back(this->cmem);
+  // ccu should be added before cproc
+  status.push_back(this->ccu);
   status.push_back(this->aproc);
   status.push_back(this->cproc);
-  status.push_back(this->ccu);
   status.push_back(this->name);
   status.push_back(this->arch);
 
