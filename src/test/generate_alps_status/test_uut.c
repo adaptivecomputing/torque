@@ -315,6 +315,38 @@ START_TEST(label_generate_test)
   }
 END_TEST
 
+START_TEST(check_status_attribute_order)
+  {
+  std::vector<std::string> status;
+  int             rc;
+  char           *path = (char *)"../test_scripts/check_order_inventory.sh";
+  char           *protocol = (char *)"1.7";
+  int             index = 0;
+  int             ccu_index = -1;
+  int             cproc_index = -1;
+  
+  rc = generate_alps_status(status, path, protocol);
+
+  fail_unless(rc == 0, "Couldn't generate the status");
+
+  // make sure CCU comes before CPROC in status
+
+  for(std::vector<std::string>::const_iterator i = status.begin(); i != status.end(); ++i)
+    {
+    if (i->substr(0, 4) == "CCU=")
+      ccu_index = index;
+    else if (i->substr(0, 6) == "CPROC=")
+      cproc_index = index;
+
+    index++;
+    }
+
+  fail_unless(ccu_index != -1, "CCU not found in status");
+  fail_unless(cproc_index != -1, "CPROC not found in status");
+  fail_unless(ccu_index < cproc_index, "CCU was not ordered before CPROC in status");
+  }
+END_TEST
+
 Suite *node_func_suite(void)
   {
   Suite *s = suite_create("alps helper suite methods");
@@ -333,8 +365,9 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("full_generate_test");
   tcase_add_test(tc_core, full_generate_test);
   tcase_add_test(tc_core, label_generate_test);
+  tcase_add_test(tc_core, check_status_attribute_order);
   suite_add_tcase(s, tc_core); 
-  
+
   //tc_core = tcase_create("full_generate_test_13");
   //tcase_add_test(tc_core, full_generate_test_13);
   //suite_add_tcase(s, tc_core);
