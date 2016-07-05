@@ -4084,6 +4084,28 @@ int place_subnodes_in_hostlist(
     if (rc != PBSE_NONE)
       return(rc);
 
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
+      {
+      char buf[MAXLINE];
+
+      if (pnode->nd_layout.getTotalThreads() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalThreads() - 1);
+        cpus = buf;
+        }
+      else
+        cpus = "0";
+
+      if (pnode->nd_layout.getTotalChips() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalChips() - 1);
+        mems = buf;
+        }
+      else
+        mems = "0";
+      }
+
     save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cpus, mems);
     save_node_usage(pnode);
 #endif
