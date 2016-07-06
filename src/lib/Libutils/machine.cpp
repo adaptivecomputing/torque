@@ -574,6 +574,11 @@ void Machine::place_remaining(
     allocation task_alloc(master.jobid.c_str());
 
     task_alloc.cores_only = master.cores_only;
+
+    // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
+    // will only use cores.)
+    if (remaining.place_type == exclusive_legacy)
+      remaining.place_type = exclusive_legacy2;
       
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
@@ -605,11 +610,15 @@ void Machine::place_remaining(
     bool fit_somewhere = false;
     allocation remaining(r);
     allocation task_alloc(master.jobid.c_str());
+    
+    // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
+    // will only use cores.)
+    if (remaining.place_type == exclusive_legacy)
+      remaining.place_type = exclusive_legacy2;
 
     /* this is for legacy jobs. */
     if ((master.cpus != 0) &&
-        ((master.place_type == exclusive_legacy2) ||
-         (master.place_type == exclusive_legacy)))
+        (master.place_type == exclusive_legacy2))
       remaining.cpus = master.cpus;
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
