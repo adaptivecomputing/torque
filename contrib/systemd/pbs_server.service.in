@@ -5,7 +5,7 @@ Wants=rsyslog.target
 After=trqauthd.service network.target local-fs.target rsyslog.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
 RemainAfterExit=yes
 

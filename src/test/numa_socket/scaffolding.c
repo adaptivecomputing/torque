@@ -85,6 +85,11 @@ Core::~Core()
   {
   }
 
+int Chip::free_core_count() const
+  {
+  return(6);
+  }
+
 Chip::Chip(int np)
   {
   }
