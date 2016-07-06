@@ -701,6 +701,8 @@ void Machine::place_remaining(
           }
         }
 
+      /* we need to set the req back to its original place_type incase there is another node for this req */
+      r.set_placement_type(place_legacy);
       //r.record_allocation(task_alloc);
       //master.add_allocation(task_alloc);
       }
@@ -1011,32 +1013,27 @@ int Machine::place_job(
     {
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    
-    a.set_place_type(r.getPlacementType());
-    
-    for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
-      {
-      int placed = this->sockets[j].place_task(r, a, remaining_tasks, hostname);
-      if (placed != 0)
-        {
-        remaining_tasks -= placed;
-        
-        if (a.place_type == exclusive_socket)
-          this->availableSockets--;
-        }
-      }
+
+    // This only has to be correct while placing. If it changes later it won't cause problems.
+    job_alloc.set_place_type(r.getPlacementType());
+
+    this->fit_tasks_within_sockets(r, job_alloc, hostname, remaining_tasks);
 
     if (remaining_tasks > 0)
       {
+      // exclusive_legacy will place only using cores. exclusive_legacy2 will use threads. If
+      // we can't place using only cores, then we should try threads before partially placing
+      // the job, as well as during.
+
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
-      place_remaining(r, a, remaining_tasks, hostname);
+      place_remaining(r, job_alloc, remaining_tasks, hostname);
       }
 
     if (remaining_tasks > 0)
       {
-       // this allocation so that the cleanup happens correctly
-        rc = -1;
+      // this allocation so that the cleanup happens correctly
+      rc = -1;
       }
     }
 
