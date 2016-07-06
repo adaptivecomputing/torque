@@ -255,6 +255,7 @@ class Socket
     int getTotalThreads() const;
     int getAvailableChips() const;
     int getAvailableCores() const;
+    int get_free_cores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
     int getid();
@@ -350,6 +351,7 @@ class Machine
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
+    int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
     int  how_many_tasks_can_be_placed(req &r) const;
     void update_internal_counts();
