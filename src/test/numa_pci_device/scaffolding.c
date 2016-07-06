@@ -1,9 +1,11 @@
+#include "pbs_config.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include <hwloc.h>
 #include <machine.hpp>
+#include "nvml.h"
 #endif
 
 #ifdef NVML_API
@@ -29,3 +31,14 @@ void log_err(
   {
   return;
   }
+
+void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id)
+  {
+  return;
+  }
+
+void Machine::store_device_on_appropriate_chip( PCI_Device &device)
+  {
+  return;
+  }
+
