@@ -882,6 +882,32 @@ int Machine::spread_place(
   } // END spread_place()
 
 
+
+int Machine::fit_tasks_within_sockets(
+    
+  req        &r,
+  allocation &job_alloc,
+  const char *hostname,
+  int        &remaining_tasks)
+
+  {
+  for (unsigned int i = 0; i < this->sockets.size() && remaining_tasks > 0; i++)
+    {
+    int placed = this->sockets[i].place_task(r, job_alloc, remaining_tasks, hostname);
+    if (placed != 0)
+      {
+      remaining_tasks -= placed;
+      
+      if (job_alloc.place_type == exclusive_socket)
+        this->availableSockets--;
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END fit_tasks_within_sockets()
+
+
+
 /*
  * place_job()
  *
@@ -906,7 +932,7 @@ int Machine::place_job(
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
   int           num_reqs = cr->req_count();
   vector<int>   partially_place;
-  allocation    a(pjob->ji_qs.ji_jobid);
+  allocation    job_alloc(pjob->ji_qs.ji_jobid);
   vector<req>   to_split;
 
   // See if the tasks fit completely on a socket, and if they do then place them there
@@ -919,32 +945,33 @@ int Machine::place_job(
     if (tasks_for_node == 0)
       continue;
       
-    a.set_place_type(r.getPlacementType());
+    // This only has to be correct while placing. If it changes later it won't cause problems.
+    job_alloc.set_place_type(r.getPlacementType());
 
     if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
       {
-      place_all_execution_slots(r, a, hostname);
+      place_all_execution_slots(r, job_alloc, hostname);
       }
-    else if ((a.place_type == exclusive_node) ||
-             (a.place_type == exclusive_socket) ||
-             (a.place_type == exclusive_chip))
+    else if ((job_alloc.place_type == exclusive_node) ||
+             (job_alloc.place_type == exclusive_socket) ||
+             (job_alloc.place_type == exclusive_chip))
       {
-      if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
+      if ((rc = spread_place(r, job_alloc, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else
       {
       for (unsigned int j = 0; j < this->sockets.size(); j++)
         {
-        if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
+        if (this->sockets[j].how_many_tasks_fit(r, job_alloc.place_type) >= tasks_for_node)
           {
           // place the req entirely on this socket
           placed = true;
-          if (a.place_type == exclusive_socket)
+          if (job_alloc.place_type == exclusive_socket)
             this->availableSockets--;
 
           // Placing 0 tasks is an error
-          if (this->sockets[j].place_task(r, a, tasks_for_node, hostname) == 0)
+          if (this->sockets[j].place_task(r, job_alloc, tasks_for_node, hostname) == 0)
             return(-1);
 
           break;
@@ -966,25 +993,25 @@ int Machine::place_job(
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
     
-    a.set_place_type(r.getPlacementType());
+    // This only has to be correct while placing. If it changes later it won't cause problems.
+    job_alloc.set_place_type(r.getPlacementType());
     
-    for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
-      {
-      int placed = this->sockets[j].place_task(r, a, remaining_tasks, hostname);
-      if (placed != 0)
-        {
-        remaining_tasks -= placed;
-        
-        if (a.place_type == exclusive_socket)
-          this->availableSockets--;
-        }
-      }
+    this->fit_tasks_within_sockets(r, job_alloc, hostname, remaining_tasks);
 
     if (remaining_tasks > 0)
       {
+      // exclusive_legacy will place only using cores. exclusive_legacy2 will use threads. If
+      // we can't place using only cores, then we should try threads before partially placing
+      // the job, as well as during.
+      if (job_alloc.place_type == exclusive_legacy)
+        {
+        job_alloc.place_type = exclusive_legacy2;
+        this->fit_tasks_within_sockets(r, job_alloc, hostname, remaining_tasks);
+        }
+
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
-      place_remaining(r, a, remaining_tasks, hostname);
+      place_remaining(r, job_alloc, remaining_tasks, hostname);
       }
 
     if (remaining_tasks > 0)
@@ -994,10 +1021,10 @@ int Machine::place_job(
       }
     }
 
-  a.place_indices_in_string(mem_string, MEM_INDICES);
-  a.place_indices_in_string(cpu_string, CPU_INDICES);
+  job_alloc.place_indices_in_string(mem_string, MEM_INDICES);
+  job_alloc.place_indices_in_string(cpu_string, CPU_INDICES);
 
-  this->allocations.push_back(a);
+  this->allocations.push_back(job_alloc);
   
   return(rc);
   } // END place_job()

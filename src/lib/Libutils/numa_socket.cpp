@@ -306,6 +306,19 @@ int Socket::getAvailableCores() const
   return(available);
   }
 
+int Socket::get_free_cores() const
+  {
+  int free_cores = 0;
+  
+  if (this->socket_exclusive == false)
+    {
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      free_cores += this->chips[i].free_core_count();
+    }
+
+  return(free_cores);
+  }
+
 int Socket::getAvailableThreads() const
   {
   int available = 0;
@@ -766,6 +779,8 @@ bool Socket::is_completely_free() const
 /*
  * fits_on_socket()
  * Determines if the task identified by remaining can fit completely on this socket
+ * by memory and execution slots
+ *
  * @param remaining - an allocation with the information for whats left for the task
  * @return - true if the allocation will completely fit on this socket, false otherwise
  */
@@ -783,11 +798,11 @@ bool Socket::fits_on_socket(
       max_cpus = remaining.place_cpus;
 
     if ((remaining.cores_only == true) &&
-        (this->getAvailableCores() >= max_cpus))
+        (this->get_free_cores() >= max_cpus))
       fits = true;
     else if (remaining.place_type == exclusive_legacy)
       {
-      if (this->getAvailableCores() >= max_cpus)
+      if (this->get_free_cores() >= max_cpus)
         fits = true;
       }
     else if ((remaining.cores_only == false) &&
