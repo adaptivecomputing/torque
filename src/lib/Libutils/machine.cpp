@@ -620,6 +620,7 @@ void Machine::place_remaining(
     allocation task_alloc(master.jobid.c_str());
 
     task_alloc.cores_only = master.cores_only;
+
       
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
@@ -651,6 +652,10 @@ void Machine::place_remaining(
     bool fit_somewhere = false;
     allocation remaining(r);
     allocation task_alloc(master.jobid.c_str());
+    
+    // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
+    // will only use cores.) if it is set to exclusive_legacy let it get cores first. We will get 
+    // threads later
 
     /* this is for legacy jobs. */
     if ((master.cpus != 0) &&
@@ -676,7 +681,8 @@ void Machine::place_remaining(
 
     /* This piece of code is meant to finish for the legacy -l requests 
        where the number of ppn requested is greater than the number of
-       cores on a node.
+       cores on a node. If we enter this section we used up all of the cores 
+       and now we need to grab threads.
      */
     if ((master.place_type == exclusive_legacy) && (remaining.cpus > 0))
       {
@@ -701,8 +707,8 @@ void Machine::place_remaining(
           }
         }
 
-      //r.record_allocation(task_alloc);
-      //master.add_allocation(task_alloc);
+      /* we need to set the req back to its original place_type incase there is another node for this req */
+      r.set_placement_type(place_legacy);
       }
 
     if (fit_somewhere == false)
