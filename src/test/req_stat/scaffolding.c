@@ -344,3 +344,8 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
 int svr_unresolvednodes = 0;
+
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }

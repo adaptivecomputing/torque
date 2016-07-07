@@ -525,3 +525,8 @@ int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objn
   {
   return(0);
   }
+
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }

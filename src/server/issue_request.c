@@ -762,7 +762,7 @@ int send_request_to_remote_server(
     else
       request->rq_reply.brp_code = tmp_rc;
 
-    request->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    set_reply_type(&request->rq_reply, BATCH_REPLY_CHOICE_NULL);
     }
 
   DIS_tcp_cleanup(chan);

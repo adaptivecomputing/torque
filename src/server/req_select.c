@@ -388,12 +388,12 @@ static void sel_step3(
 
   if (preq->rq_type == PBS_BATCH_SelectJobs)
     {
-    preply->brp_choice = BATCH_REPLY_CHOICE_Select;
+    set_reply_type(preply, BATCH_REPLY_CHOICE_Select);
     preply->brp_un.brp_select = (struct brp_select *)0;
     }
   else
     {
-    preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+    set_reply_type(preply, BATCH_REPLY_CHOICE_Status);
     CLEAR_HEAD(preply->brp_un.brp_status);
     }
 

@@ -466,3 +466,8 @@ int reservation_holder::remove_alps_reservation(
   {
   return(PBSE_NONE);
   }
+
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }
