@@ -224,6 +224,94 @@ int reply_send_mom(
 
 
 
+/*
+ * reply_free 
+ * Free any sub-structures that might hang from the basic batch_reply structure. 
+ * NOTE: the reply structure itself IS NOT FREED.
+ *
+ * @param prep - the batch_reply whose sub-structures we are conditionally freeing.
+ */
+
+void reply_free(
+
+  struct batch_reply *prep)
+
+  {
+  struct brp_status  *pstat;
+  struct brp_status  *pstatx;
+  struct brp_select  *psel;
+  struct brp_select  *pselx;
+
+  if (prep->brp_choice == BATCH_REPLY_CHOICE_Text)
+    {
+    if (prep->brp_un.brp_txt.brp_str)
+      {
+      free(prep->brp_un.brp_txt.brp_str);
+      prep->brp_un.brp_txt.brp_str = NULL;
+      prep->brp_un.brp_txt.brp_txtlen = 0;
+      }
+
+    }
+  else if (prep->brp_choice == BATCH_REPLY_CHOICE_Select)
+    {
+    psel = prep->brp_un.brp_select;
+
+    while (psel)
+      {
+      pselx = psel->brp_next;
+      free(psel);
+      psel = pselx;
+      }
+
+    }
+  else if (prep->brp_choice == BATCH_REPLY_CHOICE_Status)
+    {
+    pstat = (struct brp_status *)GET_NEXT(prep->brp_un.brp_status);
+
+    while (pstat)
+      {
+      pstatx = (struct brp_status *)GET_NEXT(pstat->brp_stlink);
+      free_attrlist(&pstat->brp_attr);
+      free(pstat);
+      pstat = pstatx;
+      }
+    }
+  else if (prep->brp_choice == BATCH_REPLY_CHOICE_RescQuery)
+    {
+    free(prep->brp_un.brp_rescq.brq_avail);
+    free(prep->brp_un.brp_rescq.brq_alloc);
+    free(prep->brp_un.brp_rescq.brq_resvd);
+    free(prep->brp_un.brp_rescq.brq_down);
+    }
+
+  prep->brp_choice = BATCH_REPLY_CHOICE_NULL;
+
+  return;
+  }  /* END reply_free() */
+
+
+
+/*
+ * set_reply_type()
+ *
+ * Sets the batch reply type, freeing any old things as needed
+ * @param prep - the batch reply we're setting
+ * @param type - the type of reply we're making
+ */
+
+void set_reply_type(
+
+  struct batch_reply *prep,
+  int                 type)
+
+  {
+  // Make sure we don't lose any pointers when we do this
+  if (prep->brp_choice != BATCH_REPLY_CHOICE_NULL)
+    reply_free(prep);
+
+  prep->brp_choice = type;
+  } // END set_reply_type()
+
 
 
 /*
@@ -237,80 +325,11 @@ void reply_ack(
   struct batch_request *preq)
 
   {
-
+  set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
   preq->rq_reply.brp_code    = PBSE_NONE;
   preq->rq_reply.brp_auxcode = 0;
-  preq->rq_reply.brp_choice  = BATCH_REPLY_CHOICE_NULL;
   reply_send(preq);
-  }
-
-/*
- * reply_free - free any sub-struttures that might hang from the basic
- * batch_reply structure, the reply structure itself IS NOT FREED.
- */
-
-void reply_free(
-
-  struct batch_reply *prep)
-
-  {
-
-  struct brp_status  *pstat;
-
-  struct brp_status  *pstatx;
-
-  struct brp_select  *psel;
-
-  struct brp_select  *pselx;
-
-  if (prep->brp_choice == BATCH_REPLY_CHOICE_Text)
-    {
-    if (prep->brp_un.brp_txt.brp_str)
-      {
-      (void)free(prep->brp_un.brp_txt.brp_str);
-      prep->brp_un.brp_txt.brp_str = NULL;
-      prep->brp_un.brp_txt.brp_txtlen = 0;
-      }
-
-    }
-  else if (prep->brp_choice == BATCH_REPLY_CHOICE_Select)
-    {
-    psel = prep->brp_un.brp_select;
-
-    while (psel)
-      {
-      pselx = psel->brp_next;
-      (void)free(psel);
-      psel = pselx;
-      }
-
-    }
-  else if (prep->brp_choice == BATCH_REPLY_CHOICE_Status)
-    {
-    pstat = (struct brp_status *)GET_NEXT(prep->brp_un.brp_status);
-
-    while (pstat)
-      {
-      pstatx = (struct brp_status *)GET_NEXT(pstat->brp_stlink);
-      free_attrlist(&pstat->brp_attr);
-      (void)free(pstat);
-      pstat = pstatx;
-      }
-    }
-  else if (prep->brp_choice == BATCH_REPLY_CHOICE_RescQuery)
-    {
-    (void)free(prep->brp_un.brp_rescq.brq_avail);
-    (void)free(prep->brp_un.brp_rescq.brq_alloc);
-    (void)free(prep->brp_un.brp_rescq.brq_resvd);
-    (void)free(prep->brp_un.brp_rescq.brq_down);
-    }
-
-  prep->brp_choice = BATCH_REPLY_CHOICE_NULL;
-
-  return;
-  }  /* END reply_free() */
-
-
+  } // END reply_ack()
 
 
 
@@ -432,27 +451,20 @@ void reply_text(
   const char    *text) /* I */
 
   {
-  if (preq->rq_reply.brp_choice != BATCH_REPLY_CHOICE_NULL)
+  if ((text != NULL) &&
+      (text[0] != '\0'))
     {
-    /* in case another reply was being built up, clean it out */
-
-    reply_free(&preq->rq_reply);
-    }
-
-  preq->rq_reply.brp_code    = code;
-
-  preq->rq_reply.brp_auxcode = 0;
-
-  if ((text != NULL) && (text[0] != '\0'))
-    {
-    preq->rq_reply.brp_choice                = BATCH_REPLY_CHOICE_Text;
+    set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_Text);
     preq->rq_reply.brp_un.brp_txt.brp_str    = strdup(text);
     preq->rq_reply.brp_un.brp_txt.brp_txtlen = strlen(text);
     }
   else
     {
-    preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+    set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
     }
+
+  preq->rq_reply.brp_code    = code;
+  preq->rq_reply.brp_auxcode = 0;
 
   reply_send(preq);
 
@@ -476,9 +488,9 @@ int reply_jobid(
   int    which)
 
   {
+  set_reply_type(&preq->rq_reply, which);
   preq->rq_reply.brp_code    = 0;
   preq->rq_reply.brp_auxcode = 0;
-  preq->rq_reply.brp_choice  = which;
 
   snprintf(preq->rq_reply.brp_un.brp_jid, sizeof(preq->rq_reply.brp_un.brp_jid), "%s", jobid);
 

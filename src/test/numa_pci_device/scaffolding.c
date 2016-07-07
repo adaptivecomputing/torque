@@ -5,7 +5,6 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include <hwloc.h>
 #include <machine.hpp>
-#include "nvml.h"
 #endif
 
 #ifdef NVML_API
@@ -32,10 +31,12 @@ void log_err(
   return;
   }
 
+#ifdef NVML_API
 void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id)
   {
   return;
   }
+#endif
 
 void Machine::store_device_on_appropriate_chip( PCI_Device &device)
   {

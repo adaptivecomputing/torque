@@ -43,3 +43,8 @@ mutex_mgr::mutex_mgr(pthread_mutex_t *m, bool lock)
 
 mutex_mgr::~mutex_mgr() {}
 
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }
+
