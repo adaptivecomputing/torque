@@ -575,10 +575,6 @@ void Machine::place_remaining(
 
     task_alloc.cores_only = master.cores_only;
 
-    // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
-    // will only use cores.)
-    if (remaining.place_type == exclusive_legacy)
-      remaining.place_type = exclusive_legacy2;
       
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
@@ -612,9 +608,8 @@ void Machine::place_remaining(
     allocation task_alloc(master.jobid.c_str());
     
     // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
-    // will only use cores.)
-    if (remaining.place_type == exclusive_legacy)
-      remaining.place_type = exclusive_legacy2;
+    // will only use cores.) if it is set to exclusive_legacy let it get cores first. We will get 
+    // threads later
 
     /* this is for legacy jobs. */
     if ((master.cpus != 0) &&
@@ -639,7 +634,8 @@ void Machine::place_remaining(
 
     /* This piece of code is meant to finish for the legacy -l requests 
        where the number of ppn requested is greater than the number of
-       cores on a node.
+       cores on a node. If we enter this section we used up all of the cores 
+       and now we need to grab threads.
      */
     if ((master.place_type == exclusive_legacy) && (remaining.cpus > 0))
       {
@@ -666,8 +662,6 @@ void Machine::place_remaining(
 
       /* we need to set the req back to its original place_type incase there is another node for this req */
       r.set_placement_type(place_legacy);
-      //r.record_allocation(task_alloc);
-      //master.add_allocation(task_alloc);
       }
 
     if (fit_somewhere == false)
@@ -1014,7 +1008,6 @@ int Machine::place_job(
       // exclusive_legacy will place only using cores. exclusive_legacy2 will use threads. If
       // we can't place using only cores, then we should try threads before partially placing
       // the job, as well as during.
-
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
       place_remaining(r, job_alloc, remaining_tasks, hostname);

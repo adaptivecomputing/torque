@@ -95,8 +95,8 @@ const int exclusive_socket = 2;
 const int exclusive_chip   = 3;
 const int exclusive_core   = 4;
 const int exclusive_thread = 5;
-const int exclusive_legacy = 6;
-const int exclusive_legacy2 = 7;
+const int exclusive_legacy = 6; /* for the -l resource request. Direct pbs_server to allocate cores only */
+const int exclusive_legacy2 = 7; /* for the -l resource request. Direct pbs_server to allocate cores and threads */
 
 allocation::allocation(
 
