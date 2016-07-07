@@ -84,7 +84,7 @@ qsub \- submit pbs job
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
 [\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
-[\-l resource_list] [\-m mail_options] [\-M user_list] [\-n node exclusive] [\-N name] 
+[\-l resource_list] [\-m mail_options] [\-M user_list] [\-n node_exclusive] [\-N name] 
 [\-o path] [\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
 [\-S path_list] [\-t array_request] [\-T prologue/epilogue script_name] 
 [\-u user_list] [\-v variable_list] [\-V] [\-w] path 
@@ -576,10 +576,15 @@ The
 .At Mail_Users
 attribute is set to the argument.
 .Ig
-.IP "\-n" 8
-Specifies that the job has exclusive access to the nodes it is executing on. This is intended to be used in
-conjunction with a scheduler that enforces exclusive access, and it tells the cpuset to give the job access
-to all of that node's resources.
+.IP "\-n node_exclusive" 8
+
+Allows a user to specify an exclusive-node access/allocation request for the job. This will set node_exclusive = True in the output of qstat -f <job ID>. By default, this only applies for cpusets, and only for compatible schedulers.
+
+For systems that use Moab and have cgroups enabled, the recommended manner for assigning all cores is to use NUMA syntax: "-L tasks=<count>:lprocs=all:place=node". 
+
+With cgroups, the ("-l") syntax (lowercase L) will, by default, restrict to the number of cores requested, or to the resources_default.procs value (i.e., 1 core, typically). In order to override this behavior and have Moab assign all the cores on a node while using "-l...singlejob" and/or "-n" (in other words, without "-L ...lprocs=all..."), you must also set RMCFG[<torque>] FLAGS=MigrateAllJobAttributes in moab.cfg.
+
+
 .IP "\-N name " 8
 Declares a name for the job.
 The name specified may be up to and including 15 characters in length.

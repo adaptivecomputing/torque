@@ -183,7 +183,7 @@ class Chip
     void setChipAvailable(bool available);
     float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
-    bool task_will_fit(const req &r) const;
+    bool task_will_fit(const req &r, int place_type) const;
     int  free_core_count() const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
@@ -255,6 +255,7 @@ class Socket
     int getTotalThreads() const;
     int getAvailableChips() const;
     int getAvailableCores() const;
+    int get_free_cores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
     int getid();
@@ -350,6 +351,7 @@ class Machine
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
+    int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
     int  how_many_tasks_can_be_placed(req &r) const;
     void update_internal_counts();

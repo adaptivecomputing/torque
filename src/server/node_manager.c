@@ -4085,7 +4085,9 @@ int place_subnodes_in_hostlist(
       return(rc);
 
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
       {
       char buf[MAXLINE];
 
