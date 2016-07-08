@@ -158,9 +158,9 @@ int req_locatejob(
 
   if (location != NULL)
     {
+    set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_Locate);
     preq->rq_reply.brp_code = 0;
     preq->rq_reply.brp_auxcode = 0;
-    preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_Locate;
     snprintf(preq->rq_reply.brp_un.brp_locate, sizeof(preq->rq_reply.brp_un.brp_locate), "%s", location);
 
     reply_send_svr(preq);

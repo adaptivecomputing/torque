@@ -145,6 +145,27 @@ int  decode_complete_req(
       return(PBSE_BAD_PARAMETER);
       }
 
+    /* See if we set memory and swap and if we did memory must be less or equal  than swap */
+    for (int i = 0; i < cr->req_count(); i++)
+      {
+      unsigned long long mem;
+      unsigned long long swap;
+      req &r = cr->get_req(i);
+
+      mem = r.getMemory();
+      swap = r.getSwap();
+
+      if (swap != 0)
+        {
+        if (swap < mem)
+          {
+          delete cr;
+          return(PBSE_BAD_PARAMETER);
+          }
+        }
+      }
+
+
     free_complete_req(patr);
 
     patr->at_val.at_ptr = cr;
@@ -191,6 +212,27 @@ int  decode_complete_req(
       free_complete_req(patr);
       return(PBSE_BAD_PARAMETER);
       }
+
+    /* See if we set memory and swap and if we did memory must be less or equal  than swap */
+    for (int i = 0; i < cr->req_count(); i++)
+      {
+      unsigned long long mem;
+      unsigned long long swap;
+      req &r = cr->get_req(i);
+
+      mem = r.getMemory();
+      swap = r.getSwap();
+
+      if (swap != 0)
+        {
+        if (swap < mem)
+          {
+          delete cr;
+          return(PBSE_BAD_PARAMETER);
+          }
+        }
+      }
+
 
     patr->at_flags |= ATR_VFLAG_SET;
     return(rc);
