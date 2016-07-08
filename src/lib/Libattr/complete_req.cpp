@@ -146,7 +146,10 @@ complete_req::complete_req(
     
     req r;
     if (task_count != 0)
+      {
       r.set_task_count(task_count);
+      r.set_placement_type(place_legacy);
+      }
 
 
     r.set_memory(mem);
