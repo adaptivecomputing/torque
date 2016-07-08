@@ -701,8 +701,9 @@ void Machine::place_remaining(
           }
         }
 
-      //r.record_allocation(task_alloc);
-      //master.add_allocation(task_alloc);
+      /* we need to set the req back to its original place_type incase there is another node for this req */
+      r.set_placement_type(place_legacy);
+      master.set_place_type(place_legacy);
       }
 
     if (fit_somewhere == false)
