@@ -1387,7 +1387,8 @@ void Chip::place_task_for_legacy_threads(
 
 bool Chip::task_will_fit(
 
-  const req &r) const
+  const req &r,
+  int        place_type) const
 
   {
   bool           fits = false;
@@ -1411,7 +1412,7 @@ bool Chip::task_will_fit(
       if (this->free_core_count() >= max_cpus)
         fits = true;
       }
-    else if (r.getPlacementType() == place_legacy)
+    else if (place_type == exclusive_legacy)
       {
       if (this->free_core_count() >= max_cpus)
         fits = true;
@@ -2041,7 +2042,7 @@ int Chip::place_task(
 
       for (; tasks_placed < to_place; tasks_placed++)
         {
-        if (task_will_fit(r) == false)
+        if (task_will_fit(r, master.place_type) == false)
           break;
 
         allocation task_alloc(master.jobid.c_str());

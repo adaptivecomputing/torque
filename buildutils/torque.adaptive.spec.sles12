@@ -1,10 +1,10 @@
 # since this spec file is 'pristine' (not requiring the use of configure, etc),
 # it uses macros defined by the user to build correctly.
 # Example of suggested build command:
-#   rpmbuild -ba --define "version 4.2.0" --define "release_number 48"
+#   rpmbuild -ba --define "version 4.2.0" --define "release 48"
 
 %{!?version:%{error:%%version not defined.}}
-%{!?release_number:%{error:%%release_number not defined.}}
+%{!?release:%{error:%%release not defined.}}
 
 # Autoconf variables
 # These are set in /usr/lib/rpm/macros, but are explicitly defined here
@@ -404,7 +404,7 @@
 
 Name:           %{name}
 Version:        %{version}
-Release:        %{release_number}
+Release:        %{release}
 Summary:        Tera-scale Open-source Resource and QUEue manager
 License:        OpenPBS License (ASF-like)
 URL:            http://www.adaptivecomputing.com/products/open-source/torque/

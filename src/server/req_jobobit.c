@@ -1033,8 +1033,8 @@ int handle_returnstd(
 
           IsFaked = 1;
 
+          set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
           preq->rq_reply.brp_code   = PBSE_MOMREJECT;
-          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
           preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
           }
         }
@@ -1196,8 +1196,8 @@ int handle_stageout(
 
           /* set up as if mom returned error */      
           IsFaked = 1;
+          set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
           preq->rq_reply.brp_code   = PBSE_MOMREJECT;
-          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
           preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
           }
         }
@@ -1441,8 +1441,8 @@ int handle_stagedel(
           IsFaked = 1;
 
           /* set up as if mom returned error since the issue_Drequest failed */
+          set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
           preq->rq_reply.brp_code = PBSE_MOMREJECT;
-          preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
           }
         }
       }
@@ -2451,10 +2451,8 @@ void on_job_rerun(
             /* set up as if mom returned error */
             IsFaked = 1;
             
+            set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_NULL);
             preq->rq_reply.brp_code = PBSE_MOMREJECT;
-            
-            preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-            
             preq->rq_reply.brp_un.brp_txt.brp_txtlen = 0;
             
             /* we will "fall" into the post reply side */
