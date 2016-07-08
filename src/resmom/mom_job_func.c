@@ -222,6 +222,7 @@ task::~task()
     {
     close_conn(this->ti_chan->sock, FALSE);
     DIS_tcp_cleanup(this->ti_chan);
+    this->ti_chan = NULL;
     }
   } // END task destructor
 
@@ -264,9 +265,12 @@ int remtree(
     {
 
     if (errno != ENOENT)
+      {
       log_err(errno, __func__, (char *)"stat");
-
-    return(-1);
+      return(-1);
+      }
+    else
+      return(PBSE_NONE);
     }
 
   if (S_ISDIR(sb.st_mode))
@@ -560,8 +564,13 @@ void mom_job_free(
   nodes_free(pj);
 
   // Delete each remaining task
-  for (unsigned int i = 0; i < pj->ji_tasks->size(); i++)
-    delete pj->ji_tasks->at(i);
+  for (std::vector<task *>::iterator it = pj->ji_tasks->begin(); it != pj->ji_tasks->end(); it++)
+    {
+    task *ptask = *it;
+    if (ptask->ti_chan_reused == TRUE)
+      ptask->ti_chan = NULL;
+    delete ptask;
+    }
 
   delete pj->ji_tasks;
 
@@ -573,6 +582,9 @@ void mom_job_free(
 
   delete pj->ji_job_pid_set;
   delete pj->ji_sigtermed_processes;
+
+  if (pj->ji_usages != NULL)
+    delete pj->ji_usages;
 
   /* now free the main structure */
   free(pj);

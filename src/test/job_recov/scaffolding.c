@@ -42,6 +42,7 @@ char *path_jobinfo_log;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 threadpool_t    *task_pool;
+bool ghost_array_recovery = false;
 
 completed_jobs_map_class completed_jobs_map;
 
@@ -149,7 +150,7 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reser
 
 char *get_variable(job *pjob, const char *variable)
   {
-  return(NULL);
+  return(strdup("napali"));
   }
 
 int safe_strncat(
@@ -437,3 +438,40 @@ int node_avail_complex(
   return(0);
   }
 
+int lock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  const char *msg,
+  int        logging)
+
+  {
+  return(0);
+  }
+
+int insert_array(
+
+  job_array *pa)
+
+  {
+  return(0);
+  }
+
+void clear_attr(
+
+  pbs_attribute *pattr, /* O */
+  attribute_def *pdef)  /* I */
+
+  {
+  memset(pattr, 0, sizeof(pbs_attribute));
+
+  pattr->at_type = pdef->at_type;
+
+  if ((pattr->at_type == ATR_TYPE_RESC) ||
+      (pattr->at_type == ATR_TYPE_LIST))
+    {
+    CLEAR_HEAD(pattr->at_val.at_list);
+    }
+
+  return;
+  }  /*END clear_attr() */

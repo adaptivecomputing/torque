@@ -29,6 +29,8 @@ extern attribute_def job_attr_def[];
 extern std::string set_resource;
 
 extern bool possible;
+extern bool get_jobs_queue_force_null;
+extern std::string global_log_buf;
 
 void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value)
   {
@@ -220,6 +222,13 @@ START_TEST(svr_dequejob_test)
 
   j.ji_qs.ji_state = JOB_STATE_RUNNING;
   fail_unless(svr_dequejob(&j, 0) == PBSE_BADSTATE);
+
+  // confirm expected error message
+  j.ji_is_array_template = TRUE;
+  strcpy(j.ji_qs.ji_jobid, "999.foo");
+  get_jobs_queue_force_null = true;
+  fail_unless(svr_dequejob(&j, 0) == PBSE_JOB_NOT_IN_QUEUE);
+  fail_unless(strcmp(global_log_buf.c_str(), "Job 999.foo has no queue") == 0);
   }
 END_TEST
 
@@ -248,6 +257,7 @@ START_TEST(svr_setjobstate_test)
   result = svr_setjobstate(&test_job, 1, 2, 3);
   fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
 
+  get_jobs_queue_force_null = false;
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);

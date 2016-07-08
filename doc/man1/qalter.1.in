@@ -600,9 +600,9 @@ An optional slot limit can be specified to limit the amount of jobs that can run
 must be the last thing specified in the array_request and is delimited from the
 array by a percent sign (%).
 .IP
-qalter weatherSimulationArray[] -t %20
+qalter 15.napali[] -t %20
 .IP
-Here, the array weatherSimulationArray[] is configured to allow a maximum of 20
+Here, the array 15.napali[] is configured to allow a maximum of 20
 concurrently running jobs.
 .IP
 Note: Slot limits can be applied at job submit time with qsub, or can be set in

@@ -3089,8 +3089,8 @@ static int sys_copy(
   int   conn)    /* I */
 
   {
-  char *ag0;
-  char *ag1;
+  const char *ag0;
+  const char *ag1;
   int i;
   int loop;
   int rc;
@@ -3103,8 +3103,8 @@ static int sys_copy(
     {
     /* local copy */
 
-    ag0 = (char *)"/bin/cp";
-    ag1 = (char *)"-rp";
+    ag0 = "/bin/cp";
+    ag1 = "-rp";
     }
   else
     {

@@ -159,6 +159,7 @@ class Chip
     void initialize_cores_from_strings(std::string &cores, std::string &threads);
     void initialize_accelerators_from_strings(std::string &gpus, std::string &mics);
     bool chipIsAvailable() const;
+    bool is_completely_free() const;
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
@@ -182,21 +183,23 @@ class Chip
     void setChipAvailable(bool available);
     float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
-    bool task_will_fit(const req &r) const;
+    bool task_will_fit(const req &r, int place_type) const;
+    int  free_core_count() const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
-    void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
-    void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void place_tasks_execution_slots(int to_bind, int to_place, allocation &a, int type);
     void place_task_for_legacy_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void uncount_allocation(int index);
     bool free_task(const char *jobid);
+    void remove_last_allocation(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
     void set_cpuset(const char *cpuset); // used for unit tests
-    void partially_place_task(allocation &remaining, allocation &master);
+    bool partially_place_task(allocation &remaining, allocation &master);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
     bool cpusets_overlap(const std::string &other) const;
     void place_accelerators(allocation &remaining, allocation &a);
@@ -252,10 +255,12 @@ class Socket
     int getTotalThreads() const;
     int getAvailableChips() const;
     int getAvailableCores() const;
+    int get_free_cores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
     int getid();
-    hwloc_uint64_t getMemory();
+    hwloc_uint64_t getMemory() const;
+    hwloc_uint64_t get_memory_for_completely_free_chips(unsigned long diff, int &count) const;
     int initializeAMDSocket(hwloc_obj_t, hwloc_topology_t);
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
@@ -270,6 +275,7 @@ class Socket
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;
+    bool is_completely_free() const;
     bool fits_on_socket(const allocation &remaining) const;
     bool partially_place(allocation &remaining, allocation &a);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
@@ -345,6 +351,7 @@ class Machine
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
+    int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
     int  how_many_tasks_can_be_placed(req &r) const;
     void update_internal_counts();

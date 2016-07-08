@@ -346,7 +346,14 @@ void translate_range_string_to_vector(
 
   while (*ptr != '\0')
     {
+    char *old_ptr = ptr;
     prev = strtol(ptr, &ptr, 10);
+
+    if (ptr == old_ptr)
+      {
+      // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      break;
+      }
     
     if (*ptr == '-')
       {
@@ -369,12 +376,9 @@ void translate_range_string_to_vector(
       indices.push_back(prev);
 
       while ((*ptr == ',') ||
-          (is_whitespace(*ptr)))
+             (is_whitespace(*ptr)))
         ptr++;
       }
-
-    if (str == ptr)
-      break;
     }
 
   free(str);
@@ -407,6 +411,11 @@ void capture_until_close_character(
     storage = val;
     storage.erase(ptr - val);
     *start = ptr + 1; // add 1 to move past the character
+    }
+  else
+    {
+    // Make sure we aren't returning stale values
+    storage.clear();
     }
   } // capture_until_close_character()
 
@@ -512,15 +521,15 @@ bool task_hosts_match(
 
 bool have_incompatible_dash_l_resource(
 
-  job *pjob)
+  pbs_attribute *pattr)
 
   {
   resource *presl; /* for -l resource request */
   bool      found_incompatible_resource = false;
 
-  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+  if (pattr->at_flags & ATR_VFLAG_SET)
     {
-    presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    presl = (resource *)GET_NEXT(pattr->at_val.at_list);
 
     while ((presl != NULL) &&
            (found_incompatible_resource == false))

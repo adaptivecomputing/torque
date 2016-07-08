@@ -1,17 +1,20 @@
 [Unit]
 Description=TORQUE pbs_server daemon
 Requires=trqauthd.service network.target local-fs.target
-Wants=syslog.target
-After=trqauthd.service network.target local-fs.target syslog.target
+Wants=rsyslog.target
+After=trqauthd.service network.target local-fs.target rsyslog.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
+RemainAfterExit=yes
 
-# Do not set PIDFile via enviroment PBS_HOME
-# better to change to PIDFile=/var/run/%i.pid
-# and cleanup all code that relies on the current location of the PIDFile
-PIDFile=@PBS_HOME@/server_priv/server.lock
+# Let systemd guess the pid.
+#
+# PIDFile should not be set to PBS_HOME/server_priv/server.lock
+# since it holds the pid of pbs_server on the active server (not the necessarily
+# the local one) in an HA configuration.
+GuessMainPID=yes
 
 # There is also no way to test PBS_SERVERDB as was done in the sysvinit
 # because the location can be changed via PBS_HOME enviroment.
@@ -26,7 +29,14 @@ Environment=PBS_ARGS=
 EnvironmentFile=-/etc/sysconfig/pbs_server
 
 ExecStart=@sbindir@/pbs_server -d $PBS_HOME $PBS_ARGS
-ExecStop=@bindir@/qterm
+
+# Define kill parameters for shutdown.
+#
+# The server should be shutdown with a SIGTERM rather than using qterm
+# (which will shutdown the active server in an HA configuration).
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

@@ -282,6 +282,7 @@ int qdel_main(
     {
     int connect;
     int stat;
+    id_list.clear();
 
     /* check to see if user specified 'all' to delete all jobs */
 

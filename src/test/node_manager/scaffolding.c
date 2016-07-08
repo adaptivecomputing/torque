@@ -974,6 +974,17 @@ int Machine::place_job(
   return(0);
   }
 
+int Machine::getTotalThreads() const
+ {
+ return(0);
+ }
+
+
+int Machine::getTotalChips() const
+ {
+ return(0);
+ }
+
 int Machine::how_many_tasks_can_be_placed(req &r) const
   {
   return(can_place);
@@ -1048,3 +1059,7 @@ bool internal_job_id_exists(int internal_job_id)
     return(false);
   }
 
+bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
+  {
+  return(true);
+  }

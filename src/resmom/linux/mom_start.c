@@ -398,6 +398,7 @@ void scan_for_terminated(void) /* linux */
 
     if (pid == pjob->ji_momsubt)
       {
+      int (*old_postfunc)(struct job *pjob, int exitcode) = pjob->ji_mompost;
       /* PID matches job mom subtask */
 
       /* NOTE:  both ji_momsubt and ji_mompost normally set in routine
@@ -407,9 +408,9 @@ void scan_for_terminated(void) /* linux */
         {
         if (pjob->ji_mompost(pjob, exiteval) == 0)
           {
-          /* success */
-
-          pjob->ji_mompost = NULL;
+          // success - delete old post function if it hasn't been updated
+          if (pjob->ji_mompost == old_postfunc)
+            pjob->ji_mompost = NULL;
           }
 
         }  /* END if (pjob->ji_mompost != NULL) */
@@ -422,9 +423,9 @@ void scan_for_terminated(void) /* linux */
           "Job has no postprocessing routine registered");
         }
 
-      /* clear mom sub-task */
-
-      pjob->ji_momsubt = 0;
+      // clear mom sub-task if it hasn't been updated
+      if (pid == pjob->ji_momsubt)
+        pjob->ji_momsubt = 0;
 
       if (multi_mom)
         {

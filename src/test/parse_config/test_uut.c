@@ -9,6 +9,7 @@
 extern int encode_used_ctr;
 extern int encode_flagged_attrs_ctr;
 extern int MOMCudaVisibleDevices;
+extern struct config *config_array;
 
 void add_job_status_information(job &pjob, std::stringstream &list);
 u_long setcudavisibledevices(const char *value);
@@ -74,6 +75,25 @@ START_TEST(test_setjobstarterprivileged)
 END_TEST
 
 
+START_TEST(test_reqgres)
+  {
+
+  // allocate array
+  fail_unless((config_array = (struct config *)calloc(2, sizeof(struct config))) != NULL);
+
+  // basic test
+  fail_unless(strcmp(reqgres(NULL), "") == 0);
+
+  // fill in array
+  config_array[0].c_name = strdup("somegres");
+  config_array[0].c_u.c_value = strdup("somestuff");
+  fail_unless(strcmp(reqgres(NULL), "somegres:somestuff") == 0);
+
+  config_array[0].c_u.c_value = strdup("!fakeshellescape");
+  fail_unless(strcmp(reqgres(NULL), "somegres:scriptoutput") == 0);
+  }
+END_TEST
+
 Suite *parse_config_suite(void)
   {
   Suite *s = suite_create("parse_config test suite methods");
@@ -87,6 +107,10 @@ Suite *parse_config_suite(void)
   
   tc_core = tcase_create("test_setjobstarterprivileged");
   tcase_add_test(tc_core, test_setjobstarterprivileged);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_reqgres");
+  tcase_add_test(tc_core, test_reqgres);
   suite_add_tcase(s, tc_core);
   
   return(s);

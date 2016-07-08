@@ -30,6 +30,7 @@
 #include "complete_req.hpp"
 #include "resource.h" /* struct resource */
 #endif
+#include "mom_config.h"
 
 using namespace std;
 using namespace boost;
@@ -976,10 +977,15 @@ int trq_cg_create_task_cgroups(
   {
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr; /* for -L req_information request */
   pbs_attribute *pattrL; /* for -L req_information request */
 
+  if (is_login_node == TRUE)
+    return(PBSE_NONE);
+
   // For -l requests we want to make only one cgroup per host
-  if ((have_incompatible_dash_l_resource(pjob) == true) ||
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
       ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     return(PBSE_NONE);
@@ -997,10 +1003,13 @@ int trq_cg_create_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattrL->at_val.at_ptr;
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1026,7 +1035,7 @@ int trq_cg_create_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1276,6 +1285,17 @@ int trq_cg_populate_task_cgroups(
   char          *job_id = pjob->ji_qs.ji_jobid;
   pbs_attribute *pattr;
 
+  // For -l requests we want to make only one cgroup per host
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+    {
+    /* this is not a -L request or there are incompatible
+       -l resources requested */
+    return(PBSE_NONE);
+    }
+
   /* See if the JOB_ATR_req_information is set. If not
      This was not a -L request */
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1285,15 +1305,6 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  // For -l requests we want to make only one cgroup per host
-  if ((have_incompatible_dash_l_resource(pjob) == true) ||
-      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
-      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
-    {
-    /* this is not a -L request or there are incompatible
-       -l resources requested */
-    return(PBSE_NONE);
-    }
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -1301,11 +1312,13 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-  
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1328,7 +1341,7 @@ int trq_cg_populate_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1480,34 +1493,43 @@ int trq_cg_get_cpuset_and_mem(
   {
   int rc = PBSE_NONE;
 
-  if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
-      (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
-    {
-    sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
-
-    return(-1);
-    }
-
-  std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-  std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-
-  // If a job is using resource request syntax 1.0 and has specified that it is node 
-  // exclusive, then just give all of the cpus and memory to the job
-  if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
-      (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
-       (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+  // Login nodes don't have a cpuset assignment, but they should just put all of the cpus and memory
+  // controllers in the cgroup
+  if (is_login_node == TRUE)
     {
     add_all_cpus_and_memory(cpuset_string, mem_string);
     }
   else
     {
-    if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+    if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
+        (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+      {
+      sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
+
       return(-1);
-    
-    if (find_range_in_cpuset_string(mems, mem_string) != 0)
-      return(-1);
+      }
+
+    std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+
+    // If a job is using resource request syntax 1.0 and has specified that it is node 
+    // exclusive, then just give all of the cpus and memory to the job
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+      {
+      add_all_cpus_and_memory(cpuset_string, mem_string);
+      }
+    else
+      {
+      if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+        return(-1);
+      
+      if (find_range_in_cpuset_string(mems, mem_string) != 0)
+        return(-1);
+      }
     }
 
   return(rc);

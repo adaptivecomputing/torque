@@ -600,5 +600,68 @@ int init_torque_cgroups()
   return(PBSE_NONE);
   }
 
+int trq_cg_add_process_to_all_cgroups(
+
+  const char *job_id,
+  pid_t       job_pid)
+
+  {
+  return(PBSE_NONE);
+  }
+
+string cg_memory_path;
+string cg_cpuacct_path;
+string cg_cpuset_path;
+string cg_devices_path;
+
+int trq_cg_add_process_to_task_cgroup(
+
+  string     &cgroup_path, 
+  const char *job_id, 
+  const unsigned int req_index,
+  const unsigned int task_index,
+  pid_t       new_pid)
+
+  {
+  return(PBSE_NONE);
+  }
+
+complete_req::complete_req() {}
+
+int complete_req::get_req_and_task_index_from_local_rank(
+    
+  int           local_rank,
+  unsigned int &req_index,
+  unsigned int &task_index,
+  const char   *host) const
+
+  {
+  return(PBSE_NONE);
+  }
+
+bool have_incompatible_dash_l_resource(
+
+  pbs_attribute *pattr)
+
+  {
+  return(false);
+  }
+
+req &complete_req::get_req(
+
+  int i)
+
+  {
+  return(this->reqs[i]);
+  }
+
+bool per_task;
+
+bool req::is_per_task() const
+
+  {
+  return(per_task);
+  }
+
 #endif
 

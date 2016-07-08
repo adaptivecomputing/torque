@@ -36,8 +36,10 @@ const char *place_legacy2 = "legacy2";
 
 req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
              socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
-             thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), placement_str(), 
-             gpu_mode(), task_count(1), pack(false), single_job_access(false), index(0) 
+             thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), os(), arch(),
+             node_access_policy(), features(), placement_str(), req_attr(), gpu_mode(),
+             placement_type(exclusive_none), task_count(1), pack(false), single_job_access(false),
+             per_task_cgroup(-1), index(0), hostlist(), task_allocations()
 
   {
   }
@@ -49,8 +51,9 @@ req::req(
   char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
                     numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
                     thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
-                    features(), placement_str(), gpu_mode(), task_count(1), pack(false),
-                    single_job_access(false), index(0)
+                    os(), arch(), node_access_policy(), features(), placement_str(), gpu_mode(),
+                    task_count(1), pack(false), single_job_access(false), per_task_cgroup(-1),
+                    index(0), hostlist(), task_allocations()
   
   {
   char *ptr = work_str;
@@ -126,16 +129,18 @@ req::req(
                       features(other.features), 
                       placement_str(other.placement_str),
                       req_attr(other.req_attr),
-                      gpu_mode(other.gpu_mode), 
+                      gpu_mode(other.gpu_mode),
+                      placement_type(other.placement_type),
                       task_count(other.task_count),
                       pack(other.pack), 
                       single_job_access(other.single_job_access),
+                      per_task_cgroup(other.per_task_cgroup),
                       index(other.index),
                       hostlist(other.hostlist),
                       task_allocations(other.task_allocations)
 
   {
-  }
+  } // END copy constructor()
 
 
 
@@ -293,6 +298,8 @@ void req::set_placement_type(
     this->placement_str = placement_str;
     }
   } // END set_placement_type()
+
+
 
 /*
  * set_place_value()
@@ -568,7 +575,8 @@ int req::set_name_value_pair(
  * Sets an attribute that doesn't require a value. It has to be
  * in this format:
  * 
- * [:{usecores|usethreads|allowthreads|usefastcores}][:pack]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:{cpt|cgroup_per_task}]
+ * [:{cph|cgroup_per_host}]
  * [:{shared|exclusive_thread|prohibited|exclusive_process|exclusive|default|reseterr}]
  *
  * @param str - the value in the format specified above.
@@ -621,6 +629,16 @@ int req::set_attribute(
       }
     else
       this->gpu_mode = str;
+    }
+  else if ((!strcasecmp(str, "cpt")) ||
+           (!strcasecmp(str, "cgroup_per_task")))
+    {
+    this->per_task_cgroup = true;
+    }
+  else if ((!strcasecmp(str, "cph")) ||
+           (!strcasecmp(str, "cgroup_per_host")))
+    {
+    this->per_task_cgroup = false;
     }
   else
     return(PBSE_BAD_PARAMETER);
@@ -988,8 +1006,8 @@ int req::submission_string_precheck(
  * initializes req from a string in the format:
  *
  * tasks=#[:lprocs=#|all][:memory=#][:disk=#][:place={node|socket|numanode|core|thread}[=#]]
- * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:maxtpn=#]
- * [:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx][reqattr=<reqattr_val>]
+ * [:{usecores|usethreads|allowthreads|usefastcores}][:pack][:{cpt|cgroup_per_task}][:{cph|cgroup_per_host}]
+ * [:maxtpn=#][:gpus=#][:mics=#][:gres=xxx[=#]][:feature=xxx][reqattr=<reqattr_val>]
  *
  * We will get only the part after tasks=
  *
@@ -1095,9 +1113,13 @@ req::req(
 
    const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
                                          nodes(0), socket(0), numa_nodes(0),
-                                         cores(0), threads(0), thread_usage_str(allow_threads),
-                                         maxtpn(0), gres(), placement_str(), gpu_mode(), 
-                                         task_count(1), single_job_access(false) 
+                                         cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
+                                         thread_usage_str(allow_threads), gpus(0), mics(0),
+                                         maxtpn(0), gres(), os(), arch(), node_access_policy(),
+                                         features(), placement_str(), req_attr(), gpu_mode(), 
+                                         task_count(1), pack(false), single_job_access(false),
+                                         per_task_cgroup(-1), index(-1), hostlist(),
+                                         task_allocations()
 
   {
   char       *work_str = strdup(resource_request.c_str());
@@ -1129,6 +1151,8 @@ req &req::operator =(
   this->nodes = other.nodes;
   this->socket = other.socket;
   this->numa_nodes = other.numa_nodes;
+  this->cores = other.cores;
+  this->threads = other.threads;
   this->thread_usage_policy = other.thread_usage_policy;
   this->thread_usage_str = other.thread_usage_str;
   this->gpus = other.gpus;
@@ -1142,16 +1166,17 @@ req &req::operator =(
   this->features = other.features;
   this->placement_str = other.placement_str;
   this->req_attr = other.req_attr;
+  this->placement_type = other.placement_type;
   this->task_count = other.task_count;
   this->pack = other.pack;
   this->single_job_access = other.single_job_access;
+  this->per_task_cgroup = other.per_task_cgroup;
   this->index = other.index;
   this->hostlist = other.hostlist;
-  this->cores = other.cores;
-  this->threads = other.threads;
+  this->task_allocations = other.task_allocations;
 
   return(*this);
-  } // END operator =
+  } // END operator =()
 
 
 
@@ -1320,6 +1345,12 @@ void req::toString(
 
   if (this->pack == true)
     str += "      pack\n";
+
+  if (this->per_task_cgroup == TRUE)
+    str += "      cpt\n";
+
+  if (this->per_task_cgroup == FALSE)
+    str += "      cph\n";
   } // END toString() 
 
 
@@ -1529,6 +1560,19 @@ void req::get_values(
     this->task_allocations[i].write_task_information(task_info);
     names.push_back(buf);
     values.push_back(task_info);
+    }
+
+  if (this->per_task_cgroup == TRUE)
+    {
+    snprintf(buf, sizeof(buf), "cpt.%d", this->index);
+    names.push_back(buf);
+    values.push_back("true");
+    }
+  else if (this->per_task_cgroup == FALSE)
+    {
+    snprintf(buf, sizeof(buf), "cpt.%d", this->index);
+    names.push_back(buf);
+    values.push_back("false");
     }
   } // END get_values() 
 
@@ -1917,7 +1961,24 @@ void req::set_from_string(
   if ((current != NULL) &&
       (!strncmp(current, "pack", 4)))
     {
+    current += 4;
     this->pack = true;
+    
+    move_past_whitespace(&current);
+    }
+  
+  if ((current != NULL) &&
+      ((!strncmp(current, "cpt", 3)) ||
+       (!strncmp(current, "cgroup_per_task", 15))))
+    {
+    this->per_task_cgroup = TRUE;
+    }
+
+  if ((current != NULL) &&
+      ((!strncmp(current, "cph", 3)) ||
+       (!strncmp(current, "cgroup_per_host", 15))))
+    {
+    this->per_task_cgroup = FALSE;
     }
 
   free(req);
@@ -2050,6 +2111,17 @@ int req::set_value(
     this->single_job_access = true;
   else if (!strncmp(name, "pack", 4))
     this->pack = true;
+  else if (!strncmp(name, "cpt", 3))
+    {
+    if ((!is_default) ||
+        (this->per_task_cgroup == -1))
+      {
+      if (value[0] == 't')
+        this->per_task_cgroup = TRUE;
+      else
+        this->per_task_cgroup = FALSE;
+      }
+    }
   else if (!strncmp(name, "hostlist", 8))
     this->insert_hostname(value);
   else if (!strcmp(name, "core"))
@@ -2258,6 +2330,17 @@ int req::getMics() const
   return(this->mics);
   }
 
+bool req::is_per_task() const
+
+  {
+  return(this->per_task_cgroup == TRUE);
+  }
+
+bool req::cgroup_preference_set() const
+  {
+  return(this->per_task_cgroup != -1);
+  }
+
 
 
 /*
@@ -2378,7 +2461,7 @@ int req::get_num_tasks_for_host(
 int req::get_task_allocation(
 
   unsigned int  index,
-  allocation &task_allocation)
+  allocation &task_allocation) const
 
   {
   unsigned int size = this->task_allocations.size();

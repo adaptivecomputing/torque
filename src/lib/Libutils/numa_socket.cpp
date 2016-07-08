@@ -70,6 +70,9 @@ Socket::Socket(
   const char *os_str = "\"os_index\":";
   std::size_t chip_begin = json_layout.find(chip_str);
   std::size_t os_begin = json_layout.find(os_str);
+  
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
 
   if ((os_begin == std::string::npos) ||
       (os_begin > chip_begin))
@@ -102,7 +105,11 @@ Socket::~Socket()
  * numa_nodes per socket. This method works on the assumption of this type
  * of architecture
  */
-int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topology)
+int Socket::initializeAMDSocket(
+    
+  hwloc_obj_t      socket_obj,
+  hwloc_topology_t topology)
+
   {
   hwloc_obj_t chip_obj;
   hwloc_obj_t prev = NULL;
@@ -142,7 +149,11 @@ int Socket::initializeAMDSocket(hwloc_obj_t socket_obj, hwloc_topology_t topolog
 
 /* Intel NUMA sockets have a hierarchy of numa_node->socket. Usually just one socket per
    numa->node. This method works on this assumption for the hardware setup. */
-int Socket::initializeIntelSocket(hwloc_obj_t socket_obj, hwloc_topology_t topology)
+int Socket::initializeIntelSocket(
+    
+  hwloc_obj_t      socket_obj,
+  hwloc_topology_t topology)
+
   {
   hwloc_obj_t chip_obj;
   hwloc_obj_t prev = NULL;
@@ -204,7 +215,7 @@ int Socket::initializeNonNUMASocket(hwloc_obj_t obj, hwloc_topology_t topology)
   this->chips.push_back(numaChip);
   return(PBSE_NONE);
   }
-    
+
 
 
 Socket &Socket::operator=(
@@ -227,17 +238,57 @@ Socket &Socket::operator=(
 
   this->socket_exclusive = other.socket_exclusive;
 
-  hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
-  hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
+  if (strlen(this->socket_cpuset_string))
+    hwloc_bitmap_list_snprintf(this->socket_cpuset_string, MAX_CPUSET_SIZE, this->socket_cpuset);
+
+  if (strlen(this->socket_nodeset_string))
+    hwloc_bitmap_list_snprintf(this->socket_nodeset_string, MAX_NODESET_SIZE, this->socket_nodeset);
 
   return(*this);
   }
 
 
 
-hwloc_uint64_t Socket::getMemory()
+hwloc_uint64_t Socket::getMemory() const
   {
-  return(this->memory);
+  hwloc_uint64_t mem = 0;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    mem += this->chips[i].getMemory();
+
+  return(mem);
+  }
+
+
+
+/*
+ * get_memory_for_completely_free_chips()
+ *
+ * Figures out how much memory this socket has in completely free chips
+ *
+ * @param mem_required - the amount of memory needed
+ * @param numa_count - a count of the free nodes used
+ */
+
+hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
+    
+  unsigned long  mem_required,
+  int           &numa_count) const
+  {
+  hwloc_uint64_t mem = 0;
+
+  numa_count = 0;
+
+  for (size_t i = 0; i < this->chips.size() && mem < mem_required; i++)
+    {
+    if (this->chips[i].is_completely_free())
+      {
+      mem += this->chips[i].getMemory();
+      numa_count++;
+      }
+    }
+
+  return(mem);
   }
 
 int Socket::getTotalCores() const
@@ -297,6 +348,19 @@ int Socket::getAvailableCores() const
     }
 
   return(available);
+  }
+
+int Socket::get_free_cores() const
+  {
+  int free_cores = 0;
+  
+  if (this->socket_exclusive == false)
+    {
+    for (unsigned int i = 0; i < this->chips.size(); i++)
+      free_cores += this->chips[i].free_core_count();
+    }
+
+  return(free_cores);
   }
 
 int Socket::getAvailableThreads() const
@@ -432,7 +496,7 @@ float Socket::how_many_tasks_fit(
       {
       // If numa > 1, place_type = exclusive_numa, so each chip is 1 piece at most.
       for (unsigned int i = 0; i < this->chips.size(); i++)
-        if (this->chips[i].how_many_tasks_fit(r, place_type) > 0)
+        if (this->chips[i].how_many_tasks_fit(r, place_type) >= 1.0)
           num_that_fit += 1;
 
       num_that_fit /= numa;
@@ -526,12 +590,12 @@ bool Socket::spread_place(
 
   {
   bool placed = false;
-  int  count  = 1;
+  int  numa_nodes_required  = 1;
   int  per_numa = execution_slots_per;
   int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
-  if ((this->getAvailableChips() == this->chips.size()) ||
+  if ((this->is_completely_free()) ||
       (chip == true))
     {
     if (chip == false)
@@ -540,12 +604,12 @@ bool Socket::spread_place(
       // of chips and place multiple times
       per_numa_remainder = per_numa % this->chips.size();
       per_numa /= this->chips.size();
-      count = this->chips.size();
+      numa_nodes_required = this->chips.size();
     
       this->socket_exclusive = true;
       }
 
-    for (int c = 0; c < count; c++)
+    for (int c = 0; c < numa_nodes_required; c++)
       {
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
@@ -604,7 +668,7 @@ int Socket::place_task(
     {
     if (this->socket_exclusive == false)
       {
-      // Attempt to fit all of tasks on a single numa chip if possible
+      // Attempt to fit all tasks from this req on a single numa chip if possible
       for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
         {
         if (this->chips[i].how_many_tasks_fit(r, master.place_type) >= to_place)
@@ -618,9 +682,10 @@ int Socket::place_task(
           }
         }
 
-      // place tasks if they didn't fit in a single numa chip
+      // Place remaining tasks
       if (tasks_to_place > 0)
         {
+        // This loop places all tasks from the req that fit inside a single chip
         for (unsigned int i = 0; i < this->chips.size() && tasks_to_place > 0; i++)
           {
           int placed = this->chips[i].place_task(r, a, tasks_to_place, hostname);
@@ -629,6 +694,47 @@ int Socket::place_task(
           if ((placed != 0) &&
               (master.place_type == exclusive_socket))
             break;
+          }
+
+        // Finally, place tasks that must span numa chips. Let's only try if there's more than
+        // one chip
+        if (this->chips.size() > 1)
+          {
+          while (tasks_to_place > 0)
+            {
+            allocation task_alloc(master.jobid.c_str());
+            allocation remaining(r);
+
+            std::vector<int> partially_placed_indices;
+
+            task_alloc.cores_only = master.cores_only;
+
+            for (unsigned int i = 0; i < this->chips.size() && remaining.fully_placed() == false; i++)
+              {
+              if (this->chips[i].partially_place_task(remaining, task_alloc) == true)
+                partially_placed_indices.push_back(i);
+              }
+
+            if (remaining.fully_placed() == true)
+              {
+              tasks_to_place--;
+              task_alloc.set_host(hostname);
+              a.add_allocation(task_alloc);
+              r.record_allocation(task_alloc);
+              }
+            else
+              {
+              if (remaining.partially_placed(r) == true)
+                {
+                // Just remove the last task in order to not remove other, valid tasks from the chip
+                for (size_t i = 0; i < partially_placed_indices.size(); i++)
+                  this->chips[partially_placed_indices[i]].remove_last_allocation(master.jobid.c_str());
+                }
+
+              // We aren't going to make any more progress, move on
+              break;
+              }
+            }
           }
         }
 
@@ -647,7 +753,7 @@ int Socket::place_task(
     }
 
   return(to_place - tasks_to_place);
-  } // END place_task
+  } // END place_task()
 
 
 
@@ -696,8 +802,33 @@ bool Socket::is_available() const
 
 
 /*
+ * is_completely_free()
+ *
+ * @return true if there are no jobs using any part of this socket
+ */
+
+bool Socket::is_completely_free() const
+  {
+  bool completely_free = true;
+  for (unsigned int i = 0; i < this->chips.size(); i++)
+    {
+    if (this->chips[i].is_completely_free() == false)
+      {
+      completely_free = false;
+      break;
+      }
+    }
+
+  return(completely_free);
+  } // END is_completely_free()
+
+
+
+/*
  * fits_on_socket()
  * Determines if the task identified by remaining can fit completely on this socket
+ * by memory and execution slots
+ *
  * @param remaining - an allocation with the information for whats left for the task
  * @return - true if the allocation will completely fit on this socket, false otherwise
  */
@@ -715,11 +846,11 @@ bool Socket::fits_on_socket(
       max_cpus = remaining.place_cpus;
 
     if ((remaining.cores_only == true) &&
-        (this->getAvailableCores() >= max_cpus))
+        (this->get_free_cores() >= max_cpus))
       fits = true;
     else if (remaining.place_type == exclusive_legacy)
       {
-      if (this->getAvailableCores() >= max_cpus)
+      if (this->get_free_cores() >= max_cpus)
         fits = true;
       }
     else if ((remaining.cores_only == false) &&
@@ -738,24 +869,23 @@ bool Socket::fits_on_socket(
  * Partially places the task whose needs are identified by remaining on the 
  * chips that are part of this socket.
  * @param remaining (I/O) - the amount remaining to place for this task
- * @param master (O) - the complete allocation for this job
+ * @param task_alloc (O) - the complete allocation for this task
  * @return - true if the task was fully placed, false if partially placed
  */
 
 bool Socket::partially_place(
 
   allocation &remaining,
-  allocation &master)
+  allocation &task_alloc)
 
   {
   bool fully_placed = false;
 
   for (unsigned int i = 0; i < this->chips.size(); i++)
     {
-    this->chips[i].partially_place_task(remaining, master);
+    this->chips[i].partially_place_task(remaining, task_alloc);
 
-    if ((remaining.cpus == 0) &&
-        (remaining.memory == 0))
+    if (remaining.fully_placed() == true)
       {
       fully_placed = true;
       break;

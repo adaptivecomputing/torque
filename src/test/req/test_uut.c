@@ -11,6 +11,37 @@ extern bool good_err;
 int parse_positive_integer(const char *str, int &parsed);
 
 
+START_TEST(test_cpt)
+  {
+  req r;
+
+  fail_unless(r.is_per_task() == false);
+  fail_unless(r.cgroup_preference_set() == false);
+  r.set_attribute("cpt");
+  fail_unless(r.is_per_task() == true);
+  fail_unless(r.cgroup_preference_set() == true);
+
+  std::string out;
+  r.toString(out);
+  fail_unless(out.find("cpt") != std::string::npos);
+
+  std::vector<std::string> names;
+  std::vector<std::string> values;
+  r.get_values(names, values);
+  fail_unless(names[names.size() - 1] == "cpt.0", names[names.size() - 1].c_str());
+  fail_unless(values[values.size() - 1] == "true", values[values.size() - 1].c_str());
+
+  // Setting as a default shouldn't change the value
+  fail_unless(r.set_value("cpt", "false", true) == PBSE_NONE);
+  fail_unless(r.is_per_task() == true);
+
+  // Setting as a non-default should change the value
+  fail_unless(r.set_value("cpt", "false", false) == PBSE_NONE);
+  fail_unless(r.is_per_task() == false);
+  }
+END_TEST
+
+
 START_TEST(test_get_cores_threads)
   {
   req r;
@@ -769,6 +800,7 @@ Suite *req_suite(void)
 
   tc_core = tcase_create("test_get_gpu_mode");
   tcase_add_test(tc_core, test_get_gpu_mode);
+  tcase_add_test(tc_core, test_cpt);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_setters");

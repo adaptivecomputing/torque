@@ -178,7 +178,7 @@ static bool geteusernam(
   std::string&   ret_user) /* pointer to User_List pbs_attribute */
 
   {
-  int  rule3 = 0;
+  bool  rule3 = false;
   char *hit = 0;
   int  i;
 
@@ -222,14 +222,14 @@ static bool geteusernam(
 
     hit = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
 
-    rule3 = 1;
+    rule3 = true;
     }
 
   /* copy user name into return buffer, strip off host name */
 
   get_jobowner(hit, username);
 
-  if (rule3)
+  if (rule3 == true)
     {
     ptr = site_map_user(username, get_variable(pjob, (char *)"PBS_O_HOST"));
 
@@ -614,19 +614,17 @@ int set_jobexid(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
   long            disable_id_check = 0;
-  int             CheckID;  /* boolean */
-
+  bool            CheckID = true;  
+  
   if (EMsg != NULL)
     EMsg[0] = '\0';
 
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
-  if (get_svr_attr_l(SRV_ATR_DisableServerIdCheck, &disable_id_check) != PBSE_NONE)
-    CheckID = 1;
-  else
+  if (get_svr_attr_l(SRV_ATR_DisableServerIdCheck, &disable_id_check) == PBSE_NONE)
     CheckID = !disable_id_check;
 
-  if (CheckID == 0)
+  if (CheckID == false)
     {
     /* NOTE: use owner, not userlist - should this be changed? */
     /* Yes, changed 10/17/2007 */
@@ -683,7 +681,7 @@ int set_jobexid(
       {
       strcpy(tmpLine, "???");
       }
-    }  /* END if (CheckID == 0) */
+    }  /* END if (CheckID == false) */
   else
     {
     int perm;
@@ -819,7 +817,7 @@ int set_jobexid(
       }
 
     snprintf(tmpLine, sizeof(tmpLine), "%s", puser.c_str());
-    }  /* END else (CheckID == 0) */
+    }  /* END else (CheckID == false) */
 
   pattr = attrry + JOB_ATR_euser;
 
@@ -909,7 +907,7 @@ int set_jobexid(
         pgrpn = gname;            /* turn gid into string */
         }
       }
-    else if (CheckID == 0)
+    else if (CheckID == false)
       {
       strcpy(gname, "???");
 
@@ -935,7 +933,7 @@ int set_jobexid(
 
     addflags = ATR_VFLAG_DEFLT;
     }  /* END if ((pgrpn = getegroup(pjob,pattr))) */
-  else if (CheckID == 0)
+  else if (CheckID == false)
     {
     /* egroup specified - do not validate group within server */
 

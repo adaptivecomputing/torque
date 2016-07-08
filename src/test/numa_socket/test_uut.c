@@ -9,7 +9,7 @@
 #include "allocation.hpp"
 #include "req.hpp"
 
-extern int tasks;
+extern float tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
@@ -20,6 +20,8 @@ extern int called_spread_place_threads;
 extern int place_amount;
 extern int json_chip;
 extern int placed_all;
+extern int partially_placed;
+extern bool completely_free;
 extern std::string my_placement_type;
 
 
@@ -67,13 +69,16 @@ START_TEST(test_spread_place)
   s.addChip();
   s.addChip();
 
+  completely_free = true;
   called_spread_place = 0;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
   fail_unless(called_spread_place == 2);
   
+  completely_free = false;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
   fail_unless(called_spread_place == 2);
 
+  completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
@@ -107,11 +112,9 @@ END_TEST
 START_TEST(test_basic_constructor)
   {
   Socket s(5);
-  s.setMemory(50);
 
   fail_unless(s.getTotalChips() == 1);
   fail_unless(s.getAvailableChips() == 1);
-  fail_unless(s.getMemory() == 50);
   }
 END_TEST
 
@@ -195,8 +198,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeNonNUMASocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize non NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -211,8 +212,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeIntelSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc == 0, "failed to get socket memory");
       }
     else
       {
@@ -227,8 +226,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeAMDSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -286,8 +283,9 @@ START_TEST(test_place_task)
   a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
+  place_amount = 4; // make partially place do nothing
   int num = s.place_task(r, a, 3, "napali");
-  fail_unless(num == 1, "Expected 2, got %d", num);
+  fail_unless(num == 1, "Expected 1, got %d", num);
   fail_unless(called_place = 1);
 
   fail_unless(s.is_available() == false);
@@ -295,6 +293,14 @@ START_TEST(test_place_task)
   fail_unless(s.free_task("1.napali") == true);
   fail_unless(s.is_available() == true);
 
+  // Make sure we'll place a task that fits on this socket but has to span numa nodes
+  tasks = 0.5;
+  placed = 0;
+  place_amount = 3;
+  partially_placed = 0;
+  num = s.place_task(r, a, 1, "napali");
+  fail_unless(num == 1, "Expected 1, got %d", num);
+  fail_unless(partially_placed == 2);
   }
 END_TEST
 

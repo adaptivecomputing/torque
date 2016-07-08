@@ -211,3 +211,10 @@ void memcheck(const char *buf) {}
 
 void log_err(int errnum, const char *routine, const char *text) {}
 
+char *conf_res(char *resline, struct rm_attribute *attr)
+  {
+  if ((resline != NULL) && (*resline == '!'))
+    return(strdup("scriptoutput"));
+
+  return(resline);
+  }

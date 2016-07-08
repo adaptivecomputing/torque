@@ -37,6 +37,7 @@ std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
 std::string cg_devices_path;
+
 #define LDAP_RETRIES 5
 
 // Sensing and control variables
@@ -844,6 +845,8 @@ int csv_length(const char *csv_str)
   }
 
 #ifdef PENABLE_LINUX_CGROUPS
+Machine this_node;
+
 int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
   {
   return(PBSE_NONE);
@@ -960,6 +963,20 @@ int trq_cg_set_resident_memory_limit(
   {
   return(PBSE_NONE);
   }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+hwloc_uint64_t Machine::getTotalMemory() const
+  {
+  return(this->totalMemory);
+  }
+
+PCI_Device::~PCI_Device() {}
+Socket::~Socket() {}
+Chip::~Chip() {}
+Core::~Core() {}
+
 #endif
 
 
@@ -1048,7 +1065,7 @@ struct passwd *get_password_entry_by_uid(
 
 bool have_incompatible_dash_l_resource(
     
-    job *pjob)
+    pbs_attribute *pattr)
 
   {
   return(false);

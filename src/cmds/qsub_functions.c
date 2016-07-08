@@ -2531,6 +2531,14 @@ void process_opt_L(
     print_qsub_usage_exit(err_buf);
     }
 
+  if ((cr.req_count() > 0) &&
+      (r.cgroup_preference_set() == true))
+    {
+    snprintf(err_buf, sizeof(err_buf),
+      "qsub: cgroup_per_task (cpt) and cgroup_per_host (cph) may only be specified for the first req");
+    print_qsub_usage_exit(err_buf);
+    }
+
   cr.add_req(r);
   } // END process_opt_L()
 

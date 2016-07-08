@@ -2012,7 +2012,9 @@ void set_depend_hold(
         job_array *to_update;
 
         if ((pa != NULL) &&
-            (array_names[i] == pa->ai_qs.parent_id))
+            ((array_names[i] == pa->ai_qs.parent_id) ||
+             ((!strncmp(array_names[i].c_str(), pa->ai_qs.parent_id, array_names[i].size())) &&
+              (pa->ai_qs.parent_id[array_names[i].size()] == '.'))))
           {
           continue;
           }

@@ -3984,10 +3984,10 @@ void update_req_hostlist(
 
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
-    if (have_incompatible_dash_l_resource(pjob) == true)
-      legacy_vmem = TRUE;
+    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
     cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, ppn_needed, (bool)legacy_vmem);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    pjob->ji_wattr[JOB_ATR_req_information].at_flags |= ATR_VFLAG_SET;
     }
   else
     {
@@ -4083,6 +4083,30 @@ int place_subnodes_in_hostlist(
     rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), (bool)legacy_vmem);
     if (rc != PBSE_NONE)
       return(rc);
+
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+      {
+      char buf[MAXLINE];
+
+      if (pnode->nd_layout.getTotalThreads() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalThreads() - 1);
+        cpus = buf;
+        }
+      else
+        cpus = "0";
+
+      if (pnode->nd_layout.getTotalChips() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalChips() - 1);
+        mems = buf;
+        }
+      else
+        mems = "0";
+      }
 
     save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cpus, mems);
     save_node_usage(pnode);

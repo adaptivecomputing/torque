@@ -360,6 +360,11 @@ req::req()
   {
   }
 
+bool req::cgroup_preference_set() const
+  {
+  return(false);
+  }
+
 int req::set_from_submission_string(
 
   char        *submission_str,

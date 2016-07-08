@@ -756,7 +756,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      snprintf(log_buf, sizeof(log_buf), "Job %s has no queue", pjob->ji_qs.ji_jobid);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, log_buf);
       return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
@@ -3541,6 +3542,7 @@ void set_resc_deflt(
   attribute_def *pdef;
   int            i;
   int            rc;
+  long           cgroup_per_task = FALSE;
 
   if (ji_wattr != NULL)
     {
@@ -3568,6 +3570,22 @@ void set_resc_deflt(
     }
   else
     pque = pjob->ji_qhdr;
+
+  if ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
+      (get_svr_attr_l(SRV_ATR_CgroupPerTask, &cgroup_per_task) == PBSE_NONE))
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    char          val[MAXLINE];
+
+    if (cgroup_per_task == TRUE)
+      strcpy(val, "true");
+    else
+      strcpy(val, "false");
+
+    for (int r = 0; r < cr->req_count(); r++)
+      cr->set_value(r, "cpt", val, true);
+    }
 
   // apply queue defaults first since they take precedence
   if (pque != NULL)

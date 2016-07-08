@@ -358,3 +358,8 @@ bool pbsnode::hasprop(std::vector<prop> *needed) const
   {
   return(true);
   }
+
+  void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }

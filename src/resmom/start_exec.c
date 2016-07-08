@@ -4398,20 +4398,12 @@ int set_job_cgroup_memory_limits(
   {
   /* See if the memory attribute was requested and then add it to
      memory.limit_in_bytes of the cgroup */
-  char          this_hostname[PBS_MAXHOSTNAME];
-  unsigned long long mem_limit;
-  unsigned long long swap_limit;
-  complete_req *cr = NULL;
+  unsigned long long  mem_limit;
+  unsigned long long  swap_limit;
+  complete_req       *cr = NULL;
+  int                 rc = PBSE_NONE;
 
-  int rc = gethostname(this_hostname, PBS_MAXHOSTNAME);
-  if (rc != 0)
-    {
-    sprintf(log_buffer, "failed to get host name: %d", errno);
-    log_ext(-1, __func__, log_buffer, LOG_ERR);
-    return(rc);
-    }
-
-  std::string string_hostname = this_hostname;
+  std::string string_hostname = mom_alias;
   if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
     {
     cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
@@ -4432,8 +4424,13 @@ int set_job_cgroup_memory_limits(
     {
     if (mem_limit == 0)
       {
-      /* memory.memsw.limit_in_bytes cannot be set unless memory.limit_in_bytes is set */
-      mem_limit = swap_limit;
+      unsigned long long max_mem_limit = this_node.getTotalMemory();
+
+      if (swap_limit >= max_mem_limit)
+        mem_limit = max_mem_limit;
+      else
+        mem_limit = swap_limit;
+
       rc = trq_cg_set_resident_memory_limit(pjob->ji_qs.ji_jobid, mem_limit);
       if (rc != PBSE_NONE)
         {
@@ -4455,7 +4452,8 @@ int set_job_cgroup_memory_limits(
   pbs_attribute *pattr;
 
   /* make sure we don't have an incompatible -l resource request */
-  if (have_incompatible_dash_l_resource(pjob) == false)
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if (have_incompatible_dash_l_resource(pattr) == false)
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */
@@ -4478,7 +4476,14 @@ int set_job_cgroup_memory_limits(
         swap_limit = cr->get_swap_per_task(req_index);
         if ((mem_limit == 0) &&
             (swap_limit != 0))
-          mem_limit = swap_limit;
+          {
+          unsigned long long max_mem_limit = this_node.getTotalMemory();
+
+          if (swap_limit >= max_mem_limit)
+            mem_limit = max_mem_limit; 
+          else
+            mem_limit = swap_limit;
+          }
 
         if (mem_limit != 0)
           {
@@ -6224,8 +6229,12 @@ int start_process(
   pbs_attribute *pattr;
   pid_t new_pid = getpid();
 
-  /* make sure we don't have an incompatible -l resource request */
-  if (have_incompatible_dash_l_resource(pjob) == false)
+  // make sure we don't have an incompatible -l resource request and we aren't a login node
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == false) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) &&
+      (is_login_node == FALSE))
     {
 
     /* if JOB_ATR_req_information is set then this was a -L request */
@@ -6235,15 +6244,20 @@ int start_process(
       rc = get_process_rank(rank);
       if (rc == PBSE_NONE)
         {
-        unsigned int req_index;
-        unsigned int task_index;
-
         complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+        unsigned int  req_index = 0;
+        unsigned int  task_index = 0;
 
-        rc = cr->get_req_and_task_index(rank, req_index, task_index);
+        if ((cr->get_num_reqs() == 0) ||
+            (cr->get_req(0).is_per_task() == false))
+          {
+          rc = PBSE_NO_PROCESS_RANK;
+          }
+        else
+          rc = cr->get_req_and_task_index(rank, req_index, task_index);
+
         if (rc == PBSE_NONE)
           {
-
           rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
                               pjob->ji_qs.ji_jobid, req_index, task_index, new_pid);
           if (rc == PBSE_NONE)
@@ -6260,6 +6274,8 @@ int start_process(
               }
             }
           }
+        else
+          rc = -1;
         }
       }
     }
