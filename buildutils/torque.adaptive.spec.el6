@@ -576,6 +576,12 @@ echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
 echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
+%{__mkdir_p} %{buildroot}/etc/profile.d
+echo 'test -d ${_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
+echo 'test `id -u` = 0 && test -d %{_sbindir} && export PATH=%{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.sh
+echo 'test -d ${_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
+echo 'test `id -u` = 0 && test-d ${_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
+
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0
 
@@ -630,6 +636,8 @@ ldconfig
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{client_sub}-${TIMESTAMP}}
 # Taken from the client's file list
+%{pre_add_back_up_file /etc/profile.d/torque.sh %{client_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.csh %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_initrddir}/trqauthd %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/chk_tree %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/hostn %{client_sub}-${TIMESTAMP}}
@@ -678,6 +686,8 @@ fi
 %pre %{server_sub}
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.sh %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.csh %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{server_pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/torque.setup %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/mom_hierarchy \
@@ -900,6 +910,8 @@ ldconfig
 
 %files %{client_sub}
 %attr(-,root,root) %config(noreplace) %{_initrddir}/trqauthd
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %{_bindir}/chk_tree
 %attr(-,root,root) %{_bindir}/hostn
 %attr(-,root,root) %{_bindir}/nqs2pbs
@@ -917,6 +929,8 @@ ldconfig
 %files %{server_sub}
 %attr(-,root,root) %doc doc/admin_guide.ps
 %attr(0755,root,root) %{_sbindir}/torque.setup
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
@@ -950,6 +964,8 @@ ldconfig
 %attr(-,root,root) %dir %{torque_spooldir}/undelivered
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/mom_priv/config
 %attr(-,root,root) %config(noreplace) %{_initrddir}/pbs_mom
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %{_sbindir}/pbs_demux
 %attr(-,root,root) %{_sbindir}/pbs_mom
 %attr(-,root,root) %{_sbindir}/momctl
