@@ -9,6 +9,10 @@
 #include "completed_jobs_map.h"
 #include "threadpool.h"
 
+// This is set to true once we've begun exiting. At this point, global destructors have been
+// called and we want to ignore requests
+extern bool exit_called;
+
 // external functions called
 
 void handle_complete_second_time(struct work_task*);
@@ -64,6 +68,9 @@ bool completed_jobs_map_class::delete_job_unlocked(
   std::string jid_string)
 
   {
+  if (exit_called == true)
+    return(true);
+  
   bool rc = true;
 
   // remove job from map if present
@@ -88,6 +95,9 @@ bool completed_jobs_map_class::delete_job(
   const char *jobid)
 
   {
+  if (exit_called == true)
+    return(true);
+  
   bool rc;
   std::string jid_string = jobid;
 
@@ -109,6 +119,9 @@ bool completed_jobs_map_class::is_job_id_in_map(
   const char *jobid)
 
   {
+  if (exit_called == true)
+    return(true);
+  
   bool rc = false;
   std::string jid_string = jobid;
 
@@ -133,6 +146,9 @@ int completed_jobs_map_class::cleanup_completed_jobs(
   void)
 
   {
+  if (exit_called == true)
+    return(PBSE_NONE);
+  
   time_t now;
   std::vector<std::string> to_remove;
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
@@ -242,6 +258,9 @@ void completed_jobs_map_class::print_map(
   void)
 
   {
+  if (exit_called == true)
+    return;
+
   if (completed_jobs_map.empty())
     {
     printf("completed jobs map is empty\n");

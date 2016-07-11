@@ -8,6 +8,7 @@
 
 completed_jobs_map_class completed_jobs_map;
 
+bool exit_called = false;
 extern bool job_id_exists_rc;
 int LOGLEVEL = 10;
 
