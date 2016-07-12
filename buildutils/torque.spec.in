@@ -204,7 +204,7 @@ export ac_cv_path_DOXYGEN=none
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} %{ac_with_debug} %{ac_with_libcpuset} \
     --with-sendmail=%{sendmail_path} %{ac_with_numa} %{ac_with_memacct} %{ac_with_top} \
-    --with-trqauthd-sock-dir=%{ac_trqauthd_sock_dir} \
+    --with-trqauthd-sock-dir=%{ac_trqauthd_sock_dir} %{?xauth_path:--with-xauth=%{xauth_path}} \
     --disable-dependency-tracking %{ac_with_gui} %{ac_with_scp} %{ac_with_syslog} \
     --disable-gcc-warnings %{ac_with_munge} %{ac_with_pam} %{ac_with_drmaa} \
     --disable-qsub-keep-override %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_cgroups} %{ac_with_spool} %{?acflags}
