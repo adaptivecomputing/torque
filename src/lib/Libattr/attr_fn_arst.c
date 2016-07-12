@@ -860,8 +860,6 @@ int set_arst(
         return(PBSE_SYSTEM);
         }
 
-      memset(pc, 0, need);
-
       tmp_arst->as_buf = pc;
       tmp_arst->as_next = pc;
       tmp_arst->as_npointers = j;
