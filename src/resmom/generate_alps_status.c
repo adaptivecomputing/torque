@@ -916,7 +916,10 @@ void alps_node_info::add_to_status(
   status.push_back(this->node_index);
   status.push_back(this->availmem);
   status.push_back(this->state);
-  status.push_back(this->os);
+  
+  if (this->os.size() != 0)
+    status.push_back(this->os);
+
   status.push_back(this->physmem);
   status.push_back(this->totmem);
   status.push_back(this->cmem);
