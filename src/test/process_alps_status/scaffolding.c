@@ -1886,7 +1886,7 @@ PCI_Device::~PCI_Device() {}
 Chip::~Chip() {}
 Core::~Core() {}
 
-Machine::Machine(int np)
+Machine::Machine(int np, int numa_nodes, int sockets)
   {
   }
 

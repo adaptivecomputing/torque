@@ -24,16 +24,23 @@ Socket::Socket() : id (0), memory(0), totalCores(0), totalThreads(0), availableC
 
 Socket::Socket(
     
-  int execution_slots) : id (0), memory(0), totalCores(execution_slots),
-                         totalThreads(execution_slots), availableCores(0), availableThreads(0),
-                         chips(), socket_exclusive(false)
+  int  execution_slots,
+  int  numa_nodes,
+  int &es_remainder) : id (0), memory(0), totalCores(execution_slots),
+                       totalThreads(execution_slots), availableCores(0), availableThreads(0),
+                       chips(), socket_exclusive(false)
 
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
-    
-  Chip c(execution_slots);
-  this->chips.push_back(c);
+
+  int per_numa_remainder = execution_slots % numa_nodes;
+  
+  for (int i = 0; i < numa_nodes; i++)
+    {
+    Chip c(execution_slots / numa_nodes, es_remainder, per_numa_remainder);
+    this->chips.push_back(c);
+    }
   }
 
 

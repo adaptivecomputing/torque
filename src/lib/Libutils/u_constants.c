@@ -135,5 +135,6 @@ const char *hbm_cache_pct          = "hbm_cache_pct";
 const char *hbm_size               = "hbm_size_mb";
 const char *page_size_kb           = "page_size_kb";
 const char *page_count             = "page_count";
+const char *numas                  = "numa_nodes";
 
 
