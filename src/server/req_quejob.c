@@ -1500,15 +1500,26 @@ int req_quejob(
     }
 
   que_mgr.lock();
-  if ((rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg)))
+
+  try
     {
-    que_mgr.unlock();
+    rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg);
+    }
+  catch (int e)
+    {
+    rc = e;
+    }
+  
+  que_mgr.unlock();
+
+  if (rc != PBSE_NONE)
+    {
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
-  que_mgr.unlock();
+
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 
