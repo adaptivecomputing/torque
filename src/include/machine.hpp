@@ -139,7 +139,7 @@ class Chip
 
   public:
     Chip();
-    Chip(int execution_slots);
+    Chip(int execution_slots, int &es_remainder, int &per_numa_remainder);
     Chip(const std::string &layout);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
@@ -243,7 +243,7 @@ class Socket
 
   public:
     Socket();
-    Socket(int execution_slots);
+    Socket(int execution_slots, int numa_nodes, int &es_remainder);
     Socket(const std::string &layout);
     ~Socket();
     int initializeSocket(hwloc_obj_t obj);
@@ -311,7 +311,7 @@ class Machine
   public:
     Machine& operator=(const Machine& newMachine);
     Machine(const std::string &layout);
-    Machine(int execution_slots);
+    Machine(int execution_slots, int numa_nodes, int sockets);
     Machine();
     ~Machine();
     Socket getSocket();

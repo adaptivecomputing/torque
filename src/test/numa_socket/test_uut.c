@@ -111,7 +111,8 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Socket s(5);
+  int remainder = 0;
+  Socket s(5, 1, remainder);
 
   fail_unless(s.getTotalChips() == 1);
   fail_unless(s.getAvailableChips() == 1);
@@ -149,7 +150,8 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   std::stringstream out;
-  Socket s(1);
+  int remainder = 0;
+  Socket s(1, 1, remainder);
   s.setMemory(2);
   s.setId(0);
 

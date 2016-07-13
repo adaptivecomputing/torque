@@ -166,6 +166,7 @@ extern const char *hbm_cache_pct;
 extern const char *hbm_size;
 extern const char *page_size_kb;
 extern const char *page_count;
+extern const char *numas;
 
 typedef struct host_req
   {

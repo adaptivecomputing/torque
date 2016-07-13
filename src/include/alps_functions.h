@@ -133,9 +133,11 @@ class alps_node_info
   std::string name;
   std::string arch;
   std::string node_index;
-  std::string hbm;      // Not always populated
-  std::string rsv;      // Not always populated
-  std::string features; // Not always populated
+  std::string hbm;        // Not always populated
+  std::string rsv;        // Not always populated
+  std::string features;   // Not always populated
+  std::string numa_nodes; // Not always populated
+  std::string socket;     // Not always populated
   std::vector<alps_accelerator_info> accelerators;
 
   void add_to_status(std::vector<std::string> &status);
