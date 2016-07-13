@@ -3876,7 +3876,8 @@ void save_cpus_and_memory_cpusets(
   if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
     {
     std::string formatted(node_name);
-    formatted += ":" + cpus;
+    if (cpus.size() != 0)
+      formatted += ":" + cpus;
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
     }
@@ -3885,7 +3886,8 @@ void save_cpus_and_memory_cpusets(
     std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
     all_cpus += "+";
     all_cpus += node_name;
-    all_cpus += ":" + cpus;
+    if (cpus.size() != 0)
+      all_cpus += ":" + cpus;
     free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
     }
@@ -3893,7 +3895,8 @@ void save_cpus_and_memory_cpusets(
   if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
     {
     std::string formatted(node_name);
-    formatted += ":" + mems;
+    if (mems.size() != 0)
+      formatted += ":" + mems;
     pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
     pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
     }
@@ -3902,7 +3905,8 @@ void save_cpus_and_memory_cpusets(
     std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
     all_mems += "+";
     all_mems += node_name;
-    all_mems += ":" + mems;
+    if (mems.size() != 0)
+      all_mems += ":" + mems;
     free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
     pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
     }

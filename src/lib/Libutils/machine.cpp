@@ -259,14 +259,20 @@ Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChi
 
 Machine::Machine(
 
-  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
-            totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(true), sockets(),
-            NVIDIA_device(), allocations()
+  int np,
+  int numa_nodes,
+  int sockets) : hardwareStyle(0), totalMemory(0), totalSockets(sockets), totalChips(numa_nodes),
+                 totalCores(np), totalThreads(np), availableSockets(sockets),
+                 availableChips(numa_nodes), availableCores(np), availableThreads(np),
+                 initialized(true), sockets(), NVIDIA_device(), allocations()
 
   {
-  Socket s(np);
-  this->sockets.push_back(s);
+  int np_remainder = np % sockets;
+  for (int i = 0; i < sockets; i++)
+    {
+    Socket s(np / sockets, numa_nodes / sockets, np_remainder);
+    this->sockets.push_back(s);
+    }
   
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);

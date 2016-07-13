@@ -147,7 +147,7 @@ END_TEST
 
 START_TEST(test_displayAsString)
   {
-  Machine           new_machine(1);
+  Machine           new_machine(1, 1, 1);
   std::stringstream out;
 
   new_machine.setMemory(2);
@@ -159,12 +159,18 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Machine m(3);
+  Machine m(3, 1, 1);
 
   fail_unless(m.getTotalSockets() == 1);
   fail_unless(m.getAvailableSockets() == 1);
   fail_unless(m.getTotalCores() == 3);
   fail_unless(m.getTotalThreads() == 3);
+
+  Machine m2(12, 2, 2);
+  fail_unless(m2.getTotalSockets() == 2);
+  fail_unless(m2.getAvailableSockets() == 2);
+  fail_unless(m2.getTotalCores() == 12);
+  fail_unless(m2.getTotalThreads() == 12);
   }
 END_TEST
 

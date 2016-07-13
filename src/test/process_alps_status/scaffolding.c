@@ -1871,13 +1871,18 @@ int Machine::getTotalThreads() const
   return(this->totalThreads);
   }
 
+bool Machine::is_initialized() const
+  {
+  return(false);
+  }
+
 Machine::~Machine() {}
 Socket::~Socket() {}
 PCI_Device::~PCI_Device() {}
 Chip::~Chip() {}
 Core::~Core() {}
 
-Machine::Machine(int np)
+Machine::Machine(int np, int numa_nodes, int sockets)
   {
   }
 
