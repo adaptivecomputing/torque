@@ -530,8 +530,7 @@ checking.  The checking is performed by the execution server.
 .RE
 .IP "\-m mail_options " 8
 Defines the set of conditions under which the execution server will
-send a mail message about the job.  The
-.Ar mail_options
+send a mail message about the job.  The mail_options
 argument is a string which consists of either the single character "\fBn\fP" or "\fBp\fP",
 or one or more of the characters "\fBa\fP", "\fBb\fP", "\fBe\fP", and "\fBf\fP".
 
