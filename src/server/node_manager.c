@@ -2077,6 +2077,14 @@ int proplist(
       {
       gpu_err_reset = TRUE;
       }
+    else if ((have_gpus) && 
+             (!strcasecmp(pname, "prohibited")))
+      {
+      // Do not allow users to request prohibited mode
+      throw (int)PBSE_GPU_PROHIBITED_MODE;
+
+      // NOT REACHED
+      }
     else
       {
       prop p(pname);
