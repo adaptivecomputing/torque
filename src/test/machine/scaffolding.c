@@ -52,7 +52,7 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
-Socket::Socket(int np)
+Socket::Socket(int np, int numa_nodes, int &es_remainder)
   {
   }
 

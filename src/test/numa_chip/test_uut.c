@@ -458,7 +458,9 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Chip c(4);
+  int remainder = 0;
+  int pn_remainder = 0;
+  Chip c(4, remainder, pn_remainder);
   c.setMemory(20);
 
   fail_unless(c.getTotalCores() == 4);
@@ -467,6 +469,16 @@ START_TEST(test_basic_constructor)
   fail_unless(c.getAvailableThreads() == 4);
   fail_unless(c.getMemory() == 20);
   fail_unless(c.getAvailableMemory() == 20);
+
+  remainder = 1;
+  pn_remainder = 1;
+  Chip c2(4, remainder, pn_remainder);
+  fail_unless(c2.getTotalCores() == 6);
+  fail_unless(c2.getTotalThreads() == 6);
+  fail_unless(c2.getAvailableCores() == 6);
+  fail_unless(c2.getAvailableThreads() == 6);
+  fail_unless(remainder == 0);
+  fail_unless(pn_remainder == 0);
   }
 END_TEST
 

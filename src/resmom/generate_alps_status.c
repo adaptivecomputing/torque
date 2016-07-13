@@ -343,6 +343,7 @@ int process_node(
   int                 num_procs         = 0;
   int                 avail_procs       = 0;
   int                 num_compute_units = 0;
+  int                 socket_count      = 0;
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
@@ -390,6 +391,8 @@ int process_node(
         {
         if (!strcmp((const char *)sockets->name, socket_name))
           {
+          socket_count++;
+
           for (socket_child = sockets->children; socket_child != NULL; socket_child = socket_child->next)
             {
             if (!strcmp((const char *)socket_child->name, segment_array))
@@ -463,6 +466,9 @@ int process_node(
       }
     } /* END the loop for processing the children */
 
+  if (socket_count == 0)
+    socket_count = 1;
+
   /* once done, add the procs, available procs, compute unit count, memory info, reservation, and features */
 
   /* note that CCU should come before CPROC */
@@ -477,6 +483,9 @@ int process_node(
 
   snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
   ani.cmem = buf;
+
+  snprintf(buf, sizeof(buf), "socket=%d", socket_count);
+  ani.socket = buf;
 
   mem_kb = memory * 1024;
 
@@ -671,6 +680,15 @@ int get_node_info(
     free(attr_value);
     }
 
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)numas);
+  if (attr_value != NULL)
+    {
+    ani.numa_nodes = numas;
+    ani.numa_nodes += "=";
+    ani.numa_nodes += attr_value;
+    free(attr_value);
+    }
+
   get_os_value(ani.os, numa_cfg_val, mcdram_cfg_val);
 
   snprintf(buf, sizeof(buf), "hbmem=%lukb", hbm_size_in_mb * 1024);
@@ -710,6 +728,7 @@ int process_system(
             {
             alps_nodes[node_ids[i]].os = ani.os;
             alps_nodes[node_ids[i]].hbm = ani.hbm;
+            alps_nodes[node_ids[i]].numa_nodes = ani.numa_nodes;
             }
           else
             alps_nodes[node_ids[i]] = ani;
@@ -922,6 +941,11 @@ void alps_node_info::add_to_status(
 
   status.push_back(this->physmem);
   status.push_back(this->totmem);
+  status.push_back(this->socket);
+
+  if (this->numa_nodes.size() != 0)
+    status.push_back(this->numa_nodes);
+
   status.push_back(this->cmem);
   // ccu should be added before cproc
   status.push_back(this->ccu);

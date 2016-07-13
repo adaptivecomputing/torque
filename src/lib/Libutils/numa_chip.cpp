@@ -86,20 +86,38 @@ Chip &Chip::operator =(
 
 Chip::Chip(
 
-  int execution_slots) : id(0), totalCores(execution_slots), totalThreads(execution_slots),
-                         availableCores(execution_slots), availableThreads(execution_slots),
-                         total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
-                         chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
-                         allocations()
+  int  execution_slots,
+  int &es_remainder,
+  int &per_numa_remainder) : id(0),total_gpus(0), available_gpus(0), total_mics(0), available_mics(0), 
+                             chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
+                             allocations()
 
   {
+  if (es_remainder > 0)
+    {
+    execution_slots++;
+    es_remainder--;
+    }
+
+  if (per_numa_remainder > 0)
+    {
+    execution_slots++;
+    per_numa_remainder--;
+    }
+
+  this->totalCores = execution_slots;
+  this->totalThreads = execution_slots;
+  this->availableCores = this->totalCores;
+  this->availableThreads = this->totalThreads;
+
   for (int i = 0; i < execution_slots; i++)
     {
     Core c;
-    c.add_processing_unit(CORE, execution_slots);
+    c.add_processing_unit(CORE, i);
+
     this->cores.push_back(c);
     }
-  }
+  } // END constructor for Cray
 
 
 
