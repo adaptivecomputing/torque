@@ -1161,6 +1161,22 @@ AC_ARG_WITH(hwloc-path, [
   [HWLOC_LIBS="-L${withval}/lib -lhwloc"; HWLOC_CFLAGS="-I${withval}/include"],
   [TOM="BOB"])
 
+dnl
+dnl enable Nvidia dcgm support
+dnl
+AC_MSG_CHECKING([whether to build Nvidia dcgm support])
+AC_ARG_ENABLE(nvidia-dcgm,
+    [  --enable-nvidia-dcgm    enable Nvidia dcgm support
+                          Nvidia dcgm support requires the use of the Nvidia Datacenter GPU Management Library (DCGM)
+],
+    enable_nvidia_dcgm=$enableval,enable_nvidia_dcgm=no)
+AC_MSG_RESULT($enable_nvidia_dcgm)
+case "$enable_nvidia_dcgm" in
+  yes) AC_DEFINE([NVIDIA_DCGM], 1, [Define to enable Nvidia dcgm support]) ;;
+  no) : ;;
+  *) AC_MSG_ERROR([--enable-nvidia-dcgm should be yes or no]) ;;
+esac
+AM_CONDITIONAL([NVIDIA_DCGM], test "$enable_nvidia_dcgm" = yes)
 
 dnl
 dnl enable Nvidia gpu support
@@ -1207,6 +1223,11 @@ if test "${enable_nvidia}" = "yes"; then
     gccwarnings=no
     AC_DEFINE([NVML_API], 1, [Define to enable Nvidia NVML api support])
   fi
+
+  if test "x$enable-nvidia-dcgm" != "xnone"; then
+    MOMLIBS="$MOMLIBS -ldcgm"
+  fi
+
 fi
 
 
