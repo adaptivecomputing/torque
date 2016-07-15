@@ -4,6 +4,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#ifdef NIC
+#include <hwloc.h>
+#endif
+
+#ifdef NVIDIA_GPUS
+#include <hwloc.h>
+#include <hwloc/nvml.h>
+#endif
+
 #include "u_tree.h"
 #include "dynamic_string.h"
 #include "tcp.h"
@@ -909,6 +918,11 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../src/lib/Libattr/complete_req.cpp"
 //#include "../../src/lib/Libattr/attr_fn_str.c"
 #ifdef MIC
+void PCI_Device::initializeMic(int x, hwloc_topology *fred)
+  {
+  return;
+  }
+
 int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   {
   return(0);

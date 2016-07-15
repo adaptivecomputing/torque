@@ -171,6 +171,8 @@ pthread_mutex_t  delete_job_files_mutex;
 
 #ifdef NVIDIA_DCGM
 dcgmHandle_t pDcgmHandle;
+unsigned int gpuIdList[DCGM_MAX_NUM_DEVICES];
+int          dcgm_gpu_count;
 #endif
 
 int          lockfds = -1;
@@ -7007,7 +7009,7 @@ int main(
 /* Due to differences in the NVIDIA libraries, NVML initialization must be done 
  * after the MOM is daemonized which happens in setup_program_environment.
  * */
-  if (!init_nvidia_nvml(global_gpu_count))
+  if (init_nvidia_nvml(global_gpu_count) != NVML_SUCCESS)
     {
     use_nvidia_gpu = FALSE;
     }
@@ -7058,6 +7060,36 @@ int main(
     }
 
   free(ip_address);
+
+  /* Get the array of all NVIDIA gpu devices on this MOM */
+  dcgm_rc = dcgmGetAllDevices(pDcgmHandle, gpuIdList, &dcgm_gpu_count);
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "Failed to get NVIDIA DCGM device count: %d", dcgm_rc);
+    log_ext(-1, __func__, log_buffer, 0);
+    exit(-1);
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    sprintf(log_buffer, "%d GPUs found with gpu Ids ", dcgm_gpu_count);
+    for (unsigned int i = 0; i < dcgm_gpu_count; i++)
+      {
+      char dcgm_buf[30];
+
+      if (i == 0)
+	      sprintf(dcgm_buf, "%d", gpuIdList[i]);
+      else
+        sprintf(dcgm_buf, ", %d", gpuIdList[i]);
+      strcat(log_buffer, dcgm_buf);
+      }
+
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, log_buffer);
+    }
+      
+  dcgmDeviceAttributes_t DcgmAttr;
+  dcgm_rc = dcgmGetDeviceAttributes(pDcgmHandle, gpuIdList[0], &DcgmAttr);
+
 
 #endif  /* NVIDIA_DCGM */
 #endif  /* NVIDIA_GPUS */

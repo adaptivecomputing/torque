@@ -134,6 +134,10 @@ extern "C"
 #include "job_host_data.hpp"
 #include "pmix_tracker.hpp"
 
+#ifdef NVIDIA_DCGM
+#include "nvidia.h"
+#endif
+
 #ifdef PENABLE_LINUX_CGROUPS
 #include "trq_cgroups.h"
 #include "complete_req.hpp"
@@ -2596,7 +2600,6 @@ int TMomFinalizeJob2(
       return(FAILURE);
       }
     }
-#endif  /* NVIDIA_GPUS */
 
 #ifdef ENABLE_PMIX
   pmix_proc_t   p;
@@ -2617,6 +2620,23 @@ int TMomFinalizeJob2(
     log_err(-1, __func__, log_buffer);*/
     }
 #endif
+
+#ifdef NVIDIA_DCGM
+  int  rc = PBSE_NONE;
+
+  rc = nvidia_dcgm_create_gpu_job_info(pjob);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Failed to setup DCGM job group: %d", rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    *SC = rc;
+    return(FAILURE);
+    }
+
+#endif /* NVIDIA_DCGM */
+ 
+#endif  /* NVIDIA_GPUS */
+
 
   /* fork the child that will become the job. */
   if ((cpid = fork_me(-1)) < 0)
@@ -4770,6 +4790,23 @@ int TMomFinalizeChild(
       log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       }
     }
+
+#ifndef PENABLE_LINUX_CGROUPS
+#ifdef PENABLE_LINUX26_CPUSETS
+  /* Move this mom process into the cpuset so the job will start in it. */
+
+  if (use_cpusets(pjob) == TRUE)
+    {
+    f (LOGLEVEL >= 6)
+      {
+      sprintf(log_buffer, "about to move to cpuset of job %s", pjob->ji_qs.ji_jobid);
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+      }
+    move_to_job_cpuset(getpid(), pjob);
+    }
+
+#endif  /* (PENABLE_LINUX26_CPUSETS) */
+#endif
 
   if (site_job_setup(pjob) != 0)
     {

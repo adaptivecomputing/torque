@@ -41,6 +41,7 @@ std::string cg_devices_path;
 #define LDAP_RETRIES 5
 
 // Sensing and control variables
+int  use_nvidia_gpu = TRUE;
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -52,7 +53,6 @@ bool fail_site_grp_check = false;
 bool addr_fail = false;
 
 
-int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -1087,4 +1087,9 @@ void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
 
 int setup_gpus_for_job(job *pjob)
   {return(0);}
+
+int nvidia_dcgm_create_gpu_job_info(job *pjob)
+  {
+  return(PBSE_NONE);
+  }
 

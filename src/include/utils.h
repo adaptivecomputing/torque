@@ -205,5 +205,12 @@ int put_env_var(const char *, const char *);
 int rmdir_ext(const char *dir, int retry_limit = 20);
 int unlink_ext(const char *filename, int retry_limit = 20);
 
+// from u_json.c
+int get_name_value_pair(char **ptr, std::string &valName, std::string &value);
+int get_array_value(char **ptr, char *token, std::string &value);
+int get_object_value(char **ptr, char *token, std::string &value);
+int get_numeric_value(char **ptr, char *token, std::string &value);
+
+
 #endif /* END #ifndef UTILS_H */
  

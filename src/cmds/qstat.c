@@ -61,20 +61,21 @@ static void states(
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 /* defines for alternative display formats */
-#define ALT_DISPLAY_a 1 /* -a option - show all jobs */
-#define ALT_DISPLAY_i 2 /* -i option - show not running */
-#define ALT_DISPLAY_r 4 /* -r option - show only running */
-#define ALT_DISPLAY_u 8 /* -u option - list user's jobs */
-#define ALT_DISPLAY_n 0x10 /* -n option - add node list */
-#define ALT_DISPLAY_s 0x20 /* -s option - add scheduler comment */
-#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info */
+#define ALT_DISPLAY_a  1       /* -a option - show all jobs */
+#define ALT_DISPLAY_i  2       /* -i option - show not running */
+#define ALT_DISPLAY_r  4       /* -r option - show only running */
+#define ALT_DISPLAY_u  8       /* -u option - list user's jobs */
+#define ALT_DISPLAY_n  0x10    /* -n option - add node list */
+#define ALT_DISPLAY_s  0x20    /* -s option - add scheduler comment */
+#define ALT_DISPLAY_R  0x40    /* -R option - add SRFS info */
 
-#define ALT_DISPLAY_q 0x80 /* -q option - alt queue display */
+#define ALT_DISPLAY_q  0x80    /* -q option - alt queue display */
 
-#define ALT_DISPLAY_Mb 0x100 /* show sizes in MB */
-#define ALT_DISPLAY_Mw 0x200 /* -M option - show sizes in MW */
-#define ALT_DISPLAY_G 0x400 /* -G option - show sizes in GB */
-#define ALT_DISPLAY_o   0x800   /* -1 option - add node list on same line */
+#define ALT_DISPLAY_Mb 0x100   /* show sizes in MB */
+#define ALT_DISPLAY_Mw 0x200   /* -M option - show sizes in MW */
+#define ALT_DISPLAY_G  0x400   /* -G option - show sizes in GB */
+#define ALT_DISPLAY_o  0x800   /* -1 option - add node list on same line */
+#define ALT_DISPLAY_g  0x1000  /* -g option - display NVIDIA DCGM gpu usage detail */
 #endif /* not PBS_NO_POSIX_VIOLATION */
 
 #define MAX_RETRIES  3
@@ -94,6 +95,7 @@ int                  B_opt;
 int                  Q_opt;
 int                  t_opt;
 int                  E_opt;
+bool                 g_opt = false;
 
 std::string          ExtendOpt;
 bool                 condensed = false;
@@ -105,6 +107,8 @@ char                 user[MAXPATHLEN];
 #else
   char                 option[3];
 #endif
+
+int get_name_value_pair(char **ptr, std::string &valName, std::string &value);
 
 int                  exec_only = 0;
 const char          *conflict_msg = "qstat: conflicting options.\n";
@@ -1585,6 +1589,471 @@ void add_xml_resource(
   } // END add_xml_resource()
 
 
+/*
+ * printf_dcgm_gpu_object()
+ *
+ * This routing prints the contents of a JSON object as XML
+ * if the -x option is requested from qstat
+ *
+ * @param name - The name of the JSON object
+ * @param value - a pointer to the JSON string with the the
+ *                contents of the object.
+ *
+ */
+
+void print_dcgm_gpu_object(
+    
+  const char *name, 
+  const char *value,
+  mxml_t     *JE)
+
+  {
+  char *ptr;
+  std::string obj_name;
+  std::string obj_value;
+  int rc;
+  mxml_t *RE;
+
+  ptr = (char *)value;
+
+  MXMLCreateE(&RE, name);
+  MXMLAddE(JE, RE);
+
+  if (*ptr == '{')
+    {
+    ptr++;
+
+    while((ptr != NULL) && (*ptr != '\0'))
+      {
+      rc = get_name_value_pair(&ptr, obj_name, obj_value);
+      if (rc != PBSE_NONE)
+        return;
+
+      add_xml_resource(RE, obj_name.c_str(), obj_value.c_str());
+
+      move_past_whitespace(&ptr);
+
+      if (*ptr == '}')
+        ptr = NULL;
+      }
+    }
+  }
+
+/*
+ * printf_dcgm_gpu_array()
+ *
+ * This routing prints the contents of a JSON array to the console
+ * in XML format
+ *
+ * @param name - The name of the JSON array
+ * @param value - a pointer to the JSON string with the the
+ *                contents of the array.
+ *
+ */
+
+void print_dcgm_gpu_array(
+    
+    const char *name, 
+    const char *value,
+    mxml_t     *JE) 
+
+  {
+  char    *ptr;
+  mxml_t  *RE;
+
+  ptr = (char *)value;
+  
+  MXMLCreateE(&RE, name);
+  MXMLAddE(JE, RE);
+
+  if (*ptr == '[')
+    {
+    ptr++;
+    move_past_whitespace(&ptr);
+    if (*ptr == '{')
+      {
+      std::string element_name, element_value;
+      unsigned int index;
+
+      ptr++;
+      move_past_whitespace(&ptr);
+      while((ptr != NULL) && (*ptr != '\0'))
+        {
+        int rc; 
+
+        rc = get_name_value_pair(&ptr, element_name, element_value);
+        if (rc != PBSE_NONE)
+          return;
+
+        add_xml_resource(RE, element_name.c_str(), element_value.c_str());
+
+        move_past_whitespace(&ptr);
+        if (*ptr == ',')
+          {
+          /* we have another object */
+          ptr++;
+          move_past_whitespace(&ptr);
+          if (*ptr == '{')
+            ptr++;
+          }
+        else if (*ptr == ']')
+          {
+          /* we are done */
+          ptr = NULL;
+
+          }
+        }
+      }
+    }
+  }
+
+ 
+/*
+ * print_dcgm_gpu_summary()
+ *
+ * print dcgm_gpu_summary displays an abbreviated list of elements from the
+ * dcgm gpu job use summary.
+ *
+ * @param resc_name - ATTR_dcgm_gpu_use
+ * @param dcgm_value - pointer to the JSON string to be printed.
+ *
+ */
+
+void print_dcgm_gpu_summary(
+    
+    const char *resc_name, 
+    const char *dcgm_value,
+    mxml_t     *JE) 
+
+  {
+  char *ptr;
+  char *valueHead;
+  std::string name;
+  std::string value;
+
+  valueHead = strdup(dcgm_value);
+  ptr = valueHead;
+
+  if (*ptr == '{')
+    ptr++;
+
+  while((ptr != NULL) && (*ptr != '\0'))
+    {
+    get_name_value_pair(&ptr, name, value);
+
+    if (value.find_first_of('{', 0) == 0)
+      {
+      print_dcgm_gpu_object(name.c_str(), value.c_str(), JE);
+      }
+    else if (value.find_first_of('[', 0) == 0)
+      {
+      print_dcgm_gpu_array(name.c_str(), value.c_str(), JE);
+      }
+    else
+      {
+      if (JE == NULL)
+        {
+        if (name == "numGpus")
+          printf("\tgpus.gpus_used = %s\n", value.c_str());
+        if (name == "energyConsumed")
+          printf("\tgpus.energy_used = %s\n", value.c_str());
+        if (name == "eccSingleBit")
+          printf("\tgpus.eccSingleBit Errors = %s\n", value.c_str());
+        if (name == "eccDoubleBit")
+          printf("\tgpus.eccDoubleBit Errors = %s\n", value.c_str());
+        }
+      else
+        {
+        add_xml_resource(JE, name.c_str(), value.c_str());
+        }
+      }
+
+    move_past_whitespace(&ptr);
+
+    if (*ptr == '}')
+      ptr = NULL;
+    }
+
+  }
+
+
+/* 
+ * print_dcgm_gpu_use()
+ *
+ * print_dcgm_gpu_use will print a brief summary of dcgm gpu information
+ * for the qstat -f request.
+ * It will also display all of the dcgm gpu use information in XML format
+ * for the qstat -x request.
+ *
+ * @param dcgm_gpu_use_attr - This is the dcgm attribute with all of the 
+ *                            gpu job use information
+ * @param JE                - This indicates whether to print the XML format or not
+ *                            If not NULL print XML.
+ */
+
+void print_dcgm_gpu_use(
+
+  struct attrl *dcgm_gpu_use_attr,
+  mxml_t       *JE)
+
+  {
+  char *resc_name;
+  char *value;
+  char  name[1024];
+  mxml_t *RE = NULL;
+
+  resc_name = dcgm_gpu_use_attr->resource;
+  value = dcgm_gpu_use_attr->value;
+
+  if (!strcmp(resc_name, "summary"))
+    {
+      print_dcgm_gpu_summary(resc_name, dcgm_gpu_use_attr->value, JE); 
+    }
+  else if (!strncmp(resc_name, "GPU:", 4))
+    {
+    if (g_opt == true)
+      {
+        print_dcgm_gpu_summary(resc_name, dcgm_gpu_use_attr->value, JE); 
+      }
+    }
+  else if (!strncmp(resc_name, "numGpus", 7))
+    {
+    if (JE == NULL)
+      {
+      printf("    gpus.summarys:\n");
+      printf("\t%s = %s\n", resc_name, value);
+      }
+    }
+  }
+
+
+/*
+ * print_json_dcgm_gpu_object()
+ *
+ * print_json_dcgm_gpu_object() prints an object portion
+ * of a dcgm gpu output in json format to the users screen
+ *
+ * @param name  - This is the name of the object
+ * @param value - this is a string brackedted by a '{' at the 
+ *                beginning and a '}' at the end of the object
+ *
+ */
+void print_json_dcgm_gpu_object(
+
+  const char *name,
+  const char *value)
+
+  {
+  char *ptr;
+  std::string obj_name;
+  std::string obj_value;
+  int rc;
+
+  obj_name = name;
+  obj_value = value;
+  ptr = (char *)value;
+
+  printf("\t\t\"%s\": {\n", name);
+  
+  if (*ptr == '{')
+    {
+    ptr++;
+ 
+    while((ptr != NULL) && (*ptr != '\0'))
+      {
+      get_name_value_pair(&ptr, obj_name, obj_value);
+
+      /* Do we have another object */
+      if (obj_value.find_first_of('{', 0) == 0)
+        {
+        print_json_dcgm_gpu_object(obj_name.c_str(), obj_value.c_str());
+        }
+      else
+        {
+        if (*ptr != '\0')
+          printf("\t\t\t\"%s\": %s,\n", obj_name.c_str(), obj_value.c_str());
+        else
+          printf("\t\t\t\"%s\": %s\n", obj_name.c_str(), obj_value.c_str());
+        }
+      }   
+    }
+  printf("\t\t},\n");
+  }
+
+
+/*
+ * print_json_dcgm_gpu_array()
+ *
+ * print_json_dcgm_gpu_array() prints an array portion
+ * of a dcgm gpu output in json format to the users screen
+ *
+ * @param name  - This is the name of the array
+ * @param value - this is the list of elements in the array
+ *
+ */
+
+void print_json_dcgm_gpu_array(
+
+  const char *name,
+  const char *value)
+
+  {
+  char *ptr;
+  std::string element_name;
+  std::string element_value;
+
+  ptr = (char *)value;
+
+  printf("\t\t\t\"%s\": [\n", name);
+
+  move_past_whitespace(&ptr);
+
+  if (*ptr == '[')
+    {
+    ptr++;
+    move_past_whitespace(&ptr);
+    
+    /* The array elements will be json objects. Look for the '{' of the first object */
+    if (*ptr == '{')
+      {
+      ptr++;
+      while((ptr != NULL) && (*ptr != '\0'))
+        {
+        get_name_value_pair(&ptr, element_name, element_value);
+
+        printf("\t\t\t\t{\"%s\": %s}", element_name.c_str(), element_value.c_str());        
+        move_past_whitespace(&ptr);
+        
+        if (*ptr != ']')
+          {
+          printf(",\n");
+          ptr++;
+          move_past_whitespace(&ptr);
+          if (*ptr == '{')
+            ptr++;
+          }
+        else
+          {
+          printf("\n\t\t\t],\n");
+          ptr = NULL;
+          }
+        }
+      }
+    }
+  }
+
+
+/*
+ * print_json_dcgm_gpu_summary()
+ *
+ * print_json_dcgm_gpu_summary displays the elements of the 
+ * dcgm gpu summary elements of the DCGM_GpuUsageInfo class
+ * in JSON format
+ *
+ * @parameter dcgm_value - This is a json encoded string of the dcgm
+ *                         job summary.
+ *
+ */
+
+void print_json_dcgm_gpu_summary(
+
+  const char *dcgm_value)
+
+  {
+  char *ptr;
+  char *valueHead;
+  std::string name;
+  std::string value;
+
+  valueHead = strdup(dcgm_value);
+
+  ptr = valueHead;
+
+  if (*ptr == '{')
+    ptr++;
+
+  while((ptr != NULL) && (*ptr != '\0'))
+    {
+    get_name_value_pair(&ptr, name, value);
+
+    /* Do we have another object */
+    if (value.find_first_of('{', 0) == 0)
+      {
+      print_json_dcgm_gpu_object(name.c_str(), value.c_str());
+      }
+    /* Do we have an array? */
+    else if (value.find_first_of('[', 0) == 0)
+      {
+      print_json_dcgm_gpu_array(name.c_str(), value.c_str());
+      }
+    else
+      {
+      move_past_whitespace(&ptr);
+      if (*ptr != '\0')
+        printf("\t\t\"%s\": %s,\n", name.c_str(), value.c_str());
+      else
+        printf("\t\t\"%s\": %s\n", name.c_str(), value.c_str());
+      }
+
+    move_past_whitespace(&ptr);
+    }
+
+  free(valueHead);
+  }
+
+
+/* 
+ * print_json_dcgm_gpu_use
+ *
+ * print_json_dcgm_gpu_use is the top level function for printing
+ * dcgm gpu job usage information in JSON format.
+ *
+ * @param dcgm_gpu_use_attr - This is a pointer to the DCGM_job_gpu_stats
+ *                            class which contains all of the job gpu
+ *                            usage infomation.
+ *
+ * @param add_comma  -  Boolean value to direct print_json_dcgm_gpu_use
+ *                      to add a comma at the end of the information or
+ *                      to not add a comme.
+ *
+ */
+
+void print_json_dcgm_gpu_use(
+
+  struct attrl *dcgm_gpu_use_attr,
+  bool add_comma)
+
+  {
+  char *resc_name;
+  char  name[1024];
+  mxml_t *RE = NULL;
+
+  resc_name = dcgm_gpu_use_attr->resource;
+
+  if (!strcmp(resc_name, "summary"))
+    {
+    printf("   \"%s\": {\n", resc_name);
+     print_json_dcgm_gpu_summary(dcgm_gpu_use_attr->value); 
+    printf("\t    },\n");
+    return;
+    }
+  else if (!strncmp(resc_name, "GPU:", 4))
+    {
+    printf("   \"%s\": {\n", resc_name);
+    print_json_dcgm_gpu_summary( dcgm_gpu_use_attr->value); 
+    if (add_comma == true)
+      printf("\t    },\n");
+    else
+      printf("\t    }\n");
+    return;
+    }
+  else
+    {
+    printf("   \"%s\": %s,\n", resc_name, dcgm_gpu_use_attr->value);
+    }
+  }
+
+
 
 void print_req_information(
 
@@ -1622,9 +2091,9 @@ void print_req_information(
     }
   else
     {
-    MXMLCreateE(&RE, name);
-    MXMLAddE(JE, RE);
-    add_xml_resource(RE, "cpu_list", out.c_str());
+    //MXMLCreateE(&RE, name);
+    //MXMLAddE(JE, RE);
+    add_xml_resource(JE, "cpu_list", out.c_str());
     }
     
   translate_vector_to_range_string(out, a.mem_indices);
@@ -1634,7 +2103,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(RE, "mem_list", out.c_str());
+    add_xml_resource(JE, "mem_list", out.c_str());
     
   if (a.task_cput_used != 0)
     {
@@ -1646,7 +2115,7 @@ void print_req_information(
       printf("\n");
       }
     else
-      add_xml_resource(RE, "cpu_time_used", buf);
+      add_xml_resource(JE, "cpu_time_used", buf);
     }
     
   if (a.task_memory_used != 0)
@@ -1663,7 +2132,7 @@ void print_req_information(
       printf("\n");
       }
     else
-      add_xml_resource(RE, "memory_used", buf);
+      add_xml_resource(JE, "memory_used", buf);
     }
     
   sprintf(buf, "%d", a.cores);
@@ -1673,7 +2142,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(RE, "cores", buf);
+    add_xml_resource(JE, "cores", buf);
     
   sprintf(buf, "%d", a.threads);
   if (JE == NULL)
@@ -1682,7 +2151,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(RE, "threads", buf);
+    add_xml_resource(JE, "threads", buf);
 
   if (JE == NULL)
     {
@@ -1690,7 +2159,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(RE, "host", a.hostname.c_str());
+    add_xml_resource(JE, "host", a.hostname.c_str());
 
   } // END print_req_information()
 
@@ -1735,6 +2204,7 @@ void create_full_job_xml(
 
   RE1 = NULL;
 
+  std::string last_attr_name;
   for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
     {
     if (attribute->name != NULL)
@@ -1748,6 +2218,11 @@ void create_full_job_xml(
         {
         print_req_information(attribute, RE1);
         }
+      else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use) && 
+         (!strcmp(attribute->resource, "summary") || (!strncmp(attribute->resource, "GPU:", 4))))
+        {
+        print_dcgm_gpu_use(attribute, RE1);
+        }
       else
         {
 
@@ -1755,6 +2230,9 @@ void create_full_job_xml(
 
         if (attribute->resource != NULL)
           {
+          if (last_attr_name != attribute->name)
+            RE1 = NULL;
+
           if (RE1 == NULL)
             {
             MXMLCreateE(&RE1, attribute->name);
@@ -1775,6 +2253,7 @@ void create_full_job_xml(
           }
         }
       }
+    last_attr_name = attribute->name;
     }
   } // END create_full_job_xml()
 
@@ -1795,42 +2274,67 @@ void display_full_job(
   struct attrl *attribute;
   time_t        epoch;
 
-  printf("Job Id: %s\n", p->name);
-  
-  for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
+  if (g_opt == false)
     {
-    if (attribute->name != NULL)
+    printf("Job Id: %s\n", p->name);
+    
+    for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
       {
-      if (!strcmp(attribute->name, ATTR_execport))
-        continue;
+      if (attribute->name != NULL)
+        {
+        if (!strcmp(attribute->name, ATTR_execport))
+          continue;
 
-      if ((attribute->resource != NULL) &&
-          (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
-        {
-        print_req_information(attribute, NULL);
-        }
-      else if (!strcmp(attribute->name, ATTR_ctime) ||
-          !strcmp(attribute->name, ATTR_etime) ||
-          !strcmp(attribute->name, ATTR_mtime) ||
-          !strcmp(attribute->name, ATTR_qtime) ||
-          !strcmp(attribute->name, ATTR_start_time) ||
-          !strcmp(attribute->name, ATTR_comp_time) ||
-          !strcmp(attribute->name, ATTR_checkpoint_time) ||
-          !strcmp(attribute->name, ATTR_a))
-        {
-        epoch = (time_t)strtol(attribute->value, NULL, 10);
+        if ((attribute->resource != NULL) &&
+            (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
+          {
+          print_req_information(attribute, NULL);
+          }
+        else if (!strcmp(attribute->name, ATTR_ctime) ||
+            !strcmp(attribute->name, ATTR_etime) ||
+            !strcmp(attribute->name, ATTR_mtime) ||
+            !strcmp(attribute->name, ATTR_qtime) ||
+            !strcmp(attribute->name, ATTR_start_time) ||
+            !strcmp(attribute->name, ATTR_comp_time) ||
+            !strcmp(attribute->name, ATTR_checkpoint_time) ||
+            !strcmp(attribute->name, ATTR_a))
+          {
+          epoch = (time_t)strtol(attribute->value, NULL, 10);
 
-        prt_attr(attribute->name, attribute->resource, ctime(&epoch));
-        }
-      else
-        {
-        if ((!strcmp(attribute->name, "Walltime")) && (attribute->value[0] == '-'))
-          prt_attr(attribute->name, (char *)"Exceeded", attribute->value);
+          prt_attr(attribute->name, attribute->resource, ctime(&epoch));
+          }
+        else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
+          {
+          print_dcgm_gpu_use(attribute, NULL);
+          }
         else
-          prt_attr(attribute->name, attribute->resource, attribute->value);
-        printf("\n");
+          {
+          if ((!strcmp(attribute->name, "Walltime")) && (attribute->value[0] == '-'))
+            prt_attr(attribute->name, (char *)"Exceeded", attribute->value);
+          else
+            prt_attr(attribute->name, attribute->resource, attribute->value);
+          printf("\n");
+          }
         }
       }
+    }
+  else
+    {
+    printf("{  \"Job_Id\": \"%s\",\n", p->name);
+    for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
+      {
+      bool add_comma = true;
+
+      if (attribute->next == NULL)
+        add_comma = false;
+
+      if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
+        {
+        print_json_dcgm_gpu_use(attribute, add_comma);
+        }
+      }
+    
+    printf("}\n");
     }
   } // END display_full_job()
 
@@ -1865,7 +2369,7 @@ void display_single_job(
       (job_is_complete(p->attribs) == true))
     return;
 
-  if (full)
+  if (full || (g_opt == true))
     {
     if (DisplayXML == true)
       create_full_job_xml(p, DE);
@@ -1909,7 +2413,7 @@ void display_statjob(
     full = true;
     }
 
-  if (!full)
+  if (!full && (g_opt == false))
     {
     sprintf(format, "%%-%ds %%-%ds %%-%ds %%%ds %%%ds %%-%ds\n",
             PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 11,
@@ -2575,7 +3079,7 @@ int process_commandline_opts(
   int rc = PBSE_NONE;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
-#define GETOPT_ARGS "acCeE:filn1pqrstu:xGMQRBW:-:"
+#define GETOPT_ARGS "acCeE:fgiln1pqrstu:xGMQRBW:-:"
 #else
 #define GETOPT_ARGS "flpQBW:"
 #endif /* PBS_NO_POSIX_VIOLATION */
@@ -2640,6 +3144,25 @@ int process_commandline_opts(
           ExtendOpt = optarg;
           E_opt = TRUE;
           }
+        break;
+
+      case 'g':
+
+        if ((alt_opt != 0) &&
+            (alt_opt != ALT_DISPLAY_u))
+          {
+          fprintf(stderr, "%s -f incompatible with one or more options. Read qstat man page\n", conflict_msg);
+
+          errflg++;
+          return(PBSE_IVALREQ);
+          }
+
+        //f_opt = true;
+
+        g_opt = true;
+
+        /* We want to return all attributes */
+        attrib = NULL;
         break;
 
       case 'i':
@@ -2746,6 +3269,7 @@ int process_commandline_opts(
       case 'x':
 
         DisplayXML = true;
+        g_opt = true;
 
         /* We want to return all attributes */
         attrib = NULL;

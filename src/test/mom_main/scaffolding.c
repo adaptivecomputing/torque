@@ -1080,7 +1080,64 @@ int init_nvidia_nvml(unsigned int &count)
  return(1);
  }
 
+dcgmReturn_t DECLDIR dcgmGetAllDevices(
+    
+    dcgmHandle_t pDcgmHandle, 
+    unsigned int gpuIdList[DCGM_MAX_NUM_DEVICES], 
+    int *count)
+
+  {
+  *count = 2;
+  return(DCGM_ST_OK);
+  }
+
+dcgmReturn_t DECLDIR dcgmGetDeviceAttributes(
+    
+  dcgmHandle_t pDcgmHandle, 
+  unsigned int gpuId, 
+  dcgmDeviceAttributes_t *pDcgmAttr)
+
+  {
+  return(DCGM_ST_OK);
+  }
+
+dcgmReturn_t DECLDIR dcgmInit(
+    
+  char *ipAddress, 
+  dcgmOperationMode_t opMode, 
+  dcgmHandle_t *pDcgmHandle)
+
+  {
+  return(DCGM_ST_OK);
+  }
+
+
+pbs_net_t get_hostaddr(
+
+  int *local_errno,
+  char *hostname)
+
+  {
+  pbs_net_t rval = 0;
+
+  return(rval);
+  }
+
+
 int shut_nvidia_nvml()
   {
-  return(1);
+  return(TRUE);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int        *local_errno,
+  const char *hostname)
+
+  {
+  pbs_net_t  rval = 0;
+
+  rval=1;
+
+  return(rval);
   }

@@ -93,3 +93,11 @@ int kill_task(job *pjob, struct task *task, int sig, int pg)
   }
 
 void check_and_act_on_obit(job *pjob, int rank) {}
+
+int nvidia_dcgm_finalize_gpu_job_info(
+
+  job *pjob)
+
+  {
+  return(PBSE_NONE);
+  }

@@ -595,8 +595,6 @@ int process_node(
   return(PBSE_NONE);
   } /* END process_node() */
 
-
-
 int process_nodes(
 
   xmlNode                  *node)

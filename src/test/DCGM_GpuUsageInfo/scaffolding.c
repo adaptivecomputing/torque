@@ -146,58 +146,6 @@ void *get_next(
       break;
 
     case 9:
-      rd.rs_name = strdup("nodes");
-      r->rs_value.at_val.at_str = strdup("1:ppn=2");
-      break;
-
-    case 10:
-
-      rd.rs_name = strdup("pmem");
-      r->rs_value.at_val.at_size.atsv_num = 80;
-      r->rs_value.at_val.at_size.atsv_shift = 10;
-      break;
-
-    case 11:
-
-      r = NULL;
-      break;
-
-    case 12:
-      rd.rs_name = strdup("nodes");
-      r->rs_value.at_val.at_str = strdup("1:ppn=2");
-      break;
-
-    case 13:
-
-      rd.rs_name = strdup("pvmem");
-      r->rs_value.at_val.at_size.atsv_num = 80;
-      r->rs_value.at_val.at_size.atsv_shift = 10;
-      break;
-
-    case 14:
-
-      r = NULL;
-      break;
-
-    case 15:
-      rd.rs_name = strdup("nodes");
-      r->rs_value.at_val.at_str = strdup("1:ppn=2");
-      break;
-
-    case 16:
-
-      rd.rs_name = strdup("vmem");
-      r->rs_value.at_val.at_size.atsv_num = 80;
-      r->rs_value.at_val.at_size.atsv_shift = 10;
-      break;
-
-    case 17:
-
-      r = NULL;
-      break;
-
-
-    case 18:
 
       rd.rs_name = strdup("vmem");
       r->rs_value.at_val.at_size.atsv_num = 2048;

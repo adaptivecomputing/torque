@@ -765,6 +765,7 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libattr/complete_req.cpp"
 
 #ifdef NVML_API
+
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
   return(0);
@@ -791,7 +792,6 @@ void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology)
   }
 
 #endif
-
 
 
 int update_user_acls(pbs_attribute *pattr, batch_op op_type)

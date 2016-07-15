@@ -1222,6 +1222,10 @@ int post_epilogue(
 
   encode_complete_req(&pjob->ji_wattr[JOB_ATR_req_information], &preq->rq_ind.rq_jobobit.rq_attr, ATTR_req_information, NULL, 0, 0);
 
+#ifdef NVIDIA_DCGM
+  encode_dcgm_gpu_use(&pjob->ji_wattr[JOB_ATR_dcgm_gpu_use], &preq->rq_ind.rq_jobobit.rq_attr, ATTR_dcgm_gpu_use, NULL, 0, 0);
+#endif
+
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     }

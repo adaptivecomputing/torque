@@ -2697,16 +2697,19 @@ int im_join_job_as_sister(
     Re-init the torque subdir
    */
   ret = init_torque_cgroups();
-  if (rc == PBSE_NONE) {
+  if (rc == PBSE_NONE) 
+    {
       ret = trq_cg_create_all_cgroups(pjob);
-  } else {
+    } 
+  else 
+    {
       /*
         Send/log an additional error, cleanup and return as before
        */
     sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
-  }
+    }
 
   if (ret != PBSE_NONE)
     {
