@@ -1269,7 +1269,6 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
 
-#ifdef PENABLE_LINUX_CGROUPS
   // JOB_ATR_cpuset_string
   {(char *)ATTR_cpustr,   /* "cpuset_string" */
    decode_str,
@@ -1295,7 +1294,6 @@ attribute_def job_attr_def[] =
    ATR_TYPE_STR,
    PARENT_TYPE_JOB,
   },
-#endif
 
   /* JOB_ATR_user_kill_delay */
   {(char *)ATTR_user_kill_delay, /* "user_kill_delay" */
