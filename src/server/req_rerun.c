@@ -520,12 +520,24 @@ int req_rerunjob(
       char               *extra = strdup(rerun);
 
       get_batch_request_id(preq);
-      if ((rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id))))
+      /* If a qrerun -f is given requeue the job regardless of the outcome of issue_signal*/
+      if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
         {
-        /* cant send to MOM */
-        req_reject(rc, 0, preq, NULL, NULL);
+        std::string extend = RERUNFORCE;
+        rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, strdup(extend.c_str()));
+        if (rc == PBSE_NORELYMOM)
+          rc = PBSE_NONE;
         }
-      return rc;
+      else         
+        {
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
+        if (rc != PBSE_NONE)
+          {
+          /* cant send to MOM */
+         req_reject(rc, 0, preq, NULL, NULL);
+          }
+        return rc;
+        }
       }
     else
       {
