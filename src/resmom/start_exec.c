@@ -2999,6 +2999,7 @@ int write_nodes_to_file(
   {
   char         filename[MAXPATHLEN];
   int          j;
+  int          rc;
   int          vnodenum;
   FILE        *file;
 
@@ -3097,15 +3098,23 @@ int write_nodes_to_file(
 
 #endif /* def NUMA_SUPPORT */
 
+      errno = 0;
+
       if (nodefile_suffix != NULL)
         {
-        fprintf(file, "%s%s\n",
-          vp->vn_host->hn_host,
-          nodefile_suffix);
+        rc = fprintf(file, "%s%s\n", vp->vn_host->hn_host, nodefile_suffix);
         }
       else
         {
-        fprintf(file, "%s\n", vp->vn_host->hn_host);
+        rc = fprintf(file, "%s\n", vp->vn_host->hn_host);
+        }
+
+      if (rc < 0)
+        {
+        sprintf(log_buffer, "Unable to write to the $PBS_NODEFILE for job %s",
+                pjob->ji_qs.ji_jobid);
+        log_err(errno, __func__, log_buffer);
+        break;
         }
 
 #ifdef NUMA_SUPPORT
@@ -3117,9 +3126,17 @@ int write_nodes_to_file(
       }    /* END for (j) */
     }
 
-  fclose(file);
+  int tmp = fclose(file);
+  if (tmp)
+    {
+    sprintf(log_buffer, "Error closing the $PBS_NODEFILE for job %s", pjob->ji_qs.ji_jobid);
+    log_err(errno, __func__, log_buffer);
 
-  return(PBSE_NONE);
+    if (rc == PBSE_NONE)
+      rc = tmp;
+    }
+
+  return(rc);
   } /* END write_nodes_to_file() */
 
 
@@ -3134,7 +3151,7 @@ void take_care_of_nodes_file(
   {
   if (pjob->ji_flags & MOM_HAS_NODEFILE)
     {
-    if (write_nodes_to_file(pjob) == -1)
+    if (write_nodes_to_file(pjob) != PBSE_NONE)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
     if (write_attr_to_file(pjob, JOB_ATR_exec_gpus, "gpu") == -1)
