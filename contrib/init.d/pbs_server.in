@@ -28,47 +28,16 @@ PBS_SERVERDB="$PBS_HOME/server_priv/serverdb"
 
 SUBSYS_LOCK="/var/lock/subsys/pbs_server"
 
-SERVER_LOCK="$PBS_HOME/server_priv/server.lock"
-
 pidof_pbs_server() {
-	local lockfile_info parent_server_pid fd fd_info
+	local local_server_pid
 
-	# This function will echo the PID of the master pbs_server process if such
-	# a process is running and then return 0. Otherwise it will echo nothing
-	# and return 1.
-
-	lockfile_info=`stat -Lc "%d:%i" $SERVER_LOCK 2>/dev/null`
-	if [ $? -ne 0 ]; then
-                # server may have been started with "-t create" and
-                # not have a $SERVER_LOCK file so try to find
-                # the pid without it
-                server_pid=`pidof -s $SBIN_PATH/pbs_server`
-                if [ $? -ne 0 ]; then
-		        return 1
-                fi
-                echo $server_pid
-                return 0
-	fi
-
-	# now we are sure the $SERVER_LOCK file exists
-	parent_server_pid=`cat $SERVER_LOCK 2>/dev/null`
-	pidof pbs_server | egrep -e "(^| )${parent_server_pid}( |$)" >/dev/null 2>/dev/null
+	# get pid of local pbs_server
+	local_server_pid=`pidof -s $SBIN_PATH/pbs_server`
 	if [ $? -ne 0 ]; then
 		return 1
 	fi
-
-	# the parent pbs_server should have a lock on the $SERVER_LOCK file, this is
-	# typically acquired early in the pbs_server process, so this loop typically
-	# stops at the sixth open file.
-	for fd in `ls /proc/${parent_server_pid}/fd/ | sort -n`; do
-		fd_info=`stat -Lc "%d:%i" /proc/${parent_server_pid}/fd/${fd} 2>/dev/null`
-		if [ x${fd_info} == x${lockfile_info} ]; then
-			echo $parent_server_pid
-			return 0
-		fi
-	done
-
-	return 1
+	echo $local_server_pid
+	return 0
 }
 
 kill_pbs_server() {
@@ -81,15 +50,18 @@ kill_pbs_server() {
 	if [ $? -ne 0 ]; then
 		return 0;
 	fi
- 
-	$BIN_PATH/qterm
+
+        # Note that qterm shouldn't be used since it will
+        # kill the master pbs_server which may be on another node (in HA mode)
+        kill -TERM $pid 
+
 	# wait for process to end
 	for i in {1..5}; do
 		kill -0 $pid &>/dev/null || return 0
 		sleep 1
 	done
 
-	# waited too long, send SIGTERM
+	# waited too long, try again
 	killproc pbs_server -TERM
 	return $?
 }
