@@ -3116,6 +3116,8 @@ int write_nodes_to_file(
         log_err(errno, __func__, log_buffer);
         break;
         }
+      else
+        rc = PBSE_NONE;
 
 #ifdef NUMA_SUPPORT
       if (dash != NULL)
