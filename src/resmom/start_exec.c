@@ -3107,6 +3107,8 @@ int write_nodes_to_file(
         {
         fprintf(file, "%s\n", vp->vn_host->hn_host);
         }
+      else
+        rc = PBSE_NONE;
 
 #ifdef NUMA_SUPPORT
       if (dash != NULL)
