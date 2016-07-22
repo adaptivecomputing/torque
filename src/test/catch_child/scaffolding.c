@@ -1431,3 +1431,11 @@ int encode_dcgm_gpu_use(
   {
   return(PBSE_NONE);
   }
+
+int nvidia_dcgm_finalize_gpu_job_info(
+
+  job *pjob)
+
+  {
+  return(0);
+  }

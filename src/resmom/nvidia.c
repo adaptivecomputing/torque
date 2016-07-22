@@ -144,10 +144,14 @@
 #endif  /* NVML_API */
 
 #ifdef NVIDIA_DCGM
+#include "req_modify.h"
+
 extern dcgmHandle_t pDcgmHandle;
 extern unsigned int gpuIdList[];
 extern int          dcgm_gpu_count;
 #endif
+
+extern int    multi_mom;
 
 extern int    find_file(const char *, const char *);
 extern int    MOMNvidiaDriverVersion;
@@ -1424,9 +1428,9 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 20, "gpu_fan_speed=%d%%", tmpint);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
+      log_nvml_error (NVML_SUCCESS, NULL, __func__);
       }
 
     /* get the memory information */
@@ -2232,6 +2236,10 @@ dcgmReturn_t nvidia_dcgm_create_gpu_job_group(
   std::string  group_name;
 
   group_name = pjob->ji_qs.ji_jobid;
+  if (multi_mom)
+    {
+    add_multi_mom_port(group_name);
+    }
 	group_name.append(GROUP_SUFFIX);
 
   dcgm_rc = dcgmGroupCreate(pDcgmHandle, DCGM_GROUP_EMPTY, (char *)group_name.c_str(), &pjob->ji_dcgmGrpId);
@@ -2291,9 +2299,17 @@ dcgmReturn_t nvidia_dcgm_start_gpu_job_stats(
 	{
   dcgmReturn_t  dcgm_rc;
   time_t t;
+  std::string  job_name;
 
+  /* multi-mom demands a unique job id or name. */
+  job_name = pjob->ji_qs.ji_jobid;
+  if (multi_mom)
+    {
+    add_multi_mom_port(job_name);
+    }
+	
   pjob->ji_dcgmGpuJobInfo.summary.startTime = time(&t);
-	dcgm_rc = dcgmJobStartStats(pDcgmHandle, pjob->ji_dcgmGrpId, pjob->ji_qs.ji_jobid);
+	dcgm_rc = dcgmJobStartStats(pDcgmHandle, pjob->ji_dcgmGrpId, const_cast<char *>(job_name.c_str()));
 	if (dcgm_rc != DCGM_ST_OK)
 	  {
 		dcgmReturn_t local_rc;
@@ -2407,51 +2423,66 @@ dcgmReturn_t nvidia_dcgm_start_gpu_job_stats(
     }
 
 
-  /*
-   * nvidia_dcgm_finalize_gpu_job_info()
-   *
-   * Collect all of the job gpu statistics, add the information
-   * as a JOB_ATR_dcgm_gpu_use attribute to be used to encode 
-   * the stats to be packaged and sent to pbs_server,.
-   *
-   * @param pjob  - pointer to the job structure.
-   *
-   */
+/*
+ * nvidia_dcgm_finalize_gpu_job_info()
+ *
+ * Collect all of the job gpu statistics, add the information
+ * as a JOB_ATR_dcgm_gpu_use attribute to be used to encode 
+ * the stats to be packaged and sent to pbs_server,.
+ *
+ * @param pjob  - pointer to the job structure.
+ *
+ */
 
 
-  int nvidia_dcgm_finalize_gpu_job_info(
+int nvidia_dcgm_finalize_gpu_job_info(
 
-    job *pjob)
+  job *pjob)
 
+  {
+  dcgmGroupInfo_t  dcgmGroupData;
+  dcgmReturn_t dcgm_rc;
+  int rc = PBSE_NONE;
+  std::string  job_name;
+
+  /* multi-mom demands a unique job id or name. */
+  job_name = pjob->ji_qs.ji_jobid;
+  if (multi_mom)
     {
-    dcgmGroupInfo_t  dcgmGroupData;
-    dcgmReturn_t dcgm_rc;
-    int rc = PBSE_NONE;
+    add_multi_mom_port(job_name);
+    }
 
-    dcgmGroupData.version = dcgmGroupInfo_version;
-    dcgm_rc = dcgmGroupGetInfo(pDcgmHandle, pjob->ji_dcgmGrpId, &dcgmGroupData);
-    /* Get the GPU statistics for this job */
-    pjob->ji_dcgmGpuJobInfo.version = dcgmJobInfo_version;
-    dcgm_rc = dcgmJobGetStats(pDcgmHandle, pjob->ji_qs.ji_jobid, &pjob->ji_dcgmGpuJobInfo);
-    if (dcgm_rc != DCGM_ST_OK)
-      {
-      sprintf(log_buffer, "Failed to get gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-      rc = PBSE_SYSTEM;
-      }
+  dcgmGroupData.version = dcgmGroupInfo_version;
+  dcgm_rc = dcgmGroupGetInfo(pDcgmHandle, pjob->ji_dcgmGrpId, &dcgmGroupData);
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "dcgmGroupGetInfo call failed: %d", dcgm_rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    rc = PBSE_SYSTEM;
+    }
 
-    dcgm_rc = dcgmJobStopStats(pDcgmHandle, pjob->ji_qs.ji_jobid);
-    if (dcgm_rc != DCGM_ST_OK)
-      {
-      sprintf(log_buffer, "Failed to stop gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-      rc = PBSE_SYSTEM;
-      }
-    else
-      {
-      time_t t;
-      pjob->ji_dcgmGpuJobInfo.summary.endTime = time(&t);
-		}
+  /* Get the GPU statistics for this job */
+  pjob->ji_dcgmGpuJobInfo.version = dcgmJobInfo_version;
+  dcgm_rc = dcgmJobStopStats(pDcgmHandle, const_cast<char *>(job_name.c_str()));
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "Failed to stop gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    rc = PBSE_SYSTEM;
+    }
+  else
+    {
+    time_t t;
+    pjob->ji_dcgmGpuJobInfo.summary.endTime = time(&t);
+    }
+
+ dcgm_rc = dcgmJobGetStats(pDcgmHandle, const_cast<char *>(job_name.c_str()), &pjob->ji_dcgmGpuJobInfo);
+  if (dcgm_rc != DCGM_ST_OK)
+    {
+    sprintf(log_buffer, "Failed to get gpu stats for job %s: %d", pjob->ji_qs.ji_jobid, dcgm_rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    rc = PBSE_SYSTEM;
+    }
 
   /* destroy the gpu group */
 	dcgm_rc = dcgmGroupDestroy(pDcgmHandle, pjob->ji_dcgmGrpId);
@@ -2471,5 +2502,167 @@ dcgmReturn_t nvidia_dcgm_start_gpu_job_stats(
   return(rc);
 
 	}
+
+
+int nvidia_dcgm_decode_GpuUsageInfo(
+
+  pbs_attribute  *patr,
+  const char     *rescn,
+  const char     *val)
+
+  {
+  int rc = PBSE_NONE;
+
+  if (val == NULL)
+    return(PBSE_BAD_PARAMETER);
+
+  if (rescn == NULL)
+    {
+    /* Currently we should not get anything without a rescn set. 
+    *      * If that changes change this part of the code */
+    return(PBSE_BAD_PARAMETER);
+    }
+  else
+    {
+    DCGM_GpuUsageInfo *dcgmGpuStats;
+
+    if ((patr->at_val.at_ptr != NULL) &&
+        ((patr->at_flags & ATR_VFLAG_SET) != 0))
+      dcgmGpuStats = (DCGM_GpuUsageInfo *)patr->at_val.at_ptr;
+    else
+      {
+      dcgmGpuStats = new DCGM_GpuUsageInfo();
+      patr->at_val.at_ptr = dcgmGpuStats;
+      }
+
+    dcgmGpuStats->set_value(rescn, val);
+
+    patr->at_flags |= ATR_VFLAG_SET;
+    }
+
+  return(rc);
+
+  }
+
+void add_num_gpus_to_total(
+    
+  job *pjob, 
+  const char *value)
+
+  {
+  DCGM_job_gpu_stats *job_gpu = (DCGM_job_gpu_stats *)pjob->ji_wattr[JOB_ATR_dcgm_gpu_use].at_val.at_ptr;
+  int newGpus;
+  int currentGpus;
+  char new_value[20];
+
+  newGpus = atoi(value);
+
+  job_gpu->get_dcgm_num_gpus(currentGpus);
+
+  currentGpus += newGpus;
+
+  sprintf(new_value, "%d", currentGpus);
+
+  job_gpu->set_value("numGpus", new_value);
+
+  }
+
+int nvidia_dcgm_get_sister_job_info(
+
+  job *pjob,
+  struct tcp_chan *chan)
+
+  {
+  struct batch_request *request = NULL;
+  struct svrattrl      *patlist = NULL;
+  DCGM_job_gpu_stats   *gpu_stats = (DCGM_job_gpu_stats *)pjob->ji_wattr[JOB_ATR_dcgm_gpu_use].at_val.at_ptr;
+  int                   rc;
+
+  request = alloc_br(0);
+  if (request == NULL)
+    {
+    sprintf(log_buffer, "failed to allocate memory for request. jobid: %s", pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    return(PBSE_MEM_MALLOC);
+    }
+
+  rc = decode_DIS_JobObit(chan, request);
+  if (rc != PBSE_NONE)
+    {
+    return(rc);
+    }
+
+  // Start taking elements off of the request
+  patlist = (svrattrl *)GET_NEXT(request->rq_ind.rq_jobobit.rq_attr);
+
+  pbs_attribute  patr;
+  while (patlist != NULL)
+    {
+    char      buf[256];
+    long long gpu_energy_consumed;    /* The amount of energy used by the current gpu */
+    long long total_energy_consumed;  /* The total gpu energy used for the job */
+    unsigned int ecc_single_bit_errors;
+    unsigned int total_ecc_single_bit_errors;
+    unsigned int ecc_double_bit_errors;
+    unsigned int total_ecc_double_bit_errors;
+    struct attropl *patopl;
+    DCGM_GpuUsageInfo *gpu_info;
+
+    patopl = &patlist->al_atopl;
+
+    if (!strcmp(patopl->resource, "version"))
+      {
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+      continue;
+      }
+
+    if ( !strcmp(patopl->resource, "summary"))
+      {
+      nvidia_dcgm_decode_GpuUsageInfo(&patr, patopl->resource, patopl->value);
+      gpu_info = (DCGM_GpuUsageInfo *)patr.at_val.at_ptr;
+      gpu_stats->add_gpu_usage_info(gpu_info);
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+      continue;
+      }
+
+
+    if (!strcmp(patopl->resource, "numGpus"))
+      {
+      add_num_gpus_to_total(pjob, patopl->value);
+      patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+      continue;
+      }
+
+    nvidia_dcgm_decode_GpuUsageInfo(&patr, patopl->resource, patopl->value);
+
+    gpu_info = (DCGM_GpuUsageInfo *)patr.at_val.at_ptr;
+    gpu_stats->add_gpu_usage_info(gpu_info);
+    gpu_info->get_energyConsumed(gpu_energy_consumed);
+    gpu_stats->get_totalEnergyConsumed(total_energy_consumed);
+    total_energy_consumed += gpu_energy_consumed;
+    sprintf(buf, "%ld", total_energy_consumed);
+    gpu_stats->set_value("total_energy_consumed", buf);
+
+    gpu_info->get_eccSingleBitErrors(ecc_single_bit_errors);
+    gpu_stats->get_totalECCSingleBitErrors(total_ecc_single_bit_errors);
+    total_ecc_single_bit_errors += ecc_single_bit_errors;
+    sprintf(buf, "%d", total_ecc_single_bit_errors);
+    gpu_stats->set_value("total_eccSingleBit_Errors", buf);
+
+    gpu_info->get_eccDoubleBitErrors(ecc_double_bit_errors);
+    gpu_stats->get_totalECCDoubleBitErrors(total_ecc_double_bit_errors);
+    total_ecc_double_bit_errors += ecc_double_bit_errors;
+    sprintf(buf, "%d", total_ecc_double_bit_errors);
+    gpu_stats->set_value("total_eccDoubleBit_Errors", buf);
+
+
+
+    patlist = (svrattrl *)GET_NEXT(patlist->al_link);
+    }
+
+
+  return(PBSE_NONE);
+  }
+
 
 #endif /* NVIDIA_DCGM */
