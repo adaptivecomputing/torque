@@ -15,6 +15,8 @@
 #define  DCGM_array_sizes 10 // At the time this code was ritten this was the hard coded array sizes
                              // for xidCriticalErrorsTs, computePids and graphicsPids
 
+extern char mom_name[];
+
 DCGM_GpuUsageInfo::DCGM_GpuUsageInfo () : 
                gpuId(0), energyConsumed(0), pcieReplays(0), startTime(0), endTime(0), eccSingleBit(0), 
                eccDoubleBit(0), numXidCriticalErrors(0), numComputePids(0), maxGpuMemoryUsed(0), powerViolationTime(0),
@@ -59,6 +61,7 @@ DCGM_GpuUsageInfo::DCGM_GpuUsageInfo(
   dcgmGpuUsageInfo_t& gpuUsageInfo)
  
   {
+  this->this_mom_name = mom_name;
   this->gpuId = gpuUsageInfo.gpuId;
 	this->energyConsumed = gpuUsageInfo.energyConsumed;
 
@@ -127,6 +130,7 @@ DCGM_GpuUsageInfo& DCGM_GpuUsageInfo::operator = (
   const DCGM_GpuUsageInfo& other)
 
   {
+  this->this_mom_name = other.this_mom_name;
   this->gpuId = other.gpuId;
 	this->energyConsumed = other.energyConsumed;
 
@@ -263,8 +267,14 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
   {
   char buf[256];
 
-  snprintf(buf, sizeof(buf), "{\"gpuId\": %ld, ", this->gpuId);
-	usage_info = buf;
+  if (this->this_mom_name.empty())
+    this->this_mom_name = mom_name;
+
+  snprintf(buf, sizeof(buf), "{\"mom_name\": \"%s\", ", this->this_mom_name.c_str());
+  usage_info = buf;
+
+  snprintf(buf, sizeof(buf), "\"gpuId\": %ld, ", this->gpuId);
+	usage_info += buf;
 
 	snprintf(buf, sizeof(buf), "\"energyConsumed\" :%ld, ", this->energyConsumed);
 	usage_info += buf;
@@ -488,7 +498,6 @@ int DCGM_GpuUsageInfo::parse_gpu_usage_array(
 	return(PBSE_NONE);
 	}
 
-
 int DCGM_GpuUsageInfo::parse_gpu_usage_object(
 
   std::string name,
@@ -576,7 +585,7 @@ int DCGM_GpuUsageInfo::set_value(
 	valueHead = strdup(value);
 	ptr = valueHead;
 
-	if ((!strncmp(name, "GPU:", 4)) || (!strcmp(name, "summary")))
+	if ((!strncmp(name, "GPU:", 4)) || (!strcmp(name, "summary")) || (!strcmp(name, "summary:")))
     {
 
     /* The main object should always start with an open bracket */
@@ -588,11 +597,18 @@ int DCGM_GpuUsageInfo::set_value(
 		  return(PBSE_IVALREQ);
 			}
 
+
 		while ((ptr != NULL) && (*ptr != '\0'))
 		  {
 			get_name_value_pair(&ptr, valName, valValue);
 
-			if (valName == "gpuId")
+      if (valName == "mom_name")
+        {
+        if (valValue.empty())
+          valValue = mom_name;
+        this->this_mom_name = valValue;
+        }
+			else if (valName == "gpuId")
 			  {
 				this->gpuId = strtoul(valValue.c_str(), NULL, 10);
 				}
@@ -710,8 +726,29 @@ int DCGM_GpuUsageInfo::set_value(
 	}
 
 
-void DCGM_GpuUsageInfo::get_energyConsumed(long long& energyConsumed)
+void DCGM_GpuUsageInfo::get_energyConsumed(
+
+  long long& energyConsumed)
 
   {
   energyConsumed = this->energyConsumed;
   }
+
+
+void DCGM_GpuUsageInfo::get_eccSingleBitErrors(
+
+  unsigned int& single_bit_errors)
+
+  {
+  single_bit_errors = this->eccSingleBit;
+  }
+
+void DCGM_GpuUsageInfo::get_eccDoubleBitErrors(
+
+  unsigned int& double_bit_errors)
+
+  {
+  double_bit_errors = this->eccDoubleBit;
+  }
+
+ 

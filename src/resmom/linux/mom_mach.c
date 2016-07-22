@@ -120,6 +120,8 @@ extern time_t   time_now;
 
 extern  int     LOGLEVEL;
 
+extern  int     multi_mom;
+
 #define TBL_INC 200            /* initial proc table */
 #define PMEMBUF_SIZE  2048
 
@@ -1254,7 +1256,13 @@ unsigned long cput_sum(
 
     /* This is not a -L request */
 
-    full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
+    full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid;
+    if (multi_mom)
+      {
+      add_multi_mom_port(full_cgroup_path);
+      }
+
+    full_cgroup_path += "/cpuacct.usage";
 
     fd = open(full_cgroup_path.c_str(), O_RDONLY);
     if (fd <= 0)
@@ -1596,7 +1604,13 @@ unsigned long long resi_sum(
       }
     }
 
-  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.max_usage_in_bytes";
+  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid;
+  if (multi_mom)
+    {
+    add_multi_mom_port(full_cgroup_path);
+    }
+
+  full_cgroup_path += "/memory.max_usage_in_bytes";
 
   fd = open(full_cgroup_path.c_str(), O_RDONLY);
   if (fd <= 0)

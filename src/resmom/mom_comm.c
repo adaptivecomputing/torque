@@ -141,6 +141,7 @@
 #endif
 #include "pmix_tracker.hpp"
 #include "pmix_operation.hpp"
+#include "nvidia.h"
 
 #define IM_FINISHED                 1
 #define IM_DONE                     0
@@ -2535,6 +2536,20 @@ int im_join_job_as_sister(
     }
 #endif  /* NVIDIA_GPUS */
 
+#ifdef NVIDIA_DCGM
+  if (rc != -1)
+    {
+    ret = nvidia_dcgm_create_gpu_job_info(pjob);
+    if (ret != PBSE_NONE)
+      {
+      sprintf(log_buffer, "ERROR:  failed to initialize NVIDIA gpus for job");
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
+      rc = -1;
+      }
+    }
+#endif
+
+
   free_attrlist(&lhead);
   
   if (rc != 0)
@@ -3232,6 +3247,7 @@ int im_spawn_task(
       }
     else
       {
+
       if (start_process(ptask, argv, envp) == -1)
         {
         if (LOGLEVEL >= 0)
@@ -4263,6 +4279,10 @@ int handle_im_kill_job_response(
       }
     }
 
+#endif
+
+#ifdef NVIDIA_DCGM
+  nvidia_dcgm_get_sister_job_info(pjob, chan);
 #endif
   
   np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 
@@ -6166,7 +6186,7 @@ void im_request(
       {
       if (connection_from_ms(chan, NULL, pSockAddr) == true)
         {
-        ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,TRUE);
+       ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,TRUE);
         }
       else
         ret = IM_FAILURE;
