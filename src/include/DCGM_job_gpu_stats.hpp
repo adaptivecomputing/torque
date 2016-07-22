@@ -8,7 +8,9 @@
 
 class DCGM_GpuUsageInfo
   {
-  unsigned int  gpuId;
+  std::string this_mom_name;              // This is not part of the dcgmFpuUsage_t structure. Put here so we
+                                          // know which MOM gpu information came from.
+	unsigned int  gpuId;
   /* All of the following are during the job's lifetime */
 
   long long energyConsumed;                 //!< Energy consumed in milliwatt-seconds
@@ -54,15 +56,21 @@ class DCGM_GpuUsageInfo
   int parse_gpu_usage_object(std::string name, std::string value);
   unsigned int get_gpuId();
   void get_energyConsumed(long long& energyConsumed);
+  void get_eccSingleBitErrors(unsigned int& single_bit_errors);
+  void get_eccDoubleBitErrors(unsigned int& double_bit_errors);
+  std::string get_mom_name(void);
   };
 
 
 class DCGM_job_gpu_stats
   {
-	  unsigned int    version;  //!< Version of this message  (dcgmPidInfo_version)
-	  int numGpus;                  //!< Number of GPUs that are valid in gpus
-	  DCGM_GpuUsageInfo summary;   //!< Summary information for all GPUs listed in gpus[] 
-	  std::vector<DCGM_GpuUsageInfo> gpus;  //!< Per-GPU information for this PID
+  unsigned int    version;              //!< Version of this message  (dcgmPidInfo_version)
+	int numGpus;                          //!< Number of GPUs that are valid in gpus
+  long long       total_energy_consumed; // total energy consumed by all GPUs on all nodes in job
+  unsigned int    total_eccSingleBit;    // total ECC single bit errors for entire job
+  unsigned int    total_eccDoubleBit;    // total ECC double bit errors for entire job
+	DCGM_GpuUsageInfo summary;            //!< Summary information for all GPUs listed in gpus[] 
+	std::vector<DCGM_GpuUsageInfo> gpus;  //!< Per-GPU information for this PID
 
 
 	public:
@@ -78,5 +86,9 @@ class DCGM_job_gpu_stats
     void get_dcgm_version(unsigned int &version);
     void get_dcgm_num_gpus(int &num_gpus);
     void get_summary_gpuId(unsigned int& gpuId);
+    void get_totalEnergyConsumed(long long& total_energy_consumed);
+    void get_totalECCSingleBitErrors(unsigned int total_ecc_single_bit_errors);
+    void get_totalECCDoubleBitErrors(unsigned int total_ecc_double_bit_errors);
+    void add_gpu_usage_info(DCGM_GpuUsageInfo *gpu_info);
 
 	};

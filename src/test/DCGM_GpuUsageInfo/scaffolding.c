@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "resource.h"
 
+char mom_name[1024];
+
 int gn_count = 0;
 
 int called_log_event;

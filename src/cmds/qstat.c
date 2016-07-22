@@ -1751,18 +1751,7 @@ void print_dcgm_gpu_summary(
       }
     else
       {
-      if (JE == NULL)
-        {
-        if (name == "numGpus")
-          printf("\tgpus.gpus_used = %s\n", value.c_str());
-        if (name == "energyConsumed")
-          printf("\tgpus.energy_used = %s\n", value.c_str());
-        if (name == "eccSingleBit")
-          printf("\tgpus.eccSingleBit Errors = %s\n", value.c_str());
-        if (name == "eccDoubleBit")
-          printf("\tgpus.eccDoubleBit Errors = %s\n", value.c_str());
-        }
-      else
+      if (JE != NULL)
         {
         add_xml_resource(JE, name.c_str(), value.c_str());
         }
@@ -1816,14 +1805,45 @@ void print_dcgm_gpu_use(
         print_dcgm_gpu_summary(resc_name, dcgm_gpu_use_attr->value, JE); 
       }
     }
+   else if (!strncmp(resc_name, "summary:", 8))
+    {
+    if (g_opt == true)
+      {
+        print_dcgm_gpu_summary(resc_name, dcgm_gpu_use_attr->value, JE); 
+      }
+    }
   else if (!strncmp(resc_name, "numGpus", 7))
     {
     if (JE == NULL)
       {
-      printf("    gpus.summarys:\n");
+      printf("    gpus.summary:\n");
       printf("\t%s = %s\n", resc_name, value);
       }
     }
+  else if (!strcmp(resc_name, "total_energy_consumed"))
+    {
+    if (JE == NULL)
+      {
+      printf("\t%s = %s\n", resc_name, value);
+      }
+    }
+  else if (!strcmp(resc_name, "total_eccSingleBit_Errors"))
+    {
+    if (JE == NULL)
+      {
+      printf("\t%s = %s\n", resc_name, value);
+      }
+    }
+  else if (!strcmp(resc_name, "total_eccDoubleBit_Errors"))
+    {
+    if (JE == NULL)
+      {
+      printf("\t%s = %s\n", resc_name, value);
+      }
+    }
+
+
+
   }
 
 
@@ -2037,7 +2057,7 @@ void print_json_dcgm_gpu_use(
     printf("\t    },\n");
     return;
     }
-  else if (!strncmp(resc_name, "GPU:", 4))
+  else if (!strncmp(resc_name, "GPU:", 4) || !strncmp(resc_name, "summary:", 8))
     {
     printf("   \"%s\": {\n", resc_name);
     print_json_dcgm_gpu_summary( dcgm_gpu_use_attr->value); 

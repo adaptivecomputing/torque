@@ -174,6 +174,7 @@ pthread_mutex_t  delete_job_files_mutex;
 dcgmHandle_t pDcgmHandle;
 unsigned int gpuIdList[DCGM_MAX_NUM_DEVICES];
 int          dcgm_gpu_count;
+extern char  mom_name[];
 #endif
 
 int          lockfds = -1;
@@ -512,11 +513,6 @@ const char *nullproc(
 
   return(NULL);
   }  /* END nullproc() */
-
-
-
-
-
 
 
 
@@ -6476,6 +6472,10 @@ void main_loop(void)
 
   mom_run_state = MOM_RUN_STATE_RUNNING;  /* mom_run_state is altered by stop_me() or MOMCheckRestart() */
 
+#ifdef NVIDIA_DCGM
+  strcpy(mom_name, mom_alias);
+#endif
+
   while (mom_run_state == MOM_RUN_STATE_RUNNING)
     {
     if (call_hup)
@@ -7111,10 +7111,10 @@ int main(
 
   pbs_net_t    mom_addr;
   char        *ip_address;
-  char         mom_name[PBS_MAXSERVERNAME];
+  char         this_mom_name[PBS_MAXSERVERNAME];
   dcgmReturn_t dcgm_rc;
 
-  rc = gethostname(mom_name, PBS_MAXSERVERNAME);
+  rc = gethostname(this_mom_name, PBS_MAXSERVERNAME);
   if (rc != 0)
     {
     sprintf(log_buffer, "gethostname failed: %d", errno);
@@ -7122,10 +7122,10 @@ int main(
     exit(-1);
     }
 
-  mom_addr = get_hostaddr(&rc, mom_name);
+  mom_addr = get_hostaddr(&rc, this_mom_name);
   if (mom_addr == 0)
     {
-    sprintf(log_buffer, "could not get ip address for %s", mom_name);
+    sprintf(log_buffer, "could not get ip address for %s", this_mom_name);
     log_ext(-1, __func__, log_buffer, 0);
     exit(-1);
     }

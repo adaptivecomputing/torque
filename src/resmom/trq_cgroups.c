@@ -36,6 +36,8 @@ using namespace std;
 using namespace boost;
 
 #define MAX_JOBID_LENGTH    1024
+extern int multi_mom;
+extern unsigned int pbs_rm_port;
 extern char mom_alias[];
 extern unsigned int global_gpu_count;
 extern uint32_t     global_mic_count;
@@ -81,6 +83,28 @@ void trq_cg_init_subsys_online(bool val)
   }
 
 
+/*
+ * add_multi_mom_port
+ *
+ * Appends the rm port if this is a multi-mom to the path
+ * @param cgroup_path - path to teh cgroup hierarchy
+ *
+ */
+
+void add_multi_mom_port(
+    
+  std::string& cgroup_path)
+
+  {
+  char rm_port[20];
+
+  sprintf(rm_port, ".%d", pbs_rm_port);
+
+  cgroup_path += rm_port;
+
+  }
+
+  
 
 /*
  * write_to_file()
@@ -177,6 +201,11 @@ int trq_cg_cleanup_torque_cgroups()
   int rc = PBSE_NONE;
 
   torque_path = cg_cpu_path;
+  if (multi_mom)
+    {
+    add_multi_mom_port(torque_path);
+    }
+
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -191,6 +220,11 @@ int trq_cg_cleanup_torque_cgroups()
     }
 
   torque_path = cg_cpuacct_path;
+  if (multi_mom)
+    {
+    add_multi_mom_port(torque_path);
+    }
+
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -204,6 +238,11 @@ int trq_cg_cleanup_torque_cgroups()
     }
 
   torque_path = cg_cpuset_path;
+  if (multi_mom)
+    {
+    add_multi_mom_port(torque_path);
+    }
+
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -217,6 +256,11 @@ int trq_cg_cleanup_torque_cgroups()
     }
 
   torque_path = cg_memory_path;
+  if (multi_mom)
+    {
+    add_multi_mom_port(torque_path);
+    }
+
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -230,6 +274,11 @@ int trq_cg_cleanup_torque_cgroups()
     }
 
   torque_path = cg_devices_path;
+  if (multi_mom)
+    {
+    add_multi_mom_port(torque_path);
+    }
+
   rc = stat(torque_path.c_str(), &buf);
   if (rc == 0)
     {
@@ -928,7 +977,14 @@ int trq_cg_add_process_to_cgroup(
   pid_t       new_pid)
 
   {
-  string full_cgroup_path = cgroup_path + job_id + "/tasks";
+  string full_cgroup_path = cgroup_path + job_id;
+  
+  if (multi_mom)
+    {
+    add_multi_mom_port(full_cgroup_path);
+    }
+
+  full_cgroup_path += "/tasks";
 
   return(trq_cg_add_process_to_cgroup_path(full_cgroup_path, new_pid));
   } // END trq_cg_add_process_to_cgroup()
@@ -1092,6 +1148,11 @@ int trq_cg_create_cgroup(
   string        full_cgroup_path(cgroup_path);
 
   full_cgroup_path += job_id;
+  
+  if (multi_mom)
+    {
+    add_multi_mom_port(full_cgroup_path);
+    }
 
   /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
   rc = trq_cg_mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
@@ -1277,7 +1338,7 @@ int trq_cg_write_task_cpuset_string(
 
 int trq_cg_populate_task_cgroups(
 
-  string cpuset_path,
+  string cgroup_path,
   job   *pjob)
 
   {
@@ -1348,10 +1409,15 @@ int trq_cg_populate_task_cgroups(
         }
 
       /* This task belongs on this host. */
-      rc = trq_cg_write_task_cpuset_string(cpuset_path, req_index, task_index, job_id, al);
+      if (multi_mom)
+        {
+        add_multi_mom_port(cgroup_path);
+        }
+
+      rc = trq_cg_write_task_cpuset_string(cgroup_path, req_index, task_index, job_id, al);
       if (rc != PBSE_NONE)
         return(rc);
-      rc = trq_cg_write_task_memset_string(cpuset_path, req_index, task_index, job_id, al);
+      rc = trq_cg_write_task_memset_string(cgroup_path, req_index, task_index, job_id, al);
       if (rc != PBSE_NONE)
         return(rc);
  
@@ -1384,6 +1450,11 @@ int trq_cg_populate_cgroup(
   const char *job_id = pjob->ji_qs.ji_jobid;
 
   path += job_id;
+  if (multi_mom)
+    {
+    add_multi_mom_port(path);
+    }
+
   if (which == CPUS)
     path += "/" + cg_prefix + "cpus";
   else
@@ -1625,7 +1696,14 @@ int trq_cg_set_swap_memory_limit(
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
-  oom_control_name = cg_memory_path + job_id + "/memory.memsw.limit_in_bytes";
+  oom_control_name = cg_memory_path + job_id;
+  
+  if (multi_mom)
+    {
+    add_multi_mom_port(oom_control_name);
+    }
+  
+  oom_control_name += "/memory.memsw.limit_in_bytes";
 
 
   int rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
@@ -1741,7 +1819,13 @@ int trq_cg_set_resident_memory_limit(
 
   /* Create a string with a path to the 
      memory.limit_in_bytes cgroup for the job */
-  oom_control_name = cg_memory_path + job_id + "/memory.limit_in_bytes";
+  oom_control_name = cg_memory_path + job_id;
+  if (multi_mom)
+    {
+    add_multi_mom_port(oom_control_name);
+    }
+  
+  oom_control_name += "/memory.limit_in_bytes";
 
   rc = write_to_file(oom_control_name.c_str(), mem_limit_string, err_msg);
   if (rc != PBSE_NONE)
@@ -2007,6 +2091,10 @@ int trq_cg_add_devices_to_cgroup(
 
   job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;
 
+  if (multi_mom)
+    {
+    add_multi_mom_port(job_devices_path);
+    }
 
   /* if there are no gpus given, deny all gpus to the job */
   if (((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) == 0) ||

@@ -10,6 +10,62 @@
 #include "pbs_error.h"
 
 
+/*
+ * get_string_value()
+ *
+ * get the string value and return a string in the value parameter
+ *
+ * @param ptr  - pointer to the JSON string being parsed. Will
+ *               point to the next name/value pair when returned.
+ * @param token - pointer to object to be parsed
+ * @param  value - pointer to json object to be returned.
+ *
+ */
+int get_string_value(
+
+  char **ptr,
+  char *token,
+  std::string &value)
+ 
+  {
+  char *endptr;
+  char buf[256];
+          
+  while (*token == '"')
+    token++;
+
+  endptr = token;
+
+  move_past_whitespace(&endptr);
+
+  while (*endptr != '"')
+    endptr++;
+
+  /* json requires a string to have quotes. see if we have a string with quotes already in place */
+  /* If so delete the quotes and we will add them back later */
+  *endptr = 0;
+  endptr++;
+  while(*endptr == '"')
+    endptr++;
+
+   /* endptr should be pointing to a comma */
+  if ((*endptr != ',') && (*endptr != '}'))
+    {
+    sprintf(buf, "expected %c. %s", 'c', endptr);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+    return(PBSE_IVALREQ);
+    }
+
+  endptr++;
+  *ptr = endptr;
+
+  value = "\"";
+  value += token;
+  value += "\"";
+
+  return(PBSE_NONE);
+  }
+ 
 /* 
  * get_numberic_value()
  *
@@ -259,6 +315,8 @@ int get_name_value_pair(
     {
     rc = get_array_value(ptr, token, value);
     }
+  else
+    rc = get_string_value(ptr, token, value);
 
   return(rc);
                                                             }

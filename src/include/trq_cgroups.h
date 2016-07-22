@@ -15,6 +15,7 @@ extern std::string cg_memory_path;
 extern std::string cg_devices_path;
 
 
+void add_multi_mom_port(std::string& cgroup_path);
 int trq_cg_cleanup_torque_cgroups();
 int trq_cg_get_cgroup_path(std::string path); 
 void trq_cg_init_subsys_online(bool val);
