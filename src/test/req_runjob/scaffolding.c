@@ -112,7 +112,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(job *)
+void free_nodes(job *pjob, const char *spec)
   {
   fprintf(stderr, "The call to free_nodes to be mocked!!\n");
   exit(1);

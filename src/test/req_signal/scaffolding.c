@@ -43,7 +43,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(job *pjob) { }
+void free_nodes(job *pjob, const char *spec) { }
 
 void svr_disconnect(int handle)
   {

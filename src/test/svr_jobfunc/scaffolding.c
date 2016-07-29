@@ -390,7 +390,7 @@ int initialize_procct(job *pjob)
   return(0);
   }
 
-void free_nodes(job *pjob) {}
+void free_nodes(job *pjob, const char *spec) {}
 
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with)
   {
