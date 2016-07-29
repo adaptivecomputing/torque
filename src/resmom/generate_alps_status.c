@@ -1053,7 +1053,7 @@ int generate_alps_status(
         log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
 
-      if (!strcmp(apbasil_protocol, "1.7"))
+      if ((apbasil_protocol != NULL) && !strcmp(apbasil_protocol, "1.7"))
         rc = get_knl_information(apbasil_path);
         
       if (rc == PBSE_NONE)
