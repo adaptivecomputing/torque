@@ -125,7 +125,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void free_nodes(job *pjob) {}
+void free_nodes(job *pjob, const char *spec) {}
 
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {

@@ -139,7 +139,7 @@ job_array *get_jobs_array(job **pjob)
   }
 
 
-void free_nodes(job *) {}
+void free_nodes(job *pjob, const char *spec) {}
 
 void free_br(struct batch_request *preq) {}
 

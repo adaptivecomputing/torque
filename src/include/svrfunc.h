@@ -41,7 +41,7 @@ int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
 extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
-extern void  free_nodes(job *);
+extern void  free_nodes(job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H
