@@ -4605,6 +4605,8 @@ int build_hostlist_nodes_req(
             record_external_node(pjob, pnode);
             }
           }
+        else
+          failure = true;
 
         /* NOTE: continue through the loop if failure is true just to clean up amounts needed */
 
@@ -4623,6 +4625,10 @@ int build_hostlist_nodes_req(
           remove_job_from_node(pnode, pjob->ji_internal_id);
 #endif
           }
+#ifdef PENABLE_LINUX_CGROUPS
+        else if (failure == true)
+          remove_job_from_node(pnode, pjob->ji_internal_id);
+#endif
         }
 
       unlock_node(pnode, __func__, NULL, LOGLEVEL);
@@ -5055,14 +5061,14 @@ int set_nodes(
                                      &naji_list,
                                      ProcBMStr)) != PBSE_NONE)
     {
-    free_nodes(pjob);
+    free_nodes(pjob, spec);
     free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, host_info)) != PBSE_NONE)
     {
-    free_nodes(pjob);
+    free_nodes(pjob, spec);
     free_alps_req_data_array(ard_array, num_reqs);
     return(rc);
     }
@@ -5081,6 +5087,7 @@ int set_nodes(
       sprintf(EMsg, "no nodes can be allocated to job");
     
     free_alps_req_data_array(ard_array, num_reqs);
+    free_nodes(pjob, spec);
 
     return(PBSE_RESCUNAV);
     }  /* END if (host_info.size() == 0) */
@@ -5092,6 +5099,7 @@ int set_nodes(
   if (rc != PBSE_NONE)
     {
     free_alps_req_data_array(ard_array, num_reqs);
+    free_nodes(pjob, spec);
     return(rc);
     }
 
@@ -5119,6 +5127,7 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
       {
+      free_nodes(pjob, spec);
       return(rc);
       }
 
@@ -5140,6 +5149,7 @@ int set_nodes(
     if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
       {
       free_alps_req_data_array(ard_array, num_reqs);
+      free_nodes(pjob, spec);
       return(rc);
       }
 
@@ -5565,6 +5575,7 @@ char *get_next_exec_host(
   char *name_ptr = *current;
   char *plus;
   char *slash;
+  char *colon;
   
   if (name_ptr != NULL)
     {
@@ -5578,6 +5589,9 @@ char *get_next_exec_host(
 
     if ((slash = strchr(name_ptr, '/')) != NULL)
       *slash = '\0';
+
+    if ((colon = strchr(name_ptr, ':')) != NULL)
+      *colon = '\0';
     }
 
   return(name_ptr);
@@ -5718,11 +5732,15 @@ int remove_job_from_node(
 
 /*
  * free_nodes - free nodes allocated to a job
+ *
+ * First attempts to free the job from nodes that are in the exec_host string, but
+ * falls back to spec if exec_host isn't specified and spec is non NULL
  */
 
 void free_nodes(
 
-  job *pjob)  /* I (modified) */
+  job        *pjob, // M
+  const char *spec) // I
 
   {
   FUNCTION_TIMER
@@ -5745,6 +5763,16 @@ void free_nodes(
     if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
       {
       exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      host_ptr = exec_hosts;
+      }
+    }
+
+  // Attempt to use spec if the exec host list isn't populated and spec is
+  if (host_ptr == NULL)
+    {
+    if (spec != NULL)
+      {
+      exec_hosts = strdup(spec);
       host_ptr = exec_hosts;
       }
     }

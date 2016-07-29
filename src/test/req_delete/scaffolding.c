@@ -107,7 +107,7 @@ pbs_queue *get_jobs_queue(job **pjob)
 
 void reply_ack(struct batch_request *preq) {}
 
-void free_nodes(job *pjob) 
+void free_nodes(job *pjob, const char *spec) 
   {
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
   }
