@@ -126,6 +126,7 @@
 #include "mom_hierarchy.h"
 #include "mom_server.h"
 #include "mom_comm.h"
+#include "mom_func.h"
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
