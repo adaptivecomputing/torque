@@ -92,7 +92,6 @@
 #include <limits.h>
 #include <map>
 #include <set>
-#include <dcgm_agent.h>
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -106,6 +105,9 @@
 #include <vector>
 #include <set>
 
+#ifdef NVIDIA_DCGM
+#include <dcgm_agent.h>
+#endif
 
 #define SAVEJOB_BUF_SIZE 8192
 

@@ -26,7 +26,11 @@ LIBATTR_UT_DIRS = attr_atomic attr_fn_acl attr_fn_arst attr_fn_b attr_fn_c attr_
                   attr_fn_hold attr_fn_intr attr_fn_intr attr_fn_l attr_fn_ll attr_fn_nppcu \
                   attr_fn_resc attr_fn_size attr_fn_str attr_fn_time attr_fn_tokens attr_fn_tv \
                   attr_fn_unkn attr_func attr_node_func attr_fn_complete_req req complete_req \
-                  attr_str_conversion attr_fn_dcgm_gpu_use DCGM_job_gpu_stats DCGM_GpuUsageInfo
+                  attr_str_conversion
+
+if NVIDIA_DCGM
+DCGM_DIRS = attr_fn_dcgm_gpu_use DCGM_job_gpu_stats DCGM_GpuUsageInfo
+endif
 
 LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server locate_job \
                   parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
@@ -91,7 +95,7 @@ CHECK_LIBS = scaffold_fail torque_test_lib
 CHECK_DIRS = ${SERVER_UT_DIRS} ${LIBUTILS_UT_DIRS} \
 						 ${LIBATTR_UT_DIRS} ${LIBCMDS_UT_DIRS} ${LIBDIS_UT_DIRS} ${LIBCSV_UT_DIRS} \
 						 ${LIBIFL_UT_DIRS} ${LIBLOG_UT_DIRS} ${CMDS_UT_DIRS} ${MISC_UT_DIRS} ${NUMA_DIRS} \
-						 ${MOM_UT_DIRS} ${PAM_DIRS} ${TRQAUTH_DIRS}
+						 ${MOM_UT_DIRS} ${PAM_DIRS} ${TRQAUTH_DIRS} ${DCGM_DIRS}
 
 $(CHECK_LIBS)::
 	$(MAKE) -C $@ $(MAKECMDGOALS)
