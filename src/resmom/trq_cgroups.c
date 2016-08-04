@@ -82,28 +82,6 @@ void trq_cg_init_subsys_online(bool val)
   return;
   }
 
-
-/*
- * add_multi_mom_port
- *
- * Appends the rm port if this is a multi-mom to the path
- * @param cgroup_path - path to teh cgroup hierarchy
- *
- */
-
-void add_multi_mom_port(
-    
-  std::string& cgroup_path)
-
-  {
-  char rm_port[20];
-
-  sprintf(rm_port, ".%d", pbs_rm_port);
-
-  cgroup_path += rm_port;
-
-  }
-
   
 
 /*
