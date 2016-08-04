@@ -1131,6 +1131,28 @@ bool am_i_mother_superior(
   }
 
 
+/*
+ * add_multi_mom_port
+ *
+ * Appends the rm port to the end of the passed string
+ * @param string - string to append port to
+ */
+
+void add_multi_mom_port(
+    
+  std::string& string)
+
+  {
+  char rm_port[20];
+
+  sprintf(rm_port, ".%d", pbs_rm_port);
+
+  string += rm_port;
+
+  }
+
+
+
 #ifdef ENABLE_PMIX
 const int pmix_info_count = 17;
 

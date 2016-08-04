@@ -269,6 +269,8 @@ int          become_the_user(job *pjob);
 
 bool         am_i_mother_superior(const job &pjob);
 
+void add_multi_mom_port(std::string& cgroup_path);
+
 /* defined in mach-dependant mom_mach.c */
 extern int kill_task(job *,struct task *, int, int);
 
