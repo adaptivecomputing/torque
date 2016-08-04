@@ -89,6 +89,7 @@
 #include "attribute.h"
 #include "pbs_ifl.h"
 #include "pbs_helper.h"
+
 #include "DCGM_job_gpu_stats.hpp"
 
 void free_dcgm_gpu_use(
@@ -335,4 +336,3 @@ int comp_dcgm_gpu_use(
   {
   return(0);
   } // END comp_dcgm_gpu_use()
-

@@ -1673,7 +1673,6 @@ void print_dcgm_gpu_array(
     if (*ptr == '{')
       {
       std::string element_name, element_value;
-      unsigned int index;
 
       ptr++;
       move_past_whitespace(&ptr);
@@ -1788,8 +1787,6 @@ void print_dcgm_gpu_use(
   {
   char *resc_name;
   char *value;
-  char  name[1024];
-  mxml_t *RE = NULL;
 
   resc_name = dcgm_gpu_use_attr->resource;
   value = dcgm_gpu_use_attr->value;
@@ -1867,7 +1864,6 @@ void print_json_dcgm_gpu_object(
   char *ptr;
   std::string obj_name;
   std::string obj_value;
-  int rc;
 
   obj_name = name;
   obj_value = value;
@@ -2045,8 +2041,6 @@ void print_json_dcgm_gpu_use(
 
   {
   char *resc_name;
-  char  name[1024];
-  mxml_t *RE = NULL;
 
   resc_name = dcgm_gpu_use_attr->resource;
 
@@ -2081,7 +2075,6 @@ void print_req_information(
   mxml_t       *JE)
 
   {
-  mxml_t      *RE;
   std::string  out;
   char         buf[100];
   char         name[1024];
@@ -2229,11 +2222,13 @@ void create_full_job_xml(
         {
         print_req_information(attribute, RE1);
         }
+#ifdef NVIDIA_DCGM
       else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use) && 
          (!strcmp(attribute->resource, "summary") || (!strncmp(attribute->resource, "GPU:", 4))))
         {
         print_dcgm_gpu_use(attribute, RE1);
         }
+#endif
       else
         {
 
@@ -2314,10 +2309,12 @@ void display_full_job(
 
           prt_attr(attribute->name, attribute->resource, ctime(&epoch));
           }
+#ifdef NVIDIA_DCGM
         else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
           {
           print_dcgm_gpu_use(attribute, NULL);
           }
+#endif
         else
           {
           if ((!strcmp(attribute->name, "Walltime")) && (attribute->value[0] == '-'))
@@ -2329,6 +2326,7 @@ void display_full_job(
         }
       }
     }
+#ifdef NVIDIA_DCGM
   else
     {
     printf("{  \"Job_Id\": \"%s\",\n", p->name);
@@ -2340,13 +2338,12 @@ void display_full_job(
         add_comma = false;
 
       if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
-        {
         print_json_dcgm_gpu_use(attribute, add_comma);
-        }
       }
     
     printf("}\n");
     }
+#endif
   } // END display_full_job()
 
 

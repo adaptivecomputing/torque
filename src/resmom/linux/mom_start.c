@@ -465,10 +465,11 @@ void scan_for_terminated(void) /* linux */
 
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
  
+
+    kill_task(pjob, matching_task, SIGKILL, 0);
 #ifdef NVIDIA_DCGM
     nvidia_dcgm_finalize_gpu_job_info(pjob);
 #endif
-    kill_task(pjob, matching_task, SIGKILL, 0);
 
     matching_task->ti_qs.ti_exitstat = exiteval;
 
