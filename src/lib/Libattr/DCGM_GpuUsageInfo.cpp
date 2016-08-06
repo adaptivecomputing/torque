@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-#include "pbs_log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include "pbs_error.h"
 
 #ifdef NVIDIA_DCGM
@@ -276,81 +276,81 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
   snprintf(buf, sizeof(buf), "{\"mom_name\": \"%s\", ", this->this_mom_name.c_str());
   usage_info = buf;
 
-  snprintf(buf, sizeof(buf), "\"gpuId\": %ld, ", this->gpuId);
+  snprintf(buf, sizeof(buf), "\"gpuId\": %u, ", this->gpuId);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"energyConsumed\" :%ld, ", this->energyConsumed);
+	snprintf(buf, sizeof(buf), "\"energyConsumed\" :%lld, ", this->energyConsumed);
 	usage_info += buf;
 
 	snprintf(buf, sizeof(buf), "\"pcieRxBandwidth\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\" : %ld,", this->pcieRxBandwidth.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\" : %lld,", this->pcieRxBandwidth.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\" : %ld,", this->pcieRxBandwidth.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\" : %lld,", this->pcieRxBandwidth.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\" : %ld},", this->pcieRxBandwidth.average);
+  snprintf(buf, sizeof(buf), "\"average\" : %lld},", this->pcieRxBandwidth.average);
   usage_info += buf;
 
 	snprintf(buf, sizeof(buf), "\"pcieTxBandwidth\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\":%ld,", this->pcieTxBandwidth.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\":%lld,", this->pcieTxBandwidth.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\":%ld,", this->pcieTxBandwidth.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\":%lld,", this->pcieTxBandwidth.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\":%ld},", this->pcieTxBandwidth.average);
-  usage_info += buf;
-
-  snprintf(buf, sizeof(buf), "\"pcieReplays\":%ld,", this->pcieReplays);
+  snprintf(buf, sizeof(buf), "\"average\":%lld},", this->pcieTxBandwidth.average);
   usage_info += buf;
 
-  snprintf(buf, sizeof(buf), "\"startTime\":%ld,", this->startTime);
+  snprintf(buf, sizeof(buf), "\"pcieReplays\":%lld,", this->pcieReplays);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"endTime\":%ld,", this->endTime);
+
+  snprintf(buf, sizeof(buf), "\"startTime\":%lld,", this->startTime);
+  usage_info += buf;
+  snprintf(buf, sizeof(buf), "\"endTime\":%lld,", this->endTime);
   usage_info += buf;
 
  	snprintf(buf, sizeof(buf), "\"smUtilization\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\":%ld,", this->smUtilization.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\":%d,", this->smUtilization.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\":%ld,", this->smUtilization.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\":%d,", this->smUtilization.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\":%ld},", this->smUtilization.average);
+  snprintf(buf, sizeof(buf), "\"average\":%d},", this->smUtilization.average);
   usage_info += buf;
 
  	snprintf(buf, sizeof(buf), "\"memoryUtilization\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\":%ld,", this->memoryUtilization.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\":%d,", this->memoryUtilization.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\":%ld,", this->memoryUtilization.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\":%d,", this->memoryUtilization.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\":%ld},", this->memoryUtilization.average);
-  usage_info += buf;
-
-  snprintf(buf, sizeof(buf), "\"eccSingleBit\":%ld,", this->eccSingleBit);
+  snprintf(buf, sizeof(buf), "\"average\":%d},", this->memoryUtilization.average);
   usage_info += buf;
 
-  snprintf(buf, sizeof(buf), "\"eccDoubleBit\":%ld,", this->eccDoubleBit);
+  snprintf(buf, sizeof(buf), "\"eccSingleBit\":%u,", this->eccSingleBit);
+  usage_info += buf;
+
+  snprintf(buf, sizeof(buf), "\"eccDoubleBit\":%u,", this->eccDoubleBit);
   usage_info += buf;
 
  	snprintf(buf, sizeof(buf), "\"memoryClock\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\":%ld,", this->memoryClock.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\":%d,", this->memoryClock.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\":%ld,", this->memoryClock.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\":%d,", this->memoryClock.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\":%ld},", this->memoryClock.average);
+  snprintf(buf, sizeof(buf), "\"average\":%d},", this->memoryClock.average);
   usage_info += buf;
 
  	snprintf(buf, sizeof(buf), "\"smClock\": {");
 	usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"minValue\":%ld,", this->smClock.minValue);
+  snprintf(buf, sizeof(buf), "\"minValue\":%d,", this->smClock.minValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"maxValue\":%ld,", this->smClock.maxValue);
+  snprintf(buf, sizeof(buf), "\"maxValue\":%d,", this->smClock.maxValue);
   usage_info += buf;
-  snprintf(buf, sizeof(buf), "\"average\":%ld},", this->smClock.average);
+  snprintf(buf, sizeof(buf), "\"average\":%d},", this->smClock.average);
   usage_info += buf;
 
-  snprintf(buf, sizeof(buf), "\"numXidCriticalErrors\":%ld,", this->numXidCriticalErrors);
+  snprintf(buf, sizeof(buf), "\"numXidCriticalErrors\":%d,", this->numXidCriticalErrors);
   usage_info += buf;
 
   if (this->numXidCriticalErrors != 0)
@@ -361,16 +361,16 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
 		  {
 			/* Don't put a comma after the last entry in the array */
 			if (i == this->numXidCriticalErrors - 1)
-        snprintf(buf, sizeof(buf), "{\"%d\": %ld}", i, this->xidCriticalErrorsTs[i]);
+        snprintf(buf, sizeof(buf), "{\"%d\": %lld}", i, this->xidCriticalErrorsTs[i]);
 			else
-        snprintf(buf, sizeof(buf), "{\"%d\": %ld},", i, this->xidCriticalErrorsTs[i]);
+        snprintf(buf, sizeof(buf), "{\"%d\": %lld},", i, this->xidCriticalErrorsTs[i]);
       usage_info += buf;
 			}
 	  snprintf(buf, sizeof(buf), "],");
     usage_info += buf;
 		}
  	
-  snprintf(buf, sizeof(buf), "\"numComputePids\":%ld,", this->numComputePids);
+  snprintf(buf, sizeof(buf), "\"numComputePids\":%d,", this->numComputePids);
   usage_info += buf;
 
 //  if (this->numComputePids != 0)
@@ -410,25 +410,25 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
 //    usage_info += buf;
 //		}
 
-	snprintf(buf, sizeof(buf), "\"maxGpuMemoryUsed\":%ld, ", this->maxGpuMemoryUsed);
+	snprintf(buf, sizeof(buf), "\"maxGpuMemoryUsed\":%lld, ", this->maxGpuMemoryUsed);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"powerViolationTime\":%ld, ", this->powerViolationTime);
+	snprintf(buf, sizeof(buf), "\"powerViolationTime\":%lld, ", this->powerViolationTime);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"thermalViolationTime\":%ld, ", this->thermalViolationTime);
+	snprintf(buf, sizeof(buf), "\"thermalViolationTime\":%lld, ", this->thermalViolationTime);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"reliabilityViolationTime\":%ld, ", this->reliabilityViolationTime);
+	snprintf(buf, sizeof(buf), "\"reliabilityViolationTime\":%lld, ", this->reliabilityViolationTime);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"boardLimitViolationTime\":%ld, ", this->boardLimitViolationTime);
+	snprintf(buf, sizeof(buf), "\"boardLimitViolationTime\":%lld, ", this->boardLimitViolationTime);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"lowUtilizationTime\":%ld, ", this->lowUtilizationTime);
+	snprintf(buf, sizeof(buf), "\"lowUtilizationTime\":%lld, ", this->lowUtilizationTime);
 	usage_info += buf;
 
-	snprintf(buf, sizeof(buf), "\"syncBoostTime\":%ld} ", this->syncBoostTime);
+	snprintf(buf, sizeof(buf), "\"syncBoostTime\":%lld} ", this->syncBoostTime);
 	usage_info += buf;
 
 }
@@ -510,6 +510,7 @@ int DCGM_GpuUsageInfo::parse_gpu_usage_object(
   char *objPtr;
   std::string element_name;
   std::string element_value;
+  int rc = PBSE_NONE;
 
   objPtr = headObjPtr;
   if (*objPtr == '{')
@@ -569,6 +570,12 @@ int DCGM_GpuUsageInfo::parse_gpu_usage_object(
     if(headObjPtr != NULL)
       free(headObjPtr);
     }
+  else
+    {
+      rc = PBSE_SYSTEM;
+    }
+
+    return rc;
   }
   
 

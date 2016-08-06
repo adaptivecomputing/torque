@@ -87,8 +87,8 @@ class DCGM_job_gpu_stats
     void get_dcgm_num_gpus(int &num_gpus);
     void get_summary_gpuId(unsigned int& gpuId);
     void get_totalEnergyConsumed(long long& total_energy_consumed);
-    void get_totalECCSingleBitErrors(unsigned int total_ecc_single_bit_errors);
-    void get_totalECCDoubleBitErrors(unsigned int total_ecc_double_bit_errors);
+    void get_totalECCSingleBitErrors(unsigned int& total_ecc_single_bit_errors);
+    void get_totalECCDoubleBitErrors(unsigned int& total_ecc_double_bit_errors);
     void add_gpu_usage_info(DCGM_GpuUsageInfo *gpu_info);
 
 	};

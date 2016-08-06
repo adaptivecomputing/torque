@@ -105,8 +105,10 @@
 #include <vector>
 #include <set>
 
+#ifdef PBS_MOM
 #ifdef NVIDIA_DCGM
 #include <dcgm_agent.h>
+#endif
 #endif
 
 #define SAVEJOB_BUF_SIZE 8192
@@ -438,8 +440,10 @@ enum job_atr
   JOB_ATR_memset_string,
   JOB_ATR_user_kill_delay,
   JOB_ATR_idle_slot_limit,
+#ifdef PBS_MOM
 #ifdef NVIDIA_DCGM
   JOB_ATR_dcgm_gpu_use,
+#endif
 #endif
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
