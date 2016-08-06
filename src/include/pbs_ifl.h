@@ -400,9 +400,7 @@
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
 #define ATTR_mailbodyfmt    "mail_body_fmt"
 
-#ifdef NVIDIA_DCGM
 #define ATTR_dcgm_gpu_use "dcgm_gpu_use"
-#endif
 
 /* various attribute values */
 

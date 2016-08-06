@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-#include "pbs_log.h"
+#include "../lib/Liblog/pbs_log.h"
 #include <dcgm_agent.h>
 #include <dcgm_fields.h>
 #include "pbs_error.h"
@@ -83,7 +83,7 @@ void DCGM_job_gpu_stats::get_values(
     {
 		snprintf(buf, sizeof(buf), "total_energy_consumed");
 		names.push_back(buf);
-		snprintf(buf, sizeof(buf), "%d", this->total_energy_consumed);
+		snprintf(buf, sizeof(buf), "%lld", this->total_energy_consumed);
 		values.push_back(buf);
 		}
 
@@ -279,7 +279,7 @@ void DCGM_job_gpu_stats::get_totalEnergyConsumed(
 
 void DCGM_job_gpu_stats::get_totalECCSingleBitErrors(
 
-  unsigned int total_ecc_single_bit_errors)
+  unsigned int& total_ecc_single_bit_errors)
 
   {
   total_ecc_single_bit_errors = this->total_eccSingleBit;
@@ -287,7 +287,7 @@ void DCGM_job_gpu_stats::get_totalECCSingleBitErrors(
 
 void DCGM_job_gpu_stats::get_totalECCDoubleBitErrors(
 
-  unsigned int total_ecc_double_bit_errors)
+  unsigned int& total_ecc_double_bit_errors)
 
   {
   total_ecc_double_bit_errors = this->total_eccDoubleBit;
