@@ -2855,10 +2855,6 @@ int req_commit(
 #endif /* AUTORUN_JOBS */
 
 #ifdef QUICKCOMMIT
-  int                    OrigState;
-  int                    OrigSState;
-  char                   OrigSChar;
-  long                   OrigFlags;
 
   char                   namebuf[MAXPATHLEN+1];
 #endif /* QUICKCOMMIT */
@@ -2897,12 +2893,6 @@ int req_commit(
     job_mutex.unlock();
     return(rc);
     }
-
-  OrigState  = pj->ji_qs.ji_state;
-
-  OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
 
   pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
   pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
