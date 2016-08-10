@@ -59,6 +59,7 @@ END_TEST
 
 START_TEST(test_constructor)
   {
+  extern int gn_count;
   complete_req c;
 
   req r1;
@@ -133,7 +134,16 @@ START_TEST(test_constructor)
   fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
   fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
 
- }
+  int old_gn_count = gn_count;
+  gn_count = 20;
+  complete_req list7(h, false);
+  fail_unless(list7.req_count() == 1);
+  const req &rl7 = list7.get_req(0);
+  fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
+  fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+  gn_count = old_gn_count;
+
+  }
 END_TEST
 
 
