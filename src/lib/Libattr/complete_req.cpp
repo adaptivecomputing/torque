@@ -49,19 +49,27 @@ void complete_req::set_value_from_nodes(
     }
   } // END set_value_from_nodes()
 
+
+
+/*
+ * Constructor from a resource list (-l request)
+ *
+ */
+
 complete_req::complete_req(
 
   tlist_head &resources,
   bool        legacy_vmem) : reqs()
 
   {
-  resource      *pr = (resource *)GET_NEXT(resources);
-  int            task_count = 0;
-  int            execution_slots = 0;
-  std::string    mem_type;
+  resource           *pr = (resource *)GET_NEXT(resources);
+  int                 task_count = 0;
+  int                 execution_slots = 0;
+  std::string         mem_type;
   unsigned long long  swap = 0;
   unsigned long long  mem = 0;
-
+  bool                per_task_mem = false;
+  bool                per_task_vmem = false;
 
   while (pr != NULL)
     {
@@ -83,6 +91,10 @@ complete_req::complete_req(
     else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "mem")))
       {
+      // pmem is per task
+      if (pr->rs_defin->rs_name[0] == 'p')
+        per_task_mem = true;
+
       mem_type = pr->rs_defin->rs_name;
       mem = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
@@ -106,6 +118,10 @@ complete_req::complete_req(
     else if ((!strcmp(pr->rs_defin->rs_name, "vmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
+      // pvmem is per task
+      if (pr->rs_defin->rs_name[0] == 'p')
+        per_task_vmem = true;
+
       mem_type = pr->rs_defin->rs_name;
       swap = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
@@ -139,8 +155,11 @@ complete_req::complete_req(
       {
       if (task_count > 1)
         {
-        mem /= task_count;
-        swap /= task_count;
+        if (per_task_mem == false)
+          mem /= task_count;
+
+        if (per_task_vmem == false)
+          swap /= task_count;
         }
       }
     
@@ -151,7 +170,6 @@ complete_req::complete_req(
       r.set_placement_type(place_legacy);
       }
 
-
     r.set_memory(mem);
     r.set_swap(swap);
 
@@ -160,7 +178,6 @@ complete_req::complete_req(
 
     this->add_req(r);
     }
-  /* We can have only one memory directive per -l request. So either mem is set or swap is set */
   else if (mem != 0)
     {
     // Handle the case where a -lnodes request was made
@@ -242,6 +259,7 @@ complete_req::complete_req(
         }
       }
     }
+
   } // END constructor from resource list
 
 

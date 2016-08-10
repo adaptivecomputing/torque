@@ -196,12 +196,29 @@ void *get_next(
       r = NULL;
       break;
 
-
     case 18:
 
       rd.rs_name = strdup("vmem");
       r->rs_value.at_val.at_size.atsv_num = 2048;
       r->rs_value.at_val.at_size.atsv_shift = 0;
+      break;
+
+    case 19:
+
+      r = NULL;
+      break;
+
+    case 20:
+
+      rd.rs_name = strdup("procs");
+      r->rs_value.at_val.at_long = 2;
+      break;
+
+    case 21:
+
+      rd.rs_name = strdup("pmem");
+      r->rs_value.at_val.at_size.atsv_num = 1024;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
       break;
 
     default:
