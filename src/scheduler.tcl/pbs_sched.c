@@ -997,7 +997,7 @@ char *argv[];
     exit(1);
     }
 
-  if (gethostname(host, sizeof(host)) == -1)
+  if (alias_gethostname(host, sizeof(host)) == -1)
     {
     char *prob = "gethostname";
 

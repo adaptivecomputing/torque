@@ -81,26 +81,26 @@ int set_trqauthd_addr()
   {
   int local_errno;
 
-  if (gethostname(trq_hostname, PBS_MAXSERVERNAME) == -1)
+  if (alias_gethostname(trq_hostname, PBS_MAXSERVERNAME) == -1)
     {
     fprintf(stderr, "failed to get host name: %d\n", errno);
     return(PBSE_BADHOST);
     }
-          
+
   trq_server_addr = get_hostaddr(&local_errno, trq_hostname);
   if (trq_server_addr == 0)
     {
     fprintf(stderr, "Could not get host address\n");
     return(PBSE_BADHOST);
     }
-              
+
   return(PBSE_NONE);
   }
 
 /* validate_active_pbs_server -- Get the currently
    active pbs_server and put it in active_server.
    this fuction sends a request to trqauthd to ask it
-   to validate the currenly active pbs_server. 
+   to validate the currenly active pbs_server.
    trqauthd will return the currently active server */
 
 int validate_active_pbs_server(
@@ -153,16 +153,16 @@ int validate_active_pbs_server(
     }
 
   rc = socket_read_num(local_socket, &ret_code);
-  if (rc != PBSE_NONE) 
+  if (rc != PBSE_NONE)
     {
     close(local_socket);
     return(rc);
     }
 
   rc = socket_read_str(local_socket, &read_buf, &read_buf_len);
-  
+
   close(local_socket);
-  
+
   if ((rc == PBSE_NONE) &&
       (read_buf_len != 0))
     {
@@ -172,10 +172,10 @@ int validate_active_pbs_server(
     {
     if (read_buf != NULL)
       free(read_buf);
-  
+
     if (rc != PBSE_NONE)
       return(rc);
-  
+
     if (read_buf_len == 0)
       return(PBSE_SOCKET_READ);
     }
@@ -183,7 +183,7 @@ int validate_active_pbs_server(
   return(rc);
   } /* END validate_active_pbs_server() */
 
-/* 
+/*
  * get_active_pbs_server()
  * sends a TRQ_GET_ACTIVE_SERVER request to trqauthd. trqauthd will send a string of the
  * currently active server back
@@ -192,7 +192,7 @@ int validate_active_pbs_server(
 */
 
 int get_active_pbs_server(
-    
+
   char **active_server,
   int   *port)
 
@@ -221,7 +221,7 @@ int get_active_pbs_server(
 
     }
 
-  /* the syntax for this call is a number followed by a | (pipe). The pipe indicates 
+  /* the syntax for this call is a number followed by a | (pipe). The pipe indicates
      the end of a number */
   sprintf(write_buf, "%d|", TRQ_GET_ACTIVE_SERVER);
   write_buf_len = strlen(write_buf);
@@ -273,7 +273,7 @@ int get_active_pbs_server(
     close(local_socket);
     return(rc);
     }
-  
+
   close(local_socket);
 
   if (read_buf_len == 0)
@@ -309,14 +309,14 @@ int trq_simple_disconnect(
   }
 
 
-/* trq_simple_connect 
+/* trq_simple_connect
  * The original purpose of this function is to connect to pbs_server
  * to make sure it is available. Return PBSE_NONE on success.
  * Anything else is failure.
  */
 
 int trq_simple_connect(
-    
+
   const char *server_name, //Format is name[:port]
   int         batch_port,
   int        *sock_handle)
@@ -354,7 +354,7 @@ int trq_simple_connect(
       rc = PBSE_SYSTEM;
       continue;
       }
-      
+
     /* Make sure we don't make the socket wait for the linger timeout before getting freed */
     rc = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
     if (rc != 0)
@@ -382,7 +382,7 @@ int trq_simple_connect(
 
   if (results != NULL)
     freeaddrinfo(results);
-  
+
   if (addr_info == NULL)
     rc = PBSE_SERVER_NOT_FOUND;
 
@@ -390,15 +390,15 @@ int trq_simple_connect(
     return(rc);
 
   *sock_handle = sock;
-  
+
   return(rc);
   }
 
 /* validate_server:
  *
  * This function tries to find the currently active
- * pbs_server. If no server can be found the default 
- * server is made the active server */ 
+ * pbs_server. If no server can be found the default
+ * server is made the active server */
 int validate_server(
 
   char  *active_server_name,
@@ -414,11 +414,11 @@ int validate_server(
   char *tp;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  /* First we try to connect to the pbs_server as 
+  /* First we try to connect to the pbs_server as
      indicated in active_server_name. If that fails
      we go through the server list. If that fails
-     we stick with the active_server_name. If 
-     another server in teh server_name_list responds 
+     we stick with the active_server_name. If
+     another server in teh server_name_list responds
      that will become the active_pbs_server */
   if (active_server_name != NULL)
     rc = trq_simple_connect(active_server_name, t_server_port, &sd);
@@ -442,8 +442,8 @@ int validate_server(
       if (tp && tp[0])
         {
         /* Trim any leading space */
-        while(isspace(*tp)) tp++; 
-        
+        while(isspace(*tp)) tp++;
+
         memset(current_name, 0, sizeof(current_name));
         snprintf(current_name, sizeof(current_name), "%s", tp);
 
@@ -487,9 +487,9 @@ int validate_server(
    shut down trqauthd. The request has the format of
    %d|%d|%s|%d| where the first %d is the command which has already
    been read in process_svr_conn. The next %d|%s pair is the user
-   name of the process issuing the request. For terminating 
+   name of the process issuing the request. For terminating
    trqauthd this must be root. The final %d is the pid of the
-   process requesting to terminate trqauthd 
+   process requesting to terminate trqauthd
    parse_terminate_request extracts the user name and the pid
  */
 
@@ -531,7 +531,7 @@ int parse_request_client(
   {
   int rc = PBSE_NONE;
   long long tmp_val = 0, tmp_port = 0, tmp_auth_type = 0, tmp_sock = 0, tmp_pid = 0;
-  
+
   if ((rc = socket_read_str(sock, server_name, &tmp_val)) != PBSE_NONE)
     {
     }
@@ -639,9 +639,9 @@ int build_active_server_response(
 
 
 int validate_user(
- 
+
   int         sock,
-  const char *user_name, 
+  const char *user_name,
   int         user_pid,
   char       *msg)
 
@@ -668,7 +668,7 @@ int validate_user(
     }
 
   user_pwd = get_password_entry_by_uid(&buf, cr.uid);
-   
+
   if (user_pwd == NULL)
     {
     sprintf(msg, "UID %d returned NULL from getpwuid", cr.uid);
@@ -759,7 +759,7 @@ int parse_response_svr(
 
 
 int get_trq_server_addr(
-   
+
   char  *server_name,
   char **server_addr,
   int   *server_addr_len)
@@ -1000,11 +1000,11 @@ int authorize_socket(
     free(trq_server_addr);
 
   return(rc);
-  } // END authorize_socket() 
+  } // END authorize_socket()
 
 
 void *process_svr_conn(
-    
+
   void *sock)
 
   {
@@ -1091,7 +1091,7 @@ void *process_svr_conn(
 #ifdef UNIT_TEST
   /* process_svr_conn_rc is used by ./test/trq_auth/test_trq_auth.c
      to discover the status of unit test calls to process_svr_conn
-   */ 
+   */
   process_svr_conn_rc = rc;
 #endif
 
@@ -1099,7 +1099,7 @@ void *process_svr_conn(
     {
     /* Failure case */
     msg_len = 6 + 1 + 6 + 1 + 1;
-    
+
     if (error_string.size() == 0)
       {
       char *err = pbse_to_txt(rc);
@@ -1110,7 +1110,7 @@ void *process_svr_conn(
     msg_len += error_string.size();
 
     message = string_format("%d|%d|%s|",rc, error_string.size(), error_string.c_str());
-    
+
     if (debug_mode == TRUE)
       {
       if (server_name != NULL)
@@ -1122,16 +1122,16 @@ void *process_svr_conn(
       {
       if (server_name != NULL)
         snprintf(msg_buf, sizeof(msg_buf),
-          "User %s at IP:port %s:%d login attempt failed --no message", 
+          "User %s at IP:port %s:%d login attempt failed --no message",
           (user_name) ? user_name : "null",
           server_name, server_port);
       }
     else
       {
       snprintf(msg_buf, sizeof(msg_buf),
-        "User %s at IP:port %s:%d login attempt failed --%s", 
+        "User %s at IP:port %s:%d login attempt failed --%s",
           (user_name) ? user_name : "null",
-          (server_name) ? server_name : "null", server_port, 
+          (server_name) ? server_name : "null", server_port,
           error_string.c_str());
       }
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
@@ -1152,6 +1152,3 @@ void *process_svr_conn(
 
   return(NULL);
   } /* END process_svr_conn() */
-
-
-

@@ -175,13 +175,13 @@ int get_fullhostname(
     {
     if (h_errno == HOST_NOT_FOUND)
       {
-      fprintf(stderr, 
+      fprintf(stderr,
         "Unable to lookup host '%s' by address (check /etc/hosts or DNS reverse name lookup)\n",
         shortname);
       }
 
     if (EMsg != NULL)
-      snprintf(EMsg, MAXLINE, 
+      snprintf(EMsg, MAXLINE,
         "getnameinfo(%s) failed, h_errno=%d",
         shortname,
         h_errno);
@@ -197,7 +197,7 @@ int get_fullhostname(
     /* FAILURE - name too long */
 
     if (EMsg != NULL)
-      snprintf(EMsg, MAXLINE, 
+      snprintf(EMsg, MAXLINE,
         "hostname (%.32s...) is too long (> %d chars)",
         addr_info->ai_canonname,
         bufsize);
@@ -212,4 +212,3 @@ int get_fullhostname(
   }  /* END get_fullhostname() */
 
 /* END get_hostname.c */
-

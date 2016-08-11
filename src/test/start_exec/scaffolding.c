@@ -702,7 +702,7 @@ int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo 
   else
     {
     char buf[MAXLINE];
-    gethostname(buf, sizeof(buf));
+    alias_gethostname(buf, sizeof(buf));
     getaddrinfo(buf, NULL, NULL, ppAddrInfoOut);
 
     return(0);

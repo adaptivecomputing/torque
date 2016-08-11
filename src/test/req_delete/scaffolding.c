@@ -536,7 +536,7 @@ int get_fullhostname(
     return(0);
 
   memset(&hostname, 0, sizeof(hostname));
-  gethostname(hostname, sizeof(hostname));
+  alias_gethostname(hostname, sizeof(hostname));
 
   memset(&hints, 0, sizeof hints);
   hints.ai_flags = AI_CANONNAME;

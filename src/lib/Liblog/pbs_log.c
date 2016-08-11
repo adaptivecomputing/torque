@@ -122,6 +122,8 @@
 #include<arpa/inet.h>
 #include<netdb.h>
 
+#include "utils.h"
+
 void job_log_close(int msg);
 
 /* Global Data */
@@ -1524,7 +1526,7 @@ void log_set_hostname_sharelogging(const char *server_name, const char *server_p
 
   if (server_name)
      hostname = (char *)server_name;
-  else if (gethostname(hostnm, sizeof(hostnm)) == 0)
+  else if (alias_gethostname(hostnm, sizeof(hostnm)) == 0)
      hostname = hostnm;
 
   if (hostname)

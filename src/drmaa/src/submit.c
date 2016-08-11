@@ -250,9 +250,9 @@ int
 drmaa_create_submission_context(
 
   drmaa_submission_context_t **c,
-  const drmaa_job_template_t *jt, 
+  const drmaa_job_template_t *jt,
   int bulk_no,
-  char *errmsg, 
+  char *errmsg,
   size_t errlen)
 
   {

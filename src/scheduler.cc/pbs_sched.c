@@ -125,6 +125,7 @@
 #include "net_connect.h"
 #include "rm.h"
 #include "libpbs.h"
+#include "utils.h"
 
 int  server_sock;
 
@@ -151,6 +152,7 @@ int   pbs_rm_port;
 int             schedreq();
 
 extern int get_4byte(int, unsigned int *);
+
 
 
 /*
@@ -754,6 +756,8 @@ int main(
   /* The following is code to reduce security risks                */
   /* move this to a place where nss_ldap doesn't hold a socket yet */
 
+  alias_gethostname = &gethostname;
+
   c = sysconf(_SC_OPEN_MAX);
 
   while (--c > 2)
@@ -949,7 +953,7 @@ int main(
     }
   pthread_mutex_unlock(&log_mutex);
 
-  if (gethostname(host, sizeof(host)) == -1)
+  if (alias_gethostname(host, sizeof(host)) == -1)
     {
     log_err(errno, id, (char *)"gethostname");
     die(0);

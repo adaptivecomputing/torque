@@ -544,7 +544,7 @@ int connect(
     return(-1);
   }
 
-int gethostname(char *name, size_t len) throw()
+int alias_gethostname(char *name, size_t len) throw()
   {
 
   if(gethostname_success == false)

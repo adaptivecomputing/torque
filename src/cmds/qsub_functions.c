@@ -834,7 +834,7 @@ void validate_qsub_host_pbs_o_server(
   /* check if QSUBHOST was entered in torque.cfg */
   if (hash_find(job_attr, ATTR_submit_host, &tmp_job_info))
     qsub_host = tmp_job_info->value.c_str();
-  else if (gethostname(tmp_host_name, PBS_MAXHOSTNAME) == 0)
+  else if (alias_gethostname(tmp_host_name, PBS_MAXHOSTNAME) == 0)
     qsub_host = tmp_host_name;
 
   if (host_name_suffix != NULL)

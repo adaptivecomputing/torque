@@ -224,4 +224,5 @@ class req
     void          set_task_usage_stats(int task_index, unsigned long cput_used, unsigned long long mem_used);
   };
 
+
 #endif /* _REQ_HPP */
