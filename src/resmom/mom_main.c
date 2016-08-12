@@ -3890,6 +3890,7 @@ void usage(
   fprintf(stderr, "  -s        \\\\ Logfile Suffix\n");
   fprintf(stderr, "  -S <INT>  \\\\ Server Port\n");
   fprintf(stderr, "  -v        \\\\ Version\n");
+  fprintf(stderr, "  -w        \\\\ Wait for the server to send mom information\n");
   fprintf(stderr, "  -x        \\\\ Do Not Use Privileged Ports\n");
   fprintf(stderr, "  --about   \\\\ Print Build Information\n");
   fprintf(stderr, "  --help    \\\\ Print Usage\n");
