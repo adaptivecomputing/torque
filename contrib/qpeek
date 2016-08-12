@@ -41,6 +41,7 @@ MAIN:
   my $help    = 0;
   my $o       = 0;
   my $e       = 0;
+  my $host_in_jobid = 1;
   my $spool;
   my $host;
 
@@ -100,10 +101,20 @@ MAIN:
   # Format and run the command
   my $cmd = "$rsh_cmd $node $tool";
 
-  $cmd .= " $spool/spool/$jobid.$host.OU"
-    if $o;
-  $cmd .= " $spool/spool/$jobid.$host.ER"
-    if $e;
+  if ( $host_in_jobid==1 )
+  {
+    $cmd .= " $spool/spool/$jobid.$host.OU"
+      if $o;
+    $cmd .= " $spool/spool/$jobid.$host.ER"
+      if $e;
+  }
+  else
+  {
+    $cmd .= " $spool/spool/$jobid.OU"
+      if $o;
+    $cmd .= " $spool/spool/$jobid.ER"
+      if $e;
+  }
 
   $cmd .= "\n";
 
