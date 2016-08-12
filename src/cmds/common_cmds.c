@@ -237,6 +237,7 @@ void calloc_or_fail(
  */
 
 int parse_variable_list(
+
   job_data_container *dest_hash, /* This is the dest hashmap for vars found */
   job_data_container * UNUSED(user_env),  /* This is the source hashmap */
   int                  UNUSED(var_type),  /* Type for vars not pulled from the source hash */
@@ -311,7 +312,7 @@ int parse_variable_list(
           name[delim - s] = '\0';
           job_env += name;
           job_env += "=,";
-          s = delim + 1;
+          s = ++delim + 1;
           }
         }
       }
