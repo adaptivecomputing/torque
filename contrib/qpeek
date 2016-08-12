@@ -22,7 +22,7 @@
 #
 #   -ssh               Use the ssh command to remote access the mother superior node
 #   -rsh               Use the rsh command to remote access the mother superior node
-#   -spool=<spool_loc> Specify the location of the spool directory, defaults to /opt/torque/spool
+#   -spool=<spool_loc> Specify the location of the spool directory, defaults to /opt/torque
 #   -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
 #
 #   -help|? Display help message
@@ -64,7 +64,7 @@ MAIN:
   }
   elsif ( !defined($spool) )
   {
-    $spool = "/opt/torque/spool";
+    $spool = "/opt/torque";
   }    
   if ( !defined($host) && -r "$spool/server_name" )
   {
@@ -130,7 +130,7 @@ Options:
   -o      Show the stdout file of the job
 
   -ssh               Use the ssh command rather than rsh to remote access the mother superior node
-  -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /opt/torque/spool
+  -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /opt/torque
   -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
 
   -help|? Display help message
