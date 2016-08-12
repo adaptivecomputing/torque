@@ -813,6 +813,7 @@ void validate_pbs_o_workdir(
     the_val = tmp_job_info->value.c_str();
 
   hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
