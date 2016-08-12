@@ -58,9 +58,9 @@ MAIN:
     'help|?'           => \$help,
   );
 
-  if ( !defined($spool) && defined($env{'PBS_HOME'}) )
+  if ( !defined($spool) && defined($ENV{'PBS_HOME'}) )
   {
-    $spool = $env{'PBS_HOME'};
+    $spool = $ENV{'PBS_HOME'};
   }
   elsif ( !defined($spool) )
   {
@@ -100,9 +100,9 @@ MAIN:
   # Format and run the command
   my $cmd = "$rsh_cmd $node $tool";
 
-  $cmd .= " $spool/$jobid.$host.OU"
+  $cmd .= " $spool/spool/$jobid.$host.OU"
     if $o;
-  $cmd .= " $spool/$jobid.$host.ER"
+  $cmd .= " $spool/spool/$jobid.$host.ER"
     if $e;
 
   $cmd .= "\n";
