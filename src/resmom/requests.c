@@ -3268,6 +3268,8 @@ int expand_words(
   char                     **bad_list)
 
   {
+  sources.clear();
+
 #ifdef HAVE_WORDEXP
   wordexp_t       src_exp;
   wordexp_t       dest_exp;
