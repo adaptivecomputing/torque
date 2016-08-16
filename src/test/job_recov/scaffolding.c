@@ -475,3 +475,48 @@ void clear_attr(
 
   return;
   }  /*END clear_attr() */
+
+array_info::array_info() {}
+
+job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
+                         ai_mutex(NULL), ai_qs()
+
+  {
+  this->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(this->ai_mutex, NULL);
+  }
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  long                  job_atr_hold,
+  int                   job_exit_status)
+
+  {
+  }
+
+void job_array::set_array_id(
+
+  const char *array_id)
+
+  {
+  snprintf(this->ai_qs.parent_id, sizeof(this->ai_qs.parent_id), "%s", array_id);
+  }
+
+void job_array::set_arrays_fileprefix(
+
+  const char *file_prefix)
+
+  {
+  snprintf(this->ai_qs.fileprefix, sizeof(this->ai_qs.fileprefix), "%s", file_prefix);
+  }
+
+void job_array::set_owner(
+
+  const char *owner)
+
+  {
+  snprintf(this->ai_qs.owner, sizeof(this->ai_qs.owner), "%s", owner);
+  }

@@ -253,7 +253,7 @@ void translate_vector_to_range_string(std::string &range_string, const std::vect
   }
 
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -283,19 +283,20 @@ void translate_range_string_to_vector(
       if ((*ptr == ',') ||
           (is_whitespace(*ptr)))
        ptr++;
-     }
-   else
-     {
-     indices.push_back(prev);
+      }
+    else
+      {
+      indices.push_back(prev);
 
-     if ((*ptr == ',') ||
-         (is_whitespace(*ptr)))
-       ptr++;
-     }
-   }
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
 
-   free(str);
-   } /* END translate_range_string_to_vector() */
+  free(str);
+  return(PBSE_NONE);
+  } /* END translate_range_string_to_vector() */
 
 
 void capture_until_close_character(

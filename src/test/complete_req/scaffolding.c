@@ -234,7 +234,7 @@ void *get_next(
 
 
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -276,6 +276,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void log_err(

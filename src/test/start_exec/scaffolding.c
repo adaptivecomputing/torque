@@ -765,7 +765,7 @@ void numa_node::recover_reservation(
 
 #endif
 
-void translate_range_string_to_vector(const char *range, std::vector<int> &indices)
+int translate_range_string_to_vector(const char *range, std::vector<int> &indices)
   {
   indices.push_back(0);
   indices.push_back(1);
@@ -777,6 +777,8 @@ void translate_range_string_to_vector(const char *range, std::vector<int> &indic
   indices.push_back(7);
   indices.push_back(8);
   indices.push_back(9);
+
+  return(PBSE_NONE);
   }
 
 int initgroups_ext(const char *username, gid_t gr_id)

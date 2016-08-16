@@ -86,7 +86,6 @@ extern int array_259_upgrade;
 int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
-int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
 
 #define     BUFSIZE 256
@@ -261,73 +260,13 @@ int add_token_xml(
     }
   return rc;
   }
-  
 
-int array_tokens_xml(
-
-  xmlNodePtr *rnode,                /* M */ /* dom's root node */
-  tlist_head  request_tokens_head,  /* I */ /* head of tokens */
-  char       *log_buf,              /* O */ /* error buffer */
-  size_t      buflen)               /* I */ /* size of error buffer */
-
-  {
-  array_request_node *rn;
-  int num_tokens = 0;
-  int rc = -1;
-  int node_count = 0;
-
-  xmlNodePtr root_node = *rnode;
-  xmlNodePtr tokenNode = NULL;
-
-  /* count number of request tokens left, empty loop body intentionally */
-  for (rn = (array_request_node*)GET_NEXT(request_tokens_head), num_tokens = 0;
-       rn != NULL;
-       rn = (array_request_node*)GET_NEXT(rn->request_tokens_link), num_tokens++)
-    {
-    /* braces help older gcc versions not whine */
-    }
-
-  add_integer_field_node(rnode, num_tokens, NUM_TOKENS_TAG, &node_count);
-  if (node_count == 1)
-    {
-    rc = PBSE_NONE;
-    if (num_tokens > 0)
-      {
-      if ((tokenNode = xmlNewNode(NULL, (xmlChar *)TOKENS_TAG)))
-        {
-        xmlAddChild(root_node, tokenNode);
-        node_count = 0;
-        for (rn = (array_request_node*)GET_NEXT(request_tokens_head); rn != NULL;
-          rn = (array_request_node*)GET_NEXT(rn->request_tokens_link))
-          {
-          if (add_token_xml(&tokenNode, rn, &node_count))
-            {
-            snprintf(log_buf, buflen, "unexpected error while creating xml nodes for array tokens %d", node_count);
-            rc = -1;
-            break;
-            }
-          }
-        }
-      else
-        { 
-        snprintf(log_buf, buflen, "unable to create the element tokens %s", __func__);
-        rc = -1;
-        }
-      }
-    }
-  else
-    snprintf(log_buf, buflen, "unable to add the element %s to the dom", NUM_TOKENS_TAG);
- 
-  return rc;
-  }
 
 
 int array_info_xml(
 
-  xmlNodePtr *rnode,         /* M */ /* dom's root node */
-  const array_info *ai_qs,   /* I */ /* info to written to xml */
-  char *log_buf,             /* O */ /* error buffer */
-  size_t buflen)             /* I */ /* len of error buffer */
+  xmlNodePtr       *rnode,   /* M */ /* dom's root node */
+  const array_info *ai_qs)   /* I */ /* info to written to xml */
 
   {
   int node_count = 0;
@@ -347,20 +286,26 @@ int array_info_xml(
   add_string_field_node(rnode, ai_qs->fileprefix, ARRAY_FILEPREFIX_TAG, &node_count);
   add_string_field_node(rnode, ai_qs->submit_host, SUBMIT_HOST_TAG, &node_count);
   add_integer_field_node(rnode, ai_qs->num_purged, NUM_PURGED_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->num_idle, NUM_IDLE_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->idle_slot_limit, IDLE_SLOT_LIMIT_TAG, &node_count);
+  add_integer_field_node(rnode, ai_qs->highest_id_created, HIGHEST_ID_CREATED_TAG, &node_count);
 
-  if (node_count == 15)
-    return PBSE_NONE;
+  // NOTE: This must be updated 
+  if (node_count == 18)
+    return(PBSE_NONE);
 
-  return -1;
-  }
+  return(-1);
+  } // END array_info_xml()
 
 
 
 int array_save_xml(
-  const job_array *pa,     /* I */  /* array info to be written to xml */
-  const char *filename,    /* I */  /* xml filename */
-  char  *log_buf,          /* O */  /* error buffer */
-  size_t buflen)           /* I */  /* length of error buffer */
+
+  const job_array *pa,       /* I */  /* array info to be written to xml */
+  const char      *filename, /* I */  /* xml filename */
+  char            *log_buf,  /* O */  /* error buffer */
+  size_t           buflen)   /* I */  /* length of error buffer */
+
   {
   int rc = -1;
   xmlDocPtr doc = NULL; 
@@ -371,18 +316,20 @@ int array_save_xml(
     if ((root_node = xmlNewNode(NULL, (const xmlChar*) ARRAY_TAG)))
       {
       xmlDocSetRootElement(doc, root_node);
-      if ((rc = array_info_xml(&root_node, (const array_info*) &(pa->ai_qs), log_buf, buflen)) == PBSE_NONE)
-        if ((rc = array_tokens_xml(&root_node, pa->request_tokens, log_buf, buflen)) == PBSE_NONE)
+      if ((rc = array_info_xml(&root_node, (const array_info*) &(pa->ai_qs))) == PBSE_NONE)
+        {
+        if (xmlNewChild(root_node, NULL, (xmlChar *)RANGE_TAG, (xmlChar *)pa->ai_qs.range_str.c_str()))
           {
 #ifndef PBS_MOM
-    lock_ss();
+          lock_ss();
 #endif /* !defined PBS_MOM */
 
           int lenwritten = xmlSaveFormatFileEnc(filename, doc, NULL, 1);
 
 #ifndef PBS_MOM
-    unlock_ss();
+          unlock_ss();
 #endif /* !defined PBS_MOM */
+
           if (!(lenwritten))
             {
             rc = -1;
@@ -390,17 +337,18 @@ int array_save_xml(
               filename, pa->ai_qs.parent_id);
             }
           }
+        }
       }
     else
       snprintf(log_buf, buflen, "Can't create root node on the document for job array file %s", filename);
     xmlFreeDoc(doc);
     }
-    else
-      snprintf(log_buf, buflen, "unable to create document for the xml file job %s", filename);
+  else
+    snprintf(log_buf, buflen, "unable to create document for the xml file job %s", filename);
 
-    /* error message will be printed out by the caller */
-    return rc;
-  }
+  /* error message will be printed out by the caller */
+  return rc;
+  } // END array_save_xml()
 
 
 
@@ -557,6 +505,19 @@ int read_and_convert_259_array(
   } /* END read_and_convert_259_array() */
 
 
+
+/*
+ * assign_array_info_fields()
+ *
+ * Sets a value in the array according the specified xml
+ * @param pa_new - a pointer to a pointer to the new array
+ * @param xml_node - a pointer to the xml node
+ * @param log_buf - a pointer to the error buffer
+ * @param buflen - the length of the error buffer
+ * @param num_tokens - the number of tokens in the range, if present
+ * @return PBSE_NONE on success, -1 if the xml tag is unreadable
+ */
+
 int assign_array_info_fields(
 
   job_array  **pa_new,       /* O */ /* Array Job to recover information from file */
@@ -627,6 +588,22 @@ int assign_array_info_fields(
   else if ((nameLen == strlen(NUM_TOKENS_TAG)) &&
     (!(strcmp((char *)xml_node->name, NUM_TOKENS_TAG)))) 
     *num_tokens = atoi((const char *)content);
+  else if (!strcmp((const char *)xml_node->name, RANGE_TAG))
+    {
+    pa->ai_qs.range_str = (const char *)content;
+    }
+  else if (!strcmp((const char *)xml_node->name, NUM_IDLE_TAG))
+    {
+    pa->ai_qs.num_idle = strtol((const char *)content, NULL, 10);
+    }
+  else if (!strcmp((const char *)xml_node->name, IDLE_SLOT_LIMIT_TAG))
+    {
+    pa->ai_qs.idle_slot_limit = strtol((const char *)content, NULL, 10);
+    }
+  else if (!strcmp((const char *)xml_node->name, HIGHEST_ID_CREATED_TAG))
+    {
+    pa->ai_qs.highest_id_created = strtol((const char *)content, NULL, 10);
+    }
   else
     {
     snprintf(log_buf, buflen, "unknown tag \"%s\" on array xml", (const char*) xml_node->name);
@@ -635,22 +612,8 @@ int assign_array_info_fields(
 
   xmlFree(content);
   return rc;
-  }
+  } // END assign_array_info_fields()
 
-
-void delete_rn(tlist_head *th)
-  {
-  array_request_node *rn;
-  tlist_head pa_request_tokens = *th;
-
-  for (rn = (array_request_node*)GET_NEXT(pa_request_tokens);
-    rn != NULL;
-    rn = (array_request_node*)GET_NEXT(pa_request_tokens))
-    {
-    delete_link(&rn->request_tokens_link);
-    free(rn);
-    }
-  }
 
 
 int parse_num_tokens(
@@ -665,7 +628,7 @@ int parse_num_tokens(
   job_array  *pa = *new_pa;
   int         rc = PBSE_NONE;
   bool        element_found = false;
-
+  char        range_buf[MAXLINE];
 
   for (cur_node = tokensNode->children; cur_node != NULL; cur_node = cur_node->next)
     {
@@ -679,26 +642,42 @@ int parse_num_tokens(
     start_attr = end_attr = NULL;
     mbool_t gotBothAttr = false;
     if ((start_attr = xmlGetProp(cur_node, (xmlChar *)START_TAG)))
+      {
       if ((end_attr = xmlGetProp(cur_node, (xmlChar *)END_TAG)))
         {
-        array_request_node *rn = (array_request_node *)calloc(1, sizeof(array_request_node));
-        rn->start = atoi((char *)start_attr);
-        rn->end = atoi((char *)end_attr);
-        CLEAR_LINK(rn->request_tokens_link);
-        append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
+        int start = atoi((char *)start_attr);
+        int end = atoi((char *)end_attr);
+
+        if (pa->ai_qs.range_str.size() == 0)
+          {
+          if (start != end)
+            snprintf(range_buf, sizeof(range_buf), "%d-%d", start, end);
+          else
+            snprintf(range_buf, sizeof(range_buf), "%d", start);
+          }
+        else
+          {
+          if (start != end)
+            snprintf(range_buf, sizeof(range_buf), ",%d-%d", start, end);
+          else
+            snprintf(range_buf, sizeof(range_buf), ",%d", start);
+          }
+
         gotBothAttr = true;
         }
-      if (start_attr)
-        xmlFree(start_attr);
-      if (end_attr)
-        xmlFree(end_attr);
-      if (!gotBothAttr)
-        {
-        delete_rn(&pa->request_tokens);
-        snprintf(log_buf, buflen, "%s", "missing start/end attributes for array tokens in the array xml");
-        rc = -1;
-        break;
-        }
+      }
+
+    if (start_attr)
+      xmlFree(start_attr);
+    if (end_attr)
+      xmlFree(end_attr);
+
+    if (!gotBothAttr)
+      {
+      snprintf(log_buf, buflen, "%s", "missing start/end attributes for array tokens in the array xml");
+      rc = -1;
+      break;
+      }
     }
    
   if (element_found == false)
@@ -709,6 +688,7 @@ int parse_num_tokens(
 
   return rc;
   }
+
 
 
 /*
@@ -760,7 +740,9 @@ int parse_array_dom(
 
     if ((!(rc)) &&
         (num_tokens > 0) && tokensNode)
-      rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);  
+      rc = parse_num_tokens(pa, tokensNode, log_buf, buflen);
+
+    new_pa->initialize_uncreated_ids();
     }
 
   if (element_found == false)
@@ -834,7 +816,7 @@ int array_recov_binary(
   int   len;
   int   rc = -1;
   struct stat s_buf;
-  array_request_node *rn;
+  char                request_buf[MAXLINE];
 
 
   fd = open(path, O_RDONLY, 0);
@@ -934,29 +916,32 @@ int array_recov_binary(
 
     for (i = 0; i < num_tokens; i++)
       {
-      rn = (array_request_node *)calloc(1, sizeof(array_request_node));
+      array_request_node rn;
 
-      if (read_ac_socket(fd, rn, sizeof(array_request_node)) != sizeof(array_request_node))
+      if (read_ac_socket(fd, &rn, sizeof(array_request_node)) != sizeof(array_request_node))
         {
         snprintf(log_buf, buflen, "error reading array_request_node from %s", path);
-        free(rn);
-
-        for (rn = (array_request_node*)GET_NEXT(pa->request_tokens);
-            rn != NULL;
-            rn = (array_request_node*)GET_NEXT(pa->request_tokens))
-          {
-          delete_link(&rn->request_tokens_link);
-          free(rn);
-          }
 
         close(fd);
         return(PBSE_SYSTEM);
         }
 
-      CLEAR_LINK(rn->request_tokens_link);
+      if (pa->ai_qs.range_str.size() == 0)
+        {
+        if (rn.start != rn.end)
+          snprintf(request_buf, sizeof(request_buf), "%d-%d", rn.start, rn.end);
+        else
+          snprintf(request_buf, sizeof(request_buf), "%d", rn.start);
+        }
+      else
+        {
+        if (rn.start != rn.end)
+          snprintf(request_buf, sizeof(request_buf), ",%d-%d", rn.start, rn.end);
+        else
+          snprintf(request_buf, sizeof(request_buf), ",%d", rn.start);
+        }
 
-      append_link(&pa->request_tokens, &rn->request_tokens_link, (void*)rn);
-
+      pa->ai_qs.range_str += request_buf;
       }
     }
 
@@ -978,17 +963,6 @@ void free_array_job_sub_struct(
   job_array *pa)
 
   {
-  array_request_node *rn;
-
-  /* clear array request linked list */
-  for (rn = (array_request_node *)GET_NEXT(pa->request_tokens);
-       rn != NULL;
-       rn = (array_request_node *)GET_NEXT(pa->request_tokens))
-    {
-    delete_link(&rn->request_tokens_link);
-    free(rn);
-    }
-
   if (pa->job_ids != NULL)
     {
     /* free the memory for the job pointers */
@@ -1018,23 +992,20 @@ int array_recov(
   bool   binary_conversion = false;
 
   /* allocate the storage for the struct */
-  pa = (job_array*)calloc(1,sizeof(job_array));
+  pa = new job_array();
 
   if (pa == NULL)
     {
     return(PBSE_SYSTEM);
     }
 
-  /* initialize the linked list nodes */
-  CLEAR_HEAD(pa->request_tokens);
-  
   if ((rc = array_recov_xml(path, &pa, log_buf, sizeof(log_buf))) && rc == PBSE_INVALID_SYNTAX)
     {
     rc = array_recov_binary(path, &pa, log_buf, sizeof(log_buf));
     binary_conversion = true;
     }
 
-    if (rc != PBSE_NONE) 
+  if (rc != PBSE_NONE) 
     {
     free_array_job_sub_struct(pa);
     free(pa);
@@ -1072,21 +1043,14 @@ int array_delete(
   job_array *pa)
 
   {
-  int                      i;
   char                     path[MAXPATHLEN + 1];
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
-  array_request_node      *rn;
-  struct array_depend     *pdep;
 #ifndef PBS_MOM
   std::string              adjusted_path_arrays;
 #endif
 
   /* first thing to do is take this out of the servers list of all arrays */
   remove_array(pa);
-
-  /* unlock the mutex and free it */
-  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-  free(pa->ai_mutex);
 
 #ifndef PBS_MOM
   // get adjusted path_arrays path
@@ -1107,32 +1071,6 @@ int array_delete(
     log_err(errno, "array_delete", log_buf);
     }
 
-  /* clear array request linked list */
-  for (rn = (array_request_node *)GET_NEXT(pa->request_tokens);
-       rn != NULL;
-       rn = (array_request_node *)GET_NEXT(pa->request_tokens))
-    {
-    delete_link(&rn->request_tokens_link);
-    free(rn);
-    }
-
-  /* free the memory for the job pointers */
-  for (i = 0; i < pa->ai_qs.array_size; i++)
-    {
-    if (pa->job_ids[i] != NULL)
-      free(pa->job_ids[i]);
-    }
-
-  free(pa->job_ids);
-
-  /* free the dependencies, if any */
-  for (pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps); 
-       pdep != NULL;
-       pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps))
-    {
-    delete pdep;
-    }
-
   /* purge the "template" job, 
      this also deletes the shared script file for the array*/
   if (pa->ai_qs.parent_id[0] != '\0')
@@ -1143,12 +1081,10 @@ int array_delete(
     }
 
   /* free the memory allocated for the struct */
-  free(pa);
+  delete pa;
 
   return(PBSE_NONE);
   } /* END array_delete() */
-
-
 
 
 
@@ -1215,31 +1151,18 @@ int setup_array_struct(
 
   {
   job_array          *pa;
-  array_request_node *rn;
-
-  int                 bad_token_count;
-  int                 array_size;
   int                 rc;
-  char                log_buf[LOCAL_LOG_BUF_SIZE];
-  long                max_array_size;
 
-  if(pjob == NULL)
+  if (pjob == NULL)
     return RM_ERR_BADPARAM;
 
-  pa = (job_array *)calloc(1,sizeof(job_array));
+  pa = new job_array();
 
-  pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
-  
-  strcpy(pa->ai_qs.parent_id, pjob->ji_qs.ji_jobid);
-  strcpy(pa->ai_qs.fileprefix, pjob->ji_qs.ji_fileprefix);
-  snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-  snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s", get_variable(pjob, pbs_o_host));
+  pa->set_array_id(pjob->ji_qs.ji_jobid);
+  pa->set_arrays_fileprefix(pjob->ji_qs.ji_fileprefix);
+  pa->set_owner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  pa->set_submit_host(get_variable(pjob, pbs_o_host));
 
-  pa->ai_qs.num_cloned = 0;
-  CLEAR_HEAD(pa->request_tokens);
-
-  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pa->ai_mutex, NULL);
   mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex);
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
@@ -1257,86 +1180,39 @@ int setup_array_struct(
     return(1);
     }
 
-  if ((rc = set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str, pa)))
+  if ((rc = pa->set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
-    long max_limit = 0;
-    get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit);
-    snprintf(log_buf,sizeof(log_buf),
-      "Array %s requested a slot limit above the max limit %ld, rejecting\n",
-      pa->ai_qs.parent_id,
-      max_limit);
-
-    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
-    
     array_delete(pa);
 
     /* array_delete will delete pa and its mutex. Do not try to unlock */
     pa_mutex.set_unlock_on_exit(false);
 
-    return(INVALID_SLOT_LIMIT);
+    return(rc);
     }
 
-  pa->ai_qs.jobs_running = 0;
-  pa->ai_qs.num_started = 0;
-  pa->ai_qs.num_failed = 0;
-  pa->ai_qs.num_successful = 0;
-  
-  bad_token_count = parse_array_request(
-                      pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str,
-                      &(pa->request_tokens));
+  long requested_limit = -1;
 
-  /* get the number of elements that should be allocated in the array */
-  rn = (array_request_node *)GET_NEXT(pa->request_tokens);
-  array_size = 0;
-  pa->ai_qs.num_jobs = 0;
-  while (rn != NULL) 
+  if (pjob->ji_wattr[JOB_ATR_idle_slot_limit].at_flags & ATR_VFLAG_SET)
+    requested_limit = pjob->ji_wattr[JOB_ATR_idle_slot_limit].at_val.at_long;
+
+  if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
-    if (rn->end > array_size)
-      array_size = rn->end;
-    /* calculate the actual number of jobs (different from array size) */
-    pa->ai_qs.num_jobs += rn->end - rn->start + 1;
-
-    rn = (array_request_node *)GET_NEXT(rn->request_tokens_link);
-    }
-
-  /* size of array is the biggest index + 1 */
-  array_size++; 
-
-  if (get_svr_attr_l(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
-    {
-    if (max_array_size < pa->ai_qs.num_jobs)
-      {
-      array_delete(pa);
-      /* array delete deletes pa and its mutex */
-      pa_mutex.set_unlock_on_exit(false);
-
-      return(ARRAY_TOO_LARGE);
-      }
-    }
-
-  /* initialize the array */
-  pa->job_ids = (char **)calloc(array_size, sizeof(char *));
-  if (pa->job_ids == NULL)
-    {
-    sprintf(log_buf, "Failed to alloc job_ids: job %s", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     array_delete(pa);
-    return(PBSE_MEM_MALLOC);
+
+    /* array_delete will delete pa and its mutex. Do not try to unlock */
+    pa_mutex.set_unlock_on_exit(false);
+
+    return(rc);
     }
 
-  /* remember array_size */
-  pa->ai_qs.array_size = array_size;
-
-  CLEAR_HEAD(pa->ai_qs.deps);
-
-  array_save(pa);
-
-  if (bad_token_count > 0)
+  if ((rc = pa->parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
     array_delete(pa);
     pa_mutex.set_unlock_on_exit(false);
-    return 2;
+    return(rc);
     }
+
+  array_save(pa);
 
   strcpy(pjob->ji_arraystructid, pa->ai_qs.parent_id);
 
@@ -1506,118 +1382,6 @@ int array_request_parse_token(
 
 
 
-int parse_array_request(
-    
-  char       *request, 
-  tlist_head *tl)
-
-  {
-  char                *temp_str;
-  int                  num_tokens;
-  char               **tokens;
-  int                  i;
-  int                  j;
-  int                  num_elements;
-  int                  start;
-  int                  end;
-  int                  num_bad_tokens;
-  int                  searching;
-  array_request_node  *rn;
-  array_request_node  *rn2;
-
-  if ((request == NULL) || 
-      (request[0] == '\0') || 
-      (tl == NULL))
-    {
-    return 1; /* return "bad_token_count" as greater than 0 so caller knows there are problems */
-    }
-  temp_str = strdup(request);
-  num_tokens = array_request_token_count(request);
-  num_bad_tokens = 0;
-
-  tokens = (char**)calloc(num_tokens, sizeof(char *));
-  j = num_tokens - 1;
-  /* start from back and scan backwards setting pointers to tokens and changing ',' to '\0' */
-
-  for (i = strlen(temp_str) - 1; i >= 0; i--)
-    {
-    if (temp_str[i] == ',')
-      {
-      tokens[j--] = &temp_str[i+1];
-      temp_str[i] = '\0';
-      }
-    else if (i == 0)
-      {
-      tokens[0] = temp_str;
-      }
-    }
-
-  for (i = 0; i < num_tokens; i++)
-    {
-    num_elements = array_request_parse_token(tokens[i], &start, &end);
-
-    if (num_elements == 0)
-      {
-      num_bad_tokens++;
-      }
-    else
-      {
-      rn = (array_request_node*)calloc(1, sizeof(array_request_node));
-      rn->start = start;
-      rn->end = end;
-      CLEAR_LINK(rn->request_tokens_link);
-
-      rn2 = (array_request_node *)GET_NEXT(*tl);
-      searching = TRUE;
-
-      while (searching)
-        {
-
-        if (rn2 == NULL)
-          {
-          append_link(tl, &rn->request_tokens_link, (void*)rn);
-          searching = FALSE;
-          }
-        else if (rn->start < rn2->start)
-          {
-          insert_link(&rn2->request_tokens_link, &rn->request_tokens_link, (void*)rn,
-                      LINK_INSET_BEFORE);
-          searching = FALSE;
-          }
-        else
-          {
-          rn2 = (array_request_node *)GET_NEXT(rn2->request_tokens_link);
-          }
-
-        }
-
-      rn2 = (array_request_node *)GET_PRIOR(rn->request_tokens_link);
-
-      if (rn2 != NULL && rn2->end >= rn->start)
-        {
-        num_bad_tokens++;
-        }
-
-      rn2 = (array_request_node *)GET_NEXT(rn->request_tokens_link);
-
-      if (rn2 != NULL && rn2->start <= rn->end)
-        {
-        num_bad_tokens++;
-        }
-
-      }
-    }
-
-  free(tokens);
-
-  free(temp_str);
-
-  return num_bad_tokens;
-  } /* END parse_array_request() */
-
-
-
-
 /*
  * delete_array_range()
  *
@@ -1633,13 +1397,10 @@ int delete_array_range(
   char      *range_str)
 
   {
-  tlist_head          tl;
-  array_request_node *rn;
-  array_request_node *to_free;
   job                *pjob;
   char               *range;
+  std::vector<int>    range_vec;
 
-  int                 i;
   int                 num_skipped = 0;
   int                 num_deleted = 0;
   int                 deleted;
@@ -1647,74 +1408,64 @@ int delete_array_range(
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
-  if((range = strchr(range_str,'=')) == NULL)
+  if ((range = strchr(range_str,'=')) == NULL)
     return(-1);
   range++; /* move past the '=' */
 
-  CLEAR_HEAD(tl);
-  if (parse_array_request(range,&tl) > 0)
+  if (translate_range_string_to_vector(range, range_vec) != PBSE_NONE)
     {
     /* don't delete jobs if range error */
 
     return(-1);
     }
 
-  rn = (array_request_node*)GET_NEXT(tl);
-
-  while (rn != NULL)
+  for (size_t i = 0; i < range_vec.size(); i++)
     {
-    for (i = rn->start; i <= rn->end; i++)
+    int index = range_vec[i];
+
+    /* don't stomp on other memory */
+    if (index >= pa->ai_qs.array_size)
+      continue;
+    
+    if (pa->job_ids[index] == NULL)
+      continue;
+
+    if ((pjob = svr_find_job(pa->job_ids[index], FALSE)) == NULL)
       {
-      if (pa->job_ids[i] == NULL)
-        continue;
-
-      /* don't stomp on other memory */
-      if (i >= pa->ai_qs.array_size)
-        continue;
-
-      if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
-        {
-        free(pa->job_ids[i]);
-        pa->job_ids[i] = NULL;
-        }
-      else
-        {
-        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-        if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
-          {
-          /* invalid state for request,  skip */
-          continue;
-          }
-
-        running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
-
-        pthread_mutex_unlock(pa->ai_mutex);
-        deleted = attempt_delete(pjob);
-        /* we come out of attempt_delete unlocked */
-        pjob_mutex.set_unlock_on_exit(false);
-
-
-        if (deleted == FALSE)
-          {
-          /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
-           * release it here */
-          num_skipped++;
-          }
-        else if (running == FALSE)
-          {
-          /* running jobs will increase the deleted count when their obit is reported */
-          num_deleted++;
-          }
-
-        pthread_mutex_lock(pa->ai_mutex);
-        }
+      free(pa->job_ids[index]);
+      pa->job_ids[index] = NULL;
       }
+    else
+      {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+        {
+        /* invalid state for request,  skip */
+        continue;
+        }
 
-    to_free = rn;
-    rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
+      running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
-    /* release mem */
-    free(to_free);
+      pthread_mutex_unlock(pa->ai_mutex);
+      deleted = attempt_delete(pjob);
+      /* we come out of attempt_delete unlocked */
+      pjob_mutex.set_unlock_on_exit(false);
+
+
+      if (deleted == FALSE)
+        {
+        /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
+         * release it here */
+        num_skipped++;
+        }
+      else if (running == FALSE)
+        {
+        /* running jobs will increase the deleted count when their obit is reported */
+        num_deleted++;
+        }
+
+      pthread_mutex_lock(pa->ai_mutex);
+      }
     }
 
   pa->ai_qs.num_failed += num_deleted;
@@ -1839,22 +1590,16 @@ int hold_array_range(
   pbs_attribute *temphold)   /* I */
 
   {
-  tlist_head          tl;
-  int                 i;
   job                *pjob;
-
-  array_request_node *rn;
-  array_request_node *to_free;
+  std::vector<int>    range_vec;
   
   char *range = strchr(range_str,'=');
   if (range == NULL)
     return(PBSE_IVALREQ);
 
   range++; /* move past the '=' */
-  
-  CLEAR_HEAD(tl);
-  
-  if (parse_array_request(range,&tl) > 0)
+ 
+  if (translate_range_string_to_vector(range, range_vec))
     {
     /* don't hold the jobs if range error */
     
@@ -1862,36 +1607,27 @@ int hold_array_range(
     }
   else 
     {
-    /* hold just that range from the array */
-    rn = (array_request_node*)GET_NEXT(tl);
-    
-    while (rn != NULL)
+    for (size_t i = 0; i < range_vec.size(); i++)
       {
-      for (i = rn->start; i <= rn->end; i++)
-        {
-        /* don't stomp on other memory */
-        if (i >= pa->ai_qs.array_size)
-          continue;
-        
-        if (pa->job_ids[i] == NULL)
-          continue;
-
-        if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
-          {
-          free(pa->job_ids[i]);
-          pa->job_ids[i] = NULL;
-          }
-        else
-          {
-          hold_job(temphold,pjob);
-          unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-          }
-        }
+      int index = range_vec[i];
+    
+      /* don't stomp on other memory */
+      if (index >= pa->ai_qs.array_size)
+        continue;
       
-      /* release mem */
-      to_free = rn;
-      rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
-      free(to_free);
+      if (pa->job_ids[index] == NULL)
+        continue;
+
+      if ((pjob = svr_find_job(pa->job_ids[index], FALSE)) == NULL)
+        {
+        free(pa->job_ids[index]);
+        pa->job_ids[index] = NULL;
+        }
+      else
+        {
+        hold_job(temphold,pjob);
+        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+        }
       }
     }
 
@@ -1908,13 +1644,9 @@ int release_array_range(
   char                 *range_str)
 
   {
-  tlist_head tl;
-  int i;
-  int rc;
+  int                 rc;
   job                *pjob;
-
-  array_request_node *rn;
-  array_request_node *to_free;
+  std::vector<int>    range_vec;
   
   char *range = strchr(range_str,'=');
   if (range == NULL)
@@ -1922,48 +1654,37 @@ int release_array_range(
 
   range++; /* move past the '=' */
   
-  CLEAR_HEAD(tl);
-  
-  if (parse_array_request(range,&tl) > 0)
+  if (translate_range_string_to_vector(range, range_vec))
     {
     /* don't hold the jobs if range error */
     
     return(PBSE_IVALREQ);
     }
   
-  /* hold just that range from the array */
-  rn = (array_request_node*)GET_NEXT(tl);
-  
-  while (rn != NULL)
+  for (size_t i = 0; i < range_vec.size(); i++)
     {
-    for (i = rn->start; i <= rn->end; i++)
+    int index = range_vec[i];
+    
+    /* don't stomp on other memory */
+    if (index >= pa->ai_qs.array_size)
+      continue;
+
+    if (pa->job_ids[index] == NULL)
+      continue;
+
+    if ((pjob = svr_find_job(pa->job_ids[index], FALSE)) == NULL)
       {
-      /* don't stomp on other memory */
-      if (i >= pa->ai_qs.array_size)
-        continue;
-
-      if (pa->job_ids[i] == NULL)
-        continue;
-
-      if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
+      free(pa->job_ids[index]);
+      pa->job_ids[index] = NULL;
+      }
+    else
+      {
+      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+      if ((rc = release_job(preq, pjob, pa)))
         {
-        free(pa->job_ids[i]);
-        pa->job_ids[i] = NULL;
-        }
-      else
-        {
-        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-        if ((rc = release_job(preq, pjob, pa)))
-          {
-          return(rc);
-          }
+        return(rc);
         }
       }
-    
-    /* release mem */
-    to_free = rn;
-    rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
-    free(to_free);
     }
 
   return(PBSE_NONE);
@@ -1981,17 +1702,11 @@ int modify_array_range(
   int            checkpoint_req)  /* I */
 
   {
-  tlist_head          tl;
-  int                 i;
   int                 rc = PBSE_NONE;
   job                *pjob;
+  std::vector<int>    range_vec;
 
-  array_request_node *rn;
-  array_request_node *to_free;
-  
-  CLEAR_HEAD(tl);
-  
-  if (parse_array_request(range,&tl) > 0)
+  if (translate_range_string_to_vector(range, range_vec))
     {
     /* don't hold the jobs if range error */
     
@@ -1999,56 +1714,45 @@ int modify_array_range(
     }
   else 
     {
-    int array_gone = FALSE;
+    bool array_gone = false;
 
-    /* hold just that range from the array */
-    rn = (array_request_node*)GET_NEXT(tl);
-    
-    while (rn != NULL)
+    for (size_t i = 0; i < range_vec.size() && array_gone == false; i++)
       {
-      if (array_gone == FALSE)
+      int index = range_vec[i];
+
+      if ((index >= pa->ai_qs.array_size) ||
+          (pa->job_ids[index] == NULL))
+        continue;
+
+      if ((pjob = svr_find_job(pa->job_ids[index], FALSE)) == NULL)
         {
-        for (i = rn->start; i <= rn->end; i++)
+        free(pa->job_ids[index]);
+        pa->job_ids[index] = NULL;
+        }
+      else
+        {
+        struct batch_request *array_req = duplicate_request(preq, index);
+        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+        pthread_mutex_unlock(pa->ai_mutex);
+        array_req->rq_noreply = TRUE;
+        modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+        pa = get_jobs_array(&pjob);
+
+        if (pa == NULL)
           {
-          if ((i >= pa->ai_qs.array_size) ||
-              (pa->job_ids[i] == NULL))
-            continue;
+          array_gone = true;
 
-          if ((pjob = svr_find_job(pa->job_ids[i], FALSE)) == NULL)
-            {
-            free(pa->job_ids[i]);
-            pa->job_ids[i] = NULL;
-            }
-          else
-            {
-            struct batch_request *array_req = duplicate_request(preq, i);
-            mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-            pthread_mutex_unlock(pa->ai_mutex);
-            array_req->rq_noreply = TRUE;
-            modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
-            pa = get_jobs_array(&pjob);
-
-            if (pa == NULL)
-              {
-              array_gone = TRUE;
-              if (pjob == NULL)
-                pjob_mutex.set_unlock_on_exit(false);
-              break;
-              }
-            
-            if (pjob == NULL)
-              {
-              pjob_mutex.set_unlock_on_exit(false);
-              pa->job_ids[i] = NULL;
-              }
-            }
+          if (pjob == NULL)
+            pjob_mutex.set_unlock_on_exit(false);
+          break;
+          }
+        
+        if (pjob == NULL)
+          {
+          pjob_mutex.set_unlock_on_exit(false);
+          pa->job_ids[i] = NULL;
           }
         }
-      
-      /* release mem */
-      to_free = rn;
-      rn = (array_request_node*)GET_NEXT(rn->request_tokens_link);
-      free(to_free);
       }
     }
 
@@ -2309,163 +2013,6 @@ void update_slot_held_jobs(
       }
     }
   } // END update_slot_held_jobs()
-
-
-
-bool need_to_update_slot_limits(
-
-  job_array *pa)
-
-  {
-  bool update_required = false;
-
-  if (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running)
-    update_required = true;
-
-  return(update_required);
-  } // END need_to_update_slot_limits()
-
-
-
-/**
- * update_array_values()
- *
- * updates internal bookeeping values for job arrays
- * @param pa - array to update
- * @param pjob - the pjob that an event happened on
- * @param event - code for what event just happened
- */
-
-void update_array_values(
-
-  job_array            *pa,        /* I */
-  int                   old_state, /* I */
-  enum ArrayEventsEnum  event,     /* I */
-  const char           *job_id,
-  long                  job_atr_hold,
-  int                   job_exit_status)
-
-  {
-  long  moab_compatible;
-
-  switch (event)
-    {
-    case aeQueue:
-
-      /* NYI, nothing needs to be done for this yet */
-
-      break;
-
-    case aeRun:
-
-      if (old_state != JOB_STATE_RUNNING)
-        {
-        if (pa->ai_qs.jobs_running < pa->ai_qs.num_jobs)
-          {
-          pa->ai_qs.jobs_running++;
-          pa->ai_qs.num_started++;
-          }
-        }
-
-      break;
-
-    case aeTerminate:
-
-      if (old_state == JOB_STATE_RUNNING)
-        {
-        if (pa->ai_qs.jobs_running > 0)
-          pa->ai_qs.jobs_running--;
-        }
-
-      if (job_exit_status == 0)
-        {
-        pa->ai_qs.num_successful++;
-        pa->ai_qs.jobs_done++;
-        }
-      else
-        {
-        pa->ai_qs.num_failed++;
-        pa->ai_qs.jobs_done++;
-        }
-
-      array_save(pa);
-
-      /* update slot limit hold if necessary */
-      if (get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
-        moab_compatible = FALSE;
-
-      if (moab_compatible != FALSE)
-        {
-        if (need_to_update_slot_limits(pa) == true)
-          {
-          int  i;
-          int  newstate;
-          int  newsub;
-          job *pj;
-
-          /* find the first held job and release its hold */
-          for (i = 0; i < pa->ai_qs.array_size; i++)
-            {
-            if (pa->job_ids[i] == NULL)
-              continue;
-
-            if (!strcmp(pa->job_ids[i], job_id))
-              continue;
-
-            if ((pj = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
-              {
-              free(pa->job_ids[i]);
-              pa->job_ids[i] = NULL;
-              }
-            else
-              {
-              mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
-              if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
-                {
-                pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-                
-                if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-                  {
-                  pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
-                  }
-                
-                svr_evaljobstate(*pj, newstate, newsub, 1);
-                svr_setjobstate(pj, newstate, newsub, FALSE);
-                job_save(pj, SAVEJOB_FULL, 0);
-                
-                break;
-                }
-
-              }
-            }
-          }
-        }
-
-      break;
-
-    case aeRerun:
-
-      if (old_state == JOB_STATE_RUNNING)
-        {
-        if (pa->ai_qs.jobs_running > 0)
-          pa->ai_qs.jobs_running--;
-
-        if (pa->ai_qs.num_started > 0)
-          pa->ai_qs.num_started--;
-        }
-
-    default:
-
-      /* log error? */
-
-      break;
-    }
-
-  set_array_depend_holds(pa);
-  array_save(pa);
-
-  } /* END update_array_values() */
-
 
 
 

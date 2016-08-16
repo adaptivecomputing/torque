@@ -155,7 +155,8 @@ int req_deletearray(
 
   // Do not attempt to delete the array while it is still cloning
   while ((pa != NULL) &&
-         (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs))
+         ((pa->ai_qs.num_cloned < pa->ai_qs.idle_slot_limit) &&
+          (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)))
     {
     unlock_ai_mutex(pa, __func__, NULL, 10);
     sleep(1);

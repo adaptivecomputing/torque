@@ -383,7 +383,7 @@ void translate_vector_to_range_string(std::string &range_string, const std::vect
   add_range_to_string(range_string, first, prev);
   }
 
-void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
+int translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
   {
   char *str = strdup(range_string);
   char *ptr = str;
@@ -431,6 +431,7 @@ void translate_range_string_to_vector(const char *range_string, std::vector<int>
     }
 
   free(str);
+  return(PBSE_NONE);
   }
 
 void capture_until_close_character(

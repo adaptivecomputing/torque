@@ -373,7 +373,6 @@ extern int  setup_gpus_for_job(job *pjob);
 extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
-void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
 
 

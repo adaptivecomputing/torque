@@ -822,7 +822,7 @@ void translate_vector_to_range_string(
   } // END translate_vector_to_range_string()
   
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -864,6 +864,8 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 bool task_hosts_match(const char *one, const char *two)

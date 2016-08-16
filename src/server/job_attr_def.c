@@ -1307,6 +1307,18 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
 
+  // JOB_ATR_idle_slot_limit
+  {(char *)ATTR_idle_slot_limit, // "idle_slot_limit"
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_WRITE,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
+
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",
     decode_unkn,

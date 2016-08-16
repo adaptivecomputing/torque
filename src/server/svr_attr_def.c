@@ -1624,5 +1624,17 @@ attribute_def svr_attr_def[] =
     PARENT_TYPE_SERVER
   },
 
+  // SRV_ATR_IdleSlotLimit
+  {(char *)ATTR_idle_slot_limit, // "idle_slot_limit"
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   MGR_ONLY_SET,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
 
   };

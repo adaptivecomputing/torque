@@ -1988,7 +1988,8 @@ int cleanup_recovered_arrays()
       array_save(pa);
       }
 
-    if (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)
+    if ((pa->ai_qs.num_cloned < pa->ai_qs.idle_slot_limit) &&
+        (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs))
       {
       /* if we can't finish building the job array then delete whats been done
          so far */
@@ -2635,8 +2636,8 @@ int pbsd_init_job(
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           if (pa)
             {
-            update_array_values(pa,JOB_STATE_RUNNING,aeTerminate,
-                job_id, job_atr_hold, job_exit_status);
+            pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_atr_hold,
+                job_exit_status);
           
             unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             }

@@ -150,7 +150,7 @@ void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, 
 
 void *get_next(list_link pl, char *file, int line)
   {
-  return(pl.ll_next);
+  return(pl.ll_next->ll_struct);
   }
 
 char *threadsafe_tokenizer(char **str, const char *delims)
@@ -305,3 +305,56 @@ std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
 job::job() {}
 job::~job() {}
+
+int translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  char *str = strdup(range_string);
+  char *ptr = str;
+  int   prev = 0;
+  int   curr;
+  int   rc = PBSE_NONE;
+
+  while (*ptr != '\0')
+    {
+    char *old_ptr = ptr;
+    prev = strtol(ptr, &ptr, 10);
+
+    if (ptr == old_ptr)
+      {
+      // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      rc = -1;
+      break;
+      }
+    
+    if (*ptr == '-')
+      {
+      ptr++;
+      curr = strtol(ptr, &ptr, 10);
+
+      while (prev <= curr)
+        {
+        indices.push_back(prev);
+
+        prev++;
+        }
+
+      while (*ptr == ',')
+        ptr++;
+      }
+    else
+      {
+      indices.push_back(prev);
+
+      while (*ptr == ',')
+        ptr++;
+      }
+    }
+
+  free(str);
+  
+  return(rc);
+  } /* END translate_range_string_to_vector() */

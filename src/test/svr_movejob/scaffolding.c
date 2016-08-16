@@ -569,7 +569,7 @@ void move_past_whitespace(
   *str = current;
   } // END move_past_whitespace()
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -611,6 +611,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 #include "../../src/lib/Libutils/machine.cpp"
@@ -639,4 +640,8 @@ void update_node_state(pbsnode *pnode, int state)
   pnode->nd_state = state;
   }
 
+job_array::job_array() {}
+job_array::~job_array() {}
+
+array_info::array_info() {}
 

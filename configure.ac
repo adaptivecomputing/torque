@@ -170,6 +170,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/incoming_request/Makefile
     src/test/issue_request/Makefile
     src/test/job_attr_def/Makefile
+    src/test/job_array/Makefile
     src/test/job_container/Makefile
     src/test/job_func/Makefile
     src/test/job_qs_upgrade/Makefile

@@ -94,7 +94,6 @@
 typedef std::vector<host_req *> host_req_list;
 
 extern char mom_alias[];
-void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 
 std::string get_frequency_request(struct cpu_frequency_value *pfreq)
   {

@@ -1773,14 +1773,6 @@ int do_quejob_commit(
       pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
       queue_name.c_str());
     }
-
-  /* if job array, setup the cloning work task */
-  if (pj->ji_is_array_template)
-    {
-    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
-    }
     
   sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
@@ -1791,7 +1783,6 @@ int do_quejob_commit(
 
     issue_track(pj);
     }
-
 
   return(rc);
   }  /* END do_quejob_commit() */
@@ -1824,7 +1815,6 @@ int req_quejob2(
   pbs_queue            *pque;
   std::string           jobid;
   std::string           filename;
-  
 
   if ((rc = get_job_id(preq, resc_access_perm, created_here, jobid)) != PBSE_NONE)
     return(rc);
@@ -1976,9 +1966,7 @@ int req_quejob2(
     return(rc);
     }
 
-
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
-
   strcpy(pj->ji_qs.ji_queue, pque->qu_qs.qu_name);
 
   pj->ji_wattr[JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
@@ -2035,6 +2023,7 @@ int req_quejob2(
 
   return(rc);
   }  /* END req_quejob2() */
+
 
 
 /*
@@ -2214,7 +2203,6 @@ int req_jobscript(
 
 
 
-
 /*
  * req_jobscript2 - receive job script section
  *
@@ -2353,9 +2341,18 @@ int req_jobscript2(
 
   reply_ack(preq);
 
+  /* if job array, setup the cloning work task */
+  if (pj->ji_is_array_template)
+    {
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
+    }
+
+  job_save(pj, SAVEJOB_FULL, 0);
+
   return(rc);
   }  /* END req_jobscript2() */
-
 
 
 

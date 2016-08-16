@@ -438,6 +438,7 @@ enum job_atr
   JOB_ATR_cpuset_string,
   JOB_ATR_memset_string,
   JOB_ATR_user_kill_delay,
+  JOB_ATR_idle_slot_limit,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -1281,7 +1282,7 @@ extern void  issue_track(job *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
-job         *job_clone(job *,struct job_array *, int);
+job         *job_clone(job *,struct job_array *, int, bool);
 job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);

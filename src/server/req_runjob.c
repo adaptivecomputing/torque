@@ -236,8 +236,7 @@ int check_and_run_job_work(
 
         job_mutex.unlock();
 
-        update_array_values(pa,job_state,aeRun,
-            job_id, job_atr_hold, job_exit_status);
+        pa->update_array_values(job_state, aeRun, job_id, job_atr_hold, job_exit_status);
 
         if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
           {

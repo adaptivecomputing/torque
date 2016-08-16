@@ -574,4 +574,15 @@ job::job() : ji_has_delete_nanny(false)
 
 job::~job() {}
 
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  long                  job_atr_hold,
+  int                   job_exit_status)
+
+  {
+  }
+
 

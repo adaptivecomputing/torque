@@ -718,13 +718,13 @@ void translate_vector_to_range_string(
   return;
   }
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
 
   {
-  return;
+  return(PBSE_NONE);
   }
 
 
@@ -829,3 +829,14 @@ job::job() {}
 job::~job() {}
 
 reservation_holder::reservation_holder() {}
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  long                  job_atr_hold,
+  int                   job_exit_status)
+
+  {
+  }

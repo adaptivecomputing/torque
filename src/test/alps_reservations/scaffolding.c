@@ -31,7 +31,7 @@ int is_whitespace(char c)
   }
 
 
-void translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
+int translate_range_string_to_vector(const char *range_string, std::vector<int> &indices)
   {
   char *str = strdup(range_string);
   char *ptr = str;
@@ -69,6 +69,7 @@ void translate_range_string_to_vector(const char *range_string, std::vector<int>
   }
 
   free(str);
+  return(PBSE_NONE);
   }
 
 

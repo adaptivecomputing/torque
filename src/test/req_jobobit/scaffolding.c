@@ -494,3 +494,20 @@ void set_reply_type(struct batch_reply *preply, int type)
   {
   preply->brp_choice = type;
   }
+
+job_array::job_array() {}
+job_array::~job_array() {}
+
+array_info::array_info() {}
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  long                  job_atr_hold,
+  int                   job_exit_status)
+
+  {
+  }
+

@@ -620,12 +620,13 @@ void translate_vector_to_range_string(
   } // END translate_vector_to_range_string()
   
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
 
   {
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void capture_until_close_character(

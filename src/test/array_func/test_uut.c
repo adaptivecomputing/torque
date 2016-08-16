@@ -33,7 +33,7 @@ job_array *get_job_array(
 
   {
   char       buf[1024];
-  job_array *pa = (job_array *)calloc(1, sizeof(job_array));
+  job_array *pa = new job_array();
   pa->ai_qs.num_jobs = size;
   pa->job_ids = (char **)calloc(size, sizeof(char *));
 
@@ -45,26 +45,6 @@ job_array *get_job_array(
 
   return(pa);
   }
-
-
-START_TEST(need_to_update_slot_limits_test)
-  {
-  job_array pa;
-
-  memset(&pa, 0, sizeof(pa));
-
-  pa.ai_qs.slot_limit = 2;
-  pa.ai_qs.jobs_running = 2;
-
-  fail_unless(need_to_update_slot_limits(&pa) == false);
-  pa.ai_qs.jobs_running = 3;
-  fail_unless(need_to_update_slot_limits(&pa) == false);
-  pa.ai_qs.jobs_running = 1;
-  fail_unless(need_to_update_slot_limits(&pa) == true);
-  pa.ai_qs.jobs_running = 0;
-  fail_unless(need_to_update_slot_limits(&pa) == true);
-  }
-END_TEST
 
 
 START_TEST(set_slot_hold_test)
@@ -138,25 +118,6 @@ START_TEST(update_slot_values_test)
 END_TEST
 
 
-START_TEST(update_array_values_test)
-  {
-  job_array  *pa = (job_array *)calloc(1, sizeof(job_array));
-  const char *job_id = "1[0].napali";
-
-  pa->ai_qs.num_jobs = 10;
-
-  update_array_values(pa, JOB_STATE_TRANSIT, aeQueue, job_id, -1, -1);
-  update_array_values(pa, JOB_STATE_QUEUED, aeRun, job_id, -1, -1);
-  fail_unless(pa->ai_qs.jobs_running == 1);
-  fail_unless(pa->ai_qs.num_started == 1);
- 
-  update_array_values(pa, JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
-  fail_unless(pa->ai_qs.jobs_running == 0);
-  fail_unless(pa->ai_qs.num_started == 0);
-  }
-END_TEST
-
-
 START_TEST(parse_array_dom_test)
   {
   xmlDocPtr doc = xmlReadMemory(array_sample, strlen(array_sample), "array", NULL, 0);
@@ -172,8 +133,6 @@ END_TEST
 START_TEST(set_slot_limit_test)
   {
   job_array pa;
-
-  memset(&pa, 0, sizeof(job_array));
 
   fail_unless(set_slot_limit(strdup("tom"), &pa) == 0, "failed with no slot limit");
   fail_unless(pa.ai_qs.slot_limit == NO_SLOT_LIMIT, "set no slot limit incorrectly");
@@ -260,18 +219,17 @@ START_TEST(first_job_index_test)
   int index;
   char buf[4096];
 
-  memset(&pa, 0, sizeof(pa));
   pa.job_ids = (char **)calloc(10, sizeof(char *));
   pa.ai_qs.array_size = 10;
 
   fail_unless(first_job_index(&pa) == -1, "no jobs fail");
   
-  pa.job_ids[8] = (char *)"bob";
+  pa.job_ids[8] = strdup("bob");
   index = first_job_index(&pa);
   snprintf(buf, sizeof(buf), "first job index should be 8 but is %d", index);
   fail_unless(index == 8, buf);
 
-  pa.job_ids[4] = (char *)"tom";
+  pa.job_ids[4] = strdup("tom");
   index = first_job_index(&pa);
   snprintf(buf, sizeof(buf), "first job index should be 4 but is %d", index);
   fail_unless(index == 4, buf);
@@ -296,7 +254,7 @@ START_TEST(array_delete_test)
   {
   job_array *pa;
 
-  pa = (job_array *)calloc(1,sizeof(job_array));
+  pa = new job_array();
   pa->job_ids = (char **)calloc(10, sizeof(char *));
   pa->ai_qs.array_size = 10;
 
@@ -311,12 +269,12 @@ START_TEST(array_delete_test)
   fprintf(fp,"I'm a very temporary file.\n");
   fclose(fp);
 
-
-
   struct array_depend *pdep = (struct array_depend *)calloc(1,sizeof(struct array_depend));
+  pdep->dp_link.ll_next = pa->ai_qs.deps.ll_next;
   pa->ai_qs.deps.ll_next = &pdep->dp_link;
   pdep->dp_link.ll_prior = (list_link *)&pa->ai_qs.deps;
   pdep->dp_link.ll_struct = (void *)pdep;
+  
   pdep->dp_jobs.push_back(new (array_depend_job));
   pdep->dp_jobs.push_back(new (array_depend_job));
   pdep->dp_jobs.push_back(new (array_depend_job));
@@ -366,7 +324,6 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("num_array_jobs_test");
   tcase_add_test(tc_core, num_array_jobs_test);
-  tcase_add_test(tc_core, need_to_update_slot_limits_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("first_job_index_test");
@@ -382,7 +339,6 @@ Suite *array_func_suite(void)
 
   tc_core = tcase_create("array_recov_binary_test");
   tcase_add_test(tc_core, array_recov_binary_test);
-  tcase_add_test(tc_core, update_array_values_test);
   tcase_add_test(tc_core, update_slot_values_test);
   suite_add_tcase(s, tc_core);
 
