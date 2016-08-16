@@ -3364,7 +3364,7 @@ int expand_words(
 void copy_file_cleanup(
     
   int             dir,
-  int             from_spool,
+  bool            from_spool,
   batch_request  *preq,
   struct rqfpair *pair,
   char           *localname,
@@ -3382,7 +3382,7 @@ void copy_file_cleanup(
 
     }
 #if NO_SPOOL_OUTPUT == 0
-  else if (from_spool == 1)
+  else if (from_spool == true)
     {
     char undelname[MAXPATHLEN + 1];
     /* copy out of spool */
@@ -3665,7 +3665,7 @@ void req_cpyfile(
   int             bad_files = 0;
   char           *bad_list = NULL;
   int             dir = 0;
-  int             from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
+  bool            from_spool = false;  /* set if file must be removed from spool after copy */
   char            localname[MAXPATHLEN + 1];  /* used only for in-bound */
 
   struct rqfpair *pair = NULL;
@@ -3773,6 +3773,8 @@ void req_cpyfile(
     return;
     }
 
+  determine_spooldir(spool_dir, pjob);
+
   // CHILD - now running as user in the user's home directory
 
 #ifdef HAVE_WORDEXP
@@ -3874,7 +3876,7 @@ void req_cpyfile(
       continue;
       }
 
-    from_spool = 0;
+    from_spool = false;
 
     prmt       = pair->fp_rmt;
 
@@ -3900,8 +3902,13 @@ void req_cpyfile(
             (!S_ISREG(myspooldir.st_mode)))
           {
           if (spool_dir != path_spool)
+            {
             snprintf(localname, sizeof(localname), "%s/%s", path_spool, pair->fp_local);
+            from_spool = true;
+            }
           }
+
+        from_spool = (spool_dir == path_spool);
         
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)
