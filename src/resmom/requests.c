@@ -4462,7 +4462,12 @@ int send_back_std_and_staged_files(
   int  exit_status)
 
   {
-  if (pjob->ji_job_is_being_rerun == FALSE)
+  // Only attempt to copy files back if we actually ran the job and aren't re-running it
+  // An exit status of JOB_EXEC_FAIL1 (-1), JOB_EXEC_FAIL2 (-2), or JOB_EXEC_RETRY (-3) 
+  // indicate that the job didn't actually run
+  if ((pjob->ji_job_is_being_rerun == FALSE) &&
+      ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat > JOB_EXEC_FAIL1) ||
+       (pjob->ji_qs.ji_un.ji_momt.ji_exitstat < JOB_EXEC_RETRY)))
     {
     batch_request *preq = get_std_file_info(pjob);
 
