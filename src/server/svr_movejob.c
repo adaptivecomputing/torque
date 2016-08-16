@@ -1130,7 +1130,8 @@ int send_job_over_network_with_retries(
         }
 
       /* check my_err from previous attempt */
-      if (should_retry_route(*my_err) == -1)
+      if ((should_retry_route(*my_err) == -1) ||
+          (should_retry_route(*mom_err) == -1))
         {
         sprintf(log_buf, "child failed in previous commit request for job %s", job_id);
 
