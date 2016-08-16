@@ -693,6 +693,8 @@ void add_to_completed_jobs(work_task *ptask) {}
 
 job::job() 
   {
+  this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+ 
   memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
   memset(&this->ji_qs, 0, sizeof(struct jobfix));
   }

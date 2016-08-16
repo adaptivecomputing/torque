@@ -9,6 +9,7 @@
 #include "work_task.h" /* work_task */
 #include "array.h" /* job_array */
 #include "server.h" /* server */
+#include "mutex_mgr.hpp"
 
 const char *text_name              = "text";
 
@@ -358,3 +359,17 @@ int translate_range_string_to_vector(
   
   return(rc);
   } /* END translate_range_string_to_vector() */
+
+int create_and_queue_array_subjob(
+    
+  job_array   *pa,
+  mutex_mgr   &array_mgr,
+  job         *template_job,
+  mutex_mgr   &template_job_mgr,
+  int          index,
+  std::string &prev_job_id,
+  bool         place_hold)
+
+  {
+  return(PBSE_NONE);
+  }
