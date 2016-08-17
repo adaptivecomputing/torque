@@ -52,6 +52,7 @@ bool fail_site_grp_check = false;
 bool addr_fail = false;
 
 
+bool force_file_overwrite;
 int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
