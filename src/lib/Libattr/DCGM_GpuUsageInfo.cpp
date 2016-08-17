@@ -104,12 +104,12 @@ DCGM_GpuUsageInfo::DCGM_GpuUsageInfo(
   this->numComputePids = gpuUsageInfo.numComputePids;
 
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
-					this->computePids[i] = gpuUsageInfo.computePids[i];
+					this->computePids[i] = gpuUsageInfo.computePidInfo[i].pid;
 
   this->numGraphicsPids = gpuUsageInfo.numGraphicsPids;
 
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
-					this->graphicsPids[i] = gpuUsageInfo.graphicsPids[i];
+					this->graphicsPids[i] = gpuUsageInfo.graphicsPidInfo[i].pid;
 
   this->maxGpuMemoryUsed = gpuUsageInfo.maxGpuMemoryUsed;
   this->powerViolationTime = gpuUsageInfo.powerViolationTime;
@@ -245,12 +245,12 @@ void DCGM_GpuUsageInfo::initializeSummary(
   this->numComputePids = gpu_usage_info.numComputePids;
 
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
-					this->computePids[i] = gpu_usage_info.computePids[i];
+					this->computePids[i] = gpu_usage_info.computePidInfo[i].pid;
 
   this->numGraphicsPids = gpu_usage_info.numGraphicsPids;
 
 	for (unsigned int i = 0; i < DCGM_array_sizes; i++)
-					this->graphicsPids[i] = gpu_usage_info.graphicsPids[i];
+					this->graphicsPids[i] = gpu_usage_info.graphicsPidInfo[i].pid;
 
   this->maxGpuMemoryUsed = gpu_usage_info.maxGpuMemoryUsed;
   this->powerViolationTime = gpu_usage_info.powerViolationTime;
