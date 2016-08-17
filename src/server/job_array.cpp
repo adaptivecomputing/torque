@@ -194,11 +194,13 @@ int job_array::set_idle_slot_limit(
   {
   long max_idle_slot_limit = -1;
   
-  if ((get_svr_attr_l(SRV_ATR_IdleSlotLimit, &max_idle_slot_limit) == PBSE_NONE) &&
-      (max_idle_slot_limit > 0))
+  if (get_svr_attr_l(SRV_ATR_IdleSlotLimit, &max_idle_slot_limit) == PBSE_NONE)
     {
-    if (requested_limit > max_idle_slot_limit)
-      return(-1);
+    if (max_idle_slot_limit > 0)
+      {
+      if (requested_limit > max_idle_slot_limit)
+        return(-1);
+      }
     }
   else
     max_idle_slot_limit = DEFAULT_IDLE_SLOT_LIMIT;
@@ -292,7 +294,8 @@ int job_array::get_next_index_to_create(
   int index = -1;
   internal_index = -1;
 
-  if (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit)
+  if ((this->ai_qs.idle_slot_limit == NO_SLOT_LIMIT) ||
+      (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit))
     {
     for (size_t i = 0; i < this->uncreated_ids.size(); i++)
       {

@@ -1442,7 +1442,8 @@ void *job_clone_wt(
       }
 
     // If we are over the idle job limit, then stop cloning
-    if (pa->ai_qs.idle_slot_limit <= pa->ai_qs.num_idle)
+    if ((pa->ai_qs.idle_slot_limit != NO_SLOT_LIMIT) &&
+        (pa->ai_qs.idle_slot_limit <= pa->ai_qs.num_idle))
       break;
     }  /* END for (i) */
 
