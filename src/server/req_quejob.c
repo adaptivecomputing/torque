@@ -1846,12 +1846,7 @@ int req_quejob2(
 
   que_mgr.unlock();
 
-  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
-    {
-    return(rc);
-    }
-
-  if ((pj = create_and_initialize_job_structure(created_here, filename, jobid)) == NULL)
+  if ((pj = create_and_initialize_job_structure(created_here, jobid)) == NULL)
     {
     unlink(filename.c_str());
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "");
@@ -1889,6 +1884,12 @@ int req_quejob2(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
+
+  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+  strcpy(pj->ji_qs.ji_fileprefix, filename.c_str());
 
   /* make sure its okay to submit this job */
   if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)
