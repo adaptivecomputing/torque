@@ -100,8 +100,10 @@
 #include "mom_func.h"
 #include "mom_config.h"
 #include "pmix_operation.hpp"
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
 #include "nvidia.h"
+#endif
 #endif
 
 /* Global Variables */
@@ -462,8 +464,10 @@ void scan_for_terminated(void) /* linux */
     /* where is job purged?  How do we keep job from progressing in state until the obit is sent? */
 
     kill_task(pjob, matching_task, SIGKILL, 0);
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
     nvidia_dcgm_finalize_gpu_job_info(pjob);
+#endif
 #endif
 
     matching_task->ti_qs.ti_exitstat = exiteval;
