@@ -467,8 +467,10 @@ void scan_for_terminated(void) /* linux */
  
 
     kill_task(pjob, matching_task, SIGKILL, 0);
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
     nvidia_dcgm_finalize_gpu_job_info(pjob);
+#endif
 #endif
 
     matching_task->ti_qs.ti_exitstat = exiteval;
