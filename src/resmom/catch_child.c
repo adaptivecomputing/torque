@@ -52,8 +52,10 @@
 #endif
 #include "mom_config.h"
 
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
 #include "nvidia.h"
+#endif
 #endif
 
 #define DIS_REPLY_READ_RETRY 10
@@ -1226,8 +1228,10 @@ int post_epilogue(
 
   encode_complete_req(&pjob->ji_wattr[JOB_ATR_req_information], &preq->rq_ind.rq_jobobit.rq_attr, ATTR_req_information, NULL, 0, 0);
 
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
   encode_dcgm_gpu_use(&pjob->ji_wattr[JOB_ATR_dcgm_gpu_use], &preq->rq_ind.rq_jobobit.rq_attr, ATTR_dcgm_gpu_use, NULL, 0, 0);
+#endif
 #endif
 
   if ((chan = DIS_tcp_setup(sock)) == NULL)
@@ -2201,6 +2205,7 @@ int send_job_obit_to_ms(
                 }
 #endif
 
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
 
               // Rather than encode each individual element of the dcgmJobInfo_t structure
@@ -2222,6 +2227,7 @@ int send_job_obit_to_ms(
                                     ATTR_dcgm_gpu_use, NULL, 0, 0);
                 encode_DIS_JobObit(chan, preq);
                 }
+#endif
 #endif
 
 
@@ -2354,6 +2360,7 @@ void exit_mom_job(
 
   run_epilogues(pjob, FALSE, FALSE);
 
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
   int rc;
 
@@ -2363,6 +2370,7 @@ void exit_mom_job(
     sprintf(log_buffer, "Failed to get NVIDIA DCGM stats: job %s", pjob->ji_qs.ji_jobid);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
+#endif
 #endif
 
   send_job_obit_to_ms(pjob, mom_radix);

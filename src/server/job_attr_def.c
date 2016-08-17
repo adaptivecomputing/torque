@@ -1309,6 +1309,7 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
 
+#ifdef NVIDIA_DCGM
   /* JOB_ATR_dcgm_gpu_use */
   {(char *)ATTR_dcgm_gpu_use, /* dcgm_gpu_use */
     decode_dcgm_gpu_use,
@@ -1320,6 +1321,7 @@ attribute_def job_attr_def[] =
     READ_WRITE | ATR_DFLAG_MOM,
     ATR_TYPE_REQ,
 		PARENT_TYPE_JOB},
+#endif
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",

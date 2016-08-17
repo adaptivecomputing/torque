@@ -2534,7 +2534,6 @@ int im_join_job_as_sister(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
     rc = -1;
     }
-#endif  /* NVIDIA_GPUS */
 
 #ifdef NVIDIA_DCGM
   if (rc != -1)
@@ -2548,6 +2547,7 @@ int im_join_job_as_sister(
       }
     }
 #endif
+#endif  /* NVIDIA_GPUS */
 
 
   free_attrlist(&lhead);
@@ -4281,8 +4281,10 @@ int handle_im_kill_job_response(
 
 #endif
 
+#ifdef NVIDIA_GPUS
 #ifdef NVIDIA_DCGM
   nvidia_dcgm_get_sister_job_info(pjob, chan);
+#endif
 #endif
   
   np->hn_sister = SISTER_KILLDONE;  /* We are changing this node from SISTER_OKAY which was 

@@ -2231,11 +2231,13 @@ void create_full_job_xml(
         {
         print_req_information(attribute, RE1);
         }
+#ifdef NVIDIA_DCGM
       else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use) && 
          (!strcmp(attribute->resource, "summary") || (!strncmp(attribute->resource, "GPU:", 4))))
         {
         print_dcgm_gpu_use(attribute, RE1);
         }
+#endif
       else
         {
 
@@ -2316,10 +2318,12 @@ void display_full_job(
 
           prt_attr(attribute->name, attribute->resource, ctime(&epoch));
           }
+#ifdef NVIDIA_DCGM
         else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
           {
           print_dcgm_gpu_use(attribute, NULL);
           }
+#endif
         else
           {
           if ((!strcmp(attribute->name, "Walltime")) && (attribute->value[0] == '-'))
@@ -2331,6 +2335,7 @@ void display_full_job(
         }
       }
     }
+#ifdef NVIDIA_DCGM
   else
     {
     printf("{  \"Job_Id\": \"%s\",\n", p->name);
@@ -2347,6 +2352,7 @@ void display_full_job(
     
     printf("}\n");
     }
+#endif
   } // END display_full_job()
 
 
