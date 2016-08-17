@@ -669,7 +669,6 @@ int determine_job_file_name(
 job *create_and_initialize_job_structure(
 
   int          created_here,
-  std::string &filename,
   std::string &jobid)
 
   {
@@ -682,7 +681,6 @@ job *create_and_initialize_job_structure(
     }
 
   snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s", jobid.c_str());
-  snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
 
   pj->ji_modified       = 1;
   pj->ji_qs.ji_svrflags = created_here;
@@ -1400,14 +1398,8 @@ int req_quejob(
 
   que_mgr.unlock();
 
-  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
+  if ((pj = create_and_initialize_job_structure(created_here, jobid)) == NULL)
     {
-    return(rc);
-    }
-
-  if ((pj = create_and_initialize_job_structure(created_here, filename, jobid)) == NULL)
-    {
-    unlink(filename.c_str());
     req_reject(PBSE_SYSTEM, 0, preq, NULL, "");
     return(PBSE_MEM_MALLOC);
     }
@@ -1443,6 +1435,14 @@ int req_quejob(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
+
+  jobid = pj->ji_qs.ji_jobid;
+
+  if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
+    {
+    return(rc);
+    }
+  strcpy(pj->ji_qs.ji_fileprefix, filename.c_str());
 
   /* make sure its okay to submit this job */
   if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)
