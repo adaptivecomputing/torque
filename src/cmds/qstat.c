@@ -3118,6 +3118,9 @@ int run_job_mode(
 
     if ((stat_single_job == 1) || (p_atropl == 0))
       {
+      if (id_list.size() == 0)
+        id_list.push_back("");
+
       for (size_t i = 0; i < id_list.size(); i++)
         {
         snprintf(job_id_out, job_id_out_size, "%s", id_list[i].c_str());
