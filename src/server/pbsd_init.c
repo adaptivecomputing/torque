@@ -1019,6 +1019,9 @@ int setup_server_attrs(
     (char *)PBS_DEFAULT_MAIL,
     0);
 
+  server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = KEEP_COMPLETED_DEFAULT;
+  server.sv_attr[SRV_ATR_KeepCompleted].at_flags = ATR_VFLAG_SET;
+
   server.sv_attr[SRV_ATR_tcp_timeout].at_val.at_long = PBS_TCPTIMEOUT;
   server.sv_attr[SRV_ATR_tcp_timeout].at_flags = ATR_VFLAG_SET;
 

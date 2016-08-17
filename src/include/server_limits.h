@@ -130,6 +130,8 @@
 
 #define TIMEOUT_FOR_JOB_DEL_REQ 120
 
+#define KEEP_COMPLETED_DEFAULT 300
+
 
 /* Server Database information - path names */
 
