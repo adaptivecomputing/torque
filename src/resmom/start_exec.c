@@ -224,6 +224,7 @@ extern uid_t          pbsuser;
 extern time_t         time_now;
 extern unsigned int   pbs_rm_port;
 extern u_long         localaddr;
+extern bool           force_file_overwrite;
 
 extern int            multi_mom;
 extern unsigned int   pbs_rm_port;
@@ -989,7 +990,11 @@ static int open_std_out_err(
   int file_out = -2;
   int file_err = -2;
   int filemode = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
-
+  
+  if (force_file_overwrite == true)
+    {
+    filemode =  O_CREAT | O_WRONLY | O_EXCL;
+    }
   /* if std out/err joined (set and != "n"), which file is first */
 
   i = is_joined(pjob);
