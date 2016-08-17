@@ -1084,3 +1084,8 @@ int shut_nvidia_nvml()
   {
   return(1);
   }
+
+const char *reqvarattr(struct rm_attribute *attrib)
+  {
+  return(NULL);
+  }
