@@ -10,6 +10,7 @@
 extern long max_slot;
 extern long idle_max_slot;
 extern long array_size;
+extern bool unset;
 
 START_TEST(test_constructors)
   {
@@ -92,7 +93,7 @@ START_TEST(test_set_slot_limit)
   fail_unless(pa.ai_qs.idle_slot_limit == idle_max_slot);
 
   // We should get the code's default if no server idle max slot limit is set
-  idle_max_slot = -1;
+  unset = true;
   fail_unless(pa.set_idle_slot_limit(-1) == PBSE_NONE);
   fail_unless(pa.ai_qs.idle_slot_limit == DEFAULT_IDLE_SLOT_LIMIT);
   }

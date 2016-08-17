@@ -13,6 +13,7 @@
 long max_slot = NO_SLOT_LIMIT;
 long idle_max_slot = 400;
 long array_size;
+bool unset;
 
 int svr_setjobstate(
 
@@ -100,6 +101,9 @@ int get_svr_attr_l(
   long *l)
 
   {
+  if (unset == true)
+    return(-1);
+
   if (attr_index == SRV_ATR_MaxSlotLimit)
     *l = max_slot;
   else if (attr_index == SRV_ATR_IdleSlotLimit)
