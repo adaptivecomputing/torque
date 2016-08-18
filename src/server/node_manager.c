@@ -2046,7 +2046,7 @@ int proplist(
 
         /* default value if no other gets specified */
 
-        gpu_mode_rqstd = gpu_exclusive_thread;
+        gpu_mode_rqstd = gpu_normal;
         }
       else
         {
