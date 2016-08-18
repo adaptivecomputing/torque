@@ -766,11 +766,20 @@ void update_layout_if_needed(
   const std::string &layout)
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  std::vector<std::string> valid_ids;
 
   if (pnode->nd_layout == NULL)
     {
-    pnode->nd_layout = new Machine(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+      
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+
+    pnode->nd_layout = new Machine(layout, valid_ids);
     }
   else if ((pnode->nd_layout->getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
            (pnode->nd_job_usages.size() == 0))
@@ -782,7 +791,15 @@ void update_layout_if_needed(
     // as we don't have active jobs
     delete pnode->nd_layout;
     
-    pnode->nd_layout = new Machine(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+    
+    pnode->nd_layout = new Machine(layout, valid_ids);
 
     if (LOGLEVEL >= 3)
       {

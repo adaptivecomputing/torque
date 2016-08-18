@@ -178,12 +178,13 @@ void Machine::update_internal_counts()
  *
  */
 
-Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory(0),
-                                                   totalSockets(0), totalChips(0),
-                                                   totalCores(0), totalThreads(0), 
-                                                   availableSockets(0), availableChips(0),
-                                                   availableCores(0), availableThreads(0),
-                                                   sockets(), NVIDIA_device(), allocations()
+Machine::Machine(const std::string &json_layout,
+                 std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0),
+                                                        totalSockets(0), totalChips(0),
+                                                        totalCores(0), totalThreads(0), 
+                                                        availableSockets(0), availableChips(0),
+                                                        availableCores(0), availableThreads(0),
+                                                        sockets(), NVIDIA_device(), allocations()
 
   {
   const char *socket_str = "\"socket\":{";
@@ -194,7 +195,7 @@ Machine::Machine(const std::string &json_layout) : hardwareStyle(0), totalMemory
     std::size_t next = json_layout.find(socket_str, socket_begin + 1);
     std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
+    Socket s(one_socket, valid_ids);
     this->sockets.push_back(s);
     this->totalSockets++;
 
