@@ -115,6 +115,11 @@ struct pbs_queue *allocd_queue = NULL;
 int enque_rc;
 int evaluated;
 int aborted;
+int freed_job_allocation;
+int job_state;
+
+bool dont_find_job;
+bool dont_find_node;
 
 char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
 
@@ -269,8 +274,7 @@ int insert_job(all_jobs *aj, job *pjob)
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void depend_clrrdy(job *pjob)
@@ -447,7 +451,13 @@ void acct_close(bool acct_mutex_locked)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  return(NULL);
+  if (dont_find_job)
+    return(NULL);
+
+  job *pjob = (job *)calloc(1, sizeof(job));
+  strcpy(pjob->ji_qs.ji_jobid, jobid);
+  pjob->ji_qs.ji_state = job_state;
+  return(pjob);
   }
 
 int svr_save(struct server *ps, int mode)
@@ -496,7 +506,12 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
 
 struct pbsnode *find_nodebyname(const char *name)
   {
-  return(NULL);
+  if (dont_find_node)
+    return(NULL);
+
+  pbsnode *pnode = (pbsnode *)calloc(1, sizeof(pbsnode));
+  pnode->nd_name = strdup(name);
+  return(pnode);
   }
 
 void initialize_queue_recycler() {}
@@ -650,6 +665,11 @@ int id_map::get_new_id(const char *name)
   return 0;
   }
 
+const char *id_map::get_name(int id)
+  {
+  return 0;
+  }
+
 void rel_resc(job *pjob) {}
 
 void mom_hierarchy_handler::initialLoadHierarchy() {}
@@ -755,7 +775,6 @@ bool task_hosts_match(const char *one, const char *two)
   }
   
 
-#include "../../lib/Libutils/machine.cpp"
 #include "../../lib/Libutils/numa_pci_device.cpp"
 #include "../../lib/Libutils/numa_socket.cpp"
 #include "../../lib/Libutils/numa_chip.cpp"
@@ -765,11 +784,39 @@ bool task_hosts_match(const char *one, const char *two)
 #include "../../lib/Libattr/complete_req.cpp"
 
 #ifdef NVML_API
+#ifdef PENABLE_LINUX_CGROUPS
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
   return(0);
   }
+#endif
 
+#endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+Machine::Machine() {}
+Machine::~Machine() {}
+
+Machine::Machine(const std::string &layout, std::vector<std::string> &valid_ids) {}
+
+int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
+  {
+  return(0);
+  }
+
+void save_node_usage(pbsnode *pnode);
+    
+void Machine::populate_job_ids(std::vector<std::string> &job_ids) const
+  {
+  job_ids.push_back("1.napali");
+  job_ids.push_back("2.napali");
+  job_ids.push_back("3.napali");
+  }
+    
+void Machine::free_job_allocation(const char *jobid)
+  {
+  freed_job_allocation++;
+  }
 #endif
 
 #ifdef MIC

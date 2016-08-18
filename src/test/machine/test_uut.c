@@ -181,14 +181,16 @@ START_TEST(test_json_constructor)
   const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
   std::stringstream out;
 
-  Machine m1(j1);
+  std::vector<std::string> valid_ids;
+
+  Machine m1(j1, valid_ids);
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
   fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
-  Machine m2(j2);
+  Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());

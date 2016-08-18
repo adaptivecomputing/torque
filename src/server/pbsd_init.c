@@ -244,6 +244,7 @@ extern struct server server;
 
 /* External Functions Called */
 
+void          save_node_usage(pbsnode *pnode);
 void          rel_resc(job *pjob);
 void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
@@ -1154,27 +1155,42 @@ void remove_invalid_allocations(
   pbsnode *pnode)
 
   {
-  int retcode;
-
   if (pnode->nd_layout != NULL)
     {
     std::vector<std::string> job_ids;
+    std::vector<std::string> bad_allocation;
+    std::set<int>            internal_job_ids;
+    std::string node_id(pnode->nd_name);
 
     pnode->nd_layout->populate_job_ids(job_ids);
 
+    unlock_node(pnode, __func__, NULL, LOGLEVEL);
+
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
-      bool exists;
-      do
+      job *pjob = svr_find_job(job_ids[i].c_str(), TRUE);
+
+      if (pjob == NULL)
+        bad_allocation.push_back(job_ids[i]);
+      else
         {
-        /* job_id_exists will return false if it can't
-           get a mutex lock. Check the recode first
-           if it returns false */
-        exists = job_id_exists(job_ids[i], &retcode);
-        }while(exists == false && retcode != 0);
-      if (exists == false)
-        pnode->nd_layout->free_job_allocation(job_ids[i].c_str());
+        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+          bad_allocation.push_back(job_ids[i]);
+
+        unlock_ji_mutex(pjob, __func__, "", 10);
+        }
       }
+
+    pnode = find_nodebyname(node_id.c_str());
+
+    if (pnode == NULL)
+      throw PBSE_NODE_DELETED;
+
+    for (size_t i = 0; i < bad_allocation.size(); i++)
+      pnode->nd_layout->free_job_allocation(bad_allocation[i].c_str());
+
+    if (bad_allocation.size() > 0)
+      save_node_usage(pnode);
     }
   } // END remove_invalid_allocations()
 
@@ -1223,7 +1239,17 @@ void load_node_usage(
     if (pnode->nd_layout != NULL)
       delete pnode->nd_layout;
 
-    pnode->nd_layout = new Machine(layout);
+    std::vector<std::string> valid_ids;
+
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+
+    pnode->nd_layout = new Machine(layout, valid_ids);
     }
   else
     {
@@ -1303,10 +1329,17 @@ int load_node_usages()
       continue;
       }
 
-    if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
+    try
       {
-      mutex_mgr   nd_mutex(pnode->nd_mutex, true);
-      load_node_usage(pnode, pdirent->d_name);
+      if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
+        {
+        mutex_mgr   nd_mutex(pnode->nd_mutex, true);
+        load_node_usage(pnode, pdirent->d_name);
+        }
+      }
+    catch (int caught_err)
+      {
+      log_err(caught_err, __func__, "");
       }
     }
 
