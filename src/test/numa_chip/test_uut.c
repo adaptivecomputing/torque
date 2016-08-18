@@ -62,9 +62,16 @@ START_TEST(test_initialize_allocation)
   {
   Chip c;
   std::stringstream out;
+  std::vector<std::string> valid_ids;
+
 
   // Make sure this doesn't last forever - we need to handle empty cpus: values
-  c.initialize_allocation(strdup(alloc_json));
+  c.initialize_allocation(strdup(alloc_json), valid_ids);
+  c.displayAllocationsAsJson(out);
+  fail_unless(out.str().find("666979[0].mgr.bwfor.privat") == std::string::npos);
+
+  valid_ids.push_back("666979[0].mgr.bwfor.privat");
+  c.initialize_allocation(strdup(alloc_json), valid_ids);
   c.displayAllocationsAsJson(out);
 
   fail_unless(out.str().find(alloc_json) != std::string::npos, "'%s' does not contain '%s'", out.str().c_str(), alloc_json);
@@ -494,8 +501,12 @@ START_TEST(test_json_constructor)
   std::stringstream o1;
   std::stringstream o2;
   std::stringstream o3;
+
+  std::vector<std::string> valid_ids;
+  valid_ids.push_back("1.napali");
+  valid_ids.push_back("0.napali");
   
-  Chip c1(j1);
+  Chip c1(j1, valid_ids);
   fail_unless(c1.get_id() == 1);
   fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
   fail_unless(c1.getTotalThreads() == 8);
@@ -504,7 +515,7 @@ START_TEST(test_json_constructor)
   c1.displayAsJson(o1, false);
   fail_unless(o1.str() == j1, o1.str().c_str());
 
-  Chip c2(j2);
+  Chip c2(j2, valid_ids);
   fail_unless(c2.get_id() == 0);
   fail_unless(c2.getTotalCores() == 8);
   fail_unless(c2.getTotalThreads() == 16);
@@ -513,7 +524,7 @@ START_TEST(test_json_constructor)
   c2.displayAsJson(o2, false);
   fail_unless(o2.str() == j2, o2.str().c_str());
 
-  Chip c3(j3);
+  Chip c3(j3, valid_ids);
   fail_unless(c3.get_id() == 12);
   fail_unless(c3.getTotalCores() == 6);
   fail_unless(c3.getTotalThreads() == 6);
@@ -522,7 +533,7 @@ START_TEST(test_json_constructor)
   c3.displayAsJson(o3, false);
   fail_unless(o3.str() == j3, o3.str().c_str());
 
-  Chip c4(j4);
+  Chip c4(j4, valid_ids);
   fail_unless(c4.get_id() == 0);
   fail_unless(c4.getTotalCores() == 16);
   fail_unless(c4.getTotalThreads() == 32);
@@ -534,7 +545,7 @@ START_TEST(test_json_constructor)
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
   
-  Chip c5(j5);
+  Chip c5(j5, valid_ids);
   fail_unless(c5.get_id() == 0);
   fail_unless(c5.getTotalCores() == 16);
   fail_unless(c5.getTotalThreads() == 32);
@@ -697,6 +708,9 @@ START_TEST(test_exclusive_place)
   r.set_value("lprocs", "2", false);
   r.set_value("memory", "1kb", false);
 
+  std::vector<std::string> valid_id;
+  valid_id.push_back(jobid);
+
   allocation a(jobid);
   a.place_type = exclusive_chip;
 
@@ -742,7 +756,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 6);
   fail_unless(recorded == 6);
 
-  Chip c2(out.str());
+  Chip c2(out.str(), valid_id);
   std::stringstream o2;
   c2.displayAsJson(o2, true);
   fail_unless(o2.str() == out.str(), o2.str().c_str());
@@ -810,7 +824,7 @@ START_TEST(test_exclusive_place)
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
 
-  Chip copy_exclusive_socket(out.str());
+  Chip copy_exclusive_socket(out.str(), valid_id);
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
   fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
 

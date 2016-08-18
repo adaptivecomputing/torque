@@ -81,7 +81,7 @@ bool Socket::is_completely_free() const
   return(true);
   }
 
-Socket::Socket(const std::string &json_layout)
+Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_socket++;
   }

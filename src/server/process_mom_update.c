@@ -749,11 +749,20 @@ void update_layout_if_needed(
   const std::string &layout)
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  std::vector<std::string> valid_ids;
 
   if (pnode->nd_layout.is_initialized() == false)
     {
-    pnode->nd_layout.reinitialize_from_json(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+      
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+
+    pnode->nd_layout.reinitialize_from_json(layout, valid_ids);
     }
   else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
            (pnode->nd_job_usages.size() == 0))
@@ -763,7 +772,15 @@ void update_layout_if_needed(
 
     // If the number of np for the node has changed, then we should get a new layout as long
     // as we don't have active jobs
-    Machine m(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+    
+    Machine m(layout, valid_ids);
     pnode->nd_layout = m;
 
     if (LOGLEVEL >= 3)

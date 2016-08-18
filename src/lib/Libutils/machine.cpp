@@ -156,7 +156,8 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   const char *socket_str = "\"socket\":{";
@@ -167,7 +168,7 @@ void Machine::initialize_from_json(
     std::size_t next = json_layout.find(socket_str, socket_begin + 1);
     std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
+    Socket s(one_socket, valid_ids);
     this->sockets.push_back(s);
     this->totalSockets++;
 
@@ -182,7 +183,8 @@ void Machine::initialize_from_json(
 
 void Machine::reinitialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -201,7 +203,7 @@ void Machine::reinitialize_from_json(
   this->NVIDIA_device.clear();
   this->allocations.clear();
 
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END reinitialize_from_json()
 
 
@@ -231,16 +233,17 @@ void Machine::reinitialize_from_json(
  *
  */
 
-Machine::Machine(
-    
-  const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0),
-                                    totalChips(0), totalCores(0), totalThreads(0), 
-                                    availableSockets(0), availableChips(0),
-                                    availableCores(0), availableThreads(0), initialized(true),
-                                    sockets(), NVIDIA_device(), allocations()
+Machine::Machine(const std::string &json_layout,
+                 std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0),
+                                                        totalSockets(0), totalChips(0),
+                                                        totalCores(0), totalThreads(0), 
+                                                        availableSockets(0), availableChips(0),
+                                                        availableCores(0), availableThreads(0),
+                                                        initialized(true), sockets(),
+                                                        NVIDIA_device(), allocations()
 
   {
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END json constructor
 
 

@@ -68,9 +68,10 @@ Socket::Socket(
 
 Socket::Socket(
 
-  const std::string &json_layout) : id(0), memory(0), totalCores(0), totalThreads(0),
-                                    availableCores(0), availableThreads(0), chips(),
-                                    socket_exclusive(false)
+  const std::string &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                         availableCores(0), availableThreads(0), chips(),
+                                         socket_exclusive(false)
 
   {
   const char *chip_str = "\"numanode\":{";
@@ -95,7 +96,7 @@ Socket::Socket(
     std::size_t next = json_layout.find(chip_str, chip_begin + 1);
     std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
 
-    Chip c(one_chip);
+    Chip c(one_chip, valid_ids);
     this->chips.push_back(c);
 
     chip_begin = next;

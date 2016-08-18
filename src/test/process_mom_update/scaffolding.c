@@ -282,6 +282,11 @@ int node_gpustatus_list(
 
 void clear_nvidia_gpus(struct pbsnode *np) {}
 
+const char *id_map::get_name(int id)
+  {
+  return("");
+  }
+
 int id_map::get_id(
 
   const char *name)

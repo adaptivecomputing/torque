@@ -103,7 +103,7 @@ hwloc_uint64_t Chip::getMemory() const
   return(this->memory);
   }
 
-Chip::Chip(const std::string &json_layout)
+Chip::Chip(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_chip++;
   }
