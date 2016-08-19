@@ -497,6 +497,7 @@ START_TEST(test_json_constructor)
   const char *j3 ="\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
   const char *j4 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
   const char *j5 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
+  const char *j6 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"5\",\"mem\":10,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}}";
 
   std::stringstream o1;
   std::stringstream o2;
@@ -505,6 +506,7 @@ START_TEST(test_json_constructor)
   std::vector<std::string> valid_ids;
   valid_ids.push_back("1.napali");
   valid_ids.push_back("0.napali");
+  valid_ids.push_back("2.napali");
   
   Chip c1(j1, valid_ids);
   fail_unless(c1.get_id() == 1);
@@ -555,6 +557,15 @@ START_TEST(test_json_constructor)
   fail_unless(c5.getAvailableThreads() == 0);
   fail_unless(c5.get_available_mics() == 0, "%d available mics", c5.get_available_mics());
   fail_unless(c5.get_available_gpus() == 0, "%d available gpus", c5.get_available_gpus());
+
+  Chip c6(j6, valid_ids);
+  std::stringstream o6;
+  c6.displayAsJson(o6, true);
+  fail_unless(o6.str() == j6, o6.str().c_str());
+  c6.free_task("0.napali");
+  o6.str("");
+  c6.displayAsJson(o6, true);
+  fail_unless(o6.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}}", o6.str().c_str());
   }
 END_TEST
 
