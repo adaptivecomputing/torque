@@ -1078,6 +1078,8 @@ void Machine::free_job_allocation(
   const char *job_id)
 
   {
+  std::vector<int> to_remove;
+
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
     bool previously_used = this->sockets[i].is_available() == false;
@@ -1088,19 +1090,14 @@ void Machine::free_job_allocation(
     }
 
   // Remove from my allocations
-  int index = -1;
-
   for (unsigned int i = 0; i < this->allocations.size(); i++)
-    {
     if (this->allocations[i].jobid == job_id)
-      {
-      index = i;
-      break;
-      }
-    }
-
-  if (index != -1)
-    this->allocations.erase(this->allocations.begin() + index);
+      to_remove.push_back(i);
+  
+  for (size_t i = 0; i < to_remove.size(); i++)
+    // Subtract i because we are dynamically changing the vector as we erase, removing 1 element
+    // each time
+    this->allocations.erase(this->allocations.begin() + to_remove[i] - i);
   } // END free_job_allocation()
 
 
