@@ -509,8 +509,8 @@ struct pbsnode *find_nodebyname(const char *name)
   if (dont_find_node)
     return(NULL);
 
-  pbsnode *pnode = (pbsnode *)calloc(1, sizeof(pbsnode));
-  pnode->nd_name = strdup(name);
+  pbsnode *pnode = new pbsnode();
+  pnode->change_name(name);
   return(pnode);
   }
 
@@ -680,6 +680,20 @@ int is_svr_attr_set(int i) {return 0;}
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
 
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+void pbsnode::change_name(const char *id)
+  {
+  this->nd_name = id;
+  }
+
+pbsnode::pbsnode()
+  {
+  }
+
 int pbsnode::unlock_node(const char *id, const char *msg, int level)
   {
   return(0);
@@ -813,7 +827,16 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
 Machine::Machine() {}
 Machine::~Machine() {}
 
+void Machine::reinitialize_from_json(const std::string &layout, std::vector<std::string> &valid_ids)
+  {
+  }
+
 Machine::Machine(const std::string &layout, std::vector<std::string> &valid_ids) {}
+
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
 
 int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
   {
