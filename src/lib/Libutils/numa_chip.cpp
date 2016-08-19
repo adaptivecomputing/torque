@@ -2506,7 +2506,9 @@ bool Chip::free_task(
     }
 
   for (size_t i = 0; i < to_remove.size(); i++)
-    this->allocations.erase(this->allocations.begin() + to_remove[i]);
+    // Subtract i because we are dynamically changing the vector as we erase, removing 1 element
+    // each time
+    this->allocations.erase(this->allocations.begin() + to_remove[i] - i);
 
   if (this->allocations.size() == 0)
     {
