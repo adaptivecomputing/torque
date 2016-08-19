@@ -444,6 +444,13 @@ int req_rerunjob(
 
     /* NO-OP */
     }
+  else if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+    {
+    // If we are already queued, then there is nothing to do.
+    rc = PBSE_NONE;
+    reply_ack(preq);
+    return(rc);
+    }
   else
     {
     /* FAILURE - job is in bad state */
@@ -524,7 +531,7 @@ int req_rerunjob(
       if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
         {
         std::string extend = RERUNFORCE;
-        rc = issue_signal(&pjob, "SIGKILL", post_rerun, extra, strdup(extend.c_str()));
+        rc = issue_signal(&pjob, "SIGTERM", post_rerun, extra, strdup(extend.c_str()));
         if (rc == PBSE_NORELYMOM)
           rc = PBSE_NONE;
         }
