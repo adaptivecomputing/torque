@@ -820,7 +820,7 @@ int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
   return(0);
   }
 
-void save_node_usage(pbsnode *pnode);
+void save_node_usage(pbsnode *pnode) {}
     
 void Machine::populate_job_ids(std::vector<std::string> &job_ids) const
   {
