@@ -288,8 +288,9 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq)
+int req_quejob(struct batch_request *preq, bool perform_commit)
   {
+  return(PBSE_NONE);
   }
 
 void req_deletearray(struct batch_request *preq)
