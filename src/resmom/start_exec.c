@@ -3003,7 +3003,7 @@ int write_nodes_to_file(
   {
   char         filename[MAXPATHLEN];
   int          j;
-  int          rc;
+  int          rc = PBSE_NONE;
   int          vnodenum;
   FILE        *file;
 

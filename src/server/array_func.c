@@ -896,7 +896,7 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    free(pa);
+    delete pa;
     close(fd);
     return PBSE_SYSTEM;
     }
@@ -958,23 +958,7 @@ int array_recov_binary(
   return PBSE_NONE;
   } /* END array_recov_binary */
 
-void free_array_job_sub_struct(
 
-  job_array *pa)
-
-  {
-  if (pa->job_ids != NULL)
-    {
-    /* free the memory for the job pointers */
-    for (int i = 0; i < pa->ai_qs.array_size; i++)
-      {
-      if (pa->job_ids[i] != NULL)
-        free(pa->job_ids[i]);
-      }
-
-    free(pa->job_ids);
-    }
-  }
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
    the servers list of arrays */
@@ -1007,8 +991,7 @@ int array_recov(
 
   if (rc != PBSE_NONE) 
     {
-    free_array_job_sub_struct(pa);
-    free(pa);
+    delete pa;
     log_err(-1, __func__, log_buf);
     return rc;
     }
@@ -1030,7 +1013,6 @@ int array_recov(
 
   return(PBSE_NONE);
   } /* END array_recov() */
-
 
 
 
