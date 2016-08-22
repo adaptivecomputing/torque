@@ -3907,8 +3907,9 @@ void req_cpyfile(
             from_spool = true;
             }
           }
-
-        from_spool = (spool_dir == path_spool);
+        
+        if (from_spool == false)
+          from_spool = (spool_dir == path_spool);
         
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)
