@@ -363,7 +363,6 @@ int process_opts(
   char *keyword;
   char *valuewd;
   char *pc;
-  char *pdepend;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
