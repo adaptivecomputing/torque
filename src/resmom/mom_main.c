@@ -2838,7 +2838,8 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    if (ret <= DIS_INVALID)
+    if ((ret <= DIS_INVALID) &&
+        (ret >= 0))
       sprintf(log_buffer, "write request response failed: %s",
         dis_emsg[ret]);
     else

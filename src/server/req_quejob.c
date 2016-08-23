@@ -661,7 +661,7 @@ int determine_job_file_name(
 
   filename = basename;
 
-  return(rc);
+  return(PBSE_NONE);
   } /* END determine_job_file_name() */
 
 
@@ -1807,9 +1807,6 @@ int req_quejob(
     {
     svr_job_purge(pj);
     job_mutex.set_unlock_on_exit(false);
-    snprintf(log_buf, sizeof(log_buf), "Couldn't save job file for %s", pj->ji_qs.ji_jobid);
-
-    req_reject(PBSE_JOB_FILE_CORRUPT, 0, preq, NULL, log_buf);
     return(rc);
     }
   snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
