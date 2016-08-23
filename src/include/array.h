@@ -1,7 +1,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-
+#include <list>
 
 /* these are required if you include array.h */
 #include "pbs_ifl.h"
@@ -115,7 +115,7 @@ class array_info
   int  num_idle;       // number of jobs that are currently queued
 
   /* dependency info */
-  tlist_head deps;
+  std::list<array_depend *> deps;
   
   /* max user name, server name, 1 for the @, and one for the NULL */
   char owner[PBS_MAXUSER + PBS_MAXSERVERNAME + 2];
@@ -127,6 +127,7 @@ class array_info
   std::string range_str;
 
   array_info();
+  ~array_info();
   };
 
 

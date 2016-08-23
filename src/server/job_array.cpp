@@ -27,18 +27,29 @@ const int DEFAULT_IDLE_SLOT_LIMIT = 300;
 array_info::array_info() : struct_version(ARRAY_QS_STRUCT_VERSION), array_size(0), num_jobs(0),
                            slot_limit(NO_SLOT_LIMIT), jobs_running(0), jobs_done(0), num_cloned(0),
                            num_started(0), num_failed(0), num_successful(0), num_purged(0),
-                           num_idle(0),
+                           num_idle(0), deps(),
                            idle_slot_limit(DEFAULT_IDLE_SLOT_LIMIT), highest_id_created(-1),
                            range_str()
 
   {
-  CLEAR_HEAD(deps);
-
   memset(this->owner, 0, sizeof(this->owner));
   memset(this->parent_id, 0, sizeof(this->parent_id));
   memset(this->fileprefix, 0, sizeof(this->fileprefix));
   memset(this->submit_host, 0, sizeof(this->submit_host));
   }
+
+
+
+array_info::~array_info() 
+
+  {
+  // free the dependencies if any exist
+  for (std::list<array_depend *>::iterator it = this->deps.begin(); it != this->deps.end(); it++)
+    {
+    array_depend *pdep = *it;
+    delete pdep;
+    }
+  } // END destructor()
 
 
 
@@ -70,14 +81,6 @@ job_array::~job_array()
       }
 
     free(this->job_ids);
-    }
-
-  /* free the dependencies, if any */
-  for (struct array_depend *pdep = (struct array_depend *)GET_NEXT(this->ai_qs.deps); 
-       pdep != NULL;
-       pdep = (struct array_depend *)GET_NEXT(this->ai_qs.deps))
-    {
-    delete pdep;
     }
   }
 

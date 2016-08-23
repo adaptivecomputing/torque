@@ -499,6 +499,7 @@ job_array::job_array() {}
 job_array::~job_array() {}
 
 array_info::array_info() {}
+array_info::~array_info() {}
 
 void job_array::update_array_values(
 

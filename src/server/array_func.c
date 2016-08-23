@@ -490,7 +490,10 @@ int read_and_convert_259_array(
   pa->ai_qs.num_successful = pa_259->ai_qs.num_successful;
   pa->ai_qs.num_purged = pa_259->ai_qs.num_purged;
 
-  pa->ai_qs.deps = pa_259->ai_qs.deps;
+  for (struct array_depend *pdep = (struct array_depend *)GET_NEXT(pa_259->ai_qs.deps); 
+       pdep != NULL;
+       pdep = (struct array_depend *)GET_NEXT(pa_259->ai_qs.deps))
+    pa->ai_qs.deps.push_back(pdep);
 
   snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", pa_259->ai_qs.owner);
   snprintf(pa->ai_qs.parent_id, sizeof(pa->ai_qs.parent_id), "%s", pa_259->ai_qs.parent_id);
@@ -818,9 +821,8 @@ int array_recov_binary(
   struct stat s_buf;
   char                request_buf[MAXLINE];
 
-
   fd = open(path, O_RDONLY, 0);
-  if(fd < 0)
+  if (fd < 0)
     {
     snprintf(log_buf, buflen, "failed to open %s", path);
     log_err(errno, __func__, log_buf);
@@ -896,7 +898,6 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    delete pa;
     close(fd);
     return PBSE_SYSTEM;
     }
@@ -946,8 +947,6 @@ int array_recov_binary(
     }
 
   close(fd);
-
-  CLEAR_HEAD(pa->ai_qs.deps);
 
   if (old_version != ARRAY_QS_STRUCT_VERSION)
     {
@@ -999,10 +998,6 @@ int array_recov(
   if (binary_conversion)
     if (array_save_xml((const job_array *)pa, path, log_buf, sizeof(log_buf)) != PBSE_NONE)
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
-
-  CLEAR_HEAD(pa->ai_qs.deps);
-  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pa->ai_mutex,NULL);
 
   lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 

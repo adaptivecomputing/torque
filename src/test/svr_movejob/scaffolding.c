@@ -644,4 +644,5 @@ job_array::job_array() {}
 job_array::~job_array() {}
 
 array_info::array_info() {}
+array_info::~array_info() {}
 

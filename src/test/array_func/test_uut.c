@@ -269,11 +269,8 @@ START_TEST(array_delete_test)
   fprintf(fp,"I'm a very temporary file.\n");
   fclose(fp);
 
-  struct array_depend *pdep = (struct array_depend *)calloc(1,sizeof(struct array_depend));
-  pdep->dp_link.ll_next = pa->ai_qs.deps.ll_next;
-  pa->ai_qs.deps.ll_next = &pdep->dp_link;
-  pdep->dp_link.ll_prior = (list_link *)&pa->ai_qs.deps;
-  pdep->dp_link.ll_struct = (void *)pdep;
+  array_depend *pdep = (array_depend *)calloc(1,sizeof(array_depend));
+  pa->ai_qs.deps.push_back(pdep);
   
   pdep->dp_jobs.push_back(new (array_depend_job));
   pdep->dp_jobs.push_back(new (array_depend_job));
