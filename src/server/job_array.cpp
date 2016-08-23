@@ -376,9 +376,10 @@ void job_array::create_job_if_needed()
  * update_array_values()
  *
  * updates internal bookkeeping values for job arrays
- * @param pa - array to update
- * @param pjob - the pjob that an event happened on
+ * @param old_state - the prior state for this job
  * @param event - code for what event just happened
+ * @param job_id - the id of the job that this happened to
+ * @param job_exit_status - the exit status, only used if the event is aeTerminate
  */
 
 void job_array::update_array_values(
@@ -386,7 +387,6 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {

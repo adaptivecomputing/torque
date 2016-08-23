@@ -165,7 +165,7 @@ class job_array
   void set_arrays_fileprefix(const char *file_prefix);
   void set_array_id(const char *array_id);
   void update_array_values(int old_state, enum ArrayEventsEnum event, const char *job_id,
-                            long job_atr_hold, int job_exit_status);
+                            int job_exit_status);
   void create_job_if_needed();
   int  get_next_index_to_create(int &internal_index);
   void initialize_uncreated_ids();
@@ -224,7 +224,6 @@ int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int)
 int modify_job(void **,svrattrl *,struct batch_request *,int, int);
 
 void update_slot_held_jobs(job_array *pa, int num_to_release);
-void update_array_values(job_array *,int,enum ArrayEventsEnum, const char *job_id, long job_atr_hold, int job_exit_status);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
 bool set_array_depend_holds(job_array *);

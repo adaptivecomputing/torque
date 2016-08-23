@@ -661,13 +661,11 @@ jump:
           {
           if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
             {
-            long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             int job_state = pjob->ji_qs.ji_state;
 
             job_mutex.unlock();
-            pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_atr_hold,
-                                    job_exit_status);
+            pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_exit_status);
 
             if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
               job_mutex.mark_as_locked();

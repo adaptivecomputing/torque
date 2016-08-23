@@ -2437,7 +2437,6 @@ int pbsd_init_job(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               local_errno = 0;
   char              job_id[PBS_MAXSVRJOBID+1];
-  long              job_atr_hold;
   int               job_exit_status;
 
   pjob->ji_momhandle = -1;
@@ -2667,13 +2666,11 @@ int pbsd_init_job(
         if (pjob != NULL)
           {
           strcpy(job_id, pjob->ji_qs.ji_jobid);
-          job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
           job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           if (pa)
             {
-            pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_atr_hold,
-                job_exit_status);
+            pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_exit_status);
           
             unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             }

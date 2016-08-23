@@ -344,8 +344,6 @@ void account_jobend(job *pjob, std::string &data)
   called_account_jobend++;
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}
-
 id_map::id_map() {}
 
 id_map::~id_map() {}
@@ -506,7 +504,6 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {

@@ -3077,7 +3077,6 @@ int handle_terminating_array_subjob(
 
   {
   job_array *pa;
-  long       job_atr_hold;
   int        job_exit_status;
   char       job_id[PBS_MAXSVRJOBID+1];
 
@@ -3092,13 +3091,12 @@ int handle_terminating_array_subjob(
     
     if (pa != NULL)
       {
-      job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
       job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
       
       snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
       unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
 
-      pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_atr_hold, job_exit_status);
+      pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_exit_status);
         
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       pjob = svr_find_job(job_id, TRUE);
@@ -3143,7 +3141,7 @@ int handle_rerunning_array_subjob(
       snprintf(job_id, sizeof(job_id), "%s", pjob->ji_qs.ji_jobid);
       unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
 
-      pa->update_array_values(JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
+      pa->update_array_values(JOB_STATE_RUNNING, aeRerun, job_id, -1);
       
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       pjob = svr_find_job(job_id, TRUE);

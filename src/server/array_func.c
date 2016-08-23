@@ -1495,6 +1495,9 @@ int delete_whole_array(
   int num_deleted = 0;
   int deleted;
   int running;
+  long cancel_exit_code = 0;
+
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   job *pjob;
 
@@ -1518,6 +1521,8 @@ int delete_whole_array(
         /* invalid state for request,  skip */
         continue;
         }
+
+      int old_state = pjob->ji_qs.ji_state;
         
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
@@ -1539,6 +1544,9 @@ int delete_whole_array(
         }
 
       pthread_mutex_lock(pa->ai_mutex);
+
+      if (deleted == TRUE)
+        pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
       }
     }
 

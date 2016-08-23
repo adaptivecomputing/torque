@@ -490,7 +490,6 @@ int job_abt(
   int   old_substate;
   int   rc = 0;
   char  job_id[PBS_MAXSVRJOBID+1];
-  long  job_atr_hold;
   int   job_exit_status;
   job  *pjob;
 
@@ -583,13 +582,12 @@ int job_abt(
           
           if (pjob != NULL)
             {
-            job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             pjob_mutex.unlock();
              
             if (pa)
               {
-              pa->update_array_values(old_state,aeTerminate, job_id, job_atr_hold, job_exit_status);
+              pa->update_array_values(old_state,aeTerminate, job_id, job_exit_status);
             
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               }
@@ -643,12 +641,11 @@ int job_abt(
 
       if (pjob != NULL)
         {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         pjob_mutex.unlock();
         if (pa)
           {
-          pa->update_array_values(old_state, aeTerminate, job_id, job_atr_hold, job_exit_status);
+          pa->update_array_values(old_state, aeTerminate, job_id, job_exit_status);
         
           unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
           }

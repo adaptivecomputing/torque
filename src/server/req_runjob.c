@@ -190,7 +190,6 @@ int check_and_run_job_work(
   int              rc = PBSE_NONE;
   char             failhost[MAXLINE];
   char             emsg[MAXLINE];
-  long             job_atr_hold;
   int              job_exit_status;
   int              job_state;
   char             job_id[PBS_MAXSVRJOBID+1];
@@ -230,13 +229,12 @@ int check_and_run_job_work(
       if ((pa->ai_qs.slot_limit < 0) ||
           (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
         {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         job_state = pjob->ji_qs.ji_state;
 
         job_mutex.unlock();
 
-        pa->update_array_values(job_state, aeRun, job_id, job_atr_hold, job_exit_status);
+        pa->update_array_values(job_state, aeRun, job_id, job_exit_status);
 
         if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
           {

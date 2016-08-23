@@ -197,12 +197,6 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
-  {
-  fprintf(stderr, "The call to update_array_values to be mocked!!\n");
-  exit(1);
-  }
-
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req to be mocked!!\n");
@@ -400,7 +394,6 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {
