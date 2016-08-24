@@ -1358,12 +1358,13 @@ job_array *ghost_create_jobs_array(
     get_variable(pjob, pbs_o_host));
     
   if (pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long > array_size)
-    array_size = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+    array_size = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long + 1;
 
   pa->job_ids = (char **)calloc(array_size, sizeof(char *));
   pa->job_ids[(int)pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pjob->ji_qs.ji_jobid);
 
   pa->ai_qs.array_size = array_size;
+  pa->ai_ghost_recovered = true;
   array_save(pa);
 
   /* link the struct into the servers list of job arrays */
