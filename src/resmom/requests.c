@@ -3563,10 +3563,16 @@ void determine_spooldir(
 
   {
 #if NO_SPOOL_OUTPUT == 1
-  spooldir = HDir;
-  spooldir += "/.pbs_spool/";
+  int         rcstat = 1;
+  struct stat myspooldir;
 
-  rcstat = stat(spooldir.c_str(), &myspooldir);
+  if (pjob != NULL)
+    {
+    spooldir = pjob->ji_grpcache->gc_homedir;
+    spooldir += "/.pbs_spool/";
+
+    rcstat = stat(spooldir.c_str(), &myspooldir);
+    }
 
   if ((rcstat != 0) || 
       (!S_ISDIR(myspooldir.st_mode)))
@@ -3673,8 +3679,6 @@ void req_cpyfile(
   int             rc;
   int             exitcode = 0;
   bool            rmtflag = false;
-#if NO_SPOOL_OUTPUT == 0
-#endif /* !NO_SPOOL_OUTPUT */
 
 #ifdef  _CRAY
   char            tmpdirname[MAXPATHLEN + 1];
