@@ -3306,7 +3306,9 @@ void req_cpyfile(
   int             bad_files = 0;
   char           *bad_list = NULL;
   int             dir = 0;
+#if NO_SPOOL_OUTPUT == 0
   int             from_spool = 0;  /* boolean - set if file must be removed from spool after copy */
+#endif
   int             len;
   char            localname[MAXPATHLEN + 1];  /* used only for in-bound */
 
@@ -3578,7 +3580,9 @@ void req_cpyfile(
       continue;
       }
 
+#if NO_SPOOL_OUTPUT == 0
     from_spool = 0;
+#endif
 
     prmt       = pair->fp_rmt;
 
