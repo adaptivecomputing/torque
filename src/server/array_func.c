@@ -866,7 +866,7 @@ int array_recov_binary(
     len = read_ac_socket(fd, &(pa->ai_qs), sizeof(array_info));
     if ((len < 0) || ((len < (int)sizeof(array_info)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
-      memset(&pa->ai_qs,0,sizeof(array_info));
+      pa->ai_qs.deps.clear();
       snprintf(log_buf, buflen, "error reading %s", path);
       close(fd);
       return(PBSE_SYSTEM);
@@ -877,7 +877,7 @@ int array_recov_binary(
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
       if (rc)
         {
-        memset(&pa->ai_qs,0,sizeof(array_info));
+        pa->ai_qs.deps.clear();
         snprintf(log_buf, buflen, 
           "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
         close(fd);
