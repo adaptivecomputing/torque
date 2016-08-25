@@ -213,3 +213,6 @@ endif
 .PHONY: cleancheck
 cleancheck:
 	$(MAKE) -C $(CHECK_DIRS) $(MAKECMDGOALS)
+
+doxygen:
+	doxygen Doxyfile

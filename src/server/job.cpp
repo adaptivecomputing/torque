@@ -3,7 +3,7 @@
 #include "log.h"
 
 
-/*
+/**
  * Default constructor
  */
 
