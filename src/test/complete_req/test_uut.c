@@ -11,14 +11,17 @@ extern int called_log_event;
 START_TEST(test_set_value_from_nodes)
   {
   complete_req c;
+  int          task_count;
 
   // Make sure this doesn't segfault
-  c.set_value_from_nodes(NULL);
-  c.set_value_from_nodes("4");
+  c.set_value_from_nodes(NULL, task_count);
+  c.set_value_from_nodes("4", task_count);
+  fail_unless(task_count == 4, "count = %d", task_count);
   fail_unless(c.req_count() == 1);
 
   complete_req c2;
-  c2.set_value_from_nodes("bob+tim");
+  c2.set_value_from_nodes("bob+tim", task_count);
+  fail_unless(task_count == 2);
   fail_unless(c2.req_count() == 2);
   }
 END_TEST
