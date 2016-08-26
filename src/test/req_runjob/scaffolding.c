@@ -49,6 +49,7 @@ int svr_totnodes = 0;
 threadpool_t *request_pool;
 char scaff_buffer[1024];
 threadpool_t *async_pool;
+bool cray_enabled;
 
 
 
@@ -275,6 +276,11 @@ char *threadsafe_tokenizer(char **str, const char *delims)
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

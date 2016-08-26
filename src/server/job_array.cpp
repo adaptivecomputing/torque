@@ -390,7 +390,7 @@ void job_array::update_array_values(
   int                   job_exit_status)
 
   {
-  long  moab_compatible;
+  bool  moab_compatible;
 
   switch (event)
     {
@@ -451,10 +451,10 @@ void job_array::update_array_values(
       array_save(this);
 
       /* update slot limit hold if necessary */
-      if (get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
-        moab_compatible = FALSE;
+      if (get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
+        moab_compatible = false;
 
-      if (moab_compatible != FALSE)
+      if (moab_compatible == true)
         {
         if (this->need_to_update_slot_limits() == true)
           {

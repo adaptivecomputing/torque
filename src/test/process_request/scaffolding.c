@@ -486,6 +486,14 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (check_acl == true)
+    *b = true;
+
+  return(0);
+  }
+
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);

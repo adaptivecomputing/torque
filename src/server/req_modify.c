@@ -1159,10 +1159,10 @@ int modify_job_attr(
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
         {
-        long lim = TRUE;
+        bool lim = true;
         int comp_resc_lt;
        
-        get_svr_attr_l(SRV_ATR_QCQLimits, &lim);
+        get_svr_attr_b(SRV_ATR_QCQLimits, &lim);
         comp_resc_lt = comp_resc2(&pjob->ji_wattr[JOB_ATR_resource],
                                       &newattr[JOB_ATR_resource],
                                       lim,

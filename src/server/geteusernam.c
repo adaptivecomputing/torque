@@ -130,9 +130,9 @@ bool is_permitted_by_node_submit(
   int         logging)
 
   {
-  long allow_node_submit = FALSE;
+  bool allow_node_submit = false;
 
-  get_svr_attr_l(SRV_ATR_AllowNodeSubmit, &allow_node_submit);
+  get_svr_attr_b(SRV_ATR_AllowNodeSubmit, &allow_node_submit);
 
   if ((allow_node_submit == TRUE) &&
       (node_exists(orighost) == true))
@@ -407,7 +407,7 @@ bool is_user_allowed_to_submit_jobs(
 
   /* check to see if we are allowing a proxy user to submit the job */
   if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
-      (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_long == 1))
+      (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_bool == true))
     {
     ProxyAllowed = true;
     }
@@ -613,7 +613,7 @@ int set_jobexid(
   char            tmpLine[1024 + 1];
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  long            disable_id_check = 0;
+  bool            disable_id_check = false;
   bool            CheckID = true;  
   
   if (EMsg != NULL)
@@ -621,7 +621,7 @@ int set_jobexid(
 
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
-  if (get_svr_attr_l(SRV_ATR_DisableServerIdCheck, &disable_id_check) == PBSE_NONE)
+  if (get_svr_attr_b(SRV_ATR_DisableServerIdCheck, &disable_id_check) == PBSE_NONE)
     CheckID = !disable_id_check;
 
   if (CheckID == false)

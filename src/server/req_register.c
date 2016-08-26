@@ -2341,9 +2341,9 @@ depend_job *find_dependjob(
 
   {
   depend_job *pdj;
-  long        display_server_suffix = TRUE;
+  bool        display_server_suffix = true;
 
-  get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_server_suffix);
+  get_svr_attr_b(SRV_ATR_display_job_server_suffix, &display_server_suffix);
 
   unsigned int dp_jobs_size = pdep->dp_jobs.size();
   for (unsigned int i = 0; i < dp_jobs_size; i++)

@@ -1018,7 +1018,7 @@ void poll_job_task(
   char      *job_id = (char *)ptask->wt_parm1;
   job       *pjob;
   time_t     time_now = time(NULL);
-  long       poll_jobs = 0;
+  bool       poll_jobs = false;
   long       job_stat_rate;
 
   free(ptask->wt_mutex);
@@ -1044,7 +1044,7 @@ void poll_job_task(
 
         if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
           {
-          get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
+          get_svr_attr_b(SRV_ATR_PollJobs, &poll_jobs);
           if (poll_jobs)
             stat_mom_job(job_id);
           }

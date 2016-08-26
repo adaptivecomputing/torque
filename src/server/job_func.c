@@ -1278,14 +1278,14 @@ int perform_array_postprocessing(
     else
       {
       mutex_mgr job_mutex(pjob->ji_mutex,true);
-      long moab_compatible = FALSE;;
+      bool moab_compatible = false;
      
       actual_job_count++;
 
-      get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible);
+      get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &moab_compatible);
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       
-      if (moab_compatible != FALSE)
+      if (moab_compatible == true)
         {
         /* if configured and necessary, apply a slot limit hold to all
          * jobs above the slot limit threshold */
@@ -1737,7 +1737,7 @@ int record_jobinfo(
   int                     fd;
   size_t                  bytes_read = 0;
   extern pthread_mutex_t  job_log_mutex;
-  long                    record_job_script = FALSE;
+  bool                    record_job_script = false;
   std::string		  adjusted_path_jobs;
   
   if (pjob == NULL)
@@ -1792,7 +1792,7 @@ int record_jobinfo(
       }
     }
   
-  get_svr_attr_l(SRV_ATR_RecordJobScript, &record_job_script);
+  get_svr_attr_b(SRV_ATR_RecordJobScript, &record_job_script);
   if (record_job_script)
     {
     /* This is for Baylor. We will make it a server parameter eventually
@@ -1857,7 +1857,7 @@ int svr_job_purge(
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
-  long          record_job_info = FALSE;
+  bool          record_job_info = false;
   char          job_id[PBS_MAXSVRJOBID+1];
   char          job_fileprefix[PBS_JOBBASE+1];
   int           job_substate;
@@ -1889,7 +1889,7 @@ int svr_job_purge(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   /* check to see if we are keeping a log of all jobs completed */
-  get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
+  get_svr_attr_b(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
     record_jobinfo(pjob);

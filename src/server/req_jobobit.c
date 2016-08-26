@@ -124,6 +124,7 @@
 #include "track_alps_reservations.hpp"
 #include "id_map.hpp"
 #include "completed_jobs_map.h"
+#include "policy_values.h"
 
 #define RESC_USED_BUF 2048
 #define JOBMUSTREPORTDEFAULTKEEP 30
@@ -666,7 +667,6 @@ int mom_comm(
 
   int               local_errno = 0;
   int               handle = -1;
-  long              cray_enabled = FALSE;
   char              jobid[PBS_MAXSVRJOBID + 1];
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -681,9 +681,8 @@ int mom_comm(
   if (pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0)
     {
     char *tmp;
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
       tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
     else
@@ -742,11 +741,7 @@ void rel_resc(
   job *pjob)  /* I (modified) */
 
   {
-  long cray_enabled = FALSE;
-
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
     {
     alps_reservations.remove_alps_reservation(pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str);
@@ -1791,7 +1786,7 @@ int handle_complete_first_time(
   pbs_queue   *pque;
   int          KeepSeconds = 0;
   char         log_buf[LOCAL_LOG_BUF_SIZE+1];
-  long         must_report = FALSE;
+  bool         must_report = false;
   std::string  jid;
   char         acctbuf[RESC_USED_BUF];
   std::string  acct_data;
@@ -1832,8 +1827,8 @@ int handle_complete_first_time(
     return PBSE_JOBNOTFOUND;
     }
   
-  if ((get_svr_attr_l(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
-      (must_report > 0))
+  if ((get_svr_attr_b(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
+      (must_report == true))
     {
     pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
@@ -3224,7 +3219,7 @@ int update_substate_from_exit_status(
 
   {
   long  automatic_requeue = -1000;
-  long  disable_requeue = FALSE;
+  bool  disable_requeue = false;
   int   exitstatus = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
   int   rc = PBSE_NONE;
@@ -3236,7 +3231,7 @@ int update_substate_from_exit_status(
     {
     /* Was there a special exit status from MOM ? */
     get_svr_attr_l(SRV_ATR_AutomaticRequeueExitCode, &automatic_requeue);
-    get_svr_attr_l(SRV_ATR_DisableAutoRequeue, &disable_requeue);
+    get_svr_attr_b(SRV_ATR_DisableAutoRequeue, &disable_requeue);
     
     if (exitstatus == automatic_requeue)
       {
@@ -3311,7 +3306,7 @@ int update_substate_from_exit_status(
         case JOB_EXEC_RETRY:
 
           /* MOM rejected job, but said retry it */
-          if (disable_requeue == FALSE)
+          if (disable_requeue == false)
             {
             if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
               {

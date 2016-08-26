@@ -49,6 +49,7 @@ extern int str_to_attr_count;
 extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
+extern bool cray_enabled;
 
 
 START_TEST(check_node_jobs_exitence_test)
@@ -631,6 +632,7 @@ START_TEST(node_in_exechostlist_test)
   fail_unless(node_in_exechostlist(node5, eh2, NULL) == true, "blah10");
   
   // Test the login node piece working
+  cray_enabled = true;
   fail_unless(node_in_exechostlist(node1, eh2, node1) == true);
   fail_unless(node_in_exechostlist(node3, eh1, node3) == true);
   fail_unless(node_in_exechostlist(node3, eh1, node1) == false);

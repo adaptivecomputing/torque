@@ -114,6 +114,11 @@ int get_svr_attr_l(
   return(PBSE_NONE);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int create_and_queue_array_subjob(
     
   job_array   *pa,

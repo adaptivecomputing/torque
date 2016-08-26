@@ -144,7 +144,7 @@ int decode_b(
     {
     patr->at_flags = (patr->at_flags & ~ATR_VFLAG_SET) |
                      ATR_VFLAG_MODIFY;
-    patr->at_val.at_long = 0;  /* default to false */
+    patr->at_val.at_bool = false;  /* default to false */
     }
   else
     {
@@ -160,7 +160,7 @@ int decode_b(
         (strcmp(ucVal, "1") == 0)  ||
         (strcmp(ucVal, "y") == 0)  ||
         (strcmp(ucVal, "Y") == 0))
-      patr->at_val.at_long = 1; /* true */
+      patr->at_val.at_bool = true;
     else if ((strcmp(ucVal, false_val) == 0) ||
              (strcmp(ucVal, "FALSE") == 0)   ||
              (strcmp(ucVal, "false") == 0)   ||
@@ -169,7 +169,7 @@ int decode_b(
              (strcmp(ucVal, "0") == 0)       ||
              (strcmp(ucVal, "n") == 0)       ||
              (strcmp(ucVal, "N") == 0))
-      patr->at_val.at_long = 0; /* false */
+      patr->at_val.at_bool = false;
     else
       return (PBSE_BADATVAL);
 
@@ -208,7 +208,7 @@ int encode_b(
   if (!(attr->at_flags & ATR_VFLAG_SET))
     return (0);
 
-  if (attr->at_val.at_long)
+  if (attr->at_val.at_bool)
     {
     value = true_val;
     }
@@ -257,17 +257,15 @@ int set_b(
     {
 
     case SET:
-      attr->at_val.at_long = new_attr->at_val.at_long;
+      attr->at_val.at_bool = new_attr->at_val.at_bool;
       break;
 
     case INCR:
-      attr->at_val.at_long =
-        attr->at_val.at_long | new_attr->at_val.at_long; /* "or" */
+      attr->at_val.at_bool = attr->at_val.at_bool || new_attr->at_val.at_bool; /* "or" */
       break;
 
     case DECR:
-      attr->at_val.at_long = attr->at_val.at_long &
-                             ~new_attr->at_val.at_long;
+      attr->at_val.at_bool = attr->at_val.at_bool && !new_attr->at_val.at_bool;
       break;
 
     default:
@@ -295,8 +293,8 @@ int comp_b(
   if (!attr || !with)
     return (1);
 
-  if (((attr->at_val.at_long == 0) && (with->at_val.at_long == 0)) ||
-      ((attr->at_val.at_long != 0) && (with->at_val.at_long != 0)))
+  if (((attr->at_val.at_bool == false) && (with->at_val.at_bool == false)) ||
+      ((attr->at_val.at_bool != false) && (with->at_val.at_bool != false)))
     return (0);
   else
     return (1);

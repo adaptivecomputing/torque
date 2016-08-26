@@ -69,6 +69,11 @@ int get_svr_attr_l(
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int unlock_ji_mutex(
 
   job        *pjob,

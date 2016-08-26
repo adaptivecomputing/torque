@@ -431,7 +431,7 @@ int execute_job_delete(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
-  long              array_compatible = FALSE;
+  bool              array_compatible = false;
   long              status_cancel_queue = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
@@ -639,8 +639,8 @@ jump:
 
   /* if configured, and this job didn't have a slot limit hold, free a job
    * held with the slot limit hold */
-  get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &array_compatible);
-  if ((array_compatible != FALSE) &&
+  get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &array_compatible);
+  if ((array_compatible == true) &&
       ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
     {
     if ((pjob->ji_arraystructid[0] != '\0') &&
@@ -1485,14 +1485,14 @@ int forced_jobpurge(
   batch_request *preq)
 
   {
-  long owner_purge = FALSE;
+  bool owner_purge = false;
   
   /* check about possibly purging the job */
   if (preq->rq_extend != NULL)
     {
     if (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
       {
-      get_svr_attr_l(SRV_ATR_OwnerPurge, &owner_purge);
+      get_svr_attr_b(SRV_ATR_OwnerPurge, &owner_purge);
 
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (owner_purge)))
@@ -1533,10 +1533,10 @@ int apply_job_delete_nanny(
 
   {
   enum work_type    tasktype;
-  long              nanny = FALSE;
+  bool              nanny = false;
 
   /* short-circuit if nanny isn't enabled or we have a delete nanny */
-  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_b(SRV_ATR_JobNanny, &nanny);
   if ((nanny == FALSE) ||
       (pjob->ji_has_delete_nanny == true))
     {
@@ -1602,10 +1602,10 @@ void job_delete_nanny(
   batch_request *newreq;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
-  long           nanny = FALSE;
+  bool           nanny = false;
 
   /* short-circuit if nanny isn't enabled */
-  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_b(SRV_ATR_JobNanny, &nanny);
   if (nanny)
     {
     jobid = (char *)pwt->wt_parm1;
@@ -1668,14 +1668,14 @@ void post_job_delete_nanny(
   int                   rc;
   job                  *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  long                  nanny = 0;
+  bool                  nanny = false;
 
   if (preq_sig == NULL)    
     return;
 
   rc       = preq_sig->rq_reply.brp_code;
 
-  get_svr_attr_l(SRV_ATR_JobNanny, &nanny);
+  get_svr_attr_b(SRV_ATR_JobNanny, &nanny);
   if (!nanny)
     {
     /* the admin disabled nanny within the last minute or so */

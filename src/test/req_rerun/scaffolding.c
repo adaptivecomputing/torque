@@ -8,6 +8,7 @@
 #include "work_task.h" /* work_task, all_tasks */
 #include "server.h"
 
+bool cray_enabled;
 const char    *msg_jobrerun = "Job Rerun";
 attribute_def  job_attr_def[10];
 const char    *msg_manager = "%s at request of %s@%s";
@@ -117,6 +118,11 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

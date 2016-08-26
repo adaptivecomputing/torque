@@ -112,6 +112,7 @@
 #include "svrfunc.h"
 #include "server.h"
 #include "utils.h"
+#include "policy_values.h"
 
 /* Local Data */
 
@@ -145,7 +146,6 @@ int acct_job(
   std::string&    ds)   /* O */
 
   {
-  long        cray_enabled = FALSE;
   int         resc_access_perm = READ_ONLY;
   char        local_buf[MAXLINE*4];
   pbs_queue  *pque;
@@ -238,8 +238,7 @@ int acct_job(
     ds += " ";
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
     ds += "login_node=";

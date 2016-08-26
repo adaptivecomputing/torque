@@ -23,6 +23,7 @@
 #include "complete_req.hpp"
 
 
+bool cray_enabled;
 bool conn_success = true;
 bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
@@ -437,6 +438,14 @@ int get_svr_attr_l(int index, long *l)
   {
   if (index == SRV_ATR_CrayEnabled)
     *l = 1;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (index == SRV_ATR_CrayEnabled)
+    *b = true;
 
   return(0);
   }

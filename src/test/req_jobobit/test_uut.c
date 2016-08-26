@@ -47,7 +47,7 @@ int alloc_br_null;
 extern struct server server;
 extern int bad_connect;
 extern int bad_job;
-extern int cray_enabled;
+extern bool cray_enabled;
 extern int double_bad;
 extern int reported;
 extern int bad_drequest;
@@ -291,13 +291,13 @@ START_TEST(mom_comm_test)
   
   /* set some variables for error cases */
   bad_connect = 1;
-  cray_enabled = 1;
+  cray_enabled = true;
   fail_unless(mom_comm(&pjob, NULL) == -1);
   bad_job = 1;
   fail_unless(mom_comm(&pjob, NULL) == -1 * PBSE_JOB_RECYCLED);
 
   bad_connect = 0;
-  cray_enabled = 0;
+  cray_enabled = false;
   bad_job = 0;
   }
 END_TEST
@@ -312,7 +312,7 @@ START_TEST(handle_complete_first_time_test)
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
   fail_unless(handle_complete_first_time(&pjob) == 0);
-  cray_enabled = 1;
+  cray_enabled = true;
   double_bad = 1;
 
   fail_unless(handle_complete_first_time(&pjob) == PBSE_JOBNOTFOUND);
@@ -558,7 +558,7 @@ START_TEST(update_substate_from_exit_status_test)
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
 
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;
-  cray_enabled = 0;
+  cray_enabled = false;
   usage = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);

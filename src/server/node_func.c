@@ -64,6 +64,7 @@
 #include "timer.hpp"
 #include "mom_hierarchy_handler.h"
 #include "runjob_help.hpp"
+#include "policy_values.h"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -267,7 +268,7 @@ struct pbsnode *find_nodebyname(
   struct pbsnode *numa  = NULL;
 
   int             numa_index;
-  long            cray_enabled = FALSE;
+  bool            cray_enabled = false;
 
   if (nodename == NULL)
     {
@@ -287,8 +288,8 @@ struct pbsnode *find_nodebyname(
     }
   else
     {
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-    if (cray_enabled == TRUE)
+    get_svr_attr_b(SRV_ATR_CrayEnabled, &cray_enabled);
+    if (cray_enabled == true)
       {
       if (alps_reporter != NULL)
         {
@@ -1133,11 +1134,10 @@ int update_nodes_file(
   struct pbsnode     *np;
   all_nodes_iterator *iter = NULL;
   FILE               *nin;
-  long                cray_enabled = FALSE;
-  long                dont_update_file = FALSE;
+  bool                dont_update_file = false;
     
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_file);
-  if (dont_update_file == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_file);
+  if (dont_update_file == true)
     return(PBSE_NONE);
 
   if (LOGLEVEL >= 2)
@@ -1168,8 +1168,6 @@ int update_nodes_file(
 
     return(-1);
     }
-    
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* for each node ... */
   /* NOTE: DO NOT change this loop to iterate over numa nodes. Since they
@@ -1314,7 +1312,7 @@ int add_execution_slot(
   bool job_exclusive_on_use = false;
 
   if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool == true))
     job_exclusive_on_use = true;
 
   if (((pnode->nd_state & INUSE_JOB) != 0) &&
@@ -2481,7 +2479,6 @@ int parse_nodes_file()
   FILE              *nin;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   extern char        server_name[];
-  long               cray_enabled = FALSE;
   char               line[MAXLINE << 4];
 
   extern resource_t  next_resource_tag;
@@ -2501,8 +2498,6 @@ int parse_nodes_file()
 
   svr_totnodes = 0;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* clear out line so we don't have residual data if there is no LF */
   memset(line, 0, sizeof(line));
 
@@ -2517,7 +2512,7 @@ int parse_nodes_file()
       }
     }  /* END for (linenum) */
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (login_node_count() == 0)
       {
@@ -2555,7 +2550,6 @@ int setup_nodes(void)
   int                num;
   int                err;
   char               line[MAXLINE << 4];
-  long cray_enabled = FALSE;
 
   struct pbsnode    *np;
 
@@ -2566,8 +2560,6 @@ int setup_nodes(void)
   if ((err = parse_nodes_file()) != PBSE_NONE)
     return(err);
     
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   nin = fopen(path_nodestate, "r");
 
   if (nin != NULL)
@@ -3311,8 +3303,6 @@ struct pbsnode *next_node(
     } /* END first iteration */
   else
     {
-    long cray_enabled = FALSE;
-
     /* if current is a numa subnode, go back to the parent */
     if ((iter->numa_index >= 0) ||
         (iter->alps_index !=  NULL))
@@ -3328,10 +3318,8 @@ struct pbsnode *next_node(
       current = tmp;
       }
 
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
     /* move to the next host or get my next node board? */
-    if (cray_enabled == TRUE)
+    if (cray_enabled == true)
       {
       if (current->nd_is_alps_reporter == TRUE)
         {

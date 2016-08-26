@@ -182,14 +182,14 @@ int mgr_modify_node(
   pbs_attribute   *new_attr;
   pbs_attribute   *unused = NULL;
   pbs_attribute   *pnew;
-  long             dont_update_nodes = FALSE;
+  bool             dont_update_nodes = false;
 
   if (plist == NULL)
     {
     return(0);  /* nothing to do, return success */
     }
   
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
 
   /* Get heap space for a temporary node-pbs_attribute array and use the
    * various "node-attribute action" functions defined in the file

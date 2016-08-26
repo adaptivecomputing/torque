@@ -313,6 +313,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int is_svr_attr_set(int index)
   {
   return(0);

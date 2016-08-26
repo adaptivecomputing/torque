@@ -203,6 +203,14 @@ int attr_to_str(
 
   switch (at_def->at_type)
     {
+
+    case ATR_TYPE_BOOL:
+     
+      snprintf(local_buf, sizeof(local_buf), attr.at_val.at_bool ? "true" : "false");
+      ds += local_buf;
+      
+      break;
+
     case ATR_TYPE_LONG:
 
       snprintf(local_buf, sizeof(local_buf), "%ld", attr.at_val.at_long);

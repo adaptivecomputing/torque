@@ -132,6 +132,7 @@
 #include "req_runjob.h"
 #include "mutex_mgr.hpp"
 #include "id_map.hpp"
+#include "policy_values.h"
 
 
 /* External Functions Called: */
@@ -456,11 +457,11 @@ int get_job_id(
     {
     /* Create a job id */
     char  host_server[PBS_MAXSERVERNAME + 1]; 
-    long  server_suffix = TRUE;
+    bool  server_suffix = true;
 
     created_here = JOB_SVFLG_HERE;
 
-    get_svr_attr_l(SRV_ATR_display_job_server_suffix, &server_suffix);
+    get_svr_attr_b(SRV_ATR_display_job_server_suffix, &server_suffix);
 
     lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
@@ -708,9 +709,9 @@ int decode_attributes_into_job(
   int          attr_index;
   int          rc = PBSE_NONE;
   // default is pass the cpu
-  long         passCpu = 1;
+  bool         passCpu = true;
   
-  get_svr_attr_l(SRV_ATR_pass_cpu_clock,&passCpu);
+  get_svr_attr_b(SRV_ATR_pass_cpu_clock,&passCpu);
 
   psatl = (svrattrl *)GET_NEXT(preq->rq_ind.rq_queuejob.rq_attr);
 
@@ -2540,21 +2541,19 @@ int set_interactive_job_roaming_policy(
   job *pjob)
 
   {
-  long            interactive_roaming = FALSE;
-  long            cray_enabled = FALSE;
+  bool            interactive_roaming = false;
   struct pbsnode *pnode;
   char           *dot;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   int             rc = PBSE_NONE;
   
-  get_svr_attr_l(SRV_ATR_InteractiveJobsCanRoam, &interactive_roaming);
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+  get_svr_attr_b(SRV_ATR_InteractiveJobsCanRoam, &interactive_roaming);
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       {
-      if (interactive_roaming == FALSE)
+      if (interactive_roaming == false)
         {
         char *submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
         if ((pnode = find_nodebyname(submit_node_id)) == NULL)

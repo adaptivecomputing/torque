@@ -100,3 +100,8 @@ int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with)
   }
 
 void log_err(int errnum, const char *routine, const char *text) {}
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }

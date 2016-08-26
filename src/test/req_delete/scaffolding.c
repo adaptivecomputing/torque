@@ -217,6 +217,16 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (nanny)
+    *b = true;
+  else if (index == SRV_ATR_JobNanny)
+    *b = server.sv_attr[index].at_val.at_bool;
+
+  return(0);
+  }
+
 batch_request *get_remove_batch_request(
 
   char *br_id)

@@ -134,6 +134,7 @@
 #include "mutex_mgr.hpp"
 #include "timer.hpp"
 #include "id_map.hpp"
+#include "policy_values.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
@@ -526,11 +527,8 @@ bool node_in_exechostlist(
   char *cur_pos = node_ehl;
   char *new_pos = cur_pos;
   int   name_len = strlen(node_name);
-  long  cray_enabled = FALSE;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if ((login_node_name != NULL) &&
         (!strcmp(login_node_name, node_name)))
@@ -1376,10 +1374,8 @@ void *write_node_state_work(
   struct pbsnode *np = NULL;
   static char    *fmt = (char *)"%s %d\n";
   static FILE    *nstatef = NULL;
-  long            cray_enabled = FALSE;
   int             savemask;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   pthread_mutex_lock(node_state_mutex);
 
   if (LOGLEVEL >= 5)
@@ -1422,7 +1418,7 @@ void *write_node_state_work(
   ** The only state that carries forward is if the
   ** node has been marked offline.
   */
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     node_iterator   iter;
     reinitialize_node_iterator(&iter);
@@ -1929,13 +1925,10 @@ static int property(
   char        *dest = *prop;
   int          i = 0;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  long         cray_enabled = FALSE;
-
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   if (!isalpha(*str))
     {
-    if ((cray_enabled == FALSE) ||
+    if ((cray_enabled == false) ||
         (is_compute_node(str) == FALSE))
       {
       sprintf(log_buf, "first character of property (%s) not a letter", str);
@@ -2293,16 +2286,13 @@ int parse_req_data(
   {
   int               i;
   int               j = 0;
-  long              cray_enabled = FALSE;
-
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   all_reqs.total_nodes = 0;
 
   for (i = 0; i < all_reqs.num_reqs; i++)
     {
     single_spec_data &req = all_reqs.reqs[i];
 
-    if ((cray_enabled == FALSE) ||
+    if ((cray_enabled == false) ||
         (is_compute_node(all_reqs.req_start[i]) == FALSE))
       {
       if ((j = number(&(all_reqs.req_start[i]), &(req.nodes))) == -1)
@@ -3067,7 +3057,6 @@ int node_spec(
   complete_spec_data   all_reqs;
   char                *spec;
   char                *plus;
-  long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
 
   FUNCTION_TIMER
@@ -3091,7 +3080,6 @@ int node_spec(
 
   set_first_node_name(spec_param, first_node_name);
   first_node_id = node_mapper.get_id(first_node_name);
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   spec = strdup(spec_param);
 
@@ -3987,7 +3975,6 @@ void update_req_hostlist(
   int         ppn_needed)
 
   {
-  long          cray_enabled = FALSE;
   complete_req *cr;
   char          host_spec[MAXLINE];
   long          legacy_vmem = FALSE;
@@ -4005,10 +3992,8 @@ void update_req_hostlist(
     {
     cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
     }
-  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     // In cray enabled mode, only create this information for the login node
     // which will have req_index 0.
@@ -4072,7 +4057,7 @@ int place_subnodes_in_hostlist(
 
     bool job_exclusive_on_use = false;
     if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool == true))
       job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
@@ -4083,8 +4068,8 @@ int place_subnodes_in_hostlist(
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
-    long              legacy_vmem = FALSE;
-    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
+    bool              legacy_vmem = false;
+    get_svr_attr_b(SRV_ATR_LegacyVmem, &legacy_vmem);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout.is_initialized() == false)
@@ -4092,7 +4077,7 @@ int place_subnodes_in_hostlist(
 
     update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed);
 
-    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), (bool)legacy_vmem);
+    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), legacy_vmem);
     if (rc != PBSE_NONE)
       return(rc);
 
@@ -4780,7 +4765,6 @@ int set_nodes(
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   alps_req_data     *ard_array = NULL;
   int                num_reqs = 0;
-  long               cray_enabled = FALSE; 
   enum job_types     job_type;
 
   int gpu_flags = 0;
@@ -4857,8 +4841,7 @@ int set_nodes(
     return(PBSE_UNKNODE);
     }
  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     // JOB_TYPE_normal means no component from the Cray will be used
     if ((job_type != JOB_TYPE_normal) && 
@@ -5695,7 +5678,6 @@ int set_one_old(
   struct pbsnode *pnode;
   char           *pc;
   char           *dash;
-  long            cray_enabled = FALSE;
 
   if ((pc = strchr(name, (int)'/')))
     {
@@ -5714,11 +5696,9 @@ int set_one_old(
     last = first;
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   pnode = find_nodebyname(name);
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (pnode == NULL)
       pnode = get_compute_node(name);
@@ -5801,7 +5781,6 @@ int set_old_nodes(
   {
   char     *old;
   char     *po;
-  long      cray_enabled = FALSE;
   int       rc = PBSE_NONE;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
@@ -5834,8 +5813,7 @@ int set_old_nodes(
     } /* END if pjobs exec host is set */
 
   /* record the job on the alps_login if cray_enabled */
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
     rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);

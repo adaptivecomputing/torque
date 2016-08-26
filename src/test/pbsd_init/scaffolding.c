@@ -488,6 +488,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int get_parent_and_child(char *start, char **parent, char **child, char **end)
   {
   return(0);

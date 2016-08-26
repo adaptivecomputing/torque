@@ -40,6 +40,7 @@ bool jobfile_fail = false;
 bool rdycommit_fail = false;
 int  retry;
 bool connect_fail = false;
+bool cray_enabled = false;
 
 mom_hierarchy_handler hierarchy_handler;
 std::string global_string;
@@ -447,6 +448,11 @@ char *pbs_geterrmsg(int con)
   }
 
 int get_svr_attr_l(int index, long *val)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

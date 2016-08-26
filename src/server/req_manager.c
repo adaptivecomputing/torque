@@ -1722,9 +1722,9 @@ void mgr_node_set(
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
   prop              props;
-  long              dont_update_nodes = FALSE;
+  bool              dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
@@ -2108,10 +2108,10 @@ static void mgr_node_delete(
   svrattrl       *plist;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  long            dont_update_nodes = FALSE;
+  bool            dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == true)
     {
     req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
     return;
@@ -2259,10 +2259,10 @@ void mgr_node_create(
   int       bad;
   svrattrl *plist;
   int       rc;
-  long      dont_update_nodes = FALSE;
+  bool      dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == true)
     {
     req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
     return;

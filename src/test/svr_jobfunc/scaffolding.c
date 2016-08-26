@@ -23,6 +23,7 @@
 
 all_nodes               allnodes;
 bool possible = false;
+bool cray_enabled = false;
 
 
 bool exit_called = false;
@@ -358,6 +359,11 @@ int get_jobs_index(all_jobs *aj, struct job *pjob)
   }
 
 int get_svr_attr_l(int attr_index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

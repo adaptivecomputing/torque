@@ -1579,6 +1579,11 @@ void req_modifyjob(
         if (newattr[i].at_val.at_str != NULL)
           snprintf(tmpLine, sizeof(tmpLine), "%s", newattr[i].at_val.at_str);
         }
+      else if (newattr[i].at_type == ATR_TYPE_BOOL)
+        {
+        sprintf(tmpLine, newattr[i].at_type ? 
+                "true" : "false");
+        }
       else if (newattr[i].at_type == ATR_TYPE_LONG)
         {
         sprintf(tmpLine, "%ld",

@@ -291,6 +291,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 pbs_queue *get_jobs_queue(job **pjob)
   {
   return((*pjob)->ji_qhdr);

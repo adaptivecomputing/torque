@@ -43,6 +43,7 @@ pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 threadpool_t    *task_pool;
 bool ghost_array_recovery = false;
+bool cray_enabled = false;
 
 completed_jobs_map_class completed_jobs_map;
 

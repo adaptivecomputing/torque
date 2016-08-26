@@ -104,6 +104,7 @@
 #include "mutex_mgr.hpp"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* get_svr_attr_* */
+#include "policy_values.h"
 
 
 /* Private Function local to this file */
@@ -657,11 +658,8 @@ int finalize_rerunjob(
         int           newsubst;
         unsigned int  dummy;
         char         *tmp;
-        long          cray_enabled = FALSE;
-       
-        get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-        if ((cray_enabled == TRUE) &&
+        if ((cray_enabled == true) &&
             (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
           tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
         else

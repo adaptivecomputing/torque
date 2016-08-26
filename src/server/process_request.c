@@ -303,9 +303,9 @@ bool request_passes_acl_check(
   unsigned long  conn_addr)
   
   {
-  long acl_enable = FALSE;
+  bool acl_enable = false;
 
-  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
+  get_svr_attr_b(SRV_ATR_acl_host_enable, &acl_enable);
   if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */

@@ -21,7 +21,7 @@
 void write_compute_node_properties(struct pbsnode &reporter, FILE *nin);
 void add_to_property_list(std::string &property_list, const char *token);
 int login_encode_jobs(struct pbsnode *pnode, tlist_head *phead);
-int cray_enabled;
+extern bool cray_enabled;
 int read_val_and_advance(int *val, const char **str);
 char *parse_node_token(char **start, int flags, int *err, char *term);
 int add_node_attribute_to_list(char *token, char **line_ptr, tlist_head *atrlist_ptr, int linenum);
@@ -393,7 +393,7 @@ START_TEST(find_nodebyname_test)
   initialize_allnodes(&allnodes, &node1, &node2);
   initialize_allnodes(alps_reporter->alps_subnodes, &node1, &node2);
 
-  cray_enabled = FALSE;
+  cray_enabled = false;
 
   pnode = find_nodebyname(NULL);
   fail_unless(pnode == NULL, "NULL nodename input fail");
@@ -428,17 +428,17 @@ START_TEST(find_nodebyname_test)
   allnodes.clear();
   allnodes.unlock();
 
-  cray_enabled = TRUE;
+  cray_enabled = true;
 
   pnode = find_nodebyname("tom");
   fail_unless(pnode == &node2, "couldn't find tom?");
 
-  cray_enabled = TRUE;
+  cray_enabled = true;
 
   pnode = find_nodebyname("bob");
   fail_unless(pnode == &node1, "couldn't find bob?");
 
-  cray_enabled = TRUE;
+  cray_enabled = true;
 
   pnode = find_nodebyname("george");
   fail_unless(pnode == NULL, "george found but doesn't exist");
