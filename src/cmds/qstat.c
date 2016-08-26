@@ -2075,6 +2075,7 @@ void print_req_information(
   mxml_t       *JE)
 
   {
+  mxml_t      *RE;
   std::string  out;
   char         buf[100];
   char         name[1024];
@@ -2104,9 +2105,9 @@ void print_req_information(
     }
   else
     {
-    //MXMLCreateE(&RE, name);
-    //MXMLAddE(JE, RE);
-    add_xml_resource(JE, "cpu_list", out.c_str());
+    MXMLCreateE(&RE, name);
+    MXMLAddE(JE, RE);
+    add_xml_resource(RE, "cpu_list", out.c_str());
     }
     
   translate_vector_to_range_string(out, a.mem_indices);
@@ -2116,7 +2117,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(JE, "mem_list", out.c_str());
+    add_xml_resource(RE, "mem_list", out.c_str());
     
   if (a.task_cput_used != 0)
     {
@@ -2128,7 +2129,7 @@ void print_req_information(
       printf("\n");
       }
     else
-      add_xml_resource(JE, "cpu_time_used", buf);
+      add_xml_resource(RE, "cpu_time_used", buf);
     }
     
   if (a.task_memory_used != 0)
@@ -2145,7 +2146,7 @@ void print_req_information(
       printf("\n");
       }
     else
-      add_xml_resource(JE, "memory_used", buf);
+      add_xml_resource(RE, "memory_used", buf);
     }
     
   sprintf(buf, "%d", a.cores);
@@ -2155,7 +2156,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(JE, "cores", buf);
+    add_xml_resource(RE, "cores", buf);
     
   sprintf(buf, "%d", a.threads);
   if (JE == NULL)
@@ -2164,7 +2165,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(JE, "threads", buf);
+    add_xml_resource(RE, "threads", buf);
 
   if (JE == NULL)
     {
@@ -2172,7 +2173,7 @@ void print_req_information(
     printf("\n");
     }
   else
-    add_xml_resource(JE, "host", a.hostname.c_str());
+    add_xml_resource(RE, "host", a.hostname.c_str());
 
   } // END print_req_information()
 
