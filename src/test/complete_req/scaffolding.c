@@ -221,6 +221,63 @@ void *get_next(
       r->rs_value.at_val.at_size.atsv_shift = 10;
       break;
 
+    case 22:
+
+      r = NULL;
+      break;
+
+    case 23:
+
+      rd.rs_name = strdup("procs");
+      r->rs_value.at_val.at_long = 1;
+      break;
+
+    case 24:
+
+      rd.rs_name = strdup("mem");
+      r->rs_value.at_val.at_size.atsv_num = 4096;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 25:
+
+      rd.rs_name = strdup("pmem");
+      r->rs_value.at_val.at_size.atsv_num = 5;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 26:
+
+      rd.rs_name = strdup("vmem");
+      r->rs_value.at_val.at_size.atsv_num = 8192;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+    
+    case 27:
+
+      r = NULL;
+      break;
+
+    case 28:
+
+      rd.rs_name = strdup("procs");
+      r->rs_value.at_val.at_long = 1;
+      break;
+
+    case 29:
+
+      rd.rs_name = strdup("mem");
+      r->rs_value.at_val.at_size.atsv_num = 100;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
+    case 30:
+
+      rd.rs_name = strdup("pmem");
+      r->rs_value.at_val.at_size.atsv_num = 5000;
+      r->rs_value.at_val.at_size.atsv_shift = 10;
+      break;
+
     default:
 
       r = NULL;

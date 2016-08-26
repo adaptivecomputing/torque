@@ -11,14 +11,17 @@ extern int called_log_event;
 START_TEST(test_set_value_from_nodes)
   {
   complete_req c;
+  int          task_count;
 
   // Make sure this doesn't segfault
-  c.set_value_from_nodes(NULL);
-  c.set_value_from_nodes("4");
+  c.set_value_from_nodes(NULL, task_count);
+  c.set_value_from_nodes("4", task_count);
+  fail_unless(task_count == 4);
   fail_unless(c.req_count() == 1);
 
   complete_req c2;
-  c2.set_value_from_nodes("bob+tim");
+  c2.set_value_from_nodes("bob+tim", task_count);
+  fail_unless(task_count == 2);
   fail_unless(c2.req_count() == 2);
   }
 END_TEST
@@ -141,6 +144,20 @@ START_TEST(test_constructor)
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
   fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+
+  // Make sure that we'll set memory to the higher of pmem and mem, and set swap
+  // as well for the same job
+  complete_req list8(h, 1, false);
+  fail_unless(list8.req_count() == 1);
+  const req &rl8 = list8.get_req(0);
+  fail_unless(rl8.getTaskCount() == 1);
+  fail_unless(rl8.getMemory() == 4096);
+  fail_unless(rl8.getSwap() == 8192);
+
+  complete_req list9(h, 1, false);
+  fail_unless(list9.req_count() == 1);
+  const req &rl9 = list9.get_req(0);
+  fail_unless(rl9.getMemory() == 5000);
   gn_count = old_gn_count;
 
   }
