@@ -65,11 +65,12 @@ complete_req::complete_req(
   resource           *pr = (resource *)GET_NEXT(resources);
   int                 task_count = 0;
   int                 execution_slots = 0;
-  std::string         mem_type;
-  unsigned long long  swap = 0;
-  unsigned long long  mem = 0;
-  bool                per_task_mem = false;
-  bool                per_task_vmem = false;
+  unsigned long long  mem_values[4];
+  int                 active_index[2];
+
+  active_index[0] = _MEM_;
+  active_index[1] = _VMEM_;
+  memset(mem_values, 0, sizeof(mem_values));
 
   while (pr != NULL)
     {
@@ -89,80 +90,75 @@ complete_req::complete_req(
       execution_slots = pr->rs_value.at_val.at_long;
       }
     else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")))
-      {
-      // pmem is per task
-      if (pr->rs_defin->rs_name[0] == 'p')
-        per_task_mem = true;
-
-      mem_type = pr->rs_defin->rs_name;
-      mem = pr->rs_value.at_val.at_size.atsv_num;
-      int shift = pr->rs_value.at_val.at_size.atsv_shift;
-
-      if (shift == 0)
-        {
-        // -l used in submission so convert
-        //   bytes to kb
-        mem /= 1024;
-        }
-      else    
-        {
-        // Convert to kb
-        while (shift > 10) 
-          {
-          mem *= 1024;
-          shift -= 10;  
-          }
-        }
-      }
-    else if ((!strcmp(pr->rs_defin->rs_name, "vmem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
+             (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
              (!strcmp(pr->rs_defin->rs_name, "pvmem")))
       {
-      // pvmem is per task
-      if (pr->rs_defin->rs_name[0] == 'p')
-        per_task_vmem = true;
+      int index;
 
-      mem_type = pr->rs_defin->rs_name;
-      swap = pr->rs_value.at_val.at_size.atsv_num;
+      // pmem is per task
+      if (pr->rs_defin->rs_name[0] == 'm')
+        index = _MEM_;
+      else if (pr->rs_defin->rs_name[0] == 'v')
+        index = _VMEM_;
+      else
+        {
+        // It is either pmem or pvmem at this point
+        if (pr->rs_defin->rs_name[1] == 'm')
+          index = _PMEM_;
+        else
+          index = _PVMEM_;
+        }
+
+      // Make sure that we take mem over 
+      mem_values[index] = pr->rs_value.at_val.at_size.atsv_num;
       int shift = pr->rs_value.at_val.at_size.atsv_shift;
 
       if (shift == 0)
         {
         // -l used in submission so convert
         //   bytes to kb
-        swap /= 1024;
+        mem_values[index] /= 1024;
         }
       else    
         {
         // Convert to kb
         while (shift > 10) 
           {
-          swap *= 1024;
+          mem_values[index] *= 1024;
           shift -= 10;  
           }
         }
       }
 
-
     pr = (resource *)GET_NEXT(pr->rs_link);
+    }
+
+  // Set mem and swap from mem_values
+  unsigned long long mem = mem_values[_MEM_];
+  if ((legacy_vmem == false) &&
+      (task_count != 0))
+    mem /= task_count;
+  if (mem_values[_PMEM_] > mem)
+    {
+    active_index[0] = _PMEM_;
+    mem = mem_values[_PMEM_];
+    }
+
+  unsigned long long vmem = mem_values[_VMEM_];
+  if ((legacy_vmem == false) &&
+      (task_count != 0))
+    vmem /= task_count;
+  if (mem_values[_PVMEM_] > vmem)
+    {
+    active_index[1] = _PVMEM_;
+    vmem = mem_values[_PVMEM_];
     }
  
   if (this->reqs.size() == 0)
     {
     // Handle the case where no -lnodes request was made
     // Distribute the memory across the tasks as -l memory is per job
-    if (legacy_vmem == false)
-      {
-      if (task_count > 1)
-        {
-        if (per_task_mem == false)
-          mem /= task_count;
-
-        if (per_task_vmem == false)
-          swap /= task_count;
-        }
-      }
-    
     req r;
     if (task_count != 0)
       {
@@ -171,95 +167,97 @@ complete_req::complete_req(
       }
 
     r.set_memory(mem);
-    r.set_swap(swap);
+    r.set_swap(vmem);
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
 
     this->add_req(r);
     }
-  else if (mem != 0)
+  else
     {
     // Handle the case where a -lnodes request was made
-
-    if (mem_type == "mem")
+    if (mem != 0)
       {
-      unsigned long long mem_per_task = mem;
-      int                total_tasks = 0;
-
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        total_tasks += this->reqs[i].getTaskCount();
-
-      if (total_tasks != 0)
-        mem_per_task = mem / total_tasks;
-      else
-        mem_per_task = mem;
-
-
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
+      if (active_index[0] == _MEM_)
         {
-        req &r = this->reqs[i];
-        r.set_memory(mem_per_task);
-        r.set_swap(0);
-        }
-      }
-    else if (mem_type == "pmem")
-      {
-      unsigned long long mem_per_process = mem;
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        {
-        req &r = this->reqs[i];
-        int ppn_per_req = r.get_execution_slots();
+        unsigned long long mem_per_task = mem;
+        int                total_tasks = 0;
 
-        r.set_memory(mem_per_process * ppn_per_req);
-        r.set_swap(0);
-        }
-      }
-    }
-  else if (swap != 0)
-    {
-    if (mem_type == "vmem")
-      {
-      unsigned long long mem_per_task;
-      int                total_tasks = 0;
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          total_tasks += this->reqs[i].getTaskCount();
 
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        total_tasks += this->reqs[i].getTaskCount();
-
-      if (legacy_vmem == true)
-        {
-        /* legacy_vmem true we set vmem per task/node */
-        mem_per_task = swap;
-        }
-      else
-        {
         if (total_tasks != 0)
-          mem_per_task = swap / total_tasks;
+          mem_per_task = mem / total_tasks;
         else
-          mem_per_task = swap;
+          mem_per_task = mem;
+
+
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          r.set_memory(mem_per_task);
+          r.set_swap(0);
+          }
         }
-        
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
+      else if (active_index[0] == _PMEM_)
         {
-        req &r = this->reqs[i];
-        r.set_swap(mem_per_task);
-        r.set_memory(0);
+        unsigned long long mem_per_process = mem;
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          int ppn_per_req = r.get_execution_slots();
+
+          r.set_memory(mem_per_process * ppn_per_req);
+          r.set_swap(0);
+          }
         }
       }
-    else if (mem_type == "pvmem")
-      {
-      unsigned long long mem_per_process = swap;
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        {
-        req &r = this->reqs[i];
-        int ppn_per_req = r.get_execution_slots();
 
-        r.set_swap(mem_per_process * ppn_per_req);
-        r.set_memory(0);
+    if (vmem != 0)
+      {
+      if (active_index[1] == _VMEM_)
+        {
+        unsigned long long mem_per_task;
+        int                total_tasks = 0;
+
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          total_tasks += this->reqs[i].getTaskCount();
+
+        if (legacy_vmem == true)
+          {
+          /* legacy_vmem true we set vmem per task/node */
+          mem_per_task = vmem;
+          }
+        else
+          {
+          if (total_tasks != 0)
+            mem_per_task = vmem / total_tasks;
+          else
+            mem_per_task = vmem;
+          }
+          
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          r.set_swap(mem_per_task);
+          r.set_memory(0);
+          }
+        }
+      else if (active_index[1] == _PVMEM_)
+        {
+        unsigned long long mem_per_process = vmem;
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          int ppn_per_req = r.get_execution_slots();
+
+          r.set_swap(mem_per_process * ppn_per_req);
+          r.set_memory(0);
+          }
         }
       }
     }
-
   } // END constructor from resource list
 
 

@@ -86,6 +86,11 @@
 
 #include "req.hpp"
 
+#define _MEM_   0
+#define _PMEM_  1
+#define _VMEM_  2
+#define _PVMEM_ 3
+
 
 class complete_req
   {

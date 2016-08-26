@@ -141,6 +141,20 @@ START_TEST(test_constructor)
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
   fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+
+  // Make sure that we'll set memory to the higher of pmem and mem, and set swap
+  // as well for the same job
+  complete_req list8(h, false);
+  fail_unless(list8.req_count() == 1);
+  const req &rl8 = list8.get_req(0);
+  fail_unless(rl8.getTaskCount() == 1);
+  fail_unless(rl8.getMemory() == 4096);
+  fail_unless(rl8.getSwap() == 8192);
+
+  complete_req list9(h, false);
+  fail_unless(list9.req_count() == 1);
+  const req &rl9 = list9.get_req(0);
+  fail_unless(rl9.getMemory() == 5000);
   gn_count = old_gn_count;
 
   }
