@@ -268,7 +268,6 @@ struct pbsnode *find_nodebyname(
   struct pbsnode *numa  = NULL;
 
   int             numa_index;
-  bool            cray_enabled = false;
 
   if (nodename == NULL)
     {
@@ -288,7 +287,6 @@ struct pbsnode *find_nodebyname(
     }
   else
     {
-    get_svr_attr_b(SRV_ATR_CrayEnabled, &cray_enabled);
     if (cray_enabled == true)
       {
       if (alps_reporter != NULL)
@@ -1175,7 +1173,7 @@ int update_nodes_file(
 
   while ((np = next_host(&allnodes,&iter,held)) != NULL)
     {
-    np->write_to_nodes_file(nin, cray_enabled);
+    np->write_to_nodes_file(nin);
 
     fflush(nin);
 
@@ -1975,12 +1973,11 @@ void add_to_property_list(
 /*
  * load_node_notes()
  *
- * @param cray_enabled - 1 if Cray, 0 otherwise
+ * Loads the notes for each node
+ *
  */
 
-void load_node_notes(
-    
-  bool cray_enabled)
+void load_node_notes()
 
   {
   std::string     line;
@@ -2004,7 +2001,7 @@ void load_node_notes(
       pnode = find_nodebyname(node_name.c_str());
 
       if ((pnode == NULL) &&
-          (cray_enabled == TRUE) &&
+          (cray_enabled == true) &&
           (isdigit(node_name.at(0))))
         {
         pnode = create_alps_subnode(alps_reporter, node_name.c_str());
@@ -2231,7 +2228,6 @@ int create_node_range(
 void handle_cray_specific_node_values(
     
   char     *nodename,
-  bool      cray_enabled,
   bool      is_alps_reporter,
   bool      is_alps_starter,
   bool      is_alps_compute,
@@ -2297,8 +2293,7 @@ char *parse_node_name(
 
   char **ptr,
   int   &err,
-  int    linenum,
-  bool   cray_enabled)
+  int    linenum)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2344,8 +2339,7 @@ int parse_line_in_nodes_file(
     
   char *line,
   int   line_size,
-  int   linenum,
-  bool  cray_enabled)
+  int   linenum)
 
   {
   if (line[0] == '#') /* comment */
@@ -2371,7 +2365,7 @@ int parse_line_in_nodes_file(
 
   CLEAR_HEAD(atrlist);
 
-  nodename = parse_node_name(&ptr, err, linenum, cray_enabled);
+  nodename = parse_node_name(&ptr, err, linenum);
 
   if (err != PBSE_NONE)
     return(-1);
@@ -2446,7 +2440,7 @@ int parse_line_in_nodes_file(
     return(PBSE_NONE);
     }
 
-  handle_cray_specific_node_values(nodename, cray_enabled, is_alps_reporter, is_alps_starter, is_alps_compute, pal);
+  handle_cray_specific_node_values(nodename, is_alps_reporter, is_alps_starter, is_alps_compute, pal);
 
   if (LOGLEVEL >= 3)
     {
@@ -2503,7 +2497,7 @@ int parse_nodes_file()
 
   for (int linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
-    int err = parse_line_in_nodes_file(line, sizeof(line), linenum, cray_enabled);
+    int err = parse_line_in_nodes_file(line, sizeof(line), linenum);
 
     if (err != PBSE_NONE)
       {
@@ -2619,7 +2613,7 @@ int setup_nodes(void)
     fclose(nin);
     }
 
-  load_node_notes(cray_enabled);
+  load_node_notes();
 
   /* SUCCESS */
 

@@ -634,6 +634,16 @@ int str_to_attr(
     case ATR_TYPE_JINFOP:
 
       break;
+
+    case ATR_TYPE_BOOL:
+
+      if ((val[0] == 'T') ||
+          (val[0] == 't'))
+        attr[index].at_val.at_bool = true;
+      else
+        attr[index].at_val.at_bool = false;
+
+      break;
     } /* END switch (pbs_attribute type) */
 
   attr[index].at_flags |= ATR_VFLAG_SET;

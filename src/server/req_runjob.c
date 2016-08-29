@@ -2269,7 +2269,7 @@ int assign_hosts(
     
     free(tmp);
 
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
       {
       split_job(pjob);

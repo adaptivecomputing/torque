@@ -1841,11 +1841,12 @@ int chk_svr_resc_limit(
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
-    if(alps_reporter != NULL)
+    if (alps_reporter != NULL)
       {
       alps_reporter->alps_subnodes->unlock();
       }
-    if (cray_enabled == TRUE)
+
+    if (cray_enabled == true)
       {
       if (mppnodect_resource != NULL)
         {

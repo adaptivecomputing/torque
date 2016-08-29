@@ -4912,7 +4912,7 @@ int set_nodes(
   *rtnportlist = strdup(exec_ports.str().c_str());
 
   // JOB_TYPE_normal means no component from the Cray will be used
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (job_type != JOB_TYPE_normal))
     {
     char *plus = strchr(*rtnlist, '+');

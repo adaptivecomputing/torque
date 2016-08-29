@@ -317,7 +317,7 @@ public:
   const char *get_name() const;
   bool        hasprop(std::vector<prop> *props) const;
   void        write_compute_node_properties(FILE *nin) const;
-  void        write_to_nodes_file(FILE *nin, bool cray_enabled) const;
+  void        write_to_nodes_file(FILE *nin) const;
   int         copy_properties(pbsnode *dest) const;
   int         get_version() const;
 

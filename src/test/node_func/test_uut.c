@@ -27,9 +27,9 @@ char *parse_node_token(char **start, int flags, int *err, char *term);
 int add_node_attribute_to_list(char *token, char **line_ptr, tlist_head *atrlist_ptr, int linenum);
 void add_node_property(std::string &propstr, const char *token, bool &is_alps_starter, bool &is_alps_reporter, bool &is_alps_compute);
 int record_node_property_list(std::string const &propstr, tlist_head *atrlist_ptr);
-void handle_cray_specific_node_values(char *nodename, bool cray_enabled, bool is_alps_reporter, bool is_alps_starter, bool is_alps_compute, svrattrl *pal);
-char *parse_node_name(char **ptr, int &err, int linenum, bool cray_enabled);
-void load_node_notes(bool cray_enabled);
+void handle_cray_specific_node_values(char *nodename, bool is_alps_reporter, bool is_alps_starter, bool is_alps_compute, svrattrl *pal);
+char *parse_node_name(char **ptr, int &err, int linenum);
+void load_node_notes();
 
 void attrlist_free();
 
@@ -126,11 +126,13 @@ START_TEST(handle_cray_specific_node_values_test)
   created_subnode = 0;
 
   // nothing should happen if cray_enabled == false
-  handle_cray_specific_node_values(NULL, false, false, false, true, NULL);
+  cray_enabled = false;
+  handle_cray_specific_node_values(NULL, false, false, true, NULL);
   fail_unless(created_subnode == 0);
 
   // should create subnode with cray enabled and is_alps_compute set to true
-  handle_cray_specific_node_values(NULL, true, false, false, true, NULL);
+  cray_enabled = true;
+  handle_cray_specific_node_values(NULL, false, false, true, NULL);
   fail_unless(created_subnode == 1);
   }
 END_TEST
@@ -146,26 +148,28 @@ START_TEST(parse_node_name_test)
   // invalid characters should fail
   sprintf(line, "*$!@!@");
   ptr = line;
-  fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
+  cray_enabled = false;
+  fail_unless(parse_node_name(&ptr, err, 1) == NULL);
   fail_unless(err != PBSE_NONE);
   
   err = PBSE_NONE;
   sprintf(line, "napali");
   ptr = line;
-  fail_unless((hostname = parse_node_name(&ptr, err, 1, false)) != NULL);
+  fail_unless((hostname = parse_node_name(&ptr, err, 1)) != NULL);
   fail_unless(err == PBSE_NONE);
   fail_unless(!strcmp(hostname, "napali"));
   
   err = PBSE_NONE;
   sprintf(line, "1napali");
   ptr = line;
-  fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
+  fail_unless(parse_node_name(&ptr, err, 1) == NULL);
   fail_unless(err != PBSE_NONE);
   
   err = PBSE_NONE;
   sprintf(line, "1214");
   ptr = line;
-  fail_unless((hostname = parse_node_name(&ptr, err, 1, true)) != NULL);
+  cray_enabled = true;
+  fail_unless((hostname = parse_node_name(&ptr, err, 1)) != NULL);
   fail_unless(err == PBSE_NONE);
   fail_unless(!strcmp(hostname, "1214"));
   }
@@ -243,7 +247,7 @@ START_TEST(test_load_node_notes)
   allnodes.insert(&node3, node3.get_name());
   allnodes.insert(&node4, node4.get_name());
 
-  load_node_notes(FALSE);
+  load_node_notes();
   fail_unless(strstr(node1.nd_note.c_str(), "1-minute load average too high") != NULL);
   fail_unless(node2.nd_note == "cloning issues");
   fail_unless(strstr(node3.nd_note.c_str(), "Health check failed:") != NULL);
