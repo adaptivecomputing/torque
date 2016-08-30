@@ -2226,7 +2226,10 @@ void create_full_job_xml(
       else if (!strcmp(attribute->name, ATTR_dcgm_gpu_use) && 
          (!strcmp(attribute->resource, "summary") || (!strncmp(attribute->resource, "GPU:", 4))))
         {
-        print_dcgm_gpu_use(attribute, RE1);
+        continue;
+        // For now we are not going to print the dcgm output to the xml format. It is already being
+        // printed to JSON format using the -g option.
+        //print_dcgm_gpu_use(attribute, RE1);
         }
 #endif
       else
