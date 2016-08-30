@@ -2333,7 +2333,8 @@ void display_full_job(
 #ifdef NVIDIA_DCGM
   else
     {
-    printf("{  \"Job_Id\": \"%s\",\n", p->name);
+    bool add_Job_Id_comma = true;
+    printf("{  \"Job_Id\": \"%s\"", p->name);
     for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
       {
       bool add_comma = true;
@@ -2342,7 +2343,15 @@ void display_full_job(
         add_comma = false;
 
       if (!strcmp(attribute->name, ATTR_dcgm_gpu_use))
+        {
+        if (add_Job_Id_comma == true)
+          {
+          printf(",\n");
+          add_Job_Id_comma = false;
+          }
+
         print_json_dcgm_gpu_use(attribute, add_comma);
+        }
       }
     
     printf("}\n");
