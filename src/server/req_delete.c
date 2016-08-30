@@ -891,6 +891,11 @@ batch_request *duplicate_request(
         preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
 
       break;
+
+    case PBS_BATCH_Rerun:
+
+      strcpy(preq_tmp->rq_ind.rq_rerun, preq->rq_ind.rq_rerun);
+      break;
       
     default:
 

@@ -120,6 +120,12 @@ START_TEST(test_duplicate_request)
   fail_unless(!strcmp(dup->rq_host, "napali"));
   fail_unless(!strcmp(dup->rq_extend, "tom"));
   fail_unless(!strcmp(dup->rq_ind.rq_run.rq_destin, "napali"));
+
+  preq->rq_type = PBS_BATCH_Rerun;
+  const char *rerun_jobid = "4.roshar";
+  strcpy(preq->rq_ind.rq_rerun, rerun_jobid);
+  batch_request *rerun_dep = duplicate_request(preq, -1);
+  fail_unless(!strcmp(rerun_dep->rq_ind.rq_rerun, rerun_jobid));
   }
 END_TEST 
 
