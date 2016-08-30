@@ -532,7 +532,7 @@ int req_rerunjob(
       if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
         {
         std::string extend = RERUNFORCE;
-        rc = issue_signal(&pjob, "SIGTERM", post_rerun, extra, strdup(extend.c_str()));
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
         if (rc == PBSE_NORELYMOM)
           rc = PBSE_NONE;
         }
