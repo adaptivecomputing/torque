@@ -164,3 +164,12 @@ job *next_job(
   pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   return(pjob);
   }
+
+batch_request *duplicate_request(
+
+  batch_request *preq,      /* I */
+  int            job_index) /* I - optional */
+
+  {
+  return(NULL);
+  }

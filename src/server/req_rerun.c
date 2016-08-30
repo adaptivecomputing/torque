@@ -234,7 +234,7 @@ void delay_and_send_sig_kill(
   pjob_mutex.unlock();
   reply_ack(preq_clt);
   set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
-  }
+  } // END delay_and_send_sig_kill()
 
 /*
  * send_sig_kill
@@ -521,29 +521,34 @@ int req_rerunjob(
     
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
-    if(delay != 0)
+    if (delay != 0)
       {
       static const char *rerun = "rerun";
       char               *extra = strdup(rerun);
 
       get_batch_request_id(preq);
       /* If a qrerun -f is given requeue the job regardless of the outcome of issue_signal*/
-      if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
+      if ((preq->rq_extend) && 
+          (!strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE))))
         {
         std::string extend = RERUNFORCE;
-        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
+        batch_request *dup = duplicate_request(preq, -1);
+        get_batch_request_id(dup);
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(dup->rq_id));
+
         if (rc == PBSE_NORELYMOM)
           rc = PBSE_NONE;
         }
-      else         
+      else
         {
         rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
         if (rc != PBSE_NONE)
           {
           /* cant send to MOM */
-         req_reject(rc, 0, preq, NULL, NULL);
+          req_reject(rc, 0, preq, NULL, NULL);
           }
-        return rc;
+
+        return(rc);
         }
       }
     else
