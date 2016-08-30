@@ -213,9 +213,9 @@ void array_get_parent_id(char *job_id, char *parent_id);
 job_array *get_array(const char *id);
 int array_recov(const char *path, job_array **pa);
 
-int delete_array_range(job_array *pa, char *range);
-int delete_whole_array(job_array *pa);
-int attempt_delete(void *);
+int delete_array_range(job_array *pa, char *range, bool purge);
+int delete_whole_array(job_array *pa, bool purge);
+bool attempt_delete(void *);
 
 int hold_array_range(job_array *,char *,pbs_attribute *);
 void hold_job(pbs_attribute *,void *);

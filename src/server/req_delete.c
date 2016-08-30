@@ -321,6 +321,12 @@ void remove_stagein(
 
 
 
+/*
+ * force_purge_work()
+ *
+ * Performs the work of purging an individual job (qdel -p)
+ * @param pjob - the job that will be purged
+ */
 
 void force_purge_work(
 
@@ -329,6 +335,9 @@ void force_purge_work(
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue *pque;
+  long       cancel_exit_code = 0;
+
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   snprintf(log_buf, sizeof(log_buf), "purging job %s without checking MOM", pjob->ji_qs.ji_jobid);
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
@@ -346,6 +355,25 @@ void force_purge_work(
     }
 
   depend_on_term(pjob);
+  
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == false))
+    {
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      throw PBSE_JOB_RECYCLED;
+
+    if (pa != NULL)
+      {
+      pa->update_array_values(pjob->ji_qs.ji_state,
+                              aeTerminate,
+                              pjob->ji_qs.ji_jobid,
+                              cancel_exit_code);
+
+      unlock_ai_mutex(pa, __func__, "", LOGLEVEL);
+      }
+    }
 
   svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
@@ -384,7 +412,20 @@ void ensure_deleted(
     {
     if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
-      force_purge_work(pjob);
+      try
+        {
+        force_purge_work(pjob);
+        }
+      catch (int err)
+        {
+        // It's not an error if the job was deleted or disappeared mid-deletion
+        if (err != PBSE_JOB_RECYCLED)
+          {
+          char log_buf[LOCAL_LOG_BUF_SIZE];
+          sprintf(log_buf, "Error when purging %s", jobid);
+          log_err(err, __func__, log_buf);
+          }
+        }
       }
     }
 
@@ -413,12 +454,20 @@ void setup_apply_job_delete_nanny(
 
 
 
+/*
+ * execut_job_delete()
+ *
+ * Deletes an individual job, contacting the mom if necessary
+ * @param pjob - the job being deleted
+ * @param Msg - why the job is being deleted
+ * @param preq - the batch request for this deletion
+ */
 
 int execute_job_delete(
 
-  job                  *pjob,            /* M */
-  char                 *Msg,             /* I */
-  struct batch_request *preq)            /* I */
+  job           *pjob,            /* M */
+  char          *Msg,             /* I */
+  batch_request *preq)            /* I */
 
   {
   struct work_task *pwtnew;
@@ -431,7 +480,6 @@ int execute_job_delete(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
-  bool              array_compatible = false;
   long              status_cancel_queue = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
@@ -637,45 +685,40 @@ jump:
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
     }
 
-  /* if configured, and this job didn't have a slot limit hold, free a job
-   * held with the slot limit hold */
-  get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &array_compatible);
-  if ((array_compatible == true) &&
-      ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
+  // Update the array book-keeping values if this is an array subjob
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == false))
     {
-    if ((pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == false))
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
       {
-      job_array *pa = get_jobs_array(&pjob);
-
-      if (pjob == NULL)
-        {
-        job_mutex.set_unlock_on_exit(false);
-        return(-1);
-        }
-      std::string dup_job_id(pjob->ji_qs.ji_jobid);
-
-      if (pa != NULL)
-        {
-        if (pjob != NULL)
-          {
-          if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
-            {
-            int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            int job_state = pjob->ji_qs.ji_state;
-
-            job_mutex.unlock();
-            pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_exit_status);
-
-            if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-              job_mutex.mark_as_locked();
-            }
-          }
-
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        }
+      job_mutex.set_unlock_on_exit(false);
+      return(-1);
       }
-    } /* END MoabArrayCompatible check */
+
+    std::string dup_job_id(pjob->ji_qs.ji_jobid);
+
+    if (pa != NULL)
+      {
+      if (pjob != NULL)
+        {
+        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+          {
+          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+          int job_state = pjob->ji_qs.ji_state;
+
+          job_mutex.unlock();
+          pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_exit_status);
+
+          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
+            job_mutex.mark_as_locked();
+          }
+        }
+
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      }
+    }
 
   if (pjob == NULL)
     {
@@ -1497,9 +1540,25 @@ int forced_jobpurge(
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (owner_purge)))
         {
-        force_purge_work(pjob);
+        std::string jobid(pjob->ji_qs.ji_jobid);
+        int rc = PURGE_SUCCESS;
+        try
+          {
+          force_purge_work(pjob);
+          }
+        catch (int err)
+          {
+          // It's not an error if the job was deleted or disappeared mid-deletion
+          if (err != PBSE_JOB_RECYCLED)
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+            sprintf(log_buf, "Error when purging %s", jobid.c_str());
+            log_err(err, __func__, log_buf);
+            rc = err;
+            }
+          }
 
-        return(PURGE_SUCCESS);
+        return(rc);
         }
       else
         {
@@ -1515,8 +1574,6 @@ int forced_jobpurge(
 
   return(PBSE_NONE);
   }  /* END forced_jobpurge() */
-
-
 
 
 

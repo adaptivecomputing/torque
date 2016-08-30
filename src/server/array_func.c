@@ -87,6 +87,7 @@ int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 job_array  *next_array_check(int *, job_array *);
+void        force_purge_work(job *pjob);
 
 #define     BUFSIZE 256
 
@@ -1371,7 +1372,8 @@ int array_request_parse_token(
 int delete_array_range(
 
   job_array *pa,
-  char      *range_str)
+  char      *range_str,
+  bool       purge)
 
   {
   job                *pjob;
@@ -1380,8 +1382,9 @@ int delete_array_range(
 
   int                 num_skipped = 0;
   int                 num_deleted = 0;
-  int                 deleted;
+  bool                deleted;
   int                 running;
+  long                cancel_exit_code = 0;
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
@@ -1395,6 +1398,8 @@ int delete_array_range(
 
     return(-1);
     }
+
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   for (size_t i = 0; i < range_vec.size(); i++)
     {
@@ -1421,27 +1426,51 @@ int delete_array_range(
         continue;
         }
 
+      int old_state = pjob->ji_qs.ji_state;
+
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
-      deleted = attempt_delete(pjob);
-      /* we come out of attempt_delete unlocked */
+      if (purge == true)
+        {
+        deleted = true;
+
+        try
+          {
+          force_purge_work(pjob);
+          }
+        catch (int err)
+          {
+          if (err != PBSE_JOB_RECYCLED)
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+            sprintf(log_buf, "Error when purging %s", pa->job_ids[i]);
+            log_err(err, __func__, log_buf);
+            deleted = false;
+            }
+          }
+        }
+      else
+        deleted = attempt_delete(pjob);
+      
+      // Both attempt_delete and force_purge_work unlock pjob
       pjob_mutex.set_unlock_on_exit(false);
+      pthread_mutex_lock(pa->ai_mutex);
 
-
-      if (deleted == FALSE)
+      if (deleted == false)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
          * release it here */
         num_skipped++;
         }
-      else if (running == FALSE)
+      else 
         {
         /* running jobs will increase the deleted count when their obit is reported */
-        num_deleted++;
-        }
+        if (running == FALSE)
+          num_deleted++;
 
-      pthread_mutex_lock(pa->ai_mutex);
+        pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
+        }
       }
     }
 
@@ -1481,20 +1510,23 @@ int first_job_index(
  * delete_whole_array()
  *
  * iterates over the array and deletes the whole thing
+ *
  * @param pa - the array to be deleted
+ * @param purge - true if the array should be purged, false if it's a normal delete
  * @return - the number of jobs skipped
  */
 int delete_whole_array(
 
-  job_array *pa) /* I */
+  job_array *pa,
+  bool       purge)
 
   {
-  int i;
-  int num_skipped = 0;
-  int num_jobs = 0;
-  int num_deleted = 0;
-  int deleted;
-  int running;
+  int  i;
+  int  num_skipped = 0;
+  int  num_jobs = 0;
+  int  num_deleted = 0;
+  bool deleted;
+  int  running;
   long cancel_exit_code = 0;
 
   get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
@@ -1527,11 +1559,33 @@ int delete_whole_array(
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
-      deleted = attempt_delete(pjob);
+
+      if (purge)
+        {
+        deleted = true;
+
+        try
+          {
+          force_purge_work(pjob);
+          }
+        catch (int err)
+          {
+          if (err != PBSE_JOB_RECYCLED)
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+            sprintf(log_buf, "Error when purging %s", pa->job_ids[i]);
+            log_err(err, __func__, log_buf);
+            deleted = false;
+            }
+          }
+        }
+      else
+        deleted = attempt_delete(pjob);
+
       /* we come out of attempt_delete unlocked */
       pjob_mutex.set_unlock_on_exit(false);
 
-      if (deleted == FALSE)
+      if (deleted == false)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
@@ -1545,7 +1599,8 @@ int delete_whole_array(
 
       pthread_mutex_lock(pa->ai_mutex);
 
-      if (deleted == TRUE)
+      if ((deleted == true) &&
+          (purge == false))
         pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
       }
     }
@@ -1557,7 +1612,6 @@ int delete_whole_array(
 
   return(num_skipped);
   } /* END delete_whole_array() */
-
 
 
 
