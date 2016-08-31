@@ -103,7 +103,7 @@ void req_rerunjob(struct batch_request *preq);
 void req_modifyjob(struct batch_request *preq);
 
 void req_shutdown(struct batch_request *preq);
-void req_signaljob(struct batch_request *preq);
+void mom_req_signal_job(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
@@ -409,7 +409,7 @@ void mom_dispatch_request(
 
     case PBS_BATCH_AsySignalJob:
 
-      req_signaljob(request);
+      mom_req_signal_job(request);
 
       break;
 

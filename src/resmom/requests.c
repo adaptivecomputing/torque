@@ -2085,7 +2085,7 @@ static void resume_suspend(
 
 
 /**
- * req_signaljob - issue (kill) a specified signal to a job
+ * mom_req_signal_job - issue (kill) a specified signal to a job
  * Signal may be either a numeric string or a signal name
  * with or without the "SIG" prefix.
  *
@@ -2096,7 +2096,7 @@ static void resume_suspend(
  * @see req_signaljob() in server/req_signal.c - peer
  */
 
-void req_signaljob(
+void mom_req_signal_job(
 
   batch_request *preq) /* I */
 
@@ -2298,7 +2298,7 @@ void req_signaljob(
   reply_ack(preq);
 
   return;
-  }  /* END req_signaljob() */
+  }  /* END mom_req_signal_job() */
 
 
 /**
