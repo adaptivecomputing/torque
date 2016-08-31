@@ -153,7 +153,8 @@ int req_deletearray(
   bool               purge = false;
   extern const char *delpurgestr;
     
-  if (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr)))
+  if ((preq->rq_extend != NULL) &&
+      (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr))))
     purge = true;
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
