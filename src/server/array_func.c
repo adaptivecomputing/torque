@@ -1529,6 +1529,8 @@ int delete_whole_array(
   int  running;
   long cancel_exit_code = 0;
 
+  std::string array_id = pa->ai_qs.parent_id;
+
   get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   job *pjob;
@@ -1548,7 +1550,8 @@ int delete_whole_array(
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       num_jobs++;
 
-      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) &&
+          (purge == false))
         {
         /* invalid state for request,  skip */
         continue;
@@ -1597,15 +1600,17 @@ int delete_whole_array(
         num_deleted++;
         }
 
-      pthread_mutex_lock(pa->ai_mutex);
-
+      if ((pa = get_array(array_id.c_str())) == NULL)
+        break;
+      
       if ((deleted == true) &&
           (purge == false))
         pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
       }
     }
 
-  pa->ai_qs.num_failed += num_deleted;
+  if (pa != NULL)
+    pa->ai_qs.num_failed += num_deleted;
 
   if (num_jobs == 0)
     return(NO_JOBS_IN_ARRAY);

@@ -232,11 +232,15 @@ int req_deletearray(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    if ((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY)
+    if (((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY) &&
+        (purge == false))
       array_delete(pa);
     }
 
-  if (num_skipped != NO_JOBS_IN_ARRAY)
+  // If purge is true, the array is gone at this point in time
+  if (purge == true)
+    pa_mutex.set_unlock_on_exit(false);
+  else if (num_skipped != NO_JOBS_IN_ARRAY)
     {
     pa_mutex.unlock();
     
