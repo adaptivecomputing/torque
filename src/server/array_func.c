@@ -2079,11 +2079,21 @@ void update_array_statuses()
 
   while ((pa = next_array(&iter)) != NULL)
     {
-    running  = pa->ai_qs.jobs_running;
-    complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
-    queued   = pa->ai_qs.num_jobs - running - complete;
-    if (queued < 0)
+    // If the array has been deleted, force the state to show as complete
+    if (pa->is_deleted())
+      {
+      running = 0;
+      complete = 1;
       queued = 0;
+      }
+    else
+      {
+      running  = pa->ai_qs.jobs_running;
+      complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
+      queued   = pa->ai_qs.num_jobs - running - complete;
+      if (queued < 0)
+        queued = 0;
+      }
     
     if (LOGLEVEL >= 7)
       {

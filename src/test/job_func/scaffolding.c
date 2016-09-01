@@ -711,3 +711,8 @@ void job_array::update_array_values(
 
   {
   }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
+  }

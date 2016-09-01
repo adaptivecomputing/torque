@@ -519,3 +519,8 @@ void job_array::set_owner(
   {
   snprintf(this->ai_qs.owner, sizeof(this->ai_qs.owner), "%s", owner);
   }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
+  }

@@ -961,20 +961,44 @@ void *delete_all_work(
     return(NULL);
     }
 
-  batch_request *preq_dup = duplicate_request(preq);
-  job           *pjob;
-  all_jobs_iterator *iter = NULL;
-  int            failed_deletes = 0;
-  int            total_jobs = 0;
-  int            rc = PBSE_NONE;
-  char           tmpLine[MAXLINE];
-  char          *Msg = preq->rq_extend;
+  batch_request         *preq_dup = duplicate_request(preq);
+  job                   *pjob;
+  all_jobs_iterator     *iter = NULL;
+  int                    failed_deletes = 0;
+  int                    total_jobs = 0;
+  int                    rc = PBSE_NONE;
+  char                   tmpLine[MAXLINE];
+  char                  *Msg = preq->rq_extend;
+  std::set<std::string>  marked_arrays;
   
   alljobs.lock();
   iter = alljobs.get_iterator();
   alljobs.unlock();
+
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
+    if ((pjob->ji_arraystructid[0] != '\0') &&
+        (pjob->ji_is_array_template == false))
+      {
+      // Mark this array as being deleted if it hasn't yet been marked
+      if (marked_arrays.find(pjob->ji_arraystructid) == marked_arrays.end())
+        {
+        job_array *pa = get_jobs_array(&pjob);
+
+        if (pjob == NULL)
+          {
+          continue;
+          }
+
+        if (pa != NULL)
+          {
+          pa->mark_deleted();
+          marked_arrays.insert(pjob->ji_arraystructid);
+          unlock_ai_mutex(pa, __func__, "", LOGLEVEL);
+          }
+        }
+      }
+    
     // use mutex manager to make sure job mutex locks are properly handled at exit
     mutex_mgr job_mutex(pjob->ji_mutex, true);
  
@@ -989,7 +1013,7 @@ void *delete_all_work(
       {
       job_mutex.unlock();
       
-      if(rc == -1)
+      if (rc == -1)
         {
         //forced_jobpurge freed preq_dup so reallocate it.
         preq_dup = duplicate_request(preq);
