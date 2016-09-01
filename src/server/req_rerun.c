@@ -537,7 +537,12 @@ int req_rerunjob(
         rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(dup->rq_id));
 
         if (rc == PBSE_NORELYMOM)
+          {
+          dup->rq_reply.brp_code = PBSE_NORELYMOM;
+          post_rerun(dup);
+          reply_ack(preq);
           rc = PBSE_NONE;
+          }
         }
       else
         {
