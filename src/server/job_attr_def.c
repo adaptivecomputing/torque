@@ -378,7 +378,7 @@ attribute_def job_attr_def[] =
   { (char *)ATTR_h,   /* "Hold_Types" */
     decode_hold,
     encode_hold,
-    set_b,
+    set_hold,
     comp_hold,
     free_null,
     NULL_FUNC,
