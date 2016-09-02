@@ -427,13 +427,7 @@ static pid_t fork_to_user(
 
   if (pid < 0)
     {
-    /* fork failed */
-
-    sprintf(log_buffer, "forked failed, errno=%d (%s)",
-            errno,
-            strerror(errno));
-
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, "Fork failed.");
 
     if (EMsg != NULL)
       snprintf(EMsg, 1024, "%s", log_buffer);
@@ -507,7 +501,7 @@ static pid_t fork_to_user(
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
 
-      log_err(-1, __func__, log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "%s", log_buffer);
@@ -520,7 +514,7 @@ static pid_t fork_to_user(
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
 
-      log_err(-1, __func__, log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "%s", log_buffer);
@@ -1083,7 +1077,7 @@ static int is_file_going_to_dir(
     sprintf(log_buffer, "File %s stat failed, errno = %d",
             destdir,
             errno);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   return(0);
@@ -3235,7 +3229,7 @@ static int sys_copy(
           rc,
           loop);
 
-  log_err(-1, __func__, log_buffer);
+  log_err(rc, __func__, log_buffer);
 
   return(rc);
   }  /* END sys_copy() */
@@ -3934,7 +3928,7 @@ nextword:
 
       add_bad_list(&bad_list, log_buffer, 2);
 
-      log_err(-1, __func__, log_buffer);
+      log_err(rc, __func__, log_buffer);
 
       /* copy message from rcp as well */
 
