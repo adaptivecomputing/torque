@@ -539,8 +539,12 @@ int req_rerunjob(
         if (rc == PBSE_NORELYMOM)
           {
           dup->rq_reply.brp_code = PBSE_NORELYMOM;
+          pjob_mutex.unlock();
           post_rerun(dup);
-          reply_ack(preq);
+          pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE);
+          if (pjob == NULL)
+            return(PBSE_NONE);
+          pjob_mutex.set_lock_state(true);
           rc = PBSE_NONE;
           }
         }
