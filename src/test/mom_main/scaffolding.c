@@ -1089,3 +1089,9 @@ const char *reqvarattr(struct rm_attribute *attrib)
   {
   return(NULL);
   }
+
+int mkdir_wrapper(const char *path, mode_t mode)
+  {
+  return(0);
+  }
+
