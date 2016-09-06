@@ -28,7 +28,9 @@ bool pmix_spawn_timed_out;
 pmix_status_t pmix_client_connect(
 
   const pmix_proc_t *proc,
-  void              *svr_obj)
+  void              *svr_obj,
+  pmix_op_cbfunc_t   cbfunc,
+  void              *cbdata)
 
   {
   pmix_status_t  rc = PMIX_SUCCESS;
@@ -47,6 +49,9 @@ pmix_status_t pmix_client_connect(
     }
   else
     rc = PMIX_ERR_NOT_FOUND;
+
+  if (cbfunc != NULL)
+    cbfunc(rc, cbdata);
 
   return(rc);
   } // END pmi_client_connect()
@@ -670,8 +675,10 @@ pmix_status_t pmix_server_disconnect(
 
 
 
-pmix_status_t pmix_server_register_event(
+pmix_status_t pmix_server_register_events(
 
+  pmix_status_t     *codes,
+  size_t             ncodes,
   const pmix_info_t  info[],
   size_t             ninfo,
   pmix_op_cbfunc_t   cbfunc,
@@ -683,17 +690,65 @@ pmix_status_t pmix_server_register_event(
 
 
 
-pmix_status_t pmix_server_deregister_event(
+pmix_status_t pmix_server_deregister_events(
 
-  const pmix_info_t  info[],
+  pmix_status_t     *codes,
+  size_t             ncodes,
+  pmix_op_cbfunc_t   cbfunc,
+  void              *cbdata)
+
+  {
+  return(PMIX_ERR_NOT_SUPPORTED);
+  } // END pmix_server_deregister_event()
+
+pmix_status_t pmix_server_notify_event(
+
+  pmix_status_t      code,
+  const pmix_proc_t *source,
+  pmix_data_range_t  range,
+  pmix_info_t        info[],
   size_t             ninfo,
   pmix_op_cbfunc_t   cbfunc,
   void              *cbdata)
 
   {
   return(PMIX_ERR_NOT_SUPPORTED);
-  }
+  } // END pmix_server_notify_event()
 
+pmix_status_t pmix_server_query(
+
+  pmix_proc_t        *proct,
+  pmix_query_t       *queries,
+  size_t              nqueries,
+  pmix_info_cbfunc_t  cbfunc,
+  void               *cbdata)
+
+  {
+  return(PMIX_ERR_NOT_SUPPORTED);
+  } // END pmix_server_query()
+
+void pmix_server_tool_connection(
+
+  pmix_info_t                   *info,
+  size_t                         ninfo,
+  pmix_tool_connection_cbfunc_t  cbfunc,
+  void                          *cbdata)
+
+  {
+  } // END pmix_server_tool_connection()
+
+void pmix_server_log(
+
+  const pmix_proc_t *client,
+  const pmix_info_t  data[],
+  size_t             ndata,
+  const pmix_info_t  directives[],
+  size_t             ndirectives,
+  pmix_op_cbfunc_t   cbfunc,
+  void              *cbdata)
+
+  {
+  }
 
 
 pmix_server_module_t psm = 
@@ -709,9 +764,13 @@ pmix_server_module_t psm =
   pmix_server_spawn,
   pmix_server_connect,
   pmix_server_disconnect,
-  pmix_server_register_event,
-  pmix_server_deregister_event,
-  NULL
+  pmix_server_register_events,
+  pmix_server_deregister_events,
+  pmix_server_notify_event,
+  NULL, // instructs pmix server to listen by it's lonesome
+  pmix_server_query,
+  pmix_server_tool_connection,
+  pmix_server_log
   };
 
 

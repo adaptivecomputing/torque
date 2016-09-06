@@ -207,6 +207,7 @@ int put_env_var(const char *, const char *);
 // from u_wrapper.c
 int rmdir_ext(const char *dir, int retry_limit = 20);
 int unlink_ext(const char *filename, int retry_limit = 20);
+int mkdir_wrapper(const char *pathname, mode_t mode);
 
 #endif /* END #ifndef UTILS_H */
  
