@@ -119,6 +119,9 @@
 #define FALSE 0
 #endif
 
+#define FATAL_ERROR    -2
+#define NONFATAL_ERROR -1
+
 #define BUFFER_OVERFLOW -5
 #define LT_ESCAPED       "&lt;"
 #define LT_ESCAPED_LEN   4
@@ -165,7 +168,7 @@ extern int write_buffer (char *,int,int);
 extern void save_args(int, char **);
 extern char *find_command(char *, char *);
 void         translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices);
-void         translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
+int          translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 void         capture_until_close_character(char **start, std::string &storage, char end);
 bool         task_hosts_match(const char *, const char *);
 

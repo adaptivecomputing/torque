@@ -1114,3 +1114,7 @@ int send_back_std_and_staged_files(
   return(PBSE_NONE);
   }
 
+const char *reqvarattr(struct rm_attribute *attrib)
+  {
+  return(NULL);
+  }

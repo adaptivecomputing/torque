@@ -224,6 +224,7 @@ extern uid_t          pbsuser;
 extern time_t         time_now;
 extern unsigned int   pbs_rm_port;
 extern u_long         localaddr;
+extern bool           force_file_overwrite;
 
 extern int            multi_mom;
 extern unsigned int   pbs_rm_port;
@@ -373,7 +374,6 @@ extern int  setup_gpus_for_job(job *pjob);
 extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
-void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
 
 
@@ -990,7 +990,11 @@ static int open_std_out_err(
   int file_out = -2;
   int file_err = -2;
   int filemode = O_CREAT | O_WRONLY | O_APPEND | O_EXCL;
-
+  
+  if (force_file_overwrite == true)
+    {
+    filemode =  O_CREAT | O_WRONLY | O_EXCL;
+    }
   /* if std out/err joined (set and != "n"), which file is first */
 
   i = is_joined(pjob);
@@ -2999,6 +3003,7 @@ int write_nodes_to_file(
   {
   char         filename[MAXPATHLEN];
   int          j;
+  int          rc = PBSE_NONE;
   int          vnodenum;
   FILE        *file;
 
@@ -3097,16 +3102,26 @@ int write_nodes_to_file(
 
 #endif /* def NUMA_SUPPORT */
 
+      errno = 0;
+
       if (nodefile_suffix != NULL)
         {
-        fprintf(file, "%s%s\n",
-          vp->vn_host->hn_host,
-          nodefile_suffix);
+        rc = fprintf(file, "%s%s\n", vp->vn_host->hn_host, nodefile_suffix);
         }
       else
         {
-        fprintf(file, "%s\n", vp->vn_host->hn_host);
+        rc = fprintf(file, "%s\n", vp->vn_host->hn_host);
         }
+
+      if (rc < 0)
+        {
+        sprintf(log_buffer, "Unable to write to the $PBS_NODEFILE for job %s",
+                pjob->ji_qs.ji_jobid);
+        log_err(errno, __func__, log_buffer);
+        break;
+        }
+      else
+        rc = PBSE_NONE;
 
 #ifdef NUMA_SUPPORT
       if (dash != NULL)
@@ -3117,9 +3132,17 @@ int write_nodes_to_file(
       }    /* END for (j) */
     }
 
-  fclose(file);
+  int tmp = fclose(file);
+  if (tmp)
+    {
+    sprintf(log_buffer, "Error closing the $PBS_NODEFILE for job %s", pjob->ji_qs.ji_jobid);
+    log_err(errno, __func__, log_buffer);
 
-  return(PBSE_NONE);
+    if (rc == PBSE_NONE)
+      rc = tmp;
+    }
+
+  return(rc);
   } /* END write_nodes_to_file() */
 
 
@@ -3134,7 +3157,7 @@ void take_care_of_nodes_file(
   {
   if (pjob->ji_flags & MOM_HAS_NODEFILE)
     {
-    if (write_nodes_to_file(pjob) == -1)
+    if (write_nodes_to_file(pjob) != PBSE_NONE)
       starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_FAIL1, sjr);
 
     if (write_attr_to_file(pjob, JOB_ATR_exec_gpus, "gpu") == -1)

@@ -147,7 +147,7 @@ END_TEST
 
 START_TEST(test_displayAsString)
   {
-  Machine           new_machine(1);
+  Machine           new_machine(1, 1, 1);
   std::stringstream out;
 
   new_machine.setMemory(2);
@@ -159,12 +159,18 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Machine m(3);
+  Machine m(3, 1, 1);
 
   fail_unless(m.getTotalSockets() == 1);
   fail_unless(m.getAvailableSockets() == 1);
   fail_unless(m.getTotalCores() == 3);
   fail_unless(m.getTotalThreads() == 3);
+
+  Machine m2(12, 2, 2);
+  fail_unless(m2.getTotalSockets() == 2);
+  fail_unless(m2.getAvailableSockets() == 2);
+  fail_unless(m2.getTotalCores() == 12);
+  fail_unless(m2.getTotalThreads() == 12);
   }
 END_TEST
 
@@ -175,14 +181,16 @@ START_TEST(test_json_constructor)
   const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
   std::stringstream out;
 
-  Machine m1(j1);
+  std::vector<std::string> valid_ids;
+
+  Machine m1(j1, valid_ids);
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
   fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
-  Machine m2(j2);
+  Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());

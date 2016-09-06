@@ -219,6 +219,7 @@ time_t  time_now = 0;
 time_t  last_poll_time = 0;
 extern tlist_head svr_requests;
 
+const char *reqvarattr(struct rm_attribute *attrib);
 extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
@@ -2183,6 +2184,7 @@ void add_diag_var_attrs(
 
   {
   struct varattr *pva;
+  const char     *ptr = reqvarattr(NULL);
 
   if ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
     {
@@ -2194,14 +2196,22 @@ void add_diag_var_attrs(
       output << "  cmd=" << pva->va_cmd << "\n  value=";
 
       if (pva->va_value != NULL) 
-       output << pva->va_value;
+        output << pva->va_value;
       else
-       output << "NULL";
-
+        {
+        if (ptr != NULL)
+          {
+	        output << ptr;
+     	    }
+     	  else
+     	    {	
+          output << "NULL";
+          }
+	      }
       output << "\n\n",
 
       pva = (struct varattr *)GET_NEXT(pva->va_link);
-      }
+      } /* end while (pva != NULL) */
     }
 
   }
@@ -2828,7 +2838,8 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    if (ret <= DIS_INVALID)
+    if ((ret <= DIS_INVALID) &&
+        (ret >= 0))
       sprintf(log_buffer, "write request response failed: %s",
         dis_emsg[ret]);
     else
@@ -3891,6 +3902,7 @@ void usage(
   fprintf(stderr, "  -s        \\\\ Logfile Suffix\n");
   fprintf(stderr, "  -S <INT>  \\\\ Server Port\n");
   fprintf(stderr, "  -v        \\\\ Version\n");
+  fprintf(stderr, "  -w        \\\\ Wait for the server to send mom information\n");
   fprintf(stderr, "  -x        \\\\ Do Not Use Privileged Ports\n");
   fprintf(stderr, "  --about   \\\\ Print Build Information\n");
   fprintf(stderr, "  --help    \\\\ Print Usage\n");

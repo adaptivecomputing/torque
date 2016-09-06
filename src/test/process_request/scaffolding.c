@@ -288,8 +288,9 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq)
+int req_quejob(struct batch_request *preq, bool perform_commit)
   {
+  return(PBSE_NONE);
   }
 
 void req_deletearray(struct batch_request *preq)
@@ -481,6 +482,14 @@ int get_svr_attr_l(int index, long *l)
   {
   if (check_acl == true)
     *l = 1;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (check_acl == true)
+    *b = true;
 
   return(0);
   }

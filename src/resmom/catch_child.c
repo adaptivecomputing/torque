@@ -1144,6 +1144,8 @@ int send_job_obit(
   int                   resc_access_perm;
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
+  
+  set_jobs_substate(pjob, JOB_SUBSTATE_OBIT);
 
   pjob->ji_obit_sent = time(NULL);
 
@@ -1165,7 +1167,7 @@ int send_job_obit(
 
   if (sock < 0)
     {
-    // jobs stuck in JOB_SUBSTATE_PREOBIT are retried
+    // jobs stuck in JOB_SUBSTATE_OBIT are retried
     return(1);
     }
 

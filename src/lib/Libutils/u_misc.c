@@ -330,7 +330,7 @@ void translate_vector_to_range_string(
  * @param indices (O) - the vector populated from range_string
  */
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -340,6 +340,7 @@ void translate_range_string_to_vector(
   char *ptr = str;
   int   prev = 0;
   int   curr;
+  int   rc = PBSE_NONE;
 
   while (is_whitespace(*ptr))
     ptr++;
@@ -352,6 +353,7 @@ void translate_range_string_to_vector(
     if (ptr == old_ptr)
       {
       // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      rc = -1;
       break;
       }
     
@@ -382,6 +384,8 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  
+  return(rc);
   } /* END translate_range_string_to_vector() */
 
 

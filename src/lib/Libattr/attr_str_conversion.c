@@ -203,6 +203,14 @@ int attr_to_str(
 
   switch (at_def->at_type)
     {
+
+    case ATR_TYPE_BOOL:
+     
+      snprintf(local_buf, sizeof(local_buf), attr.at_val.at_bool ? "true" : "false");
+      ds += local_buf;
+      
+      break;
+
     case ATR_TYPE_LONG:
 
       snprintf(local_buf, sizeof(local_buf), "%ld", attr.at_val.at_long);
@@ -624,6 +632,16 @@ int str_to_attr(
     case ATR_TYPE_LL:
     case ATR_TYPE_SHORT:
     case ATR_TYPE_JINFOP:
+
+      break;
+
+    case ATR_TYPE_BOOL:
+
+      if ((val[0] == 'T') ||
+          (val[0] == 't'))
+        attr[index].at_val.at_bool = true;
+      else
+        attr[index].at_val.at_bool = false;
 
       break;
     } /* END switch (pbs_attribute type) */

@@ -585,7 +585,7 @@ void parse_command_line(
 
           exit(1);
           }
-        a_opt_init = server.sv_attr[SRV_ATR_scheduling].at_val.at_long;
+        a_opt_init = server.sv_attr[SRV_ATR_scheduling].at_val.at_bool;
         pthread_mutex_unlock(server.sv_attr_mutex);
 
         break;
@@ -1271,7 +1271,7 @@ void main_loop(void)
   all_jobs_iterator  *iter = NULL;
   long          when = 0;
   long          log = 0;
-  long          scheduling = FALSE;
+  bool          scheduling = false;
   long          sched_iteration = PBS_SCHEDULE_CYCLE;
   time_t        time_now = time(NULL);
 //  time_t        try_hellos = 0;
@@ -1380,7 +1380,7 @@ void main_loop(void)
     if (state == SV_STATE_RUN)
       {
       /* if time or event says to run scheduler, do it */
-      get_svr_attr_l(SRV_ATR_scheduling, &scheduling);
+      get_svr_attr_b(SRV_ATR_scheduling, &scheduling);
       get_svr_attr_l(SRV_ATR_scheduler_iteration, &sched_iteration);
 
       pthread_mutex_lock(svr_do_schedule_mutex);
@@ -3010,7 +3010,7 @@ void restore_attr_default(
 
     case SRV_ATR_PollJobs:
 
-      server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+      server.sv_attr[SRV_ATR_PollJobs].at_val.at_bool = true;
 
       break;
 

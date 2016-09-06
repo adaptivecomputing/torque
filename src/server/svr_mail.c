@@ -591,7 +591,7 @@ void svr_mailowner(
   char                 *domain = NULL;
   int                   i;
   mail_info             mi;
-  long                  no_force = FALSE;
+  bool                  no_force = false;
 
   struct array_strings *pas;
   memset(mailto, 0, sizeof(mailto));
@@ -648,10 +648,10 @@ void svr_mailowner(
    * if force is true, force the mail out regardless of mailpoint
    * unless server no_mail_force attribute is set to true
    */
-  get_svr_attr_l(SRV_ATR_NoMailForce, &no_force);
+  get_svr_attr_b(SRV_ATR_NoMailForce, &no_force);
 
   if ((force != MAIL_FORCE) ||
-      (no_force == TRUE))
+      (no_force == false))
     {
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)

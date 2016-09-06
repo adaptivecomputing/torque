@@ -52,7 +52,7 @@ void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
-Socket::Socket(int np)
+Socket::Socket(int np, int numa_nodes, int &es_remainder)
   {
   }
 
@@ -81,7 +81,7 @@ bool Socket::is_completely_free() const
   return(true);
   }
 
-Socket::Socket(const std::string &json_layout)
+Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_socket++;
   }

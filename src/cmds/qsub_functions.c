@@ -64,7 +64,7 @@
 #if defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:K:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hi:Ij:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
 #define MAXBUF 2048
@@ -813,6 +813,7 @@ void validate_pbs_o_workdir(
     the_val = tmp_job_info->value.c_str();
 
   hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
@@ -999,6 +1000,23 @@ void validate_basic_resourcing(
 
 
 
+void validate_array_options(
+
+  job_info *ji)
+
+  {
+  job_data *dummy;
+
+  if ((hash_find(ji->job_attr, ATTR_t, &dummy) == FALSE) &&
+      (hash_find(ji->job_attr, ATTR_idle_slot_limit, &dummy)))
+    {
+    fprintf(stderr, "qsub: the idle array slot limit (-i) can only be applied to array jobs (-t)\n");
+    exit(4);
+    }
+  } // END validate_basic_resourcing()
+
+
+
 /*
  * Set up (or enforce) errpath or outpath when join option specified
  * so that qstat will diplay it properly.
@@ -1067,6 +1085,8 @@ void post_check_attributes(job_info *ji, char *script_tmp)
    * -j oe (or eo) specified.)
    */
   validate_join_options(ji->job_attr, script_tmp);
+
+  validate_array_options(ji);
   } /* END post_check_attributes() */
 
 
@@ -2611,6 +2631,43 @@ int process_opt_d(
 
 
 /*
+ * process_opt_i()
+ *
+ * Verifies and adds the idle slot limit argument to the job
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub after -i
+ * @param data_type - the source of this argument
+ * @return PBSE_NONE if a valid number, -1 if invalid
+ */
+
+int process_opt_i(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg != NULL)
+    {
+    char *end;
+
+    int limit = strtol(cmd_arg, &end, 10);
+
+    if ((limit > 0) &&
+        (end != cmd_arg))
+      {
+      hash_add_or_exit(ji->job_attr, ATTR_idle_slot_limit, cmd_arg, data_type);
+     
+      return(PBSE_NONE);
+      }
+    }
+
+  return(-1);
+  } // END process_opt_i()
+
+
+
+/*
  * process_opt_j()
  *
  * Verifies and adds the argument passed to -j
@@ -3026,6 +3083,17 @@ void process_opts(
       case 'h':
 
         hash_add_or_exit(ji->job_attr, ATTR_h, "u", data_type);
+        break;
+
+      case 'i':
+
+        if (process_opt_i(ji, optarg, data_type) != PBSE_NONE)
+          {
+          char buf[MAXLINE];
+          snprintf(buf, sizeof(buf), "qsub: illegal -i value '%s'", optarg);
+          print_qsub_usage_exit(buf);
+          }
+
         break;
 
       case 'I':

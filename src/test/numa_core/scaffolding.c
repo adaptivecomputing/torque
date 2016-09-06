@@ -25,7 +25,7 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -67,5 +67,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 

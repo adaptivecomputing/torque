@@ -409,7 +409,7 @@ START_TEST(chk_resc_min_limits_test)
   server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long = 0;
+  server.sv_attr[SRV_ATR_QCQLimits].at_val.at_bool = false;
 
   pthread_mutex_init(server.sv_qs_mutex,NULL);
   pthread_mutex_init(server.sv_attr_mutex,NULL);

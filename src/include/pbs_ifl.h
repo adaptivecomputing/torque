@@ -381,6 +381,7 @@
 #define ATTR_cpustr                "cpuset_string"
 #define ATTR_memstr                "memset_string"
 #define ATTR_user_kill_delay           "user_kill_delay"
+#define ATTR_idle_slot_limit           "idle_slot_limit"
 #define ATTR_copy_on_rerun             "copy_on_rerun"
 #define ATTR_job_exclusive_on_use      "job_exclusive_on_use"
 #define ATTR_disable_automatic_requeue "disable_automatic_requeue"

@@ -119,6 +119,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "job_func.h"
+#include "policy_values.h"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -1130,7 +1131,8 @@ int send_job_over_network_with_retries(
         }
 
       /* check my_err from previous attempt */
-      if (should_retry_route(*my_err) == -1)
+      if ((should_retry_route(*my_err) == -1) ||
+          (should_retry_route(*mom_err) == -1))
         {
         sprintf(log_buf, "child failed in previous commit request for job %s", job_id);
 
@@ -1408,13 +1410,10 @@ char *get_ms_name(
   job &pjob)
 
   {
-  long          cray_enabled = 0;
   char         *ms_name = NULL;
   unsigned int  dummy;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
       ms_name = strdup(pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str);

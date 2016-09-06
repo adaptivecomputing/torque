@@ -23,6 +23,7 @@
 #include "complete_req.hpp"
 
 
+bool cray_enabled;
 bool conn_success = true;
 bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
@@ -441,6 +442,14 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (index == SRV_ATR_CrayEnabled)
+    *b = true;
+
+  return(0);
+  }
+
 int process_alps_status(
 
   char           *nd_name,
@@ -620,12 +629,13 @@ void translate_vector_to_range_string(
   } // END translate_vector_to_range_string()
   
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
 
   {
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void capture_until_close_character(

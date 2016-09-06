@@ -132,16 +132,23 @@ static const char *svr_state_names[] =
 /*
  * encode_svrstate - encode the current server state from the internal
  * integer to a state name string.
+ * 
+ * @param pattr - the attribute to encode
+ * @param phead - the linked list to append the encoded attribute
+ * @param atname - the attribute's name
+ * @param rsname - NOT USED
+ * @param mode - encode mode
+ * @param perm - NOT USED 
  */
 
 int encode_svrstate(
 
-  pbs_attribute  *pattr,   /* ptr to pbs_attribute */
-  tlist_head     *phead,   /* head of attrlist list */
-  const char    *atname,  /* pbs_attribute name */
-  const char    *rsname,  /* null */
-  int             mode,    /* encode mode */
-  int             perm)    /* only used for resources */
+  pbs_attribute  *pattr,
+  tlist_head     *phead,
+  const char    *atname,
+  const char    *rsname,
+  int             mode,
+  int             perm)
 
   {
   svrattrl *pal;
@@ -168,7 +175,7 @@ int encode_svrstate(
   if (pattr->at_val.at_long == SV_STATE_RUN)
     {
     pthread_mutex_lock(server.sv_attr_mutex);
-    if (server.sv_attr[SRV_ATR_scheduling].at_val.at_long == 0)
+    if (server.sv_attr[SRV_ATR_scheduling].at_val.at_bool == false)
       psname = svr_idle;
     else 
       {
@@ -471,7 +478,7 @@ int set_svr_attr(
   long                 *l;
   char                 *c;
   struct array_strings *arst;
-
+  bool                 *b;
   if (attr_index >= SRV_ATR_LAST)
     return(-1);
 
@@ -481,6 +488,13 @@ int set_svr_attr(
 
   switch (svr_attr_def[attr_index].at_type)
     {
+    case ATR_TYPE_BOOL:
+      
+      b = (bool *)val;
+      server.sv_attr[attr_index].at_val.at_bool = *b;
+
+      break;
+
     case ATR_TYPE_LONG:
 
       l = (long *)val;
@@ -521,7 +535,31 @@ int set_svr_attr(
   return(PBSE_NONE);
   } /* END set_svr_attr() */
 
+int get_svr_attr_b(
 
+  int attr_index,
+  bool *b)
+
+  {
+  int rc = PBSE_NONE;
+  pthread_mutex_lock(server.sv_attr_mutex);
+  if ((attr_index >= SRV_ATR_LAST) ||
+      ((server.sv_attr[attr_index].at_flags & ATR_VFLAG_SET) == FALSE))
+    {
+    rc = -1;
+    }
+  else if(svr_attr_def[attr_index].at_type == ATR_TYPE_BOOL)
+    {
+    *b = server.sv_attr[attr_index].at_val.at_bool;
+    }
+  else
+    {
+    rc = -2;
+    }
+  pthread_mutex_unlock(server.sv_attr_mutex);
+  return rc;
+  }
+  
 int get_svr_attr_l(
 
   int   attr_index,
@@ -538,6 +576,10 @@ int get_svr_attr_l(
   else if (svr_attr_def[attr_index].at_type == ATR_TYPE_LONG)
     {
     *l = server.sv_attr[attr_index].at_val.at_long;
+    }
+  else if (svr_attr_def[attr_index].at_type == ATR_TYPE_BOOL) /* temp till get_svr_attr_b function */
+    {                                                         /* gets implemented */
+    *l = server.sv_attr[attr_index].at_val.at_bool;
     }
   else
     {

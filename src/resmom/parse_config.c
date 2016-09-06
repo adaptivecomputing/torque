@@ -113,6 +113,7 @@ int              igncput = 0;
 int              ignvmem = 0; 
 /* end policies */
 bool             check_rur = true; /* on by default */
+bool             force_file_overwrite = false;
 int              spoolasfinalname = 0;
 int              maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
 char            *apbasil_path     = NULL;
@@ -217,7 +218,7 @@ struct passwd *getpwnam_ext(char **user_buffer, char *user_name);
 
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
-
+unsigned long setforceoverwrite(const char*);
 unsigned long setrur(const char *);
 unsigned long setxauthpath(const char *);
 unsigned long setrcpcmd(const char *);
@@ -299,6 +300,7 @@ unsigned long setjobdirectorysticky(const char *);
 unsigned long setcudavisibledevices(const char *);
 
 struct specials special[] = {
+  { "force_overwrite",     setforceoverwrite}, 
   { "alloc_par_cmd",       setallocparcmd },
   { "auto_ideal_load",     setautoidealload },
   { "auto_max_load",       setautomaxload },
@@ -482,7 +484,21 @@ char *tokcpy(
   return(str);
   }  /* END tokcpy() */
 
+unsigned long setforceoverwrite(
+  
+  const char *value)
 
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    force_file_overwrite = enable;
+    return(1);
+    }
+
+  return(0); /* error */
+  }
 unsigned long setrur(
 
   const char *value)
@@ -492,7 +508,7 @@ unsigned long setrur(
 
   if ((enable = setbool(value)) != -1)
     {
-    check_rur = true;
+    check_rur = enable;
     return(1);
     }
     

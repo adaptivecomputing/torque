@@ -431,6 +431,7 @@ int req_connect (struct batch_request *req);
 extern void  req_trackjob (struct batch_request *req);
 extern void *req_gpuctrl (void *req);
 int          req_holdarray(batch_request *preq);
+int          req_quejob(batch_request *preq, bool perform_commit);
 #else
 extern void  req_cpyfile (struct batch_request *req);
 extern void  req_delfile (struct batch_request *req);

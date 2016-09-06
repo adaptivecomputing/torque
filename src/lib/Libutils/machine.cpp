@@ -156,7 +156,8 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   const char *socket_str = "\"socket\":{";
@@ -167,7 +168,7 @@ void Machine::initialize_from_json(
     std::size_t next = json_layout.find(socket_str, socket_begin + 1);
     std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
+    Socket s(one_socket, valid_ids);
     this->sockets.push_back(s);
     this->totalSockets++;
 
@@ -182,7 +183,8 @@ void Machine::initialize_from_json(
 
 void Machine::reinitialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -201,7 +203,7 @@ void Machine::reinitialize_from_json(
   this->NVIDIA_device.clear();
   this->allocations.clear();
 
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END reinitialize_from_json()
 
 
@@ -231,16 +233,17 @@ void Machine::reinitialize_from_json(
  *
  */
 
-Machine::Machine(
-    
-  const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0),
-                                    totalChips(0), totalCores(0), totalThreads(0), 
-                                    availableSockets(0), availableChips(0),
-                                    availableCores(0), availableThreads(0), initialized(true),
-                                    sockets(), NVIDIA_device(), allocations()
+Machine::Machine(const std::string &json_layout,
+                 std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0),
+                                                        totalSockets(0), totalChips(0),
+                                                        totalCores(0), totalThreads(0), 
+                                                        availableSockets(0), availableChips(0),
+                                                        availableCores(0), availableThreads(0),
+                                                        initialized(true), sockets(),
+                                                        NVIDIA_device(), allocations()
 
   {
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END json constructor
 
 
@@ -259,14 +262,20 @@ Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChi
 
 Machine::Machine(
 
-  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
-            totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(true), sockets(),
-            NVIDIA_device(), allocations()
+  int np,
+  int numa_nodes,
+  int sockets) : hardwareStyle(0), totalMemory(0), totalSockets(sockets), totalChips(numa_nodes),
+                 totalCores(np), totalThreads(np), availableSockets(sockets),
+                 availableChips(numa_nodes), availableCores(np), availableThreads(np),
+                 initialized(true), sockets(), NVIDIA_device(), allocations()
 
   {
-  Socket s(np);
-  this->sockets.push_back(s);
+  int np_remainder = np % sockets;
+  for (int i = 0; i < sockets; i++)
+    {
+    Socket s(np / sockets, numa_nodes / sockets, np_remainder);
+    this->sockets.push_back(s);
+    }
   
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -1116,6 +1125,8 @@ void Machine::free_job_allocation(
   const char *job_id)
 
   {
+  std::vector<int> to_remove;
+
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
     bool previously_used = this->sockets[i].is_available() == false;
@@ -1126,19 +1137,14 @@ void Machine::free_job_allocation(
     }
 
   // Remove from my allocations
-  int index = -1;
-
   for (unsigned int i = 0; i < this->allocations.size(); i++)
-    {
     if (this->allocations[i].jobid == job_id)
-      {
-      index = i;
-      break;
-      }
-    }
-
-  if (index != -1)
-    this->allocations.erase(this->allocations.begin() + index);
+      to_remove.push_back(i);
+  
+  for (size_t i = 0; i < to_remove.size(); i++)
+    // Subtract i because we are dynamically changing the vector as we erase, removing 1 element
+    // each time
+    this->allocations.erase(this->allocations.begin() + to_remove[i] - i);
   } // END free_job_allocation()
 
 

@@ -227,6 +227,23 @@ long attr_ifelse_long(
 
 
 
+bool attr_ifelse_bool(
+
+  pbs_attribute *attr1,
+  pbs_attribute *attr2,
+  bool           defbool)
+
+  {
+  if (attr1->at_flags & ATR_VFLAG_SET)
+    return(attr1->at_val.at_bool);
+  else if (attr2->at_flags & ATR_VFLAG_SET)
+    return(attr2->at_val.at_bool);
+  else
+    return(defbool);
+  }
+
+
+
 /*
  * free_null - A free routine for attributes which do not
  * have calloc-ed space ( boolean, char, long ).

@@ -421,7 +421,7 @@ int authenticate_user(
   char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   time_t time_now = time(NULL);
   char   error_msg[1024];
-  long   acl_enabled = FALSE;
+  bool   acl_enabled = false;
 
 #ifdef MUNGE_AUTH
  
@@ -516,7 +516,7 @@ int authenticate_user(
     }
 
   /* If Server's Acl_User enabled, check if user in list */
-  get_svr_attr_l(SRV_ATR_AclUserEnabled, &acl_enabled);
+  get_svr_attr_b(SRV_ATR_AclUserEnabled, &acl_enabled);
   if (acl_enabled)
     {
     struct array_strings *acl_users = NULL;

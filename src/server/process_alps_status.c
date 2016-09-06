@@ -379,13 +379,6 @@ int set_ncpus(
   else if (current->nd_slots.get_total_execution_slots() > parent->max_subnode_nppn)
     parent->max_subnode_nppn = current->nd_slots.get_total_execution_slots();
 
-#ifdef PENABLE_LINUX_CGROUPS
-  if (current->nd_layout.getTotalThreads() != current->nd_slots.get_total_execution_slots())
-    {
-    current->nd_layout = Machine(current->nd_slots.get_total_execution_slots());
-    }
-#endif
-
   return(PBSE_NONE);
   } /* END set_ncpus() */
 
@@ -635,6 +628,10 @@ int process_alps_status(
   struct pbsnode *parent;
   struct pbsnode *current = NULL;
   int             rc;
+#ifdef PENABLE_LINUX_CGROUPS
+  int             numa_nodes = 0;
+  int             sockets = 0;
+#endif
   pbs_attribute   temp;
   container::item_container<const char *> rsv_ht;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -667,7 +664,14 @@ int process_alps_status(
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
         break;
       else
+        {
+#ifdef PENABLE_LINUX_CGROUPS
+        sockets = 0;
+        numa_nodes = 0;
+#endif
+
         continue;
+        }
       }
 
     if (current == NULL)
@@ -780,6 +784,18 @@ int process_alps_status(
         }
 
       set_ncpus(current, parent, ncpus);
+
+#ifdef PENABLE_LINUX_CGROUPS
+      if (numa_nodes == 0)
+        numa_nodes = 1;
+
+      if ((current->nd_layout.is_initialized() == false) ||
+          (current->nd_layout.getTotalThreads() != current->nd_slots.get_total_execution_slots()))
+        {
+        Machine m(current->nd_slots.get_total_execution_slots(), numa_nodes, sockets);
+        current->nd_layout = m;
+        }
+#endif
       }
     else if (!strncmp(str, state, strlen(state)))
       {
@@ -789,6 +805,16 @@ int process_alps_status(
     else if (!strncmp(str, "totmem", 6))
       {
       set_total_memory(current, str);
+      }
+    else if (!strncmp(str, numas, 10))
+      {
+      // 11 is strlen("numa_nodes=")
+      numa_nodes = strtol(str + 11, NULL, 10);
+      }
+    else if (!strncmp(str, "socket", 6))
+      {
+      // 7 is strlen("socket=")
+      sockets = strtol(str + 7, NULL, 10);
       }
 #endif
 

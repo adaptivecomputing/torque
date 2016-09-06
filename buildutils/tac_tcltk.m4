@@ -178,9 +178,6 @@ fi
 if test "x${build_gui}" = "xyes" -a "${TK}" != "1"; then
 	AC_MSG_ERROR([cannot build GUI without Tk library])
 fi
-if test "x${build_gui}" = "x" -a "${TK}" = "1"; then
-	build_gui=yes
-fi
 if test "x${build_gui}" = "x"; then
 	build_gui=no
 fi

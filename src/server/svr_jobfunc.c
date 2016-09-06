@@ -151,6 +151,7 @@
 #include <algorithm>
 #include "utils.h"
 #include "pbs_nodes.h"
+#include "policy_values.h"
 
 #include "user_info.h" /* remove_server_suffix() */
 
@@ -1659,7 +1660,6 @@ int chk_svr_resc_limit(
   long          mpp_width = 0;
   resource     *mppnodect_resource = NULL;
   long          proc_ct = 0;
-  long          cray_enabled = FALSE;
 
   resource_def *noderesc     = NULL;
   resource_def *needresc     = NULL;
@@ -1831,22 +1831,22 @@ int chk_svr_resc_limit(
     jbrc = (resource *)GET_NEXT(jbrc->rs_link);
     }  /* END while (jbrc != NULL) */
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
   if(alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->lock();
     }
-  if ((cray_enabled != TRUE) || 
+  if ((cray_enabled != true) || 
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
-    if(alps_reporter != NULL)
+    if (alps_reporter != NULL)
       {
       alps_reporter->alps_subnodes->unlock();
       }
-    if (cray_enabled == TRUE)
+
+    if (cray_enabled == true)
       {
       if (mppnodect_resource != NULL)
         {
@@ -2046,7 +2046,7 @@ int chk_resc_limits(
   pthread_mutex_lock(server.sv_attr_mutex);
   resc_gt = comp_resc2(&pque->qu_attr[QA_ATR_ResourceMin],
          pattr,
-         server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
+         server.sv_attr[SRV_ATR_QCQLimits].at_val.at_bool,
          EMsg,
          GREATER);
   pthread_mutex_unlock(server.sv_attr_mutex);
@@ -2240,10 +2240,10 @@ static int check_queue_group_ACL(
     struct array_strings *pas;
 
     pthread_mutex_lock(server.sv_attr_mutex);
-    slpygrp = attr_ifelse_long(
+    slpygrp = attr_ifelse_bool(
       &pque->qu_attr[QA_ATR_AclGroupSloppy],
       &server.sv_attr[SRV_ATR_AclGroupSloppy],
-      0);
+      false);
     pthread_mutex_unlock(server.sv_attr_mutex);
 
     rc = acl_check(
@@ -2310,9 +2310,9 @@ static int check_queue_group_ACL(
         int logic_or;
 
         pthread_mutex_lock(server.sv_attr_mutex);
-        logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
+        logic_or = attr_ifelse_bool(&pque->qu_attr[QA_ATR_AclLogic],
                                     &server.sv_attr[SRV_ATR_AclLogic],
-                                    0);
+                                    false);
         pthread_mutex_unlock(server.sv_attr_mutex);
 
         if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
@@ -2385,9 +2385,9 @@ static int check_queue_user_ACL(
       int logic_or;
 
       pthread_mutex_lock(server.sv_attr_mutex);
-      logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
+      logic_or = attr_ifelse_bool(&pque->qu_attr[QA_ATR_AclLogic],
                                   &server.sv_attr[SRV_ATR_AclLogic],
-                                  0);
+                                  false);
       pthread_mutex_unlock(server.sv_attr_mutex);
 
       if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)

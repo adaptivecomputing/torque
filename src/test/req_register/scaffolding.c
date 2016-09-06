@@ -12,6 +12,7 @@
 #include "work_task.h" /* work_task */
 #include "queue.h"
 
+const int DEFAULT_IDLE_SLOT_LIMIT = 300;
 const char *msg_illregister = "Illegal op in register request received for job %s";
 const char *msg_registerdel = "Job deleted as result of dependency on job %s";
 char server_name[PBS_MAXSERVERNAME + 1];
@@ -287,6 +288,14 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (svr == 10)
+    *b = false;
+
+  return(0);
+  }
+
 pbs_queue *get_jobs_queue(job **pjob)
   {
   return((*pjob)->ji_qhdr);
@@ -371,3 +380,19 @@ job::job() : ji_rejectdest()
   }
 
 job::~job() {}
+
+array_info::array_info() : struct_version(ARRAY_QS_STRUCT_VERSION), array_size(0), num_jobs(0),
+                           slot_limit(NO_SLOT_LIMIT), jobs_running(0), jobs_done(0), num_cloned(0),
+                           num_started(0), num_failed(0), num_successful(0), num_purged(0),
+                           num_idle(0), deps(),
+                           idle_slot_limit(DEFAULT_IDLE_SLOT_LIMIT), highest_id_created(-1),
+                           range_str()
+
+  {
+  }
+
+job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
+                         ai_mutex(NULL), ai_qs()
+
+  {
+  }

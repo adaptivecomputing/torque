@@ -24,16 +24,23 @@ Socket::Socket() : id (0), memory(0), totalCores(0), totalThreads(0), availableC
 
 Socket::Socket(
     
-  int execution_slots) : id (0), memory(0), totalCores(execution_slots),
-                         totalThreads(execution_slots), availableCores(0), availableThreads(0),
-                         chips(), socket_exclusive(false)
+  int  execution_slots,
+  int  numa_nodes,
+  int &es_remainder) : id (0), memory(0), totalCores(execution_slots),
+                       totalThreads(execution_slots), availableCores(0), availableThreads(0),
+                       chips(), socket_exclusive(false)
 
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
-    
-  Chip c(execution_slots);
-  this->chips.push_back(c);
+
+  int per_numa_remainder = execution_slots % numa_nodes;
+  
+  for (int i = 0; i < numa_nodes; i++)
+    {
+    Chip c(execution_slots / numa_nodes, es_remainder, per_numa_remainder);
+    this->chips.push_back(c);
+    }
   }
 
 
@@ -61,9 +68,10 @@ Socket::Socket(
 
 Socket::Socket(
 
-  const std::string &json_layout) : id(0), memory(0), totalCores(0), totalThreads(0),
-                                    availableCores(0), availableThreads(0), chips(),
-                                    socket_exclusive(false)
+  const std::string &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                         availableCores(0), availableThreads(0), chips(),
+                                         socket_exclusive(false)
 
   {
   const char *chip_str = "\"numanode\":{";
@@ -88,7 +96,7 @@ Socket::Socket(
     std::size_t next = json_layout.find(chip_str, chip_begin + 1);
     std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
 
-    Chip c(one_chip);
+    Chip c(one_chip, valid_ids);
     this->chips.push_back(c);
 
     chip_begin = next;

@@ -102,6 +102,21 @@ START_TEST(test_mom_finding_jobs)
   fail_unless(mom_find_job_by_int_string("0") == NULL);
   fail_unless(mom_find_job_by_int_string("4") == NULL);
   fail_unless(mom_find_job_by_int_string("40") == pjob4);
+
+  // Make sure we'll find jobs that don't have a server suffix
+  const char *jobid5 = "5";
+  const char *jobid6 = "6";
+  job *pjob5 = job_alloc();
+  job *pjob6 = job_alloc();
+
+  strcpy(pjob5->ji_qs.ji_jobid, jobid5);
+  strcpy(pjob6->ji_qs.ji_jobid, jobid6);
+  alljobs_list.push_back(pjob5);
+  alljobs_list.push_back(pjob6);
+  fail_unless(mom_find_job("5.roshar") == pjob5);
+  fail_unless(mom_find_job("6.scadrial") == pjob6);
+  fail_unless(mom_find_job(jobid5) == pjob5);
+  fail_unless(mom_find_job(jobid6) == pjob6);
   }
 END_TEST
 

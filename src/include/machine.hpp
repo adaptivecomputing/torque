@@ -139,8 +139,8 @@ class Chip
 
   public:
     Chip();
-    Chip(int execution_slots);
-    Chip(const std::string &layout);
+    Chip(int execution_slots, int &es_remainder, int &per_numa_remainder);
+    Chip(const std::string &layout, std::vector<std::string> &valid_ids);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
     ~Chip();
@@ -164,7 +164,8 @@ class Chip
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
     void parse_values_from_json_string(const std::string &json_layout, std::string &cores,
-         std::string &threads, std::string &gpus, std::string &mics);
+                                       std::string &threads, std::string &gpus, std::string &mics,
+                                       std::vector<std::string> &valid_ids);
 
 #ifdef NVIDIA_GPUS
   #ifdef NVML_API
@@ -206,8 +207,8 @@ class Chip
     int  reserve_accelerator(int type);
     void free_accelerators(allocation &a);
     void free_accelerator(int index, int type);
-    void initialize_allocations(char *allocations);
-    void initialize_allocation(char *allocation);
+    void initialize_allocations(char *allocations, std::vector<std::string> &valid_ids);
+    void initialize_allocation(char *allocation, std::vector<std::string> &valid_ids);
     void aggregate_allocation(allocation &a);
     void adjust_open_resources();
     void reserve_allocation_resources(allocation &a);
@@ -243,8 +244,8 @@ class Socket
 
   public:
     Socket();
-    Socket(int execution_slots);
-    Socket(const std::string &layout);
+    Socket(int execution_slots, int numa_nodes, int &es_remainder);
+    Socket(const std::string &layout, std::vector<std::string> &valid_ids);
     ~Socket();
     Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
@@ -310,12 +311,12 @@ class Machine
   #endif
 #endif
     
-  void initialize_from_json(const std::string &json_layout);
+  void initialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);
-    Machine(const std::string &layout);
-    Machine(int execution_slots);
+    Machine(const std::string &layout, std::vector<std::string> &valid_ids);
+    Machine(int execution_slots, int numa_nodes, int sockets);
     Machine();
     ~Machine();
     Socket getSocket();
@@ -358,7 +359,7 @@ class Machine
     void populate_job_ids(std::vector<std::string> &job_ids) const;
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
     bool is_initialized() const;
-    void reinitialize_from_json(const std::string &json_layout);
+    void reinitialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
   };
 
 extern Machine this_node;

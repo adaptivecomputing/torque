@@ -47,6 +47,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
 int remove_procct(

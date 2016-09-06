@@ -995,18 +995,22 @@ int register_array_depend(
   int                   num_jobs) /* I */
 
   {
-  struct array_depend     *pdep;
+  struct array_depend     *pdep = NULL;
 
   array_depend_job        *pdj = NULL;
 
   /* check for existing dependencies of that type */
-  pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
-  while (pdep != NULL)
-    {
-    if (type == pdep->dp_type)
-     break; 
+  std::list<array_depend *>::iterator it = pa->ai_qs.deps.begin();
 
-    pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
+  while (it != pa->ai_qs.deps.end())
+    {
+    if (type == (*it)->dp_type)
+      {
+      pdep = *it;
+      break; 
+      }
+
+    it++;
     }
 
   /* make dependency if none exists */
@@ -1018,7 +1022,7 @@ int register_array_depend(
       {
       pdep->dp_type = type;
 
-      append_link(&pa->ai_qs.deps, &pdep->dp_link, pdep);
+      pa->ai_qs.deps.push_back(pdep);
       }
     else
       return(PBSE_SYSTEM);
@@ -1133,11 +1137,12 @@ bool set_array_depend_holds(
   job                     *pjob;
   array_depend_job        *pdj;
 
-  struct array_depend     *pdep = (struct array_depend *)GET_NEXT(pa->ai_qs.deps);
-
   /* loop through dependencies to update holds */
-  while (pdep != NULL)
+  for (std::list<array_depend *>::iterator it = pa->ai_qs.deps.begin();
+       it != pa->ai_qs.deps.end(); it++)
     {
+    array_depend *pdep = *it;
+
     compareNumber = -1;
 
     switch (pdep->dp_type)
@@ -1247,8 +1252,6 @@ bool set_array_depend_holds(
         }
 
       }
-
-    pdep = (struct array_depend *)GET_NEXT(pdep->dp_link);
     }
 
   return(dependency_satisfied);
@@ -2338,9 +2341,9 @@ depend_job *find_dependjob(
 
   {
   depend_job *pdj;
-  long        display_server_suffix = TRUE;
+  bool        display_server_suffix = true;
 
-  get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_server_suffix);
+  get_svr_attr_b(SRV_ATR_display_job_server_suffix, &display_server_suffix);
 
   unsigned int dp_jobs_size = pdep->dp_jobs.size();
   for (unsigned int i = 0; i < dp_jobs_size; i++)

@@ -25,6 +25,7 @@
 #include "track_alps_reservations.hpp"
 
 
+bool cray_enabled;
 int  attr_count = 0;
 int  next_count = 0;
 const char *msg_momnoexec2 = "Job cannot be executed\nSee job standard error file";
@@ -54,7 +55,6 @@ int bad_connect;
 int bad_job;
 int bad_queue;
 int double_bad;
-int cray_enabled;
 int reported;
 int bad_drequest;
 int usage;
@@ -139,7 +139,7 @@ job_array *get_jobs_array(job **pjob)
   }
 
 
-void free_nodes(job *) {}
+void free_nodes(job *pjob, const char *spec) {}
 
 void free_br(struct batch_request *preq) {}
 
@@ -244,15 +244,18 @@ void get_jobowner(char *from, char *to)
 
 int get_svr_attr_l(int index, long *l)
   {
+  if (usage)
+    *l = 0x0010;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
   if (index == SRV_ATR_DisableAutoRequeue)
-    *l = disable_requeue;
-  else
-    {
-    if (cray_enabled)
-      *l = 1;
-    else if (usage)
-      *l = 0x0010;
-    }
+    *b = disable_requeue;
+  else if (cray_enabled)
+    *b = true;
 
   return(0);
   }
@@ -343,8 +346,6 @@ void account_jobend(job *pjob, std::string &data)
   {
   called_account_jobend++;
   }
-
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status) {}
 
 id_map::id_map() {}
 
@@ -494,3 +495,20 @@ void set_reply_type(struct batch_reply *preply, int type)
   {
   preply->brp_choice = type;
   }
+
+job_array::job_array() {}
+job_array::~job_array() {}
+
+array_info::array_info() {}
+array_info::~array_info() {}
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  int                   job_exit_status)
+
+  {
+  }
+

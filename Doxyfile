@@ -575,7 +575,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = src/cmds src/daemon_client src/drmaa src/gui src/lib/Libattr  src/lib/Libcsv  src/lib/Libifl  src/lib/Libnet  src/lib/Libsite src/lib/Libcmds  src/lib/Libdis  src/lib/Liblog  src/lib/Libpbs  src/lib/Libutils src/mom_rcp src/momctl src/pam src/resmom src/scheduler.basl src/scheduler.cc src/scheduler.tcl src/server src/tools
+INPUT                  = src/include src/cmds src/daemon_client src/drmaa src/gui src/lib/Libattr  src/lib/Libcsv  src/lib/Libifl  src/lib/Libnet  src/lib/Libsite src/lib/Libcmds  src/lib/Libdis  src/lib/Liblog  src/lib/Libpbs  src/lib/Libutils src/mom_rcp src/momctl src/pam src/resmom src/scheduler.basl src/scheduler.cc src/scheduler.tcl src/server src/tools
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

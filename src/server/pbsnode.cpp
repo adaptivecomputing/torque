@@ -8,6 +8,7 @@
 #include "mom_hierarchy_handler.h"
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "alps_constants.h"
+#include "policy_values.h"
 
 #define MSG_LEN_LONG 160
 
@@ -589,8 +590,7 @@ void pbsnode::write_compute_node_properties(
 
 void pbsnode::write_to_nodes_file(
     
-  FILE *nin,
-  bool  cray_enabled) const
+  FILE *nin) const
 
   {
   /* ... write its name, and if time-shared, append :ts */
@@ -646,7 +646,7 @@ void pbsnode::write_to_nodes_file(
     fprintf(nin, " %s=%s", ATTR_NODE_requestid, this->nd_requestid.c_str());
 
   /* write out properties */
-  for (int j = 0;j < this->nd_properties.size() - 1; j++)
+  for (int j = 0; j < this->nd_properties.size() - 1; j++)
     {
     /* Don't write out the cray_enabled features here */
     if ((this->nd_properties[j] != "cray_compute") &&

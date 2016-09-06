@@ -915,10 +915,16 @@ void setup_pelog_outputs(
         (fds2 < 0))
       {
       if (fds1 >= 0)
+        {
         close(fds1);
+        fds1 = -1;
+        }
 
       if (fds2 >= 0)
+        {
         close(fds2);
+        fds2 = -1;
+        }
 
       if ((pe_io_type == PE_IO_TYPE_STD) &&
           (strlen(specpelog) == strlen(path_epilogp)) &&
@@ -939,7 +945,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds1 >= 0)&&(dup(fds1) >= 0))
+        if ((fds1 >= 0) &&
+            (dup(fds1) >= 0))
           close(fds1);
         }
       }
@@ -950,7 +957,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds2 >= 0)&&(dup(fds2) >= 0))
+        if ((fds2 >= 0) &&
+            (dup(fds2) >= 0))
           close(fds2);
         }
       }

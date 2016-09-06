@@ -13,12 +13,47 @@
 int mk_subdirs(char **);
 int pbsd_init_reque(job *, int);
 void check_jobs_queue(job *pjob);
+void remove_invalid_allocations(pbsnode *pnode);
 
 extern char global_log_ext_msg[LOCAL_LOG_BUF_SIZE];
 extern int enque_rc;
 extern int evaluated;
 extern int aborted;
+extern int freed_job_allocation;
+extern int job_state;
+extern bool dont_find_job;
+extern bool dont_find_node;
 extern pbs_queue *allocd_queue;
+
+#ifdef PENABLE_LINUX_CGROUPS
+START_TEST(test_remove_invalid_allocations)
+  {
+  pbsnode pnode;
+
+  // Set that we shouldn't find the jobs. There are 3 jobs, so we should free all 3.
+  dont_find_job = true;
+  dont_find_node = false;
+  freed_job_allocation = 0;
+  job_state = JOB_STATE_RUNNING;
+  remove_invalid_allocations(&pnode);
+  fail_unless(freed_job_allocation == 3);
+
+  // Set that we find the jobs, but they aren't running. This should free all 3 again.
+  dont_find_job = false;
+  freed_job_allocation = 0;
+  job_state = JOB_STATE_QUEUED;
+  remove_invalid_allocations(&pnode);
+  fail_unless(freed_job_allocation == 3);
+
+  // Make it so that the jobs are in a running state, so none should get freed.
+  freed_job_allocation = 0;
+  job_state = JOB_STATE_RUNNING;
+  remove_invalid_allocations(&pnode);
+  fail_unless(freed_job_allocation == 0);
+  }
+END_TEST
+#endif
+
 
 START_TEST(test_check_jobs_queue)
   {
@@ -90,6 +125,9 @@ Suite *pbsd_init_suite(void)
   Suite *s = suite_create("pbsd_init_suite methods");
   TCase *tc_core = tcase_create("test_mk_subdirs");
   tcase_add_test(tc_core, test_mk_subdirs);
+#ifdef PENABLE_LINUX_CGROUPS
+  tcase_add_test(tc_core, test_remove_invalid_allocations);
+#endif
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_pbsd_init_reque");

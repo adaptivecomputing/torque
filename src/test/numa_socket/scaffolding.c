@@ -90,7 +90,7 @@ int Chip::free_core_count() const
   return(6);
   }
 
-Chip::Chip(int np)
+Chip::Chip(int np, int &es_remainder, int &pn_remainder)
   {
   }
 
@@ -103,7 +103,7 @@ hwloc_uint64_t Chip::getMemory() const
   return(this->memory);
   }
 
-Chip::Chip(const std::string &json_layout)
+Chip::Chip(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_chip++;
   }

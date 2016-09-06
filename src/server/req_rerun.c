@@ -104,6 +104,7 @@
 #include "mutex_mgr.hpp"
 #include "svr_func.h" /* get_svr_attr_* */
 #include "job_func.h" /* get_svr_attr_* */
+#include "policy_values.h"
 
 
 /* Private Function local to this file */
@@ -234,7 +235,7 @@ void delay_and_send_sig_kill(
   pjob_mutex.unlock();
   reply_ack(preq_clt);
   set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
-  }
+  } // END delay_and_send_sig_kill()
 
 /*
  * send_sig_kill
@@ -444,6 +445,13 @@ int req_rerunjob(
 
     /* NO-OP */
     }
+  else if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+    {
+    // If we are already queued, then there is nothing to do.
+    rc = PBSE_NONE;
+    reply_ack(preq);
+    return(rc);
+    }
   else
     {
     /* FAILURE - job is in bad state */
@@ -514,18 +522,44 @@ int req_rerunjob(
     
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
-    if(delay != 0)
+    if (delay != 0)
       {
       static const char *rerun = "rerun";
       char               *extra = strdup(rerun);
 
       get_batch_request_id(preq);
-      if ((rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id))))
+      /* If a qrerun -f is given requeue the job regardless of the outcome of issue_signal*/
+      if ((preq->rq_extend) && 
+          (!strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE))))
         {
-        /* cant send to MOM */
-        req_reject(rc, 0, preq, NULL, NULL);
+        std::string extend = RERUNFORCE;
+        batch_request *dup = duplicate_request(preq, -1);
+        get_batch_request_id(dup);
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(dup->rq_id));
+
+        if (rc == PBSE_NORELYMOM)
+          {
+          dup->rq_reply.brp_code = PBSE_NORELYMOM;
+          pjob_mutex.unlock();
+          post_rerun(dup);
+          pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE);
+          if (pjob == NULL)
+            return(PBSE_NONE);
+          pjob_mutex.set_lock_state(true);
+          rc = PBSE_NONE;
+          }
         }
-      return rc;
+      else
+        {
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
+        if (rc != PBSE_NONE)
+          {
+          /* cant send to MOM */
+          req_reject(rc, 0, preq, NULL, NULL);
+          }
+
+        return(rc);
+        }
       }
     else
       {
@@ -638,11 +672,8 @@ int finalize_rerunjob(
         int           newsubst;
         unsigned int  dummy;
         char         *tmp;
-        long          cray_enabled = FALSE;
-       
-        get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-        if ((cray_enabled == TRUE) &&
+        if ((cray_enabled == true) &&
             (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
           tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
         else

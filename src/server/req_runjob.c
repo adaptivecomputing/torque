@@ -119,6 +119,7 @@
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
 #include "complete_req.hpp"
+#include "policy_values.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -190,7 +191,6 @@ int check_and_run_job_work(
   int              rc = PBSE_NONE;
   char             failhost[MAXLINE];
   char             emsg[MAXLINE];
-  long             job_atr_hold;
   int              job_exit_status;
   int              job_state;
   char             job_id[PBS_MAXSVRJOBID+1];
@@ -230,14 +230,12 @@ int check_and_run_job_work(
       if ((pa->ai_qs.slot_limit < 0) ||
           (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
         {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         job_state = pjob->ji_qs.ji_state;
 
         job_mutex.unlock();
 
-        update_array_values(pa,job_state,aeRun,
-            job_id, job_atr_hold, job_exit_status);
+        pa->update_array_values(job_state, aeRun, job_id, job_exit_status);
 
         if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
           {
@@ -1005,7 +1003,6 @@ int svr_startjob(
   {
   int     f;
   int     rc;
-  long    cray_enabled = FALSE;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -1068,10 +1065,8 @@ int svr_startjob(
     return(rc);
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* copy the server nppcu value to the job */
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET)))
     {
     long svr_nppcu_value = 0;
@@ -1397,7 +1392,6 @@ int svr_strtjob2(
   struct timeval   start_time;
   struct timezone  tz;
   int              rc = PBSE_NONE;
-  long             cray_enabled = FALSE;
 
   pattr = &pjob->ji_wattr[JOB_ATR_start_time];
 
@@ -1420,10 +1414,8 @@ int svr_strtjob2(
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* check if this is a special heterogeneous job */
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_external_clone != NULL))
     rc = handle_heterogeneous_job_launch(pjob, preq);
   else
@@ -2120,7 +2112,6 @@ int assign_hosts(
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   char         *def_node = NULL;
   char         *to_free = NULL;
-  long          cray_enabled = FALSE;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -2268,8 +2259,7 @@ int assign_hosts(
       portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
 
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
       tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
     else
@@ -2279,7 +2269,7 @@ int assign_hosts(
     
     free(tmp);
 
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
       {
       split_job(pjob);

@@ -81,7 +81,7 @@
 .SH NAME
 pbs_server \- start a pbs batch server
 .SH SYNOPSIS
-pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-f] [\-h] [\-l port\^]
+pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-f] [\-h] [\-l location\^]
 [\-p\ port\^] [\-t type\^] [\-v] [\^\-A\ acctfile\^] [\^\-D] [\-H\ hostname\^]
 [\^\-L\ logfile\^] [\-M\ mom_port\^] [\-n\ don't send hierarchy\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
 [\-\-about] [\-\-ha] [\-\-help] [\-\-version]
@@ -128,14 +128,9 @@ Accept status update from any mom. Adds node to nodes file.
 Force overwrite of server database.
 .IP "\-h" 15
 Print help information.
-.IP "\-l scheduler_port"
-Specifies the host name and port number of listening schedulers. By default pbs_server
-communicates to the scheduler on the loop back address at port 15004. If the scheduler 
-and pbs_server are not on the same host the -l option tells pbs_server where to find 
-the scheduler.  When using TORQUE in high availability mode the -l option should be 
-used to let TORQUE know where all potential schedulers are located. If pbs_server and
-the scheduler are not on the same node the -l option or the -S option must be used
-in order for TORQUE to communicate with the scheduler.
+.IP "\-l location"
+Specifies where to find the scheduler (for example, Moab) when it does not reside on the same host as Torque.
+Example: pbs_server -1 <other_host>:<other_port>
 .IP "\-p port" 15
 Specifies the port number on which the server will
 listen for batch requests.

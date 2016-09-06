@@ -1442,9 +1442,15 @@ int find_range_in_cpuset_string(
     }
 
   pos += strlen(mom_alias) + 1; // add 1 to pass the ':'
+  if (pos >= source.size()) // Make sure we don't pass the end of the string
+    pos = source.size();
+
   end = source.find("+", pos);
 
-  output = source.substr(pos, end - pos);
+  if (end != std::string::npos)
+    output = source.substr(pos, end - pos);
+  else
+    output = source.substr(pos);
 
   if (output.size() < 1)
     {

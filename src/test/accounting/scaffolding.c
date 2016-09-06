@@ -11,6 +11,7 @@ char *acct_file;
 char path_acct[_POSIX_PATH_MAX];
 attribute_def job_attr_def[10];
 int LOGLEVEL=0;
+bool cray_enabled;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime) 
   {
@@ -45,6 +46,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
@@ -64,7 +70,7 @@ int is_whitespace(
     return(FALSE);
   } /* END is_whitespace */
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -106,6 +112,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)

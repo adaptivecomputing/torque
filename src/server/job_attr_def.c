@@ -378,7 +378,7 @@ attribute_def job_attr_def[] =
   { (char *)ATTR_h,   /* "Hold_Types" */
     decode_hold,
     encode_hold,
-    set_b,
+    set_hold,
     comp_hold,
     free_null,
     NULL_FUNC,
@@ -1269,7 +1269,6 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
 
-#ifdef PENABLE_LINUX_CGROUPS
   // JOB_ATR_cpuset_string
   {(char *)ATTR_cpustr,   /* "cpuset_string" */
    decode_str,
@@ -1295,7 +1294,6 @@ attribute_def job_attr_def[] =
    ATR_TYPE_STR,
    PARENT_TYPE_JOB,
   },
-#endif
 
   /* JOB_ATR_user_kill_delay */
   {(char *)ATTR_user_kill_delay, /* "user_kill_delay" */
@@ -1308,6 +1306,18 @@ attribute_def job_attr_def[] =
     READ_WRITE | ATR_DFLAG_MOM,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB},
+
+  // JOB_ATR_idle_slot_limit
+  {(char *)ATTR_idle_slot_limit, // "idle_slot_limit"
+   decode_l,
+   encode_l,
+   set_l,
+   comp_l,
+   free_null,
+   NULL_FUNC,
+   READ_WRITE,
+   ATR_TYPE_LONG,
+   PARENT_TYPE_JOB},
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",

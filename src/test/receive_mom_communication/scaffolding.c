@@ -365,6 +365,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 void clear_nvidia_gpus(
 
   struct pbsnode *np)  /* I */
@@ -822,7 +827,7 @@ void translate_vector_to_range_string(
   } // END translate_vector_to_range_string()
   
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -864,6 +869,8 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 bool task_hosts_match(const char *one, const char *two)
@@ -914,3 +921,5 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
 #ifdef NVIDIA_GPUS
 int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
 #endif
+
+job::job() {}

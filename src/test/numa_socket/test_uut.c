@@ -111,7 +111,8 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Socket s(5);
+  int remainder = 0;
+  Socket s(5, 1, remainder);
 
   fail_unless(s.getTotalChips() == 1);
   fail_unless(s.getAvailableChips() == 1);
@@ -126,19 +127,21 @@ START_TEST(test_json_constructor)
   const char *j3 = "\"socket\":{\"os_index\":2,\"numanode\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
   std::stringstream out;
 
-  Socket s1(j1);
+  std::vector<std::string> valid_ids;
+
+  Socket s1(j1, valid_ids);
   fail_unless(json_chip == 2, "%d times", json_chip);
   s1.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":12,,}", out.str().c_str());
 
   out.str("");
-  Socket s2(j2);
+  Socket s2(j2, valid_ids);
   fail_unless(json_chip == 4, "%d times", json_chip);
   s2.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":0,,}", out.str().c_str());
 
   out.str("");
-  Socket s3(j3);
+  Socket s3(j3, valid_ids);
   fail_unless(json_chip == 5, "%d times", json_chip);
   s3.displayAsJson(out, false);
   fail_unless(out.str() == "\"socket\":{\"os_index\":2,}", out.str().c_str());
@@ -149,7 +152,8 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   std::stringstream out;
-  Socket s(1);
+  int remainder = 0;
+  Socket s(1, 1, remainder);
   s.setMemory(2);
   s.setId(0);
 

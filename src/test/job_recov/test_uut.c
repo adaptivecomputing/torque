@@ -110,6 +110,28 @@ START_TEST(test_decode_attribute)
   }
 END_TEST
 
+START_TEST(ghost_array_test2)
+  {
+  const char *array_id = "10[].napali";
+  job *pjob = (job *)calloc(1, sizeof(job));
+  snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "%s", "10[0].napali");
+
+  init();
+  
+  for (int i = 0;i < JOB_ATR_LAST;i++)
+    {
+    clear_attr(&pjob->ji_wattr[i], &job_attr_def[i]);
+    }
+
+  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@napali");
+  pjob->ji_wattr[JOB_ATR_job_owner].at_flags = ATR_VFLAG_SET;
+  pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 500; // >DEFAULT_ARRAY_RECOV_SIZE
+
+  job_array *pa = ghost_create_jobs_array(pjob, array_id);
+  fail_unless(pa->ai_ghost_recovered == true);
+  fail_unless(pa->ai_qs.array_size == 501); // 1 more than 500
+  }
+END_TEST
 
 START_TEST(test_set_array_jobs_ids)
   {
@@ -436,6 +458,7 @@ Suite *job_recov_suite(void)
 
   TCase *tc_core = tcase_create("test_job_recover");
   tcase_add_test(tc_core, ghost_array_test);
+  tcase_add_test(tc_core, ghost_array_test2);
   tcase_add_test(tc_core, test_job_recover);
   tcase_add_test(tc_core, fill_resource_list_test);
   tcase_add_test(tc_core, test_add_encoded_attributes);

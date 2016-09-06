@@ -23,6 +23,7 @@
 
 all_nodes               allnodes;
 bool possible = false;
+bool cray_enabled = false;
 
 
 bool exit_called = false;
@@ -362,6 +363,11 @@ int get_svr_attr_l(int attr_index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int lock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return(0);
@@ -390,7 +396,7 @@ int initialize_procct(job *pjob)
   return(0);
   }
 
-void free_nodes(job *pjob) {}
+void free_nodes(job *pjob, const char *spec) {}
 
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with)
   {
@@ -513,7 +519,7 @@ void move_past_whitespace(
   } // END move_past_whitespace()
 
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -555,6 +561,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void create_size_string(

@@ -1310,7 +1310,7 @@ job_array *ghost_create_jobs_array(
   const char *array_id)
 
   {
-  job_array   *pa = (job_array *)calloc(1,sizeof(job_array));
+  job_array   *pa = new job_array();
   long         array_size = DEFAULT_ARRAY_RECOV_SIZE;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   char         file_prefix_work[PBS_JOBBASE + 1];
@@ -1323,15 +1323,9 @@ job_array *ghost_create_jobs_array(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     }
   
-  pa->ai_qs.struct_version = ARRAY_QS_STRUCT_VERSION;
-  CLEAR_HEAD(pa->request_tokens);
-  CLEAR_HEAD(pa->ai_qs.deps);
-  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pa->ai_mutex,NULL);
-
   lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
-  strcpy(pa->ai_qs.parent_id, array_id);
+  pa->set_array_id(array_id);
   
   get_svr_attr_l(SRV_ATR_MaxSlotLimit, &slot_limit);
   pa->ai_qs.slot_limit = slot_limit;
@@ -1352,18 +1346,18 @@ job_array *ghost_create_jobs_array(
   else
     snprintf(pa->ai_qs.fileprefix, sizeof(pa->ai_qs.fileprefix), "%s", file_prefix_work);
 
-  snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", 
-    pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  pa->set_owner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
   snprintf(pa->ai_qs.submit_host, sizeof(pa->ai_qs.submit_host), "%s",
     get_variable(pjob, pbs_o_host));
     
   if (pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long > array_size)
-    array_size = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+    array_size = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long + 1;
 
   pa->job_ids = (char **)calloc(array_size, sizeof(char *));
   pa->job_ids[(int)pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pjob->ji_qs.ji_jobid);
 
   pa->ai_qs.array_size = array_size;
+  pa->ai_ghost_recovered = true;
   array_save(pa);
 
   /* link the struct into the servers list of job arrays */

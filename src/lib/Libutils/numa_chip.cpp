@@ -86,20 +86,38 @@ Chip &Chip::operator =(
 
 Chip::Chip(
 
-  int execution_slots) : id(0), totalCores(execution_slots), totalThreads(execution_slots),
-                         availableCores(execution_slots), availableThreads(execution_slots),
-                         total_gpus(0), available_gpus(0), total_mics(0), available_mics(0),
-                         chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
-                         allocations()
+  int  execution_slots,
+  int &es_remainder,
+  int &per_numa_remainder) : id(0),total_gpus(0), available_gpus(0), total_mics(0), available_mics(0), 
+                             chip_exclusive(false), memory(0), available_memory(0), cores(), devices(),
+                             allocations()
 
   {
+  if (es_remainder > 0)
+    {
+    execution_slots++;
+    es_remainder--;
+    }
+
+  if (per_numa_remainder > 0)
+    {
+    execution_slots++;
+    per_numa_remainder--;
+    }
+
+  this->totalCores = execution_slots;
+  this->totalThreads = execution_slots;
+  this->availableCores = this->totalCores;
+  this->availableThreads = this->totalThreads;
+
   for (int i = 0; i < execution_slots; i++)
     {
     Core c;
-    c.add_processing_unit(CORE, execution_slots);
+    c.add_processing_unit(CORE, i);
+
     this->cores.push_back(c);
     }
-  }
+  } // END constructor for Cray
 
 
 
@@ -109,11 +127,12 @@ Chip::Chip(
 
 void Chip::parse_values_from_json_string(
 
-  const std::string &json_layout,
-  std::string       &cores,
-  std::string       &threads,
-  std::string       &gpus,
-  std::string       &mics)
+  const std::string        &json_layout,
+  std::string              &cores,
+  std::string              &threads,
+  std::string              &gpus,
+  std::string              &mics,
+  std::vector<std::string> &valid_ids)
 
   {
   char        *work_str = strdup(json_layout.c_str());
@@ -157,7 +176,7 @@ void Chip::parse_values_from_json_string(
     capture_until_close_character(&val, mics, '"');
     }
 
-  initialize_allocations(val);
+  initialize_allocations(val, valid_ids);
 
   free(work_str);
   } // END parse_values_from_json_string()
@@ -227,7 +246,8 @@ void Chip::initialize_cores_from_strings(
 
 void Chip::initialize_allocation(
 
-  char *allocation_str)
+  char                     *allocation_str,
+  std::vector<std::string> &valid_ids)
 
   {
   allocation   a;
@@ -242,54 +262,69 @@ void Chip::initialize_allocation(
     a.jobid = tmp_val;
     }
 
-  ptr = strstr(val, "cpus\":");
-  if (ptr != NULL)
+  // check if the id is valid
+  bool id_valid = false;
+  for (size_t i = 0; i < valid_ids.size(); i++)
     {
-    val = ptr + 7; // move past "cpus\":\""
-    capture_until_close_character(&val, tmp_val, '"');
-    translate_range_string_to_vector(tmp_val.c_str(), a.cpu_indices);
+    if (valid_ids[i] == a.jobid)
+      {
+      id_valid = true;
+      break;
+      }
     }
 
-  ptr = strstr(val, "mem\":");
-  if (ptr != NULL)
+  // Only keep this allocation if the id is valid
+  if (id_valid == true)
     {
-    val = ptr + 5; // move past "mem\":"
-    a.memory = strtol(val, &val, 10);
+    ptr = strstr(val, "cpus\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "cpus\":\""
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.cpu_indices);
+      }
+
+    ptr = strstr(val, "mem\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 5; // move past "mem\":"
+      a.memory = strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "exclusive\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 11; // move past "exclusive\":"
+      a.place_type = strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "cores_only\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 12; // move past "cores_only\":"
+      a.cores_only = (bool)strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "gpus\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "gpus\":\"
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.gpu_indices);
+      }
+
+    ptr = strstr(val, "mics\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "mics\":\"
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.mic_indices);
+      }
+
+    a.mem_indices.push_back(this->id);
+
+    this->allocations.push_back(a);
     }
-
-  ptr = strstr(val, "exclusive\":");
-  if (ptr != NULL)
-    {
-    val = ptr + 11; // move past "exclusive\":"
-    a.place_type = strtol(val, &val, 10);
-    }
-
-  ptr = strstr(val, "cores_only\":");
-  if (ptr != NULL)
-    {
-    val = ptr + 12; // move past "cores_only\":"
-    a.cores_only = (bool)strtol(val, &val, 10);
-    }
-
-  ptr = strstr(val, "gpus\":");
-  if (ptr != NULL)
-    {
-    val = ptr + 7; // move past "gpus\":\"
-    capture_until_close_character(&val, tmp_val, '"');
-    translate_range_string_to_vector(tmp_val.c_str(), a.gpu_indices);
-    }
-
-  ptr = strstr(val, "mics\":");
-  if (ptr != NULL)
-    {
-    val = ptr + 7; // move past "mics\":\"
-    capture_until_close_character(&val, tmp_val, '"');
-    translate_range_string_to_vector(tmp_val.c_str(), a.mic_indices);
-    }
-
-  a.mem_indices.push_back(this->id);
-
-  this->allocations.push_back(a);
   } // END initialize_allocation()
 
 
@@ -301,7 +336,8 @@ void Chip::initialize_allocation(
 
 void Chip::initialize_allocations(
 
-  char *allocations)
+  char                     *allocations,
+  std::vector<std::string> &valid_ids)
 
   {
   static const char *allocation_start = "allocation\":{";
@@ -324,7 +360,7 @@ void Chip::initialize_allocations(
       *next = '\0';
       }
 
-    initialize_allocation(current);
+    initialize_allocation(current, valid_ids);
 
     current = next;
     }
@@ -489,11 +525,12 @@ void Chip::initialize_accelerators_from_strings(
 
 Chip::Chip(
    
-  const std::string &json_layout) : id(0), totalCores(0), totalThreads(0), availableCores(0),
-                                    availableThreads(0), total_gpus(0), available_gpus(0),
-                                    total_mics(0), available_mics(0), chip_exclusive(false),
-                                    memory(0), available_memory(0), cores(), devices(),
-                                    allocations()
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), totalCores(0), totalThreads(0), availableCores(0),
+                                         availableThreads(0), total_gpus(0), available_gpus(0),
+                                         total_mics(0), available_mics(0), chip_exclusive(false),
+                                         memory(0), available_memory(0), cores(), devices(),
+                                         allocations()
 
   {
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -507,7 +544,7 @@ Chip::Chip(
   std::string gpus;
   std::string mics;
 
-  parse_values_from_json_string(json_layout, cores, threads, gpus, mics);
+  parse_values_from_json_string(json_layout, cores, threads, gpus, mics, valid_ids);
 
   initialize_cores_from_strings(cores, threads);
   
@@ -2472,7 +2509,9 @@ bool Chip::free_task(
     }
 
   for (size_t i = 0; i < to_remove.size(); i++)
-    this->allocations.erase(this->allocations.begin() + to_remove[i]);
+    // Subtract i because we are dynamically changing the vector as we erase, removing 1 element
+    // each time
+    this->allocations.erase(this->allocations.begin() + to_remove[i] - i);
 
   if (this->allocations.size() == 0)
     {

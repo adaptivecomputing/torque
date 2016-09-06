@@ -203,13 +203,11 @@ class array_depend_job
 class array_depend
   {
   public:
-  list_link                       dp_link;
   short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
     {
-    CLEAR_HEAD(this->dp_link);
     }
 
   ~array_depend()
@@ -217,8 +215,6 @@ class array_depend
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
       delete this->dp_jobs[i];
-
-    delete_link(&this->dp_link);
     }
   };
 
@@ -435,11 +431,10 @@ enum job_atr
 #include "site_job_attr_enum.h"
 
   JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
-#ifdef PENABLE_LINUX_CGROUPS
   JOB_ATR_cpuset_string,
   JOB_ATR_memset_string,
-#endif
   JOB_ATR_user_kill_delay,
+  JOB_ATR_idle_slot_limit,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -1283,7 +1278,7 @@ extern void  issue_track(job *);
 extern job  *job_alloc();
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
-job         *job_clone(job *,struct job_array *, int);
+job         *job_clone(job *,struct job_array *, int, bool);
 job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);

@@ -262,20 +262,12 @@ schd_get_queue_limits(Queue *queue)
     /* Is there an enabled user access control list on this queue? */
     if (!strcmp(attr->name, ATTR_acluren))
       {
-      if (schd_val2bool(attr->value, &istrue) == 0)
-        {
-        if (istrue) /* if true, queue has an ACL */
+        if (*attr->value) /* if true, queue has an ACL */
           queue->flags |= QFLAGS_USER_ACL;
         else
           queue->flags &= ~QFLAGS_USER_ACL;
-        }
-      else
-        {
-        DBPRT(("%s: couldn't parse attr %s value %s to boolean\n", id,
-               attr->name, attr->value));
-        }
-
-      continue;
+       
+        continue;
       }
 
     if (!strcmp(attr->name, ATTR_acluser))

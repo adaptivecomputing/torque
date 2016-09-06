@@ -28,6 +28,7 @@ std::string attrname;
 std::string attrval;
 int         created_subnode;
 
+bool cray_enabled;
 int svr_tsnodes = 0; 
 int svr_unresolvednodes = 0;
 resource_t next_resource_tag;
@@ -62,7 +63,6 @@ const char *dis_emsg[] = {"No error",
 };
 boost::ptr_vector<std::string> hierarchy_holder;
 pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
-extern int cray_enabled;
 
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
@@ -223,6 +223,14 @@ int get_svr_attr_l(int index, long *l)
   {
   if (index == SRV_ATR_CrayEnabled)
     *l = cray_enabled;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (index == SRV_ATR_CrayEnabled)
+    *b = cray_enabled;
 
   return(0);
   }

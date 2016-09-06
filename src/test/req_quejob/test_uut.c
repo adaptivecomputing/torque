@@ -19,7 +19,7 @@ int get_job_id(batch_request *preq, int &resc_access_perm, int &created_here, st
 bool job_exists(const char *job_id);
 pbs_queue *get_queue_for_job(char *queue_name, int &rc);
 int determine_job_file_name(batch_request *preq, std::string &jobid, std::string &filename);
-job *create_and_initialize_job_structure(int created_here, std::string &filename, std::string &jobid);
+job *create_and_initialize_job_structure(int created_here, std::string &jobid);
 
 extern struct server server;
 extern char *path_jobs;
@@ -36,17 +36,15 @@ extern bool set_ji_substate;
 START_TEST(test_create_and_initialize_job_structure)
   {
   std::string jobid("1.napali");
-  std::string filename("1.napali");
  
   mem_fail = true;
-  job *pjob = create_and_initialize_job_structure(1, filename, jobid);
+  job *pjob = create_and_initialize_job_structure(1, jobid);
   fail_unless(pjob == NULL);
 
   mem_fail = false;
-  pjob = create_and_initialize_job_structure(1, filename, jobid);
+  pjob = create_and_initialize_job_structure(1, jobid);
   fail_unless(pjob != NULL);
   fail_unless(jobid == pjob->ji_qs.ji_jobid);
-  fail_unless(filename == pjob->ji_qs.ji_fileprefix);
   fail_unless(pjob->ji_modified == 1);
   fail_unless(pjob->ji_qs.ji_svrflags == 1);
   fail_unless(pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_NEW);

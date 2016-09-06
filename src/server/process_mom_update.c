@@ -749,11 +749,20 @@ void update_layout_if_needed(
   const std::string &layout)
 
   {
-  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  std::vector<std::string> valid_ids;
 
   if (pnode->nd_layout.is_initialized() == false)
     {
-    pnode->nd_layout.reinitialize_from_json(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+      
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+
+    pnode->nd_layout.reinitialize_from_json(layout, valid_ids);
     }
   else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
            (pnode->nd_job_usages.size() == 0))
@@ -763,7 +772,15 @@ void update_layout_if_needed(
 
     // If the number of np for the node has changed, then we should get a new layout as long
     // as we don't have active jobs
-    Machine m(layout);
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      {
+      const char *id = job_mapper.get_name(pnode->nd_job_usages[i].internal_job_id);
+
+      if (id != NULL)
+        valid_ids.push_back(id);
+      }
+    
+    Machine m(layout, valid_ids);
     pnode->nd_layout = m;
 
     if (LOGLEVEL >= 3)
@@ -788,19 +805,19 @@ int process_status_info(
   {
   const char     *name = nd_name;
   struct pbsnode *current;
-  long            mom_job_sync = FALSE;
-  long            auto_np = FALSE;
-  long            down_on_error = FALSE;
-  long            note_append_on_error = FALSE;
+  bool            mom_job_sync = false;
+  bool            auto_np = false;
+  bool            down_on_error = false;
+  bool            note_append_on_error = false;
   int             dont_change_state = FALSE;
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
   bool            send_hello = false;
 
-  get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
-  get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
-  get_svr_attr_l(SRV_ATR_NoteAppendOnError, &note_append_on_error);
-  get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
+  get_svr_attr_b(SRV_ATR_MomJobSync, &mom_job_sync);
+  get_svr_attr_b(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_b(SRV_ATR_NoteAppendOnError, &note_append_on_error);
+  get_svr_attr_b(SRV_ATR_DownOnError, &down_on_error);
 
   /* Before filling the "temp" pbs_attribute, initialize it.
    * The second and third parameter to decode_arst are never
@@ -931,7 +948,7 @@ int process_status_info(
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
 
-        if (note_append_on_error == TRUE)
+        if (note_append_on_error == true)
           {
           set_note_error(current, str);
           }
