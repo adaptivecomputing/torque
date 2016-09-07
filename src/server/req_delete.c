@@ -362,7 +362,7 @@ void force_purge_work(
     job_array *pa = get_jobs_array(&pjob);
 
     if (pjob == NULL)
-      throw PBSE_JOB_RECYCLED;
+      throw (int)PBSE_JOB_RECYCLED;
 
     if (pa != NULL)
       {
@@ -1547,6 +1547,7 @@ int forced_jobpurge(
         {
         std::string jobid(pjob->ji_qs.ji_jobid);
         int rc = PURGE_SUCCESS;
+
         try
           {
           force_purge_work(pjob);

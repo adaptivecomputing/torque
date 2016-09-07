@@ -1186,7 +1186,7 @@ void remove_invalid_allocations(
     pnode = find_nodebyname(node_id.c_str());
 
     if (pnode == NULL)
-      throw PBSE_NODE_DELETED;
+      throw (int)PBSE_NODE_DELETED;
 
     for (size_t i = 0; i < bad_allocation.size(); i++)
       pnode->nd_layout.free_job_allocation(bad_allocation[i].c_str());

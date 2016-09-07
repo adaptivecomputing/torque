@@ -2036,7 +2036,7 @@ void set_depend_hold(
 
       if (pjob == NULL)
         {
-        throw PBSE_JOBNOTFOUND;
+        throw (int)PBSE_JOBNOTFOUND;
         }
       }
     }
