@@ -1169,6 +1169,7 @@ void free_br(
   switch (preq->rq_type)
     {
     case PBS_BATCH_QueueJob:
+    case PBS_BATCH_QueueJob2:
 
       free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
 
