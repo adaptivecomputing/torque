@@ -1,6 +1,6 @@
 [Unit]
 Description=TORQUE pbs_server daemon
-Requires=trqauthd.service network.target local-fs.target
+Requires=network.target local-fs.target
 Wants=rsyslog.target
 After=trqauthd.service network.target local-fs.target rsyslog.target
 

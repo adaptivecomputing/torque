@@ -459,6 +459,7 @@ extern int set_str_csv(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_
 extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int        set_hold(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);

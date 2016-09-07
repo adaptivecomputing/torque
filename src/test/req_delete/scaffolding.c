@@ -594,4 +594,6 @@ void job_array::update_array_values(
   {
   }
 
+void job_array::mark_deleted() {}
+
 

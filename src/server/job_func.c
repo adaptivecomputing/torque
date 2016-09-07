@@ -1861,10 +1861,10 @@ int svr_job_purge(
   char          job_id[PBS_MAXSVRJOBID+1];
   char          job_fileprefix[PBS_JOBBASE+1];
   int           job_substate;
-  int           job_is_array_template;
+  bool          job_is_array_template;
   unsigned int  job_has_checkpoint_file;
-  int           job_has_arraystruct;
-  int           do_delete_array = FALSE;
+  bool          job_has_arraystruct;
+  bool          do_delete_array = false;
   job_array     *pa = NULL;
   char          array_id[PBS_MAXSVRJOBID+1];
   std::string	adjusted_path_jobs;
@@ -1882,7 +1882,7 @@ int svr_job_purge(
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_substate = pjob->ji_qs.ji_substate;
   job_is_array_template = pjob->ji_is_array_template;
-  job_has_arraystruct = ((pjob->ji_arraystructid[0] == '\0') ? FALSE:TRUE);
+  job_has_arraystruct = (pjob->ji_arraystructid[0] != '\0');
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
   if (LOGLEVEL >= 10)
@@ -1903,8 +1903,8 @@ int svr_job_purge(
       }
     }
 
-  if ((job_has_arraystruct == FALSE) ||
-      (job_is_array_template == TRUE))
+  if ((job_has_arraystruct == false) ||
+      (job_is_array_template == true))
     {
     int rc2 = 0;
     if ((rc2 = remove_job(&array_summary, pjob)) == PBSE_JOBNOTFOUND)
@@ -1924,8 +1924,8 @@ int svr_job_purge(
     }
 
   /* if part of job array then remove from array's job list */
-  if ((job_has_arraystruct == TRUE) &&
-      (job_is_array_template == FALSE))
+  if ((job_has_arraystruct == true) &&
+      (job_is_array_template == false))
     {
     /* pa->ai_mutex will come out locked after 
        the call to get_jobs_array */
@@ -1944,19 +1944,18 @@ int svr_job_purge(
         /* if there are no more jobs in the array,
          * then we can clean that up too */
         pa->ai_qs.num_purged++;
-        if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
+        if ((pa->ai_qs.num_purged == pa->ai_qs.num_jobs) ||
+            ((pa->is_deleted() == true) &&
+             (pa->ai_qs.num_idle == 0)))
           {
           /* array_delete will unlock pa->ai_mutex */
           strcpy(array_id, pjob->ji_arraystructid);
-          do_delete_array = TRUE;
-          unlock_ai_mutex(pa, __func__, "1a", LOGLEVEL);
+          do_delete_array = true;
           }
         else
-          {
           array_save(pa);
-          
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-          }
+        
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
       }
     else
@@ -2002,8 +2001,8 @@ int svr_job_purge(
 
   /* pjob->ji_mutex is unlocked at this point */
   /* delete the script file */
-  if ((job_has_arraystruct == FALSE) || 
-      (job_is_array_template == TRUE))
+  if ((job_has_arraystruct == false) || 
+      (job_is_array_template == true))
     {
     /* delete script file */        
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
@@ -2074,7 +2073,7 @@ int svr_job_purge(
       }
     }
 
-  if (job_is_array_template == TRUE)
+  if (job_is_array_template == true)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", 
       adjusted_path_jobs.c_str(), job_fileprefix, JOB_FILE_TMP_SUFFIX);
@@ -2097,7 +2096,7 @@ int svr_job_purge(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
-  if (do_delete_array == TRUE)
+  if (do_delete_array == true)
     {
     pa = get_array(array_id);
     if (pa != NULL)

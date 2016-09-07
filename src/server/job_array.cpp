@@ -55,7 +55,7 @@ array_info::~array_info()
 
 // job_array empty constructor
 job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
-                         ai_mutex(NULL), ai_qs()
+                         ai_mutex(NULL), ai_qs(), being_deleted(false)
 
   {
   this->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -297,16 +297,20 @@ int job_array::get_next_index_to_create(
   int index = -1;
   internal_index = -1;
 
-  if ((this->ai_qs.idle_slot_limit == NO_SLOT_LIMIT) ||
-      (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit))
+  // Don't instantiate new jobs after we've been deleted
+  if (this->being_deleted == false)
     {
-    for (size_t i = 0; i < this->uncreated_ids.size(); i++)
+    if ((this->ai_qs.idle_slot_limit == NO_SLOT_LIMIT) ||
+        (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit))
       {
-      if (this->uncreated_ids[i] != -1)
+      for (size_t i = 0; i < this->uncreated_ids.size(); i++)
         {
-        index = this->uncreated_ids[i];
-        internal_index = i;
-        break;
+        if (this->uncreated_ids[i] != -1)
+          {
+          index = this->uncreated_ids[i];
+          internal_index = i;
+          break;
+          }
         }
       }
     }
@@ -550,6 +554,18 @@ void job_array::initialize_uncreated_ids()
     if (temp[i] > this->ai_qs.highest_id_created)
       this->uncreated_ids.push_back(temp[i]);
     }
+  }
+
+
+
+void job_array::mark_deleted()
+  {
+  this->being_deleted = true;
+  }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
   }
 
 

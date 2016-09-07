@@ -136,23 +136,25 @@ class array_info
 class job_array
   {
   public:
-  char **job_ids; // Array of the sub job ids for this array
+  char             **job_ids; // Array of the sub job ids for this array
   
   /* on server restart we track the number of array tasks that have been recovered. This is
    * in case the server is restarted (cleanly) before the array is completely setup */
-  int    jobs_recovered; 
+  int                jobs_recovered; 
  
   // true if the array file couldn't be recovered but we made this in 
   // order to not lose sub-jobs
-  bool              ai_ghost_recovered;
+  bool               ai_ghost_recovered;
 
   // Vector of array sub jobs indices that haven't been created
-  std::vector<int>  uncreated_ids;
+  std::vector<int>   uncreated_ids;
 
-  pthread_mutex_t  *ai_mutex;
+  pthread_mutex_t   *ai_mutex;
 
   /* this info is saved in the array file */
-  array_info   ai_qs;
+  array_info         ai_qs;
+
+  bool               being_deleted;
 
   job_array();
   ~job_array();
@@ -171,6 +173,8 @@ class job_array
   void initialize_uncreated_ids();
 
   bool need_to_update_slot_limits() const;
+  void mark_deleted();
+  bool is_deleted() const;
   };
 
 
