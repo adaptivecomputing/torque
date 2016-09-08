@@ -2310,6 +2310,7 @@ dcgmReturn_t nvidia_dcgm_start_gpu_job_stats(
     }
 	
   pjob->ji_dcgmGpuJobInfo.summary.startTime = time(&t);
+  dcgmWatchJobFields(pDcgmHandle, pjob->ji_dcgmGrpId, 1000, 300, 2);
 	dcgm_rc = dcgmJobStartStats(pDcgmHandle, pjob->ji_dcgmGrpId, const_cast<char *>(job_name.c_str()));
 	if (dcgm_rc != DCGM_ST_OK)
 	  {
@@ -2464,6 +2465,11 @@ int nvidia_dcgm_finalize_gpu_job_info(
 
   /* Get the GPU statistics for this job */
   pjob->ji_dcgmGpuJobInfo.version = dcgmJobInfo_version;
+  dcgm_rc = dcgmWatchJobFields(pDcgmHandle, pjob->ji_dcgmGrpId, 1000, 300, 2);
+  // Note that updates for gpus may not take place until next field update cycle.
+  // Our job is done so we can't wait that long. dcgmUpdateAllFields will 
+  // force an update so we are ready.
+  dcgm_rc = dcgmUpdateAllFields(pDcgmHandle, 1);
   dcgm_rc = dcgmJobStopStats(pDcgmHandle, const_cast<char *>(job_name.c_str()));
   if (dcgm_rc != DCGM_ST_OK)
     {

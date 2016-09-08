@@ -378,9 +378,9 @@ void DCGM_GpuUsageInfo::write_gpu_usage_info(std::string& usage_info)
 		  {
 			/* Don't put a comma after the last entry in the array */
 			if (i == this->numComputePids - 1)
-        snprintf(buf, sizeof(buf), "{\"%d\": %u}", i, this->computePids[i]);
+        snprintf(buf, sizeof(buf), "{\"a%d\": %u}", i, this->computePids[i]);
 			else
-        snprintf(buf, sizeof(buf), "{\"%d\": %u},", i, this->computePids[i]);
+        snprintf(buf, sizeof(buf), "{\"a%d\": %u},", i, this->computePids[i]);
       usage_info += buf;
 			}
 	  snprintf(buf, sizeof(buf), "],");

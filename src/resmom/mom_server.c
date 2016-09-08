@@ -1176,7 +1176,7 @@ int write_my_server_status(
     {
     const char *str_to_write = strings[i].c_str();
 
-    if (LOGLEVEL >= 7)
+    if (LOGLEVEL >= 9)
       {
       sprintf(log_buffer,"%s: sending to server \"%s\", i = %u size = %d",
         id,
