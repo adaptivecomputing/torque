@@ -8,7 +8,7 @@ dnl
 dnl
 dnl Configuration and build system for PBS written
 dnl  by Lonhyn T. Jasinskyj (lonhyn@nas.nasa.gov)
-dnl 
+dnl
 dnl (credit for the inspiration for some of this is due to the work of
 dnl  Martin Buchholz who autoconf'ed XEmacs)
 dnl
@@ -138,7 +138,7 @@ dnl  ######################################################################
 dnl  add unit testing if check is installed
 AC_ARG_WITH(check,
    [AS_HELP_STRING([--with-check], [Enable unit testing (check package default=no)])], [have_check=yes], [have_check=no])
- 
+
 AS_IF([test x"$have_check" = "xyes"], [
   PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [check_installed="yes"], [check_installed="no"])
   AS_IF([test x"$check_installed" = "xno"], [
@@ -576,7 +576,7 @@ dnl  ######################################################################
 dnl   Disable qsub keep(-k) override?
 dnl
 AC_ARG_ENABLE(qsub-keep-override, [
-  --disable-qsub-keep-override 
+  --disable-qsub-keep-override
                           do not allow the qsub -k flag to override -o -e.],
 [case "${enableval}" in
   yes)  ;;
@@ -691,7 +691,7 @@ dnl
 
 dnl
 dnl add _GNU_SOURCE
-dnl 
+dnl
 AC_DEFINE([_GNU_SOURCE], 1, [Define _GNU_SOURCE for portability])
 
 dnl
@@ -742,7 +742,7 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       ;;
   esac
   AC_MSG_RESULT([after tweak CFLAGS=$CFLAGS])
-  
+
   AC_MSG_RESULT([before tweak CXXFLAGS=$CXXFLAGS])
   CXXFLAGS=`echo $CXXFLAGS | sed 's/ \?-O[[^ ]]*//g'`
   AC_MSG_RESULT([mid tweak CXXFLAGS=$CXXFLAGS])
@@ -779,7 +779,7 @@ TAC_SYS_LARGEFILE
 
 
 dnl We need pthreads
-AC_CHECK_LIB(pthread, pthread_create, 
+AC_CHECK_LIB(pthread, pthread_create,
     PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt",
     [AC_MSG_ERROR([TORQUE needs pthreads in order to build]) ])
 LIBS="$LIBS $PTHREAD_LIBS"
@@ -797,7 +797,7 @@ AC_CHECK_LIB(crypto, BN_init,
 
 dnl
 dnl we need libxml2
-dnl 
+dnl
 xmlLib=`xml2-config --libs | sed 's/-L@<:@^@<:@:space:@:>@@:>@* //g;s/-l//'`
 
 dnl skip the first two chars because its -l<libname>
@@ -830,14 +830,14 @@ dnl
 dnl If hpux and gcc, force the XOPEN interface.
 AC_MSG_CHECKING([whether to force XOPEN networking stack])
 AC_ARG_ENABLE(xopen_networking, [
-  --disable-xopen-networking      
+  --disable-xopen-networking
                           With HPUX and GCC, don't force usage of XOPEN and libxnet])
 if test "${enable_xopen_networking}" != "no" ; then
 case $GCC,$PBS_MACH in
   yes,hpux*) AC_MSG_RESULT([yes])
              AC_MSG_WARN([On HPUX and gcc, forcing XOPEN network stack.])
              AC_MSG_WARN([Use --disable-xopen-networking to prevent it])
-             AC_CHECK_LIB([xnet], [getpeername], 
+             AC_CHECK_LIB([xnet], [getpeername],
               [LIBS="-lxnet $LIBS"
                CFLAGS="$CFLAGS -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1"],
               [AC_MSG_WARN([This build will likely fail in mysterious ways at run-time])
@@ -938,7 +938,7 @@ if test "x$enable_sp2" = "xyes" ; then
     esac
 fi
 AC_DEFINE_UNQUOTED(IBM_SP2, ${IBM_SP2}, [defined if this is an SP2])
-AC_SUBST(PBSPOE)    
+AC_SUBST(PBSPOE)
 AC_SUBST(PBSPOEO)
 
 AC_ARG_ENABLE(maxint-jobids, [  --enable-maxint-jobids       enables job ids to go up to maxint])
@@ -976,7 +976,7 @@ if test "x$enable_cpuset" = "xyes" ; then
   cpuset=1
   AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
   dnl define geometry requests to allow these to be requested here
-  dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"  
+  dnl  CFLAGS="$CFLAGS -DGEOMETRY_REQUESTS"
   RPM_AC_OPTS="$RPM_AC_OPTS --with cpuset"
 else
   AC_MSG_RESULT([no])
@@ -1029,7 +1029,7 @@ fi
 
 
 dnl
-dnl add the option to view coverage when executing TORQUE 
+dnl add the option to view coverage when executing TORQUE
 dnl
 AC_ARG_ENABLE(coverage, [
   --enable-coverage   Builds TORQUE with --coverage in order to allow evaluation of what parts of the code are being exercised. This is mainly useful for quality assurance.])
@@ -1089,11 +1089,11 @@ fi
 
 
 
-dnl add an option to specify a path where TORQUE should look for boost 
+dnl add an option to specify a path where TORQUE should look for boost
 dnl include files
 dnl
 AC_ARG_WITH(boost-path, [
-  --with-boost-path=PATH   
+  --with-boost-path=PATH
                        Specifies the path to the boost include files.
                        Example: ./configure --with-boost-path=/usr/local/packages/boost_1_36_0
                        Will specify that the include files are in /usr/local/packages/boost_1_36_0],
@@ -1149,11 +1149,11 @@ fi
 
 
 
-dnl add an option to specify a different path where TORQUE should look for HWLOC 
+dnl add an option to specify a different path where TORQUE should look for HWLOC
 dnl lib and include files
 dnl
 AC_ARG_WITH(hwloc-path, [
-  --with-hwloc-path=PATH   
+  --with-hwloc-path=PATH
                        Specifies the path to the hwloc libraries and include files.
                        Example: ./configure --with-hwloc-path=/usr/local/hwloc-1.9
                        Will specify that the include files are in /usr/local/hwloc-1.9/include and
@@ -1169,8 +1169,8 @@ AC_MSG_CHECKING([whether to build Nvidia gpu support])
 AC_ARG_ENABLE(nvidia-gpus,
     [  --enable-nvidia-gpus    enable Nvidia gpu support
                           Nvidia gpu support requires the use of the Nvidia Management Library (NVML)
-                          When using --enable-nvidia-gpus, you must also specify --with-nvml-lib=DIR and 
-                          --with-nvml-include=DIR. hwloc 1.9 or later is also required. 
+                          When using --enable-nvidia-gpus, you must also specify --with-nvml-lib=DIR and
+                          --with-nvml-include=DIR. hwloc 1.9 or later is also required.
                           See --with-hwloc-path.
 ],
     enable_nvidia=$enableval,enable_nvidia=no)
@@ -1188,10 +1188,10 @@ dnl
 if test "${enable_nvidia}" = "yes"; then
   AC_ARG_WITH(nvml_include,
       [  --with-nvml-include=DIR include path for nvml.h],
-      nvmlinclude=$withval,nvmlinclude=none)   
+      nvmlinclude=$withval,nvmlinclude=none)
   AC_ARG_WITH(nvml_lib,
       [  --with-nvml-lib=DIR     lib path for libnvidia-ml],
-      nvmllib=$withval,nvmllib=none)   
+      nvmllib=$withval,nvmllib=none)
 
   if test "x$nvmlinclude" = "xnone" && test "x$nvmllib" == "xnone"; then
     AC_MSG_ERROR([--with-nvml-lib and --with-nvml-include need to be specified])
@@ -1230,7 +1230,7 @@ if test "${build_l26_cpuset}" = "yes" || test "${enable_nvidia}" = "yes" || test
     GPU_DETECTION_DEPENDS_ON_HWLOC="GPU detection requires the hwloc development package
 "
   # In order to get AC_CHECK_LIB to pick up the nvml library
-  # if it is not in the default location we need to add 
+  # if it is not in the default location we need to add
   # the value of nvmllib set in --with-nvml-lib to LDFLAGS
   LDFLAGS="$LDFLAGS -L$nvmllib"
   AC_CHECK_LIB([nvidia-ml], [nvmlDeviceGetHandleByIndex],,
@@ -1275,7 +1275,7 @@ then configuring again.
 
     LIBS="$LIBS $HWLOC_LIBS";
   fi
-fi 
+fi
 
 
 if test "x$HWLOC_CFLAGS" != "xnone"; then
@@ -1285,7 +1285,7 @@ fi
 
 
 dnl enable pbs_mom to use the cpuset API from libcpuset
-dnl only makes sense with cpusets enabled 
+dnl only makes sense with cpusets enabled
 AC_ARG_ENABLE(libcpuset, [  --enable-libcpuset      Allows pbs_mom to use the cpuset API from libcpuset])
 if test "${build_mom}" = "yes" ; then
   if test "x$GCC" = "xyes" ; then
@@ -1329,32 +1329,138 @@ if test "${build_mom}" = "yes" ; then
 fi
 
 
-dnl 
+dnl
 dnl Add the ability to link against the pmix library
-dnl 
-dnl --enable-pmix
-AC_ARG_ENABLE(pmix, [
-  --enable-pmix links pbs_mom against libpmix])
+dnl
+dnl --with-pmix
+AC_ARG_WITH([pmix],
+            [AC_HELP_STRING([--with-pmix(=DIR)],
+                            [Build PMIx support.  DIR can either be left off, or be a valid directory name. Supplying a valid directory name adds DIR/include, DIR/lib, and DIR/lib64 to the search path for headers and libraries])])
+
+AC_MSG_CHECKING([if user requested PMIx support($with_pmix)])
+AS_IF([test -z "$with_pmix" || test "$with_pmix" = "no"],
+      [AC_MSG_RESULT([no])
+       pmix_happy=no],
+
+      [AC_MSG_RESULT([yes])
+       # check for pmix lib location */
+       AS_IF([test "x$with_pmix" = "x"],
+             [pmix_ext_install_dir=/usr],
+             [pmix_ext_install_dir=$with_pmix])
+
+       # Make sure we have the headers in the correct location
+       AC_MSG_CHECKING([PMIx include directory])
+       AS_IF([test ! -d $pmix_ext_install_dir/include],
+             [AC_MSG_RESULT([not found])
+              AC_MSG_ERROR([Cannot continue])],
+             [AC_MSG_RESULT([found])
+              AC_MSG_CHECKING([presence of pmix.h])
+              AS_IF([test "x`ls $pmix_ext_install_dir/include/pmix.h`" = "x"],
+                    [AC_MSG_RESULT([not found])
+                     AC_MSG_ERROR([Cannot continue])],
+                    [AC_MSG_RESULT([found])])])
+
+       # Now check the lib
+       AC_MSG_CHECKING([PMIx lib directory])
+       AS_IF([test ! -d $pmix_ext_install_dir/lib],
+             [AC_MSG_RESULT([not found])
+              AC_MSG_ERROR([Cannot continue])],
+             [AC_MSG_RESULT([found])
+              AC_MSG_CHECKING([presence of libpmix])
+              AS_IF([test "x`ls $pmix_ext_install_dir/lib/libpmix.*`" = "x"],
+                    [AC_MSG_RESULT([not found])
+                     AC_MSG_ERROR([Cannot continue])],
+                    [AC_MSG_RESULT([found])])])
+
+       # check the version
+       pmix_save_CPPFLAGS=$CPPFLAGS
+       pmix_save_LDFLAGS=$LDFLAGS
+       pmix_save_LIBS=$LIBS
+
+       # if the pmix_version.h file does not exist, then
+       # this must be from a pre-1.1.5 version
+       AC_MSG_CHECKING([PMIx version])
+       CPPFLAGS="-I$pmix_ext_install_dir/include $CPPFLAGS"
+       AS_IF([test "x`ls $pmix_ext_install_dir/include/pmix_version.h 2> /dev/null`" = "x"],
+             [AC_MSG_RESULT([version file not found - assuming v1.1.4])
+              pmix_version_found=1
+              pmix_version=114],
+             [AC_MSG_RESULT([version file found])
+              pmix_version_found=0])
+
+       # if it does exist, then we need to parse it to find
+       # the actual release series
+       AS_IF([test "$pmix_version_found" = "0"],
+             [AC_MSG_CHECKING([version 3x])
+              AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
+                                                  #include <pmix_version.h>
+                                                  #if (PMIX_VERSION_MAJOR != 3L)
+                                                  #error "not version 3"
+                                                  #endif
+                                                  ], [])],
+                                [AC_MSG_RESULT([found])
+                                 pmix_version=3X
+                                 pmix_version_found=1],
+                                [AC_MSG_RESULT([not found])])])
+
+       AS_IF([test "$pmix_version_found" = "0"],
+             [AC_MSG_CHECKING([version 2x])
+              AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
+                                                  #include <pmix_version.h>
+                                                  #if (PMIX_VERSION_MAJOR != 2L)
+                                                  #error "not version 2"
+                                                  #endif
+                                                  ], [])],
+                                [AC_MSG_RESULT([found])
+                                 pmix_version=2X
+                                 pmix_version_found=1],
+                                [AC_MSG_RESULT([not found])])])
+
+       AS_IF([test "$pmix_version_found" = "0"],
+             [AC_MSG_CHECKING([version 1x])
+              AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
+                                                  #include <pmix_version.h>
+                                                  #if (PMIX_VERSION_MAJOR != 1L)
+                                                  #error "not version 1"
+                                                  #endif
+                                                  ], [])],
+                                [AC_MSG_RESULT([found])
+                                 pmix_version=1X
+                                 pmix_version_found=1],
+                                [AC_MSG_RESULT([not found])])])
+
+       AS_IF([test "x$pmix_version" = "x"],
+             [AC_MSG_WARN([PMIx support requested, but version])
+              AC_MSG_WARN([information of the external lib could not])
+              AC_MSG_WARN([be detected])
+              AC_MSG_ERROR([cannot continue])])
+
+       CPPFLAGS=$pmix_save_CPPFLAGS
+       LDFLAGS=$pmix_save_LDFLAGS
+       LIBS=$pmix_save_LIBS
+
+       pmix_happy=yes])
+
 if test "${build_mom}" = "yes" ; then
   if test "x$GCC" = "xyes"; then
-    AC_MSG_CHECKING([whether to build with pmix support])
-    if test "${enable_pmix}" = "yes"; then
-      AC_MSG_RESULT([yes])
-      AC_CHECK_LIB([pmix], [PMIx_Finalize], ,
-        [AC_MSG_ERROR([--enable-pmix requires libpmix to be installed]) ])
+    AC_MSG_CHECKING([building PMIx support])
+    if test "${pmix_happy}" = "yes"; then
+      AC_MSG_RESULT([yes - version: $pmix_version])
       AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      CPPFLAGS="-I$pmix_ext_install_dir/include $CPPFLAGS"
+      LDFLAGS="-L$pmix_ext_install_dir/lib $LDFLAGS"
       MOMLIBS="$MOMLIBS -lpmix"
     else
       AC_MSG_RESULT([no])
     fi
   fi
 fi
-AM_CONDITIONAL([BUILDPMIX], test "${enable_pmix}" = yes)
+AM_CONDITIONAL([BUILDPMIX], test "${pmix_happy}" = yes)
 
 
 dnl fixes errors relating to unaligned memory accesses
 dnl some systems experience these errors
-dnl 
+dnl
 dnl --enable-align-memory
 AC_ARG_ENABLE(align_memory, [
   --enable-align-memory  Change compile flags to get rid of unaligned memory access errors])
@@ -1437,7 +1543,7 @@ case "$BLCR" in
     ])
     SAVE_LDFLAGS="$LDFLAGS"
     LDFLAGS="$BLCR_LDFLAGS $LDFLAGS"
-    AC_CHECK_LIB([cr], [cr_init], [ :], 
+    AC_CHECK_LIB([cr], [cr_init], [ :],
       AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-lib]))
     LDFLAGS="$SAVE_LDFLAGS"
     AC_SUBST([BLCR_LDFLAGS])
@@ -1449,7 +1555,7 @@ case "$BLCR" in
     ])
     SAVE_CPPFLAGS="$CPPFLAGS"
     CPPFLAGS="$BLCR_CPPFLAGS $CPPFLAGS"
-    AC_CHECK_HEADER([libcr.h], [ :], 
+    AC_CHECK_HEADER([libcr.h], [ :],
       AC_MSG_ERROR([pass the path to libcr.so to --with-blcr-include]))
     CPPFLAGS="$SAVE_CPPFLAGS"
     AC_SUBST([BLCR_CPPFLAGS])
@@ -1470,7 +1576,7 @@ case "$BLCR" in
   *) AC_MSG_ERROR([--enable-blcr should be yes or no]) ;;
 esac
 
-dnl 
+dnl
 dnl if we're running from a tarball (not checked out) automatically turn off
 dnl the warnings
 dnl
@@ -1498,15 +1604,15 @@ dnl
 AC_MSG_CHECKING([whether to build Cray's CPA support])
 AC_ARG_ENABLE(cpa,
     [  --enable-cpa            enable Cray's CPA support],
-    CPA=$enableval,CPA=no)   
+    CPA=$enableval,CPA=no)
 AC_MSG_RESULT($CPA)
 
 AC_ARG_WITH(cpa_include,
     [  --with-cpa-include=DIR  include path for cpalib.h],
-    cpainclude=$withval,cpainclude=none)   
+    cpainclude=$withval,cpainclude=none)
 AC_ARG_WITH(cpa_lib,
     [  --with-cpa-lib=DIR      lib path for libcpalib],
-    cpalib=$withval,cpalib=none)   
+    cpalib=$withval,cpalib=none)
 
 if test "x$cpainclude" != "xnone" ;then
   CPPFLAGS="$CPPFLAGS -I$cpainclude"
@@ -1542,7 +1648,7 @@ dnl
 AC_MSG_CHECKING([whether to build Cray's CSA support])
 AC_ARG_ENABLE(csa,
     [  --enable-csa            enable Cray's CSA support],
-    CSA=$enableval,CSA=no)   
+    CSA=$enableval,CSA=no)
 AC_MSG_RESULT($CSA)
 
 case "$CSA" in
@@ -1595,7 +1701,7 @@ AUTH_TYPE="classic (pbs_iff)"
 
 dnl compile for munge authorization - allows sites to use munge
 dnl as a means to validate user identity from remote hosts. (executable based implementation)
-dnl 
+dnl
 AC_ARG_ENABLE(munge_auth_exec, [
   --enable-munge-exec  (LEGACY) Allows users to be authorized using munge instead of ruserok ])
 if test "x$GCC" = "xyes" ;then
@@ -1612,19 +1718,19 @@ if test "x$GCC" = "xyes" ;then
 fi
 
 dnl compile for munge library based authorization - link with munge library
-dnl instead of using expensive popen() calls. This option requires munge 
+dnl instead of using expensive popen() calls. This option requires munge
 dnl libraries to be installed during compilation.
 
-AC_ARG_ENABLE(munge_auth, [ 
-  --enable-munge-auth Use MUNGE authentication instead ruserok method. Munge library is required. 
+AC_ARG_ENABLE(munge_auth, [
+  --enable-munge-auth Use MUNGE authentication instead ruserok method. Munge library is required.
              This method is much faster than former exec-based implementation ] )
 
 AC_MSG_CHECKING([whether to support MUNGE library based authentication])
 if test  "x$GCC" = "xyes" ; then
-  
+
   if test "${enable_munge_auth}" = "yes"; then
     if test x"${enable_munge_exec}" = x"yes"; then
-        echo 
+        echo
         AC_MSG_ERROR([ --enable-munge-auth and --enable-munge-exec options are mutually exclusive])
     fi
 
@@ -1633,7 +1739,7 @@ if test  "x$GCC" = "xyes" ; then
     AC_CHECK_LIB(munge,munge_ctx_create,LDFLAGS="$LDFLAGS -lmunge")
     AC_CHECK_HEADERS([munge.h])
 
-    if test "$ac_cv_header_munge_h" = "yes" && test "$ac_cv_lib_munge_munge_ctx_create" = "yes"; then 
+    if test "$ac_cv_header_munge_h" = "yes" && test "$ac_cv_lib_munge_munge_ctx_create" = "yes"; then
        CFLAGS="$CFLAGS -DMUNGE_AUTH -DMUNGE_AUTH_LIB"
        AUTH_TYPE="munge library (NEW)"
     else
@@ -1787,7 +1893,7 @@ if test "$SCHD_TYPE" = cc -o "$SCHD_TYPE" = basl; then
   if test "$SCHD_CODE" = none; then
     AC_MSG_ERROR([Must specify --with-sched-code for C and BASL schedulers.])
   fi
-fi  
+fi
 
 AC_SUBST(SCHD_CODE)
 
@@ -1877,7 +1983,7 @@ AC_DEFINE_UNQUOTED(SHELL_USE_ARGV, ${SHELL_USE_ARGV}, [job script name passed as
 
 
 AC_ARG_ENABLE(posixmemlock, [
-  --disable-posixmemlock  disable the moms use of mlockall.  
+  --disable-posixmemlock  disable the moms use of mlockall.
                           Some versions of OSs seem to have buggy POSIX MEMLOCK.],
 [case "${enableval}" in
   yes)  ;;
@@ -1888,7 +1994,7 @@ esac])dnl
 
 
 AC_ARG_ENABLE(privports, [
-  --disable-privports     disable the use of privileged ports for authentication.  
+  --disable-privports     disable the use of privileged ports for authentication.
                           Some versions of OSX have a buggy bind() and cannot
                           bind to privileged ports.],
 [case "${enableval}" in
@@ -2068,7 +2174,7 @@ AC_ARG_WITH(servchkptdir,
 dnl Declare which of scp, rcp, or mom_rcp is to be used for file delivery
 dnl As of TORQUE 2.1.0, default to scp if found, otherwise use the internal mom_rcp
 AC_ARG_WITH(scp,
-    [  --with-scp              use scp instead of mom_rcp (deprecated, use 
+    [  --with-scp              use scp instead of mom_rcp (deprecated, use
                           --with-rcp=scp).],
   [ AC_MSG_WARN([--with-scp is deprecated, use --with-rcp=scp])
     AC_PATH_PROG(RCP_PATH, "scp", "error")
@@ -2179,7 +2285,7 @@ fi
 AC_MSG_RESULT([$pammoddir])
 AC_SUBST(pammoddir)
 AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
-      
+
 
 
 
@@ -2192,7 +2298,7 @@ AC_ARG_WITH(xauth,
                         xauth_path=$withval
                 fi
         ],
-        [       
+        [
                 TestPath="$PATH"
                 TestPath="${TestPath}${PATH_SEPARATOR}/usr/X/bin"
                 TestPath="${TestPath}${PATH_SEPARATOR}/usr/bin/X11"
@@ -2415,7 +2521,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>]],
 
   build_drmaa_docs=yes
   RPM_AC_OPTS="$RPM_AC_OPTS --with drmaa"
-else  
+else
   DOXYGEN=none
   build_drmaa_docs=no
   RPM_AC_OPTS="$RPM_AC_OPTS --without drmaa"
@@ -2425,7 +2531,7 @@ AM_CONDITIONAL(DRMAA_DOCS, [test "$DOXYGEN" != "none"])
 AC_SUBST(build_drmaa_docs)
 drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
-    
+
 if test "x$gccwarnings" = "xyes" ;then
   AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
   AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
@@ -2555,7 +2661,7 @@ AC_OUTPUT(buildutils/pbs_mkdirs
 )
 
 echo
-echo "Building components: server=$build_server mom=$build_mom clients=$build_clients 
+echo "Building components: server=$build_server mom=$build_mom clients=$build_clients
                      gui=$build_gui drmaa=$build_drmaa pam=`test "x$pammoddir" = "xdisabled" && echo no || echo yes`"
 echo "PBS Machine type    : $PBS_MACH"
 echo "Remote copy         : $RCP_PATH $RCP_ARGS"
@@ -2578,8 +2684,8 @@ and run configure again without --enable-gcc-warnings.])
 fi
 
 if test "${maxint_ids}" = "1" ; then
-  AC_MSG_WARN([You are enabling job ids to go up to the maximum value of an int 
-    on your system. Depending on the size of your system, this may make existing 
+  AC_MSG_WARN([You are enabling job ids to go up to the maximum value of an int
+    on your system. Depending on the size of your system, this may make existing
     jobs impossible to upgrade. BE CERTAIN BEFORE PROCEEDING!])
 fi
 echo "Ready for '${MAKE-make}'."
