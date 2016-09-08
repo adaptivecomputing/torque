@@ -303,9 +303,9 @@ bool request_passes_acl_check(
   unsigned long  conn_addr)
   
   {
-  long acl_enable = FALSE;
+  bool acl_enable = false;
 
-  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
+  get_svr_attr_b(SRV_ATR_acl_host_enable, &acl_enable);
   if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */
@@ -738,13 +738,14 @@ int dispatch_request(
     case PBS_BATCH_QueueJob2:
 
       net_add_close_func(sfds, close_quejob);
-      rc = req_quejob2(request);
+      rc = req_quejob(request, true);
       
       break;
+
     case PBS_BATCH_QueueJob:
 
       net_add_close_func(sfds, close_quejob);
-      rc = req_quejob(request);
+      rc = req_quejob(request, false);
       
       break;
 
@@ -1168,6 +1169,7 @@ void free_br(
   switch (preq->rq_type)
     {
     case PBS_BATCH_QueueJob:
+    case PBS_BATCH_QueueJob2:
 
       free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
 

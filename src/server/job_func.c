@@ -490,7 +490,6 @@ int job_abt(
   int   old_substate;
   int   rc = 0;
   char  job_id[PBS_MAXSVRJOBID+1];
-  long  job_atr_hold;
   int   job_exit_status;
   job  *pjob;
 
@@ -583,13 +582,12 @@ int job_abt(
           
           if (pjob != NULL)
             {
-            job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
             pjob_mutex.unlock();
              
             if (pa)
               {
-              pa->update_array_values(old_state,aeTerminate, job_id, job_atr_hold, job_exit_status);
+              pa->update_array_values(old_state,aeTerminate, job_id, job_exit_status);
             
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               }
@@ -643,12 +641,11 @@ int job_abt(
 
       if (pjob != NULL)
         {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         pjob_mutex.unlock();
         if (pa)
           {
-          pa->update_array_values(old_state, aeTerminate, job_id, job_atr_hold, job_exit_status);
+          pa->update_array_values(old_state, aeTerminate, job_id, job_exit_status);
         
           unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
           }
@@ -1281,14 +1278,14 @@ int perform_array_postprocessing(
     else
       {
       mutex_mgr job_mutex(pjob->ji_mutex,true);
-      long moab_compatible = FALSE;;
+      bool moab_compatible = false;
      
       actual_job_count++;
 
-      get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible);
+      get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &moab_compatible);
       pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
       
-      if (moab_compatible != FALSE)
+      if (moab_compatible == true)
         {
         /* if configured and necessary, apply a slot limit hold to all
          * jobs above the slot limit threshold */
@@ -1740,7 +1737,7 @@ int record_jobinfo(
   int                     fd;
   size_t                  bytes_read = 0;
   extern pthread_mutex_t  job_log_mutex;
-  long                    record_job_script = FALSE;
+  bool                    record_job_script = false;
   std::string		  adjusted_path_jobs;
   
   if (pjob == NULL)
@@ -1795,7 +1792,7 @@ int record_jobinfo(
       }
     }
   
-  get_svr_attr_l(SRV_ATR_RecordJobScript, &record_job_script);
+  get_svr_attr_b(SRV_ATR_RecordJobScript, &record_job_script);
   if (record_job_script)
     {
     /* This is for Baylor. We will make it a server parameter eventually
@@ -1860,14 +1857,14 @@ int svr_job_purge(
   char          namebuf[MAXPATHLEN + 1];
   extern char  *msg_err_purgejob;
   time_t        time_now = time(NULL);
-  long          record_job_info = FALSE;
+  bool          record_job_info = false;
   char          job_id[PBS_MAXSVRJOBID+1];
   char          job_fileprefix[PBS_JOBBASE+1];
   int           job_substate;
-  int           job_is_array_template;
+  bool          job_is_array_template;
   unsigned int  job_has_checkpoint_file;
-  int           job_has_arraystruct;
-  int           do_delete_array = FALSE;
+  bool          job_has_arraystruct;
+  bool          do_delete_array = false;
   job_array     *pa = NULL;
   char          array_id[PBS_MAXSVRJOBID+1];
   std::string	adjusted_path_jobs;
@@ -1885,14 +1882,14 @@ int svr_job_purge(
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_substate = pjob->ji_qs.ji_substate;
   job_is_array_template = pjob->ji_is_array_template;
-  job_has_arraystruct = ((pjob->ji_arraystructid[0] == '\0') ? FALSE:TRUE);
+  job_has_arraystruct = (pjob->ji_arraystructid[0] != '\0');
   job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   /* check to see if we are keeping a log of all jobs completed */
-  get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
+  get_svr_attr_b(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
     record_jobinfo(pjob);
@@ -1906,8 +1903,8 @@ int svr_job_purge(
       }
     }
 
-  if ((job_has_arraystruct == FALSE) ||
-      (job_is_array_template == TRUE))
+  if ((job_has_arraystruct == false) ||
+      (job_is_array_template == true))
     {
     int rc2 = 0;
     if ((rc2 = remove_job(&array_summary, pjob)) == PBSE_JOBNOTFOUND)
@@ -1927,8 +1924,8 @@ int svr_job_purge(
     }
 
   /* if part of job array then remove from array's job list */
-  if ((job_has_arraystruct == TRUE) &&
-      (job_is_array_template == FALSE))
+  if ((job_has_arraystruct == true) &&
+      (job_is_array_template == false))
     {
     /* pa->ai_mutex will come out locked after 
        the call to get_jobs_array */
@@ -1947,19 +1944,18 @@ int svr_job_purge(
         /* if there are no more jobs in the array,
          * then we can clean that up too */
         pa->ai_qs.num_purged++;
-        if (pa->ai_qs.num_purged == pa->ai_qs.num_jobs)
+        if ((pa->ai_qs.num_purged == pa->ai_qs.num_jobs) ||
+            ((pa->is_deleted() == true) &&
+             (pa->ai_qs.num_idle == 0)))
           {
           /* array_delete will unlock pa->ai_mutex */
           strcpy(array_id, pjob->ji_arraystructid);
-          do_delete_array = TRUE;
-          unlock_ai_mutex(pa, __func__, "1a", LOGLEVEL);
+          do_delete_array = true;
           }
         else
-          {
           array_save(pa);
-          
-          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-          }
+        
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
       }
     else
@@ -2005,8 +2001,8 @@ int svr_job_purge(
 
   /* pjob->ji_mutex is unlocked at this point */
   /* delete the script file */
-  if ((job_has_arraystruct == FALSE) || 
-      (job_is_array_template == TRUE))
+  if ((job_has_arraystruct == false) || 
+      (job_is_array_template == true))
     {
     /* delete script file */        
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
@@ -2077,7 +2073,7 @@ int svr_job_purge(
       }
     }
 
-  if (job_is_array_template == TRUE)
+  if (job_is_array_template == true)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", 
       adjusted_path_jobs.c_str(), job_fileprefix, JOB_FILE_TMP_SUFFIX);
@@ -2100,7 +2096,7 @@ int svr_job_purge(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, job_id, log_buf);
     }
 
-  if (do_delete_array == TRUE)
+  if (do_delete_array == true)
     {
     pa = get_array(array_id);
     if (pa != NULL)

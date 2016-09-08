@@ -203,13 +203,11 @@ class array_depend_job
 class array_depend
   {
   public:
-  list_link                       dp_link;
   short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
     {
-    CLEAR_HEAD(this->dp_link);
     }
 
   ~array_depend()
@@ -217,8 +215,6 @@ class array_depend
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
       delete this->dp_jobs[i];
-
-    delete_link(&this->dp_link);
     }
   };
 

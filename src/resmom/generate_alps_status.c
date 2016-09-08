@@ -860,6 +860,8 @@ int get_command_output(
   int             bytes_read;
   int             total_bytes_read = 0;
 
+  output.clear();
+
   if ((alps_pipe = popen(command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),

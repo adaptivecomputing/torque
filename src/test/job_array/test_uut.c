@@ -179,12 +179,12 @@ START_TEST(update_array_values_test)
 
   pa->ai_qs.num_jobs = 10;
 
-  pa->update_array_values(JOB_STATE_TRANSIT, aeQueue, job_id, -1, -1);
-  pa->update_array_values(JOB_STATE_QUEUED, aeRun, job_id, -1, -1);
+  pa->update_array_values(JOB_STATE_TRANSIT, aeQueue, job_id, -1);
+  pa->update_array_values(JOB_STATE_QUEUED, aeRun, job_id, -1);
   fail_unless(pa->ai_qs.jobs_running == 1, "Expected 1 running job, got %d", pa->ai_qs.jobs_running);
   fail_unless(pa->ai_qs.num_started == 1, "Expected 1 job started, got %d", pa->ai_qs.num_started);
  
-  pa->update_array_values(JOB_STATE_RUNNING, aeRerun, job_id, -1, -1);
+  pa->update_array_values(JOB_STATE_RUNNING, aeRerun, job_id, -1);
   fail_unless(pa->ai_qs.jobs_running == 0, "Expected 0 running jobs, got %d", pa->ai_qs.jobs_running);
   fail_unless(pa->ai_qs.num_started == 0, "Expected 0 started jobs, got %d", pa->ai_qs.num_started);
   }

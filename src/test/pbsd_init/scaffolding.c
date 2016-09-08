@@ -384,12 +384,6 @@ void initialize_recycler()
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
-  {
-  fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
-  exit(1);
-  }
-
 int array_delete(job_array *pa)
   {
   fprintf(stderr, "The call to array_delete needs to be mocked!!\n");
@@ -490,6 +484,11 @@ char *threadsafe_tokenizer(char **str, const char *delims)
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }
@@ -905,7 +904,6 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {

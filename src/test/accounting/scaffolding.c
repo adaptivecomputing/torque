@@ -11,6 +11,7 @@ char *acct_file;
 char path_acct[_POSIX_PATH_MAX];
 attribute_def job_attr_def[10];
 int LOGLEVEL=0;
+bool cray_enabled;
 
 int log_remove_old(char *DirPath, unsigned long ExpireTime) 
   {
@@ -41,6 +42,11 @@ pbs_queue *get_jobs_queue(job **pjob)
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

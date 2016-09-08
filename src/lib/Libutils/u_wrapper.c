@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -226,3 +227,29 @@ int unlink_ext(
   return(rc);
   } // END unlink_ext()
 
+
+
+int mkdir_wrapper(
+
+  const char *pathname,
+  mode_t      mode)
+
+  {
+  struct stat buf;
+  int         rc = mkdir(pathname, mode);
+
+  if (rc != 0)
+    {
+    if (errno != EEXIST)
+      return(rc);
+    }
+
+  rc = stat(pathname, &buf);
+  if (rc != 0)
+    return(rc);
+
+  if (buf.st_mode != mode)
+    rc = chmod(pathname, mode);
+
+  return(rc);
+  } // END mkdir_wrapper()

@@ -12,6 +12,7 @@ int                     LOGLEVEL = 10;
 id_map                  node_mapper;
 mom_hierarchy_handler   hierarchy_handler; //The global declaration.
 bool                    exit_called;
+bool                    cray_enabled;
 
 int pbs_getaddrinfo(
     

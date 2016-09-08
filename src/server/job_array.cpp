@@ -27,13 +27,11 @@ const int DEFAULT_IDLE_SLOT_LIMIT = 300;
 array_info::array_info() : struct_version(ARRAY_QS_STRUCT_VERSION), array_size(0), num_jobs(0),
                            slot_limit(NO_SLOT_LIMIT), jobs_running(0), jobs_done(0), num_cloned(0),
                            num_started(0), num_failed(0), num_successful(0), num_purged(0),
-                           num_idle(0),
+                           num_idle(0), deps(),
                            idle_slot_limit(DEFAULT_IDLE_SLOT_LIMIT), highest_id_created(-1),
                            range_str()
 
   {
-  CLEAR_HEAD(deps);
-
   memset(this->owner, 0, sizeof(this->owner));
   memset(this->parent_id, 0, sizeof(this->parent_id));
   memset(this->fileprefix, 0, sizeof(this->fileprefix));
@@ -42,9 +40,22 @@ array_info::array_info() : struct_version(ARRAY_QS_STRUCT_VERSION), array_size(0
 
 
 
+array_info::~array_info() 
+
+  {
+  // free the dependencies if any exist
+  for (std::list<array_depend *>::iterator it = this->deps.begin(); it != this->deps.end(); it++)
+    {
+    array_depend *pdep = *it;
+    delete pdep;
+    }
+  } // END destructor()
+
+
+
 // job_array empty constructor
 job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
-                         ai_mutex(NULL), ai_qs()
+                         ai_mutex(NULL), ai_qs(), being_deleted(false)
 
   {
   this->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -70,14 +81,6 @@ job_array::~job_array()
       }
 
     free(this->job_ids);
-    }
-
-  /* free the dependencies, if any */
-  for (struct array_depend *pdep = (struct array_depend *)GET_NEXT(this->ai_qs.deps); 
-       pdep != NULL;
-       pdep = (struct array_depend *)GET_NEXT(this->ai_qs.deps))
-    {
-    delete pdep;
     }
   }
 
@@ -294,16 +297,20 @@ int job_array::get_next_index_to_create(
   int index = -1;
   internal_index = -1;
 
-  if ((this->ai_qs.idle_slot_limit == NO_SLOT_LIMIT) ||
-      (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit))
+  // Don't instantiate new jobs after we've been deleted
+  if (this->being_deleted == false)
     {
-    for (size_t i = 0; i < this->uncreated_ids.size(); i++)
+    if ((this->ai_qs.idle_slot_limit == NO_SLOT_LIMIT) ||
+        (this->ai_qs.num_idle < this->ai_qs.idle_slot_limit))
       {
-      if (this->uncreated_ids[i] != -1)
+      for (size_t i = 0; i < this->uncreated_ids.size(); i++)
         {
-        index = this->uncreated_ids[i];
-        internal_index = i;
-        break;
+        if (this->uncreated_ids[i] != -1)
+          {
+          index = this->uncreated_ids[i];
+          internal_index = i;
+          break;
+          }
         }
       }
     }
@@ -373,9 +380,10 @@ void job_array::create_job_if_needed()
  * update_array_values()
  *
  * updates internal bookkeeping values for job arrays
- * @param pa - array to update
- * @param pjob - the pjob that an event happened on
+ * @param old_state - the prior state for this job
  * @param event - code for what event just happened
+ * @param job_id - the id of the job that this happened to
+ * @param job_exit_status - the exit status, only used if the event is aeTerminate
  */
 
 void job_array::update_array_values(
@@ -383,11 +391,10 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {
-  long  moab_compatible;
+  bool  moab_compatible;
 
   switch (event)
     {
@@ -448,10 +455,10 @@ void job_array::update_array_values(
       array_save(this);
 
       /* update slot limit hold if necessary */
-      if (get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
-        moab_compatible = FALSE;
+      if (get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &moab_compatible) != PBSE_NONE)
+        moab_compatible = false;
 
-      if (moab_compatible != FALSE)
+      if (moab_compatible == true)
         {
         if (this->need_to_update_slot_limits() == true)
           {
@@ -547,6 +554,18 @@ void job_array::initialize_uncreated_ids()
     if (temp[i] > this->ai_qs.highest_id_created)
       this->uncreated_ids.push_back(temp[i]);
     }
+  }
+
+
+
+void job_array::mark_deleted()
+  {
+  this->being_deleted = true;
+  }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
   }
 
 

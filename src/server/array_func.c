@@ -87,6 +87,7 @@ int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 job_array  *next_array_check(int *, job_array *);
+void        force_purge_work(job *pjob);
 
 #define     BUFSIZE 256
 
@@ -490,7 +491,10 @@ int read_and_convert_259_array(
   pa->ai_qs.num_successful = pa_259->ai_qs.num_successful;
   pa->ai_qs.num_purged = pa_259->ai_qs.num_purged;
 
-  pa->ai_qs.deps = pa_259->ai_qs.deps;
+  for (struct array_depend *pdep = (struct array_depend *)GET_NEXT(pa_259->ai_qs.deps); 
+       pdep != NULL;
+       pdep = (struct array_depend *)GET_NEXT(pa_259->ai_qs.deps))
+    pa->ai_qs.deps.push_back(pdep);
 
   snprintf(pa->ai_qs.owner, sizeof(pa->ai_qs.owner), "%s", pa_259->ai_qs.owner);
   snprintf(pa->ai_qs.parent_id, sizeof(pa->ai_qs.parent_id), "%s", pa_259->ai_qs.parent_id);
@@ -818,9 +822,8 @@ int array_recov_binary(
   struct stat s_buf;
   char                request_buf[MAXLINE];
 
-
   fd = open(path, O_RDONLY, 0);
-  if(fd < 0)
+  if (fd < 0)
     {
     snprintf(log_buf, buflen, "failed to open %s", path);
     log_err(errno, __func__, log_buf);
@@ -864,7 +867,7 @@ int array_recov_binary(
     len = read_ac_socket(fd, &(pa->ai_qs), sizeof(array_info));
     if ((len < 0) || ((len < (int)sizeof(array_info)) && (pa->ai_qs.struct_version == ARRAY_QS_STRUCT_VERSION)))
       {
-      memset(&pa->ai_qs,0,sizeof(array_info));
+      pa->ai_qs.deps.clear();
       snprintf(log_buf, buflen, "error reading %s", path);
       close(fd);
       return(PBSE_SYSTEM);
@@ -875,7 +878,7 @@ int array_recov_binary(
       rc = array_upgrade(pa, fd, pa->ai_qs.struct_version, &old_version);
       if (rc)
         {
-        memset(&pa->ai_qs,0,sizeof(array_info));
+        pa->ai_qs.deps.clear();
         snprintf(log_buf, buflen, 
           "Cannot upgrade array version %d to %d", pa->ai_qs.struct_version, ARRAY_QS_STRUCT_VERSION);
         close(fd);
@@ -896,7 +899,6 @@ int array_recov_binary(
   pa->job_ids = (char **)calloc(pa->ai_qs.array_size, sizeof(char *));
   if(pa->job_ids == NULL)
     {
-    free(pa);
     close(fd);
     return PBSE_SYSTEM;
     }
@@ -947,8 +949,6 @@ int array_recov_binary(
 
   close(fd);
 
-  CLEAR_HEAD(pa->ai_qs.deps);
-
   if (old_version != ARRAY_QS_STRUCT_VERSION)
     {
     /* resave the array struct if the version on disk is older than the current */
@@ -958,23 +958,7 @@ int array_recov_binary(
   return PBSE_NONE;
   } /* END array_recov_binary */
 
-void free_array_job_sub_struct(
 
-  job_array *pa)
-
-  {
-  if (pa->job_ids != NULL)
-    {
-    /* free the memory for the job pointers */
-    for (int i = 0; i < pa->ai_qs.array_size; i++)
-      {
-      if (pa->job_ids[i] != NULL)
-        free(pa->job_ids[i]);
-      }
-
-    free(pa->job_ids);
-    }
-  }
 
 /* array_recov reads in  an array struct saved to disk and inserts it into
    the servers list of arrays */
@@ -1007,8 +991,7 @@ int array_recov(
 
   if (rc != PBSE_NONE) 
     {
-    free_array_job_sub_struct(pa);
-    free(pa);
+    delete pa;
     log_err(-1, __func__, log_buf);
     return rc;
     }
@@ -1016,10 +999,6 @@ int array_recov(
   if (binary_conversion)
     if (array_save_xml((const job_array *)pa, path, log_buf, sizeof(log_buf)) != PBSE_NONE)
       log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,pa->ai_qs.parent_id,log_buf);
-
-  CLEAR_HEAD(pa->ai_qs.deps);
-  pa->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pa->ai_mutex,NULL);
 
   lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
@@ -1030,7 +1009,6 @@ int array_recov(
 
   return(PBSE_NONE);
   } /* END array_recov() */
-
 
 
 
@@ -1175,7 +1153,7 @@ int setup_array_struct(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "cannot save job");
 
     svr_job_purge(pjob);
-    free(pa);
+    delete pa;
 
     return(1);
     }
@@ -1394,7 +1372,8 @@ int array_request_parse_token(
 int delete_array_range(
 
   job_array *pa,
-  char      *range_str)
+  char      *range_str,
+  bool       purge)
 
   {
   job                *pjob;
@@ -1403,8 +1382,9 @@ int delete_array_range(
 
   int                 num_skipped = 0;
   int                 num_deleted = 0;
-  int                 deleted;
+  bool                deleted;
   int                 running;
+  long                cancel_exit_code = 0;
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
@@ -1418,6 +1398,8 @@ int delete_array_range(
 
     return(-1);
     }
+
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   for (size_t i = 0; i < range_vec.size(); i++)
     {
@@ -1444,27 +1426,51 @@ int delete_array_range(
         continue;
         }
 
+      int old_state = pjob->ji_qs.ji_state;
+
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
-      deleted = attempt_delete(pjob);
-      /* we come out of attempt_delete unlocked */
+      if (purge == true)
+        {
+        deleted = true;
+
+        try
+          {
+          force_purge_work(pjob);
+          }
+        catch (int err)
+          {
+          if (err != PBSE_JOB_RECYCLED)
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+            sprintf(log_buf, "Error when purging %s", pa->job_ids[i]);
+            log_err(err, __func__, log_buf);
+            deleted = false;
+            }
+          }
+        }
+      else
+        deleted = attempt_delete(pjob);
+      
+      // Both attempt_delete and force_purge_work unlock pjob
       pjob_mutex.set_unlock_on_exit(false);
+      pthread_mutex_lock(pa->ai_mutex);
 
-
-      if (deleted == FALSE)
+      if (deleted == false)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere. When it fails,
          * release it here */
         num_skipped++;
         }
-      else if (running == FALSE)
+      else 
         {
         /* running jobs will increase the deleted count when their obit is reported */
-        num_deleted++;
-        }
+        if (running == FALSE)
+          num_deleted++;
 
-      pthread_mutex_lock(pa->ai_mutex);
+        pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
+        }
       }
     }
 
@@ -1504,20 +1510,28 @@ int first_job_index(
  * delete_whole_array()
  *
  * iterates over the array and deletes the whole thing
+ *
  * @param pa - the array to be deleted
+ * @param purge - true if the array should be purged, false if it's a normal delete
  * @return - the number of jobs skipped
  */
 int delete_whole_array(
 
-  job_array *pa) /* I */
+  job_array *pa,
+  bool       purge)
 
   {
-  int i;
-  int num_skipped = 0;
-  int num_jobs = 0;
-  int num_deleted = 0;
-  int deleted;
-  int running;
+  int  i;
+  int  num_skipped = 0;
+  int  num_jobs = 0;
+  int  num_deleted = 0;
+  bool deleted;
+  int  running;
+  long cancel_exit_code = 0;
+
+  std::string array_id = pa->ai_qs.parent_id;
+
+  get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
   job *pjob;
 
@@ -1536,20 +1550,45 @@ int delete_whole_array(
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       num_jobs++;
 
-      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) &&
+          (purge == false))
         {
         /* invalid state for request,  skip */
         continue;
         }
+
+      int old_state = pjob->ji_qs.ji_state;
         
       running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
-      deleted = attempt_delete(pjob);
+
+      if (purge)
+        {
+        deleted = true;
+
+        try
+          {
+          force_purge_work(pjob);
+          }
+        catch (int err)
+          {
+          if (err != PBSE_JOB_RECYCLED)
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+            sprintf(log_buf, "Error when purging %s", pa->job_ids[i]);
+            log_err(err, __func__, log_buf);
+            deleted = false;
+            }
+          }
+        }
+      else
+        deleted = attempt_delete(pjob);
+
       /* we come out of attempt_delete unlocked */
       pjob_mutex.set_unlock_on_exit(false);
 
-      if (deleted == FALSE)
+      if (deleted == false)
         {
         /* if the job was deleted, this mutex would be taked care of elsewhere.
          * When it fails, release it here */
@@ -1561,18 +1600,23 @@ int delete_whole_array(
         num_deleted++;
         }
 
-      pthread_mutex_lock(pa->ai_mutex);
+      if ((pa = get_array(array_id.c_str())) == NULL)
+        break;
+      
+      if ((deleted == true) &&
+          (purge == false))
+        pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
       }
     }
 
-  pa->ai_qs.num_failed += num_deleted;
+  if (pa != NULL)
+    pa->ai_qs.num_failed += num_deleted;
 
   if (num_jobs == 0)
     return(NO_JOBS_IN_ARRAY);
 
   return(num_skipped);
   } /* END delete_whole_array() */
-
 
 
 
@@ -2035,11 +2079,21 @@ void update_array_statuses()
 
   while ((pa = next_array(&iter)) != NULL)
     {
-    running  = pa->ai_qs.jobs_running;
-    complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
-    queued   = pa->ai_qs.num_jobs - running - complete;
-    if (queued < 0)
+    // If the array has been deleted, force the state to show as complete
+    if (pa->is_deleted())
+      {
+      running = 0;
+      complete = 1;
       queued = 0;
+      }
+    else
+      {
+      running  = pa->ai_qs.jobs_running;
+      complete = pa->ai_qs.num_failed + pa->ai_qs.num_successful;
+      queued   = pa->ai_qs.num_jobs - running - complete;
+      if (queued < 0)
+        queued = 0;
+      }
     
     if (LOGLEVEL >= 7)
       {

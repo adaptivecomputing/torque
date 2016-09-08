@@ -1,7 +1,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-
+#include <list>
 
 /* these are required if you include array.h */
 #include "pbs_ifl.h"
@@ -115,7 +115,7 @@ class array_info
   int  num_idle;       // number of jobs that are currently queued
 
   /* dependency info */
-  tlist_head deps;
+  std::list<array_depend *> deps;
   
   /* max user name, server name, 1 for the @, and one for the NULL */
   char owner[PBS_MAXUSER + PBS_MAXSERVERNAME + 2];
@@ -127,6 +127,7 @@ class array_info
   std::string range_str;
 
   array_info();
+  ~array_info();
   };
 
 
@@ -135,23 +136,25 @@ class array_info
 class job_array
   {
   public:
-  char **job_ids; // Array of the sub job ids for this array
+  char             **job_ids; // Array of the sub job ids for this array
   
   /* on server restart we track the number of array tasks that have been recovered. This is
    * in case the server is restarted (cleanly) before the array is completely setup */
-  int    jobs_recovered; 
+  int                jobs_recovered; 
  
   // true if the array file couldn't be recovered but we made this in 
   // order to not lose sub-jobs
-  bool              ai_ghost_recovered;
+  bool               ai_ghost_recovered;
 
   // Vector of array sub jobs indices that haven't been created
-  std::vector<int>  uncreated_ids;
+  std::vector<int>   uncreated_ids;
 
-  pthread_mutex_t  *ai_mutex;
+  pthread_mutex_t   *ai_mutex;
 
   /* this info is saved in the array file */
-  array_info   ai_qs;
+  array_info         ai_qs;
+
+  bool               being_deleted;
 
   job_array();
   ~job_array();
@@ -164,12 +167,14 @@ class job_array
   void set_arrays_fileprefix(const char *file_prefix);
   void set_array_id(const char *array_id);
   void update_array_values(int old_state, enum ArrayEventsEnum event, const char *job_id,
-                            long job_atr_hold, int job_exit_status);
+                            int job_exit_status);
   void create_job_if_needed();
   int  get_next_index_to_create(int &internal_index);
   void initialize_uncreated_ids();
 
   bool need_to_update_slot_limits() const;
+  void mark_deleted();
+  bool is_deleted() const;
   };
 
 
@@ -212,9 +217,9 @@ void array_get_parent_id(char *job_id, char *parent_id);
 job_array *get_array(const char *id);
 int array_recov(const char *path, job_array **pa);
 
-int delete_array_range(job_array *pa, char *range);
-int delete_whole_array(job_array *pa);
-int attempt_delete(void *);
+int delete_array_range(job_array *pa, char *range, bool purge);
+int delete_whole_array(job_array *pa, bool purge);
+bool attempt_delete(void *);
 
 int hold_array_range(job_array *,char *,pbs_attribute *);
 void hold_job(pbs_attribute *,void *);
@@ -223,7 +228,6 @@ int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int)
 int modify_job(void **,svrattrl *,struct batch_request *,int, int);
 
 void update_slot_held_jobs(job_array *pa, int num_to_release);
-void update_array_values(job_array *,int,enum ArrayEventsEnum, const char *job_id, long job_atr_hold, int job_exit_status);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
 bool set_array_depend_holds(job_array *);

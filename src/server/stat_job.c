@@ -139,7 +139,7 @@ int status_job(
   {
   struct brp_status *pstat;
   int                IsOwner = 0;
-  long               query_others = 0;
+  bool               query_others = false;
   long               condensed_timeout = JOB_CONDENSED_TIMEOUT;
 
   /* Make sure procct is removed from the job 
@@ -150,7 +150,7 @@ int status_job(
   if (svr_authorize_jobreq(preq, pjob) == 0)
     IsOwner = 1;
 
-  get_svr_attr_l(SRV_ATR_query_others, &query_others);
+  get_svr_attr_b(SRV_ATR_query_others, &query_others);
   if (!query_others)
     {
     if (IsOwner == 0)

@@ -511,7 +511,7 @@ void deregister_jobs_nspace(
   if (pos != std::string::npos)
     nspace.erase(pos);
 
-  PMIx_server_deregister_nspace(nspace.c_str());
+  PMIx_server_deregister_nspace(nspace.c_str(), NULL, NULL);
 
   if (LOGLEVEL >= 6)
     {
@@ -1041,6 +1041,31 @@ void mom_job_purge(
 
 
 
+/*
+ * mom_find_job_by_raw_string()
+ *
+ * @param raw_string - a string that shouldn't be edited before being compared with job ids
+ */
+
+job *mom_find_job_by_raw_string(
+
+  std::string &raw_string)
+
+  {
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+    {
+    job *pj = *iter;
+
+    // Match
+    if (raw_string == pj->ji_qs.ji_jobid)
+      return(pj);
+    }
+
+  return(NULL);
+  } // END mom_find_job_by_raw_string()
+
 
 
 /*
@@ -1062,18 +1087,18 @@ job *mom_find_job(
   if ((pos = jid.find("@")) != std::string::npos)
     jid.erase(pos);
 
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  if ((pj = mom_find_job_by_raw_string(jid)) == NULL)
     {
-    pj = *iter;
-
-    // Match
-    if (jid == pj->ji_qs.ji_jobid)
-      return(pj);
+    // We haven't found the job, let's check if we can find it by removing the server suffix
+    if ((pos = jid.find_last_of('.')) != std::string::npos)
+      {
+      jid.erase(pos);
+     
+      pj = mom_find_job_by_raw_string(jid);
+      }
     }
 
-  return(NULL);
+  return(pj);
   }   /* END mom_find_job() */
 
 

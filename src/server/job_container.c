@@ -130,10 +130,10 @@ char *get_correct_jobname(
 
   int len;
 
-  long  display_suffix = TRUE;
+  bool  display_suffix = true;
   char *alias = NULL;
 
-  get_svr_attr_l(SRV_ATR_display_job_server_suffix, &display_suffix);
+  get_svr_attr_b(SRV_ATR_display_job_server_suffix, &display_suffix);
   if (display_suffix == FALSE)
     server_suffix = FALSE;
 

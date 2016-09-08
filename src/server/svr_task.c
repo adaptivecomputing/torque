@@ -513,7 +513,6 @@ void *remove_some_recycle_tasks(
 
 
 
-
 int insert_task_into_recycler(
 
   struct work_task *ptask)

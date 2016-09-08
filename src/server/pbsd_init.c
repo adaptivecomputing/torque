@@ -795,7 +795,7 @@ int initialize_paths()
   const char        *new_tag = ".new";
   struct stat  statbuf;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  long         use_jobs_subdirs = FALSE;
+  bool         use_jobs_subdirs = false;
   char        *paths[3] = { NULL };
 #if !defined(DEBUG) && !defined(NO_SECURITY_CHECK)
   char         EMsg[1024];
@@ -891,7 +891,7 @@ int initialize_paths()
     }
 
   // get the use_jobs_subdirs value if set
-  get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+  get_svr_attr_b(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
 
   // check divided jobs and arrays subdirectories for existence
   if (use_jobs_subdirs == TRUE)
@@ -1032,13 +1032,13 @@ int setup_server_attrs(
   server.sv_attr[SRV_ATR_JobStatRate].at_val.at_long = PBS_RESTAT_JOB;
   server.sv_attr[SRV_ATR_JobStatRate].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[SRV_ATR_PollJobs].at_val.at_long = PBS_POLLJOBS;
+  server.sv_attr[SRV_ATR_PollJobs].at_val.at_bool = true;
   server.sv_attr[SRV_ATR_PollJobs].at_flags = ATR_VFLAG_SET;
 
   server.sv_attr[SRV_ATR_MomJobSync].at_flags = ATR_VFLAG_SET;
-  server.sv_attr[SRV_ATR_MomJobSync].at_val.at_long = 1;
+  server.sv_attr[SRV_ATR_MomJobSync].at_val.at_bool = true;
 
-  server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_MoabArrayCompatible].at_val.at_bool = true;
   server.sv_attr[SRV_ATR_MoabArrayCompatible].at_flags = ATR_VFLAG_SET;
 
   /* force logging of all types */
@@ -1055,10 +1055,10 @@ int setup_server_attrs(
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_val.at_long = TIMEOUT_FOR_JOB_DEL_REQ;
   server.sv_attr[SRV_ATR_TimeoutForJobRequeue].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[SRV_ATR_NoteAppendOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_NoteAppendOnError].at_val.at_bool = true;
   server.sv_attr[SRV_ATR_NoteAppendOnError].at_flags = ATR_VFLAG_SET;
 
-  server.sv_attr[SRV_ATR_DownOnError].at_val.at_long = TRUE;
+  server.sv_attr[SRV_ATR_DownOnError].at_val.at_bool = true;
   server.sv_attr[SRV_ATR_DownOnError].at_flags = ATR_VFLAG_SET;
 
   /* If not a "create" initialization, recover server db */
@@ -1082,7 +1082,7 @@ int setup_server_attrs(
       }
    
     if ((server.sv_attr[SRV_ATR_CopyOnRerun].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_CopyOnRerun].at_val.at_long))
+        (server.sv_attr[SRV_ATR_CopyOnRerun].at_val.at_bool))
       {
       cpy_stdout_err_on_rerun = true;
       }
@@ -1118,7 +1118,7 @@ int setup_server_attrs(
     return(-1);
     }
 
-  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_long)
+  if (server.sv_attr[SRV_ATR_RecordJobInfo].at_val.at_bool)
     {
     rc = job_log_open(job_log_file, path_jobinfo_log);
 
@@ -1134,7 +1134,7 @@ int setup_server_attrs(
   if (a_opt_init != -1)
     {
     /* a_option was set, overrides saved value of scheduling attr */
-    server.sv_attr[SRV_ATR_scheduling].at_val.at_long = a_opt_init;
+    server.sv_attr[SRV_ATR_scheduling].at_val.at_bool = a_opt_init;
     server.sv_attr[SRV_ATR_scheduling].at_flags |= ATR_VFLAG_SET;
     }
       
@@ -1186,7 +1186,7 @@ void remove_invalid_allocations(
     pnode = find_nodebyname(node_id.c_str());
 
     if (pnode == NULL)
-      throw PBSE_NODE_DELETED;
+      throw (int)PBSE_NODE_DELETED;
 
     for (size_t i = 0; i < bad_allocation.size(); i++)
       pnode->nd_layout.free_job_allocation(bad_allocation[i].c_str());
@@ -1479,7 +1479,7 @@ int handle_array_recovery(
   DIR              *dir_sub;
   int               rc = PBSE_NONE;
   int               rc2 = PBSE_NONE;
-  long              use_jobs_subdirs = FALSE;
+  bool              use_jobs_subdirs = false;
 
   if (chdir(path_arrays) != 0)
     {
@@ -1497,7 +1497,7 @@ int handle_array_recovery(
     return -1;
 
   // get the value of use_jobs_subdirs if set
-  get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+  get_svr_attr_b(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
 
   while ((pdirent = readdir(dir)) != NULL)
     {
@@ -1668,7 +1668,7 @@ int handle_job_recovery(
   job              *pjob;
   time_t            time_now = time(NULL);
   char              basen[MAXPATHLEN+1];
-  long              use_jobs_subdirs = FALSE;
+  bool              use_jobs_subdirs = false;
 
   JobArray.clear();
   recovered_job_count = 0;
@@ -1712,7 +1712,7 @@ int handle_job_recovery(
   else
     {
     // get the value of use_jobs_subdirs if set
-    get_svr_attr_l(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
+    get_svr_attr_b(SRV_ATR_use_jobs_subdirs, &use_jobs_subdirs);
 
     while ((pdirent = readdir(dir)) != NULL)
       {
@@ -2217,14 +2217,14 @@ void setup_threadpool()
 void set_server_policies()
 
   {
-  long cray = 0;
-  long recover_subjobs = 0;
+  bool cray = false;
+  bool recover_subjobs = false;
 
-  if (get_svr_attr_l(SRV_ATR_CrayEnabled, &cray) == PBSE_NONE)
-    cray_enabled = (bool)cray;
+  if (get_svr_attr_b(SRV_ATR_CrayEnabled, &cray) == PBSE_NONE)
+    cray_enabled = cray;
 
-  if (get_svr_attr_l(SRV_ATR_GhostArrayRecovery, &recover_subjobs) == PBSE_NONE)
-    ghost_array_recovery = (bool)recover_subjobs;
+  if (get_svr_attr_b(SRV_ATR_GhostArrayRecovery, &recover_subjobs) == PBSE_NONE)
+    ghost_array_recovery = recover_subjobs;
 
   } // END set_server_policies()
 
@@ -2437,7 +2437,6 @@ int pbsd_init_job(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               local_errno = 0;
   char              job_id[PBS_MAXSVRJOBID+1];
-  long              job_atr_hold;
   int               job_exit_status;
 
   pjob->ji_momhandle = -1;
@@ -2667,13 +2666,11 @@ int pbsd_init_job(
         if (pjob != NULL)
           {
           strcpy(job_id, pjob->ji_qs.ji_jobid);
-          job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
           job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           if (pa)
             {
-            pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_atr_hold,
-                job_exit_status);
+            pa->update_array_values(JOB_STATE_RUNNING, aeTerminate, job_id, job_exit_status);
           
             unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
             }
@@ -2947,7 +2944,7 @@ void change_logs_handler(int sig)
 void change_logs()
 
   {
-  long record_job_info = FALSE;
+  bool record_job_info = false;
 
   run_change_logs = FALSE;
   acct_close(false);
@@ -2958,7 +2955,7 @@ void change_logs()
 
   acct_open(acct_file, false);
 
-  get_svr_attr_l(SRV_ATR_RecordJobInfo, &record_job_info);
+  get_svr_attr_b(SRV_ATR_RecordJobInfo, &record_job_info);
   if (record_job_info)
     {
     pthread_mutex_lock(&job_log_mutex);

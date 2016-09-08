@@ -18,6 +18,7 @@
 #include "id_map.hpp"
 #include "pbs_nodes.h"
 
+bool cray_enabled;
 bool exit_called = false;
 const char *PJobSubState[10];
 char *path_jobs;
@@ -309,6 +310,14 @@ int get_svr_attr_l(int index, long *l)
   {
   if (long_to_set != -1)
     *l = long_to_set;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (long_to_set != -1)
+    *b = long_to_set;
 
   return(0);
   }

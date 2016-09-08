@@ -35,6 +35,12 @@ int get_svr_attr_l(int attr_index, long *l)
 	return 0;
   }  
 
+int get_svr_attr_b(int index, bool *b)
+  {
+	called = 1;
+  return(0);
+  }
+
 int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
   {
   send_the_mail((mail_info *)arg);

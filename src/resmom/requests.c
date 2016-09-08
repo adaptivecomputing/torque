@@ -429,13 +429,7 @@ static pid_t fork_to_user(
 
   if (pid < 0)
     {
-    /* fork failed */
-
-    sprintf(log_buffer, "forked failed, errno=%d (%s)",
-            errno,
-            strerror(errno));
-
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, "Fork failed.");
 
     if (EMsg != NULL)
       snprintf(EMsg, 1024, "%s", log_buffer);
@@ -509,7 +503,7 @@ static pid_t fork_to_user(
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
 
-      log_err(-1, __func__, log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "%s", log_buffer);
@@ -522,7 +516,7 @@ static pid_t fork_to_user(
       {
       sprintf(log_buffer, "put_env_var failed with %d", rc);
 
-      log_err(-1, __func__, log_buffer);
+      log_err(errno, __func__, log_buffer);
 
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "%s", log_buffer);
@@ -1084,7 +1078,7 @@ static int is_file_going_to_dir(
     sprintf(log_buffer, "File %s stat failed, errno = %d",
             destdir,
             errno);
-    log_err(-1, __func__, log_buffer);
+    log_err(errno, __func__, log_buffer);
     }
 
   return(0);
@@ -1578,6 +1572,11 @@ void req_modifyjob(
         {
         if (newattr[i].at_val.at_str != NULL)
           snprintf(tmpLine, sizeof(tmpLine), "%s", newattr[i].at_val.at_str);
+        }
+      else if (newattr[i].at_type == ATR_TYPE_BOOL)
+        {
+        sprintf(tmpLine, newattr[i].at_type ? 
+                "true" : "false");
         }
       else if (newattr[i].at_type == ATR_TYPE_LONG)
         {
@@ -2080,7 +2079,7 @@ static void resume_suspend(
 
 
 /**
- * req_signaljob - issue (kill) a specified signal to a job
+ * mom_req_signal_job - issue (kill) a specified signal to a job
  * Signal may be either a numeric string or a signal name
  * with or without the "SIG" prefix.
  *
@@ -2091,7 +2090,7 @@ static void resume_suspend(
  * @see req_signaljob() in server/req_signal.c - peer
  */
 
-void req_signaljob(
+void mom_req_signal_job(
 
   batch_request *preq) /* I */
 
@@ -2293,7 +2292,7 @@ void req_signaljob(
   reply_ack(preq);
 
   return;
-  }  /* END req_signaljob() */
+  }  /* END mom_req_signal_job() */
 
 
 /**
@@ -3045,7 +3044,7 @@ void req_returnfiles(
         sock,
         pjob->ji_qs.ji_jobid);
       
-      log_err(-1, __func__, log_buffer);
+      log_err(errno, __func__, log_buffer);
     
       req_reject(PBSE_SOCKET_FAULT, 0, preq, mom_host, "Cannot open a socket to pbs_server");
       }
@@ -3220,7 +3219,7 @@ static int sys_copy(
           rc,
           loop);
 
-  log_err(-1, __func__, log_buffer);
+  log_err(rc, __func__, log_buffer);
 
   return(rc);
   }  /* END sys_copy() */
@@ -3563,10 +3562,16 @@ void determine_spooldir(
 
   {
 #if NO_SPOOL_OUTPUT == 1
-  spooldir = HDir;
-  spooldir += "/.pbs_spool/";
+  int         rcstat = 1;
+  struct stat myspooldir;
 
-  rcstat = stat(spooldir.c_str(), &myspooldir);
+  if (pjob != NULL)
+    {
+    spooldir = pjob->ji_grpcache->gc_homedir;
+    spooldir += "/.pbs_spool/";
+
+    rcstat = stat(spooldir.c_str(), &myspooldir);
+    }
 
   if ((rcstat != 0) || 
       (!S_ISDIR(myspooldir.st_mode)))
@@ -3673,8 +3678,6 @@ void req_cpyfile(
   int             rc;
   int             exitcode = 0;
   bool            rmtflag = false;
-#if NO_SPOOL_OUTPUT == 0
-#endif /* !NO_SPOOL_OUTPUT */
 
 #ifdef  _CRAY
   char            tmpdirname[MAXPATHLEN + 1];
@@ -3907,8 +3910,9 @@ void req_cpyfile(
             from_spool = true;
             }
           }
-
-        from_spool = (spool_dir == path_spool);
+        
+        if (from_spool == false)
+          from_spool = (spool_dir == path_spool);
         
         }  /* END if (pair->fp_flag == STDJOBFILE) */
       else if (pair->fp_flag == JOBCKPFILE)

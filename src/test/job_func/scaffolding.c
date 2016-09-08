@@ -225,12 +225,6 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool re
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status)
-  {
-  fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
-  exit(1);
-  }
-
 int array_delete(job_array *pa)
   {
   fprintf(stderr, "The call to array_delete needs to be mocked!!\n");
@@ -315,6 +309,11 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char 
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }
@@ -708,8 +707,12 @@ void job_array::update_array_values(
   int                   old_state, /* I */
   enum ArrayEventsEnum  event,     /* I */
   const char           *job_id,
-  long                  job_atr_hold,
   int                   job_exit_status)
 
   {
+  }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
   }

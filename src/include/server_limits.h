@@ -118,7 +118,6 @@
 #define PBS_TCPTIMEOUT        300 /* timeout for pbs-mom tcp connections */
 #define PBS_TCPINTIMEOUT      600 /* timeout for incoming tcp connections */
 #define PBS_JOBSTAT_MIN         4 /* minimum time between job stats */
-#define PBS_POLLJOBS         TRUE /* enable pbs_server job polling */
 #define PBS_LOG_CHECK_RATE    300 /* check log size (and log age) every 5 min
                                      if log_file_max_size is set */
 #define PBS_ACCT_CHECK_RATE   60*60  /* check accounting files every hour

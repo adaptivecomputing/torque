@@ -96,11 +96,13 @@ job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   exit(1);
   }
 
-int attempt_delete(void *j)
+bool attempt_delete(void *j)
   {
   fprintf(stderr, "The call to attempt_delete needs to be mocked!!\n");
   exit(1);
   }
+
+void force_purge_work(job *pjob) {}
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
@@ -208,6 +210,11 @@ int get_svr_attr_l(int attr_index, long *l)
     *l = 5;
     }
 
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
   return(0);
   }
 

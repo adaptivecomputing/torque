@@ -235,6 +235,7 @@ Machine          this_node;
 #ifdef ENABLE_PMIX
 std::string                 topology_xml;
 extern pmix_server_module_t psm;
+char                        path_pmix_tmpdir[MAXPATHLEN];
 #endif
 
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -2838,7 +2839,8 @@ int process_layout_request(
   
   if ((ret = DIS_tcp_wflush(chan)) != DIS_SUCCESS)
     {
-    if (ret <= DIS_INVALID)
+    if ((ret <= DIS_INVALID) &&
+        (ret >= 0))
       sprintf(log_buffer, "write request response failed: %s",
         dis_emsg[ret]);
     else
@@ -4768,6 +4770,42 @@ int initialize_hwloc_topology()
   return(PBSE_NONE);
   }
 #endif
+
+
+
+#ifdef ENABLE_PMIX
+int initialize_pmix_server()
+
+  {
+  pmix_status_t pmix_rc;
+  pmix_info_t   info[2];
+
+  snprintf(path_pmix_tmpdir, sizeof(path_pmix_tmpdir), "/tmp/pmix_server-%d/", getpid());
+  if (mkdir_wrapper(path_pmix_tmpdir, 0777) != PBSE_NONE)
+    return(1);
+
+  strcpy(info[0].key, PMIX_SERVER_TMPDIR);
+  info[0].value.type = PMIX_STRING;
+  info[0].value.data.string = strdup(path_pmix_tmpdir);
+
+  strcpy(info[1].key, PMIX_SOCKET_MODE);
+  info[1].value.type = PMIX_UINT32;
+  info[1].value.data.uint32 = 0777;
+
+  if ((pmix_rc = PMIx_server_init(&psm, info, 2)) != PMIX_SUCCESS)
+    {
+/*  Uncomment once PMIx bug is fixed
+ *  const char *err_msg = PMIx_Error_string(pmix_rc);
+    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
+    fprintf(stderr, "%s", log_buffer);*/
+    return(1);
+    }
+
+  return(PBSE_NONE);
+  } // END initialize_pmix_server()
+#endif
+
+
  
 /**
  * setup_program_environment
@@ -5113,16 +5151,8 @@ int setup_program_environment(void)
 #endif /* PENABLE_LINUX_CGROUPS */
 
 #ifdef ENABLE_PMIX
-  pmix_status_t pmix_rc;
-  //pmix_info_t   info[1];
-  if ((pmix_rc = PMIx_server_init(&psm, NULL, 0)) != PMIX_SUCCESS)
-    {
-/*  Uncomment once PMIx bug is fixed
- *  const char *err_msg = PMIx_Error_string(pmix_rc);
-    sprintf(log_buffer, "Could not initialize PMIx server: %s\n", err_msg);
-    fprintf(stderr, "%s", log_buffer);*/
+  if (initialize_pmix_server() != PBSE_NONE)
     return(1);
-    }
 #endif
 
 #ifdef NUMA_SUPPORT

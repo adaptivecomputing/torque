@@ -194,7 +194,8 @@ union attr_val    /* the attribute value */
   Long                  at_ll;        /* largest long integer */
   char                  at_char;      /* single character */
   char                 *at_str;       /* char string (alloc) */
-
+  bool                  at_bool;      /* bool true or false */
+  
   struct array_strings *at_arst;      /* array of strings (alloc) */
 
   struct size_value     at_size;      /* size value */
@@ -253,7 +254,7 @@ typedef struct attribute_def attribute_def;
 
 /* Defines for type of Attribute based on data type    */
 
-#define ATR_TYPE_LONG          1 /* Long integer, also Boolean */
+#define ATR_TYPE_LONG          1 /* Long integer */
 #define ATR_TYPE_CHAR          2 /* single character */
 #define ATR_TYPE_STR           3 /* string, null terminated */
 #define ATR_TYPE_ARST          4 /* Array of strings (char **) */
@@ -268,6 +269,7 @@ typedef struct attribute_def attribute_def;
 #define ATR_TYPE_FREQ          15 /* CPU frequency */
 #define ATR_TYPE_REQ           16 /* job req information */
 #define ATR_TYPE_ATTR_REQ_INFO 17 /* queue and server req_information types */
+#define ATR_TYPE_BOOL          18 /* Boolean true or false */
 
 /* Defines for  Flag field in attribute_def         */
 
@@ -366,6 +368,7 @@ int  find_attr(attribute_def *attrdef, const char *name, int limit);
 int  recov_attr(int fd, void *parent, attribute_def *padef,
                 pbs_attribute *pattr, int limit, int unknown, int do_actions);
 long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
+bool attr_ifelse_bool(pbs_attribute *, pbs_attribute *, bool);
 void free_null(pbs_attribute *attr);
 void free_noop(pbs_attribute *attr);
 svrattrl *attrlist_alloc(int szname, int szresc, int szval);
@@ -456,6 +459,7 @@ extern int set_str_csv(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_
 extern int set_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_acl_arst(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_resc(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
+int        set_hold(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_hostacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_uacl(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 extern int set_unkn(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
