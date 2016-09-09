@@ -1624,7 +1624,7 @@ int apply_job_delete_nanny(
 
   /* short-circuit if nanny isn't enabled or we have a delete nanny */
   get_svr_attr_b(SRV_ATR_JobNanny, &nanny);
-  if ((nanny == FALSE) ||
+  if ((nanny == false) ||
       (pjob->ji_has_delete_nanny == true))
     {
     return(PBSE_NONE);
