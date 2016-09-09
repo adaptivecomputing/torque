@@ -234,13 +234,15 @@ int req_deletearray(
 
     if (((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY) &&
         (purge == false))
-      array_delete(pa);
+      {
+      pa_mutex.unlock();
+      array_delete(preq->rq_ind.rq_delete.rq_objname);
+      }
     }
 
   // If purge is true, the array is gone at this point in time
-  if (purge == true)
-    pa_mutex.set_unlock_on_exit(false);
-  else if (num_skipped != NO_JOBS_IN_ARRAY)
+  if ((purge == false) &&
+      (num_skipped != NO_JOBS_IN_ARRAY))
     {
     pa_mutex.unlock();
     

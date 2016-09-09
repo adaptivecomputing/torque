@@ -135,8 +135,7 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
 
 char *get_correct_jobname(const char *jobid)
   {
-  fprintf(stderr, "The call to get_correct_jobname needs to be mocked!!\n");
-  exit(1);
+  return(strdup(jobid));
   }
 
 void *get_prior(list_link pl, char *file, int line)

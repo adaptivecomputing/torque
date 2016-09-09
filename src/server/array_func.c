@@ -57,9 +57,7 @@
 #include "batch_request.h"
 #include "alps_constants.h"
 
-#ifndef PBS_MOM
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
-#endif /* PBS_MOM */
 
 
 extern int array_upgrade(job_array *, int, int, int *);
@@ -73,7 +71,7 @@ extern void post_modify_arrayreq(batch_request *preq);
 extern struct server   server;
 
 all_jobs          array_summary;
-static all_arrays allarrays;
+all_arrays allarrays;
 
 extern char *path_arrays;
 extern char *path_jobs;
@@ -192,11 +190,52 @@ job_array *get_array(
 
   allarrays.unlock();
 
-  if (tmpjobid != NULL)
-    free(tmpjobid);
+  free(tmpjobid);
 
   return(pa);
   } /* END get_array() */
+
+
+
+/*
+ * get_and_remove_array()
+ *
+ * Gets the array with parent_id == id if present, and removes it from allarrays,
+ * then it is returned.
+ *
+ * @param id - the id of the array to remove and return
+ * @return - a pointer to the removed array or NULL if not found
+ */
+
+job_array *get_and_remove_array(
+
+  const char *id)
+
+  {
+  job_array *pa = NULL;
+  char      *tmpjobid;
+
+  tmpjobid = get_correct_jobname(id);
+  if (tmpjobid == NULL)
+    return(NULL);
+
+  allarrays.lock();
+
+  pa = allarrays.find(tmpjobid);
+
+  if (pa != NULL)
+    {
+    lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+    allarrays.remove(id);
+    }
+
+  allarrays.unlock();
+
+  free(tmpjobid);
+
+  return(pa);
+  } // END get_and_remove_array()
+
 
 
 void add_string_field_node(
@@ -321,15 +360,11 @@ int array_save_xml(
         {
         if (xmlNewChild(root_node, NULL, (xmlChar *)RANGE_TAG, (xmlChar *)pa->ai_qs.range_str.c_str()))
           {
-#ifndef PBS_MOM
           lock_ss();
-#endif /* !defined PBS_MOM */
 
           int lenwritten = xmlSaveFormatFileEnc(filename, doc, NULL, 1);
 
-#ifndef PBS_MOM
           unlock_ss();
-#endif /* !defined PBS_MOM */
 
           if (!(lenwritten))
             {
@@ -361,16 +396,11 @@ int array_save(
   {
   char namebuf[MAXPATHLEN];
   char log_buf[LOCAL_LOG_BUF_SIZE];
-#ifndef PBS_MOM
   // get adjusted path_arrays path
   std::string adjusted_path_arrays = get_path_jobdata(pa->ai_qs.parent_id, path_arrays);
 
   snprintf(namebuf, sizeof(namebuf), "%s%s%s",
     adjusted_path_arrays.c_str(), pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
-#else
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-   path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
-#endif
 
   /* error buf is filled in array_save_xml or its subroutines */
   if (array_save_xml((const job_array *)pa, namebuf, log_buf, sizeof(log_buf)) != PBSE_NONE)
@@ -1012,41 +1042,41 @@ int array_recov(
 
 
 
-/* delete a job array struct from memory and disk. This is used when the number
+/* 
+ * array_delete()
+ * Delete a job array from memory and disk. 
+ *
+ * @pre-cond: There should be no sub jobs left for this array.
  *  of jobs that belong to the array becomes zero.
  *  returns zero if there are no errors, non-zero otherwise
  */
 int array_delete(
     
-  job_array *pa)
+  const char *array_id)
 
   {
   char                     path[MAXPATHLEN + 1];
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
-#ifndef PBS_MOM
   std::string              adjusted_path_arrays;
-#endif
 
   /* first thing to do is take this out of the servers list of all arrays */
-  remove_array(pa);
+  job_array *pa = get_and_remove_array(array_id);
 
-#ifndef PBS_MOM
+  // The array has vanished - success
+  if (pa == NULL)
+    return(PBSE_NONE);
+
   // get adjusted path_arrays path
   adjusted_path_arrays = get_path_jobdata(pa->ai_qs.fileprefix, path_arrays);
 
   /* delete the on disk copy of the struct */
   snprintf(path, sizeof(path), "%s%s%s",
     adjusted_path_arrays.c_str(), pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
-#else
-  /* delete the on disk copy of the struct */
-  snprintf(path, sizeof(path), "%s%s%s",
-    path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
-#endif
 
   if (unlink(path))
     {
     sprintf(log_buf, "unable to delete %s", path);
-    log_err(errno, "array_delete", log_buf);
+    log_err(errno, __func__, log_buf);
     }
 
   /* purge the "template" job, 
@@ -1160,10 +1190,8 @@ int setup_array_struct(
 
   if ((rc = pa->set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
-    array_delete(pa);
-
-    /* array_delete will delete pa and its mutex. Do not try to unlock */
-    pa_mutex.set_unlock_on_exit(false);
+    pa_mutex.unlock();
+    array_delete(pjob->ji_qs.ji_jobid);
 
     return(rc);
     }
@@ -1175,18 +1203,16 @@ int setup_array_struct(
 
   if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
-    array_delete(pa);
-
-    /* array_delete will delete pa and its mutex. Do not try to unlock */
-    pa_mutex.set_unlock_on_exit(false);
+    pa_mutex.unlock();
+    array_delete(pjob->ji_qs.ji_jobid);
 
     return(rc);
     }
 
   if ((rc = pa->parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
-    array_delete(pa);
-    pa_mutex.set_unlock_on_exit(false);
+    pa_mutex.unlock();
+    array_delete(pjob->ji_qs.ji_jobid);
     return(rc);
     }
 
@@ -2239,7 +2265,7 @@ int remove_array(
   if (pa == NULL)
     rc = PBSE_NONE;
   else
-    if(!allarrays.remove(pa->ai_qs.parent_id))
+    if (!allarrays.remove(pa->ai_qs.parent_id))
       rc = THING_NOT_FOUND;
 
   allarrays.unlock();

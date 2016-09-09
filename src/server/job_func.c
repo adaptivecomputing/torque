@@ -2097,11 +2097,7 @@ int svr_job_purge(
     }
 
   if (do_delete_array == true)
-    {
-    pa = get_array(array_id);
-    if (pa != NULL)
-      array_delete(pa);
-    }
+    array_delete(array_id);
 
   return(PBSE_NONE);
   }  /* END svr_job_purge() */

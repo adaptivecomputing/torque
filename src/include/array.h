@@ -209,7 +209,7 @@ typedef container::item_container<job_array *>::item_iterator all_arrays_iterato
 #define RANGE_TAG                "range"
 
 int  is_array(char *id);
-int  array_delete(job_array *pa);
+int  array_delete(const char *array_id);
 int  array_save(job_array *pa);
 int  array_save(job_array *pa);
 void array_get_parent_id(char *job_id, char *parent_id);
