@@ -16,6 +16,7 @@ int                     LOGLEVEL;
 bool                    exit_called = false;
 threadpool_t           *task_pool;
 id_map                  node_mapper;
+int			lock_node_count = 0;
 
 execution_slot_tracker::execution_slot_tracker(){}
 
@@ -79,6 +80,16 @@ int tcp_connect_sockaddr(struct sockaddr *sa, size_t s)
 
 int add_conn(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *))
   {
+  return(0);
+  }
+
+int lock_node(
+  struct pbsnode *the_node,
+  const char     *id,
+  const char     *msg,
+  int             logging)
+  {
+  lock_node_count++;
   return(0);
   }
 
@@ -306,4 +317,12 @@ const char *id_map::get_name(int id)
   return(NULL);
   }
 
+int insert_node(all_nodes *an, struct pbsnode *pnode)
+  {
+  if ((an == NULL) || (pnode == NULL) || (pnode->nd_name == NULL)) return 0;
 
+  an->lock();
+  an->insert(pnode, pnode->nd_name);
+  an->unlock();
+  return(PBSE_NONE);
+  }
