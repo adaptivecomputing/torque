@@ -7,6 +7,7 @@
 
 extern char      *path_mom_hierarchy;
 extern all_nodes allnodes;
+extern int lock_node_count;
 
 class sendNodeHolder
   {
@@ -20,14 +21,46 @@ public:
     }
   };
 
+class test_mom_hierarchy_handler
+  {
+public:
+  pbsnode *call_nextNode(mom_hierarchy_handler hierarchy_handler)
+    {
+    all_nodes_iterator *iter = NULL; 
+
+    return hierarchy_handler.nextNode(&iter);
+    }
+  };
+
+
 extern int xml_index;
+
+START_TEST(test_next_node)
+  {
+  pbsnode *np;
+  pbsnode *node = NULL;
+  test_mom_hierarchy_handler test_hierarchy_handler;
+
+  // insert node into allnodes
+  node = (pbsnode *)calloc(1, sizeof(pbsnode));
+  fail_unless(node != NULL);
+  node->nd_name = (char *)"foo";
+  insert_node(&allnodes, node);
+
+  // confirm nextNode locks node
+  lock_node_count = 0;
+  np = test_hierarchy_handler.call_nextNode(hierarchy_handler);
+  fail_unless(np != NULL);
+  fail_unless(lock_node_count == 1);
+  }
+END_TEST
 
 START_TEST(load_hierarchy_test)
   {
   path_mom_hierarchy = (char *)"./dummy_hierarchy.txt"; //Need it to find something.
   hierarchy_handler.initialLoadHierarchy();
 
-  /*
+/*
   allnodes.lock();
   all_nodes_iterator *it = allnodes.get_iterator();
   pbsnode *pNode;
@@ -38,7 +71,7 @@ START_TEST(load_hierarchy_test)
     }
   delete it;
   allnodes.unlock();
-  */
+*/
 
   pbsnode node;
   memset(&node,0,sizeof(node));
@@ -68,6 +101,9 @@ Suite *mom_hierarchy_handler_suite(void)
   tcase_add_test(tc_core, load_hierarchy_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_next_node");
+  tcase_add_test(tc_core, test_next_node);
+  suite_add_tcase(s, tc_core);
   return s;
   }
 

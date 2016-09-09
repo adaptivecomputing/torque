@@ -3,6 +3,7 @@
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include "pbs_error.h"
 #include "threadpool.h"
 
@@ -68,10 +69,17 @@ START_TEST(manage_timed_task_test)
   work_task  ptask2;
   work_task  ptask3;
   work_task *wt;
+  int rc;
 
   memset(&ptask1, 0, sizeof(ptask1));
+  ptask1.wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(ptask1.wt_mutex, NULL);
   memset(&ptask2, 0, sizeof(ptask2));
+  ptask2.wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(ptask2.wt_mutex, NULL);
   memset(&ptask3, 0, sizeof(ptask3));
+  ptask3.wt_mutex = (pthread_mutex_t*)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(ptask3.wt_mutex, NULL);
 
   if (task_list_timed == NULL)
     task_list_timed = new std::list<timed_task>();
@@ -89,6 +97,12 @@ START_TEST(manage_timed_task_test)
 
   wt = pop_timed_task(150);
   fail_unless(wt != NULL);
+
+  // we expect the mutex to be locked
+  //   so trylock should fail
+  rc = pthread_mutex_trylock(wt->wt_mutex);
+  fail_unless(rc == EBUSY);
+
   fail_unless(wt->wt_event == 100);
   fail_unless(pop_timed_task(150) == NULL);
 
