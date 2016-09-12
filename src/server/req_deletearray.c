@@ -175,7 +175,7 @@ int req_deletearray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
+  mutex_mgr pa_mutex(pa->ai_mutex, true);
   /* check authorization */
   get_jobowner(pa->ai_qs.owner, owner);
 
@@ -240,9 +240,11 @@ int req_deletearray(
       }
     }
 
-  // If purge is true, the array is gone at this point in time
-  if ((purge == false) &&
-      (num_skipped != NO_JOBS_IN_ARRAY))
+  // If purge is true, the array is gone at this point in time, mark the mutex manager 
+  // unlocked
+  if (purge == true)
+    pa_mutex.set_lock_state(false);
+  else if (num_skipped != NO_JOBS_IN_ARRAY)
     {
     pa_mutex.unlock();
     
