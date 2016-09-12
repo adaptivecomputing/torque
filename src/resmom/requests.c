@@ -3124,11 +3124,13 @@ static int sys_copy(
 
   for (loop = 1;loop < 4;++loop)
     {
-    if ((rc = fork()) > 0)
+    
+    pid_t pid_fork;
+    if ((pid_fork = fork()) > 0)
       {
       /* Parent - wait for copy to complete */
 
-      while (((i = wait(&rc)) < 0) && (errno == EINTR))
+      while (((i = waitpid(pid_fork, &rc, 0)) < 0) && (errno == EINTR))
         /* NO-OP, retry for EINTR */;
 
       if (i == -1)
