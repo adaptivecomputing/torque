@@ -248,7 +248,7 @@ int delete_inactive_job(
       KeepSeconds = attr_ifelse_long(
                     &pque->qu_attr[QE_ATR_KeepCompleted],
                     &server.sv_attr[SRV_ATR_KeepCompleted],
-                    0);
+                    KEEP_COMPLETED_DEFAULT);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else
@@ -447,7 +447,7 @@ void setup_apply_job_delete_nanny(
   int rc = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
 
   if ((rc != PBSE_NONE) || (KeepSeconds <= 0))
-    apply_job_delete_nanny(pjob, time_now + 60);
+    apply_job_delete_nanny(pjob, time_now + KEEP_COMPLETED_DEFAULT);
   else
     apply_job_delete_nanny(pjob, time_now + KeepSeconds);
   } /* END of setup_apply_job_delete_nanny */

@@ -514,7 +514,7 @@ int job_abt(
   long KeepSeconds = 0;
   int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
   if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
-    KeepSeconds = 0;
+    KeepSeconds = KEEP_COMPLETED_DEFAULT;
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
