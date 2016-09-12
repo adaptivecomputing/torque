@@ -1985,7 +1985,22 @@ void set_depend_hold(
 
         if (pdp->dp_type >= JOB_DEPEND_TYPE_AFTERSTARTARRAY)
           {
-          array_names.push_back(pdp->dp_jobs[0]->dc_child);
+          // make sure the dependency still present
+          if (pdp->dp_jobs.size() > 0)
+            {
+            array_names.push_back(pdp->dp_jobs[0]->dc_child);
+            }
+          else
+            {
+            if (LOGLEVEL >= 2)
+              {
+              log_event(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "Array dependency already satisfied. Skipping array dependency handling for job.");
+              }
+            }
           }
       }  /* END switch (pdp->dp_type) */
 
