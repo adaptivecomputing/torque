@@ -363,11 +363,11 @@ END_TEST
 START_TEST(test_setup_apply_job_delete_nanny)
   {
   time_t time_now = time(NULL);
-  time_t call_time = time_now + 300;
+  time_t call_time = time_now + 200;
 
   nanny = 0; /* nanny is being used by the other unit tests above */
   server.sv_attr[SRV_ATR_KeepCompleted].at_flags = ATR_VFLAG_SET;
-  server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 300;
+  server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 200;
 
   server.sv_attr[SRV_ATR_JobNanny].at_flags = ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_JobNanny].at_val.at_long = 1;
