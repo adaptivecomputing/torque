@@ -1,7 +1,7 @@
 PBS Tools
 
-Website:  http://www.nics.tennessee.edu/~troy/pbstools/
-SVN repo:  http://svn.nics.utk.edu/repos/pbstools/
+Website:  http://www.osc.edu/~troy/pbstools/
+Git repo:  https://github.com/tabaer/pbstools
 
 PBS Tools is a collection of utilities that have been developed at
 OSC, NICS, and elsewhere to aid in the administration and management
@@ -18,10 +18,6 @@ bin/ja -- Job accounting within a PBS job; similar to "ja" in NQE.
 bin/pbsdcp -- Distributed copy command within a PBS job.  This can
 optionally include an MPI-based scatter functionality that should
 scale better than the default rcp-based approach.
-
-bin/qps -- ps for PBS jobs; relies on the "all" command.
-
-bin/qpeek -- Allows users to look at spooled output of running jobs.
 
 bin/qexec -- Workalike for SGE qlogin/qrsh/qsh
 
@@ -52,20 +48,9 @@ database.
 bin/jobinfo -- Command line lookup of usage data in the accounting
 database.
 
-sbin/dezombify -- Requeue a "running" PBS job that's not actually
-running because it had JOIN JOB failures.  Relies on the "all"
-command; requires root privilege.
-
-sbin/qtracejob.pbs-server -- Wrapper around the tracejob command to
-give a time-sorted list of log messages from all hosts involved.  Must
-run on host where pbs_server resides; requires root privilege.
-
 sbin/reaver -- Find (and optionally clean up) processes on a host
 which have not been allocated jobs on that host; requires root
 privilege.
-
-sbin/showscript.pbs-server -- Show the script associated with a jobid.
-Must run on host where pbs_server resides; requires root privilege.
 
 
 Reporting tools:
@@ -139,11 +124,12 @@ Suggestions:
 ------------
 
 Comments and suggestions on this software are welcomed; please send
-them to Troy Baer <tbaer@utk.edu> or Doug Johnson <djohnson@osc.edu>.
+them to Troy Baer <troy@osc.edu>.
+
 
 Copyright:
 ----------
-PBS Tools are copyright 2005-2009 Ohio Supercomputer Center and/or
-copyright 2008-2011 University of Tennessee, and are licensed under
+PBS Tools are copyright 2005-2016 Supercomputer Center and/or
+copyright 2008-2015 University of Tennessee, and are licensed under
 the terms of the GNU GPL v2.
 
