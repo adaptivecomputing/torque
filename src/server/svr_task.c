@@ -226,13 +226,12 @@ struct work_task *set_task(
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
-    pthread_mutex_lock(pnew->wt_mutex);
    
     insert_timed_task(pnew);
 
-    /* only keep the lock if they want it */
-    if (get_lock == FALSE)
-      pthread_mutex_unlock(pnew->wt_mutex);
+    /* set the lock if the caller wants it */
+    if (get_lock == TRUE)
+      pthread_mutex_lock(pnew->wt_mutex);
     }
 
   return(pnew);
