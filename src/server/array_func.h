@@ -14,8 +14,6 @@ int array_save(job_array *pa);
 
 void array_get_parent_id(char *job_id, char *parent_id);
 
-int array_delete(job_array *pa);
-
 int set_slot_limit(char *request, job_array *pa);
 
 int setup_array_struct(job *pjob);

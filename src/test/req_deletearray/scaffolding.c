@@ -145,7 +145,7 @@ job *svr_find_job(const char *jobid, int get_subjob)
 
 int array_delete(
     
-  job_array *pa)
+  const char *array_id)
 
   {
   return(0);

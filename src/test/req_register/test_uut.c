@@ -685,6 +685,18 @@ START_TEST(set_depend_hold_test)
   set_depend_hold(&pjob2, pattr, NULL);
   fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
   fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD);
+
+  memset(&pjob, 0, sizeof(pjob));
+  pattr = &pjob.ji_wattr[JOB_ATR_depend];
+  initialize_depend_attr(pattr);
+  pdep = make_depend(JOB_DEPEND_TYPE_AFTERSTARTARRAY, pattr);
+  // intentially skip make_depend() call so
+  // a dependency is not actually created.
+  // set_depend_hold() expected to gracefully
+  // handle this condition.
+  set_depend_hold(&pjob, pattr, NULL);
+  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
+  fail_unless(pjob.ji_qs.ji_state != JOB_STATE_HELD);
   }
 END_TEST
 

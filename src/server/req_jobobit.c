@@ -940,7 +940,7 @@ int handle_returnstd(
       KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
         &server.sv_attr[SRV_ATR_KeepCompleted],
-        0);
+        KEEP_COMPLETED_DEFAULT);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else if (pjob == NULL)
@@ -1817,7 +1817,7 @@ int handle_complete_first_time(
     KeepSeconds = attr_ifelse_long(
       &pque->qu_attr[QE_ATR_KeepCompleted],
       &server.sv_attr[SRV_ATR_KeepCompleted],
-      0);
+      KEEP_COMPLETED_DEFAULT);
     pthread_mutex_unlock(server.sv_attr_mutex);
     }
   else if (pjob == NULL)

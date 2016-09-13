@@ -227,7 +227,8 @@ int  decode_complete_req(
         {
         if (swap < mem)
           {
-          delete cr;
+          /* free_complete_req implies a 'delete cr' */
+          free_complete_req(patr);
           return(PBSE_BAD_PARAMETER);
           }
         }

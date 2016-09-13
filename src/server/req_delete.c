@@ -248,7 +248,7 @@ int delete_inactive_job(
       KeepSeconds = attr_ifelse_long(
                     &pque->qu_attr[QE_ATR_KeepCompleted],
                     &server.sv_attr[SRV_ATR_KeepCompleted],
-                    0);
+                    KEEP_COMPLETED_DEFAULT);
       pthread_mutex_unlock(server.sv_attr_mutex);
       }
     else
@@ -362,7 +362,7 @@ void force_purge_work(
     job_array *pa = get_jobs_array(&pjob);
 
     if (pjob == NULL)
-      throw PBSE_JOB_RECYCLED;
+      throw (int)PBSE_JOB_RECYCLED;
 
     if (pa != NULL)
       {
@@ -447,7 +447,7 @@ void setup_apply_job_delete_nanny(
   int rc = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
 
   if ((rc != PBSE_NONE) || (KeepSeconds <= 0))
-    apply_job_delete_nanny(pjob, time_now + 60);
+    apply_job_delete_nanny(pjob, time_now + KEEP_COMPLETED_DEFAULT);
   else
     apply_job_delete_nanny(pjob, time_now + KeepSeconds);
   } /* END of setup_apply_job_delete_nanny */
@@ -1571,6 +1571,7 @@ int forced_jobpurge(
         {
         std::string jobid(pjob->ji_qs.ji_jobid);
         int rc = PURGE_SUCCESS;
+
         try
           {
           force_purge_work(pjob);
@@ -1623,7 +1624,7 @@ int apply_job_delete_nanny(
 
   /* short-circuit if nanny isn't enabled or we have a delete nanny */
   get_svr_attr_b(SRV_ATR_JobNanny, &nanny);
-  if ((nanny == FALSE) ||
+  if ((nanny == false) ||
       (pjob->ji_has_delete_nanny == true))
     {
     return(PBSE_NONE);

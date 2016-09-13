@@ -25,6 +25,7 @@ extern char *path_arrays;
 
 extern bool place_hold;
 extern int  unlocked;
+extern all_arrays allarrays;
 
 
 job_array *get_job_array(
@@ -262,6 +263,7 @@ START_TEST(array_delete_test)
 
   path_arrays = (char *)"./";
   strcpy(pa->ai_qs.fileprefix,"tempFile");
+  strcpy(pa->ai_qs.parent_id, "1.roshar");
   char path[256];
   snprintf(path, sizeof(path), "%s%s%s",
     path_arrays, pa->ai_qs.fileprefix, ARRAY_FILE_SUFFIX);
@@ -277,8 +279,9 @@ START_TEST(array_delete_test)
   pdep->dp_jobs.push_back(new (array_depend_job));
   pdep->dp_jobs.push_back(new (array_depend_job));
   pdep->dp_jobs.push_back(new (array_depend_job));
+  allarrays.insert(pa, pa->ai_qs.parent_id);
 
-  array_delete(pa);
+  array_delete("1.roshar");
 
   }
 END_TEST

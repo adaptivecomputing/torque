@@ -225,10 +225,9 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool re
   exit(1);
   }
 
-int array_delete(job_array *pa)
+int array_delete(const char *array_id)
   {
-  fprintf(stderr, "The call to array_delete needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void release_req(struct work_task *pwt)

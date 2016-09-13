@@ -651,7 +651,7 @@ void svr_mailowner(
   get_svr_attr_b(SRV_ATR_NoMailForce, &no_force);
 
   if ((force != MAIL_FORCE) ||
-      (no_force == false))
+      (no_force == true))
     {
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)

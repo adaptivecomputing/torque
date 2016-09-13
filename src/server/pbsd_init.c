@@ -1186,7 +1186,7 @@ void remove_invalid_allocations(
     pnode = find_nodebyname(node_id.c_str());
 
     if (pnode == NULL)
-      throw PBSE_NODE_DELETED;
+      throw (int)PBSE_NODE_DELETED;
 
     for (size_t i = 0; i < bad_allocation.size(); i++)
       pnode->nd_layout.free_job_allocation(bad_allocation[i].c_str());
@@ -2007,7 +2007,9 @@ int cleanup_recovered_arrays()
       if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
         svr_job_purge(pjob);
 
-      array_delete(pa);
+      std::string array_id(pa->ai_qs.parent_id);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      array_delete(array_id.c_str());
 
       /* move on to the next array */
       continue;
@@ -2048,7 +2050,9 @@ int cleanup_recovered_arrays()
             }
           }
 
-        array_delete(pa);
+        std::string array_id(pa->ai_qs.parent_id);
+        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+        array_delete(array_id.c_str());
         continue;
         }
       else
@@ -2063,7 +2067,9 @@ int cleanup_recovered_arrays()
     else if ((pa->ai_qs.jobs_done == pa->ai_qs.num_jobs) && 
              (job_template_exists == FALSE))
       {
-      array_delete(pa);
+      std::string array_id(pa->ai_qs.parent_id);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      array_delete(array_id.c_str());
       continue;
       }
 

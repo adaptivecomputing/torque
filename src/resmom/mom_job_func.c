@@ -511,7 +511,7 @@ void deregister_jobs_nspace(
   if (pos != std::string::npos)
     nspace.erase(pos);
 
-  PMIx_server_deregister_nspace(nspace.c_str());
+  PMIx_server_deregister_nspace(nspace.c_str(), NULL, NULL);
 
   if (LOGLEVEL >= 6)
     {

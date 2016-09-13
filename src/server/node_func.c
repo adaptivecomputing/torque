@@ -1329,7 +1329,6 @@ int create_a_gpusubnode(
 
   {
   int     rc = PBSE_NONE;
-  gpusubn tmp;
 
   if (pnode == NULL)
     {
@@ -1338,16 +1337,7 @@ int create_a_gpusubnode(
     return(rc);
     }
   
-  /* now use the new memory */
-
-  /* initialize the node */
-  pnode->nd_gpus_real = FALSE;
-  tmp.inuse = FALSE;
-  tmp.job_internal_id = -1;
-  tmp.mode = gpu_normal;
-  tmp.state = gpu_unallocated;
-  tmp.flag = okay;
-  tmp.index = pnode->nd_gpusn.size();
+  gpusubn tmp(pnode->nd_gpusn.size());
 
   /* increment the number of gpu subnodes and gpus free */
   pnode->nd_gpusn.push_back(tmp);

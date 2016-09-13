@@ -121,6 +121,9 @@ pbsnode *mom_hierarchy_handler::nextNode(all_nodes_iterator **iter)
     *iter = NULL;
     allnodes.unlock();
     }
+  else
+    pNode->lock_node(__func__, NULL, LOGLEVEL);
+
   return pNode;
   }
 

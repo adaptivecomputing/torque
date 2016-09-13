@@ -226,7 +226,12 @@ int job_log_open(char *filename, char *directory) {return 0;}
 char *threadsafe_tokenizer(char **str, const char *delims) {return NULL;}
 int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int set_l(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
-int array_delete(job_array *pa) {return 0;}
+
+int array_delete(const char *array_id) 
+  {
+  return(PBSE_NONE);
+  }
+
 int array_save(job_array *pa) {return 0;}
 int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
 void mutex_mgr::set_unlock_on_exit(bool val) {}
