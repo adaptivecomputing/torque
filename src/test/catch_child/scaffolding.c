@@ -20,6 +20,7 @@
 #include "mom_func.h"
 #include "mom_job_cleanup.h"
 #include "complete_req.hpp"
+#include "json/json.h"
 
 int server_down;
 int called_open_socket = 0;
@@ -958,11 +959,11 @@ struct batch_request *alloc_br(int type)
   return br;
   }
 
-void encode_used(job *pjob, int i, std::stringstream *output, list_link *l)
+void encode_used(job *pjob, int i, Json::Value *output, list_link *l)
   {
   }
 
-void encode_flagged_attrs(job *pjob, int i, std::stringstream *output, list_link *l)
+void encode_flagged_attrs(job *pjob, int i, Json::Value *output, list_link *l)
   {
   }
 

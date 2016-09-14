@@ -1138,6 +1138,18 @@ int modify_job_attr(
          perm,         /* I */
          bad);         /* O */
 
+  // Update plugin-reported information, if any
+  while (plist != NULL)
+    {
+    if (plist->al_op == SET_PLUGIN)
+      {
+      rc = PBSE_NONE;
+      pjob->set_plugin_resource_usage(plist->al_resc, plist->al_value);
+      }
+    
+    plist = (struct svrattrl *)GET_NEXT(plist->al_link);
+    }
+
   /* if req_information has been changed move it over to pattr */
   if ((rc == 0) &&
       (newattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))

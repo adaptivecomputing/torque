@@ -74,6 +74,10 @@
 #include "req.hpp"
 #endif
 
+#ifdef USE_RESOURCE_PLUGIN
+#include "trq_plugin_api.h"
+#endif
+
 
 /*
 ** System dependent code to gather information for the resource
@@ -2861,7 +2865,7 @@ int mom_set_use(
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
     return -1;
 
-  lp = (unsigned long *) & pres->rs_value.at_val.at_long;
+  lp = (unsigned long *) &pres->rs_value.at_val.at_long;
 
   lnum = cput_sum(pjob);
 
@@ -2953,6 +2957,12 @@ int mom_set_use(
     {
     pjob->ji_mempressure_curr = 0;
     }
+#endif
+
+#ifdef USE_RESOURCE_PLUGIN
+  std::string jid(pjob->ji_qs.ji_jobid);
+  std::set<pid_t> job_pids(*pjob->ji_job_pid_set);
+  report_job_resources(jid, job_pids, *pjob->ji_custom_usage_info);
 #endif
 
   return(PBSE_NONE);

@@ -97,6 +97,7 @@
 #include "../lib/Libutils/u_lock_ctl.h"
 #include "mutex_mgr.hpp"
 #include "id_map.hpp"
+#include "plugin_internal.h"
 
 
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -440,7 +441,7 @@ void update_job_data(
               
             log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);  
             }
-          
+
           memset(&tA, 0, sizeof(tA));
 
           tA.al_name  = attr_name;
@@ -805,7 +806,7 @@ int process_status_info(
   {
   const char     *name = nd_name;
   struct pbsnode *current;
-  bool            mom_job_sync = false;
+  bool            mom_job_sync = true;
   bool            auto_np = false;
   bool            down_on_error = false;
   bool            note_append_on_error = false;
@@ -912,6 +913,10 @@ int process_status_info(
       continue;
       }
 #endif
+    else if (!strncmp(str, PLUGIN_EQUALS, PLUGIN_EQ_LEN))
+      {
+      current->capture_plugin_resources(str + PLUGIN_EQ_LEN);
+      }
     else if (!strcmp(str, "first_update=true"))
       {
       /* mom is requesting that we send the mom hierarchy file to her */

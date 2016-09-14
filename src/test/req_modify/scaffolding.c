@@ -321,4 +321,12 @@ int acl_check(pbs_attribute *pattr, char *name, int type)
   return(rc);
   }
 
+void job::set_plugin_resource_usage(
+
+  const char *name,
+  const char *val)
+  
+  {
+  }
+
 void update_slot_held_jobs(job_array *pa, int num_to_release) {}

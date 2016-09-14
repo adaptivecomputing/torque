@@ -61,3 +61,10 @@ int remove_procct(
   {
   return(0);
   }
+
+void job::encode_plugin_resource_usage(
+    
+  tlist_head *phead) const
+
+  {
+  }

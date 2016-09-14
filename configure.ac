@@ -170,6 +170,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/incoming_request/Makefile
     src/test/issue_request/Makefile
     src/test/job_attr_def/Makefile
+    src/test/job/Makefile
     src/test/job_array/Makefile
     src/test/job_container/Makefile
     src/test/job_func/Makefile
@@ -928,6 +929,28 @@ if test "x$enable_maxint_jobids" = "xyes" ; then
   AC_MSG_RESULT([yes])
   maxint_ids=1
   CFLAGS="$CFLAGS -DUSE_MAXINT_JOBIDS"
+else
+  AC_MSG_RESULT([no])
+fi
+
+dnl
+dnl Specify whether or not to use the resource plugin library
+dnl
+
+AC_ARG_WITH(resource-plugin, [
+  --with-resource-plugin=PATH
+                       Specifies the path to the resource plugin library to link against.
+                       For example: ./configure --with-resource-plugin=/opt/torque-plugin
+                       tells Torque that libresource_plugin.so is in /opt/torque-plugin/],
+  [PLUGIN_PATH="${withval}"], [PLUGIN_PATH=""])
+
+AC_MSG_CHECKING([Whether to use the resource plugin libary])
+
+if test "x$PLUGIN_PATH" != "x"; then
+  dnl A plugin library has been specified
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(USE_RESOURCE_PLUGIN, 1, [Define to use the resource plugin])
+  MOMLIBS="$MOMLIBS -L$PLUGIN_PATH -lresource_plugin"
 else
   AC_MSG_RESULT([no])
 fi

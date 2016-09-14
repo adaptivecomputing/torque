@@ -365,7 +365,7 @@ int diswsi(tcp_chan *c, int value)
   }
 
 job *mock_job_alloc_return = NULL;
-job *job_alloc(void )
+job *mom_job_alloc(void )
   {
   if (mock_job_alloc_return == NULL)
     {

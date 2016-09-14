@@ -474,6 +474,10 @@ job::job()
 
 job::~job() {}
 
+void job::add_plugin_resource_usage(std::string &acct_data) const 
+  {
+  }
+
 int get_time_string(char *buf, int bufsize, long timeval)
   {
   return(0);

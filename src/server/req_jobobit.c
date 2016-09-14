@@ -1702,6 +1702,8 @@ int get_used(
     pr = (resource *)GET_NEXT(pr->rs_link);
     }
 
+  pjob->add_plugin_resource_usage(acct_data);
+
   return(PBSE_NONE);
   } // END get_used()
 

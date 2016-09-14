@@ -21,6 +21,7 @@
 #include "id_map.hpp"
 #include "machine.hpp"
 #include "complete_req.hpp"
+#include "json/json.h"
 
 
 bool cray_enabled;
@@ -591,9 +592,9 @@ const char *id_map::get_name(int id)
     {
     switch (id)
       {
-      case 1:
-      case 2:
-      case 3:
+      case 11:
+      case 12:
+      case 13:
 
         snprintf(buf, sizeof(buf), "%d.lei.ac", id);
         return(strdup(buf));
@@ -1054,6 +1055,8 @@ job::job()
   }
 
 job::~job() {}
+
+void job::set_plugin_resource_usage_from_json(Json::Value &usage) {}
 
 bool have_incompatible_dash_l_resource(job *pjob)
   {

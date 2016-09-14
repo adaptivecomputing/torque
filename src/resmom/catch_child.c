@@ -51,6 +51,7 @@
 #include "pbs_cpuset.h"
 #endif
 #include "mom_config.h"
+#include "json/json.h"
 
 #define DIS_REPLY_READ_RETRY 10
 
@@ -87,8 +88,8 @@ u_long resc_used(job *, const char *, u_long(*f) (resource *));
 void preobit_preparation (job *);
 void *obit_reply (void *);
 extern u_long addclient (const char *);
-extern void encode_used (job *, int, std::stringstream *, tlist_head *);
-extern void encode_flagged_attrs (job *, int, std::stringstream *, tlist_head *);
+extern void encode_used (job *, int, Json::Value *, tlist_head *);
+extern void encode_flagged_attrs (job *, int, Json::Value *, tlist_head *);
 extern int job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);

@@ -5,6 +5,8 @@
 
 #include <pbs_config.h>
 
+std::map<std::string, std::string> encoded;
+
 extern std::string global_string;
 
 AvlTree                 ipaddrs = NULL;
@@ -145,3 +147,43 @@ Core::~Core() {}
 pbsnode *alps_reporter;
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
+
+
+svrattrl *attrlist_create(
+
+  const char  *aname, /* I - pbs_attribute name */
+  const char  *rname, /* I - resource name if needed or null */
+  int           vsize) /* I - size of resource value         */
+
+  {
+  svrattrl *pal;
+  size_t    asz;
+  size_t    rsz;
+
+  asz = strlen(aname) + 1;     /* pbs_attribute name,allow for null term */
+
+  if (rname == NULL)      /* resource name only if type resource */
+    rsz = 0;
+  else
+    rsz = strlen(rname) + 1;
+
+  pal = attrlist_alloc(asz, rsz, vsize);
+
+  strcpy(pal->al_name, aname); /* copy name right after struct */
+
+  if (rsz > 0)
+    strcpy(pal->al_resc, rname);
+
+  return(pal);
+  }
+
+void append_link(
+
+  tlist_head *head, /* ptr to head of list */
+  list_link  *new_link,  /* ptr to new entry */
+  void       *pobj) /* ptr to object to link in */
+
+  {
+  svrattrl *pal = (svrattrl *)pobj;
+  encoded[pal->al_name] = pal->al_value;
+  }

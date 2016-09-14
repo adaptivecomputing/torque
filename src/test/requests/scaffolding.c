@@ -337,7 +337,7 @@ int diswsi(tcp_chan *chan, int value)
   exit(1);
   }
 
-job *job_alloc(void)
+job *mom_job_alloc(void)
   {
   fprintf(stderr, "The call to job_alloc needs to be mocked!!\n");
   exit(1);

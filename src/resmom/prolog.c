@@ -108,6 +108,7 @@
 #include "net_connect.h"
 #include "utils.h"
 #include "mom_config.h"
+#include "json/json.h"
 
 
 const int   PELOG_DOESNT_EXIST = -1;
@@ -137,7 +138,7 @@ extern unsigned int pbs_rm_port;
 /* external prototypes */
 
 extern int pe_input(char *);
-extern void encode_used(job *, int, std::stringstream *, tlist_head *);
+extern void encode_used(job *, int, Json::Value *, tlist_head *);
 #ifdef ENABLE_CSA
 extern void add_wkm_end(uint64_t, int64_t, char *);
 

@@ -1,13 +1,14 @@
 #include <pbs_config.h>
 #include "pbs_job.h"
 #include "log.h"
+#include "json/json.h"
 
 
 /**
  * Default constructor
  */
 
-job::job() : ji_momstat(0), ji_modified(0), ji_momhandle(-1), ji_radix(0),
+job::job() : ji_plugin_usage_info(), ji_momstat(0), ji_modified(0), ji_momhandle(-1), ji_radix(0),
              ji_has_delete_nanny(false), ji_qhdr(NULL), ji_lastdest(0),
              ji_retryok(0), ji_rejectdest(), ji_is_array_template(false),
              ji_have_nodes_request(false), ji_external_clone(NULL),
@@ -32,8 +33,10 @@ job::job() : ji_momstat(0), ji_modified(0), ji_momhandle(-1), ji_radix(0),
 
 
 /*
- * job_init_wattr - initialize job working pbs_attribute array
- * set the types and the "unspecified value" flag
+ * job_init_wattr() 
+ *
+ * Initialize job attribute array
+ * Sets the types and the "unspecified value" flag
  */
 
 void job::job_init_wattr()
@@ -48,6 +51,8 @@ void job::job_init_wattr()
 
 
 /*
+ * free_job_allocation()
+ *
  * A helper function for the destructor
  */
 
@@ -85,3 +90,99 @@ job::~job()
   } // END destructor()
 
 
+
+/*
+ * add_plugin_resource_usage()
+ *
+ * Adds resource usage information to the string for the accounting log from the resource plugin,
+ * if any
+ *
+ * @param acct_data - 
+ */
+
+void job::add_plugin_resource_usage(
+
+  std::string &acct_data) const
+
+  {
+  for (std::map<std::string, std::string>::const_iterator it = this->ji_plugin_usage_info.begin();
+       it != this->ji_plugin_usage_info.end();
+       it++)
+    acct_data += " resources_used." + it->first + "=" + it->second;
+  } // END add_plugin_resource_usage()
+
+
+
+/*
+ * encode_plugin_resource_usage
+ *
+ * Adds resource usage information from the plugin to the list for qstat output
+ * @param phead - The linked list we add the plugin usage to
+ */
+
+void job::encode_plugin_resource_usage(
+    
+  tlist_head *phead) const
+
+  {
+  for (std::map<std::string, std::string>::const_iterator it = this->ji_plugin_usage_info.begin();
+       it != this->ji_plugin_usage_info.end();
+       it++)
+    {
+    svrattrl *pal = attrlist_create(ATTR_used, it->first.c_str(), it->second.size() + 1);
+    strcpy(pal->al_value, it->second.c_str());
+    pal->al_flags = ATR_VFLAG_SET;
+    append_link(phead, &pal->al_link, pal);
+    }
+
+  } // END encode_plugin_resource_usage()
+
+
+
+/*
+ * set_plugin_resource_usage()
+ *
+ * Records a resource from the resource plugin in our resources used map
+ */
+
+void job::set_plugin_resource_usage(
+
+  const char *name,
+  const char *value)
+
+  {
+  this->ji_plugin_usage_info[name] = value;
+  }
+  
+
+
+/*
+ * set_plugin_resource_usage_from_json()
+ *
+ * Records the plugin reported resource usage from the json string
+ */
+
+void job::set_plugin_resource_usage_from_json(
+    
+  Json::Value &resources)
+
+  {
+  std::vector<std::string>keys = resources.getMemberNames();
+
+  for (size_t i = 0; i < keys.size(); i++)
+    this->ji_plugin_usage_info[keys[i]] = resources[keys[i]].asString();
+  }
+
+
+
+void job::set_plugin_resource_usage_from_json(
+
+  const char *json_str)
+
+  {
+  Json::Value  resources;
+  Json::Reader reader;
+
+  if (reader.parse(json_str, resources) == true)
+    this->set_plugin_resource_usage_from_json(resources);
+  }

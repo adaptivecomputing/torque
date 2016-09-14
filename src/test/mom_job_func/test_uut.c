@@ -33,7 +33,7 @@ extern int saved_job;
 
 START_TEST(test_set_jobs_substate)
   {
-  job *pjob = job_alloc();
+  job *pjob = mom_job_alloc();
   saved_job = 0;
 
   // Make sure we don't segfault
@@ -58,10 +58,10 @@ END_TEST
 
 START_TEST(test_mom_finding_jobs)
   {
-  job *pjob1 = job_alloc();
-  job *pjob2 = job_alloc();
-  job *pjob3 = job_alloc();
-  job *pjob4 = job_alloc();
+  job *pjob1 = mom_job_alloc();
+  job *pjob2 = mom_job_alloc();
+  job *pjob3 = mom_job_alloc();
+  job *pjob4 = mom_job_alloc();
 
   const char *jobid1 = "1.napali";
   const char *jobid2 = "2.napali";
@@ -106,8 +106,8 @@ START_TEST(test_mom_finding_jobs)
   // Make sure we'll find jobs that don't have a server suffix
   const char *jobid5 = "5";
   const char *jobid6 = "6";
-  job *pjob5 = job_alloc();
-  job *pjob6 = job_alloc();
+  job *pjob5 = mom_job_alloc();
+  job *pjob6 = mom_job_alloc();
 
   strcpy(pjob5->ji_qs.ji_jobid, jobid5);
   strcpy(pjob6->ji_qs.ji_jobid, jobid6);

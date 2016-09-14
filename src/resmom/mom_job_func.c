@@ -81,7 +81,7 @@
  *
  * Included public functions are:
  *
- *   job_alloc    allocate job struct and initialize defaults
+ *   mom_job_alloc    allocate job struct and initialize defaults
  *   mom_job_free   free space allocated to the job structure and its
  *    childern structures.
  *   mom_job_purge   purge job from server
@@ -451,13 +451,13 @@ int conn_qsub(
 
 
 /*
- * job_alloc - allocate space for a job structure and initialize working
+ * mom_job_alloc - allocate space for a job structure and initialize working
  * attribute to "unset"
  *
  * Returns: pointer to structure or null is space not available.
  */
 
-job *job_alloc(void)
+job *mom_job_alloc(void)
 
   {
   job *pj;
@@ -466,7 +466,7 @@ job *job_alloc(void)
 
   if (pj == NULL)
     {
-    log_err(errno, "job_alloc", (char *)"no memory");
+    log_err(errno, __func__, (char *)"no memory");
 
     return(NULL);
     }
@@ -487,6 +487,10 @@ job *job_alloc(void)
   pj->ji_cgroups_created = false;
 #endif
 
+#ifdef USE_RESOURCE_PLUGIN
+  pj->ji_custom_usage_info = new std::map<std::string, std::string>();
+#endif
+
   pj->ji_sigtermed_processes = new std::set<int>();
 
   /* set the working attributes to "unspecified" */
@@ -495,7 +499,7 @@ job *job_alloc(void)
   pj->ji_job_pid_set = new job_pid_set_t;
 
   return(pj);
-  }  /* END job_alloc() */
+  }  /* END mom_job_alloc() */
 
 
 
@@ -585,6 +589,11 @@ void mom_job_free(
 
   if (pj->ji_usages != NULL)
     delete pj->ji_usages;
+
+#ifdef USE_RESOURCE_PLUGIN
+  if (pj->ji_custom_usage_info != NULL)
+    delete pj->ji_custom_usage_info;
+#endif
 
   /* now free the main structure */
   free(pj);

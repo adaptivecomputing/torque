@@ -1755,9 +1755,12 @@ job *job_recov(
   int   rc;
 #ifdef PBS_MOM
   char namebuf[MAXPATHLEN];
-#endif
 
+  pj = mom_job_alloc();
+
+#else
   pj = job_alloc(); /* allocate & initialize job structure space */
+#endif
 
   if (pj == NULL)
     {

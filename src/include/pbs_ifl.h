@@ -590,7 +590,7 @@
 
 #define NO_MOM_RELAY 1
 
-enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD };
+enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD, SET_PLUGIN };
 
 /* ALPS nppcu values */
 enum nppcu_values { NPPCU_ALPS_CHOOSES = 0, NPPCU_NO_USE_HT, NPPCU_USE_HT };
