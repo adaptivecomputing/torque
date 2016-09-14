@@ -343,10 +343,10 @@ int insert_node(all_nodes *an, struct pbsnode *pnode)
 
 int remove_node(all_nodes *an, struct pbsnode *pnode)
   {
-  if ((an == NULL) || (pnode == NULL) || (pnode->nd_name == NULL)) return 0;
+  if ((an == NULL) || (pnode == NULL) || (pnode->get_name() == NULL)) return 0;
 
   an->lock();
-  an->remove(pnode->nd_name);
+  an->remove(pnode->get_name());
   an->unlock();
   return(PBSE_NONE);
   }
