@@ -1,7 +1,14 @@
 #!/usr/bin/perl
-
+#
 # qpeek:  Peek into a job's output spool files
-# Copyright 2001, Ohio Supercomputer Center
+# Copyright 2001, 2006, 2007, 2016 Ohio Supercomputer Center
+# Copyright 2008, 2010 Adaptive Computing
+#
+# License:  GNU GPL v2; see ../COPYING for details.
+# Revision info:
+# $HeadURL$
+# $Revision$
+# $Date$
 #
 # Usage:  qpeek [options] JOBID
 #
@@ -15,7 +22,7 @@
 #
 #   -ssh               Use the ssh command to remote access the mother superior node
 #   -rsh               Use the rsh command to remote access the mother superior node
-#   -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /var/spool/torque/spool
+#   -spool=<spool_loc> Specify the location of the spool directory, defaults to /opt/torque
 #   -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
 #
 #   -help|? Display help message
@@ -30,12 +37,13 @@ MAIN:
 
   # Options Variables
   my $tool    = "cat";
-  my $spool   = "/opt/torque/spool";
-  my $host    = "set_the_host";
   my $rsh_cmd = "rsh";
   my $help    = 0;
   my $o       = 0;
   my $e       = 0;
+  my $host_in_jobid = 1;
+  my $spool;
+  my $host;
 
   GetOptions(
     'c'   => sub { $tool    = "cat" },
@@ -50,6 +58,24 @@ MAIN:
     'host=s'           => \$host,
     'help|?'           => \$help,
   );
+
+  if ( !defined($spool) && defined($ENV{'PBS_HOME'}) )
+  {
+    $spool = $ENV{'PBS_HOME'};
+  }
+  elsif ( !defined($spool) )
+  {
+    $spool = "/opt/torque";
+  }    
+  if ( !defined($host) && -r "$spool/server_name" )
+  {
+    $host = `cat $spool/server_name`;
+    chomp($host);
+  }
+  elsif ( !defined($host) )
+  {
+    $host = "set_the_host";
+  }
 
   # Set OU as the default spool suffix
   $o = 1
@@ -75,10 +101,20 @@ MAIN:
   # Format and run the command
   my $cmd = "$rsh_cmd $node $tool";
 
-  $cmd .= " $spool/$jobid.$host.OU"
-    if $o;
-  $cmd .= " $spool/$jobid.$host.ER"
-    if $e;
+  if ( $host_in_jobid==1 )
+  {
+    $cmd .= " $spool/spool/$jobid.$host.OU"
+      if $o;
+    $cmd .= " $spool/spool/$jobid.$host.ER"
+      if $e;
+  }
+  else
+  {
+    $cmd .= " $spool/spool/$jobid.OU"
+      if $o;
+    $cmd .= " $spool/spool/$jobid.ER"
+      if $e;
+  }
 
   $cmd .= "\n";
 
@@ -105,7 +141,7 @@ Options:
   -o      Show the stdout file of the job
 
   -ssh               Use the ssh command rather than rsh to remote access the mother superior node
-  -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /var/spool/torque/spool
+  -spool=<spool_loc> Specifiy the location of the spool directory, defaults to /opt/torque
   -host=<host>       The name of the host to use in the filename for the jobs stdout or stderr
 
   -help|? Display help message
