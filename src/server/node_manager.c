@@ -965,8 +965,11 @@ void *sync_node_jobs(
     return(NULL);
     }
 
-  // We are done with the original string
+  std::string node_name(node_id);
+
+  // We are done with the original string - frees node_id
   free(raw_input);
+  node_id = NULL;
 
   std::vector<std::string> job_id_list = job_list.getMemberNames();
 
@@ -982,7 +985,7 @@ void *sync_node_jobs(
     process_job_attribute_information(job_id_list[i], job_info);
 
     // re-lock the node
-    if ((np = find_nodebyname(node_id)) == NULL)
+    if ((np = find_nodebyname(node_name.c_str())) == NULL)
       {
       pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 

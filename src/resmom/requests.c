@@ -3194,7 +3194,7 @@ static int sys_copy(
         rc = (40000 + WTERMSIG(rc)); /* 400xx is signaled */
         }
       }
-    else if (rc < 0)
+    else if (pid_fork < 0)
       {
       rc = errno + 10000; /* error on fork (100xx), retry */
       }
@@ -3244,7 +3244,7 @@ static int sys_copy(
       log_err(errno, __func__, log_buffer);
 
       exit(13); /* 13, an unlucky number */
-      }    /* END else ((rc = fork()) > 0) */
+      }    /* END else ((pid_fork = fork()) > 0) */
 
     /* copy did not work, try again */
 
