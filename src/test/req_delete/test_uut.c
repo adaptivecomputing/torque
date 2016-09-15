@@ -155,6 +155,8 @@ START_TEST(test_forced_jobpurge)
 
   pjob = new job();
   preq = (batch_request *)calloc(1, sizeof(batch_request));
+  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  memset(pjob->ji_arraystructid, 0, sizeof(pjob->ji_arraystructid));
 
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
