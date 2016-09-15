@@ -2879,8 +2879,6 @@ const char *getjoblist(
 
     Json::Value job_info;
 
-    job_info["job_id"] = pjob->ji_qs.ji_jobid;
-
     if (am_i_mother_superior(*pjob) == true)
       {
       add_job_status_information(*pjob, job_info);

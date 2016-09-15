@@ -652,3 +652,13 @@ job_array::~job_array() {}
 array_info::array_info() {}
 array_info::~array_info() {}
 
+int node_status_list(
+
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }
+

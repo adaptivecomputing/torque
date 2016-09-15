@@ -964,6 +964,8 @@ void pbsnode::remove_node_state_flag(
   this->nd_state &= ~flag;
   }
 
+void pbsnode::add_job_list_to_status(const std::string &job_list) {}
+
 Machine::Machine() {}
 Machine::~Machine() {}
 

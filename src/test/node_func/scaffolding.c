@@ -578,3 +578,13 @@ void update_node_state(pbsnode *pnode, int state)
   {
   pnode->nd_state = state;
   }
+
+int node_status_list(
+
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }
