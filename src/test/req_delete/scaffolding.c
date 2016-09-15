@@ -48,8 +48,7 @@ batch_request *alloc_br(int type)
 
 job_array *get_jobs_array(job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void account_record(int acctype, job *pjob, const char *text)
