@@ -85,6 +85,7 @@
 
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <map>
 #include <set>
 #include <sys/types.h>
 #include <vector>
