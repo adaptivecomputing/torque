@@ -197,7 +197,7 @@ This package contains a DRMAA 1.0 implementation for use with TORQUE.
 %build
 CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
 CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
-LDFLAGS="%{?ldflags:%{ldflags}}%{!?ldflags:@LDFLAGS@}"
+LDFLAGS="%{?ldflags:%{ldflags}}%{!?ldflags:$RPM_LD_FLAGS}"
 export CFLAGS CXXFLAGS LDFLAGS
 # use cached configure DOXYGEN
 export ac_cv_path_DOXYGEN=none
