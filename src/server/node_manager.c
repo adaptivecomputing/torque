@@ -905,41 +905,21 @@ void *sync_node_jobs(
   void *vp)
 
   {
-  struct pbsnode       *np;
-  sync_job_info        *sji = (sync_job_info *)vp;
-  char                 *raw_input;
-  char                 *node_id;
-  char                 *jobstring_in;
-  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
   if (vp == NULL)
     return(NULL);
 
-  raw_input = sji->input;
+  struct pbsnode       *np;
+  sync_job_info        *sji = (sync_job_info *)vp;
+  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  bool                  sync = sji->sync_jobs;
+  std::string           node_name(sji->node_name);
+  std::string           job_info(sji->job_info);
 
-  free(sji);
+  delete sji;
 
-  /* raw_input's format is:
-   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
-  if ((jobstring_in = strchr(raw_input, ':')) != NULL)
+  if ((np = find_nodebyname(node_name.c_str())) == NULL)
     {
-    node_id = raw_input;
-    *jobstring_in = '\0';
-    jobstring_in++;
-    }
-  else
-    {
-    /* bad input */
-    free(raw_input);
-
-    return(NULL);
-    }
-    
-  if ((np = find_nodebyname(node_id)) == NULL)
-    {
-    free(raw_input);
-
     return(NULL);
     }
 
@@ -949,27 +929,21 @@ void *sync_node_jobs(
   Json::Value  job_list;
   Json::Reader reader;
 
-  if (reader.parse(jobstring_in, job_list) == false)
+  if (reader.parse(job_info, job_list) == false)
     {
     // Error parsing the json or an empty string - If the string is just whitespace,
     // then don't log this error.
-    if (trim(jobstring_in)[0] != '\0')
+    if (job_info.find_first_not_of(" \n\r\t") != std::string::npos)
       {
-      snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'", jobstring_in);
+      snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'",
+        job_info.c_str());
       log_err(-1, __func__, log_buf);
       }
 
     np->unlock_node(__func__, NULL, LOGLEVEL);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-    free(raw_input);
     return(NULL);
     }
-
-  std::string node_name(node_id);
-
-  // We are done with the original string - frees node_id
-  free(raw_input);
-  node_id = NULL;
 
   std::vector<std::string> job_id_list = job_list.getMemberNames();
   std::string              job_list_str("jobs=");
@@ -999,7 +973,7 @@ void *sync_node_jobs(
       }
 
     // Only look to kill jobs if sync jobs is true
-    if (sji->sync_jobs == true)
+    if (sync == true)
       {
       internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
 
@@ -1033,7 +1007,7 @@ void *sync_node_jobs(
     } /* END for each job reported */
 
   /* SUCCESS */
-  if (sji->sync_jobs == true)
+  if (sync == true)
     sync_node_jobs_with_moms(np, job_id_list);
 
   np->add_job_list_to_status(job_list_str);

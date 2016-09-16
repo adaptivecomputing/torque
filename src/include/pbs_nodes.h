@@ -590,12 +590,19 @@ public:
   };
 
 
-typedef struct sync_job_info
+class sync_job_info
   {
-  char   *input;
+  public:
+  std::string job_info;
+  std::string node_name;
   time_t  timestamp;
   bool    sync_jobs;
-  } sync_job_info;
+
+  sync_job_info()
+    {
+    this->timestamp = time(NULL);
+    }
+  } ;
 
 
 

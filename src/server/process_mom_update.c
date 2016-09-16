@@ -921,21 +921,13 @@ int process_status_info(
     else if (!strncmp(str, "jobs=", 5))
       {
       /* walk job list reported by mom */
-      size_t         len = strlen(str) + strlen(current->get_name()) + 2;
-      char          *jobstr = (char *)calloc(1, len);
-      sync_job_info *sji = (sync_job_info *)calloc(1, sizeof(sync_job_info));
-
-      if ((jobstr != NULL) &&
-          (sji != NULL))
-        {
-        sprintf(jobstr, "%s:%s", current->get_name(), str+5);
-        sji->input = jobstr;
-        sji->timestamp = time(NULL);
-        sji->sync_jobs = mom_job_sync;
-
-        /* sji must be freed in sync_node_jobs */
-        enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
-        }
+      sync_job_info *sji = new sync_job_info();
+      sji->node_name = current->get_name();
+      sji->job_info = str + 5;
+      sji->sync_jobs = mom_job_sync;
+        
+      // sji is freed in sync_node_jobs()
+      enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
 
       continue;
       }
