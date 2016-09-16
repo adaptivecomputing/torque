@@ -1405,12 +1405,16 @@ u_long addclient(
 
   {
   struct addrinfo *addr_info;
+  struct addrinfo  hints;
   struct in_addr   saddr;
   u_long           ipaddr;
 
   /* FIXME: must be able to retry failed lookups later */
 
-  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
+  memset(&hints, 0, sizeof(hints));
+  // IPv4
+  hints.ai_family = AF_INET;
+  if (getaddrinfo(name, NULL, &hints, &addr_info) != 0)
     {
     sprintf(log_buffer, "host %s not found", name);
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "pbs_error.h"
 #include "net_cache.h"
@@ -105,6 +106,18 @@ START_TEST(test_socket_connect_unix)
   }
 END_TEST
 
+START_TEST(test_pbs_getaddrinfo)
+  {
+  char hostname[1024];
+  struct addrinfo *new_addr = NULL;
+
+  fail_unless(gethostname(hostname, sizeof(hostname)) == 0);
+  fail_unless(pbs_getaddrinfo(hostname, NULL, &new_addr) == 0);
+  fail_unless((new_addr != NULL) && (new_addr->ai_family == AF_INET));
+  }
+END_TEST
+
+
 Suite *net_common_suite(void)
   {
   Suite *s = suite_create("net_common_suite methods");
@@ -126,6 +139,10 @@ Suite *net_common_suite(void)
 
   tc_core = tcase_create("test_socket_connect_unix");
   tcase_add_test(tc_core, test_socket_connect_unix);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_pbs_getaddrinfo");
+  tcase_add_test(tc_core, test_pbs_getaddrinfo);
   suite_add_tcase(s, tc_core);
 
   return s;
