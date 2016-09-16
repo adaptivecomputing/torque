@@ -333,7 +333,7 @@ int trq_simple_connect(
 
   memset(&hints, 0, sizeof(hints));
   /* set the hints so we get a STREAM socket */
-  hints.ai_family = AF_UNSPEC; /* allow for IPv4 or IPv6 */
+  hints.ai_family = AF_INET; /* IPv4 */
   hints.ai_socktype = SOCK_STREAM; /* we want a tcp connection */
   hints.ai_flags = AI_PASSIVE;  /* fill in my IP for me */
   snprintf(port_string, 10, "%d", batch_port);

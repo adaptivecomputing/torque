@@ -262,6 +262,8 @@ public:
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
+    // IPv4
+    hints.ai_family = AF_INET;
 
     if (new_addr_out == NULL)
       return(false);
