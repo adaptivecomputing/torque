@@ -954,7 +954,32 @@ void pbsnode::add_plugin_resources(
     append_link(phead, &pal->al_link, pal);
     }
 
+  } // END add_plugin_resources()
+
+
+
+/*
+ * add_job_list_to_status()
+ *
+ * Adds the job_list to this nodes's status
+ * @param job_list - the job list to be added. FORMAT: jobs=[job1[,job2[...]]]
+ */
+
+void pbsnode::add_job_list_to_status(
+
+  const std::string &job_list)
+
+  {
+  pbs_attribute current;
+  pbs_attribute to_add;
+
+  memset(&current, 0, sizeof(current));
+  memset(&to_add, 0, sizeof(to_add));
+
+  current.at_val.at_arst = copy_arst(this->nd_status);
+  decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
+  set_arst(&current, &to_add, INCR);
+  free_arst(&to_add);
+  node_status_list(&current, this, ATR_ACTION_ALTER);
   }
-
-
 

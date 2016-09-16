@@ -351,6 +351,7 @@ public:
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
   void capture_plugin_resources(const char *str);
+  void add_job_list_to_status(const std::string &job_list);
   };
 
 
@@ -593,6 +594,7 @@ typedef struct sync_job_info
   {
   char   *input;
   time_t  timestamp;
+  bool    sync_jobs;
   } sync_job_info;
 
 

@@ -187,3 +187,37 @@ void append_link(
   svrattrl *pal = (svrattrl *)pobj;
   encoded[pal->al_name] = pal->al_value;
   }
+
+int decode_arst(
+
+  pbs_attribute *patr,    /* O (modified) */
+  const char *  UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char *  UNUSED(rescn),   /* I resource name (notused) */
+  const char    *val,     /* I pbs_attribute value */
+  int           UNUSED(perm)) /* only used for resources */
+
+  {
+  return(0);
+  }
+
+int set_arst(
+
+  pbs_attribute *attr,  /* I/O */
+  pbs_attribute *new_attr,   /* I */
+  enum batch_op     op)    /* I */
+
+  {
+  return(0);
+  }
+
+void free_arst(pbs_attribute *attr) {}
+
+int node_status_list(
+
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }

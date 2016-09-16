@@ -972,11 +972,17 @@ void *sync_node_jobs(
   node_id = NULL;
 
   std::vector<std::string> job_id_list = job_list.getMemberNames();
+  std::string              job_list_str("jobs=");
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
   for (size_t i = 0; i < job_id_list.size(); i++)
     {
+    if (i > 0)
+      job_list_str += " " + job_id_list[i];
+    else
+      job_list_str += job_id_list[i];
+
     Json::Value &job_info = job_list[job_id_list[i]];
     int         internal_job_id;
 
@@ -992,38 +998,45 @@ void *sync_node_jobs(
       return(NULL);
       }
 
-    internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
-
-    if (internal_job_id == -1)
+    // Only look to kill jobs if sync jobs is true
+    if (sji->sync_jobs == true)
       {
-      /* log a message if it's at loglevel 7 and proceed to kill the job.
-      */
-      if (LOGLEVEL >= 7)
+      internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
+
+      if (internal_job_id == -1)
         {
-        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id_list[i].c_str());
-        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        /* log a message if it's at loglevel 7 and proceed to kill the job.
+        */
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "jobid: %s not found in job_mapper", job_id_list[i].c_str());
+          log_ext(-1, __func__, log_buf, LOG_WARNING);
+          }
         }
-      }
-    if (job_should_be_killed(job_id_list[i], internal_job_id, np))
-      {
-      if (kill_job_on_mom(job_id_list[i].c_str(), np) == PBSE_NONE)
+      if (job_should_be_killed(job_id_list[i], internal_job_id, np))
         {
-        pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(internal_job_id);
-        pthread_mutex_unlock(&jobsKilledMutex);
+        if (kill_job_on_mom(job_id_list[i].c_str(), np) == PBSE_NONE)
+          {
+          pthread_mutex_lock(&jobsKilledMutex);
+          jobsKilled.push_back(internal_job_id);
+          pthread_mutex_unlock(&jobsKilledMutex);
 
-        int *dup_id = new int(internal_job_id);
-        set_task(WORK_Timed, 
-                 time(NULL) + job_sync_timeout,
-                 remove_job_from_already_killed_list,
-                 dup_id,
-                 FALSE);
+          int *dup_id = new int(internal_job_id);
+          set_task(WORK_Timed, 
+                   time(NULL) + job_sync_timeout,
+                   remove_job_from_already_killed_list,
+                   dup_id,
+                   FALSE);
+          }
         }
       }
     } /* END for each job reported */
 
   /* SUCCESS */
-  sync_node_jobs_with_moms(np, job_id_list);
+  if (sji->sync_jobs == true)
+    sync_node_jobs_with_moms(np, job_id_list);
+
+  np->add_job_list_to_status(job_list_str);
 
   np->unlock_node(__func__, NULL, LOGLEVEL);
   

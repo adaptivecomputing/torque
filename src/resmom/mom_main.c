@@ -1686,7 +1686,7 @@ void add_diag_remaining_spool_space(
       if (verbositylevel >= 1)
         {
         output << "stdout/stderr spool directory: '" << path_spool << "' (" << VFSStat.f_bavail;
-        output << "blocks available)\n";
+        output << " blocks available)\n";
         }
       }
     else
