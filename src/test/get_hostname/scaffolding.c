@@ -1,6 +1,10 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
-#include <netinet/in.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+bool pbs_getaddrinfo_got_af_inet = false;
 
 int insert_addr_name_info(
     
@@ -25,5 +29,8 @@ int pbs_getaddrinfo(
   struct addrinfo **ppAddrInfoOut)
 
   {
-  return(0);
+  if ((pHints != NULL) && (pHints->ai_family == AF_INET))
+    pbs_getaddrinfo_got_af_inet = true;
+
+  return(1);
   }

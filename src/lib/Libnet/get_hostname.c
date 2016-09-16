@@ -158,6 +158,8 @@ int get_fullhostname(
 
   memset(&hints,0,sizeof(hints));
   hints.ai_flags = AI_CANONNAME;
+  // IPv4
+  hints.ai_family = AF_INET;
 
   if (pbs_getaddrinfo(shortname, &hints, &addr_info) != 0)
     {
