@@ -980,6 +980,7 @@ void pbsnode::add_job_list_to_status(
   decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
   set_arst(&current, &to_add, INCR);
   free_arst(&to_add);
+  free_arst(&current);
   node_status_list(&current, this, ATR_ACTION_ALTER);
   }
 
