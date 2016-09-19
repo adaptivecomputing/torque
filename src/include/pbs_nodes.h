@@ -598,7 +598,7 @@ class sync_job_info
   time_t  timestamp;
   bool    sync_jobs;
 
-  sync_job_info()
+  sync_job_info() : job_info(), node_name(), sync_jobs(false)
     {
     this->timestamp = time(NULL);
     }
