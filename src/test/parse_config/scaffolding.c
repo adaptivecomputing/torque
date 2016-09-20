@@ -7,6 +7,7 @@
 #include "pbs_job.h"
 #include "u_tree.h"
 #include "log.h"
+#include "json/json.h"
 
 #define LOG_BUF_SIZE        16384
 #define MAXLINE            1024
@@ -36,7 +37,7 @@ void encode_used(
 
   job               *pjob,   /* I */
   int                perm,   /* I */
-  std::stringstream *list,   /* O */
+  Json::Value       *list,   /* O */
   tlist_head        *phead)  /* O */
 
   {
@@ -46,7 +47,7 @@ void encode_flagged_attrs(
 
   job               *pjob,   /* I */
   int                perm,   /* I */
-  std::stringstream *list,   /* O */
+  Json::Value       *list,   /* O */
   tlist_head        *phead)  /* O */
 
   {

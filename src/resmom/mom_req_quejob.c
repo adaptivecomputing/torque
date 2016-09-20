@@ -310,7 +310,7 @@ void mom_req_quejob(
     {
     /* if not already here, allocate job struct */
 
-    if ((pj = job_alloc()) == NULL)
+    if ((pj = mom_job_alloc()) == NULL)
       {
       /* FAILURE */
 

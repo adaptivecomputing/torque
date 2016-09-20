@@ -2,14 +2,16 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include "license_pbs.h" /* See here for the software license */
-#include "node_manager.h"
-#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <list>
+
+#include "license_pbs.h" /* See here for the software license */
+#include "node_manager.h"
+#include "test_uut.h"
 #include "pbs_error.h"
 #include "server.h" /* server */
+#include "json/json.h"
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -27,7 +29,7 @@ int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(std::list<node_job_add_info> *naji_list, struct pbsnode *pnode, single_spec_data &req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
-void process_job_attribute_information(std::string &job_id, std::string &attributes);
+void process_job_attribute_information(std::string &job_id, Json::Value &job_info);
 bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_list);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data &spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
@@ -429,11 +431,14 @@ END_TEST
 
 START_TEST(process_job_attribute_information_test)
   {
-  std::string attr_str("(cput=100,vmem=100101,mem=100020)");
+  Json::Value job_attrs;
+  job_attrs["cput"] = "100";
+  job_attrs["vmem"] = "100101";
+  job_attrs["mem"] = "100020";
   std::string jobid("2.napali");
 
   str_to_attr_count = 0;
-  process_job_attribute_information(jobid, attr_str);
+  process_job_attribute_information(jobid, job_attrs);
   fail_unless(str_to_attr_count == 3);
   fail_unless(decode_resc_count == 3);
   }
@@ -550,16 +555,16 @@ START_TEST(sync_node_jobs_with_moms_test)
     pnode->nd_slots.add_execution_slot();
 
   /* Job #1 */
-  job_usage_info jui(1);
+  job_usage_info jui(11);
   pnode->nd_slots.reserve_execution_slots(2, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   /* Job #2 */
-  job_usage_info jui2(2);
+  job_usage_info jui2(12);
   pnode->nd_slots.reserve_execution_slots(4, jui2.est);
   pnode->nd_job_usages.push_back(jui2);
   
-  job_usage_info jui3(3);
+  job_usage_info jui3(13);
   pnode->nd_slots.reserve_execution_slots(3, jui3.est);
   pnode->nd_job_usages.push_back(jui3);
 
@@ -567,22 +572,31 @@ START_TEST(sync_node_jobs_with_moms_test)
   fail_unless(pnode->nd_slots.get_number_free() == 0);
 
   /* No jobs to be cleaned from the node */
-  sync_node_jobs_with_moms(pnode, "1.lei.ac 2.lei.ac 3.lei.ac");
+  std::vector<std::string> job_list;
+  job_list.push_back("11.lei.ac");
+  job_list.push_back("12.lei.ac");
+  job_list.push_back("13.lei.ac");
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 0);
 
   /* Clean the 2nd job from the node */
-  sync_node_jobs_with_moms(pnode, "1.lei.ac 3.lei.ac");
+  job_list.clear();
+  job_list.push_back("11.lei.ac");
+  job_list.push_back("13.lei.ac");
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 4);
 
   /* Clean all jobs from the node */
-  sync_node_jobs_with_moms(pnode, "");
+  job_list.clear();
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 9);
 
   /* This job should not be clean as svr_find_job should find it */
   job_usage_info jui4(4);
   pnode->nd_slots.reserve_execution_slots(3, jui4.est);
   pnode->nd_job_usages.push_back(jui4);
-  sync_node_jobs_with_moms(pnode, "");
+  job_list.clear();
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 6);
   job_mode = false;
   }

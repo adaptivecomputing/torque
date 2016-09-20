@@ -13,6 +13,25 @@
 
 std::string global_string = "";
 
+extern std::map<std::string, std::string> encoded;
+
+START_TEST(test_plugin_things)
+  {
+  pbsnode pnode;
+
+  const char *json = "{\"generic_resources\":{\"awakened_objects\":100},\"generic_metrics\":{\"reversals\":1.5},\"varattrs\":{\"breaths\":\"4\"},\"features\":\"royal,knows_password\"}";
+  pnode.capture_plugin_resources(json);
+
+  encoded.clear();
+  tlist_head phead;
+  pnode.add_plugin_resources(&phead);
+  fail_unless(encoded["gres:awakened_objects"] == "100");
+  fail_unless(encoded["gmetric:reversals"] == "1.50");
+  fail_unless(encoded["varattr:breaths"] == "4");
+  fail_unless(encoded["features"] == "royal,knows_password");
+  }
+END_TEST
+
 
 START_TEST(test_version)
   {
@@ -116,6 +135,7 @@ Suite *pbsnode_suite(void)
   tc_core = tcase_create("more_tests");
   tcase_add_test(tc_core, test_copy_properties);
   tcase_add_test(tc_core, test_encode_properties);
+  tcase_add_test(tc_core, test_plugin_things);
   suite_add_tcase(s, tc_core);
   
   return(s);

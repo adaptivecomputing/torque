@@ -482,6 +482,10 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
+void pbsnode::capture_plugin_resources(const char *str)
+  {
+  }
+
 void pbsnode::set_version(const char *ver_str) {}
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_failures(0),
@@ -536,6 +540,8 @@ bool task_hosts_match(const char *one, const char *two)
   {
   return(true);
   }
+
+void job::set_plugin_resource_usage_from_json(const char *) {}
 
 #include "../../lib/Libutils/machine.cpp"
 #include "../../lib/Libutils/numa_chip.cpp"

@@ -340,7 +340,7 @@ int insert_into_alljobs_by_rank(
 
   if (pjcur != NULL)
     {
-    if(aj->find(pjcur->ji_qs.ji_jobid))
+    if (aj->find(pjcur->ji_qs.ji_jobid))
       {
       curJobid = pjcur->ji_qs.ji_jobid;
       }

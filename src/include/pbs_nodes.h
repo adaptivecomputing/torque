@@ -85,8 +85,11 @@
 
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <map>
 #include <set>
 #include <sys/types.h>
+#include <vector>
+#include <string>
 
 #include "execution_slot_tracker.hpp"
 #include "net_connect.h" /* pbs_net_t */
@@ -94,8 +97,6 @@
 
 /* NOTE:  requires server_limits.h */
 
-#include <vector>
-#include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
 #include "attribute.h"
@@ -226,10 +227,14 @@ class received_node
 class pbsnode
   {
 private:
-  std::string                   nd_name;             /* node's host name */
-  int                           nd_error;            // set if there's an error
-  std::vector<std::string>      nd_properties;       // The node's properties
-  int                           nd_version;          // The node's software version
+  std::string                          nd_name;             /* node's host name */
+  int                                  nd_error;            // set if there's an error
+  std::vector<std::string>             nd_properties;       // The node's properties
+  int                                  nd_version;          // The node's software version
+  std::map<std::string, unsigned int>  nd_plugin_generic_resources; // Plugin-supplied gres
+  std::map<std::string, double>        nd_plugin_generic_metrics; // Plugin-supplied gmetrics
+  std::map<std::string, std::string>   nd_plugin_varattrs; // Plugin-supplied varattrs
+  std::string                          nd_plugin_features;
 
 public:
   // Network failures without two consecutive successive between them.
@@ -330,6 +335,7 @@ public:
   void        write_to_nodes_file(FILE *nin) const;
   int         copy_properties(pbsnode *dest) const;
   int         get_version() const;
+  void        add_plugin_resources(tlist_head *phead) const;
 
   // NON-CONST methods
   void change_name(const char *new_name);
@@ -344,6 +350,8 @@ public:
   int encode_properties(tlist_head *);
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
+  void capture_plugin_resources(const char *str);
+  void add_job_list_to_status(const std::string &job_list);
   };
 
 
@@ -582,11 +590,19 @@ public:
   };
 
 
-typedef struct sync_job_info
+class sync_job_info
   {
-  char   *input;
+  public:
+  std::string job_info;
+  std::string node_name;
   time_t  timestamp;
-  } sync_job_info;
+  bool    sync_jobs;
+
+  sync_job_info() : job_info(), node_name(), sync_jobs(false)
+    {
+    this->timestamp = time(NULL);
+    }
+  } ;
 
 
 

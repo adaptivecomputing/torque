@@ -54,6 +54,26 @@ START_TEST(test_next_node)
   }
 END_TEST
 
+
+START_TEST(test_checkAndSendHierarchy)
+  {
+  u_long pul = 0;
+  pbsnode node("foo", &pul, true);
+
+  // first, remove node from allnodes (from previous test)
+  allnodes.unlock();
+  remove_node(&allnodes, &node);
+
+  // insert node into allnodes
+  node.nd_state = INUSE_DOWN|INUSE_OFFLINE|INUSE_NOHIERARCHY;
+  insert_node(&allnodes, &node);
+
+  hierarchy_handler.checkAndSendHierarchy(false);
+  fail_unless(node.nd_state == INUSE_DOWN);
+  }
+END_TEST
+
+
 START_TEST(load_hierarchy_test)
   {
   path_mom_hierarchy = (char *)"./dummy_hierarchy.txt"; //Need it to find something.
@@ -101,6 +121,10 @@ Suite *mom_hierarchy_handler_suite(void)
 
   tc_core = tcase_create("test_next_node");
   tcase_add_test(tc_core, test_next_node);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_checkAndSendHierarchy");
+  tcase_add_test(tc_core, test_checkAndSendHierarchy);
   suite_add_tcase(s, tc_core);
   return s;
   }

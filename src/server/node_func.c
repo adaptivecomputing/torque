@@ -825,6 +825,8 @@ int status_nodeattrib(
           }
         }
       }    /* END for (index) */
+
+    pnode->add_plugin_resources(phead);
     }      /* END else (pal != NULL) */
 
   return(rc);

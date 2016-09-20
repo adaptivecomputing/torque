@@ -139,6 +139,8 @@
 #include "complete_req.hpp"
 #endif
 #include "runjob_help.hpp"
+#include "plugin_internal.h"
+#include "json/json.h"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -780,96 +782,55 @@ void *finish_job(
 
 
 /*
- * is_jobid_in_mom()
- * returns: true if jobid was found; false otherwise.
- */
-bool is_jobid_in_mom(
-
-  const char *jobs,
-  const char *jobid)
-
-  {
-  char *joblist = strdup(jobs);
-  char *jobptr = joblist;
-  char *jobidstr = NULL;
-
-  jobidstr = threadsafe_tokenizer(&jobptr, " ");
-  while (jobidstr != NULL)
-    {
-    if (strcmp(jobid, jobidstr) == 0)
-      {
-      free(joblist);
-      return(true);
-      }
-
-    jobidstr = threadsafe_tokenizer(&jobptr, " ");
-    }
-
-  free(joblist);
-
-  return(false);
-  } /* END is_jobid_in_mom() */
-
-
-
-
-/*
  * sync_node_jobs_with_moms() - remove any jobs in the pbsnode (np) that was not
  * reported by the mom that it's currently running in its status update.
+ *
+ * @param np - the node we are checking
+ * @param job_id_list - a list of the valid job ids for the mom
  */
 void sync_node_jobs_with_moms(
 
-  struct pbsnode *np,        /* I */
-  const char *jobs_in_mom)   /* I */
+  pbsnode                  *np,
+  std::vector<std::string> &job_id_list)
 
   {
-  std::vector<int> jobsRemoveFromNode;
-  bool removealljobs = (strlen(jobs_in_mom) == 0);
+  std::vector<int> jobs_to_remove;
+  char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
     {
-    bool            removejob = false;
+    bool            removejob = true;
     // this one has to be a copy instead of a reference because we lose the mutex
     // below which can make the pointer invalid
     job_usage_info  jui = np->nd_job_usages[i];
     const char     *jobid = job_mapper.get_name(jui.internal_job_id);
     int             internal_job_id = jui.internal_job_id;
 
-    if (!removealljobs)
+    for (size_t i = 0; i < job_id_list.size(); i++)
       {
-      char *p = strstr((char *)jobs_in_mom, jobid);
-      /* job is in the node but not in mom */
-      if (!p)
-        removejob = true;
-      else if (is_jobid_in_mom(jobs_in_mom, jobid) == false)
-        removejob = true;
+      if (job_id_list[i] == jobid)
+        {
+        removejob = false;
+        break;
+        }
       }
-    if (removejob || removealljobs)
-      {
-      np->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      job *pjob = svr_find_job(jobid, TRUE);
-      np->tmp_lock_node(__func__, NULL, LOGLEVEL);
 
-      if (pjob)
-        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-      else
-        jobsRemoveFromNode.push_back(internal_job_id);
+    if (removejob)
+      {
+      if (internal_job_id_exists(internal_job_id) == false)
+        jobs_to_remove.push_back(internal_job_id);
       }
     }
 
-  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  for (unsigned int i = 0; i < jobsRemoveFromNode.size(); i++)
+  for (unsigned int i = 0; i < jobs_to_remove.size(); i++)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Job %s was not reported in %s update status. Freeing job from node.",
-      job_mapper.get_name(jobsRemoveFromNode[i]), np->get_name());
+      job_mapper.get_name(jobs_to_remove[i]), np->get_name());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    remove_job_from_node(np, jobsRemoveFromNode[i]);
+    remove_job_from_node(np, jobs_to_remove[i]);
     }
   } /* end of sync_node_jobs_with_moms */
-
-
-
 
 
 
@@ -877,56 +838,53 @@ void sync_node_jobs_with_moms(
  * process_job_attribute_information()
  *
  * @post-cond: the job with id job_id has its attribute values updated to match
- * the values parsed from attributes
- * @param attributes - a string object with job attributes and values in the 
- * format (name1=val1[,name2=val2[...]])
+ * the values in job_info
  * @param jobid - a string object containing the job's id
+ * @param attributes - a json object with job attributes and values in it
  */
+
 void process_job_attribute_information(
-    
+
   std::string &job_id,
-  std::string &attributes)
+  Json::Value &job_info)
 
   {
-  char *job_id_dup = strdup(job_id.c_str());
-  char *attr_dup = strdup(attributes.c_str());
-  // move past '(' at front
-  char *attr_work = attr_dup + 1;
   job  *pjob;
 
-  // remove the ')' at the end
-  char *paren = strrchr(attr_work, ')');
-
-  if (paren != NULL)
-    *paren = '\0';
-
-  if ((pjob = svr_find_job(job_id_dup, TRUE)) != NULL)
+  if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
-    char *attr_val = threadsafe_tokenizer(&attr_work, ",");
-    
-    while (attr_val != NULL)
+    std::vector<std::string> keys = job_info.getMemberNames();
+
+    for (int i = 0; i < keys.size(); i++)
       {
-      char *attr_name = threadsafe_tokenizer(&attr_val, "=");
-
-      if ((attr_name != NULL) &&
-          (attr_val != '\0'))
+      if (keys[i] == PLUGIN_RESC)
         {
-        if (str_to_attr(attr_name, attr_val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
-          {
-          // should be resources used if not found as attribute
-          decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
-          }
+        // plugin resources are themselves a json object
+        pjob->set_plugin_resource_usage_from_json(job_info[keys[i]]);
         }
+      else
+        {
+        // Regular attribute or resource usage information
+        const char  *attr_name = keys[i].c_str();
+        char        *val = strdup(job_info[keys[i]].asString().c_str());
 
-      attr_val = threadsafe_tokenizer(&attr_work, ",");
+        if ((attr_name != NULL) &&
+            (*val != '\0'))
+          {
+          if (str_to_attr(attr_name, val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+            {
+            // should be resources used if not found as attribute
+            decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
+            }
+          }
+
+        free(val);
+        }
       }
 
     pjob->ji_last_reported_time = time(NULL);
     }
-
-  free(job_id_dup);
-  free(attr_dup);
   } /* END process_job_attribute_information() */
 
 
@@ -947,126 +905,112 @@ void *sync_node_jobs(
   void *vp)
 
   {
-  struct pbsnode       *np;
-  sync_job_info        *sji = (sync_job_info *)vp;
-  char                 *raw_input;
-  char                 *node_id;
-  char                 *jobstring_in;
-  char                 *joblist;
-  char                 *jobidstr;
-  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
-  char                 *jobs_in_mom = NULL;
-
   if (vp == NULL)
     return(NULL);
 
-  raw_input = sji->input;
+  struct pbsnode       *np;
+  sync_job_info        *sji = (sync_job_info *)vp;
+  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  bool                  sync = sji->sync_jobs;
+  std::string           node_name(sji->node_name);
+  std::string           job_info(sji->job_info);
 
-  free(sji);
+  delete sji;
 
-  /* raw_input's format is:
-   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
-  if ((jobstring_in = strchr(raw_input, ':')) != NULL)
+  if ((np = find_nodebyname(node_name.c_str())) == NULL)
     {
-    node_id = raw_input;
-    *jobstring_in = '\0';
-    jobstring_in++;
-    }
-  else
-    {
-    /* bad input */
-    free(raw_input);
-
-    return(NULL);
-    }
-    
-  if ((np = find_nodebyname(node_id)) == NULL)
-    {
-    free(raw_input);
-
     return(NULL);
     }
 
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
 
-  /* FORMAT <JOBID>[ <JOBID>]... */
-  jobs_in_mom = strdup(jobstring_in);
-  joblist = jobstring_in;
-  jobidstr = threadsafe_tokenizer(&joblist, " ");
+  /* FORMAT json string*/
+  Json::Value  job_list;
+  Json::Reader reader;
+
+  if (reader.parse(job_info, job_list) == false)
+    {
+    // Error parsing the json or an empty string - If the string is just whitespace,
+    // then don't log this error.
+    if (job_info.find_first_not_of(" \n\r\t") != std::string::npos)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'",
+        job_info.c_str());
+      log_err(-1, __func__, log_buf);
+      }
+
+    np->unlock_node(__func__, NULL, LOGLEVEL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    return(NULL);
+    }
+
+  std::vector<std::string> job_id_list = job_list.getMemberNames();
+  std::string              job_list_str("jobs=");
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
-  while ((jobidstr != NULL) && 
-         (isdigit(*jobidstr)) != FALSE)
+  for (size_t i = 0; i < job_id_list.size(); i++)
     {
-    std::string job_id(jobidstr);
-    size_t      pos;
+    if (i > 0)
+      job_list_str += " " + job_id_list[i];
+    else
+      job_list_str += job_id_list[i];
+
+    Json::Value &job_info = job_list[job_id_list[i]];
     int         internal_job_id;
 
-    if ((pos = job_id.find("(")) != std::string::npos)
+    // must unlock the node to lock the job in this sub-function
+    np->unlock_node(__func__, NULL, LOGLEVEL);
+    process_job_attribute_information(job_id_list[i], job_info);
+
+    // re-lock the node
+    if ((np = find_nodebyname(node_name.c_str())) == NULL)
       {
-      std::string attributes = job_id.substr(pos);
-      job_id.erase(pos);
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
-      // must unlock the node to lock the job in this sub-function
-      np->unlock_node(__func__, NULL, LOGLEVEL);
-      process_job_attribute_information(job_id, attributes);
-
-      // re-lock the node
-      if ((np = find_nodebyname(node_id)) == NULL)
-        {
-        free(raw_input);
-
-        if (jobs_in_mom)
-          free(jobs_in_mom);
-  
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-
-        return(NULL);
-        }
+      return(NULL);
       }
 
-    internal_job_id = job_mapper.get_id(job_id.c_str());
-
-    if (internal_job_id == -1)
+    // Only look to kill jobs if sync jobs is true
+    if (sync == true)
       {
-      /* log a message if it's at loglevel 7 and proceed to kill the job.
-      */
-      if (LOGLEVEL >= 7)
+      internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
+
+      if (internal_job_id == -1)
         {
-        char log_buf[LOCAL_LOG_BUF_SIZE];
-        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
-        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        /* log a message if it's at loglevel 7 and proceed to kill the job.
+        */
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "jobid: %s not found in job_mapper", job_id_list[i].c_str());
+          log_ext(-1, __func__, log_buf, LOG_WARNING);
+          }
+        }
+      if (job_should_be_killed(job_id_list[i], internal_job_id, np))
+        {
+        if (kill_job_on_mom(job_id_list[i].c_str(), np) == PBSE_NONE)
+          {
+          pthread_mutex_lock(&jobsKilledMutex);
+          jobsKilled.push_back(internal_job_id);
+          pthread_mutex_unlock(&jobsKilledMutex);
+
+          int *dup_id = new int(internal_job_id);
+          set_task(WORK_Timed, 
+                   time(NULL) + job_sync_timeout,
+                   remove_job_from_already_killed_list,
+                   dup_id,
+                   FALSE);
+          }
         }
       }
-    if (job_should_be_killed(job_id, internal_job_id, np))
-      {
-      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
-        {
-        pthread_mutex_lock(&jobsKilledMutex);
-        jobsKilled.push_back(internal_job_id);
-        pthread_mutex_unlock(&jobsKilledMutex);
-
-        int *dup_id = new int(internal_job_id);
-        set_task(WORK_Timed, 
-                 time(NULL) + job_sync_timeout,
-                 remove_job_from_already_killed_list,
-                 dup_id,
-                 FALSE);
-        }
-      }
-    
-    jobidstr = threadsafe_tokenizer(&joblist, " ");
-    } /* END while ((jobidstr != NULL) && ...) */
+    } /* END for each job reported */
 
   /* SUCCESS */
-  free(raw_input);
+  if (sync == true)
+    sync_node_jobs_with_moms(np, job_id_list);
 
-  if (jobs_in_mom)
-    {
-    sync_node_jobs_with_moms(np, jobs_in_mom);
-    free(jobs_in_mom);
-    }
+  np->add_job_list_to_status(job_list_str);
 
   np->unlock_node(__func__, NULL, LOGLEVEL);
   

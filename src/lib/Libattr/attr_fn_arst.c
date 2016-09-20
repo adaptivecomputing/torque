@@ -129,7 +129,7 @@ int decode_arst_direct(
   char      *pbuf = NULL;
   char      *pc = NULL;
   char      *pstr = NULL;
-  int     ssize;
+  int        ssize;
   char      *tmpval = NULL;
   char      *tmp = NULL;
 

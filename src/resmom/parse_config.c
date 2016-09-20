@@ -99,9 +99,10 @@
 #include "mom_func.h"
 #include "u_tree.h"
 #include "csv.h"
+#include "json/json.h"
 
-void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
-void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
+void encode_used(job *pjob, int perm, Json::Value *, tlist_head *phead);
+void encode_flagged_attrs(job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
@@ -1404,12 +1405,16 @@ u_long addclient(
 
   {
   struct addrinfo *addr_info;
+  struct addrinfo  hints;
   struct in_addr   saddr;
   u_long           ipaddr;
 
   /* FIXME: must be able to retry failed lookups later */
 
-  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
+  memset(&hints, 0, sizeof(hints));
+  // IPv4
+  hints.ai_family = AF_INET;
+  if (getaddrinfo(name, NULL, &hints, &addr_info) != 0)
     {
     sprintf(log_buffer, "host %s not found", name);
 
@@ -2823,15 +2828,13 @@ const char *reqmsg(
 
 void add_job_status_information(
 
-  job               &pjob,
-  std::stringstream &list)
+  job         &pjob,
+  Json::Value &job_info)
 
   {
-  list << "(";
-  encode_used(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds resources_used attr */
+  encode_used(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds resources_used attr */
 
-  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds other flagged attrs */
-  list << ")";
+  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds other flagged attrs */
   } /* END add_job_status_information() */
 
 
@@ -2841,17 +2844,13 @@ const char *getjoblist(
   struct rm_attribute *attrib) /* I */
 
   {
-  std::stringstream  list;
+  Json::Value        job_list;
   job               *pjob;
-  bool               firstjob = true;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
   char *dot;
 #endif 
-
-  // reset the job list
-  list.clear();
 
   if (alljobs_list.size() == 0)
     {
@@ -2882,25 +2881,17 @@ const char *getjoblist(
       continue;
 #endif
 
-    if (!firstjob)
-      list << " ";
-    
-    firstjob = false;
-
-    list << pjob->ji_qs.ji_jobid;
+    Json::Value job_info;
 
     if (am_i_mother_superior(*pjob) == true)
       {
-      add_job_status_information(*pjob, list);
+      add_job_status_information(*pjob, job_info);
       }
+
+    job_list[pjob->ji_qs.ji_jobid] = job_info;
     }  /* END for (pjob) */
 
-#ifdef NUMA_SUPPORT
-  if (firstjob == true)
-    list << " ";
-#endif
-
-  return(strdup(list.str().c_str()));
+  return(strdup(job_list.toStyledString().c_str()));
   }  /* END getjoblist() */
 
 

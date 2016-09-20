@@ -74,6 +74,10 @@
 #include "req.hpp"
 #endif
 
+#ifdef USE_RESOURCE_PLUGIN
+#include "trq_plugin_api.h"
+#endif
+
 
 /*
 ** System dependent code to gather information for the resource
@@ -2745,6 +2749,36 @@ int job_expected_resc_found(
 
 
 
+#ifdef USE_RESOURCE_PLUGIN
+/*
+ * add_plugin_job_resource_usage()
+ *
+ * Calls the resource plugin to add arbitrary job resource usage information
+ *
+ * @param pjob - the job whose resource usage information we're adding
+ */
+
+void add_plugin_job_resource_usage(
+    
+  job *pjob)
+
+  {
+  static const int job_resource_alarm_seconds = 3;
+  std::string jid(pjob->ji_qs.ji_jobid);
+  std::set<pid_t> job_pids(*pjob->ji_job_pid_set);
+  
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Executing the job usage plugin");
+
+  alarm(job_resource_alarm_seconds);
+  report_job_resources(jid, job_pids, *pjob->ji_custom_usage_info);
+  alarm(0);
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__,
+      "Finished executing the job usage plugin");
+  }
+#endif
 
 
 /*
@@ -2861,7 +2895,7 @@ int mom_set_use(
   if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
     return -1;
 
-  lp = (unsigned long *) & pres->rs_value.at_val.at_long;
+  lp = (unsigned long *) &pres->rs_value.at_val.at_long;
 
   lnum = cput_sum(pjob);
 
@@ -2953,6 +2987,10 @@ int mom_set_use(
     {
     pjob->ji_mempressure_curr = 0;
     }
+#endif
+
+#ifdef USE_RESOURCE_PLUGIN
+  add_plugin_job_resource_usage(pjob);
 #endif
 
   return(PBSE_NONE);

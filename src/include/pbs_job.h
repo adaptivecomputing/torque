@@ -92,6 +92,9 @@
 #include <limits.h>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
+
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -101,9 +104,7 @@
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
 #include "job_host_data.hpp"
-#include <string>
-#include <vector>
-#include <set>
+#include "json/json.h"
 
 
 #define SAVEJOB_BUF_SIZE 8192
@@ -726,9 +727,13 @@ typedef struct job
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
                                         and tasks from start_process. */
   std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
+
 #ifdef PENABLE_LINUX_CGROUPS
   bool             ji_cgroups_created;
 #endif
+
+  // Usage information coming from a plug-in
+  std::map<std::string, std::string> *ji_custom_usage_info;
 
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
@@ -764,6 +769,10 @@ typedef struct job
 // for the server
 class job
   {
+  private:
+  // Usage information coming from a plug-in
+  std::map<std::string, std::string> ji_plugin_usage_info;
+
   public:
 
   /* MOM: links to polled jobs */
@@ -826,6 +835,13 @@ class job
   ~job();
   void free_job_allocation();
   void job_init_wattr();
+
+  void set_plugin_resource_usage_from_json(Json::Value &resources);
+  void set_plugin_resource_usage_from_json(const char *json_str);
+  void set_plugin_resource_usage(const char *name, const char *value);
+
+  void encode_plugin_resource_usage(tlist_head *phead) const;
+  void add_plugin_resource_usage(std::string &acct_data) const;
   };
 #endif
 
@@ -1275,7 +1291,11 @@ extern char *get_egroup(job *);
 extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
 extern void  issue_track(job *);
+#ifdef PBS_MOM
+job         *mom_job_alloc();
+#else
 extern job  *job_alloc();
+#endif
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
 job         *job_clone(job *,struct job_array *, int, bool);

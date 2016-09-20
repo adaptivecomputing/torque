@@ -10,8 +10,7 @@ void sum_select_mem_request(job * pj);
 
 int req_jobcredential(struct batch_request *preq);
 
-int req_jobscript(struct batch_request *preq);
-int req_jobscript2(struct batch_request *preq);
+int req_jobscript(batch_request *preq, bool perform_commit);
 
 int req_mvjobfile(struct batch_request *preq);
 

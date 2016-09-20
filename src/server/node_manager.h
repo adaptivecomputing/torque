@@ -69,6 +69,6 @@ int node_avail(char *spec, int *navail, int *nalloc, int *nresvd, int *ndown);
 
 int node_reserve(char *nspec, resource_t tag);
 
-void sync_node_jobs_with_moms(struct pbsnode *np, const char *jobs_in_mom);
+void sync_node_jobs_with_moms(struct pbsnode *np, std::vector<std::string> &job_list);
 
 #endif /* _NODE_MANAGER_H */

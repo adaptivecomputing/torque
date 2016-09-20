@@ -458,6 +458,13 @@ struct group *getgrnam_ext(
 
 task::~task() {}
 
+#ifdef USE_RESOURCE_PLUGIN
+void report_job_resources(
+  
+  const std::string &jid,
+  const std::set<pid_t> &job_pids,
+  std::map<std::string, std::string> &usage_info) {}
+#endif
 
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"

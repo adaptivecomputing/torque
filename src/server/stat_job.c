@@ -183,7 +183,6 @@ int status_job(
   append_link(pstathd, &pstat->brp_stlink, pstat);
 
   /* add attributes to the status reply */
-
   *bad = 0;
 
   if (status_attrib(
@@ -199,8 +198,12 @@ int status_job(
     {
     return(PBSE_NOATTR);
     }
+  else if (condensed == false)
+    {
+    pjob->encode_plugin_resource_usage(&pstat->brp_attr);
+    }
 
-  return (0);
+  return (PBSE_NONE);
   }  /* END status_job() */
 
 

@@ -190,7 +190,7 @@ job *mom_find_job(const char *jobid)
   return(NULL);
   }
 
-job *job_alloc(void)
+job *mom_job_alloc(void)
   {
   return((job *)calloc(1, sizeof(job)));
   }

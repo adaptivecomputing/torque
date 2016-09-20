@@ -3,14 +3,23 @@
 #include "test_get_hostname.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+extern bool pbs_getaddrinfo_got_af_inet;
+
+START_TEST(test_get_fullhostname)
   {
+  char shortname[1024];
+  char namebuf[1024];
+  int rc;
 
-
+  fail_unless(gethostname(shortname, sizeof(shortname)) == 0);
+  rc = get_fullhostname(shortname, namebuf, sizeof(namebuf), NULL);
+  fail_unless(rc != PBSE_NONE);
+  fail_unless(pbs_getaddrinfo_got_af_inet);
   }
 END_TEST
 
@@ -24,8 +33,8 @@ END_TEST
 Suite *get_hostname_suite(void)
   {
   Suite *s = suite_create("get_hostname_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_get_fullhostname");
+  tcase_add_test(tc_core, test_get_fullhostname);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

@@ -9,6 +9,8 @@
 #include "../lib/Libnet/lib_net.h" /* pbs_getaddrinfo */
 #include "alps_constants.h"
 #include "policy_values.h"
+#include "json/json.h"
+#include "plugin_internal.h"
 
 #define MSG_LEN_LONG 160
 
@@ -17,8 +19,9 @@ int record_node_property_list(std::string const &, tlist_head *);
 
 extern AvlTree          ipaddrs;
 
-pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_failures(0),
-                     nd_consecutive_successes(0),
+pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_plugin_generic_resources(),
+                     nd_plugin_generic_metrics(), nd_plugin_varattrs(), nd_plugin_features(),
+                     nd_proximal_failures(0), nd_consecutive_successes(0),
                      nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
                      nd_note(),
                      nd_stream(-1),
@@ -64,6 +67,8 @@ pbsnode::pbsnode(
   const char *pname,
   u_long     *pul,
   bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_version(0),
+                                     nd_plugin_generic_resources(), nd_plugin_generic_metrics(),
+                                     nd_plugin_varattrs(), nd_plugin_features(),
                                      nd_proximal_failures(0), nd_consecutive_successes(0),
                                      nd_mutex(), nd_f_st(), nd_prop(NULL), nd_status(NULL),
                                      nd_note(),
@@ -166,6 +171,10 @@ pbsnode &pbsnode::operator =(
   this->nd_f_st = other.nd_f_st;
   this->nd_properties = other.nd_properties;
   this->nd_version = other.nd_version;
+  this->nd_plugin_generic_resources = other.nd_plugin_generic_resources;
+  this->nd_plugin_generic_metrics = other.nd_plugin_generic_metrics;
+  this->nd_plugin_varattrs = other.nd_plugin_varattrs;
+  this->nd_plugin_features = other.nd_plugin_features;
   this->nd_proximal_failures = other.nd_proximal_failures;
   this->nd_consecutive_successes = other.nd_consecutive_successes;
   
@@ -254,6 +263,10 @@ pbsnode::pbsnode(
 
   const pbsnode &other) : nd_error(other.nd_error), nd_properties(other.nd_properties),
                           nd_version(other.nd_version),
+                          nd_plugin_generic_resources(other.nd_plugin_generic_resources),
+                          nd_plugin_generic_metrics(other.nd_plugin_generic_metrics),
+                          nd_plugin_varattrs(other.nd_plugin_varattrs),
+                          nd_plugin_features(other.nd_plugin_features),
                           nd_proximal_failures(other.nd_proximal_failures),
                           nd_consecutive_successes(other.nd_consecutive_successes), nd_mutex(),
                           nd_id(other.nd_id), nd_addrs(other.nd_addrs),
@@ -818,4 +831,156 @@ void pbsnode::set_version(
   }
 
 
+
+/*
+ * capture_plugin_resources
+ *
+ * json_str - A json string specifying what plugin resources have been added
+ */
+
+void pbsnode::capture_plugin_resources(
+    
+  const char *json_str)
+
+  {
+  Json::Value  plugin_info;
+  Json::Reader reader;
+
+  if (reader.parse(json_str, plugin_info) == true)
+    {
+    std::vector<std::string> keys = plugin_info.getMemberNames();
+
+    for (size_t i = 0; i < keys.size(); i++)
+      {
+      if (keys[i] == GRES)
+        {
+        Json::Value              gres_info = plugin_info[keys[i]];
+        std::vector<std::string> resource_keys = gres_info.getMemberNames();
+
+        for (size_t j = 0; j < resource_keys.size(); j++)
+          {
+          this->nd_plugin_generic_resources[resource_keys[j]] = gres_info[resource_keys[j]].asInt();
+          }
+        }
+      else if (keys[i] == VARATTRS)
+        {
+        Json::Value              varattr_info = plugin_info[keys[i]];
+        std::vector<std::string> varattr_keys = varattr_info.getMemberNames();
+
+        for (size_t j = 0; j < varattr_keys.size(); j++)
+          {
+          this->nd_plugin_varattrs[varattr_keys[j]] = varattr_info[varattr_keys[j]].asString();
+          }
+        }
+      else if (keys[i] == GMETRICS)
+        {
+        Json::Value              gmetric_info = plugin_info[keys[i]];
+        std::vector<std::string> gmetric_keys = gmetric_info.getMemberNames();
+
+        for (size_t j = 0; j < gmetric_keys.size(); j++)
+          this->nd_plugin_generic_metrics[gmetric_keys[j]] = gmetric_info[gmetric_keys[j]].asDouble();
+        }
+      else if (keys[i] == FEATURES)
+        {
+        this->nd_plugin_features = plugin_info[FEATURES].asString();
+        }
+      }
+    }
+
+  } // END capture_plugin_resources()
+
+
+
+/*
+ * add_plugin_resources()
+ *
+ * Encodes the plugin generic resources, generic metrics, varattrs,
+ * and features, and links them to phead.
+ *
+ * @param phead - the list that the resources are being added to
+ */
+
+void pbsnode::add_plugin_resources(
+    
+  tlist_head *phead) const
+
+  {
+  char namebuf[MAXLINE];
+  char valbuf[MAXLINE];
+
+  for (std::map<std::string, unsigned int>::const_iterator it = this->nd_plugin_generic_resources.begin();
+       it != this->nd_plugin_generic_resources.end();
+       it++)
+    {
+    int vallen  = snprintf(valbuf, sizeof(valbuf), "%u", it->second);
+    snprintf(namebuf, sizeof(namebuf), "gres:%s", it->first.c_str());
+
+    svrattrl *pal = attrlist_create(namebuf, NULL, vallen + 1);
+    strcpy(pal->al_value, valbuf);
+    pal->al_flags = ATR_VFLAG_SET;
+    append_link(phead, &pal->al_link, pal);
+    }
+
+  for (std::map<std::string, double>::const_iterator it = this->nd_plugin_generic_metrics.begin();
+       it != this->nd_plugin_generic_metrics.end();
+       it++)
+    {
+    int vallen  = snprintf(valbuf, sizeof(valbuf), "%.2f", it->second);
+    snprintf(namebuf, sizeof(namebuf), "gmetric:%s", it->first.c_str());
+
+    svrattrl *pal = attrlist_create(namebuf, NULL, vallen + 1);
+    strcpy(pal->al_value, valbuf);
+    pal->al_flags = ATR_VFLAG_SET;
+    append_link(phead, &pal->al_link, pal);
+    }
+
+  for (std::map<std::string, std::string>::const_iterator it = this->nd_plugin_varattrs.begin();
+       it != this->nd_plugin_varattrs.end();
+       it++)
+    {
+    snprintf(namebuf, sizeof(namebuf), "varattr:%s", it->first.c_str());
+
+    svrattrl *pal = attrlist_create(namebuf, NULL, it->second.size() + 1);
+    strcpy(pal->al_value, it->second.c_str());
+    pal->al_flags = ATR_VFLAG_SET;
+    append_link(phead, &pal->al_link, pal);
+    }
+
+  if (this->nd_plugin_features.size() > 0)
+    {
+    svrattrl *pal = attrlist_create(FEATURES, NULL, this->nd_plugin_features.size() + 1);
+    strcpy(pal->al_value, this->nd_plugin_features.c_str());
+    pal->al_flags = ATR_VFLAG_SET;
+    append_link(phead, &pal->al_link, pal);
+    }
+
+  } // END add_plugin_resources()
+
+
+
+/*
+ * add_job_list_to_status()
+ *
+ * Adds the job_list to this nodes's status
+ * @param job_list - the job list to be added. FORMAT: jobs=[job1[,job2[...]]]
+ */
+
+void pbsnode::add_job_list_to_status(
+
+  const std::string &job_list)
+
+  {
+  pbs_attribute current;
+  pbs_attribute to_add;
+
+  memset(&current, 0, sizeof(current));
+  memset(&to_add, 0, sizeof(to_add));
+
+  current.at_val.at_arst = copy_arst(this->nd_status);
+  decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
+  set_arst(&current, &to_add, INCR);
+  free_arst(&to_add);
+  free_arst(&current);
+  node_status_list(&current, this, ATR_ACTION_ALTER);
+  }
 

@@ -445,3 +445,11 @@ int add_gpu_status(std::vector<std::string> &mom_status)
   return(0);
   }
 
+
+#ifdef USE_RESOURCE_PLUGIN
+void report_node_generic_resources(std::map<std::string, unsigned int> &gres) {}
+void report_node_generic_metrics(std::map<std::string, double> &gmetrics) {}
+void report_node_varattrs(std::map<std::string, std::string> &varattrs) {}
+void report_node_features(std::set<std::string> &features) {}
+#endif
+

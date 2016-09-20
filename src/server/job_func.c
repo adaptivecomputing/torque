@@ -2104,11 +2104,6 @@ int svr_job_purge(
 
 
 
-
-
-
-
-
 /* 
  * Always access the array in this way in order to avoid deadlock 
  *

@@ -250,6 +250,12 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#ifdef USE_RESOURCE_PLUGIN
+#include "json/json.h"
+#include "trq_plugin_api.h"
+#include "plugin_internal.h"
+#endif
+
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
 #define UPDATE_TO_SERVER                  0
@@ -902,8 +908,12 @@ void gen_macaddr(
     {
     char             buff[500];
     struct addrinfo *pAddr = NULL;
+    struct addrinfo  hints;
 
-    if (getaddrinfo(mom_host, NULL, NULL, &pAddr) != 0)
+    memset(&hints, 0, sizeof(hints));
+    // IPv4
+    hints.ai_family = AF_INET;
+    if (getaddrinfo(mom_host, NULL, &hints, &pAddr) != 0)
       {
       return;
       }
@@ -1026,6 +1036,105 @@ stat_record stats[] = {
 
 
 
+/*
+ * add_custom_node_resources()
+ *
+ * Adds the custom things people want to report. This is the interaction point for the
+ * resource plugin for node resource piece
+ */
+
+void add_custom_node_resources()
+
+  {
+#ifdef USE_RESOURCE_PLUGIN
+  static const int                           node_resource_alarm_seconds = 5;
+  static std::map<std::string, std::string>  varattrs;
+  static std::map<std::string, unsigned int> greses;
+  static std::map<std::string, double>       gmetrics;
+  static std::set<std::string>               features;
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Starting the node resource plugin");
+
+  // Set an alarm so the plug-in can't bring the mom to its knees
+  alarm(node_resource_alarm_seconds);
+  report_node_generic_resources(greses);
+  report_node_generic_metrics(gmetrics);
+  report_node_varattrs(varattrs);
+  report_node_features(features);
+  alarm(0);
+
+  if ((varattrs.size() > 0) ||
+      (greses.size() > 0) ||
+      (gmetrics.size() > 0) ||
+      (features.size() > 0))
+    {
+    Json::Value plugin_info;
+    std::string status_entry(PLUGIN_EQUALS);
+
+    if (greses.size() > 0)
+      {
+      Json::Value gres_values;
+
+      for (std::map<std::string, unsigned int>::iterator it = greses.begin();
+           it != greses.end();
+           it++)
+        gres_values[it->first] = it->second;
+
+      plugin_info[GRES] = gres_values;
+      }
+
+    if (varattrs.size() > 0)
+      {
+      Json::Value varattr_info;
+
+      for (std::map<std::string, std::string>::iterator it = varattrs.begin();
+           it != varattrs.end();
+           it++)
+        varattr_info[it->first] = it->second;
+
+      plugin_info[VARATTRS] = varattr_info;
+      }
+
+    if (gmetrics.size() > 0)
+      {
+      Json::Value gmetric_info;
+
+      for (std::map<std::string, double>::iterator it = gmetrics.begin();
+           it != gmetrics.end();
+           it++)
+        gmetric_info[it->first] = it->second;
+
+      plugin_info[GMETRICS] = gmetric_info;
+      }
+
+    if (features.size() > 0)
+      {
+      std::string feature_list;
+
+      for (std::set<std::string>::iterator it = features.begin(); it != features.end(); it++)
+        {
+        if (feature_list.size() > 0)
+          feature_list += ",";
+
+        feature_list += *it;
+        }
+
+      plugin_info[FEATURES] = feature_list;
+      }
+
+    status_entry += plugin_info.toStyledString();
+    mom_status.push_back(status_entry);
+    }
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Finished the node resource plugin");
+#endif
+
+  } // END add_custom_node_resources()
+
+
+
 /**
  * generate_server_status
  *
@@ -1082,6 +1191,8 @@ void generate_server_status(
 
   ss << "version=" << PACKAGE_VERSION;
   status.push_back(ss.str());
+
+  add_custom_node_resources();
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */

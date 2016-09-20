@@ -140,6 +140,14 @@ int attr_atomic_set(
 
   while (plist != NULL)
     {
+#ifdef USE_RESOURCE_PLUGIN
+    if (plist->al_op == SET_PLUGIN)
+      {
+      plist = (struct svrattrl *)GET_NEXT(plist->al_link);
+      continue;
+      }
+#endif
+    
     listidx++;
 
     if ((index = find_attr(pdef, plist->al_name, limit)) < 0)

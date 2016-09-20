@@ -900,6 +900,8 @@ void pbsnode::change_name(const char *hostname)
 
 void pbsnode::set_version(const char *) {}
 
+void pbsnode::capture_plugin_resources(const char *) {}
+
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"
 #include "../../src/lib/Libutils/machine.cpp"

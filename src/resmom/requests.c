@@ -120,6 +120,10 @@
 #include "tcp.h" /* tcp_chan */
 #include "mom_config.h"
 #include "power_state.hpp"
+#ifdef USE_RESOURCE_PLUGIN
+#include "plugin_internal.h"
+#include "json/json.h"
+#endif
 
 #ifdef _CRAY
 #include <sys/category.h>
@@ -2295,6 +2299,7 @@ void mom_req_signal_job(
   }  /* END mom_req_signal_job() */
 
 
+
 /**
  * Encodes the used resource information (cput, mem, walltime, etc.)
  * about the given job. (The data is encoded in preparation for
@@ -2304,17 +2309,17 @@ void mom_req_signal_job(
 
 void encode_used(
 
-  job               *pjob,   /* I */
-  int                perm,   /* I */
-  std::stringstream *list,   /* O */
-  tlist_head        *phead)  /* O */
+  job               *pjob,     /* I */
+  int                perm,     /* I */
+  Json::Value       *job_used, /* O */
+  tlist_head        *phead)    /* O */
 
   {
   unsigned long  lnum;
   int            i;
   pbs_attribute *at;
   attribute_def *ad;
-  bool           first = true;
+  char           valbuf[MAXLINE];
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
@@ -2384,34 +2389,76 @@ void encode_used(
              perm);
       }
 
-    if (list != NULL)
+    if (job_used != NULL)
       {
-      if (first != true)
-        *list << ",";
-
       if (mem_val == true)
-        *list << rd->rs_name << "=" << val.at_val.at_long << "kb";
+        snprintf(valbuf, sizeof(valbuf), "%ldkb", val.at_val.at_long);
       else
-        *list << rd->rs_name << "=" << val.at_val.at_long; 
+        snprintf(valbuf, sizeof(valbuf), "%ld", val.at_val.at_long);
+        
+      (*job_used)[rd->rs_name] = valbuf;
       }
-
-    first = false;
 
     if (rc < 0)
       break;
     }  /* END for (rs) */
+
+#ifdef USE_RESOURCE_PLUGIN
+
+  if (pjob->ji_custom_usage_info != NULL)
+    {
+    Json::Value plugin_values;
+
+    for (std::map<std::string, std::string>::iterator it = pjob->ji_custom_usage_info->begin();
+         it != pjob->ji_custom_usage_info->end();
+         it++)
+      {
+      pbs_attribute val;
+
+      val.at_flags |= ATR_VFLAG_SET;
+
+      if (phead != NULL)
+        {
+        svrattrl *pal = attrlist_create(ATTR_used, it->first.c_str(), it->second.size() + 1);
+        strcpy(pal->al_value, it->second.c_str());
+        pal->al_op = SET_PLUGIN;
+        append_link(phead, &pal->al_link, pal);
+        }
+
+      if (job_used != NULL)
+        plugin_values[it->first] = it->second;
+      }
+        
+    if ((job_used != NULL) &&
+        (pjob->ji_custom_usage_info->size() > 0))
+      {
+      (*job_used)[PLUGIN_RESC] = plugin_values;
+      }
+    }
+#endif
 
   return;
   }  /* END encode_used() */
 
 
 
+/*
+ * encode_flagged_attrs()
+ *
+ * Packs the flagged attributes for sending to pbs_server
+ *
+ * @param pjob - the job whose attributes are being packed
+ * @param perm - the permissions for looking at these attributes
+ * @param job_info - the json object where these attributes should be added, if non-NULL
+ * @param phead - the linked list where these attributes should be added, if non-NULL
+ */
+
 void encode_flagged_attrs(
 
-  job               *pjob,   /* I */
-  int                perm,   /* I */
-  std::stringstream *list,   /* O */
-  tlist_head        *phead)  /* O */
+  job               *pjob,     /* I */
+  int                perm,     /* I */
+  Json::Value       *job_info, /* O */
+  tlist_head        *phead)    /* O */
 
   {
   int             index;
@@ -2440,21 +2487,15 @@ void encode_flagged_attrs(
       if (phead != NULL)
         ad->at_encode(at, phead, ad->at_name, NULL, ATR_ENCODE_CLIENT, perm);
 
-      if (list != NULL)
+      if (job_info != NULL)
         {
         std::string attr;
         attr_to_str(attr, ad, *at, false);
-
-        // add a comma if this isn't the first data in the string
-        // it will always have at least '(' already
-        if (list->str().size() > 1)
-          *list << ",";
-
-        *list << ad->at_name << "=" << attr;
+        (*job_info)[ad->at_name] = attr;
         }
       }
     }
-  }
+  } // END encode_flagged_attrs()
 
 
 
@@ -3153,7 +3194,7 @@ static int sys_copy(
         rc = (40000 + WTERMSIG(rc)); /* 400xx is signaled */
         }
       }
-    else if (rc < 0)
+    else if (pid_fork < 0)
       {
       rc = errno + 10000; /* error on fork (100xx), retry */
       }
@@ -3203,7 +3244,7 @@ static int sys_copy(
       log_err(errno, __func__, log_buffer);
 
       exit(13); /* 13, an unlucky number */
-      }    /* END else ((rc = fork()) > 0) */
+      }    /* END else ((pid_fork = fork()) > 0) */
 
     /* copy did not work, try again */
 
@@ -3793,7 +3834,7 @@ void req_cpyfile(
      * has already set PBS_JOBID and HOME for us.  Now just fake a TMPDIR
      * if we need it. */
 
-    pjob = job_alloc();
+    pjob = mom_job_alloc();
 
     if (pjob == NULL)
       {
