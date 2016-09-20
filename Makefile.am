@@ -91,7 +91,7 @@ dist-hook:
 	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' $(srcdir)/README.torque > $(distdir)/README.torque
 
 srpm: dist
-	rpmbuild -ts $(distdir).tar.gz
+	rpmbuild $(RPMOPTS) -ts $(distdir).tar.gz
 
 rpm: dist
 	rpmbuild $(RPM_AC_OPTS) $(RPMOPTS) -tb $(distdir).tar.gz
