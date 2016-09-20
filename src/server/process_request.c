@@ -738,14 +738,14 @@ int dispatch_request(
     case PBS_BATCH_QueueJob2:
 
       net_add_close_func(sfds, close_quejob);
-      rc = req_quejob(request);
+      rc = req_quejob(request, 2);
       
       break;
 
     case PBS_BATCH_QueueJob:
 
       net_add_close_func(sfds, close_quejob);
-      rc = req_quejob(request);
+      rc = req_quejob(request, 1);
       
       break;
 

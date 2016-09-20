@@ -1026,6 +1026,10 @@ int get_mom_node_version(
 
 
 
+/*
+ * send_job_over_network()
+ */
+
 int send_job_over_network(
 
   char          *job_id,
@@ -1074,9 +1078,19 @@ int send_job_over_network(
       return(rc);
     }
 
-  rc = get_mom_node_version(job_id, node_version);
-  if (rc != PBSE_NONE)
-    return(rc);
+  bool queue_to_server = strchr(job_destin, '@') != NULL;
+
+  if (queue_to_server == true)
+    {
+    // Force the commit to be executed
+    node_version = 1;
+    }
+  else
+    {
+    rc = get_mom_node_version(job_id, node_version);
+    if (rc != PBSE_NONE)
+      return(rc);
+    }
 
   if (node_version < 610)
     {
