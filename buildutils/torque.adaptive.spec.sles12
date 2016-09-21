@@ -618,9 +618,12 @@ done
 %{pre_add_back_up_dir  %{torque_appstatedir}/checkpoint %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/pbs_environment %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file /etc/ld.so.conf.d/torque.conf %{common_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file %{torque_sysconfdir}/server_name %{common_sub}-${TIMESTAMP}}
 %{pre_zip_back_up %{common_sub}-${TIMESTAMP}}
 
 %post %{common_sub}
+%grep_safety_net %{torque_home} __AC_HOSTNAME_NOT_SET__ ${HOSTNAME}
+
 echo "  Running 'ldconfig'..."
 ldconfig
 
@@ -686,7 +689,6 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_add_back_up_file %{_sbindir}/torque.setup %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/mom_hierarchy \
                        %{server_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{torque_sysconfdir}/server_name %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/nodes \
                        %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_unitdir}/pbs_server.service %{server_sub}-${TIMESTAMP}}
@@ -885,6 +887,7 @@ ldconfig
 %attr(-,root,root) %{_libdir}/lib%{project_name}.so*
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/pbs_environment
 %attr(-,root,root) %config(noreplace) /etc/ld.so.conf.d/torque.conf
+%attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.*
 %attr(-,root,root) %doc Release_Notes src/pam/README.pam
 %attr(-,root,root) %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
@@ -918,7 +921,6 @@ ldconfig
 %attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
-%attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/nodes
 %attr(-,root,root) %config(noreplace) %{_unitdir}/pbs_server.service
 %attr(-,root,root) %{_sbindir}/pbs_server
