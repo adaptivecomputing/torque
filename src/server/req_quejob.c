@@ -1707,14 +1707,17 @@ int perform_commit_work(
  * req_quejob - Queue Job Batch Request processing routine
  *
  * @param preq - the batch request that contains the job's information
- * @param perform_commit - if true, perform the job's commit, otherwise skip it
+ * @param version - Tells us what version of queue job this is. Right now the 
+ *                  options are 1 and 2. If it's version 2 and we are interactive,
+ *                  then we should do the commit
  * @return PBSE_NONE on success, otherwise a PBSE_* error code
  *
  */
 
 int req_quejob(
 
-  batch_request *preq)
+  batch_request *preq,
+  int            version)
 
   {
   int                   created_here = 0;
@@ -1913,6 +1916,14 @@ int req_quejob(
 
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
+
+  if ((version > 1) &&
+      (pj->ji_wattr[JOB_ATR_interactive].at_val.at_long))
+    {
+    // On failure, perform commit work will reply to and free the request
+    if ((rc = perform_commit_work(preq, pj, version)) != PBSE_NONE)
+      return(rc);
+    }
 
   /* acknowledge the request with the job id */
   if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)

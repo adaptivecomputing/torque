@@ -283,7 +283,7 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-int req_quejob(batch_request *preq)
+int req_quejob(batch_request *preq, int version)
   {
   return(PBSE_NONE);
   }
