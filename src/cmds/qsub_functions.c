@@ -4659,6 +4659,13 @@ void main_func(
     print_qsub_usage_exit("unable to catch signals");
     }
 
+  // If we are doing an interactive job, don't send the job script even if one exists
+  if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
+    {
+    unlink(script_tmp);
+    memset(script_tmp, 0, sizeof(script_tmp));
+    }
+
   /* Send submit request to the server. */
 
   int retries = 0;
