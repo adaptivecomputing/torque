@@ -54,6 +54,9 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/README.pbs_weblite \
 	contrib/README.pestat \
 	contrib/README.qpeek \
+	contrib/resource_plugin_kit/plugin_driver.cpp \
+	contrib/resource_plugin_kit/README \
+	contrib/resource_plugin_kit/resource_plugin.cpp \
 	contrib/showjobs \
 	contrib/diag/tdiag.sh \
 	contrib/use_jobs_subdirs_setup \
