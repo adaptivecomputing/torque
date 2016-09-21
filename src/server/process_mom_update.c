@@ -184,6 +184,8 @@ int process_mic_status(
       if ((rc = save_single_mic_status(single_mic_status, &temp)) != PBSE_NONE)
         break;
 
+      single_mic_status.clear();
+
       snprintf(mic_id_buf, sizeof(mic_id_buf), "mic[%d]=%s", mic_count, str);
       single_mic_status += mic_id_buf;
 
