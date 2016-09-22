@@ -2145,7 +2145,6 @@ AC_ARG_WITH(xauth,
         [
                 if test "x$withval" != "xno" ; then
                         xauth_path=$withval
-                        RPM_AC_OPTS="$RPM_AC_OPTS --define \"xauth_path ${withval}\""
                 fi
         ],
         [       
