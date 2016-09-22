@@ -1,19 +1,69 @@
 language: cpp
+addons:
+  apt:
+    packages: &general
+        - check
+        - libboost-dev
+        - libreadline-dev
+        - libpam0g-dev
+        - libssl-dev
+        - libhwloc-dev
+        - libxml2-dev
 
-branches:
-  only:
-    - 4.2-dev
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: [*general, 'gcc-4.4', 'g++-4.4']
+      env:
+        - OUR_CC=gcc-4.4 OUR_CXX=g++-4.4 OUR_GCOV=gcov-4.4
 
-before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq check
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: [*general, 'gcc-4.8', 'g++-4.8']
+      env:
+        - OUR_CC=gcc-4.8 OUR_CXX=g++-4.8 OUR_GCOV=gcov-4.8
 
-script: ./autogen.sh && ./configure --with-check && make && make check -k && make distcheck
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: [*general, 'gcc-5', 'g++-5']
+      env:
+        - OUR_CC=gcc-5 OUR_CXX=g++-5 OUR_GCOV=gcov-5
 
-compiler:
-  - clang
-  - gcc
+    - os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: [*general, 'gcc-6', 'g++-6']
+      env:
+        - OUR_CC=gcc-6 OUR_CXX=g++-6 OUR_GCOV=gcov-6
 
-notifications:
-  email:
-    - torquedev@supercluster.org
+install:
+    - wget -q -O hwloc.tar.gz https://github.com/open-mpi/hwloc/archive/hwloc-1.11.4.tar.gz
+    - tar -xzf hwloc.tar.gz
+    - mkdir $HOME/opt
+    - pushd hwloc-*/ && ./autogen.sh && ./configure --prefix=$HOME/opt && make && make install && popd
+    - export PKG_CONFIG_PATH=$HOME/opt/lib/pkgconfig:$PKG_CONFIG_PATH
+    - export LD_LIBRARY_PATH=$HOME/opt/lib:$LD_LIBRARY_PATH
+    - export PATH=$HOME/opt/bin:$PATH
+    - ln -s $(which $OUR_GCOV) $HOME/opt/bin/gcov
+
+script:
+    - ./autogen.sh
+    - CC=$OUR_CC CXX=$OUR_CXX ./configure --with-check --with-pam --enable-acct-x --enable-drmaa --enable-cgroups --with-hwloc-path=$HOME/opt
+    - make -j2 V=0
+    - set -o pipefail
+    - make check -k V=0 | tee checks.txt
+    - make distcheck V=0
+    - python parse_cov_results.py checks.txt
+    - python cov_file_results.py
