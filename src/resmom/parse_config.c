@@ -2306,7 +2306,18 @@ void reset_config_vars()
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
   LOGLEVEL = 0;
-  }
+  
+  // Clear varattrs
+  struct varattr *pva;
+ 
+  while ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
+    {
+    delete_link(&pva->va_link);
+    
+    free(pva->va_cmd);
+    free(pva);
+    }
+  } // END reset_config_vars()
 
 
 

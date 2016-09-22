@@ -3017,7 +3017,7 @@ int rm_request(
           }
         }
 
-      clear_servers();
+      reset_config_vars();
 
       len = read_config(body);
 
