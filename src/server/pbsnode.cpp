@@ -973,14 +973,20 @@ void pbsnode::add_job_list_to_status(
   pbs_attribute current;
   pbs_attribute to_add;
 
-  memset(&current, 0, sizeof(current));
-  memset(&to_add, 0, sizeof(to_add));
+  if ((job_list.size() != 0) &&
+      (job_list.find_first_not_of(" \n\r\t") != std::string::npos))
+    {
+    memset(&current, 0, sizeof(current));
+    memset(&to_add, 0, sizeof(to_add));
 
-  current.at_val.at_arst = copy_arst(this->nd_status);
-  decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
-  set_arst(&current, &to_add, INCR);
-  free_arst(&to_add);
-  free_arst(&current);
-  node_status_list(&current, this, ATR_ACTION_ALTER);
-  }
+    current.at_val.at_arst = copy_arst(this->nd_status);
+    decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
+    set_arst(&current, &to_add, INCR);
+    
+    node_status_list(&current, this, ATR_ACTION_ALTER);
+   
+    free_arst(&to_add);
+    free_arst(&current);
+    }
+  } // END add_job_list_to_status()
 
