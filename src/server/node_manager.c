@@ -1208,13 +1208,6 @@ void *sync_node_jobs(
       return(NULL);
       }
     }
-  else
-    {
-    // Don't do anything with an empty string
-    np->unlock_node(__func__, NULL, LOGLEVEL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-    return(NULL);
-    }
 
   // Couldn't parse this job information
   if (rc != PBSE_NONE)
