@@ -187,7 +187,7 @@ int get_fullhostname(
         h_errno);
 
     /* FAILURE - cannot get host by address */
-
+    freeaddrinfo(addr_info);
     return(PBSE_CANNOT_RESOLVE);
     }
 
@@ -202,12 +202,14 @@ int get_fullhostname(
         addr_info->ai_canonname,
         bufsize);
 
+    freeaddrinfo(addr_info);
     return(PBSE_BAD_PARAMETER);
     }
 
   snprintf(namebuf, bufsize, "%s", addr_info->ai_canonname);
 
   /* SUCCESS */
+  freeaddrinfo(addr_info);
   return(PBSE_NONE);
   }  /* END get_fullhostname() */
 
