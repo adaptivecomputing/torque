@@ -114,6 +114,10 @@ static struct winsize wsz;
 
 extern int mom_reader_go;
 
+#ifdef HAVE_GETADDRINFO
+static int IPv4or6 = AF_UNSPEC;
+#endif
+
 extern int conn_qsub(char *, long, char *);
 extern int DEBUGMODE;
 
@@ -585,8 +589,7 @@ int x11_create_display(
 
     memset(&hints, 0, sizeof(hints));
 
-    // IPv4
-    hints.ai_family = AF_INET;
+    hints.ai_family = IPv4or6;
     hints.ai_flags = x11_use_localhost ? 0 : AI_PASSIVE;
     hints.ai_socktype = SOCK_STREAM;
 
