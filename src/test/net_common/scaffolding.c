@@ -9,7 +9,7 @@ bool connect_success = true;
 struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
 
   {
-  return(pAddrInfo);
+  return(NULL);
   }
 
 char *get_cached_fullhostname(

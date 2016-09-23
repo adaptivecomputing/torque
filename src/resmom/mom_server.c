@@ -908,12 +908,8 @@ void gen_macaddr(
     {
     char             buff[500];
     struct addrinfo *pAddr = NULL;
-    struct addrinfo  hints;
 
-    memset(&hints, 0, sizeof(hints));
-    // IPv4
-    hints.ai_family = AF_INET;
-    if (getaddrinfo(mom_host, NULL, &hints, &pAddr) != 0)
+    if (getaddrinfo(mom_host, NULL, NULL, &pAddr) != 0)
       {
       return;
       }
