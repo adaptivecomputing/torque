@@ -841,12 +841,14 @@ void sync_node_jobs_with_moms(
  * the values in job_info
  * @param jobid - a string object containing the job's id
  * @param attributes - a json object with job attributes and values in it
+ * @param node_addr - the address of the node who sent this update
  */
 
 void process_job_attribute_information(
 
   std::string &job_id,
-  Json::Value &job_info)
+  Json::Value &job_info,
+  pbs_net_t    node_addr)
 
   {
   job  *pjob;
@@ -854,36 +856,42 @@ void process_job_attribute_information(
   if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
-    std::vector<std::string> keys = job_info.getMemberNames();
 
-    for (int i = 0; i < keys.size(); i++)
+    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      if (keys[i] == PLUGIN_RESC)
-        {
-        // plugin resources are themselves a json object
-        pjob->set_plugin_resource_usage_from_json(job_info[keys[i]]);
-        }
-      else
-        {
-        // Regular attribute or resource usage information
-        const char  *attr_name = keys[i].c_str();
-        char        *val = strdup(job_info[keys[i]].asString().c_str());
+      std::vector<std::string> keys = job_info.getMemberNames();
 
-        if ((attr_name != NULL) &&
-            (*val != '\0'))
+      for (int i = 0; i < keys.size(); i++)
+        {
+        if (keys[i] == PLUGIN_RESC)
           {
-          if (str_to_attr(attr_name, val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
-            {
-            // should be resources used if not found as attribute
-            decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
-            }
+          // plugin resources are themselves a json object
+          pjob->set_plugin_resource_usage_from_json(job_info[keys[i]]);
           }
+        else
+          {
+          // Regular attribute or resource usage information
+          const char  *attr_name = keys[i].c_str();
+          char        *val = strdup(job_info[keys[i]].asString().c_str());
 
-        free(val);
+          if ((attr_name != NULL) &&
+              (*val != '\0'))
+            {
+            if (str_to_attr(attr_name, val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+              {
+              // should be resources used if not found as attribute
+              decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
+              }
+            }
+
+          free(val);
+          }
         }
-      }
 
-    pjob->ji_last_reported_time = time(NULL);
+      // Only update the last reported time if the mother superior is reporting it.
+      if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+        pjob->ji_last_reported_time = time(NULL);
+      }
     }
   } /* END process_job_attribute_information() */
 
@@ -902,7 +910,8 @@ void process_job_attribute_information(
 void process_legacy_job_attribute_information(
 
   std::string &job_id,
-  std::string &attributes)
+  std::string &attributes,
+  pbs_net_t    node_addr)
 
   {
   char *attr_dup = strdup(attributes.c_str());
@@ -938,7 +947,9 @@ void process_legacy_job_attribute_information(
       attr_val = threadsafe_tokenizer(&attr_work, ",");
       }
 
-    pjob->ji_last_reported_time = time(NULL);
+    // Only update the last reported time if the mother superior is reporting it.
+    if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+      pjob->ji_last_reported_time = time(NULL);
     }
 
   free(attr_dup);
@@ -990,10 +1001,11 @@ int parse_job_information_from_legacy_format(
       {
       std::string attributes = job_id.substr(pos);
       job_id.erase(pos);
+      pbs_net_t    node_addr = np->nd_sock_addr.sin_addr.s_addr;
 
       // must unlock the node to lock the job in this sub-function
       np->unlock_node( __func__, NULL, LOGLEVEL);
-      process_legacy_job_attribute_information(job_id, attributes);
+      process_legacy_job_attribute_information(job_id, attributes, node_addr);
 
       // re-lock the node
       if ((np = find_nodebyname(node_name.c_str())) == NULL)
@@ -1083,11 +1095,12 @@ void process_job_info_from_json(
       job_list += job_id_list[i];
 
     Json::Value &single_job_info = node_job_info[job_id_list[i]];
-    int         internal_job_id;
+    int          internal_job_id;
+    pbs_net_t    node_addr = np->nd_sock_addr.sin_addr.s_addr;
 
     // must unlock the node to lock the job in this sub-function
     np->unlock_node(__func__, NULL, LOGLEVEL);
-    process_job_attribute_information(job_id_list[i], single_job_info);
+    process_job_attribute_information(job_id_list[i], single_job_info, node_addr);
 
     // re-lock the node
     if ((np = find_nodebyname(node_name.c_str())) == NULL)

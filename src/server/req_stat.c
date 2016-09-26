@@ -1041,7 +1041,7 @@ void poll_job_task(
 
         get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
 
-        if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
+        if (time_now - pjob->ji_last_reported_time > job_stat_rate)
           stat_mom_job(job_id);
 
         /* add another task */
