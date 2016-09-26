@@ -403,7 +403,7 @@ If \-h is not specified, then
 is set to NONE, "n".
 .Ig
 .IP "\-i idle_slot_lmit" 8
-Sets a default slot limit for all new submitted arrays. When this parameter is set, and a user requests an idle slot limit that exceeds this setting, that array will be rejected.
+Sets an idle slot limit for the job array being submitted. If this parameter is set for a non-array job, it will be rejected. Additionally, if the user requests an idle slot limit that exceeds the the server parameter's default, the job will be rejected. See also the idle_slot_limit server parameter.
 .br
  $ qsub -t 0-99 -i 10 script.sh
 .br
