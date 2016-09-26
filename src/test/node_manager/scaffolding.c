@@ -1078,3 +1078,5 @@ bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
   {
   return(true);
   }
+
+int pbsnode::get_version() const {return 0;}
