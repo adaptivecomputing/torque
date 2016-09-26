@@ -136,12 +136,7 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void req_jobscript(struct batch_request *preq)
-  {
-  return;
-  }
-
-void req_jobscript2(struct batch_request *preq)
+void req_jobscript(batch_request *preq, bool perform_commit)
   {
   return;
   }
@@ -288,7 +283,7 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-int req_quejob(struct batch_request *preq, bool perform_commit)
+int req_quejob(batch_request *preq, int version)
   {
   return(PBSE_NONE);
   }

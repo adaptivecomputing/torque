@@ -948,8 +948,6 @@ int pbs_getaddrinfo(
     {
     memset(&hints,0,sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
-    // IPv4
-    hints.ai_family = AF_INET;
     pHints = &hints;
     }
 

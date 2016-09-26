@@ -890,116 +890,215 @@ void process_job_attribute_information(
 
 
 /*
- * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ * process_legacy_job_attribute_information()
  *
- * This function is called every time we get a node stat from the pbs_mom.
- *
- * NOTE: changed to be processed in a thread so that processing here doesn't hinder
- * the server's ability to reply to the status
- *
- * @see is_stat_get()
+ * @post-cond: the job with id job_id has its attribute values updated to match
+ * the values parsed from attributes
+ * @param job_id - a string object containing the job's id
+ * @param attributes - a string object with job attributes and values in the 
+ * format (name1=val1[,name2=val2[...]])
  */
 
-void *sync_node_jobs(
+void process_legacy_job_attribute_information(
 
-  void *vp)
+  std::string &job_id,
+  std::string &attributes)
 
   {
-  struct pbsnode       *np;
-  sync_job_info        *sji = (sync_job_info *)vp;
-  char                 *raw_input;
-  char                 *node_id;
-  char                 *jobstring_in;
-  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char *attr_dup = strdup(attributes.c_str());
+  // move past '(' at front
+  char *attr_work = attr_dup + 1;
+  job  *pjob;
 
-  if (vp == NULL)
-    return(NULL);
+  // remove the ')' at the end
+  char *paren = strrchr(attr_work, ')');
 
-  raw_input = sji->input;
+  if (paren != NULL)
+    *paren = '\0';
 
-  free(sji);
-
-  /* raw_input's format is:
-   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
-  if ((jobstring_in = strchr(raw_input, ':')) != NULL)
+  if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
-    node_id = raw_input;
-    *jobstring_in = '\0';
-    jobstring_in++;
-    }
-  else
-    {
-    /* bad input */
-    free(raw_input);
-
-    return(NULL);
-    }
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    char *attr_val = threadsafe_tokenizer(&attr_work, ",");
     
-  if ((np = find_nodebyname(node_id)) == NULL)
-    {
-    free(raw_input);
-
-    return(NULL);
-    }
-
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
-
-  /* FORMAT json string*/
-  Json::Value  job_list;
-  Json::Reader reader;
-
-  if (reader.parse(jobstring_in, job_list) == false)
-    {
-    // Error parsing the json or an empty string - If the string is just whitespace,
-    // then don't log this error.
-    if (trim(jobstring_in)[0] != '\0')
+    while (attr_val != NULL)
       {
-      snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'", jobstring_in);
-      log_err(-1, __func__, log_buf);
+      char *attr_name = threadsafe_tokenizer(&attr_val, "=");
+
+      if ((attr_name != NULL) &&
+          (attr_val != '\0'))
+        {
+        if (str_to_attr(attr_name, attr_val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+          {
+          // should be resources used if not found as attribute
+          decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
+          }
+        }
+
+      attr_val = threadsafe_tokenizer(&attr_work, ",");
       }
 
-    np->unlock_node(__func__, NULL, LOGLEVEL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-    free(raw_input);
-    return(NULL);
+    pjob->ji_last_reported_time = time(NULL);
     }
 
-  std::string node_name(node_id);
+  free(attr_dup);
+  } // END process_legacy_job_attribute_information()
 
-  // We are done with the original string - frees node_id
-  free(raw_input);
-  node_id = NULL;
 
-  std::vector<std::string> job_id_list = job_list.getMemberNames();
-  std::string              job_list_str("jobs=");
+
+/*
+ * Attempts to parse the raw information sent from the mom according to the old format:
+ * [jobid1[(name1=value1[,name2=value2...])[jobid2[(name1=value1[,name2=value2...])]]]]
+ * NOTE: Each name/value pair is either resource usage or a flagged attribute.
+ *
+ * @param np - the node that sent this string in
+ */
+
+int parse_job_information_from_legacy_format(
+
+  pbsnode                  *np,
+  std::vector<std::string> &job_id_list,
+  std::string              &raw_job_info,
+  std::string              &job_list,
+  const std::string        &node_name,
+  bool                      sync)
+
+  {
+  long  job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char *raw_job_data = strdup(raw_job_info.c_str());
+  char *joblist = raw_job_data;
+  char *jobidstr;
+
+  get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
+  jobidstr = threadsafe_tokenizer(&joblist, " ");
+
+  while ((jobidstr != NULL) && 
+         (isdigit(*jobidstr)) != FALSE)
+    {
+    std::string job_id(jobidstr);
+    size_t      pos;
+    int         internal_job_id;
+
+    if (job_id_list.size() == 0)
+      job_list += job_id;
+    else
+      job_list += "," + job_id;
+
+    job_id_list.push_back(job_id);
+
+    if ((pos = job_id.find("(")) != std::string::npos)
+      {
+      std::string attributes = job_id.substr(pos);
+      job_id.erase(pos);
+
+      // must unlock the node to lock the job in this sub-function
+      np->unlock_node( __func__, NULL, LOGLEVEL);
+      process_legacy_job_attribute_information(job_id, attributes);
+
+      // re-lock the node
+      if ((np = find_nodebyname(node_name.c_str())) == NULL)
+        {
+        free(raw_job_data);
+
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+
+        throw (int)PBSE_NODE_DELETED;
+        }
+      }
+
+    internal_job_id = job_mapper.get_id(job_id.c_str());
+
+    if (internal_job_id == -1)
+      {
+      /* log a message if it's at loglevel 7 and proceed to kill the job.
+      */
+      if (LOGLEVEL >= 7)
+        {
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+        sprintf(log_buf, "jobid: %s not found in job_mapper", job_id.c_str());
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
+      }
+
+    if (job_should_be_killed(job_id, internal_job_id, np))
+      {
+      if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
+        {
+        pthread_mutex_lock(&jobsKilledMutex);
+        jobsKilled.push_back(internal_job_id);
+        pthread_mutex_unlock(&jobsKilledMutex);
+
+        int *dup_id = new int(internal_job_id);
+        set_task(WORK_Timed, 
+                 time(NULL) + job_sync_timeout,
+                 remove_job_from_already_killed_list,
+                 dup_id,
+                 FALSE);
+        }
+      }
+    
+    jobidstr = threadsafe_tokenizer(&joblist, " ");
+    } /* END while ((jobidstr != NULL) && ...) */
+        
+  free(raw_job_data);
+
+  return(PBSE_NONE);
+  } // END parse_job_information_from_legacy_format()
+
+
+
+/*
+ * process_job_info_from_json()
+ *
+ * Processes the json object to get the current job usage and any flagged attributes
+ * @param np - the node that sent us this json
+ * @param node_job_info - the json object specifying the jobs and their attribute information
+ * @param job_id_list - add each job id here
+ * @param job_list - concatenate each job id here
+ * @param sync - true if we should kill jobs that we don't think should be on these nodes
+ */
+
+void process_job_info_from_json(
+
+  pbsnode                  *np,
+  Json::Value              &node_job_info,
+  std::vector<std::string> &job_id_list,
+  std::string              &job_list,
+  const std::string        &node_name,
+  bool                      sync)
+    
+  {
+  long job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  job_id_list = node_job_info.getMemberNames();
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
 
   for (size_t i = 0; i < job_id_list.size(); i++)
     {
     if (i > 0)
-      job_list_str += " " + job_id_list[i];
+      job_list += " " + job_id_list[i];
     else
-      job_list_str += job_id_list[i];
+      job_list += job_id_list[i];
 
-    Json::Value &job_info = job_list[job_id_list[i]];
+    Json::Value &single_job_info = node_job_info[job_id_list[i]];
     int         internal_job_id;
 
     // must unlock the node to lock the job in this sub-function
     np->unlock_node(__func__, NULL, LOGLEVEL);
-    process_job_attribute_information(job_id_list[i], job_info);
+    process_job_attribute_information(job_id_list[i], single_job_info);
 
     // re-lock the node
     if ((np = find_nodebyname(node_name.c_str())) == NULL)
       {
       pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
-      return(NULL);
+      throw (int)PBSE_NODE_DELETED;
       }
 
     // Only look to kill jobs if sync jobs is true
-    if (sji->sync_jobs == true)
+    if (sync == true)
       {
       internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
 
@@ -1013,6 +1112,7 @@ void *sync_node_jobs(
           log_ext(-1, __func__, log_buf, LOG_WARNING);
           }
         }
+
       if (job_should_be_killed(job_id_list[i], internal_job_id, np))
         {
         if (kill_job_on_mom(job_id_list[i].c_str(), np) == PBSE_NONE)
@@ -1031,9 +1131,99 @@ void *sync_node_jobs(
         }
       }
     } /* END for each job reported */
+  } // process_job_info_from_json()
+
+
+
+/*
+ * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ *
+ * This function is called every time we get a node stat from the pbs_mom.
+ *
+ * NOTE: changed to be processed in a thread so that processing here doesn't hinder
+ * the server's ability to reply to the status
+ *
+ * @see is_stat_get()
+ */
+
+void *sync_node_jobs(
+
+  void *vp)
+
+  {
+  if (vp == NULL)
+    return(NULL);
+
+  struct pbsnode       *np;
+  sync_job_info        *sji = (sync_job_info *)vp;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  bool                  sync = sji->sync_jobs;
+  std::string           node_name(sji->node_name);
+  std::string           raw_job_info(sji->job_info);
+
+  delete sji;
+
+  if ((np = find_nodebyname(node_name.c_str())) == NULL)
+    {
+    return(NULL);
+    }
+
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  
+  std::vector<std::string> job_id_list;
+  std::string              job_list_str("jobs=");
+  int                      rc = PBSE_NONE;
+    
+  if (raw_job_info.find_first_not_of(" \n\r\t") != std::string::npos)
+    {
+    // Process the old way if the node is older
+    try
+      {
+      if (np->get_version() < 610)
+        {
+        rc = parse_job_information_from_legacy_format(np, job_id_list, raw_job_info, job_list_str,
+                                                      node_name, sync);
+        }
+      else
+        {
+        Json::Value  job_list;
+        Json::Reader reader;
+    
+        if (reader.parse(raw_job_info, job_list) == false)
+          rc = -1;
+        else
+          process_job_info_from_json(np, job_list, job_id_list, job_list_str, node_name, sync);
+        }
+      }
+    catch (int error)
+      {
+      if (error != PBSE_NODE_DELETED)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Caught unknown error %d", error);
+        log_err(error, __func__, log_buf);
+        np->unlock_node(__func__, NULL, LOGLEVEL);
+        }
+
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+      return(NULL);
+      }
+    }
+
+  // Couldn't parse this job information
+  if (rc != PBSE_NONE)
+    {
+    snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'",
+      raw_job_info.c_str());
+    log_err(-1, __func__, log_buf);
+    
+    np->unlock_node(__func__, NULL, LOGLEVEL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    return(NULL);
+    }
+
 
   /* SUCCESS */
-  if (sji->sync_jobs == true)
+  if (sync == true)
     sync_node_jobs_with_moms(np, job_id_list);
 
   np->add_job_list_to_status(job_list_str);

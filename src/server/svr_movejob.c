@@ -998,17 +998,27 @@ int commit_job_on_mom(
   } /* END commit_job_on_mom() */
 
 
+
+/*
+ * get_mom_node_version()
+ *
+ * Finds the node version for the mother superior for the job that matches job_id
+ *
+ * @param job_id - the id of the job in question
+ * @param version - we write the node's version here
+ * @return PBSE_NONE on SUCCESS or PBSE_* if we can't find the job or node
+ */
+
 int get_mom_node_version(
   
   char *job_id, 
-  int& version)
+  int  &version)
 
   {
   job *pjob;
   pbsnode *pnode;
-  
 
-  pjob = svr_find_job(job_id, FALSE);
+  pjob = svr_find_job(job_id, TRUE);
   if (pjob == NULL)
     return(PBSE_UNKJOBID);
 
@@ -1025,6 +1035,10 @@ int get_mom_node_version(
   }
 
 
+
+/*
+ * send_job_over_network()
+ */
 
 int send_job_over_network(
 
@@ -1074,9 +1088,19 @@ int send_job_over_network(
       return(rc);
     }
 
-  rc = get_mom_node_version(job_id, node_version);
-  if (rc != PBSE_NONE)
-    return(rc);
+  bool queue_to_server = strchr(job_destin, '@') != NULL;
+
+  if (queue_to_server == true)
+    {
+    // Force the commit to be executed
+    node_version = 1;
+    }
+  else
+    {
+    rc = get_mom_node_version(job_id, node_version);
+    if (rc != PBSE_NONE)
+      return(rc);
+    }
 
   if (node_version < 610)
     {

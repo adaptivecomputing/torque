@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <sstream>
 #include <check.h>
-#include <unistd.h>
 
 #include "pbs_job.h"
 #include "mom_func.h"
@@ -81,31 +80,6 @@ START_TEST(test_reqgres)
   }
 END_TEST
 
-
-START_TEST(test_addclient)
-  {
-  char hostname[1024];
-  u_long addr;
-  u_long new_addr;
-  struct addrinfo *addr_info;
-  struct addrinfo hints;
-  struct in_addr saddr;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
- 
-  // get IP addr of hostname from addclient
-  fail_unless(gethostname(hostname, sizeof(hostname)) == 0);
-  addr = addclient(hostname); 
-
-  // now look up IPv4 one and confirm same as one from addclient
-  fail_unless(getaddrinfo(hostname, NULL, &hints, &addr_info) == 0);
-  saddr = ((struct sockaddr_in *)addr_info->ai_addr)->sin_addr;
-  new_addr = ntohl(saddr.s_addr);
-  fail_unless(addr == new_addr);
-  }
-END_TEST
-
 Suite *parse_config_suite(void)
   {
   Suite *s = suite_create("parse_config test suite methods");
@@ -121,10 +95,6 @@ Suite *parse_config_suite(void)
   tcase_add_test(tc_core, test_reqgres);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_addclient");
-  tcase_add_test(tc_core, test_addclient);
-  suite_add_tcase(s, tc_core);
-
   return(s);
   }
 

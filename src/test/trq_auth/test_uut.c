@@ -97,8 +97,6 @@ START_TEST(test_trq_simple_connect)
   int         handle = -1;
   int         rc;
   int         port = 15001;
-  struct sockaddr sa;
-  socklen_t   al;
 
   connect_success = true;
   getaddrinfo_success = true;
@@ -133,11 +131,6 @@ START_TEST(test_trq_simple_connect)
   rc = trq_simple_connect(server_name, port, &handle);
   fail_unless(rc != PBSE_NONE, "trq_simple_connect failed failed connect call", rc);
 
-  // make sure socket is IPv4
-  al = sizeof(sa);
-  rc = getsockname(handle, &sa, &al);
-  fail_unless(rc != 0);
-  fail_unless(sa.sa_family != AF_INET);
   }
 END_TEST
 

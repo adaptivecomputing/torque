@@ -1405,16 +1405,12 @@ u_long addclient(
 
   {
   struct addrinfo *addr_info;
-  struct addrinfo  hints;
   struct in_addr   saddr;
   u_long           ipaddr;
 
   /* FIXME: must be able to retry failed lookups later */
 
-  memset(&hints, 0, sizeof(hints));
-  // IPv4
-  hints.ai_family = AF_INET;
-  if (getaddrinfo(name, NULL, &hints, &addr_info) != 0)
+  if (getaddrinfo(name, NULL, NULL, &addr_info) != 0)
     {
     sprintf(log_buffer, "host %s not found", name);
 
@@ -2311,7 +2307,18 @@ void reset_config_vars()
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
   LOGLEVEL = 0;
-  }
+  
+  // Clear varattrs
+  struct varattr *pva;
+ 
+  while ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
+    {
+    delete_link(&pva->va_link);
+    
+    free(pva->va_cmd);
+    free(pva);
+    }
+  } // END reset_config_vars()
 
 
 

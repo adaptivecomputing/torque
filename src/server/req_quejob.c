@@ -1370,7 +1370,7 @@ void adjust_array_file_path(
  * @param preq - the batch request we're procesing
  * @param pj - the job being commmitted
  * @param version - the submission version: 1 means this was called by req_commit()
- *                                          2 means this was called by req_quejob()
+ *                                          2 means this was called by req_jobscript()
  *
  * @param return - PBSE_NONE on success, or PBSE_* on error
  */
@@ -1382,7 +1382,7 @@ int perform_commit_work(
   int            version)
 
   {
-  int rc = PBSE_NONE;
+  int        rc = PBSE_NONE;
 
   int        newstate;
   int        newsub;
@@ -1650,14 +1650,14 @@ int perform_commit_work(
     /* acknowledge the request with the job id */
 
     reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
+    }
     
-    /* if job array, setup the cloning work task */
-    if (pj->ji_is_array_template)
-      {
-      sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
-      }
+  /* if job array, setup the cloning work task */
+  if (pj->ji_is_array_template)
+    {
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
     }
     
   sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
@@ -1707,7 +1707,9 @@ int perform_commit_work(
  * req_quejob - Queue Job Batch Request processing routine
  *
  * @param preq - the batch request that contains the job's information
- * @param perform_commit - if true, perform the job's commit, otherwise skip it
+ * @param version - Tells us what version of queue job this is. Right now the 
+ *                  options are 1 and 2. If it's version 2 and we are interactive,
+ *                  then we should do the commit
  * @return PBSE_NONE on success, otherwise a PBSE_* error code
  *
  */
@@ -1715,7 +1717,7 @@ int perform_commit_work(
 int req_quejob(
 
   batch_request *preq,
-  bool           perform_commit)
+  int            version)
 
   {
   int                   created_here = 0;
@@ -1915,9 +1917,11 @@ int req_quejob(
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
-  if (perform_commit == true)
+  if ((version > 1) &&
+      (pj->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
-    if ((rc = perform_commit_work(preq, pj, 2)) != PBSE_NONE)
+    // On failure, perform commit work will reply to and free the request
+    if ((rc = perform_commit_work(preq, pj, version)) != PBSE_NONE)
       return(rc);
     }
 
@@ -1985,6 +1989,8 @@ int req_jobcredential(
   return rc;
   }  /* END req_jobcredential() */
 
+
+
 /*
  * req_jobscript - receive job script section
  *
@@ -1993,7 +1999,8 @@ int req_jobcredential(
 
 int req_jobscript(
 
-  struct batch_request *preq)
+  batch_request *preq,
+  bool           perform_commit)
 
   {
   int   fds;
@@ -2005,7 +2012,6 @@ int req_jobscript(
   std::string adjusted_path_jobs;
 
   errno = 0;
-
 
   pj = locate_new_job(preq->rq_ind.rq_jobfile.rq_jobid);
 
@@ -2019,8 +2025,9 @@ int req_jobscript(
     return(rc);
     }
 
-  /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
+  mutex_mgr job_mutex(pj->ji_mutex, true);
 
+  /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
     rc = PBSE_IVALREQ;
@@ -2040,9 +2047,9 @@ int req_jobscript(
         errno,
         strerror(errno));
       }
+
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
     return(rc);
     }
 
@@ -2054,7 +2061,6 @@ int req_jobscript(
         preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
     return rc;
     }
 
@@ -2084,7 +2090,6 @@ int req_jobscript(
              msg_script_open);
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
     return rc;
     }
 
@@ -2102,7 +2107,6 @@ int req_jobscript(
     log_err(rc, __func__, log_buf);
     req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
     close(fds);
-    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
     return rc;
     }
 
@@ -2116,165 +2120,17 @@ int req_jobscript(
     (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
 
   /* SUCCESS */
-  unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
-
+  if (perform_commit == true)
+    {
+    // On error, preq has been replied to and freed
+    if ((rc = perform_commit_work(preq, pj, 2)) != PBSE_NONE)
+      return(rc);
+    }
+    
   reply_ack(preq);
 
   return(rc);
   }  /* END req_jobscript() */
-
-
-
-/*
- * req_jobscript2 - receive job script section
- *
- * Each section is appended to the file
- */
-
-int req_jobscript2(
-
-  struct batch_request *preq)
-
-  {
-  int   fds;
-  char  namebuf[MAXPATHLEN];
-  job  *pj;
-  int   filemode = 0600;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  int   rc = PBSE_NONE;
-
-  errno = 0;
-
-
-  pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, FALSE);
-
-  if (pj == NULL)
-    {
-    rc = PBSE_IVALREQ;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    return(rc);
-    }
-
-  /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
-
-  if ((pj->ji_qs.ji_state != JOB_STATE_QUEUED) && 
-      (pj->ji_qs.ji_state != JOB_STATE_HELD) &&
-      ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)) &&
-      ((pj->ji_qs.ji_state == JOB_STATE_TRANSIT) && (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUTCM)) &&
-      (pj->ji_qs.ji_state != JOB_STATE_WAITING))
-    {
-    rc = PBSE_IVALREQ;
-    if (errno == 0)
-      {
-      snprintf(log_buf, sizeof(log_buf),
-        "job %s in unexpected state '%s'",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate]);
-      }
-    else
-      {
-      snprintf(log_buf, sizeof(log_buf),
-        "job %s in unexpected state '%s' (errno=%d - %s)",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate],
-        errno,
-        strerror(errno));
-      }
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
-    return(rc);
-    }
-
-  if (svr_authorize_jobreq(preq, pj) == -1)
-    {
-    rc = PBSE_PERM;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "cannot authorize request %s (%d-%s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "2", LOGLEVEL);
-    return rc;
-    }
-
-  // get adjusted path_jobs path
-  std::string adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
-
-  if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
-    {
-    /* NOTE:  fail is job script already exists */
-
-    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
-    }
-  else
-    {
-    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
-    }
-
-  if (fds < 0)
-    {
-    rc = PBSE_CAN_NOT_OPEN_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
-             namebuf,
-             errno,
-             strerror(errno),
-             msg_script_open);
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    unlock_ji_mutex(pj, __func__, "3", LOGLEVEL);
-    return rc;
-    }
-
-  if (write_ac_socket(
-        fds,
-        preq->rq_ind.rq_jobfile.rq_data,
-        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
-    {
-    rc = PBSE_CAN_NOT_WRITE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
-        namebuf,
-        errno,
-        strerror(errno),
-        msg_script_write);
-    log_err(rc, __func__, log_buf);
-    req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
-    close(fds);
-    unlock_ji_mutex(pj, __func__, "4", LOGLEVEL);
-    return rc;
-    }
-
-  close(fds);
-
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
-
-  /* job has a script file */
-
-  pj->ji_qs.ji_svrflags =
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
-
-  /* SUCCESS */
-  unlock_ji_mutex(pj, __func__, "5", LOGLEVEL);
-
-  reply_ack(preq);
-
-  /* if job array, setup the cloning work task */
-  if (pj->ji_is_array_template)
-    {
-    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
-    }
-
-  job_save(pj, SAVEJOB_FULL, 0);
-
-  return(rc);
-  }  /* END req_jobscript2() */
 
 
 

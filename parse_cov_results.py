@@ -6,7 +6,7 @@ import getopt
 import re
 import os
 
-# re patterns for the following line: 
+# re patterns for the following line:
 #     TOTALCOV -- '../../MConfig.c': Lines(1020) - executed:1.37%
 #
 line_prog = re.compile(".*TOTALCOV -- (.*): Lines\(([0-9]+)\) - executed:(.+)%.*")
@@ -95,9 +95,12 @@ def report_file(report):
     print "Lines executed: %6s of %6s statements: %.02f%% COVERAGE" % (int(actual_lines), total_lines, percent_touched)
 
     # Record this on Ben's website
-    urlstr='http://moab-walldisplay/metrics/record.php?metric=10&date=now&value=';
-    urlstr += str(percent_touched)
-    urllib2.urlopen(urlstr)
+    try:
+        urlstr='http://moab-walldisplay/metrics/record.php?metric=10&date=now&value=';
+        urlstr += str(percent_touched)
+        urllib2.urlopen(urlstr)
+    except urllib2.URLError, err:
+        print "Failed to post result to %s: %s" % (urlstr, err)
 
     #Output this information to a comma separated values file
     csv = open('coverages.csv', 'w')

@@ -123,14 +123,14 @@ START_TEST(test_one)
   memset(&req,0,sizeof(req));
 
   strcpy(req.rq_ind.rq_jobfile.rq_jobid,"NotThisJob");
-  fail_unless(req_jobscript(&req) == PBSE_IVALREQ);
+  fail_unless(req_jobscript(&req, false) == PBSE_IVALREQ);
 
   path_jobs = getcwd(path_to_jobs,sizeof(path_to_jobs));
   strcat(path_jobs,"/");
   sprintf(cmd,"rm -f %s*.SC",path_jobs);
   system(cmd);
   strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
-  fail_unless(req_jobscript(&req) == PBSE_NONE);
+  fail_unless(req_jobscript(&req, false) == PBSE_NONE);
   system(cmd);
   }
 END_TEST

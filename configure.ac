@@ -1272,8 +1272,6 @@ If you have done these and still get this  error, try running ./autogen.sh and
 then configuring again.
 ])])
 
-      AC_CHECK_LIB([hwloc], [hwloc_linux_get_tid_last_cpu_location],,
-        [AC_MSG_ERROR([libhwloc does not look like >= 1.9])])
     fi
 
     LIBS="$LIBS $HWLOC_LIBS";
@@ -2299,6 +2297,7 @@ AC_ARG_WITH(xauth,
         [
                 if test "x$withval" != "xno" ; then
                         xauth_path=$withval
+                        RPM_AC_OPTS="$RPM_AC_OPTS --define \"xauth_path ${withval}\""
                 fi
         ],
         [
