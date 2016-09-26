@@ -29,7 +29,7 @@ int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(std::list<node_job_add_info> *naji_list, struct pbsnode *pnode, single_spec_data &req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
-void process_job_attribute_information(std::string &job_id, Json::Value &job_info);
+void process_job_attribute_information(std::string &job_id, Json::Value &job_info, pbs_net_t addr);
 bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_list);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data &spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
@@ -438,8 +438,8 @@ START_TEST(process_job_attribute_information_test)
   std::string jobid("2.napali");
 
   str_to_attr_count = 0;
-  process_job_attribute_information(jobid, job_attrs);
-  fail_unless(str_to_attr_count == 3);
+  process_job_attribute_information(jobid, job_attrs, 0);
+  fail_unless(str_to_attr_count == 3, "expected 3, got %d", str_to_attr_count);
   fail_unless(decode_resc_count == 3);
   }
 END_TEST
