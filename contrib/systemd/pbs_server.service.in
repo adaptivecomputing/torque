@@ -7,6 +7,7 @@ After=trqauthd.service network.target local-fs.target rsyslog.target
 [Service]
 Type=simple
 User=root
+RemainAfterExit=yes
 
 # Let systemd guess the pid.
 #
