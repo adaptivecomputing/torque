@@ -4376,11 +4376,6 @@ unsigned long long get_memory_limit_for_this_host(
   if (cr != NULL)
     mem_limit = cr->get_memory_for_this_host(string_hostname);
 
-  if (mem_limit == 0)
-    {
-    mem_limit = get_memory_limit_from_resource_list(pjob);
-    }
-
   return(mem_limit);
   } // END get_memory_limit_for_this_host()
 
