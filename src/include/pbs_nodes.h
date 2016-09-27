@@ -251,7 +251,7 @@ public:
 
   struct array_strings         *nd_prop;             /* array of properities */
 
-  struct array_strings         *nd_status;
+  std::string                   nd_status;
   std::string                   nd_note;             /* note set by administrator */
   int                           nd_stream;           /* stream to Mom on host */
   enum psit                     nd_flag;

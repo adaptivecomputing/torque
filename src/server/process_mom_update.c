@@ -709,7 +709,7 @@ int update_node_mac_addr(
 int save_node_status(
 
   struct pbsnode *np,
-  pbs_attribute  *temp)
+  std::string    &new_status)
 
   {
   int  rc = PBSE_NONE;
@@ -717,19 +717,11 @@ int save_node_status(
 
   /* it's nice to know when the last update happened */
   snprintf(date_attrib, sizeof(date_attrib), "rectime=%ld", (long)time(NULL));
-  
-  if (decode_arst(temp, NULL, NULL, date_attrib, 0))
-    {
-    DBPRT(("is_stat_get:  cannot add date_attrib\n"));
-    }
-  
-  /* insert the information from "temp" into np */
-  if ((rc = node_status_list(temp, np, ATR_ACTION_ALTER)) != PBSE_NONE)
-    {
-    DBPRT(("is_stat_get: cannot set node status list\n"));
-    }
 
-  free_arst(temp);
+  new_status += ",";
+  new_status += date_attrib;
+
+  np->nd_status = new_status;
 
   return(rc);
   } /* END save_node_status() */
@@ -813,25 +805,14 @@ int process_status_info(
   bool            down_on_error = false;
   bool            note_append_on_error = false;
   int             dont_change_state = FALSE;
-  pbs_attribute   temp;
   int             rc = PBSE_NONE;
   bool            send_hello = false;
+  std::string     temp;
 
   get_svr_attr_b(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_b(SRV_ATR_AutoNodeNP, &auto_np);
   get_svr_attr_b(SRV_ATR_NoteAppendOnError, &note_append_on_error);
   get_svr_attr_b(SRV_ATR_DownOnError, &down_on_error);
-
-  /* Before filling the "temp" pbs_attribute, initialize it.
-   * The second and third parameter to decode_arst are never
-   * used, so just leave them empty. (GBS) */
-  memset(&temp, 0, sizeof(temp));
-
-  if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
-    {
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
-    return(rc);
-    }
 
   /* if original node cannot be found do not process the update */
   if ((current = find_nodebyname(nd_name)) == NULL)
@@ -858,7 +839,7 @@ int process_status_info(
       {
       /* if we've already processed some, save this before moving on */
       if (i != 0)
-        save_node_status(current, &temp);
+        save_node_status(current, temp);
       
       dont_change_state = FALSE;
 
@@ -871,7 +852,7 @@ int process_status_info(
       {
       /* if we've already processed some, save this before moving on */
       if (i != 0)
-        save_node_status(current, &temp);
+        save_node_status(current, temp);
 
       dont_change_state = FALSE;
 
@@ -942,13 +923,12 @@ int process_status_info(
       /* reset gpu data in case mom reconnects with changed gpus */
       clear_nvidia_gpus(current);
       }
-    else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
+    else 
       {
-      DBPRT(("is_stat_get: cannot add attributes\n"));
+      if (temp.size() > 0)
+        temp += ",";
 
-      free_arst(&temp);
-
-      break;
+      temp += str;
       }
 
     if (!strncmp(str, "state", 5))
@@ -1000,7 +980,7 @@ int process_status_info(
 
   if (current != NULL)
     {
-    save_node_status(current, &temp);
+    save_node_status(current, temp);
     current->unlock_node(__func__, NULL, LOGLEVEL);
     }
   

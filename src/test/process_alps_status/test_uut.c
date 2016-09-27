@@ -45,20 +45,20 @@ END_TEST
 
 START_TEST(set_ncpus_test)
   {
-  struct pbsnode  pnode;
-  struct pbsnode  parent;
+  pbsnode *pnode = new pbsnode();
+  pbsnode *parent = new pbsnode();
 
-  fail_unless(set_ncpus(&pnode,&parent, 2) == 0, "Couldn't set ncpus to 2");
-  snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode.nd_slots.get_total_execution_slots());
-  fail_unless(pnode.nd_slots.get_total_execution_slots() == 2, buf);
+  fail_unless(set_ncpus(pnode,parent, 2) == 0, "Couldn't set ncpus to 2");
+  snprintf(buf, sizeof(buf), "ncpus should be 2 but is %d", pnode->nd_slots.get_total_execution_slots());
+  fail_unless(pnode->nd_slots.get_total_execution_slots() == 2, buf);
 
-  fail_unless(set_ncpus(&pnode,&parent, 4) == 0, "Couldn't set ncpus to 4");
-  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode.nd_slots.get_total_execution_slots());
-  fail_unless(pnode.nd_slots.get_total_execution_slots() == 4, buf);
+  fail_unless(set_ncpus(pnode,parent, 4) == 0, "Couldn't set ncpus to 4");
+  snprintf(buf, sizeof(buf), "ncpus should be 4 but is %d", pnode->nd_slots.get_total_execution_slots());
+  fail_unless(pnode->nd_slots.get_total_execution_slots() == 4, buf);
 
-  fail_unless(set_ncpus(&pnode,&parent, 8) == 0, "Couldn't set ncpus to 8");
-  snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode.nd_slots.get_total_execution_slots());
-  fail_unless(pnode.nd_slots.get_total_execution_slots() == 8, buf);
+  fail_unless(set_ncpus(pnode,parent, 8) == 0, "Couldn't set ncpus to 8");
+  snprintf(buf, sizeof(buf), "ncpus should be 8 but is %d", pnode->nd_slots.get_total_execution_slots());
+  fail_unless(pnode->nd_slots.get_total_execution_slots() == 8, buf);
   }
 END_TEST
 

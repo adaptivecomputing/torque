@@ -929,8 +929,6 @@ int mgr_set_node_attr(
     pnode->nd_prop = NULL;
     }
 
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
   if ((pnode->nd_state != tnode.nd_state))
     {
     char OrigState[1024];
@@ -961,20 +959,6 @@ int mgr_set_node_attr(
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, pnode->get_name(), log_buf);
       }
     }
-
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
-  /*
-    if ((pnode->nd_status != NULL) && (pnode->nd_status != tnode.nd_status))
-      {
-      if (pnode->nd_status->as_buf != NULL)
-        free(pnode->nd_status->as_buf);
-
-      free(pnode->nd_status);
-
-      pnode->nd_status = NULL;
-      }
-  */
 
   *pnode              = tnode;        /* updates all data including linking in props */
 

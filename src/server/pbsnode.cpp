@@ -22,7 +22,7 @@ extern AvlTree          ipaddrs;
 pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_plugin_generic_resources(),
                      nd_plugin_generic_metrics(), nd_plugin_varattrs(), nd_plugin_features(),
                      nd_proximal_failures(0), nd_consecutive_successes(0),
-                     nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_f_st(), nd_addrs(), nd_prop(NULL), nd_status(),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -70,7 +70,7 @@ pbsnode::pbsnode(
                                      nd_plugin_generic_resources(), nd_plugin_generic_metrics(),
                                      nd_plugin_varattrs(), nd_plugin_features(),
                                      nd_proximal_failures(0), nd_consecutive_successes(0),
-                                     nd_mutex(), nd_f_st(), nd_prop(NULL), nd_status(NULL),
+                                     nd_mutex(), nd_f_st(), nd_prop(NULL), nd_status(),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -139,7 +139,6 @@ pbsnode::~pbsnode()
   {
   free_arst_value(this->nd_acl);
   free_arst_value(this->nd_prop);
-  free_arst_value(this->nd_status);
   free_arst_value(this->nd_gpustatus);
   free_arst_value(this->nd_micstatus);
   } // END destructor
@@ -181,8 +180,7 @@ pbsnode &pbsnode::operator =(
   free_arst_value(this->nd_prop);
   this->nd_prop = copy_arst(other.nd_prop);
 
-  free_arst_value(this->nd_status);
-  this->nd_status = copy_arst(other.nd_status);
+  this->nd_status = other.nd_status;
 
   this->nd_note = other.nd_note;
   this->nd_addrs = other.nd_addrs;
@@ -269,7 +267,7 @@ pbsnode::pbsnode(
                           nd_plugin_features(other.nd_plugin_features),
                           nd_proximal_failures(other.nd_proximal_failures),
                           nd_consecutive_successes(other.nd_consecutive_successes), nd_mutex(),
-                          nd_id(other.nd_id), nd_addrs(other.nd_addrs),
+                          nd_id(other.nd_id), nd_addrs(other.nd_addrs), nd_status(other.nd_status),
                           nd_note(other.nd_note), nd_stream(other.nd_stream),
                           nd_flag(other.nd_flag), nd_mom_port(other.nd_mom_port),
                           nd_mom_rm_port(other.nd_mom_rm_port), nd_sock_addr(), nd_nprops(0),
@@ -307,7 +305,6 @@ pbsnode::pbsnode(
 
   {
   this->nd_prop = copy_arst(other.nd_prop);
-  this->nd_status = copy_arst(other.nd_status);
   this->nd_gpustatus = copy_arst(other.nd_gpustatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
@@ -970,23 +967,8 @@ void pbsnode::add_job_list_to_status(
   const std::string &job_list)
 
   {
-  pbs_attribute current;
-  pbs_attribute to_add;
-
   if ((job_list.size() != 0) &&
       (job_list.find_first_not_of(" \n\r\t") != std::string::npos))
-    {
-    memset(&current, 0, sizeof(current));
-    memset(&to_add, 0, sizeof(to_add));
-
-    current.at_val.at_arst = copy_arst(this->nd_status);
-    decode_arst(&to_add, NULL, NULL, job_list.c_str(), 0);
-    set_arst(&current, &to_add, INCR);
-    
-    node_status_list(&current, this, ATR_ACTION_ALTER);
-   
-    free_arst(&to_add);
-    free_arst(&current);
-    }
+    this->nd_status += "," + job_list;
   } // END add_job_list_to_status()
 
