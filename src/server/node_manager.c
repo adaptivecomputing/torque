@@ -468,7 +468,6 @@ int check_node_for_job(
 
 
 
-
 /*
  * is_job_on_node - return TRUE if this internal job id is present on pnode
  */
@@ -507,7 +506,6 @@ int is_job_on_node(
 
   return(present);
   }  /* END is_job_on_node() */
-
 
 
 
