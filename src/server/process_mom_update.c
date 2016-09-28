@@ -935,7 +935,21 @@ int process_status_info(
       if (temp.size() > 0)
         temp += ",";
 
-      temp += str;
+      if (!strncmp(str, "message=", 8))
+        {
+        std::string no_newlines(str);
+        size_t pos = no_newlines.find('\n');
+        
+        while (pos != std::string::npos)
+          {
+          no_newlines.replace(pos, 1, 1, ' ');
+          pos = no_newlines.find('\n');
+          }
+
+        temp += no_newlines;
+        }
+      else
+        temp += str;
       }
 
     if (!strncmp(str, "state", 5))
