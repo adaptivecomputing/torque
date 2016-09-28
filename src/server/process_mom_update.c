@@ -837,9 +837,13 @@ int process_status_info(
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
       {
+
       /* if we've already processed some, save this before moving on */
       if (i != 0)
+        {
         save_node_status(current, temp);
+        temp.clear();
+        }
       
       dont_change_state = FALSE;
 
@@ -852,7 +856,10 @@ int process_status_info(
       {
       /* if we've already processed some, save this before moving on */
       if (i != 0)
+        {
         save_node_status(current, temp);
+        temp.clear();
+        }
 
       dont_change_state = FALSE;
 

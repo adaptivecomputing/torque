@@ -650,6 +650,8 @@ int process_alps_status(
         {
         if (current != NULL)
           save_node_status(current, temp);
+      
+        temp.clear();
         }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
