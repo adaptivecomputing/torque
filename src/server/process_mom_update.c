@@ -986,12 +986,11 @@ int process_status_info(
       /* update job attributes based on what the MOM gives us */      
       update_job_data(current, str + strlen("jobdata="));
       }
-    else if (auto_np)
+    else if ((auto_np) &&
+             (!(strncmp(str, "ncpus=", 6))))
+
       {
-      if (!(strncmp(str, "ncpus=", 6)))
-        {
-        handle_auto_np(current, str);
-        }
+      handle_auto_np(current, str);
       }
     else if (!strncmp(str, "version=", 8))
       {
