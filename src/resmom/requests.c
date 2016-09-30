@@ -2357,23 +2357,23 @@ void encode_used(
 
       if (!strcmp(rd->rs_name, "cput"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_cput;
+          lnum += pjob->ji_resources[j].nr_cput;
           }
         }
       else if (!strcmp(rd->rs_name, "mem"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_mem;
+          lnum += pjob->ji_resources[j].nr_mem;
           }
         }
       else if (!strcmp(rd->rs_name, "vmem"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_vmem;
+          lnum += pjob->ji_resources[j].nr_vmem;
           }
         }
 
