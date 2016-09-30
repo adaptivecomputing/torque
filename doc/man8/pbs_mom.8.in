@@ -81,7 +81,7 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-d\ directory] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
+pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-D\^] [\^\-d\ directory] [\^\-F\^] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
 .SH DESCRIPTION
 The
 .B pbs_mom
@@ -140,6 +140,8 @@ present, pbs_mom will log the fact and continue.
 Displays the help/usage message.
 .IP "\-H hostname" 16
 Sets the MOM's hostname.  This can be useful on multi-homed networks.
+.IP "\-D" 16
+Debug mode. Do not fork.
 .IP "\-d directory" 16
 Specifies the path of the directory which is the home of the servers
 working files, PBS_HOME.
@@ -147,6 +149,8 @@ This option is typically used along with \-M when debugging MOM.
 The default directory is given by $PBS_SERVER_HOME
 which is typically
 .Ty /usr/spool/PBS .
+.IP "\-F" 16
+Do not fork. Use when running under systemd.
 .IP "\-L logfile" 16
 Specifies an absolute path name for use as the log file.
 If not specified, MOM will
