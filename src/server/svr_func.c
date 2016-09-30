@@ -221,7 +221,6 @@ void set_resc_assigned(
   enum batch_op op)  /* INCR or DECR */
 
   {
-  resource      *jobrsc;
   resource      *pr;
   pbs_attribute *queru;
   resource_def  *rscdef;
@@ -279,53 +278,55 @@ void set_resc_assigned(
     sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
     queru = &pque->qu_attr[QE_ATR_ResourceAssn];
-    jobrsc = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+    std::vector<resource> *job_resc = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
-    while (jobrsc != NULL)
+    if (job_resc != NULL)
       {
-      rscdef = jobrsc->rs_defin;
-
-      /* if resource usage is to be tracked */
-
-      if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
-          (jobrsc->rs_value.at_flags & ATR_VFLAG_SET))
+      for (size_t i = 0; i < job_resc->size(); i++)
         {
-        /* update system pbs_attribute of resources assigned */
+        resource &r = job_resc->at(i);
 
-        pr = find_resc_entry(sysru, rscdef);
+        rscdef = r.rs_defin;
 
-        if (pr == NULL)
+        /* if resource usage is to be tracked */
+
+        if ((rscdef->rs_flags & ATR_DFLAG_RASSN) &&
+            (r.rs_value.at_flags & ATR_VFLAG_SET))
           {
-          pr = add_resource_entry(sysru, rscdef);
+          /* update system pbs_attribute of resources assigned */
+
+          pr = find_resc_entry(sysru, rscdef);
 
           if (pr == NULL)
             {
-            return;
+            pr = add_resource_entry(sysru, rscdef);
+
+            if (pr == NULL)
+              {
+              return;
+              }
             }
-          }
 
-        rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
+          rscdef->rs_set(&pr->rs_value, &r.rs_value, op);
 
-        /* update queue pbs_attribute of resources assigned */
+          /* update queue pbs_attribute of resources assigned */
 
-        pr = find_resc_entry(queru, rscdef);
-
-        if (pr == NULL)
-          {
-          pr = add_resource_entry(queru, rscdef);
+          pr = find_resc_entry(queru, rscdef);
 
           if (pr == NULL)
             {
-            return;
+            pr = add_resource_entry(queru, rscdef);
+
+            if (pr == NULL)
+              {
+              return;
+              }
             }
+
+          rscdef->rs_set(&pr->rs_value, &r.rs_value, op);
           }
-
-        rscdef->rs_set(&pr->rs_value, &jobrsc->rs_value, op);
-        }
-
-      jobrsc = (resource *)GET_NEXT(jobrsc->rs_link);
-      }  /* END while (jobrsc != NULL) */
-
+        }  // END for each job resource */
+      }
     }
   else if (pjob == NULL)
     {

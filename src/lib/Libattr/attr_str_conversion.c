@@ -275,29 +275,30 @@ int attr_to_str(
     case ATR_TYPE_RESC:
 
       {
-      resource *current = (resource *)GET_NEXT(attr.at_val.at_list);
-
-      if (current == NULL)
+      if (attr.at_val.at_ptr == NULL)
         return(NO_ATTR_DATA);
 
-      /* print all of the resources */
-      while (current != NULL)
+      std::vector<resource> *resources = (std::vector<resource> *)attr.at_val.at_ptr;
+
+      // print all of the resources
+      for (size_t i = 0; i < resources->size(); i++)
         {
+        resource &r = resources->at(i);
 
         /* there are only 3 resource types used */
-        switch (current->rs_value.at_type)
+        switch (r.rs_value.at_type)
           {
           case ATR_TYPE_LONG:
 
             ds += "\t\t<";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
-            snprintf(local_buf, sizeof(local_buf), "%ld", current->rs_value.at_val.at_long);
+            snprintf(local_buf, sizeof(local_buf), "%ld", r.rs_value.at_val.at_long);
             ds += local_buf;
 
             ds += "</";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
             break;
@@ -305,28 +306,28 @@ int attr_to_str(
           case ATR_TYPE_STR:
 
             /* Patch provided by Martin Siegert to fix seg-fault
-             * when current->rs_value.at_val.at_str is NULL 
+             * when r.rs_value.at_val.at_str is NULL 
              * Bugzilla bug 101 
              */
 
-            if (current->rs_value.at_val.at_str == NULL)
+            if (r.rs_value.at_val.at_str == NULL)
               break;
 
-            if (strlen(current->rs_value.at_val.at_str) == 0)
+            if (strlen(r.rs_value.at_val.at_str) == 0)
               break;
 
             ds += "\t\t<";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
             
             if (XML == true)
-              appendEscapedXML(current->rs_value.at_val.at_str,ds);
+              appendEscapedXML(r.rs_value.at_val.at_str,ds);
             else
-              ds += current->rs_value.at_val.at_str;
+              ds += r.rs_value.at_val.at_str;
 
             ds += "</";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
             break;
@@ -334,23 +335,22 @@ int attr_to_str(
           case ATR_TYPE_SIZE:
 
             ds += "\t\t<";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
-            size_to_str(current->rs_value.at_val.at_size, local_buf, sizeof(local_buf));
+            size_to_str(r.rs_value.at_val.at_size, local_buf, sizeof(local_buf));
 
             ds += local_buf;
 
             ds += "</";
-            ds += current->rs_defin->rs_name;
+            ds += r.rs_defin->rs_name;
             ds += ">";
 
             break;
           }
 
-        current = (resource *)GET_NEXT(current->rs_link);
         ds += "\n";
-        }
+        } // END for each resource
       }
 
       break;

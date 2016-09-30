@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include "pbs_error.h"
 #include "resource.h"
 #include "work_task.h"
@@ -34,13 +35,19 @@ extern std::string global_log_buf;
 
 void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value)
   {
-  resource *rsc = (resource *)calloc(1, sizeof(resource));
-  fail_unless(rsc != NULL, "unable to allocate a resource");
-  rsc->rs_defin = prdef;
-  rsc->rs_value.at_type = prdef->rs_type;
+  if (pattr->at_val.at_ptr == NULL)
+    {
+    pattr->at_val.at_ptr = new std::vector<resource>();
+    }
+
+  std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
+  resource rsc;
+  rsc.rs_defin = prdef;
+  rsc.rs_value.at_type = prdef->rs_type;
+  rsc.rs_value.at_val.at_str = strdup(value);
+  resources->push_back(rsc);
   pattr->at_flags = ATR_VFLAG_SET;
-  pattr->at_val.at_str = (char *)strdup(value);
-  append_link(&pattr->at_val.at_list, &rsc->rs_link, rsc);
+  pattr->at_val.at_ptr = resources;
   }
 
 
@@ -427,11 +434,6 @@ START_TEST(chk_resc_min_limits_test)
 
   result = chk_resc_limits(&test_attribute, &test_queue, message);
   fail_unless(result == PBSE_NONE, "Fail to approve queue minimum resource");
-
-  free(test_attribute.at_val.at_str);
-  test_attribute.at_val.at_str = strdup("2:ppn=1");
-  /* cant do the  real test because comp_resc2 is mocked for the other tests */
-  /* fail_unless(result != PBSE_NONE, "Fail to detect minim resource not met"); */
   }
 END_TEST
 

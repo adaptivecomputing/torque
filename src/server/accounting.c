@@ -600,22 +600,22 @@ void account_jobend(
 #ifdef USESAVEDRESOURCES
   pattr = &pjob->ji_wattr[JOB_ATR_resc_used];
 
-  if (pattr->at_flags & ATR_VFLAG_SET)
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+      (pattr->at_val.at_ptr != NULL))
     {
-    resource *pres;
-    const char     *pname;
+    const char *pname;
 
-    pres = (resource *)GET_NEXT(pattr->at_val.at_list);
-    
+    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
+
     /* find the walltime resource */
-    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      pname = pres->rs_defin->rs_name;
+      pname = resources->at(i).rs_defin->rs_name;
       
       if (strcmp(pname, "walltime") == 0)
         {
         /* found walltime */
-        walltime_val = pres->rs_value.at_val.at_long;
+        walltime_val = resources->at(i).rs_value.at_val.at_long;
         break;
         }
       }

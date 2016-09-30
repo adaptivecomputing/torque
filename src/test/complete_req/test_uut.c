@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <vector>
 
 #include "complete_req.hpp"
 #include "pbs_error.h"
+#include "resource.h"
 
 extern int called_log_event;
 
@@ -60,9 +62,39 @@ START_TEST(test_set_get_value)
 END_TEST
 
 
+void add_resource(
+
+  std::vector<resource> &resources,
+  const char            *name,
+  const char            *str_val,
+  long                   lval1,
+  long                   lval2)
+
+  {
+  resource_def *rd = (resource_def *)calloc(1, sizeof(resource_def));
+  rd->rs_name = strdup(name);
+  resource r;
+
+  r.rs_defin = rd;
+  
+  if (str_val != NULL)
+    {
+    r.rs_value.at_val.at_str = strdup(str_val);
+    }
+  else if (lval2 < 0)
+    r.rs_value.at_val.at_long = lval1;
+  else
+    {
+    r.rs_value.at_val.at_size.atsv_num = lval1;
+    r.rs_value.at_val.at_size.atsv_shift = lval2;
+    }
+  
+  resources.push_back(r);
+  } // add_resource()
+
+
 START_TEST(test_constructor)
   {
-  extern int gn_count;
   complete_req c;
 
   req r1;
@@ -96,50 +128,68 @@ START_TEST(test_constructor)
 
   fail_unless(equals_out == c_out);
 
-  tlist_head h;
-  complete_req list1(h, 2, false);
+  std::vector<resource> resources;
+  add_resource(resources, "nodes", "1:ppn=2+2:gpus=1", 0, 0);
+  add_resource(resources, "mem", NULL, 40, 20);
+  complete_req list1(&resources, 2, false);
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
-  complete_req list2(h, 2, true);
+  resources.clear();
+  add_resource(resources, "size", NULL, 20, -1);
+  add_resource(resources, "mem", NULL, 40, 10);
+  complete_req list2(&resources, 2, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
   fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
  
-  complete_req list3(h, 2, false);
+  resources.clear();
+  add_resource(resources, "ncpus", NULL, 16, -1);
+  add_resource(resources, "mem", NULL, 40, 10);
+  complete_req list3(&resources, 2, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
   fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
 
-  complete_req list4(h, 2, true);
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "pmem", NULL, 80, 10);
+  complete_req list4(&resources, 2, true);
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
   fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
 
-  complete_req list5(h, 2, true);
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "pvmem", NULL, 80, 10);
+  complete_req list5(&resources, 2, true);
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
   fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
   fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
-  complete_req list6(h, 2, true);
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "vmem", NULL, 80, 10);
+  complete_req list6(&resources, 2, true);
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
   fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
   fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
 
-  int old_gn_count = gn_count;
-  gn_count = 20;
-  complete_req list7(h, 2, false);
+  resources.clear();
+  add_resource(resources, "procs", NULL, 2, -1);
+  add_resource(resources, "pmem", NULL, 1024, 10);
+  complete_req list7(&resources, 2, false);
   fail_unless(list7.req_count() == 1);
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
@@ -147,18 +197,26 @@ START_TEST(test_constructor)
 
   // Make sure that we'll set memory to the higher of pmem and mem, and set swap
   // as well for the same job
-  complete_req list8(h, 1, false);
+  resources.clear();
+  add_resource(resources, "procs", NULL, 1, -1);
+  add_resource(resources, "mem", NULL, 4096, 10);
+  add_resource(resources, "pmem", NULL, 5, 10);
+  add_resource(resources, "vmem", NULL, 8192, 10);
+  complete_req list8(&resources, 1, false);
   fail_unless(list8.req_count() == 1);
   const req &rl8 = list8.get_req(0);
   fail_unless(rl8.getTaskCount() == 1);
   fail_unless(rl8.getMemory() == 4096);
   fail_unless(rl8.getSwap() == 8192);
 
-  complete_req list9(h, 1, false);
+  resources.clear();
+  add_resource(resources, "procs", NULL, 1, -1);
+  add_resource(resources, "mem", NULL, 100, 10);
+  add_resource(resources, "pmem", NULL, 5000, 10);
+  complete_req list9(&resources, 1, false);
   fail_unless(list9.req_count() == 1);
   const req &rl9 = list9.get_req(0);
   fail_unless(rl9.getMemory() == 5000);
-  gn_count = old_gn_count;
 
   }
 END_TEST
@@ -166,10 +224,9 @@ END_TEST
 
 START_TEST(test_constructor_oldstyle_req)
   {
-  tlist_head h;
-  extern int gn_count;
-  gn_count = 18;
-  complete_req list1(h, 2, false);
+  std::vector<resource> resources;
+  add_resource(resources, "vmem", NULL, 2048, 0);
+  complete_req list1(&resources, 2, false);
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);

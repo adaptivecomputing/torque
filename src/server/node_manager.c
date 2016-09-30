@@ -4155,7 +4155,7 @@ void update_req_hostlist(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, ppn_needed, (bool)legacy_vmem);
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr, ppn_needed, (bool)legacy_vmem);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
     pjob->ji_wattr[JOB_ATR_req_information].at_flags |= ATR_VFLAG_SET;
     }

@@ -1676,30 +1676,33 @@ int get_used(
   std::string &acct_data)
 
   {
-  resource      *pr = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_ptr;
   attribute_def  at_def;
   const char     empty[] = "0";
 
-  while (pr != NULL)
+  if (resources != NULL)
     {
-    acct_data += " resources_used.";
-    acct_data += pr->rs_defin->rs_name;
-    acct_data += "=";
-
-    if (!strcmp(pr->rs_defin->rs_name, "walltime"))
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      char buf[MAXLINE];
-      get_time_string(buf, sizeof(buf), pr->rs_value.at_val.at_long);
-      acct_data += buf;
-      }
-    else
-      {
-      at_def.at_type = pr->rs_value.at_type;
-      if (attr_to_str(acct_data, &at_def, pr->rs_value, false) == NO_ATTR_DATA)
-        acct_data += empty;
-      }
+      resource &r = resources->at(i);
 
-    pr = (resource *)GET_NEXT(pr->rs_link);
+      acct_data += " resources_used.";
+      acct_data += r.rs_defin->rs_name;
+      acct_data += "=";
+
+      if (!strcmp(r.rs_defin->rs_name, "walltime"))
+        {
+        char buf[MAXLINE];
+        get_time_string(buf, sizeof(buf), r.rs_value.at_val.at_long);
+        acct_data += buf;
+        }
+      else
+        {
+        at_def.at_type = r.rs_value.at_type;
+        if (attr_to_str(acct_data, &at_def, r.rs_value, false) == NO_ATTR_DATA)
+          acct_data += empty;
+        }
+      }
     }
 
   pjob->add_plugin_resource_usage(acct_data);
@@ -2799,20 +2802,22 @@ void encode_job_used(
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
 
-  if ((at->at_flags & ATR_VFLAG_SET) == 0)
+  if (((at->at_flags & ATR_VFLAG_SET) == 0) ||
+      (at->at_val.at_ptr == NULL))
     {
     return;
     }
 
-  for (rs = (resource *)GET_NEXT(at->at_val.at_list);
-       rs != NULL;
-       rs = (resource *)GET_NEXT(rs->rs_link))
+  std::vector<resource> *resources = (std::vector<resource> *)at->at_val.at_ptr;
+
+  for (size_t i = 0; i < resources->size(); i++)
     {
-    resource_def *rd = rs->rs_defin;
+    resource &r = resources->at(i);
+    resource_def *rd = r.rs_defin;
     pbs_attribute val;
     int           rc;
 
-    val = rs->rs_value; /* copy resource pbs_attribute */
+    val = r.rs_value; /* copy resource pbs_attribute */
 
     rc = rd->rs_encode(
            &val,
@@ -2824,7 +2829,7 @@ void encode_job_used(
 
     if (rc < 0)
       break;
-    }  /* END for (rs) */
+    }  /* END for each resource */
 
   return;
   }  /* END encode_job_used() */

@@ -566,10 +566,15 @@ static int mgr_set_attr(
 
       (pdef + index)->at_free(pold);
 
-      if ((pold->at_type == ATR_TYPE_LIST) ||
-          (pold->at_type == ATR_TYPE_RESC))
+      if (pold->at_type == ATR_TYPE_LIST)
         {
         list_move(&pnew->at_val.at_list, &pold->at_val.at_list);
+        }
+      else if (pold->at_type == ATR_TYPE_RESC)
+        {
+        void *old_ptr = pold->at_val.at_ptr;
+        pold->at_val.at_ptr = pnew->at_val.at_ptr;
+        pnew->at_val.at_ptr = old_ptr;
         }
       else if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
         {
@@ -617,7 +622,6 @@ int mgr_unset_attr(
   int   ord;
   svrattrl *pl;
   resource_def *prsdef;
-  resource *presc;
 
   /* first check the pbs_attribute exists and we have privilege to set */
 
@@ -698,18 +702,28 @@ int mgr_unset_attr(
                  plist->al_resc,
                  svr_resc_size);
 
-      if ((presc = find_resc_entry(pattr + index, prsdef)))
+      std::vector<resource> *resources = (std::vector<resource> *)pattr[index].at_val.at_ptr;
+
+      if (resources != NULL)
         {
-        if ((pdef->at_parent != PARENT_TYPE_SERVER) ||
-            (index != SRV_ATR_resource_cost))
+        int index = -1;
+
+        for (size_t i = 0; i < resources->size(); i++)
           {
-          prsdef->rs_free(&presc->rs_value);
+          resource &r = resources->at(i);
+          if (!strcmp(r.rs_defin->rs_name, prsdef->rs_name))
+            {
+            prsdef->rs_free(&r.rs_value);
+            index = i;
+            break;
+            }
           }
 
-        delete_link(&presc->rs_link);
+        if (index != -1)
+          {
+          resources->erase(resources->begin() + index);
+          }
         }
-
-      free(presc);
       }
     else
       {
