@@ -81,7 +81,7 @@
 .SH NAME
 pbs_server \- start a pbs batch server
 .SH SYNOPSIS
-pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-f] [\-h] [\-l location\^]
+pbs_server\ [\-a active] [\-c] [\-d\ config_path\^]\ [\-e] [\-F] [\-f] [\-h] [\-l location\^]
 [\-p\ port\^] [\-t type\^] [\-v] [\^\-A\ acctfile\^] [\^\-D] [\-H\ hostname\^]
 [\^\-L\ logfile\^] [\-M\ mom_port\^] [\-n\ don't send hierarchy\^] [\-R\ momRPP_port] [\-S\ scheduler_port\^]
 [\-\-about] [\-\-ha] [\-\-help] [\-\-version]
@@ -124,6 +124,8 @@ which is typically
 .Ty /usr/spool/PBS .
 .IP "\-e" 15
 Accept status update from any mom. Adds node to nodes file.
+.IP "\-F" 15
+Do not fork. Use when running under systemd.
 .IP "\-f" 15
 Force overwrite of server database.
 .IP "\-h" 15
@@ -148,7 +150,7 @@ Specifies an absolute path name of the file to use as the accounting file.
 If not specified, the file is named for the current date in the
 PBS_HOME/server_priv/accounting directory.
 .IP "\-D"
-Debug mode.
+Debug mode. Do not fork.
 .IP "\-H hostname"
 Causes the server to start under a different hostname as obtained from
 gethostname(2). Useful for servers with multiple network interfaces to support
