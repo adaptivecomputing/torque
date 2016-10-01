@@ -121,7 +121,7 @@ do
             parallel="${1}"
             shift
             ;;
-        -g|--with-cgroups)
+        -g|--enable-cgroups)
             cgroups=1
             shift
             ;;
