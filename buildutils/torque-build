@@ -213,7 +213,7 @@ echo "Started ${0}, version ${version}, release ${release}." \
 
 if [ $cgroups -ne 0 ]
 then
-  configure_options="$configure_options --enable-cgroups --hwloc-path=/usr/local/bin/"
+  configure_options="$configure_options --enable-cgroups --with-hwloc-path=/usr/local/bin/"
 fi
 
 echo $(git rev-parse HEAD) > current_hash
