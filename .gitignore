@@ -11,6 +11,7 @@ test_uut
 .deps
 .dirstamp
 .libs
+*~
 *.m4
 *.log
 *.trs

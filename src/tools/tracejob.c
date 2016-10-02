@@ -116,7 +116,7 @@ int main(
 
   {
   /* Array for the log entries for the specified job */
-  FILE *fp;
+  gzFile fp;
   int i, j;
   int file_count;
   char *filenames[MAX_LOG_FILES_PER_DAY];  /* full path of logfiles to read */
@@ -333,7 +333,7 @@ int main(
 
         for (; file_count > 0; file_count--)
           {
-          if ((fp = fopen(filenames[file_count-1], "r")) == NULL)
+          if ((fp = gzopen(filenames[file_count-1], "r")) == NULL)
             {
             if (verbosity >= 1)
               perror(filenames[file_count-1]);
@@ -341,7 +341,7 @@ int main(
             continue;
             }
 
-          if (parse_log(fp, argv[opt], j) < 0)
+          if (parse_log(&fp, argv[opt], j) < 0)
             {
             /* no valid entries located in file */
 
@@ -357,7 +357,7 @@ int main(
                     filenames[file_count-1]);
             }
 
-          fclose(fp);
+          gzclose(fp);
           free(filenames[file_count-1]);
           } /* end of for file_count */
         }
@@ -414,7 +414,7 @@ int main(
 
 int parse_log(
 
-  FILE *fp,   /* I */
+  gzFile *fp,   /* I */
   char *job,  /* I */
   int   ind)  /* I */
 
@@ -434,7 +434,7 @@ int parse_log(
 
   tms.tm_isdst = -1; /* mktime() will attempt to figure it out */
 
-  while (fgets(buf, sizeof(buf), fp) != NULL)
+  while (gzgets(*fp, buf, sizeof(buf)) != NULL)
     {
     lineno++;
     j++;
@@ -589,7 +589,7 @@ int parse_log(
 
       logcount++;
       }
-    }    /* END while (fgets(buf,sizeof(buf),fp) != NULL) */
+    }    /* END while (gzgets(*fp, buf, sizeof(buf)) != NULL) */
 
   if (logcount == 0)
     {

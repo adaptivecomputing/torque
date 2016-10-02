@@ -82,7 +82,7 @@
 #define TRACEJOB_H
 
 #include <time.h> /* time_t, struct tm */
-#include <stdio.h> /* FILE */
+#include <zlib.h>
 
 /* Symbolic constants */
 
@@ -158,7 +158,7 @@ unsigned no_print:
 
 /* prototypes */
 int sort_by_date(const void *v1, const void *v2);
-int parse_log(FILE *, char *, int);
+int parse_log(gzFile *, char *, int);
 char *strip_path(char *path);
 void free_log_entry(struct log_entry *lg);
 void line_wrap(char *line, int start, int end);

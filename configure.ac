@@ -799,6 +799,10 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
 
 
+dnl find zlib
+AC_CHECK_LIB(z, gzopen,
+  [],
+  [AC_MSG_ERROR([TORQUE needs zlib-devel in order to build]) ])
 
 
 dnl ###########################################
