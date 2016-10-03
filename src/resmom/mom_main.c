@@ -341,7 +341,7 @@ char           *path_log;
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
-int                     DOBACKGROUND = 1;
+bool                    daemonize_mom = true;
 long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
@@ -1685,7 +1685,7 @@ void add_diag_remaining_spool_space(
       if (verbositylevel >= 1)
         {
         output << "stdout/stderr spool directory: '" << path_spool << "' (" << VFSStat.f_bavail;
-        output << "blocks available)\n";
+        output << " blocks available)\n";
         }
       }
     else
@@ -3887,7 +3887,8 @@ void usage(
   fprintf(stderr, "  -C <PATH> \\\\ Checkpoint Dir\n");
   fprintf(stderr, "  -d <PATH> \\\\ Home Dir\n");
   fprintf(stderr, "  -C <PATH> \\\\ Checkpoint Dir\n");
-  fprintf(stderr, "  -D        \\\\ DEBUG - do not background\n");
+  fprintf(stderr, "  -D        \\\\ Debug mode (do not fork)\n");
+  fprintf(stderr, "  -F        \\\\ Do not fork (use when running under systemd)\n");
   fprintf(stderr, "  -h        \\\\ Print Usage\n");
   fprintf(stderr, "  -H <HOST> \\\\ Hostname\n");
   fprintf(stderr, "  -l        \\\\ MOM Log Dir Path\n");
@@ -4223,7 +4224,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:A:c:C:d:DhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
     {
     switch (c)
       {
@@ -4327,7 +4328,14 @@ void parse_command_line(
 
       case 'D':  /* debug */
 
-        DOBACKGROUND = 0;
+        daemonize_mom = false;
+
+        break;
+
+      case 'F':  /* do not fork */
+
+        // use when running under systemd
+        daemonize_mom = false;
 
         break;
 
@@ -4847,7 +4855,7 @@ int setup_program_environment(void)
     {
     DEBUGMODE = 1;
 
-    DOBACKGROUND = 0;
+    daemonize_mom = false;
     }
 
   memset(TMOMStartInfo, 0, sizeof(pjobexec_t)*TMAX_JE);
@@ -5175,7 +5183,7 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_UNLCK); /* unlock so child can relock */
 
-  if (DOBACKGROUND == 1)
+  if (daemonize_mom)
     {
     if (fork() > 0)
       {
@@ -5202,7 +5210,7 @@ int setup_program_environment(void)
 
     dummyfile = fopen("/dev/null", "w");
     assert((dummyfile != 0) && (fileno(dummyfile) == 2));
-    }  /* END if (DOBACKGROUND == 1) */
+    }  /* END if (daemonize_mom) */
 
   mom_lock(lockfds, F_WRLCK); /* lock out other MOMs */
 

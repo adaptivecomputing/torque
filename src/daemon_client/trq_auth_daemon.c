@@ -41,6 +41,7 @@ extern char *trq_hostname;
 
 bool       down_server = false;
 bool       use_log = true;
+bool       daemonize_server = true;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
 
@@ -182,8 +183,8 @@ int daemonize_trqauthd(const char *server_ip, const char *server_port, void *(*p
     }
 
   if (getenv("PBSDEBUG") != NULL)
-    debug_mode = TRUE;
-  if (debug_mode == FALSE)
+    daemonize_server = false;
+  if (daemonize_server)
     {
     pid = fork();
     if(pid > 0)
@@ -266,7 +267,7 @@ void parse_command_line(int argc, char **argv)
             {0,         0,                0,  0 }
   };
 
-  while ((c = getopt_long(argc, argv, "Ddn", long_options, &option_index)) != -1)
+  while ((c = getopt_long(argc, argv, "DdFn", long_options, &option_index)) != -1)
     {
     switch (c)
       {
@@ -286,6 +287,7 @@ void parse_command_line(int argc, char **argv)
               }
             fprintf(stderr, "\n  -D // RUN IN DEBUG MODE\n");
             fprintf(stderr, "  -d // terminate trqauthd\n");
+            fprintf(stderr, "  -F // do not fork (use when running under systemd)\n");
             fprintf(stderr, "\n");
             exit(0);
             break;
@@ -297,13 +299,18 @@ void parse_command_line(int argc, char **argv)
         break;
 
       case 'D':
-        debug_mode = TRUE;
+        daemonize_server = false;
         break;
 
       case 'd':
         down_server = true;
         break;
        
+      case 'F':
+        // use when running under systemd
+        daemonize_server = false;
+        break;
+
        case 'n':
 
          use_log=false;

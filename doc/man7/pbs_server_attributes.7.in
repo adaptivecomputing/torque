@@ -225,6 +225,26 @@ default value: none, must be set to an existing queue.
 .if !\n(Pb .ig Ig
 [internal type: string]
 .Ig
+.Al disable_automatic_requeue
+Normally, if a job cannot start due to a transient error, the MOM returns a special exit
+code to the server so that the job is requeued instead of completed. When this
+parameter is set, the special exit code is ignored and the job is completed.
+Format: boolean; default value: false.
+.Ig
+.Al display_job_server_suffix
+When set to TRUE, Torque will display both the job ID and the host name. When set to
+FALSE, only the job ID will be displayed.
+Format: boolean; default value: true.
+.Ig
+.Al dont_write_nodes_file
+When set to TRUE, the nodes file cannot be overwritten for any reason; qmgr
+commands to edit nodes will be rejected.
+Format: boolean; default value: false.
+.Ig
+.Al note_append_on_error
+Append the error string to the end of the current nodes note if MOM reports a message
+beginning with the string "ERROR". Format: boolean; default value: true.
+.Ig
 .Al down_on_error
 Set a node's state to "down" if MOM reports a message beginning with the string
 "ERROR".  This might interfere with moab's node error handling.  See the HEALTH

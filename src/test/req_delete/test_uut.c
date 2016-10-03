@@ -382,7 +382,7 @@ START_TEST(test_setup_apply_job_delete_nanny)
               "apply_job_delete_nanny did not go off at the right time");
 
   //Now, let's test there was no keep_completed server option
-  call_time = time_now + 60;
+  call_time = time_now + KEEP_COMPLETED_DEFAULT;
   server.sv_attr[SRV_ATR_KeepCompleted].at_flags = 0;
   server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 0;
   memset(&myjob, 0, sizeof(job)); 

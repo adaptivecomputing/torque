@@ -183,6 +183,8 @@ int process_mic_status(
       if ((rc = save_single_mic_status(single_mic_status, &temp)) != PBSE_NONE)
         break;
 
+      single_mic_status.clear();
+
       snprintf(mic_id_buf, sizeof(mic_id_buf), "mic[%d]=%s", mic_count, str);
       single_mic_status += mic_id_buf;
 
@@ -826,6 +828,7 @@ int process_status_info(
   long            mom_job_sync = FALSE;
   long            auto_np = FALSE;
   long            down_on_error = FALSE;
+  long            note_append_on_error = FALSE;
   int             dont_change_state = FALSE;
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
@@ -833,6 +836,7 @@ int process_status_info(
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_l(SRV_ATR_NoteAppendOnError, &note_append_on_error);
   get_svr_attr_l(SRV_ATR_DownOnError, &down_on_error);
 
   /* Before filling the "temp" pbs_attribute, initialize it.
@@ -963,7 +967,10 @@ int process_status_info(
         {
         update_node_state(current, INUSE_DOWN);
         dont_change_state = TRUE;
-        set_note_error(current, str);
+	if (note_append_on_error == TRUE)
+	  {
+            set_note_error(current, str);
+	  }
         }
       }
     else if (!strncmp(str,"macaddr=",8))
