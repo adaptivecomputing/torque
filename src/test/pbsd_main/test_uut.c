@@ -86,6 +86,8 @@ START_TEST(test_parse_command_line_case5)
   char *argv[] = {strdup("pbs_server"), strdup("-D")};
   set_optind();
 
+  TDoBackground = true;
+  LineBufferOutput = false;
   parse_command_line(2, argv);
   fail_unless(TDoBackground == false);
   fail_unless(LineBufferOutput);
@@ -98,8 +100,24 @@ START_TEST(test_parse_command_line_case6)
   char *argv[] = {strdup("pbs_server"), strdup("-F")};
   set_optind();
 
+  TDoBackground = true;
+  LineBufferOutput = false;
   parse_command_line(2, argv);
   fail_unless(TDoBackground == false);
+  fail_unless(LineBufferOutput == false);
+  }
+END_TEST
+
+
+START_TEST(test_parse_command_line_case7)
+  {
+  char *argv[] = {strdup("pbs_server")};
+  set_optind();
+
+  TDoBackground = true;
+  LineBufferOutput = false;
+  parse_command_line(1, argv);
+  fail_unless(TDoBackground == true);
   fail_unless(LineBufferOutput == false);
   }
 END_TEST
@@ -133,6 +151,10 @@ Suite *pbsd_main_suite(void)
 
   tc_core = tcase_create("test_parse_command_line_case6");
   tcase_add_test(tc_core, test_parse_command_line_case6);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line_case7");
+  tcase_add_test(tc_core, test_parse_command_line_case7);
   suite_add_tcase(s, tc_core);
 
   return s;
