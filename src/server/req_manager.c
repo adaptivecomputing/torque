@@ -1606,7 +1606,10 @@ void mgr_queue_set(
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
 
       if (allques == FALSE)
+        {
+        que_mutex.set_unlock_on_exit(false);
         break;
+        }
 
       }
 
