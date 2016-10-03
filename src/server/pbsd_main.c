@@ -308,7 +308,7 @@ pid_t                   sid;
 char                   *plogenv = NULL;
 int                     LOGLEVEL = 0;
 int                     DEBUGMODE = 0;
-bool                    TDoBackground = false;  /* background daemon */
+bool                    TDoBackground = true;  /* background daemon */
 bool                    LineBufferOutput = true;
 
 char                   *ProgName;
