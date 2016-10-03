@@ -758,14 +758,9 @@ int action_resc(
       
       if ((r.rs_value.at_flags & ATR_VFLAG_MODIFY) &&
           (r.rs_defin->rs_action))
-        {
         r.rs_defin->rs_action(&r, pattr, actmode);
 
-        // Refresh our reference to r since the vector may have changed during rs_action
-        r = resources->at(i);
-        }
-
-      r.rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
+      resources->at(i).rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
       }
     }
 
