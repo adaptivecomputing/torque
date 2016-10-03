@@ -721,7 +721,7 @@ bool am_i_mother_superior(const job &pjob)
   return(am_ms);
   }
 
-int ctnodes(char *epec)
+int ctnodes(const char *epec)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);

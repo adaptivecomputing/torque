@@ -726,8 +726,11 @@ resource *add_resource_entry(
 
   resources->push_back(new_resource);
   pattr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+  
+  // Return the element we just added
+  resource &r = resources->at(resources->size() - 1);
 
-  return(&resources->at(resources->size() - 1));
+  return(&r);
   } /* END add_resource_entry() */
 
 

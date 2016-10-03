@@ -342,7 +342,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   return(0);
   }

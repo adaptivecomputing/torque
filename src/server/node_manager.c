@@ -170,8 +170,6 @@ extern int              has_nodes;
 extern int create_a_gpusubnode(struct pbsnode *);
 int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
 
-extern int              ctnodes(char *);
-
 extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_node_usage;

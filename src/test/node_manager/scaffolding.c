@@ -90,12 +90,6 @@ void DIS_tcp_reset(int fd, int i)
   exit(1);
   }
 
-int ctnodes(char *spec)
-  {
-  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
-  exit(1);
-  }
-
 char * netaddr(struct sockaddr_in *ap)
   {
   fprintf(stderr, "The call to netaddr needs to be mocked!!\n");

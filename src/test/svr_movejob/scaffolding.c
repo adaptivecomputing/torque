@@ -457,10 +457,10 @@ int get_svr_attr_b(int index, bool *b)
   return(0);
   }
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   int   ct = 0;
-  char *pc;
+  const char *pc;
 
   while (1)
     {
