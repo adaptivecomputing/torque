@@ -2797,7 +2797,6 @@ void encode_job_used(
   {
   pbs_attribute  *at;
   attribute_def  *ad;
-  resource       *rs;
 
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
