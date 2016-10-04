@@ -402,6 +402,7 @@ int __comp_work__(
   int           &greater_than,
   int           &less_than,
   bool           check_default,
+  bool           compare_forwards,
   char          *EMsg)
 
   {
@@ -421,7 +422,13 @@ int __comp_work__(
         {
         if (atresc->rs_value.at_flags & ATR_VFLAG_SET)
           {
-          int rc = atresc->rs_defin->rs_comp(&atresc->rs_value, &r.rs_value);
+          int rc;
+
+          if (compare_forwards)
+            rc = atresc->rs_defin->rs_comp(&atresc->rs_value, &r.rs_value);
+          else
+            rc = atresc->rs_defin->rs_comp(&r.rs_value, &atresc->rs_value);
+
           if (rc > 0)
             {
             if ((EMsg != NULL) &&
@@ -440,7 +447,7 @@ int __comp_work__(
     }  /* END while() */
 
   return(0);
-  } // END comp_work()
+  } // END __comp_work__()
 
 
 
@@ -495,7 +502,7 @@ int comp_resc(
             pbs_attribute.  If the queue has a min requirement of resource X
             and the job has no value set for this resource, this routine
             will not trigger comp_resc_lt */
-  __comp_work__(attr, with, comp_resc_gt, comp_resc_lt, false, NULL);
+  __comp_work__(attr, with, comp_resc_gt, comp_resc_lt, false, true, NULL);
 
   return(0);
   }  /* END comp_resc() */
@@ -561,7 +568,7 @@ int comp_resc2(
   if (IsQueueCentric == 1)
     {
     /* comparison is queue centric */
-    __comp_work__(queue_attr, job_attr, comp_resc_gt, comp_resc_lt, true, EMsg);
+    __comp_work__(queue_attr, job_attr, local_gt, local_lt, true, true, EMsg);
     }
   else
     {
@@ -571,7 +578,7 @@ int comp_resc2(
               pbs_attribute.  If the queue has a min requirement of resource X
               and the job has no value set for this resource, this routine
               will not trigger comp_resc_lt */
-    __comp_work__(job_attr, queue_attr, comp_resc_gt, comp_resc_lt, false, EMsg);
+    __comp_work__(job_attr, queue_attr, local_gt, local_lt, false, false, EMsg);
     }
 
   if (type == GREATER)
