@@ -156,7 +156,8 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   const char *socket_str = "\"socket\":{";
@@ -167,7 +168,7 @@ void Machine::initialize_from_json(
     std::size_t next = json_layout.find(socket_str, socket_begin + 1);
     std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
 
-    Socket s(one_socket);
+    Socket s(one_socket, valid_ids);
     this->sockets.push_back(s);
     this->totalSockets++;
 
@@ -182,7 +183,8 @@ void Machine::initialize_from_json(
 
 void Machine::reinitialize_from_json(
 
-  const std::string &json_layout)
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids)
 
   {
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
@@ -201,7 +203,7 @@ void Machine::reinitialize_from_json(
   this->NVIDIA_device.clear();
   this->allocations.clear();
 
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END reinitialize_from_json()
 
 
@@ -231,16 +233,17 @@ void Machine::reinitialize_from_json(
  *
  */
 
-Machine::Machine(
-    
-  const std::string &json_layout) : hardwareStyle(0), totalMemory(0), totalSockets(0),
-                                    totalChips(0), totalCores(0), totalThreads(0), 
-                                    availableSockets(0), availableChips(0),
-                                    availableCores(0), availableThreads(0), initialized(true),
-                                    sockets(), NVIDIA_device(), allocations()
+Machine::Machine(const std::string &json_layout,
+                 std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0),
+                                                        totalSockets(0), totalChips(0),
+                                                        totalCores(0), totalThreads(0), 
+                                                        availableSockets(0), availableChips(0),
+                                                        availableCores(0), availableThreads(0),
+                                                        initialized(true), sockets(),
+                                                        NVIDIA_device(), allocations()
 
   {
-  this->initialize_from_json(json_layout);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END json constructor
 
 
@@ -259,14 +262,20 @@ Machine::Machine() : hardwareStyle(0), totalMemory(0), totalSockets(0), totalChi
 
 Machine::Machine(
 
-  int np) : hardwareStyle(0), totalMemory(0), totalSockets(1), totalChips(1), totalCores(np),
-            totalThreads(np), availableSockets(1), availableChips(1),
-            availableCores(np), availableThreads(np), initialized(true), sockets(),
-            NVIDIA_device(), allocations()
+  int np,
+  int numa_nodes,
+  int sockets) : hardwareStyle(0), totalMemory(0), totalSockets(sockets), totalChips(numa_nodes),
+                 totalCores(np), totalThreads(np), availableSockets(sockets),
+                 availableChips(numa_nodes), availableCores(np), availableThreads(np),
+                 initialized(true), sockets(), NVIDIA_device(), allocations()
 
   {
-  Socket s(np);
-  this->sockets.push_back(s);
+  int np_remainder = np % sockets;
+  for (int i = 0; i < sockets; i++)
+    {
+    Socket s(np / sockets, numa_nodes / sockets, np_remainder);
+    this->sockets.push_back(s);
+    }
   
   memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
@@ -620,7 +629,7 @@ void Machine::place_remaining(
     allocation task_alloc(master.jobid.c_str());
 
     task_alloc.cores_only = master.cores_only;
-      
+
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
       if (this->sockets[j].fits_on_socket(remaining) == false)
@@ -651,6 +660,15 @@ void Machine::place_remaining(
     bool fit_somewhere = false;
     allocation remaining(r);
     allocation task_alloc(master.jobid.c_str());
+    
+    // At this point, we want to use cores or threads, whatever is available. (exclusive_legacy
+    // will only use cores.) if it is set to exclusive_legacy let it get cores first. We will get 
+    // threads later
+
+    /* this is for legacy jobs. */
+    if ((master.cpus != 0) &&
+        (master.place_type == exclusive_legacy2))
+      remaining.cpus = master.cpus;
 
     for (unsigned int j = 0; j < this->sockets.size(); j++)
       {
@@ -668,9 +686,43 @@ void Machine::place_remaining(
         }
       }
 
+    /* This piece of code is meant to finish for the legacy -l requests 
+       where the number of ppn requested is greater than the number of
+       cores on a node. If we enter this section we used up all of the cores 
+       and now we need to grab threads.
+     */
+    if ((master.place_type == exclusive_legacy) && (remaining.cpus > 0))
+      {
+      r.set_placement_type(place_legacy2);
+      master.set_place_type(place_legacy2);
+      master.cpus = remaining.cpus;
+      remaining.place_type = master.place_type;
+
+      for (unsigned int j = 0; j < this->sockets.size(); j++)
+        {
+        if (remaining.place_type == exclusive_socket)
+          this->availableSockets--;
+
+        if (this->sockets[j].partially_place(remaining, task_alloc) == true)
+          {
+          fit_somewhere = true;
+
+          task_alloc.set_host(hostname);
+          r.record_allocation(task_alloc);
+          master.add_allocation(task_alloc);
+          break;
+          }
+        }
+
+      /* we need to set the req back to its original place_type incase there is another node for this req */
+      r.set_placement_type(place_legacy);
+      master.set_place_type(place_legacy);
+      }
+
     if (fit_somewhere == false)
       break;
 
+   
     remaining_tasks--;
     }
 
@@ -807,6 +859,39 @@ int Machine::spread_place(
     quantity = this->sockets.size();
     chips = false;
     }
+  else
+    {
+    // Make sure we are grabbing enough memory
+    unsigned long mem_needed = r.getMemory();
+    unsigned long mem_count = 0;
+    int           mem_quantity = 0;
+
+    for (size_t i = 0; i < this->sockets.size() && mem_needed > mem_count; i++)
+      {
+      if (chips == true)
+        {
+        unsigned long diff = mem_needed - mem_count;
+        int           numa_nodes_required = 0;
+        mem_count += this->sockets[i].get_memory_for_completely_free_chips(diff, numa_nodes_required);
+        mem_quantity += numa_nodes_required;
+        }
+      else if (this->sockets[i].is_completely_free())
+        {
+        mem_count += this->sockets[i].getMemory();
+
+        mem_quantity++;
+        }
+
+      if (mem_quantity > quantity)
+        quantity = mem_quantity;
+      }
+
+    // If we don't have enough memory, reject the job
+    if (mem_needed > mem_count)
+      {
+      return(PBSE_RESCUNAV);
+      }
+    }
 
   // Spread the placement evenly across the number of sockets or numa nodes
   int execution_slots_per = r.getExecutionSlots() / quantity;
@@ -857,6 +942,32 @@ int Machine::spread_place(
   } // END spread_place()
 
 
+
+int Machine::fit_tasks_within_sockets(
+    
+  req        &r,
+  allocation &job_alloc,
+  const char *hostname,
+  int        &remaining_tasks)
+
+  {
+  for (unsigned int i = 0; i < this->sockets.size() && remaining_tasks > 0; i++)
+    {
+    int placed = this->sockets[i].place_task(r, job_alloc, remaining_tasks, hostname);
+    if (placed != 0)
+      {
+      remaining_tasks -= placed;
+      
+      if (job_alloc.place_type == exclusive_socket)
+        this->availableSockets--;
+      }
+    }
+
+  return(PBSE_NONE);
+  } // END fit_tasks_within_sockets()
+
+
+
 /*
  * place_job()
  *
@@ -878,18 +989,10 @@ int Machine::place_job(
   {
   int rc = PBSE_NONE;
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
-    {
-    // Initialize a complete_req from the -l resource request
-    complete_req *cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, legacy_vmem);
-    cr->set_hostlists(pjob->ji_qs.ji_jobid, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-    }
-
   complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
   int           num_reqs = cr->req_count();
   vector<int>   partially_place;
-  allocation    a(pjob->ji_qs.ji_jobid);
+  allocation    job_alloc(pjob->ji_qs.ji_jobid);
   vector<req>   to_split;
 
   // See if the tasks fit completely on a socket, and if they do then place them there
@@ -902,32 +1005,33 @@ int Machine::place_job(
     if (tasks_for_node == 0)
       continue;
       
-    a.set_place_type(r.getPlacementType());
+    // This only has to be correct while placing. If it changes later it won't cause problems.
+    job_alloc.set_place_type(r.getPlacementType());
 
     if (r.get_execution_slots() == ALL_EXECUTION_SLOTS)
       {
-      place_all_execution_slots(r, a, hostname);
+      place_all_execution_slots(r, job_alloc, hostname);
       }
-    else if ((a.place_type == exclusive_node) ||
-             (a.place_type == exclusive_socket) ||
-             (a.place_type == exclusive_chip))
+    else if ((job_alloc.place_type == exclusive_node) ||
+             (job_alloc.place_type == exclusive_socket) ||
+             (job_alloc.place_type == exclusive_chip))
       {
-      if ((rc = spread_place(r, a, tasks_for_node, hostname)) != PBSE_NONE)
+      if ((rc = spread_place(r, job_alloc, tasks_for_node, hostname)) != PBSE_NONE)
         return(rc);
       }
     else
       {
       for (unsigned int j = 0; j < this->sockets.size(); j++)
         {
-        if (this->sockets[j].how_many_tasks_fit(r, a.place_type) >= tasks_for_node)
+        if (this->sockets[j].how_many_tasks_fit(r, job_alloc.place_type) >= tasks_for_node)
           {
           // place the req entirely on this socket
           placed = true;
-          if (a.place_type == exclusive_socket)
+          if (job_alloc.place_type == exclusive_socket)
             this->availableSockets--;
 
           // Placing 0 tasks is an error
-          if (this->sockets[j].place_task(r, a, tasks_for_node, hostname) == 0)
+          if (this->sockets[j].place_task(r, job_alloc, tasks_for_node, hostname) == 0)
             return(-1);
 
           break;
@@ -945,43 +1049,37 @@ int Machine::place_job(
   // If any reqs were marked to be placed partially in different sockets then 
   // place them now
   for (unsigned int i = 0; i < partially_place.size(); i++)
-    {
+    { 
     req  &r = cr->get_req(partially_place[i]);
     int   remaining_tasks = r.get_num_tasks_for_host(hostname);
-    
-    a.set_place_type(r.getPlacementType());
-    
-    for (unsigned int j = 0; j < this->sockets.size() && remaining_tasks > 0; j++)
-      {
-      int placed = this->sockets[j].place_task(r, a, remaining_tasks, hostname);
-      if (placed != 0)
-        {
-        remaining_tasks -= placed;
-        
-        if (a.place_type == exclusive_socket)
-          this->availableSockets--;
-        }
-      }
+
+    // This only has to be correct while placing. If it changes later it won't cause problems.
+    job_alloc.set_place_type(r.getPlacementType());
+
+    this->fit_tasks_within_sockets(r, job_alloc, hostname, remaining_tasks);
 
     if (remaining_tasks > 0)
       {
+      // exclusive_legacy will place only using cores. exclusive_legacy2 will use threads. If
+      // we can't place using only cores, then we should try threads before partially placing
+      // the job, as well as during.
+
       // At this point, all of the tasks that fit within 1 numa node have been placed.
       // Now place any leftover tasks
-      place_remaining(r, a, remaining_tasks, hostname);
+      place_remaining(r, job_alloc, remaining_tasks, hostname);
       }
 
     if (remaining_tasks > 0)
       {
-      // We didn't place all of the tasks, but don't exit yet. We need to mark
       // this allocation so that the cleanup happens correctly
       rc = -1;
       }
     }
 
-  a.place_indices_in_string(mem_string, MEM_INDICES);
-  a.place_indices_in_string(cpu_string, CPU_INDICES);
+  job_alloc.place_indices_in_string(mem_string, MEM_INDICES);
+  job_alloc.place_indices_in_string(cpu_string, CPU_INDICES);
 
-  this->allocations.push_back(a);
+  this->allocations.push_back(job_alloc);
   
   return(rc);
   } // END place_job()
@@ -1027,6 +1125,8 @@ void Machine::free_job_allocation(
   const char *job_id)
 
   {
+  std::vector<int> to_remove;
+
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
     bool previously_used = this->sockets[i].is_available() == false;
@@ -1037,19 +1137,14 @@ void Machine::free_job_allocation(
     }
 
   // Remove from my allocations
-  int index = -1;
-
   for (unsigned int i = 0; i < this->allocations.size(); i++)
-    {
     if (this->allocations[i].jobid == job_id)
-      {
-      index = i;
-      break;
-      }
-    }
-
-  if (index != -1)
-    this->allocations.erase(this->allocations.begin() + index);
+      to_remove.push_back(i);
+  
+  for (size_t i = 0; i < to_remove.size(); i++)
+    // Subtract i because we are dynamically changing the vector as we erase, removing 1 element
+    // each time
+    this->allocations.erase(this->allocations.begin() + to_remove[i] - i);
   } // END free_job_allocation()
 
 

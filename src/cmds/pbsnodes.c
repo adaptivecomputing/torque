@@ -116,7 +116,7 @@
 #include        "mcom.h"
 #include        "cmds.h"
 #include "libcmds.h" /* TShowAbout_exit */
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "pbs_helper.h"
 
 #define LIST 1
@@ -316,9 +316,11 @@ static int set_note(
   struct attropl  *new_attr = NULL;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL && !quiet)
+  if (new_attr == NULL)
     {
-    fprintf(stderr, "Failed to allocate new_attr");
+    if (!quiet)
+      fprintf(stderr, "Failed to allocate new_attr");
+
     return(1);
     }
 
@@ -347,9 +349,11 @@ static int set_node_power_state(
   struct attropl *new_attr = NULL;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL  && !quiet )
+  if (new_attr == NULL)
     {
-    fprintf(stderr, "Failed to allocate new_attr");
+    if (!quiet)
+      fprintf(stderr, "Failed to allocate new_attr");
+
     return(1);
     }
 
@@ -450,9 +454,11 @@ static int marknode(
   int             rc = PBSE_NONE;
 
   new_attr = (struct attropl*)malloc(sizeof(struct attropl));
-  if ( new_attr == NULL && !quiet )
+  if (new_attr == NULL)
     {
-    fprintf(stderr, "Failed to allocate new_attr");
+    if (!quiet)
+      fprintf(stderr, "Failed to allocate new_attr");
+
     return(1);
     }
 

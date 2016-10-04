@@ -97,7 +97,7 @@
 #include <pthread.h>
 
 #include "libpbs.h"
-#include "../lib/Libifl/lib_ifl.h" /* netaddr_long */
+#include "lib_ifl.h" /* netaddr_long */
 #include "pbs_error.h"
 #include "server_limits.h"
 #include "pbs_nodes.h"
@@ -303,9 +303,9 @@ bool request_passes_acl_check(
   unsigned long  conn_addr)
   
   {
-  long acl_enable = FALSE;
+  bool acl_enable = false;
 
-  get_svr_attr_l(SRV_ATR_acl_host_enable, &acl_enable);
+  get_svr_attr_b(SRV_ATR_acl_host_enable, &acl_enable);
   if (acl_enable)
     {
     /* acl enabled, check it; always allow myself and nodes */
@@ -682,9 +682,11 @@ int process_request(
       case PBS_BATCH_JobCred:
       case PBS_BATCH_MoveJob:
       case PBS_BATCH_QueueJob:
+      case PBS_BATCH_QueueJob2:
       case PBS_BATCH_RunJob:
       case PBS_BATCH_StageIn:
       case PBS_BATCH_jobscript:
+      case PBS_BATCH_jobscript2:
 
         req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
 
@@ -733,10 +735,17 @@ int dispatch_request(
 
   switch (request->rq_type)
     {
+    case PBS_BATCH_QueueJob2:
+
+      net_add_close_func(sfds, close_quejob);
+      rc = req_quejob(request, 2);
+      
+      break;
+
     case PBS_BATCH_QueueJob:
 
       net_add_close_func(sfds, close_quejob);
-      rc = req_quejob(request);
+      rc = req_quejob(request, 1);
       
       break;
 
@@ -745,10 +754,16 @@ int dispatch_request(
       rc = req_jobcredential(request);
       break;
 
+    case PBS_BATCH_jobscript2:
+     
+      rc = req_jobscript(request, true);
+      
+      break;
+
 
     case PBS_BATCH_jobscript:
      
-      rc = req_jobscript(request);
+      rc = req_jobscript(request, false);
       
       break;
 
@@ -759,6 +774,12 @@ int dispatch_request(
       
       break;
 
+
+    case PBS_BATCH_Commit2:
+      
+      rc = req_commit2(request);
+      
+      break;
 
     case PBS_BATCH_Commit:
       
@@ -1148,6 +1169,7 @@ void free_br(
   switch (preq->rq_type)
     {
     case PBS_BATCH_QueueJob:
+    case PBS_BATCH_QueueJob2:
 
       free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
 
@@ -1164,6 +1186,16 @@ void free_br(
       break;
 
     case PBS_BATCH_MvJobFile:
+
+    case PBS_BATCH_jobscript2:
+
+      if (preq->rq_ind.rq_jobfile.rq_data)
+        {
+        free(preq->rq_ind.rq_jobfile.rq_data);
+        preq->rq_ind.rq_jobfile.rq_data = NULL;
+        }
+      break;
+
 
     case PBS_BATCH_jobscript:
 

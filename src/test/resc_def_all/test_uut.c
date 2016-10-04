@@ -5,7 +5,7 @@
 #include <string.h>
 #include "pbs_error.h"
 
-long count_proc(char *);
+long count_proc(const char *);
 
 START_TEST(test_count_proc)
   {

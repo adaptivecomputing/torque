@@ -118,7 +118,7 @@ resource_t next_resource_tag;
 
 int req_rescq(
     
-    struct batch_request *vp) /* I */
+  struct batch_request *vp) /* I */
 
   {
   struct batch_request *preq = (struct batch_request *)vp;
@@ -139,7 +139,7 @@ int req_rescq(
 
   preply = &preq->rq_reply.brp_un.brp_rescq;
 
-  preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_RescQuery;
+  set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_RescQuery);
   preply->brq_number = prescq->rq_num;
 
   preply->brq_avail = (int *)calloc(prescq->rq_num, sizeof(int));

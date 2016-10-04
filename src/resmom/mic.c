@@ -97,6 +97,16 @@ extern nodeboard node_boards[];
 #endif
 
 
+/*
+ * add_isa()
+ *
+ * Adds the architecture information for this MIC to the status
+ * @param status - the status strings
+ * @param mic_stat - specifies the current state of this MIC
+ * @return PBSE_NONE on success or PBSE_SYSTEM if the ISA index doesn't match one we know.
+ *         The error case should never realistically happen.
+ */
+
 int add_isa(
 
   std::vector<std::string> &status,
@@ -142,6 +152,15 @@ int add_isa(
 
 
 
+/*
+ * calculate_and_add_load()
+ *
+ * Calculates the load and normalized load for this MIC and adds them to the status
+ * @param status - the status strings to be sent to pbs_server
+ * @param mic_stat - the struct describing this MIC's state
+ * @return PBSE_NONE on success
+ */
+
 int calculate_and_add_load(
 
   std::vector<std::string> &status,
@@ -172,6 +191,14 @@ int calculate_and_add_load(
 
 
 
+/*
+ * add_single_mic_info()
+ *
+ * Adds the information for a single MIC accelerator to the node status
+ * @param status - we append this MIC's status information here
+ * @param mic_stat - the struct that holds this accelerator's state information
+ * @return PBSE_NONE on SUCCESS. This function can't really fail.
+ */
 
 int add_single_mic_info(
 
@@ -212,26 +239,37 @@ int add_single_mic_info(
   return(PBSE_NONE);
   } /* END add_single_mic_info() */
 
+// A set of the OS index for each MIC that is down
 std::set<int> down_mics;
+
+
+
+/*
+ * check_for_mics()
+ *
+ * Checks if we have MIC accelerators on this node. If NUMA_SUPPORT (large scale NUMA machine
+ * support) is enabled then everything that happens per node happens per nodeboard instead.
+ * @param num_engines - output - set to the number of MIC accelerators for this node.
+ */
 
 int check_for_mics(
   
-  uint32_t& num_engines)
+  uint32_t &num_engines)
 
   {
   uint32_t                 i = 0;
 
 #ifdef NUMA_SUPPORT
-    /* does this node board have mics configured? */
-    if (node_boards[numa_index].mic_end_index < 0)
-      return(PBSE_NONE);
+  /* does this node board have mics configured? */
+  if (node_boards[numa_index].mic_end_index < 0)
+    return(PBSE_NONE);
 #endif
 
-    if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
-      {
-      log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
-      return(PBSE_SYSTEM);
-      }
+  if (COIEngineGetCount(COI_ISA_MIC, &num_engines) != COI_SUCCESS)
+    {
+    log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
+    return(PBSE_SYSTEM);
+    }
 
 #ifdef NUMA_SUPPORT
   if (num_engines < node_boards[numa_index].mic_end_index)
@@ -244,7 +282,7 @@ int check_for_mics(
     return(PBSE_SYSTEM);
     }
 
-    for (i = node_boards[numa_index].mic_start_index; i <= node_boards[numa_index].mic_end_index; i++)
+  for (i = node_boards[numa_index].mic_start_index; i <= node_boards[numa_index].mic_end_index; i++)
 #else
   for (i = 0; i < num_engines; i++)
 #endif
@@ -285,9 +323,19 @@ int check_for_mics(
     }
 
   return(PBSE_NONE);
-  }
+  } // END check_for_mics()
 
 
+
+/*
+ * add_mic_status()
+ *
+ * Adds the mic information to the status that is sent to pbs_server
+ * @param status - each string that will be sent to pbs_server. We will append the mic
+ * status information here.
+ *
+ * @return PBSE_NONE on success, or an appropriate PBSE_* error on failure
+ */
 
 int add_mic_status(
 
@@ -360,7 +408,6 @@ int add_mic_status(
 
   return(PBSE_NONE);
   } /* END add_mic_status() */
-
 
 
 

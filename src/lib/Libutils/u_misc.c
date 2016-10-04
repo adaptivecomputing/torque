@@ -86,10 +86,16 @@
 #include <vector>
 
 #include "utils.h"
+#include "resource.h"
 
 #ifndef MAX_CMD_ARGS
 #define MAX_CMD_ARGS 10
 #endif
+
+
+const char *incompatible_l[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
+                                 "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
+                                 "software", "geometry", "opsys", "tpn", "trl", NULL };
 
 int    ArgC = 0;
 char **ArgV = NULL;
@@ -324,7 +330,7 @@ void translate_vector_to_range_string(
  * @param indices (O) - the vector populated from range_string
  */
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -334,13 +340,22 @@ void translate_range_string_to_vector(
   char *ptr = str;
   int   prev = 0;
   int   curr;
+  int   rc = PBSE_NONE;
 
   while (is_whitespace(*ptr))
     ptr++;
 
   while (*ptr != '\0')
     {
+    char *old_ptr = ptr;
     prev = strtol(ptr, &ptr, 10);
+
+    if (ptr == old_ptr)
+      {
+      // This means *ptr wasn't numeric, error. break out to prevent an infinite loop
+      rc = -1;
+      break;
+      }
     
     if (*ptr == '-')
       {
@@ -363,15 +378,14 @@ void translate_range_string_to_vector(
       indices.push_back(prev);
 
       while ((*ptr == ',') ||
-          (is_whitespace(*ptr)))
+             (is_whitespace(*ptr)))
         ptr++;
       }
-
-    if (str == ptr)
-      break;
     }
 
   free(str);
+  
+  return(rc);
   } /* END translate_range_string_to_vector() */
 
 
@@ -401,6 +415,11 @@ void capture_until_close_character(
     storage = val;
     storage.erase(ptr - val);
     *start = ptr + 1; // add 1 to move past the character
+    }
+  else
+    {
+    // Make sure we aren't returning stale values
+    storage.clear();
     }
   } // capture_until_close_character()
 
@@ -491,5 +510,48 @@ bool task_hosts_match(
 
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 
 
+/* 
+ * have_incompatible_dash_l_resource
+ *
+ * Check to see if this is an incompatile -l resource
+ * request for a -L syntax
+ *
+ * @param pjob  - the job structure we are working with
+ *
+ */
+
+bool have_incompatible_dash_l_resource(
+
+  pbs_attribute *pattr)
+
+  {
+  bool found_incompatible_resource = false;
+
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+      (pattr->at_val.at_ptr != NULL))
+    {
+    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
+
+    for (size_t j = 0; j < resources->size() && found_incompatible_resource == false; j++)
+      {
+      resource &r = resources->at(j);
+
+      for (int i = 0; incompatible_l[i] != NULL; i++)
+        {
+        if (!strcmp(incompatible_l[i], r.rs_defin->rs_name))
+          {
+          found_incompatible_resource = true;
+          break;
+          }
+        }
+      }
+    }
+
+  return(found_incompatible_resource);
+  } // END have_incompatible_dash_l_resource()
+
+
+#endif /* PENABLE_LINUX_CGROUPS */

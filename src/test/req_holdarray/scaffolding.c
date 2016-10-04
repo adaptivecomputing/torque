@@ -35,10 +35,9 @@ int hold_array_range(job_array *pa, char *range_str, pbs_attribute *temphold)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)

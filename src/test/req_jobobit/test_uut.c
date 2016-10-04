@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <vector>
 
 #include "pbs_job.h"
 #include "req_jobobit.h"
@@ -12,6 +13,7 @@
 #include "server.h"
 #include "work_task.h"
 #include "completed_jobs_map.h"
+#include "resource.h"
 
 
 char *setup_from(job *pjob, const char *suffix);
@@ -47,7 +49,7 @@ int alloc_br_null;
 extern struct server server;
 extern int bad_connect;
 extern int bad_job;
-extern int cray_enabled;
+extern bool cray_enabled;
 extern int double_bad;
 extern int reported;
 extern int bad_drequest;
@@ -85,6 +87,37 @@ START_TEST(set_job_comment_test)
 END_TEST
 
 
+void add_resource(
+
+  std::vector<resource> &resources,
+  const char            *name,
+  const char            *str_val,
+  long                   lval1,
+  long                   lval2)
+
+  {
+  resource_def *rd = (resource_def *)calloc(1, sizeof(resource_def));
+  rd->rs_name = strdup(name);
+  resource r;
+
+  r.rs_defin = rd;
+  
+  if (str_val != NULL)
+    {
+    r.rs_value.at_val.at_str = strdup(str_val);
+    }
+  else if (lval2 < 0)
+    r.rs_value.at_val.at_long = lval1;
+  else
+    {
+    r.rs_value.at_val.at_size.atsv_num = lval1;
+    r.rs_value.at_val.at_size.atsv_shift = lval2;
+    }
+
+  resources.push_back(r);
+  } // add_resource()
+
+
 START_TEST(get_used_test)
   {
   std::string data;
@@ -92,6 +125,13 @@ START_TEST(get_used_test)
 
   attr_count = 0;
   next_count = 0;
+
+  std::vector<resource> resources;
+  add_resource(resources, "cput", NULL, 100, -1);
+  add_resource(resources, "mem", NULL, 4096, 20);
+  add_resource(resources, "vmem", NULL, 8192, 20);
+  pjob.ji_wattr[JOB_ATR_resc_used].at_flags |= ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_resc_used].at_val.at_ptr = &resources;
 
   fail_unless(get_used(&pjob, data) == PBSE_NONE);
   fail_unless(data == " resources_used.cput=100 resources_used.mem=4096mb resources_used.vmem=8192mb", "'%s'", data.c_str());
@@ -291,13 +331,13 @@ START_TEST(mom_comm_test)
   
   /* set some variables for error cases */
   bad_connect = 1;
-  cray_enabled = 1;
+  cray_enabled = true;
   fail_unless(mom_comm(&pjob, NULL) == -1);
   bad_job = 1;
   fail_unless(mom_comm(&pjob, NULL) == -1 * PBSE_JOB_RECYCLED);
 
   bad_connect = 0;
-  cray_enabled = 0;
+  cray_enabled = false;
   bad_job = 0;
   }
 END_TEST
@@ -312,7 +352,7 @@ START_TEST(handle_complete_first_time_test)
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
   fail_unless(handle_complete_first_time(&pjob) == 0);
-  cray_enabled = 1;
+  cray_enabled = true;
   double_bad = 1;
 
   fail_unless(handle_complete_first_time(&pjob) == PBSE_JOBNOTFOUND);
@@ -475,6 +515,19 @@ START_TEST(end_of_job_accounting_test)
   pjob->ji_qs.ji_stime = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
+  // Make sure this is set - should cause the next call to not execute
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0);
+  
+  // Make sure that we'll do end of job accounting for jobs that are deleted while running
+  // First call doesn't do account_jobend due to svrflags
+  pjob->ji_being_deleted = true;
+  called_account_jobend = false;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == false);
+
+  pjob->ji_qs.ji_svrflags = 0;
+  fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
+  fail_unless(called_account_jobend == true);
   
   usage = 0;
   }
@@ -526,6 +579,7 @@ START_TEST(handle_terminating_job_test)
   {
   job  *pjob = new job();
 
+  bad_job = 0;
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
   fail_unless(handle_terminating_job(pjob, 0, "bob") == PBSE_NONE);
@@ -544,7 +598,7 @@ START_TEST(update_substate_from_exit_status_test)
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
 
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;
-  cray_enabled = 0;
+  cray_enabled = false;
   usage = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);

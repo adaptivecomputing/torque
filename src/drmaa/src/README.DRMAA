@@ -1,0 +1,83 @@
+gperf and Torque drmaa
+----------------------
+
+gperf is a utility which will generate a perfect hash table given a set of inputs. 
+Torque drmaa uses it to lookup keywords used by drmaa. 
+
+In the torque drmaa implementation, during configuration time the files 
+drmaa_attrib.c and pbs_attrib.c are created from drmaa_attrib.gperf and 
+pbs_attrib.gperf respectively. The current Torque implementation is for 
+drmaa version 1. We have not impleneted anything for version 2.
+
+When Torque switched to using C++ to compile in 4.2.0 it created a problem 
+for some applications which use drmaa because C++ mangles function names 
+and the applications were built using 'C' and could not resolved some of 
+the Torque function calls.
+
+Starting in Torque 5.1.3 and 6.0.2 Adaptive Computing changed the code to  
+use the extern "C" directive to compile the drmaa library. However, the gperf 
+code generated still left the functions pbs_attrib_lookup() and drmaa_attrib_lookup() 
+undefined, probably because of the inline directives to build the code. To fix 
+this problem the files drmaa_attrib.c and pbs_attrib.c were modified to remove 
+the inline directives. This solved the unresolved function problem when using 
+the libdrmaa.so.
+
+The perfect hash created by gperf is very convenient and we would like to be able 
+to continue to use it in the future if needed. We would use it to create tables 
+for drmaa version 2 for example. It may be that code needs to be recreated as well 
+to work on a specific platform. The instructions to create these files were 
+removed from the Makefile.am.  To be able to create the files again replace the 
+following Makefile.am code with the Makefile.am in the drmaa/src directory.
+
+
+------------------------------------------------------------------------------------------------------------------------
+include $(top_srcdir)/buildutils/config.mk
+
+PBS_LIBS = ../../lib/Libpbs/libtorque.la
+
+AM_CFLAGS  = @PTHREAD_CFLAGS@
+
+GPERF       = @GPERF@
+GPERFFLAGS  = --language=ANSI-C --struct-type --readonly-tables --includes --pic
+
+lib_LTLIBRARIES     = libdrmaa.la
+libdrmaa_la_SOURCES = \
+attrib.c \
+attrib.h \
+compat.c \
+compat.h \
+drmaa_attrib.gperf \
+drmaa_impl.h \
+error.c \
+error.h \
+jobs.c \
+jobs.h \
+lookup3.c \
+lookup3.h \
+pbs_attrib.gperf \
+session.c \
+submit.c \
+util.c \
+wait.c
+include_HEADERS     = drmaa.h
+BUILT_SOURCES       = drmaa_attrib.c pbs_attrib.c
+EXTRA_DIST          = drmaa_attrib.c pbs_attrib.c
+libdrmaa_la_LIBADD  = $(PBS_LIBS) @PTHREAD_LIBS@
+
+.gperf.c:
+  base=`basename $< .gperf`; \
+  if $(GPERF) $(GPERFFLAGS) --hash-function-name=$${base}_hash \
+  --lookup-function-name=$${base}_lookup $< >$@; \
+  then exit 0; \
+  else rm $@; exit 1; \
+fi
+
+---------------------------------------------------------------------------------------------------------------
+
+Rerun autogen.sh from the root of the source and rerun configure. This will 
+create the new pbs_attrib.c and drmaa.c files with their hash tables.
+
+If the library will not link with your application you can moddify the pbs_attrib.c 
+and drmaa_attrib.c files by removing all of the inline directives. Use the extern "C" 
+directive before the first table and recompile. You can use the original versions 
+of pbs_attrib.c and drmaa_attrib.c for reference.

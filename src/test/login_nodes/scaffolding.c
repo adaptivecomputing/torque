@@ -92,7 +92,6 @@ int proplist(
   char         name_storage[80];
   char        *pname;
   char        *pequal;
-  int          have_gpus = FALSE;
 
   *node_req = 1; /* default to 1 processor per node */
 
@@ -146,8 +145,6 @@ int proplist(
           return(1);
           }
 
-        have_gpus = TRUE;
-
         /* default value if no other gets specified */
         }
       else
@@ -171,9 +168,10 @@ int proplist(
   }  /* END proplist() */
 
 
-pbsnode::pbsnode(): nd_properties(), nd_mutex(), nd_state(INUSE_FREE), nd_needed(0),
-                    nd_np_to_be_used(0),
+pbsnode::pbsnode(): nd_properties(), nd_mutex(), nd_needed(0),
+                    nd_np_to_be_used(0), nd_state(INUSE_FREE),
                     nd_power_state(0)
+
   {}
 
 pbsnode::~pbsnode() {}

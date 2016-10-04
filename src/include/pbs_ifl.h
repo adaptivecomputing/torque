@@ -285,6 +285,7 @@
 #define ATTR_tcptimeout  "tcp_timeout"
 #define ATTR_jobstatrate "job_stat_rate"
 #define ATTR_polljobs    "poll_jobs"
+#define ATTR_note_append_on_error   "note_append_on_error"
 #define ATTR_downonerror "down_on_error"
 #define ATTR_disableserveridcheck "disable_server_id_check"
 #define ATTR_jobnanny    "job_nanny"
@@ -380,6 +381,7 @@
 #define ATTR_cpustr                "cpuset_string"
 #define ATTR_memstr                "memset_string"
 #define ATTR_user_kill_delay           "user_kill_delay"
+#define ATTR_idle_slot_limit           "idle_slot_limit"
 #define ATTR_copy_on_rerun             "copy_on_rerun"
 #define ATTR_job_exclusive_on_use      "job_exclusive_on_use"
 #define ATTR_disable_automatic_requeue "disable_automatic_requeue"
@@ -392,6 +394,9 @@
 #define ATTR_nodesubmitexceptions       "node_submit_exceptions"
 #define ATTR_legacy_vmem                "legacy_vmem"
 #define ATTR_email_batch_seconds        "email_batch_seconds"
+#define ATTR_tcpincomingtimeout        "tcp_incoming_timeout"
+#define ATTR_ghost_array_recovery      "ghost_array_recovery"
+#define ATTR_cgroup_per_task           "cgroup_per_task"
 
 /* notification email formating */
 #define ATTR_mailsubjectfmt "mail_subject_fmt"
@@ -585,7 +590,7 @@
 
 #define NO_MOM_RELAY 1
 
-enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD };
+enum batch_op { SET, UNSET, INCR, DECR, EQ, NE, GE, GT, LE, LT, DFLT, MERGE, INCR_OLD, SET_PLUGIN };
 
 /* ALPS nppcu values */
 enum nppcu_values { NPPCU_ALPS_CHOOSES = 0, NPPCU_NO_USE_HT, NPPCU_USE_HT };

@@ -236,7 +236,7 @@
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
@@ -250,6 +250,12 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#ifdef USE_RESOURCE_PLUGIN
+#include "json/json.h"
+#include "trq_plugin_api.h"
+#include "plugin_internal.h"
+#endif
+
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
 #define UPDATE_TO_SERVER                  0
@@ -1026,6 +1032,105 @@ stat_record stats[] = {
 
 
 
+/*
+ * add_custom_node_resources()
+ *
+ * Adds the custom things people want to report. This is the interaction point for the
+ * resource plugin for node resource piece
+ */
+
+void add_custom_node_resources()
+
+  {
+#ifdef USE_RESOURCE_PLUGIN
+  static const int                           node_resource_alarm_seconds = 5;
+  static std::map<std::string, std::string>  varattrs;
+  static std::map<std::string, unsigned int> greses;
+  static std::map<std::string, double>       gmetrics;
+  static std::set<std::string>               features;
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Starting the node resource plugin");
+
+  // Set an alarm so the plug-in can't bring the mom to its knees
+  alarm(node_resource_alarm_seconds);
+  report_node_generic_resources(greses);
+  report_node_generic_metrics(gmetrics);
+  report_node_varattrs(varattrs);
+  report_node_features(features);
+  alarm(0);
+
+  if ((varattrs.size() > 0) ||
+      (greses.size() > 0) ||
+      (gmetrics.size() > 0) ||
+      (features.size() > 0))
+    {
+    Json::Value plugin_info;
+    std::string status_entry(PLUGIN_EQUALS);
+
+    if (greses.size() > 0)
+      {
+      Json::Value gres_values;
+
+      for (std::map<std::string, unsigned int>::iterator it = greses.begin();
+           it != greses.end();
+           it++)
+        gres_values[it->first] = it->second;
+
+      plugin_info[GRES] = gres_values;
+      }
+
+    if (varattrs.size() > 0)
+      {
+      Json::Value varattr_info;
+
+      for (std::map<std::string, std::string>::iterator it = varattrs.begin();
+           it != varattrs.end();
+           it++)
+        varattr_info[it->first] = it->second;
+
+      plugin_info[VARATTRS] = varattr_info;
+      }
+
+    if (gmetrics.size() > 0)
+      {
+      Json::Value gmetric_info;
+
+      for (std::map<std::string, double>::iterator it = gmetrics.begin();
+           it != gmetrics.end();
+           it++)
+        gmetric_info[it->first] = it->second;
+
+      plugin_info[GMETRICS] = gmetric_info;
+      }
+
+    if (features.size() > 0)
+      {
+      std::string feature_list;
+
+      for (std::set<std::string>::iterator it = features.begin(); it != features.end(); it++)
+        {
+        if (feature_list.size() > 0)
+          feature_list += ",";
+
+        feature_list += *it;
+        }
+
+      plugin_info[FEATURES] = feature_list;
+      }
+
+    status_entry += plugin_info.toStyledString();
+    mom_status.push_back(status_entry);
+    }
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Finished the node resource plugin");
+#endif
+
+  } // END add_custom_node_resources()
+
+
+
 /**
  * generate_server_status
  *
@@ -1065,6 +1170,7 @@ void generate_server_status(
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
+  ss.str("");
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1078,6 +1184,11 @@ void generate_server_status(
 
     alarm(0);
     }  /* END for (i) */
+
+  ss << "version=" << PACKAGE_VERSION;
+  status.push_back(ss.str());
+
+  add_custom_node_resources();
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */
@@ -2360,7 +2471,6 @@ int read_cluster_addresses(
   std::string      hierarchy_file = "/n";
   long            list_size;
   long            list_len = 0;
-
   if (mh != NULL)
     free_mom_hierarchy(mh);
 
@@ -3091,7 +3201,7 @@ void state_to_server(
     return;    /* Do nothing, just return */
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -3298,6 +3408,45 @@ int mom_open_socket_to_jobs_server(
   }  /* END mom_open_socket_to_jobs_server() */
 
 
+int mom_open_socket_to_jobs_server_with_retries(
+
+  job        *pjob,
+  const char *caller_id,
+  void       *(*message_handler)(void *),
+  int         retry_limit)
+
+  {
+  int retries = -1;
+  int sock = -1;
+
+  while ((sock < 0) &&
+         (retries < retry_limit))
+    {
+    sock = mom_open_socket_to_jobs_server(pjob, __func__, message_handler);
+
+    switch (errno)
+      {
+      case EINTR:
+      case ETIMEDOUT:
+      case EINPROGRESS:
+
+        retries++;
+
+        break;
+
+      default:
+
+        retries = retry_limit;
+
+        break;
+      }
+    }
+
+  return(sock);
+  } // END mom_open_socket_to_jobs_server_with_retries()
+
+
+
 /**
  * clear_down_mom_servers
  *
@@ -3369,7 +3518,7 @@ bool is_for_this_host(
   char  *ptr;
   char  temp_char_string[THIS_HOST_LEN];
 
-  strcpy(temp_char_string, device_spec.c_str());
+  snprintf(temp_char_string, sizeof(temp_char_string), "%s", device_spec.c_str());
 
   /* peel off the -device part of the device_spec */
   ptr = strstr(temp_char_string, suffix);

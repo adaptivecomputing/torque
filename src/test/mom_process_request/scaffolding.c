@@ -170,10 +170,8 @@ void req_delfile(struct batch_request *preq)
   exit(1);
   }
  
-void req_signaljob(struct batch_request *preq)
+void mom_req_signal_job(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_signaljob needs to be mocked!!\n");
-  exit(1);
   }
 
 void req_cpyfile(struct batch_request *preq)
@@ -279,3 +277,5 @@ char * netaddr_long(long ap, char *out)
   {
   return(NULL);
   }
+
+void req_cleanup_job(batch_request *preq) {}

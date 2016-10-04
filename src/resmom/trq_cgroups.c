@@ -30,6 +30,7 @@
 #include "complete_req.hpp"
 #include "resource.h" /* struct resource */
 #endif
+#include "mom_config.h"
 
 using namespace std;
 using namespace boost;
@@ -62,7 +63,6 @@ const int MEMS = 1;
 const int MAX_WRITE_RETRIES = 5;
 
 #ifdef PENABLE_LINUX_CGROUPS
-std::vector<std::string> incompatible_dash_l_resources;
 extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
@@ -78,26 +78,6 @@ void trq_cg_init_subsys_online(bool val)
   subsys_online[cg_subsys_count] = true;
 
   return;
-  }
-
-void initialize_incompatible_dash_l_resources(std::vector<std::string> &incompatible_resource_list)
-  {
-  /* These are the -l resources that are not compatible with the -L resource request */
-  incompatible_resource_list.clear();
-  incompatible_resource_list.push_back("mem");
-  incompatible_resource_list.push_back("nodes");
-  incompatible_resource_list.push_back("hostlis");
-  incompatible_resource_list.push_back("ncpus");
-  incompatible_resource_list.push_back("procs");
-  incompatible_resource_list.push_back("pvmem");
-  incompatible_resource_list.push_back("pmem");
-  incompatible_resource_list.push_back("vmem");
-  incompatible_resource_list.push_back("reqattr");
-  incompatible_resource_list.push_back("software");
-  incompatible_resource_list.push_back("geometry");
-  incompatible_resource_list.push_back("opsys");
-  incompatible_resource_list.push_back("tpn");
-  incompatible_resource_list.push_back("trl");
   }
 
 
@@ -355,7 +335,25 @@ int trq_cg_initialize_cpuset_string(
   return(rc);
   } // END trq_cg_initialize_cpuset_string()
 
+/* make sure that the cgroup directories have the correct mode, in case 
+ * they get created from a thread that has a non-zero umask set. */
+int trq_cg_mkdir(const char* pathname, mode_t mode) {
 
+    struct stat buf;
+    int rc = mkdir(pathname, mode);
+    if(rc != 0) {
+        return rc;
+    }
+    rc = stat(pathname, &buf);
+    if(rc != 0) {
+        return rc;
+    }
+    if(buf.st_mode != mode) {
+        rc = chmod(pathname, mode);
+    }
+    return rc;
+
+} 
 
 /* We need to add a torque directory to each subsystem mount point
  * so we have a place to put the jobs */
@@ -372,17 +370,18 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
+    
 
   torque_path = cg_cpuacct_path;
   rc = stat(torque_path.c_str(), &buf);
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     }
@@ -392,7 +391,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
      /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       {
       sprintf(log_buf, "Could not create %s for cgroups: error %d", torque_path.c_str(), errno);
@@ -417,7 +416,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -427,7 +426,7 @@ int init_torque_cgroups()
   if (rc != 0)
     {
     /* create the torque directory under cg_cpu_path */
-    rc = mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    rc = trq_cg_mkdir( torque_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     if (rc != 0)
       return(rc);
     } 
@@ -958,47 +957,6 @@ int trq_cg_add_process_to_all_cgroups(
   } // END trq_cg_add_process_to_all_cgroups()
 
 
-/* 
- * have_incompatible_dash_l_resource
- *
- * Check to see if this is an incompatile -l resource
- * request for a -L syntax
- *
- * @param pjob  - the job structure we are working with
- *
- */
-   
-bool have_incompatible_dash_l_resource(
-    
-    job *pjob)
-
-  {
-  resource *presl; /* for -l resource request */
-
-  presl = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list); 
-  if (presl != NULL)
-    {
-    std::vector<std::string>::iterator it;
-
-    if (incompatible_dash_l_resources.size() == 0)
-      initialize_incompatible_dash_l_resources(incompatible_dash_l_resources);
-
-    do
-      {
-      std::string pname = presl->rs_defin->rs_name;
-      it = std::find(incompatible_dash_l_resources.begin(), incompatible_dash_l_resources.end(), pname);
-      if (it != incompatible_dash_l_resources.end())
-        {
-        /* pname points to a string of an incompatible -l resource type */
-        return(true);
-        }
-
-      presl = (resource *)GET_NEXT(presl->rs_link);
-      }while(presl != NULL); 
-    }
-  return(false);
-  }
-
 
 /* 
  * trq_cg_create_task_cgroups
@@ -1019,10 +977,17 @@ int trq_cg_create_task_cgroups(
   {
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_attribute *pattr; /* for -L req_information request */
   pbs_attribute *pattrL; /* for -L req_information request */
 
+  if (is_login_node == TRUE)
+    return(PBSE_NONE);
 
-  if (have_incompatible_dash_l_resource(pjob) == true)
+  // For -l requests we want to make only one cgroup per host
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
     return(PBSE_NONE);
 
   pattrL = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1038,10 +1003,13 @@ int trq_cg_create_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattrL->at_val.at_ptr;
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1067,7 +1035,7 @@ int trq_cg_create_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1078,7 +1046,7 @@ int trq_cg_create_task_cgroups(
       req_task_path = cgroup_path + req_task_number;
       /* create a cgroup with the job_id.Ri.ty where req_index and task_index are the
          req and task reference */
-      rc = mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+      rc = trq_cg_mkdir(req_task_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
       if ((rc != 0) &&
           (errno != EEXIST))
         {
@@ -1126,7 +1094,7 @@ int trq_cg_create_cgroup(
   full_cgroup_path += job_id;
 
   /* create a cgroup with the job_id as the directory name under the cgroup_path subsystem */
-  rc = mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(full_cgroup_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
       (errno != EEXIST))
     {
@@ -1317,6 +1285,17 @@ int trq_cg_populate_task_cgroups(
   char          *job_id = pjob->ji_qs.ji_jobid;
   pbs_attribute *pattr;
 
+  // For -l requests we want to make only one cgroup per host
+  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  if ((have_incompatible_dash_l_resource(pattr) == true) ||
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
+      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+    {
+    /* this is not a -L request or there are incompatible
+       -l resources requested */
+    return(PBSE_NONE);
+    }
+
   /* See if the JOB_ATR_req_information is set. If not
      This was not a -L request */
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1326,12 +1305,6 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  if ( have_incompatible_dash_l_resource(pjob) == true)
-    {
-    /* this is not a -L request or there are incompatible
-       -l resources requested */
-    return(PBSE_NONE);
-    }
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -1339,11 +1312,13 @@ int trq_cg_populate_task_cgroups(
     return(PBSE_NONE);
     }
 
-  char   this_hostname[PBS_MAXHOSTNAME];
-
-  gethostname(this_hostname, PBS_MAXHOSTNAME);
   complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
-  
+    
+  if ((cr->get_num_reqs() == 0) ||
+      (cr->get_req(0).is_per_task() == false))
+    {
+    return(PBSE_NONE);
+    }
 
   for (unsigned int req_index = 0; req_index < cr->req_count(); req_index++)
     {
@@ -1366,7 +1341,7 @@ int trq_cg_populate_task_cgroups(
       std::string task_host;
       each_req.get_task_host_name(task_host, task_index);
 
-      if (task_hosts_match(task_host.c_str(), this_hostname) == false)
+      if (task_hosts_match(task_host.c_str(), mom_alias) == false)
         {
         /* this task does not belong to this host. Go to the next one */
         continue;
@@ -1467,9 +1442,15 @@ int find_range_in_cpuset_string(
     }
 
   pos += strlen(mom_alias) + 1; // add 1 to pass the ':'
+  if (pos >= source.size()) // Make sure we don't pass the end of the string
+    pos = source.size();
+
   end = source.find("+", pos);
 
-  output = source.substr(pos, end - pos);
+  if (end != std::string::npos)
+    output = source.substr(pos, end - pos);
+  else
+    output = source.substr(pos);
 
   if (output.size() < 1)
     {
@@ -1483,6 +1464,32 @@ int find_range_in_cpuset_string(
 
 
 
+/*
+ * add_all_cpus_and_memory()
+ *
+ */
+
+void add_all_cpus_and_memory(
+
+  std::string &cpu_string,
+  std::string &mem_string)
+
+  {
+  char buf[MAXLINE];
+  sprintf(buf, "0-%d", this_node.getTotalThreads() - 1);
+  cpu_string = buf;
+
+  sprintf(buf, "0-%d", this_node.getTotalChips() - 1);
+  mem_string = buf;
+  } // END add_all_cpus_and_memory()
+
+
+
+/*
+ * trq_cg_get_cpuset_and_mem()
+ *
+ */
+
 int trq_cg_get_cpuset_and_mem(
 
   job         *pjob, 
@@ -1492,24 +1499,44 @@ int trq_cg_get_cpuset_and_mem(
   {
   int rc = PBSE_NONE;
 
-  if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
-      (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+  // Login nodes don't have a cpuset assignment, but they should just put all of the cpus and memory
+  // controllers in the cgroup
+  if (is_login_node == TRUE)
     {
-    sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
-    log_err(-1, __func__, log_buffer);
-
-    return(-1);
+    add_all_cpus_and_memory(cpuset_string, mem_string);
     }
+  else
+    {
+    if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
+        (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+      {
+      sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
+      log_err(-1, __func__, log_buffer);
 
-  std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+      return(-1);
+      }
 
-  if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
-    return(-1);
+    std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
 
-  std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-  
-  if (find_range_in_cpuset_string(mems, mem_string) != 0)
-    return(-1);
+    // If a job is using resource request syntax 1.0 and has specified that it is node 
+    // exclusive, then just give all of the cpus and memory to the job
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+      {
+      add_all_cpus_and_memory(cpuset_string, mem_string);
+      }
+    else
+      {
+      if (find_range_in_cpuset_string(cpus, cpuset_string) != 0)
+        return(-1);
+      
+      if (find_range_in_cpuset_string(mems, mem_string) != 0)
+        return(-1);
+      }
+    }
 
   return(rc);
   } // END trq_cg_get_cpuset_and_mem()
@@ -1900,7 +1927,7 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
 
   devices_deny = job_devices_path + '/' + "devices.deny";
 
-  rc = mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+  rc = trq_cg_mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
   if ((rc != 0) &&
        (errno != EEXIST))
     {

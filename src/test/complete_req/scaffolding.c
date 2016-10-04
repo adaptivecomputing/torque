@@ -72,99 +72,9 @@ void log_event(
   called_log_event++;
   }
 
-void *get_next(
-
-  list_link  pl,   /* I */
-  char     *file, /* I */
-  int      line) /* I */
-
-  {
-  static struct resource_def rd;
-
-  resource *r = (resource *)calloc(1, sizeof(resource));
-  r->rs_defin = &rd;
-
-  switch (gn_count)
-    {
-    case 0:
-
-      rd.rs_name = strdup("nodes");
-      r->rs_value.at_val.at_str = strdup("1:ppn=2+2:gpus=1");
-
-      break;
-    
-    case 1:
-
-      rd.rs_name = strdup("mem");
-      r->rs_value.at_val.at_size.atsv_num = 40;
-      r->rs_value.at_val.at_size.atsv_shift = 20;
-      
-      break;
-
-    case 2:
-
-      r = NULL;
-      break;
-
-    case 3: 
-
-      rd.rs_name = strdup("size");
-      r->rs_value.at_val.at_long = 20;
-      break;
-
-    case 4:
-
-      rd.rs_name = strdup("mem");
-      r->rs_value.at_val.at_size.atsv_num = 40;
-      r->rs_value.at_val.at_size.atsv_shift = 10;
-
-      break;
-
-    case 5:
-
-      r = NULL;
-      break;
-
-    case 6:
-      
-      rd.rs_name = strdup("ncpus");
-      r->rs_value.at_val.at_long = 16;
-      break;
-
-    case 7:
-
-      rd.rs_name = strdup("mem");
-      r->rs_value.at_val.at_size.atsv_num = 40;
-      r->rs_value.at_val.at_size.atsv_shift = 10;
-
-      break;
-
-    case 8:
-
-      r = NULL;
-      break;
-
-    case 9:
-
-      rd.rs_name = strdup("vmem");
-      r->rs_value.at_val.at_size.atsv_num = 2048;
-      r->rs_value.at_val.at_size.atsv_shift = 0;
-      break;
-
-    default:
-
-      r = NULL;
-      break;
-    }
-
-  gn_count++;
-
-  return(r);
-  }
 
 
-
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -206,6 +116,7 @@ void translate_range_string_to_vector(
     }
 
   free(str);
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void log_err(

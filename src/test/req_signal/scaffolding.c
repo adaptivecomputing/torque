@@ -5,6 +5,10 @@
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
 #include "node_func.h" /* node_info */
+#include "attribute.h"
+
+
+attribute_def job_attr_def[10];
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char scaff_buffer[1024];
@@ -39,7 +43,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(job *pjob) { }
+void free_nodes(job *pjob, const char *spec) { }
 
 void svr_disconnect(int handle)
   {
@@ -132,4 +136,31 @@ char * netaddr_long(long ap, char *out)
 
 job::job() {}
 job::~job() {}
+
+int svr_setjobstate(
+
+  job *pjob,
+  int newstate,
+  int newsubstate,
+  int has_queue_mutex)
+
+  {
+  if (pjob == NULL)
+    return(PBSE_BAD_PARAMETER);
+
+  pjob->ji_qs.ji_state = newstate;
+  pjob->ji_qs.ji_substate = newsubstate;
+
+  return(0);
+  }
+
+
+void rel_resc(
+
+  job *pjob)
+
+  {
+  return;
+  }
+
 

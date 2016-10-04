@@ -45,6 +45,8 @@ coverity=0
 unit_tests=1
 parallel=3
 tarball=1
+cgroups=0
+configure_options=""
 
 # To be set later
 version=
@@ -117,6 +119,10 @@ do
         -j)
             shift
             parallel="${1}"
+            shift
+            ;;
+        -g|--enable-cgroups)
+            cgroups=1
             shift
             ;;
         *)
@@ -205,9 +211,14 @@ fi
 echo "Started ${0}, version ${version}, release ${release}." \
     ${quiet_redirect}
 
+if [ $cgroups -ne 0 ]
+then
+  configure_options="$configure_options --enable-cgroups --with-hwloc-path=/usr/local/bin/"
+fi
+
 echo $(git rev-parse HEAD) > current_hash
 sh autogen.sh
-./configure
+./configure $configure_options
 
 
 if [ ${coverity} -ne 0 -o ${unit_tests} -ne 0 ]

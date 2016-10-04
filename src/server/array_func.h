@@ -10,13 +10,9 @@
 
 int is_array(char *id);
 
-job_array *get_array(char *id);
-
 int array_save(job_array *pa);
 
 void array_get_parent_id(char *job_id, char *parent_id);
-
-int array_delete(job_array *pa);
 
 int set_slot_limit(char *request, job_array *pa);
 
@@ -39,8 +35,6 @@ int hold_array_range(job_array *pa, char *range_str, pbs_attribute *temphold);
 int release_array_range(job_array *pa, struct batch_request *preq, char *range_str);
 
 int modify_array_range(job_array *pa, char *range, svrattrl *plist, struct batch_request *preq, int checkpoint_req);
-
-void update_array_values(job_array *pa,int old_state,enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status);
 
 void initialize_all_arrays_array();
 

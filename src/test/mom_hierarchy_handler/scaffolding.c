@@ -16,6 +16,7 @@ int                     LOGLEVEL = 10;
 bool                    exit_called = false;
 threadpool_t           *task_pool;
 id_map                  node_mapper;
+int			lock_node_count = 0;
 
 execution_slot_tracker::execution_slot_tracker(){}
 
@@ -319,7 +320,33 @@ int pbsnode::unlock_node(const char *id, const char *msg, int level)
   return(0);
   }
 
+int pbsnode::lock_node(const char *id, const char *msg, int level)
+  {
+  lock_node_count++;
+  return(0);
+  }
+
 const char *pbsnode::get_name() const
   {
   return(this->nd_name.c_str());
+  }
+
+int insert_node(all_nodes *an, struct pbsnode *pnode)
+  {
+  if ((an == NULL) || (pnode == NULL) || (pnode->get_name() == NULL)) return 0;
+
+  an->lock();
+  an->insert(pnode, pnode->get_name());
+  an->unlock();
+  return(PBSE_NONE);
+  }
+
+int remove_node(all_nodes *an, struct pbsnode *pnode)
+  {
+  if ((an == NULL) || (pnode == NULL) || (pnode->get_name() == NULL)) return 0;
+
+  an->lock();
+  an->remove(pnode->get_name());
+  an->unlock();
+  return(PBSE_NONE);
   }

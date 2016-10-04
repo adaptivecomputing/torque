@@ -40,7 +40,7 @@
 #include "net_cache.h"
 #include "utils.h"
 #include "allocation.hpp"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 using namespace std;
 
@@ -67,7 +67,7 @@ static void states(
 #define ALT_DISPLAY_u 8 /* -u option - list user's jobs */
 #define ALT_DISPLAY_n 0x10 /* -n option - add node list */
 #define ALT_DISPLAY_s 0x20 /* -s option - add scheduler comment */
-#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info */
+#define ALT_DISPLAY_R 0x40 /* -R option - add SRFS info - unsupported */
 
 #define ALT_DISPLAY_q 0x80 /* -q option - alt queue display */
 
@@ -118,7 +118,7 @@ static bool print_header = true;
 #define DEFTASKSIZE 6
 
 int   tasksize = DEFTASKSIZE;
-int   alias_opt = FALSE;
+int                  alias_opt = FALSE;
 
 string get_err_msg(
   int   any_failed,
@@ -1352,7 +1352,7 @@ bool is_the_user(
 /*
  * get_summary_attributes()
  *
- * Iteratres over the attributes and stores the ones we're interested in for the summary
+ * Iterates over the attributes and stores the ones we're interested in for the summary
  * @param attribute - a linked list of the job's attributes
  * @param name - O to store the name
  * @param owner - O to store the owner
@@ -1373,6 +1373,7 @@ void get_summary_attributes(
   {
   char         *c;
   unsigned int  len;
+  char          long_name[17];
 
   for (; attribute != NULL; attribute = attribute->next)
     {
@@ -1386,8 +1387,6 @@ void get_summary_attributes(
 
         if (len > PBS_NAMELEN)
           {
-          char  long_name[17];
-
           len = len - PBS_NAMELEN + 3;
 
           c = attribute->value + len;
@@ -1398,6 +1397,7 @@ void get_summary_attributes(
           if (*c == '\0')
             c = attribute->value + len;
 
+          memset(long_name, 0, sizeof(long_name));
           snprintf(long_name, sizeof(long_name), "...%s", c);
 
           c = long_name;
@@ -1512,43 +1512,6 @@ void display_job_summary(
 
   if (p->name != NULL)
     {
-    c = p->name;
-
-    while ((*c != '.') && (*c != '\0'))
-      c++;
-
-    if (alias_opt == TRUE)
-      {
-      /* show the alias as well as the first part of the server name */
-      if (*c == '.')
-        {
-        c++;
-
-        while((*c != '.') && (*c != '\0'))
-          c++;
-        }
-      }
-
-    if (alias_opt == TRUE)
-      {
-      /* show the alias as well as the first part of the server name */
-      if (*c == '.')
-        {
-        c++;
-
-        while((*c != '.') && (*c != '\0'))
-          c++;
-        }
-      }
-
-    if (*c != '\0')
-      c++;    /* List the first part of the server name, too. */
-
-    while ((*c != '.') && (*c != '\0'))
-      c++;
-
-    *c = '\0';
-
     len = strlen(p->name);
 
     if (len > (PBS_MAXSEQNUM + PBS_MAXJOBARRAYLEN + 8))
@@ -1747,30 +1710,21 @@ void create_full_job_xml(
   mxml_t              *DE)
 
   {
-  mxml_t       *JE;
+  mxml_t       *JE = NULL;
   mxml_t       *AE;
-  mxml_t       *RE1;
-  mxml_t       *JI;
+  mxml_t       *RE1 = NULL;
+  mxml_t       *JI = NULL;
   struct attrl *attribute;
   
-  if (DisplayXML == true)
-    {
-    JE = NULL;
+  MXMLCreateE(&JE, "Job");
 
-    MXMLCreateE(&JE, "Job");
+  MXMLAddE(DE, JE);
 
-    MXMLAddE(DE, JE);
+  MXMLCreateE(&JI, "Job_Id");
 
-    JI = NULL;
+  MXMLSetVal(JI, p->name,mdfString);
 
-    MXMLCreateE(&JI, "Job_Id");
-
-    MXMLSetVal(JI, p->name,mdfString);
-
-    MXMLAddE(JE, JI);
-    }
-
-  RE1 = NULL;
+  MXMLAddE(JE, JI);
 
   for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
     {
@@ -1941,7 +1895,10 @@ void display_statjob(
   /* XML only support for full output */
 
   if (DisplayXML == true)
+    {
+    printf("<?xml version=\"1.0\"?>\n");
     full = true;
+    }
 
   if (!full)
     {
@@ -3030,7 +2987,10 @@ int run_job_mode(
   char   rmt_server[MAXSERVERNAME];
 
   struct batch_status *p_server;
-  struct batch_status *p_status;
+  struct batch_status *p_status = NULL;
+    
+  std::string server_name;
+  std::vector<std::string> id_list;
 
   if (have_args == true)
     {
@@ -3047,7 +3007,7 @@ int run_job_mode(
 
       snprintf(job_id, sizeof(job_id), "%s", operand);
 
-      any_failed = get_server(job_id, job_id_out, job_id_out_size, server_out, server_out_size);
+      any_failed = get_server_and_job_ids(job_id, id_list, server_name);
       if (any_failed != PBSE_NONE)
         {
         fprintf(stderr, "qstat: illegally formed job identifier: %s\n",
@@ -3059,6 +3019,8 @@ int run_job_mode(
 
         return(any_failed);
         }
+
+      snprintf(server_out, server_out_size, "%s", server_name.c_str());
       }
     else
       {
@@ -3100,6 +3062,8 @@ int run_job_mode(
         }
       }    /* END else */
     }
+  else
+    id_list.push_back("");
 
   while (retry_count < MAX_RETRIES)
     {
@@ -3145,12 +3109,23 @@ int run_job_mode(
 
     if ((stat_single_job == 1) || (p_atropl == 0))
       {
-      p_status = pbs_statjob_err(
-                   connect,
-                   job_id_out,
-                   attrib,
-                   exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
-                   &any_failed);
+      if (id_list.size() == 0)
+        id_list.push_back("");
+
+      for (size_t i = 0; i < id_list.size(); i++)
+        {
+        snprintf(job_id_out, job_id_out_size, "%s", id_list[i].c_str());
+
+        p_status = pbs_statjob_err(
+                     connect,
+                     job_id_out,
+                     attrib,
+                     exec_only ? (char *)EXECQUEONLY : (char *)ExtendOpt.c_str(),
+                     &any_failed);
+
+        if (any_failed != PBSE_UNKJOBID)
+          break;
+        }
       }
     else
       {
@@ -3203,6 +3178,10 @@ int run_job_mode(
           pbs_disconnect(connect);
           continue;
           }
+        
+        // If it's XML output display an empty XML document
+        if (DisplayXML)
+          display_statjob(p_status, print_header, f_opt, user);
 
         tcl_stat("job", NULL, f_opt);
 

@@ -9,6 +9,7 @@
  * misc server function prototypes
  */
 
+int get_svr_attr_b(int index, bool *b);
 int get_svr_attr_l(int index, long *l);
 int get_svr_attr_str(int index, char **str);
 int get_svr_attr_arst(int index, struct array_strings **arst);
@@ -41,7 +42,7 @@ int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
 extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
-extern void  free_nodes(job *);
+extern void  free_nodes(job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H

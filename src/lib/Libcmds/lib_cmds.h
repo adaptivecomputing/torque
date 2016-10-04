@@ -34,7 +34,6 @@ int parse_at_list(char *list, int use_count, int abs_path);
 /* static char *deptypes[] */
 /* static char *arraydeptypes[] */
 int parse_depend_item(char *depend_list, char *rtn_list, int rtn_size);
-int parse_depend_list(char *list, char *rtn_list, int rtn_size);
 
 /* from file parse_destid.c */
 int parse_destination_id(char *destination_in, char **queue_name_out, char **server_name_out);

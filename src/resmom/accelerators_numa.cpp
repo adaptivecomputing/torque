@@ -217,7 +217,7 @@ void PCI_Device::initializeMic(
 
 
 
-#ifdef NVML_API
+#ifdef NVIDIA_GPUS
 void PCI_Device::initializeGpu(
 
   int              idx,

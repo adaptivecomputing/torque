@@ -30,8 +30,6 @@ int node_ntype(pbs_attribute *new_attr, void *pnode, int actmode);
 
 int node_prop_list(pbs_attribute *new_attr, void *pnode, int actmode); 
 
-int node_status_list(pbs_attribute *new_attr, void *pnode, int actmode); 
-
 int node_gpustatus_list(pbs_attribute *new_attr, void *pnode, int actmode); 
 
 int node_note(pbs_attribute *new_attr, void *pnode, int actmode); 

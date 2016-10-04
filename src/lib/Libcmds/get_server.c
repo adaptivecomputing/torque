@@ -58,6 +58,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <vector>
+#include <string>
+
 #include "pbs_ifl.h"
 #include "pbs_error.h"
 #include "net_connect.h"
@@ -106,6 +109,95 @@ int TShowAbout_exit(void)
   }  /* END TShowAbout_exit() */
 
 
+
+int get_server_and_job_ids(
+
+  const char               *job_id_in,
+  std::vector<std::string> &potential_ids,
+  std::string              &server_out)
+
+  {
+  char *seq_number = NULL;
+  char *parent_server = NULL;
+  char *current_server = NULL;
+  char  def_server[PBS_MAXSERVERNAME + 1];
+  char  full_servername[PBS_MAXSERVERNAME + 1];
+  char *c;
+
+  /* parse the job_id_in into components */
+
+  if (!strcasecmp("all",job_id_in))
+    {
+    potential_ids.push_back(job_id_in);
+    server_out[0] = '\0';
+    }
+  else
+    {
+    if (parse_jobid(job_id_in, &seq_number, &parent_server, &current_server))
+      {
+      return(PBSE_BAD_PARAMETER);
+      }
+    
+    /* Apply the above rules, in order, except for the locate job request.
+     * That request is only sent if the job is not found on the local server. */
+    
+    if (notNULL(current_server))
+      {
+      /* @server found */
+      server_out = current_server;
+      }
+    else
+      {
+      /* can't locate a server, so return a NULL to tell pbs_connect to use default */
+      server_out[0] = '\0';
+      }
+    
+    if (!notNULL(parent_server))
+      {
+      parent_server = pbs_default();
+
+      if (notNULL(parent_server))
+        {
+        snprintf(def_server, PBS_MAXSERVERNAME, "%s", parent_server);
+        
+        c = def_server;
+        
+        while ((*c != '\n') && (*c != '\0'))
+          c++;
+        
+        *c = '\0';
+        }
+      }
+
+    if (!notNULL(parent_server))
+      {
+      return(PBSE_SERVER_NOT_FOUND);
+      }
+
+    std::string jid_out(seq_number);
+    jid_out += ".";
+    jid_out += parent_server;
+
+    potential_ids.push_back(jid_out);
+
+    if (get_fullhostname(parent_server, full_servername, PBS_MAXSERVERNAME, NULL) == 0)
+      {
+      if (strcmp(parent_server, full_servername))
+        {
+        // If this isn't the full name, add that to the list
+        jid_out = seq_number;
+        jid_out += ".";
+        jid_out += full_servername;
+        potential_ids.push_back(jid_out);
+        }
+      }
+    }
+  
+  return(PBSE_NONE);
+  } // END get_server_and_job_ids()
+
+
+
 /**
  * Take a job ID string and parse it into
  * job ID and server name parts.
@@ -127,7 +219,6 @@ int get_server(
   char *parent_server = NULL;
   char *current_server = NULL;
   char def_server[PBS_MAXSERVERNAME + 1];
-  char host_server[PBS_MAXSERVERNAME + 1];
   char *c;
 
   /* parse the job_id_in into components */
@@ -152,18 +243,12 @@ int get_server(
       /* @server found */
       snprintf(server_out, server_out_size, "%s", current_server);
       }
-    else if (notNULL(parent_server))
-      {
-      /* .server found */
-      snprintf(server_out, server_out_size, "%s", parent_server);
-      }
     else
       {
       /* can't locate a server, so return a NULL to tell pbs_connect to use default */
       server_out[0] = '\0';
       }
     
-    /* Make a fully qualified name of the job id. */  
     if (notNULL(parent_server))
       {
       if (notNULL(current_server))
@@ -173,20 +258,7 @@ int get_server(
         }
       else
         {
-        if (get_fullhostname(parent_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
-         {
-         /* FAILURE */
-         return(1);
-         }
-        
-        if (!strncmp(parent_server, host_server, strlen(parent_server)))
-          {
-          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
-          }
-        else
-          {
-          snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
-          }
+        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, parent_server);
         }
       
       if ((c = strchr(parent_server, ':')) != 0)
@@ -210,28 +282,12 @@ int get_server(
       
       c = def_server;
       
-      while ((*c != '\n') && (*c != '\0') && (*c != ':'))
+      while ((*c != '\n') && (*c != '\0'))
         c++;
       
       *c = '\0';
       
-      if (get_fullhostname(def_server, host_server, PBS_MAXSERVERNAME, NULL) != 0)
-        {
-        /* FAILURE */
-        
-        return(1);
-        }
-      
-      if ((c = strchr(def_server, ':')) != 0)
-        {
-        if (*(c - 1) == '\\')
-          c--;
-        
-        snprintf(job_id_out, job_id_out_size, "%s.%s%s", seq_number, host_server, c);
-        }
-      else
-        snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, host_server);
-
+      snprintf(job_id_out, job_id_out_size, "%s.%s", seq_number, def_server);
       }    /* END else */
     }
   

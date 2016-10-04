@@ -3,6 +3,7 @@
 #include <stdio.h> /* fprintf */
 #include <netdb.h> /* addrinfo */
 #include <netinet/in.h>
+#include <pbs_config.h>
 
 
 #include "pbs_nodes.h" /* all_nodes, pbsnode */
@@ -27,6 +28,7 @@ std::string attrname;
 std::string attrval;
 int         created_subnode;
 
+bool cray_enabled;
 int svr_tsnodes = 0; 
 int svr_unresolvednodes = 0;
 resource_t next_resource_tag;
@@ -61,7 +63,6 @@ const char *dis_emsg[] = {"No error",
 };
 boost::ptr_vector<std::string> hierarchy_holder;
 pthread_mutex_t                 hierarchy_holder_Mutex = PTHREAD_MUTEX_INITIALIZER;
-extern int cray_enabled;
 
 mom_hierarchy_handler hierarchy_handler; //The global declaration.
 
@@ -77,19 +78,39 @@ void attrlist_free()
     }
   }
 
-svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
-  {
-  int namesize = 0;
-  if (aname != NULL)
-    namesize = strlen(aname) + 1;
-  s = (svrattrl *)calloc(1, sizeof(svrattrl) + namesize + vsize);
-  s->al_name = (char *)s + sizeof(svrattrl);
-  s->al_value = s->al_name + namesize;
+svrattrl *attrlist_create(
+  const char *aname, 
+  const char *rname, 
+  int vsize)
 
-  if (aname != NULL)
-    strcpy(s->al_name, aname); /* copy name right after struct */
+  {
+  size_t    asz;
+  size_t    rsz;
+
+  asz = strlen(aname) + 1;     /* pbs_attribute name,allow for null term */
+
+  if (rname == NULL)      /* resource name only if type resource */
+    rsz = 0;
+  else
+    rsz = strlen(rname) + 1;
+
+  s = attrlist_alloc(asz, rsz, vsize);
+
+  strcpy(s->al_name, aname); /* copy name right after struct */
+
+  if (rsz > 0)
+    strcpy(s->al_resc, rname);
+
   return(s);
+}
+
+void append_link(tlist_head *head, list_link *new_link, void *pobj)
+  {
+  svrattrl *pal = (svrattrl *)pobj;
+  attrname = pal->al_name;
+  attrval = pal->al_value;
   }
+
 
 AvlTree AVL_delete_node(u_long key, uint16_t port, AvlTree tree)
   {
@@ -133,20 +154,6 @@ struct pbsnode *AVL_find(u_long key, uint16_t port, AvlTree tree)
   }
 
 void free_attrlist(tlist_head *pattrlisthead)
-  {
-  }
-
-void append_link(tlist_head *head, list_link *new_link, void *pobj)
-  {
-  svrattrl *pal = (svrattrl *)pobj;
-  attrname = pal->al_name;
-  attrval = pal->al_value;
-  }
-
-void delete_link(
-
-  struct list_link *old) /* ptr to link to delete */
-
   {
   }
 
@@ -216,6 +223,14 @@ int get_svr_attr_l(int index, long *l)
   {
   if (index == SRV_ATR_CrayEnabled)
     *l = cray_enabled;
+
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (index == SRV_ATR_CrayEnabled)
+    *b = cray_enabled;
 
   return(0);
   }
@@ -485,6 +500,7 @@ void mom_hierarchy_handler::reloadHierarchy()
   {
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
 int Machine::getDedicatedSockets() const
   {
   return(0);
@@ -530,7 +546,45 @@ bool Machine::is_initialized() const
   return(true);
   }
 
+Machine &Machine::operator =(const Machine &other)
+  {
+  return(*this);
+  }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+PCI_Device::PCI_Device(const PCI_Device &other)
+  {
+  }
+
+PCI_Device::~PCI_Device() {}
+
+Chip::Chip(const Chip &other)
+  {
+  }
+
+Chip::~Chip() {}
+
+Core::~Core() {}
+
+allocation::allocation(const allocation &other) {}
+
+Socket::~Socket() {}
+
+#endif
+
 void update_node_state(pbsnode *pnode, int state) 
   {
   pnode->nd_state = state;
+  }
+
+int node_status_list(
+
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
   }

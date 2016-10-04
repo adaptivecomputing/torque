@@ -738,7 +738,7 @@ int modify_job(
 /*
  * modify_whole_array()
  * modifies the entire job array 
- * @SEE req_modify_array PARENT
+ * @SEE req_modifyarray PARENT
  */
 
 int modify_whole_array(
@@ -850,8 +850,10 @@ void *modify_array_work(
 
     if ((pcnt = strchr(array_spec,'%')) != NULL)
       {
+      int old_slot_limit = pa->ai_qs.slot_limit;
       int slot_limit = atoi(pcnt+1);
       pa->ai_qs.slot_limit = slot_limit;
+      update_slot_held_jobs(pa, slot_limit - old_slot_limit);
       }
     }
   
@@ -1136,6 +1138,18 @@ int modify_job_attr(
          perm,         /* I */
          bad);         /* O */
 
+  // Update plugin-reported information, if any
+  while (plist != NULL)
+    {
+    if (plist->al_op == SET_PLUGIN)
+      {
+      rc = PBSE_NONE;
+      pjob->set_plugin_resource_usage(plist->al_resc, plist->al_value);
+      }
+    
+    plist = (struct svrattrl *)GET_NEXT(plist->al_link);
+    }
+
   /* if req_information has been changed move it over to pattr */
   if ((rc == 0) &&
       (newattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
@@ -1157,10 +1171,10 @@ int modify_job_attr(
 
       if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
         {
-        long lim = TRUE;
+        bool lim = true;
         int comp_resc_lt;
        
-        get_svr_attr_l(SRV_ATR_QCQLimits, &lim);
+        get_svr_attr_b(SRV_ATR_QCQLimits, &lim);
         comp_resc_lt = comp_resc2(&pjob->ji_wattr[JOB_ATR_resource],
                                       &newattr[JOB_ATR_resource],
                                       lim,
@@ -1307,12 +1321,17 @@ int modify_job_attr(
 
       job_attr_def[i].at_free(pattr + i);
 
-      if ((newattr[i].at_type == ATR_TYPE_LIST) ||
-          (newattr[i].at_type == ATR_TYPE_RESC))
+      if (newattr[i].at_type == ATR_TYPE_LIST)
         {
         list_move(
           &newattr[i].at_val.at_list,
           &(pattr + i)->at_val.at_list);
+        }
+      else if (newattr[i].at_type == ATR_TYPE_RESC)
+        {
+        void *old_ptr = pattr[i].at_val.at_ptr;
+        pattr[i].at_val.at_ptr = newattr[i].at_val.at_ptr;
+        newattr[i].at_val.at_ptr = old_ptr;
         }
       else
         {

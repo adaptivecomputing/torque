@@ -174,6 +174,12 @@ char * csv_find_string(const char *csv_str, const char *search_str)
   exit(1);
   }
 
+int pbs_deljob_err( int c, const char *jobid, char *extend, int *local_errno)
+  {
+  return(0);
+  }
+
+
 int pbs_deljob( int c, char *jobid, char *extend)
   {
   fprintf(stderr, "The call to pbs_deljob to be mocked!!\n");
@@ -192,10 +198,9 @@ void calloc_or_fail(char **dest, int alloc_size, const char *err_msg)
   exit(1);
   }
 
-int parse_depend_list( char *list, char *rtn_list,  int rtn_size )
-  {
-  fprintf(stderr, "The call to parse_depend_list to be mocked!!\n");
-  exit(1);
+int parse_depend_list(char *list, std::vector<std::string> &dep_list)
+  { 
+  return(PBSE_NONE);
   }
 
 void parse_variable_list(
@@ -353,6 +358,11 @@ void complete_req::add_req(req &r)
 req::req()
 
   {
+  }
+
+bool req::cgroup_preference_set() const
+  {
+  return(false);
   }
 
 int req::set_from_submission_string(

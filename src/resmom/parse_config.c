@@ -99,9 +99,10 @@
 #include "mom_func.h"
 #include "u_tree.h"
 #include "csv.h"
+#include "json/json.h"
 
-void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
-void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
+void encode_used(job *pjob, int perm, Json::Value *, tlist_head *phead);
+void encode_flagged_attrs(job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
@@ -112,6 +113,8 @@ int              ignmem = 0;
 int              igncput = 0;
 int              ignvmem = 0; 
 /* end policies */
+bool             check_rur = true; /* on by default */
+bool             force_file_overwrite = false;
 int              spoolasfinalname = 0;
 int              maxupdatesbeforesending = MAX_UPDATES_BEFORE_SENDING;
 char            *apbasil_path     = NULL;
@@ -216,7 +219,8 @@ struct passwd *getpwnam_ext(char **user_buffer, char *user_name);
 
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
-
+unsigned long setforceoverwrite(const char*);
+unsigned long setrur(const char *);
 unsigned long setxauthpath(const char *);
 unsigned long setrcpcmd(const char *);
 unsigned long setpbsclient(const char *);
@@ -297,6 +301,7 @@ unsigned long setjobdirectorysticky(const char *);
 unsigned long setcudavisibledevices(const char *);
 
 struct specials special[] = {
+  { "force_overwrite",     setforceoverwrite}, 
   { "alloc_par_cmd",       setallocparcmd },
   { "auto_ideal_load",     setautoidealload },
   { "auto_max_load",       setautomaxload },
@@ -377,6 +382,7 @@ struct specials special[] = {
   { "mom_hierarchy_retry_time",  setmomhierarchyretrytime},
   { "jobdirectory_sticky", setjobdirectorysticky},
   { "cuda_visible_devices", setcudavisibledevices},
+  { "cray_check_rur",       setrur },
   { NULL,                  NULL }
   };
 
@@ -479,7 +485,36 @@ char *tokcpy(
   return(str);
   }  /* END tokcpy() */
 
+unsigned long setforceoverwrite(
+  
+  const char *value)
 
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    force_file_overwrite = enable;
+    return(1);
+    }
+
+  return(0); /* error */
+  }
+unsigned long setrur(
+
+  const char *value)
+  
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    check_rur = enable;
+    return(1);
+    }
+    
+  return(0); /* error */
+  }/* end setrur() */
 
 
 unsigned long setidealload(
@@ -1438,7 +1473,7 @@ u_long setjoboomscoreadjust(
   v = atoi(value);
 
   /* check for allowed value range */
-  if( v >= -17 && v <= 15 ) 
+  if( v >= -1000 && v <= 1000 ) 
     {
     job_oom_score_adjust = v;
     /* ok */
@@ -1888,7 +1923,7 @@ u_long usecp(
 
   *pnxt++ = '\0';
 
-  cph.cph_hosts = value;
+  cph.cph_from = value;
   cph.cph_to = skipwhite(pnxt);
 
   pcphosts.push_back(cph);
@@ -2272,7 +2307,18 @@ void reset_config_vars()
   resend_join_job_wait_time = RESEND_WAIT_TIME;
   mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
   LOGLEVEL = 0;
-  }
+  
+  // Clear varattrs
+  struct varattr *pva;
+ 
+  while ((pva = (struct varattr *)GET_NEXT(mom_varattrs)) != NULL)
+    {
+    delete_link(&pva->va_link);
+    
+    free(pva->va_cmd);
+    free(pva);
+    }
+  } // END reset_config_vars()
 
 
 
@@ -2789,15 +2835,13 @@ const char *reqmsg(
 
 void add_job_status_information(
 
-  job               &pjob,
-  std::stringstream &list)
+  job         &pjob,
+  Json::Value &job_info)
 
   {
-  list << "(";
-  encode_used(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds resources_used attr */
+  encode_used(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds resources_used attr */
 
-  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &list, NULL); /* adds other flagged attrs */
-  list << ")";
+  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds other flagged attrs */
   } /* END add_job_status_information() */
 
 
@@ -2807,17 +2851,13 @@ const char *getjoblist(
   struct rm_attribute *attrib) /* I */
 
   {
-  std::stringstream  list;
+  Json::Value        job_list;
   job               *pjob;
-  bool               firstjob = true;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
   char *dot;
 #endif 
-
-  // reset the job list
-  list.clear();
 
   if (alljobs_list.size() == 0)
     {
@@ -2848,25 +2888,17 @@ const char *getjoblist(
       continue;
 #endif
 
-    if (!firstjob)
-      list << " ";
-    
-    firstjob = false;
-
-    list << pjob->ji_qs.ji_jobid;
+    Json::Value job_info;
 
     if (am_i_mother_superior(*pjob) == true)
       {
-      add_job_status_information(*pjob, list);
+      add_job_status_information(*pjob, job_info);
       }
+
+    job_list[pjob->ji_qs.ji_jobid] = job_info;
     }  /* END for (pjob) */
 
-#ifdef NUMA_SUPPORT
-  if (firstjob == true)
-    list << " ";
-#endif
-
-  return(strdup(list.str().c_str()));
+  return(strdup(job_list.toStyledString().c_str()));
   }  /* END getjoblist() */
 
 
@@ -3065,8 +3097,6 @@ const char *reqvarattr(
 
 
 
-
-
 const char *reqgres(
 
   struct rm_attribute *attrib)  /* I (ignored) */
@@ -3157,9 +3187,12 @@ const char *reqgres(
       strncat(GResBuf, "+", sizeof(GResBuf) - 1 - strlen(GResBuf));
       }
 
-    snprintf(tmpLine, 1024, "%s:%s",
-             cp->c_name,
-             cp->c_u.c_value);
+    {
+      // check if shell escape needed
+      char *p = conf_res(cp->c_u.c_value, NULL);
+      snprintf(tmpLine, 1024, "%s:%s",
+               cp->c_name, p);
+    }
 
     strncat(GResBuf, tmpLine, (sizeof(GResBuf) - strlen(GResBuf) - 1));
     }  /* END for (cp) */

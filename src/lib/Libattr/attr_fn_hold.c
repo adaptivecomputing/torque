@@ -238,3 +238,53 @@ int comp_hold(
   else
     return 1;
   }
+
+
+
+/*
+ * set_hold()
+ *
+ * Hold is a bitmap, so this treats it as one
+ * @param attr - the attribute we're "setting"
+ * @param new_attr - the attribute we're "setting" from
+ * "setting" is quoted because we set, increment, and decrement
+ * @param op - which operation we're performing
+ * @return PBSE_NONE unless op is invalid, that gets PBSE_INTERNAL
+ */
+
+int set_hold(
+
+  pbs_attribute *attr,
+  pbs_attribute *new_attr,
+  enum batch_op  op)
+
+  {
+  assert(attr && new_attr && (new_attr->at_flags & ATR_VFLAG_SET));
+
+  switch (op)
+    {
+    case SET:
+
+      attr->at_val.at_long = new_attr->at_val.at_long;
+      break;
+
+    case INCR:
+
+      attr->at_val.at_long |= new_attr->at_val.at_long;
+      break;
+
+    case DECR:
+
+      attr->at_val.at_long &= ~new_attr->at_val.at_long;
+      break;
+
+    default:
+
+      return(PBSE_INTERNAL);
+
+    }
+  
+  attr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+
+  return(PBSE_NONE);
+  } // END set_hold()

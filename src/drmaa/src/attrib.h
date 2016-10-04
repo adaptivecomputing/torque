@@ -32,6 +32,11 @@
 #endif
 #include <drmaa.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct drmaa_attrib_info_s drmaa_attrib_info_t;
 
 enum
@@ -55,6 +60,8 @@ struct drmaa_attrib_info_s
   const char *pbs_name;
   unsigned    flags;
   };
+
+typedef struct drmaa_attrib_info_s drmaa_attrib_info_t;
 
 /** @brief Attributes information table. */
 extern const drmaa_attrib_info_t drmaa_attr_table[];
@@ -167,5 +174,8 @@ typedef enum
   N_DRMAA_ATTRIBS = MAX_DRMAA_ATTR + 1
   } drmaa_attribute_t;
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* __ATTRIB_H */
 

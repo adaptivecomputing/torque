@@ -5,11 +5,11 @@ Wants=syslog.target
 After=network.target local-fs.target syslog.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
 
-ExecStart=@sbindir@/trqauthd
-ExecStop=@sbindir@/trqauthd -d
+ExecStart=@sbindir@/trqauthd -F
+ExecStop=-@sbindir@/trqauthd -d
 
 [Install]
 WantedBy=multi-user.target

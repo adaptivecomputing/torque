@@ -91,7 +91,7 @@
 #include <set>
 #include <time.h>
 
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 std::set<std::string> down_nodes;
 std::map<int, alps_node_info> alps_nodes;
@@ -171,8 +171,8 @@ int process_memory_array(
   unsigned long &memory)
 
   {
-  int            page_size;
-  unsigned long  page_cnt;
+  int            page_size = 0;
+  unsigned long  page_cnt = 0;
   char          *attr_value;
   xmlNode       *child;
 
@@ -343,18 +343,19 @@ int process_node(
   int                 num_procs         = 0;
   int                 avail_procs       = 0;
   int                 num_compute_units = 0;
+  int                 socket_count      = 0;
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
   alps_node_info      ani;
   std::set<std::string>::iterator iter;
     
-  ani.index = "node=";
+  ani.node_header = "node=";
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
   if (attr_value != NULL)
     {
     node_id_string = attr_value;
-    ani.index += node_id_string;
+    ani.node_header += node_id_string;
     nid = strtol(attr_value, NULL, 10);
     free(attr_value);
     }
@@ -390,6 +391,8 @@ int process_node(
         {
         if (!strcmp((const char *)sockets->name, socket_name))
           {
+          socket_count++;
+
           for (socket_child = sockets->children; socket_child != NULL; socket_child = socket_child->next)
             {
             if (!strcmp((const char *)socket_child->name, segment_array))
@@ -463,6 +466,9 @@ int process_node(
       }
     } /* END the loop for processing the children */
 
+  if (socket_count == 0)
+    socket_count = 1;
+
   /* once done, add the procs, available procs, compute unit count, memory info, reservation, and features */
 
   /* note that CCU should come before CPROC */
@@ -477,6 +483,9 @@ int process_node(
 
   snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
   ani.cmem = buf;
+
+  snprintf(buf, sizeof(buf), "socket=%d", socket_count);
+  ani.socket = buf;
 
   mem_kb = memory * 1024;
 
@@ -577,6 +586,10 @@ int process_node(
     ani.features += features.c_str();
     }
 
+  char node_index_buf[MAXLINE];
+  snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%lu", alps_nodes.size());
+  ani.node_index = node_index_buf;
+
   alps_nodes[nid] = ani;
 
   return(PBSE_NONE);
@@ -667,6 +680,15 @@ int get_node_info(
     free(attr_value);
     }
 
+  attr_value = (char *)xmlGetProp(node, (const xmlChar *)numas);
+  if (attr_value != NULL)
+    {
+    ani.numa_nodes = numas;
+    ani.numa_nodes += "=";
+    ani.numa_nodes += attr_value;
+    free(attr_value);
+    }
+
   get_os_value(ani.os, numa_cfg_val, mcdram_cfg_val);
 
   snprintf(buf, sizeof(buf), "hbmem=%lukb", hbm_size_in_mb * 1024);
@@ -706,6 +728,7 @@ int process_system(
             {
             alps_nodes[node_ids[i]].os = ani.os;
             alps_nodes[node_ids[i]].hbm = ani.hbm;
+            alps_nodes[node_ids[i]].numa_nodes = ani.numa_nodes;
             }
           else
             alps_nodes[node_ids[i]] = ani;
@@ -837,6 +860,8 @@ int get_command_output(
   int             bytes_read;
   int             total_bytes_read = 0;
 
+  output.clear();
+
   if ((alps_pipe = popen(command, "r")) == NULL)
     {
     snprintf(log_buffer, sizeof(log_buffer),
@@ -908,16 +933,26 @@ void alps_node_info::add_to_status(
   std::vector<std::string> &status)
 
   {
-  status.push_back(this->index);
+  status.push_back(this->node_header);
+  status.push_back(this->node_index);
   status.push_back(this->availmem);
   status.push_back(this->state);
-  status.push_back(this->os);
+  
+  if (this->os.size() != 0)
+    status.push_back(this->os);
+
   status.push_back(this->physmem);
   status.push_back(this->totmem);
+  status.push_back(this->socket);
+
+  if (this->numa_nodes.size() != 0)
+    status.push_back(this->numa_nodes);
+
   status.push_back(this->cmem);
+  // ccu should be added before cproc
+  status.push_back(this->ccu);
   status.push_back(this->aproc);
   status.push_back(this->cproc);
-  status.push_back(this->ccu);
   status.push_back(this->name);
   status.push_back(this->arch);
 
@@ -1020,7 +1055,7 @@ int generate_alps_status(
         log_event(PBSEVENT_JOB | PBSEVENT_SYSLOG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
 
-      if (!strcmp(apbasil_protocol, "1.7"))
+      if ((apbasil_protocol != NULL) && !strcmp(apbasil_protocol, "1.7"))
         rc = get_knl_information(apbasil_path);
         
       if (rc == PBSE_NONE)

@@ -18,6 +18,8 @@
 #include "mom_func.h" /* radix_buf */
 #include "dis.h"
 #include "complete_req.hpp"
+#include "pmix_operation.hpp"
+#include "pmix_tracker.hpp"
 
 
 #ifdef NVIDIA_GPUS
@@ -62,6 +64,7 @@ int log_event_counter;
 bool exit_called = false;
 bool ms_val = true;
 job_pid_set_t    global_job_sid_set;
+char             mom_alias[PBS_MAXHOSTNAME + 1];
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)
@@ -362,7 +365,7 @@ int diswsi(tcp_chan *c, int value)
   }
 
 job *mock_job_alloc_return = NULL;
-job *job_alloc(void )
+job *mom_job_alloc(void )
   {
   if (mock_job_alloc_return == NULL)
     {
@@ -391,7 +394,7 @@ int add_to_resend_things(resend_momcomm *mc)
   return(0);
   }
 
-im_compose_info *create_compose_reply_info(char *jobid, char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid)
+im_compose_info *create_compose_reply_info(const char *jobid, const char *cookie, hnodent *np, int command, tm_event_t event, tm_task_id taskid, const char *data)
   {
   return(0);
   }
@@ -541,3 +544,124 @@ int trq_cg_add_devices_to_cgroup(job *pjob)
   {
   return(PBSE_NONE);
   }
+
+task::~task() {}
+
+#ifdef ENABLE_PMIX
+std::map<unsigned int, pmix_operation> existing_connections;
+std::map<std::string, pmix_operation>  pending_fences;
+
+pmix_operation::pmix_operation() {}
+pmix_operation::pmix_operation(const pmix_operation &other) {}
+pmix_operation::pmix_operation(char *rank_str, job *pjob) {}
+
+pmix_operation &pmix_operation::operator =(const pmix_operation &other)
+  {
+  return(*this);
+  }
+
+pmix_status_t pmix_operation::complete_operation(job *pjob, long timeout)
+  {
+  return(PMIX_SUCCESS);
+  }
+
+bool pmix_operation::mark_reported(
+
+  const std::string &hostname)
+
+  {
+  return(true);
+  }
+
+void pmix_operation::execute_callback() {}
+
+unsigned int pmix_operation::get_operation_id() const
+  {
+  return(this->op_id);
+  }
+
+void pmix_operation::add_data(const std::string &add_data)
+  {
+  if (this->data.size() != 0)
+    this->data += ",";
+  this->data += add_data;
+  }
+
+int  clean_up_connection(job *pjob, struct sockaddr_in *source_addr, unsigned int op_id, bool ms)
+  {
+  return(0);
+  }
+
+#endif
+
+#ifdef PENABLE_LINUX_CGROUPS
+int init_torque_cgroups()
+  {
+  return(PBSE_NONE);
+  }
+
+int trq_cg_add_process_to_all_cgroups(
+
+  const char *job_id,
+  pid_t       job_pid)
+
+  {
+  return(PBSE_NONE);
+  }
+
+string cg_memory_path;
+string cg_cpuacct_path;
+string cg_cpuset_path;
+string cg_devices_path;
+
+int trq_cg_add_process_to_task_cgroup(
+
+  string     &cgroup_path, 
+  const char *job_id, 
+  const unsigned int req_index,
+  const unsigned int task_index,
+  pid_t       new_pid)
+
+  {
+  return(PBSE_NONE);
+  }
+
+complete_req::complete_req() {}
+
+int complete_req::get_req_and_task_index_from_local_rank(
+    
+  int           local_rank,
+  unsigned int &req_index,
+  unsigned int &task_index,
+  const char   *host) const
+
+  {
+  return(PBSE_NONE);
+  }
+
+bool have_incompatible_dash_l_resource(
+
+  pbs_attribute *pattr)
+
+  {
+  return(false);
+  }
+
+req &complete_req::get_req(
+
+  int i)
+
+  {
+  return(this->reqs[i]);
+  }
+
+bool per_task;
+
+bool req::is_per_task() const
+
+  {
+  return(per_task);
+  }
+
+#endif
+

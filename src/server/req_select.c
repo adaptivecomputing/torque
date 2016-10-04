@@ -372,9 +372,9 @@ static void sel_step3(
   pbs_queue           *pque = NULL;
 
   all_jobs_iterator   *iter = NULL;
-  long        query_others = 0;
+  bool        query_others = false;
   
-  get_svr_attr_l(SRV_ATR_query_others, &query_others);
+  get_svr_attr_b(SRV_ATR_query_others, &query_others);
   if (cntl->sc_origrq->rq_extend != NULL)
     {
     if (!strncmp(cntl->sc_origrq->rq_extend, "summarize_arrays", strlen("summarize_arrays")))
@@ -388,12 +388,12 @@ static void sel_step3(
 
   if (preq->rq_type == PBS_BATCH_SelectJobs)
     {
-    preply->brp_choice = BATCH_REPLY_CHOICE_Select;
+    set_reply_type(preply, BATCH_REPLY_CHOICE_Select);
     preply->brp_un.brp_select = (struct brp_select *)0;
     }
   else
     {
-    preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+    set_reply_type(preply, BATCH_REPLY_CHOICE_Status);
     CLEAR_HEAD(preply->brp_un.brp_status);
     }
 

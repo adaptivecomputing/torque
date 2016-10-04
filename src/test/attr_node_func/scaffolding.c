@@ -56,7 +56,7 @@ void populate_range_string_from_slot_tracker(
   }
 
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);

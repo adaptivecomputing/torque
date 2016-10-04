@@ -3,6 +3,10 @@
 #include "u_tree.h"
 #include "mom_hierarchy_handler.h"
 
+#include <pbs_config.h>
+
+std::map<std::string, std::string> encoded;
+
 extern std::string global_string;
 
 AvlTree                 ipaddrs = NULL;
@@ -10,6 +14,7 @@ int                     LOGLEVEL = 10;
 id_map                  node_mapper;
 mom_hierarchy_handler   hierarchy_handler; //The global declaration.
 bool                    exit_called;
+bool                    cray_enabled;
 
 int pbs_getaddrinfo(
     
@@ -111,6 +116,108 @@ int record_node_property_list(std::string const &propstr, tlist_head *atrlist_pt
   return(0);
   }
 
+#ifdef PENABLE_LINUX_CGROUPS
+#include "machine.hpp"
+#include "allocation.hpp"
+
+PCI_Device::PCI_Device(PCI_Device const &other) {}
+PCI_Device::~PCI_Device() {}
+
+Machine &Machine::operator =(const Machine &other)
+  {
+  return(*this);
+  }
+
+Machine::~Machine() {}
+Machine::Machine() {}
+
+Chip::Chip(const Chip &other) {}
+Chip::~Chip() {}
+
+allocation::allocation(const allocation &other) {}
+
+Socket::~Socket() {}
+Socket::Socket() {}
+
+Core::Core() {}
+Core::~Core() {}
+
+#endif
+
 pbsnode *alps_reporter;
 const char *alps_reporter_feature  = "alps_reporter";
 const char *alps_starter_feature   = "alps_login";
+
+
+svrattrl *attrlist_create(
+
+  const char  *aname, /* I - pbs_attribute name */
+  const char  *rname, /* I - resource name if needed or null */
+  int           vsize) /* I - size of resource value         */
+
+  {
+  svrattrl *pal;
+  size_t    asz;
+  size_t    rsz;
+
+  asz = strlen(aname) + 1;     /* pbs_attribute name,allow for null term */
+
+  if (rname == NULL)      /* resource name only if type resource */
+    rsz = 0;
+  else
+    rsz = strlen(rname) + 1;
+
+  pal = attrlist_alloc(asz, rsz, vsize);
+
+  strcpy(pal->al_name, aname); /* copy name right after struct */
+
+  if (rsz > 0)
+    strcpy(pal->al_resc, rname);
+
+  return(pal);
+  }
+
+void append_link(
+
+  tlist_head *head, /* ptr to head of list */
+  list_link  *new_link,  /* ptr to new entry */
+  void       *pobj) /* ptr to object to link in */
+
+  {
+  svrattrl *pal = (svrattrl *)pobj;
+  encoded[pal->al_name] = pal->al_value;
+  }
+
+int decode_arst(
+
+  pbs_attribute *patr,    /* O (modified) */
+  const char *  UNUSED(name),    /* I pbs_attribute name (notused) */
+  const char *  UNUSED(rescn),   /* I resource name (notused) */
+  const char    *val,     /* I pbs_attribute value */
+  int           UNUSED(perm)) /* only used for resources */
+
+  {
+  return(0);
+  }
+
+int set_arst(
+
+  pbs_attribute *attr,  /* I/O */
+  pbs_attribute *new_attr,   /* I */
+  enum batch_op     op)    /* I */
+
+  {
+  return(0);
+  }
+
+void free_arst(pbs_attribute *attr) {}
+
+int node_status_list(
+
+  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
+  void          *pnode,         /*pointer to a pbsnode struct     */
+  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+
+  {
+  return(0);
+  }

@@ -129,7 +129,7 @@ int decode_arst_direct(
   char      *pbuf = NULL;
   char      *pc = NULL;
   char      *pstr = NULL;
-  int     ssize;
+  int        ssize;
   char      *tmpval = NULL;
   char      *tmp = NULL;
 
@@ -859,8 +859,6 @@ int set_arst(
         free(tmp_arst);
         return(PBSE_SYSTEM);
         }
-
-      memset(pc, 0, need);
 
       tmp_arst->as_buf = pc;
       tmp_arst->as_next = pc;

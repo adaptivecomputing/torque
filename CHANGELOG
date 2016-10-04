@@ -1,5 +1,11 @@
 c - crash     b - bug fix    e - enhancement    f - new feature  n - note
 
+NOTE: the CHANGELOG file is now deprecated. Please check the release notes page
+on the Adaptive Computing Website. For example, the 6.0.1 release notes can be
+found:
+
+http://docs.adaptivecomputing.com/9-0-1/releaseNotes/help.htm
+
 6.0.0
   b - TRQ-3245. Enable reporter mom to correctly handle UNKNOWN role.
   b - TRQ-3242. Fix problem where resource string argument to prologue

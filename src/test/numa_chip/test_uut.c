@@ -12,6 +12,73 @@ extern int recorded;
 extern std::string my_placement_type;
 extern std::string thread_type;
 
+const char *alloc_json = "\"allocation\":{\"jobid\":\"666979[0].mgr.bwfor.privat\",\"cpus\":\"\",\"mem\":4203424,\"exclusive\":0,\"cores_only\":0}";
+
+
+START_TEST(test_place_tasks_execution_slots)
+  {
+  const char        *jobid = "1.napali";
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  a.cores_only = true;
+
+  c.place_tasks_execution_slots(2, 8, a, CORE);
+  fail_unless(a.cpu_indices.size() == 2);
+  fail_unless(a.cpu_place_indices.size() == 6);
+  
+  c.place_tasks_execution_slots(2, 8, a, CORE);
+  fail_unless(a.cpu_indices.size() == 4);
+  fail_unless(a.cpu_place_indices.size() == 12);
+  fail_unless(c.free_core_count() == 0);
+
+  Chip               c2;
+  c2.setId(0);
+  c2.setThreads(32);
+  c2.setCores(16);
+  c2.setMemory(6);
+  c2.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c2.make_core(i);
+
+  allocation b(jobid);
+  c2.place_tasks_execution_slots(0, 2, b, THREAD);
+  fail_unless(b.cpu_indices.size() == 0);
+  fail_unless(b.cpu_place_indices.size() == 2, "size is %u", b.cpu_place_indices.size());
+  fail_unless(c2.free_core_count() == 15, "%d are free", c2.free_core_count());
+  }
+END_TEST
+
+
+START_TEST(test_initialize_allocation)
+  {
+  Chip c;
+  std::stringstream out;
+  std::vector<std::string> valid_ids;
+
+
+  // Make sure this doesn't last forever - we need to handle empty cpus: values
+  c.initialize_allocation(strdup(alloc_json), valid_ids);
+  c.displayAllocationsAsJson(out);
+  fail_unless(out.str().find("666979[0].mgr.bwfor.privat") == std::string::npos);
+
+  valid_ids.push_back("666979[0].mgr.bwfor.privat");
+  c.initialize_allocation(strdup(alloc_json), valid_ids);
+  c.displayAllocationsAsJson(out);
+
+  fail_unless(out.str().find(alloc_json) != std::string::npos, "'%s' does not contain '%s'", out.str().c_str(), alloc_json);
+
+  }
+END_TEST
+
 
 START_TEST(test_place_all_execution_slots)
   {
@@ -331,6 +398,7 @@ END_TEST
 START_TEST(test_spread_place)
   {
   const char        *jobid = "1.napali";
+  const char        *jobid2 = "2.scadrial";
   req                r;
   std::stringstream  out;
 
@@ -385,20 +453,33 @@ START_TEST(test_spread_place)
   fail_unless(c.has_socket_exclusive_allocation() == true);
 
   c.free_task(jobid);
-  allocation a2;
+  allocation a2(jobid2);
   a2.place_type = exclusive_chip;
   remaining = 0;
   fail_unless(c.spread_place(r, a2, 40, remaining) == false);
   fail_unless(c.spread_place(r, a2, 18, remaining) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
+  c.free_task(jobid2);
+  
+  req r2;
+  allocation a3;
+  const char *host = "scadrial";
+  r2.set_value("lprocs", "2", false);
+  r2.set_value("memory", "1kb", false);
+  int tasks = c.place_task(r2, a3, 1, host);
+  fail_unless(tasks == 1);
+  // We shouldn't place anything in spread place unless we're completely free
+  fail_unless(c.spread_place(r, a2, 18, remaining) == false);
   }
 END_TEST
 
 
 START_TEST(test_basic_constructor)
   {
-  Chip c(4);
+  int remainder = 0;
+  int pn_remainder = 0;
+  Chip c(4, remainder, pn_remainder);
   c.setMemory(20);
 
   fail_unless(c.getTotalCores() == 4);
@@ -407,6 +488,16 @@ START_TEST(test_basic_constructor)
   fail_unless(c.getAvailableThreads() == 4);
   fail_unless(c.getMemory() == 20);
   fail_unless(c.getAvailableMemory() == 20);
+
+  remainder = 1;
+  pn_remainder = 1;
+  Chip c2(4, remainder, pn_remainder);
+  fail_unless(c2.getTotalCores() == 6);
+  fail_unless(c2.getTotalThreads() == 6);
+  fail_unless(c2.getAvailableCores() == 6);
+  fail_unless(c2.getAvailableThreads() == 6);
+  fail_unless(remainder == 0);
+  fail_unless(pn_remainder == 0);
   }
 END_TEST
 
@@ -418,12 +509,18 @@ START_TEST(test_json_constructor)
   const char *j3 ="\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
   const char *j4 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
   const char *j5 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
+  const char *j6 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"5\",\"mem\":10,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}}";
 
   std::stringstream o1;
   std::stringstream o2;
   std::stringstream o3;
+
+  std::vector<std::string> valid_ids;
+  valid_ids.push_back("1.napali");
+  valid_ids.push_back("0.napali");
+  valid_ids.push_back("2.napali");
   
-  Chip c1(j1);
+  Chip c1(j1, valid_ids);
   fail_unless(c1.get_id() == 1);
   fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
   fail_unless(c1.getTotalThreads() == 8);
@@ -432,7 +529,7 @@ START_TEST(test_json_constructor)
   c1.displayAsJson(o1, false);
   fail_unless(o1.str() == j1, o1.str().c_str());
 
-  Chip c2(j2);
+  Chip c2(j2, valid_ids);
   fail_unless(c2.get_id() == 0);
   fail_unless(c2.getTotalCores() == 8);
   fail_unless(c2.getTotalThreads() == 16);
@@ -441,7 +538,7 @@ START_TEST(test_json_constructor)
   c2.displayAsJson(o2, false);
   fail_unless(o2.str() == j2, o2.str().c_str());
 
-  Chip c3(j3);
+  Chip c3(j3, valid_ids);
   fail_unless(c3.get_id() == 12);
   fail_unless(c3.getTotalCores() == 6);
   fail_unless(c3.getTotalThreads() == 6);
@@ -450,7 +547,7 @@ START_TEST(test_json_constructor)
   c3.displayAsJson(o3, false);
   fail_unless(o3.str() == j3, o3.str().c_str());
 
-  Chip c4(j4);
+  Chip c4(j4, valid_ids);
   fail_unless(c4.get_id() == 0);
   fail_unless(c4.getTotalCores() == 16);
   fail_unless(c4.getTotalThreads() == 32);
@@ -462,7 +559,7 @@ START_TEST(test_json_constructor)
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
   
-  Chip c5(j5);
+  Chip c5(j5, valid_ids);
   fail_unless(c5.get_id() == 0);
   fail_unless(c5.getTotalCores() == 16);
   fail_unless(c5.getTotalThreads() == 32);
@@ -472,6 +569,15 @@ START_TEST(test_json_constructor)
   fail_unless(c5.getAvailableThreads() == 0);
   fail_unless(c5.get_available_mics() == 0, "%d available mics", c5.get_available_mics());
   fail_unless(c5.get_available_gpus() == 0, "%d available gpus", c5.get_available_gpus());
+
+  Chip c6(j6, valid_ids);
+  std::stringstream o6;
+  c6.displayAsJson(o6, true);
+  fail_unless(o6.str() == j6, o6.str().c_str());
+  c6.free_task("0.napali");
+  o6.str("");
+  c6.displayAsJson(o6, true);
+  fail_unless(o6.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}}", o6.str().c_str());
   }
 END_TEST
 
@@ -564,8 +670,8 @@ END_TEST
 START_TEST(test_how_many_tasks_fit)
   {
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   Chip c;
   c.setThreads(12);
@@ -586,22 +692,32 @@ START_TEST(test_how_many_tasks_fit)
   tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
 
+  // Make sure we can do fractional fits
+  c.setCores(1);
+  for (int i = 0; i < 1; i++)
+    c.make_core(i);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
+
   c.setCores(2);
+  for (int i = 1; i < 2; i++)
+    c.make_core(i);
   tasks = c.how_many_tasks_fit(r, 0);
-  fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
+  fail_unless(tasks == 1, "%d tasks fit, expected 1", tasks);
 
   // make sure that we can handle a request without memory
   req r2;
-  r2.set_value("lprocs", "2");
+  r2.set_value("lprocs", "2", false);
   c.setCores(10);
+  for (int i = 2; i < 10; i++)
+    c.make_core(i);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
 
   // make sure we account for gpus and mics
-  r2.set_value("gpus", "1");
+  r2.set_value("gpus", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
-  r2.set_value("gpus", "0");
+  r2.set_value("gpus", "0", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
-  r2.set_value("mics", "1");
+  r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
   }
 END_TEST
@@ -612,8 +728,11 @@ START_TEST(test_exclusive_place)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
+
+  std::vector<std::string> valid_id;
+  valid_id.push_back(jobid);
 
   allocation a(jobid);
   a.place_type = exclusive_chip;
@@ -660,7 +779,7 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 6);
   fail_unless(recorded == 6);
 
-  Chip c2(out.str());
+  Chip c2(out.str(), valid_id);
   std::stringstream o2;
   c2.displayAsJson(o2, true);
   fail_unless(o2.str() == out.str(), o2.str().c_str());
@@ -683,7 +802,7 @@ START_TEST(test_exclusive_place)
   req r2;
   allocation a3(jobid);
   a3.place_type = exclusive_none;
-  r2.set_value("lprocs", "32");
+  r2.set_value("lprocs", "32", false);
   thread_type.clear();
   recorded = 0;
   tasks = c3.place_task(r2, a3, 1, host);
@@ -704,7 +823,7 @@ START_TEST(test_exclusive_place)
   thread_type = use_cores;
 
   req r3;
-  r3.set_value("lprocs", "16");
+  r3.set_value("lprocs", "16", false);
   allocation remaining(r3);
   allocation master("2.napali");
 
@@ -728,7 +847,7 @@ START_TEST(test_exclusive_place)
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
 
-  Chip copy_exclusive_socket(out.str());
+  Chip copy_exclusive_socket(out.str(), valid_id);
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
   fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
 
@@ -867,8 +986,8 @@ START_TEST(test_place_and_free_task)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   allocation a(jobid);
 
@@ -973,6 +1092,8 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_json_constructor);
   tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
+  tcase_add_test(tc_core, test_initialize_allocation);
+  tcase_add_test(tc_core, test_place_tasks_execution_slots);
   suite_add_tcase(s, tc_core);
   
   return(s);

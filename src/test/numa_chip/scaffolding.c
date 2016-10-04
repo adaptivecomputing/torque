@@ -19,6 +19,8 @@ const char *place_socket = "socket";
 const char *place_numa_node = "numanode";
 const char *place_core = "core";
 const char *place_thread = "thread";
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -164,7 +166,7 @@ int req::getExecutionSlots() const
   return(this->execution_slots);
   }
 
-int req::set_value(const char *name, const char *value)
+int req::set_value(const char *name, const char *value, bool is_default)
   {
   if (!strcmp(name, "lprocs"))
     this->execution_slots = atoi(value);

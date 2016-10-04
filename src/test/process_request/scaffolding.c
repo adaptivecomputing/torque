@@ -136,10 +136,9 @@ void delete_link(struct list_link *old)
   exit(1);
   }
 
-void req_jobscript(struct batch_request *preq)
+void req_jobscript(batch_request *preq, bool perform_commit)
   {
-  fprintf(stderr, "The call to req_jobscript needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 int svr_get_privilege(char *user, char *host)
@@ -284,8 +283,9 @@ void req_rescreserve(struct batch_request *preq)
   exit(1);
   }
 
-void req_quejob(struct batch_request *preq)
+int req_quejob(batch_request *preq, int version)
   {
+  return(PBSE_NONE);
   }
 
 void req_deletearray(struct batch_request *preq)
@@ -481,6 +481,14 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (check_acl == true)
+    *b = true;
+
+  return(0);
+  }
+
 int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
   {
   return(0);
@@ -537,3 +545,20 @@ bool acl_special::is_authorized(const std::string &host, const std::string &user
     return(false);
   return(true);
   }
+
+int req_job_cleanup_done(batch_request *preq)
+
+  {
+  return(PBSE_NONE);
+  }
+
+int req_quejob2(batch_request *preq)
+    {
+      return(0);
+        }
+
+int req_commit2(batch_request *preq)
+    {
+      return(0);
+        }
+

@@ -13,6 +13,7 @@
 #include "libpbs.h" /* job_file */
 #include "mom_config.h"
 #include "mom_mach.h"
+#include "json/json.h"
 
 #define MAXLINE 1024
 
@@ -59,7 +60,7 @@ int put_env_var(const char *name, const char *value)
   return(0);
   }
 
-void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead)
+void encode_used(job *pjob, int perm, Json::Value *list, tlist_head *phead)
 
   {
   }

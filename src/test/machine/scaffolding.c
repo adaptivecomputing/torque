@@ -34,6 +34,8 @@ bool socket_fit;
 bool partially_placed;
 bool spreaded = true;
 int my_placement_type;
+int req_mem;
+int sock_mem;
 
 char mom_alias[1024];
 
@@ -41,20 +43,45 @@ const int MEM_INDICES = 1;
 const int CPU_INDICES = 1;
 const char *use_cores = "usecores";
 const int ALL_EXECUTION_SLOTS = -1;
+const char *place_legacy = "legacy";
+const char *place_legacy2 = "legacy2";
+const int exclusive_legacy = 6;
+const int exclusive_legacy2 = 7;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
   }
 
-Socket::Socket(int np)
+Socket::Socket(int np, int numa_nodes, int &es_remainder)
   {
   }
 
 void Socket::setMemory(hwloc_uint64_t mem)
   {
+  this->memory = mem;
   }
 
-Socket::Socket(const std::string &json_layout)
+hwloc_uint64_t Socket::getMemory() const
+  {
+  return(sock_mem);
+  }
+
+hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
+
+  unsigned long diff,
+  int           &count) const
+
+  {
+  count = 1;
+  return(diff);
+  }
+
+bool Socket::is_completely_free() const
+  {
+  return(true);
+  }
+
+Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_socket++;
   }
@@ -120,6 +147,11 @@ bool Socket::spread_place(
   called_spread_place++;
 
   return(spreaded);
+  }
+
+Socket &Socket::operator =(const Socket &other)
+  {
+  return(*this);
   }
 
 Core::~Core()
@@ -208,6 +240,11 @@ bool Socket::is_available() const
 
 void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
 
+unsigned long req::getMemory() const
+  {
+  return(req_mem);
+  }
+
 int req::getPlaceCores() const
   {
   return(my_core_count);
@@ -233,11 +270,15 @@ req &complete_req::get_req(int index)
   return(r);
   }
 
+void req::set_placement_type(const std::string &type)
+  {
+  }
+
 void complete_req::set_hostlists(const char *job_id, const char *hostlists)
   {
   }
 
-complete_req::complete_req(list_link &l, bool legacy) {}
+complete_req::complete_req(void *resc, int num_ppn, bool legacy) {}
 
 req::req() {}
 req::req(const req &other) {}
@@ -313,6 +354,11 @@ int allocation::add_allocation(allocation const &a)
 void allocation::set_host(const char *hostname)
   {
   this->hostname = hostname;
+  }
+
+allocation &allocation::operator =(const allocation &other)
+  {
+  return(*this);
   }
 
 PCI_Device::~PCI_Device() {}

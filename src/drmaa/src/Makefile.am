@@ -26,8 +26,8 @@ PBS_LIBS = ../../lib/Libpbs/libtorque.la
 
 AM_CFLAGS  = @PTHREAD_CFLAGS@
 
-GPERF       = @GPERF@
-GPERFFLAGS  = -L C++ --struct-type --readonly-tables --includes 
+#GPERF       = @GPERF@
+#GPERFFLAGS  = -L ANSI-C --struct-type --readonly-tables --includes 
 
 if DRMAA_BUILD
 lib_LTLIBRARIES     = libdrmaa.la
@@ -36,7 +36,7 @@ libdrmaa_la_SOURCES = \
  attrib.h \
  compat.c \
  compat.h \
- drmaa_attrib.gperf \
+ drmaa_attrib.c \
  drmaa_impl.h \
  error.c \
  error.h \
@@ -44,22 +44,14 @@ libdrmaa_la_SOURCES = \
  jobs.h \
  lookup3.c \
  lookup3.h \
- pbs_attrib.gperf \
+ pbs_attrib.c \
  session.c \
  submit.c \
  util.c \
  wait.c
 include_HEADERS     = drmaa.h
-BUILT_SOURCES       = drmaa_attrib.c pbs_attrib.c
-EXTRA_DIST          = drmaa_attrib.c pbs_attrib.c
+#BUILT_SOURCES       = drmaa_attrib.c pbs_attrib.c
+#EXTRA_DIST          = drmaa_attrib.c pbs_attrib.c
 libdrmaa_la_LIBADD  = $(PBS_LIBS) @PTHREAD_LIBS@
-
-.gperf.c:
-	base=`basename $< .gperf`; \
-	if $(GPERF) $(GPERFFLAGS) --hash-function-name=$${base}_hash \
-		--lookup-function-name=$${base}_lookup $< >$@; \
-	then exit 0; \
-	else rm $@; exit 1; \
-	fi
 
 endif

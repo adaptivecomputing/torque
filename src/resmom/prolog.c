@@ -99,7 +99,7 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "mom_mach.h"
 #include "mom_func.h"
@@ -108,6 +108,7 @@
 #include "net_connect.h"
 #include "utils.h"
 #include "mom_config.h"
+#include "json/json.h"
 
 
 const int   PELOG_DOESNT_EXIST = -1;
@@ -137,7 +138,7 @@ extern unsigned int pbs_rm_port;
 /* external prototypes */
 
 extern int pe_input(char *);
-extern void encode_used(job *, int, std::stringstream *, tlist_head *);
+extern void encode_used(job *, int, Json::Value *, tlist_head *);
 #ifdef ENABLE_CSA
 extern void add_wkm_end(uint64_t, int64_t, char *);
 
@@ -915,17 +916,21 @@ void setup_pelog_outputs(
         (fds2 < 0))
       {
       if (fds1 >= 0)
+        {
         close(fds1);
+        fds1 = -1;
+        }
 
       if (fds2 >= 0)
+        {
         close(fds2);
+        fds2 = -1;
+        }
 
       if ((pe_io_type == PE_IO_TYPE_STD) &&
           (strlen(specpelog) == strlen(path_epilogp)) &&
           (strcmp(path_epilogp, specpelog) == 0))
         dupeStdFiles = 0;
-      else
-        exit(-1);
       }
     }
 
@@ -941,7 +946,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds1 >= 0)&&(dup(fds1) >= 0))
+        if ((fds1 >= 0) &&
+            (dup(fds1) >= 0))
           close(fds1);
         }
       }
@@ -952,7 +958,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds2 >= 0)&&(dup(fds2) >= 0))
+        if ((fds2 >= 0) &&
+            (dup(fds2) >= 0))
           close(fds2);
         }
       }

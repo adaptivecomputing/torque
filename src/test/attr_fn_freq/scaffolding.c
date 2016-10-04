@@ -4,7 +4,7 @@
 
 #include "attribute.h" /* svrattrl */
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);

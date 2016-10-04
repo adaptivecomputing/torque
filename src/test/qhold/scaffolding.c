@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
+#include <vector>
+#include <string>
 
 int pbs_errno = 0;
 char *pbs_server = NULL;
@@ -32,16 +34,14 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
+int pbs_holdjob_err(int c, const char *jobid, const char *holdtype, char *extend, int *local_errno)
   { 
-  fprintf(stderr, "The call to pbs_holdjob needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-int pbs_holdjob_err(int c, char *jobid, char *holdtype, char *extend, int *local_errno)
+int pbs_holdjob(int c, char *jobid, char *holdtype, char *extend)
   { 
-  fprintf(stderr, "The call to pbs_holdjob_err needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int job_size, char *server_out, int server_size)
@@ -57,3 +57,13 @@ void prt_job_err(const char *cmd, int connect, const char *id)
   }
 
 void initialize_network_info() {}
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
+  }

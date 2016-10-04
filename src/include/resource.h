@@ -108,13 +108,19 @@
  * rather than depending on a predefined index.
  */
 
-typedef struct resource
-  {
-  list_link            rs_link; /* link to other resources in list */
+#include <string.h>
 
+class resource
+  {
+  public:
   struct resource_def *rs_defin; /* pointer to definition entry */
   pbs_attribute        rs_value; /* pbs_attribute struct holding value */
-  } resource;
+
+  resource() : rs_defin(NULL)
+    {
+    memset(&this->rs_value, 0, sizeof(this->rs_value));
+    }
+  };
 
 typedef struct resource_def
   {

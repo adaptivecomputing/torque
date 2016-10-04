@@ -113,6 +113,7 @@
 #include <netdb.h>
 #include <signal.h>
 #include <termios.h>
+#include <string>
 #ifdef sun
 #include <sys/stream.h>
 #endif /* sun */
@@ -316,7 +317,35 @@ make_argv(int *argc, char *argv[], char *line)
   }
 
 
+void print_attr_depend_options(
 
+  std::vector<std::string> &dependency_options)
+
+  {
+  bool need_sep = false;
+
+  if (dependency_options.size() == 0)
+    return;
+
+  printf("%s = ", ATTR_depend);
+  // iterate over dependency_options
+  for (std::vector<std::string>::const_iterator i = dependency_options.begin();
+       i != dependency_options.end(); ++i)
+    {
+    if (need_sep)
+      {
+      printf(":");
+      }
+    else
+      {
+      need_sep = true;
+      }
+
+    printf("%s", (*i).c_str());
+    }
+
+  printf("\n");
+  }
 
 
 int process_opts(
@@ -334,7 +363,6 @@ int process_opts(
   char *keyword;
   char *valuewd;
   char *pc;
-  char *pdepend;
 
 #if !defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:hIj:k:l:m:M:N:o:p:q:r:S:u:v:VW:z"
@@ -809,21 +837,24 @@ int process_opts(
               {
               Depend_opt = passet;
 
-              pdepend = (char *) malloc(PBS_DEPEND_LEN);
+              std::vector<std::string> dependency_options;
+              int rc;
 
-              if ((pdepend == NULL) ||
-                   parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN))
+              if (((rc = parse_depend_list(valuewd, dependency_options)) != PBSE_NONE) ||
+                  (dependency_options.size() == 0))
                 {
-                fprintf(stderr, "scriptload: illegal -W value\n");
+                /* cannot parse 'depend' value */
+                if (rc == 2)
+                  fprintf(stderr, "scriptload: -W value exceeded max length (%d)\n", PBS_DEPEND_LEN);
+                else
+                  fprintf(stderr, "scriptload: illegal -W dependency value: '%s'\n", valuewd);
 
                 errflg++;
 
                 break;
                 }
 
-              printf("%s = %s\n",
-                ATTR_depend,
-                pdepend);
+              print_attr_depend_options(dependency_options);
               }
             }
           else if (strcmp(keyword, ATTR_stagein) == 0)

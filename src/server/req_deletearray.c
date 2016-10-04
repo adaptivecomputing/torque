@@ -53,24 +53,24 @@ extern int LOGLEVEL;
  * attempt_delete()
  * deletes a job differently depending on the job's state
  *
- * @return TRUE if the job was deleted, FALSE if skipped
+ * @return true if the job was deleted, false if skipped
  * @param pjob - a pointer to the job being handled
  * this functions starts with pjob->ji_mutex locked and
  * exit with pjob->ji_mutex unlocked.
  */
-int attempt_delete(
+bool attempt_delete(
 
   void *j) /* I */
 
   {
-  int        skipped = FALSE;
+  bool       skipped = false;
 
   job       *pjob;
   time_t     time_now = time(NULL);
 
   /* job considered deleted if null */
   if (j == NULL)
-    return(TRUE);
+    return(true);
 
   pjob = (job *)j;
 
@@ -87,7 +87,7 @@ int attempt_delete(
     /* I'm not sure if this is still possible since the thread
      * waits on the job to finish transmiting, but I'll leave
      * this part here --dbeer */
-    skipped = TRUE;
+    skipped = true;
     
     return(!skipped);
     }  /* END if (pjob->ji_qs.ji_state == JOB_SUBSTATE_TRANSIT) */
@@ -95,7 +95,7 @@ int attempt_delete(
   else if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
     {
     /* we'll wait for the mom to get this job, then delete it */
-    skipped = TRUE;
+    skipped = true;
     }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
 
   else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
@@ -137,25 +137,32 @@ int attempt_delete(
 
 int req_deletearray(
     
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
-  job_array        *pa;
+  job_array         *pa;
 
-  char             *range;
+  char              *range;
 
-  struct work_task *ptask;
-  char              log_buf[LOCAL_LOG_BUF_SIZE];
+  struct work_task  *ptask;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
 
-  int               num_skipped = 0;
-  char              owner[PBS_MAXUSER + 1];
-  time_t            time_now = time(NULL);
+  int                num_skipped = 0;
+  char               owner[PBS_MAXUSER + 1];
+  time_t             time_now = time(NULL);
+  bool               purge = false;
+  extern const char *delpurgestr;
+    
+  if ((preq->rq_extend != NULL) &&
+      (!strncmp(preq->rq_extend, delpurgestr, strlen(delpurgestr))))
+    purge = true;
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
   // Do not attempt to delete the array while it is still cloning
   while ((pa != NULL) &&
-         (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs))
+         ((pa->ai_qs.num_cloned < pa->ai_qs.idle_slot_limit) &&
+          (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)))
     {
     unlock_ai_mutex(pa, __func__, NULL, 10);
     sleep(1);
@@ -168,7 +175,7 @@ int req_deletearray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
+  mutex_mgr pa_mutex(pa->ai_mutex, true);
   /* check authorization */
   get_jobowner(pa->ai_qs.owner, owner);
 
@@ -204,7 +211,7 @@ int req_deletearray(
       }
 
     /* parse the array range */
-    num_skipped = delete_array_range(pa,range);
+    num_skipped = delete_array_range(pa, range, purge);
 
     if (num_skipped < 0)
       {
@@ -225,11 +232,19 @@ int req_deletearray(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    if ((num_skipped = delete_whole_array(pa)) == NO_JOBS_IN_ARRAY)
-      array_delete(pa);
+    if (((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY) &&
+        (purge == false))
+      {
+      pa_mutex.unlock();
+      array_delete(preq->rq_ind.rq_delete.rq_objname);
+      }
     }
 
-  if (num_skipped != NO_JOBS_IN_ARRAY)
+  // If purge is true, the array is gone at this point in time, mark the mutex manager 
+  // unlocked
+  if (purge == true)
+    pa_mutex.set_lock_state(false);
+  else if (num_skipped != NO_JOBS_IN_ARRAY)
     {
     pa_mutex.unlock();
     

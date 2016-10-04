@@ -77,7 +77,7 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   fprintf(stderr, "The call to get_array to be mocked!!\n");
   exit(1);
@@ -211,6 +211,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 batch_request *get_remove_batch_request(
 
   char *br_id)
@@ -315,3 +320,13 @@ int acl_check(pbs_attribute *pattr, char *name, int type)
 
   return(rc);
   }
+
+void job::set_plugin_resource_usage(
+
+  const char *name,
+  const char *val)
+  
+  {
+  }
+
+void update_slot_held_jobs(job_array *pa, int num_to_release) {}

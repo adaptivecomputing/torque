@@ -81,7 +81,7 @@ int find_error_type(
   return(0);
   }
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -89,4 +89,5 @@ void translate_range_string_to_vector(
   {
   indices.push_back(6142);
   indices.push_back(6143);
+  return(PBSE_NONE);
   }

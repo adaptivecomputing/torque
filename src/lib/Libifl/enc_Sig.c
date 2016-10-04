@@ -93,8 +93,8 @@
 int encode_DIS_SignalJob(
     
   struct tcp_chan *chan,
-  char *jobid,
-  char *signal)
+  const char *jobid,
+  const char *signal)
 
   {
   int   rc;

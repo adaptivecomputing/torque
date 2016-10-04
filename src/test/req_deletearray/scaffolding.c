@@ -10,6 +10,7 @@
 #include "queue.h" /* pbs_queue */
 #include "array.h" /* job_array */
 
+const char *delpurgestr = DELPURGE;
 const char *msg_permlog = "Unauthorized Request, request type: %d, Object: %s, Name: %s, request from: %s@%s";
 struct server server;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -62,10 +63,9 @@ struct work_task *apply_job_delete_nanny(struct job *pjob, int delay)
   exit(1);
   }
 
- int delete_array_range(job_array *pa, char *range_str)
+int delete_array_range(job_array *pa, char *range_str, bool purge)
   {
-  fprintf(stderr, "The call to delete_array_range needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
@@ -74,10 +74,9 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(stru
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
-  fprintf(stderr, "The call to get_array needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg)
@@ -134,10 +133,9 @@ void get_jobowner(char *from, char *to)
   exit(1);
   }
 
-int delete_whole_array(job_array *pa)
+int delete_whole_array(job_array *pa, bool purge)
   {
-  fprintf(stderr, "The call to delete_whole_array needs to be mocked!!\n");
-  exit(1);
+  return(PBSE_NONE);
   }
 
 job *svr_find_job(const char *jobid, int get_subjob)
@@ -147,7 +145,7 @@ job *svr_find_job(const char *jobid, int get_subjob)
 
 int array_delete(
     
-  job_array *pa)
+  const char *array_id)
 
   {
   return(0);

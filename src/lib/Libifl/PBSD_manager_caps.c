@@ -95,7 +95,7 @@ int PBSD_manager(
   int             function,
   int             command,
   int             objtype,
-  char           *objname,
+  const char     *objname,
   struct attropl *aoplp,
   char           *extend,
   int            *local_errno)

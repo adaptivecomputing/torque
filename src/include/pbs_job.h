@@ -92,6 +92,9 @@
 #include <limits.h>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
+
 #include "server_limits.h"
 #include "list_link.h"
 #include "pbs_ifl.h"
@@ -100,9 +103,8 @@
 #include "mom_hierarchy.h"
 #include "tcp.h" /* tcp_chan */
 #include "net_connect.h"
-#include <string>
-#include <vector>
-#include <set>
+#include "job_host_data.hpp"
+#include "json/json.h"
 
 
 #define SAVEJOB_BUF_SIZE 8192
@@ -139,9 +141,8 @@ class depend_job
   short       dc_state; /* released / ready to run (syncct)  */
   long        dc_cost; /* cost of this child (syncct)   */
   std::string dc_child;
-  std::string dc_svr;
 
-  depend_job() : dc_state(0), dc_cost(0), dc_child(), dc_svr()
+  depend_job() : dc_state(0), dc_cost(0), dc_child()
     {
     }
   };
@@ -193,10 +194,9 @@ class array_depend_job
   public:
   /* in this case, the child is the job depending on the array */
   std::string dc_child;
-  std::string dc_svr;
   int         dc_num;
 
-  array_depend_job() : dc_child(), dc_svr(), dc_num(0)
+  array_depend_job() : dc_child(), dc_num(0)
     {
     }
   };
@@ -204,13 +204,11 @@ class array_depend_job
 class array_depend
   {
   public:
-  list_link                       dp_link;
   short                           dp_type;
   std::vector<array_depend_job *> dp_jobs;
 
   array_depend() : dp_type(0), dp_jobs()
     {
-    CLEAR_HEAD(this->dp_link);
     }
 
   ~array_depend()
@@ -218,8 +216,6 @@ class array_depend
     unsigned int dp_jobs_size = this->dp_jobs.size();
     for (unsigned int i = 0; i < dp_jobs_size; i++)
       delete this->dp_jobs[i];
-
-    delete_link(&this->dp_link);
     }
   };
 
@@ -436,11 +432,10 @@ enum job_atr
 #include "site_job_attr_enum.h"
 
   JOB_ATR_copystd_on_rerun, /* copy std files to user's specified on reurn */
-#ifdef PENABLE_LINUX_CGROUPS
   JOB_ATR_cpuset_string,
   JOB_ATR_memset_string,
-#endif
   JOB_ATR_user_kill_delay,
+  JOB_ATR_idle_slot_limit,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -453,6 +448,9 @@ enum job_atr
 extern attribute_def job_attr_def[];
 
 #ifdef PBS_MOM
+
+#define COPY_FILE_FAIL 1
+
 #include "tm_.h"
 
 /*
@@ -526,6 +524,10 @@ typedef std::set<pid_t> job_pid_set_t;
 
 #endif /* MOM */
 
+#ifdef PBS_MOM
+// forward declare task so it can be part of the job
+class task;
+#endif
 
 #define COUNTED_GLOBALLY 0x0001
 #define COUNTED_IN_QUEUE 0x0010
@@ -694,7 +696,8 @@ typedef struct job
   hnodent        *ji_sisters; /* ptr to job host management stuff for intermediate moms */
   vnodent        *ji_vnods; /* ptr to job vnode management stuff */
   noderes        *ji_resources; /* ptr to array of node resources */
-  tlist_head     ji_tasks; /* list of task structs */
+  std::vector<task *> *ji_tasks; /* list of tasks */
+  std::map<std::string, job_host_data> *ji_usages; // Current proc usage on hosts
   tm_node_id     ji_nodekill; /* set to nodeid requesting job die */
   int            ji_flags; /* mom only flags */
   char           ji_globid[64]; /* global job id */
@@ -717,15 +720,20 @@ typedef struct job
   time_t         ji_obit_busy_time;      // the timestamp of when the obit got a busy message
   time_t         ji_obit_minus_one_time; // the timestamp of when the obit got a -1 
   time_t         ji_exited_time;         // server has indicated that this job has exited 
-  time_t         ji_obit_sent;               // The time the obit was sent
+  time_t         ji_obit_sent;           // The time the obit was sent
+  time_t         ji_state_set;           // The time we set the current state
   int            ji_joins_resent;      /* set to TRUE when rejoins have been sent */
   bool           ji_stats_done;      /* Job has terminated and stats have been collected */
   job_pid_set_t  *ji_job_pid_set;    /* pids of child processes forked from TMomFinalizeJob2
                                         and tasks from start_process. */
   std::set<pid_t> *ji_sigtermed_processes; // set of pids to which we've sent a SIGTERM
+
 #ifdef PENABLE_LINUX_CGROUPS
   bool             ji_cgroups_created;
 #endif
+
+  // Usage information coming from a plug-in
+  std::map<std::string, std::string> *ji_custom_usage_info;
 
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
 
@@ -761,6 +769,10 @@ typedef struct job
 // for the server
 class job
   {
+  private:
+  // Usage information coming from a plug-in
+  std::map<std::string, std::string> ji_plugin_usage_info;
+
   public:
 
   /* MOM: links to polled jobs */
@@ -823,6 +835,13 @@ class job
   ~job();
   void free_job_allocation();
   void job_init_wattr();
+
+  void set_plugin_resource_usage_from_json(Json::Value &resources);
+  void set_plugin_resource_usage_from_json(const char *json_str);
+  void set_plugin_resource_usage(const char *name, const char *value);
+
+  void encode_plugin_resource_usage(tlist_head *phead) const;
+  void add_plugin_resource_usage(std::string &acct_data) const;
   };
 #endif
 
@@ -877,40 +896,6 @@ void *remove_completed_jobs(void *);
 
 
 #ifdef PBS_MOM
-/*
-** Tasks are sessions belonging to a job, running on one of the
-** nodes assigned to the job.
-*/
-
-
-typedef struct taskfix
-  {
-  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
-  tm_node_id ti_parentnode;
-  tm_task_id ti_parenttask;
-  tm_task_id ti_task; /* task's taskid */
-  int  ti_status; /* status of task */
-  pid_t  ti_sid;  /* session id */
-  int  ti_exitstat; /* exit status */
-  union
-    {
-    int ti_hold[16]; /* reserved space */
-    } ti_u;
-  } taskfix;
-
-typedef struct task
-  {
-  list_link        ti_jobtask; /* links to tasks for this job */
-  struct tcp_chan *ti_chan;  /* DIS file descriptor to task */
-  int              ti_flags; /* task internal flags */
-  tm_event_t       ti_register; /* event if task registers - never used*/
-  tlist_head       ti_obits; /* list of obit events */
-  tlist_head       ti_info; /* list of named info */
-
-  taskfix ti_qs;
-  } task;
-
-
 
 /*
 ** Events need to be linked to either a task or another event
@@ -918,12 +903,15 @@ typedef struct task
 ** we can forward the event to another MOM.
 */
 
-typedef struct fwdevent
+class fwdevent
   {
+  public:
   tm_node_id fe_node; /* where does notification go */
   tm_event_t fe_event; /* event number */
   tm_task_id fe_taskid; /* which task id */
-  } fwdevent;
+
+  fwdevent() : fe_node(0), fe_event(0), fe_taskid(0) {}
+  };
 
 /*
 ** A linked list of eventent structures is maintained for all events
@@ -947,28 +935,81 @@ typedef struct eventent
 ** These are tracked by obitent structures linked to the task.
 */
 
-typedef struct obitent
+class obitent
   {
+  public:
   fwdevent oe_info; /* who gets the event */
-  list_link oe_next; /* link to next one */
-  } obitent;
+
+  obitent() : oe_info() {}
+  };
 
 /*
 ** A task can have a list of named infomation which it makes
 ** available to other tasks in the job.
 */
 
-typedef struct infoent
+class infoent
   {
+  public:
   char  *ie_name; /* published name */
   void  *ie_info; /* the glop */
   size_t ie_len;  /* how much glop */
-  list_link ie_next; /* link to next one */
-  } infoent;
+
+  infoent() : ie_name(NULL), ie_info(NULL), ie_len(0) {}
+  ~infoent()
+    {
+    free(this->ie_name);
+    free(this->ie_info);
+    }
+  };
 
 
+/*
+** Tasks are sessions belonging to a job, running on one of the
+** nodes assigned to the job.
+*/
 
-#ifdef PBS_MOM
+
+typedef struct taskfix
+  {
+  char     ti_parentjobid[PBS_MAXSVRJOBID+1];
+  tm_node_id ti_parentnode;
+  tm_task_id ti_parenttask;
+  tm_task_id ti_task; /* task's taskid */
+  int  ti_status; /* status of task */
+  pid_t  ti_sid;  /* session id */
+  int  ti_exitstat; /* exit status */
+  union
+    {
+    int ti_hold[16]; /* reserved space */
+    } ti_u;
+  } taskfix;
+
+class task
+  {
+  public:
+  struct tcp_chan    *ti_chan;  /* DIS file descriptor to task */
+  int                 ti_flags; /* task internal flags */
+  int                 ti_chan_reused; /* do_tcp for tm_requests will reuse the chan and 
+                                      make a second call to tm_request where the same
+                                      chan is added to a task for the job. When the job
+                                      is deleted the same chan is in two tasks and the secon
+                                      task tries to free the same address. This lets us know
+                                      it has already been deleted.*/
+  tm_event_t          ti_register; /* event if task registers - never used*/
+  std::vector<obitent>  ti_obits; /* list of obit events */
+  std::vector<infoent>  ti_info; /* list of named info */
+
+  taskfix ti_qs;
+
+  task() : ti_chan(NULL), ti_flags(0), ti_chan_reused(0), ti_register(0), ti_obits(), ti_info()
+    {
+    memset(&this->ti_qs, 0, sizeof(this->ti_qs));
+    }
+
+  ~task();
+  };
+
 typedef struct job_file_delete_info
   {
   char           jobid[PBS_MAXSVRJOBID+1];
@@ -981,9 +1022,6 @@ typedef struct job_file_delete_info
   bool           cgroups_all_created;
 #endif
   } job_file_delete_info;
-#endif
-
-
 
 
 #define TI_FLAGS_INIT           1  /* task has called tm_init */
@@ -1020,7 +1058,10 @@ typedef struct job_file_delete_info
 #define IM_RADIX_ALL_OK   12
 #define IM_JOIN_JOB_RADIX 13
 #define IM_KILL_JOB_RADIX 14
-#define IM_MAX            15
+#define IM_FENCE          15
+#define IM_CONNECT        16
+#define IM_DISCONNECT     17
+#define IM_MAX            18
 
 #define IM_ERROR          99
 
@@ -1057,22 +1098,43 @@ typedef struct send_job_request
 /*
  * server flags (in ji_svrflags)
  */
-#define JOB_SVFLG_HERE     0x01 /* SERVER: job created here */
-/* MOM: set for Mother Superior */
-#define JOB_SVFLG_HASWAIT  0x02 /* job has timed task entry for wait time */
-#define JOB_SVFLG_HASRUN   0x04 /* job has been run before (being rerun */
-#define JOB_SVFLG_CHECKPOINT_FILE    0x10 /* job has checkpoint file for restart */
-#define JOB_SVFLG_SCRIPT   0x20 /* job has a Script file */
-#define JOB_SVFLG_OVERLMT1 0x40 /* job over limit first time, MOM only */
-#define JOB_SVFLG_OVERLMT2 0x80 /* job over limit second time, MOM only */
-#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100 /* job has migratable checkpoint */
-#define JOB_SVFLG_Suspend  0x200 /* job suspended (signal suspend) */
-#define JOB_SVFLG_StagedIn 0x400 /* job has files that have been staged in */
-#define JOB_SVFLG_JOB_ABORTED 0x800 /* Job has been aborted for some reason */
-#define JOB_SVFLG_HasNodes 0x1000 /* job has nodes allocated to it */
-#define JOB_SVFLG_RescAssn 0x2000 /* job resources accumulated in server/que */
-#define JOB_SVFLG_CHECKPOINT_COPIED 0x4000 /* job checkpoint file that has been copied */
-#define JOB_SVFLG_INTERMEDIATE_MOM  0x8000 /* This is for job_radix. I am an intermediate mom */
+
+// For Server:
+#ifndef PBS_MOM
+#define JOB_SVFLG_HERE                   0x01   // SERVER: job created here
+#define JOB_SVFLG_HASWAIT                0x02   // job has timed task entry for wait time
+#define JOB_SVFLG_HASRUN                 0x04   // job has been run before (being rerun
+#define JOB_SVFLG_CHECKPOINT_FILE        0x10   // job has checkpoint file for restart
+#define JOB_SVFLG_SCRIPT                 0x20   // job has a Script file
+//#define JOB_SVFLG_OVERLMT1             0x40   // MOM only 
+//#define JOB_SVFLG_OVERLMT2             0x80   // MOM only
+#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100  // job has migratable checkpoint
+#define JOB_SVFLG_Suspend                0x200  // job suspended (signal suspend)
+#define JOB_SVFLG_StagedIn               0x400  // job has files that have been staged in
+//#define JOB_SVFLG_JOB_ABORTED          0x800  // MOM only
+#define JOB_SVFLG_HasNodes               0x1000 // job has nodes allocated to it
+#define JOB_SVFLG_RescAssn               0x2000 // job resources accumulated in server/que
+#define JOB_SVFLG_CHECKPOINT_COPIED      0x4000 // job checkpoint file that has been copied 
+#define JOB_ACCOUNTED_FOR                0x8000 // End of job accounting has happened
+
+#else
+// For MOM:
+#define JOB_SVFLG_HERE                   0x01   // set on mother superior
+//#define JOB_SVFLG_HASWAIT              0x02   // Not used on the mom
+//#define JOB_SVFLG_HASRUN               0x04   // Not used on the mom
+#define JOB_SVFLG_CHECKPOINT_FILE        0x10   // job has checkpoint file for restart
+#define JOB_SVFLG_SCRIPT                 0x20   // job has a Script file
+#define JOB_SVFLG_OVERLMT1               0x40   // job over limit first time, MOM only
+#define JOB_SVFLG_OVERLMT2               0x80   // job over limit second time, MOM only
+#define JOB_SVFLG_CHECKPOINT_MIGRATEABLE 0x100  // job has migratable checkpoint 
+#define JOB_SVFLG_Suspend                0x200  // job suspended (signal suspend)
+//#define JOB_SVFLG_StagedIn             0x400  // Not used on the mom
+#define JOB_SVFLG_JOB_ABORTED            0x800  // Job has been aborted for some reason 
+//#define JOB_SVFLG_HasNodes             0x1000 // Not used on the mom
+//#define JOB_SVFLG_RescAssn             0x2000 // Not used on the mom
+//#define JOB_SVFLG_CHECKPOINT_COPIED    0x4000 // Not used on the mom
+#define JOB_SVFLG_INTERMEDIATE_MOM       0x8000 // This is for job_radix. I am an intermediate mom
+#endif
 
 
 /*
@@ -1083,6 +1145,8 @@ typedef struct send_job_request
 #define SAVEJOB_NEW   2
 
 #define MAIL_NONE  (int)'n'
+#define MAIL_NOJOBMAIL  (int)'p'
+#define MAIL_NONZERO (int)'f'
 #define MAIL_ABORT (int)'a'
 #define MAIL_BEGIN (int)'b'
 #define MAIL_DEL   (int)'d'
@@ -1152,6 +1216,8 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_RUNNING 42 /* job running */
 #define JOB_SUBSTATE_SUSPEND 43 /* job suspended, CRAY only */
 
+#define JOB_SUBSTATE_PRECLEAN 48
+
 #define JOB_SUBSTATE_MOM_WAIT 49 /* waiting for kill confirm from sister moms */
 #define JOB_SUBSTATE_EXITING 50 /* Start of job exiting processing */
 #define JOB_SUBSTATE_EXIT_WAIT 51 /* Waiting for response from other moms
@@ -1172,10 +1238,11 @@ typedef struct send_job_request
 #define JOB_SUBSTATE_RERUN2 62 /* job is rerun, delete files stage */
 #define JOB_SUBSTATE_RERUN3 63 /* job is rerun, mom delete job */
 
+#define JOB_SUBSTATE_POST_CLEANUP  64 // job has completed cleanup and just needs to tell pbs_server
+
 #define JOB_SUBSTATE_RETURNSTD 70      /* job has checkpoint file, return
 stdout / stderr files to server spool
 dir so that job can be restarted */
-
 #define JOB_SUBSTATE_ARRAY_TEMP 75  /* job is an array template */
 
 /* decriminator for ji_un union type */
@@ -1224,16 +1291,24 @@ extern char *get_egroup(job *);
 extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
 extern void  issue_track(job *);
+#ifdef PBS_MOM
+job         *mom_job_alloc();
+#else
 extern job  *job_alloc();
+#endif
 extern int   job_unlink_file(job *pjob, const char *name);
 #ifndef PBS_MOM
-job         *job_clone(job *,struct job_array *, int);
+job         *job_clone(job *,struct job_array *, int, bool);
 job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
 bool         job_id_exists(const std::string &job_id_string, int *rcode);
+bool         internal_job_id_exists(int internal_id);
 #else
 extern job  *mom_find_job(const char *);
+int          send_back_std_and_staged_files(job *pjob, int exitstatus);
+int          post_stageout(job *pjob, int exitstatus);
+void         delete_staged_in_files(job *pjob, char *home_dir, char **bad_list);
 #endif
 extern job  *job_recov(const char *);
 extern int   job_save(job *, int, int);

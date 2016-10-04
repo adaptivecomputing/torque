@@ -96,8 +96,8 @@
 int PBSD_sig_put(
     
   int   c,
-  char *jobid,
-  char *signal, 
+  const char *jobid,
+  const char *signal, 
   char *extend)
   
   {
@@ -144,8 +144,8 @@ int PBSD_sig_put(
 int PBSD_async_sig_put(
     
   int   c,
-  char *jobid,
-  char *signal,
+  const char *jobid,
+  const char *signal,
   char *extend)
   
   {

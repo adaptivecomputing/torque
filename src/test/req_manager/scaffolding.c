@@ -40,6 +40,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
 bool exit_called = false;
+time_t pbs_incoming_tcp_timeout;
 
 mom_hierarchy_t *mh;
 boost::ptr_vector<std::string> hierarchy_holder;
@@ -422,6 +423,11 @@ int get_svr_attr_l(
   int   attr_index,
   long *l)
 
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }

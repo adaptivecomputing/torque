@@ -81,7 +81,7 @@
  *
  * Included public functions are:
  *
- *   job_alloc    allocate job struct and initialize defaults
+ *   mom_job_alloc    allocate job struct and initialize defaults
  *   mom_job_free   free space allocated to the job structure and its
  *    childern structures.
  *   mom_job_purge   purge job from server
@@ -155,6 +155,16 @@
 #include "machine.hpp"
 #endif
 
+#ifdef ENABLE_PMIX
+extern "C"{
+#include "pmix_server.h"
+}
+#include "utils.h"
+
+extern std::string topology_xml;
+extern char        mom_alias[];
+#endif
+
 #ifndef TRUE
 #define TRUE 1
 #define FALSE 0
@@ -205,66 +215,16 @@ void       send_update_soon();
 extern int multi_mom;
 extern int pbs_rm_port;
 
-void tasks_free(
 
-  job *pj)
-
+task::~task()
   {
-  task            *tp = (task *)GET_NEXT(pj->ji_tasks);
-  obitent         *op;
-  infoent         *ip;
-  container::item_container<struct tcp_chan *> freed_chans;
-
-  while (tp != NULL)
+  if (this->ti_chan != NULL)
     {
-    op = (obitent *)GET_NEXT(tp->ti_obits);
-
-    while (op != NULL)
-      {
-      delete_link(&op->oe_next);
-
-      free(op);
-
-      op = (obitent *)GET_NEXT(tp->ti_obits);
-      }  /* END while (op != NULL) */
-
-    ip = (infoent *)GET_NEXT(tp->ti_info);
-
-    while (ip != NULL)
-      {
-      delete_link(&ip->ie_next);
-
-      free(ip->ie_name);
-      free(ip->ie_info);
-      free(ip);
-
-      ip = (infoent *)GET_NEXT(tp->ti_info);
-      }
-
-    if (tp->ti_chan != NULL)
-      {
-      char ptr[50];
-      sprintf(ptr,"%p",(void *)tp->ti_chan);
-      freed_chans.lock();
-      if(freed_chans.insert(tp->ti_chan,ptr))
-        {
-        close_conn(tp->ti_chan->sock, FALSE);
-        DIS_tcp_cleanup(tp->ti_chan);
-        }
-      freed_chans.unlock();
-        
-      tp->ti_chan = NULL;
-      }
-
-    delete_link(&tp->ti_jobtask);
-
-    free(tp);
-
-    tp = (task *)GET_NEXT(pj->ji_tasks);
-    }  /* END while (tp != NULL) */
-
-  return;
-  }  /* END tasks_free() */
+    close_conn(this->ti_chan->sock, FALSE);
+    DIS_tcp_cleanup(this->ti_chan);
+    this->ti_chan = NULL;
+    }
+  } // END task destructor
 
 
 
@@ -305,9 +265,12 @@ int remtree(
     {
 
     if (errno != ENOENT)
+      {
       log_err(errno, __func__, (char *)"stat");
-
-    return(-1);
+      return(-1);
+      }
+    else
+      return(PBSE_NONE);
     }
 
   if (S_ISDIR(sb.st_mode))
@@ -488,13 +451,13 @@ int conn_qsub(
 
 
 /*
- * job_alloc - allocate space for a job structure and initialize working
+ * mom_job_alloc - allocate space for a job structure and initialize working
  * attribute to "unset"
  *
  * Returns: pointer to structure or null is space not available.
  */
 
-job *job_alloc(void)
+job *mom_job_alloc(void)
 
   {
   job *pj;
@@ -503,7 +466,7 @@ job *job_alloc(void)
 
   if (pj == NULL)
     {
-    log_err(errno, "job_alloc", (char *)"no memory");
+    log_err(errno, __func__, (char *)"no memory");
 
     return(NULL);
     }
@@ -512,7 +475,8 @@ job *job_alloc(void)
 
   CLEAR_LINK(pj->ji_jobque);
 
-  CLEAR_HEAD(pj->ji_tasks);
+  pj->ji_tasks = new std::vector<task *>();
+  pj->ji_usages = new std::map<std::string, job_host_data>();
   pj->ji_taskid = TM_NULL_TASK + 1;
   pj->ji_obit = TM_NULL_EVENT;
   pj->ji_nodekill = TM_ERROR_NODE;
@@ -523,6 +487,10 @@ job *job_alloc(void)
   pj->ji_cgroups_created = false;
 #endif
 
+#ifdef USE_RESOURCE_PLUGIN
+  pj->ji_custom_usage_info = new std::map<std::string, std::string>();
+#endif
+
   pj->ji_sigtermed_processes = new std::set<int>();
 
   /* set the working attributes to "unspecified" */
@@ -531,9 +499,32 @@ job *job_alloc(void)
   pj->ji_job_pid_set = new job_pid_set_t;
 
   return(pj);
-  }  /* END job_alloc() */
+  }  /* END mom_job_alloc() */
 
 
+
+#ifdef ENABLE_PMIX
+void deregister_jobs_nspace(
+
+  job *pj)
+
+  {
+  std::string nspace(pj->ji_qs.ji_jobid);
+  size_t      pos = nspace.find(".");
+
+  if (pos != std::string::npos)
+    nspace.erase(pos);
+
+  PMIx_server_deregister_nspace(nspace.c_str(), NULL, NULL);
+
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buffer, "Deregistered the PMIx namespace %s for job %s",
+      nspace.c_str(), pj->ji_qs.ji_jobid);
+    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
+  } // END deregister_jobs_nspace()
+#endif
 
 
 
@@ -558,6 +549,10 @@ void mom_job_free(
                log_buffer);
     }
 
+#ifdef ENABLE_PMIX
+  deregister_jobs_nspace(pj);
+#endif
+
   /* remove any calloc working attribute space */
 
   for (i = 0;i < JOB_ATR_LAST;i++)
@@ -572,7 +567,16 @@ void mom_job_free(
 
   nodes_free(pj);
 
-  tasks_free(pj);
+  // Delete each remaining task
+  for (std::vector<task *>::iterator it = pj->ji_tasks->begin(); it != pj->ji_tasks->end(); it++)
+    {
+    task *ptask = *it;
+    if (ptask->ti_chan_reused == TRUE)
+      ptask->ti_chan = NULL;
+    delete ptask;
+    }
+
+  delete pj->ji_tasks;
 
   if (pj->ji_resources)
     {
@@ -582,6 +586,14 @@ void mom_job_free(
 
   delete pj->ji_job_pid_set;
   delete pj->ji_sigtermed_processes;
+
+  if (pj->ji_usages != NULL)
+    delete pj->ji_usages;
+
+#ifdef USE_RESOURCE_PLUGIN
+  if (pj->ji_custom_usage_info != NULL)
+    delete pj->ji_custom_usage_info;
+#endif
 
   /* now free the main structure */
   free(pj);
@@ -1038,6 +1050,31 @@ void mom_job_purge(
 
 
 
+/*
+ * mom_find_job_by_raw_string()
+ *
+ * @param raw_string - a string that shouldn't be edited before being compared with job ids
+ */
+
+job *mom_find_job_by_raw_string(
+
+  std::string &raw_string)
+
+  {
+  std::list<job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+    {
+    job *pj = *iter;
+
+    // Match
+    if (raw_string == pj->ji_qs.ji_jobid)
+      return(pj);
+    }
+
+  return(NULL);
+  } // END mom_find_job_by_raw_string()
+
 
 
 /*
@@ -1059,18 +1096,18 @@ job *mom_find_job(
   if ((pos = jid.find("@")) != std::string::npos)
     jid.erase(pos);
 
-  std::list<job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+  if ((pj = mom_find_job_by_raw_string(jid)) == NULL)
     {
-    pj = *iter;
-
-    // Match
-    if (jid == pj->ji_qs.ji_jobid)
-      return(pj);
+    // We haven't found the job, let's check if we can find it by removing the server suffix
+    if ((pos = jid.find_last_of('.')) != std::string::npos)
+      {
+      jid.erase(pos);
+     
+      pj = mom_find_job_by_raw_string(jid);
+      }
     }
 
-  return(NULL);
+  return(pj);
   }   /* END mom_find_job() */
 
 
@@ -1082,16 +1119,15 @@ job *mom_find_job(
  * @return the job, or NULL if no local job has that integer id
  */
 
-job *mom_find_job_by_int_id(
+job *mom_find_job_by_int_string(
 
-  int jobid)
+  const char *jobint_string)
 
   {
-  char  job_id_buf[PBS_MAXSVRJOBID + 1];
   job  *pjob;
   int   job_id_buf_len;
 
-  job_id_buf_len = sprintf(job_id_buf, "%d", jobid);
+  job_id_buf_len = strlen(jobint_string);
 
   std::list<job *>::iterator iter;
 
@@ -1100,7 +1136,7 @@ job *mom_find_job_by_int_id(
     pjob = *iter;
 
     // Compare just the numeric portion of the id
-    if (!strncmp(pjob->ji_qs.ji_jobid, job_id_buf, job_id_buf_len))
+    if (!strncmp(pjob->ji_qs.ji_jobid, jobint_string, job_id_buf_len))
       {
       // Make sure the job's numeric portion as ended
       if ((pjob->ji_qs.ji_jobid[job_id_buf_len] == '.') ||
@@ -1112,7 +1148,7 @@ job *mom_find_job_by_int_id(
 
   // Not found - we return from the loop if we find the job
   return(NULL);
-  } // END mom_find_job_by_int_id()
+  } // END mom_find_job_by_int_string()
 
 
 
@@ -1130,6 +1166,306 @@ bool am_i_mother_superior(
     
   return(mother_superior);
   }
+
+
+void set_jobs_substate(
+
+  job *pjob,
+  int  new_substate)
+
+  {
+  if (pjob != NULL)
+    {
+    if (pjob->ji_qs.ji_substate != new_substate)
+      {
+      time_now = time(NULL);
+      unsigned int momport = 0;
+
+      pjob->ji_qs.ji_substate = new_substate;
+      pjob->ji_state_set = time_now;
+
+      if (multi_mom)
+        momport = pbs_rm_port;
+        
+      job_save(pjob, SAVEJOB_QUICK, momport);
+      }
+    }
+  } // END set_jobs_substate()
+
+
+#ifdef ENABLE_PMIX
+const int pmix_info_count = 17;
+
+void free_info_array(
+
+  pmix_status_t  pst,
+  void          *cbdata)
+
+  {
+  pmix_info_t *pmi_array = (pmix_info_t *)cbdata;
+
+  PMIX_INFO_FREE(pmi_array, pmix_info_count);
+  } // END free_info_array()
+
+
+
+uint32_t local_arch = 0xFFFFFFFF;
+
+void register_jobs_nspace(
+
+  job        *pjob,
+  pjobexec_t *TJE)
+
+  {
+  pmix_info_t      *pmi_array;
+  int               es = 0;
+  int               lowest_rank = 0;
+  int               prev_index = -1;
+  int               attr_index;
+  std::vector<int>  ranks;
+  std::string       node_list;
+  pmix_status_t     rc;
+  std::string       pmix_jobid(pjob->ji_qs.ji_jobid);
+ 
+  // Get some needed info about ranks / local execution slots 
+  for (int i = 0; i < pjob->ji_numvnod; i++)
+    {
+    if (prev_index != pjob->ji_vnods[i].vn_host->hn_node)
+      {
+      if (node_list.size() != 0)
+        node_list += ",";
+
+      node_list += pjob->ji_vnods[i].vn_host->hn_host;
+      }
+
+    if (pjob->ji_vnods[i].vn_host->hn_node == pjob->ji_nodeid)
+      {
+      es++;
+
+      ranks.push_back(i);
+      }
+    }
+
+  if (ranks.size() != 0)
+    lowest_rank = ranks[0];
+
+  PMIX_INFO_CREATE(pmi_array, pmix_info_count);
+
+  attr_index = 0;
+  strcpy(pmi_array[attr_index].key, PMIX_JOBID);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  std::string jobid(pjob->ji_qs.ji_jobid);
+  std::size_t dot = jobid.find(".");
+
+  if (dot != std::string::npos)
+    jobid.erase(dot);
+
+  // PMIx just wants the numeric portion of the job id
+  pmi_array[attr_index].value.data.string = strdup(jobid.c_str());
+
+  // Add the application information for this job
+  // Get the number of procs for this job
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_UNIV_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+
+  // For now, the job and namespace are the same size
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_JOB_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+  
+  // Max procs for the job is also the same
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_MAX_PROCS);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
+
+  // Get the number of procs for this node
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODE_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = es;
+  
+  // Local size is the same as the number for this node
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_SIZE);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = es;
+
+  // Mapping information
+  // list of nodes
+  char *node_regex;
+  PMIx_generate_regex(node_list.c_str(), &node_regex);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODE_MAP);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = node_regex;
+
+  // map of process ranks to nodes
+  std::string ppn_list(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  std::replace(ppn_list.begin(), ppn_list.end(), '+', ';');
+  std::replace(ppn_list.begin(), ppn_list.end(), '/', ',');
+  char *ppn_regex;
+  PMIx_generate_ppn(ppn_list.c_str(), &ppn_regex);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_PROC_MAP);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = ppn_regex;
+
+  // Node-level information
+  // Node id
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NODEID);
+  pmi_array[attr_index].value.type = PMIX_UINT32;
+  pmi_array[attr_index].value.data.uint32 = pjob->ji_nodeid;
+
+  // hostname
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_HOSTNAME);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(mom_alias);
+
+  // local peers
+  std::string peer_ranks;
+  translate_vector_to_range_string(peer_ranks, ranks);
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_PEERS);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(peer_ranks.c_str());
+
+#ifdef ENABLE_CGROUPS
+  // local cpuset
+  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)
+    {
+    std::string range;
+    std::string cpu_list(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
+    find_range_in_cpuset_string(cpu_list, range);
+  
+    attr_index++;
+    strcpy(pmi_array[attr_index].key, PMIX_CPUSET);
+    pmi_array[attr_index].value.type = PMIX_STRING;
+    pmi_array[attr_index].value.data.uint32 = strdup(range.c_str());
+    }
+
+  // node topology
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCAL_TOPO);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(topology_xml.c_str());
+#endif
+
+  // local leader
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_LOCALLDR);
+  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.data.uint64 = lowest_rank;
+
+  // architecture
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_ARCH);
+  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.data.uint64 = local_arch;
+
+  // top level directory for job
+  char *init_dir = get_job_envvar(pjob, "PBS_O_INITDIR");
+
+  if (init_dir == NULL)
+    {
+    struct passwd *pwdp = (struct passwd *)TJE->pwdp;
+    init_dir = pwdp->pw_dir;
+    }
+
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_NSDIR);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  pmi_array[attr_index].value.data.string = strdup(init_dir);
+
+  // temporary directory for job
+  char tmpdir[MAXPATHLEN];
+  attr_index++;
+  strcpy(pmi_array[attr_index].key, PMIX_TMPDIR);
+  pmi_array[attr_index].value.type = PMIX_STRING;
+  if (TTmpDirName(pjob, tmpdir, sizeof(tmpdir)))
+    pmi_array[attr_index].value.data.string = strdup(tmpdir);
+  else
+    pmi_array[attr_index].value.data.string = strdup(init_dir);
+
+  size_t pos = pmix_jobid.find(".");
+  if (pos != std::string::npos)
+    pmix_jobid.erase(pos);
+
+  if ((rc = PMIx_server_register_nspace(pmix_jobid.c_str(),
+                              es,
+                              pmi_array,
+                              pmix_info_count,
+                              free_info_array,
+                              pmi_array)) != PMIX_SUCCESS)
+    {
+    /* Uncomment this once the bug in PMIx is fixed
+     * snprintf(log_buffer, sizeof(log_buffer),
+      "Failed to register the namespace for %s with PMIx: %s",
+      pjob->ji_qs.ji_jobid,
+      PMIx_Error_string(rc));
+    log_err(-1, __func__, log_buffer);*/
+    }
+  else 
+    {
+    if (LOGLEVEL >= 3)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully registered a PMIx namespace '%s' for job '%s'",
+        pmix_jobid.c_str(),
+        pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+
+    pmix_proc_t p;
+    strcpy(p.nspace, pmix_jobid.c_str());
+    p.rank = 0;
+
+    rc = PMIx_server_register_client(&p,
+                                     pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+                                     pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+                                     NULL, NULL, NULL);
+
+    if (rc != PMIX_SUCCESS)
+      {
+      /* Uncomment once the PMIx bug is fixed
+       * snprintf(log_buffer, sizeof(log_buffer),
+        "Failed to the client with the namespace for %s with PMIx: %s",
+        pjob->ji_qs.ji_jobid,
+        PMIx_Error_string(rc));
+      log_err(-1, __func__, log_buffer);*/
+      }
+    else if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+        "Successfully registered the client with PMIx namespace '%s' for job '%s': uid %d, gid %d",
+        pmix_jobid.c_str(), pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+      }
+    }
+  
+  // Peer-level information - do we provide this at this time?
+  // rank
+  // appnum
+  // application leader
+  // global rank
+  // application rank
+  // local rank
+  // node rank
+  // node id
+  // uri
+  // cpuset for process
+  // spawned - true if launched via a dynamic spawn
+  // temporary dir for this process
+
+  } // END register_jobs_nspace()
+
+#endif
 
 /* END job_func.c */
 
