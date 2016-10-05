@@ -813,10 +813,10 @@ void pbsnode::set_version(
         {
         ptr++;
         version += strtol(ptr, &ptr, 10);
-
-        // Only set the version if we had the correct format
-        this->nd_version = version;
         }
+      
+      // Pre-release, we'll have versions like 6.1 instead of 6.1.x
+      this->nd_version = version;
       }
     else if (!strcmp(version_str, "master"))
       {
