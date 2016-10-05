@@ -54,6 +54,8 @@ START_TEST(test_version)
   fail_unless(pnode.get_version() == 1041, "Version is %d", pnode.get_version());
   pnode.set_version("6.1.8");
   fail_unless(pnode.get_version() == 618);
+  pnode.set_version("6.1");
+  fail_unless(pnode.get_version() == 610);
   }
 END_TEST
 
