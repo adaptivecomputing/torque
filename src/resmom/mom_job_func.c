@@ -600,6 +600,7 @@ int job_unlink_file(
   const char *name)	 /* I */
 
   {
+  int rc = 0;
   int   saved_errno = 0;
   int   result = 0;
   uid_t uid = geteuid();
@@ -613,7 +614,15 @@ int job_unlink_file(
   if ((setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1))
     {
     saved_errno = errno;
-    setegid(gid);
+    rc = setegid(gid);
+    if (rc != 0) 
+      {
+      snprintf(log_buffer, sizeof(log_buffer),
+           "setegid(%lu) failed, error: %s\n",
+                    (unsigned long)gid,
+                    strerror(errno));
+      log_err(errno, __func__, log_buffer);
+      }
     errno = saved_errno;
     return -1;
     }
@@ -621,7 +630,15 @@ int job_unlink_file(
   saved_errno = errno;
 
   setuid_ext(uid, TRUE);
-  setegid(gid);
+  rc = setegid(gid);
+  if (rc != 0) 
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+             "setegid(%lu) failed, error: %s\n",
+             (unsigned long)gid,
+             strerror(errno));
+    log_err(errno, __func__, log_buffer);
+    }
 
   errno = saved_errno;
   return(result);
@@ -685,7 +702,15 @@ void remove_tmpdir_file(
           }
         
         setuid_ext(pbsuser, TRUE);
-        setegid(pbsgroup);
+        int rc = setegid(pbsgroup);
+        if (rc != 0) 
+          {
+          snprintf(log_buffer, sizeof(log_buffer),
+                   "setegid(%lu) failed, error: %s\n",
+                   (unsigned long)pbsgroup,
+                   strerror(errno));
+          log_err(errno, __func__, log_buffer);
+          }
         }
       
       if ((rc != 0) && 

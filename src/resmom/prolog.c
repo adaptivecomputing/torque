@@ -1153,7 +1153,7 @@ void prepare_and_run_pelog_as_child(
     {
     setuid_ext(pbsuser, TRUE);
     int rc = setegid(pbsgroup);
-    if (!rc) {
+    if (rc != 0) {
      snprintf(log_buffer, sizeof(log_buffer),
               "setegid(%lu) failed, error: %s\n",
               (unsigned long) pbsgroup,

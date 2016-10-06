@@ -1322,7 +1322,14 @@ int TMakeTmpDir(
 
   setuid_ext(pbsuser, TRUE);
 
-  setegid(pbsgroup);
+  rc = setegid(pbsgroup);
+  if (!rc) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "setegid(%lu) failed, error: %s\n",
+                (unsigned long)pbsgroup,
+                strerror(errno));
+      log_err(errno, __func__, log_buffer);
+    }
 
   if (retval != 0)
     log_err(retval, __func__, log_buffer);
@@ -3004,7 +3011,7 @@ int write_nodes_to_file(
   {
   char         filename[MAXPATHLEN];
   int          j;
-  int          rc;
+  int          rc = 0;
   int          vnodenum;
   FILE        *file;
 
@@ -8044,7 +8051,14 @@ int open_std_file(
 
       log_err(errno, __func__, log_buffer);
 
-      setegid(pbsgroup);
+      int rc = setegid(pbsgroup);
+      if (rc != 0) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "setegid(%lu) failed, error: %s\n",
+                (unsigned long)pbsgroup,
+                strerror(errno));
+      log_err(errno, __func__, log_buffer);
+      }
       return(-1);
       }
 
@@ -8252,7 +8266,14 @@ int open_std_file(
       log_err(errno, __func__, log_buffer);
       }
 
-    setegid(pbsgroup);
+    int rc = setegid(pbsgroup);
+    if (!rc) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "setegid(%lu) failed, error: %s\n",
+                (unsigned long)pbsgroup,
+                strerror(errno));
+      log_err(errno, __func__, log_buffer);
+    }
     }
 
   if (fds == -1)
@@ -8285,7 +8306,15 @@ reset_ids_fail:
   if (changed_to_user)
     {
     setuid_ext(pbsuser, TRUE);
-    setegid(pbsgroup);
+    int rc = setegid(pbsgroup);
+    if (rc != 0) {
+      snprintf(log_buffer, sizeof(log_buffer),
+               "setegid(%lu) failed, error: %s\n",
+               (unsigned long)pbsgroup,
+               strerror(errno));
+      log_err(errno, __func__, log_buffer);
+    }
+ 
     }
   return(-1);
 
@@ -8294,7 +8323,16 @@ reset_ids_timeout:
   if (changed_to_user)
     {
     setuid_ext(pbsuser, TRUE);
-    setegid(pbsgroup);
+    int rc = setegid(pbsgroup);
+    if (!rc) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "setegid(%lu) failed, error: %s\n",
+                (unsigned long)pbsgroup,
+                strerror(errno));
+       log_err(errno, __func__, log_buffer);
+    }
+
+
     }
   return(-2);
   }   /* END open_std_file() */
