@@ -1785,8 +1785,14 @@ void mom_server_all_update_stat(void)
 
     sprintf(buf, "%d", rc);
     len = strlen(buf);
-    write(fd_pipe[1], buf, len);
-
+    int wr = write(fd_pipe[1], buf, len);
+    if (wr != len) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "write failed, error: %s\n",
+                strerror(errno));
+       log_err(errno, __func__, log_buffer);
+    }
+        
     exit_called = true;
   
     exit(0);
