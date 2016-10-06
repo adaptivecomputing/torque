@@ -991,7 +991,13 @@ void handle_pipes_as_child(
 
   close(parent_read);
   close(parent_write);
-  write(kid_write,(char *)&childSessionID,sizeof(childSessionID));
+  int wr = write(kid_write,(char *)&childSessionID,sizeof(childSessionID));
+  if (wr != sizeof(childSessionID)) {
+     snprintf(log_buffer, sizeof(log_buffer),
+              "write failed, error: %s\n",
+              strerror(errno));
+     log_err(errno, __func__, log_buffer);
+  }
   close(kid_read);
   close(kid_write);
   } /* END handle_pipes_as_child() */
@@ -1146,7 +1152,14 @@ void prepare_and_run_pelog_as_child(
       (which == PE_EPILOGUSERJOB))
     {
     setuid_ext(pbsuser, TRUE);
-    setegid(pbsgroup);
+    int rc = setegid(pbsgroup);
+    if (!rc) {
+     snprintf(log_buffer, sizeof(log_buffer),
+              "setegid(%lu) failed, error: %s\n",
+              (unsigned long) pbsgroup,
+              strerror(errno));
+     log_err(errno, __func__, log_buffer);
+    }
 
     if (become_the_user(pjob) != PBSE_NONE)
       {
@@ -1625,7 +1638,13 @@ int run_pelog(
 
     close(kid_read);
     close(kid_write);
-    read(parent_read,(char *)&childSessionID,sizeof(childSessionID));
+    int rc = read(parent_read,(char *)&childSessionID,sizeof(childSessionID));
+    if (rc != sizeof(childSessionID)) {
+       snprintf(log_buffer, sizeof(log_buffer),
+                "read failed, error: %s\n",
+                strerror(errno));
+       log_err(errno, __func__, log_buffer);
+    }
     close(parent_read);
     close(parent_write);
 
