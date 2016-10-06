@@ -280,8 +280,8 @@ int qdel_main(
   
   for (;optind < argc;optind++)
     {
-    int connect;
     int stat;
+    int connect;
     id_list.clear();
 
     /* check to see if user specified 'all' to delete all jobs */
@@ -309,6 +309,7 @@ int qdel_main(
       }
     
 cnt:
+    stat = 0;
     
     connect = cnt2server(server_name.c_str());
     

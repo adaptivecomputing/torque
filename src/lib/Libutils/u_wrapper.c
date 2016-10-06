@@ -138,7 +138,7 @@ int rmdir_ext(
   int         retry_limit)
 
   {
-  int rc;
+  int rc = 0;
   int retry_count = 0;
 
   while ((retry_count < retry_limit) &&
@@ -187,7 +187,7 @@ int unlink_ext(
   int         retry_limit)
 
   {
-  int rc;
+  int rc = 0;
   int retry_count = 0;
 
   while ((retry_count < retry_limit) &&
