@@ -67,7 +67,7 @@ extern Machine this_node;
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */
-bool subsys_online[cg_subsys_count];
+bool subsys_online[cg_subsys_count+1];
 
 /* initialize subsys_online to all false so we
    can know if any needed hierarcies are not mounted */
@@ -312,7 +312,10 @@ int trq_cg_initialize_cpuset_string(
 
   /* read in the string from the file */
   memset(buf, 0, 64);
-  fread(buf, sizeof(buf), 1, fd);
+  int rc = fread(buf, sizeof(buf), 1, fd);
+  if (rc != 1) {
+    log_err(errno, __func__, "Could not read file");
+  }
   if (strlen(buf) < 1)
     {
     sprintf(log_buf, "Could not read %s while initializing cpuset cgroups: error %d",
@@ -327,7 +330,7 @@ int trq_cg_initialize_cpuset_string(
   /* Now write the value we got from the parent cgroup file to the torque cgroup file */
   cpus_path = cg_cpuset_path + cg_prefix + file_name;
   std::string err_msg;
-  int rc = write_to_file(cpus_path.c_str(), buf, err_msg);
+  rc = write_to_file(cpus_path.c_str(), buf, err_msg);
 
   if (rc != PBSE_NONE)
     log_err(errno, __func__, err_msg.c_str());
