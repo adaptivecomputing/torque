@@ -369,18 +369,7 @@ int req_runjob(
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    batch_request *new_preq = duplicate_request(preq, -1);
-
-    if (new_preq == NULL)
-      {
-      sprintf(log_buf, "failed to duplicate batch request");
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      free_br(preq);
-      return(PBSE_MEM_MALLOC);
-      }
-
-    reply_ack(new_preq);
-    free_br(new_preq);
+    reply_ack(preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
