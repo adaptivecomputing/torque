@@ -419,7 +419,7 @@ int parse_log(
   int j = 0;
 
   struct tm tms; /* used to convert date to unix date */
-  static char none[1] = { '\0' };
+  const char none = '\0';
   int lineno = 0;
 
   int logcount = 0;
@@ -530,27 +530,27 @@ int parse_log(
       if (tmp.event != NULL)
         log->log_lines[log->ll_cur_amm].event = strdup(tmp.event);
       else
-        log->log_lines[log->ll_cur_amm].event = none;
+        log->log_lines[log->ll_cur_amm].event = strdup(&none);
 
       if (tmp.obj != NULL)
         log->log_lines[log->ll_cur_amm].obj = strdup(tmp.obj);
       else
-        log->log_lines[log->ll_cur_amm].obj = none;
+        log->log_lines[log->ll_cur_amm].obj = strdup(&none);
 
       if (tmp.type != NULL)
         log->log_lines[log->ll_cur_amm].type = strdup(tmp.type);
       else
-        log->log_lines[log->ll_cur_amm].type = none;
+        log->log_lines[log->ll_cur_amm].type = strdup(&none);
 
       if (tmp.name != NULL)
         log->log_lines[log->ll_cur_amm].name = strdup(tmp.name);
       else
-        log->log_lines[log->ll_cur_amm].name = none;
+        log->log_lines[log->ll_cur_amm].name = strdup(&none);
 
       if (tmp.msg != NULL)
         log->log_lines[log->ll_cur_amm].msg = strdup(tmp.msg);
       else
-        log->log_lines[log->ll_cur_amm].msg = none;
+        log->log_lines[log->ll_cur_amm].msg = strdup(&none);
 
       switch (ind)
         {
