@@ -7004,7 +7004,13 @@ int main(
   memset(Torque_Info_SysVersion, 0, sizeof(Torque_Info_SysVersion));
   if ((fp = fopen("/proc/version", "r")) != NULL)
     {
-    fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
+    int rc = fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
+    if (rc != 1) {
+        snprintf(log_buffer, sizeof(log_buffer),
+                 "fread failed, error: %s\n",
+                 strerror(errno));
+        log_err(errno, __func__, log_buffer);
+         }
     fclose(fp);
     }
 
