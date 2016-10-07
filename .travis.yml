@@ -2,7 +2,7 @@ language: cpp
 
 branches:
   only:
-    - 4.2-dev
+    - 6.0-dev
 
 before_install:
  - sudo apt-get update -qq
