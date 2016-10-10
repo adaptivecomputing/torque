@@ -260,7 +260,7 @@ then
     make check  | ./parse_cov_results.py
 fi
 
-if [[ ${version} =~ ^[0-9]+(\.[0-9]+){1,3}(\.?(a|b|r?c|h)[0-9]+)?$ ]]
+if [[ ${version} =~ ^[0-9]+\.[0-9]+(\.?(a|b|r?c)[0-9]+|(\.[0-9]+)+(\.h[0-9]+)?)?$ ]]
 then
   package_version="${version}"
   release=1
