@@ -1630,10 +1630,10 @@ int main(
     {
     int rc = fread(Torque_Info_SysVersion, sizeof(Torque_Info_SysVersion), 1, fp);
     if (rc != 1) {
-        snprintf(log_buffer, sizeof(log_buffer),
+        snprintf(log_buf, sizeof(log_buf),
                  "fread failed, error: %s\n",
                  strerror(errno));
-        log_err(errno, __func__, log_buffer);
+        log_err(errno, __func__, log_buf);
     }
     fclose(fp);
     }
