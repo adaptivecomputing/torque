@@ -457,8 +457,8 @@ void handle_aborted_job(
 /*
  * job_abt - abort a job
  *
- * The job removed from the system and a mail message is sent
- * to the job owner.
+ * The job is deleted and a mail message is sent to the job owner.
+ * NOTE: The job is always unlocked when this function exits.
  */
 
 /* NOTE:  this routine is called under the following conditions:
@@ -591,7 +591,9 @@ int job_abt(
             
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               }
-            pjob = svr_find_job(job_id, TRUE);
+
+            if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
+              pjob_mutex.mark_as_locked();
             }
           }
       
@@ -649,7 +651,9 @@ int job_abt(
         
           unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
           }
-        pjob = svr_find_job(job_id, TRUE);
+        
+        if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
+          pjob_mutex.mark_as_locked();
         }
       }
 
