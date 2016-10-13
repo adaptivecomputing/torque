@@ -22,7 +22,7 @@
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
 #include "machine.hpp"
-
+#include "authorized_hosts.hpp"
 
 std::string attrname;
 std::string attrval;
@@ -588,3 +588,13 @@ int node_status_list(
   {
   return(0);
   }
+
+void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short port, const std::string &hostname) {}
+
+bool authorized_hosts::remove_address(unsigned long addr, unsigned short port)
+  {
+  return(true);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;

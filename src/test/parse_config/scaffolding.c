@@ -8,6 +8,7 @@
 #include "u_tree.h"
 #include "log.h"
 #include "json/json.h"
+#include "authorized_hosts.hpp"
 
 #define LOG_BUF_SIZE        16384
 #define MAXLINE            1024
@@ -219,3 +220,9 @@ char *conf_res(char *resline, struct rm_attribute *attr)
 
   return(resline);
   }
+
+void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short port, const std::string &hostname) {}
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;
+

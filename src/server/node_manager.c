@@ -141,6 +141,7 @@
 #include "runjob_help.hpp"
 #include "plugin_internal.h"
 #include "json/json.h"
+#include "authorized_hosts.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -234,12 +235,10 @@ struct pbsnode *tfind_addr(
   char         *job_momname)
 
   {
-  struct pbsnode *pn = AVL_find(key,port,ipaddrs);
+  pbsnode *pn = auth_hosts.get_authorized_node(key, port);
 
   if (pn == NULL)
     return(NULL);
-
-  pn->lock_node(__func__, "pn", LOGLEVEL);
 
   if ((pn->num_node_boards == 0) ||
       (job_momname == NULL))
@@ -1375,7 +1374,7 @@ void stream_eof(
 
   if (addr != 0)
     {
-    np = AVL_find(addr, port, ipaddrs);
+    np = auth_hosts.get_authorized_node(addr, port);
     }
 
   if (np == NULL)
@@ -2593,8 +2592,8 @@ int save_node_for_adding(
 
 void set_first_node_name(
     
-  char *spec_param,      /* I */
-  char *first_node_name) /* O */
+  const char *spec_param,      /* I */
+  char       *first_node_name) /* O */
 
   {
   int   i;
@@ -3197,7 +3196,7 @@ bool process_as_node_list(
 
 int node_spec(
 
-  char                          *spec_param, /* I */
+  const char                    *spec_param, /* I */
   int                            early,      /* I (boolean) */
   int                            exactmatch, /* I (boolean) - NOT USED */
   char                          *ProcBMStr,  /* I */
@@ -4292,94 +4291,56 @@ int place_subnodes_in_hostlist(
 
 
 /*
- * takes a struct howl and translates it to a string that will
+ * translate_howl_to_string()
+ *
+ * Takes a list of howl objects and translates it to a string that will
  * become a job pbs_attribute (exec_hosts, exec_gpus, exec_ports)
- * NOTE: frees list (the struct howl)
+ *
+ * @param hlist - a std list of the howl objects
+ * @param EMsg - output any error message here
+ * @param NCount - the count of nodes in the string
+ * @param str - output the populated string here
+ * @param portstr - output the populated port string here
+ * @param port - if true, populate the port string
+ * @retunrn PBSE_NONE on success of PBSE_* on error
  */
 
 int translate_howl_to_string(
 
   std::list<howl>  &hlist,
   char             *EMsg,
-  int              *NCount,
-  char            **str_ptr,
-  char            **portstr_ptr,
-  int               port)
+  int              &NCount,
+  std::string      &str,
+  std::string      *portstr,
+  bool              port)
 
   {
-  size_t  len = 1;
-  int     count = 1;
-  char   *str;
-  char   *end;
-  char   *portlist = NULL;
-  char   *endport;
-
-  for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
-    {
-    len += it->hostname.size() + 8;
-    count++;
-    }
-
-  if ((str = (char *)calloc(1, len + 1)) == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate memory!");
-
-    if (EMsg != NULL)
-      sprintf(EMsg,"no nodes can be allocated to job");
-    
-    return(PBSE_RESCUNAV);
-    }
-
-  *str = '\0';
-
-  if (port == TRUE)
-    {
-    /* port list will have a string of sister port addresses */
-    if ((portlist = (char *)calloc(1, (count * PBS_MAXPORTNUM) + count)) == NULL)
-      {
-      log_err(ENOMEM, __func__, "Cannot allocate memory!");
-      
-      if (EMsg != NULL)
-        sprintf(EMsg,"no nodes can be allocated to job");
-
-      free(str);
-      
-      return(PBSE_RESCUNAV);
-      }
-  
-    *portlist = '\0';
-    }
+  char    buf[MAXLINE];
 
   /* now copy in name+name+... */
-  *NCount = 0;
+  NCount = 0;
 
-  end = str;
-  endport = portlist;
   for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
     {
-    (*NCount)++;
+    NCount++;
 
-    sprintf(end, "%s/%d+",
-      it->hostname.c_str(),
-      it->index);
+    if (str.size() != 0)
+      str += "+";
+    
+    str += it->hostname + "/";
 
-    end += strlen(end);
+    sprintf(buf, "%d", it->index);
+    str += buf;
 
-    if (port == TRUE)
+    if ((port == true) &&
+        (portstr != NULL))
       {
-      sprintf(endport, "%d+", it->port);
-      endport += strlen(endport);
+      if (portstr->size() != 0)
+        portstr->append("+");
+
+      sprintf(buf, "%d", it->port);
+      portstr->append(buf);
       }
-    }
-
-  /* strip trailing '+' and assign pointers */
-  str[strlen(str) - 1] = '\0';
-  *str_ptr = str;
-
-  if (port == TRUE)
-    {
-    portlist[strlen(portlist) - 1] = '\0';
-    *portstr_ptr = portlist;
     }
 
   return(PBSE_NONE);
@@ -4555,7 +4516,7 @@ int build_hostlist_nodes_req(
 
   job                                *pjob,      /* M */
   char                               *EMsg,      /* O */
-  char                               *spec,      /* I */
+  const char                         *spec,      /* I */
   short                               newstate,  /* I */
   std::vector<job_reservation_info>  &host_info, /* O */
   std::list<howl>                    &gpu_list,  /* O */
@@ -4905,18 +4866,17 @@ int locate_resource_request_20_nodes(
 
 int set_nodes(
 
-  job   *pjob,        /* I */
-  char  *spec,        /* I */
-  int    procs,       /* I */
-  char **rtnlist,     /* O */
-  char **rtnportlist, /* O */
-  char  *FailHost,    /* O (optional,minsize=1024) */
-  char  *EMsg)        /* O (optional,minsize=1024) */
+  job         *pjob,        /* I */
+  const char  *spec,        /* I */
+  int          procs,       /* I */
+  std::string &node_list,   /* O */
+  std::string &rtnportlist, /* O */
+  char        *FailHost,    /* O (optional,minsize=1024) */
+  char        *EMsg)        /* O (optional,minsize=1024) */
 
   {
   FUNCTION_TIMER
   std::vector<job_reservation_info> host_info;
-  std::string                       exec_hosts;
   std::stringstream                 exec_ports;
   std::list<node_job_add_info>      naji_list;
   std::list<howl>                   gpu_list;
@@ -4928,8 +4888,8 @@ int set_nodes(
   short              newstate;
 
   char              *login_prop = NULL;
-  char              *gpu_str = NULL;
-  char              *mic_str = NULL;
+  std::string        gpu_str;
+  std::string        mic_str;
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   alps_req_data     *ard_array = NULL;
@@ -5069,7 +5029,7 @@ int set_nodes(
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
   /* build list of allocated nodes, gpus, and ports */
-  rc = translate_job_reservation_info_to_string(host_info, &NCount, exec_hosts, &exec_ports);
+  rc = translate_job_reservation_info_to_string(host_info, &NCount, node_list, &exec_ports);
   if (rc != PBSE_NONE)
     {
     free_nodes(pjob, spec); 
@@ -5077,29 +5037,24 @@ int set_nodes(
     return(rc);
     }
 
-  *rtnlist = strdup(exec_hosts.c_str());
-  *rtnportlist = strdup(exec_ports.str().c_str());
+  rtnportlist = exec_ports.str();
 
   // JOB_TYPE_normal means no component from the Cray will be used
   if ((cray_enabled == true) &&
       (job_type != JOB_TYPE_normal))
     {
-    char *plus = strchr(*rtnlist, '+');
+    size_t pos = node_list.find('+');
 
     /* only do this if there's more than one host in the host list */
-    if (plus != NULL)
+    if (pos != std::string::npos)
       {
-      char *to_free = *rtnlist;
-
-      *plus = '\0';
-      *rtnlist = strdup(plus + 1);
-      free(to_free);
+      node_list = node_list.substr(pos + 1);
       }
     }
 
   if (mic_list.size() != 0)
     {
-    if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
+    if ((rc = translate_howl_to_string(mic_list, EMsg, NCount, mic_str, NULL, false)) != PBSE_NONE)
       {
       free_nodes(pjob, spec);
       return(rc);
@@ -5112,15 +5067,13 @@ int set_nodes(
       &pjob->ji_wattr[JOB_ATR_exec_mics],
       NULL,
       NULL,
-      mic_str,
+      mic_str.c_str(),
       0);
-
-    free(mic_str);
     }
 
   if (gpu_list.size() != 0)
     {
-    if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
+    if ((rc = translate_howl_to_string(gpu_list, EMsg, NCount, gpu_str, NULL, false)) != PBSE_NONE)
       {
       free_nodes(pjob, spec);
       delete [] ard_array;
@@ -5134,11 +5087,9 @@ int set_nodes(
       &pjob->ji_wattr[JOB_ATR_exec_gpus],
       NULL,
       NULL,
-      gpu_str,
+      gpu_str.c_str(),
       0);  /* O */
     
-    free(gpu_str);
-
     if (gpu_mode_rqstd != -1)
       gpu_flags = gpu_mode_rqstd;
     if (gpu_err_reset)
@@ -5166,7 +5117,7 @@ int set_nodes(
     snprintf(log_buf, sizeof(log_buf), "job %s allocated %d nodes (nodelist=%.4000s)",
       pjob->ji_qs.ji_jobid,
       NCount,
-      *rtnlist);
+      node_list.c_str());
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
