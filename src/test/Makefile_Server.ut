@@ -1,8 +1,8 @@
 PROG_ROOT = ../../server
 
-AM_CFLAGS = -g -DTEST_FUNCTION -DUT_SENDMAIL_CMD=\"./fakemail.sh\" -I${PROG_ROOT}/ -I${PROG_ROOT}/../include/ --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags`
-AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags`
-AM_LIBS=`xml2-config --libs`
+AM_CFLAGS = -g -DTEST_FUNCTION -DUT_SENDMAIL_CMD=\"./fakemail.sh\" -I${PROG_ROOT}/ -I${PROG_ROOT}/../include/ --coverage -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\" -DPBS_ENVIRON=\"$(PBS_ENVIRON)\" `xml2-config --cflags` $(CHECK_CFLAGS)
+AM_CXXFLAGS = -g -DTEST_FUNCTION -I${PROG_ROOT}/ -I$(PROG_ROOT)/../include --coverage `xml2-config --cflags` $(CHECK_CFLAGS)
+AM_LIBS=`xml2-config --libs` $(CHECK_LIBS)
 
 lib_LTLIBRARIES = libuut.la libscaffolding.la
 
