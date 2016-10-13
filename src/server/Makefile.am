@@ -54,11 +54,15 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 	ln -s $(program_prefix)pbs_server$(program_suffix)$(EXEEXT) \
 	   $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
-	systemctl 2>/dev/null | grep -- -\.mount >/dev/null 2>&1 && \
-	  echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service" && \
-	  $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service || \
-	  (echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server" && \
-	  $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server)
+	if systemctl 2>/dev/null | grep -- -\.mount >/dev/null 2>&1; then \
+          if [ -f $(top_srcdir)/contrib/systemd/pbs_server.service ]; then \
+	    echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service"; \
+	    $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service; \
+	  fi \
+	elif [ -f $(top_srcdir)/contrib/init.d/pbs_server ]; then \
+	  echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server"; \
+	  $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server; \
+	fi
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes

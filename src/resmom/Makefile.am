@@ -72,16 +72,21 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
 	ln -s $(program_prefix)pbs_mom$(program_suffix)$(EXEEXT) \
 	  $(DESTDIR)$(sbindir)/$(program_prefix)qnoded$(program_suffix)$(EXEEXT)
-	systemctl 2>/dev/null | grep -- -\.mount >/dev/null 2>&1 && \
-	  echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_mom.service $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service" && \
-	  $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_mom.service $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service || \
-	  (echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom" && \
-	  $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom)
+	if systemctl 2>/dev/null | grep -- -\.mount >/dev/null 2>&1; then \
+	  if [ -f $(top_srcdir)/contrib/systemd/pbs_mom.service ]; then \
+	    echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_mom.service $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service"; \
+	    $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_mom.service $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service; \
+	  fi \
+	elif [ -f $(top_srcdir)/contrib/init.d/pbs_mom ]; then \
+	  echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom"; \
+	  $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom; \
+	fi
 	-$(install_sh) -d -m 755 $(DESTDIR)/etc/ld.so.conf.d
-	test -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf || \
-	  echo $(libdir) > $(DESTDIR)/etc/ld.so.conf.d/torque.conf && \
-	  chmod 644 $(DESTDIR)/etc/ld.so.conf.d/torque.conf && \
-	  echo $(DESTDIR) | egrep -q tpackages\|rpmbuild || /sbin/ldconfig
+	if [ -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \
+	  echo $(libdir) > $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
+	  chmod 644 $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
+	  echo $(DESTDIR) | egrep -q tpackages\|rpmbuild || /sbin/ldconfig; \
+	fi
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON)
