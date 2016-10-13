@@ -22,6 +22,7 @@
 #include "machine.hpp"
 #include "complete_req.hpp"
 #include "json/json.h"
+#include "authorized_hosts.hpp"
 
 
 bool cray_enabled;
@@ -1078,3 +1079,11 @@ bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
   }
 
 int pbsnode::get_version() const {return 0;}
+
+pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned short port)
+  {
+  return(NULL);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;

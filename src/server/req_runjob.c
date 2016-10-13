@@ -904,6 +904,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot lookup master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -929,6 +930,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot create socket for master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -957,6 +959,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot connect to master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -1735,10 +1738,11 @@ job *chk_job_torun(
       /* check that execution host is actually set */
       /* this can happen if running the job failed after stagein */
       if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
-	{
-	req_reject(PBSE_EXECTHERE, 0, preq, NULL, "exec host not set but files staged in");
-	return(NULL);
-	}
+        {
+        req_reject(PBSE_EXECTHERE, 0, preq, NULL, "exec host not set but files staged in");
+        return(NULL);
+        }
+
       /* specified destination must match exec_host */
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
@@ -2091,9 +2095,9 @@ int assign_hosts(
 
   {
   unsigned int  dummy;
-  char         *list = NULL;
-  char         *portlist = NULL;
-  char         *hosttoalloc = NULL;
+  std::string   list;
+  std::string   portlist;
+  const char   *hosttoalloc = NULL;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
@@ -2120,8 +2124,8 @@ int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-    hosttoalloc = get_correct_spec_string(given, pjob);
-    to_free = hosttoalloc;
+    to_free = get_correct_spec_string(given, pjob);
+    hosttoalloc = to_free;
     }
   else
     {
@@ -2165,8 +2169,8 @@ int assign_hosts(
       (procs == 0) &&
       (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL))
     {
-    hosttoalloc = strdup(RESOURCE_20_FIND);
-    to_free = hosttoalloc;
+    to_free = strdup(RESOURCE_20_FIND);
+    hosttoalloc = to_free;
     }
 
   get_svr_attr_str(SRV_ATR_DefNode, &def_node);
@@ -2197,19 +2201,18 @@ int assign_hosts(
     {
     /* fall back to 1 cluster node */
 
-    hosttoalloc = strdup(PBS_DEFAULT_NODE);
-    to_free = hosttoalloc;
+    hosttoalloc = PBS_DEFAULT_NODE;
     }
 
   /* do we need to allocate the (cluster) node(s)? */
 
   if (svr_totnodes != 0)
     {
-    rc = set_nodes(pjob, (char *)hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
+    rc = set_nodes(pjob, (char *)hosttoalloc, procs, list, portlist, FailHost, EMsg);
     
     set_exec_host = 1; /* maybe new VPs, must set */
     
-    hosttoalloc = list;
+    hosttoalloc = list.c_str();
     }
 
   if (rc == 0)
@@ -2236,7 +2239,7 @@ int assign_hosts(
         &pjob->ji_wattr[JOB_ATR_exec_port],
         NULL,
         NULL,
-        portlist,
+        portlist.c_str(),
         0);  /* O */
 
       pjob->ji_modified = 1;
@@ -2274,9 +2277,6 @@ int assign_hosts(
       {
       free_nodes(pjob);
       
-      if (list != NULL)
-        free(list);
-      
       sprintf(log_buf, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
         pjob->ji_qs.ji_destin);
       
@@ -2289,12 +2289,6 @@ int assign_hosts(
       }
 
     }  /* END if (rc == 0) */
-
-  if (list != NULL)
-    free(list);
-        
-  if (portlist != NULL)
-    free(portlist);
 
   if (to_free != NULL)
     free(to_free);

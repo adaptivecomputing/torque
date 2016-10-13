@@ -122,7 +122,7 @@
 #include "mom_comm.h"
 #include "mcom.h"
 #include "svrfunc.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "utils.h"
 #include "../lib/Libnet/lib_net.h" /* get_hostaddr_hostent_af */
 #include "mom_server.h"
@@ -159,7 +159,6 @@ extern tlist_head    svr_newjobs;
 extern tlist_head    mom_polljobs; /* must have resource limits polled */
 extern int           termin_child;
 extern time_t        time_now;
-extern AvlTree       okclients;
 extern int           port_care;
 extern char         *path_prologp;
 extern char         *path_prologuserp;
@@ -6040,35 +6039,20 @@ void im_request(
  
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
-  
-  if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0 )
+ 
+  if (auth_hosts.is_authorized(ipaddr) == false) 
     {
-    long max_len = 1024;
-    long final_len = 0;
-    char *tmp_line = (char *)calloc(1, max_len + 1);
+    std::string list;
     close_conn(chan->sock, FALSE);
     svr_conn[chan->sock].cn_stay_open = FALSE;
     chan->sock = -1;
-    if (tmp_line != NULL)
-      ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
-    else
-      ret = -1;
 
-    if (ret == 0)
-      {
-      snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "bad connect from %s - unauthorized (okclients: %s)",
-        netaddr(pSockAddr),
-        tmp_line);
-      }
-    else
-      snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "bad connect from %s - unauthorized (could not get ok clients %d)",
-        netaddr(pSockAddr),
-        ret);
+    auth_hosts.list_authorized_hosts(list);
+    snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
+      "bad connect from %s - unauthorized (okclients: %s)",
+      netaddr(pSockAddr),
+      list.c_str());
     
-    if (tmp_line != NULL)
-      free(tmp_line);
     log_err(-1, __func__, log_buffer);
 
     goto im_req_finish;

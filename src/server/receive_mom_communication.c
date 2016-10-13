@@ -93,6 +93,7 @@
 #include "attribute.h"
 #include "mom_update.h"
 #include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "net_cache.h"
 #include "threadpool.h"
 #include "../lib/Libnet/lib_net.h"
@@ -379,12 +380,11 @@ void *svr_is_request(
     }
 
   ipaddr = args[1];
+
+  node = auth_hosts.get_authorized_node(ipaddr, mom_port);
   
-  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
-    {
-    node->lock_node(__func__, "AVL_find", LOGLEVEL);
-    } /* END if AVL_find != NULL) */
-  else if (allow_any_mom)
+  if ((node == NULL) &&
+      (allow_any_mom))
     {
     const char *name = get_cached_nameinfo(&addr);
 

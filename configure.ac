@@ -429,6 +429,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/site_mom_chu/Makefile
     src/test/site_mom_ckp/Makefile
     src/test/site_mom_jst/Makefile
+    src/test/authorized_hosts/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile

@@ -65,6 +65,7 @@
 #include "mom_hierarchy_handler.h"
 #include "runjob_help.hpp"
 #include "policy_values.h"
+#include "authorized_hosts.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -84,7 +85,6 @@ extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
-extern AvlTree          ipaddrs;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -887,7 +887,7 @@ void effective_node_delete(
   for (unsigned int i = 0; i < pnode->nd_addrs.size(); i++)
     {
     /* del node's IP addresses from tree  */
-    ipaddrs = AVL_delete_node(pnode->nd_addrs[i], pnode->nd_mom_port, ipaddrs);
+    auth_hosts.remove_address(pnode->nd_addrs[i], pnode->nd_mom_port);
     }
 
   delete pnode;
@@ -1645,7 +1645,7 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
       }
 
     addr = pul[i];
-    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    auth_hosts.add_authorized_address(addr, pnode->nd_mom_port, pnode->get_name());
     }  /* END for (i) */
 
   if ((rc = setup_node_boards(pnode, pul)) != PBSE_NONE)
@@ -3173,7 +3173,7 @@ int create_partial_pbs_node(
     }
 
   insert_node(&allnodes,pnode);
-  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+  auth_hosts.add_authorized_address(addr, pnode->nd_mom_port, pnode->get_name());
   
   svr_totnodes++;
   recompute_ntype_cnts();

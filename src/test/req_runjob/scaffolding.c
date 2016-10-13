@@ -204,7 +204,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
- int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg)
+ int set_nodes(job *pjob, const char *spec, int procs, std::string &node_list, std::string &portlist, char *FailHost, char *EMsg)
   {
   fprintf(stderr, "The call to set_nodes to be mocked!!\n");
   exit(1);

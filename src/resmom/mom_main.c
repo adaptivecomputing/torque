@@ -80,7 +80,7 @@
 #include "dis.h"
 #include "csv.h"
 #include "utils.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #ifdef PENABLE_LINUX26_CPUSETS
 #include "pbs_cpuset.h"
 #include "node_internals.hpp"
@@ -224,6 +224,7 @@ extern struct var_table vtable; /* see start_exec.c */
 
 time_t          last_log_check;
 
+authorized_hosts              auth_hosts;
 std::vector<exiting_job_info> exiting_job_list;
 std::vector<resend_momcomm *> things_to_resend;
 
@@ -360,7 +361,6 @@ int   port_care = FALSE; /* configured without priv ports, don't care about them
 uid_t   uid = 0;  /* uid we are running with */
 unsigned int   alarm_time = 10; /* time before alarm */
 
-extern AvlTree            okclients;  /* accept connections from */
 u_long   localaddr = 0;
 
 int   cphosts_num = 0;
@@ -1948,22 +1948,12 @@ void add_diag_okclient_list(
   std::stringstream &output)
 
   {
-  long max_len = 1024;
-  long final_len = 0;
-  char *tmp_line = (char *)calloc(1, max_len + 1);
-  
-  if (tmp_line != NULL)
-    {
-    int ret = AVL_list(okclients, &tmp_line, &final_len, &max_len);
+  std::string list;
+ 
+  auth_hosts.list_authorized_hosts(list);
 
-    output << "Trusted Client List:  " << tmp_line << ":  " << ret << "\n";
-    free(tmp_line);
-    }
-  else
-    {
-    output << "Trusted Client Could not be retrieved\n";
-    }
-  }
+  output << "Trusted Client List:  " << list << "\n";
+  } // END add_diag_okclient_list()
 
 
 void add_diag_copy_command(
@@ -2907,7 +2897,7 @@ int rm_request(
     }
 
   if (((port_care != FALSE) && (port >= IPPORT_RESERVED)) ||
-      (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0 ))
+      (auth_hosts.is_authorized(ipadd) == false))
     {
     if (bad_restrict(ipadd))
       {
@@ -3441,7 +3431,7 @@ void *tcp_request(
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
-  if (AVL_is_in_tree_no_port_compare(ipadd, 0, okclients) == 0)
+  if (auth_hosts.is_authorized(ipadd) == false)
     {
     sprintf(log_buffer, "bad connect from %s", address);
     log_err(-1, __func__, log_buffer);
@@ -4560,7 +4550,7 @@ bool verify_mom_hierarchy()
           {
           unsigned short rm_port = ntohs(nc.sock_addr.sin_port);
           unsigned long  ipaddr = ntohl(nc.sock_addr.sin_addr.s_addr);
-          okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+          auth_hosts.add_authorized_address(ipaddr, rm_port, "");
           }
             
         legitimate_hierarchy = true;
@@ -5469,7 +5459,7 @@ int setup_program_environment(void)
 
   localaddr = ntohl(inet_addr("127.0.0.1"));
 
-  okclients = AVL_insert(localaddr, 0, NULL, okclients);
+  auth_hosts.add_authorized_address(localaddr, 0, "");
 
   addclient(mom_host);
 
@@ -7553,6 +7543,12 @@ void get_mom_job_dir_sticky_config(
 
   } /* END get_mom_job_dir_sticky_config */
 
+
+// This is a stub that shouldn't ever be used
+pbsnode *find_nodebyname(const char *nodename)
+  {
+  return(NULL);
+  }
 
 
 /* END mom_main.c */

@@ -97,7 +97,7 @@
 #include "mom_config.h"
 #include "dis.h"
 #include "mom_func.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "csv.h"
 #include "json/json.h"
 
@@ -201,7 +201,6 @@ extern char         PBSNodeMsgBuf[MAXLINE];
 extern long         MaxConnectTimeout;
 extern char        *path_log;
 extern tlist_head   mom_varattrs; /* variable attributes */
-extern AvlTree      okclients;  /* accept connections from */
 extern int          mom_server_count;
 extern time_t       time_now;
 extern int          internal_state;
@@ -1424,7 +1423,7 @@ u_long addclient(
 
   ipaddr = ntohl(saddr.s_addr);
 
-  okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+  auth_hosts.add_authorized_address(ipaddr, 0, "");
   
   return(ipaddr);
   }  /* END addclient() */
