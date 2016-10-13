@@ -174,6 +174,15 @@ packages:
            test $$d = gui && echo dummy > $$proot/regen-tclIndex; \
            ( cd $$proot; tar cf - * ) | gzip > $$tarball && \
            ( cd $$proot; tar cf - \
+                           `test -f ./usr/lib/systemd/system/pbs_server.service && echo ./usr/lib/systemd/system/pbs_server.service` \
+                           `test -f ./etc/init.d/pbs_server && echo ./etc/init.d/pbs_server` \
+                           `test -f ./usr/lib/systemd/system/pbs_mom.service && echo ./usr/lib/systemd/system/pbs_mom.service` \
+                           `test -f ./etc/init.d/pbs_mom && echo ./etc/init.d/pbs_mom` \
+                           `test -f ./usr/lib/systemd/system/trqauthd.service && echo ./usr/lib/systemd/system/trqauthd.service` \
+                           `test -f ./etc/init.d/trqauthd && echo ./etc/init.d/trqauthd` \
+                           `test -f ./etc/ld.so.conf.d/torque.conf && echo ./etc/ld.so.conf.d/torque.conf` \
+                           `test -f ./etc/profile.d/torque.sh && echo ./etc/profile.d/torque.sh` \
+                           `test -f ./etc/profile.d/torque.csh && echo ./etc/profile.d/torque.csh` \
                            `test -f ./post-install && echo ./post-install` \
                            `test -f ./regen-tclIndex && echo ./regen-tclIndex` \
                            `test -d .$(sbindir) && echo .$(sbindir)/*` \

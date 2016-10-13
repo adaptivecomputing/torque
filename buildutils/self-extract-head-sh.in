@@ -126,11 +126,11 @@ if test $install -gt 0;then
   # take the archive portion of this file and pipe it to tar
   sed -n $SKIP,\$p $0 | gzip -dc | (cd $destdir; tar x${vopt}f - )
 
-  # finallized files should be owned by root, not the package-builder
+  # finalized files should be owned by root, not the package-builder
   if test $chownfiles -gt 0;then
     test $verbose -gt 0 && echo "setting file user and group ownerships"
     sed -n $SKIP,\$p $0 | gzip -dc | tar tf - | \
-      while read line;do
+      while read line; do
          chown $user $destdir$line; chgrp $group $destdir$line
          case $line in
             *$sbindir/${program_prefix}pbs_iff${program_suffix})
@@ -142,6 +142,15 @@ if test $install -gt 0;then
          esac
       done
   fi
+
+  # see if we need to do an ldconfig
+  sed -n $SKIP,\$p $0 | gzip -dc | tar tf - | \
+      (do_ldconfig=0; while read line; do
+         case $line in
+            */etc/ld.so.conf.d/torque.conf)
+               do_ldconfig=1;;
+         esac
+      done; test $do_ldconfig -gt 0 && /sbin/ldconfig)
 
   # restore the original conf files
   if test $saveconfs -gt 0;then
@@ -160,7 +169,7 @@ if test $install -gt 0;then
       echo "Skipping ${destdir}post-install"
     fi
   fi
-    
+
   echo "Done."
 fi
 
