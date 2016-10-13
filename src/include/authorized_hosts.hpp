@@ -5,7 +5,6 @@
 #include <string>
 
 #include "pbs_nodes.h"
-#include <check.h>
 
 class authorized_host_info
   {

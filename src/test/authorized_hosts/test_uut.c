@@ -2,6 +2,7 @@
 #include "lib_utils.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <check.h>
 
 
 #include "pbs_error.h"
