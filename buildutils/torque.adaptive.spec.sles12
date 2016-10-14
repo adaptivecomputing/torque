@@ -333,7 +333,7 @@
 %define breq_munge %{?with_munge:munge-devel}
 %define breq_pam   %{?with_pam:pam-devel}
 %define breq_scp   %{?with_scp:/usr/bin/scp}
-%define breq_cgroups   %{?with_cgroups:libcgroup} %{?with_cgroups:libcgroup-tools} %{?with_cgroups:hwloc >= 1.9.1}
+%define breq_cgroups   %{?with_cgroups:libcgroup1} %{?with_cgroups:libcgroup-tools} %{?with_cgroups:hwloc >= 1.9.1}
 
 # Missing:
 # libcpuset -> libcpuset.so.*
