@@ -33,7 +33,7 @@ START_TEST(netaddr_pbs_net_t_test_one)
   ipaddr = 167773189;
 
   ipaddr_str = netaddr_pbs_net_t(ipaddr);
-  fail_unless(ipaddr_str != NULL);
+  fail_unless(ipaddr_str != NULL, "");
   fprintf(stdout, "\n%s\n", ipaddr_str);
   free(ipaddr_str);
 
@@ -80,11 +80,11 @@ START_TEST(test_ping_trqauthd)
   unix_domain_file_name = "./unit_test";
   unlink(unix_domain_file_name.c_str());
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
 
   unix_socket_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_SOCKET_FAULT);
+  fail_unless(rc == PBSE_SOCKET_FAULT, "");
 
   unix_socket_success = true;
   socket_connect_success = false;

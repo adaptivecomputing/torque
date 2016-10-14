@@ -53,21 +53,21 @@ START_TEST(test_reserving_and_freeing)
   c.reserve_processing_unit(0);
   c.reserve_processing_unit(8);
 
-  fail_unless(c.get_open_processing_unit() == -1);
+  fail_unless(c.get_open_processing_unit() == -1, "");
   
   // make sure freeing an index we don't have does nothing
   fail_unless(c.free_pu_index(1, completely_free) == false);
-  fail_unless(completely_free == false);
-  fail_unless(c.get_open_processing_unit() == -1);
+  fail_unless(completely_free == false, "");
+  fail_unless(c.get_open_processing_unit() == -1, "");
 
   // make sure an actual free works
   fail_unless(c.free_pu_index(0, completely_free) == true);
-  fail_unless(completely_free == false);
-  fail_unless(c.get_open_processing_unit() == 0);
+  fail_unless(completely_free == false, "");
+  fail_unless(c.get_open_processing_unit() == 0, "");
   fail_unless(c.free_pu_index(0, completely_free) == true);
-  fail_unless(completely_free == false);
+  fail_unless(completely_free == false, "");
   fail_unless(c.free_pu_index(8, completely_free) == true);
-  fail_unless(completely_free == true);
+  fail_unless(completely_free == true, "");
   int index = c.get_open_processing_unit();
   fail_unless(index != -1, "Open processing unit is %d, shouldn't be -1");
   index = c.get_open_processing_unit();
@@ -83,17 +83,17 @@ START_TEST(test_recovering_allocations)
 
   // unit test init gives us os indexes 0 and 8
   c.unit_test_init();
-  fail_unless(c.reserve_processing_unit(0) == true);
-  fail_unless(c.reserve_processing_unit(8) == true);
-  fail_unless(c.reserve_processing_unit(1) == false);
-  fail_unless(c.reserve_processing_unit(9) == false);
-  fail_unless(c.get_open_processing_unit() == -1);
+  fail_unless(c.reserve_processing_unit(0) == true, "");
+  fail_unless(c.reserve_processing_unit(8) == true, "");
+  fail_unless(c.reserve_processing_unit(1) == false, "");
+  fail_unless(c.reserve_processing_unit(9) == false, "");
+  fail_unless(c.get_open_processing_unit() == -1, "");
   fail_unless(c.free_pu_index(0, completely_free) == true);
-  fail_unless(completely_free == false);
-  fail_unless(c.is_free() == false);
+  fail_unless(completely_free == false, "");
+  fail_unless(c.is_free() == false, "");
   fail_unless(c.free_pu_index(8, completely_free) == true);
-  fail_unless(completely_free == true);
-  fail_unless(c.is_free() == true);
+  fail_unless(completely_free == true, "");
+  fail_unless(c.is_free() == true, "");
   }
 END_TEST
 
@@ -103,15 +103,15 @@ START_TEST(test_add_processing_unit)
   Core c;
 
   fail_unless(c.getNumberOfProcessingUnits() == 0, "%d processing units", c.getNumberOfProcessingUnits());
-  fail_unless(c.get_id() == -1);
+  fail_unless(c.get_id() == -1, "");
 
   c.add_processing_unit(CORE, 0);
   c.add_processing_unit(THREAD, 1);
-  fail_unless(c.getNumberOfProcessingUnits() == 2);
-  fail_unless(c.get_id() == 0);
+  fail_unless(c.getNumberOfProcessingUnits() == 2, "");
+  fail_unless(c.get_id() == 0, "");
   fail_unless(c.add_processing_unit(CORE, 2) != 0);
-  fail_unless(c.getNumberOfProcessingUnits() == 2);
-  fail_unless(c.get_id() == 0);
+  fail_unless(c.getNumberOfProcessingUnits() == 2, "");
+  fail_unless(c.get_id() == 0, "");
 
   Core c2;
   c2.add_processing_unit(CORE, 4);
@@ -119,7 +119,7 @@ START_TEST(test_add_processing_unit)
   c2.add_processing_unit(THREAD, 6);
   c2.add_processing_unit(THREAD, 7);
   fail_unless(c2.getNumberOfProcessingUnits() == 4, "%d", c2.getNumberOfProcessingUnits());
-  fail_unless(c2.get_id() == 4);
+  fail_unless(c2.get_id() == 4, "");
   }
 END_TEST
 

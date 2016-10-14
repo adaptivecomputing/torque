@@ -28,9 +28,9 @@ START_TEST(test_update_layout_if_needed)
   pnode->nd_layout = NULL;
   update_layout_if_needed(pnode, sans_threads);
 
-  fail_unless(event_logged == 0);
-  fail_unless(pnode->nd_layout != NULL);
-  fail_unless(pnode->nd_layout->getTotalThreads() == 16);
+  fail_unless(event_logged == 0, "");
+  fail_unless(pnode->nd_layout != NULL, "");
+  fail_unless(pnode->nd_layout->getTotalThreads() == 16, "");
     
   for (int i = 0; i < 16; i++)
     pnode->nd_slots.add_execution_slot();
@@ -40,7 +40,7 @@ START_TEST(test_update_layout_if_needed)
   update_layout_if_needed(pnode, sans_threads);
   update_layout_if_needed(pnode, sans_threads);
   update_layout_if_needed(pnode, sans_threads);
-  fail_unless(event_logged == 0);
+  fail_unless(event_logged == 0, "");
 
   // Simulate that threads were turned on in this machine, therefore increasing the number of
   // execution slots
@@ -49,15 +49,15 @@ START_TEST(test_update_layout_if_needed)
 
   update_layout_if_needed(pnode, with_threads);
   
-  fail_unless(event_logged == 1);
-  fail_unless(pnode->nd_layout->getTotalThreads() == 32);
+  fail_unless(event_logged == 1, "");
+  fail_unless(pnode->nd_layout->getTotalThreads() == 32, "");
 
   // Calling again without changing the number of slots should do nothing
   update_layout_if_needed(pnode, with_threads);
   update_layout_if_needed(pnode, with_threads);
   update_layout_if_needed(pnode, with_threads);
   update_layout_if_needed(pnode, with_threads);
-  fail_unless(event_logged == 1);
+  fail_unless(event_logged == 1, "");
   }
 END_TEST
 #endif
@@ -93,23 +93,23 @@ END_TEST
 START_TEST(test_two)
   {
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(pbsnode));
-  fail_unless(restore_note(pnode) == PBSE_NONE);
-  fail_unless(pnode->nd_note == NULL);
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
+  fail_unless(pnode->nd_note == NULL, "");
 
   fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE);
   fail_unless(!strcmp(pnode->nd_note, "ERROR - bob"));
 
-  fail_unless(restore_note(pnode) == PBSE_NONE);
-  fail_unless(pnode->nd_note == NULL);
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
+  fail_unless(pnode->nd_note == NULL, "");
 
   free(pnode->nd_note);
   pnode->nd_note = strdup("Yo Dawg, I heard you wanted a note");
 
-  fail_unless(restore_note(pnode) == PBSE_NONE);
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note"));
   fail_unless(set_note_error(pnode, "message=ERROR Everything's broken") == PBSE_NONE);
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note - ERROR Everything's broken"));
-  fail_unless(restore_note(pnode) == PBSE_NONE);
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note"));
   }
 END_TEST

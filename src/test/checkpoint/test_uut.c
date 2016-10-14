@@ -19,12 +19,12 @@ START_TEST(establish_server_connection_test)
 
   snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "1.napali");
 
-  fail_unless(establish_server_connection(pjob) == -1);
+  fail_unless(establish_server_connection(pjob) == -1, "");
   connect_fail = true;
   pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str = strdup("bob");
-  fail_unless(establish_server_connection(pjob) == -1);
+  fail_unless(establish_server_connection(pjob) == -1, "");
   connect_fail = false;
-  fail_unless(establish_server_connection(pjob) >= 0);
+  fail_unless(establish_server_connection(pjob) >= 0, "");
   }
 END_TEST
 

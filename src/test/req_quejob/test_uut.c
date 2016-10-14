@@ -39,17 +39,17 @@ START_TEST(test_create_and_initialize_job_structure)
  
   mem_fail = true;
   job *pjob = create_and_initialize_job_structure(1, jobid);
-  fail_unless(pjob == NULL);
+  fail_unless(pjob == NULL, "");
 
   mem_fail = false;
   pjob = create_and_initialize_job_structure(1, jobid);
-  fail_unless(pjob != NULL);
-  fail_unless(jobid == pjob->ji_qs.ji_jobid);
-  fail_unless(pjob->ji_modified == 1);
-  fail_unless(pjob->ji_qs.ji_svrflags == 1);
-  fail_unless(pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_NEW);
-  fail_unless(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str == NULL);
-  fail_unless(pjob->ji_mod_time > 0);
+  fail_unless(pjob != NULL, "");
+  fail_unless(jobid == pjob->ji_qs.ji_jobid, "");
+  fail_unless(pjob->ji_modified == 1, "");
+  fail_unless(pjob->ji_qs.ji_svrflags == 1, "");
+  fail_unless(pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_NEW, "");
+  fail_unless(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str == NULL, "");
+  fail_unless(pjob->ji_mod_time > 0, "");
   }
 END_TEST
 
@@ -78,14 +78,14 @@ START_TEST(test_get_queue_for_job)
   default_queue = false;
   queue_name[0] = '@';
   fail_unless(get_queue_for_job(queue_name, rc) == NULL);
-  fail_unless(rc == PBSE_QUENODFLT);
+  fail_unless(rc == PBSE_QUENODFLT, "");
 
   default_queue = true;
   fail_unless(get_queue_for_job(queue_name, rc) != NULL);
 
   strcpy(queue_name, "batch2");
   fail_unless(get_queue_for_job(queue_name, rc) == NULL);
-  fail_unless(rc == PBSE_UNKQUE);
+  fail_unless(rc == PBSE_UNKQUE, "");
   
   strcpy(queue_name, "batch");
   fail_unless(get_queue_for_job(queue_name, rc) != NULL);
@@ -95,8 +95,8 @@ END_TEST
 
 START_TEST(test_job_exists)
   {
-  fail_unless(job_exists("0.napali") == false);
-  fail_unless(job_exists("1.napali") == true);
+  fail_unless(job_exists("0.napali") == false, "");
+  fail_unless(job_exists("1.napali") == true, "");
   }
 END_TEST
 
@@ -110,7 +110,7 @@ START_TEST(test_one)
   memset(&j,0,sizeof(j));
   memset(&req,0,sizeof(req));
 
-  fail_unless(req_jobcredential(&req) == PBSE_IVALREQ);
+  fail_unless(req_jobcredential(&req) == PBSE_IVALREQ, "");
 
   strcpy(j.ji_qs.ji_jobid,"SomeJob");
   strcpy(j.ji_qs.ji_fileprefix,"prefix");
@@ -118,19 +118,19 @@ START_TEST(test_one)
   newjobs.insert(&j,j.ji_qs.ji_jobid);
   newjobs.unlock();
 
-  fail_unless(req_jobcredential(&req) == PBSE_NONE);
+  fail_unless(req_jobcredential(&req) == PBSE_NONE, "");
 
   memset(&req,0,sizeof(req));
 
   strcpy(req.rq_ind.rq_jobfile.rq_jobid,"NotThisJob");
-  fail_unless(req_jobscript(&req) == PBSE_IVALREQ);
+  fail_unless(req_jobscript(&req) == PBSE_IVALREQ, "");
 
   path_jobs = getcwd(path_to_jobs,sizeof(path_to_jobs));
   strcat(path_jobs,"/");
   sprintf(cmd,"rm -f %s*.SC",path_jobs);
   system(cmd);
   strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
-  fail_unless(req_jobscript(&req) == PBSE_NONE);
+  fail_unless(req_jobscript(&req) == PBSE_NONE, "");
   system(cmd);
   }
 END_TEST
@@ -148,9 +148,9 @@ START_TEST(test_get_job_id)
   preq.rq_fromsvr = 1;
   strcpy(preq.rq_ind.rq_queuejob.rq_jid, "1.napali");
   fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE);
-  fail_unless(job_id == "1.napali");
-  fail_unless(resc_access_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_SvWR));
-  fail_unless(created_here == 0);
+  fail_unless(job_id == "1.napali", "");
+  fail_unless(resc_access_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_SvWR), "");
+  fail_unless(created_here == 0, "");
 
   preq.rq_fromsvr = 0;
   resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
@@ -160,25 +160,25 @@ START_TEST(test_get_job_id)
   sprintf(server_name, "napali");
   fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE);
   fail_unless(job_id == "0.napali", job_id.c_str());
-  fail_unless(created_here == 1);
-  fail_unless(resc_access_perm == (ATR_DFLAG_USWR | ATR_DFLAG_Creat));
+  fail_unless(created_here == 1, "");
+  fail_unless(resc_access_perm == (ATR_DFLAG_USWR | ATR_DFLAG_Creat), "");
 
   strcpy(str_to_set, "tom");
   created_here = 0;
   fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE);
-  fail_unless(created_here == 1);
+  fail_unless(created_here == 1, "");
   fail_unless(job_id == "1.napali.tom", job_id.c_str());
 
   created_here = 0;
   long_to_set = 0;
   fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE);
-  fail_unless(created_here == 1);
+  fail_unless(created_here == 1, "");
   fail_unless(job_id == "2.tom", job_id.c_str());
 
   created_here = 0;
   str_to_set[0] = '\0';
   fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE);
-  fail_unless(created_here == 1);
+  fail_unless(created_here == 1, "");
   fail_unless(job_id == "3", job_id.c_str());
 
   server.sv_qs.sv_jobidnumber = PBS_SEQNUMTOP;
@@ -200,7 +200,7 @@ START_TEST(test_req_commit)
   strcpy(preq->rq_ind.rq_commit, "1.napali");
   default_queue = false;
   set_ji_substate = true;
-  fail_unless(PBSE_MUTEX_ALREADY_UNLOCKED == req_commit(preq));
+  fail_unless(PBSE_MUTEX_ALREADY_UNLOCKED == req_commit(preq), "");
   }
 END_TEST
 

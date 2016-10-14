@@ -74,12 +74,12 @@ START_TEST(set_job_comment_test)
 
   set_job_comment(&pjob, "bob");
   fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "bob"));
-  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET, "");
  
   // Overwrite, do not append
   set_job_comment(&pjob, "tim");
   fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "tim"));
-  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET, "");
   }
 END_TEST
 
@@ -183,7 +183,7 @@ START_TEST(return_stdfile_test)
 
   fail_unless((p2 = return_stdfile(&preq, &pjob, JOB_ATR_errpath)) == p1);
   fail_unless((p2 = return_stdfile(NULL, &pjob, JOB_ATR_outpath)) != NULL);
-  fail_unless(p2->rq_type == PBS_BATCH_ReturnFiles);
+  fail_unless(p2->rq_type == PBS_BATCH_ReturnFiles, "");
 
   pjob.ji_wattr[JOB_ATR_checkpoint_name].at_flags = 0;
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_outpath) == NULL);
@@ -202,8 +202,8 @@ START_TEST(rel_resc_test)
   job pjob;
 
   rel_resc(&pjob);
-  fail_unless(svr_do_schedule == SCH_SCHEDULE_TERM);
-  fail_unless(listener_command == SCH_SCHEDULE_TERM);
+  fail_unless(svr_do_schedule == SCH_SCHEDULE_TERM, "");
+  fail_unless(listener_command == SCH_SCHEDULE_TERM, "");
   }
 END_TEST
 
@@ -216,12 +216,12 @@ START_TEST(handle_exiting_or_abort_substate_test)
 
   memset(&pjob, 0, sizeof(pjob));
   
-  fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE);
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_EXITING);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RETURNSTD);
+  fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE, "");
+  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_EXITING, "");
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RETURNSTD, "");
 
   pjob.ji_wattr[JOB_ATR_depend].at_flags |= ATR_VFLAG_SET;
-  fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE);
+  fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -237,7 +237,7 @@ START_TEST(setrerun_test)
   fail_unless(setrerun(&pjob,NULL) != PBSE_NONE);
   pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
   fail_unless(setrerun(&pjob,"rerunner") == PBSE_NONE);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN, "");
   }
 END_TEST
 
@@ -254,13 +254,13 @@ START_TEST(setup_cpyfiles_test)
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
-  fail_unless(preq != NULL);
+  fail_unless(preq != NULL, "");
 
   pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str = strdup("dbeer");
   preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
 
   preq = setup_cpyfiles(preq, pjob, strdup("from"), strdup("to"), 1, 1);
-  fail_unless(preq != NULL);
+  fail_unless(preq != NULL, "");
   }
 END_TEST
 
@@ -323,18 +323,18 @@ START_TEST(handle_complete_first_time_test)
   memset(&pjob, 0, sizeof(pjob));
   strcpy(pjob.ji_qs.ji_jobid, "1.napali");
 
-  fail_unless(handle_complete_first_time(&pjob) == 0);
+  fail_unless(handle_complete_first_time(&pjob) == 0, "");
   cray_enabled = 1;
   double_bad = 1;
 
-  fail_unless(handle_complete_first_time(&pjob) == PBSE_JOBNOTFOUND);
+  fail_unless(handle_complete_first_time(&pjob) == PBSE_JOBNOTFOUND, "");
 
   double_bad = 0;
-  fail_unless(handle_complete_first_time(&pjob) == 0);
+  fail_unless(handle_complete_first_time(&pjob) == 0, "");
 
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
   pjob.ji_wattr[JOB_ATR_comp_time].at_flags = ATR_VFLAG_SET;
-  fail_unless(handle_complete_first_time(&pjob) == 0);
+  fail_unless(handle_complete_first_time(&pjob) == 0, "");
   }
 END_TEST
 
@@ -372,14 +372,14 @@ START_TEST(handle_complete_second_time_test)
   ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   ptask->wt_parm1 = strdup("1.napali");
   handle_complete_second_time(ptask);
-  fail_unless(purged == false);
+  fail_unless(purged == false, "");
   
   completed = true;
   ptask = (work_task *)calloc(1, sizeof(*ptask));
   ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   ptask->wt_parm1 = strdup("1.napali");
   handle_complete_second_time(ptask);
-  fail_unless(purged == true);
+  fail_unless(purged == true, "");
   completed = false;
 
   completed = false;
@@ -388,7 +388,7 @@ START_TEST(handle_complete_second_time_test)
   ptask->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   ptask->wt_parm1 = strdup("1.napali");
   handle_complete_second_time(ptask);
-  fail_unless(purged == true);
+  fail_unless(purged == true, "");
   }
 END_TEST
 
@@ -412,16 +412,16 @@ START_TEST(handle_complete_subjob_test)
   parent->ji_cray_clone = cray;
   parent->ji_external_clone = external;
 
-  fail_unless(handle_complete_subjob(cray) == PBSE_NONE);
-  fail_unless(parent->ji_qs.ji_state != JOB_STATE_COMPLETE);
+  fail_unless(handle_complete_subjob(cray) == PBSE_NONE, "");
+  fail_unless(parent->ji_qs.ji_state != JOB_STATE_COMPLETE, "");
 
   printf("final\n");
 
   double_bad = 1;
   cray->ji_qs.ji_state = JOB_STATE_COMPLETE;
-  fail_unless(handle_complete_subjob(external) == PBSE_NONE);
-  fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE);
-  fail_unless(handle_complete_subjob(external) == PBSE_NONE);
+  fail_unless(handle_complete_subjob(external) == PBSE_NONE, "");
+  fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE, "");
+  fail_unless(handle_complete_subjob(external) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -440,16 +440,16 @@ START_TEST(handle_exited_test)
   pthread_mutex_init(listener_command_mutex, NULL);
 
   double_bad = 0;
-  fail_unless(handle_exited(pjob) == PBSE_NONE);
+  fail_unless(handle_exited(pjob) == PBSE_NONE, "");
 
   double_bad = 1;
-  fail_unless(handle_exited(pjob) == PBSE_JOBNOTFOUND);
+  fail_unless(handle_exited(pjob) == PBSE_JOBNOTFOUND, "");
   double_bad = 0;
 
   bad_job = TRUE;
-  fail_unless(handle_exited(pjob) == PBSE_CONNECT);
+  fail_unless(handle_exited(pjob) == PBSE_CONNECT, "");
   bad_drequest = TRUE;
-  fail_unless(handle_exited(pjob) == PBSE_CONNECT);
+  fail_unless(handle_exited(pjob) == PBSE_CONNECT, "");
   alloc_br_null = TRUE;
   }
 END_TEST
@@ -485,31 +485,31 @@ START_TEST(end_of_job_accounting_test)
   called_account_jobend = false;
   pjob->ji_being_deleted = true;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
-  fail_unless(called_account_jobend == false);
+  fail_unless(called_account_jobend == false, "");
 
   pjob->ji_being_deleted = false;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
-  fail_unless(called_account_jobend == false);
+  fail_unless(called_account_jobend == false, "");
 
   // We need to also set a start time to call this.
   pjob->ji_qs.ji_stime = 1;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
-  fail_unless(called_account_jobend == true);
+  fail_unless(called_account_jobend == true, "");
   // Make sure this is set - should cause the next call to not execute
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0, "");
   
   // Make sure that we'll do end of job accounting for jobs that are deleted while running
   // First call doesn't do account_jobend due to svrflags
   pjob->ji_being_deleted = true;
   called_account_jobend = false;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
-  fail_unless(called_account_jobend == false);
+  fail_unless(called_account_jobend == false, "");
 
   pjob->ji_qs.ji_svrflags = 0;
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
-  fail_unless(called_account_jobend == true);
+  fail_unless(called_account_jobend == true, "");
   
   usage = 0;
   }
@@ -525,14 +525,14 @@ START_TEST(handle_terminating_array_subjob_test)
   strcpy(pjob->ji_arraystructid, "1[].napali");
 
   double_bad = 1;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID, "");
 
   double_bad = 0;
   bad_job = 0;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE, "");
 
   bad_job = 1;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID, "");
   bad_job = 0;
   }
 END_TEST
@@ -545,14 +545,14 @@ START_TEST(handle_rerunning_array_subjob_test)
   strcpy(pjob->ji_arraystructid, "1[].napali");
   
   double_bad = 1;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID, "");
 
   double_bad = 0;
   bad_job = 0;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_NONE, "");
 
   bad_job = 1;
-  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID);
+  fail_unless(handle_terminating_array_subjob(pjob) == PBSE_UNKJOBID, "");
   }
 END_TEST
 
@@ -582,44 +582,44 @@ START_TEST(update_substate_from_exit_status_test)
   cray_enabled = 0;
   usage = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
-  fail_unless(alreadymailed == 0);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1, "");
+  fail_unless(alreadymailed == 0, "");
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT_MEM;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
-  fail_unless(alreadymailed == 1);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING, "");
+  fail_unless(alreadymailed == 1, "");
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_FAIL1;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
-  fail_unless(alreadymailed == 1);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING, "");
+  fail_unless(alreadymailed == 1, "");
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITABT;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN, "");
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0, "");
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"\n\n\n\n\n\n\n\n\n") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN, "");
   pjob->ji_qs.ji_svrflags = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1, "");
   
   // make sure disabling auto requeuing works
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
   disable_requeue = 1;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING, "");
   disable_requeue = 0;
 
 
@@ -628,23 +628,23 @@ START_TEST(update_substate_from_exit_status_test)
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_BADRESRT;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_CHECKPOINT_FILE;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN, "");
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0, "");
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRST;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_SYSTEM);
-  fail_unless(pjob->ji_momhandle == -1);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0);
+  fail_unless(pjob->ji_momhandle == -1, "");
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0, "");
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0, "");
 
   alreadymailed = 0;
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRMG;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0);
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0, "");
+  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0, "");
   
   alreadymailed = 0;
   // The substate should stay the same when the job is being deleted

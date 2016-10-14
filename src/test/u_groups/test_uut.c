@@ -62,25 +62,25 @@ START_TEST(test_free_grname)
 
   /* buf is NULL */
   free_grname(grp, buf);
-  fail_unless(buf == NULL);
+  fail_unless(buf == NULL, "");
 
   buf = (char *)malloc(20);
-  fail_unless(buf != NULL);
+  fail_unless(buf != NULL, "");
   memset(buf, '1', 10);
   buf[10] = 0;
   free_grname(grp, buf);
-  fail_unless(grp == NULL);
-  fail_unless(strlen(buf) < 10);
+  fail_unless(grp == NULL, "");
+  fail_unless(strlen(buf) < 10, "");
   
   buf = (char *)malloc(20);
-  fail_unless(buf != NULL);
+  fail_unless(buf != NULL, "");
   memset(buf, '1', 10);
   buf[10] = 0;
   grp = (struct group *)malloc(sizeof(struct group));
-  fail_unless(grp != NULL);
+  fail_unless(grp != NULL, "");
   free_grname(grp, buf);
-  fail_unless(strlen(buf) < 10);
-  fail_unless(grp != NULL);
+  fail_unless(strlen(buf) < 10, "");
+  fail_unless(grp != NULL, "");
 
   }
 END_TEST
@@ -94,7 +94,7 @@ START_TEST(test_getgrgid_ext)
   fail_unless(strcmp("root", grp->gr_name) == 0);
 
   grp = getgrgid_ext(&buf, 59000);
-  fail_unless(grp == NULL);
+  fail_unless(grp == NULL, "");
 
   }
 END_TEST

@@ -27,7 +27,7 @@ START_TEST(test_attr_to_str)
   pattr.at_flags |= ATR_VFLAG_SET;
   pattr.at_val.at_long = 7;
   fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE);
-  fail_unless(output == "7");
+  fail_unless(output == "7", "");
 
   output.clear();
   ad.at_type = ATR_TYPE_CHAR;
@@ -39,7 +39,7 @@ START_TEST(test_attr_to_str)
   ad.at_type = ATR_TYPE_STR;
   pattr.at_val.at_str = strdup("bobby wood");
   fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE);
-  fail_unless(output == "bobby wood");
+  fail_unless(output == "bobby wood", "");
 
   }
 END_TEST
@@ -50,11 +50,11 @@ START_TEST(test_appendEscapedXML)
   std::string escaped;
 
   appendEscapedXML("command > log.txt 2>&1", escaped);
-  fail_unless(escaped == "command &gt; log.txt 2&gt;&amp;1");
+  fail_unless(escaped == "command &gt; log.txt 2&gt;&amp;1", "");
 
   escaped.clear();
   appendEscapedXML("do not alter this", escaped);
-  fail_unless(escaped == "do not alter this");
+  fail_unless(escaped == "do not alter this", "");
 
   escaped.clear();
   appendEscapedXML("don't use \" for emphasis, it's < grammatically correct", escaped);

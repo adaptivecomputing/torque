@@ -99,7 +99,7 @@ START_TEST(obit_reply_test)
   
   eintr_test = true;
   obit_reply(&sock);
-  fail_unless(DIS_reply_read_count == 11);
+  fail_unless(DIS_reply_read_count == 11, "");
   eintr_test = false;
   }
 END_TEST
@@ -117,20 +117,20 @@ START_TEST(test_eligible_for_exiting_check)
   job *pjob = (job *)calloc(1, sizeof(job));
   server_down = TRUE;
 
-  fail_unless(eligible_for_exiting_check(pjob) == false);
+  fail_unless(eligible_for_exiting_check(pjob) == false, "");
   server_down = FALSE;
-  fail_unless(eligible_for_exiting_check(pjob) == false);
+  fail_unless(eligible_for_exiting_check(pjob) == false, "");
   pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-  fail_unless(eligible_for_exiting_check(pjob) == true);
+  fail_unless(eligible_for_exiting_check(pjob) == true, "");
 
   pjob->ji_flags |= MOM_CHECKPOINT_POST;
-  fail_unless(eligible_for_exiting_check(pjob) == false);
+  fail_unless(eligible_for_exiting_check(pjob) == false, "");
   
   pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
-  fail_unless(eligible_for_exiting_check(pjob) == false);
+  fail_unless(eligible_for_exiting_check(pjob) == false, "");
 
   pjob->ji_flags = 0;
-  fail_unless(eligible_for_exiting_check(pjob) == true);
+  fail_unless(eligible_for_exiting_check(pjob) == true, "");
   }
 END_TEST
 
@@ -141,11 +141,11 @@ START_TEST(test_jobs_main_process)
 
   pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long = 2;
   check_jobs_main_process(pjob, &ptask);
-  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING, "");
   
   pjob->ji_sampletim -= 500;
   check_jobs_main_process(pjob, &ptask);
-  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING, "");
   }
 END_TEST
 
@@ -155,21 +155,21 @@ START_TEST(test_non_mother_superior_cleanup)
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
 
-  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  fail_unless(non_mother_superior_cleanup(pjob) == true, "");
 
   pjob->ji_qs.ji_svrflags = 0;
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
-  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  fail_unless(non_mother_superior_cleanup(pjob) == true, "");
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
-  fail_unless(non_mother_superior_cleanup(pjob) == true);
-  fail_unless(exiting_tasks == 1);
+  fail_unless(non_mother_superior_cleanup(pjob) == true, "");
+  fail_unless(exiting_tasks == 1, "");
   
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  fail_unless(non_mother_superior_cleanup(pjob) == true, "");
   
   pjob->ji_qs.ji_svrflags = 0;
-  fail_unless(non_mother_superior_cleanup(pjob) == true);
+  fail_unless(non_mother_superior_cleanup(pjob) == true, "");
   }
 END_TEST
 
@@ -189,14 +189,14 @@ START_TEST(test_mother_superior_cleanup)
   pjob->ji_hosts[1].hn_sister = SISTER_KILLDONE;
   pjob->ji_flags = MOM_EPILOGUE_RUN;
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
-  fail_unless(exiting_job_list.size() == 1);
-  fail_unless(exiting_job_list[0].jobid == "1.napali");
+  fail_unless(exiting_job_list.size() == 1, "");
+  fail_unless(exiting_job_list[0].jobid == "1.napali", "");
   
   called_fork_me = 0;
   pjob->ji_flags = 0;
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
-  fail_unless(called_open_socket == 1);
-  fail_unless(called_fork_me == 1);
+  fail_unless(called_open_socket == 1, "");
+  fail_unless(called_fork_me == 1, "");
   }
 END_TEST
 

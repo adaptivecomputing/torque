@@ -19,7 +19,7 @@ int process_and_save_socket_error(int socket_errno);
 START_TEST(test_get_random_reserved_port)
   {
   for (int i = 0; i < 2048; i++)
-    fail_unless(get_random_reserved_port() < 1024);
+    fail_unless(get_random_reserved_port() < 1024, "");
 
   }
 END_TEST
@@ -28,17 +28,17 @@ START_TEST(test_process_and_save_socket_error)
   {
   int rc = process_and_save_socket_error(ETIMEDOUT);
 
-  fail_unless(rc == PERMANENT_SOCKET_FAIL);
-  fail_unless(errno == ETIMEDOUT);
+  fail_unless(rc == PERMANENT_SOCKET_FAIL, "");
+  fail_unless(errno == ETIMEDOUT, "");
 
-  fail_unless(process_and_save_socket_error(EINTR) == TRANSIENT_SOCKET_FAIL);
-  fail_unless(errno == EINTR);
+  fail_unless(process_and_save_socket_error(EINTR) == TRANSIENT_SOCKET_FAIL, "");
+  fail_unless(errno == EINTR, "");
 
-  fail_unless(process_and_save_socket_error(EAGAIN) == TRANSIENT_SOCKET_FAIL);
-  fail_unless(errno == EAGAIN);
+  fail_unless(process_and_save_socket_error(EAGAIN) == TRANSIENT_SOCKET_FAIL, "");
+  fail_unless(errno == EAGAIN, "");
 
-  fail_unless(process_and_save_socket_error(EHOSTUNREACH) == PERMANENT_SOCKET_FAIL);
-  fail_unless(errno == EHOSTUNREACH);
+  fail_unless(process_and_save_socket_error(EHOSTUNREACH) == PERMANENT_SOCKET_FAIL, "");
+  fail_unless(errno == EHOSTUNREACH, "");
   }
 END_TEST
 

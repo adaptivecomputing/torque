@@ -36,20 +36,20 @@ START_TEST(test_remove_invalid_allocations)
   freed_job_allocation = 0;
   job_state = JOB_STATE_RUNNING;
   remove_invalid_allocations(&pnode);
-  fail_unless(freed_job_allocation == 3);
+  fail_unless(freed_job_allocation == 3, "");
 
   // Set that we find the jobs, but they aren't running. This should free all 3 again.
   dont_find_job = false;
   freed_job_allocation = 0;
   job_state = JOB_STATE_QUEUED;
   remove_invalid_allocations(&pnode);
-  fail_unless(freed_job_allocation == 3);
+  fail_unless(freed_job_allocation == 3, "");
 
   // Make it so that the jobs are in a running state, so none should get freed.
   freed_job_allocation = 0;
   job_state = JOB_STATE_RUNNING;
   remove_invalid_allocations(&pnode);
-  fail_unless(freed_job_allocation == 0);
+  fail_unless(freed_job_allocation == 0, "");
   }
 END_TEST
 #endif
@@ -64,10 +64,10 @@ START_TEST(test_check_jobs_queue)
   sprintf(pjob.ji_qs.ji_queue, "lost");
 
   check_jobs_queue(&pjob);
-  fail_unless(allocd_queue != NULL);
+  fail_unless(allocd_queue != NULL, "");
   fail_unless(!strcmp(allocd_queue->qu_qs.qu_name, pjob.ji_qs.ji_queue));
-  fail_unless(allocd_queue->qu_qs.qu_type == QTYPE_Execution);
-  fail_unless(allocd_queue->qu_attr[QA_ATR_GhostQueue].at_val.at_long == 1);
+  fail_unless(allocd_queue->qu_qs.qu_type == QTYPE_Execution, "");
+  fail_unless(allocd_queue->qu_attr[QA_ATR_GhostQueue].at_val.at_long == 1, "");
   fail_unless(!strcmp(allocd_queue->qu_attr[QA_ATR_QType].at_val.at_str, "Execution"));
   }
 END_TEST
@@ -78,26 +78,26 @@ START_TEST(test_mk_subdirs)
   char *paths[3] = { NULL };
 
   // null path - expect failure
-  fail_unless(mk_subdirs(NULL) != PBSE_NONE);
-  fail_unless(global_log_ext_msg[0] == '\0');
+  fail_unless(mk_subdirs(NULL) != PBSE_NONE, "");
+  fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // no paths defined - expect success
-  fail_unless(mk_subdirs(paths) == PBSE_NONE);
-  fail_unless(global_log_ext_msg[0] == '\0');
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
+  fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // path defined - expect success
-  fail_unless((paths[0] = strdup("./subdir")) != NULL);
-  fail_unless(mk_subdirs(paths) == PBSE_NONE);
+  fail_unless((paths[0] = strdup("./subdir")) != NULL, "");
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
   fail_unless(strncmp("created", global_log_ext_msg, strlen("created")) == 0);
 
   // path defined - expect success (no log msg since already created)
   global_log_ext_msg[0] = '\0';
-  fail_unless((paths[0] = strdup("./subdir")) != NULL);
-  fail_unless(mk_subdirs(paths) == PBSE_NONE);
-  fail_unless(global_log_ext_msg[0] == '\0');
+  fail_unless((paths[0] = strdup("./subdir")) != NULL, "");
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
+  fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // clean up
-  fail_unless(system("rmdir ./subdir*") == 0);
+  fail_unless(system("rmdir ./subdir*") == 0, "");
   }
 END_TEST
 
@@ -110,15 +110,15 @@ START_TEST(test_pbsd_init_reque)
   aborted = 0;
   enque_rc = PBSE_NONE;
   fail_unless(pbsd_init_reque(pjob, 0) == PBSE_NONE);
-  fail_unless(evaluated == 0);
+  fail_unless(evaluated == 0, "");
 
   enque_rc = PBSE_BADDEPEND;
   fail_unless(pbsd_init_reque(pjob, 1) == PBSE_NONE);
-  fail_unless(evaluated == 1);
+  fail_unless(evaluated == 1, "");
   
   enque_rc = 10;
   fail_unless(pbsd_init_reque(pjob, 1) == 10);
-  fail_unless(evaluated == 1);
+  fail_unless(evaluated == 1, "");
   }
 END_TEST
 

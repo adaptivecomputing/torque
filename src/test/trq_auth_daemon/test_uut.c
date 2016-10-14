@@ -39,7 +39,7 @@ START_TEST(test_parse_command_line1)
 
   daemonize_server = true;
   parse_command_line(2, argv);
-  fail_unless(daemonize_server == false);
+  fail_unless(daemonize_server == false, "");
   }
 END_TEST
 
@@ -51,7 +51,7 @@ START_TEST(test_parse_command_line2)
 
   daemonize_server = true;
   parse_command_line(2, argv);
-  fail_unless(daemonize_server == false);
+  fail_unless(daemonize_server == false, "");
   }
 END_TEST
 
@@ -63,7 +63,7 @@ START_TEST(test_parse_command_line3)
 
   daemonize_server = true;
   parse_command_line(1, argv);
-  fail_unless(daemonize_server == true);
+  fail_unless(daemonize_server == true, "");
   }
 END_TEST
 

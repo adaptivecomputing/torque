@@ -35,7 +35,7 @@ START_TEST(test_place_all_execution_slots)
 
   placed_all = 0;
   s.place_all_execution_slots(r, a);
-  fail_unless(placed_all == 2);
+  fail_unless(placed_all == 2, "");
   }
 END_TEST
 
@@ -54,7 +54,7 @@ START_TEST(test_spread_place_pu)
   called_spread_place_cores = 0;
   a.set_place_type(place_core);
   fail_unless(s.spread_place_pu(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
-  fail_unless(called_spread_place_cores == 2);
+  fail_unless(called_spread_place_cores == 2, "");
   
   }
 END_TEST
@@ -72,19 +72,19 @@ START_TEST(test_spread_place)
   completely_free = true;
   called_spread_place = 0;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
-  fail_unless(called_spread_place == 2);
+  fail_unless(called_spread_place == 2, "");
   
   completely_free = false;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
-  fail_unless(called_spread_place == 2);
+  fail_unless(called_spread_place == 2, "");
 
   completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
-  fail_unless(called_spread_place == 3);
+  fail_unless(called_spread_place == 3, "");
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
-  fail_unless(called_spread_place == 4);
+  fail_unless(called_spread_place == 4, "");
 
   }
 END_TEST
@@ -103,8 +103,8 @@ START_TEST(test_accelerators_remaining)
   gpus_remaining = s.get_gpus_remaining();
   mics_remaining = s.get_mics_remaining();
 
-  fail_unless(gpus_remaining == 0);
-  fail_unless(mics_remaining == 0);
+  fail_unless(gpus_remaining == 0, "");
+  fail_unless(mics_remaining == 0, "");
   }
 END_TEST
 
@@ -114,8 +114,8 @@ START_TEST(test_basic_constructor)
   int remainder = 0;
   Socket s(5, 1, remainder);
 
-  fail_unless(s.getTotalChips() == 1);
-  fail_unless(s.getAvailableChips() == 1);
+  fail_unless(s.getTotalChips() == 1, "");
+  fail_unless(s.getAvailableChips() == 1, "");
   }
 END_TEST
 
@@ -172,9 +172,9 @@ START_TEST(test_store_pci_device_appropriately)
 
   called_store_pci = 0;
   fail_unless(s.store_pci_device_appropriately(d, false) == false);
-  fail_unless(called_store_pci == 2);
+  fail_unless(called_store_pci == 2, "");
   fail_unless(s.store_pci_device_appropriately(d, true) == true);
-  fail_unless(called_store_pci == 3);
+  fail_unless(called_store_pci == 3, "");
   }
 END_TEST
 
@@ -279,8 +279,8 @@ START_TEST(test_place_task)
   tasks = 4;
   placed = 3;
   int rc = s.place_task(r, a, 3, "napali");
-  fail_unless(rc == 3);
-  fail_unless(called_place = 1);
+  fail_unless(rc == 3, "");
+  fail_unless(called_place = 1, "");
 
   // This call should use both nodes so place should get called twice and one should be leftover
   called_place = 0;
@@ -290,12 +290,12 @@ START_TEST(test_place_task)
   place_amount = 4; // make partially place do nothing
   int num = s.place_task(r, a, 3, "napali");
   fail_unless(num == 1, "Expected 1, got %d", num);
-  fail_unless(called_place = 1);
+  fail_unless(called_place = 1, "");
 
-  fail_unless(s.is_available() == false);
+  fail_unless(s.is_available() == false, "");
   oscillate = false;
-  fail_unless(s.free_task("1.napali") == true);
-  fail_unless(s.is_available() == true);
+  fail_unless(s.free_task("1.napali") == true, "");
+  fail_unless(s.is_available() == true, "");
 
   // Make sure we'll place a task that fits on this socket but has to span numa nodes
   tasks = 0.5;
@@ -304,7 +304,7 @@ START_TEST(test_place_task)
   partially_placed = 0;
   num = s.place_task(r, a, 1, "napali");
   fail_unless(num == 1, "Expected 1, got %d", num);
-  fail_unless(partially_placed == 2);
+  fail_unless(partially_placed == 2, "");
   }
 END_TEST
 
@@ -322,11 +322,11 @@ START_TEST(test_partial_place)
   remaining.cpus = 1;
   remaining.place_cpus = 0;
 
-  fail_unless(s.fits_on_socket(remaining) == true);
+  fail_unless(s.fits_on_socket(remaining) == true, "");
   remaining.cores_only = false;
-  fail_unless(s.fits_on_socket(remaining) == true);
+  fail_unless(s.fits_on_socket(remaining) == true, "");
   remaining.memory = 1024;
-  fail_unless(s.fits_on_socket(remaining) == false);
+  fail_unless(s.fits_on_socket(remaining) == false, "");
 
   // Tell it to fully place the job
   place_amount = 1;
@@ -354,11 +354,11 @@ START_TEST(test_free_task)
 
   // Should return true because the Chip::free_task is stubbed to always return true
   oscillate = false;
-  fail_unless(s.free_task("1.napali") == true);
+  fail_unless(s.free_task("1.napali") == true, "");
 
   // Should return false because oscillate makes Chip::free_task return true then false
   oscillate = true;
-  fail_unless(s.free_task("1.napali") == false);
+  fail_unless(s.free_task("1.napali") == false, "");
   }
 END_TEST
 

@@ -18,7 +18,7 @@ START_TEST(test_req_modifyjob)
 
   // create space for the req
   preq = (batch_request *)calloc(1, sizeof(batch_request));
-  fail_unless(preq != NULL);
+  fail_unless(preq != NULL, "");
 
   // load a full job name into the req name
   snprintf(preq->rq_ind.rq_modify.rq_objname, sizeof(preq->rq_ind.rq_modify.rq_objname),

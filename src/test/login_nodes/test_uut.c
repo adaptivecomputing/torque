@@ -108,13 +108,13 @@ START_TEST(retrieval_test)
   initialize_node_for_testing(&n3);
   initialize_node_for_testing(&n4);
   rc = add_to_login_holder(&n1);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n2);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n3);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n4);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   rtd = get_next_login_node(NULL);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);
@@ -176,7 +176,7 @@ START_TEST(retrieval_test)
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node != 0);
+    fail_unless(logins.next_node != 0, "");
     }
   
   for (int i = 0; i < 51; i++)
@@ -189,8 +189,8 @@ START_TEST(retrieval_test)
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node != 0);
-    fail_unless(logins.next_node != 1);
+    fail_unless(logins.next_node != 0, "");
+    fail_unless(logins.next_node != 1, "");
     }
   
   for (int i = 0; i < 51; i++)
@@ -203,7 +203,7 @@ START_TEST(retrieval_test)
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node == 3);
+    fail_unless(logins.next_node == 3, "");
     }
   
   for (int i = 0; i < 51; i++)
@@ -217,21 +217,21 @@ START_TEST(retrieval_test)
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node == 0);
+    fail_unless(logins.next_node == 0, "");
     }
 
   n2.nd_job_usages.clear();
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node == 0 || logins.next_node == 1);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1, "");
     }
 
   n3.nd_job_usages.clear();
   for (int i = 0; i < 200; i++)
     {
     update_next_node_index(0, NULL);
-    fail_unless(logins.next_node == 0 || logins.next_node == 1 || logins.next_node == 2);
+    fail_unless(logins.next_node == 0 || logins.next_node == 1 || logins.next_node == 2, "");
     }
   }
 END_TEST
@@ -285,13 +285,13 @@ START_TEST(prop_test)
 
   initialize_login_holder();
   rc = add_to_login_holder(&n1);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n2);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n3);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   rc = add_to_login_holder(&n4);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   rtd = get_next_login_node(props);
   increment_counts(&n1, &n2, &n3, &n4, rtd, &n1_rtd, &n2_rtd, &n3_rtd, &n4_rtd);

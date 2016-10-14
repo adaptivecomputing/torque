@@ -90,7 +90,7 @@ START_TEST(test_PBSD_QueueJob_hash)
   flush_rc = 1;
   connection[5].ch_errtxt = NULL;
   fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE);
-  fail_unless(msg == NULL);
+  fail_unless(msg == NULL, "");
 
   }
 END_TEST

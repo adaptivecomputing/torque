@@ -13,27 +13,27 @@ START_TEST(test_one)
   batch_request *pBr4 = (batch_request *)calloc(1,sizeof(batch_request));
 
   int rc = get_batch_request_id(pBr1);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   rc = get_batch_request_id(pBr2);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   rc = get_batch_request_id(pBr3);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   rc = get_batch_request_id(pBr4);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
 
   batch_request *tmp = get_batch_request((char *)"0");
-  fail_unless(tmp == pBr1);
+  fail_unless(tmp == pBr1, "");
   tmp = get_remove_batch_request((char *)"0");
-  fail_unless(tmp == pBr1);
+  fail_unless(tmp == pBr1, "");
   tmp = get_batch_request((char *)"0");
-  fail_unless(tmp == NULL);
+  fail_unless(tmp == NULL, "");
 
   tmp = get_batch_request((char *)"1");
-  fail_unless(tmp == pBr2);
+  fail_unless(tmp == pBr2, "");
   rc = remove_batch_request((char *)"1");
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   tmp = get_batch_request((char *)"1");
-  fail_unless(tmp == NULL);
+  fail_unless(tmp == NULL, "");
 
 
 

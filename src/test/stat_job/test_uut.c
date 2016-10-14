@@ -23,13 +23,13 @@ START_TEST(test_include_in_status)
       case JOB_ATR_resc_used:
       case JOB_ATR_in_queue:
 
-        fail_unless(result == true);
+        fail_unless(result == true, "");
 
         break;
 
       default:
 
-        fail_unless(result == false);
+        fail_unless(result == false, "");
 
         break;
       }

@@ -199,8 +199,8 @@ START_TEST(check_orphaned_test)
   state_updated = 0;
 
   fail_unless(check_if_orphaned(strdup(rsv_id)) == 0, "bad return code");
-  fail_unless(issued_request == 1);
-  fail_unless(state_updated == 1);
+  fail_unless(issued_request == 1, "");
+  fail_unless(state_updated == 1, "");
   }
 END_TEST
 
@@ -225,7 +225,7 @@ START_TEST(create_alps_subnode_test)
   /* scaffolding makes it fail the second time */
   subnode = create_alps_subnode(&parent, node_id);
   fail_unless(subnode == NULL, "subnode isn't NULL when it should be");
-  fail_unless(start_clnodes_value + 2 <= svr_clnodes);
+  fail_unless(start_clnodes_value + 2 <= svr_clnodes, "");
   }
 END_TEST
 

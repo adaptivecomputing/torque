@@ -18,10 +18,10 @@ START_TEST(test_one)
   path_queues = (char *)"./";
   memset(&q,0,sizeof(q));
   strcpy(q.qu_qs.qu_name,"QueueSaveFile");
-  fail_unless(que_save(&q) == 0);
+  fail_unless(que_save(&q) == 0, "");
 
   pbs_queue *pQ = que_recov_xml((char *)"QueueSaveFile");
-  fail_unless(pQ != NULL);
+  fail_unless(pQ != NULL, "");
 
   free(pQ);
 

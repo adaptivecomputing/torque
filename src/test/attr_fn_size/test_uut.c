@@ -12,7 +12,7 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_size(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY);
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
   fail_unless(decode_size(&attr,NULL,NULL,"100",0) == 0);
   fail_unless(decode_size(&attr,NULL,NULL,"100k",0) == 0);
@@ -22,7 +22,7 @@ START_TEST(test_one)
   fail_unless(decode_size(&attr,NULL,NULL,"100P",0) == 0);
   fail_unless(decode_size(&attr,NULL,NULL,"100W",0) == 0);
   fail_unless(decode_size(&attr,NULL,NULL,"100b",0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET));
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET), "");
 
   }
 END_TEST
@@ -73,8 +73,8 @@ START_TEST(test_three)
   decode_size(&t,NULL,NULL,"1g",0);
 
   set_size(&f,&t,INCR);
-  fail_unless(f.at_val.at_size.atsv_num == 2);
-  fail_unless(f.at_val.at_size.atsv_shift == 30);
+  fail_unless(f.at_val.at_size.atsv_num == 2, "");
+  fail_unless(f.at_val.at_size.atsv_shift == 30, "");
 
   memset(&f,0,sizeof(f));
   decode_size(&f,NULL,NULL,"2G",0);
@@ -85,7 +85,7 @@ START_TEST(test_three)
   {
     long n = f.at_val.at_size.atsv_num;
     n <<= f.at_val.at_size.atsv_shift;
-    fail_unless(n == (1<<30));
+    fail_unless(n == (1<<30), "");
   }
 
   }

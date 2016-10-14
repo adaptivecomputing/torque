@@ -32,13 +32,13 @@ START_TEST(test_place_tasks_execution_slots)
   a.cores_only = true;
 
   c.place_tasks_execution_slots(2, 8, a, CORE);
-  fail_unless(a.cpu_indices.size() == 2);
-  fail_unless(a.cpu_place_indices.size() == 6);
+  fail_unless(a.cpu_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices.size() == 6, "");
   
   c.place_tasks_execution_slots(2, 8, a, CORE);
-  fail_unless(a.cpu_indices.size() == 4);
-  fail_unless(a.cpu_place_indices.size() == 12);
-  fail_unless(c.free_core_count() == 0);
+  fail_unless(a.cpu_indices.size() == 4, "");
+  fail_unless(a.cpu_place_indices.size() == 12, "");
+  fail_unless(c.free_core_count() == 0, "");
 
   Chip               c2;
   c2.setId(0);
@@ -51,7 +51,7 @@ START_TEST(test_place_tasks_execution_slots)
 
   allocation b(jobid);
   c2.place_tasks_execution_slots(0, 2, b, THREAD);
-  fail_unless(b.cpu_indices.size() == 0);
+  fail_unless(b.cpu_indices.size() == 0, "");
   fail_unless(b.cpu_place_indices.size() == 2, "size is %u", b.cpu_place_indices.size());
   fail_unless(c2.free_core_count() == 15, "%d are free", c2.free_core_count());
   }
@@ -68,7 +68,7 @@ START_TEST(test_initialize_allocation)
   // Make sure this doesn't last forever - we need to handle empty cpus: values
   c.initialize_allocation(strdup(alloc_json), valid_ids);
   c.displayAllocationsAsJson(out);
-  fail_unless(out.str().find("666979[0].mgr.bwfor.privat") == std::string::npos);
+  fail_unless(out.str().find("666979[0].mgr.bwfor.privat") == std::string::npos, "");
 
   valid_ids.push_back("666979[0].mgr.bwfor.privat");
   c.initialize_allocation(strdup(alloc_json), valid_ids);
@@ -97,14 +97,14 @@ START_TEST(test_place_all_execution_slots)
 
   a.cores_only = true;
   c.place_all_execution_slots(r, a);
-  fail_unless(a.cores == 16);
-  fail_unless(a.threads == 32);
+  fail_unless(a.cores == 16, "");
+  fail_unless(a.threads == 32, "");
   c.free_task(jobid);
 
   allocation         a2(jobid);
   c.place_all_execution_slots(r, a2);
-  fail_unless(a2.cores == 0);
-  fail_unless(a2.threads == 32);
+  fail_unless(a2.cores == 0, "");
+  fail_unless(a2.threads == 32, "");
   }
 END_TEST
 
@@ -135,11 +135,11 @@ START_TEST(test_spread_place_threads)
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"16\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
 
-  fail_unless(a.cpu_indices.size() == 1);
-  fail_unless(a.cpu_indices[0] == 16);
-  fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 0);
-  fail_unless(a.cpu_place_indices[1] == 1);
+  fail_unless(a.cpu_indices.size() == 1, "");
+  fail_unless(a.cpu_indices[0] == 16, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices[0] == 0, "");
+  fail_unless(a.cpu_place_indices[1] == 1, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -150,11 +150,11 @@ START_TEST(test_spread_place_threads)
 
   fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 3);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 1);
-  fail_unless(a.cpu_indices[2] != 3);
-  fail_unless(a.cpu_place_indices.size() == 2);
+  fail_unless(a.cpu_indices.size() == 3, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 1, "");
+  fail_unless(a.cpu_indices[2] != 3, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -165,13 +165,13 @@ START_TEST(test_spread_place_threads)
 
   fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 4);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] != 1);
-  fail_unless(a.cpu_indices[2] != 2 );
-  fail_unless(a.cpu_indices[3] == 2);
-  fail_unless(a.cpu_place_indices.size() == 1);
-  fail_unless(a.cpu_place_indices[0] == 1);
+  fail_unless(a.cpu_indices.size() == 4, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] != 1, "");
+  fail_unless(a.cpu_indices[2] != 2 , "");
+  fail_unless(a.cpu_indices[3] == 2, "");
+  fail_unless(a.cpu_place_indices.size() == 1, "");
+  fail_unless(a.cpu_place_indices[0] == 1, "");
 
 
   c.free_task(jobid);
@@ -183,12 +183,12 @@ START_TEST(test_spread_place_threads)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 2);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 2);
-  fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 1);
-  fail_unless(a.cpu_place_indices[1] == 3);
+  fail_unless(a.cpu_indices.size() == 2, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 2, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices[0] == 1, "");
+  fail_unless(a.cpu_place_indices[1] == 3, "");
 
   fail_unless(c.reserve_core(0,a) == false);
   fail_unless(c.reserve_core(1,a) == false);
@@ -204,16 +204,16 @@ START_TEST(test_spread_place_threads)
 
   fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 5);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 1);
-  fail_unless(a.cpu_indices[2] == 2);
-  fail_unless(a.cpu_indices[3] == 3);
-  fail_unless(a.cpu_indices[4] == 19);
-  fail_unless(a.cpu_place_indices.size() == 3);
-  fail_unless(a.cpu_place_indices[0] == 16);
-  fail_unless(a.cpu_place_indices[1] == 17);
-  fail_unless(a.cpu_place_indices[2] == 18);
+  fail_unless(a.cpu_indices.size() == 5, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 1, "");
+  fail_unless(a.cpu_indices[2] == 2, "");
+  fail_unless(a.cpu_indices[3] == 3, "");
+  fail_unless(a.cpu_indices[4] == 19, "");
+  fail_unless(a.cpu_place_indices.size() == 3, "");
+  fail_unless(a.cpu_place_indices[0] == 16, "");
+  fail_unless(a.cpu_place_indices[1] == 17, "");
+  fail_unless(a.cpu_place_indices[2] == 18, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -224,16 +224,16 @@ START_TEST(test_spread_place_threads)
 
   fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 7);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 16);
-  fail_unless(a.cpu_indices[2] == 1);
-  fail_unless(a.cpu_indices[3] == 2);
-  fail_unless(a.cpu_indices[4] == 18);
-  fail_unless(a.cpu_indices[5] == 3);
-  fail_unless(a.cpu_indices[6] == 19);
-  fail_unless(a.cpu_place_indices.size() == 1);
-  fail_unless(a.cpu_place_indices[0] == 17);
+  fail_unless(a.cpu_indices.size() == 7, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 16, "");
+  fail_unless(a.cpu_indices[2] == 1, "");
+  fail_unless(a.cpu_indices[3] == 2, "");
+  fail_unless(a.cpu_indices[4] == 18, "");
+  fail_unless(a.cpu_indices[5] == 3, "");
+  fail_unless(a.cpu_indices[6] == 19, "");
+  fail_unless(a.cpu_place_indices.size() == 1, "");
+  fail_unless(a.cpu_place_indices[0] == 17, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -280,11 +280,11 @@ START_TEST(test_spread_place_cores)
   fail_unless(c.reserve_core(1,a) == false);
   fail_unless(c.reserve_core(2,a) == false);
 
-  fail_unless(a.cpu_indices.size() == 1);
-  fail_unless(a.cpu_indices[0] == 1);
-  fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 0);
-  fail_unless(a.cpu_place_indices[1] == 2);
+  fail_unless(a.cpu_indices.size() == 1, "");
+  fail_unless(a.cpu_indices[0] == 1, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices[0] == 0, "");
+  fail_unless(a.cpu_place_indices[1] == 2, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -295,13 +295,13 @@ START_TEST(test_spread_place_cores)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 3);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 2);
-  fail_unless(a.cpu_indices[2] == 4);
-  fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 1);
-  fail_unless(a.cpu_place_indices[1] == 3);
+  fail_unless(a.cpu_indices.size() == 3, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 2, "");
+  fail_unless(a.cpu_indices[2] == 4, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices[0] == 1, "");
+  fail_unless(a.cpu_place_indices[1] == 3, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -312,13 +312,13 @@ START_TEST(test_spread_place_cores)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 4);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 1);
-  fail_unless(a.cpu_indices[2] == 3);
-  fail_unless(a.cpu_indices[3] == 4);
-  fail_unless(a.cpu_place_indices.size() == 1);
-  fail_unless(a.cpu_place_indices[0] == 2);
+  fail_unless(a.cpu_indices.size() == 4, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 1, "");
+  fail_unless(a.cpu_indices[2] == 3, "");
+  fail_unless(a.cpu_indices[3] == 4, "");
+  fail_unless(a.cpu_place_indices.size() == 1, "");
+  fail_unless(a.cpu_place_indices[0] == 2, "");
 
 
   c.free_task(jobid);
@@ -330,12 +330,12 @@ START_TEST(test_spread_place_cores)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 2);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 2);
-  fail_unless(a.cpu_place_indices.size() == 2);
-  fail_unless(a.cpu_place_indices[0] == 1);
-  fail_unless(a.cpu_place_indices[1] == 3);
+  fail_unless(a.cpu_indices.size() == 2, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 2, "");
+  fail_unless(a.cpu_place_indices.size() == 2, "");
+  fail_unless(a.cpu_place_indices[0] == 1, "");
+  fail_unless(a.cpu_place_indices[1] == 3, "");
 
   fail_unless(c.reserve_core(0,a) == false);
   fail_unless(c.reserve_core(1,a) == false);
@@ -351,16 +351,16 @@ START_TEST(test_spread_place_cores)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 5);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 2);
-  fail_unless(a.cpu_indices[2] == 4);
-  fail_unless(a.cpu_indices[3] == 6);
-  fail_unless(a.cpu_indices[4] == 7);
-  fail_unless(a.cpu_place_indices.size() == 3);
-  fail_unless(a.cpu_place_indices[0] == 1);
-  fail_unless(a.cpu_place_indices[1] == 3);
-  fail_unless(a.cpu_place_indices[2] == 5);
+  fail_unless(a.cpu_indices.size() == 5, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 2, "");
+  fail_unless(a.cpu_indices[2] == 4, "");
+  fail_unless(a.cpu_indices[3] == 6, "");
+  fail_unless(a.cpu_indices[4] == 7, "");
+  fail_unless(a.cpu_place_indices.size() == 3, "");
+  fail_unless(a.cpu_place_indices[0] == 1, "");
+  fail_unless(a.cpu_place_indices[1] == 3, "");
+  fail_unless(a.cpu_place_indices[2] == 5, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -371,16 +371,16 @@ START_TEST(test_spread_place_cores)
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
 
-  fail_unless(a.cpu_indices.size() == 7);
-  fail_unless(a.cpu_indices[0] == 0);
-  fail_unless(a.cpu_indices[1] == 1);
-  fail_unless(a.cpu_indices[2] == 2);
-  fail_unless(a.cpu_indices[3] == 4);
-  fail_unless(a.cpu_indices[4] == 5);
-  fail_unless(a.cpu_indices[5] == 6);
-  fail_unless(a.cpu_indices[6] == 7);
-  fail_unless(a.cpu_place_indices.size() == 1);
-  fail_unless(a.cpu_place_indices[0] == 3);
+  fail_unless(a.cpu_indices.size() == 7, "");
+  fail_unless(a.cpu_indices[0] == 0, "");
+  fail_unless(a.cpu_indices[1] == 1, "");
+  fail_unless(a.cpu_indices[2] == 2, "");
+  fail_unless(a.cpu_indices[3] == 4, "");
+  fail_unless(a.cpu_indices[4] == 5, "");
+  fail_unless(a.cpu_indices[5] == 6, "");
+  fail_unless(a.cpu_indices[6] == 7, "");
+  fail_unless(a.cpu_place_indices.size() == 1, "");
+  fail_unless(a.cpu_place_indices[0] == 3, "");
 
   c.free_task(jobid);
   a.cpu_indices.clear();
@@ -425,7 +425,7 @@ START_TEST(test_spread_place)
   fail_unless(c.reserve_core(0, a) == false);
   remaining = 1;
   fail_unless(c.spread_place(r, a, 4, remaining) == false);
-  fail_unless(c.has_socket_exclusive_allocation() == false);
+  fail_unless(c.has_socket_exclusive_allocation() == false, "");
   c.free_task(jobid);
   
   // Check that we place 5 cores correctly
@@ -442,15 +442,15 @@ START_TEST(test_spread_place)
   remaining = 1;
   fail_unless(c.spread_place(r, a, 0, remaining) == true);
   fail_unless(c.reserve_core(0, a) == false);
-  fail_unless(remaining == 0);
+  fail_unless(remaining == 0, "");
  
   // Check what happens we we place an empty set on the chip
   c.free_task(jobid);
   a.place_type = exclusive_socket;
   fail_unless(c.spread_place(r, a, 0, remaining) == true);
-  fail_unless(c.getAvailableCores() == 0);
-  fail_unless(c.getAvailableThreads() == 0);
-  fail_unless(c.has_socket_exclusive_allocation() == true);
+  fail_unless(c.getAvailableCores() == 0, "");
+  fail_unless(c.getAvailableThreads() == 0, "");
+  fail_unless(c.has_socket_exclusive_allocation() == true, "");
 
   c.free_task(jobid);
   allocation a2(jobid2);
@@ -458,8 +458,8 @@ START_TEST(test_spread_place)
   remaining = 0;
   fail_unless(c.spread_place(r, a2, 40, remaining) == false);
   fail_unless(c.spread_place(r, a2, 18, remaining) == true);
-  fail_unless(c.getAvailableCores() == 0);
-  fail_unless(c.getAvailableThreads() == 0);
+  fail_unless(c.getAvailableCores() == 0, "");
+  fail_unless(c.getAvailableThreads() == 0, "");
   c.free_task(jobid2);
   
   req r2;
@@ -468,7 +468,7 @@ START_TEST(test_spread_place)
   r2.set_value("lprocs", "2", false);
   r2.set_value("memory", "1kb", false);
   int tasks = c.place_task(r2, a3, 1, host);
-  fail_unless(tasks == 1);
+  fail_unless(tasks == 1, "");
   // We shouldn't place anything in spread place unless we're completely free
   fail_unless(c.spread_place(r, a2, 18, remaining) == false);
   }
@@ -482,22 +482,22 @@ START_TEST(test_basic_constructor)
   Chip c(4, remainder, pn_remainder);
   c.setMemory(20);
 
-  fail_unless(c.getTotalCores() == 4);
-  fail_unless(c.getTotalThreads() == 4);
-  fail_unless(c.getAvailableCores() == 4);
-  fail_unless(c.getAvailableThreads() == 4);
-  fail_unless(c.getMemory() == 20);
-  fail_unless(c.getAvailableMemory() == 20);
+  fail_unless(c.getTotalCores() == 4, "");
+  fail_unless(c.getTotalThreads() == 4, "");
+  fail_unless(c.getAvailableCores() == 4, "");
+  fail_unless(c.getAvailableThreads() == 4, "");
+  fail_unless(c.getMemory() == 20, "");
+  fail_unless(c.getAvailableMemory() == 20, "");
 
   remainder = 1;
   pn_remainder = 1;
   Chip c2(4, remainder, pn_remainder);
-  fail_unless(c2.getTotalCores() == 6);
-  fail_unless(c2.getTotalThreads() == 6);
-  fail_unless(c2.getAvailableCores() == 6);
-  fail_unless(c2.getAvailableThreads() == 6);
-  fail_unless(remainder == 0);
-  fail_unless(pn_remainder == 0);
+  fail_unless(c2.getTotalCores() == 6, "");
+  fail_unless(c2.getTotalThreads() == 6, "");
+  fail_unless(c2.getAvailableCores() == 6, "");
+  fail_unless(c2.getAvailableThreads() == 6, "");
+  fail_unless(remainder == 0, "");
+  fail_unless(pn_remainder == 0, "");
   }
 END_TEST
 
@@ -521,52 +521,52 @@ START_TEST(test_json_constructor)
   valid_ids.push_back("2.napali");
   
   Chip c1(j1, valid_ids);
-  fail_unless(c1.get_id() == 1);
+  fail_unless(c1.get_id() == 1, "");
   fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
-  fail_unless(c1.getTotalThreads() == 8);
+  fail_unless(c1.getTotalThreads() == 8, "");
   fail_unless(c1.get_available_mics() == 2, "%d mics", c1.get_available_mics());
-  fail_unless(c1.get_available_gpus() == 0);
+  fail_unless(c1.get_available_gpus() == 0, "");
   c1.displayAsJson(o1, false);
   fail_unless(o1.str() == j1, o1.str().c_str());
 
   Chip c2(j2, valid_ids);
-  fail_unless(c2.get_id() == 0);
-  fail_unless(c2.getTotalCores() == 8);
-  fail_unless(c2.getTotalThreads() == 16);
-  fail_unless(c2.get_available_mics() == 0);
-  fail_unless(c2.get_available_gpus() == 4);
+  fail_unless(c2.get_id() == 0, "");
+  fail_unless(c2.getTotalCores() == 8, "");
+  fail_unless(c2.getTotalThreads() == 16, "");
+  fail_unless(c2.get_available_mics() == 0, "");
+  fail_unless(c2.get_available_gpus() == 4, "");
   c2.displayAsJson(o2, false);
   fail_unless(o2.str() == j2, o2.str().c_str());
 
   Chip c3(j3, valid_ids);
-  fail_unless(c3.get_id() == 12);
-  fail_unless(c3.getTotalCores() == 6);
-  fail_unless(c3.getTotalThreads() == 6);
-  fail_unless(c3.get_available_mics() == 2);
-  fail_unless(c3.get_available_gpus() == 2);
+  fail_unless(c3.get_id() == 12, "");
+  fail_unless(c3.getTotalCores() == 6, "");
+  fail_unless(c3.getTotalThreads() == 6, "");
+  fail_unless(c3.get_available_mics() == 2, "");
+  fail_unless(c3.get_available_gpus() == 2, "");
   c3.displayAsJson(o3, false);
   fail_unless(o3.str() == j3, o3.str().c_str());
 
   Chip c4(j4, valid_ids);
-  fail_unless(c4.get_id() == 0);
-  fail_unless(c4.getTotalCores() == 16);
-  fail_unless(c4.getTotalThreads() == 32);
-  fail_unless(c4.getMemory() == 1024);
-  fail_unless(c4.getAvailableMemory() == 1024);
+  fail_unless(c4.get_id() == 0, "");
+  fail_unless(c4.getTotalCores() == 16, "");
+  fail_unless(c4.getTotalThreads() == 32, "");
+  fail_unless(c4.getMemory() == 1024, "");
+  fail_unless(c4.getAvailableMemory() == 1024, "");
   // Should be 4 because no one is specifically requesting cores
   fail_unless(c4.getAvailableCores() == 4, "%d available cores", c4.getAvailableCores());
-  fail_unless(c4.getAvailableThreads() == 0);
+  fail_unless(c4.getAvailableThreads() == 0, "");
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
   
   Chip c5(j5, valid_ids);
-  fail_unless(c5.get_id() == 0);
-  fail_unless(c5.getTotalCores() == 16);
-  fail_unless(c5.getTotalThreads() == 32);
-  fail_unless(c5.getMemory() == 1024);
+  fail_unless(c5.get_id() == 0, "");
+  fail_unless(c5.getTotalCores() == 16, "");
+  fail_unless(c5.getTotalThreads() == 32, "");
+  fail_unless(c5.getMemory() == 1024, "");
   // Should be 0 because we're exlcusive chip
   fail_unless(c5.getAvailableCores() == 0, "%d available cores", c5.getAvailableCores());
-  fail_unless(c5.getAvailableThreads() == 0);
+  fail_unless(c5.getAvailableThreads() == 0, "");
   fail_unless(c5.get_available_mics() == 0, "%d available mics", c5.get_available_mics());
   fail_unless(c5.get_available_gpus() == 0, "%d available gpus", c5.get_available_gpus());
 
@@ -753,8 +753,8 @@ START_TEST(test_exclusive_place)
   fail_unless(num_fit == 1, "Expected 1, got %d", num_fit);
   recorded = 0;
   int tasks = c.place_task(r, a, 1, host);
-  fail_unless(tasks == 1);
-  fail_unless(recorded == 1);
+  fail_unless(tasks == 1, "");
+  fail_unless(recorded == 1, "");
   
   std::stringstream out;
   c.displayAsJson(out, true);
@@ -765,8 +765,8 @@ START_TEST(test_exclusive_place)
   recorded = 0;
   tasks = c.place_task(r, a, 5, host);
   fail_unless(c.how_many_tasks_fit(r, 0) == 0);
-  fail_unless(tasks == 0);
-  fail_unless(recorded == 0);
+  fail_unless(tasks == 0, "");
+  fail_unless(recorded == 0, "");
   c.free_task(jobid);
   
   allocation a2(jobid);
@@ -776,8 +776,8 @@ START_TEST(test_exclusive_place)
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
-  fail_unless(tasks == 6);
-  fail_unless(recorded == 6);
+  fail_unless(tasks == 6, "");
+  fail_unless(recorded == 6, "");
 
   Chip c2(out.str(), valid_id);
   std::stringstream o2;
@@ -787,7 +787,7 @@ START_TEST(test_exclusive_place)
   fail_unless(c2.getAvailableCores() == 4, "%d cores available", c2.getAvailableCores());
   fail_unless(c2.getTotalThreads() == 32, "%d total threads", c2.getTotalThreads());
   fail_unless(c2.getMemory() == 6, "%d total memory", (int)c2.getMemory());
-  fail_unless(c2.getAvailableMemory() == 0);
+  fail_unless(c2.getAvailableMemory() == 0, "");
   fail_unless(c2.getAvailableThreads() == 8, "%d available", c2.getAvailableThreads());
 
   Chip c3;
@@ -807,7 +807,7 @@ START_TEST(test_exclusive_place)
   recorded = 0;
   tasks = c3.place_task(r2, a3, 1, host);
   fail_unless(tasks == 1, "%d tasks", tasks);
-  fail_unless(recorded == 1);
+  fail_unless(recorded == 1, "");
   out.str("");
   c3.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
@@ -841,15 +841,15 @@ START_TEST(test_exclusive_place)
   c.free_task(jobid);
   recorded = 0;
   tasks = c.place_task(r, a4, 1, host);
-  fail_unless(tasks == 1);
-  fail_unless(recorded == 1);
+  fail_unless(tasks == 1, "");
+  fail_unless(recorded == 1, "");
   out.str("");
   c.displayAsJson(out, true);
   fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
 
   Chip copy_exclusive_socket(out.str(), valid_id);
-  fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
-  fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
+  fail_unless(copy_exclusive_socket.getAvailableThreads() == 0, "");
+  fail_unless(copy_exclusive_socket.getAvailableCores() == 0, "");
 
   allocation to_add("1.napali");
   to_add.cpu_indices.push_back(2);
@@ -888,15 +888,15 @@ START_TEST(test_partial_place)
   remaining.memory = 2;
 
   c.partially_place_task(remaining, master);
-  fail_unless(remaining.memory == 0);
-  fail_unless(remaining.cpus == 0);
+  fail_unless(remaining.memory == 0, "");
+  fail_unless(remaining.cpus == 0, "");
 
   // use the rest of the cpus
   remaining.cpus = 28;
   remaining.memory = 3;
   allocation m2("2.napali");
   c.partially_place_task(remaining, m2);
-  fail_unless(remaining.memory == 0);
+  fail_unless(remaining.memory == 0, "");
   fail_unless(remaining.cpus == 10, "%d remaining", remaining.cpus);
 
   allocation m3("3.napali");
@@ -905,8 +905,8 @@ START_TEST(test_partial_place)
 
   // Make sure we'll still use that memory even without cpus
   c.partially_place_task(remaining, m3);
-  fail_unless(remaining.cpus == 4);
-  fail_unless(remaining.memory == 5);
+  fail_unless(remaining.cpus == 4, "");
+  fail_unless(remaining.memory == 5, "");
   
   c.free_task("1.napali");
   c.free_task("2.napali");
@@ -918,7 +918,7 @@ START_TEST(test_partial_place)
   allocation master2("1.napali");
   c.partially_place_task(remaining, master2);
   fail_unless(remaining.cpus == 1, "cpus %d", remaining.cpus);
-  fail_unless(remaining.memory == 6);
+  fail_unless(remaining.memory == 6, "");
 
   }
 END_TEST
@@ -941,8 +941,8 @@ START_TEST(test_reserve_accelerators)
     fail_unless(c.store_pci_device_appropriately(d, true) == true);
     }
 
-  fail_unless(c.get_available_mics() == 1);
-  fail_unless(c.get_available_gpus() == 1);
+  fail_unless(c.get_available_mics() == 1, "");
+  fail_unless(c.get_available_gpus() == 1, "");
 
   c.set_cpuset("0");
 
@@ -952,8 +952,8 @@ START_TEST(test_reserve_accelerators)
     fail_unless(c.store_pci_device_appropriately(d, false) == true);
     }
 
-  fail_unless(c.get_available_mics() == 2);
-  fail_unless(c.get_available_gpus() == 2);
+  fail_unless(c.get_available_mics() == 2, "");
+  fail_unless(c.get_available_gpus() == 2, "");
 
   // Make sure a non-matching cpuset doesn't store the pci devices
   c.set_cpuset("1");
@@ -962,8 +962,8 @@ START_TEST(test_reserve_accelerators)
     PCI_Device d;
     c.store_pci_device_appropriately(d, false);
     }
-  fail_unless(c.get_available_mics() == 2);
-  fail_unless(c.get_available_gpus() == 2);
+  fail_unless(c.get_available_mics() == 2, "");
+  fail_unless(c.get_available_gpus() == 2, "");
 
   allocation remaining;
   allocation a;
@@ -972,11 +972,11 @@ START_TEST(test_reserve_accelerators)
   remaining.gpus = 2;
 
   c.place_accelerators(remaining, a);
-  fail_unless(c.get_available_mics() == 0);
-  fail_unless(c.get_available_gpus() == 0);
+  fail_unless(c.get_available_mics() == 0, "");
+  fail_unless(c.get_available_gpus() == 0, "");
   c.free_accelerators(a);
-  fail_unless(c.get_available_mics() == 2);
-  fail_unless(c.get_available_gpus() == 2);
+  fail_unless(c.get_available_mics() == 2, "");
+  fail_unless(c.get_available_gpus() == 2, "");
   }
 END_TEST
 
@@ -1004,8 +1004,8 @@ START_TEST(test_place_and_free_task)
   // fill the node's memory
   int tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
-  fail_unless(a.mem_indices.size() > 0);
-  fail_unless(a.mem_indices[0] == 0);
+  fail_unless(a.mem_indices.size() > 0, "");
+  fail_unless(a.mem_indices[0] == 0, "");
 
   // Memory should be full now
   tasks = c.place_task(r, a, 6, host);
@@ -1018,8 +1018,8 @@ START_TEST(test_place_and_free_task)
   tasks = c.place_task(r, a, 6, host);
   fail_unless(tasks == 6, "Placed only %d tasks, expected 6", tasks);
   c.free_task(jobid);
-  fail_unless(c.getAvailableCores() == 12);
-  fail_unless(c.getAvailableThreads() == 24);
+  fail_unless(c.getAvailableCores() == 12, "");
+  fail_unless(c.getAvailableThreads() == 24, "");
   
   // Now place by thread
   my_placement_type = "";
@@ -1044,30 +1044,30 @@ START_TEST(test_place_and_free_task)
   
   // Make sure we're full
   fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
-  fail_unless(c.getAvailableThreads() == 0);
+  fail_unless(c.getAvailableThreads() == 0, "");
   a.clear();
   tasks = c.place_task(r, a, 1, host);
-  fail_unless(tasks == 0);
+  fail_unless(tasks == 0, "");
 
   // Make sure we free correctly
-  fail_unless(c.free_task(jobid3) == false);
+  fail_unless(c.free_task(jobid3) == false, "");
   fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
   int threads = c.getAvailableThreads();
   fail_unless(threads == 6, "Expected 6 threads but got %d", threads);
 
   // Make sure a repeat free does nothing
-  fail_unless(c.free_task(jobid3) == false);
-  fail_unless(c.getAvailableCores() == 12);
-  fail_unless(c.getAvailableThreads() == 6);
+  fail_unless(c.free_task(jobid3) == false, "");
+  fail_unless(c.getAvailableCores() == 12, "");
+  fail_unless(c.getAvailableThreads() == 6, "");
   
-  fail_unless(c.free_task(jobid2) == false);
+  fail_unless(c.free_task(jobid2) == false, "");
   fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
-  fail_unless(c.getAvailableThreads() == 12);
+  fail_unless(c.getAvailableThreads() == 12, "");
   
   // We should be free now
-  fail_unless(c.free_task(jobid) == true);
+  fail_unless(c.free_task(jobid) == true, "");
   fail_unless(c.getAvailableCores() == 12, "%d available", c.getAvailableCores());
-  fail_unless(c.getAvailableThreads() == 24);
+  fail_unless(c.getAvailableThreads() == 24, "");
   }
 END_TEST
 

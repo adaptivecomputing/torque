@@ -48,18 +48,18 @@ START_TEST(test_check_if_possible)
   int cores = -1;
   int threads = -1;
 
-  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false);
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false, "");
 
   numanodes = 1;
   cores = 3;
   threads = 3;
-  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false);
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == false, "");
 
   sockets = 2;
   numanodes = 0;
   cores = -1;
   threads = -1;
-  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == true);
+  fail_unless(m.check_if_possible(sockets, numanodes, cores, threads) == true, "");
   }
 END_TEST
 
@@ -79,7 +79,7 @@ START_TEST(test_place_all_execution_slots)
   placed_all = 0;
   exec_slots = -1;
   m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(placed_all == 2);
+  fail_unless(placed_all == 2, "");
   }
 END_TEST
 
@@ -109,7 +109,7 @@ START_TEST(test_spread_place)
   num_for_host = 3;
   called_spread_place = 0;
   m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(called_spread_place == 3);
+  fail_unless(called_spread_place == 3, "");
 
   // Now we're multiple instead of one so it should multiply the calls
   sockets = 0;
@@ -126,7 +126,7 @@ START_TEST(test_spread_place)
   num_for_host = 3;
   called_spread_place = 0;
   m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(called_spread_place == 6);
+  fail_unless(called_spread_place == 6, "");
   
   called_spread_place = 0;
   sockets = 1;
@@ -161,16 +161,16 @@ START_TEST(test_basic_constructor)
   {
   Machine m(3, 1, 1);
 
-  fail_unless(m.getTotalSockets() == 1);
-  fail_unless(m.getAvailableSockets() == 1);
-  fail_unless(m.getTotalCores() == 3);
-  fail_unless(m.getTotalThreads() == 3);
+  fail_unless(m.getTotalSockets() == 1, "");
+  fail_unless(m.getAvailableSockets() == 1, "");
+  fail_unless(m.getTotalCores() == 3, "");
+  fail_unless(m.getTotalThreads() == 3, "");
 
   Machine m2(12, 2, 2);
-  fail_unless(m2.getTotalSockets() == 2);
-  fail_unless(m2.getAvailableSockets() == 2);
-  fail_unless(m2.getTotalCores() == 12);
-  fail_unless(m2.getTotalThreads() == 12);
+  fail_unless(m2.getTotalSockets() == 2, "");
+  fail_unless(m2.getAvailableSockets() == 2, "");
+  fail_unless(m2.getTotalCores() == 12, "");
+  fail_unless(m2.getTotalThreads() == 12, "");
   }
 END_TEST
 
@@ -187,14 +187,14 @@ START_TEST(test_json_constructor)
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
-  fail_unless(m1.getTotalSockets() == 2);
+  fail_unless(m1.getTotalSockets() == 2, "total sockets != 2");
 
   out.str("");
   Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
   fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
-  fail_unless(m2.getTotalSockets() == 1);
+  fail_unless(m2.getTotalSockets() == 1, "total sockets != 1");
   }
 END_TEST
 
@@ -210,13 +210,13 @@ START_TEST(test_store_pci_device_on_appropriate_chip)
   // Since this is non numa it should be forced to socket 0 
   m.setIsNuma(false);
   m.store_device_on_appropriate_chip(d);
-  fail_unless(called_store_pci == 1);
+  fail_unless(called_store_pci == 1, "failure to store on appropriate chip");
  
   // Since this is numa it should place on the sockets until it returns true,
   // which due to the scaffolding is never, so once per socket
   m.setIsNuma(true);
   m.store_device_on_appropriate_chip(d);
-  fail_unless(called_store_pci == 3);
+  fail_unless(called_store_pci == 3, "failure to store on appropriate chip");
   }
 END_TEST
 
@@ -309,9 +309,9 @@ START_TEST(test_place_and_free_job)
   // Check how many tasks fit
   req r;
   num_tasks_fit = 8;
-  fail_unless(m.how_many_tasks_can_be_placed(r) == 16);
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 16, "");
   num_tasks_fit = 2;
-  fail_unless(m.how_many_tasks_can_be_placed(r) == 4);
+  fail_unless(m.how_many_tasks_can_be_placed(r) == 4, "");
 
   // Make the job fit on one socket so we call place once per task
   called_place_task = 0;
@@ -324,13 +324,13 @@ START_TEST(test_place_and_free_job)
 
   std::vector<std::string> job_ids;
   m.populate_job_ids(job_ids);
-  fail_unless(job_ids.size() == 1);
+  fail_unless(job_ids.size() == 1, "job_ids size != 1");
   fail_unless(job_ids[0] == "1.napali", "id: '%s'", job_ids[0].c_str());
 
   // Make sure we call free tasks once per socket
   called_free_task = 0;
   m.free_job_allocation("1.napali");
-  fail_unless(called_free_task == 2);
+  fail_unless(called_free_task == 2, "");
 
   // Get a job that is placed on multiple sockets
   my_req_count = 1;
@@ -351,7 +351,7 @@ START_TEST(test_place_and_free_job)
   called_fits_on_socket = 0;
   m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_partially_place == 1, "called %d", called_partially_place);
-  fail_unless(called_fits_on_socket == 1);
+  fail_unless(called_fits_on_socket == 1, "");
   
   socket_fit = false;
   num_tasks_fit = 0;

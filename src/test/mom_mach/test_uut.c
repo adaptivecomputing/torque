@@ -43,18 +43,18 @@ START_TEST(test_get_job_sid_from_pid)
   global_job_sid_set.clear();
 
   /* expect fail for pids < 2 */
-  fail_unless(get_job_sid_from_pid(0) == -1);
-  fail_unless(get_job_sid_from_pid(1) == -1);
+  fail_unless(get_job_sid_from_pid(0) == -1, "");
+  fail_unless(get_job_sid_from_pid(1) == -1, "");
 
   /* expect fail for unknown pid */
-  fail_unless(get_job_sid_from_pid(5) == -1);
+  fail_unless(get_job_sid_from_pid(5) == -1, "");
 
   /* insert sid into sid set */
   global_job_sid_set.insert(1000);
 
   /* create space for 2 pids */
   proc_array = (proc_stat_t *) calloc(2, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   proc_array[index].pid = 10;
   proc_array[index].ppid = 20;
@@ -64,7 +64,7 @@ START_TEST(test_get_job_sid_from_pid)
   pid2procarrayindex_map[proc_array[index].pid] = index;
 
   /* pid's sid is in global_job_sid_set so expect success */
-  fail_unless(get_job_sid_from_pid(10) == 1000);
+  fail_unless(get_job_sid_from_pid(10) == 1000, "");
 
   /* change the pid's session to something not in global_job_sid_set */
   proc_array[index].session = 2000;
@@ -79,13 +79,13 @@ START_TEST(test_get_job_sid_from_pid)
   pid2procarrayindex_map[proc_array[index].pid] = index;
 
   /* find the session using recursion--expect success */
-  fail_unless(get_job_sid_from_pid(10) == 1000);
+  fail_unless(get_job_sid_from_pid(10) == 1000, "");
 
   /* make pid 20's session id be something not in the global_job_sid_set */
   proc_array[index].session = 2000;
 
   /* pid 20's session is not in global_job_sid_set and has parent pid 1 so expect failure */ 
-  fail_unless(get_job_sid_from_pid(20) == -1);
+  fail_unless(get_job_sid_from_pid(20) == -1, "");
   }
 END_TEST
 
@@ -100,12 +100,12 @@ START_TEST(test_injob)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* expect failure since 10 is not in the pid2jobsid_map */
   fail_unless(injob(pjob, 10) == FALSE);
@@ -134,7 +134,7 @@ START_TEST(test_injob)
  
   /* create task to hold the payload) */
   task *tp = new task();
-  fail_unless(tp != NULL);
+  fail_unless(tp != NULL, "");
 
   /* populate it */
   tp->ti_qs.ti_sid = 2000;
@@ -157,28 +157,28 @@ START_TEST(test_cput_sum)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* empty pid2jobsid_map so 0 expected */
-  fail_unless(cput_sum(pjob) == 0);
+  fail_unless(cput_sum(pjob) == 0, "");
 
   /* expect mOM_NO_PROC to be set */
-  fail_unless((pjob->ji_flags & MOM_NO_PROC) != 0);
+  fail_unless((pjob->ji_flags & MOM_NO_PROC) != 0, "");
 
   /* set up some preliminaries */
   pid2jobsid_map[10] = 1000;
 
   /* empty pid2procarrayindex_map so 0 expected */
-  fail_unless(cput_sum(pjob) == 0);
+  fail_unless(cput_sum(pjob) == 0, "");
 
   /* create space for 1 pid */
   proc_array = (proc_stat_t *) calloc(1, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   /* fill in some values */
   proc_array[0].pid = 10;
@@ -198,10 +198,10 @@ START_TEST(test_cput_sum)
   cputfactor = 1.0;
 
   /* expect (utime + stime + cutime + cstime) * cputfactor = 100 */
-  fail_unless(cput_sum(pjob) == 100);
+  fail_unless(cput_sum(pjob) == 100, "");
 
   /* expect MOM_NO_PROC *not* to be set */
-  fail_unless((pjob->ji_flags & MOM_NO_PROC) == 0);
+  fail_unless((pjob->ji_flags & MOM_NO_PROC) == 0, "");
   }
 END_TEST
 
@@ -218,19 +218,19 @@ START_TEST(test_overmem_proc)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* pid2jobsid_map is empty so expect FALSE */
   fail_unless(overmem_proc(pjob, 0) == FALSE);
 
   /* create space for 1 pid */
   proc_array = (proc_stat_t *) calloc(1, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   /* fill in some values */
   proc_array[0].pid = 10;
@@ -277,19 +277,19 @@ START_TEST(test_overcpu_proc)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* pid2jobsid_map is empty so expect FALSE */
   fail_unless(overcpu_proc(pjob, 0) == FALSE);
 
   /* create space for 1 pid */
   proc_array = (proc_stat_t *) calloc(1, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   /* fill in some values */
   proc_array[0].pid = 10;
@@ -340,19 +340,19 @@ START_TEST(test_resi_sum)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* pid2jobsid_map is empty so expect 0 */
-  fail_unless(resi_sum(pjob) == 0);
+  fail_unless(resi_sum(pjob) == 0, "");
 
   /* create space for 1 pid */
   proc_array = (proc_stat_t *) calloc(1, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   /* fill in some values */
   proc_array[0].pid = 10;
@@ -368,7 +368,7 @@ START_TEST(test_resi_sum)
   pid2jobsid_map[10] = 2000;
 
   /* pid 10 is not in job so expect 0 */
-  fail_unless(resi_sum(pjob) == 0);
+  fail_unless(resi_sum(pjob) == 0, "");
 
   /* add new sid for pid 10 */
   pid2jobsid_map.clear();
@@ -377,13 +377,13 @@ START_TEST(test_resi_sum)
   pagesize = 4096;
 
   /* pid 10 is in job so expect 1*pagesize */
-  fail_unless(resi_sum(pjob) == (unsigned long long)pagesize);
+  fail_unless(resi_sum(pjob) == (unsigned long long)pagesize, "");
 
   /* clear map */
   pid2procarrayindex_map.clear();
 
   /* pid is in job but can't look up pid in pid2procarrayindex_map so expect 0 */
-  fail_unless(resi_sum(pjob) == 0);
+  fail_unless(resi_sum(pjob) == 0, "");
 
   /* todo: test when USELIBMEMACCT set */
   }
@@ -401,19 +401,19 @@ START_TEST(test_mem_sum)
 
   /* create space for job structure */
   pjob = (job *) calloc(1, sizeof(job));
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_tasks = new std::vector<task *>();
 
   /* create job pid set */
   pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
+  fail_unless(pjob->ji_job_pid_set != NULL, "");
 
   /* pid2jobsid_map is empty so expect 0 */
-  fail_unless(mem_sum(pjob) == 0);
+  fail_unless(mem_sum(pjob) == 0, "");
 
   /* create space for 1 pid */
   proc_array = (proc_stat_t *) calloc(1, sizeof(proc_stat_t));
-  fail_unless(proc_array != NULL);
+  fail_unless(proc_array != NULL, "");
 
   /* fill in some values */
   proc_array[0].pid = 10;
@@ -429,20 +429,20 @@ START_TEST(test_mem_sum)
   pid2jobsid_map[10] = 2000;
 
   /* pid 10 is not in job so expect 0 */
-  fail_unless(mem_sum(pjob) == 0);
+  fail_unless(mem_sum(pjob) == 0, "");
 
   /* add new sid for pid 10 */
   pid2jobsid_map.clear();
   pid2jobsid_map[10] = 1000;
 
   /* pid 10 is in job so expect 10 */
-  fail_unless(mem_sum(pjob) == 10);
+  fail_unless(mem_sum(pjob) == 10, "");
 
   /* clear map */
   pid2procarrayindex_map.clear();
 
   /* pid is in job but can't look up pid in pid2procarrayindex_map so expect 0 */
-  fail_unless(mem_sum(pjob) == 0);
+  fail_unless(mem_sum(pjob) == 0, "");
   }
 END_TEST
 

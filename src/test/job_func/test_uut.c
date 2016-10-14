@@ -38,10 +38,10 @@ START_TEST(internal_job_id_exists_test)
 
   // internal ids are set to map to %d.napali in scaffolding.c if < 5
   for (int i = 0; i < 3; i++)
-    fail_unless(internal_job_id_exists(i) == true);
+    fail_unless(internal_job_id_exists(i) == true, "");
 
   for (int i = 3; i < 10; i++)
-    fail_unless(internal_job_id_exists(i) == false);
+    fail_unless(internal_job_id_exists(i) == false, "");
   }
 END_TEST
 
@@ -238,7 +238,7 @@ START_TEST(handle_aborted_job_test)
   fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "Job deleted as result of dependency on job 0.lei. Appended"));
 
   handle_aborted_job(&job_ptr, true, 0, text);
-  fail_unless(job_ptr == NULL);
+  fail_unless(job_ptr == NULL, "");
   }
 END_TEST /* handle_aborted_job_test */
 
@@ -373,13 +373,13 @@ START_TEST(svr_job_purge_test)
   result = svr_job_purge(test_job);
   fail_unless(result == 0, "non-queued job fail", result);
   // called_remove_job once means we didn't call job_free
-  fail_unless(called_remove_job == 1);
+  fail_unless(called_remove_job == 1, "");
   
   dequejob_rc = 0;
   result = svr_job_purge(test_job);
   fail_unless(result == 0, "queued job fail: %d", result);
   // Calling remove_job twice means we did call job_free
-  fail_unless(called_remove_job == 3);
+  fail_unless(called_remove_job == 3, "");
   }
 END_TEST
 

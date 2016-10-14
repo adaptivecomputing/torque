@@ -56,7 +56,7 @@ START_TEST(test_stat_update)
 
   // Make sure that the job isn't aborted.
   stat_update(&preq, &cntl);
-  fail_unless(abort_called == 0);
+  fail_unless(abort_called == 0, "");
   }
 END_TEST
 
@@ -90,19 +90,19 @@ START_TEST(test_get_next_status_job)
   // these should grab the jobs from the array
   cntl.sc_type = tjstArray;
   job *pjob = get_next_status_job(&cntl, array_index, pa, NULL);
-  fail_unless(pjob != NULL);
-  fail_unless(array_index == 0);
+  fail_unless(pjob != NULL, "");
+  fail_unless(array_index == 0, "");
   fail_unless(!strcmp(pjob->ji_qs.ji_jobid, "1[0].napali"));
   
   pjob = get_next_status_job(&cntl, array_index, pa, NULL);
-  fail_unless(pjob != NULL);
-  fail_unless(array_index == 1);
+  fail_unless(pjob != NULL, "");
+  fail_unless(array_index == 1, "");
   fail_unless(!strcmp(pjob->ji_qs.ji_jobid, "1[1].napali"));
   
   // we are now past the number of jobs in the array, this should return NULL
   pjob = get_next_status_job(&cntl, array_index, pa, NULL);
-  fail_unless(pjob == NULL);
-  fail_unless(array_index == 2);
+  fail_unless(pjob == NULL, "");
+  fail_unless(array_index == 2, "");
   }
 END_TEST
 

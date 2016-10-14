@@ -26,16 +26,16 @@ START_TEST(test_one)
   /* Validate input */
   /* NULL path */
   rc = log_remove_old(null_path, 100);
-  fail_unless(rc == -1);
+  fail_unless(rc == -1, "");
 
   /* Expire time of 0 */
   strcpy(path, "some_dir");
   rc = log_remove_old(path, 0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   dir_is_null = true;
   rc = log_remove_old(path, 10);
-  fail_unless(rc == -1);
+  fail_unless(rc == -1, "");
 
   /* get just a . for the directory entry */
   stat_fail = false;
@@ -45,7 +45,7 @@ START_TEST(test_one)
   first_time = true;
 
   rc = log_remove_old(path, 100);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   /* get just a .. for the directory entry */
   dot = false;
@@ -53,7 +53,7 @@ START_TEST(test_one)
   first_time = true;
 
   rc = log_remove_old(path, 100);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   /* Time not yet expired */
   dot = false;
@@ -62,7 +62,7 @@ START_TEST(test_one)
   time_expired = false;
 
   rc = log_remove_old(path, 100);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
    /* Time expired */
   dot = false;
@@ -71,7 +71,7 @@ START_TEST(test_one)
   time_expired = true;
 
   rc = log_remove_old(path, 100);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
    /* stat failure  */
   stat_fail = true;
@@ -81,7 +81,7 @@ START_TEST(test_one)
   time_expired = true;
 
   rc = log_remove_old(path, 100);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
 
   }

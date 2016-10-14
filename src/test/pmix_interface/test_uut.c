@@ -19,11 +19,11 @@ START_TEST(test_fences)
   strcpy(pjob.ji_qs.ji_jobid, "2.napali");
   pending_fences[jid] = f;
   notify_fence_complete(&pjob);
-  fail_unless(completed_op == 0);
+  fail_unless(completed_op == 0, "");
   
   strcpy(pjob.ji_qs.ji_jobid, jid.c_str());
   notify_fence_complete(&pjob);
-  fail_unless(completed_op == 1);
+  fail_unless(completed_op == 1, "");
   }
 END_TEST
 

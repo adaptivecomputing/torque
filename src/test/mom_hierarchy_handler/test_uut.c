@@ -43,15 +43,15 @@ START_TEST(test_next_node)
 
   // insert node into allnodes
   node = (pbsnode *)calloc(1, sizeof(pbsnode));
-  fail_unless(node != NULL);
+  fail_unless(node != NULL, "");
   node->nd_name = (char *)"foo";
   insert_node(&allnodes, node);
 
   // confirm nextNode locks node
   lock_node_count = 0;
   np = test_hierarchy_handler.call_nextNode(hierarchy_handler);
-  fail_unless(np != NULL);
-  fail_unless(lock_node_count == 1);
+  fail_unless(np != NULL, "");
+  fail_unless(lock_node_count == 1, "");
   }
 END_TEST
 
@@ -62,7 +62,7 @@ START_TEST(test_checkAndSendHierarchy)
 
   // first, remove node from allnodes (from previous test)
   node = (pbsnode *)calloc(1, sizeof(pbsnode));
-  fail_unless(node != NULL);
+  fail_unless(node != NULL, "");
   node->nd_name = (char *)"foo";
   allnodes.unlock();
   remove_node(&allnodes, node);
@@ -72,7 +72,7 @@ START_TEST(test_checkAndSendHierarchy)
   insert_node(&allnodes, node);
 
   hierarchy_handler.checkAndSendHierarchy(false);
-  fail_unless(node->nd_state == INUSE_DOWN);
+  fail_unless(node->nd_state == INUSE_DOWN, "");
   }
 END_TEST
 

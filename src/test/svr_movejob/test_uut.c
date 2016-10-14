@@ -82,7 +82,7 @@ START_TEST(send_job_over_network_test)
   CLEAR_HEAD(h);
 
   fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE);
-  fail_unless(attempt_to_queue == false);
+  fail_unless(attempt_to_queue == false, "");
 
   fprintf(stderr,"%p %s\n",(void *)destin,destin);
   CLEAR_HEAD(h);
@@ -170,7 +170,7 @@ START_TEST(encode_attributes_test)
 
   encode_attributes(attrl, &pjob, ATR_DFLAG_MOM, ATR_ENCODE_MOM);
 
-  fail_unless(GET_NEXT(attrl) != NULL);
+  fail_unless(GET_NEXT(attrl) != NULL, "");
   }
 END_TEST
 
@@ -182,11 +182,11 @@ START_TEST(queue_job_on_mom_test)
   int        type = MOVE_TYPE_Exec;
 
   fail_unless(queue_job_on_mom(1, &my_err, strdup("1.napali"), strdup("batch"), attrl, timeout, type) == PBSE_NONE);
-  fail_unless(timeout == false);
+  fail_unless(timeout == false, "");
   
   expired = true;
   fail_unless(queue_job_on_mom(1, &my_err, strdup("1.napali"), strdup("batch"), attrl, timeout, type) == LOCUTION_RETRY);
-  fail_unless(timeout == true);
+  fail_unless(timeout == true, "");
 
   timeout = false;
   expired = false;
@@ -218,11 +218,11 @@ START_TEST(log_commit_error_test)
 
   errno = EINTR;
   log_commit_error(5, PBSE_TIMEOUT, strdup("2.napali"), timeout);
-  fail_unless(timeout == false);
+  fail_unless(timeout == false, "");
 
   errno = EINPROGRESS;
   log_commit_error(5, EINPROGRESS, strdup("3.napali"), timeout);
-  fail_unless(timeout == true);
+  fail_unless(timeout == true, "");
   }
 END_TEST
 
@@ -234,11 +234,11 @@ START_TEST(get_job_script_path_test)
   strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
 
   fail_unless(get_job_script_path(pjob, script) == PBSE_NONE);
-  fail_unless(script == "/var/spool/torque/server_priv/jobs/1.napali.SC");
+  fail_unless(script == "/var/spool/torque/server_priv/jobs/1.napali.SC", "");
 
   pjob->ji_arraystructid[0] = 'a';
   fail_unless(get_job_script_path(pjob, script) == PBSE_NONE);
-  fail_unless(script == "/var/spool/torque/server_priv/jobs/2.napali.SC");
+  fail_unless(script == "/var/spool/torque/server_priv/jobs/2.napali.SC", "");
 
   get_jobs_array_fail = true;
   fail_unless(get_job_script_path(pjob, script) == -1);

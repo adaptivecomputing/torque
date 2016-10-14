@@ -20,14 +20,14 @@ START_TEST(test_requeue_job_without_contacting_mom)
 
   // job isn't running so nothing should happen
   requeue_job_without_contacting_mom(pjob);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL);
-  fail_unless(pjob.ji_qs.ji_state == 0);
+  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL, "");
+  fail_unless(pjob.ji_qs.ji_state == 0, "");
 
   pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
   requeue_job_without_contacting_mom(pjob);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_flags == 0);
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_QUEUED);
+  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL, "");
+  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_flags == 0, "");
+  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_QUEUED, "");
   }
 END_TEST
 
@@ -38,10 +38,10 @@ START_TEST(test_handle_requeue_all)
   memset(&preq, 0, sizeof(preq));
 
   // fail due to lack of permissions
-  fail_unless(handle_requeue_all(&preq) == PBSE_PERM);
+  fail_unless(handle_requeue_all(&preq) == PBSE_PERM, "");
 
   preq.rq_perm |= ATR_DFLAG_MGWR;
-  fail_unless(handle_requeue_all(&preq) == PBSE_NONE);
+  fail_unless(handle_requeue_all(&preq) == PBSE_NONE, "");
   }
 END_TEST
 

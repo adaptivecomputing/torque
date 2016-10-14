@@ -70,15 +70,15 @@ START_TEST(test_process_opt_p)
   fail_unless(process_opt_p(&ji, "1024", 1) != PBSE_NONE);
   fail_unless(process_opt_p(&ji, "-", 1) != PBSE_NONE);
   fail_unless(process_opt_p(&ji, "  5", 1) == PBSE_NONE);
-  fail_unless(added_value == "5");
+  fail_unless(added_value == "5", "");
   fail_unless(process_opt_p(&ji, "+10", 1) == PBSE_NONE);
-  fail_unless(added_value == "+10");
+  fail_unless(added_value == "+10", "");
   fail_unless(process_opt_p(&ji, "1", 1) == PBSE_NONE);
-  fail_unless(added_value == "1");
+  fail_unless(added_value == "1", "");
   fail_unless(process_opt_p(&ji, "1000", 1) == PBSE_NONE);
-  fail_unless(added_value == "1000");
+  fail_unless(added_value == "1000", "");
   fail_unless(process_opt_p(&ji, "-1000", 1) == PBSE_NONE);
-  fail_unless(added_value == "-1000");
+  fail_unless(added_value == "-1000", "");
   }
 END_TEST
 
@@ -141,10 +141,10 @@ END_TEST
 
 START_TEST(test_retry_submit_error)
   {
-  fail_unless(retry_submit_error(PBSE_NONE) == false);
-  fail_unless(retry_submit_error(PBSE_NOATTR) == false);
-  fail_unless(retry_submit_error(PBSE_ATTRRO) == false);
-  fail_unless(retry_submit_error(PBSE_TIMEOUT));
+  fail_unless(retry_submit_error(PBSE_NONE) == false, "");
+  fail_unless(retry_submit_error(PBSE_NOATTR) == false, "");
+  fail_unless(retry_submit_error(PBSE_ATTRRO) == false, "");
+  fail_unless(retry_submit_error(PBSE_TIMEOUT), "");
   }
 END_TEST
 
@@ -169,7 +169,7 @@ START_TEST(test_process_opt_d)
   cwd_ptr = getcwd(cwd, sizeof(cwd));
   std::string current(cwd_ptr);
   current += "/.";
-  fail_unless(added_value == current);
+  fail_unless(added_value == current, "");
   
   // fail with non-existent directory
   fail_unless(process_opt_d(&ji, "/tmp/superfakefakojet/", 1, jd) != PBSE_NONE);
@@ -184,7 +184,7 @@ START_TEST(test_process_opt_L)
 
   added_req = false;
   process_opt_L(arg);
-  fail_unless(added_req == true);
+  fail_unless(added_req == true, "");
   }
 END_TEST
 
@@ -217,7 +217,7 @@ START_TEST(test_add_new_request_if_present)
   req_val = 3;
   stored_complete_req = false;
   add_new_request_if_present(&ji);
-  fail_unless(stored_complete_req == true);
+  fail_unless(stored_complete_req == true, "");
   }
 END_TEST
 
@@ -300,7 +300,7 @@ START_TEST(test_x11_get_proto_1)
   char *resp = NULL;
   int debug = 1;
   resp = x11_get_proto(param1, debug);
-  fail_unless(resp == NULL);
+  fail_unless(resp == NULL, "");
   }
 END_TEST
 
@@ -350,7 +350,7 @@ START_TEST(test_make_argv)
   /* 0: "qsub"         1            2                3                     4    5    6   7 8 */
   char const * line = "simple_arg \"quoted ' arg\" \'s\"quoted \" arg\' \\\\ \\\" \\\' \\  end";
   make_argv(&argc, vect, line);
-  fail_unless(argc == 9);
+  fail_unless(argc == 9, "");
   fail_unless(strcmp(vect[0], "qsub") == 0);
   fail_unless(strcmp(vect[1], "simple_arg") == 0);
   fail_unless(strcmp(vect[2], "quoted ' arg") == 0);
@@ -360,12 +360,12 @@ START_TEST(test_make_argv)
   fail_unless(strcmp(vect[6], "\'") == 0);
   fail_unless(strcmp(vect[7], " ") == 0);
   fail_unless(strcmp(vect[8], "end") == 0);
-  fail_unless(vect[9] == NULL);
+  fail_unless(vect[9] == NULL, "");
 
   /* two args that are (escaped) spaces + test mem free/alloc no-fail test */
   line = "\\  \\\t";
   make_argv(&argc, vect, line);
-  fail_unless(argc == 3);
+  fail_unless(argc == 3, "");
   fail_unless(strcmp(vect[0], "qsub") == 0);
   fail_unless(strcmp(vect[1], " ") == 0);
   fail_unless(strcmp(vect[2], "\t") == 0);
@@ -373,7 +373,7 @@ START_TEST(test_make_argv)
   /* no arguments + mem free/alloc no-fail test */
   line = "      \t     ";
   make_argv(&argc, vect, line);
-  fail_unless(argc == 1);
+  fail_unless(argc == 1, "");
   fail_unless(strcmp(vect[0], "qsub") == 0);
   }
 END_TEST

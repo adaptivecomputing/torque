@@ -14,14 +14,14 @@ START_TEST(test_string_replchar)
   char *mystring;
 
   mystring = (char *)calloc(1024, sizeof(char));
-  fail_unless(NULL != mystring);
+  fail_unless(NULL != mystring, "");
 
   // NULL should be handled without error
   string_replchar(NULL, 'a', 'b');
 
   // string empty
   string_replchar(mystring, 'a', 'b');
-  fail_unless('\0' == *mystring);
+  fail_unless('\0' == *mystring, "");
 
   // simple replacement
   snprintf(mystring, 1024, "abcdefga");

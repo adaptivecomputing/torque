@@ -78,11 +78,11 @@ START_TEST(test_read_request_from_socket)
   dis_req_read_rc = PBSE_SYSTEM;
   batch_request *preq;
   fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
-  fail_unless(preq->rq_type == PBS_BATCH_Disconnect);
+  fail_unless(preq->rq_type == PBS_BATCH_Disconnect, "");
 
   dis_req_read_rc = 5;
   fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
-  fail_unless(preq->rq_failcode == dis_req_read_rc);
+  fail_unless(preq->rq_failcode == dis_req_read_rc, "");
   }
 END_TEST
 
@@ -92,9 +92,9 @@ START_TEST(test_process_request)
 
   memset(&chan, 0, sizeof(chan));
   chan.sock = -1;
-  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE);
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "");
   chan.sock = 66034;
-  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE);
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "");
 
   }
 END_TEST
@@ -120,15 +120,15 @@ START_TEST(test_alloc_br)
   {
   batch_request *preq = alloc_br(PBS_BATCH_QueueJob);
 
-  fail_unless(preq->rq_type == PBS_BATCH_QueueJob);
-  fail_unless(preq->rq_conn == -1);
-  fail_unless(preq->rq_orgconn == -1);
-  fail_unless(preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_NULL);
-  fail_unless(preq->rq_noreply == FALSE);
-  fail_unless(preq->rq_time > 0);
+  fail_unless(preq->rq_type == PBS_BATCH_QueueJob, "");
+  fail_unless(preq->rq_conn == -1, "");
+  fail_unless(preq->rq_orgconn == -1, "");
+  fail_unless(preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_NULL, "");
+  fail_unless(preq->rq_noreply == FALSE, "");
+  fail_unless(preq->rq_time > 0, "");
 
   free_br(preq);
-  fail_unless(free_attrlist_called > 0);
+  fail_unless(free_attrlist_called > 0, "");
   }
 END_TEST
 

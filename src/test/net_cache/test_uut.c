@@ -75,7 +75,7 @@ void *add_and_lookup_stuff(void *parm)
         pAddr = get_cached_addrinfo_full(word);
       }
 
-      fail_unless((pAddr != NULL));
+      fail_unless((pAddr != NULL), "");
 
       if(pAddr != NULL)
         {
@@ -89,7 +89,7 @@ void *add_and_lookup_stuff(void *parm)
         p2 = get_cached_fullhostname(word,pINetAddr);
         p3 = get_cached_addrinfo(word);
         p4 = get_cached_addrinfo_full(word);
-        fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)));
+        fail_unless(((p1 != NULL)&&(p2 != NULL)&&(p3 != NULL)&&(p4 != NULL)), "");
         }
       else
         {

@@ -13,12 +13,12 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_str(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY);
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
   fail_unless(decode_str(&attr,NULL,NULL,"",0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY);
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
   fail_unless(decode_str(&attr,NULL,NULL,"a string",0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET));
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET), "");
   fail_unless(strcmp(attr.at_val.at_str,"a string") == 0);
   }
 END_TEST
@@ -106,14 +106,14 @@ START_TEST(test_csv)
   decode_str(&t,NULL,NULL,"cmd2, cmd3",0);
   rc = set_str_csv(&f, &t, SET);
   fail_unless(strcmp(f.at_val.at_str,"cmd2, cmd3")==0);
-  fail_unless(rc==0);
+  fail_unless(rc==0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd3",0);
   rc = set_str_csv(&f, &t, DECR);
   fail_unless(strcmp(f.at_val.at_str,"cmd2")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
@@ -121,21 +121,21 @@ START_TEST(test_csv)
 
   rc = set_str_csv(&f, &t, INCR);
   fail_unless(strcmp(f.at_val.at_str,"cmd2,cmd4")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd2",0);
   rc = set_str_csv(&f, &t, DECR);
   fail_unless(strcmp(f.at_val.at_str,"cmd4")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd4",0);
   rc = set_str_csv(&f, &t, DECR);
-  fail_unless(f.at_val.at_str == 0);
-  fail_unless(rc == 0);
+  fail_unless(f.at_val.at_str == 0, "");
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   /* more complex cases*/
@@ -143,42 +143,42 @@ START_TEST(test_csv)
   decode_str(&t,NULL,NULL,"cmd5, cmd6",0);
   rc = set_str_csv(&f, &t, SET);
   fail_unless(strcmp(f.at_val.at_str,"cmd5, cmd6")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd5,,,,cmd7,cmd6,",0);
   rc = set_str_csv(&f, &t, INCR_OLD);
   fail_unless(strcmp(f.at_val.at_str,"cmd5, cmd6,cmd7")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd5,,,,cmd6,  cmd6, ",0);
   rc = set_str_csv(&f, &t, DECR);
   fail_unless(strcmp(f.at_val.at_str,"cmd7")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd8, cmd9 ",0);
   rc = set_str_csv(&f, &t, DECR);
   fail_unless(strcmp(f.at_val.at_str,"cmd7")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd8,cmd9, cmd10",0);
   rc = set_str_csv(&f, &t, INCR_OLD);
   fail_unless(strcmp(f.at_val.at_str,"cmd7,cmd8,cmd9,cmd10")==0);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   memset(&t,0,sizeof(t));
   decode_str(&t,NULL,NULL,"cmd7,cmd10,cmd8,cmd9",0);
   rc = set_str_csv(&f, &t, DECR);
-  fail_unless(f.at_val.at_str == 0);
-  fail_unless(rc == 0);
+  fail_unless(f.at_val.at_str == 0, "");
+  fail_unless(rc == 0, "");
   free_str(&t);
 
   free_str(&f);

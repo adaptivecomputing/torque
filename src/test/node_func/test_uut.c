@@ -80,34 +80,34 @@ START_TEST(add_node_property_test)
   bool        is_alps_compute = false;
 
   add_node_property(props, "cray_compute", is_alps_starter, is_alps_reporter, is_alps_compute);
-  fail_unless(props == "cray_compute");
-  fail_unless(is_alps_compute == true);
-  fail_unless(is_alps_starter == false);
-  fail_unless(is_alps_reporter == false);
+  fail_unless(props == "cray_compute", "");
+  fail_unless(is_alps_compute == true, "");
+  fail_unless(is_alps_starter == false, "");
+  fail_unless(is_alps_reporter == false, "");
 
   is_alps_compute = false;
   props.clear();
   add_node_property(props, alps_starter_feature, is_alps_starter, is_alps_reporter, is_alps_compute);
-  fail_unless(props == alps_starter_feature);
-  fail_unless(is_alps_compute == false);
-  fail_unless(is_alps_starter == true);
-  fail_unless(is_alps_reporter == false);
+  fail_unless(props == alps_starter_feature, "");
+  fail_unless(is_alps_compute == false, "");
+  fail_unless(is_alps_starter == true, "");
+  fail_unless(is_alps_reporter == false, "");
   is_alps_starter = false;
 
   props.clear();
   add_node_property(props, alps_reporter_feature, is_alps_starter, is_alps_reporter, is_alps_compute);
-  fail_unless(props == "cray_compute");
-  fail_unless(is_alps_compute == false);
-  fail_unless(is_alps_starter == false);
-  fail_unless(is_alps_reporter == true);
+  fail_unless(props == "cray_compute", "");
+  fail_unless(is_alps_compute == false, "");
+  fail_unless(is_alps_starter == false, "");
+  fail_unless(is_alps_reporter == true, "");
 
   is_alps_reporter = false;
   props.clear();
   add_node_property(props, "bigmem", is_alps_starter, is_alps_reporter, is_alps_compute);
-  fail_unless(props == "bigmem");
-  fail_unless(is_alps_compute == false);
-  fail_unless(is_alps_starter == false);
-  fail_unless(is_alps_reporter == false);
+  fail_unless(props == "bigmem", "");
+  fail_unless(is_alps_compute == false, "");
+  fail_unless(is_alps_starter == false, "");
+  fail_unless(is_alps_reporter == false, "");
   }
 END_TEST
 
@@ -124,15 +124,15 @@ START_TEST(record_node_property_list_test)
 
   // empty list should do nothing
   fail_unless(record_node_property_list(empty, &th) == PBSE_NONE);
-  fail_unless(attrname.size() == 0);
-  fail_unless(attrval.size() == 0);
+  fail_unless(attrname.size() == 0, "");
+  fail_unless(attrval.size() == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
 
 /*  fail_unless(record_node_property_list(props, &th) == PBSE_NONE);
-  fail_unless(attrname == ATTR_NODE_properties);
-  fail_unless(attrval == props);
+  fail_unless(attrname == ATTR_NODE_properties, "");
+  fail_unless(attrval == props, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();*/
@@ -149,11 +149,11 @@ START_TEST(handle_cray_specific_node_values_test)
 
   // nothing should happen if cray_enabled == false
   handle_cray_specific_node_values(NULL, false, false, false, true, NULL);
-  fail_unless(created_subnode == 0);
+  fail_unless(created_subnode == 0, "");
 
   // should create subnode with cray enabled and is_alps_compute set to true
   handle_cray_specific_node_values(NULL, true, false, false, true, NULL);
-  fail_unless(created_subnode == 1);
+  fail_unless(created_subnode == 1, "");
   }
 END_TEST
 
@@ -169,26 +169,26 @@ START_TEST(parse_node_name_test)
   sprintf(line, "*$!@!@");
   ptr = line;
   fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
-  fail_unless(err != PBSE_NONE);
+  fail_unless(err != PBSE_NONE, "");
   
   err = PBSE_NONE;
   sprintf(line, "napali");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, false)) != NULL);
-  fail_unless(err == PBSE_NONE);
+  fail_unless(err == PBSE_NONE, "");
   fail_unless(!strcmp(hostname, "napali"));
   
   err = PBSE_NONE;
   sprintf(line, "1napali");
   ptr = line;
   fail_unless(parse_node_name(&ptr, err, 1, false) == NULL);
-  fail_unless(err != PBSE_NONE);
+  fail_unless(err != PBSE_NONE, "");
   
   err = PBSE_NONE;
   sprintf(line, "1214");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, true)) != NULL);
-  fail_unless(err == PBSE_NONE);
+  fail_unless(err == PBSE_NONE, "");
   fail_unless(!strcmp(hostname, "1214"));
   }
 END_TEST
@@ -209,7 +209,7 @@ START_TEST(add_node_attribute_to_list_test)
   ptr = line;
 
   ret = add_node_attribute_to_list(strdup("np"), &ptr, &th, 1);
-  fail_unless(ret == PBSE_NONE);
+  fail_unless(ret == PBSE_NONE, "");
   sattr = (svrattrl *)GET_NEXT(th); 
   fail_unless(strcmp(sattr->al_name, "np") == 0);
   fail_unless(strcmp(sattr->al_value, "100") == 0);
@@ -305,11 +305,11 @@ START_TEST(read_val_and_advance_test)
 
   str = strdup("64,16,16");
   fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
-  fail_unless(val == 64);
+  fail_unless(val == 64, "");
   fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
-  fail_unless(val == 16);
+  fail_unless(val == 16, "");
   fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
-  fail_unless(val == 16);
+  fail_unless(val == 16, "");
   }
 END_TEST
 
@@ -325,9 +325,9 @@ START_TEST(node_exists_check)
   node2.nd_name = strdup("tom");
 
   initialize_allnodes(&allnodes, &node1, &node2);
-  fail_unless(node_exists("bob") == true);
-  fail_unless(node_exists("tom") == true);
-  fail_unless(node_exists("joe") == false);
+  fail_unless(node_exists("bob") == true, "");
+  fail_unless(node_exists("tom") == true, "");
+  fail_unless(node_exists("joe") == false, "");
   }
 END_TEST
   
@@ -367,12 +367,12 @@ START_TEST(write_compute_node_properties_test)
   fail_unless(strstr(line.c_str(), "martin") != NULL);
   fail_unless(strstr(line.c_str(), "cray_compute") != NULL);
   const char *ptr = strstr(line.c_str(), "tom");
-  fail_unless(ptr != NULL);
+  fail_unless(ptr != NULL, "");
   fail_unless(strstr(ptr + 1, "tom") == NULL);
   // there should only be 1 line 
   line.clear();
   getline(myfile, line);
-  fail_unless(line.size() == 0);
+  fail_unless(line.size() == 0, "");
   alps_reporter = NULL;
   }
 END_TEST

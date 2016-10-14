@@ -88,7 +88,7 @@ START_TEST(test_find_task_by_pid)
   for (int i = 0; i < 10; i++)
     {
     task *ptask = find_task_by_pid(&pjob, i + 90);
-    fail_unless(ptask->ti_qs.ti_sid == tasks[i]->ti_qs.ti_sid);
+    fail_unless(ptask->ti_qs.ti_sid == tasks[i]->ti_qs.ti_sid, "");
     }
 
   fail_unless(find_task_by_pid(&pjob, 1000) == NULL);
@@ -135,7 +135,7 @@ START_TEST(test_process_end_job_error_reply)
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
   log_event_counter = 0;
   fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0);
-  fail_unless(log_event_counter == 1);
+  fail_unless(log_event_counter == 1, "");
   }
 END_TEST
 
@@ -155,7 +155,7 @@ START_TEST(handle_im_poll_job_response_test)
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
 
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);
-  fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem);
+  fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem, "");
   }
 END_TEST
 
@@ -204,11 +204,11 @@ START_TEST(create_contact_list_test)
   pjob.ji_sisters[2].sock_addr.sin_addr.s_addr = htonl(101);
 
   create_contact_list(pjob, contact_list, &addr);
-  fail_unless(contact_list.size() == 1);
+  fail_unless(contact_list.size() == 1, "");
   contact_list.clear();
 
   create_contact_list(pjob, contact_list, NULL);
-  fail_unless(contact_list.size() == 2);
+  fail_unless(contact_list.size() == 2, "");
   contact_list.clear();
 
   pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_INTERMEDIATE_MOM;
@@ -216,11 +216,11 @@ START_TEST(create_contact_list_test)
   pjob.ji_sisters = NULL;
 
   create_contact_list(pjob, contact_list, &addr);
-  fail_unless(contact_list.size() == 1);
+  fail_unless(contact_list.size() == 1, "");
   contact_list.clear();
 
   create_contact_list(pjob, contact_list, NULL);
-  fail_unless(contact_list.size() == 2);
+  fail_unless(contact_list.size() == 2, "");
 
   }
 END_TEST
@@ -247,7 +247,7 @@ END_TEST
 
 START_TEST(test_get_received_node_entry)
   {
-  fail_unless(get_received_node_entry(strdup("pickle")) != NULL);
+  fail_unless(get_received_node_entry(strdup("pickle")) != NULL, "");
   }
 END_TEST
 
@@ -532,7 +532,7 @@ void set_mom_last_send_to_server_time(time_t target) {
 void check_mom_last_send_to_server_time(time_t expected) {
   for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
     {
-    fail_unless(mom_servers[sindex].MOMLastSendToServerTime == expected);
+    fail_unless(mom_servers[sindex].MOMLastSendToServerTime == expected, "");
     }
 }
 
@@ -540,11 +540,11 @@ START_TEST(send_update_soon_test)
   {
   ForceServerUpdate = false;
   send_update_soon();
-  fail_unless(ForceServerUpdate);
+  fail_unless(ForceServerUpdate, "");
 
   ForceServerUpdate = true;
   send_update_soon();
-  fail_unless(ForceServerUpdate);
+  fail_unless(ForceServerUpdate, "");
   }
 END_TEST
 
@@ -556,11 +556,11 @@ START_TEST(get_stat_update_interval_test)
 
   ForceServerUpdate = false;
   interval = get_stat_update_interval();
-  fail_unless(interval == 45);
+  fail_unless(interval == 45, "");
 
   ForceServerUpdate = true;
   interval = get_stat_update_interval();
-  fail_unless(interval == 15);
+  fail_unless(interval == 15, "");
   }
 END_TEST
 

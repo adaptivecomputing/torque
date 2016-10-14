@@ -28,7 +28,7 @@ START_TEST(test_one)
   connectAddrRetries = 3;
 
   fail_unless(tcp_connect_sockaddr(&addr,sizeof(struct sockaddr)) == 42);
-  fail_unless(connectAddrRetries == -1);
+  fail_unless(connectAddrRetries == -1, "");
 
   }
 END_TEST

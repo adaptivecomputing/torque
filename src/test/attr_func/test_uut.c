@@ -27,7 +27,7 @@ START_TEST(test_one)
   ret = parse_comma_string(NULL,&ptr);
   fail_unless(strcmp(ret,"hello.") == 0);
   ret = parse_comma_string(NULL,&ptr);
-  fail_unless(ret == NULL);
+  fail_unless(ret == NULL, "");
 
   free(str);
 
@@ -39,8 +39,8 @@ START_TEST(test_one)
 
   str = strdup(s2);
   rc = count_substrings(str,&ocnt);
-  fail_unless(rc == 0);
-  fail_unless(ocnt == 3);
+  fail_unless(rc == 0, "");
+  fail_unless(ocnt == 3, "");
   fail_unless(strcmp(str,"Let's , test \\, count,substrings.") == 0);
 
   free(str);
@@ -53,14 +53,14 @@ START_TEST(test_two)
   svrattrl *attrl2 = attrlist_create("Barney","Betty",20);
   fail_unless(strcmp(attrl->al_name,"Fred") == 0);
   fail_unless(strcmp(attrl->al_resc,"Wilma") == 0);
-  fail_unless(attrl->al_nameln == 5);
-  fail_unless(attrl->al_rescln == 6);
-  fail_unless(!is_link_initialized((list_link *)attrl));
+  fail_unless(attrl->al_nameln == 5, "");
+  fail_unless(attrl->al_rescln == 6, "");
+  fail_unless(!is_link_initialized((list_link *)attrl), "");
   append_link((tlist_head *)attrl,(list_link *)attrl2,(void *)attrl2);
-  fail_unless(is_link_initialized((list_link *)attrl));
+  fail_unless(is_link_initialized((list_link *)attrl), "");
   attrl2->al_atopl.op = UNSET;
   attrl_fixlink((tlist_head *)attrl);
-  fail_unless(attrl2->al_atopl.op == SET);
+  fail_unless(attrl2->al_atopl.op == SET, "");
   free_attrlist((tlist_head *)attrl);
 
   }
@@ -83,7 +83,7 @@ START_TEST(test_three)
   def.at_type = ATR_TYPE_LIST;
 
   clear_attr(&attr,&def);
-  fail_unless(attr.at_type == ATR_TYPE_LIST);
+  fail_unless(attr.at_type == ATR_TYPE_LIST, "");
 
   attribute_def defa[3];
 
@@ -106,7 +106,7 @@ START_TEST(test_three)
   fail_unless(attr_ifelse_long(&attrA,&attrB,3) == 5);
 
   free_null(&attrA);
-  fail_unless(attrA.at_flags == 0);
+  fail_unless(attrA.at_flags == 0, "");
   free_noop(&attrA);
   comp_null(&attrA,&attrB);
   }

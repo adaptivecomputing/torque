@@ -48,29 +48,29 @@ END_TEST
 
 START_TEST(test_setjobstarterprivileged)
   {
-  fail_unless(setjobstarterprivileged("") == 1);
-  fail_unless(jobstarter_privileged == 0);
+  fail_unless(setjobstarterprivileged("") == 1, "");
+  fail_unless(jobstarter_privileged == 0, "");
 
-  fail_unless(setjobstarterprivileged("off") == 1);
-  fail_unless(jobstarter_privileged == 0);
+  fail_unless(setjobstarterprivileged("off") == 1, "");
+  fail_unless(jobstarter_privileged == 0, "");
 
-  fail_unless(setjobstarterprivileged("0") == 1);
-  fail_unless(jobstarter_privileged == 0);
+  fail_unless(setjobstarterprivileged("0") == 1, "");
+  fail_unless(jobstarter_privileged == 0, "");
 
-  fail_unless(setjobstarterprivileged("false") == 1);
-  fail_unless(jobstarter_privileged == 0);
+  fail_unless(setjobstarterprivileged("false") == 1, "");
+  fail_unless(jobstarter_privileged == 0, "");
 
-  fail_unless(setjobstarterprivileged("on") == 1);
-  fail_unless(jobstarter_privileged == TRUE);
+  fail_unless(setjobstarterprivileged("on") == 1, "");
+  fail_unless(jobstarter_privileged == TRUE, "");
 
-  fail_unless(setjobstarterprivileged("t") == 1);
-  fail_unless(jobstarter_privileged == TRUE);
+  fail_unless(setjobstarterprivileged("t") == 1, "");
+  fail_unless(jobstarter_privileged == TRUE, "");
 
-  fail_unless(setjobstarterprivileged("T") == 1);
-  fail_unless(jobstarter_privileged == TRUE);
+  fail_unless(setjobstarterprivileged("T") == 1, "");
+  fail_unless(jobstarter_privileged == TRUE, "");
 
-  fail_unless(setjobstarterprivileged("1") == 1);
-  fail_unless(jobstarter_privileged == TRUE);
+  fail_unless(setjobstarterprivileged("1") == 1, "");
+  fail_unless(jobstarter_privileged == TRUE, "");
   }
 END_TEST
 

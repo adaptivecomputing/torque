@@ -18,7 +18,7 @@ START_TEST(test_get_server)
 
   fail_unless(get_server("1.napali", jid, sizeof(jid), server, sizeof(server)) == PBSE_NONE);
   // Specifying a job id with server shouldn't set the server or HA gets hosed
-  fail_unless(strlen(server) == 0);
+  fail_unless(strlen(server) == 0, "");
   // If they specify a full job id take exactly what they specified
   fail_unless(!strcmp(jid, "1.napali"));
   
@@ -36,7 +36,7 @@ START_TEST(test_get_server)
   
   fail_unless(get_server("1.napali.ac", jid, sizeof(jid), server, sizeof(server)) == PBSE_NONE);
   // @ should get the server set
-  fail_unless(strlen(server) == 0);
+  fail_unless(strlen(server) == 0, "");
   // If they specify a full job id take exactly what they specified
   fail_unless(!strcmp(jid, "1.napali.ac"));
   }

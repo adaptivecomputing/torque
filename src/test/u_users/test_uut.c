@@ -15,8 +15,8 @@ START_TEST(get_password_entry_by_uid_test)
   {
   char *buf;
   struct passwd *root = get_password_entry_by_uid(&buf, 0);
-  fail_unless(uid_i == 6);
-  fail_unless(root != NULL);
+  fail_unless(uid_i == 6, "");
+  fail_unless(root != NULL, "");
   }
 END_TEST
 

@@ -17,44 +17,44 @@ START_TEST(test_one)
   fail_unless(completed_jobs_map.add_job("1234.abc", 0) == true);
 
   // should be able to find it
-  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == true);
+  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == true, "");
 
   // second insert is a duplicate so should return false
   fail_unless(completed_jobs_map.add_job("1234.abc", 0) == false);
 
   // delete bogus job should return false
-  fail_unless(completed_jobs_map.delete_job("bogus") == false);
+  fail_unless(completed_jobs_map.delete_job("bogus") == false, "");
 
   // delete valid job should return true
-  fail_unless(completed_jobs_map.delete_job("1234.abc") == true);
+  fail_unless(completed_jobs_map.delete_job("1234.abc") == true, "");
 
   // should not be able to find it
-  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == false);
+  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == false, "");
 
   // insert should work fine
   fail_unless(completed_jobs_map.add_job("12345.abc", now) == true);
 
   // should be able to find it
-  fail_unless(completed_jobs_map.is_job_id_in_map("12345.abc") == true);
+  fail_unless(completed_jobs_map.is_job_id_in_map("12345.abc") == true, "");
 
   // expect 1 job to have be cleaned
-  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE);
+  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE, "");
 
   // should not be able to find it
-  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == false);
+  fail_unless(completed_jobs_map.is_job_id_in_map("1234.abc") == false, "");
 
   // insert should work fine
   fail_unless(completed_jobs_map.add_job("12345.abc", (time_t)(now+10)) == true);
   // cleanup time in future so expect failure
-  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE);
+  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE, "");
 
   // insert shold work fine
   fail_unless(completed_jobs_map.add_job("1.abc", (time_t)(now-10)) == true);
   // cleanup time in the past so expect success
-  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE);
+  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE, "");
 
   // remove
-  fail_unless(completed_jobs_map.delete_job("12345.abc") == true);
+  fail_unless(completed_jobs_map.delete_job("12345.abc") == true, "");
 
   // add in 5 jobs
   fail_unless(completed_jobs_map.add_job("12345.abc", now) == true);
@@ -64,14 +64,14 @@ START_TEST(test_one)
   fail_unless(completed_jobs_map.add_job("52345.abc", now) == true);
 
   // make sure they all get cleaned
-  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE);
+  fail_unless(completed_jobs_map.cleanup_completed_jobs() == PBSE_NONE, "");
 
   // make sure they all are gone
-  fail_unless(completed_jobs_map.is_job_id_in_map("12345.abc") == false);
-  fail_unless(completed_jobs_map.is_job_id_in_map("22345.abc") == false);
-  fail_unless(completed_jobs_map.is_job_id_in_map("32345.abc") == false);
-  fail_unless(completed_jobs_map.is_job_id_in_map("42345.abc") == false);
-  fail_unless(completed_jobs_map.is_job_id_in_map("52345.abc") == false);
+  fail_unless(completed_jobs_map.is_job_id_in_map("12345.abc") == false, "");
+  fail_unless(completed_jobs_map.is_job_id_in_map("22345.abc") == false, "");
+  fail_unless(completed_jobs_map.is_job_id_in_map("32345.abc") == false, "");
+  fail_unless(completed_jobs_map.is_job_id_in_map("42345.abc") == false, "");
+  fail_unless(completed_jobs_map.is_job_id_in_map("52345.abc") == false, "");
 
   // todo: test concurrency safety?
   }

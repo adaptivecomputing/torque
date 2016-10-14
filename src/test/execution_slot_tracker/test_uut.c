@@ -18,8 +18,8 @@ START_TEST(test_reserve_slot)
   for (int i = 0; i < 10; i++)
     {
     fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE);
-    fail_unless(est.is_occupied(i) == true);
-    fail_unless(est2.is_occupied(i) == true);
+    fail_unless(est.is_occupied(i) == true, "");
+    fail_unless(est2.is_occupied(i) == true, "");
     }
   }
 END_TEST
@@ -47,28 +47,28 @@ START_TEST(test_available)
   for (int i = 0; i < 10; i++)
     {
     est.add_execution_slot();
-    fail_unless(est.get_number_free() == i + 1);
-    fail_unless(est.get_total_execution_slots() == i + 1);
+    fail_unless(est.get_number_free() == i + 1, "");
+    fail_unless(est.get_total_execution_slots() == i + 1, "");
     }
 
   for (int i = 0; i < 10; i++)
     {
     est.mark_as_used(i);
-    fail_unless(est.get_number_free() == 10 - i - 1);
-    fail_unless(est.get_total_execution_slots() == 10);
+    fail_unless(est.get_number_free() == 10 - i - 1, "");
+    fail_unless(est.get_total_execution_slots() == 10, "");
     }
 
   for (int i = 0; i < 10; i++)
     {
     est.mark_as_free(i);
-    fail_unless(est.get_number_free() == i + 1);
+    fail_unless(est.get_number_free() == i + 1, "");
     }
 
-  fail_unless(est.mark_as_free(10) != PBSE_NONE);
-  fail_unless(est.get_number_free() == 10);
+  fail_unless(est.mark_as_free(10) != PBSE_NONE, "");
+  fail_unless(est.get_number_free() == 10, "");
   
-  fail_unless(est.mark_as_used(10) != PBSE_NONE);
-  fail_unless(est.get_number_free() == 10);
+  fail_unless(est.mark_as_used(10) != PBSE_NONE, "");
+  fail_unless(est.get_number_free() == 10, "");
   }
 END_TEST
 
@@ -82,7 +82,7 @@ START_TEST(test_equals)
 
     est2 = est1;
 
-    fail_unless(est2.get_number_free() == est1.get_number_free());
+    fail_unless(est2.get_number_free() == est1.get_number_free(), "");
     }
 
   for (int i = 0; i < 5; i++)
@@ -91,7 +91,7 @@ START_TEST(test_equals)
     }
   
   execution_slot_tracker est3 = est1;
-  fail_unless(est3.get_number_free() == 15);
+  fail_unless(est3.get_number_free() == 15, "");
   }
 END_TEST
 
@@ -109,10 +109,10 @@ START_TEST(test_reserving)
     }
 
   e1.unset_subset(e2);
-  fail_unless(e1.get_number_free() == 5);
+  fail_unless(e1.get_number_free() == 5, "");
   execution_slot_tracker e3(20);
 
-  fail_unless(e1.unset_subset(e3) == SUBSET_TOO_LARGE);
+  fail_unless(e1.unset_subset(e3) == SUBSET_TOO_LARGE, "");
 
   for (int i = 0; i < 10; i++)
     {
@@ -122,28 +122,28 @@ START_TEST(test_reserving)
 
   execution_slot_tracker e4;
   e1.reserve_execution_slots(4, e4);
-  fail_unless(e4.get_total_execution_slots() == 10);
-  fail_unless(e1.get_number_free() == 6);
-  fail_unless(e4.get_number_free() == 6);
+  fail_unless(e4.get_total_execution_slots() == 10, "");
+  fail_unless(e1.get_number_free() == 6, "");
+  fail_unless(e4.get_number_free() == 6, "");
 
   e1.reserve_execution_slots(6, e2);
-  fail_unless(e2.get_total_execution_slots() == 10);
-  fail_unless(e2.get_number_free() == 4);
-  fail_unless(e1.get_number_free() == 0);
+  fail_unless(e2.get_total_execution_slots() == 10, "");
+  fail_unless(e2.get_number_free() == 4, "");
+  fail_unless(e1.get_number_free() == 0, "");
 
   fail_unless(e1.reserve_execution_slots(1, e4) == INSUFFICIENT_FREE_EXECUTION_SLOTS);
-  fail_unless(e4.get_number_free() == 6);
+  fail_unless(e4.get_number_free() == 6, "");
 
-  fail_unless(e1.unreserve_execution_slots(e3) == SUBSET_TOO_LARGE);
-  fail_unless(e1.get_number_free() == 0);
+  fail_unless(e1.unreserve_execution_slots(e3) == SUBSET_TOO_LARGE, "");
+  fail_unless(e1.get_number_free() == 0, "");
 
   e1.unreserve_execution_slots(e2);
-  fail_unless(e1.get_number_free() == 6);
-  fail_unless(e2.get_number_free() == 4);
+  fail_unless(e1.get_number_free() == 6, "");
+  fail_unless(e2.get_number_free() == 4, "");
   
   e1.unreserve_execution_slots(e4);
-  fail_unless(e1.get_number_free() == 10);
-  fail_unless(e4.get_number_free() == 6);
+  fail_unless(e1.get_number_free() == 10, "");
+  fail_unless(e4.get_number_free() == 6, "");
   }
 END_TEST
 
@@ -155,40 +155,40 @@ START_TEST(test_occupied_iterator)
   int                    index;
 
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == -1);
-  fail_unless(iter >= 10);
+  fail_unless(index == -1, "");
+  fail_unless(iter >= 10, "");
 
   iter = -1;
   e1.mark_as_used(5);
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 5);
-  fail_unless(iter == 6);
+  fail_unless(index == 5, "");
+  fail_unless(iter == 6, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == -1);
+  fail_unless(index == -1, "");
 
   iter = -1;
   e1.mark_as_used(7);
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 5);
-  fail_unless(iter == 6);
+  fail_unless(index == 5, "");
+  fail_unless(iter == 6, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 7);
-  fail_unless(iter == 8);
+  fail_unless(index == 7, "");
+  fail_unless(iter == 8, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == -1);
+  fail_unless(index == -1, "");
 
   iter = -1;
   e1.mark_as_used(3);
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 3);
+  fail_unless(index == 3, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 5);
-  fail_unless(iter == 6);
+  fail_unless(index == 5, "");
+  fail_unless(iter == 6, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == 7);
-  fail_unless(iter == 8);
+  fail_unless(index == 7, "");
+  fail_unless(iter == 8, "");
   index = e1.get_next_occupied_index(iter);
-  fail_unless(index == -1);
+  fail_unless(index == -1, "");
   }
 END_TEST
 

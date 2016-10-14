@@ -27,10 +27,10 @@ START_TEST(test_job_read_xml)
 
   rc = job_read_xml("job.xml", &xjob, log_buf, sizeof(log_buf));
 
-  fail_unless(rc == PBSE_NONE);
-  fail_unless(xjob.ji_qs.ji_un.ji_momt.ji_exuid == 500);
-  fail_unless(xjob.ji_qs.ji_state == JOB_STATE_RUNNING);
-  fail_unless(xjob.ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(xjob.ji_qs.ji_un.ji_momt.ji_exuid == 500, "");
+  fail_unless(xjob.ji_qs.ji_state == JOB_STATE_RUNNING, "");
+  fail_unless(xjob.ji_qs.ji_substate == JOB_SUBSTATE_RUNNING, "");
   
   }
 END_TEST

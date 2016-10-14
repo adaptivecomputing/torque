@@ -15,12 +15,12 @@ START_TEST(test_one)
   memset(&a,0,sizeof(a));
   a.at_type = ATR_TYPE_ARST;
   fail_unless(decode_arst(&a,NULL,NULL,"this=this,is=is,a=a,comma=comma,delimited=bleck,string=strung",0)==0);
-  fail_unless(a.at_flags == (ATR_VFLAG_SET | ATR_VFLAG_MODIFY));
+  fail_unless(a.at_flags == (ATR_VFLAG_SET | ATR_VFLAG_MODIFY), "");
   s = a.at_val.at_arst;
-  fail_unless(s->as_npointers == 6);
+  fail_unless(s->as_npointers == 6, "");
   fail_unless(decode_arst_merge(&a,NULL,NULL,"another=other,comma=comma,delimited=blah,string=strange")==0);
   s = a.at_val.at_arst;
-  fail_unless(s->as_usedptr == 7);
+  fail_unless(s->as_usedptr == 7, "");
   free_arst(&a);
 
   memset(&a,0,sizeof(a));
@@ -30,7 +30,7 @@ START_TEST(test_one)
   decode_arst(&a,NULL,NULL,"this=this,is=is,a=a,comma=comma,delimited=bleck,string=strung",0);
   decode_arst(&b,NULL,NULL,"another=other,comma=comma,delimited=blah,string=strange",0);
   fail_unless(set_arst(&a,&b,SET)==0);
-  fail_unless(a.at_val.at_arst->as_usedptr == 4);
+  fail_unless(a.at_val.at_arst->as_usedptr == 4, "");
   free_arst(&a);
   free_arst(&b);
 
@@ -41,7 +41,7 @@ START_TEST(test_one)
   decode_arst(&a,NULL,NULL,"this=this,is=is,a=a,comma=comma,delimited=bleck,string=strung",0);
   decode_arst(&b,NULL,NULL,"another=other,comma=comma,delimited=blah,string=strange",0);
   fail_unless(set_arst(&a,&b,INCR)==0);
-  fail_unless(a.at_val.at_arst->as_usedptr == 7);
+  fail_unless(a.at_val.at_arst->as_usedptr == 7, "");
   free_arst(&a);
   free_arst(&b);
 
@@ -52,7 +52,7 @@ START_TEST(test_one)
   decode_arst(&a,NULL,NULL,"this=this,is=is,a=a,comma=comma,delimited=bleck,string=strung",0);
   decode_arst(&b,NULL,NULL,"another=other,comma=comma,delimited=blah,string=strange",0);
   fail_unless(set_arst(&a,&b,DECR)==0);
-  fail_unless(a.at_val.at_arst->as_usedptr == 5);
+  fail_unless(a.at_val.at_arst->as_usedptr == 5, "");
   free_arst(&a);
   free_arst(&b);
 

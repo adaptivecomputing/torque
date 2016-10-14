@@ -171,8 +171,8 @@ START_TEST(job_wait_over_test)
 
   job_wait_over(pwt);
 
-  fail_unless(napali_job.ji_qs.ji_state == JOB_STATE_COMPLETE);
-  fail_unless(napali_job.ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE);
+  fail_unless(napali_job.ji_qs.ji_state == JOB_STATE_COMPLETE, "");
+  fail_unless(napali_job.ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE, "");
   }
 END_TEST
 
@@ -261,7 +261,7 @@ START_TEST(svr_setjobstate_test)
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
-  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
+  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL, "");
 
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("lei/0");
@@ -272,11 +272,11 @@ START_TEST(svr_setjobstate_test)
 
   decrement_count = 0;
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
-  fail_unless(decrement_count == 2);
+  fail_unless(decrement_count == 2, "");
 
   decrement_count = 0;
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
-  fail_unless(decrement_count == 0);
+  fail_unless(decrement_count == 0, "");
   }
 END_TEST
 
@@ -322,16 +322,16 @@ START_TEST(svr_evaljobstate_test)
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);
-  fail_unless(old_state == state);
-  fail_unless(old_substate == substate);
+  fail_unless(old_state == state, "");
+  fail_unless(old_substate == substate, "");
 
   test_job.ji_qs.ji_state = JOB_STATE_EXITING;
   test_job.ji_qs.ji_substate = JOB_SUBSTATE_RERUN3;
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);
-  fail_unless(state == JOB_STATE_QUEUED);
-  fail_unless(substate == JOB_SUBSTATE_QUEUED);
+  fail_unless(state == JOB_STATE_QUEUED, "");
+  fail_unless(substate == JOB_SUBSTATE_QUEUED, "");
 
 
   test_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
@@ -339,8 +339,8 @@ START_TEST(svr_evaljobstate_test)
   old_state = test_job.ji_qs.ji_state;
   old_substate = test_job.ji_qs.ji_substate;
   svr_evaljobstate(test_job, state, substate, 1);
-  fail_unless(old_state == state);
-  fail_unless(old_substate == substate);
+  fail_unless(old_state == state, "");
+  fail_unless(old_substate == substate, "");
   }
 END_TEST
 
@@ -556,11 +556,11 @@ START_TEST(prefix_std_file_test)
 
   result = prefix_std_file(NULL, test_string, 0);
   fail_unless(result != NULL, "NULL input job pointer fail");
-  fail_unless(strlen(result) == 0);
+  fail_unless(strlen(result) == 0, "");
 
   result = prefix_std_file(&test_job, test_string, 0);
   fail_unless(result != NULL, "prefix_std_file fail");
-  fail_unless(strlen(result) == 0);
+  fail_unless(strlen(result) == 0, "");
 
   }
 END_TEST

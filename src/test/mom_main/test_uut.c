@@ -135,12 +135,12 @@ START_TEST(test_read_mom_hierarchy)
   system("rm -f bob");
   path_mom_hierarchy = strdup("bob");
   read_mom_hierarchy();
-  fail_unless(received_cluster_addrs == false);
+  fail_unless(received_cluster_addrs == false, "");
   //system("touch bob");
   // the following lines need more spoofing in order to work correctly
 //  parsing_hierarchy = true;
 //  read_mom_hierarchy();
-//  fail_unless(received_cluster_addrs == true);
+//  fail_unless(received_cluster_addrs == true, "");
 //  parsing_hierarchy = false;
   }
 END_TEST
@@ -150,7 +150,7 @@ START_TEST(test_call_scan_for_exiting)
   {
   exiting_tasks = true;
 
-  fail_unless(call_scan_for_exiting() == true);
+  fail_unless(call_scan_for_exiting() == true, "");
 
   exiting_tasks = false;
 
@@ -162,11 +162,11 @@ START_TEST(test_call_scan_for_exiting)
   alljobs_list.push_back(job2);
   alljobs_list.push_back(job3);
 
-  fail_unless(call_scan_for_exiting() == false);
+  fail_unless(call_scan_for_exiting() == false, "");
 
   job2->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-  fail_unless(call_scan_for_exiting() == true);
+  fail_unless(call_scan_for_exiting() == true, "");
 
   alljobs_list.clear();
   }
@@ -179,16 +179,16 @@ START_TEST(test_parse_integer_range)
   int end;
 
   fail_unless(parse_integer_range("0", start, end) == PBSE_NONE);
-  fail_unless(start == end);
-  fail_unless(start == 0);
+  fail_unless(start == end, "");
+  fail_unless(start == 0, "");
 
   fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE);
-  fail_unless(end == 2);
-  fail_unless(start == 0);
+  fail_unless(end == 2, "");
+  fail_unless(start == 0, "");
 
   fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE);
-  fail_unless(end == 4);
-  fail_unless(start == 2);
+  fail_unless(end == 4, "");
+  fail_unless(start == 2, "");
 
   fail_unless(parse_integer_range("4-2", start, end) != PBSE_NONE);
   }
@@ -264,7 +264,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_select_timeout() == 9, "");
 
   /* status update is minimum */
   time_now = 110;
@@ -273,7 +273,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 19; /* 9 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_select_timeout() == 9, "");
 
   /* poll is minimum */
   time_now = 110;
@@ -282,7 +282,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 29; /* 9 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_select_timeout() == 9, "");
 
   /* LastServerUpdateTime is zero */
   time_now = 110;
@@ -291,7 +291,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20;
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_select_timeout() == 1, "");
 
   /* status update is minimum and was needed to be sent some time ago */
   time_now = 110;
@@ -300,7 +300,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* -1 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_select_timeout() == 1, "");
 
   /* poll is minimum and was needed to be sent some time ago */
   time_now = 110;
@@ -309,7 +309,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 79;
   CheckPollTime = 30; /* -1 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_select_timeout() == 1, "");
   }
 END_TEST
 
@@ -321,7 +321,7 @@ START_TEST(test_parse_command_line1)
 
   daemonize_mom = true;
   parse_command_line(2, argv);
-  fail_unless(daemonize_mom == false);
+  fail_unless(daemonize_mom == false, "");
   }
 END_TEST
 
@@ -333,7 +333,7 @@ START_TEST(test_parse_command_line2)
 
   daemonize_mom = true;
   parse_command_line(2, argv);
-  fail_unless(daemonize_mom == false);
+  fail_unless(daemonize_mom == false, "");
   }
 END_TEST
 
@@ -345,7 +345,7 @@ START_TEST(test_parse_command_line3)
 
   daemonize_mom = true;
   parse_command_line(1, argv);
-  fail_unless(daemonize_mom == true);
+  fail_unless(daemonize_mom == true, "");
   }
 END_TEST
 

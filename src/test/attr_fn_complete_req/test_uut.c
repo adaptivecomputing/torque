@@ -18,8 +18,8 @@ START_TEST(test_free_complete_req)
   pattr.at_val.at_ptr = cr;
 
   free_complete_req(&pattr);
-  fail_unless(pattr.at_val.at_ptr == NULL);
-  fail_unless(pattr.at_flags == 0);
+  fail_unless(pattr.at_val.at_ptr == NULL, "");
+  fail_unless(pattr.at_flags == 0, "");
 
   // make sure we don't segfault if we call this twice
   free_complete_req(&pattr);
@@ -44,22 +44,22 @@ START_TEST(test_decode_encode_complete_req)
   fail_unless(decode_complete_req(&pattr, NULL, "hippo", "bob", 1) == PBSE_BAD_PARAMETER);
 
   // should still be NULL
-  fail_unless(pattr.at_val.at_ptr == NULL);
+  fail_unless(pattr.at_val.at_ptr == NULL, "");
 
   // these should work
   fail_unless(decode_complete_req(&pattr, NULL, resc_names[0], values[0], 1) == PBSE_NONE);
-  fail_unless((pattr.at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless((pattr.at_flags & ATR_VFLAG_SET) != 0, "");
 
   complete_req *cr = (complete_req *)pattr.at_val.at_ptr;
-  fail_unless(cr != NULL);
+  fail_unless(cr != NULL, "");
 
   fail_unless(cr->req_count() == 1, "count: %d\n%s", cr->req_count());
   fail_unless(decode_complete_req(&pattr, NULL, resc_names[1], values[1], 1) == PBSE_NONE);
 
   cr = (complete_req *)pattr.at_val.at_ptr;
-  fail_unless(cr != NULL);
+  fail_unless(cr != NULL, "");
 
-  fail_unless(cr->req_count() == 1);
+  fail_unless(cr->req_count() == 1, "");
 
   fail_unless(encode_complete_req(NULL, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
   extern int called_encode;
@@ -71,7 +71,7 @@ START_TEST(test_decode_encode_complete_req)
   pattr.at_val.at_ptr = NULL;
   fail_unless(encode_complete_req(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
   // make sure we didn't encode anything new
-  fail_unless(called_encode == 4);
+  fail_unless(called_encode == 4, "");
   }
 END_TEST
 
@@ -97,18 +97,18 @@ START_TEST(test_set_complete_req)
   complete_req *cr2 = (complete_req *)pattr2.at_val.at_ptr;
   complete_req *cr1 = (complete_req *)pattr.at_val.at_ptr;
 
-  fail_unless(cr2->req_count() == cr1->req_count());
+  fail_unless(cr2->req_count() == cr1->req_count(), "");
   fail_unless(decode_complete_req(&pattr2, NULL, "lprocs.1", "5", 1) == PBSE_NONE);
 
   // make sure they're different now
   cr2 = (complete_req *)pattr2.at_val.at_ptr;
-  fail_unless(cr2->req_count() != cr1->req_count());
+  fail_unless(cr2->req_count() != cr1->req_count(), "");
   fail_unless(set_complete_req(&pattr2, &pattr, SET) == PBSE_NONE);
   
   fail_unless(set_complete_req(NULL, &pattr, SET) == PBSE_BAD_PARAMETER);
   fail_unless(set_complete_req(&pattr2, &pattr, UNSET) == PBSE_NONE);
-  fail_unless(pattr2.at_val.at_ptr == NULL);
-  fail_unless((pattr2.at_flags & ATR_VFLAG_SET) == 0);
+  fail_unless(pattr2.at_val.at_ptr == NULL, "");
+  fail_unless((pattr2.at_flags & ATR_VFLAG_SET) == 0, "");
   }
 END_TEST
 

@@ -122,7 +122,7 @@ START_TEST(test_send_email_batch)
     fail_unless(output.find(buf) != std::string::npos, "output contains: '%s'", output.c_str());
     }
 
-  fail_unless(output.find("Subject: Summary Email for 10 Torque Jobs") != std::string::npos);
+  fail_unless(output.find("Subject: Summary Email for 10 Torque Jobs") != std::string::npos, "");
   
   remove_old_mail(filename);
   }

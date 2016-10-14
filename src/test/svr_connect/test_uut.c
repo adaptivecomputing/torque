@@ -20,14 +20,14 @@ START_TEST(test_connect_while_handling_mutex)
   find_node_called = 0;
   node_unlocked = 0;
   connect_while_handling_mutex(0, 0, NULL, NULL);
-  fail_unless(find_node_called == 0);
-  fail_unless(node_unlocked == 0);
+  fail_unless(find_node_called == 0, "");
+  fail_unless(node_unlocked == 0, "");
 
   // This test will segfault without the fix for TRQ-2997.
   free_node_on_unlock = true;
   connect_while_handling_mutex(0, 0, NULL, &pnode);
-  fail_unless(node_unlocked == 1);
-  fail_unless(find_node_called == 1);
+  fail_unless(node_unlocked == 1, "");
+  fail_unless(find_node_called == 1, "");
 
   }
 END_TEST

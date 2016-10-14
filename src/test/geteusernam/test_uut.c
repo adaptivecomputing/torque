@@ -21,7 +21,7 @@ START_TEST(test_get_user_host_from_user)
 
   user = "user";
   get_user_host_from_user(user_host, user);
-  fail_unless(user_host.size() == 0);
+  fail_unless(user_host.size() == 0, "");
   }
 END_TEST
 

@@ -13,34 +13,34 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_l(&attr,NULL,NULL,"134569",0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 134569);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 134569, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_l(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 0);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 0, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_l(&attr,NULL,NULL,"-356778",0);
   decode_l(&otherattr,NULL,NULL,"23456789",0);
   fail_unless(set_l(&attr,&otherattr,SET) == 0);
-  fail_unless(attr.at_val.at_long == 23456789);
+  fail_unless(attr.at_val.at_long == 23456789, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_l(&attr,NULL,NULL,"-35678",0);
   decode_l(&otherattr,NULL,NULL,"35678",0);
   fail_unless(set_l(&attr,&otherattr,INCR) == 0);
-  fail_unless(attr.at_val.at_long == 0);
+  fail_unless(attr.at_val.at_long == 0, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_l(&attr,NULL,NULL,"-35678",0);
   decode_l(&otherattr,NULL,NULL,"-35678",0);
   fail_unless(set_l(&attr,&otherattr,DECR) == 0);
-  fail_unless(attr.at_val.at_long == 0);
+  fail_unless(attr.at_val.at_long == 0, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));

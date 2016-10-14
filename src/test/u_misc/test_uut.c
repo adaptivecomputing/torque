@@ -17,11 +17,11 @@ START_TEST(test_capture_until_close_character)
   start++;
 
   capture_until_close_character(&ptr, storage, '"');
-  fail_unless(storage.size() == 0);
+  fail_unless(storage.size() == 0, "");
   capture_until_close_character(&start, storage, '"');
-  fail_unless(storage.size() == 0);
+  fail_unless(storage.size() == 0, "");
   capture_until_close_character(&start, storage, ')');
-  fail_unless(storage == "tim is bob");
+  fail_unless(storage == "tim is bob", "");
   }
 END_TEST
 
@@ -76,43 +76,43 @@ START_TEST(test_translate_range_string_to_vector)
   std::vector<int> indices;
 
   translate_range_string_to_vector("1\n", indices);
-  fail_unless(indices.size() == 1);
-  fail_unless(indices[0] == 1);
+  fail_unless(indices.size() == 1, "");
+  fail_unless(indices[0] == 1, "");
 
   indices.clear();
   translate_range_string_to_vector("0-1\n", indices);
-  fail_unless(indices.size() == 2);
-  fail_unless(indices[0] == 0);
-  fail_unless(indices[1] == 1);
+  fail_unless(indices.size() == 2, "");
+  fail_unless(indices[0] == 0, "");
+  fail_unless(indices[1] == 1, "");
 
   indices.clear();
   translate_range_string_to_vector("1-4", indices);
-  fail_unless(indices.size() == 4);
-  fail_unless(indices[0] == 1);
-  fail_unless(indices[1] == 2);
-  fail_unless(indices[2] == 3);
-  fail_unless(indices[3] == 4);
+  fail_unless(indices.size() == 4, "");
+  fail_unless(indices[0] == 1, "");
+  fail_unless(indices[1] == 2, "");
+  fail_unless(indices[2] == 3, "");
+  fail_unless(indices[3] == 4, "");
   
   indices.clear();
   translate_range_string_to_vector("0-2,6-8", indices);
-  fail_unless(indices.size() == 6);
-  fail_unless(indices[0] == 0);
-  fail_unless(indices[1] == 1);
-  fail_unless(indices[2] == 2);
-  fail_unless(indices[3] == 6);
-  fail_unless(indices[4] == 7);
-  fail_unless(indices[5] == 8);
+  fail_unless(indices.size() == 6, "");
+  fail_unless(indices[0] == 0, "");
+  fail_unless(indices[1] == 1, "");
+  fail_unless(indices[2] == 2, "");
+  fail_unless(indices[3] == 6, "");
+  fail_unless(indices[4] == 7, "");
+  fail_unless(indices[5] == 8, "");
 
   indices.clear();
   translate_range_string_to_vector("qt32", indices);
   // Invalid, should give us a vector of 0
-  fail_unless(indices.size() == 0);
+  fail_unless(indices.size() == 0, "");
 
   indices.clear();
   translate_range_string_to_vector("\n       6142-6143\n     ", indices);
-  fail_unless(indices.size() == 2);
-  fail_unless(indices[0] == 6142);
-  fail_unless(indices[1] == 6143);
+  fail_unless(indices.size() == 2, "");
+  fail_unless(indices[0] == 6142, "");
+  fail_unless(indices[1] == 6143, "");
   }
 END_TEST
 
@@ -126,17 +126,17 @@ START_TEST(test_task_hosts_match)
   this_host = "numa3";
 
   match = task_hosts_match(hostlist.c_str(), this_host.c_str());
-  fail_unless(match==true);
+  fail_unless(match==true, "");
 
   hostlist = "numa3.ac";
 
   /* short names can match FQDN */
   match = task_hosts_match(hostlist.c_str(), this_host.c_str());
-  fail_unless(match==true);
+  fail_unless(match==true, "");
 
   hostlist = "nowforsomethingcompletelydiffernt";
   match = task_hosts_match(hostlist.c_str(), this_host.c_str());
-  fail_unless(match==false);
+  fail_unless(match==false, "");
 
   }
 END_TEST

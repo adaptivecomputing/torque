@@ -49,18 +49,18 @@ START_TEST(adjust_for_depth_test)
   unsigned int nppn  = 24;
 
   adjust_for_depth(width, nppn, 24);
-  fail_unless(width == 1);
-  fail_unless(nppn  == 1);
+  fail_unless(width == 1, "");
+  fail_unless(nppn  == 1, "");
 
   width = 96;
   nppn  = 24;
   adjust_for_depth(width, nppn, 12);
-  fail_unless(width == 8);
-  fail_unless(nppn  == 2);
+  fail_unless(width == 8, "");
+  fail_unless(nppn  == 2, "");
 
   adjust_for_depth(width, nppn, 0);
-  fail_unless(width == 8);
-  fail_unless(nppn  == 2);
+  fail_unless(width == 8, "");
+  fail_unless(nppn  == 2, "");
   }
 END_TEST
 
@@ -172,7 +172,7 @@ START_TEST(parse_exec_hosts_test)
   hr = hrl->front();
   fail_unless(strcmp(hr->hostname,"l11") == 0);
   hrl->erase(hrl->begin());
-  fail_unless(hrl->size() == 0);
+  fail_unless(hrl->size() == 0, "");
   delete hrl;
   }
 END_TEST

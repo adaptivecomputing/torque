@@ -100,7 +100,7 @@ START_TEST(set_array_depend_holds_test)
   CLEAR_HEAD(pa->ai_qs.deps);
   fail_unless(register_array_depend(pa, preq, JOB_DEPEND_TYPE_AFTEROKARRAY, 10) == PBSE_NONE);
   pa->ai_qs.num_successful = 12;
-  fail_unless(set_array_depend_holds(pa) == true);
+  fail_unless(set_array_depend_holds(pa) == true, "");
   }
 END_TEST
 
@@ -435,19 +435,19 @@ START_TEST(req_register_test)
   preq->rq_ind.rq_register.rq_dependtype = JOB_DEPEND_TYPE_AFTEROK;
 
   preq->rq_ind.rq_register.rq_op = -10;
-  fail_unless(req_register(preq) == PBSE_IVALREQ);
+  fail_unless(req_register(preq) == PBSE_IVALREQ, "");
 
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_REGISTER;
-  fail_unless(req_register(preq) == PBSE_NONE);
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_RELEASE;
-  fail_unless(req_register(preq) == PBSE_NONE);
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_DELETE;
-  fail_unless(req_register(preq) == PBSE_NONE);
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_UNREG;
-  fail_unless(req_register(preq) == PBSE_NONE);
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -670,8 +670,8 @@ START_TEST(set_depend_hold_test)
   make_dependjob(pdep, job2);
 
   set_depend_hold(&pjob, pattr, NULL);
-  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_HELD);
+  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0, "");
+  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_HELD, "");
   
   memset(&pjob2, 0, sizeof(pjob2));
   pjob2.ji_qs.ji_substate = JOB_SUBSTATE_DEPNHOLD;
@@ -682,8 +682,8 @@ START_TEST(set_depend_hold_test)
   make_dependjob(pdep, job2);
 
   set_depend_hold(&pjob2, pattr, NULL);
-  fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
-  fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD);
+  fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0, "");
+  fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD, "");
 
   memset(&pjob, 0, sizeof(pjob));
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
@@ -694,8 +694,8 @@ START_TEST(set_depend_hold_test)
   // set_depend_hold() expected to gracefully
   // handle this condition.
   set_depend_hold(&pjob, pattr, NULL);
-  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
-  fail_unless(pjob.ji_qs.ji_state != JOB_STATE_HELD);
+  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0, "");
+  fail_unless(pjob.ji_qs.ji_state != JOB_STATE_HELD, "");
   }
 END_TEST
 
@@ -713,10 +713,10 @@ START_TEST(delete_dependency_job_test)
   strcpy(preq.rq_ind.rq_register.rq_child, job2);
   pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
   fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE);
-  fail_unless(pjob != NULL);
+  fail_unless(pjob != NULL, "");
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE);
-  fail_unless(pjob == NULL);
+  fail_unless(pjob == NULL, "");
   }
 END_TEST
 

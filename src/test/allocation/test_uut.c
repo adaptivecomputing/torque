@@ -51,27 +51,27 @@ START_TEST(test_allocation_constructors)
   {
   allocation a;
 
-  fail_unless(a.jobid.size() == 0);
-  fail_unless(a.memory == 0);
-  fail_unless(a.cpus == 0);
+  fail_unless(a.jobid.size() == 0, "");
+  fail_unless(a.memory == 0, "");
+  fail_unless(a.cpus == 0, "");
 
   a.jobid = "1.napali";
   a.memory = 1024 * 6;
   a.cpus = 4;
 
   allocation a2(a);
-  fail_unless(a2.jobid == "1.napali");
-  fail_unless(a2.cpus == 4);
-  fail_unless(a2.memory == 1024 * 6);
+  fail_unless(a2.jobid == "1.napali", "");
+  fail_unless(a2.cpus == 4, "");
+  fail_unless(a2.memory == 1024 * 6, "");
 
   allocation a3("1.napali");
-  fail_unless(a3.jobid == "1.napali");
+  fail_unless(a3.jobid == "1.napali", "");
 
   req r;
   allocation a4(r);
   fail_unless(a4.memory == 1024, "mem = %d", a.memory);
-  fail_unless(a4.cpus == 2);
-  fail_unless(a4.cores_only == true);
+  fail_unless(a4.cpus == 2, "");
+  fail_unless(a4.cores_only == true, "");
   }
 END_TEST
 
@@ -98,14 +98,14 @@ START_TEST(test_add_allocation)
   a2.mem_indices.push_back(0);
 
   a2.add_allocation(a);
-  fail_unless(a2.cpus == 4);
-  fail_unless(a2.memory == 8);
-  fail_unless(a2.mem_indices.size() == 2);
-  fail_unless(a2.cpu_indices.size() == 4);
-  fail_unless(a2.gpu_indices.size() == 1);
-  fail_unless(a2.gpu_indices[0] == 0);
-  fail_unless(a2.mic_indices.size() == 1);
-  fail_unless(a2.mic_indices[0] == 3);
+  fail_unless(a2.cpus == 4, "");
+  fail_unless(a2.memory == 8, "");
+  fail_unless(a2.mem_indices.size() == 2, "");
+  fail_unless(a2.cpu_indices.size() == 4, "");
+  fail_unless(a2.gpu_indices.size() == 1, "");
+  fail_unless(a2.gpu_indices[0] == 0, "");
+  fail_unless(a2.mic_indices.size() == 1, "");
+  fail_unless(a2.mic_indices[0] == 3, "");
   }
 END_TEST
 
@@ -114,37 +114,37 @@ START_TEST(test_set_place_type)
   {
 
   allocation a;
-  fail_unless(a.place_type == exclusive_none);
+  fail_unless(a.place_type == exclusive_none, "");
 
   a.set_place_type(place_node);
-  fail_unless(a.place_type == exclusive_node);
+  fail_unless(a.place_type == exclusive_node, "");
 
   a.set_place_type(place_socket);
-  fail_unless(a.place_type == exclusive_socket);
+  fail_unless(a.place_type == exclusive_socket, "");
 
   a.set_place_type(place_numa_node);
-  fail_unless(a.place_type == exclusive_chip);
+  fail_unless(a.place_type == exclusive_chip, "");
 
   a.set_place_type(place_core);
-  fail_unless(a.place_type == exclusive_core);
+  fail_unless(a.place_type == exclusive_core, "");
 
   a.set_place_type(place_thread);
-  fail_unless(a.place_type == exclusive_thread);
+  fail_unless(a.place_type == exclusive_thread, "");
 
  a.set_place_type("bobo");
-  fail_unless(a.place_type == exclusive_none);
+  fail_unless(a.place_type == exclusive_none, "");
 
   a.set_place_type("socket=2");
-  fail_unless(a.place_type == exclusive_socket);
+  fail_unless(a.place_type == exclusive_socket, "");
 
   a.set_place_type("numanode=2");
-  fail_unless(a.place_type == exclusive_chip);
+  fail_unless(a.place_type == exclusive_chip, "");
 
   a.set_place_type("core=2");
-  fail_unless(a.place_type == exclusive_core);
+  fail_unless(a.place_type == exclusive_core, "");
 
   a.set_place_type("thread=2");
-  fail_unless(a.place_type == exclusive_thread);
+  fail_unless(a.place_type == exclusive_thread, "");
   }
 END_TEST
 
@@ -187,8 +187,8 @@ START_TEST(test_task_usage_stats)
   a.set_task_usage_stats(21, 123456789);
   a.get_stats_used(cput_used, mem_used);
 
-  fail_unless(cput_used == 21);
-  fail_unless(mem_used == 123456789);
+  fail_unless(cput_used == 21, "");
+  fail_unless(mem_used == 123456789, "");
 
   }
 END_TEST
@@ -206,8 +206,8 @@ START_TEST(test_accelerators_remaining)
   a.get_mics_remaining(mics_remaining);
   a.get_gpus_remaining(gpus_remaining);
   
-  fail_unless(mics_remaining == 2);
-  fail_unless(gpus_remaining == 2);
+  fail_unless(mics_remaining == 2, "");
+  fail_unless(gpus_remaining == 2, "");
   }
 END_TEST
 
@@ -216,30 +216,30 @@ START_TEST(test_fully_placed)
   {
   allocation a;
 
-  fail_unless(a.fully_placed() == true);
+  fail_unless(a.fully_placed() == true, "");
 
   a.cpus = 1;
-  fail_unless(a.fully_placed() == false);
+  fail_unless(a.fully_placed() == false, "");
 
   a.cpus = 0;
   a.memory = 1;
-  fail_unless(a.fully_placed() == false);
+  fail_unless(a.fully_placed() == false, "");
 
   a.memory = 0;
   a.gpus = 1;
-  fail_unless(a.fully_placed() == false);
+  fail_unless(a.fully_placed() == false, "");
 
   a.gpus = 0;
   a.mics = 1;
-  fail_unless(a.fully_placed() == false);
+  fail_unless(a.fully_placed() == false, "");
 
   a.mics = 0;
-  fail_unless(a.fully_placed() == true);
+  fail_unless(a.fully_placed() == true, "");
 
   a.place_cpus = 1;
-  fail_unless(a.fully_placed() == false);
+  fail_unless(a.fully_placed() == false, "");
   a.place_cpus = 0;
-  fail_unless(a.fully_placed() == true);
+  fail_unless(a.fully_placed() == true, "");
   }
 END_TEST
 

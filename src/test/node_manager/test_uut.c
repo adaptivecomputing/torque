@@ -66,7 +66,7 @@ START_TEST(check_node_jobs_exitence_test)
     }
 
   napali_node.nd_job_usages = usages;
-  fail_unless(napali_node.nd_job_usages.size() == 10);
+  fail_unless(napali_node.nd_job_usages.size() == 10, "");
 
   work_task *pwt = (work_task *)calloc(1, sizeof(work_task));
   pwt->wt_parm1 = strdup(napali_node.nd_name);
@@ -75,9 +75,9 @@ START_TEST(check_node_jobs_exitence_test)
   check_node_jobs_existence(pwt);
 
   // Should have removed all usages 10 and higher -- see scaffolding.c
-  fail_unless(napali_node.nd_job_usages.size() == 5);
+  fail_unless(napali_node.nd_job_usages.size() == 5, "");
   for (size_t i = 0; i < napali_node.nd_job_usages.size(); i++)
-    fail_unless(napali_node.nd_job_usages[i].internal_job_id < 10);
+    fail_unless(napali_node.nd_job_usages[i].internal_job_id < 10, "");
 
   }
 END_TEST
@@ -115,48 +115,48 @@ START_TEST(test_update_failure_counts)
   update_failure_counts(name, -1);
 
   // Make sure the two failures are correctly counted
-  fail_unless(pnode->nd_proximal_failures == 2);
-  fail_unless(pnode->nd_consecutive_successes == 0);
-  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 2, "");
+  fail_unless(pnode->nd_consecutive_successes == 0, "");
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
 
   // One success shouldn't reset the failure counts
   update_failure_counts(name, 0);
-  fail_unless(pnode->nd_proximal_failures == 2);
-  fail_unless(pnode->nd_consecutive_successes == 1);
-  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 2, "");
+  fail_unless(pnode->nd_consecutive_successes == 1, "");
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
   
   // Two should
   update_failure_counts(name, 0);
-  fail_unless(pnode->nd_proximal_failures == 0);
-  fail_unless(pnode->nd_consecutive_successes == 2);
-  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 0, "");
+  fail_unless(pnode->nd_consecutive_successes == 2, "");
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
 
   // One failure should reset the success count
   update_failure_counts(name, 1);
-  fail_unless(pnode->nd_proximal_failures == 1);
-  fail_unless(pnode->nd_consecutive_successes == 0);
-  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 1, "");
+  fail_unless(pnode->nd_consecutive_successes == 0, "");
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
 
   // State shouldn't change until there are 3 proximal failures
   update_failure_counts(name, 1);
-  fail_unless(pnode->nd_proximal_failures == 2);
-  fail_unless(pnode->nd_consecutive_successes == 0);
-  fail_unless(pnode->nd_state == INUSE_FREE);
+  fail_unless(pnode->nd_proximal_failures == 2, "");
+  fail_unless(pnode->nd_consecutive_successes == 0, "");
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
   
   update_failure_counts(name, 1);
-  fail_unless(pnode->nd_state != INUSE_FREE);
-  fail_unless(pnode->nd_proximal_failures == 3);
+  fail_unless(pnode->nd_state != INUSE_FREE, "");
+  fail_unless(pnode->nd_proximal_failures == 3, "");
 
   // State shouldn't reset until there are 2 consecutive successes
   update_failure_counts(name, 0);
-  fail_unless(pnode->nd_state != INUSE_FREE);
-  fail_unless(pnode->nd_proximal_failures == 3);
-  fail_unless(pnode->nd_consecutive_successes == 1);
+  fail_unless(pnode->nd_state != INUSE_FREE, "");
+  fail_unless(pnode->nd_proximal_failures == 3, "");
+  fail_unless(pnode->nd_consecutive_successes == 1, "");
   
   update_failure_counts(name, 0);
-  fail_unless(pnode->nd_state == INUSE_FREE);
-  fail_unless(pnode->nd_proximal_failures == 0);
-  fail_unless(pnode->nd_consecutive_successes == 2);
+  fail_unless(pnode->nd_state == INUSE_FREE, "");
+  fail_unless(pnode->nd_proximal_failures == 0, "");
+  fail_unless(pnode->nd_consecutive_successes == 2, "");
   }
 END_TEST
 
@@ -180,34 +180,34 @@ START_TEST(test_add_remove_mic_jobs)
   pjobs[2].ji_internal_id = 2;
 
   fail_unless(add_job_to_mic(&pnode, 0, pjobs + 0) == PBSE_NONE);
-  fail_unless(pnode.nd_nmics_free == 4);
-  fail_unless(pnode.nd_nmics_to_be_used == 2);
+  fail_unless(pnode.nd_nmics_free == 4, "");
+  fail_unless(pnode.nd_nmics_to_be_used == 2, "");
   
   fail_unless(add_job_to_mic(&pnode, 1, pjobs + 1) == PBSE_NONE);
-  fail_unless(pnode.nd_nmics_free == 3);
-  fail_unless(pnode.nd_nmics_to_be_used == 1);
+  fail_unless(pnode.nd_nmics_free == 3, "");
+  fail_unless(pnode.nd_nmics_to_be_used == 1, "");
   
   fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) == PBSE_NONE);
-  fail_unless(pnode.nd_nmics_free == 2);
-  fail_unless(pnode.nd_nmics_to_be_used == 0);
+  fail_unless(pnode.nd_nmics_free == 2, "");
+  fail_unless(pnode.nd_nmics_to_be_used == 0, "");
  
   // make sure an add to the same mic fails
   fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) != PBSE_NONE);
-  fail_unless(pnode.nd_nmics_free == 2);
-  fail_unless(pnode.nd_nmics_to_be_used == 0);
+  fail_unless(pnode.nd_nmics_free == 2, "");
+  fail_unless(pnode.nd_nmics_to_be_used == 0, "");
 
   remove_job_from_nodes_mics(&pnode, pjobs + 0);
-  fail_unless(pnode.nd_nmics_free == 3);
+  fail_unless(pnode.nd_nmics_free == 3, "");
 
   // make sure a repeat doesn't change things
   remove_job_from_nodes_mics(&pnode, pjobs + 0);
-  fail_unless(pnode.nd_nmics_free == 3);
+  fail_unless(pnode.nd_nmics_free == 3, "");
 
   remove_job_from_nodes_mics(&pnode, pjobs + 1);
-  fail_unless(pnode.nd_nmics_free == 4);
+  fail_unless(pnode.nd_nmics_free == 4, "");
 
   remove_job_from_nodes_mics(&pnode, pjobs + 2);
-  fail_unless(pnode.nd_nmics_free == 5);
+  fail_unless(pnode.nd_nmics_free == 5, "");
   }
 END_TEST
 
@@ -227,16 +227,16 @@ START_TEST(test_kill_job_on_mom)
   pnode.nd_addrs = &addr;
 
   rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == PBSE_NONE); 
+  fail_unless(rc == PBSE_NONE, ""); 
 
   alloc_br_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == -1); 
+  fail_unless(rc == -1, ""); 
 
   alloc_br_success = true;;
   conn_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == -1); 
+  fail_unless(rc == -1, ""); 
 
   free(pnode.nd_name);
 
@@ -286,18 +286,18 @@ START_TEST(test_initialize_alps_req_data)
   record_fitting_node(num, &pnode, &naji_list, &req, 0, 3, 3, JOB_TYPE_cray, &csd, &ard);
 
   fail_unless(!strcmp(ard[0].node_list->c_str(), "napali"), ard[0].node_list->c_str());
-  fail_unless(ard[0].ppn == 32);
+  fail_unless(ard[0].ppn == 32, "");
   fail_unless(!strcmp(ard[1].node_list->c_str(), "waimea,wailua"));
-  fail_unless(ard[1].ppn == 2);
+  fail_unless(ard[1].ppn == 2, "");
   fail_unless(!strcmp(ard[2].node_list->c_str(), "lihue"));
-  fail_unless(ard[2].ppn == 12);
+  fail_unless(ard[2].ppn == 12, "");
 
   job *pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
   fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
   fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
  
-  fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET);
+  fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET, "");
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str, "napali*32|waimea,wailua*2|lihue*12"));
 
   // make sure this doesn't segfault
@@ -334,8 +334,8 @@ START_TEST(translate_job_reservation_info_to_string_test)
 
   translate_job_reservation_info_to_string(host_info, &count, exec_host, &exec_port);
   fail_unless(exec_host == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.c_str());
-  fail_unless(exec_port.str() == "15002+15002+15002+15002+15002");
-  fail_unless(count == 5);
+  fail_unless(exec_port.str() == "15002+15002+15002+15002+15002", "");
+  fail_unless(count == 5, "");
   }
 END_TEST
 
@@ -391,7 +391,7 @@ START_TEST(node_is_spec_acceptable_test)
   spec.ppn = 10;
 
   fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes, false) == false);
-  fail_unless(eligible_nodes == 0);
+  fail_unless(eligible_nodes == 0, "");
 
   for (int i = 0; i < 10; i++)
     pnode.nd_slots.add_execution_slot();
@@ -399,18 +399,18 @@ START_TEST(node_is_spec_acceptable_test)
   pnode.nd_slots.mark_as_used(4);
 
   fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
-  fail_unless(eligible_nodes == 1);
+  fail_unless(eligible_nodes == 1, "");
 
   eligible_nodes = 0;
   pnode.nd_slots.mark_as_free(4);
   pnode.nd_state |= INUSE_DOWN;  
   fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
-  fail_unless(eligible_nodes == 1);
+  fail_unless(eligible_nodes == 1, "");
   
   eligible_nodes = 0;
   pnode.nd_state = INUSE_FREE;
   fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true);
-  fail_unless(eligible_nodes == 1);
+  fail_unless(eligible_nodes == 1, "");
   }
 END_TEST
 
@@ -450,8 +450,8 @@ START_TEST(process_job_attribute_information_test)
 
   str_to_attr_count = 0;
   process_job_attribute_information(jobid, attr_str);
-  fail_unless(str_to_attr_count == 3);
-  fail_unless(decode_resc_count == 3);
+  fail_unless(str_to_attr_count == 3, "");
+  fail_unless(decode_resc_count == 3, "");
   }
 END_TEST
 
@@ -461,8 +461,8 @@ START_TEST(job_already_being_killed_test)
   jobsKilled.clear();
   jobsKilled.push_back(10);
 
-  fail_unless(job_already_being_killed(1) == false);
-  fail_unless(job_already_being_killed(10) == true);
+  fail_unless(job_already_being_killed(1) == false, "");
+  fail_unless(job_already_being_killed(10) == true, "");
   }
 END_TEST
 
@@ -485,7 +485,7 @@ START_TEST(remove_job_from_already_killed_list_test)
   remove_job_from_already_killed_list(pwt);
 
   for (unsigned int i = 0; i < jobsKilled.size(); i++)
-    fail_unless(jobsKilled[i] != 5);
+    fail_unless(jobsKilled[i] != 5, "");
 
   pwt = (struct work_task *)calloc(1,sizeof(struct work_task));
   pwt->wt_mutex = (pthread_mutex_t *)calloc(1,sizeof(pthread_mutex_t));
@@ -494,7 +494,7 @@ START_TEST(remove_job_from_already_killed_list_test)
   remove_job_from_already_killed_list(pwt);
 
   for (unsigned int i = 0; i < jobsKilled.size(); i++)
-    fail_unless(jobsKilled[i] != 6);
+    fail_unless(jobsKilled[i] != 6, "");
 
   }
 END_TEST
@@ -511,12 +511,12 @@ START_TEST(remove_job_from_node_test)
   pnode->nd_slots.reserve_execution_slots(6, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
-  fail_unless(pnode->nd_slots.get_number_free() == 4);
+  fail_unless(pnode->nd_slots.get_number_free() == 4, "");
 
   remove_job_from_node(pnode, 1);
-  fail_unless(pnode->nd_slots.get_number_free() == 10);
+  fail_unless(pnode->nd_slots.get_number_free() == 10, "");
   remove_job_from_node(pnode, 1);
-  fail_unless(pnode->nd_slots.get_number_free() == 10);
+  fail_unless(pnode->nd_slots.get_number_free() == 10, "");
   }
 END_TEST
 
@@ -578,26 +578,26 @@ START_TEST(sync_node_jobs_with_moms_test)
   pnode->nd_job_usages.push_back(jui3);
 
   /* node is fully allocated for the 3 jobs above */
-  fail_unless(pnode->nd_slots.get_number_free() == 0);
+  fail_unless(pnode->nd_slots.get_number_free() == 0, "");
 
   /* No jobs to be cleaned from the node */
   sync_node_jobs_with_moms(pnode, "1.lei.ac 2.lei.ac 3.lei.ac");
-  fail_unless(pnode->nd_slots.get_number_free() == 0);
+  fail_unless(pnode->nd_slots.get_number_free() == 0, "");
 
   /* Clean the 2nd job from the node */
   sync_node_jobs_with_moms(pnode, "1.lei.ac 3.lei.ac");
-  fail_unless(pnode->nd_slots.get_number_free() == 4);
+  fail_unless(pnode->nd_slots.get_number_free() == 4, "");
 
   /* Clean all jobs from the node */
   sync_node_jobs_with_moms(pnode, "");
-  fail_unless(pnode->nd_slots.get_number_free() == 9);
+  fail_unless(pnode->nd_slots.get_number_free() == 9, "");
 
   /* This job should not be clean as svr_find_job should find it */
   job_usage_info jui4(4);
   pnode->nd_slots.reserve_execution_slots(3, jui4.est);
   pnode->nd_job_usages.push_back(jui4);
   sync_node_jobs_with_moms(pnode, "");
-  fail_unless(pnode->nd_slots.get_number_free() == 6);
+  fail_unless(pnode->nd_slots.get_number_free() == 6, "");
   job_mode = false;
   }
 END_TEST
@@ -773,7 +773,7 @@ START_TEST(check_node_order_test)
   node.nd_id = 8;
   fail_unless(save_node_for_adding(&naji_list, &node, &req, 8, 0, -1) == PBSE_NONE);
   it = naji_list.begin();
-  fail_unless(it->node_id == 8);
+  fail_unless(it->node_id == 8, "");
 
   // Now try a more realistic example - usually there are only 1 or 2 reqs in a job
   naji_list.clear();

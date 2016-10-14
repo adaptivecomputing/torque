@@ -23,13 +23,13 @@ START_TEST(test_basics)
   PCI_Device p;
   p.setId(1);
 
-  fail_unless(p.get_id() == 1);
-  fail_unless(p.get_type() == -1);
-  fail_unless(p.is_busy() == false);
+  fail_unless(p.get_id() == 1, "");
+  fail_unless(p.get_type() == -1, "");
+  fail_unless(p.is_busy() == false, "");
   p.set_state(true);
-  fail_unless(p.is_busy() == true);
+  fail_unless(p.is_busy() == true, "");
   p.set_type(GPU);
-  fail_unless(p.get_type() == GPU);
+  fail_unless(p.get_type() == GPU, "");
   }
 END_TEST
 

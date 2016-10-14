@@ -64,14 +64,14 @@ START_TEST(get_memory_limit_from_resource_list_test)
 
   // Do the full case
   unsigned long long mem_limit = get_memory_limit_from_resource_list(&pjob);
-  fail_unless(mem_limit == 4 * 1024 * 1024);
+  fail_unless(mem_limit == 4 * 1024 * 1024, "");
   
   // Test where only half the vnods are on this node
   for (int i = pjob.ji_numvnod / 2; i < pjob.ji_numvnod; i++)
     pjob.ji_vnods[i].vn_host->hn_node = 1;
 
   mem_limit = get_memory_limit_from_resource_list(&pjob);
-  fail_unless(mem_limit == 2 * 1024 * 1024);
+  fail_unless(mem_limit == 2 * 1024 * 1024, "");
   }
 END_TEST
 #endif
@@ -82,12 +82,12 @@ START_TEST(remove_leading_hostname_test)
   char *p1 = strdup("napali:/home/dbeer");
   char *p2 = NULL;
 
-  fail_unless(remove_leading_hostname(NULL) == FAILURE);
-  fail_unless(remove_leading_hostname(&p2) == FAILURE);
-  fail_unless(remove_leading_hostname(&p1) == SUCCESS);
+  fail_unless(remove_leading_hostname(NULL) == FAILURE, "");
+  fail_unless(remove_leading_hostname(&p2) == FAILURE, "");
+  fail_unless(remove_leading_hostname(&p1) == SUCCESS, "");
   fail_unless(!strcmp(p1, "/home/dbeer"), p1);
   // for some reason it returns failure if a ':' isn't present
-  fail_unless(remove_leading_hostname(&p1) == FAILURE);
+  fail_unless(remove_leading_hostname(&p1) == FAILURE, "");
   // make sure it didn't change
   fail_unless(!strcmp(p1, "/home/dbeer"), p1);
   }
@@ -104,16 +104,16 @@ START_TEST(exec_bail_test)
   send_sisters_called = 0;
   exec_bail(&pjob, 1, NULL);
   // make sure we called send_ms() and not send_sisters()
-  fail_unless(send_ms_called > 0);
-  fail_unless(send_sisters_called == 0);
+  fail_unless(send_ms_called > 0, "");
+  fail_unless(send_sisters_called == 0, "");
 
   am_ms = true;
   pjob.ji_stdout = 11;
   pjob.ji_stderr = 12;
   exec_bail(&pjob, 2, NULL);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING);
-  fail_unless(pjob.ji_qs.ji_un.ji_momt.ji_exitstat == 2); // must match the code passed in
-  fail_unless(send_sisters_called > 0);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING, "");
+  fail_unless(pjob.ji_qs.ji_un.ji_momt.ji_exitstat == 2, ""); // must match the code passed in
+  fail_unless(send_sisters_called > 0, "");
 
   }
 END_TEST
@@ -124,7 +124,7 @@ START_TEST(no_hang_test)
   logged_event = 0;
   no_hang(SIGUSR1);
 
-  fail_unless(logged_event > 0);
+  fail_unless(logged_event > 0, "");
   }
 END_TEST
 
@@ -148,9 +148,9 @@ START_TEST(job_nodes_test)
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
   pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
 
-  fail_unless(job_nodes(*pjob) != PBSE_NONE);
+  fail_unless(job_nodes(*pjob) != PBSE_NONE, "");
   // nothing should've happened since the flag isn't set
-  fail_unless(pjob->ji_numnodes == 0);
+  fail_unless(pjob->ji_numnodes == 0, "");
   
   pjob->ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
 
@@ -161,33 +161,33 @@ START_TEST(job_nodes_test)
   addr_fail = false; // allow things to work normally
 
 
-  fail_unless(job_nodes(*pjob) == PBSE_NONE);
-  fail_unless(pjob->ji_numnodes == 2);
-  fail_unless(pjob->ji_numvnod == 20);
+  fail_unless(job_nodes(*pjob) == PBSE_NONE, "");
+  fail_unless(pjob->ji_numnodes == 2, "");
+  fail_unless(pjob->ji_numvnod == 20, "");
 
   fail_unless(!strcmp(pjob->ji_hosts[0].hn_host, "napali"));
   fail_unless(!strcmp(pjob->ji_hosts[1].hn_host, "waimea"));
-  fail_unless(pjob->ji_hosts[2].hn_node == TM_ERROR_NODE);
-  fail_unless(pjob->ji_vnods[20].vn_node == TM_ERROR_NODE);
+  fail_unless(pjob->ji_hosts[2].hn_node == TM_ERROR_NODE, "");
+  fail_unless(pjob->ji_vnods[20].vn_node == TM_ERROR_NODE, "");
 
   for (int i = 0; i < 2; i++)
     {
-    fail_unless(pjob->ji_hosts[i].hn_node == i);
-    fail_unless(pjob->ji_hosts[i].hn_sister == SISTER_OKAY);
-    fail_unless(pjob->ji_hosts[i].hn_port == 15002);
-    fail_unless(GET_NEXT(pjob->ji_hosts[i].hn_events) == NULL);
+    fail_unless(pjob->ji_hosts[i].hn_node == i, "");
+    fail_unless(pjob->ji_hosts[i].hn_sister == SISTER_OKAY, "");
+    fail_unless(pjob->ji_hosts[i].hn_port == 15002, "");
+    fail_unless(GET_NEXT(pjob->ji_hosts[i].hn_events) == NULL, "");
     }
   
   for (int i = 0; i < 20; i++)
     {
-    fail_unless(pjob->ji_vnods[i].vn_node == i);
-    fail_unless(pjob->ji_vnods[i].vn_index == i % 10);
-    fail_unless(pjob->ji_vnods[i].vn_host == &pjob->ji_hosts[i/10]);
+    fail_unless(pjob->ji_vnods[i].vn_node == i, "");
+    fail_unless(pjob->ji_vnods[i].vn_index == i % 10, "");
+    fail_unless(pjob->ji_vnods[i].vn_host == &pjob->ji_hosts[i/10], "");
     }
 
   nodes_free(pjob);
-  fail_unless(pjob->ji_vnods == NULL);
-  fail_unless(pjob->ji_hosts == NULL);
+  fail_unless(pjob->ji_vnods == NULL, "");
+  fail_unless(pjob->ji_hosts == NULL, "");
   }
 END_TEST
 
@@ -422,7 +422,7 @@ START_TEST(test_check_pwd_euser)
   fail_site_grp_check = false;
   decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
   pwd = check_pwd(pjob);
-  fail_unless(pwd == true);
+  fail_unless(pwd == true, "");
   }
 END_TEST
 

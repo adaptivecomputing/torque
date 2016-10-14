@@ -44,7 +44,7 @@ START_TEST(test_one)
   tree = AVL_insert(500,505,node + 20,tree);
 
   pNode = AVL_find(503,503,tree);
-  fail_unless(pNode == (node + 12));
+  fail_unless(pNode == (node + 12), "");
   fail_unless(AVL_is_in_tree(500,505,tree) == 1);
   fail_unless(AVL_is_in_tree(510,505,tree) == 0);
   fail_unless(AVL_is_in_tree(500,515,tree) == 0);
@@ -66,8 +66,8 @@ START_TEST(test_one)
 
   fail_unless(AVL_list(tree,&bf,&len,&maxLen) == PBSE_NONE);
 
-  fail_unless(bf != NULL);
-  fail_unless(len > 0);
+  fail_unless(bf != NULL, "");
+  fail_unless(len > 0, "");
   //fprintf(stderr,"%s\n",bf);
 
 

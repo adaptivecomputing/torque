@@ -10,7 +10,7 @@ START_TEST(test_constructor)
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
 
   pmix_tracker pt(pjob, 1);
-  fail_unless(pt.id_matches("1") == true);
+  fail_unless(pt.id_matches("1") == true, "");
   }
 END_TEST
 

@@ -10,11 +10,11 @@ long count_proc(char *);
 START_TEST(test_count_proc)
   {
 
-  fail_unless(count_proc(NULL) == 0);
-  fail_unless(count_proc(strdup("")) == 0);
-  fail_unless(count_proc(strdup("1")) == 1);
-  fail_unless(count_proc(strdup("1+2:ppn=5")) == 11);
-  fail_unless(count_proc(strdup("1:ppn=1+5:ppn=100+5+1000:ppn=10000")) == 10000506);
+  fail_unless(count_proc(NULL) == 0, "");
+  fail_unless(count_proc(strdup("")) == 0, "");
+  fail_unless(count_proc(strdup("1")) == 1, "");
+  fail_unless(count_proc(strdup("1+2:ppn=5")) == 11, "");
+  fail_unless(count_proc(strdup("1:ppn=1+5:ppn=100+5+1000:ppn=10000")) == 10000506, "");
 
   }
 END_TEST

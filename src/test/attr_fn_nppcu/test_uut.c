@@ -13,38 +13,38 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,"0",0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 0);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 0, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,"1",0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 1);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 1, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,"2",0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 2);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 2, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,"-1",0) != 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) == 0);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) == 0, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,"5",0) != 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) == 0);
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) == 0, "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_nppcu(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_long == 0); 
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_long == 0, ""); 
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_nppcu(&attr,NULL,NULL,"1",0);
   decode_nppcu(&otherattr,NULL,NULL,"2",0);
   fail_unless(set_l(&attr,&otherattr,SET) == 0);
-  fail_unless(attr.at_val.at_long == 2);
+  fail_unless(attr.at_val.at_long == 2, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));

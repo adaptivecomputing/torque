@@ -410,10 +410,10 @@ START_TEST(test_run_job_mode)
   string errmsg;
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
-  fail_unless(pbs_server != NULL);
+  fail_unless(pbs_server != NULL, "");
   
   rc = gethostname(pbs_server, len);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_job_mode failed for no operand");
@@ -455,30 +455,30 @@ START_TEST(test_run_queue_mode)
   string errmsg;
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
-  fail_unless(pbs_server != NULL);
+  fail_unless(pbs_server != NULL, "");
   
   rc = gethostname(pbs_server, len);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
   operand = "batch";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "(null)";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
   operand = "batch";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   free(pbs_server);
@@ -497,10 +497,10 @@ START_TEST(test_run_server_mode)
 
   connect_success = true;
   pbs_server = (char *)malloc(PBS_MAXSERVERNAME + 1);
-  fail_unless(pbs_server != NULL);
+  fail_unless(pbs_server != NULL, "");
   
   rc = gethostname(pbs_server, len);
-  fail_unless(rc == 0);
+  fail_unless(rc == 0, "");
 
   rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
   fail_unless(rc == PBSE_NONE, "run_server_mode failed with no arguments");
@@ -568,34 +568,34 @@ END_TEST
 START_TEST(test_read_int_token)
   {
   const char * tok = "";
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "-1";
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "0";
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "10";
-  fail_unless(read_int_token(&tok) == 10);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 10, "");
+  fail_unless(tok == NULL, "");
   tok = "99999999999999999"; /* int overflow */
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "12asf";
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "a12";
-  fail_unless(read_int_token(&tok) == 1);
-  fail_unless(tok == NULL);
+  fail_unless(read_int_token(&tok) == 1, "");
+  fail_unless(tok == NULL, "");
   tok = "2:3";
-  fail_unless(read_int_token(&tok) == 2);
-  fail_unless(tok != NULL);
-  fail_unless(*tok == ':');
+  fail_unless(read_int_token(&tok) == 2, "");
+  fail_unless(tok != NULL, "");
+  fail_unless(*tok == ':', "");
   tok = "2+3";
-  fail_unless(read_int_token(&tok) == 2);
-  fail_unless(tok != NULL);
-  fail_unless(*tok == '+');
+  fail_unless(read_int_token(&tok) == 2, "");
+  fail_unless(tok != NULL, "");
+  fail_unless(*tok == '+', "");
   }
 END_TEST
 
@@ -603,56 +603,56 @@ START_TEST(test_read_int_prop)
   {
   const char * prop = "prop=22";
   fail_unless(read_int_prop(&prop, "prop=") == 22);
-  fail_unless(prop == NULL);
+  fail_unless(prop == NULL, "");
   prop = "prop=";
   fail_unless(read_int_prop(&prop, "prop=") == 1);
-  fail_unless(prop == NULL);
+  fail_unless(prop == NULL, "");
   prop = "prop=asdf";
   fail_unless(read_int_prop(&prop, "prop=") == 1);
-  fail_unless(prop == NULL);
+  fail_unless(prop == NULL, "");
   prop = "a=2:b=3";
   fail_unless(read_int_prop(&prop, "prop=") == 0);
-  fail_unless(prop != NULL);
-  fail_unless(*prop == ':');
+  fail_unless(prop != NULL, "");
+  fail_unless(*prop == ':', "");
   prop = "a=2+b=3";
   fail_unless(read_int_prop(&prop, "prop=") == 0);
-  fail_unless(prop != NULL);
-  fail_unless(*prop == '+');
+  fail_unless(prop != NULL, "");
+  fail_unless(*prop == '+', "");
   prop = "prop=2+b=3";
   fail_unless(read_int_prop(&prop, "prop=") == 2);
-  fail_unless(prop != NULL);
-  fail_unless(*prop == '+');
+  fail_unless(prop != NULL, "");
+  fail_unless(*prop == '+', "");
   prop = "";
   fail_unless(read_int_prop(&prop, "prop=") == 0);
-  fail_unless(prop == NULL);
+  fail_unless(prop == NULL, "");
   }
 END_TEST
 
 START_TEST(test_read_node_spec)
   {
   const char * spec = "n01:ppn=10";
-  fail_unless(read_node_spec(&spec) == 10);
-  fail_unless(spec == NULL);
+  fail_unless(read_node_spec(&spec) == 10, "");
+  fail_unless(spec == NULL, "");
   spec = "2:ppn=10";
-  fail_unless(read_node_spec(&spec) == 20);
-  fail_unless(spec == NULL);
+  fail_unless(read_node_spec(&spec) == 20, "");
+  fail_unless(spec == NULL, "");
   spec = "2";
-  fail_unless(read_node_spec(&spec) == 2);
-  fail_unless(spec == NULL);
+  fail_unless(read_node_spec(&spec) == 2, "");
+  fail_unless(spec == NULL, "");
   spec = "2:prop=val:pr:ppn=10:prop=val";
-  fail_unless(read_node_spec(&spec) == 20);
-  fail_unless(spec == NULL);
+  fail_unless(read_node_spec(&spec) == 20, "");
+  fail_unless(spec == NULL, "");
   }
 END_TEST
 
 START_TEST(test_get_tasks_from_nodes_resc)
   {
   const char * spec = "n01+n02+n03";
-  fail_unless(get_tasks_from_nodes_resc(spec) == 3);
+  fail_unless(get_tasks_from_nodes_resc(spec) == 3, "");
   spec = "n01+2+n03";
-  fail_unless(get_tasks_from_nodes_resc(spec) == 4);
+  fail_unless(get_tasks_from_nodes_resc(spec) == 4, "");
   spec = "n01:prop=val+5:prop=val+1+n02:prop=val:ppn=5+n03+n04:ppn=10";
-  fail_unless(get_tasks_from_nodes_resc(spec) == 23);
+  fail_unless(get_tasks_from_nodes_resc(spec) == 23, "");
   }
 END_TEST
 

@@ -62,36 +62,36 @@ START_TEST(ghost_array_test)
   job_array *pa = ghost_create_jobs_array(pjob, array_id);
   fail_unless(!strcmp(pa->ai_qs.parent_id, array_id));
   fail_unless(!strcmp(pa->ai_qs.fileprefix, "10.napali"), "prefix=%s", pa->ai_qs.fileprefix);
-  fail_unless(pa->job_ids[0] != NULL);
+  fail_unless(pa->job_ids[0] != NULL, "");
   fail_unless(!strcmp(pa->job_ids[0], pjob->ji_qs.ji_jobid));
-  fail_unless(pa->ai_qs.array_size == 101); // DEFAULT_ARRAY_RECOV_SIZE
+  fail_unless(pa->ai_qs.array_size == 101, ""); // DEFAULT_ARRAY_RECOV_SIZE
 
   pa->job_ids[50] = strdup("10[50].napali");
 
   check_and_reallocate_job_ids(pa, 210);
   fail_unless(!strcmp(pa->job_ids[0], "10[0].napali"));
   fail_unless(!strcmp(pa->job_ids[50], "10[50].napali"));
-  fail_unless(pa->ai_qs.array_size == 404); // should have doubled twice to accomodate index 210
+  fail_unless(pa->ai_qs.array_size == 404, ""); // should have doubled twice to accomodate index 210
 
   pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
   update_recovered_array_values(pa, pjob);
-  fail_unless(pa->ai_qs.num_jobs == 1);
-  fail_unless(pa->ai_qs.num_started == 1);
-  fail_unless(pa->ai_qs.jobs_running == 1);
+  fail_unless(pa->ai_qs.num_jobs == 1, "");
+  fail_unless(pa->ai_qs.num_started == 1, "");
+  fail_unless(pa->ai_qs.jobs_running == 1, "");
       
   pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
   update_recovered_array_values(pa, pjob);
   fail_unless(pa->ai_qs.num_jobs == 2, "%d jobs", pa->ai_qs.num_jobs);
-  fail_unless(pa->ai_qs.num_started == 2);
-  fail_unless(pa->ai_qs.jobs_done == 1);
-  fail_unless(pa->ai_qs.jobs_running == 1);
+  fail_unless(pa->ai_qs.num_started == 2, "");
+  fail_unless(pa->ai_qs.jobs_done == 1, "");
+  fail_unless(pa->ai_qs.jobs_running == 1, "");
   
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   update_recovered_array_values(pa, pjob);
-  fail_unless(pa->ai_qs.num_jobs == 3);
-  fail_unless(pa->ai_qs.num_started == 2);
-  fail_unless(pa->ai_qs.jobs_done == 1);
-  fail_unless(pa->ai_qs.jobs_running == 1);
+  fail_unless(pa->ai_qs.num_jobs == 3, "");
+  fail_unless(pa->ai_qs.num_started == 2, "");
+  fail_unless(pa->ai_qs.jobs_done == 1, "");
+  fail_unless(pa->ai_qs.jobs_running == 1, "");
   }
 END_TEST
 
@@ -105,7 +105,7 @@ START_TEST(test_decode_attribute)
 
   decode_attribute(pal, &pjob, false);
   fail_unless(pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 1, "val: %d", (int)pjob->ji_wattr[JOB_ATR_hold].at_val.at_long);
-  fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0, "");
   }
 END_TEST
 
@@ -127,8 +127,8 @@ START_TEST(ghost_array_test2)
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 500; // >DEFAULT_ARRAY_RECOV_SIZE
 
   job_array *pa = ghost_create_jobs_array(pjob, array_id);
-  fail_unless(pa->ai_ghost_recovered == true);
-  fail_unless(pa->ai_qs.array_size == 501); // 1 more than 500
+  fail_unless(pa->ai_ghost_recovered == true, "");
+  fail_unless(pa->ai_qs.array_size == 501, ""); // 1 more than 500
   }
 END_TEST
 
@@ -155,7 +155,7 @@ START_TEST(test_set_array_jobs_ids)
   pjob = (job *)calloc(1, sizeof(job));
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
   fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == -1); // We should delete template jobs that don't have an array
-  fail_unless(pjob->ji_is_array_template == TRUE);
+  fail_unless(pjob->ji_is_array_template == TRUE, "");
   }
 END_TEST
 
@@ -181,7 +181,7 @@ START_TEST(test_translate_dependency_to_string)
   // make sure we don't segfault
   translate_dependency_to_string(NULL, value);
   translate_dependency_to_string(&dep_attr, value);
-  fail_unless(value == "afterok:1.napali");
+  fail_unless(value == "afterok:1.napali", "");
   }
 END_TEST
 
@@ -198,7 +198,7 @@ START_TEST(test_add_encoded_attributes)
   add_encoded_attributes(&attr_node, attributes);
   xmlNode *child = attr_node->children;
 
-  fail_unless(child != NULL);
+  fail_unless(child != NULL, "");
   fail_unless(!strcmp((const char *)child->name, ATTR_owner));
   fail_unless(!strcmp((const char *)child->children->name, "text"));
   fail_unless(!strcmp((const char *)child->children->content, "dbeer@napali"));
@@ -221,7 +221,7 @@ START_TEST(test_add_encoded_attributes)
   add_encoded_attributes(&attr_node, attributes);
   xmlNode *child = attr_node->children;
 
-  fail_unless(child != NULL);
+  fail_unless(child != NULL, "");
   fail_unless(!strcmp((const char *)child->name, ATTR_used)); */
   }
 END_TEST
@@ -440,7 +440,7 @@ START_TEST(test_job_recover)
   fail_unless(rc == PBSE_NONE, "Failed to save job to an xml file");
 
   job *recov_pj = job_recov(jobFileName);
-  fail_unless(recov_pj != NULL);
+  fail_unless(recov_pj != NULL, "");
 
   rc = job_compare(pj, recov_pj);
   fail_unless(rc == 0, "jobs (saved & recovered) did not compare the same");

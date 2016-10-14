@@ -13,34 +13,34 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_c(&attr,NULL,NULL,"Hello",0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_char == 'H');
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_char == 'H', "");
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_c(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0);
-  fail_unless(attr.at_val.at_char == '\0');
+  fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
+  fail_unless(attr.at_val.at_char == '\0', "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_c(&attr,NULL,NULL,"Hello",0);
   decode_c(&otherattr,NULL,NULL,"Jello",0);
   fail_unless(set_c(&attr,&otherattr,SET) == 0);
-  fail_unless(attr.at_val.at_char == 'J');
+  fail_unless(attr.at_val.at_char == 'J', "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_c(&attr,NULL,NULL,"Hello",0);
   decode_c(&otherattr,NULL,NULL,"\x1",0);
   fail_unless(set_c(&attr,&otherattr,INCR) == 0);
-  fail_unless(attr.at_val.at_char == 'I');
+  fail_unless(attr.at_val.at_char == 'I', "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_c(&attr,NULL,NULL,"Hello",0);
   decode_c(&otherattr,NULL,NULL,"\x1",0);
   fail_unless(set_c(&attr,&otherattr,DECR) == 0);
-  fail_unless(attr.at_val.at_char == 'G');
+  fail_unless(attr.at_val.at_char == 'G', "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));

@@ -42,7 +42,7 @@ START_TEST(test_parse_command_line_case1)
   char *argv[] = {strdup("pbs_server"), strdup("-n")};
   set_optind();
 
-  fail_unless(auto_send_hierarchy == true);
+  fail_unless(auto_send_hierarchy == true, "");
   parse_command_line(2, argv);
   fail_unless(auto_send_hierarchy == false, "-n failed");
   }
@@ -89,8 +89,8 @@ START_TEST(test_parse_command_line_case5)
   TDoBackground = true;
   LineBufferOutput = false;
   parse_command_line(2, argv);
-  fail_unless(TDoBackground == false);
-  fail_unless(LineBufferOutput);
+  fail_unless(TDoBackground == false, "");
+  fail_unless(LineBufferOutput, "");
   }
 END_TEST
 
@@ -103,8 +103,8 @@ START_TEST(test_parse_command_line_case6)
   TDoBackground = true;
   LineBufferOutput = false;
   parse_command_line(2, argv);
-  fail_unless(TDoBackground == false);
-  fail_unless(LineBufferOutput == false);
+  fail_unless(TDoBackground == false, "");
+  fail_unless(LineBufferOutput == false, "");
   }
 END_TEST
 
@@ -117,8 +117,8 @@ START_TEST(test_parse_command_line_case7)
   TDoBackground = true;
   LineBufferOutput = false;
   parse_command_line(1, argv);
-  fail_unless(TDoBackground == true);
-  fail_unless(LineBufferOutput == false);
+  fail_unless(TDoBackground == true, "");
+  fail_unless(LineBufferOutput == false, "");
   }
 END_TEST
 

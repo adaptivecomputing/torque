@@ -67,7 +67,7 @@ START_TEST(get_active_pbs_server_test)
 
   setenv("PBSAPITIMEOUT", "3", 1);
   get_active_pbs_server(&server_name, &port);
-  fail_unless(pbs_tcp_timeout == 3);
+  fail_unless(pbs_tcp_timeout == 3, "");
 
   socket_success = false;
   rc = get_active_pbs_server(&server_name, &port);
@@ -379,7 +379,7 @@ START_TEST(test_send_svr_disconnect)
 
 
   user = (char *)malloc(10);
-  fail_unless(user != NULL);
+  fail_unless(user != NULL, "");
   strcpy(user, "fred");
   send_svr_disconnect(sock, user);
   free(user);
@@ -424,9 +424,9 @@ START_TEST(build_active_server_response_test)
   {
   std::string message;
   set_active_pbs_server("", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
   set_active_pbs_server("napali", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE);
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
   fail_unless(!strcmp(message.c_str(), "0|6|napali|15001|"));
   }
 END_TEST
@@ -462,33 +462,33 @@ START_TEST(test_validate_user)
   getpwuid_success = true;
   
   rc = validate_user(10, "eris", 1, msg);
-  fail_unless(rc == PBSE_NONE);
+  fail_unless(rc == PBSE_NONE, "");
 
   // send in a NULL name 
   rc = validate_user(10, NULL, 1, msg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   // send a null msg pointer 
   rc = validate_user(10, "eris", 1, NULL);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   getsockopt_success = false;
   rc = validate_user(10, "eris", 1, msg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   getsockopt_success = true;
   getpwuid_success = false;
   rc = validate_user(10, "eris", 1, msg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   // test the case where user names won't match 
   getpwuid_success = true;
   rc = validate_user(10, "fred", 1, msg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   // test the case where user pids won't match 
   rc = validate_user(10, "eris", 2, msg);
-  fail_unless(rc != PBSE_NONE);
+  fail_unless(rc != PBSE_NONE, "");
 
   }
 END_TEST

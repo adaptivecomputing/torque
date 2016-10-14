@@ -11,10 +11,10 @@ START_TEST(test_constructor)
   job_usage_info jui2(2);
   job_usage_info jui_copy(1);
 
-  fail_unless(jui1.internal_job_id == 1);
-  fail_unless(jui2.internal_job_id == 2);
-  fail_unless((jui1 == jui2) == false);
-  fail_unless(jui1 == jui_copy);
+  fail_unless(jui1.internal_job_id == 1, "");
+  fail_unless(jui2.internal_job_id == 2, "");
+  fail_unless((jui1 == jui2) == false, "");
+  fail_unless(jui1 == jui_copy, "");
   }
 END_TEST
 

@@ -12,7 +12,7 @@ START_TEST(test_one)
 
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_frequency(&attr,NULL,NULL,NULL,0) == 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY);
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
   fail_unless(decode_frequency(&attr,NULL,NULL,"100",0) == 0);
   fail_unless(decode_frequency(&attr,NULL,NULL,"100mhz",0) == 0);
@@ -24,7 +24,7 @@ START_TEST(test_one)
   // UserSpace is disallowed 
   fail_unless(decode_frequency(&attr,NULL,NULL,"UserSpace",0) != 0);
   fail_unless(decode_frequency(&attr,NULL,NULL,"fred",0) != 0);
-  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET));
+  fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET), "");
 
   }
 END_TEST

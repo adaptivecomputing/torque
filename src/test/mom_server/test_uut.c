@@ -138,8 +138,8 @@ START_TEST(test_mom_server_update_stat_clear_force)
   ForceServerUpdate = true;
 
   fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
-  fail_unless(ForceServerUpdate == false);
-  fail_unless(pms.MOMLastSendToServerTime == time_now);
+  fail_unless(ForceServerUpdate == false, "");
+  fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 
   /* Usual send status update */
   time_now = time(NULL);
@@ -147,8 +147,8 @@ START_TEST(test_mom_server_update_stat_clear_force)
   ForceServerUpdate = false;
 
   fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
-  fail_unless(ForceServerUpdate == false);
-  fail_unless(pms.MOMLastSendToServerTime == time_now);
+  fail_unless(ForceServerUpdate == false, "");
+  fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 
   /* It's too early to update even if force enabled */
   time_now = time(NULL);
@@ -157,8 +157,8 @@ START_TEST(test_mom_server_update_stat_clear_force)
   ForceServerUpdate = true;
 
   fail_unless(mom_server_update_stat(&pms, status) == NO_SERVER_CONFIGURED);
-  fail_unless(ForceServerUpdate == true);
-  fail_unless(pms.MOMLastSendToServerTime == check_val);
+  fail_unless(ForceServerUpdate == true, "");
+  fail_unless(pms.MOMLastSendToServerTime == check_val, "");
   }
 END_TEST
 
@@ -172,19 +172,19 @@ START_TEST(test_send_update_force_flag)
 
   ForceServerUpdate = false;
   time_now = 100;
-  fail_unless(!send_update());
+  fail_unless(!send_update(), "");
   time_now = 144;
-  fail_unless(!send_update());
+  fail_unless(!send_update(), "");
   time_now = 145;
-  fail_unless(send_update());
+  fail_unless(send_update(), "");
 
   ForceServerUpdate = true;
   time_now = 100;
-  fail_unless(!send_update());
+  fail_unless(!send_update(), "");
   time_now = 114;
-  fail_unless(!send_update());
+  fail_unless(!send_update(), "");
   time_now = 115;
-  fail_unless(send_update());
+  fail_unless(send_update(), "");
   }
 END_TEST
 
@@ -199,24 +199,24 @@ START_TEST(test_mom_server_all_update_stat_clear_force)
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(ForceServerUpdate == false);
+  fail_unless(ForceServerUpdate == false, "");
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = false;
   mom_server_all_update_stat();
-  fail_unless(ForceServerUpdate == false);
+  fail_unless(ForceServerUpdate == false, "");
 
   is_reporter_mom = false;
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(ForceServerUpdate == false);
+  fail_unless(ForceServerUpdate == false, "");
 
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
-  fail_unless(ForceServerUpdate == false);
+  fail_unless(ForceServerUpdate == false, "");
   }
 END_TEST
 
@@ -257,9 +257,9 @@ START_TEST(test_get_device_indices)
   strcpy(suffix, "-gpu");
   spec = "fattony3.ac-gpu/0+fattony3.ac-gpu/1+numa3.ac-gpu/0";
   get_device_indices(spec.c_str(), gpu_indices, suffix);
-  fail_unless(gpu_indices.size() == 2);
-  fail_unless(gpu_indices[0] == 0);
-  fail_unless(gpu_indices[1] == 1);
+  fail_unless(gpu_indices.size() == 2, "");
+  fail_unless(gpu_indices[0] == 0, "");
+  fail_unless(gpu_indices[1] == 1, "");
 
   }
 END_TEST

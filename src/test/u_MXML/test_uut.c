@@ -100,10 +100,10 @@ START_TEST(test_one)
   mxml_t *pXml = NULL;
 
   fail_unless(MXMLFromString(&pXml,(char *)sampleXML,NULL,NULL,0) == SUCCESS);
-  fail_unless(MXMLDestroyE(&pXml) == SUCCESS);
+  fail_unless(MXMLDestroyE(&pXml) == SUCCESS, "");
 
   fail_unless(MXMLFromString(&pXml,(char *)badXML,NULL,NULL,0) != SUCCESS);
-  fail_unless(MXMLDestroyE(&pXml) == SUCCESS);
+  fail_unless(MXMLDestroyE(&pXml) == SUCCESS, "");
 
   }
 END_TEST
@@ -130,26 +130,26 @@ START_TEST(test_two)
   fail_unless(!strcmp(bf,"string"));
 
   fail_unless(MXMLGetAttrF(pExtra,(char *)"int",NULL,(void *)&i,mdfInt,sizeof(i)) == SUCCESS);
-  fail_unless(i == 123);
+  fail_unless(i == 123, "");
   fail_unless(MXMLGetAttrF(pExtra,(char *)"intless",NULL,(void *)&i,mdfInt,sizeof(i)) == FAILURE);
-  fail_unless(i==0);
+  fail_unless(i==0, "");
 
 
   fail_unless(MXMLGetAttrF(pExtra,(char *)"long",NULL,(void *)&l,mdfLong,sizeof(l)) == SUCCESS);
-  fail_unless(l == 3245);
+  fail_unless(l == 3245, "");
   fail_unless(MXMLGetAttrF(pExtra,(char *)"longless",NULL,(void *)&l,mdfLong,sizeof(l)) == FAILURE);
-  fail_unless(l == 0);
+  fail_unless(l == 0, "");
 
   fail_unless(MXMLGetAttrF(pExtra,(char *)"double",NULL,(void *)&d,mdfDouble,sizeof(d)) == SUCCESS);
-  fail_unless(d == 3.14159);
+  fail_unless(d == 3.14159, "");
   fail_unless(MXMLGetAttrF(pExtra,(char *)"doubleless",NULL,(void *)&d,mdfDouble,sizeof(d)) == FAILURE);
-  fail_unless(d == 0.0);
+  fail_unless(d == 0.0, "");
 
   fail_unless(MXMLToString(pXml,bf,sizeof(bf),NULL,true) == SUCCESS);
   fail_unless(MXMLToXString(pXml,&buff,&i,sizeof(bf),NULL,true) == SUCCESS);
   if (buff != NULL) free(buff);
 
-  fail_unless(MXMLDestroyE(&pXml) == SUCCESS);
+  fail_unless(MXMLDestroyE(&pXml) == SUCCESS, "");
 
 
   }

@@ -36,11 +36,11 @@ START_TEST(dispatch_timed_task_test)
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
 
-  fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY);
+  fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY, "");
   
   request_pool->tp_idle_threads = 6;
-  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE);
-  fail_unless(wt.wt_being_recycled == TRUE);
+  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE, "");
+  fail_unless(wt.wt_being_recycled == TRUE, "");
   }
 END_TEST
 
@@ -53,13 +53,13 @@ START_TEST(can_dispatch_task_test)
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
 
-  fail_unless(can_dispatch_task() == false);
+  fail_unless(can_dispatch_task() == false, "");
 
   request_pool->tp_idle_threads = 45;
-  fail_unless(can_dispatch_task() == true);
+  fail_unless(can_dispatch_task() == true, "");
 
   request_pool->tp_idle_threads = 6;
-  fail_unless(can_dispatch_task() == true);
+  fail_unless(can_dispatch_task() == true, "");
   }
 END_TEST
 
@@ -92,28 +92,28 @@ START_TEST(manage_timed_task_test)
   insert_timed_task(&ptask2);
   insert_timed_task(&ptask3);
 
-  fail_unless(pop_timed_task(0) == NULL);
-  fail_unless(pop_timed_task(99) == NULL);
+  fail_unless(pop_timed_task(0) == NULL, "");
+  fail_unless(pop_timed_task(99) == NULL, "");
 
   wt = pop_timed_task(150);
-  fail_unless(wt != NULL);
+  fail_unless(wt != NULL, "");
 
   // we expect the mutex to be locked
   //   so trylock should fail
   rc = pthread_mutex_trylock(wt->wt_mutex);
-  fail_unless(rc == EBUSY);
+  fail_unless(rc == EBUSY, "");
 
-  fail_unless(wt->wt_event == 100);
-  fail_unless(pop_timed_task(150) == NULL);
+  fail_unless(wt->wt_event == 100, "");
+  fail_unless(pop_timed_task(150) == NULL, "");
 
   wt = pop_timed_task(350);
-  fail_unless(wt != NULL);
-  fail_unless(wt->wt_event == 200);
+  fail_unless(wt != NULL, "");
+  fail_unless(wt->wt_event == 200, "");
   wt = pop_timed_task(350);
-  fail_unless(wt != NULL);
-  fail_unless(wt->wt_event == 300);
+  fail_unless(wt != NULL, "");
+  fail_unless(wt->wt_event == 300, "");
   wt = pop_timed_task(350);
-  fail_unless(wt == NULL);
+  fail_unless(wt == NULL, "");
   }
 END_TEST
 
@@ -130,11 +130,11 @@ START_TEST(test_one)
   fail_unless(rc == PBSE_NONE, "initalize_threadpool failed", rc);
 
   struct work_task *pWorkTask = set_task(WORK_Timed,357,check_nodes,NULL,0);
-  fail_unless(pWorkTask != NULL);
+  fail_unless(pWorkTask != NULL, "");
   struct work_task *pWorkTask2 = set_task(WORK_Timed,356,check_nodes,NULL,0);
-  fail_unless(pWorkTask2 != NULL);
+  fail_unless(pWorkTask2 != NULL, "");
   struct work_task *pWorkTask3 = set_task(WORK_Timed,358,check_nodes,NULL,0);
-  fail_unless(pWorkTask3 != NULL);
+  fail_unless(pWorkTask3 != NULL, "");
 
   rc = dispatch_task(pWorkTask);
   fail_unless(rc == PBSE_NONE, "dispatch_task failed", rc);
@@ -143,8 +143,8 @@ START_TEST(test_one)
   std::vector<work_task *>::iterator iter = tr.tasks.tasks.end();
   struct work_task *pRecycled = next_task_from_recycler(&tr.tasks,iter);
   fprintf(stderr,"%p %p\n",(void *)pWorkTask,(void *)pRecycled);
-  fail_unless(pRecycled == pWorkTask);
-  fail_unless(task_is_in_threadpool(pWorkTask2));
+  fail_unless(pRecycled == pWorkTask, "");
+  fail_unless(task_is_in_threadpool(pWorkTask2), "");
   }
 END_TEST
 

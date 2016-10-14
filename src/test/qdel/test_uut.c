@@ -18,7 +18,7 @@ START_TEST(test_clientretry_disabled)
   int argc = sizeof(argv) / sizeof(argv[0]);
   char *envp[] = {NULL};
   qdel_main(argc, argv, envp);
-  fail_unless(cnt2server_conf_cnt == 0);
+  fail_unless(cnt2server_conf_cnt == 0, "");
   }
 END_TEST
 
@@ -32,8 +32,8 @@ START_TEST(test_clientretry_cmdline)
   int argc = sizeof(argv) / sizeof(argv[0]);
   char *envp[] = {NULL};
   qdel_main(argc, argv, envp);
-  fail_unless(cnt2server_conf_cnt == 1);
-  fail_unless(cnt2server_conf_arg[0] == 100);
+  fail_unless(cnt2server_conf_cnt == 1, "");
+  fail_unless(cnt2server_conf_arg[0] == 100, "");
   }
 END_TEST
 
@@ -48,8 +48,8 @@ START_TEST(test_clientretry_conf_file)
   char clientretry_val[] = "200";
   get_trq_param_ret = clientretry_val;
   qdel_main(argc, argv, envp);
-  fail_unless(cnt2server_conf_cnt == 1);
-  fail_unless(cnt2server_conf_arg[0] == 200);
+  fail_unless(cnt2server_conf_cnt == 1, "");
+  fail_unless(cnt2server_conf_arg[0] == 200, "");
 
   get_trq_param_ret = NULL;
   }
@@ -65,8 +65,8 @@ START_TEST(test_clientretry_env)
   char env0[] = "PBS_CLIENTRETRY=300";
   char *envp[] = {env0, NULL};
   qdel_main(argc, argv, envp);
-  fail_unless(cnt2server_conf_cnt == 1);
-  fail_unless(cnt2server_conf_arg[0] == 300);
+  fail_unless(cnt2server_conf_cnt == 1, "");
+  fail_unless(cnt2server_conf_arg[0] == 300, "");
   }
 END_TEST
 
