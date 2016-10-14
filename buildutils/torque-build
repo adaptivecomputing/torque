@@ -216,6 +216,9 @@ then
   configure_options="$configure_options --enable-cgroups --with-hwloc-path=/usr/local/bin/"
 fi
 
+# set so child makefiles know this
+export FROM_TORQUE_BUILD=1
+
 echo $(git rev-parse HEAD) > current_hash
 sh autogen.sh
 ./configure $configure_options

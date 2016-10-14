@@ -162,7 +162,7 @@ packages:
            tarball=$(PKGROOT)/$(PACKAGE_NAME)-$$pname-$$d-$$phost.tar.gz; \
            pkgfile=./$(PACKAGE_NAME)-$$pname-$$d-$$phost.sh; \
            echo "Building $$pkgfile ..."; \
-           $(MAKE) DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
+           $(MAKE) FROM_MAKE_PACKAGES=1 DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
 	   case $$d in \
 	      devel) :;; \
 	      *) rm -f $$proot/$(libdir)/*a $$proot/$(libdir)/*.so;; \
