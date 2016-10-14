@@ -6,24 +6,6 @@
 
 #include "pbs_nodes.h"
 
-class authorized_host_info
-  {
-  friend class authorized_hosts;
-
-  std::string              hostname;
-  std::set<unsigned short> ports;
-
-  public:
-    authorized_host_info() : hostname(), ports() {}
-    authorized_host_info(const std::string &host, unsigned short port) : hostname(host)
-      {
-      ports.insert(port);
-      }
-    
-    authorized_host_info(
-      const authorized_host_info &other) : hostname(other.hostname), ports(other.ports) {}
-  };
-
 
 class authorized_hosts
   {
