@@ -99,7 +99,7 @@ uninstall-hook:
 	  rm -f $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service || :; \
 	  rm -f $(DESTDIR)/etc/init.d/pbs_mom || :; \
 	  rm -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf || :; \
-	  if $(FROM_MAKE_PACKAGES)0 -eq 0; then \
+	  if [ $(FROM_MAKE_PACKAGES)0 -eq 0 ]; then \
 	    /sbin/ldconfig; \
 	  fi; \
 	fi
