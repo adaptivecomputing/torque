@@ -63,9 +63,13 @@
   unset CONFFLAGS \
   CONFFLAGS_FILE=`mktemp %{_tmppath}/confflags.XXXX` \
   ./configure --help 2>&1 > ${CONFFLAGS_FILE} \
+  if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+  then \
+      CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+  fi \
   if grep -q  -- '--oldincludedir' "${CONFFLAGS_FILE}" \
   then \
-      CONFFLAGS='--oldincludedir=%{_oldincludedir}' \
+      CONFFLAGS="${CONFFLAGS} --oldincludedir=%{_oldincludedir}" \
   fi \
   if grep -q  -- '--datarootdir' ${CONFFLAGS_FILE} \
   then \
@@ -297,7 +301,6 @@
 ### Features disabled by default
 %bcond_with    blcr
 %bcond_with    cpuset
-%bcond_with    cgroups
 %bcond_with    libcpuset
 %bcond_with    memacct
 %bcond_with    munge
@@ -306,6 +309,7 @@
 %bcond_with    top
 
 ### Features enabled by default
+%bcond_without cgroups
 %bcond_without scp
 %bcond_without spool
 %bcond_without syslog
@@ -313,7 +317,7 @@
 ### Autoconf macro expansions
 %define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
-%define ac_with_cgroups     --%{?with_cgroups:en}%{!?with_cgroups:dis}able-cgroups
+%define ac_with_cgroups    --%{?with_cgroups:en}%{!?with_cgroups:dis}able-cgroups
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
 %define ac_with_numa       --%{?with_numa:en}%{!?with_numa:dis}able-numa-support
@@ -329,7 +333,7 @@
 %define breq_munge %{?with_munge:munge-devel}
 %define breq_pam   %{?with_pam:pam-devel}
 %define breq_scp   %{?with_scp:/usr/bin/scp}
-%define req_cgroups   %{?with_cgroups:%{rootbin}/lssubsys}
+%define breq_cgroups   %{?with_cgroups:libcgroup} %{?with_cgroups:libcgroup-tools} %{?with_cgroups:hwloc >= 1.9.1}
 
 # Missing:
 # libcpuset -> libcpuset.so.*
@@ -433,7 +437,7 @@ Suite.
 Group:      Applications/System
 Summary:    TORQUE Common Files
 %if %{with cgroups}
-Requires: %{req_cgroups}
+Requires: %{breq_cgroups}
 %endif
 
 %description %{common_sub}
@@ -450,6 +454,9 @@ Obsoletes:  %{community_client_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
 Provides:   %{community_client_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_client_pkg}(x86-64) < %{version}-%{release}
+%endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
 %endif
 Provides:   %{community_top_pkg}-docs = %{version}-%{release}
 Obsoletes:  %{community_top_pkg}-docs < %{version}-%{release}
@@ -468,6 +475,9 @@ Obsoletes:  %{community_server_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
 Provides:   %{community_server_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_server_pkg}(x86-64) < %{version}-%{release}
+%endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
 %endif
 Requires:   %{common_pkg}
 Requires:   %{client_pkg}
@@ -490,6 +500,9 @@ Obsoletes:  %{community_devel_pkg} < %{version}-%{release}
 Provides:   %{community_devel_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_devel_pkg}(x86-64) < %{version}-%{release}
 %endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
+%endif
 
 %description %{devel_sub}
 Development headers and libraries for TORQUE
@@ -510,6 +523,9 @@ Obsoletes:  %{community_mom_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
 Provides:   %{community_mom_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_mom_pkg}(x86-64) < %{version}-%{release}
+%endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
 %endif
 
 %description %{mom_sub}
