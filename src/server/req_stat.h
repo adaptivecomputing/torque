@@ -11,9 +11,9 @@
 
 int req_stat_job(struct batch_request *preq);
 
-int stat_to_mom(char *job_id, struct stat_cntl *cntl);
+int stat_to_mom(const char *job_id, struct stat_cntl *cntl);
 
-void stat_mom_job(char *jobid);
+void stat_mom_job(const char *jobid);
 
 void stat_update(struct batch_request *preq, struct stat_cntl *cntl);
 

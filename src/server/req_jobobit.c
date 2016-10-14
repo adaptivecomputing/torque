@@ -1896,7 +1896,7 @@ int handle_complete_first_time(
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf, "adding job to completed_jobs_map from %s", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jid.c_str(), log_buf);
     }
 
   // add job id and clean up time for processing by cleanup task
@@ -3714,7 +3714,7 @@ int req_jobobit(
   /* clear suspended flag if it was set */
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
 
-  if ((rc = update_substate_from_exit_status(pjob, &alreadymailed,mailbuf)) != PBSE_NONE)
+  if ((rc = update_substate_from_exit_status(pjob, &alreadymailed, mailbuf)) != PBSE_NONE)
     return(rc);
 
   /* What do we now do with the job... */

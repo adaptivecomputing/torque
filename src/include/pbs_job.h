@@ -1084,12 +1084,17 @@ task *task_find(job *pjob, tm_task_id taskid);
 #define LOCUTION_SIZE     20
 
 
-typedef struct send_job_request
+class send_job_request
   {
-  char      *jobid;
-  int        move_type;
-  void      *data;
-  } send_job_request;
+  public:
+  std::string  jobid;
+  int          move_type;
+  void        *data;
+
+  send_job_request() : jobid(), move_type(MOVE_TYPE_Move), data(NULL)
+    {
+    }
+  };
 
 
 
