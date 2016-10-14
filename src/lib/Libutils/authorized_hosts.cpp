@@ -244,16 +244,19 @@ bool authorized_hosts::remove_address(
   pthread_mutex_lock(&this->auth_mutex);
   std::map<unsigned long, std::map<unsigned short, std::string> >::iterator it = this->auth_map.find(addr);
 
-  std::map<unsigned short, std::string>::iterator map_it = it->second.find(port);
-  if (map_it != it->second.end())
+  if (it != this->auth_map.end())
     {
-    removed = true;
-    it->second.erase(map_it);
-
-    // If there are no authorized ports left, remove this address completely
-    if (it->second.size() == 0)
+    std::map<unsigned short, std::string>::iterator map_it = it->second.find(port);
+    if (map_it != it->second.end())
       {
-      this->auth_map.erase(it);
+      removed = true;
+      it->second.erase(map_it);
+
+      // If there are no authorized ports left, remove this address completely
+      if (it->second.size() == 0)
+        {
+        this->auth_map.erase(it);
+        }
       }
     }
   
