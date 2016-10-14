@@ -737,7 +737,7 @@ void req_stat_job_step2(
 
 int stat_to_mom(
 
-  char             *job_id,
+  const char       *job_id,
   struct stat_cntl *cntl)  /* M */
 
   {
@@ -974,7 +974,7 @@ void stat_update(
 
 void stat_mom_job(
 
-  char *job_id)
+  const char *job_id)
 
   {
   struct stat_cntl *cntl;

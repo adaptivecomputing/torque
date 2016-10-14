@@ -127,7 +127,7 @@
 
 /* External Functions Called: */
 
-extern int   send_job_work(char *job_id,char *,int,int *,struct batch_request *);
+extern int   send_job_work(char *job_id, const char *,int,int *,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
@@ -1422,10 +1422,10 @@ int svr_strtjob2(
 
 void finish_sendmom(
 
-  char                  *job_id,
+  const char            *job_id,
   struct batch_request *preq,
   long                  start_time,
-  char                 *node_name,
+  const char           *node_name,
   int                   status,
   int                   mom_err)
 
@@ -1877,12 +1877,12 @@ job *chk_job_torun(
 
 int set_job_exec_info(
     
-  job  *pjob,
-  char *list)
+  job        *pjob,
+  const char *list)
 
   {
   char            ms[PBS_MAXHOSTNAME];
-  char           *ptr;
+  const char     *ptr;
   int             i;
   struct pbsnode *pnode;
   struct in_addr  hostaddr;
@@ -2208,7 +2208,7 @@ int assign_hosts(
 
   if (svr_totnodes != 0)
     {
-    rc = set_nodes(pjob, (char *)hosttoalloc, procs, list, portlist, FailHost, EMsg);
+    rc = set_nodes(pjob, hosttoalloc, procs, list, portlist, FailHost, EMsg);
     
     set_exec_host = 1; /* maybe new VPs, must set */
     
@@ -2255,7 +2255,7 @@ int assign_hosts(
         (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
       tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
     else
-      tmp = parse_servername((char *)hosttoalloc, &dummy);
+      tmp = parse_servername(hosttoalloc, &dummy);
     
     snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", tmp);
     

@@ -188,7 +188,7 @@ extern int              SvrNodeCt;
 
 extern int              multi_mom;
 
-const int network_fail_wait_time = 300;
+const int               network_fail_wait_time = 300;
 
 #define SKIP_NONE       0
 #define SKIP_EXCLUSIVE  1
