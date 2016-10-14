@@ -260,7 +260,7 @@ START_TEST(test_initializeMachine)
   hwloc_topology_load(topology);
 
   rc = new_machine.initializeMachine(topology);
-  fail_unless(rc == PBSE_NONE, "machine initialization failed");
+  fail_unless(rc == PBSE_NONE, "machine initialization failed", "");
 
   rc = new_machine.getTotalSockets();
   fail_unless(rc != 0, "Failed to get machine number of sockets");

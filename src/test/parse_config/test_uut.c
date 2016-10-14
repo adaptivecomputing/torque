@@ -82,15 +82,15 @@ START_TEST(test_reqgres)
   fail_unless((config_array = (struct config *)calloc(2, sizeof(struct config))) != NULL);
 
   // basic test
-  fail_unless(strcmp(reqgres(NULL), "") == 0);
+  fail_unless(strcmp(reqgres(NULL), "") == 0, "");
 
   // fill in array
   config_array[0].c_name = strdup("somegres");
   config_array[0].c_u.c_value = strdup("somestuff");
-  fail_unless(strcmp(reqgres(NULL), "somegres:somestuff") == 0);
+  fail_unless(strcmp(reqgres(NULL), "somegres:somestuff") == 0, "");
 
   config_array[0].c_u.c_value = strdup("!fakeshellescape");
-  fail_unless(strcmp(reqgres(NULL), "somegres:scriptoutput") == 0);
+  fail_unless(strcmp(reqgres(NULL), "somegres:scriptoutput") == 0, "");
   }
 END_TEST
 

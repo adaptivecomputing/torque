@@ -26,19 +26,19 @@ START_TEST(test_attr_to_str)
 
   pattr.at_flags |= ATR_VFLAG_SET;
   pattr.at_val.at_long = 7;
-  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE);
+  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE, "", "");
   fail_unless(output == "7", "");
 
   output.clear();
   ad.at_type = ATR_TYPE_CHAR;
   pattr.at_val.at_char = 'a';
-  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE);
+  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE, "", "");
   fail_unless(output == "a", "is %s", output.c_str());
 
   output.clear();
   ad.at_type = ATR_TYPE_STR;
   pattr.at_val.at_str = strdup("bobby wood");
-  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE);
+  fail_unless(attr_to_str(output, &ad, pattr, false) == PBSE_NONE, "", "");
   fail_unless(output == "bobby wood", "");
 
   }
@@ -72,30 +72,30 @@ START_TEST(test_size_to_str)
   sv.atsv_num = 2;
   sv.atsv_shift = 50;
 
-  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "2pb"));
 
   sv.atsv_num = 30;
   sv.atsv_shift = 40;
-  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "30tb"));
 
   sv.atsv_num = 4;
   sv.atsv_shift = 30;
-  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "4gb"));
 
   sv.atsv_num = 500;
   sv.atsv_shift = 20;
-  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "500mb"));
 
   sv.atsv_num = 1;
   sv.atsv_shift = 10;
-  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "1kb"));
   
-  fail_unless(size_to_str(sv, buf, 2) != PBSE_NONE);
+  fail_unless(size_to_str(sv, buf, 2) != PBSE_NONE, "");
   }
 END_TEST
 

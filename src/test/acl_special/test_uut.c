@@ -39,8 +39,8 @@ START_TEST(test_basics)
   a.add_user_configuration("dbeer@napali");
   a.add_group_configuration("company@waimea");
 
-  fail_unless(a.is_authorized("waimea", "jbeer") == false);
-  fail_unless(a.is_authorized("napali", "dbeer") == true);
+  fail_unless(a.is_authorized("waimea", "jbeer") == false, "");
+  fail_unless(a.is_authorized("napali", "dbeer") == true, "");
   }
 END_TEST
 

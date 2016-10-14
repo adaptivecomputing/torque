@@ -179,20 +179,20 @@ START_TEST(test_add_remove_mic_jobs)
   pjobs[1].ji_internal_id = 1;
   pjobs[2].ji_internal_id = 2;
 
-  fail_unless(add_job_to_mic(&pnode, 0, pjobs + 0) == PBSE_NONE);
+  fail_unless(add_job_to_mic(&pnode, 0, pjobs + 0) == PBSE_NONE, "", "");
   fail_unless(pnode.nd_nmics_free == 4, "");
   fail_unless(pnode.nd_nmics_to_be_used == 2, "");
   
-  fail_unless(add_job_to_mic(&pnode, 1, pjobs + 1) == PBSE_NONE);
+  fail_unless(add_job_to_mic(&pnode, 1, pjobs + 1) == PBSE_NONE, "", "");
   fail_unless(pnode.nd_nmics_free == 3, "");
   fail_unless(pnode.nd_nmics_to_be_used == 1, "");
   
-  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) == PBSE_NONE);
+  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) == PBSE_NONE, "", "");
   fail_unless(pnode.nd_nmics_free == 2, "");
   fail_unless(pnode.nd_nmics_to_be_used == 0, "");
  
   // make sure an add to the same mic fails
-  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) != PBSE_NONE);
+  fail_unless(add_job_to_mic(&pnode, 2, pjobs + 2) != PBSE_NONE, "");
   fail_unless(pnode.nd_nmics_free == 2, "");
   fail_unless(pnode.nd_nmics_to_be_used == 0, "");
 
@@ -227,7 +227,7 @@ START_TEST(test_kill_job_on_mom)
   pnode.nd_addrs = &addr;
 
   rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == PBSE_NONE, ""); 
+  fail_unless(rc == PBSE_NONE, "", ""); 
 
   alloc_br_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
@@ -256,7 +256,7 @@ START_TEST(test_initialize_alps_req_data)
   memset(&csd, 0, sizeof(csd));
   memset(&pnode, 0, sizeof(pnode));
 
-  fail_unless(initialize_alps_req_data(&ard, 3) == PBSE_NONE);
+  fail_unless(initialize_alps_req_data(&ard, 3) == PBSE_NONE, "", "");
 
   pnode.nd_id = 0;
   pnode.nd_name = strdup("napali");
@@ -294,8 +294,8 @@ START_TEST(test_initialize_alps_req_data)
 
   job *pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
-  fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
-  fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
+  fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE, "", "");
+  fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE, "", "");
  
   fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET, "");
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str, "napali*32|waimea,wailua*2|lihue*12"));
@@ -390,7 +390,7 @@ START_TEST(node_is_spec_acceptable_test)
 
   spec.ppn = 10;
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes, false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes, false) == false, "");
   fail_unless(eligible_nodes == 0, "");
 
   for (int i = 0; i < 10; i++)
@@ -398,18 +398,18 @@ START_TEST(node_is_spec_acceptable_test)
     
   pnode.nd_slots.mark_as_used(4);
 
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false, "");
   fail_unless(eligible_nodes == 1, "");
 
   eligible_nodes = 0;
   pnode.nd_slots.mark_as_free(4);
   pnode.nd_state |= INUSE_DOWN;  
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == false, "");
   fail_unless(eligible_nodes == 1, "");
   
   eligible_nodes = 0;
   pnode.nd_state = INUSE_FREE;
-  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true);
+  fail_unless(node_is_spec_acceptable(&pnode, &spec, NULL, &eligible_nodes,false) == true, "");
   fail_unless(eligible_nodes == 1, "");
   }
 END_TEST
@@ -419,26 +419,26 @@ START_TEST(process_as_node_list_test)
   {
   std::list<node_job_add_info> naji_list;
 
-  fail_unless(process_as_node_list("", NULL) == false);
-  fail_unless(process_as_node_list(NULL, &naji_list) == false);
+  fail_unless(process_as_node_list("", NULL) == false, "");
+  fail_unless(process_as_node_list(NULL, &naji_list) == false, "");
 
-  fail_unless(process_as_node_list("bob:ppn=10", &naji_list) == true);
-  fail_unless(process_as_node_list("bob:ppn=12", NULL) == false);
+  fail_unless(process_as_node_list("bob:ppn=10", &naji_list) == true, "");
+  fail_unless(process_as_node_list("bob:ppn=12", NULL) == false, "");
 
   // cray can have numeric node names so it should attempt to find the node 2 
   // and 10 in the following tests to know if they exist
-  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji_list) == true);
-  fail_unless(process_as_node_list("2:ppn=10", &naji_list) == true);
-  fail_unless(process_as_node_list("10:ppn=10", &naji_list) == false);
+  fail_unless(process_as_node_list("2:ppn=10+3:ppn=10", &naji_list) == true, "");
+  fail_unless(process_as_node_list("2:ppn=10", &naji_list) == true, "");
+  fail_unless(process_as_node_list("10:ppn=10", &naji_list) == false, "");
 
   // should now check the first two nodes so that it doesn't think things 
   // like nodes=bob+10:ppn=10 are hostlists
-  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji_list) == false);
-  fail_unless(process_as_node_list("bob+10:ppn=10", &naji_list) == false);
-  fail_unless(process_as_node_list("bob+10", &naji_list) == false);
+  fail_unless(process_as_node_list("bob:ppn=10+10:ppn=10", &naji_list) == false, "");
+  fail_unless(process_as_node_list("bob+10:ppn=10", &naji_list) == false, "");
+  fail_unless(process_as_node_list("bob+10", &naji_list) == false, "");
 
-  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji_list) == true);
-  fail_unless(process_as_node_list("bob+waimea|napali", &naji_list) == true);
+  fail_unless(process_as_node_list("bob:ppn=4|napali:ppn=2", &naji_list) == true, "");
+  fail_unless(process_as_node_list("bob+waimea|napali", &naji_list) == true, "");
   }
 END_TEST
 
@@ -651,10 +651,10 @@ START_TEST(node_in_exechostlist_test)
   fail_unless(node_in_exechostlist(node5, eh2, NULL) == true, "blah10");
   
   // Test the login node piece working
-  fail_unless(node_in_exechostlist(node1, eh2, node1) == true);
-  fail_unless(node_in_exechostlist(node3, eh1, node3) == true);
-  fail_unless(node_in_exechostlist(node3, eh1, node1) == false);
-  fail_unless(node_in_exechostlist(node4, eh1, node3) == false);
+  fail_unless(node_in_exechostlist(node1, eh2, node1) == true, "");
+  fail_unless(node_in_exechostlist(node3, eh1, node3) == true, "");
+  fail_unless(node_in_exechostlist(node3, eh1, node1) == false, "");
+  fail_unless(node_in_exechostlist(node4, eh1, node3) == false, "");
   }
 END_TEST
 
@@ -703,35 +703,35 @@ START_TEST(check_node_order_test)
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 0;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 6) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 6) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 1;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 3) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 3) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 2;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 11) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 11) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 3;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 1) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 4;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 15) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 15) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 5;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 4) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 4) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 6;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 10) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 10) == PBSE_NONE, "", "");
 
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 7;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 61) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 4, 0, 61) == PBSE_NONE, "", "");
 
   std::list<node_job_add_info>::iterator it = naji_list.begin();
 
@@ -771,22 +771,22 @@ START_TEST(check_node_order_test)
   // added to jobs
   memset(&node,0,sizeof(struct pbsnode));
   node.nd_id = 8;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 8, 0, -1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 8, 0, -1) == PBSE_NONE, "", "");
   it = naji_list.begin();
   fail_unless(it->node_id == 8, "");
 
   // Now try a more realistic example - usually there are only 1 or 2 reqs in a job
   naji_list.clear();
   node.nd_id = 0;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE, "", "");
   node.nd_id = 1;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE, "", "");
   node.nd_id = 2;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 0) == PBSE_NONE, "", "");
   node.nd_id = 3;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 1) == PBSE_NONE, "", "");
   node.nd_id = 4;
-  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 1) == PBSE_NONE);
+  fail_unless(save_node_for_adding(&naji_list, &node, &req, 2, 0, 1) == PBSE_NONE, "", "");
   
   it = naji_list.begin();
   fail_unless(it->node_id == 2, "id is %d", it->node_id);

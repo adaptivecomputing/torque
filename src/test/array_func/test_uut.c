@@ -132,7 +132,7 @@ START_TEST(update_slot_values_test)
   unlocked = 0;
 
   // Make sure the counts are corrected after calling update_slot_values()
-  fail_unless(update_slot_values(pa, 0, 1, pjob, candidates) == PBSE_NONE);
+  fail_unless(update_slot_values(pa, 0, 1, pjob, candidates) == PBSE_NONE, "", "");
   fail_unless(pa->ai_qs.jobs_running == 0, "");
   fail_unless(unlocked == 1, "");
   }
@@ -336,10 +336,10 @@ START_TEST(array_recov_binary_test)
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* missing file */
-  fail_unless(array_recov_binary((char *)"", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov");
+  fail_unless(array_recov_binary((char *)"", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov", "");
 
   /* zero length file */
-  fail_unless(array_recov_binary((char *)"file_zero", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov");
+  fail_unless(array_recov_binary((char *)"file_zero", &pa, log_buf, sizeof(log_buf)) == PBSE_SYSTEM, "failed array_recov", "");
   }
 END_TEST
 

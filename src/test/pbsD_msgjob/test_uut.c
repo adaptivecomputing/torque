@@ -13,12 +13,12 @@ START_TEST(test_pbs_msgjob_err)
   char *jobid = strdup("1.napali");
   char *msg = strdup("delay");
 
-  fail_unless(pbs_msgjob_err(-1, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_msgjob_err(PBS_NET_MAX_CONNECTIONS, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_msgjob_err(0, strdup(""), 0, msg, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_msgjob_err(0, NULL, 0, msg, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_msgjob_err(0, jobid, 0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_msgjob_err(0, jobid, 0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_msgjob_err(-1, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_msgjob_err(PBS_NET_MAX_CONNECTIONS, jobid, 0, msg, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_msgjob_err(0, strdup(""), 0, msg, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_msgjob_err(0, NULL, 0, msg, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_msgjob_err(0, jobid, 0, strdup(""), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_msgjob_err(0, jobid, 0, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

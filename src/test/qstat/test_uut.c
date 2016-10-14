@@ -102,19 +102,19 @@ START_TEST(test_timestring_to_int)
   strcpy(some_string, "01:01:01");
   rc  = timestring_to_int(some_string, &walltime);
   fail_unless(walltime == 3661, "timestring_to_int failed");
-  fail_unless(rc == PBSE_NONE, "bad return code from timestring_to_int 1 ", rc);
+  fail_unless(rc == PBSE_NONE, "bad return code from timestring_to_int 1 ", rc, "");
 
   strcpy(some_string, "01:01");
   rc  = timestring_to_int(some_string, &walltime);
-  fail_unless(rc == PBSE_BAD_PARAMETER, "bad return code from timestring_to_int 2 ", rc);
+  fail_unless(rc == PBSE_BAD_PARAMETER, "bad return code from timestring_to_int 2 ", rc, "");
 
   strcpy(some_string, "01:01:");
   rc  = timestring_to_int(some_string, &walltime);
-  fail_unless(rc == PBSE_NONE, "bad return code from timestring_to_int 3 ", rc);
+  fail_unless(rc == PBSE_NONE, "bad return code from timestring_to_int 3 ", rc, "");
 
   strcpy(some_string, "300");
   rc  = timestring_to_int(some_string, &walltime);
-  fail_unless(rc == PBSE_BAD_PARAMETER, "bad return code from timestring_to_int 4 ", rc);
+  fail_unless(rc == PBSE_BAD_PARAMETER, "bad return code from timestring_to_int 4 ", rc, "");
 
 
   }
@@ -133,63 +133,63 @@ START_TEST(test_process_commandline_opts)
 
   /* no arguments */
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with no options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with no options ", rc, "");
 
   argv[1] = (char *)malloc(10);
   fail_unless(argv[1] != NULL, "failed to allocate memory for argv[1]");
   strcpy(argv[1], "-q");
   argc = 2;
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q option ", rc, "");
 
   strcpy(argv[1], "-Q");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q option ", rc, "");
 
   strcpy(argv[1], "-B");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -B option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -B option ", rc, "");
 
   strcpy(argv[1], "-a");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -a option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -a option ", rc, "");
 
   strcpy(argv[1], "-i");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -i option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -i option ", rc, "");
 
   strcpy(argv[1], "-r");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -r option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -r option ", rc, "");
 
   strcpy(argv[1], "-e");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -e option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -e option ", rc, "");
 
   strcpy(argv[1], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -l option ", rc, "");
 
   strcpy(argv[1], "-s");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -s option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -s option ", rc, "");
 
   strcpy(argv[1], "-R");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -R option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -R option ", rc, "");
 
   strcpy(argv[1], "-R");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -R option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -R option ", rc, "");
 
   strcpy(argv[1], "-c");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -c option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -c option ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "123");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with job id argument ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with job id argument ", rc, "");
 
   argv[2] = (char *)malloc(10);
   fail_unless(argv[1] != NULL, "failed to allocate memory for argv[1]");
@@ -198,97 +198,97 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[1], "-B");
   strcpy(argv[2], "-Q");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with illegal -B and -Q option ", rc);
+  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with illegal -B and -Q option ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-q");
   strcpy(argv[2], "-B");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with illegal -B and -q option ", rc);
+  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with illegal -B and -q option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-Q");
   strcpy(argv[2], "-q");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -Q and -q option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -Q and -q option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-n");
   strcpy(argv[2], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -n and -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -n and -l option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-n");
   strcpy(argv[2], "-1");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -n and -1 option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -n and -1 option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-a");
   strcpy(argv[2], "-s");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -s option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -s option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-a");
   strcpy(argv[2], "-R");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -R option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -R option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-a");
   strcpy(argv[2], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -a and -l option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-i");
   strcpy(argv[2], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -i and -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -i and -l option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-r");
   strcpy(argv[2], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -r and -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -r and -l option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-e");
   strcpy(argv[2], "-l");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -e and -l option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with illegal -e and -l option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-Q");
   strcpy(argv[2], "batch");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q destination option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q destination option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-q");
   strcpy(argv[2], "batch");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q destination option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q destination option ", rc, "");
 
   optind = 1;
   argc = 3;
   strcpy(argv[1], "-q");
   strcpy(argv[2], "-M");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q -M  option ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -q -M  option ", rc, "");
 
   optind = 1;
   argv[3] = (char *)malloc(10);
@@ -298,49 +298,49 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[2], "-x");
   strcpy(argv[3], "1234");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-f");
   strcpy(argv[2], "-1");
   strcpy(argv[3], "1234");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-f");
   strcpy(argv[2], "-l");
   strcpy(argv[3], "1234");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-f");
   strcpy(argv[2], "1234");
   strcpy(argv[3], "batch");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-f");
   strcpy(argv[2], "-G");
   strcpy(argv[3], "1234");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-f");
   strcpy(argv[2], "-M");
   strcpy(argv[3], "1234");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   strcpy(argv[1], "-Q");
   strcpy(argv[2], "-f");
   strcpy(argv[3], "batch");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q,-f and destination options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q,-f and destination options ", rc, "");
 
   argv[4] = (char *)malloc(10);
   fail_unless(argv[1] != NULL, "failed to allocate memory for argv[1]");
@@ -351,7 +351,7 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[3], "site_stuff");
   strcpy(argv[4], "123");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   argc = 4;
@@ -360,7 +360,7 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[3], "-M");
   strcpy(argv[4], "123");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with -f and -x options ", rc);
+  fail_unless(rc == PBSE_IVALREQ, "parse_commandline_opts failed with -f and -x options ", rc, "");
 
   optind = 1;
   argc = 4;
@@ -369,7 +369,7 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[3], "-1");
   strcpy(argv[4], "second");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q, -f, -1 and destination options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q, -f, -1 and destination options ", rc, "");
 
   optind = 1;
   argc = 4;
@@ -378,7 +378,7 @@ START_TEST(test_process_commandline_opts)
   strcpy(argv[3], "-l");
   strcpy(argv[4], "second");
   rc = process_commandline_opts(argc, argv, &exec_only, &errflg);
-  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q, -f, -l and destination options ", rc);
+  fail_unless(rc == PBSE_NONE, "parse_commandline_opts failed with -Q, -f, -l and destination options ", rc, "");
 
   }
 END_TEST
@@ -416,7 +416,7 @@ START_TEST(test_run_job_mode)
   fail_unless(rc == 0, "");
 
   rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "run_job_mode failed for no operand");
+  fail_unless(rc == PBSE_NONE, "run_job_mode failed for no operand", "");
 
   have_args = true;
   operand = "(null)";
@@ -426,12 +426,12 @@ START_TEST(test_run_job_mode)
 
   operand = "1234";
   rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234 operand");
+  fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234 operand", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "1234.hosta";
   rc = run_job_mode(have_args, operand.c_str(), &located, server_out, server_old, queue_name_out, server_name_out, job_id_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234.kmn operand");
+  fail_unless(rc == PBSE_NONE, "run_job_mode failed for jobid 1234.kmn operand", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
@@ -461,18 +461,18 @@ START_TEST(test_run_queue_mode)
   fail_unless(rc == 0, "");
 
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
   operand = "batch";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "(null)";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
@@ -503,7 +503,7 @@ START_TEST(test_run_server_mode)
   fail_unless(rc == 0, "");
 
   rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "run_server_mode failed with no arguments");
+  fail_unless(rc == PBSE_NONE, "run_server_mode failed with no arguments", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
@@ -514,7 +514,7 @@ START_TEST(test_run_server_mode)
 
   operand = "hosta";
   rc = run_server_mode(have_args, operand.c_str(), server_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "run_server_mode failed with arguments");
+  fail_unless(rc == PBSE_NONE, "run_server_mode failed with arguments", "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;
@@ -611,19 +611,19 @@ START_TEST(test_read_int_prop)
   fail_unless(read_int_prop(&prop, "prop=") == 1);
   fail_unless(prop == NULL, "");
   prop = "a=2:b=3";
-  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(read_int_prop(&prop, "prop=") == 0, "");
   fail_unless(prop != NULL, "");
   fail_unless(*prop == ':', "");
   prop = "a=2+b=3";
-  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(read_int_prop(&prop, "prop=") == 0, "");
   fail_unless(prop != NULL, "");
   fail_unless(*prop == '+', "");
   prop = "prop=2+b=3";
-  fail_unless(read_int_prop(&prop, "prop=") == 2);
+  fail_unless(read_int_prop(&prop, "prop=") == 2, "");
   fail_unless(prop != NULL, "");
   fail_unless(*prop == '+', "");
   prop = "";
-  fail_unless(read_int_prop(&prop, "prop=") == 0);
+  fail_unless(read_int_prop(&prop, "prop=") == 0, "");
   fail_unless(prop == NULL, "");
   }
 END_TEST

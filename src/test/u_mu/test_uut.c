@@ -45,7 +45,7 @@ START_TEST(safe_strncat_test)
 
   strcpy(small_buf, names[0]);
   ret = safe_strncat(small_buf, names[1], sizeof(small_buf) - strlen(small_buf) - 1);
-  fail_unless(ret == PBSE_NONE, "reported not enough space when space exists");
+  fail_unless(ret == PBSE_NONE, "reported not enough space when space exists", "");
   ret = safe_strncat(small_buf, names[2], sizeof(small_buf) - strlen(small_buf) - 1);
   fail_unless(ret == -1, "reported enough space when space does not exist");
 

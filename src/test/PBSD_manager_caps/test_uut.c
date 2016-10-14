@@ -9,8 +9,8 @@
 
 START_TEST(test_PBSD_manager)
   {
-  fail_unless(PBSD_manager(-1, 0, 0, 0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_manager(PBS_NET_MAX_CONNECTIONS, 0, 0, 0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_manager(-1, 0, 0, 0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_manager(PBS_NET_MAX_CONNECTIONS, 0, 0, 0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST

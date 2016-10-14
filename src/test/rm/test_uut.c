@@ -19,19 +19,19 @@ START_TEST(test_addreq)
   //struct tcp_chan *chan;
 
   int sock = openrm((char *)"The Host",322);
-  fail_unless(begin_rm_req(sock,&err,6) == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"hello") == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"to") == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"all") == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"the") == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"boys") == 0);
-  fail_unless(addreq_err(sock,&err,(char *)"and girls") == 0);
+  fail_unless(begin_rm_req(sock,&err,6) == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"hello") == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"to") == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"all") == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"the") == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"boys") == 0, "");
+  fail_unless(addreq_err(sock,&err,(char *)"and girls") == 0, "");
   flushreq();
   char *bf = NULL;
   long long len = 0;
-  fail_unless(debug_read(sock,&bf,&len) == 0);
+  fail_unless(debug_read(sock,&bf,&len) == 0, "");
 
-  fail_unless(strcmp(bf,"+1+2+6+2+5hello+2to+3all+3the+4boys+9and girls") == 0);
+  fail_unless(strcmp(bf,"+1+2+6+2+5hello+2to+3all+3the+4boys+9and girls") == 0, "");
   }
 END_TEST
 
@@ -42,7 +42,7 @@ START_TEST(test_allreq)
   //struct tcp_chan *chan;
 
   int sock = openrm((char *)"The Host",322);
-  fail_unless(begin_rm_req(sock,&err,6) == 0);
+  fail_unless(begin_rm_req(sock,&err,6) == 0, "");
   fail_unless(allreq((char *)"hello") > 0, "");
   fail_unless(allreq((char *)"to") > 0, "");
   fail_unless(allreq((char *)"all") > 0, "");
@@ -52,9 +52,9 @@ START_TEST(test_allreq)
   flushreq();
   char *bf = NULL;
   long long len = 0;
-  fail_unless(debug_read(sock,&bf,&len) == 0);
+  fail_unless(debug_read(sock,&bf,&len) == 0, "");
 
-  fail_unless(strcmp(bf,"+1+2+6+2+5hello+2to+3all+3the+4boys+9and girls") == 0);
+  fail_unless(strcmp(bf,"+1+2+6+2+5hello+2to+3all+3the+4boys+9and girls") == 0, "");
   }
 END_TEST
 
@@ -72,7 +72,7 @@ START_TEST(test_downrm)
   int sock = openrm((char *)"The Host",322);
 
   fail_unless(debug_write(sock,(char *)"3+100",5) == 5);
-  fail_unless(downrm(&err,sock) == 0);
+  fail_unless(downrm(&err,sock) == 0, "");
   }
 END_TEST
 
@@ -82,7 +82,7 @@ START_TEST(test_configrm)
   int err = 0;
 
   fail_unless(debug_write(sock,(char *)"3+100",5) == 5);
-  fail_unless(configrm(sock,&err,(char *)"Some file or other") == 0);
+  fail_unless(configrm(sock,&err,(char *)"Some file or other") == 0, "");
 
   }
 END_TEST
@@ -96,28 +96,28 @@ START_TEST(test_getreq)
   fail_unless(debug_write(sock,(char *)"2+11fred=farmer2+13sweet=babaloo",32) == 32);
   char *r = getreq_err(&err,sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"farmer") == 0);
+  fail_unless(strcmp(r,"farmer") == 0, "");
   r = getreq_err(&err,sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"babaloo") == 0);
+  fail_unless(strcmp(r,"babaloo") == 0, "");
 
   fullresp(1);
   fail_unless(debug_write(sock,(char *)"2+11fred=farmer2+13sweet=babaloo",32) == 32);
   r = getreq_err(&err,sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"fred=farmer") == 0);
+  fail_unless(strcmp(r,"fred=farmer") == 0, "");
   r = getreq_err(&err,sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"sweet=babaloo") == 0);
+  fail_unless(strcmp(r,"sweet=babaloo") == 0, "");
 
   fullresp(0);
   fail_unless(debug_write(sock,(char *)"2+11fred=farmer2+13sweet=babaloo",32) == 32);
   r = getreq(sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"farmer") == 0);
+  fail_unless(strcmp(r,"farmer") == 0, "");
   r = getreq(sock);
   fail_unless(err == 0, "");
-  fail_unless(strcmp(r,"babaloo") == 0);
+  fail_unless(strcmp(r,"babaloo") == 0, "");
 
 
   }

@@ -11,16 +11,16 @@ START_TEST(test_one)
   pbs_attribute attr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_frequency(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_frequency(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
-  fail_unless(decode_frequency(&attr,NULL,NULL,"100",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"100mhz",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"100MHz",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"P11",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"p2",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"perFormance",0) == 0);
-  fail_unless(decode_frequency(&attr,NULL,NULL,"Ondemand",0) == 0);
+  fail_unless(decode_frequency(&attr,NULL,NULL,"100",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"100mhz",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"100MHz",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"P11",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"p2",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"perFormance",0) == 0, "");
+  fail_unless(decode_frequency(&attr,NULL,NULL,"Ondemand",0) == 0, "");
   // UserSpace is disallowed 
   fail_unless(decode_frequency(&attr,NULL,NULL,"UserSpace",0) != 0);
   fail_unless(decode_frequency(&attr,NULL,NULL,"fred",0) != 0);

@@ -65,75 +65,75 @@ START_TEST(has_conflicting_resource_requeusts_test)
   pque->qu_attr[QA_ATR_ResourceDefault].at_flags = ATR_VFLAG_SET;
 
   set_resource = "nodes";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "trl";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "size";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "mppwidth";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "mem";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "hostlist";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "ncpus";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "procs";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "pvmem";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "pmem";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "vmem";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "reqattr";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "software";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "geometry";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "opsys";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "tpn";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "walltime";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
 
   set_resource = "epilogue";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
 
   // Make sure we allow conflicting resources if the queue has 
   pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
   set_resource = "tpn";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
   set_resource = "vmem";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
   set_resource = "nodes";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
   
   pque->qu_attr[QA_ATR_ResourceDefault].at_flags = 0;
   pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags = ATR_VFLAG_SET;
   set_resource = "nodes";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == true);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == true, "");
 
   set_resource = "walltime";
-  fail_unless(has_conflicting_resource_requests(pjob, pque) == false);
+  fail_unless(has_conflicting_resource_requests(pjob, pque) == false, "");
   }
 END_TEST
 
@@ -146,15 +146,15 @@ START_TEST(is_valid_state_transition_test)
   pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
 
-  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true, "");
   pjob.ji_qs.ji_state = JOB_STATE_COMPLETE;
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
   
-  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true, "");
 
   // not allowed
-  fail_unless(is_valid_state_transition(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_COMPLETE) == false);
-  fail_unless(is_valid_state_transition(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT) == false);
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_COMPLETE) == false, "");
+  fail_unless(is_valid_state_transition(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT) == false, "");
   }
 END_TEST
 
@@ -202,7 +202,7 @@ START_TEST(svr_enquejob_test)
 
   result = svr_enquejob(&test_job, 0, NULL, false, false);
   /*Need more complicated mocking in order to have other result than PBSE_JOBNOTFOUND*/
-  fail_unless(result == PBSE_JOBNOTFOUND, "svr_enquejob fail: %d", result);
+  fail_unless(result == PBSE_JOBNOTFOUND, "svr_enquejob fail: %d", result, "");
 
   }
 END_TEST
@@ -215,20 +215,20 @@ START_TEST(svr_dequejob_test)
   memset(&j, 0, sizeof(job));
 
   result = svr_dequejob(NULL, 0);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail", "");
 
   result = svr_dequejob(&j, 0);
-  fail_unless(result == PBSE_JOBNOTFOUND, "svr_dequejob fail");
+  fail_unless(result == PBSE_JOBNOTFOUND, "svr_dequejob fail", "");
 
   j.ji_qs.ji_state = JOB_STATE_RUNNING;
-  fail_unless(svr_dequejob(&j, 0) == PBSE_BADSTATE);
+  fail_unless(svr_dequejob(&j, 0) == PBSE_BADSTATE, "");
 
   // confirm expected error message
   j.ji_is_array_template = TRUE;
   strcpy(j.ji_qs.ji_jobid, "999.foo");
   get_jobs_queue_force_null = true;
-  fail_unless(svr_dequejob(&j, 0) == PBSE_JOB_NOT_IN_QUEUE);
-  fail_unless(strcmp(global_log_buf.c_str(), "Job 999.foo has no queue") == 0);
+  fail_unless(svr_dequejob(&j, 0) == PBSE_JOB_NOT_IN_QUEUE, "");
+  fail_unless(strcmp(global_log_buf.c_str(), "Job 999.foo has no queue") == 0, "");
   }
 END_TEST
 
@@ -249,33 +249,33 @@ START_TEST(svr_setjobstate_test)
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
 
   result = svr_setjobstate(NULL, 0, 0, 0);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail", "");
 
   result = svr_setjobstate(&test_job, 0, 0, 0);
-  fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
+  fail_unless(result == PBSE_NONE, "svr_setjobstate fail", "");
 
   result = svr_setjobstate(&test_job, 1, 2, 3);
-  fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
+  fail_unless(result == PBSE_NONE, "svr_setjobstate fail", "");
 
   get_jobs_queue_force_null = false;
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "", "");
   fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL, "");
 
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("lei/0");
   test_job.ji_wattr[JOB_ATR_checkpoint].at_val.at_str = strdup("enabled");
   test_job.ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "", "");
   fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL, "exec_host list got removed when it shouldn't have...");
 
   decrement_count = 0;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "", "");
   fail_unless(decrement_count == 2, "");
 
   decrement_count = 0;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "", "");
   fail_unless(decrement_count == 0, "");
   }
 END_TEST
@@ -384,16 +384,16 @@ START_TEST(chk_resc_limits_test)
   memset(&test_queue, 0, sizeof(test_queue));
 
   result = chk_resc_limits(NULL, &test_queue, message);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_attribute pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_attribute pointer fail", "");
 
   result = chk_resc_limits(&test_attribute, NULL, message);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_queue pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_queue pointer fail", "");
 
   result = chk_resc_limits(&test_attribute, &test_queue, NULL);
-  fail_unless(result == PBSE_NONE, "chk_resc_limits with NULL message pointer fail");
+  fail_unless(result == PBSE_NONE, "chk_resc_limits with NULL message pointer fail", "");
 
   result = chk_resc_limits(&test_attribute, &test_queue, message);
-  fail_unless(result == PBSE_NONE, "chk_resc_limits fail");
+  fail_unless(result == PBSE_NONE, "chk_resc_limits fail", "");
 
   }
 END_TEST
@@ -417,7 +417,7 @@ START_TEST(chk_resc_min_limits_test)
 
   resource_def nodes_resource_def;
   memcpy(&nodes_resource_def, &svr_resc_def_const[14], sizeof(resource_def));
-  fail_unless(strcmp("nodes", nodes_resource_def.rs_name) == 0);
+  fail_unless(strcmp("nodes", nodes_resource_def.rs_name) == 0, "");
 
   memset(&test_attribute, 0, sizeof(test_attribute));
   memset(&test_queue, 0, sizeof(test_queue));
@@ -426,7 +426,7 @@ START_TEST(chk_resc_min_limits_test)
   add_resc_attribute(&test_attribute, &nodes_resource_def, "2:ppn=1+1:ppn=4");
 
   result = chk_resc_limits(&test_attribute, &test_queue, message);
-  fail_unless(result == PBSE_NONE, "Fail to approve queue minimum resource");
+  fail_unless(result == PBSE_NONE, "Fail to approve queue minimum resource", "");
 
   free(test_attribute.at_val.at_str);
   test_attribute.at_val.at_str = strdup("2:ppn=1");
@@ -457,24 +457,24 @@ START_TEST(svr_chkque_test)
   memset(&test_queue, 0, sizeof(test_queue));
 
   result = svr_chkque(NULL, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job pointer fail", "");
 
 
   memset(&test_queue, 0, sizeof(test_queue));
   result = svr_chkque(&test_job, NULL, hostname, 0, NULL);
   result = svr_chkque(&test_job, NULL, hostname, 0, NULL);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_queue pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pbs_queue pointer fail", "");
 
   result = svr_chkque(&test_job, &test_queue, NULL, 0, NULL);
   fail_unless(result != PBSE_NONE, "NULL input hostname pointer fail");
 
   test_queue.qu_qs.qu_type = QTYPE_Execution;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_QUNOENB, "svr_chkque fail");
+  fail_unless(result == PBSE_QUNOENB, "svr_chkque fail", "");
 
   test_queue.qu_attr[QA_ATR_Enabled].at_val.at_long = 1;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_BAD_PARAMETER, "svr_chkque fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "svr_chkque fail", "");
 
   test_queue.qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long = 1;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
@@ -494,26 +494,26 @@ START_TEST(svr_chkque_test)
   disallowed_types_array_strings.as_usedptr = 1;
 
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail");
+  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail", "");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_batch;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_NOBATCH, "svr_chkque PBSE_NOBATCH fail");
+  fail_unless(result == PBSE_NOBATCH, "svr_chkque PBSE_NOBATCH fail", "");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_rerunable;
   test_job.ji_wattr[JOB_ATR_rerunable].at_flags = ATR_VFLAG_SET;
   test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_NORERUNABLE, "svr_chkque PBSE_NORERUNABLE fail");
+  fail_unless(result == PBSE_NORERUNABLE, "svr_chkque PBSE_NORERUNABLE fail", "");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_nonrerunable;
   test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 0;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail");
+  fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail", "");
 
   test_queue.qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst = NULL;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail");
+  fail_unless(result == PBSE_QUNOENB, "svr_chkque some_string fail", "");
 
 
   /* must reallocate as_string for this to work.
@@ -521,7 +521,7 @@ START_TEST(svr_chkque_test)
   disallowed_types_array_strings.as_string[0] = some_string;
   disallowed_types_array_strings.as_string[1] = (char *)Q_DT_fault_intolerant;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
-  fail_unless(result == PBSE_NOFAULTINTOLERANT, "svr_chkque PBSE_NOFAULTINTOLERANT fail");
+  fail_unless(result == PBSE_NOFAULTINTOLERANT, "svr_chkque PBSE_NOFAULTINTOLERANT fail", "");
   */
   }
 END_TEST
@@ -536,13 +536,13 @@ START_TEST(job_set_wait_test)
   memset(&test_attribute, 0, sizeof(test_attribute));
 
   result = job_set_wait(NULL, &test_job, 0);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input attribute pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input attribute pointer fail", "");
 
   result = job_set_wait(&test_attribute, NULL, 0);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job pointer fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job pointer fail", "");
 
   result = job_set_wait(&test_attribute, &test_job, 0);
-  fail_unless(result == PBSE_NONE, "job_set_wait fail");
+  fail_unless(result == PBSE_NONE, "job_set_wait fail", "");
   }
 END_TEST
 

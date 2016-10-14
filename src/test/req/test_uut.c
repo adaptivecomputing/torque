@@ -32,11 +32,11 @@ START_TEST(test_cpt)
   fail_unless(values[values.size() - 1] == "true", values[values.size() - 1].c_str());
 
   // Setting as a default shouldn't change the value
-  fail_unless(r.set_value("cpt", "false", true) == PBSE_NONE);
+  fail_unless(r.set_value("cpt", "false", true) == PBSE_NONE, "", "");
   fail_unless(r.is_per_task() == true, "");
 
   // Setting as a non-default should change the value
-  fail_unless(r.set_value("cpt", "false", false) == PBSE_NONE);
+  fail_unless(r.set_value("cpt", "false", false) == PBSE_NONE, "", "");
   fail_unless(r.is_per_task() == false, "");
   }
 END_TEST
@@ -113,9 +113,9 @@ START_TEST(test_append_gres)
 
   r.set_value("gres", "A=3", false);
 
-  fail_unless(r.append_gres("B=2") == PBSE_NONE, "");
-  fail_unless(r.append_gres("B=2") == PBSE_NONE, "");
-  fail_unless(r.append_gres("A=2") == PBSE_NONE, "");
+  fail_unless(r.append_gres("B=2") == PBSE_NONE, "", "");
+  fail_unless(r.append_gres("B=2") == PBSE_NONE, "", "");
+  fail_unless(r.append_gres("A=2") == PBSE_NONE, "", "");
 
   fail_unless(r.getGres() == "A=2:B=2", r.getGres().c_str());
   }
@@ -235,10 +235,10 @@ START_TEST(test_get_set_values)
   fail_unless(values[5] == "usecores", values[5].c_str());
   fail_unless(values[6] == "true", "");
 
-  fail_unless(r2.set_value("bob", "tom", false) != PBSE_NONE);
+  fail_unless(r2.set_value("bob", "tom", false) != PBSE_NONE, "");
 
   int i;
-  fail_unless(parse_positive_integer("1.0", i) != PBSE_NONE);
+  fail_unless(parse_positive_integer("1.0", i) != PBSE_NONE, "");
 
   req r3;
   r3.set_value("task_count", "1", false);
@@ -322,21 +322,21 @@ START_TEST(test_submission_string_has_duplicates)
   std::string error;
   req         r;
 
-  fail_unless(r.submission_string_has_duplicates(str, error) == false);
-  fail_unless(r.submission_string_has_duplicates(str2, error) == false);
-  fail_unless(r.submission_string_has_duplicates(err_str1, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str2, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str3, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str4, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str5, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str6, error) == true);
-  fail_unless(r.submission_string_has_duplicates(err_str7, error) == true);
-  fail_unless(r.submission_string_has_duplicates(non_err_str1, error) == false);
-  fail_unless(r.submission_string_has_duplicates(non_err_str2, error) == false);
-  fail_unless(r.submission_string_precheck(strdup("5:lprocs=4+2:lprocs=2"), error) != PBSE_NONE);
-  fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE);
-  fail_unless(r.set_from_submission_string(strdup(err_str8), error) != PBSE_NONE);
-  fail_unless(r.set_from_submission_string(strdup(err_str9), error) != PBSE_NONE);
+  fail_unless(r.submission_string_has_duplicates(str, error) == false, "");
+  fail_unless(r.submission_string_has_duplicates(str2, error) == false, "");
+  fail_unless(r.submission_string_has_duplicates(err_str1, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str2, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str3, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str4, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str5, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str6, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(err_str7, error) == true, "");
+  fail_unless(r.submission_string_has_duplicates(non_err_str1, error) == false, "");
+  fail_unless(r.submission_string_has_duplicates(non_err_str2, error) == false, "");
+  fail_unless(r.submission_string_precheck(strdup("5:lprocs=4+2:lprocs=2"), error) != PBSE_NONE, "");
+  fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE, "");
+  fail_unless(r.set_from_submission_string(strdup(err_str8), error) != PBSE_NONE, "");
+  fail_unless(r.set_from_submission_string(strdup(err_str9), error) != PBSE_NONE, "");
   }
 END_TEST
 
@@ -346,7 +346,7 @@ START_TEST(test_constructors)
   req r;
   std::vector<std::string> l;
 
-  fail_unless(r.getHostlist(l) == PBSE_EMPTY, "");
+  fail_unless(r.getHostlist(l) == PBSE_EMPTY, "", "");
   fail_unless(l.size() == 0, "");
   fail_unless(r.getTaskCount() == 1, "");
   fail_unless(r.getPlacementType() == "", "");
@@ -403,18 +403,18 @@ START_TEST(test_constructors)
   std::string error;
   req str_set;
 
-  fail_unless(str_set.set_from_submission_string(strdup("5:lproc=2"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("5:lproc=2"), error) != PBSE_NONE, "");
   good_err = true;
-  fail_unless(str_set.set_from_submission_string(strdup("5:lprocs=2:place=sockets=2"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("5:lprocs=2:place=sockets=2"), error) != PBSE_NONE, "");
 
-  fail_unless(str_set.set_from_submission_string(strdup("4:lprocs=all"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("4:memory=12gb:memory=1024mb"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("-1:lprocs=4"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=-4"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=4:memory=0"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("3:gpus=2:reseterr:exclusive_thread:opsys=cent6"), error) == PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE);
-  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE);
+  fail_unless(str_set.set_from_submission_string(strdup("4:lprocs=all"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("4:memory=12gb:memory=1024mb"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("-1:lprocs=4"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=-4"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=4:memory=0"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("3:gpus=2:reseterr:exclusive_thread:opsys=cent6"), error) == PBSE_NONE, "", "");
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE, "");
+  fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE, "");
 
   std::string req7("2:place=numanode");
   req r7(req7);
@@ -473,7 +473,7 @@ START_TEST(test_equals_operator)
   fail_unless(r.getExecutionSlots() == ALL_EXECUTION_SLOTS, "");
 
   // make sure set_attribute fails when bad values are sent
-  fail_unless(r2.set_attribute("bob") == PBSE_BAD_PARAMETER, "");
+  fail_unless(r2.set_attribute("bob") == PBSE_BAD_PARAMETER, "", "");
   }
 END_TEST
 

@@ -38,10 +38,10 @@ START_TEST(test_handle_requeue_all)
   memset(&preq, 0, sizeof(preq));
 
   // fail due to lack of permissions
-  fail_unless(handle_requeue_all(&preq) == PBSE_PERM, "");
+  fail_unless(handle_requeue_all(&preq) == PBSE_PERM, "", "");
 
   preq.rq_perm |= ATR_DFLAG_MGWR;
-  fail_unless(handle_requeue_all(&preq) == PBSE_NONE, "");
+  fail_unless(handle_requeue_all(&preq) == PBSE_NONE, "", "");
   }
 END_TEST
 

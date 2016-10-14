@@ -55,16 +55,16 @@ START_TEST(test_get_req_and_task_index_from_local_rank)
 
   // If this attribute isn't set, we should do nothing
   pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long = 2;
-  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK, "");
 
   pjob->ji_wattr[JOB_ATR_request_version].at_flags = ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
   per_task = false; // Setting this means I should get PBSE_NO_PROCESS_RANK
-  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK, "");
 
   per_task = true;
-  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NONE);
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NONE, "", "");
   }
 END_TEST
 
@@ -107,12 +107,12 @@ START_TEST(is_nodeid_on_this_host_test)
   pjob.ji_vnods[1].vn_host = (hnodent *)0x0022;
   pjob.ji_nodeid = 0;
 
-  fail_unless(is_nodeid_on_this_host(&pjob, 0) == true);
-  fail_unless(is_nodeid_on_this_host(&pjob, 1) == false);
+  fail_unless(is_nodeid_on_this_host(&pjob, 0) == true, "");
+  fail_unless(is_nodeid_on_this_host(&pjob, 1) == false, "");
 
   pjob.ji_nodeid = 1;
-  fail_unless(is_nodeid_on_this_host(&pjob, 0) == false);
-  fail_unless(is_nodeid_on_this_host(&pjob, 1) == true);
+  fail_unless(is_nodeid_on_this_host(&pjob, 0) == false, "");
+  fail_unless(is_nodeid_on_this_host(&pjob, 1) == true, "");
   }
 END_TEST
 
@@ -134,7 +134,7 @@ START_TEST(test_process_end_job_error_reply)
   pjob->ji_numnodes = 4;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
   log_event_counter = 0;
-  fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0);
+  fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0, "");
   fail_unless(log_event_counter == 1, "");
   }
 END_TEST
@@ -154,7 +154,7 @@ START_TEST(handle_im_poll_job_response_test)
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == -1);
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
 
-  fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);
+  fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0, "");
   fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem, "");
   }
 END_TEST
@@ -262,10 +262,10 @@ START_TEST(task_save_test)
   memset(&test_job, 0, sizeof(test_job));
 
   result = task_save(NULL);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL input fail", "");
 
   result = task_save(&test_task);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL pointer to owning job fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL pointer to owning job fail", "");
 
   strncpy(test_job.ji_qs.ji_fileprefix,
           file_prefix,

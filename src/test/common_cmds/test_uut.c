@@ -47,7 +47,7 @@ START_TEST(test_parse_env_line_nospace)
   char env_var[] = "ONE_VAR=THE_VAL";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
-  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line");
+  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line", "");
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
@@ -61,7 +61,7 @@ START_TEST(test_parse_env_line_space)
   char env_var[] = "ONE_VAR=  THE_VAL";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
-  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line");
+  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line", "");
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);
@@ -70,7 +70,7 @@ START_TEST(test_parse_env_line_space)
   char env_with_empty_val[] = "EMPTY_VAR=";
   name = val = NULL;
   rc = parse_env_line(env_with_empty_val, &name, &val);
-  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line2");
+  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line2", "");
   fail_unless(name != NULL, "name should not be empty");
   fail_unless(val == NULL, "val should be empty");
   fail_unless(strcmp("EMPTY_VAR", name) == 0, "[EMPTY_VAR] != [%s]", name);
@@ -83,7 +83,7 @@ START_TEST(test_parse_env_line_allspace)
   char env_var[] = "ONE_VAR=   ";
   char *name = NULL, *val = NULL;
   rc = parse_env_line(env_var, &name, &val);
-  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line");
+  fail_unless(rc == PBSE_NONE,"Invalid return from parse_env_line", "");
   fail_unless(name != NULL, "name should have a value");
   fail_unless(val != NULL, "val should have a value");
   fail_unless(strcmp("ONE_VAR", name) == 0, "[ONE_VAR] != [%s]", name);

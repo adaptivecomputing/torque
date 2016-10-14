@@ -49,13 +49,13 @@ START_TEST(test_process_opt_K)
   job_info ji;
 
   // Must be a positive number
-  fail_unless(process_opt_K(&ji, NULL, 1) != PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "-1", 1) != PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "abc", 1) != PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "0", 1) != PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE);
-  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE);
+  fail_unless(process_opt_K(&ji, NULL, 1) != PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "-1", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "abc", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "0", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE, "", "");
   }
 END_TEST
 
@@ -64,20 +64,20 @@ START_TEST(test_process_opt_p)
   {
   job_info ji;
 
-  fail_unless(process_opt_p(&ji, NULL, 1) != PBSE_NONE);
-  fail_unless(process_opt_p(&ji, "-a", 1) != PBSE_NONE);
-  fail_unless(process_opt_p(&ji, "-1025", 1) != PBSE_NONE);
-  fail_unless(process_opt_p(&ji, "1024", 1) != PBSE_NONE);
-  fail_unless(process_opt_p(&ji, "-", 1) != PBSE_NONE);
-  fail_unless(process_opt_p(&ji, "  5", 1) == PBSE_NONE);
+  fail_unless(process_opt_p(&ji, NULL, 1) != PBSE_NONE, "");
+  fail_unless(process_opt_p(&ji, "-a", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_p(&ji, "-1025", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_p(&ji, "1024", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_p(&ji, "-", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_p(&ji, "  5", 1) == PBSE_NONE, "", "");
   fail_unless(added_value == "5", "");
-  fail_unless(process_opt_p(&ji, "+10", 1) == PBSE_NONE);
+  fail_unless(process_opt_p(&ji, "+10", 1) == PBSE_NONE, "", "");
   fail_unless(added_value == "+10", "");
-  fail_unless(process_opt_p(&ji, "1", 1) == PBSE_NONE);
+  fail_unless(process_opt_p(&ji, "1", 1) == PBSE_NONE, "", "");
   fail_unless(added_value == "1", "");
-  fail_unless(process_opt_p(&ji, "1000", 1) == PBSE_NONE);
+  fail_unless(process_opt_p(&ji, "1000", 1) == PBSE_NONE, "", "");
   fail_unless(added_value == "1000", "");
-  fail_unless(process_opt_p(&ji, "-1000", 1) == PBSE_NONE);
+  fail_unless(process_opt_p(&ji, "-1000", 1) == PBSE_NONE, "", "");
   fail_unless(added_value == "-1000", "");
   }
 END_TEST
@@ -87,24 +87,24 @@ START_TEST(test_process_opt_m)
   {
   job_info ji;
 
-  fail_unless(process_opt_m(&ji, NULL, 1) != PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "bob", 1) != PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "a", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "b", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "e", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "ae", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "ab", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "ba", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "be", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "bea", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "bae", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "abe", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "aeb", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "eb", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "ea", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "eba", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "eab", 1) == PBSE_NONE);
-  fail_unless(process_opt_m(&ji, "bobo", 1) != PBSE_NONE);
+  fail_unless(process_opt_m(&ji, NULL, 1) != PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "bob", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "a", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "b", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "e", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "ae", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "ab", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "ba", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "be", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "bea", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "bae", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "abe", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "aeb", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "eb", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "ea", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "eba", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "eab", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "bobo", 1) != PBSE_NONE, "");
   }
 END_TEST
 
@@ -113,14 +113,14 @@ START_TEST(test_process_opt_k)
   {
   job_info ji;
 
-  fail_unless(process_opt_k(&ji, NULL, 1) != PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "bob", 1) != PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "o", 1) == PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "e", 1) == PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "oe", 1) == PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "eo", 1) == PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "n", 1) == PBSE_NONE);
-  fail_unless(process_opt_k(&ji, "no", 1) != PBSE_NONE);
+  fail_unless(process_opt_k(&ji, NULL, 1) != PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "bob", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "o", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "e", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "oe", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "eo", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "n", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "no", 1) != PBSE_NONE, "");
   }
 END_TEST
 
@@ -129,12 +129,12 @@ START_TEST(test_process_opt_j)
   {
   job_info ji;
 
-  fail_unless(process_opt_j(&ji, NULL, 1) != PBSE_NONE);
-  fail_unless(process_opt_j(&ji, "bob", 1) != PBSE_NONE);
-  fail_unless(process_opt_j(&ji, "n", 1) == PBSE_NONE);
-  fail_unless(process_opt_j(&ji, "oe", 1) == PBSE_NONE);
-  fail_unless(process_opt_j(&ji, "eo", 1) == PBSE_NONE);
-  fail_unless(process_opt_j(&ji, "oeo", 1) != PBSE_NONE);
+  fail_unless(process_opt_j(&ji, NULL, 1) != PBSE_NONE, "");
+  fail_unless(process_opt_j(&ji, "bob", 1) != PBSE_NONE, "");
+  fail_unless(process_opt_j(&ji, "n", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_j(&ji, "oe", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_j(&ji, "eo", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_j(&ji, "oeo", 1) != PBSE_NONE, "");
   }
 END_TEST
 
@@ -155,8 +155,8 @@ START_TEST(test_process_opt_d)
   job_data   *jd = NULL;
 
   // fail with bad arguments to the function
-  fail_unless(process_opt_d(NULL, NULL, 1, NULL) != PBSE_NONE);
-  fail_unless(process_opt_d(&ji, "/tmp/dbeer/work/", 1, jd) == PBSE_NONE);
+  fail_unless(process_opt_d(NULL, NULL, 1, NULL) != PBSE_NONE, "");
+  fail_unless(process_opt_d(&ji, "/tmp/dbeer/work/", 1, jd) == PBSE_NONE, "", "");
   fail_unless(added_value == "/tmp/dbeer/work/", added_value.c_str());
 
   // current_directory/. will exist on every system
@@ -172,7 +172,7 @@ START_TEST(test_process_opt_d)
   fail_unless(added_value == current, "");
   
   // fail with non-existent directory
-  fail_unless(process_opt_d(&ji, "/tmp/superfakefakojet/", 1, jd) != PBSE_NONE);
+  fail_unless(process_opt_d(&ji, "/tmp/superfakefakojet/", 1, jd) != PBSE_NONE, "");
   }
 END_TEST
 
@@ -264,14 +264,14 @@ START_TEST(test_is_resource_request_valid)
 
   // Empty shouldn't fail
   in_hash.clear();
-  fail_unless(is_resource_request_valid(&ji, err_msg) == true);
+  fail_unless(is_resource_request_valid(&ji, err_msg) == true, "");
 
   // Any one of these should work
   for (int i = 0; i < 4; i++)
     {
     in_hash.clear();
     in_hash.push_back(resc_array[i]);
-    fail_unless(is_resource_request_valid(&ji, err_msg) == true);
+    fail_unless(is_resource_request_valid(&ji, err_msg) == true, "");
     }
 
   // Any two of these should fail
@@ -285,7 +285,7 @@ START_TEST(test_is_resource_request_valid)
       if (j != i)
         {
         in_hash.push_back(resc_array[j]);
-        fail_unless(is_resource_request_valid(&ji, err_msg) == false);
+        fail_unless(is_resource_request_valid(&ji, err_msg) == false, "");
         in_hash.pop_back();
         }
       }
@@ -351,30 +351,30 @@ START_TEST(test_make_argv)
   char const * line = "simple_arg \"quoted ' arg\" \'s\"quoted \" arg\' \\\\ \\\" \\\' \\  end";
   make_argv(&argc, vect, line);
   fail_unless(argc == 9, "");
-  fail_unless(strcmp(vect[0], "qsub") == 0);
-  fail_unless(strcmp(vect[1], "simple_arg") == 0);
-  fail_unless(strcmp(vect[2], "quoted ' arg") == 0);
-  fail_unless(strcmp(vect[3], "s\"quoted \" arg") == 0);
-  fail_unless(strcmp(vect[4], "\\") == 0);
-  fail_unless(strcmp(vect[5], "\"") == 0);
-  fail_unless(strcmp(vect[6], "\'") == 0);
-  fail_unless(strcmp(vect[7], " ") == 0);
-  fail_unless(strcmp(vect[8], "end") == 0);
+  fail_unless(strcmp(vect[0], "qsub") == 0, "");
+  fail_unless(strcmp(vect[1], "simple_arg") == 0, "");
+  fail_unless(strcmp(vect[2], "quoted ' arg") == 0, "");
+  fail_unless(strcmp(vect[3], "s\"quoted \" arg") == 0, "");
+  fail_unless(strcmp(vect[4], "\\") == 0, "");
+  fail_unless(strcmp(vect[5], "\"") == 0, "");
+  fail_unless(strcmp(vect[6], "\'") == 0, "");
+  fail_unless(strcmp(vect[7], " ") == 0, "");
+  fail_unless(strcmp(vect[8], "end") == 0, "");
   fail_unless(vect[9] == NULL, "");
 
   /* two args that are (escaped) spaces + test mem free/alloc no-fail test */
   line = "\\  \\\t";
   make_argv(&argc, vect, line);
   fail_unless(argc == 3, "");
-  fail_unless(strcmp(vect[0], "qsub") == 0);
-  fail_unless(strcmp(vect[1], " ") == 0);
-  fail_unless(strcmp(vect[2], "\t") == 0);
+  fail_unless(strcmp(vect[0], "qsub") == 0, "");
+  fail_unless(strcmp(vect[1], " ") == 0, "");
+  fail_unless(strcmp(vect[2], "\t") == 0, "");
 
   /* no arguments + mem free/alloc no-fail test */
   line = "      \t     ";
   make_argv(&argc, vect, line);
   fail_unless(argc == 1, "");
-  fail_unless(strcmp(vect[0], "qsub") == 0);
+  fail_unless(strcmp(vect[0], "qsub") == 0, "");
   }
 END_TEST
 

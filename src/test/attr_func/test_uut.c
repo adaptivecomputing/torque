@@ -19,13 +19,13 @@ START_TEST(test_one)
   int ocnt;
   ptr = str;
   ret  = parse_comma_string(str,&ptr);
-  fail_unless(strcmp(ret,"this") == 0);
+  fail_unless(strcmp(ret,"this") == 0, "");
   ret = parse_comma_string(NULL,&ptr);
-  fail_unless(strcmp(ret,"is") == 0);
+  fail_unless(strcmp(ret,"is") == 0, "");
   ret = parse_comma_string(NULL,&ptr);
-  fail_unless(strcmp(ret,"at \\, test") == 0);
+  fail_unless(strcmp(ret,"at \\, test") == 0, "");
   ret = parse_comma_string(NULL,&ptr);
-  fail_unless(strcmp(ret,"hello.") == 0);
+  fail_unless(strcmp(ret,"hello.") == 0, "");
   ret = parse_comma_string(NULL,&ptr);
   fail_unless(ret == NULL, "");
 
@@ -41,7 +41,7 @@ START_TEST(test_one)
   rc = count_substrings(str,&ocnt);
   fail_unless(rc == 0, "");
   fail_unless(ocnt == 3, "");
-  fail_unless(strcmp(str,"Let's , test \\, count,substrings.") == 0);
+  fail_unless(strcmp(str,"Let's , test \\, count,substrings.") == 0, "");
 
   free(str);
   }
@@ -51,8 +51,8 @@ START_TEST(test_two)
   {
   svrattrl *attrl = attrlist_create("Fred","Wilma",20);
   svrattrl *attrl2 = attrlist_create("Barney","Betty",20);
-  fail_unless(strcmp(attrl->al_name,"Fred") == 0);
-  fail_unless(strcmp(attrl->al_resc,"Wilma") == 0);
+  fail_unless(strcmp(attrl->al_name,"Fred") == 0, "");
+  fail_unless(strcmp(attrl->al_resc,"Wilma") == 0, "");
   fail_unless(attrl->al_nameln == 5, "");
   fail_unless(attrl->al_rescln == 6, "");
   fail_unless(!is_link_initialized((list_link *)attrl), "");
@@ -93,7 +93,7 @@ START_TEST(test_three)
   defa[1].at_name = "Howdy Pard.";
   defa[2].at_name = "hello";
 
-  fail_unless(find_attr(defa,"HeLlo",3) == 2);
+  fail_unless(find_attr(defa,"HeLlo",3) == 2, "");
   fail_unless(find_attr(defa,"Hello there. ",3) == -1);
 
   attrA.at_val.at_long = 5;

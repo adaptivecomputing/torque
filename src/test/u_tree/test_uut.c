@@ -46,25 +46,25 @@ START_TEST(test_one)
   pNode = AVL_find(503,503,tree);
   fail_unless(pNode == (node + 12), "");
   fail_unless(AVL_is_in_tree(500,505,tree) == 1);
-  fail_unless(AVL_is_in_tree(510,505,tree) == 0);
-  fail_unless(AVL_is_in_tree(500,515,tree) == 0);
+  fail_unless(AVL_is_in_tree(510,505,tree) == 0, "");
+  fail_unless(AVL_is_in_tree(500,515,tree) == 0, "");
 
   fail_unless(AVL_is_in_tree_no_port_compare(500,501,tree) == 1);
   fail_unless(AVL_is_in_tree_no_port_compare(500,521,tree) == 1);
-  fail_unless(AVL_is_in_tree_no_port_compare(510,501,tree) == 0);
+  fail_unless(AVL_is_in_tree_no_port_compare(510,501,tree) == 0, "");
 
   fail_unless(AVL_get_port_by_ipaddr(506,tree) == 506);
-  fail_unless(AVL_get_port_by_ipaddr(526,tree) == 0);
+  fail_unless(AVL_get_port_by_ipaddr(526,tree) == 0, "");
 
   fail_unless(AVL_is_in_tree(500,505,tree) == 1);
   tree = AVL_delete_node(500,505,tree);
-  fail_unless(AVL_is_in_tree(500,505,tree) == 0);
+  fail_unless(AVL_is_in_tree(500,505,tree) == 0, "");
   tree = AVL_delete_node(497,497,tree);
   tree = AVL_delete_node(497,495,tree);
   tree = AVL_delete_node(500,506,tree);
   tree = AVL_delete_node(506,506,tree);
 
-  fail_unless(AVL_list(tree,&bf,&len,&maxLen) == PBSE_NONE);
+  fail_unless(AVL_list(tree,&bf,&len,&maxLen) == PBSE_NONE, "", "");
 
   fail_unless(bf != NULL, "");
   fail_unless(len > 0, "");

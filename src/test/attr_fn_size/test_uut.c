@@ -11,17 +11,17 @@ START_TEST(test_one)
   pbs_attribute attr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_size(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_size(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
-  fail_unless(decode_size(&attr,NULL,NULL,"100",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100k",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100m",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100G",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100t",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100P",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100W",0) == 0);
-  fail_unless(decode_size(&attr,NULL,NULL,"100b",0) == 0);
+  fail_unless(decode_size(&attr,NULL,NULL,"100",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100k",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100m",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100G",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100t",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100P",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100W",0) == 0, "");
+  fail_unless(decode_size(&attr,NULL,NULL,"100b",0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET), "");
 
   }

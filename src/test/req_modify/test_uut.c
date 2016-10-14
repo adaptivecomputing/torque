@@ -45,13 +45,13 @@ END_TEST
 START_TEST(test_allowed_gres_modifier)
   {
   // NULL user and/or host should fail
-  fail_unless(allowed_gres_modifier(NULL, "host") == false);
-  fail_unless(allowed_gres_modifier("manager", NULL) == false);
-  fail_unless(allowed_gres_modifier(NULL, NULL) == false);
+  fail_unless(allowed_gres_modifier(NULL, "host") == false, "");
+  fail_unless(allowed_gres_modifier("manager", NULL) == false, "");
+  fail_unless(allowed_gres_modifier(NULL, NULL) == false, "");
 
-  fail_unless(allowed_gres_modifier("manager", "host") == true);
-  fail_unless(allowed_gres_modifier("adaptive", "host") == true);
-  fail_unless(allowed_gres_modifier("joe", "host") == false);
+  fail_unless(allowed_gres_modifier("manager", "host") == true, "");
+  fail_unless(allowed_gres_modifier("adaptive", "host") == true, "");
+  fail_unless(allowed_gres_modifier("joe", "host") == false, "");
   }
 END_TEST
 

@@ -10,8 +10,8 @@
 
 START_TEST(PBSD_gpu_put_test)
   {
-  fail_unless(PBSD_gpu_put(-1, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_gpu_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_gpu_put(-1, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_gpu_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, 0, 0, 0, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

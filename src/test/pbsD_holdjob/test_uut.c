@@ -12,11 +12,11 @@ START_TEST(test_pbs_holdjob_err)
   char jobid[1024];
   sprintf(jobid, "1.napali");
 
-  fail_unless(pbs_holdjob_err(-1, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_holdjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_holdjob_err(-1, jobid, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_holdjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   memset(&jobid, 0, sizeof(jobid));
-  fail_unless(pbs_holdjob_err(0, jobid, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_holdjob_err(0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_holdjob_err(0, jobid, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_holdjob_err(0, NULL, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

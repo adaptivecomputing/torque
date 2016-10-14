@@ -28,7 +28,7 @@ START_TEST(test_one)
   struct stat b;
 
   memset(&b,0,sizeof(b));
-  fail_unless(stat("./QueueSaveFile",&b) == 0);
+  fail_unless(stat("./QueueSaveFile",&b) == 0, "");
 
   unlink("./QueueSaveFile");
 

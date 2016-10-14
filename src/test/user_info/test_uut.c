@@ -140,11 +140,11 @@ START_TEST(increment_queued_jobs_test)
   // after 1 increment the count should be 2 because initialize_user_info() starts out with tom at 
   // 1 instead of 0, as a normal program would start. Its done this way for the decrement code.
   fail_unless(get_num_queued(&users, "tom") == 2, "didn't actually increment tom 1");
-  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0);
+  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0, "");
   fail_unless(get_num_queued(&users, "tom") == 3, "didn't actually increment tom 2");
 
   // Enqueue the job without resetting to make sure the count doesn't change
-  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0);
+  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0, "");
   fail_unless(get_num_queued(&users, "tom") == 3, "Shouldn't have incremented with the bit set");
   }
 END_TEST
@@ -179,10 +179,10 @@ START_TEST(decrement_queued_jobs_test)
   fail_unless(get_num_queued(&users, "tom") == 0, "Disallow going negative in the count");
 
   // Make sure we are clearing and resetting the bits  
-  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0);
+  fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0, "");
   fail_unless(get_num_queued(&users, "tom") == 1);
-  fail_unless(decrement_queued_jobs(&users, (char *)"tom", &pjob) == 0);
-  fail_unless(get_num_queued(&users, "tom") == 0);
+  fail_unless(decrement_queued_jobs(&users, (char *)"tom", &pjob) == 0, "");
+  fail_unless(get_num_queued(&users, "tom") == 0, "");
 
   }
 END_TEST

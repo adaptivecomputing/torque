@@ -161,16 +161,16 @@ START_TEST(parse_exec_hosts_test)
 
   hrl = parse_exec_hosts(eh3,mpp);
   hr = hrl->front();
-  fail_unless(strcmp(hr->hostname,"waimea") == 0);
+  fail_unless(strcmp(hr->hostname,"waimea") == 0, "");
   hrl->erase(hrl->begin());
   hr = hrl->front();
-  fail_unless(strcmp(hr->hostname,"lihue") == 0);
+  fail_unless(strcmp(hr->hostname,"lihue") == 0, "");
   hrl->erase(hrl->begin());
   hr = hrl->front();
-  fail_unless(strcmp(hr->hostname,"napali") == 0);
+  fail_unless(strcmp(hr->hostname,"napali") == 0, "");
   hrl->erase(hrl->begin());
   hr = hrl->front();
-  fail_unless(strcmp(hr->hostname,"l11") == 0);
+  fail_unless(strcmp(hr->hostname,"l11") == 0, "");
   hrl->erase(hrl->begin());
   fail_unless(hrl->size() == 0, "");
   delete hrl;

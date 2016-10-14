@@ -9,16 +9,16 @@
 
 START_TEST(test_PBSD_sig_put)
   {
-  fail_unless(PBSD_sig_put(-1, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_sig_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_sig_put(-1, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_sig_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST
 
 START_TEST(test_PBSD_async_sig_put)
   {
-  fail_unless(PBSD_async_sig_put(-1, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_async_sig_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_async_sig_put(-1, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_async_sig_put(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST

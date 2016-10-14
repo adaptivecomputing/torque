@@ -17,7 +17,7 @@ START_TEST(test_reserve_slot)
 
   for (int i = 0; i < 10; i++)
     {
-    fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE);
+    fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE, "", "");
     fail_unless(est.is_occupied(i) == true, "");
     fail_unless(est2.is_occupied(i) == true, "");
     }
@@ -131,7 +131,7 @@ START_TEST(test_reserving)
   fail_unless(e2.get_number_free() == 4, "");
   fail_unless(e1.get_number_free() == 0, "");
 
-  fail_unless(e1.reserve_execution_slots(1, e4) == INSUFFICIENT_FREE_EXECUTION_SLOTS);
+  fail_unless(e1.reserve_execution_slots(1, e4) == INSUFFICIENT_FREE_EXECUTION_SLOTS, "");
   fail_unless(e4.get_number_free() == 6, "");
 
   fail_unless(e1.unreserve_execution_slots(e3) == SUBSET_TOO_LARGE, "");

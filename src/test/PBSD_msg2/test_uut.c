@@ -9,8 +9,8 @@
 
 START_TEST(test_PBSD_msg_put)
   {
-  fail_unless(PBSD_msg_put(-1, NULL, 0, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_msg_put(PBS_NET_MAX_CONNECTIONS, NULL, 0, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_msg_put(-1, NULL, 0, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_msg_put(PBS_NET_MAX_CONNECTIONS, NULL, 0, NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST

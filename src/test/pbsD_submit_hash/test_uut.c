@@ -9,8 +9,8 @@
 
 START_TEST(test_pbs_submit_hash)
   {
-  fail_unless(pbs_submit_hash(-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_submit_hash(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_submit_hash(-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_submit_hash(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL, NULL, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

@@ -53,7 +53,7 @@ START_TEST(test_spread_place_pu)
 
   called_spread_place_cores = 0;
   a.set_place_type(place_core);
-  fail_unless(s.spread_place_pu(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
+  fail_unless(s.spread_place_pu(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true, "");
   fail_unless(called_spread_place_cores == 2, "");
   
   }
@@ -71,19 +71,19 @@ START_TEST(test_spread_place)
 
   completely_free = true;
   called_spread_place = 0;
-  fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
+  fail_unless(s.spread_place(r, a, 5, remaining, false) == true, "");
   fail_unless(called_spread_place == 2, "");
   
   completely_free = false;
-  fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
+  fail_unless(s.spread_place(r, a, 5, remaining, false) == false, "");
   fail_unless(called_spread_place == 2, "");
 
   completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
-  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  fail_unless(s.spread_place(r, a, 5, remaining, true) == true, "");
   fail_unless(called_spread_place == 3, "");
-  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  fail_unless(s.spread_place(r, a, 5, remaining, true) == true, "");
   fail_unless(called_spread_place == 4, "");
 
   }
@@ -171,9 +171,9 @@ START_TEST(test_store_pci_device_appropriately)
   s.addChip();
 
   called_store_pci = 0;
-  fail_unless(s.store_pci_device_appropriately(d, false) == false);
+  fail_unless(s.store_pci_device_appropriately(d, false) == false, "");
   fail_unless(called_store_pci == 2, "");
-  fail_unless(s.store_pci_device_appropriately(d, true) == true);
+  fail_unless(s.store_pci_device_appropriately(d, true) == true, "");
   fail_unless(called_store_pci == 3, "");
   }
 END_TEST
@@ -206,7 +206,7 @@ START_TEST(test_initializeSocket)
     else
       {
       /* rc should be -1. This will flag the error for us */
-      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc");
+      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc", "");
       }
     }
   else if (style == INTEL)
@@ -220,7 +220,7 @@ START_TEST(test_initializeSocket)
     else
       {
       /* rc should be -1. This will flag the error for us */
-      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc");
+      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc", "");
       }
     }
   else if (style == AMD)
@@ -234,7 +234,7 @@ START_TEST(test_initializeSocket)
     else
       {
       /* rc should be -1. This will flag the error for us */
-      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc");
+      fail_unless(rc == PBSE_NONE, "Could not get socket object from hwloc", "");
       }
     }
   else
@@ -333,13 +333,13 @@ START_TEST(test_partial_place)
   remaining.cpus = 8;
   remaining.memory = 1024;
   allocation master;
-  fail_unless(s.partially_place(remaining, master) == true);
+  fail_unless(s.partially_place(remaining, master) == true, "");
 
   // Tell it to partially place the job
   place_amount = 2;
   remaining.cpus = 8;
   remaining.memory = 1024;
-  fail_unless(s.partially_place(remaining, master) == false);
+  fail_unless(s.partially_place(remaining, master) == false, "");
   }
 END_TEST
 

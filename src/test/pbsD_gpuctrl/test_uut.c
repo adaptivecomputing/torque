@@ -14,12 +14,12 @@ START_TEST(test_pbs_gpumode_err)
   sprintf(node, "napali");
   sprintf(gpuid, "1");
 
-  fail_unless(pbs_gpumode_err(-1, node, gpuid, 0, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_gpumode_err(PBS_NET_MAX_CONNECTIONS, node, gpuid, 0, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_gpumode_err(0, NULL, gpuid, 0, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_gpumode_err(0, node, NULL, 0, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_gpumode_err(0, node, gpuid, -1, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_gpumode_err(0, node, gpuid, 4, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_gpumode_err(-1, node, gpuid, 0, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_gpumode_err(PBS_NET_MAX_CONNECTIONS, node, gpuid, 0, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_gpumode_err(0, NULL, gpuid, 0, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_gpumode_err(0, node, NULL, 0, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_gpumode_err(0, node, gpuid, -1, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_gpumode_err(0, node, gpuid, 4, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

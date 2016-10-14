@@ -12,32 +12,32 @@ START_TEST(test_one)
   pbs_attribute attr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_hold(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
   fail_unless(attr.at_val.at_long == 0, "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,"n",0) == 0);
+  fail_unless(decode_hold(&attr,NULL,NULL,"n",0) == 0, "");
   fail_unless(attr.at_val.at_long == HOLD_n, "");
   fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,"son",0) == 0);
+  fail_unless(decode_hold(&attr,NULL,NULL,"son",0) == 0, "");
   fail_unless(attr.at_val.at_long == HOLD_n, "");
   fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,"o",0) == 0);
+  fail_unless(decode_hold(&attr,NULL,NULL,"o",0) == 0, "");
   fail_unless(attr.at_val.at_long == HOLD_o, "");
   fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,"sou",0) == 0);
+  fail_unless(decode_hold(&attr,NULL,NULL,"sou",0) == 0, "");
   fail_unless(attr.at_val.at_long == (HOLD_s|HOLD_o|HOLD_u), "");
   fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_hold(&attr,NULL,NULL,"banana",0) == PBSE_BADATVAL);
+  fail_unless(decode_hold(&attr,NULL,NULL,"banana",0) == PBSE_BADATVAL, "");
 
   }
 END_TEST

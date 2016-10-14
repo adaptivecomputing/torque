@@ -25,7 +25,7 @@ START_TEST(test_decode_token)
 
   rc = decode_tokens(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode tokens failed: %d", rc);
-  fail_unless(rc == PBSE_NONE, EMsg);
+  fail_unless(rc == PBSE_NONE, EMsg, "");
 
   }
 END_TEST
@@ -47,7 +47,7 @@ START_TEST(test_decode_token_no_colon)
 
   rc = decode_tokens(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode tokens failed: %d", rc);
-  fail_unless(rc == PBSE_BADATVAL, EMsg);
+  fail_unless(rc == PBSE_BADATVAL, EMsg, "");
   }
 END_TEST
 

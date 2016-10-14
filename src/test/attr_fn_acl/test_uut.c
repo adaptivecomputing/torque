@@ -20,7 +20,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farming.org",0);
 
-  fail_unless(set_uacl(&attr,&newAttr,SET) == 0);
+  fail_unless(set_uacl(&attr,&newAttr,SET) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 3, "");
 
   free_arst(&attr);
@@ -32,7 +32,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farmer.org",0);
 
-  fail_unless(set_uacl(&attr,&newAttr,INCR) == PBSE_DUPLIST);
+  fail_unless(set_uacl(&attr,&newAttr,INCR) == PBSE_DUPLIST, "");
 
   free_arst(&attr);
   free_arst(&newAttr);
@@ -43,7 +43,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farming.org",0);
 
-  fail_unless(set_uacl(&attr,&newAttr,INCR) == 0);
+  fail_unless(set_uacl(&attr,&newAttr,INCR) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 6, "");
 
   free_arst(&attr);
@@ -55,7 +55,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farmer.org",0);
 
-  fail_unless(set_uacl(&attr,&newAttr,DECR) == 0);
+  fail_unless(set_uacl(&attr,&newAttr,DECR) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 2, "");
 
   free_arst(&attr);
@@ -67,7 +67,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farming.org",0);
 
-  fail_unless(set_hostacl(&attr,&newAttr,SET) == 0);
+  fail_unless(set_hostacl(&attr,&newAttr,SET) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 3, "");
 
   free_arst(&attr);
@@ -79,7 +79,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farmer.org",0);
 
-  fail_unless(set_hostacl(&attr,&newAttr,INCR) == PBSE_DUPLIST);
+  fail_unless(set_hostacl(&attr,&newAttr,INCR) == PBSE_DUPLIST, "");
 
   free_arst(&attr);
   free_arst(&newAttr);
@@ -90,7 +90,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farming.org",0);
 
-  fail_unless(set_hostacl(&attr,&newAttr,INCR) == 0);
+  fail_unless(set_hostacl(&attr,&newAttr,INCR) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 6, "");
 
   free_arst(&attr);
@@ -102,7 +102,7 @@ START_TEST(test_one)
   memset(&newAttr,0,sizeof(newAttr));
   decode_arst(&newAttr,NULL,NULL,"brad@gmail.com,lauradaw7@bestgirl.com,fred@farmer.org",0);
 
-  fail_unless(set_hostacl(&attr,&newAttr,DECR) == 0);
+  fail_unless(set_hostacl(&attr,&newAttr,DECR) == 0, "");
   fail_unless(attr.at_val.at_arst->as_usedptr == 2, "");
 
   free_arst(&attr);

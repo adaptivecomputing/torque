@@ -33,9 +33,9 @@ START_TEST(invalid_mutex)
   fail_unless(my_mutex.is_valid() == false, "Null mutex did not create error");
 
   rc = my_mutex.lock();
-  fail_unless(rc == PBSE_INVALID_MUTEX, "Mutex should be invalid on this lock");
+  fail_unless(rc == PBSE_INVALID_MUTEX, "Mutex should be invalid on this lock", "");
   rc = my_mutex.unlock();
-  fail_unless(rc == PBSE_INVALID_MUTEX, "Mutex should be invalid on this unlock");
+  fail_unless(rc == PBSE_INVALID_MUTEX, "Mutex should be invalid on this unlock", "");
   }
 END_TEST
 
@@ -51,7 +51,7 @@ START_TEST(unlock_mutex)
   fail_unless(my_mutex.is_valid() == true, "Failed to initialize and lock mutex");
 
   rc = my_mutex.unlock();
-  fail_unless(rc == PBSE_NONE, "failed to unlock mutex");
+  fail_unless(rc == PBSE_NONE, "failed to unlock mutex", "");
   }
 END_TEST
 
@@ -67,10 +67,10 @@ START_TEST(lock_mutex)
   fail_unless(my_mutex.is_valid() == true, "Failed to initialize and lock mutex");
 
   rc = my_mutex.unlock();
-  fail_unless(rc == PBSE_NONE, "failed to unlock mutex");
+  fail_unless(rc == PBSE_NONE, "failed to unlock mutex", "");
 
   rc = my_mutex.lock();
-  fail_unless(rc == PBSE_NONE, "failed to unlock mutex");
+  fail_unless(rc == PBSE_NONE, "failed to unlock mutex", "");
   }
 END_TEST
 
@@ -86,7 +86,7 @@ START_TEST(mutex_already_locked)
   fail_unless(my_mutex.is_valid() == true, "Failed to initialize and lock mutex");
 
   rc = my_mutex.lock();
-  fail_unless(rc == PBSE_MUTEX_ALREADY_LOCKED, "Failed to lock mutex");
+  fail_unless(rc == PBSE_MUTEX_ALREADY_LOCKED, "Failed to lock mutex", "");
   }
 END_TEST
 
@@ -102,10 +102,10 @@ START_TEST(mutex_already_unlocked)
   fail_unless(my_mutex.is_valid() == true, "Failed to initialize and lock mutex");
 
   rc = my_mutex.unlock();
-  fail_unless(rc == PBSE_NONE, "Failed to lock mutex");
+  fail_unless(rc == PBSE_NONE, "Failed to lock mutex", "");
 
   rc = my_mutex.unlock();
-  fail_unless(rc == PBSE_MUTEX_ALREADY_UNLOCKED, "Failed to lock mutex");
+  fail_unless(rc == PBSE_MUTEX_ALREADY_UNLOCKED, "Failed to lock mutex", "");
   }
 END_TEST
 

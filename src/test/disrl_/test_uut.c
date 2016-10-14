@@ -20,7 +20,7 @@ START_TEST(test_one)
   unsigned          nskips;
 
   memset(&chan, 0, sizeof(chan));
-  fail_unless(disrl_(&chan, ptr, &ndigs, &nskips, 0, dis_umaxd + 1) != PBSE_NONE);
+  fail_unless(disrl_(&chan, ptr, &ndigs, &nskips, 0, dis_umaxd + 1) != PBSE_NONE, "");
 /*int disrl_(
 
   struct tcp_chan   *chan,

@@ -91,7 +91,7 @@ START_TEST(test_getgrgid_ext)
   struct group *grp;
 
   grp = getgrgid_ext(&buf, 0);
-  fail_unless(strcmp("root", grp->gr_name) == 0);
+  fail_unless(strcmp("root", grp->gr_name) == 0, "");
 
   grp = getgrgid_ext(&buf, 59000);
   fail_unless(grp == NULL, "");

@@ -10,10 +10,10 @@
 START_TEST(test_pbs_runjob_err)
   {
   int err;
-  fail_unless(pbs_runjob_err(-1, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1);
-  fail_unless(pbs_runjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1);
-  fail_unless(pbs_runjob_err(0, strdup(""), NULL, NULL, &err) == PBSE_IVALREQ * -1);
-  fail_unless(pbs_runjob_err(0, NULL, NULL, NULL, &err) == PBSE_IVALREQ * -1);
+  fail_unless(pbs_runjob_err(-1, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1, "");
+  fail_unless(pbs_runjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL, &err) == PBSE_IVALREQ * -1, "");
+  fail_unless(pbs_runjob_err(0, strdup(""), NULL, NULL, &err) == PBSE_IVALREQ * -1, "");
+  fail_unless(pbs_runjob_err(0, NULL, NULL, NULL, &err) == PBSE_IVALREQ * -1, "");
   }
 END_TEST
 

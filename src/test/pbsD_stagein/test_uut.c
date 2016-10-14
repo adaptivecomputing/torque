@@ -9,10 +9,10 @@
 
 START_TEST(test_pbs_stagein)
   {
-  fail_unless(pbs_stagein(-1, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_stagein(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_stagein(0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_stagein(0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_stagein(-1, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_stagein(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_stagein(0, strdup(""), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_stagein(0, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

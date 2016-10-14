@@ -12,12 +12,12 @@ START_TEST(test_one)
   pbs_attribute otherattr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_ll(&attr,NULL,NULL,"134569345934",0) == 0);
+  fail_unless(decode_ll(&attr,NULL,NULL,"134569345934",0) == 0, "");
   fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
   fail_unless(attr.at_val.at_ll == 134569345934, "");
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_ll(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_ll(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
   fail_unless(attr.at_val.at_ll == 0, "");
 
@@ -25,21 +25,21 @@ START_TEST(test_one)
   memset(&otherattr,0,sizeof(attr));
   decode_ll(&attr,NULL,NULL,"-134569345934",0);
   decode_ll(&otherattr,NULL,NULL,"2345678945684",0);
-  fail_unless(set_ll(&attr,&otherattr,SET) == 0);
+  fail_unless(set_ll(&attr,&otherattr,SET) == 0, "");
   fail_unless(attr.at_val.at_ll == 2345678945684, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_ll(&attr,NULL,NULL,"-356783567835678",0);
   decode_ll(&otherattr,NULL,NULL,"356783567835678",0);
-  fail_unless(set_ll(&attr,&otherattr,INCR) == 0);
+  fail_unless(set_ll(&attr,&otherattr,INCR) == 0, "");
   fail_unless(attr.at_val.at_ll == 0, "");
 
   memset(&attr,0,sizeof(attr));
   memset(&otherattr,0,sizeof(attr));
   decode_ll(&attr,NULL,NULL,"-356783567835678",0);
   decode_ll(&otherattr,NULL,NULL,"-356783567835678",0);
-  fail_unless(set_ll(&attr,&otherattr,DECR) == 0);
+  fail_unless(set_ll(&attr,&otherattr,DECR) == 0, "");
   fail_unless(attr.at_val.at_ll == 0, "");
 
   memset(&attr,0,sizeof(attr));
@@ -53,7 +53,7 @@ START_TEST(test_one)
   memset(&otherattr,0,sizeof(attr));
   decode_ll(&attr,NULL,NULL,"356783567835678",0);
   decode_ll(&otherattr,NULL,NULL,"356783567835678",0);
-  fail_unless(comp_ll(&attr,&otherattr) == 0);
+  fail_unless(comp_ll(&attr,&otherattr) == 0, "");
   }
 END_TEST
 

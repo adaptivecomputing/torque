@@ -179,22 +179,22 @@ START_TEST(test_mother_superior_cleanup)
   sprintf(pjob->ji_qs.ji_jobid, "1.napali");
   int  found_one = 1;
 
-  fail_unless(mother_superior_cleanup(pjob, 10, &found_one) == false);
+  fail_unless(mother_superior_cleanup(pjob, 10, &found_one) == false, "");
 
   pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
-  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true, "");
 
   exiting_job_list.clear();
   pjob->ji_numnodes = 2;
   pjob->ji_hosts[1].hn_sister = SISTER_KILLDONE;
   pjob->ji_flags = MOM_EPILOGUE_RUN;
-  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true, "");
   fail_unless(exiting_job_list.size() == 1, "");
   fail_unless(exiting_job_list[0].jobid == "1.napali", "");
   
   called_fork_me = 0;
   pjob->ji_flags = 0;
-  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
+  fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true, "");
   fail_unless(called_open_socket == 1, "");
   fail_unless(called_fork_me == 1, "");
   }

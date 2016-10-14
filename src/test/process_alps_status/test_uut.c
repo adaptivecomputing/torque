@@ -38,11 +38,11 @@ START_TEST(record_reservation_test)
 
   memset(&pnode, 0, sizeof(pnode));
 
-  fail_unless(record_reservation(&pnode, "1") != PBSE_NONE);
+  fail_unless(record_reservation(&pnode, "1") != PBSE_NONE, "");
 
   job_usage_info jui(1);
   pnode.nd_job_usages.push_back(jui);
-  fail_unless(record_reservation(&pnode, "1") == PBSE_NONE);
+  fail_unless(record_reservation(&pnode, "1") == PBSE_NONE, "", "");
   }
 END_TEST
 

@@ -52,16 +52,16 @@ START_TEST(test_connect_to_trqauthd)
   connect_success = true;
    
   rc = connect_to_trqauthd(&sock);
-  fail_unless(rc == PBSE_NONE, "connect_to_trqauthd failed", rc);
+  fail_unless(rc == PBSE_NONE, "connect_to_trqauthd failed", rc, "");
 
   socket_success = false;
   rc = connect_to_trqauthd(&sock);
-  fail_unless(rc == PBSE_SOCKET_FAULT, "connect_to_trqauthd failed", rc);
+  fail_unless(rc == PBSE_SOCKET_FAULT, "connect_to_trqauthd failed", rc, "");
 
   socket_success = true;
   connect_success = false;
   rc = connect_to_trqauthd(&sock);
-  fail_unless(rc == PBSE_SOCKET_FAULT, "connect_to_trqauthd failed", rc);
+  fail_unless(rc == PBSE_SOCKET_FAULT, "connect_to_trqauthd failed", rc, "");
 
   }
 END_TEST
@@ -96,11 +96,11 @@ START_TEST(test_socket_connect_unix)
   connect_success = true;
 
   rc = socket_connect_unix(sock, unix_sockname, &err_msg);
-  fail_unless(rc == PBSE_NONE, "socket_connect_unix failed", rc);
+  fail_unless(rc == PBSE_NONE, "socket_connect_unix failed", rc, "");
 
   connect_success = false;
   rc = socket_connect_unix(sock, unix_sockname, &err_msg);
-  fail_unless(rc == PBSE_DOMAIN_SOCKET_FAULT, "socket_connect_unix failed", rc);
+  fail_unless(rc == PBSE_DOMAIN_SOCKET_FAULT, "socket_connect_unix failed", rc, "");
 
   }
 END_TEST

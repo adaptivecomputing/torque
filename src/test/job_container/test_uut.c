@@ -41,7 +41,7 @@ START_TEST(swap_jobs_test)
   insert_job(&alljobs, test_job);
   insert_job(&alljobs, second_test_job);
   result = swap_jobs(&alljobs, test_job,second_test_job);
-  fail_unless(result == PBSE_NONE, "swap jobs fail");
+  fail_unless(result == PBSE_NONE, "swap jobs fail", "");
   }
 END_TEST
 
@@ -61,7 +61,7 @@ START_TEST(insert_job_test)
   fail_unless(result != PBSE_NONE, "NULL job insert fail");
 
   result = insert_job(&alljobs, test_job);
-  fail_unless(result == PBSE_NONE, "job insert fail: %d",result);
+  fail_unless(result == PBSE_NONE, "job insert fail: %d",result, "");
   }
 END_TEST
 
@@ -86,7 +86,7 @@ START_TEST(insert_job_after_test)
 
   insert_job(&alljobs,test_job);
   result = insert_job_after(&alljobs,test_job,test_job);
-  fail_unless(result == PBSE_NONE, "job insert fail");
+  fail_unless(result == PBSE_NONE, "job insert fail", "");
   }
 END_TEST
 
@@ -104,7 +104,7 @@ START_TEST(insert_job_first_test)
   fail_unless(result != PBSE_NONE, "NULL job insert fail");
 
   result = insert_job_first(&alljobs,test_job);
-  fail_unless(result == PBSE_NONE, "job insert fail");
+  fail_unless(result == PBSE_NONE, "job insert fail", "");
   }
 END_TEST
 
@@ -141,7 +141,7 @@ START_TEST(remove_job_test)
 
   insert_job(&alljobs,test_job);
   result = remove_job(&alljobs,test_job);
-  fail_unless(result == PBSE_NONE, "job remove fail");
+  fail_unless(result == PBSE_NONE, "job remove fail", "");
   }
 END_TEST
 
@@ -159,27 +159,27 @@ START_TEST(next_job_test)
   struct job *test_job1 = job_alloc();
   strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
   int rc = insert_job(&alljobs,test_job1);
-  fail_unless(rc == PBSE_NONE, "job insert fail1");
+  fail_unless(rc == PBSE_NONE, "job insert fail1", "");
 
   struct job *test_job2 = job_alloc();
   strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
   rc = insert_job(&alljobs,test_job2);
-  fail_unless(rc == PBSE_NONE, "job insert fail2");
+  fail_unless(rc == PBSE_NONE, "job insert fail2", "");
 
   struct job *test_job3 = job_alloc();
   strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
   rc = insert_job(&alljobs,test_job3);
-  fail_unless(rc == PBSE_NONE, "job insert fai3");
+  fail_unless(rc == PBSE_NONE, "job insert fai3", "");
 
   struct job *test_job4 = job_alloc();
   strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
   rc = insert_job(&alljobs,test_job4);
-  fail_unless(rc == PBSE_NONE, "job insert fail4");
+  fail_unless(rc == PBSE_NONE, "job insert fail4", "");
 
   struct job *test_job5 = job_alloc();
   strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
   rc = insert_job(&alljobs,test_job5);
-  fail_unless(rc == PBSE_NONE, "job insert fail5");
+  fail_unless(rc == PBSE_NONE, "job insert fail5", "");
 
   /* first transverse to see if we get all 5 jobs */
   all_jobs_iterator *iter;
@@ -208,7 +208,7 @@ START_TEST(next_job_test)
   struct job *test_job6 = job_alloc();
   strcpy(test_job6->ji_qs.ji_jobid, "test_job6");
   rc = insert_job(&alljobs,test_job6);
-  fail_unless(rc == PBSE_NONE, "job insert fail6");
+  fail_unless(rc == PBSE_NONE, "job insert fail6", "");
 
   pjob = next_job(&alljobs,iter2);
   jobcount = 0;
@@ -234,27 +234,27 @@ START_TEST(find_job_by_array_with_removed_record_test)
   struct job *test_job1 = job_alloc();
   strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
   result = insert_job(&alljobs,test_job1);
-  fail_unless(result == PBSE_NONE, "job insert fail1");
+  fail_unless(result == PBSE_NONE, "job insert fail1", "");
 
   struct job *test_job2 = job_alloc();
   strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
   result = insert_job(&alljobs,test_job2);
-  fail_unless(result == PBSE_NONE, "job insert fail2");
+  fail_unless(result == PBSE_NONE, "job insert fail2", "");
   
   struct job *test_job3 = job_alloc();
   strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
   result = insert_job(&alljobs,test_job3);
-  fail_unless(result == PBSE_NONE, "job insert fai3");
+  fail_unless(result == PBSE_NONE, "job insert fai3", "");
 
   struct job *test_job4 = job_alloc();
   strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
   result = insert_job(&alljobs,test_job4);
-  fail_unless(result == PBSE_NONE, "job insert fail4");
+  fail_unless(result == PBSE_NONE, "job insert fail4", "");
 
   struct job *test_job5 = job_alloc();
   strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
   result = insert_job(&alljobs,test_job5);
-  fail_unless(result == PBSE_NONE, "job insert fail5");
+  fail_unless(result == PBSE_NONE, "job insert fail5", "");
   }
 END_TEST
 

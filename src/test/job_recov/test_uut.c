@@ -141,16 +141,16 @@ START_TEST(test_set_array_jobs_ids)
   init();
 
   sprintf(pjob->ji_qs.ji_jobid, "4[21].napali");
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE, "", "");
 
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE, "");
 
   // check the returned error message
   expected_err_msg = "array struct missing for array job ";
   expected_err_msg.append(pjob->ji_qs.ji_jobid);
-  fail_unless(strcmp(buf, expected_err_msg.c_str()) == 0);
+  fail_unless(strcmp(buf, expected_err_msg.c_str()) == 0, "");
 
   pjob = (job *)calloc(1, sizeof(job));
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
@@ -338,12 +338,12 @@ job *create_a_job(const char *jobId)
            psatl->al_resc,
            psatl->al_value,
            resc_access_perm);
-    fail_unless(rc == PBSE_NONE, "Failed call to decode_resc");
+    fail_unless(rc == PBSE_NONE, "Failed call to decode_resc", "");
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }
 
 /*  rc = set_nodes_attr(pj); */
-  fail_unless(rc == PBSE_NONE, "Failed to set nodes");
+  fail_unless(rc == PBSE_NONE, "Failed to set nodes", "");
 
   fill_other_job_info(&pj, resc_access_perm);
 
@@ -418,7 +418,7 @@ START_TEST(fill_resource_list_test)
     clear_attr(&pjob->ji_wattr[i], &job_attr_def[i]);
     }
 
-  fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0);
+  fail_unless(fill_resource_list(&pjob, xmlDocGetRootElement(doc), buf, sizeof(buf), ATTR_l) == 0, "");
   
   const char *rl_empty_sample = "<Resource_List>\n</Resource_List>";
   doc = xmlReadMemory(rl_empty_sample, strlen(rl_empty_sample), "Resource_List", NULL, 0);
@@ -437,7 +437,7 @@ START_TEST(test_job_recover)
   fail_unless((pj != NULL), "unable to create a job");
   snprintf(jobFileName, MAXPATHLEN, "/tmp/%s.JB", jobid);
   int rc = saveJobToXML(pj, jobFileName);
-  fail_unless(rc == PBSE_NONE, "Failed to save job to an xml file");
+  fail_unless(rc == PBSE_NONE, "Failed to save job to an xml file", "");
 
   job *recov_pj = job_recov(jobFileName);
   fail_unless(recov_pj != NULL, "");

@@ -67,8 +67,8 @@ START_TEST(test_sort_paths)
     sprintf(num,"%d ",(int)mh->paths.at(i).size());
     strcat(after,num);
     }
-  fail_unless(strcmp(before,"15 14 13 12 11 ") == 0);
-  fail_unless(strcmp(after,"11 12 13 14 15 ") == 0);
+  fail_unless(strcmp(before,"15 14 13 12 11 ") == 0, "");
+  fail_unless(strcmp(after,"11 12 13 14 15 ") == 0, "");
   }
 END_TEST
 
@@ -137,7 +137,7 @@ START_TEST(test_mom_server_update_stat_clear_force)
   pms.MOMLastSendToServerTime = time_now - 20;
   ForceServerUpdate = true;
 
-  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "", "");
   fail_unless(ForceServerUpdate == false, "");
   fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 
@@ -146,7 +146,7 @@ START_TEST(test_mom_server_update_stat_clear_force)
   pms.MOMLastSendToServerTime = time_now - 100;
   ForceServerUpdate = false;
 
-  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE);
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "", "");
   fail_unless(ForceServerUpdate == false, "");
   fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 
@@ -231,15 +231,15 @@ START_TEST(test_is_for_this_host)
   suffix = "-gpu";
   /* test the positive case */
   spec =  "fattony3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix.c_str()) == true);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == true, "");
 
   /* test the negative case */
   spec =  "numa3.ac-gpu/0";
-  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false, "");
 
   /* test the negative case bad input*/
   spec =  "fattony3.ac/0";
-  fail_unless(is_for_this_host(spec, suffix.c_str()) == false);
+  fail_unless(is_for_this_host(spec, suffix.c_str()) == false, "");
 
   }
 END_TEST

@@ -26,7 +26,7 @@ START_TEST(test_get_path_to_rur_file)
   {
   std::string p = get_path_to_rur_log("./rur.conf");
 
-  fail_unless(strcmp(p.c_str(),"/lus/scratch/RUR/output/rur.output") == 0);
+  fail_unless(strcmp(p.c_str(),"/lus/scratch/RUR/output/rur.output") == 0, "");
   }
 END_TEST
 

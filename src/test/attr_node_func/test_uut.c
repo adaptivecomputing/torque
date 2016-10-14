@@ -44,19 +44,19 @@ START_TEST(test_one)
   memset(&pa,0,sizeof(pa));
   sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02dZ",tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
   rc = decode_utc(&pa,"TTL",NULL,str,0);
-  fail_unless(rc == PBSE_BAD_UTC_RANGE, "");
+  fail_unless(rc == PBSE_BAD_UTC_RANGE, "", "");
   memset(&pa,0,sizeof(pa));
   sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d",
     tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
     tm.tm_gmtoff < 0 ? '-':'+', (int)abs(tm.tm_gmtoff)/3600);
   rc = decode_utc(&pa,"TTL",NULL,str,0);
-  fail_unless(rc == PBSE_BAD_UTC_RANGE, "");
+  fail_unless(rc == PBSE_BAD_UTC_RANGE, "", "");
   memset(&pa,0,sizeof(pa));
   sprintf(str,"%04d-%02d-%02dT%02d:%02d:%02d%c%02d%02d",
     tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
     tm.tm_gmtoff < 0 ? '-':'+', (int)abs(tm.tm_gmtoff)/3600, (int)(abs(tm.tm_gmtoff)/60)%60);
   rc = decode_utc(&pa,"TTL",NULL,str,0);
-  fail_unless(rc == PBSE_BAD_UTC_RANGE, "");
+  fail_unless(rc == PBSE_BAD_UTC_RANGE, "", "");
   }
 END_TEST
 
@@ -71,24 +71,24 @@ START_TEST(test_two)
 
   int rc = node_state(&attr,&nd,ATR_ACTION_NEW);
   fail_unless(attr.at_val.at_short == INUSE_DOWN, "");
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
 
   nd.nd_state = 0;
   attr.at_val.at_short = INUSE_OFFLINE;
 
   rc = node_state(&attr,&nd,ATR_ACTION_ALTER);
   fail_unless(nd.nd_state == INUSE_OFFLINE, "");
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
 
   nd.nd_state = INUSE_NOHIERARCHY;
   attr.at_val.at_short = INUSE_OFFLINE;
 
   rc = node_state(&attr,&nd,ATR_ACTION_ALTER);
   fail_unless(nd.nd_state == INUSE_NOHIERARCHY, "");
-  fail_unless(rc == PBSE_HIERARCHY_NOT_SENT, "");
+  fail_unless(rc == PBSE_HIERARCHY_NOT_SENT, "", "");
 
   rc = node_state(&attr,&nd,DECR);
-  fail_unless(rc == PBSE_INTERNAL, "");
+  fail_unless(rc == PBSE_INTERNAL, "", "");
 
 
   }
@@ -107,13 +107,13 @@ START_TEST(test_set_note_str)
   new_attr.at_flags = ATR_VFLAG_SET;
 
   // check that everything went ok
-  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE);
+  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "", "");
 
   // confirm newline removed from string
   fail_unless(strchr(new_attr.at_val.at_str, '\n') == NULL);
 
   // confirm note copied
-  fail_unless(strcmp(attr.at_val.at_str, new_attr.at_val.at_str) == 0);
+  fail_unless(strcmp(attr.at_val.at_str, new_attr.at_val.at_str) == 0, "");
 
   // clear things for new test
   memset(&attr, 0, sizeof(attr));
@@ -124,13 +124,13 @@ START_TEST(test_set_note_str)
   new_attr.at_flags = ATR_VFLAG_SET;
 
   // check that everything went ok
-  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE);
+  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "", "");
 
   // no newline should be in string
   fail_unless(strchr(new_attr.at_val.at_str, '\n') == NULL);
 
   // confirm note copied
-  fail_unless(strcmp(attr.at_val.at_str, new_attr.at_val.at_str) == 0);
+  fail_unless(strcmp(attr.at_val.at_str, new_attr.at_val.at_str) == 0, "");
   }
 END_TEST
 

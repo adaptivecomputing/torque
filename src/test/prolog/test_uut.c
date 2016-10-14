@@ -29,18 +29,18 @@ START_TEST(test_check_pelog_permissions)
   memset(&sbuf, 0, sizeof(sbuf));
   memset(&pjob, 0, sizeof(pjob));
 
-  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE);
+  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE, "");
   sbuf.st_mode = S_IXUSR | S_IFREG;
-  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE);
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE);
+  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE, "");
   sbuf.st_mode |= S_IRUSR;
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE);
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) == PBSE_NONE);
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) != PBSE_NONE);
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) != PBSE_NONE, "");
   sbuf.st_mode |= S_IROTH | S_IXOTH;
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) == PBSE_NONE);
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) == PBSE_NONE, "", "");
   sbuf.st_mode |= S_IWOTH;
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) != PBSE_NONE);
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) != PBSE_NONE, "");
   }
 END_TEST
 

@@ -12,14 +12,14 @@ START_TEST(test_one)
   pbs_attribute attr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_str(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_str(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
-  fail_unless(decode_str(&attr,NULL,NULL,"",0) == 0);
+  fail_unless(decode_str(&attr,NULL,NULL,"",0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == ATR_VFLAG_MODIFY, "");
 
-  fail_unless(decode_str(&attr,NULL,NULL,"a string",0) == 0);
+  fail_unless(decode_str(&attr,NULL,NULL,"a string",0) == 0, "");
   fail_unless((attr.at_flags&(ATR_VFLAG_MODIFY|ATR_VFLAG_SET)) == (ATR_VFLAG_MODIFY|ATR_VFLAG_SET), "");
-  fail_unless(strcmp(attr.at_val.at_str,"a string") == 0);
+  fail_unless(strcmp(attr.at_val.at_str,"a string") == 0, "");
   }
 END_TEST
 

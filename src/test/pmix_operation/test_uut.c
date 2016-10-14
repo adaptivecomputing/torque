@@ -89,9 +89,9 @@ START_TEST(test_constructors)
   fail_unless(pos != std::string::npos, ""); // should be found
   unsigned int id = strtol(ranks.c_str(), NULL, 10);
   fail_unless(id == conn.get_operation_id(), "");
-  fail_unless(conn.ranks_match(procs, 3) == true);
-  fail_unless(conn.ranks_match(procs, 4) == false);
-  fail_unless(conn.ranks_match(procs, 2) == false);
+  fail_unless(conn.ranks_match(procs, 3) == true, "");
+  fail_unless(conn.ranks_match(procs, 4) == false, "");
+  fail_unless(conn.ranks_match(procs, 2) == false, "");
   sprintf(mom_alias, "napali");
   notified = 0;
   pmix_status_t rc = conn.complete_operation(pjob, 30);
@@ -99,9 +99,9 @@ START_TEST(test_constructors)
   fail_unless(notified == 2, "notified count %d", notified); // should have sent two remote notifications
 
   pmix_operation copy_conn(conn);
-  fail_unless(copy_conn.ranks_match(procs, 3) == true);
-  fail_unless(copy_conn.ranks_match(procs, 4) == false);
-  fail_unless(copy_conn.ranks_match(procs, 2) == false);
+  fail_unless(copy_conn.ranks_match(procs, 3) == true, "");
+  fail_unless(copy_conn.ranks_match(procs, 4) == false, "");
+  fail_unless(copy_conn.ranks_match(procs, 2) == false, "");
   std::string copy_ranks;
   copy_conn.populate_rank_string(copy_ranks);
   fail_unless(copy_ranks == ranks, "");
@@ -120,7 +120,7 @@ START_TEST(test_constructors)
   one.set_id(2);
   existing_connections[1] = conn;
   existing_connections[2] = one;
-  fail_unless(clean_up_connection(pjob, NULL, 1, false) == PBSE_NONE);
+  fail_unless(clean_up_connection(pjob, NULL, 1, false) == PBSE_NONE, "", "");
   fail_unless(notified == 0, ""); // I passed false to MS, so I shouldn't notify anyone
   fail_unless(killed_task == 1, "Killed task = %d", killed_task);
   fail_unless(clean_up_connection(pjob, NULL, 1, true) == -1);

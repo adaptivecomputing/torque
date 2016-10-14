@@ -92,9 +92,9 @@ START_TEST(test_process_request)
 
   memset(&chan, 0, sizeof(chan));
   chan.sock = -1;
-  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "");
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "", "");
   chan.sock = 66034;
-  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "");
+  fail_unless(process_request(&chan) == PBSE_SOCKET_CLOSE, "", "");
 
   }
 END_TEST
@@ -105,14 +105,14 @@ START_TEST(test_request_passes_acl_check)
   batch_request preq;
   strcpy(preq.rq_host, "napali");
 
-  fail_unless(request_passes_acl_check(&preq, 0) == true);
+  fail_unless(request_passes_acl_check(&preq, 0) == true, "");
   
   find_node = true;
   check_acl = true;
-  fail_unless(request_passes_acl_check(&preq, 0) == true);
+  fail_unless(request_passes_acl_check(&preq, 0) == true, "");
 
   find_node = false;
-  fail_unless(request_passes_acl_check(&preq, 0) == false);
+  fail_unless(request_passes_acl_check(&preq, 0) == false, "");
   }
 END_TEST
 

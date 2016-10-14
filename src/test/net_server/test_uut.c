@@ -60,8 +60,8 @@ END_TEST
 
 START_TEST(test_add_connection)
   {
-  fail_unless(add_connection(-1, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER);
-  fail_unless(add_connection(PBS_NET_MAX_CONNECTIONS, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER);
+  fail_unless(add_connection(-1, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER, "");
+  fail_unless(add_connection(PBS_NET_MAX_CONNECTIONS, ToServerDIS, 0, 0, PBS_SOCK_INET, accept_conn, 0) == PBSE_BAD_PARAMETER, "");
 
   }
 END_TEST
@@ -80,31 +80,31 @@ START_TEST(test_ping_trqauthd)
   unix_domain_file_name = "./unit_test";
   unlink(unix_domain_file_name.c_str());
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
 
   unix_socket_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_SOCKET_FAULT, "");
+  fail_unless(rc == PBSE_SOCKET_FAULT, "", "");
 
   unix_socket_success = true;
   socket_connect_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_DOMAIN_SOCKET_FAULT, "ping_trqauthd failed for socket_connect_success = false", rc);
+  fail_unless(rc == PBSE_DOMAIN_SOCKET_FAULT, "ping_trqauthd failed for socket_connect_success = false", rc, "");
 
   socket_connect_success = true;
   socket_write_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_SOCKET_WRITE, "ping_trqauthd failed for socket_connect_success = false", rc);
+  fail_unless(rc == PBSE_SOCKET_WRITE, "ping_trqauthd failed for socket_connect_success = false", rc, "");
 
   socket_write_success = true;
   socket_read_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_SOCKET_READ, "ping_trqauthd failed for socket_connect_success = false", rc);
+  fail_unless(rc == PBSE_SOCKET_READ, "ping_trqauthd failed for socket_connect_success = false", rc, "");
 
   socket_read_success = true;
   socket_read_code = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_BADHOST, "ping_trqauthd failed for socket_connect_success = false", rc);
+  fail_unless(rc == PBSE_BADHOST, "ping_trqauthd failed for socket_connect_success = false", rc, "");
 
   unlink(unix_domain_file_name.c_str());
   }

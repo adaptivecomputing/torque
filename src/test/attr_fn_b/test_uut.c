@@ -37,14 +37,14 @@ START_TEST(test_one)
   pbs_attribute attr;
 
   memset(&attr,0,sizeof(attr));
-  fail_unless(decode_b(&attr,NULL,NULL,NULL,0) == 0);
+  fail_unless(decode_b(&attr,NULL,NULL,NULL,0) == 0, "");
   fail_unless((attr.at_flags&ATR_VFLAG_MODIFY) != 0, "");
   fail_unless(attr.at_val.at_long == 0, "");
 
   for(i = 0;i < (sizeof(tVals)/sizeof(char *));i++)
     {
     memset(&attr,0,sizeof(attr));
-    fail_unless(decode_b(&attr,NULL,NULL,tVals[i],0) == 0);
+    fail_unless(decode_b(&attr,NULL,NULL,tVals[i],0) == 0, "");
     fail_unless(attr.at_val.at_long == 1, "");
     fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
     }
@@ -52,7 +52,7 @@ START_TEST(test_one)
   for(i = 0;i < (sizeof(fVals)/sizeof(char *));i++)
     {
     memset(&attr,0,sizeof(attr));
-    fail_unless(decode_b(&attr,NULL,NULL,fVals[i],0) == 0);
+    fail_unless(decode_b(&attr,NULL,NULL,fVals[i],0) == 0, "");
     fail_unless(attr.at_val.at_long == 0, "");
     fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY), "");
     }

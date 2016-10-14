@@ -13,28 +13,28 @@ START_TEST(test_get_path_jobdata)
   {
   get_svr_attr_l_valset = false;
 
-  fail_unless(get_path_jobdata(NULL, NULL) == "");
-  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/");
+  fail_unless(get_path_jobdata(NULL, NULL) == "", "");
+  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/", "");
 
   get_svr_attr_l_valset = true;
   get_svr_attr_l_val = TRUE;
 
-  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/5/");
-  fail_unless(get_path_jobdata("", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("a", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("9", "/foo/") == "/foo/9/");
-  fail_unless(get_path_jobdata("127363.server", "/foo/") == "/foo/3/");
-  fail_unless(get_path_jobdata("127361[].server", "/foo/") == "/foo/1/");
+  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/5/", "");
+  fail_unless(get_path_jobdata("", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("a", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("9", "/foo/") == "/foo/9/", "");
+  fail_unless(get_path_jobdata("127363.server", "/foo/") == "/foo/3/", "");
+  fail_unless(get_path_jobdata("127361[].server", "/foo/") == "/foo/1/", "");
 
   get_svr_attr_l_valset = true;
   get_svr_attr_l_val = FALSE;
 
-  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("a", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("9", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("127363.server", "/foo/") == "/foo/");
-  fail_unless(get_path_jobdata("127361[].server", "/foo/") == "/foo/");
+  fail_unless(get_path_jobdata("12345", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("a", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("9", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("127363.server", "/foo/") == "/foo/", "");
+  fail_unless(get_path_jobdata("127361[].server", "/foo/") == "/foo/", "");
   }
 END_TEST
 

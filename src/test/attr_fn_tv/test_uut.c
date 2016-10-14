@@ -23,7 +23,7 @@ START_TEST(decode_tv)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_NONE, EMsg);
+  fail_unless(rc == PBSE_NONE, EMsg, "");
 
   }
 END_TEST
@@ -45,7 +45,7 @@ START_TEST(decode_tv_no_dot)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_NONE, EMsg);
+  fail_unless(rc == PBSE_NONE, EMsg, "");
 
   }
 END_TEST
@@ -67,7 +67,7 @@ START_TEST(decode_tv_two_dots)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_BADATVAL, EMsg);
+  fail_unless(rc == PBSE_BADATVAL, EMsg, "");
 
   }
 END_TEST
@@ -89,7 +89,7 @@ START_TEST(decode_tv_not_digit)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_BADATVAL, EMsg);
+  fail_unless(rc == PBSE_BADATVAL, EMsg, "");
 
   }
 END_TEST
@@ -110,7 +110,7 @@ START_TEST(decode_tv_null_val)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_NONE, EMsg);
+  fail_unless(rc == PBSE_NONE, EMsg, "");
 
   }
 END_TEST
@@ -132,7 +132,7 @@ START_TEST(decode_tv_val_empty)
 
   rc = decode_tv(&pattr, name, rescn, val, perm);
   sprintf(EMsg, "decode_tv unexpectedly failed: %d", rc);
-  fail_unless(rc == PBSE_NONE, EMsg);
+  fail_unless(rc == PBSE_NONE, EMsg, "");
 
   }
 END_TEST

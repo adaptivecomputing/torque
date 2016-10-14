@@ -71,42 +71,42 @@ START_TEST(test_should_resend_obit)
 
   // Running jobs shouldn't re-send their obits
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  fail_unless(should_resend_obit(&pjob, diff) == false);
+  fail_unless(should_resend_obit(&pjob, diff) == false, "");
   pjob.ji_obit_busy_time = time_now - (2 * diff);
-  fail_unless(should_resend_obit(&pjob, diff) == false);
+  fail_unless(should_resend_obit(&pjob, diff) == false, "");
 
   // Being past the busy wait time should trigger re-sending for any of the states
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   
   pjob.ji_obit_busy_time = 0;
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
   pjob.ji_obit_sent = time_now - 1;
   // This shouldn't put us past waiting
-  fail_unless(should_resend_obit(&pjob, diff) == false);
+  fail_unless(should_resend_obit(&pjob, diff) == false, "");
   pjob.ji_obit_sent -= 10; // the wait time
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   pjob.ji_obit_sent = time_now;
 
   // Exiting jobs should retry if they received a minus one and are past waiting
   // This shouldn't put us past waiting
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
   pjob.ji_obit_minus_one_time = time_now - 1;
-  fail_unless(should_resend_obit(&pjob, diff) == false);
+  fail_unless(should_resend_obit(&pjob, diff) == false, "");
   pjob.ji_obit_minus_one_time -= 15; // the wait time
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   pjob.ji_obit_minus_one_time = 0;
 
   // Exited jobs should receive a response within 30 seconds even when the server is slammed
   pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
   pjob.ji_exited_time = time_now - 1;
-  fail_unless(should_resend_obit(&pjob, diff) == false);
+  fail_unless(should_resend_obit(&pjob, diff) == false, "");
   pjob.ji_exited_time -= 30; // the wait time
-  fail_unless(should_resend_obit(&pjob, diff) == true);
+  fail_unless(should_resend_obit(&pjob, diff) == true, "");
   }
 END_TEST
 
@@ -178,19 +178,19 @@ START_TEST(test_parse_integer_range)
   int start;
   int end;
 
-  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE);
+  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE, "", "");
   fail_unless(start == end, "");
   fail_unless(start == 0, "");
 
-  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE);
+  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE, "", "");
   fail_unless(end == 2, "");
   fail_unless(start == 0, "");
 
-  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE);
+  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE, "", "");
   fail_unless(end == 4, "");
   fail_unless(start == 2, "");
 
-  fail_unless(parse_integer_range("4-2", start, end) != PBSE_NONE);
+  fail_unless(parse_integer_range("4-2", start, end) != PBSE_NONE, "");
   }
 END_TEST
 

@@ -14,7 +14,7 @@ START_TEST(test_cnt2server_conf)
   long retry = 10;
 
   rc = cnt2server_conf(retry);
-  fail_unless(rc == PBSE_NONE, "cnt2server_retry failed", rc);
+  fail_unless(rc == PBSE_NONE, "cnt2server_retry failed", rc, "");
 
   }
 END_TEST

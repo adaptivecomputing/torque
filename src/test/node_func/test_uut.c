@@ -123,14 +123,14 @@ START_TEST(record_node_property_list_test)
   CLEAR_HEAD(th);
 
   // empty list should do nothing
-  fail_unless(record_node_property_list(empty, &th) == PBSE_NONE);
+  fail_unless(record_node_property_list(empty, &th) == PBSE_NONE, "", "");
   fail_unless(attrname.size() == 0, "");
   fail_unless(attrval.size() == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
 
-/*  fail_unless(record_node_property_list(props, &th) == PBSE_NONE);
+/*  fail_unless(record_node_property_list(props, &th) == PBSE_NONE, "", "");
   fail_unless(attrname == ATTR_NODE_properties, "");
   fail_unless(attrval == props, "");
   attrlist_free();
@@ -175,7 +175,7 @@ START_TEST(parse_node_name_test)
   sprintf(line, "napali");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, false)) != NULL);
-  fail_unless(err == PBSE_NONE, "");
+  fail_unless(err == PBSE_NONE, "", "");
   fail_unless(!strcmp(hostname, "napali"));
   
   err = PBSE_NONE;
@@ -188,7 +188,7 @@ START_TEST(parse_node_name_test)
   sprintf(line, "1214");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, true)) != NULL);
-  fail_unless(err == PBSE_NONE, "");
+  fail_unless(err == PBSE_NONE, "", "");
   fail_unless(!strcmp(hostname, "1214"));
   }
 END_TEST
@@ -209,10 +209,10 @@ START_TEST(add_node_attribute_to_list_test)
   ptr = line;
 
   ret = add_node_attribute_to_list(strdup("np"), &ptr, &th, 1);
-  fail_unless(ret == PBSE_NONE, "");
+  fail_unless(ret == PBSE_NONE, "", "");
   sattr = (svrattrl *)GET_NEXT(th); 
-  fail_unless(strcmp(sattr->al_name, "np") == 0);
-  fail_unless(strcmp(sattr->al_value, "100") == 0);
+  fail_unless(strcmp(sattr->al_name, "np") == 0, "");
+  fail_unless(strcmp(sattr->al_value, "100") == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
@@ -221,16 +221,16 @@ START_TEST(add_node_attribute_to_list_test)
   // this is invalid syntax
   snprintf(line, sizeof(line), "100=");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("np"), &ptr, &th, 1) != PBSE_NONE);
+  fail_unless(add_node_attribute_to_list(strdup("np"), &ptr, &th, 1) != PBSE_NONE, "");
 
   CLEAR_HEAD(th);
   // run over the two special cases
   snprintf(line, sizeof(line), "100");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE, "", "");
   sattr = (svrattrl *)GET_NEXT(th); 
-  fail_unless(strcmp(sattr->al_name, "TTL") == 0);
-  fail_unless(strcmp(sattr->al_value, "100") == 0);
+  fail_unless(strcmp(sattr->al_name, "TTL") == 0, "");
+  fail_unless(strcmp(sattr->al_value, "100") == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
@@ -238,10 +238,10 @@ START_TEST(add_node_attribute_to_list_test)
   CLEAR_HEAD(th);
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE);
+  fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE, "", "");
   sattr = (svrattrl *)GET_NEXT(th); 
-  fail_unless(strcmp(sattr->al_name, "acl") == 0);
-  fail_unless(strcmp(sattr->al_value, "bob,tom") == 0);
+  fail_unless(strcmp(sattr->al_name, "acl") == 0, "");
+  fail_unless(strcmp(sattr->al_value, "bob,tom") == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
@@ -300,15 +300,15 @@ START_TEST(read_val_and_advance_test)
   int   val;
   char *str = NULL;
 
-  fail_unless(read_val_and_advance(NULL, &str) == PBSE_BAD_PARAMETER);
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_BAD_PARAMETER);
+  fail_unless(read_val_and_advance(NULL, &str) == PBSE_BAD_PARAMETER, "");
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_BAD_PARAMETER, "");
 
   str = strdup("64,16,16");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
   fail_unless(val == 64, "");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
   fail_unless(val == 16, "");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE);
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
   fail_unless(val == 16, "");
   }
 END_TEST
@@ -423,7 +423,7 @@ START_TEST(login_encode_jobs_test)
   fail_unless(result != PBSE_NONE, "NULL input list_link pointer fail");
 
   result = login_encode_jobs(&node, &list);
-  fail_unless(result == PBSE_NONE, "login_encode_jobs_test fail");
+  fail_unless(result == PBSE_NONE, "login_encode_jobs_test fail", "");
   }
 END_TEST
 
@@ -525,10 +525,10 @@ START_TEST(add_execution_slot_test)
   initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
 
   result = add_execution_slot(NULL);
-  fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail");
+  fail_unless(result == PBSE_RMBADPARAM, "NULL node pointer input fail", "");
 
   result = add_execution_slot(&node);
-  fail_unless(result == PBSE_NONE, "add_execution_slot_test fail");
+  fail_unless(result == PBSE_NONE, "add_execution_slot_test fail", "");
   }
 END_TEST
 
@@ -564,7 +564,7 @@ START_TEST(chk_characteristic_test)
   fail_unless(result != PBSE_NONE, "NULL input mask pointer fail");
 
   result =  chk_characteristic(&node, &node_info, &mask);
-  fail_unless(result == PBSE_NONE, "chk_characteristic fail");
+  fail_unless(result == PBSE_NONE, "chk_characteristic fail", "");
   }
 END_TEST
 
@@ -632,7 +632,7 @@ START_TEST(initialize_pbsnode_test)
   fail_unless(result != PBSE_NONE, "NULL input node pointer fail");
 
   result = initialize_pbsnode(&node, NULL, NULL, 0, FALSE);
-  fail_unless(result == PBSE_NONE, "initialization fail");
+  fail_unless(result == PBSE_NONE, "initialization fail", "");
   }
 END_TEST
 
@@ -708,7 +708,7 @@ START_TEST(create_a_gpusubnode_test)
   fail_unless(result != PBSE_NONE, "NULL node pointer input fail");
 
   result = create_a_gpusubnode(&node);
-  fail_unless(result == PBSE_NONE, "create_a_gpusubnode fail");
+  fail_unless(result == PBSE_NONE, "create_a_gpusubnode fail", "");
   }
 END_TEST
 
@@ -728,7 +728,7 @@ START_TEST(copy_properties_test)
 
   // TODO: fill in source node
   result = copy_properties(&destanation_node, &source_node);
-  fail_unless(result == PBSE_NONE, "copy_properties return fail");
+  fail_unless(result == PBSE_NONE, "copy_properties return fail", "");
   }
 END_TEST 
 
@@ -761,7 +761,7 @@ START_TEST(setup_nodes_test)
   int result = -1;
 
   result = setup_nodes();
-  fail_unless(result == PBSE_NONE, "setup_nodes fail");
+  fail_unless(result == PBSE_NONE, "setup_nodes fail", "");
   }
 END_TEST
 
@@ -784,10 +784,10 @@ START_TEST(node_np_action_test)
   fail_unless(result != PBSE_NONE, "node_np_action fail");
 
   result = node_np_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = node_np_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_BADATVAL, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_BADATVAL, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST */
 
@@ -807,13 +807,13 @@ START_TEST(node_mom_port_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = node_mom_port_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = node_mom_port_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = node_mom_port_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -833,13 +833,13 @@ START_TEST(node_mom_rm_port_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = node_mom_rm_port_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = node_mom_rm_port_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = node_mom_rm_port_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -859,13 +859,13 @@ START_TEST(node_gpus_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = node_gpus_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = node_gpus_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = node_gpus_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_BADATVAL, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_BADATVAL, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -885,13 +885,13 @@ START_TEST(node_numa_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = node_numa_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = node_numa_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = node_numa_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -911,13 +911,13 @@ START_TEST(numa_str_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = numa_str_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = numa_str_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = numa_str_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -937,13 +937,13 @@ START_TEST(gpu_str_action_test)
   fail_unless(result != PBSE_NONE, "NULL input node fail");
 
   result = gpu_str_action(&attributes, (void*)(&node), 0);
-  fail_unless(result == PBSE_INTERNAL, "node_np_action fail");
+  fail_unless(result == PBSE_INTERNAL, "node_np_action fail", "");
 
   result = gpu_str_action(&attributes, (void*)(&node), ATR_ACTION_NEW);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_NEW fail", "");
 
   result = gpu_str_action(&attributes, (void*)(&node), ATR_ACTION_ALTER);
-  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail");
+  fail_unless(result == PBSE_NONE, "ATR_ACTION_ALTER fail", "");
   }
 END_TEST
 
@@ -960,7 +960,7 @@ START_TEST(create_partial_pbs_node_test)
   fail_unless(result != PBSE_NONE, "NULL input name fail");
 
   result = create_partial_pbs_node(name, 0, 0);
-  fail_unless(result == PBSE_NONE, "create_partial_pbs_node fail");
+  fail_unless(result == PBSE_NONE, "create_partial_pbs_node fail", "");
   }
 END_TEST
 
@@ -1015,7 +1015,7 @@ START_TEST(insert_node_test)
   node.nd_name = (char *)"node_name";
 
   result = insert_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "insert_node fail");
+  fail_unless(result == PBSE_NONE, "insert_node fail", "");
 
   }
 END_TEST
@@ -1043,7 +1043,7 @@ START_TEST(remove_node_test)
 
   test_all_nodes.insert(&node, node.nd_name);
   result = remove_node(&test_all_nodes, &node);
-  fail_unless(result == PBSE_NONE, "couldn't remove node that was present");
+  fail_unless(result == PBSE_NONE, "couldn't remove node that was present", "");
   }
 END_TEST
 

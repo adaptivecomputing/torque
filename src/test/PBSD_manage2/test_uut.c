@@ -9,8 +9,8 @@
 
 START_TEST(test_PBSD_mgr_put)
   {
-  fail_unless(PBSD_mgr_put(-1, 0, 0, 0, NULL, NULL, NULL) == PBSE_BAD_PARAMETER);
-  fail_unless(PBSD_mgr_put(PBS_NET_MAX_CONNECTIONS, 0, 0, 0, NULL, NULL, NULL) == PBSE_BAD_PARAMETER);
+  fail_unless(PBSD_mgr_put(-1, 0, 0, 0, NULL, NULL, NULL) == PBSE_BAD_PARAMETER, "");
+  fail_unless(PBSD_mgr_put(PBS_NET_MAX_CONNECTIONS, 0, 0, 0, NULL, NULL, NULL) == PBSE_BAD_PARAMETER, "");
 
   }
 END_TEST

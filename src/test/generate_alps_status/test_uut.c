@@ -59,7 +59,7 @@ START_TEST(get_knl_information_test)
   const char *path = "../test_scripts/get_inventory_knl.sh";
   
   alps_nodes.clear();
-  fail_unless(get_knl_information(path) == PBSE_NONE, "");
+  fail_unless(get_knl_information(path) == PBSE_NONE, "", "");
   fail_unless(alps_nodes.find(6142) != alps_nodes.end(), "");
   fail_unless(alps_nodes.find(6143) != alps_nodes.end(), "");
   fail_unless(alps_nodes[6142].os == "opsys=CLE_a2a_flat", alps_nodes[6142].os.c_str());

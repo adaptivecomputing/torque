@@ -9,12 +9,12 @@
 
 START_TEST(test_pbs_sigjob_err)
   {
-  fail_unless(pbs_sigjob_err(-1, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_sigjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_sigjob_err(0, strdup(""), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_sigjob_err(0, NULL, strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), strdup(""), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_sigjob_err(-1, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_sigjob_err(PBS_NET_MAX_CONNECTIONS, strdup("1.napali"), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_sigjob_err(0, strdup(""), strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_sigjob_err(0, NULL, strdup("SIGTERM"), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), strdup(""), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_sigjob_err(0, strdup("1.napali"), NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

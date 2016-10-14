@@ -20,7 +20,7 @@ START_TEST(test_one)
   req.rq_ind.rq_authen.rq_port = 42;
   strcpy(req.rq_user,"Tron");
   strcpy(req.rq_user,"Flynns");
-  fail_unless(req_authenuser(&req) == PBSE_CLIENT_CONN_NOT_FOUND, "");
+  fail_unless(req_authenuser(&req) == PBSE_CLIENT_CONN_NOT_FOUND, "", "");
   req.rq_conn = 4;
   fail_unless(rejected, "");
   rejected = FALSE;
@@ -34,7 +34,7 @@ START_TEST(test_one)
   svr_conn[7].cn_addr = 2265079;
   svr_conn[7].cn_port = 42;
 
-  fail_unless(req_authenuser(&req) == PBSE_NONE, "");
+  fail_unless(req_authenuser(&req) == PBSE_NONE, "", "");
   fail_unless(rejected == FALSE, "");
   fail_unless(acked, "");
   fail_unless(svr_conn[6].cn_authen == PBS_NET_CONN_AUTHENTICATED, "");

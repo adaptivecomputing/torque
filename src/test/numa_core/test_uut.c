@@ -23,7 +23,7 @@ START_TEST(test_initializeCore)
 
   core_obj = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_SOCKET, prev);
   rc = new_core.initializeCore(core_obj, topology);
-  fail_unless(rc == PBSE_NONE, "Failed to initialize cores");
+  fail_unless(rc == PBSE_NONE, "Failed to initialize cores", "");
 
   rc = new_core.getNumberOfProcessingUnits();
   fail_unless(rc != 0, "Failed to get number of processing units in core");
@@ -56,17 +56,17 @@ START_TEST(test_reserving_and_freeing)
   fail_unless(c.get_open_processing_unit() == -1, "");
   
   // make sure freeing an index we don't have does nothing
-  fail_unless(c.free_pu_index(1, completely_free) == false);
+  fail_unless(c.free_pu_index(1, completely_free) == false, "");
   fail_unless(completely_free == false, "");
   fail_unless(c.get_open_processing_unit() == -1, "");
 
   // make sure an actual free works
-  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(c.free_pu_index(0, completely_free) == true, "");
   fail_unless(completely_free == false, "");
   fail_unless(c.get_open_processing_unit() == 0, "");
-  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(c.free_pu_index(0, completely_free) == true, "");
   fail_unless(completely_free == false, "");
-  fail_unless(c.free_pu_index(8, completely_free) == true);
+  fail_unless(c.free_pu_index(8, completely_free) == true, "");
   fail_unless(completely_free == true, "");
   int index = c.get_open_processing_unit();
   fail_unless(index != -1, "Open processing unit is %d, shouldn't be -1");
@@ -88,10 +88,10 @@ START_TEST(test_recovering_allocations)
   fail_unless(c.reserve_processing_unit(1) == false, "");
   fail_unless(c.reserve_processing_unit(9) == false, "");
   fail_unless(c.get_open_processing_unit() == -1, "");
-  fail_unless(c.free_pu_index(0, completely_free) == true);
+  fail_unless(c.free_pu_index(0, completely_free) == true, "");
   fail_unless(completely_free == false, "");
   fail_unless(c.is_free() == false, "");
-  fail_unless(c.free_pu_index(8, completely_free) == true);
+  fail_unless(c.free_pu_index(8, completely_free) == true, "");
   fail_unless(completely_free == true, "");
   fail_unless(c.is_free() == true, "");
   }

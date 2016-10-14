@@ -102,14 +102,14 @@ START_TEST(test_getvars_from_string)
   // test error string
   errbuf[0] = '\0';
   fail_unless(getvars_from_string(NULL, envp_out, max_entries - 1, &envp_out_index, false, errbuf, sizeof(errbuf)) == 1);
-  fail_unless(strncmp("var_list_string is NULL", errbuf, 23) == 0);
+  fail_unless(strncmp("var_list_string is NULL", errbuf, 23) == 0, "");
 
   free(var_list_string);
   var_list_string = NULL;
 
   // check basic condition (no vars)
   envp_out_index = 0;
-  fail_unless(getvars_from_string("", envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0);
+  fail_unless(getvars_from_string("", envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0, "");
   fail_unless(envp_out_index == 0, "");
   fail_unless(envp_out[0] == NULL, "");
 
@@ -119,10 +119,10 @@ START_TEST(test_getvars_from_string)
   fail_unless((var_list_string = strdup("FIRSTNAME")) != NULL, "");
   // get name=value into envp_out
   envp_out_index = 0;
-  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0);
+  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0, "");
   // check expected outcome
   fail_unless(envp_out_index == 1, "");
-  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0);
+  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0, "");
 
   // clean up
   free(var_list_string);
@@ -136,11 +136,11 @@ START_TEST(test_getvars_from_string)
   fail_unless((var_list_string = strdup("FIRSTNAME,LASTNAME")) != NULL);
   // get name=value into envp_out
   envp_out_index = 0;
-  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0);
+  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0, "");
   // check expected outcome
   fail_unless(envp_out_index == 2, "");
-  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0);
-  fail_unless(strcmp("LASTNAME=jones", envp_out[1]) == 0);
+  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0, "");
+  fail_unless(strcmp("LASTNAME=jones", envp_out[1]) == 0, "");
 
   // clean up
   free(var_list_string);
@@ -155,10 +155,10 @@ START_TEST(test_getvars_from_string)
   fail_unless((var_list_string = strdup("FOO")) != NULL, "");
   // get name=value into envp_out
   envp_out_index = 0;
-  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0);
+  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, NULL, 0) == 0, "");
   // check expected outcome
   fail_unless(envp_out_index == 1, "");
-  fail_unless(strcmp(envp_out[0], "FOO=") == 0);
+  fail_unless(strcmp(envp_out[0], "FOO=") == 0, "");
   fail_unless(envp_out[1] == NULL, "");
   free(var_list_string);
 
@@ -177,25 +177,25 @@ START_TEST(test_getvars_from_string)
   errbuf[0] = '\0';
   var_list_string = strdup("LASTNAME,FRUIT=orange,FIRSTNAME,BLAM=");
   envp_out_index = 0;
-  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, errbuf, sizeof(errbuf)) == 0);
+  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, false, errbuf, sizeof(errbuf)) == 0, "");
   fail_unless(envp_out_index == 4, "");
-  fail_unless(strcmp(envp_out[0], "LASTNAME=jones") == 0);
-  fail_unless(strcmp(envp_out[1], "FRUIT=orange") == 0);
-  fail_unless(strcmp(envp_out[2], "FIRSTNAME=mike") == 0);
-  fail_unless(strcmp(envp_out[3], "BLAM=") == 0);
+  fail_unless(strcmp(envp_out[0], "LASTNAME=jones") == 0, "");
+  fail_unless(strcmp(envp_out[1], "FRUIT=orange") == 0, "");
+  fail_unless(strcmp(envp_out[2], "FIRSTNAME=mike") == 0, "");
+  fail_unless(strcmp(envp_out[3], "BLAM=") == 0, "");
   fail_unless(envp_out[4] == NULL, "");
   fail_unless(errbuf[0] == '\0', "");
 
   // check when env already set
   errbuf[0] = '\0';
   var_list_string = strdup("LASTNAME,VEGGIE=celery,FIRSTNAME");
-  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, true, errbuf, sizeof(errbuf)) == 0);
+  fail_unless(getvars_from_string(var_list_string, envp_out, max_entries - 1, &envp_out_index, true, errbuf, sizeof(errbuf)) == 0, "");
   fail_unless(envp_out_index == 5, "");
-  fail_unless(strcmp(envp_out[0], "LASTNAME=jones") == 0);
-  fail_unless(strcmp(envp_out[1], "FRUIT=orange") == 0);
-  fail_unless(strcmp(envp_out[2], "FIRSTNAME=mike") == 0);
-  fail_unless(strcmp(envp_out[3], "BLAM=") == 0);
-  fail_unless(strcmp(envp_out[4], "VEGGIE=celery") == 0);
+  fail_unless(strcmp(envp_out[0], "LASTNAME=jones") == 0, "");
+  fail_unless(strcmp(envp_out[1], "FRUIT=orange") == 0, "");
+  fail_unless(strcmp(envp_out[2], "FIRSTNAME=mike") == 0, "");
+  fail_unless(strcmp(envp_out[3], "BLAM=") == 0, "");
+  fail_unless(strcmp(envp_out[4], "VEGGIE=celery") == 0, "");
   fail_unless(envp_out[5] == NULL, "");
   fail_unless(errbuf[0] == '\0', "");
   }
@@ -220,11 +220,11 @@ START_TEST(test_getallvars_from_env)
   // test error string
   errbuf[0] = '\0';
   fail_unless(getallvars_from_env((const char **)envp_in, NULL, 0, &envp_out_index, errbuf, sizeof(errbuf)) == 1);
-  fail_unless(strncmp("envp_out is NULL", errbuf, 16) == 0);
+  fail_unless(strncmp("envp_out is NULL", errbuf, 16) == 0, "");
 
   // basic test
   envp_out_index = 0;
-  fail_unless(getallvars_from_env((const char **)envp_in, envp_out, max_entries - 1, &envp_out_index, NULL, 0) == 0);
+  fail_unless(getallvars_from_env((const char **)envp_in, envp_out, max_entries - 1, &envp_out_index, NULL, 0) == 0, "");
   fail_unless(envp_out_index == 0, "");
 
   // create some variables
@@ -232,11 +232,11 @@ START_TEST(test_getallvars_from_env)
   fail_unless((envp_in[1] = strdup("LASTNAME=jones")) != NULL, "");
   fail_unless((envp_in[2] = strdup("OTHERSTUFF=foo")) != NULL, "");
   envp_out_index = 0;
-  fail_unless(getallvars_from_env((const char **)envp_in, envp_out, max_entries - 1, &envp_out_index, NULL, 0) == 0);
+  fail_unless(getallvars_from_env((const char **)envp_in, envp_out, max_entries - 1, &envp_out_index, NULL, 0) == 0, "");
   fail_unless(envp_out_index == 3, "");
-  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0);
-  fail_unless(strcmp("LASTNAME=jones", envp_out[1]) == 0);
-  fail_unless(strcmp("OTHERSTUFF=foo", envp_out[2]) == 0);
+  fail_unless(strcmp("FIRSTNAME=mike", envp_out[0]) == 0, "");
+  fail_unless(strcmp("LASTNAME=jones", envp_out[1]) == 0, "");
+  fail_unless(strcmp("OTHERSTUFF=foo", envp_out[2]) == 0, "");
 
   // clean up
   free(envp_out[0]);

@@ -113,18 +113,18 @@ START_TEST(test_trq_simple_connect)
 
 
   rc = trq_simple_connect(server_name, port, &handle);
-  fail_unless(rc == PBSE_NONE, "trq_simple_connect failed success case", rc);
+  fail_unless(rc == PBSE_NONE, "trq_simple_connect failed success case", rc, "");
   fail_unless(handle >= 0, "trq_simple_connect returned invalid handle", handle);
   trq_simple_disconnect(handle);
 
   socket_success = false;
   rc = trq_simple_connect(server_name, port, &handle);
-  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed socket call", rc);
+  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed socket call", rc, "");
 
   socket_success = true;
   setsockopt_success = false;
   rc = trq_simple_connect(server_name, port, &handle);
-  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed setsockopt call", rc);
+  fail_unless(rc == PBSE_SERVER_NOT_FOUND, "trq_simple_connect failed failed setsockopt call", rc, "");
 
   setsockopt_success = true;
   connect_success = false;
@@ -153,7 +153,7 @@ START_TEST(test_trq_simple_disconnect)
   DIS_success = true;
 
   rc = trq_simple_disconnect(handle);
-  fail_unless(rc == PBSE_NONE, "trq_simple_disconnect failed success case", rc);
+  fail_unless(rc == PBSE_NONE, "trq_simple_disconnect failed success case", rc, "");
 
 
   }
@@ -182,7 +182,7 @@ START_TEST(test_validate_server)
 
   strcpy(active_server_name, "localhost");
   rc = validate_server(active_server_name, port, ssh_key, &sign_key);
-  fail_unless(rc == PBSE_NONE, "validate_server success case failed", rc);
+  fail_unless(rc == PBSE_NONE, "validate_server success case failed", rc, "");
 
   }
 END_TEST
@@ -194,7 +194,7 @@ START_TEST(test_set_active_pbs_server)
 
   strcpy(new_server_name, "localhost");
   rc = set_active_pbs_server(new_server_name, 15001);
-  fail_unless(rc == PBSE_NONE, "set_active_pbs_server failed", rc);
+  fail_unless(rc == PBSE_NONE, "set_active_pbs_server failed", rc, "");
 
   }
 END_TEST
@@ -219,7 +219,7 @@ START_TEST(test_validate_active_pbs_server)
 
   request_type = 1;
   rc = validate_active_pbs_server(&active_server);
-  fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc);
+  fail_unless(rc == PBSE_NONE, "validate_active_pbs_server failed", rc, "");
 
   socket_success = false;
   rc = validate_active_pbs_server(&active_server);
@@ -277,7 +277,7 @@ START_TEST(test_process_svr_conn)
   *sock = 20;
   request_type = 10;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_IVALREQ, "process_svr_conn did not fail as expected with invalid request type", process_svr_conn_rc); 
+  fail_unless(process_svr_conn_rc == PBSE_IVALREQ, "process_svr_conn did not fail as expected with invalid request type", process_svr_conn_rc, ""); 
 
   // Test the success case for TRQ_GET_ACTIVE_SERVER
   process_svr_conn_rc = PBSE_NONE;
@@ -285,21 +285,21 @@ START_TEST(test_process_svr_conn)
   *sock = 20;
   request_type = TRQ_GET_ACTIVE_SERVER;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed", "");
 
   trqauthd_terminate_success = true;
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
   request_type = TRQ_DOWN_TRQAUTHD;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_GET_ACTIVE_SERVER failed", "");
 
   trqauthd_terminate_success = false;
   sock = (int *)calloc(1, sizeof(int));
   *sock = 20;
   request_type = TRQ_DOWN_TRQAUTHD;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_PERM, "TRQ_GET_ACTIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_PERM, "TRQ_GET_ACTIVE_SERVER failed", "");
 
   // Test the success case for TRQ_VALIDATE_ACTIVE_SERVER
   sock = (int *)calloc(1, sizeof(int));
@@ -315,7 +315,7 @@ START_TEST(test_process_svr_conn)
   *sock = 20;
   request_type = TRQ_VALIDATE_ACTIVE_SERVER;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_VALIDATE_ACTIVE_SERVER failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_VALIDATE_ACTIVE_SERVER failed", "");
 
   // Test the success case for TRQ_AUTH_CONNECTION
   sock = (int *)calloc(1, sizeof(int));
@@ -323,7 +323,7 @@ START_TEST(test_process_svr_conn)
   socket_success = true;
   request_type = TRQ_AUTH_CONNECTION;
   (*process_svr_conn)((void *)sock);
-  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed");
+  fail_unless(process_svr_conn_rc == PBSE_NONE, "TRQ_AUTH_CONNECTION failed", "");
   
   // Test when validate_user fails
   socket_read_success = true;
@@ -391,10 +391,10 @@ START_TEST(build_request_svr_test)
   {
   std::string message;
 
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER);
-  fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED);
-  fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID);
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE);
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER, "");
+  fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED, "");
+  fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID, "");
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE, "", "");
 
   char buf[1024];
   snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
@@ -407,7 +407,7 @@ START_TEST(build_request_svr_test)
     6);
   fail_unless(!strcmp(message.c_str(), buf));
   
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE);
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE, "", "");
   snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
     PBS_BATCH_PROT_TYPE,
     PBS_BATCH_PROT_VER,
@@ -424,9 +424,9 @@ START_TEST(build_active_server_response_test)
   {
   std::string message;
   set_active_pbs_server("", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "", "");
   set_active_pbs_server("napali", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "", "");
   fail_unless(!strcmp(message.c_str(), "0|6|napali|15001|"));
   }
 END_TEST
@@ -438,7 +438,7 @@ START_TEST(test_set_trqauthd_addr)
   gethostname_success = true;
   get_hostaddr_success = true;
   rc = set_trqauthd_addr();
-  fail_unless(rc == PBSE_NONE, "set_trqauthd_addr failed for success case");
+  fail_unless(rc == PBSE_NONE, "set_trqauthd_addr failed for success case", "");
 
   // this test doesn't work because we're trying to use a built-in function. Some linker
   // magic would have to happen to use our built-in instead of the normal one
@@ -462,7 +462,7 @@ START_TEST(test_validate_user)
   getpwuid_success = true;
   
   rc = validate_user(10, "eris", 1, msg);
-  fail_unless(rc == PBSE_NONE, "");
+  fail_unless(rc == PBSE_NONE, "", "");
 
   // send in a NULL name 
   rc = validate_user(10, NULL, 1, msg);

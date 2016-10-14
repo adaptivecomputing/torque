@@ -165,7 +165,7 @@ START_TEST(test_hash_add_hash)
   callocVal(&value, "value4");
   hash_add_item(&map2, name, value, ENV_DATA, SET);
   callocVal(&value,"othervalue4");
-  fail_unless(hash_add_item(&map2, name, value, ENV_DATA, SET) == true);
+  fail_unless(hash_add_item(&map2, name, value, ENV_DATA, SET) == true, "");
   rc = hash_count(&map1);
   fail_unless(rc == 2, "2 values should exist in map, but only %d does", rc);
   rc = hash_count(&map2);

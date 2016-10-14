@@ -17,24 +17,24 @@ START_TEST(test_get_protocol_type)
 
   memset(&chan, 0, sizeof(chan));
 
-  fail_unless(get_protocol_type(&chan, rc) == 2);
+  fail_unless(get_protocol_type(&chan, rc) == 2, "");
   fail_unless(peek_count == 1, "");
 
   // make sure we're retrying if we have time
   pbs_incoming_tcp_timeout = 300;
-  fail_unless(get_protocol_type(&chan, rc) == 2);
+  fail_unless(get_protocol_type(&chan, rc) == 2, "");
   fail_unless(peek_count == 3, "");
 
   // make sure we don't retry if our timeout is below 5
   pbs_incoming_tcp_timeout = 3;
-  fail_unless(get_protocol_type(&chan, rc) == 0);
+  fail_unless(get_protocol_type(&chan, rc) == 0, "");
   fail_unless(peek_count == 4, "");
 
   // make sure we don't retry if our threadpool is busy
   peek_count = 5; // will fail with odd numbers
   pbs_incoming_tcp_timeout = 300;
   busy_pool = true;
-  fail_unless(get_protocol_type(&chan, rc) == 0);
+  fail_unless(get_protocol_type(&chan, rc) == 0, "");
   fail_unless(peek_count == 6, "");
   }
 END_TEST

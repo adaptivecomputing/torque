@@ -19,10 +19,10 @@ START_TEST(test_one)
   fail_unless(escape_xml(NULL,NULL,sizeof(out)) == BUFFER_OVERFLOW);
   fail_unless(escape_xml(in,NULL,sizeof(out)) == BUFFER_OVERFLOW);
   fail_unless(escape_xml(in,shrt,sizeof(shrt)) == BUFFER_OVERFLOW);
-  fail_unless(escape_xml(in,out,sizeof(out)) == PBSE_NONE);
+  fail_unless(escape_xml(in,out,sizeof(out)) == PBSE_NONE, "", "");
   fail_unless(unescape_xml(out,shrt,sizeof(shrt)) == BUFFER_OVERFLOW);
-  fail_unless(unescape_xml(out,final,sizeof(final)) == PBSE_NONE);
-  fail_unless(strcmp(in,final) == 0);
+  fail_unless(unescape_xml(out,final,sizeof(final)) == PBSE_NONE, "", "");
+  fail_unless(strcmp(in,final) == 0, "");
 
 
   }
@@ -41,9 +41,9 @@ START_TEST(test_two)
   strcpy(xml,"<unfinished><child>some text</child> ");
   fail_unless(get_parent_and_child(xml,&parent,&child,&end) == -1);
   strcpy(xml,sample);
-  fail_unless(get_parent_and_child(xml,&parent,&child,&end) == 0);
+  fail_unless(get_parent_and_child(xml,&parent,&child,&end) == 0, "");
   fail_unless(strcmp(parent,"parent")==0);
-  fail_unless(strncmp(child,"<child>",7) == 0);
+  fail_unless(strncmp(child,"<child>",7) == 0, "");
 
   strcpy(xml,sample);
   fail_unless(find_next_tag(NULL,&end) == NULL);

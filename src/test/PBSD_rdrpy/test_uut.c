@@ -33,14 +33,14 @@ START_TEST(test_PBSD_rdrpy)
   fail_unless(PBSD_rdrpy(&local_errno, 1) == NULL);
   fail_unless(!strcmp("We timed out!", connection[1].ch_errtxt), "message: %s",
     connection[1].ch_errtxt);
-  fail_unless(connection[1].ch_errno == PBSE_TIMEOUT, "");
+  fail_unless(connection[1].ch_errno == PBSE_TIMEOUT, "", "");
 
   timeout = false;
   decode_rc = DIS_OVERFLOW;
   fail_unless(PBSD_rdrpy(&local_errno, 1) == NULL);
   fail_unless(!strcmp(dis_emsg[DIS_OVERFLOW], connection[1].ch_errtxt), "message: %s",
     connection[1].ch_errtxt);
-  fail_unless(connection[1].ch_errno == PBSE_PROTOCOL, "");
+  fail_unless(connection[1].ch_errno == PBSE_PROTOCOL, "", "");
 
   decode_rc = PBSE_NONE;
   fail_unless(PBSD_rdrpy(&local_errno, 1) != NULL);
@@ -61,15 +61,15 @@ START_TEST(set_pbs_errno_from_dis_errcode_test)
       {
       case DIS_NOMALLOC:
 
-        fail_unless(local_error == PBSE_MEM_MALLOC, "");
+        fail_unless(local_error == PBSE_MEM_MALLOC, "", "");
         break;
 
       case DIS_EOF:
-        fail_unless(local_error == PBSE_EOF, "");
+        fail_unless(local_error == PBSE_EOF, "", "");
         break;
         
       default:
-        fail_unless(local_error == PBSE_PROTOCOL, "");
+        fail_unless(local_error == PBSE_PROTOCOL, "", "");
         break;
       }
     }

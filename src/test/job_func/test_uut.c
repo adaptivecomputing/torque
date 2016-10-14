@@ -121,7 +121,7 @@ START_TEST(fix_external_exec_hosts_test)
 
   memset(&pjob, 0, sizeof(pjob));
 
-  fail_unless(fix_external_exec_hosts(&pjob) == PBSE_BAD_PARAMETER, "error codes not correctly checked");
+  fail_unless(fix_external_exec_hosts(&pjob) == PBSE_BAD_PARAMETER, "error codes not correctly checked", "");
 
   pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(exec1);
   pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str = strdup(externals);
@@ -351,7 +351,7 @@ START_TEST(record_jobinfo_test)
   /*
   struct job* test_job = NULL;
   int result = record_jobinfo(test_job);
-  fail_unless(result == PBSE_BAD_PARAMETER, "NULL job input fail");
+  fail_unless(result == PBSE_BAD_PARAMETER, "NULL job input fail", "");
 
   test_job = job_alloc();
   record_jobinfo(test_job);

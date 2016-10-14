@@ -31,13 +31,13 @@ START_TEST(test_in_execution_queue)
   pbs_queue *pque = (pbs_queue *)calloc(1, sizeof(pbs_queue));
   pque->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
 
-  fail_unless(in_execution_queue(NULL, NULL) == false);
-  fail_unless(in_execution_queue(pjob, NULL) == false);
-  fail_unless(in_execution_queue(pjob, pa) == false);
+  fail_unless(in_execution_queue(NULL, NULL) == false, "");
+  fail_unless(in_execution_queue(pjob, NULL) == false, "");
+  fail_unless(in_execution_queue(pjob, pa) == false, "");
 
   pque->qu_qs.qu_type = QTYPE_Execution;
   pjob->ji_qhdr = pque;
-  fail_unless(in_execution_queue(pjob, pa) == true);
+  fail_unless(in_execution_queue(pjob, pa) == true, "");
   }
 END_TEST
 

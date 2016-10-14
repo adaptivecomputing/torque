@@ -34,32 +34,32 @@ END_TEST
 
 START_TEST(test_PBSD_scbuf)
   {
-  fail_unless(PBSD_scbuf(-1, 0, 0, NULL, 0, NULL, JScript) == PBSE_IVALREQ);
-  fail_unless(PBSD_scbuf(PBS_NET_MAX_CONNECTIONS, 0, 0, NULL, 0, NULL, JScript) == PBSE_IVALREQ);
+  fail_unless(PBSD_scbuf(-1, 0, 0, NULL, 0, NULL, JScript) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_scbuf(PBS_NET_MAX_CONNECTIONS, 0, 0, NULL, 0, NULL, JScript) == PBSE_IVALREQ, "");
   }
 END_TEST
 
 
 START_TEST(test_PBSD_commit)
   {
-  fail_unless(PBSD_commit(-1, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_commit(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_commit(-1, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_commit(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 
 
 START_TEST(test_PBSD_commit_get_sid)
   {
-  fail_unless(PBSD_commit_get_sid(-1, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_commit_get_sid(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_commit_get_sid(-1, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_commit_get_sid(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 
 
 START_TEST(test_PBSD_rdytocmt)
   {
-  fail_unless(PBSD_rdytocmt(-1, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_rdytocmt(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_rdytocmt(-1, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_rdytocmt(PBS_NET_MAX_CONNECTIONS, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 
@@ -72,15 +72,15 @@ START_TEST(test_PBSD_QueueJob_hash)
   job_data_container *res_attr = NULL;
   char *extend = NULL;
   char *msg;
-  fail_unless(PBSD_QueueJob_hash(-1, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
-  fail_unless(PBSD_QueueJob_hash(PBS_NET_MAX_CONNECTIONS, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ);
+  fail_unless(PBSD_QueueJob_hash(-1, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_QueueJob_hash(PBS_NET_MAX_CONNECTIONS, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) == PBSE_IVALREQ, "");
 
   initialize_connections();
 
   // set to trigger a failure in encode_DIS_ReqExtend
   extend_rc = 1;
   connection[5].ch_errtxt = NULL;
-  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE);
+  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE, "");
   fail_unless(!strcmp(msg, dis_emsg[extend_rc]), msg);
   extend_rc = 0;
 
@@ -89,7 +89,7 @@ START_TEST(test_PBSD_QueueJob_hash)
   // set to trigger a failure in DIS_tcp_wflush()
   flush_rc = 1;
   connection[5].ch_errtxt = NULL;
-  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE);
+  fail_unless(PBSD_QueueJob_hash(5, jobid, destin, job_attr, res_attr, extend, &jobid, &msg) != PBSE_NONE, "");
   fail_unless(msg == NULL, "");
 
   }
@@ -99,16 +99,16 @@ END_TEST
 START_TEST(test_PBSD_jobfile)
   {
   enum job_file which = JScript;
-  fail_unless(PBSD_jobfile(-1, 0, NULL, NULL, which) == PBSE_IVALREQ);
-  fail_unless(PBSD_jobfile(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL, which) == PBSE_IVALREQ);
+  fail_unless(PBSD_jobfile(-1, 0, NULL, NULL, which) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_jobfile(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL, which) == PBSE_IVALREQ, "");
   }
 END_TEST
 
 
 START_TEST(test_PBSD_jscript)
   {
-  fail_unless(PBSD_jscript(-1, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(PBSD_jscript(-1, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(PBSD_jscript(PBS_NET_MAX_CONNECTIONS, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

@@ -36,10 +36,10 @@ START_TEST(dispatch_timed_task_test)
   request_pool->tp_nthreads = 50;
   request_pool->tp_idle_threads = 0;
 
-  fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY, "");
+  fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY, "", "");
   
   request_pool->tp_idle_threads = 6;
-  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE, "");
+  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE, "", "");
   fail_unless(wt.wt_being_recycled == TRUE, "");
   }
 END_TEST
@@ -127,7 +127,7 @@ START_TEST(test_one)
     task_list_timed = new std::list<timed_task>();
 
   rc = initialize_threadpool(&request_pool, 5, 50, 60);
-  fail_unless(rc == PBSE_NONE, "initalize_threadpool failed", rc);
+  fail_unless(rc == PBSE_NONE, "initalize_threadpool failed", rc, "");
 
   struct work_task *pWorkTask = set_task(WORK_Timed,357,check_nodes,NULL,0);
   fail_unless(pWorkTask != NULL, "");
@@ -137,7 +137,7 @@ START_TEST(test_one)
   fail_unless(pWorkTask3 != NULL, "");
 
   rc = dispatch_task(pWorkTask);
-  fail_unless(rc == PBSE_NONE, "dispatch_task failed", rc);
+  fail_unless(rc == PBSE_NONE, "dispatch_task failed", rc, "");
   delete_task(pWorkTask);
 
   std::vector<work_task *>::iterator iter = tr.tasks.tasks.end();

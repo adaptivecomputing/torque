@@ -157,11 +157,11 @@ START_TEST(job_nodes_test)
   // Force it to not resolve the hostname
   addr_fail = true;
   int rc = job_nodes(*pjob);
-  fail_unless(rc == PBSE_CANNOT_RESOLVE, "Error is %d", rc);
+  fail_unless(rc == PBSE_CANNOT_RESOLVE, "Error is %d", rc, "");
   addr_fail = false; // allow things to work normally
 
 
-  fail_unless(job_nodes(*pjob) == PBSE_NONE, "");
+  fail_unless(job_nodes(*pjob) == PBSE_NONE, "", "");
   fail_unless(pjob->ji_numnodes == 2, "");
   fail_unless(pjob->ji_numvnod == 20, "");
 
@@ -294,13 +294,13 @@ START_TEST(test_bld_env_variables_no_realloc)
   envp = (char *)vtable.v_envp;
   block = (char *)vtable.v_block_start;
   rc = add_env_variables(&vtable, 10, 1024);
-  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely");
+  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely", "");
   fail_unless((char *)vtable.v_envp == (char *)envp, "bld_env_variables should not have reallocated env pointers");
   fail_unless(vtable.v_block_start == block, "bld_env_variables should not have reallocated the block of memory");
   fail_unless(vtable.v_ensize == 20, "size of pointers allocation were altered: expected 20, actual %d", vtable.v_ensize);
   fail_unless(vtable.v_used == 10, "env used were not correctly updated; expected 10, actual %d", vtable.v_used);
   rc = check_content(&vtable);
-  fail_unless(rc == PBSE_NONE, "env variables were not written as expected");
+  fail_unless(rc == PBSE_NONE, "env variables were not written as expected", "");
   free_used_mem(&vtable);
   }
 END_TEST
@@ -316,7 +316,7 @@ START_TEST(test_bld_env_variables_realloc_env)
   envp = (char *)vtable.v_envp;
   block = (char *)vtable.v_block_start;
   rc = add_env_variables(&vtable, 10, 1024);
-  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely");
+  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely", "");
   fail_unless((char *)vtable.v_envp != (char *)envp, "bld_env_variables should have been reallocated for env pointers");
   fail_unless(vtable.v_block_start == block, "bld_env_variables should not have been reallocated the block of memory");
   rc = 6 + EN_THRESHOLD;
@@ -336,14 +336,14 @@ START_TEST(test_bld_env_variables_realloc_block)
   envp = (char *)vtable.v_envp;
   block = (char *)vtable.v_block_start;
   rc = add_env_variables(&vtable, 10, 2048);
-  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely");
+  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely", "");
   fail_unless((char *)vtable.v_envp == (char *)envp, "bld_env_variables should not have reallocated env pointers");
   fail_unless(vtable.v_block_start != block, "bld_env_variables should have been reallocated the block of memory");
   rc = 1024 + EXTRA_VARIABLE_SPACE;
   fail_unless(vtable.v_ensize == 120, "size of env pointers were readjusted incorrectly: expected 120, actual %d", vtable.v_ensize);
   fail_unless(vtable.v_used == 10, "env used were not correctly updated; expected 10, actual %d", vtable.v_used); 
   rc = check_content(&vtable);
-  fail_unless(rc == PBSE_NONE, "env variables were not written as expected");
+  fail_unless(rc == PBSE_NONE, "env variables were not written as expected", "");
   free_used_mem(&vtable);
   }
 END_TEST
@@ -358,7 +358,7 @@ START_TEST(test_bld_env_variables_realloc_all)
   envp = (char *)vtable.v_envp;
   block = (char *)vtable.v_block_start;
   rc = add_env_variables(&vtable, 12, 2048);
-  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely");
+  fail_unless(rc == PBSE_NONE, "something went wrong in bld_env_variables unexpectely", "");
   fail_unless((char *)vtable.v_envp != (char *)envp, "bld_env_variables should have reallocated env pointers");
   fail_unless(vtable.v_block_start != block, "bld_env_variables should have been reallocated the block of memory");
   rc = 1024 + EXTRA_VARIABLE_SPACE;
@@ -366,7 +366,7 @@ START_TEST(test_bld_env_variables_realloc_all)
   fail_unless(vtable.v_ensize == 105, "size of env pointers were readjusted incorrectly: expected 120, actual %d", vtable.v_ensize);
   fail_unless(vtable.v_used == 12, "env used were not correctly updated; expected 10, actual %d", vtable.v_used); 
   rc = check_content(&vtable);
-  fail_unless(rc == PBSE_NONE, "env variables were not written as expected");
+  fail_unless(rc == PBSE_NONE, "env variables were not written as expected", "");
   free_used_mem(&vtable);
   }
 END_TEST
@@ -375,19 +375,19 @@ START_TEST(test_get_indices_from_exec_str)
   {
   char  buf[1024];
 
-  fail_unless(get_indices_from_exec_str(NULL, NULL, 0) != PBSE_NONE);
+  fail_unless(get_indices_from_exec_str(NULL, NULL, 0) != PBSE_NONE, "");
 
   strcpy(mom_alias, "slesmic");
 
-  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "1,0"));
   
   strcpy(mom_alias, "napali");
 
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE, "", "");
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   }
 END_TEST
@@ -454,34 +454,34 @@ START_TEST(test_get_num_nodes_ppn)
 
   // invalid parameter tests
   
-  fail_unless(get_num_nodes_ppn(NULL, &num_nodes, &num_ppn) != PBSE_NONE);
-  fail_unless(get_num_nodes_ppn("20", NULL, &num_ppn) != PBSE_NONE);
-  fail_unless(get_num_nodes_ppn("20", &num_nodes, NULL) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn(NULL, &num_nodes, &num_ppn) != PBSE_NONE, "");
+  fail_unless(get_num_nodes_ppn("20", NULL, &num_ppn) != PBSE_NONE, "");
+  fail_unless(get_num_nodes_ppn("20", &num_nodes, NULL) != PBSE_NONE, "");
 
   // overflow tests
  
   // overflow in node count 
   snprintf(maxstr, sizeof(maxstr), "%llu", (long long unsigned)LONG_MAX+1ULL);
-  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE, "");
   // clear errno
   errno = 0;
 
   // overflow in ppn
   snprintf(maxstr, sizeof(maxstr), "1:ppn=%llu", (long long unsigned)LONG_MAX+1ULL);
-  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE, "");
   // clear errno
   errno = 0;
 
   // overflow in extra node count
   snprintf(maxstr, sizeof(maxstr), "1:ppn=2+%llu", (long long unsigned)LONG_MAX+1ULL);
-  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn(maxstr, &num_nodes, &num_ppn) != PBSE_NONE, "");
   // clear errno
   errno = 0;
 
   // invalid hostname tests
 
-  fail_unless(get_num_nodes_ppn("!:ppn=10", &num_nodes, &num_ppn) != PBSE_NONE);
-  fail_unless(get_num_nodes_ppn("20:ppn=10+*", &num_nodes, &num_ppn) != PBSE_NONE);
+  fail_unless(get_num_nodes_ppn("!:ppn=10", &num_nodes, &num_ppn) != PBSE_NONE, "");
+  fail_unless(get_num_nodes_ppn("20:ppn=10+*", &num_nodes, &num_ppn) != PBSE_NONE, "");
 
   // valid tests
 

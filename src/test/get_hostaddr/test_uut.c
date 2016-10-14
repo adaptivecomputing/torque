@@ -27,11 +27,11 @@ START_TEST(test_netaddr_long)
 
   // get string from host byte order adddress
   netaddr_long(a_hbo.s_addr, buf);
-  fail_unless(strcmp(ip_addr_str, buf) == 0);
+  fail_unless(strcmp(ip_addr_str, buf) == 0, "");
 
   // get string from network byte order adddress
   netaddr_long(a_nbo.s_addr, buf);
-  fail_unless(strcmp(ip_addr_str_rev, buf) == 0);
+  fail_unless(strcmp(ip_addr_str_rev, buf) == 0, "");
 
   }
 END_TEST

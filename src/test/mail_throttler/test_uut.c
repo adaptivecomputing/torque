@@ -19,11 +19,11 @@ START_TEST(test_adding)
   fail_unless(mt.add_email_entry(mi) == false, "");
 
   std::vector<mail_info> pending;
-  fail_unless(mt.get_email_list(mi.mailto, pending) == PBSE_NONE);
+  fail_unless(mt.get_email_list(mi.mailto, pending) == PBSE_NONE, "", "");
   fail_unless(pending.size() == 4, "");
-  fail_unless(mt.get_email_list(mi.mailto, pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("b", pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("c", pending) != PBSE_NONE);
+  fail_unless(mt.get_email_list(mi.mailto, pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("b", pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("c", pending) != PBSE_NONE, "");
   
   fail_unless(mt.add_email_entry(mi) == true, "");
   fail_unless(mt.add_email_entry(mi) == false, "");
@@ -37,17 +37,17 @@ START_TEST(test_adding)
   fail_unless(mt.add_email_entry(mi) == true, "");
   fail_unless(mt.add_email_entry(mi) == false, "");
 
-  fail_unless(mt.get_email_list("d", pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("3", pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("a", pending) == PBSE_NONE);
+  fail_unless(mt.get_email_list("d", pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("3", pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("a", pending) == PBSE_NONE, "", "");
   fail_unless(pending.size() == 3, "");
-  fail_unless(mt.get_email_list("b", pending) == PBSE_NONE);
+  fail_unless(mt.get_email_list("b", pending) == PBSE_NONE, "", "");
   fail_unless(pending.size() == 2, "");
-  fail_unless(mt.get_email_list("c", pending) == PBSE_NONE);
+  fail_unless(mt.get_email_list("c", pending) == PBSE_NONE, "", "");
   fail_unless(pending.size() == 2, "");
-  fail_unless(mt.get_email_list("a", pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("b", pending) != PBSE_NONE);
-  fail_unless(mt.get_email_list("c", pending) != PBSE_NONE);
+  fail_unless(mt.get_email_list("a", pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("b", pending) != PBSE_NONE, "");
+  fail_unless(mt.get_email_list("c", pending) != PBSE_NONE, "");
   }
 END_TEST
 

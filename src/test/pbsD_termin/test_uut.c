@@ -9,8 +9,8 @@
 
 START_TEST(test_pbs_terminate_err)
   {
-  fail_unless(pbs_terminate_err(-1, 0, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_terminate_err(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_terminate_err(-1, 0, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_terminate_err(PBS_NET_MAX_CONNECTIONS, 0, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 

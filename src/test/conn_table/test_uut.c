@@ -25,7 +25,7 @@ START_TEST(test_one)
     connection[i].ch_socket = i;
     }
   rc = get_connection_entry(&conn_pos);
-  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case");
+  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case", "");
   fail_unless(conn_pos >= 0, "invalid connection entry returned");
 
   }
@@ -45,7 +45,7 @@ START_TEST(test_two)
     }
 
   rc = get_connection_entry(&conn_pos);
-  fail_unless(rc == PBSE_NOCONNECTS, "get_connection_entry failed for normal case: %d", rc);
+  fail_unless(rc == PBSE_NOCONNECTS, "get_connection_entry failed for normal case: %d", rc, "");
   fail_unless(conn_pos == -1, "invalid connection entry returned");
 
   }
@@ -65,12 +65,12 @@ START_TEST(test_three)
     }
 
   rc = get_connection_entry(&conn_pos);
-  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case");
+  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case", "");
   fail_unless(conn_pos >= 0, "invalid connection entry returned");
   connection[conn_pos].ch_inuse = TRUE;
   pthread_mutex_lock(connection[conn_pos].ch_mutex);
   rc = get_connection_entry(&conn_pos);
-  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case");
+  fail_unless(rc == PBSE_NONE, "get_connection_entry failed for normal case", "");
   fail_unless(conn_pos >= 0, "invalid connection entry returned");
 
   }

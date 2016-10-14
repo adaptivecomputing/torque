@@ -14,13 +14,13 @@ START_TEST(test_is_permitted_by_node_submit)
   {
   int logging = 5;
   exists = true;
-  fail_unless(is_permitted_by_node_submit("napali", logging) == false);
-  fail_unless(is_permitted_by_node_submit("waimea", logging) == false);
-  fail_unless(is_permitted_by_node_submit("lihue", logging) == true);
-  fail_unless(is_permitted_by_node_submit("wailua", logging) == true);
+  fail_unless(is_permitted_by_node_submit("napali", logging) == false, "");
+  fail_unless(is_permitted_by_node_submit("waimea", logging) == false, "");
+  fail_unless(is_permitted_by_node_submit("lihue", logging) == true, "");
+  fail_unless(is_permitted_by_node_submit("wailua", logging) == true, "");
 
   exists = false;
-  fail_unless(is_permitted_by_node_submit("haole", logging) == false);
+  fail_unless(is_permitted_by_node_submit("haole", logging) == false, "");
   }
 END_TEST
 

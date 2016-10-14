@@ -10,10 +10,10 @@
 START_TEST(test_pbs_rerunjob_err)
   {
   char *jobid = strdup("1.napali");
-  fail_unless(pbs_rerunjob_err(-1, jobid, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_rerunjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_rerunjob_err(0, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_rerunjob_err(0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_rerunjob_err(-1, jobid, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_rerunjob_err(PBS_NET_MAX_CONNECTIONS, jobid, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_rerunjob_err(0, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_rerunjob_err(0, strdup(""), NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST

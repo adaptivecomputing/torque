@@ -14,10 +14,10 @@ int pbs_movejob(int c, char *jobid, char *destin, char *extend);
 
 START_TEST(test_pbs_movejob)
   {
-  fail_unless(pbs_movejob(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_movejob(-1, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_movejob(0, strdup(""), NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_movejob(0, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_movejob(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_movejob(-1, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_movejob(0, strdup(""), NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_movejob(0, NULL, NULL, NULL) == PBSE_IVALREQ, "");
 
   }
 END_TEST

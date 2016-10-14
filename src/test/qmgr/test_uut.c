@@ -34,10 +34,10 @@ START_TEST(test_check_list)
   // Server cannot be numeric
   fail_unless(check_list(MGR_OBJ_SERVER, "12") != 0);
   // Cray nodes can be numeric, so allow those
-  fail_unless(check_list(MGR_OBJ_NODE, "12") == 0);
+  fail_unless(check_list(MGR_OBJ_NODE, "12") == 0, "");
   // all alpha characters should work for both
-  fail_unless(check_list(MGR_OBJ_NODE, "napali") == 0);
-  fail_unless(check_list(MGR_OBJ_SERVER, "napali") == 0);
+  fail_unless(check_list(MGR_OBJ_NODE, "napali") == 0, "");
+  fail_unless(check_list(MGR_OBJ_SERVER, "napali") == 0, "");
   }
 END_TEST
 

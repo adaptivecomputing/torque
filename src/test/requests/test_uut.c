@@ -26,11 +26,11 @@ START_TEST(test_string_replchar)
   // simple replacement
   snprintf(mystring, 1024, "abcdefga");
   string_replchar(mystring, 'a', 'z');
-  fail_unless(strcmp("zbcdefgz", mystring) == 0);
+  fail_unless(strcmp("zbcdefgz", mystring) == 0, "");
 
   // no replacement
   string_replchar(mystring, 'a', 'z');
-  fail_unless(strcmp("zbcdefgz", mystring) == 0);
+  fail_unless(strcmp("zbcdefgz", mystring) == 0, "");
   }
 END_TEST
 

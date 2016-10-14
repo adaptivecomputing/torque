@@ -9,8 +9,8 @@
 
 START_TEST(test_pbs_checkpointjob_err)
   {
-  fail_unless(pbs_checkpointjob_err(-1, NULL, NULL, NULL) == PBSE_IVALREQ);
-  fail_unless(pbs_checkpointjob_err(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ);
+  fail_unless(pbs_checkpointjob_err(-1, NULL, NULL, NULL) == PBSE_IVALREQ, "");
+  fail_unless(pbs_checkpointjob_err(PBS_NET_MAX_CONNECTIONS, NULL, NULL, NULL) == PBSE_IVALREQ, "");
   }
 END_TEST
 
