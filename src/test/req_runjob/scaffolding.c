@@ -89,10 +89,8 @@ char *find_ts_node(void)
   exit(1);
   }
 
-void stat_mom_job(char *job_id)
+void stat_mom_job(const char *job_id)
   {
-  fprintf(stderr, "The call to stat_mom_job to be mocked!!\n");
-  exit(1);
   }
 
 pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
@@ -245,7 +243,7 @@ void DIS_tcp_settimeout(long timeout)
   {
   }
 
-int send_job_work(char *job_id, char *node_name, int type, int *my_err, struct batch_request *preq)
+int send_job_work(char *job_id, const char *node_name, int type, int *my_err, struct batch_request *preq)
   {
   //returning failure
   return -1;
