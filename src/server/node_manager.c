@@ -1385,7 +1385,6 @@ void stream_eof(
     }
 
   /* Before we mark this node down see if we can connect */
-  np->lock_node(__func__, "parent", LOGLEVEL);
   conn = svr_connect(addr, port, &my_err, np, NULL);
   if (conn >= 0)
     {
