@@ -17,7 +17,7 @@ START_TEST(test_reserve_slot)
 
   for (int i = 0; i < 10; i++)
     {
-    fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE, "", "");
+    fail_unless(est.reserve_execution_slot(i, est2) == PBSE_NONE, "");
     fail_unless(est.is_occupied(i) == true, "");
     fail_unless(est2.is_occupied(i) == true, "");
     }

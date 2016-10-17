@@ -31,14 +31,14 @@ START_TEST(test_check_pelog_permissions)
 
   fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE, "");
   sbuf.st_mode = S_IXUSR | S_IFREG;
-  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "");
   fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE, "");
   sbuf.st_mode |= S_IRUSR;
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "", "");
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSERJOB) == PBSE_NONE, "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) == PBSE_NONE, "");
   fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) != PBSE_NONE, "");
   sbuf.st_mode |= S_IROTH | S_IXOTH;
-  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) == PBSE_NONE, "", "");
+  fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOGUSER) == PBSE_NONE, "");
   sbuf.st_mode |= S_IWOTH;
   fail_unless(check_pelog_permissions(sbuf, FALSE, &pjob, "bob", PE_PROLOG) != PBSE_NONE, "");
   }

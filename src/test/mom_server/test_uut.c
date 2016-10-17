@@ -137,7 +137,7 @@ START_TEST(test_mom_server_update_stat_clear_force)
   pms.MOMLastSendToServerTime = time_now - 20;
   ForceServerUpdate = true;
 
-  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "", "");
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "");
   fail_unless(ForceServerUpdate == false, "");
   fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 
@@ -146,7 +146,7 @@ START_TEST(test_mom_server_update_stat_clear_force)
   pms.MOMLastSendToServerTime = time_now - 100;
   ForceServerUpdate = false;
 
-  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "", "");
+  fail_unless(mom_server_update_stat(&pms, status) == PBSE_NONE, "");
   fail_unless(ForceServerUpdate == false, "");
   fail_unless(pms.MOMLastSendToServerTime == time_now, "");
 

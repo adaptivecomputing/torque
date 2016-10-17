@@ -34,7 +34,7 @@ START_TEST(test_one)
   svr_conn[7].cn_addr = 2265079;
   svr_conn[7].cn_port = 42;
 
-  fail_unless(req_authenuser(&req) == PBSE_NONE, "", "");
+  fail_unless(req_authenuser(&req) == PBSE_NONE, "");
   fail_unless(rejected == FALSE, "");
   fail_unless(acked, "");
   fail_unless(svr_conn[6].cn_authen == PBS_NET_CONN_AUTHENTICATED, "");

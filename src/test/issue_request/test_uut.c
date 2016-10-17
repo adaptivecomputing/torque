@@ -50,7 +50,7 @@ START_TEST(test_one)
 
   decode_str(&testJob.ji_wattr[JOB_ATR_exec_host],NULL,NULL,"Sherrie",0);
 
-  fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_NONE, "", "");
+  fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_NONE, "");
 
   }
 END_TEST
@@ -70,7 +70,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
   
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
 
@@ -78,7 +78,7 @@ START_TEST(test_send_request_to_remote_server)
   fail_unless(preq != NULL, "");
   strcpy(preq->rq_ind.rq_track.rq_jid, "1234");
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
   
   free(preq);
   preq = alloc_br(PBS_BATCH_CheckpointJob);
@@ -96,7 +96,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_ind.rq_gpuctrl.rq_reset_vol = 1;
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_MessJob);
@@ -106,7 +106,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_ind.rq_message.rq_text = NULL;
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
 
   free(preq);
@@ -115,7 +115,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_rerun, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_RegistDep);
@@ -123,7 +123,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_rerun, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_AsySignalJob);
@@ -133,7 +133,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_extra = NULL;
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_SignalJob);
@@ -143,7 +143,7 @@ START_TEST(test_send_request_to_remote_server)
   preq->rq_extra = NULL;
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_StatusJob);
@@ -151,7 +151,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_ReturnFiles);
@@ -159,7 +159,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_CopyFiles);
@@ -167,7 +167,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_DelFiles);
@@ -175,7 +175,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_DeleteReservation);
@@ -183,7 +183,7 @@ START_TEST(test_send_request_to_remote_server)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = send_request_to_remote_server(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   free(preq);
   preq = alloc_br(PBS_BATCH_GAP038);
@@ -208,7 +208,7 @@ START_TEST(test_handle_local_request)
   fail_unless(preq != NULL, "");
 
   rc = handle_local_request(10, preq);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
   free(preq);
 
   }
@@ -224,7 +224,7 @@ START_TEST(test_issue_Drequest)
   strcpy(preq->rq_ind.rq_status.rq_id, "1234");
 
   rc = issue_Drequest(10, preq, true);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
 
   }

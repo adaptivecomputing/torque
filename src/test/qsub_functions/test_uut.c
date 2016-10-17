@@ -53,9 +53,9 @@ START_TEST(test_process_opt_K)
   fail_unless(process_opt_K(&ji, "-1", 1) != PBSE_NONE, "");
   fail_unless(process_opt_K(&ji, "abc", 1) != PBSE_NONE, "");
   fail_unless(process_opt_K(&ji, "0", 1) != PBSE_NONE, "");
-  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_K(&ji, "30", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "3", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_K(&ji, "15", 1) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -69,15 +69,15 @@ START_TEST(test_process_opt_p)
   fail_unless(process_opt_p(&ji, "-1025", 1) != PBSE_NONE, "");
   fail_unless(process_opt_p(&ji, "1024", 1) != PBSE_NONE, "");
   fail_unless(process_opt_p(&ji, "-", 1) != PBSE_NONE, "");
-  fail_unless(process_opt_p(&ji, "  5", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_p(&ji, "  5", 1) == PBSE_NONE, "");
   fail_unless(added_value == "5", "");
-  fail_unless(process_opt_p(&ji, "+10", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_p(&ji, "+10", 1) == PBSE_NONE, "");
   fail_unless(added_value == "+10", "");
-  fail_unless(process_opt_p(&ji, "1", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_p(&ji, "1", 1) == PBSE_NONE, "");
   fail_unless(added_value == "1", "");
-  fail_unless(process_opt_p(&ji, "1000", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_p(&ji, "1000", 1) == PBSE_NONE, "");
   fail_unless(added_value == "1000", "");
-  fail_unless(process_opt_p(&ji, "-1000", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_p(&ji, "-1000", 1) == PBSE_NONE, "");
   fail_unless(added_value == "-1000", "");
   }
 END_TEST
@@ -89,21 +89,21 @@ START_TEST(test_process_opt_m)
 
   fail_unless(process_opt_m(&ji, NULL, 1) != PBSE_NONE, "");
   fail_unless(process_opt_m(&ji, "bob", 1) != PBSE_NONE, "");
-  fail_unless(process_opt_m(&ji, "a", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "b", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "e", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "ae", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "ab", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "ba", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "be", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "bea", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "bae", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "abe", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "aeb", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "eb", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "ea", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "eba", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_m(&ji, "eab", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_m(&ji, "a", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "b", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "e", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "ae", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "ab", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "ba", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "be", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "bea", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "bae", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "abe", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "aeb", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "eb", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "ea", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "eba", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_m(&ji, "eab", 1) == PBSE_NONE, "");
   fail_unless(process_opt_m(&ji, "bobo", 1) != PBSE_NONE, "");
   }
 END_TEST
@@ -115,11 +115,11 @@ START_TEST(test_process_opt_k)
 
   fail_unless(process_opt_k(&ji, NULL, 1) != PBSE_NONE, "");
   fail_unless(process_opt_k(&ji, "bob", 1) != PBSE_NONE, "");
-  fail_unless(process_opt_k(&ji, "o", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_k(&ji, "e", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_k(&ji, "oe", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_k(&ji, "eo", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_k(&ji, "n", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_k(&ji, "o", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "e", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "oe", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "eo", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_k(&ji, "n", 1) == PBSE_NONE, "");
   fail_unless(process_opt_k(&ji, "no", 1) != PBSE_NONE, "");
   }
 END_TEST
@@ -131,9 +131,9 @@ START_TEST(test_process_opt_j)
 
   fail_unless(process_opt_j(&ji, NULL, 1) != PBSE_NONE, "");
   fail_unless(process_opt_j(&ji, "bob", 1) != PBSE_NONE, "");
-  fail_unless(process_opt_j(&ji, "n", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_j(&ji, "oe", 1) == PBSE_NONE, "", "");
-  fail_unless(process_opt_j(&ji, "eo", 1) == PBSE_NONE, "", "");
+  fail_unless(process_opt_j(&ji, "n", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_j(&ji, "oe", 1) == PBSE_NONE, "");
+  fail_unless(process_opt_j(&ji, "eo", 1) == PBSE_NONE, "");
   fail_unless(process_opt_j(&ji, "oeo", 1) != PBSE_NONE, "");
   }
 END_TEST
@@ -156,7 +156,7 @@ START_TEST(test_process_opt_d)
 
   // fail with bad arguments to the function
   fail_unless(process_opt_d(NULL, NULL, 1, NULL) != PBSE_NONE, "");
-  fail_unless(process_opt_d(&ji, "/tmp/dbeer/work/", 1, jd) == PBSE_NONE, "", "");
+  fail_unless(process_opt_d(&ji, "/tmp/dbeer/work/", 1, jd) == PBSE_NONE, "");
   fail_unless(added_value == "/tmp/dbeer/work/", added_value.c_str());
 
   // current_directory/. will exist on every system

@@ -161,7 +161,7 @@ START_TEST(job_nodes_test)
   addr_fail = false; // allow things to work normally
 
 
-  fail_unless(job_nodes(*pjob) == PBSE_NONE, "", "");
+  fail_unless(job_nodes(*pjob) == PBSE_NONE, "");
   fail_unless(pjob->ji_numnodes == 2, "");
   fail_unless(pjob->ji_numvnod == 20, "");
 
@@ -379,15 +379,15 @@ START_TEST(test_get_indices_from_exec_str)
 
   strcpy(mom_alias, "slesmic");
 
-  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE, "", "");
+  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE, "");
   fail_unless(!strcmp(buf, "1,0"));
   
   strcpy(mom_alias, "napali");
 
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE, "", "");
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE, "");
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE, "", "");
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE, "");
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   }
 END_TEST

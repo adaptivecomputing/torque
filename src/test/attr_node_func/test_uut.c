@@ -71,14 +71,14 @@ START_TEST(test_two)
 
   int rc = node_state(&attr,&nd,ATR_ACTION_NEW);
   fail_unless(attr.at_val.at_short == INUSE_DOWN, "");
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   nd.nd_state = 0;
   attr.at_val.at_short = INUSE_OFFLINE;
 
   rc = node_state(&attr,&nd,ATR_ACTION_ALTER);
   fail_unless(nd.nd_state == INUSE_OFFLINE, "");
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   nd.nd_state = INUSE_NOHIERARCHY;
   attr.at_val.at_short = INUSE_OFFLINE;
@@ -107,7 +107,7 @@ START_TEST(test_set_note_str)
   new_attr.at_flags = ATR_VFLAG_SET;
 
   // check that everything went ok
-  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "", "");
+  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "");
 
   // confirm newline removed from string
   fail_unless(strchr(new_attr.at_val.at_str, '\n') == NULL);
@@ -124,7 +124,7 @@ START_TEST(test_set_note_str)
   new_attr.at_flags = ATR_VFLAG_SET;
 
   // check that everything went ok
-  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "", "");
+  fail_unless(set_note_str(&attr, &new_attr, SET) == PBSE_NONE, "");
 
   // no newline should be in string
   fail_unless(strchr(new_attr.at_val.at_str, '\n') == NULL);

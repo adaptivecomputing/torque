@@ -70,20 +70,20 @@ START_TEST(test_set_note_error)
   fail_unless(!strcmp(pnode->nd_note, "ERROR - bob"));
 
   // Make sure the same error isn't appended twice - the note shouldn't be changed
-  fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "ERROR - bob"));
 
   free(pnode->nd_note);
   pnode->nd_note = NULL;
 
-  fail_unless(set_note_error(pnode, "message=yay") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=yay") == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "yay"));
   
-  fail_unless(set_note_error(pnode, "message=ERROR - the system is down") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=ERROR - the system is down") == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "yay - ERROR - the system is down"));
 
   // make sure newline stripped 
-  fail_unless(set_note_error(pnode, "message=ERROR - the system is down\n") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=ERROR - the system is down\n") == PBSE_NONE, "");
   fail_unless(strcmp(pnode->nd_note, "yay - ERROR - the system is down") == 0, "");
   }
 END_TEST
@@ -93,23 +93,23 @@ END_TEST
 START_TEST(test_two)
   {
   struct pbsnode *pnode = (struct pbsnode *)calloc(1, sizeof(pbsnode));
-  fail_unless(restore_note(pnode) == PBSE_NONE, "", "");
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(pnode->nd_note == NULL, "");
 
-  fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "ERROR - bob"));
 
-  fail_unless(restore_note(pnode) == PBSE_NONE, "", "");
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(pnode->nd_note == NULL, "");
 
   free(pnode->nd_note);
   pnode->nd_note = strdup("Yo Dawg, I heard you wanted a note");
 
-  fail_unless(restore_note(pnode) == PBSE_NONE, "", "");
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note"));
-  fail_unless(set_note_error(pnode, "message=ERROR Everything's broken") == PBSE_NONE, "", "");
+  fail_unless(set_note_error(pnode, "message=ERROR Everything's broken") == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note - ERROR Everything's broken"));
-  fail_unless(restore_note(pnode) == PBSE_NONE, "", "");
+  fail_unless(restore_note(pnode) == PBSE_NONE, "");
   fail_unless(!strcmp(pnode->nd_note, "Yo Dawg, I heard you wanted a note"));
   }
 END_TEST

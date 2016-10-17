@@ -461,18 +461,18 @@ START_TEST(test_run_queue_mode)
   fail_unless(rc == 0, "");
 
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   have_args = true;
   operand = "batch";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   operand = "(null)";
   rc = run_queue_mode(have_args, operand.c_str(), server_out, queue_name_out, server_name_out, errmsg);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
   fail_unless(errmsg.size() == 0, "error message contains information");
 
   connect_success = false;

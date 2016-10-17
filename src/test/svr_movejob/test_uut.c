@@ -56,7 +56,7 @@ START_TEST(send_job_over_network_with_retries_test)
   fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_FAIL);
 
   retry = 1;
-  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE, "", "");
+  fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE, "");
 
   retry = 10;
   fail_unless(send_job_over_network_with_retries(jobid, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, 10, strdup("/out"), strdup("/err"), strdup("chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == LOCUTION_RETRY);
@@ -81,7 +81,7 @@ START_TEST(send_job_over_network_test)
 
   CLEAR_HEAD(h);
 
-  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE, "", "");
+  fail_unless(send_job_over_network(jobid, 5, destin, h, attempt_to_queue, c, timeout, "script", true, false, 10, strdup("/out"), strdup("/err"), strdup("/chkpt"), MOVE_TYPE_Exec, &my_err,&mom_err) == PBSE_NONE, "");
   fail_unless(attempt_to_queue == false, "");
 
   fprintf(stderr,"%p %s\n",(void *)destin,destin);
@@ -100,7 +100,7 @@ START_TEST(commit_job_on_mom_test);
   char *jobid = strdup("1.napali");
   int  mom_err;
 
-  fail_unless(commit_job_on_mom(5, jobid, timeout,&mom_err) == PBSE_NONE, "", "");
+  fail_unless(commit_job_on_mom(5, jobid, timeout,&mom_err) == PBSE_NONE, "");
   commit_error = true;
   fail_unless(commit_job_on_mom(5, jobid, timeout,&mom_err) == LOCUTION_FAIL);
   commit_error = false;
@@ -121,8 +121,8 @@ END_TEST
 
 START_TEST(send_files_if_needed_test)
   {
-  fail_unless(send_files_if_needed(5, strdup("1.napali"), MOVE_TYPE_Exec, false, 1, strdup("/out"), strdup("/err"), strdup("/chkpt")) == PBSE_NONE, "", "");
-  fail_unless(send_files_if_needed(5, strdup("1.napali"), MOVE_TYPE_Exec, true, 1, strdup("/out"), strdup("/err"), strdup("/chkpt")) == PBSE_NONE, "", "");
+  fail_unless(send_files_if_needed(5, strdup("1.napali"), MOVE_TYPE_Exec, false, 1, strdup("/out"), strdup("/err"), strdup("/chkpt")) == PBSE_NONE, "");
+  fail_unless(send_files_if_needed(5, strdup("1.napali"), MOVE_TYPE_Exec, true, 1, strdup("/out"), strdup("/err"), strdup("/chkpt")) == PBSE_NONE, "");
   jobfile_fail = true;
   fail_unless(send_files_if_needed(5, strdup("1.napali"), MOVE_TYPE_Exec, true, 1, strdup("/out"), strdup("/err"), strdup("/chkpt")) != PBSE_NONE, "");
   jobfile_fail = false;
@@ -133,8 +133,8 @@ START_TEST(send_job_script_if_needed_test)
   {
   script_fail = false;
 
-  fail_unless(send_job_script_if_needed(4, false, strdup("bobo"), strdup("1.napali")) == PBSE_NONE, "", "");
-  fail_unless(send_job_script_if_needed(4, true, strdup("bobo"), strdup("1.napali")) == PBSE_NONE, "", "");
+  fail_unless(send_job_script_if_needed(4, false, strdup("bobo"), strdup("1.napali")) == PBSE_NONE, "");
+  fail_unless(send_job_script_if_needed(4, true, strdup("bobo"), strdup("1.napali")) == PBSE_NONE, "");
 
   script_fail = true;
   fail_unless(send_job_script_if_needed(4, true, strdup("bobo"), strdup("1.napali")) != PBSE_NONE, "");
@@ -181,7 +181,7 @@ START_TEST(queue_job_on_mom_test)
   bool       timeout = false;
   int        type = MOVE_TYPE_Exec;
 
-  fail_unless(queue_job_on_mom(1, &my_err, strdup("1.napali"), strdup("batch"), attrl, timeout, type) == PBSE_NONE, "", "");
+  fail_unless(queue_job_on_mom(1, &my_err, strdup("1.napali"), strdup("batch"), attrl, timeout, type) == PBSE_NONE, "");
   fail_unless(timeout == false, "");
   
   expired = true;
@@ -203,9 +203,9 @@ END_TEST
 START_TEST(update_substate_if_needed_test)
   {
   bool change = false;
-  fail_unless(update_substate_if_needed(strdup("2.napali"), change) == PBSE_NONE, "", "");
+  fail_unless(update_substate_if_needed(strdup("2.napali"), change) == PBSE_NONE, "");
   change = true;
-  fail_unless(update_substate_if_needed(strdup("1.napali"), change) == PBSE_NONE, "", "");
+  fail_unless(update_substate_if_needed(strdup("1.napali"), change) == PBSE_NONE, "");
   fail_unless(update_substate_if_needed(strdup("2.napali"), change) != PBSE_NONE, "");
   }
 END_TEST
@@ -233,11 +233,11 @@ START_TEST(get_job_script_path_test)
 
   strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
 
-  fail_unless(get_job_script_path(pjob, script) == PBSE_NONE, "", "");
+  fail_unless(get_job_script_path(pjob, script) == PBSE_NONE, "");
   fail_unless(script == "/var/spool/torque/server_priv/jobs/1.napali.SC", "");
 
   pjob->ji_arraystructid[0] = 'a';
-  fail_unless(get_job_script_path(pjob, script) == PBSE_NONE, "", "");
+  fail_unless(get_job_script_path(pjob, script) == PBSE_NONE, "");
   fail_unless(script == "/var/spool/torque/server_priv/jobs/2.napali.SC", "");
 
   get_jobs_array_fail = true;
@@ -253,7 +253,7 @@ END_TEST
 START_TEST(save_jobs_sid_test)
   {
   fail_unless(save_jobs_sid(strdup("2.napali"), 10) != PBSE_NONE, "");
-  fail_unless(save_jobs_sid(strdup("1.napali"), 10) == PBSE_NONE, "", "");
+  fail_unless(save_jobs_sid(strdup("1.napali"), 10) == PBSE_NONE, "");
   }
 END_TEST
 

@@ -64,7 +64,7 @@ START_TEST(test_get_req_and_task_index_from_local_rank)
   fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK, "");
 
   per_task = true;
-  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NONE, "", "");
+  fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NONE, "");
   }
 END_TEST
 

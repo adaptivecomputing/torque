@@ -32,11 +32,11 @@ START_TEST(test_cpt)
   fail_unless(values[values.size() - 1] == "true", values[values.size() - 1].c_str());
 
   // Setting as a default shouldn't change the value
-  fail_unless(r.set_value("cpt", "false", true) == PBSE_NONE, "", "");
+  fail_unless(r.set_value("cpt", "false", true) == PBSE_NONE, "");
   fail_unless(r.is_per_task() == true, "");
 
   // Setting as a non-default should change the value
-  fail_unless(r.set_value("cpt", "false", false) == PBSE_NONE, "", "");
+  fail_unless(r.set_value("cpt", "false", false) == PBSE_NONE, "");
   fail_unless(r.is_per_task() == false, "");
   }
 END_TEST
@@ -113,9 +113,9 @@ START_TEST(test_append_gres)
 
   r.set_value("gres", "A=3", false);
 
-  fail_unless(r.append_gres("B=2") == PBSE_NONE, "", "");
-  fail_unless(r.append_gres("B=2") == PBSE_NONE, "", "");
-  fail_unless(r.append_gres("A=2") == PBSE_NONE, "", "");
+  fail_unless(r.append_gres("B=2") == PBSE_NONE, "");
+  fail_unless(r.append_gres("B=2") == PBSE_NONE, "");
+  fail_unless(r.append_gres("A=2") == PBSE_NONE, "");
 
   fail_unless(r.getGres() == "A=2:B=2", r.getGres().c_str());
   }
@@ -412,7 +412,7 @@ START_TEST(test_constructors)
   fail_unless(str_set.set_from_submission_string(strdup("-1:lprocs=4"), error) != PBSE_NONE, "");
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=-4"), error) != PBSE_NONE, "");
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=4:memory=0"), error) != PBSE_NONE, "");
-  fail_unless(str_set.set_from_submission_string(strdup("3:gpus=2:reseterr:exclusive_thread:opsys=cent6"), error) == PBSE_NONE, "", "");
+  fail_unless(str_set.set_from_submission_string(strdup("3:gpus=2:reseterr:exclusive_thread:opsys=cent6"), error) == PBSE_NONE, "");
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=core"), error) != PBSE_NONE, "");
   fail_unless(str_set.set_from_submission_string(strdup("1:lprocs=all:place=thread=2"), error) != PBSE_NONE, "");
 

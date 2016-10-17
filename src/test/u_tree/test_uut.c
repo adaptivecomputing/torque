@@ -64,7 +64,7 @@ START_TEST(test_one)
   tree = AVL_delete_node(500,506,tree);
   tree = AVL_delete_node(506,506,tree);
 
-  fail_unless(AVL_list(tree,&bf,&len,&maxLen) == PBSE_NONE, "", "");
+  fail_unless(AVL_list(tree,&bf,&len,&maxLen) == PBSE_NONE, "");
 
   fail_unless(bf != NULL, "");
   fail_unless(len > 0, "");

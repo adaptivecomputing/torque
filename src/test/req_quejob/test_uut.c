@@ -61,9 +61,9 @@ START_TEST(test_determine_job_file_name)
   path_jobs = strdup("./");
 
   system("rm ./1.napali.JB ./1.napalj.JB");
-  fail_unless(determine_job_file_name(NULL, jobid, filename) == PBSE_NONE, "", "");
+  fail_unless(determine_job_file_name(NULL, jobid, filename) == PBSE_NONE, "");
   fail_unless(filename == "1.napali", filename.c_str());
-  fail_unless(determine_job_file_name(NULL, jobid, filename) == PBSE_NONE, "", "");
+  fail_unless(determine_job_file_name(NULL, jobid, filename) == PBSE_NONE, "");
   fail_unless(filename == "1.napalj", filename.c_str());
   system("rm ./1.napali.JB ./1.napalj.JB");
   }
@@ -118,7 +118,7 @@ START_TEST(test_one)
   newjobs.insert(&j,j.ji_qs.ji_jobid);
   newjobs.unlock();
 
-  fail_unless(req_jobcredential(&req) == PBSE_NONE, "", "");
+  fail_unless(req_jobcredential(&req) == PBSE_NONE, "");
 
   memset(&req,0,sizeof(req));
 
@@ -130,7 +130,7 @@ START_TEST(test_one)
   sprintf(cmd,"rm -f %s*.SC",path_jobs);
   system(cmd);
   strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
-  fail_unless(req_jobscript(&req) == PBSE_NONE, "", "");
+  fail_unless(req_jobscript(&req) == PBSE_NONE, "");
   system(cmd);
   }
 END_TEST
@@ -147,7 +147,7 @@ START_TEST(test_get_job_id)
 
   preq.rq_fromsvr = 1;
   strcpy(preq.rq_ind.rq_queuejob.rq_jid, "1.napali");
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(job_id == "1.napali", "");
   fail_unless(resc_access_perm & (ATR_DFLAG_MGWR | ATR_DFLAG_SvWR), "");
   fail_unless(created_here == 0, "");
@@ -158,34 +158,34 @@ START_TEST(test_get_job_id)
 
   preq.rq_ind.rq_queuejob.rq_jid[0] = '\0';
   sprintf(server_name, "napali");
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(job_id == "0.napali", job_id.c_str());
   fail_unless(created_here == 1, "");
   fail_unless(resc_access_perm == (ATR_DFLAG_USWR | ATR_DFLAG_Creat), "");
 
   strcpy(str_to_set, "tom");
   created_here = 0;
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(created_here == 1, "");
   fail_unless(job_id == "1.napali.tom", job_id.c_str());
 
   created_here = 0;
   long_to_set = 0;
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(created_here == 1, "");
   fail_unless(job_id == "2.tom", job_id.c_str());
 
   created_here = 0;
   str_to_set[0] = '\0';
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(created_here == 1, "");
   fail_unless(job_id == "3", job_id.c_str());
 
   server.sv_qs.sv_jobidnumber = PBS_SEQNUMTOP;
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(job_id == "99999999", job_id.c_str());
   
-  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "", "");
+  fail_unless(get_job_id(&preq, resc_access_perm, created_here, job_id) == PBSE_NONE, "");
   fail_unless(job_id == "0", job_id.c_str());
   }
 END_TEST

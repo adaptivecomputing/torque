@@ -123,14 +123,14 @@ START_TEST(record_node_property_list_test)
   CLEAR_HEAD(th);
 
   // empty list should do nothing
-  fail_unless(record_node_property_list(empty, &th) == PBSE_NONE, "", "");
+  fail_unless(record_node_property_list(empty, &th) == PBSE_NONE, "");
   fail_unless(attrname.size() == 0, "");
   fail_unless(attrval.size() == 0, "");
   attrlist_free();
   attrname.clear();
   attrval.clear();
 
-/*  fail_unless(record_node_property_list(props, &th) == PBSE_NONE, "", "");
+/*  fail_unless(record_node_property_list(props, &th) == PBSE_NONE, "");
   fail_unless(attrname == ATTR_NODE_properties, "");
   fail_unless(attrval == props, "");
   attrlist_free();
@@ -175,7 +175,7 @@ START_TEST(parse_node_name_test)
   sprintf(line, "napali");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, false)) != NULL);
-  fail_unless(err == PBSE_NONE, "", "");
+  fail_unless(err == PBSE_NONE, "");
   fail_unless(!strcmp(hostname, "napali"));
   
   err = PBSE_NONE;
@@ -188,7 +188,7 @@ START_TEST(parse_node_name_test)
   sprintf(line, "1214");
   ptr = line;
   fail_unless((hostname = parse_node_name(&ptr, err, 1, true)) != NULL);
-  fail_unless(err == PBSE_NONE, "", "");
+  fail_unless(err == PBSE_NONE, "");
   fail_unless(!strcmp(hostname, "1214"));
   }
 END_TEST
@@ -209,7 +209,7 @@ START_TEST(add_node_attribute_to_list_test)
   ptr = line;
 
   ret = add_node_attribute_to_list(strdup("np"), &ptr, &th, 1);
-  fail_unless(ret == PBSE_NONE, "", "");
+  fail_unless(ret == PBSE_NONE, "");
   sattr = (svrattrl *)GET_NEXT(th); 
   fail_unless(strcmp(sattr->al_name, "np") == 0, "");
   fail_unless(strcmp(sattr->al_value, "100") == 0, "");
@@ -227,7 +227,7 @@ START_TEST(add_node_attribute_to_list_test)
   // run over the two special cases
   snprintf(line, sizeof(line), "100");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE, "", "");
+  fail_unless(add_node_attribute_to_list(strdup("TTL"), &ptr, &th, 1) == PBSE_NONE, "");
   sattr = (svrattrl *)GET_NEXT(th); 
   fail_unless(strcmp(sattr->al_name, "TTL") == 0, "");
   fail_unless(strcmp(sattr->al_value, "100") == 0, "");
@@ -238,7 +238,7 @@ START_TEST(add_node_attribute_to_list_test)
   CLEAR_HEAD(th);
   snprintf(line, sizeof(line), "bob,tom");
   ptr = line;
-  fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE, "", "");
+  fail_unless(add_node_attribute_to_list(strdup("acl"), &ptr, &th, 1) == PBSE_NONE, "");
   sattr = (svrattrl *)GET_NEXT(th); 
   fail_unless(strcmp(sattr->al_name, "acl") == 0, "");
   fail_unless(strcmp(sattr->al_value, "bob,tom") == 0, "");
@@ -304,11 +304,11 @@ START_TEST(read_val_and_advance_test)
   fail_unless(read_val_and_advance(&val, &str) == PBSE_BAD_PARAMETER, "");
 
   str = strdup("64,16,16");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "");
   fail_unless(val == 64, "");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "");
   fail_unless(val == 16, "");
-  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "", "");
+  fail_unless(read_val_and_advance(&val, &str) == PBSE_NONE, "");
   fail_unless(val == 16, "");
   }
 END_TEST

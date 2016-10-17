@@ -39,7 +39,7 @@ START_TEST(dispatch_timed_task_test)
   fail_unless(dispatch_timed_task(&wt) == PBSE_SERVER_BUSY, "", "");
   
   request_pool->tp_idle_threads = 6;
-  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE, "", "");
+  fail_unless(dispatch_timed_task(&wt) == PBSE_NONE, "");
   fail_unless(wt.wt_being_recycled == TRUE, "");
   }
 END_TEST

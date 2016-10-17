@@ -82,18 +82,18 @@ START_TEST(test_mk_subdirs)
   fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // no paths defined - expect success
-  fail_unless(mk_subdirs(paths) == PBSE_NONE, "", "");
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
   fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // path defined - expect success
   fail_unless((paths[0] = strdup("./subdir")) != NULL, "");
-  fail_unless(mk_subdirs(paths) == PBSE_NONE, "", "");
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
   fail_unless(strncmp("created", global_log_ext_msg, strlen("created")) == 0, "");
 
   // path defined - expect success (no log msg since already created)
   global_log_ext_msg[0] = '\0';
   fail_unless((paths[0] = strdup("./subdir")) != NULL, "");
-  fail_unless(mk_subdirs(paths) == PBSE_NONE, "", "");
+  fail_unless(mk_subdirs(paths) == PBSE_NONE, "");
   fail_unless(global_log_ext_msg[0] == '\0', "");
 
   // clean up
@@ -109,11 +109,11 @@ START_TEST(test_pbsd_init_reque)
   evaluated = 0;
   aborted = 0;
   enque_rc = PBSE_NONE;
-  fail_unless(pbsd_init_reque(pjob, 0) == PBSE_NONE, "", "");
+  fail_unless(pbsd_init_reque(pjob, 0) == PBSE_NONE, "");
   fail_unless(evaluated == 0, "");
 
   enque_rc = PBSE_BADDEPEND;
-  fail_unless(pbsd_init_reque(pjob, 1) == PBSE_NONE, "", "");
+  fail_unless(pbsd_init_reque(pjob, 1) == PBSE_NONE, "");
   fail_unless(evaluated == 1, "");
   
   enque_rc = 10;

@@ -260,22 +260,22 @@ START_TEST(svr_setjobstate_test)
   get_jobs_queue_force_null = false;
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "", "");
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "");
   fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL, "");
 
   test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
   test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("lei/0");
   test_job.ji_wattr[JOB_ATR_checkpoint].at_val.at_str = strdup("enabled");
   test_job.ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "", "");
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE, "");
   fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL, "exec_host list got removed when it shouldn't have...");
 
   decrement_count = 0;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "", "");
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "");
   fail_unless(decrement_count == 2, "");
 
   decrement_count = 0;
-  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "", "");
+  fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE, "");
   fail_unless(decrement_count == 0, "");
   }
 END_TEST

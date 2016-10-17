@@ -394,7 +394,7 @@ START_TEST(build_request_svr_test)
   fail_unless(build_request_svr(AUTH_TYPE_IFF, NULL, 5, message) == PBSE_BAD_PARAMETER, "");
   fail_unless(build_request_svr(AUTH_TYPE_KEY, "dbeer", 5, message) == PBSE_NOT_IMPLEMENTED, "");
   fail_unless(build_request_svr(-17, "dbeer", 5, message) == PBSE_AUTH_INVALID, "");
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE, "", "");
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 6, message) == PBSE_NONE, "");
 
   char buf[1024];
   snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
@@ -407,7 +407,7 @@ START_TEST(build_request_svr_test)
     6);
   fail_unless(!strcmp(message.c_str(), buf));
   
-  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE, "", "");
+  fail_unless(build_request_svr(AUTH_TYPE_IFF, "dbeer", 7, message) == PBSE_NONE, "");
   snprintf(buf, sizeof(buf), "+%d+%d2+%d%d+%ddbeer%d+%d+0",
     PBS_BATCH_PROT_TYPE,
     PBS_BATCH_PROT_VER,
@@ -424,9 +424,9 @@ START_TEST(build_active_server_response_test)
   {
   std::string message;
   set_active_pbs_server("", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE, "", "");
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
   set_active_pbs_server("napali", 15001);
-  fail_unless(build_active_server_response(message) == PBSE_NONE, "", "");
+  fail_unless(build_active_server_response(message) == PBSE_NONE, "");
   fail_unless(!strcmp(message.c_str(), "0|6|napali|15001|"));
   }
 END_TEST
@@ -462,7 +462,7 @@ START_TEST(test_validate_user)
   getpwuid_success = true;
   
   rc = validate_user(10, "eris", 1, msg);
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   // send in a NULL name 
   rc = validate_user(10, NULL, 1, msg);

@@ -178,15 +178,15 @@ START_TEST(test_parse_integer_range)
   int start;
   int end;
 
-  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE, "", "");
+  fail_unless(parse_integer_range("0", start, end) == PBSE_NONE, "");
   fail_unless(start == end, "");
   fail_unless(start == 0, "");
 
-  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE, "", "");
+  fail_unless(parse_integer_range("0-2", start, end) == PBSE_NONE, "");
   fail_unless(end == 2, "");
   fail_unless(start == 0, "");
 
-  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE, "", "");
+  fail_unless(parse_integer_range("2-4", start, end) == PBSE_NONE, "");
   fail_unless(end == 4, "");
   fail_unless(start == 2, "");
 

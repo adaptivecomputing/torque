@@ -31,10 +31,10 @@ START_TEST(test_set_get_value)
   {
   complete_req c;
 
-  fail_unless(c.set_value(1, "task_count", "5", false) == PBSE_NONE, "", "");
-  fail_unless(c.set_value(0, "task_count", "4", false) == PBSE_NONE, "", "");
-  fail_unless(c.set_value(0, "lprocs", "4", false) == PBSE_NONE, "", "");
-  fail_unless(c.set_value(1, "gpus", "2", false) == PBSE_NONE, "", "");
+  fail_unless(c.set_value(1, "task_count", "5", false) == PBSE_NONE, "");
+  fail_unless(c.set_value(0, "task_count", "4", false) == PBSE_NONE, "");
+  fail_unless(c.set_value(0, "lprocs", "4", false) == PBSE_NONE, "");
+  fail_unless(c.set_value(1, "gpus", "2", false) == PBSE_NONE, "");
   fail_unless(c.set_value(-1, "blah", "blah", false) == PBSE_BAD_PARAMETER, "");
   fail_unless(c.req_count() == 2, "");
 
@@ -267,13 +267,13 @@ START_TEST(test_update_hostlist)
   c.add_req(r1);
 
   fail_unless(c.update_hostlist("napali:ppn=6", 1) != PBSE_NONE, "");
-  fail_unless(c.update_hostlist("napali:ppn=6", 0) == PBSE_NONE, "", "");
+  fail_unless(c.update_hostlist("napali:ppn=6", 0) == PBSE_NONE, "");
 
   c.add_req(r2);
 
   fail_unless(c.update_hostlist("waimea:ppn=4", -1) != PBSE_NONE, "");
   fail_unless(c.update_hostlist("waimea:ppn=4", 2) != PBSE_NONE, "");
-  fail_unless(c.update_hostlist("waimea:ppn=4", 1) == PBSE_NONE, "", "");
+  fail_unless(c.update_hostlist("waimea:ppn=4", 1) == PBSE_NONE, "");
 
   std::vector<std::string> list;
   req &r = c.get_req(0);

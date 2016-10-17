@@ -98,7 +98,7 @@ START_TEST(set_array_depend_holds_test)
   strcpy(preq->rq_ind.rq_register.rq_svr, host);
 
   CLEAR_HEAD(pa->ai_qs.deps);
-  fail_unless(register_array_depend(pa, preq, JOB_DEPEND_TYPE_AFTEROKARRAY, 10) == PBSE_NONE, "", "");
+  fail_unless(register_array_depend(pa, preq, JOB_DEPEND_TYPE_AFTEROKARRAY, 10) == PBSE_NONE, "");
   pa->ai_qs.num_successful = 12;
   fail_unless(set_array_depend_holds(pa) == true, "");
   }
@@ -438,16 +438,16 @@ START_TEST(req_register_test)
   fail_unless(req_register(preq) == PBSE_IVALREQ, "", "");
 
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_REGISTER;
-  fail_unless(req_register(preq) == PBSE_NONE, "", "");
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_RELEASE;
-  fail_unless(req_register(preq) == PBSE_NONE, "", "");
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_DELETE;
-  fail_unless(req_register(preq) == PBSE_NONE, "", "");
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   
   preq->rq_ind.rq_register.rq_op = JOB_DEPEND_OP_UNREG;
-  fail_unless(req_register(preq) == PBSE_NONE, "", "");
+  fail_unless(req_register(preq) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -602,7 +602,7 @@ START_TEST(register_dependency_test)
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
 
-  fail_unless(register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_AFTERSTART) == PBSE_NONE, "", "");
+  fail_unless(register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_AFTERSTART) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -627,7 +627,7 @@ START_TEST(release_before_dependency_test)
   make_dependjob(pdep, job1);
   register_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK);
 
-  fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_NONE, "", "");
+  fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_NONE, "");
   fail_unless(release_before_dependency(&preq, &pjob, JOB_DEPEND_TYPE_BEFOREOK) == PBSE_IVALREQ, "");
   }
 END_TEST
@@ -651,7 +651,7 @@ START_TEST(release_syncwith_dependency_test)
   make_dependjob(pdep, job1);
   pdep->dp_released = 0;
   
-  fail_unless(release_syncwith_dependency(&preq, &pjob) == PBSE_NONE, "", "");
+  fail_unless(release_syncwith_dependency(&preq, &pjob) == PBSE_NONE, "");
   }
 END_TEST
 
@@ -712,10 +712,10 @@ START_TEST(delete_dependency_job_test)
   fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_IVALREQ, "");
   strcpy(preq.rq_ind.rq_register.rq_child, job2);
   pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
-  fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE, "", "");
+  fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE, "");
   fail_unless(pjob != NULL, "");
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-  fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE, "", "");
+  fail_unless(delete_dependency_job(&preq, &pjob) == PBSE_NONE, "");
   fail_unless(pjob == NULL, "");
   }
 END_TEST

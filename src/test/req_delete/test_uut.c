@@ -79,11 +79,11 @@ START_TEST(test_handle_single_delete)
   {
   batch_request *preq = (batch_request *)calloc(1,sizeof(batch_request));
   strcpy(preq->rq_ind.rq_delete.rq_objname, "2.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE, "", "");
+  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE, "");
   fail_unless(preq->rq_noreply == FALSE, "");
 
   strcpy(preq->rq_ind.rq_delete.rq_objname, "1.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE, "", "");
+  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE, "");
   fail_unless(preq->rq_noreply == TRUE, "");
   }
 END_TEST
@@ -93,7 +93,7 @@ START_TEST(test_handle_delete_all)
   batch_request preq;
   memset(&preq, 0, sizeof(preq));
 
-  fail_unless(handle_delete_all(&preq, &preq, NULL) == PBSE_NONE, "", "");
+  fail_unless(handle_delete_all(&preq, &preq, NULL) == PBSE_NONE, "");
   fail_unless(preq.rq_noreply == TRUE, "");
   }
 END_TEST
@@ -164,7 +164,7 @@ START_TEST(test_forced_jobpurge)
   fail_unless(forced_jobpurge(pjob, preq) == PURGE_SUCCESS);
  
   preq->rq_extend = NULL;
-  fail_unless(forced_jobpurge(pjob, preq) == PBSE_NONE, "", "");
+  fail_unless(forced_jobpurge(pjob, preq) == PBSE_NONE, "");
 
   nanny = 1;
   }
@@ -258,13 +258,13 @@ START_TEST(test_apply_job_delete_nanny)
 
   fail_unless(apply_job_delete_nanny(pjob, -1) == -1);
   fail_unless(pjob->ji_has_delete_nanny == FALSE, "");
-  fail_unless(apply_job_delete_nanny(pjob, 0) == PBSE_NONE, "", "");
+  fail_unless(apply_job_delete_nanny(pjob, 0) == PBSE_NONE, "");
   fail_unless(pjob->ji_has_delete_nanny == TRUE, "");
   pjob->ji_has_delete_nanny = FALSE;
-  fail_unless(apply_job_delete_nanny(pjob, 10) == PBSE_NONE, "", "");
+  fail_unless(apply_job_delete_nanny(pjob, 10) == PBSE_NONE, "");
   fail_unless(pjob->ji_has_delete_nanny == TRUE, "");
 
-  fail_unless(apply_job_delete_nanny(pjob, 1) == PBSE_NONE, "", "");
+  fail_unless(apply_job_delete_nanny(pjob, 1) == PBSE_NONE, "");
   }
 END_TEST 
 
@@ -285,31 +285,31 @@ START_TEST(test_delete_inactive_job)
   fail_unless(delete_inactive_job((job **)NULL, NULL) == PBSE_BAD_PARAMETER, "");
   
   keep_seconds = 10;
-  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE, "");
 
   pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
   bad_queue = 1;
-  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE, "");
   bad_queue = 0;
 
   pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
-  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING, "");
   fail_unless(pjob->ji_momhandle = -1, "");
 
   pjob = (job *)calloc(1, sizeof(job));
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
-  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob == NULL, "");
 
   pjob = (job *)calloc(1, sizeof(job));
   bad_relay = 1;
   pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
-  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob == NULL, "");
   bad_relay = 0;
   }

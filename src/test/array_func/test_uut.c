@@ -132,7 +132,7 @@ START_TEST(update_slot_values_test)
   unlocked = 0;
 
   // Make sure the counts are corrected after calling update_slot_values()
-  fail_unless(update_slot_values(pa, 0, 1, pjob, candidates) == PBSE_NONE, "", "");
+  fail_unless(update_slot_values(pa, 0, 1, pjob, candidates) == PBSE_NONE, "");
   fail_unless(pa->ai_qs.jobs_running == 0, "");
   fail_unless(unlocked == 1, "");
   }

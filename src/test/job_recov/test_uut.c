@@ -141,7 +141,7 @@ START_TEST(test_set_array_jobs_ids)
   init();
 
   sprintf(pjob->ji_qs.ji_jobid, "4[21].napali");
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE, "", "");
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE, "");
 
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;

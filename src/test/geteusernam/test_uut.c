@@ -43,13 +43,13 @@ START_TEST(test_node_exception_check)
   pattr.at_val.at_arst = arst;
 
   // FREE shouldn't do any checking
-  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_FREE) == PBSE_NONE, "", "");
+  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_FREE) == PBSE_NONE, "");
   // waimea is set to not exist, so we should error
   fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_UNKNODE, "");
  
   // make it so waimea isn't seen and we should succeed
   arst->as_usedptr = 1;
-  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_NONE, "", "");
+  fail_unless(node_exception_check(&pattr, &pattr, ATR_ACTION_NEW) == PBSE_NONE, "");
   }
 END_TEST
 

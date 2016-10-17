@@ -13,11 +13,11 @@ START_TEST(test_release_job)
   batch_request  preq;
 
   pjob->ji_qs.ji_state = JOB_STATE_EXITING;
-  fail_unless(release_job(&preq, pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(release_job(&preq, pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING, "");
 
   pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-  fail_unless(release_job(&preq, pjob, NULL) == PBSE_NONE, "", "");
+  fail_unless(release_job(&preq, pjob, NULL) == PBSE_NONE, "");
   fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE, "");
   }
 END_TEST

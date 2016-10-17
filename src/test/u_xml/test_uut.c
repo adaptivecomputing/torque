@@ -19,9 +19,9 @@ START_TEST(test_one)
   fail_unless(escape_xml(NULL,NULL,sizeof(out)) == BUFFER_OVERFLOW);
   fail_unless(escape_xml(in,NULL,sizeof(out)) == BUFFER_OVERFLOW);
   fail_unless(escape_xml(in,shrt,sizeof(shrt)) == BUFFER_OVERFLOW);
-  fail_unless(escape_xml(in,out,sizeof(out)) == PBSE_NONE, "", "");
+  fail_unless(escape_xml(in,out,sizeof(out)) == PBSE_NONE, "");
   fail_unless(unescape_xml(out,shrt,sizeof(shrt)) == BUFFER_OVERFLOW);
-  fail_unless(unescape_xml(out,final,sizeof(final)) == PBSE_NONE, "", "");
+  fail_unless(unescape_xml(out,final,sizeof(final)) == PBSE_NONE, "");
   fail_unless(strcmp(in,final) == 0, "");
 
 

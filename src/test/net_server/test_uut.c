@@ -80,7 +80,7 @@ START_TEST(test_ping_trqauthd)
   unix_domain_file_name = "./unit_test";
   unlink(unix_domain_file_name.c_str());
   rc = ping_trqauthd(unix_domain_file_name.c_str());
-  fail_unless(rc == PBSE_NONE, "", "");
+  fail_unless(rc == PBSE_NONE, "");
 
   unix_socket_success = false;
   rc = ping_trqauthd(unix_domain_file_name.c_str());

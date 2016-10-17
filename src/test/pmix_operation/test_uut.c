@@ -120,7 +120,7 @@ START_TEST(test_constructors)
   one.set_id(2);
   existing_connections[1] = conn;
   existing_connections[2] = one;
-  fail_unless(clean_up_connection(pjob, NULL, 1, false) == PBSE_NONE, "", "");
+  fail_unless(clean_up_connection(pjob, NULL, 1, false) == PBSE_NONE, "");
   fail_unless(notified == 0, ""); // I passed false to MS, so I shouldn't notify anyone
   fail_unless(killed_task == 1, "Killed task = %d", killed_task);
   fail_unless(clean_up_connection(pjob, NULL, 1, true) == -1);
