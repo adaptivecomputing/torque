@@ -19,8 +19,12 @@ install-exec-hook:
 	      $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/trqauthd.service $(DESTDIR)/usr/lib/systemd/system/trqauthd.service; \
 	    fi \
 	  elif [ -f $(top_srcdir)/contrib/init.d/trqauthd ]; then \
-	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/trqauthd $(DESTDIR)/etc/init.d/trqauthd"; \
-	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/trqauthd $(DESTDIR)/etc/init.d/trqauthd; \
+	    prefix=''; \
+            if [ "`$(top_srcdir)/buildutils/determine.distro`" = sles ]; then \
+	      prefix=suse. ; \
+	    fi; \
+	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}trqauthd $(DESTDIR)/etc/init.d/trqauthd"; \
+	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}trqauthd $(DESTDIR)/etc/init.d/trqauthd; \
 	  fi; \
 	  $(install_sh) -d -m 755 $(DESTDIR)/etc/ld.so.conf.d || :; \
 	  if [ ! -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \

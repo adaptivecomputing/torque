@@ -28,6 +28,7 @@ EXTRA_DIST = acinclude.m4 \
 	torque.setup \
 	torque.spec \
 	buildutils/config.mk \
+	buildutils/determine.distro \
 	buildutils/modulefiles.in \
 	buildutils/modulefiles.vers.in \
 	buildutils/pbs_mach_type \

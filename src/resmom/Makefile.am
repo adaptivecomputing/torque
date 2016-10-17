@@ -79,8 +79,12 @@ install-exec-hook:
 	      $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_mom.service $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service; \
 	    fi \
 	  elif [ -f $(top_srcdir)/contrib/init.d/pbs_mom ]; then \
-	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom"; \
-	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_mom $(DESTDIR)/etc/init.d/pbs_mom; \
+	    prefix=''; \
+            if [ "`$(top_srcdir)/buildutils/determine.distro`" = sles ]; then \
+	      prefix=suse. ; \
+	    fi; \
+	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_mom $(DESTDIR)/etc/init.d/pbs_mom"; \
+	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_mom $(DESTDIR)/etc/init.d/pbs_mom; \
 	  fi; \
 	  $(install_sh) -d -m 755 $(DESTDIR)/etc/ld.so.conf.d || :; \
 	  if [ ! -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \

@@ -59,10 +59,14 @@ install-exec-hook:
             if [ -f $(top_srcdir)/contrib/systemd/pbs_server.service ]; then \
 	      echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service"; \
 	      $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service; \
-	    fi \
+	    fi; \
 	  elif [ -f $(top_srcdir)/contrib/init.d/pbs_server ]; then \
-	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server"; \
-	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/pbs_server $(DESTDIR)/etc/init.d/pbs_server; \
+	    prefix=''; \
+            if [ "`$(top_srcdir)/buildutils/determine.distro`" = sles ]; then \
+	      prefix=suse. ; \
+	    fi; \
+	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_server $(DESTDIR)/etc/init.d/pbs_server"; \
+	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_server $(DESTDIR)/etc/init.d/pbs_server; \
 	  fi; \
 	fi
 
