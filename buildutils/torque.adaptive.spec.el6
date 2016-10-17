@@ -595,7 +595,7 @@ done
 ## Configuration
 echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/server_priv/nodes
-echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
+echo '$logevent 225 # bitmap of which events to log' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
 %{__mkdir_p} %{buildroot}/etc/profile.d
