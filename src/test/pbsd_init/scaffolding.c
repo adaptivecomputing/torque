@@ -803,11 +803,6 @@ bool task_hosts_match(const char *one, const char *two)
   }
   
 
-#include "../../lib/Libutils/numa_pci_device.cpp"
-#include "../../lib/Libutils/numa_socket.cpp"
-#include "../../lib/Libutils/numa_chip.cpp"
-#include "../../lib/Libutils/numa_core.cpp"
-#include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
 
@@ -854,6 +849,89 @@ void Machine::free_job_allocation(const char *jobid)
   {
   freed_job_allocation++;
   }
+
+const int exclusive_none   = 0;
+const int exclusive_node   = 1;
+const int exclusive_socket = 2;
+const int exclusive_chip   = 3;
+const int exclusive_core   = 4;
+const int exclusive_thread = 5;
+const int exclusive_legacy = 6; /* for the -l resource request. Direct pbs_server to allocate cores only */
+const int exclusive_legacy2 = 7; /* for the -l resource request. Direct pbs_server to allocate cores and threads */
+
+void allocation::get_stats_used(
+
+  unsigned long &cput_used, 
+  unsigned long long &memory_used)
+
+  {
+  }
+
+void allocation::initialize_from_string(
+
+  const std::string &task_info)
+
+  {
+  }
+
+void allocation::get_task_host_name(
+
+  std::string &host)
+
+  {
+  }
+
+allocation::allocation(const allocation &other) {}
+
+allocation &allocation::operator =(const allocation &other) 
+  
+  {
+  return(*this);
+  }
+
+void allocation::set_task_usage_stats(
+
+  unsigned long      cput_used,
+  unsigned long long mem_used)
+
+  {
+  }
+
+allocation::allocation() {}
+
+void allocation::write_task_information(
+
+  std::string &task_info) const
+
+  {
+  }
+
+void allocation::set_memory_used(
+
+  const unsigned long long mem_used)
+
+  {
+  }
+
+void allocation::set_cput_used(
+
+  const unsigned long cput_used)
+
+  {
+  }
+
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+
+Socket::Socket() {}
+Socket::~Socket() {}
+
+Chip::Chip() {}
+Chip::~Chip() {}
+
+Core::Core() {}
+Core::~Core() {}
+
 #endif
 
 #ifdef MIC

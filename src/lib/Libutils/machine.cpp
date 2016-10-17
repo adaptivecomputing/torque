@@ -24,6 +24,7 @@
 #include "log.h"
 #include "complete_req.hpp"
 #include "utils.h"
+#include "numa_constants.h"
 
 using namespace std;
 
@@ -156,24 +157,17 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const std::string        &json_layout,
+  const Json::Value &layout,
   std::vector<std::string> &valid_ids)
 
   {
-  const char *socket_str = "\"socket\":{";
-  std::size_t socket_begin = json_layout.find(socket_str);
-
-  while (socket_begin != std::string::npos)
+  for (int i = 0 ; i < layout[NODE].size();i++)
     {
-    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
-    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
-
-    Socket s(one_socket, valid_ids);
+    Socket s(layout[NODE][i][SOCKET], valid_ids);
     this->sockets.push_back(s);
     this->totalSockets++;
-
-    socket_begin = next;
     }
+ 
 
   update_internal_counts();
   this->initialized = true;
@@ -243,7 +237,10 @@ Machine::Machine(const std::string &json_layout,
                                                         NVIDIA_device(), allocations()
 
   {
-  this->initialize_from_json(json_layout, valid_ids);
+  Json::Reader read;
+  Json::Value root;
+  read.parse(json_layout.c_str(), root );
+  this->initialize_from_json(root, valid_ids);
   } // END json constructor
 
 
@@ -497,16 +494,13 @@ void Machine::displayAsJson(
   bool          include_jobs) const
 
   {
-  out << "{\"node\":{";
-
+  Json::Value node;
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
-    if (i > 0)
-      out << ",";
-    this->sockets[i].displayAsJson(out, include_jobs);
+    this->sockets[i].displayAsJson(node[NODE][i][SOCKET], include_jobs);
     }
-
-  out << "}}";
+  
+  out << node;
   }
 
 int Machine::getHardwareStyle() const

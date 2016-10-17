@@ -4,6 +4,8 @@
 #include "log.h"
 #include "pbs_error.h"
 #include "machine.hpp"
+#include "json/json.h"
+#include "numa_constants.h"
 
 const char  *use_cores = "usecores";
 std::string  my_placement_type;
@@ -21,6 +23,8 @@ const char *place_core = "core";
 const char *place_thread = "thread";
 const char *place_legacy = "legacy";
 const char *place_legacy2 = "legacy2";
+Json::Value alloc_json;
+std::stringstream Json_as_stream;
 
 void log_err(int errnum, const char *routine, const char *text)
   {
@@ -172,9 +176,9 @@ int req::set_value(const char *name, const char *value, bool is_default)
     this->execution_slots = atoi(value);
   else if (!strcmp(name, "memory"))
     this->mem = atoi(value);
-  else if (!strcmp(name, "gpus"))
+  else if (!strcmp(name, GPUS))
     this->gpus = atoi(value);
-  else if (!strcmp(name, "mics"))
+  else if (!strcmp(name, MICS))
     this->mics = atoi(value);
 
   return(0);
@@ -216,3 +220,120 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   return(0);
   }
 #endif
+
+void setAllocJson(int test_num)
+  {
+  alloc_json = Json::nullValue;
+  if(test_num == 1)//test_initialize_allocation's configuration
+    {
+    alloc_json[JOBID] = "666979[0].mgr.bwfor.privat";
+    alloc_json[CPUS] = "0";
+    alloc_json[MEM] = "4203424";
+    alloc_json[EXCLUSIVE] = 0;
+    alloc_json[CORES_ONLY] = 0;  
+    return;
+    }
+  
+  //the next few tests have similar setups
+  //so create test_spread_place_threads config
+  //and use if statements to modify the Json for the specific tests
+  if(test_num < 5)//after test 4 the string changes significantly
+    {
+    alloc_json[OS_INDEX] = 0;
+    alloc_json[CORES] = "0-15";
+    alloc_json[THREADS] = "16-31";
+    alloc_json[MEM] = "6";
+    alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "1.napali";
+    alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "16";
+    alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] = "0";
+    alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
+    alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
+   
+    
+    if(test_num == 2)//test_spread_place_threads's configuration is the previous Json statments
+      {
+      return;
+      }
+  
+    if(test_num == 3)//test_spread_place_cores' configuration
+      {
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "1";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 1;
+      return;
+      }
+    if(test_num == 4)//test_spread_place's configuration
+      {
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0,4,8,12";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 3;
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 1;
+      return;
+      }
+    }//end test_num <5
+
+  //The next 3 configurations(5-7) are from test_json_constructor
+  if(test_num < 8)
+    {
+    alloc_json[OS_INDEX] = 0;
+    alloc_json[CORES] = "0-15";
+    alloc_json[THREADS] = "16-31";
+    alloc_json[MEM] = "1024";
+    alloc_json[GPUS] = "0-1";
+    alloc_json[MICS] = "2-3";
+    
+    if(test_num == 5)//j4's config
+      {
+      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0-3,16-19";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] ="0";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
+      alloc_json[ALLOCATIONS][0][ALLOCATION][GPUS] = "0-1";
+
+      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "4-15";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "0";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 1;
+      alloc_json[ALLOCATIONS][1][ALLOCATION][MICS] = "2-3";
+      return;
+      }
+    if(test_num == 6)//j6's config
+      {
+      for(int i = 0; i < 4; i++)
+        {
+        alloc_json[ALLOCATIONS][i][ALLOCATION][EXCLUSIVE] = 0;
+        alloc_json[ALLOCATIONS][i][ALLOCATION][CORES_ONLY] = 0;
+        }      
+      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] = "10";
+      
+      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "0";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "10";
+
+      alloc_json[ALLOCATIONS][2][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[ALLOCATIONS][2][ALLOCATION][CPUS] = "5";
+      alloc_json[ALLOCATIONS][2][ALLOCATION][MEM] = "10";
+      
+      alloc_json[ALLOCATIONS][3][ALLOCATION][JOBID] = "2.napali";
+      alloc_json[ALLOCATIONS][3][ALLOCATION][CPUS] = "6-7";
+      alloc_json[ALLOCATIONS][3][ALLOCATION][MEM] = "1000";
+      return;
+      }
+    if(test_num == 7)
+      {
+      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] = "10";
+      alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
+      
+      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "2.napali";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "6-7";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "1000";
+      alloc_json[ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 0;
+      }
+    }//end if test_num < 8
+  }
