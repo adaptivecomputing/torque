@@ -67,7 +67,7 @@
   then \
       CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
   fi \
-  if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \                                                            
+  if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \
   then \
       CONFFLAGS="${CONFFLAGS} %{_cgroupsopt}" \
   fi \
