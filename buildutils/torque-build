@@ -222,7 +222,10 @@ echo "Started ${0}, version ${version}, release ${release}." \
 
 if [ $cgroups -ne 0 ]
 then
+  cgroupsopts="--enable-cgroups"
   configure_options="$configure_options --enable-cgroups --with-hwloc-path=$hwloc_path"
+else
+  cgroupsopts="--disable-cgroups"
 fi
 
 # set so child makefiles know this
@@ -339,6 +342,7 @@ then
         --define "_specdir ${root_path}/buildutils/rpmbuild/SPECS" \
         --define "_tmppath ${root_path}/buildutils/rpmbuild/tmp" \
         --define "_hwlocpath $hwloc_path" \
+        --define "_cgroupsopt ${cgroupsopts}" \
         --define "version ${version}" \
         --define "release ${release}.${distro}" \
         --define "source_file ${source_file}" \
