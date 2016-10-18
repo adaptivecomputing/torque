@@ -67,6 +67,10 @@
   then \
       CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
   fi \
+  if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \
+  then \
+      CONFFLAGS="${CONFFLAGS} %{_cgroupsopt}" \
+  fi \
   if grep -q  -- '--oldincludedir' "${CONFFLAGS_FILE}" \
   then \
       CONFFLAGS="${CONFFLAGS} --oldincludedir=%{_oldincludedir}" \
@@ -454,9 +458,6 @@ Obsoletes:  %{community_client_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
 Provides:   %{community_client_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_client_pkg}(x86-64) < %{version}-%{release}
-%endif
-%if %{with cgroups}
-Requires: %{breq_cgroups}
 %endif
 Provides:   %{community_top_pkg}-docs = %{version}-%{release}
 Obsoletes:  %{community_top_pkg}-docs < %{version}-%{release}
