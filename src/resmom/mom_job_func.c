@@ -316,7 +316,7 @@ int remtree(
         {
         sprintf(log_buffer, "unlink failed on %s", namebuf);
         log_err(errno, __func__, log_buffer);
-        
+
         rtnv = -1;
         }
       else if (LOGLEVEL >= 7)
@@ -383,7 +383,7 @@ int conn_qsub(
 
   {
   pbs_net_t hostaddr;
-  
+
   int       s;
   int       local_errno = 0;
   int flags;
@@ -515,7 +515,7 @@ void deregister_jobs_nspace(
   if (pos != std::string::npos)
     nspace.erase(pos);
 
-  PMIx_server_deregister_nspace(nspace.c_str(), NULL, NULL);
+  PMIx_server_deregister_nspace(nspace.c_str());
 
   if (LOGLEVEL >= 6)
     {
@@ -695,18 +695,18 @@ void remove_tmpdir_file(
           sprintf(log_buffer, "remtree failed: %s", strerror(errno));
           log_err(errno, __func__, log_buffer);
           }
-        
+
         setuid_ext(pbsuser, TRUE);
         setegid(pbsgroup);
         }
-      
-      if ((rc != 0) && 
+
+      if ((rc != 0) &&
           (LOGLEVEL >= 5))
         {
         sprintf(log_buffer,
           "recursive remove of job transient tmpdir %s failed",
           namebuf);
-        
+
         log_err(errno, "recursive (r)rmdir", log_buffer);
         }
       }
@@ -728,8 +728,8 @@ void *delete_job_files(
 
   if (thread_unlink_calls == true)
     {
-    /* this algorithm needs to make sure the 
-       thread for delete_job_files posts to the 
+    /* this algorithm needs to make sure the
+       thread for delete_job_files posts to the
        semaphore before it tries to lock the
        delete_job_files_mutex. posting to delete_job_files_sem
        lets other processes know there are threads still
@@ -740,7 +740,7 @@ void *delete_job_files(
       {
       log_err(-1, __func__, "failed to post delete_job_files_sem");
       }
-    
+
     pthread_mutex_lock(&delete_job_files_mutex);
     }
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -762,10 +762,10 @@ void *delete_job_files(
   /* delete the node file and gpu file */
   sprintf(namebuf,"%s/%s", path_aux, jfdi->jobid);
   unlink_ext(namebuf);
-  
+
   sprintf(namebuf, "%s/%sgpu", path_aux, jfdi->jobid);
   unlink_ext(namebuf);
-  
+
   sprintf(namebuf, "%s/%smic", path_aux, jfdi->jobid);
   unlink_ext(namebuf);
 
@@ -852,9 +852,9 @@ void *delete_job_files(
 
   if (thread_unlink_calls == true)
     {
-    /* decrement the delte_job_files_sem so 
+    /* decrement the delte_job_files_sem so
        other threads know this job is done
-       cleaning up 
+       cleaning up
      */
     sem_wait(delete_job_files_sem);
     pthread_mutex_unlock(&delete_job_files_mutex);
@@ -906,7 +906,7 @@ void remove_from_exiting_list(
       exiting_job_list.erase(exiting_job_list.begin() + i);
       break;
       }
-    } 
+    }
   } /* END remove_from_exiting_list() */
 
 
@@ -1102,7 +1102,7 @@ job *mom_find_job(
     if ((pos = jid.find_last_of('.')) != std::string::npos)
       {
       jid.erase(pos);
-     
+
       pj = mom_find_job_by_raw_string(jid);
       }
     }
@@ -1163,7 +1163,7 @@ bool am_i_mother_superior(
 
   {
   bool mother_superior = ((pjob.ji_nodeid == 0) && ((pjob.ji_qs.ji_svrflags & JOB_SVFLG_HERE) != 0));
-    
+
   return(mother_superior);
   }
 
@@ -1211,6 +1211,24 @@ void free_info_array(
 
 uint32_t local_arch = 0xFFFFFFFF;
 
+/* RHC: The register_nspace function is non-blocking and
+ * you have to wait for it to complete before moving on.
+ * The register_client function is also non-blocking and
+ * also must complete before you start to launch local
+ * procs, but it can run in parallel with the register_nspace
+ * function as the two are separate. So you may need a struct
+ * that contains whatever info you need to free in addition
+ * to a volatile flag to tell you when the function is complete */
+static void fincb(
+
+  pmix_status_t status,
+  void          *cbdata)
+
+  {
+  volatile bool *active = (volatile bool*)cbdata;
+  *active = false;
+  }
+
 void register_jobs_nspace(
 
   job        *pjob,
@@ -1226,8 +1244,9 @@ void register_jobs_nspace(
   std::string       node_list;
   pmix_status_t     rc;
   std::string       pmix_jobid(pjob->ji_qs.ji_jobid);
- 
-  // Get some needed info about ranks / local execution slots 
+  volatile bool     active;
+
+  // Get some needed info about ranks / local execution slots
   for (int i = 0; i < pjob->ji_numvnod; i++)
     {
     if (prev_index != pjob->ji_vnods[i].vn_host->hn_node)
@@ -1275,7 +1294,7 @@ void register_jobs_nspace(
   strcpy(pmi_array[attr_index].key, PMIX_JOB_SIZE);
   pmi_array[attr_index].value.type = PMIX_UINT32;
   pmi_array[attr_index].value.data.uint32 = pjob->ji_numvnod;
-  
+
   // Max procs for the job is also the same
   attr_index++;
   strcpy(pmi_array[attr_index].key, PMIX_MAX_PROCS);
@@ -1287,7 +1306,7 @@ void register_jobs_nspace(
   strcpy(pmi_array[attr_index].key, PMIX_NODE_SIZE);
   pmi_array[attr_index].value.type = PMIX_UINT32;
   pmi_array[attr_index].value.data.uint32 = es;
-  
+
   // Local size is the same as the number for this node
   attr_index++;
   strcpy(pmi_array[attr_index].key, PMIX_LOCAL_SIZE);
@@ -1342,7 +1361,7 @@ void register_jobs_nspace(
     std::string range;
     std::string cpu_list(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
     find_range_in_cpuset_string(cpu_list, range);
-  
+
     attr_index++;
     strcpy(pmi_array[attr_index].key, PMIX_CPUSET);
     pmi_array[attr_index].value.type = PMIX_STRING;
@@ -1396,6 +1415,9 @@ void register_jobs_nspace(
   if (pos != std::string::npos)
     pmix_jobid.erase(pos);
 
+  /* RHC: You can wait here for this function to complete,
+   * or you can put a wait at the end of this entire function
+   * as I have shown below */
   if ((rc = PMIx_server_register_nspace(pmix_jobid.c_str(),
                               es,
                               pmi_array,
@@ -1410,7 +1432,7 @@ void register_jobs_nspace(
       PMIx_Error_string(rc));
     log_err(-1, __func__, log_buffer);*/
     }
-  else 
+  else
     {
     if (LOGLEVEL >= 3)
       {
@@ -1425,6 +1447,10 @@ void register_jobs_nspace(
     strcpy(p.nspace, pmix_jobid.c_str());
     p.rank = 0;
 
+    /* RHC: I would advise not waiting for this function to complete on
+     * each local client as that would be unnecessarily slow. I would instead
+     * suggest just adding a wait at the end of the entire procedure, as
+     * illustrated below */
     rc = PMIx_server_register_client(&p,
                                      pjob->ji_qs.ji_un.ji_momt.ji_exuid,
                                      pjob->ji_qs.ji_un.ji_momt.ji_exgid,
@@ -1448,8 +1474,12 @@ void register_jobs_nspace(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
-  
+
   // Peer-level information - do we provide this at this time?
+
+  /* RHC: Yes, you need to provide this info for every process in the
+   * job or we will hang */
+
   // rank
   // appnum
   // application leader
@@ -1462,6 +1492,11 @@ void register_jobs_nspace(
   // cpuset for process
   // spawned - true if launched via a dynamic spawn
   // temporary dir for this process
+
+  active = true;
+  while (active) {
+    usleep(10);
+  }
 
   } // END register_jobs_nspace()
 
