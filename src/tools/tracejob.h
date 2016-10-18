@@ -82,7 +82,7 @@
 #define TRACEJOB_H
 
 #include <time.h> /* time_t, struct tm */
-#include <stdio.h> /* FILE */
+#include <zlib.h>
 
 /* Symbolic constants */
 
@@ -138,7 +138,6 @@ enum field
   };
 
 /* A PBS log entry */
-
 struct log_entry
   {
   char *date;           /* date of log entry */
@@ -156,15 +155,31 @@ unsigned no_print:
   /* A=accounting S=server M=Mom L=Scheduler */
   };
 
+/* path from pbs home to the log files */
+const char *mid_path[] =
+  {
+  "server_priv/accounting",
+  "server_logs",
+  "mom_logs",
+  "sched_logs"
+  };
+
+struct log_array
+  {
+  struct log_entry *log_lines;
+  unsigned int ll_cur_amm;
+  unsigned int ll_max_amm;
+  };
+
 /* prototypes */
 int sort_by_date(const void *v1, const void *v2);
-int parse_log(FILE *, char *, int);
+int parse_log(gzFile *, char *, int, struct log_array *);
 char *strip_path(char *path);
 void free_log_entry(struct log_entry *lg);
 void line_wrap(char *line, int start, int end);
 int  log_path(char *path, int index, struct tm *tm_ptr, char *filenames[]);
-void alloc_more_space();
-void filter_excess(int threshold);
+void alloc_more_space(struct log_array *);
+void filter_excess(int threshold, struct log_array *);
 int sort_by_message(const void *v1, const void *v2);
 int get_cols(void);
 
