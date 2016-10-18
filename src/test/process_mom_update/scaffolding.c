@@ -565,8 +565,6 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   }
 #endif
 
-
-#ifdef PENABLE_LINUX_CGROUPS
 const int exclusive_none   = 0;
 const int exclusive_node   = 1;
 const int exclusive_socket = 2;
@@ -637,6 +635,9 @@ void allocation::set_cput_used(
   {
   }
 
+
+
+#ifdef PENABLE_LINUX_CGROUPS
 PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device() {}
 

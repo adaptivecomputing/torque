@@ -816,40 +816,6 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
 
 #endif
 
-#ifdef PENABLE_LINUX_CGROUPS
-Machine::Machine() {}
-Machine::~Machine() {}
-
-void Machine::reinitialize_from_json(const std::string &layout, std::vector<std::string> &valid_ids)
-  {
-  }
-
-Machine::Machine(const std::string &layout, std::vector<std::string> &valid_ids) {}
-
-bool Machine::is_initialized() const
-  {
-  return(true);
-  }
-
-int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
-  {
-  return(0);
-  }
-
-void save_node_usage(pbsnode *pnode) {}
-    
-void Machine::populate_job_ids(std::vector<std::string> &job_ids) const
-  {
-  job_ids.push_back("1.napali");
-  job_ids.push_back("2.napali");
-  job_ids.push_back("3.napali");
-  }
-    
-void Machine::free_job_allocation(const char *jobid)
-  {
-  freed_job_allocation++;
-  }
-
 const int exclusive_none   = 0;
 const int exclusive_node   = 1;
 const int exclusive_socket = 2;
@@ -919,6 +885,41 @@ void allocation::set_cput_used(
 
   {
   }
+
+#ifdef PENABLE_LINUX_CGROUPS
+Machine::Machine() {}
+Machine::~Machine() {}
+
+void Machine::reinitialize_from_json(const std::string &layout, std::vector<std::string> &valid_ids)
+  {
+  }
+
+Machine::Machine(const std::string &layout, std::vector<std::string> &valid_ids) {}
+
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
+
+int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
+  {
+  return(0);
+  }
+
+void save_node_usage(pbsnode *pnode) {}
+    
+void Machine::populate_job_ids(std::vector<std::string> &job_ids) const
+  {
+  job_ids.push_back("1.napali");
+  job_ids.push_back("2.napali");
+  job_ids.push_back("3.napali");
+  }
+    
+void Machine::free_job_allocation(const char *jobid)
+  {
+  freed_job_allocation++;
+  }
+
 
 PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device() {}
