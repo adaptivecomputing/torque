@@ -121,7 +121,7 @@ int main(
   int event_type;
   char filter_excessive = 0;
   int excessive_count;
-  struct log_array log = {};
+  struct log_array log;
 
 #if defined(FILTER_EXCESSIVE)
   filter_excessive = 1;
@@ -130,6 +130,8 @@ int main(
 #if defined(EXCESSIVE_COUNT)
   excessive_count = EXCESSIVE_COUNT;
 #endif
+
+  memset(&log, 0, sizeof(log));
 
   while ((c = getopt(argc, argv, "qzvamslw:p:n:f:c:")) != EOF)
     {
