@@ -1,6 +1,6 @@
 include $(top_srcdir)/buildutils/config.mk
 
-noinst_HEADERS = trq_auth_daemon.h 
+noinst_HEADERS = trq_auth_daemon.h
 DIST_SUBDIRS =
 CLEANFILES = *.gcda *.gcno *.gcov
 
@@ -30,7 +30,7 @@ install-exec-hook:
 	  if [ ! -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \
 	    echo $(libdir) > $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
 	    chmod 644 $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
-	    if [ $(FROM_MAKE_PACKAGES)0 -eq 0 ]; then \
+	    if [ $(FROM_MAKE_PACKAGES)0 -eq 0 && $(UID) -eq 0 ]; then \
 	      /sbin/ldconfig; \
 	    fi; \
 	  fi; \
@@ -41,7 +41,7 @@ uninstall-hook:
 	  rm -f $(DESTDIR)/usr/lib/systemd/system/trqauthd.service || :; \
 	  rm -f $(DESTDIR)/etc/init.d/trqauthd || :; \
 	  rm -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf || :; \
-	  if [ $(FROM_MAKE_PACKAGES)0 -eq 0 ]; then \
+	  if [ $(FROM_MAKE_PACKAGES)0 -eq 0 && $(UID) -eq 0 ]; then \
 	    /sbin/ldconfig; \
 	  fi; \
 	fi
