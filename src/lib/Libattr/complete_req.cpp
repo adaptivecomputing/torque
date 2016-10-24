@@ -57,66 +57,74 @@ void complete_req::set_value_from_nodes(
 /*
  * Constructor from a resource list (-l request)
  *
+ * @param resc_ptr - a pointer to the vector of resources
+ * @param ppn_needed - ppn required for the job described by this completed req
+ * @param legacy_vmem - true if vmem should be considered per node, false if per job
  */
 
 complete_req::complete_req(
 
-  tlist_head &resources,
-  int         ppn_needed,
-  bool        legacy_vmem) : reqs()
+  void  *resc_ptr,
+  int    ppn_needed, // UNUSED
+  bool   legacy_vmem) : reqs()
 
   {
-  resource           *pr = (resource *)GET_NEXT(resources);
-  int                 task_count = 0;
-  int                 execution_slots = 0;
-  unsigned long long  mem_values[4];
-  int                 active_index[2];
+  std::vector<resource> *resources = (std::vector<resource> *)resc_ptr;
+  int                    task_count = 0;
+  int                    execution_slots = 0;
+  unsigned long long     mem_values[4];
+  int                    active_index[2];
+
+  if (resources == NULL)
+    return;
 
   active_index[0] = _MEM_;
   active_index[1] = _VMEM_;
   memset(mem_values, 0, sizeof(mem_values));
 
-  while (pr != NULL)
+  for (size_t i = 0; i < resources->size(); i++)
     {
-    if (!strcmp(pr->rs_defin->rs_name, "nodes"))
+    resource &r = resources->at(i);
+
+    if (!strcmp(r.rs_defin->rs_name, "nodes"))
       {
-      this->set_value_from_nodes(pr->rs_value.at_val.at_str, task_count);
+      this->set_value_from_nodes(r.rs_value.at_val.at_str, task_count);
       }
-    else if ((!strcmp(pr->rs_defin->rs_name, "procs")) ||
-             (!strcmp(pr->rs_defin->rs_name, "size")))
+    else if ((!strcmp(r.rs_defin->rs_name, "procs")) ||
+             (!strcmp(r.rs_defin->rs_name, "size")))
       {
-      task_count = pr->rs_value.at_val.at_long;
+      task_count = r.rs_value.at_val.at_long;
       execution_slots = 1;
       }
-    else if (!strcmp(pr->rs_defin->rs_name, "ncpus"))
+    else if (!strcmp(r.rs_defin->rs_name, "ncpus"))
       {
       task_count = 1;
-      execution_slots = pr->rs_value.at_val.at_long;
+      execution_slots = r.rs_value.at_val.at_long;
       }
-    else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
+    else if ((!strcmp(r.rs_defin->rs_name, "pmem")) ||
+             (!strcmp(r.rs_defin->rs_name, "mem")) ||
+             (!strcmp(r.rs_defin->rs_name, "vmem")) ||
+             (!strcmp(r.rs_defin->rs_name, "pvmem")))
       {
       int index;
 
       // pmem is per task
-      if (pr->rs_defin->rs_name[0] == 'm')
+      if (r.rs_defin->rs_name[0] == 'm')
         index = _MEM_;
-      else if (pr->rs_defin->rs_name[0] == 'v')
+      else if (r.rs_defin->rs_name[0] == 'v')
         index = _VMEM_;
       else
         {
         // It is either pmem or pvmem at this point
-        if (pr->rs_defin->rs_name[1] == 'm')
+        if (r.rs_defin->rs_name[1] == 'm')
           index = _PMEM_;
         else
           index = _PVMEM_;
         }
 
       // Make sure that we take mem over 
-      mem_values[index] = pr->rs_value.at_val.at_size.atsv_num;
-      int shift = pr->rs_value.at_val.at_size.atsv_shift;
+      mem_values[index] = r.rs_value.at_val.at_size.atsv_num;
+      int shift = r.rs_value.at_val.at_size.atsv_shift;
 
       if (shift == 0)
         {
@@ -134,8 +142,6 @@ complete_req::complete_req(
           }
         }
       }
-
-    pr = (resource *)GET_NEXT(pr->rs_link);
     }
 
   // Set mem and swap from mem_values

@@ -726,7 +726,6 @@ int svr_dequejob(
   int            rc = PBSE_NONE;
   pbs_attribute *pattr;
   pbs_queue     *pque;
-  resource      *presc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* make sure pjob isn't null */
@@ -835,16 +834,17 @@ int svr_dequejob(
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
-  if (pattr->at_flags & ATR_VFLAG_SET)
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+      (pattr->at_val.at_ptr != NULL))
     {
-    presc = (resource *)GET_NEXT(pattr->at_val.at_list);
-
-    while (presc != NULL)
+    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
+    
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      if (presc->rs_value.at_flags & ATR_VFLAG_DEFLT)
-        presc->rs_defin->rs_free(&presc->rs_value);
+      resource &r = resources->at(i);
 
-      presc = (resource *)GET_NEXT(presc->rs_link);
+      if (r.rs_value.at_flags & ATR_VFLAG_DEFLT)
+        r.rs_defin->rs_free(&r.rs_value);
       }
     }
 
@@ -1641,10 +1641,8 @@ int chk_svr_resc_limit(
   int           dummy;
   int           rc;
   int           req_procs = 0; /* must start at 0 */
-  resource     *jbrc;
   resource     *jbrc_nodes = NULL;
   resource     *qurc;
-  resource     *svrc;
   resource     *cmpwith;
 
   int           LimitIsFromQueue = FALSE;
@@ -1681,28 +1679,28 @@ int chk_svr_resc_limit(
   if (nodectresc != NULL)
     {
     pthread_mutex_lock(server.sv_attr_mutex);
-    svrc = (resource *)GET_NEXT(
-        server.sv_attr[SRV_ATR_resource_avail].at_val.at_list);
-    
-    while (svrc != NULL)
-      {
-      if (svrc->rs_defin == nodectresc)
-        {
-        svrc = find_resc_entry(
-            &server.sv_attr[SRV_ATR_resource_avail],
-            svrc->rs_defin);
-        
-        if ((svrc != NULL) && (svrc->rs_value.at_flags & ATR_VFLAG_SET))
-          {
-          SvrNodeCt = svrc->rs_value.at_val.at_long;
-          }
+    std::vector<resource> *svr_resc = (std::vector<resource> *)server.sv_attr[SRV_ATR_resource_avail].at_val.at_ptr;
 
-        if (svrc == NULL)
+    if (svr_resc != NULL)
+      {
+      for (size_t i = 0; i < svr_resc->size(); i++)
+        {
+        resource &r = svr_resc->at(i);
+
+        if (r.rs_defin == nodectresc)
+          {
+          resource *svrc = find_resc_entry(&server.sv_attr[SRV_ATR_resource_avail], r.rs_defin);
+          
+          if ((svrc != NULL) &&
+              (svrc->rs_value.at_flags & ATR_VFLAG_SET))
+            {
+            SvrNodeCt = svrc->rs_value.at_val.at_long;
+            }
+
           break;
+          }
         }
-      
-      svrc = (resource *)GET_NEXT(svrc->rs_link);
-      } /* END while (svrc != NULL) */
+      }
     
     pthread_mutex_unlock(server.sv_attr_mutex);
     }   /* END if (nodectresc != NULL) */
@@ -1710,126 +1708,126 @@ int chk_svr_resc_limit(
   /* return values via global comp_resc_gt and comp_resc_lt */
   comp_resc_gt = 0;
 
-
-  jbrc = (resource *)GET_NEXT(jobatr->at_val.at_list);
-
-  while (jbrc != NULL)
+  std::vector<resource> *job_resc = (std::vector<resource> *)jobatr->at_val.at_ptr;
+  if (job_resc != NULL)
     {
-    cmpwith = NULL;
-
-    if ((jbrc->rs_value.at_flags & (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
+    for (size_t i = 0; i < job_resc->size(); i++)
       {
-      qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], jbrc->rs_defin);
+      resource &r = job_resc->at(i);
 
-      LimitName = (jbrc->rs_defin->rs_name == NULL)?"resource":jbrc->rs_defin->rs_name;
+      cmpwith = NULL;
 
-      pthread_mutex_lock(server.sv_attr_mutex);
-      cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
-          &server.sv_attr[SRV_ATR_ResourceMax],
-          jbrc->rs_defin,
-          &LimitIsFromQueue);
-      pthread_mutex_unlock(server.sv_attr_mutex);
-
-      if (strcmp(LimitName,"mppnppn") == 0)
+      if ((r.rs_value.at_flags & (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
         {
-        mpp_nppn = jbrc->rs_value.at_val.at_long;
-        }
-      else if (strcmp(LimitName,"mppwidth") == 0)
-        {
-        mpp_width = jbrc->rs_value.at_val.at_long;
-        }
+        qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], r.rs_defin);
 
-      if ((jbrc->rs_defin == noderesc) && 
-          (qtype == QTYPE_Execution))
-        {
-        /* NOTE:  process after loop so SvrNodeCt is loaded */
-        /* can check pure nodes violation right here */
-        int job_nodes;
-        int queue_nodes;
+        LimitName = (r.rs_defin->rs_name == NULL)? "resource" : r.rs_defin->rs_name;
 
-        jbrc_nodes = jbrc;
-        if ((jbrc_nodes != NULL) && 
-            (qurc != NULL))
+        pthread_mutex_lock(server.sv_attr_mutex);
+        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
+            &server.sv_attr[SRV_ATR_ResourceMax],
+            r.rs_defin,
+            &LimitIsFromQueue);
+        pthread_mutex_unlock(server.sv_attr_mutex);
+
+        if (strcmp(LimitName,"mppnppn") == 0)
           {
-          if ((isdigit(*(jbrc_nodes->rs_value.at_val.at_str))) &&
-              (isdigit(*(qurc->rs_value.at_val.at_str))))
-            {
-            job_nodes   = atoi(jbrc_nodes->rs_value.at_val.at_str);
-            queue_nodes = atoi(qurc->rs_value.at_val.at_str);
+          mpp_nppn = r.rs_value.at_val.at_long;
+          }
+        else if (strcmp(LimitName,"mppwidth") == 0)
+          {
+          mpp_width = r.rs_value.at_val.at_long;
+          }
 
-            if (queue_nodes < job_nodes)
-              comp_resc_lt++;
+        if ((r.rs_defin == noderesc) && 
+            (qtype == QTYPE_Execution))
+          {
+          /* NOTE:  process after loop so SvrNodeCt is loaded */
+          /* can check pure nodes violation right here */
+          int job_nodes;
+          int queue_nodes;
+
+          jbrc_nodes = &r;
+          if ((jbrc_nodes != NULL) && 
+              (qurc != NULL))
+            {
+            if ((isdigit(*(jbrc_nodes->rs_value.at_val.at_str))) &&
+                (isdigit(*(qurc->rs_value.at_val.at_str))))
+              {
+              job_nodes   = atoi(jbrc_nodes->rs_value.at_val.at_str);
+              queue_nodes = atoi(qurc->rs_value.at_val.at_str);
+
+              if (queue_nodes < job_nodes)
+                comp_resc_lt++;
+              }
             }
           }
-        }
 
-      /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-      else if ((jbrc->rs_defin == procresc) &&
-               (qtype == QTYPE_Execution))
-        {
-        proc_ct = jbrc->rs_value.at_val.at_long;
-        }
+        /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
+        else if ((r.rs_defin == procresc) &&
+                 (qtype == QTYPE_Execution))
+          {
+          proc_ct = r.rs_value.at_val.at_long;
+          }
 
 #ifdef NERSCDEV
-      else if (jbrc->rs_defin == mppwidthresc)
-        {
-        if (jbrc->rs_value.at_flags & ATR_VFLAG_SET)
+        else if (r.rs_defin == mppwidthresc)
           {
-          MPPWidth = jbrc->rs_value.at_val.at_long;
-          }
-        }
-
-#endif /* NERSCDEV */
-      else if ((strcmp(LimitName,"mppnodect") == 0) &&
-               (jbrc->rs_value.at_val.at_long == -1))
-        {
-        /*
-         * mppnodect is a special attrtibute,  It gets set based upon the
-         * values of mppwidth and mppnppn. -1 signifies the case where mppwidth
-         * and mppnppn were not both specified for the job. We will need to
-         * check mppnodect limits against queue/server defaults, if any.
-         */
-         
-        mppnodect_resource = jbrc;
-        }
-      else if ((cmpwith != NULL) && 
-               (jbrc->rs_defin != needresc))
-        {
-        /* don't check neednodes */
-
-        rc = jbrc->rs_defin->rs_comp(
-               &cmpwith->rs_value,
-               &jbrc->rs_value);
-
-        if (rc > 0)
-          {
-          comp_resc_gt++;
-          }
-        else if (rc < 0)
-          {
-          /* only record if:
-           *     is_transit flag is not set
-           * or  is_transit is set, but not to true
-           * or  the value comes from queue limit
-           */
-          if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-              (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
-              (LimitIsFromQueue))
+          if (r.rs_value.at_flags & ATR_VFLAG_SET)
             {
-            if ((EMsg != NULL) && (EMsg[0] == '\0'))
-              {
-              sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                      (LimitIsFromQueue == 1) ? "queue" : "server",LimitName);
-              }
-
-              comp_resc_lt++;
+            MPPWidth = r.rs_value.at_val.at_long;
             }
           }
-        }
-      }    /* END if () */
 
-    jbrc = (resource *)GET_NEXT(jbrc->rs_link);
-    }  /* END while (jbrc != NULL) */
+#endif /* NERSCDEV */
+        else if ((strcmp(LimitName,"mppnodect") == 0) &&
+                 (r.rs_value.at_val.at_long == -1))
+          {
+          /*
+           * mppnodect is a special attrtibute,  It gets set based upon the
+           * values of mppwidth and mppnppn. -1 signifies the case where mppwidth
+           * and mppnppn were not both specified for the job. We will need to
+           * check mppnodect limits against queue/server defaults, if any.
+           */
+           
+          mppnodect_resource = &r;
+          }
+        else if ((cmpwith != NULL) && 
+                 (r.rs_defin != needresc))
+          {
+          /* don't check neednodes */
+
+          rc = r.rs_defin->rs_comp(&cmpwith->rs_value, &r.rs_value);
+
+          if (rc > 0)
+            {
+            comp_resc_gt++;
+            }
+          else if (rc < 0)
+            {
+            /* only record if:
+             *     is_transit flag is not set
+             * or  is_transit is set, but not to true
+             * or  the value comes from queue limit
+             */
+            if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+                (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
+                (LimitIsFromQueue))
+              {
+              if ((EMsg != NULL) && (EMsg[0] == '\0'))
+                {
+                sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                        (LimitIsFromQueue == 1) ? "queue" : "server",LimitName);
+                }
+
+                comp_resc_lt++;
+              }
+            }
+          }
+        }    /* END if () */
+      }  // END for each job resource
+    }
+
 
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
@@ -3366,24 +3364,23 @@ void set_deflt_resc(
 
   {
   resource *prescjb;
-  resource *prescdt;
 
   if (dflt->at_flags & ATR_VFLAG_SET)
     {
 
-    if ((dflt->at_type == ATR_TYPE_REQ) || (dflt->at_type == ATR_TYPE_RESC))
+    if ((dflt->at_type == ATR_TYPE_REQ) ||
+        (dflt->at_type == ATR_TYPE_RESC))
       {
       /* for each resource in the default value list */
+      std::vector<resource> *resc_deflt = (std::vector<resource> *)dflt->at_val.at_ptr;
 
-      prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
-
-      while (prescdt != NULL)
+      if (resc_deflt != NULL)
         {
-        if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
+        for (size_t i = 0; i < resc_deflt->size(); i++)
           {
-          /* see if the job already has that resource */
+          resource &r = resc_deflt->at(i);
 
-          prescjb = find_resc_entry(jb, prescdt->rs_defin);
+          prescjb = find_resc_entry(jb, r.rs_defin);
 
           if ((prescjb == NULL) ||
               ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
@@ -3391,22 +3388,17 @@ void set_deflt_resc(
             /* resource does not exist or value is not set */
 
             if (prescjb == NULL)
-              prescjb = add_resource_entry(jb, prescdt->rs_defin);
+              prescjb = add_resource_entry(jb, r.rs_defin);
 
             if (prescjb != NULL)
               {
-              if (prescdt->rs_defin->rs_set(
-                    &prescjb->rs_value,
-                    &prescdt->rs_value,
-                    SET) == 0)
+              if (r.rs_defin->rs_set(&prescjb->rs_value, &r.rs_value, SET) == 0)
                 {
                 prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
                 }
               }
             }
           }
-
-        prescdt = (resource *)GET_NEXT(prescdt->rs_link);
         }
       }
     else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)

@@ -207,7 +207,7 @@ extern void  change_logs();
 /* Local Private Functions */
 
 static int    get_port (char *, unsigned int *, pbs_net_t *);
-static int    daemonize_server (int, pid_t *);
+int daemonize_server (bool, bool, pid_t *);
 int mutex_lock (mutex_t *);
 int mutex_unlock (mutex_t *);
 int svr_restart();
@@ -308,7 +308,8 @@ pid_t                   sid;
 char                   *plogenv = NULL;
 int                     LOGLEVEL = 0;
 int                     DEBUGMODE = 0;
-int                     TDoBackground = 1;  /* background daemon */
+bool                    TDoBackground = true;  /* background daemon */
+bool                    LineBufferOutput = true;
 
 char                   *ProgName;
 char                   *NodeSuffix = NULL;
@@ -452,9 +453,10 @@ int PBSShowUsage(
   fprintf(stderr, "  -A <PATH> \\\\ Path to accounting file\n");
   fprintf(stderr, "  -a <BOOL> \\\\ Scheduling\n");
   fprintf(stderr, "  -c        \\\\ Wait for mom hierarchy\n");
-  fprintf(stderr, "  -D        \\\\ Debugmode\n");
+  fprintf(stderr, "  -D        \\\\ Debug mode (do not fork)\n");
   fprintf(stderr, "  -d <PATH> \\\\ Homedir\n");
   fprintf(stderr, "  -e        \\\\ Enable any mom\n");
+  fprintf(stderr, "  -F        \\\\ Do not fork (use when running under systemd)\n");
   fprintf(stderr, "  -f        \\\\ Force Overwrite Serverdb\n");
   fprintf(stderr, "  -h        \\\\ Print Usage\n");
   fprintf(stderr, "  -H <HOST> \\\\ Daemon Hostname\n");
@@ -509,7 +511,7 @@ void parse_command_line(
 
   ForceCreation = FALSE;
 
-  while ((c = getopt(argc, argv, "A:a:cd:DefhH:L:l:mM:nPp:R:S:t:uv-:")) != -1)
+  while ((c = getopt(argc, argv, "A:a:cd:DeFfhH:L:l:mM:nPp:R:S:t:uv-:")) != -1)
     {
     switch (c)
       {
@@ -605,14 +607,24 @@ void parse_command_line(
 
         break;
 
+      // Debug mode
       case 'D':
 
-        TDoBackground = 0;
+        TDoBackground = false;
+        LineBufferOutput = true;
 
         break;
 
       case 'e':
         allow_any_mom = TRUE;
+        break;
+
+      // Do not fork (use when running under systemd)
+      case 'F':
+
+        TDoBackground = false;
+        LineBufferOutput = false;
+
         break;
 
       case 'f':
@@ -1569,7 +1581,8 @@ void set_globals_from_environment(void)
   if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
-    TDoBackground = 0;
+    TDoBackground = false;
+    LineBufferOutput = true;
     }
 
   return;
@@ -1793,17 +1806,19 @@ int main(
   if (getenv("PBSDEBUG") != NULL)
     {
     DEBUGMODE = 1;
-    TDoBackground = 0;
+    TDoBackground = false;
+    LineBufferOutput = true;
     }
 #ifdef DISABLE_DAEMONS
-    TDoBackground = 0;
+    TDoBackground = false;
+    LineBufferOutput = true;
 #endif
 
   /* handle running in the background or not if we're debugging */
 
   if (high_availability_mode)
     {
-    if (daemonize_server(TDoBackground,&sid) == FAILURE)
+    if (daemonize_server(TDoBackground, LineBufferOutput, &sid) == FAILURE)
       {
       exit(2);
       }
@@ -1832,7 +1847,7 @@ int main(
   /* handle running in the background or not if we're debugging */
   if (!high_availability_mode)
     {
-    if (daemonize_server(TDoBackground,&sid) == FAILURE)
+    if (daemonize_server(TDoBackground, LineBufferOutput, &sid) == FAILURE)
       {
       exit(2);
       }
@@ -2819,19 +2834,19 @@ static void lock_out_ha()
   } /* END lock_out_ha() */
 
 
-
-
 /**
  * daemonize_server()
  * figures out, based on the mode, whether or not to run in the background and does so
  *
  * @param DoBackground - (I) indicates whether or not we should run in the background
+ * @param LineBufferOutput - (I) indicates whether or not stdout/err should be line buffered
  * @param sid - (O) set to the correct pid
  * @return success unless we could not run in the background and we're supposed to
  */
-static int daemonize_server(
+int daemonize_server(
 
-  int  DoBackground,  /* I */
+  bool DoBackground,  /* I */
+  bool LineBufferOutput,  /* I */
   int *sid)           /* O */
 
   {
@@ -2840,12 +2855,15 @@ static int daemonize_server(
 
   if (!DoBackground)
     {
-    /* handle foreground (i.e. debug mode) */
+    /* run in foreground */
 
     *sid = getpid();
 
-    setvbuf(stdout,NULL,_IOLBF,0);
-    setvbuf(stderr,NULL,_IOLBF,0);
+    if (LineBufferOutput)
+      {
+      setvbuf(stdout, NULL, _IOLBF, 0);
+      setvbuf(stderr, NULL, _IOLBF, 0);
+      }
 
     return(SUCCESS);
     }

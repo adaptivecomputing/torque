@@ -99,32 +99,11 @@ void *add_and_lookup_stuff(void *parm)
   }
 
 
-START_TEST(test_overwrite_cache)
+/*START_TEST(test_two)
   {
-  struct addrinfo *new_addr = NULL;
-  char hostname[1024];
 
-  fail_unless(gethostname(hostname, sizeof(hostname)) == 0);
-  overwrite_cache(hostname, &new_addr);
-  // confirm address is IPv4
-  fail_unless(new_addr->ai_family == AF_INET);
   }
-END_TEST
-
-START_TEST(test_insert_addr_name_info)
-  {
-  struct addrinfo *new_addr = NULL;
-  char hostname[1024];
-
-  fail_unless(gethostname(hostname, sizeof(hostname)) == 0);
-  new_addr = insert_addr_name_info(NULL, hostname); 
-  fail_unless(new_addr != NULL);
-  overwrite_cache(hostname, &new_addr);
-  // confirm address is IPv4
-  fail_unless((new_addr != NULL) && (new_addr->ai_family == AF_INET));
-  }
-END_TEST
-
+END_TEST*/
 
 Suite *get_hostaddr_suite(void)
   {
@@ -134,13 +113,9 @@ Suite *get_hostaddr_suite(void)
   tcase_add_test(tc_core, test_one);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_overwrite_cache");
-  tcase_add_test(tc_core, test_overwrite_cache);
-  suite_add_tcase(s, tc_core);
-
-  tc_core = tcase_create("test_insert_addr_name_info");
-  tcase_add_test(tc_core, test_insert_addr_name_info);
-  suite_add_tcase(s, tc_core);
+/*  tc_core = tcase_create("test_two");
+  tcase_add_test(tc_core, test_two);
+  suite_add_tcase(s, tc_core);*/
 
   return s;
   }

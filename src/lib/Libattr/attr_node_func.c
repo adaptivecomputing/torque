@@ -1518,17 +1518,17 @@ int node_prop_list(
 
 
 
-
 /*
  * node_status_list - Either derive a "status list" pbs_attribute from the node
  *                 or update node's status list from pbs_attribute's status list.
  */
 
+/*
 int node_status_list(
 
-  pbs_attribute *new_attr,           /*derive status into this pbs_attribute*/
-  void          *pnode,         /*pointer to a pbsnode struct     */
-  int            actmode)       /*action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new_attr,      // derive status into this pbs_attribute
+  void          *pnode,         // pointer to a pbsnode struct
+  int            actmode)       // action mode; "NEW" or "ALTER"
 
   {
   int              rc = 0;
@@ -1536,22 +1536,22 @@ int node_status_list(
   struct pbsnode  *np;
   pbs_attribute    temp;
 
-  np = (struct pbsnode *)pnode;    /* because of at_action arg type */
+  np = (struct pbsnode *)pnode;    // because of at_action arg type
 
   switch (actmode)
     {
 
     case ATR_ACTION_NEW:
 
-      /* if node has a status list, then copy array_strings    */
-      /* into temp to use to setup a copy, otherwise setup empty */
+      // if node has a status list, then copy array_strings
+      // into temp to use to setup a copy, otherwise setup empty
 
-      if (np->nd_status != NULL)
+      if (np->nd_status.size() != 0)
         {
-        /* setup temporary pbs_attribute with the array_strings */
-        /* from the node                                    */
+        // setup temporary pbs_attribute with the array_strings
+        // from the node
 
-        temp.at_val.at_arst = np->nd_status;
+        temp.at_val.at_str = np->nd_status;
         temp.at_flags = ATR_VFLAG_SET;
         temp.at_type  = ATR_TYPE_ARST;
 
@@ -1559,7 +1559,7 @@ int node_status_list(
         }
       else
         {
-        /* node has no properties, setup empty pbs_attribute */
+        // node has no properties, setup empty pbs_attribute
 
         new_attr->at_val.at_arst = NULL;
         new_attr->at_flags       = 0;
@@ -1578,14 +1578,14 @@ int node_status_list(
         np->nd_status = NULL;
         }
 
-      /* update node with new attr_strings */
+      // update node with new attr_strings
 
       np->nd_status = new_attr->at_val.at_arst;
 
       new_attr->at_val.at_arst = NULL;
 
-      /* update number of status items listed in node */
-      /* does not include name and subnode property */
+      // update number of status items listed in node
+      // does not include name and subnode property
 
       if (np->nd_status != NULL)
         np->nd_nstatus = np->nd_status->as_usedptr;
@@ -1599,10 +1599,11 @@ int node_status_list(
       rc = PBSE_INTERNAL;
 
       break;
-    }  /* END switch(actmode) */
+    }  * END switch(actmode) */
 
-  return(rc);
-  }  /* END node_status_list() */
+//  return(rc);
+//  }  /* END node_status_list() */
+
 
 
 /*
@@ -1688,7 +1689,7 @@ int node_gpustatus_list(
     }  /* END switch(actmode) */
 
   return(rc);
-  }  /* END node_status_list() */
+  }  /* END node_gpupstatus_list() */
 
 
 
@@ -1763,7 +1764,7 @@ int node_micstatus_list(
     }  /* END switch(actmode) */
 
   return(rc);
-  }  /* END node_status_list() */
+  }  /* END node_micstatus_list() */
 
 
 

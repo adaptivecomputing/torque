@@ -1770,7 +1770,6 @@ int mom_set_limits(
   const char  *pname = NULL;
   int  retval;
   unsigned long value; /* place in which to build resource value */
-  resource *pres;
 
   struct rlimit reslim;
   unsigned long vmem_limit = 0;
@@ -1794,8 +1793,6 @@ int mom_set_limits(
 
   assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-
   /*
    * cycle through all the resource specifications,
    * setting limits appropriately.
@@ -1816,158 +1813,141 @@ int mom_set_limits(
       log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
       }
 
-    };
+    }
 
-
-  while (pres != NULL)
+  if (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL)
     {
-    if (pres->rs_defin != NULL)
-      pname = pres->rs_defin->rs_name;
-    else
-      pname = NULL;
+    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
-    if (LOGLEVEL >= 2)
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      sprintf(log_buffer, "setting limit for attribute '%s'",
-              (pname != NULL) ? pname : "NULL");
+      resource &r = resources->at(i);
 
-      log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+      if (r.rs_defin != NULL)
+        pname = r.rs_defin->rs_name;
+      else
+        pname = NULL;
 
-      log_buffer[0] = '\0';
-      }
-
-    assert(pres->rs_defin != NULL);
-
-    assert(pname != NULL);
-
-    assert(pname[0] != '\0');
-
-    if (!strcmp(pname, "cput"))
-      {
-      if (igncput == FALSE)
+      if (LOGLEVEL >= 2)
         {
-        /* cpu time - check, if less than pcput use it */
+        sprintf(log_buffer, "setting limit for attribute '%s'",
+                (pname != NULL) ? pname : "NULL");
 
-        retval = mm_gettime(pres, &value);
+        log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
-        if (retval != PBSE_NONE)
-          {
-          sprintf(log_buffer, "cput mm_gettime failed in %s", __func__);
-
-          return(error(pname, retval));
-          }
+        log_buffer[0] = '\0';
         }
-      }
-    else if (!strcmp(pname, "pcput"))
-      {
-      if (igncput == FALSE)
-        {
-        if (set_mode == SET_LIMIT_SET)
-          {
-          /* process cpu time - set */
 
-          retval = mm_gettime(pres, &value);
+      assert(r.rs_defin != NULL);
+
+      assert(pname != NULL);
+
+      assert(pname[0] != '\0');
+
+      if (!strcmp(pname, "cput"))
+        {
+        if (igncput == FALSE)
+          {
+          /* cpu time - check, if less than pcput use it */
+
+          retval = mm_gettime(&r, &value);
 
           if (retval != PBSE_NONE)
             {
-            sprintf(log_buffer, "pcput mm_gettime failed in %s", __func__);
+            sprintf(log_buffer, "cput mm_gettime failed in %s", __func__);
 
             return(error(pname, retval));
             }
-
-          reslim.rlim_cur = reslim.rlim_max =
-            (unsigned long)((double)value / cputfactor);
-
-          if (LOGLEVEL >= 2)
-            {
-            sprintf(log_buffer, "setting cpu time limit to %ld for job %s",
-              (long int)reslim.rlim_cur,
-              pjob->ji_qs.ji_jobid);
-
-            log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
-
-            log_buffer[0] = '\0';
-            }
-
-          /* NOTE: some versions of linux have a bug which causes the parent
-                   process to receive a SIGKILL if the child's cpu limit is exceeded */
-
-          if (setrlimit(RLIMIT_CPU, &reslim) < 0)
-            {
-            sprintf(log_buffer, "setrlimit for RLIMIT_CPU failed in %s, errno=%d (%s)",
-              __func__,
-              errno, strerror(errno));
-
-            return(error("RLIMIT_CPU", PBSE_SYSTEM));
-            }
-          }    /* END if (set_mode == SET_LIMIT_SET) */
+          }
         }
-      }
-    else if (!strcmp(pname, "file"))
-      {
-      /* set */
-
-      if (set_mode == SET_LIMIT_SET)
+      else if (!strcmp(pname, "pcput"))
         {
-        retval = mm_getsize(pres, &value);
-
-        if (retval != PBSE_NONE)
+        if (igncput == FALSE)
           {
-          sprintf(log_buffer, "mm_getsize() failed for file in %s",
-                  __func__);
+          if (set_mode == SET_LIMIT_SET)
+            {
+            /* process cpu time - set */
 
-          return(error(pname, retval));
-          }
+            retval = mm_gettime(&r, &value);
 
-        reslim.rlim_cur = reslim.rlim_max = value;
+            if (retval != PBSE_NONE)
+              {
+              sprintf(log_buffer, "pcput mm_gettime failed in %s", __func__);
 
-        if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
-          {
-          sprintf(log_buffer, "cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)",
-                  (long int)reslim.rlim_max,
-                  pjob->ji_qs.ji_jobid);
+              return(error(pname, retval));
+              }
 
-          log_err(errno, __func__, log_buffer);
+            reslim.rlim_cur = reslim.rlim_max =
+              (unsigned long)((double)value / cputfactor);
 
-          log_buffer[0] = '\0';
+            if (LOGLEVEL >= 2)
+              {
+              sprintf(log_buffer, "setting cpu time limit to %ld for job %s",
+                (long int)reslim.rlim_cur,
+                pjob->ji_qs.ji_jobid);
 
-          return(error(pname, PBSE_SYSTEM));
+              log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
+
+              log_buffer[0] = '\0';
+              }
+
+            /* NOTE: some versions of linux have a bug which causes the parent
+                     process to receive a SIGKILL if the child's cpu limit is exceeded */
+
+            if (setrlimit(RLIMIT_CPU, &reslim) < 0)
+              {
+              sprintf(log_buffer, "setrlimit for RLIMIT_CPU failed in %s, errno=%d (%s)",
+                __func__,
+                errno, strerror(errno));
+
+              return(error("RLIMIT_CPU", PBSE_SYSTEM));
+              }
+            }    /* END if (set_mode == SET_LIMIT_SET) */
           }
         }
-      }
-    else if (!strcmp(pname, "vmem"))
-      {
-      if (ignvmem == FALSE)
-        {
-        /* check */
-
-        retval = mm_getsize(pres, &value);
-
-        if (retval != PBSE_NONE)
-          {
-          sprintf(log_buffer, "mm_getsize() failed for vmem in %s", __func__);
-
-          return(error(pname, retval));
-          }
-
-        if ((vmem_limit == 0) || (value < vmem_limit))
-          vmem_limit = value;
-        }
-      }
-    else if (!strcmp(pname, "pvmem"))
-      {
-      if (ignvmem == FALSE)
+      else if (!strcmp(pname, "file"))
         {
         /* set */
 
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = mm_getsize(pres, &value);
+          retval = mm_getsize(&r, &value);
 
           if (retval != PBSE_NONE)
             {
-            sprintf(log_buffer, "mm_getsize() failed for pvmem in %s",
-              __func__);
+            sprintf(log_buffer, "mm_getsize() failed for file in %s",
+                    __func__);
+
+            return(error(pname, retval));
+            }
+
+          reslim.rlim_cur = reslim.rlim_max = value;
+
+          if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
+            {
+            sprintf(log_buffer, "cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)",
+                    (long int)reslim.rlim_max,
+                    pjob->ji_qs.ji_jobid);
+
+            log_err(errno, __func__, log_buffer);
+
+            log_buffer[0] = '\0';
+
+            return(error(pname, PBSE_SYSTEM));
+            }
+          }
+        }
+      else if (!strcmp(pname, "vmem"))
+        {
+        if (ignvmem == FALSE)
+          {
+          /* check */
+
+          retval = mm_getsize(&r, &value);
+
+          if (retval != PBSE_NONE)
+            {
+            sprintf(log_buffer, "mm_getsize() failed for vmem in %s", __func__);
 
             return(error(pname, retval));
             }
@@ -1976,190 +1956,211 @@ int mom_set_limits(
             vmem_limit = value;
           }
         }
-      }
-    else if ((!strcmp(pname,"mem") && (pjob->ji_numnodes != 1)) ||
-              !strcmp(pname,"mppmem"))
-      {
-      /* ignore. If we ever get rid of support for the UNICOS OS then we can
-         remove the ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN flags from mppmem */
-      }
-    else if ((!strcmp(pname, "mem") && (pjob->ji_numnodes == 1)) ||
-             !strcmp(pname, "pmem"))
-      {
-      if (ignmem == FALSE)
+      else if (!strcmp(pname, "pvmem"))
         {
-        /* set */
-
-        if (set_mode == SET_LIMIT_SET)
+        if (ignvmem == FALSE)
           {
-          retval = mm_getsize(pres, &value);
+          /* set */
 
-          if (retval != PBSE_NONE)
+          if (set_mode == SET_LIMIT_SET)
             {
-            sprintf(log_buffer, "mm_getsize() failed for mem/pmem in %s",
-              __func__);
+            retval = mm_getsize(&r, &value);
 
-            return(error(pname, retval));
+            if (retval != PBSE_NONE)
+              {
+              sprintf(log_buffer, "mm_getsize() failed for pvmem in %s",
+                __func__);
+
+              return(error(pname, retval));
+              }
+
+            if ((vmem_limit == 0) || (value < vmem_limit))
+              vmem_limit = value;
             }
+          }
+        }
+      else if ((!strcmp(pname,"mem") && (pjob->ji_numnodes != 1)) ||
+                !strcmp(pname,"mppmem"))
+        {
+        /* ignore. If we ever get rid of support for the UNICOS OS then we can
+           remove the ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN flags from mppmem */
+        }
+      else if ((!strcmp(pname, "mem") && (pjob->ji_numnodes == 1)) ||
+               !strcmp(pname, "pmem"))
+        {
+        if (ignmem == FALSE)
+          {
+          /* set */
 
-          reslim.rlim_cur = reslim.rlim_max = value;
-
-          if (setrlimit(RLIMIT_DATA, &reslim) < 0)
+          if (set_mode == SET_LIMIT_SET)
             {
-            sprintf(log_buffer, "cannot set data limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
+            retval = mm_getsize(&r, &value);
 
-            return(error("RLIMIT_DATA", PBSE_SYSTEM));
-            }
+            if (retval != PBSE_NONE)
+              {
+              sprintf(log_buffer, "mm_getsize() failed for mem/pmem in %s",
+                __func__);
 
-          if (setrlimit(RLIMIT_RSS, &reslim) < 0)
-            {
-            sprintf(log_buffer, "cannot set RSS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
+              return(error(pname, retval));
+              }
 
-            return(error("RLIMIT_RSS", PBSE_SYSTEM));
-            }
+            reslim.rlim_cur = reslim.rlim_max = value;
+
+            if (setrlimit(RLIMIT_DATA, &reslim) < 0)
+              {
+              sprintf(log_buffer, "cannot set data limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
+                (long int)reslim.rlim_max,
+                pjob->ji_qs.ji_jobid,
+                errno,
+                strerror(errno));
+
+              return(error("RLIMIT_DATA", PBSE_SYSTEM));
+              }
+
+            if (setrlimit(RLIMIT_RSS, &reslim) < 0)
+              {
+              sprintf(log_buffer, "cannot set RSS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
+                (long int)reslim.rlim_max,
+                pjob->ji_qs.ji_jobid,
+                errno,
+                strerror(errno));
+
+              return(error("RLIMIT_RSS", PBSE_SYSTEM));
+              }
 
 #ifdef __GATECH
-          /* NOTE:  best patch may be to change to 'vmem_limit = value;' */
+            /* NOTE:  best patch may be to change to 'vmem_limit = value;' */
 
-          if (setrlimit(RLIMIT_STACK, &reslim) < 0)
-            {
-            sprintf(log_buffer, "cannot set stack limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
+            if (setrlimit(RLIMIT_STACK, &reslim) < 0)
+              {
+              sprintf(log_buffer, "cannot set stack limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
+                (long int)reslim.rlim_max,
+                pjob->ji_qs.ji_jobid,
+                errno,
+                strerror(errno));
 
-            return(error("RLIMIT_STACK", PBSE_SYSTEM));
-            }
+              return(error("RLIMIT_STACK", PBSE_SYSTEM));
+              }
 
-          /* set address space */
+            /* set address space */
 
-          if (setrlimit(RLIMIT_AS, &reslim) < 0)
-            {
-            sprintf(log_buffer, "cannot set AS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
-              (long int)reslim.rlim_max,
-              pjob->ji_qs.ji_jobid,
-              errno,
-              strerror(errno));
+            if (setrlimit(RLIMIT_AS, &reslim) < 0)
+              {
+              sprintf(log_buffer, "cannot set AS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
+                (long int)reslim.rlim_max,
+                pjob->ji_qs.ji_jobid,
+                errno,
+                strerror(errno));
 
-            return(error("RLIMIT_AS", PBSE_SYSTEM));
-            }
+              return(error("RLIMIT_AS", PBSE_SYSTEM));
+              }
 
 #endif /* __GATECH */
 
-          mem_limit = value;
+            mem_limit = value;
 
-          if (getrlimit(RLIMIT_STACK, &reslim) >= 0)
+            if (getrlimit(RLIMIT_STACK, &reslim) >= 0)
+              {
+              /* NOTE:  mem_limit no longer used with UMU patch in place */
+
+              mem_limit = value + reslim.rlim_cur;
+              }
+            }
+          }
+        }    /* END else if (!strcmp(pname,"mem") && ... */
+      else if (!strcmp(pname, "walltime"))
+        {
+        /* check */
+
+        retval = mm_gettime(&r, &value);
+
+        if (retval != PBSE_NONE)
+          {
+          sprintf(log_buffer, "mm_gettime() failed for walltime in %s\n",
+                  __func__);
+
+          return(error(pname, retval));
+          }
+        }
+      else if (!strcmp(pname, "nice"))
+        {
+        /* set nice */
+
+        if (set_mode == SET_LIMIT_SET)
+          {
+          errno = 0;
+
+          if ((nice((int)r.rs_value.at_val.at_long) == -1) && (errno != 0))
             {
-            /* NOTE:  mem_limit no longer used with UMU patch in place */
+            sprintf(log_buffer, "nice() failed w/errno=%d (%s) in %s\n",
+                    errno,
+                    strerror(errno),
+                    __func__);
 
-            mem_limit = value + reslim.rlim_cur;
+            return(error(pname, PBSE_BADATVAL));
             }
           }
         }
-      }    /* END else if (!strcmp(pname,"mem") && ... */
-    else if (!strcmp(pname, "walltime"))
-      {
-      /* check */
-
-      retval = mm_gettime(pres, &value);
-
-      if (retval != PBSE_NONE)
+      else if (!strcmp(pname, "cpuclock"))   /* Set cpu frequency */
         {
-        sprintf(log_buffer, "mm_gettime() failed for walltime in %s\n",
+        if(set_mode == SET_LIMIT_SET)
+          {
+          std::string beforeFreq;
+          char requestedFreq[100];
+
+          from_frequency(&(r.rs_value.at_val.at_frequency),requestedFreq);
+
+          nd_frequency.get_frequency_string(beforeFreq);
+          if (!nd_frequency.set_frequency((cpu_frequency_type)r.rs_value.at_val.at_frequency.frequency_type,
+              r.rs_value.at_val.at_frequency.mhz,
+              r.rs_value.at_val.at_frequency.mhz))
+            {
+            std::string msg = "Failed to change frequency.";
+            log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
+            }
+          else
+            {
+            std::string afterFreq;
+            nd_frequency.get_frequency_string(afterFreq);
+            std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq + " requested frequency was " + requestedFreq;
+            log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
+            }
+          }
+        }
+      else if (!strcmp(pname, "size"))
+        {
+        /* ignore */
+
+        /* NO-OP */
+        }
+      else if (!strcmp(pname, "prologue"))
+        {
+        }
+      else if (!strcmp(pname, "epilogue"))
+        {
+        }
+      else if ((!strcmp(pname, "mppdepth"))  ||
+               (!strcmp(pname, "mppnodect")) ||
+               (!strcmp(pname, "mppwidth")) ||
+               (!strcmp(pname, "mppnppn")) ||
+               (!strcmp(pname, "mppnodes")) ||
+               (!strcmp(pname, "mpplabels")) ||
+               (!strcmp(pname, "mpparch")) ||
+               (!strcmp(pname, "mpplabel")))
+        {
+        /* NO-OP */
+        }
+      else if ((r.rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
+        {
+        /* don't recognize and not marked as ignore by mom */
+
+        sprintf(log_buffer, "do not know how to process resource '%s' in %s\n",
+                pname,
                 __func__);
 
-        return(error(pname, retval));
+        return(error(pname, PBSE_UNKRESC));
         }
       }
-    else if (!strcmp(pname, "nice"))
-      {
-      /* set nice */
-
-      if (set_mode == SET_LIMIT_SET)
-        {
-        errno = 0;
-
-        if ((nice((int)pres->rs_value.at_val.at_long) == -1) && (errno != 0))
-          {
-          sprintf(log_buffer, "nice() failed w/errno=%d (%s) in %s\n",
-                  errno,
-                  strerror(errno),
-                  __func__);
-
-          return(error(pname, PBSE_BADATVAL));
-          }
-        }
-      }
-    else if (!strcmp(pname, "cpuclock"))   /* Set cpu frequency */
-      {
-      if(set_mode == SET_LIMIT_SET)
-        {
-        std::string beforeFreq;
-        char requestedFreq[100];
-
-        from_frequency(&(pres->rs_value.at_val.at_frequency),requestedFreq);
-
-        nd_frequency.get_frequency_string(beforeFreq);
-        if(!nd_frequency.set_frequency((cpu_frequency_type)pres->rs_value.at_val.at_frequency.frequency_type,
-            pres->rs_value.at_val.at_frequency.mhz,
-            pres->rs_value.at_val.at_frequency.mhz))
-          {
-          std::string msg = "Failed to change frequency.";
-          log_ext(nd_frequency.get_last_error(),__func__,msg.c_str(),LOG_ERR);
-          }
-        else
-          {
-          std::string afterFreq;
-          nd_frequency.get_frequency_string(afterFreq);
-          std::string msg = "Changed frequency from " + beforeFreq + " to " + afterFreq + " requested frequency was " + requestedFreq;
-          log_ext(PBSE_CHANGED_CPU_FREQUENCY,__func__, msg.c_str(),LOG_NOTICE);
-          }
-        }
-      }
-    else if (!strcmp(pname, "size"))
-      {
-      /* ignore */
-
-      /* NO-OP */
-      }
-    else if (!strcmp(pname, "prologue"))
-      {
-      }
-    else if (!strcmp(pname, "epilogue"))
-      {
-      }
-    else if ((!strcmp(pname, "mppdepth"))  ||
-             (!strcmp(pname, "mppnodect")) ||
-             (!strcmp(pname, "mppwidth")) ||
-             (!strcmp(pname, "mppnppn")) ||
-             (!strcmp(pname, "mppnodes")) ||
-             (!strcmp(pname, "mpplabels")) ||
-             (!strcmp(pname, "mpparch")) ||
-             (!strcmp(pname, "mpplabel")))
-      {
-      /* NO-OP */
-      }
-    else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
-      {
-      /* don't recognize and not marked as ignore by mom */
-
-      sprintf(log_buffer, "do not know how to process resource '%s' in %s\n",
-              pname,
-              __func__);
-
-      return(error(pname, PBSE_UNKRESC));
-      }
-
-    pres = (resource *)GET_NEXT(pres->rs_link);
     }
 
   if (set_mode == SET_LIMIT_SET)
@@ -2240,7 +2241,6 @@ int mom_do_poll(
 
   {
   const char  *pname;
-  resource *pres;
 
   assert(pjob != NULL);
 
@@ -2257,35 +2257,35 @@ int mom_do_poll(
 
   assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  pres = (resource *)GET_NEXT(
-           pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
-  while (pres != NULL)
+  if (resources != NULL)
     {
-    assert(pres->rs_defin != NULL);
-
-    pname = pres->rs_defin->rs_name;
-
-    assert(pname != NULL);
-    assert(*pname != '\0');
-
-    if (strcmp(pname, "walltime") == 0 ||
-        strcmp(pname, "cput") == 0 ||
-        strcmp(pname, "pcput") == 0 ||
-        strcmp(pname, "mem") == 0 ||
-        strcmp(pname, "pvmem") == 0 ||
-        strcmp(pname, "vmem") == 0)
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      return(TRUE);
-      }
+      resource &r = resources->at(i);
 
-    pres = (resource *)GET_NEXT(pres->rs_link);
+      assert(r.rs_defin != NULL);
+
+      pname = r.rs_defin->rs_name;
+
+      assert(pname != NULL);
+      assert(*pname != '\0');
+
+      if (strcmp(pname, "walltime") == 0 ||
+          strcmp(pname, "cput") == 0 ||
+          strcmp(pname, "pcput") == 0 ||
+          strcmp(pname, "mem") == 0 ||
+          strcmp(pname, "pvmem") == 0 ||
+          strcmp(pname, "vmem") == 0)
+        {
+        return(TRUE);
+        }
+      }
     }
 
   return(FALSE);
   }  /* END mom_do_poll() */
-
-
 
 
 
@@ -2574,114 +2574,116 @@ int mom_over_limit(
   unsigned long      num;
   unsigned long long numll;
 
-  resource *pres;
-
   assert(pjob != NULL);
   assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  pres = (resource *)GET_NEXT(
-           pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
-  for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+  if (resources != NULL)
     {
-    assert(pres->rs_defin != NULL);
-
-    pname = pres->rs_defin->rs_name;
-
-    assert(pname != NULL);
-    assert(*pname != '\0');
-
-    if ((igncput == FALSE) && (strcmp(pname, "cput") == 0))
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      retval = mm_gettime(pres, &value);
+      resource &r = resources->at(i);
 
-      if (retval != PBSE_NONE)
-        continue;
+      assert(r.rs_defin != NULL);
 
-      if ((num = cput_sum(pjob)) > value)
+      pname = r.rs_defin->rs_name;
+
+      assert(pname != NULL);
+      assert(*pname != '\0');
+
+      if ((igncput == FALSE) && (strcmp(pname, "cput") == 0))
         {
-        sprintf(log_buffer, "cput %lu exceeded limit %lu",
-                num,
-                value);
+        retval = mm_gettime(&r, &value);
 
-        return(JOB_EXEC_OVERLIMIT_CPUT);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((num = cput_sum(pjob)) > value)
+          {
+          sprintf(log_buffer, "cput %lu exceeded limit %lu",
+                  num,
+                  value);
+
+          return(JOB_EXEC_OVERLIMIT_CPUT);
+          }
         }
-      }
-    else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
-      {
-      retval = mm_gettime(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      if (overcpu_proc(pjob, value))
+      else if ((igncput == FALSE) && (strcmp(pname, "pcput") == 0))
         {
-        sprintf(log_buffer, "pcput exceeded limit %lu",
-                value);
+        retval = mm_gettime(&r, &value);
 
-        return(JOB_EXEC_OVERLIMIT_CPUT);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if (overcpu_proc(pjob, value))
+          {
+          sprintf(log_buffer, "pcput exceeded limit %lu",
+                  value);
+
+          return(JOB_EXEC_OVERLIMIT_CPUT);
+          }
         }
-      }
-    else if (strcmp(pname, "vmem") == 0)
-      {
-      retval = mm_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      if ((ignvmem == 0) && ((numll = mem_sum(pjob)) > value))
+      else if (strcmp(pname, "vmem") == 0)
         {
-        sprintf(log_buffer, "vmem %llu exceeded limit %lu",
-                numll,
-                value);
+        retval = mm_getsize(&r, &value);
 
-        return(JOB_EXEC_OVERLIMIT_MEM);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((ignvmem == 0) && ((numll = mem_sum(pjob)) > value))
+          {
+          sprintf(log_buffer, "vmem %llu exceeded limit %lu",
+                  numll,
+                  value);
+
+          return(JOB_EXEC_OVERLIMIT_MEM);
+          }
         }
-      }
-    else if (strcmp(pname, "pvmem") == 0)
-      {
-      unsigned long long valuell;
-
-      retval = mm_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      valuell = (unsigned long long)value;
-
-      if ((ignvmem == 0) && (overmem_proc(pjob, valuell)))
+      else if (strcmp(pname, "pvmem") == 0)
         {
-        sprintf(log_buffer, "pvmem exceeded limit %llu",
-                valuell);
+        unsigned long long valuell;
 
-        return(JOB_EXEC_OVERLIMIT_MEM);
+        retval = mm_getsize(&r, &value);
+
+        if (retval != PBSE_NONE)
+          continue;
+
+        valuell = (unsigned long long)value;
+
+        if ((ignvmem == 0) && (overmem_proc(pjob, valuell)))
+          {
+          sprintf(log_buffer, "pvmem exceeded limit %llu",
+                  valuell);
+
+          return(JOB_EXEC_OVERLIMIT_MEM);
+          }
         }
-      }
-    else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
-      {
-
-      /* no need to check walltime on sisters, MS will get it */
-      if (am_i_mother_superior(*pjob) == false)
-        continue;
-
-      retval = mm_gettime(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      num = (unsigned long)((double)(time_now - pjob->ji_qs.ji_stime) *
-                            wallfactor);
-
-      if (num > value)
+      else if (ignwalltime == 0 && strcmp(pname, "walltime") == 0)
         {
-        sprintf(log_buffer, "walltime %ld exceeded limit %ld",
-                num,
-                value);
 
-        return(JOB_EXEC_OVERLIMIT_WT);
+        /* no need to check walltime on sisters, MS will get it */
+        if (am_i_mother_superior(*pjob) == false)
+          continue;
+
+        retval = mm_gettime(&r, &value);
+
+        if (retval != PBSE_NONE)
+          continue;
+
+        num = (unsigned long)((double)(time_now - pjob->ji_qs.ji_stime) *
+                              wallfactor);
+
+        if (num > value)
+          {
+          sprintf(log_buffer, "walltime %ld exceeded limit %ld",
+                  num,
+                  value);
+
+          return(JOB_EXEC_OVERLIMIT_WT);
+          }
         }
-      }
-    }  /* END for (pres) */
+      }  /* END for each resource */
+    }
 
 #ifdef PENABLE_LINUX26_CPUSETS
   /* Check memory_pressure */
@@ -2721,8 +2723,6 @@ int mom_over_limit(
 
   return(PBSE_NONE);
   }  /* END mom_over_limit() */
-
-
 
 
 

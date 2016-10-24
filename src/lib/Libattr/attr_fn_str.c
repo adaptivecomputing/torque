@@ -125,7 +125,7 @@ using namespace std;
  *  *patr members set
  */
 
-extern int ctnodes(char *spec);
+extern int ctnodes(const char *spec);
 
 int decode_str(
 

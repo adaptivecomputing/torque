@@ -6,11 +6,128 @@
 #include "server.h" /* server */
 #include "batch_request.h" /* batch_request */
 #include "list_link.h" /* list_link */
+#include "resource.h" /* list_link */
 
 attribute_def job_attr_def[10];
 struct server server;
 
-
+resource_def svr_resc_def_const[100];
+/*
+resource_def svr_resc_def_const[] =
+  {
+    { "arch",
+    decode_str,
+    encode_str,
+    set_str,
+    comp_str,
+    free_str,
+    NULL_FUNC,
+    READ_WRITE,
+    ATR_TYPE_STR
+    },
+  { "cpupercent",
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    NO_USER_SET,
+    ATR_TYPE_LONG
+  },
+  { "cput",
+    decode_time,
+    encode_time,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN,
+    ATR_TYPE_LONG
+  },
+  { "file",
+    decode_size,
+    encode_size,
+    set_size,
+    comp_size,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_SIZE
+  },
+  { "mem",
+    decode_size,
+    encode_size,
+    set_size,
+    comp_size,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN | ATR_DFLAG_RASSN,
+    ATR_TYPE_SIZE
+  },
+  { "pmem",
+    decode_size,
+    encode_size,
+    set_size,
+    comp_size,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN | ATR_DFLAG_RMOMIG,
+    ATR_TYPE_SIZE
+  },
+  { "ncpus",
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG | ATR_DFLAG_RASSN,
+    ATR_TYPE_LONG
+  },
+  { "vmem",
+    decode_size,
+    encode_size,
+    set_size,
+    comp_size,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_ALTRUN | ATR_DFLAG_RASSN,
+    ATR_TYPE_SIZE
+  },
+  { "pvmem",
+    decode_size,
+    encode_size,
+    set_size,
+    comp_size,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM | ATR_DFLAG_RMOMIG,
+    ATR_TYPE_SIZE
+  },
+  { "nice", 
+    decode_l,
+    encode_l,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_LONG
+  },
+  { "pcput",
+    decode_time,
+    encode_time,
+    set_l,
+    comp_l,
+    free_null,
+    NULL_FUNC,
+    READ_WRITE | ATR_DFLAG_MOM,
+    ATR_TYPE_LONG
+  },
+  }; */
+resource_def *svr_resc_def = svr_resc_def_const;
+int svr_resc_size = sizeof(svr_resc_def_const) / sizeof(resource_def);
 
 svrattrl *attrlist_create(const char *aname, const char *rname, int vsize)
   {

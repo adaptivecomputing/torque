@@ -20,6 +20,7 @@ extern time_t LastServerUpdateTime;
 extern time_t last_poll_time;
 extern bool ForceServerUpdate;
 extern int MOMCudaVisibleDevices;
+extern bool daemonize_mom;
 
 time_t pbs_tcp_timeout;
 unsigned long setcudavisibledevices(const char *);
@@ -44,6 +45,24 @@ extern int flush_ret;
 extern int job_bailed;
 extern bool am_i_ms;
 
+bool are_we_forking()
+
+  {
+  char *forking = getenv("CK_FORK");
+
+  if ((forking != NULL) &&  
+      (!strcasecmp(forking, "no")))
+    return(false);
+
+  return(true);
+  }
+
+void set_optind()
+
+  {
+  if (are_we_forking() == false)
+    optind = 0;
+  }
 
 int encode_fake(
 
@@ -393,6 +412,42 @@ START_TEST(calculate_select_timeout_test)
 END_TEST
 
 
+START_TEST(test_parse_command_line1)
+  {
+  char *argv[] = {strdup("pbs_mom"), strdup("-D")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(2, argv);
+  fail_unless(daemonize_mom == false);
+  }
+END_TEST
+
+
+START_TEST(test_parse_command_line2)
+  {
+  char *argv[] = {strdup("pbs_mom"), strdup("-F")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(2, argv);
+  fail_unless(daemonize_mom == false);
+  }
+END_TEST
+
+
+START_TEST(test_parse_command_line3)
+  {
+  char *argv[] = {strdup("pbs_mom")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(1, argv);
+  fail_unless(daemonize_mom == true);
+  }
+END_TEST
+
+
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
@@ -415,6 +470,18 @@ Suite *mom_main_suite(void)
   tc_core = tcase_create("test_check_job_substates");
   tcase_add_test(tc_core, test_check_job_substates);
   tcase_add_test(tc_core, test_should_resend_obit);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line1");
+  tcase_add_test(tc_core, test_parse_command_line1);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line2");
+  tcase_add_test(tc_core, test_parse_command_line2);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line3");
+  tcase_add_test(tc_core, test_parse_command_line3);
   suite_add_tcase(s, tc_core);
 
   return s;

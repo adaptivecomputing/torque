@@ -83,7 +83,7 @@ qsub \- submit pbs job
 .SH SYNOPSIS
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
-[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
+[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-i idle_slot_limit] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
 [\-l resource_list] [\-m mail_options] [\-M user_list] [\-n node_exclusive] [\-N name] 
 [\-o path] [\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
 [\-S path_list] [\-t array_request] [\-T prologue/epilogue script_name] 
@@ -401,6 +401,13 @@ attribute will be set to USER, "u".
 If \-h is not specified, then
 .At Hold_Types 
 is set to NONE, "n".
+.Ig
+.IP "\-i idle_slot_lmit" 8
+Sets an idle slot limit for the job array being submitted. If this parameter is set for a non-array job, it will be rejected. Additionally, if the user requests an idle slot limit that exceeds the the server parameter's default, the job will be rejected. See also the idle_slot_limit server parameter.
+.br
+ $ qsub -t 0-99 -i 10 script.sh
+.br
+  The submitted array will only instantiate 10 idle jobs; instead of all 100 jobs at submission time.
 .Ig
 .IP "\-I" 8
 Declares that the job is to be run "interactively".  The job will be queued

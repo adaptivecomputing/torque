@@ -398,6 +398,7 @@ END_TEST
 START_TEST(test_spread_place)
   {
   const char        *jobid = "1.napali";
+  const char        *jobid2 = "2.scadrial";
   req                r;
   std::stringstream  out;
 
@@ -452,13 +453,24 @@ START_TEST(test_spread_place)
   fail_unless(c.has_socket_exclusive_allocation() == true);
 
   c.free_task(jobid);
-  allocation a2;
+  allocation a2(jobid2);
   a2.place_type = exclusive_chip;
   remaining = 0;
   fail_unless(c.spread_place(r, a2, 40, remaining) == false);
   fail_unless(c.spread_place(r, a2, 18, remaining) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
+  c.free_task(jobid2);
+  
+  req r2;
+  allocation a3;
+  const char *host = "scadrial";
+  r2.set_value("lprocs", "2", false);
+  r2.set_value("memory", "1kb", false);
+  int tasks = c.place_task(r2, a3, 1, host);
+  fail_unless(tasks == 1);
+  // We shouldn't place anything in spread place unless we're completely free
+  fail_unless(c.spread_place(r, a2, 18, remaining) == false);
   }
 END_TEST
 

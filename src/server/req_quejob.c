@@ -211,45 +211,46 @@ int set_nodes_attr(
   job *pjob)
 
   {
-  resource *pres;
-	int       nodect_set = 0;
+	bool      nodect_set = false;
   int       rc = 0;
   const char  *pname;
 
-  if (pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET)
+  if ((pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL))
     {
-    pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list);
-    while (pres != NULL)
+    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
+
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      if (pres->rs_defin != NULL)
+      resource &r = resources->at(i);
+      if (r.rs_defin != NULL)
         {
-        pname = pres->rs_defin->rs_name;
+        pname = r.rs_defin->rs_name;
         if (pname == NULL || *pname == 0)
           {
-          pres = (resource *)GET_NEXT(pres->rs_link);
           continue;
           }
         
         if ((strncmp(pname, "nodes", 5) == 0) || 
             (strncmp(pname, "procs", 5) == 0))
           {
-          nodect_set = 1;
+          nodect_set = true;
           break;
           }
         }
-        pres = (resource *)GET_NEXT(pres->rs_link);
       }
-    }                                                                         
+    }
 
-    if (nodect_set == 0)
-      {
-      int resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
-      /* neither procs nor nodes were requested. set procct to 1 */
-      rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], "Resource_List", "procct", "1", resc_access_perm);
-      }
+  if (nodect_set == false)
+    {
+    int resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
+    /* neither procs nor nodes were requested. set procct to 1 */
+    rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], "Resource_List", "procct", "1", resc_access_perm);
+    }
 
   return(rc);
   }   /* END set_nodes_attr() */
+
 
 
 /*

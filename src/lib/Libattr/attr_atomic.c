@@ -126,7 +126,6 @@ int attr_atomic_set(
   int           acc;
   int           index;
   int           listidx;
-  resource      *prc;
   int            rc;
   pbs_attribute  temp;
   int            resc_access_perm = privil; /* set privilege for decode_resc() */
@@ -198,7 +197,7 @@ int attr_atomic_set(
      */
     
     if ((strcmp(plist->al_name,ATTR_l) == 0) &&
-      (strcmp(plist->al_resc,"ncpus") == 0))
+        (strcmp(plist->al_resc,"ncpus") == 0))
       {
       char      *pc;
       if ((pc = strstr(plist->al_value,":gpus=")) != NULL)
@@ -269,12 +268,14 @@ int attr_atomic_set(
 
       if ((new_attr + index)->at_type == ATR_TYPE_RESC)
         {
-        prc = (resource *)GET_NEXT((new_attr + index)->at_val.at_list);
+        std::vector<resource> *res_ptr = (std::vector<resource> *)(new_attr + index)->at_val.at_ptr;
 
-        while (prc)
+        if (res_ptr != NULL)
           {
-          prc->rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
-          prc = (resource *)GET_NEXT(prc->rs_link);
+          std::vector<resource> &resources = *res_ptr;
+
+          for (size_t i = 0; i < resources.size(); i++)
+            resources[i].rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
           }
         }
       }

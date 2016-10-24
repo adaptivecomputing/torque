@@ -559,11 +559,11 @@ int node_prop_list(pbs_attribute*, void*, int)
 
 int ctnodes(
 
-  char *spec)
+  const char *spec)
 
   {
   int   ct = 0;
-  char *pc;
+  const char *pc;
 
   while (1)
     {

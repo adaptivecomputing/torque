@@ -123,7 +123,7 @@
 
 /* External functions called */
 int svr_movejob(job *, char *, int *, struct batch_request *);
-long count_proc(char *spec);
+long count_proc(const char *spec);
 
 /* Local Functions */
 

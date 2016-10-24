@@ -1321,12 +1321,17 @@ int modify_job_attr(
 
       job_attr_def[i].at_free(pattr + i);
 
-      if ((newattr[i].at_type == ATR_TYPE_LIST) ||
-          (newattr[i].at_type == ATR_TYPE_RESC))
+      if (newattr[i].at_type == ATR_TYPE_LIST)
         {
         list_move(
           &newattr[i].at_val.at_list,
           &(pattr + i)->at_val.at_list);
+        }
+      else if (newattr[i].at_type == ATR_TYPE_RESC)
+        {
+        void *old_ptr = pattr[i].at_val.at_ptr;
+        pattr[i].at_val.at_ptr = newattr[i].at_val.at_ptr;
+        newattr[i].at_val.at_ptr = old_ptr;
         }
       else
         {

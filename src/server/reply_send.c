@@ -86,9 +86,6 @@ static void set_err_msg(
 
 
 
-
-
-
 static int dis_reply_write(
 
   int                 sfds,    /* I */
@@ -98,26 +95,28 @@ static int dis_reply_write(
   int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
 
   /* setup for DIS over tcp */
-  if ((chan = DIS_tcp_setup(sfds)) == NULL)
+  if ((chan = DIS_tcp_setup(sfds)) != NULL)
     {
-    }
+    /* send message to remote client */
+    if ((rc = encode_DIS_reply(chan, preply)) ||
+             (rc = DIS_tcp_wflush(chan)))
+      {
+      sprintf(log_buf, "DIS reply failure, %d", rc);
 
-  /* send message to remote client */
-  else if ((rc = encode_DIS_reply(chan, preply)) ||
-           (rc = DIS_tcp_wflush(chan)))
-    {
-    sprintf(log_buf, "DIS reply failure, %d", rc);
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
-    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+      /* don't need to get the lock here because we already have it from process request */
+      close_conn(sfds, FALSE);
+      }
 
-    /* don't need to get the lock here because we already have it from process request */
-    close_conn(sfds, FALSE);
-    }
-
-  if (chan != NULL)
     DIS_tcp_cleanup(chan);
+    }
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return(rc);
   }  /* END dis_reply_write() */

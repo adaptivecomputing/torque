@@ -114,9 +114,9 @@ extern attribute_def    node_attr_def[];
 extern int svr_clnodes;
 
 /* Prototypes */
-int save_node_status(struct pbsnode *current, pbs_attribute *temp);
+int save_node_status(pbsnode *current, std::string &temp);
 
-struct pbsnode *find_alpsnode_by_name(
+pbsnode *find_alpsnode_by_name(
 
   struct pbsnode *parent,
   const char    *node_id)
@@ -627,22 +627,13 @@ int process_alps_status(
   char           *current_node_id = NULL;
   struct pbsnode *parent;
   struct pbsnode *current = NULL;
-  int             rc;
 #ifdef PENABLE_LINUX_CGROUPS
   int             numa_nodes = 0;
   int             sockets = 0;
 #endif
-  pbs_attribute   temp;
+  std::string     temp;
   container::item_container<const char *> rsv_ht;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-
-  memset(&temp, 0, sizeof(temp));
-
-  if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
-    {
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
-    return(rc);
-    }
 
   /* if we can't find the parent node, ignore the update */
   if ((parent = find_nodebyname(nd_name)) == NULL)
@@ -658,7 +649,9 @@ int process_alps_status(
       if (i != 0)
         {
         if (current != NULL)
-          save_node_status(current, &temp);
+          save_node_status(current, temp);
+      
+        temp.clear();
         }
 
       if ((current = determine_node_from_str(str, parent, current)) == NULL)
@@ -680,7 +673,7 @@ int process_alps_status(
     /* process the gpu status information separately */
     if (!strcmp(CRAY_GPU_STATUS_START, str))
       {
-      rc = process_gpu_status(current, i, status_info);
+      process_gpu_status(current, i, status_info);
       continue;
       }
     else if (!strncmp(reservation_id, str, strlen(reservation_id)))
@@ -707,7 +700,6 @@ int process_alps_status(
           {
           /* reporter node disappeared - this shouldn't be possible */
           log_err(PBSE_UNKNODE, __func__, "Alps reporter node disappeared while recording a reservation");
-          free_arst(&temp);
           free(current_node_id);
           return(PBSE_NONE);
           }
@@ -719,7 +711,6 @@ int process_alps_status(
           snprintf(log_buf, sizeof(log_buf), "Current node '%s' disappeared while recording a reservation",
             current_node_id);
           log_err(PBSE_UNKNODE, __func__, log_buf);
-          free_arst(&temp);
           free(current_node_id);
           return(PBSE_NONE);
           }
@@ -733,10 +724,11 @@ int process_alps_status(
         }
       }
     /* save this as is to the status strings */
-    else if ((rc = decode_arst(&temp, NULL, NULL, str, 0)) != PBSE_NONE)
+    else
       {
-      free_arst(&temp);
-      return(rc);
+      if (temp.size() > 0)
+        temp += ",";
+      temp += str;
       }
 
     /* perform any special processing */
@@ -822,7 +814,7 @@ int process_alps_status(
 
   if (current != NULL)
     {
-    save_node_status(current, &temp);
+    save_node_status(current, temp);
     current->unlock_node(__func__, NULL, LOGLEVEL);
     }
 

@@ -90,12 +90,6 @@ void DIS_tcp_reset(int fd, int i)
   exit(1);
   }
 
-int ctnodes(char *spec)
-  {
-  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
-  exit(1);
-  }
-
 char * netaddr(struct sockaddr_in *ap)
   {
   fprintf(stderr, "The call to netaddr needs to be mocked!!\n");
@@ -338,6 +332,10 @@ job *svr_find_job(const char *jobid, int get_subjob)
   else if (!strcmp(jobid, "4"))
     {
     return(NULL);
+    }
+  else if (!strcmp(jobid, "2.napali"))
+    {
+    pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
     }
   else if (strcmp(jobid, "2"))
     {
@@ -685,7 +683,7 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
-                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -718,7 +716,7 @@ pbsnode::pbsnode(
   const char *pname,
   u_long     *pul,
   bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_prop(NULL),
-                                     nd_status(NULL),
+                                     nd_status(),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -1078,3 +1076,5 @@ bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
   {
   return(true);
   }
+
+int pbsnode::get_version() const {return 0;}

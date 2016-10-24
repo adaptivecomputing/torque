@@ -1633,10 +1633,13 @@ void req_modifyjob(
 
     job_attr_def[i].at_free(pattr + i);
 
-    if ((newattr[i].at_type == ATR_TYPE_LIST) ||
-        (newattr[i].at_type == ATR_TYPE_RESC))
-      {
+    if (newattr[i].at_type == ATR_TYPE_LIST)
       list_move(&newattr[i].at_val.at_list, &(pattr + i)->at_val.at_list);
+    else if (newattr[i].at_type == ATR_TYPE_RESC)
+      {
+      void *old_ptr = pattr[i].at_val.at_ptr;
+      pattr[i].at_val.at_ptr = newattr[i].at_val.at_ptr;
+      newattr[i].at_val.at_ptr = old_ptr;
       }
 
 #ifdef TNOT
@@ -2316,7 +2319,6 @@ void encode_used(
 
   {
   unsigned long  lnum;
-  int            i;
   pbs_attribute *at;
   attribute_def *ad;
   char           valbuf[MAXLINE];
@@ -2324,16 +2326,16 @@ void encode_used(
   at = &pjob->ji_wattr[JOB_ATR_resc_used];
   ad = &job_attr_def[JOB_ATR_resc_used];
 
-  if ((at->at_flags & ATR_VFLAG_SET) == 0)
-    {
+  if (((at->at_flags & ATR_VFLAG_SET) == 0) ||
+      (at->at_val.at_ptr == NULL))
     return;
-    }
 
-  for (resource *rs = (resource *)GET_NEXT(at->at_val.at_list);
-       rs != NULL;
-       rs = (resource *)GET_NEXT(rs->rs_link))
+  std::vector<resource> *resources = (std::vector<resource> *)at->at_val.at_ptr;
+
+  for (size_t i = 0; i < resources->size(); i++)
     {
-    resource_def *rd = rs->rs_defin;
+    resource     &r = resources->at(i);
+    resource_def *rd = r.rs_defin;
     pbs_attribute val;
     int           rc = PBSE_NONE;
     bool          mem_val = false;
@@ -2341,7 +2343,7 @@ void encode_used(
     if ((rd->rs_flags & perm) == 0)
       continue;
 
-    val = rs->rs_value; /* copy resource pbs_attribute */
+    val = r.rs_value; /* copy resource pbs_attribute */
 
     if ((!strcmp(rd->rs_name, "mem")) ||
         (!strcmp(rd->rs_name, "vmem")))
@@ -2355,23 +2357,23 @@ void encode_used(
 
       if (!strcmp(rd->rs_name, "cput"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_cput;
+          lnum += pjob->ji_resources[j].nr_cput;
           }
         }
       else if (!strcmp(rd->rs_name, "mem"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_mem;
+          lnum += pjob->ji_resources[j].nr_mem;
           }
         }
       else if (!strcmp(rd->rs_name, "vmem"))
         {
-        for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        for (int j = 0; j < pjob->ji_numnodes - 1; j++)
           {
-          lnum += pjob->ji_resources[i].nr_vmem;
+          lnum += pjob->ji_resources[j].nr_vmem;
           }
         }
 
@@ -2401,7 +2403,7 @@ void encode_used(
 
     if (rc < 0)
       break;
-    }  /* END for (rs) */
+    }  /* END for each resource */
 
 #ifdef USE_RESOURCE_PLUGIN
 

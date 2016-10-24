@@ -342,7 +342,7 @@ char           *path_log;
 
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
-int                     DOBACKGROUND = 1;
+bool                    daemonize_mom = true;
 long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
@@ -2010,7 +2010,6 @@ void add_diag_jobs_memory_info(
   job               *pjob)
 
   {
-  resource      *pres;
   const char    *resname;
   unsigned long  resvalue;
   
@@ -2023,28 +2022,36 @@ void add_diag_jobs_memory_info(
       return;
       }
 
-    pres = (resource *)GET_NEXT(pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_list);
-    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_ptr;
+
+    if (resources != NULL)
       {
-      if (pres->rs_defin == NULL) 
+      for (size_t i = 0; i < resources->size(); i++)
         {
-        continue;
+        resource &r = resources->at(i);
+
+        if (r.rs_defin == NULL) 
+          {
+          continue;
+          }
+
+        resname = r.rs_defin->rs_name;
+        if (!(strcmp(resname, "mem")))
+          resvalue = getsize(&r);
+        else if (!(strcmp(resname, "vmem")))
+          resvalue = getsize(&r);
+        else if (!(strcmp(resname, "cput")))
+          resvalue = gettime(&r);
+        else if (!(strcmp(resname, "energy_used")))
+          resvalue = gettime(&r);
+        else
+          continue;
+
+        output << " " << resname << "=" << resvalue;
         }
 
-      resname = pres->rs_defin->rs_name;
-      if (!(strcmp(resname, "mem")))
-        resvalue = getsize(pres);
-      else if (!(strcmp(resname, "vmem")))
-        resvalue = getsize(pres);
-      else if (!(strcmp(resname, "cput")))
-        resvalue = gettime(pres);
-      else if (!(strcmp(resname, "energy_used")))
-        resvalue = gettime(pres);
-      else
-        continue;
-
-      output << " " << resname << "=" << resvalue;
       }
+
 
 #ifdef PENABLE_LINUX26_CPUSETS
     /* report current memory pressure */
@@ -3019,7 +3026,7 @@ int rm_request(
           }
         }
 
-      clear_servers();
+      reset_config_vars();
 
       len = read_config(body);
 
@@ -3697,7 +3704,6 @@ int job_over_limit(
   {
   pbs_attribute       *attr;
   pbs_attribute       *used;
-  resource            *limresc;
   resource            *useresc;
 
   struct resource_def *rd;
@@ -3706,10 +3712,6 @@ int job_over_limit(
   unsigned long        limit;
   char                *units;
   int                  rc;
-
-#ifndef NUMA_SUPPORT
-  int                  i;
-#endif /* ndef NUMA_SUPPORT */
 
   if ((rc = mom_over_limit(pjob)) != PBSE_NONE)
     {
@@ -3799,60 +3801,68 @@ int job_over_limit(
 
   used = &pjob->ji_wattr[JOB_ATR_resc_used];
 
+  bool over_limit = false;
+
   /* only enforce cpu time and memory usage */
-
-  for (limresc = (resource *)GET_NEXT(attr->at_val.at_list);
-       limresc != NULL;
-       limresc = (resource *)GET_NEXT(limresc->rs_link))
+  if (attr->at_val.at_ptr != NULL)
     {
-    if ((limresc->rs_value.at_flags & ATR_VFLAG_SET) == 0)
-      continue;
+    std::vector<resource> *resources = (std::vector<resource> *)attr->at_val.at_ptr;
 
-    rd = limresc->rs_defin;
-
-    if (!strcmp(rd->rs_name, "cput"))
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      if (igncput == TRUE)
+      resource &r = resources->at(i);
+      if ((r.rs_value.at_flags & ATR_VFLAG_SET) == 0)
         continue;
+
+      rd = r.rs_defin;
+
+      if (!strcmp(rd->rs_name, "cput"))
+        {
+        if (igncput == TRUE)
+          continue;
+        else
+          index = 0;
+        }
+      else if (!strcmp(rd->rs_name, "mem"))
+        {
+        if (ignmem == TRUE)
+          continue;
+        else
+          index = 1;
+        }
       else
-        index = 0;
-      }
-    else if (!strcmp(rd->rs_name, "mem"))
-      {
-      if (ignmem == TRUE)
         continue;
-      else
-        index = 1;
-      }
-    else
-      continue;
 
-    useresc = find_resc_entry(used, rd);
+      useresc = find_resc_entry(used, rd);
 
-    if (useresc == NULL)
-      continue;
+      if (useresc == NULL)
+        continue;
 
-    if ((useresc->rs_value.at_flags & ATR_VFLAG_SET) == 0)
-      continue;
+      if ((useresc->rs_value.at_flags & ATR_VFLAG_SET) == 0)
+        continue;
 
-    total = (index == 0) ? gettime(useresc) : getsize(useresc);
+      total = (index == 0) ? gettime(useresc) : getsize(useresc);
 
 #ifndef NUMA_SUPPORT 
-    for (i = 0;i < pjob->ji_numnodes - 1;i++)
-      {
-      noderes *nr = &pjob->ji_resources[i];
+      for (i = 0;i < pjob->ji_numnodes - 1;i++)
+        {
+        noderes *nr = &pjob->ji_resources[i];
 
-      total += ((index == 0) ? nr->nr_cput : nr->nr_mem);
-      }
+        total += ((index == 0) ? nr->nr_cput : nr->nr_mem);
+        }
 #endif /* ndef NUMA_SUPPORT */
 
-    limit = (index == 0) ? gettime(limresc) : getsize(limresc);
+      limit = (index == 0) ? gettime(&r) : getsize(&r);
 
-    if (limit <= total)
-      break;
-    }  /* END for (limresc) */
+      if (limit <= total)
+        {
+        over_limit = true;
+        break;
+        }
+      }
+    }
 
-  if (limresc == NULL)
+  if (over_limit == false)
     {
     /* no limit violation detected, job ok */
 
@@ -3889,7 +3899,8 @@ void usage(
   fprintf(stderr, "  -C <PATH> \\\\ Checkpoint Dir\n");
   fprintf(stderr, "  -d <PATH> \\\\ Home Dir\n");
   fprintf(stderr, "  -C <PATH> \\\\ Checkpoint Dir\n");
-  fprintf(stderr, "  -D        \\\\ DEBUG - do not background\n");
+  fprintf(stderr, "  -D        \\\\ Debug mode (do not fork)\n");
+  fprintf(stderr, "  -F        \\\\ Do not fork (use when running under systemd)\n");
   fprintf(stderr, "  -h        \\\\ Print Usage\n");
   fprintf(stderr, "  -H <HOST> \\\\ Hostname\n");
   fprintf(stderr, "  -l        \\\\ MOM Log Dir Path\n");
@@ -4225,7 +4236,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:A:c:C:d:DhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
     {
     switch (c)
       {
@@ -4329,7 +4340,14 @@ void parse_command_line(
 
       case 'D':  /* debug */
 
-        DOBACKGROUND = 0;
+        daemonize_mom = false;
+
+        break;
+
+      case 'F':  /* do not fork */
+
+        // use when running under systemd
+        daemonize_mom = false;
 
         break;
 
@@ -4849,7 +4867,7 @@ int setup_program_environment(void)
     {
     DEBUGMODE = 1;
 
-    DOBACKGROUND = 0;
+    daemonize_mom = false;
     }
 
   memset(TMOMStartInfo, 0, sizeof(pjobexec_t)*TMAX_JE);
@@ -5177,7 +5195,7 @@ int setup_program_environment(void)
 
   mom_lock(lockfds, F_UNLCK); /* unlock so child can relock */
 
-  if (DOBACKGROUND == 1)
+  if (daemonize_mom)
     {
     if (fork() > 0)
       {
@@ -5204,7 +5222,7 @@ int setup_program_environment(void)
 
     dummyfile = fopen("/dev/null", "w");
     assert((dummyfile != 0) && (fileno(dummyfile) == 2));
-    }  /* END if (DOBACKGROUND == 1) */
+    }  /* END if (daemonize_mom) */
 
   mom_lock(lockfds, F_WRLCK); /* lock out other MOMs */
 

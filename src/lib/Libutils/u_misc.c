@@ -528,26 +528,25 @@ bool have_incompatible_dash_l_resource(
   pbs_attribute *pattr)
 
   {
-  resource *presl; /* for -l resource request */
-  bool      found_incompatible_resource = false;
+  bool found_incompatible_resource = false;
 
-  if (pattr->at_flags & ATR_VFLAG_SET)
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+      (pattr->at_val.at_ptr != NULL))
     {
-    presl = (resource *)GET_NEXT(pattr->at_val.at_list);
+    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
 
-    while ((presl != NULL) &&
-           (found_incompatible_resource == false))
+    for (size_t j = 0; j < resources->size() && found_incompatible_resource == false; j++)
       {
+      resource &r = resources->at(j);
+
       for (int i = 0; incompatible_l[i] != NULL; i++)
         {
-        if (!strcmp(incompatible_l[i], presl->rs_defin->rs_name))
+        if (!strcmp(incompatible_l[i], r.rs_defin->rs_name))
           {
           found_incompatible_resource = true;
           break;
           }
         }
-
-      presl = (resource *)GET_NEXT(presl->rs_link);
       }
     }
 

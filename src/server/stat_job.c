@@ -218,11 +218,8 @@ int add_walltime_remaining(
   {
   int            len = 0;
   char           buf[MAXPATHLEN+1];
-  const char   *pname;
   svrattrl      *pal;
-  resource      *pres;
   
-  int            found = 0;
   long           remaining = 0;
   time_t         time_now   = time(NULL);
 
@@ -233,40 +230,26 @@ int add_walltime_remaining(
     /* only for running jobs, do nothing */
     return(PBSE_NONE);
     }
-  
-  if (((pattr + JOB_ATR_resource)->at_val.at_list.ll_next != NULL) &&
-      ((pattr + JOB_ATR_resource)->at_flags & ATR_VFLAG_SET))
+
+  resource_def *walltime_def = find_resc_def(svr_resc_def, "walltime", svr_resc_size);
+  if (walltime_def != NULL)
     {
-    pres = (resource *)GET_NEXT((pattr + JOB_ATR_resource)->at_val.at_list);
-    
-    /* find the walltime resource */
-    for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+    resource *res = find_resc_entry(pattr + JOB_ATR_resource, walltime_def);
+    if (res != NULL)
       {
-      pname = pres->rs_defin->rs_name;
+      remaining = res->rs_value.at_val.at_long - (time_now - pattr[index].at_val.at_long);
       
-      if (strcmp(pname, "walltime") == 0)
+      snprintf(buf,MAXPATHLEN,"%ld",remaining);
+      
+      len = strlen(buf);
+      pal = attrlist_create("Walltime","Remaining",len+1);
+      
+      if (pal != NULL)
         {
-        /* found walltime */
-        long value = pres->rs_value.at_val.at_long;
-        remaining = value - (time_now - (pattr + index)->at_val.at_long);
-        found = TRUE;
-        break;
+        memcpy(pal->al_value,buf,len);
+        pal->al_flags = ATR_VFLAG_SET;
+        append_link(phead,&pal->al_link,pal);
         }
-      }
-    }
-  
-  if (found == TRUE)
-    {
-    snprintf(buf,MAXPATHLEN,"%ld",remaining);
-    
-    len = strlen(buf);
-    pal = attrlist_create("Walltime","Remaining",len+1);
-    
-    if (pal != NULL)
-      {
-      memcpy(pal->al_value,buf,len);
-      pal->al_flags = ATR_VFLAG_SET;
-      append_link(phead,&pal->al_link,pal);
       }
     }
 

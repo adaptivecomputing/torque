@@ -615,7 +615,7 @@ int status_nodeattrib(
       atemp[i].at_val.at_arst = pnode->nd_prop;
       }
     else if (i == ND_ATR_status)
-      atemp[i].at_val.at_arst = pnode->nd_status;
+      atemp[i].at_val.at_str = NULL;
     else if (i == ND_ATR_ntype)
       atemp[i].at_val.at_short = pnode->nd_ntype;
     else if (i == ND_ATR_ttl)
@@ -759,7 +759,7 @@ int status_nodeattrib(
         else
           {
           if (index == ND_ATR_status)
-            atemp[index].at_val.at_arst = pnode->nd_status;
+            atemp[index].at_val.at_str = strdup(pnode->nd_status.c_str());
 
           rc = ((padef + index)->at_encode(
                 &atemp[index],
@@ -768,6 +768,8 @@ int status_nodeattrib(
                 NULL,
                 ATR_ENCODE_CLIENT,
                 0));
+
+          free(atemp[index].at_val.at_str);
           }
 
         if (rc < 0)
@@ -801,7 +803,7 @@ int status_nodeattrib(
                !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
         if (index == ND_ATR_status)
-          atemp[index].at_val.at_arst = pnode->nd_status;
+          atemp[index].at_val.at_str = strdup(pnode->nd_status.c_str());
 
         rc = (padef + index)->at_encode(
                &atemp[index],
@@ -810,6 +812,9 @@ int status_nodeattrib(
                NULL,
                ATR_ENCODE_CLIENT,
                0);
+          
+        if (index == ND_ATR_status)
+          free(atemp[index].at_val.at_str);
 
         if (rc < 0)
           {

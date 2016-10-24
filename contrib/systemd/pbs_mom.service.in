@@ -5,33 +5,18 @@ Wants=syslog.target
 After=network.target local-fs.target syslog.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
 
 LimitNOFILE=32768
 LimitMEMLOCK=infinity
 LimitSTACK=12582912
 
-KillMode=process
-
-# Do not set PIDFile via enviroment PBS_HOME
-# better to change to PIDFile=/var/run/%i.pid
-# and cleanup all code that relies on the current location of the PIDFile
-PIDFile=@PBS_HOME@/mom_priv/mom.lock
-
 Environment=PBS_HOME=@PBS_HOME@
 Environment=PBS_ARGS=
 EnvironmentFile=-/etc/sysconfig/pbs_mom
 
-ExecStart=@sbindir@/pbs_mom -d $PBS_HOME $PBS_ARGS
-ExecStop=/bin/bash -c " \
-  for i in {1..5}; do \
-    kill -0 $MAINPID &>/dev/null || exit 0; \
-    @sbindir@/momctl -s && exit; \
-    sleep 1; \
-  done \
-"
-ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=@sbindir@/pbs_mom -F -d $PBS_HOME $PBS_ARGS
 
 [Install]
 WantedBy=multi-user.target

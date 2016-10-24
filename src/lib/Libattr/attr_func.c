@@ -129,11 +129,8 @@ void clear_attr(
 
   pattr->at_type = pdef->at_type;
 
-  if ((pattr->at_type == ATR_TYPE_RESC) ||
-      (pattr->at_type == ATR_TYPE_LIST))
-    {
+  if (pattr->at_type == ATR_TYPE_LIST)
     CLEAR_HEAD(pattr->at_val.at_list);
-    }
 
   return;
   }  /*END clear_attr() */

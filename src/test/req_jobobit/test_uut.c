@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <vector>
 
 #include "pbs_job.h"
 #include "req_jobobit.h"
@@ -12,6 +13,7 @@
 #include "server.h"
 #include "work_task.h"
 #include "completed_jobs_map.h"
+#include "resource.h"
 
 
 char *setup_from(job *pjob, const char *suffix);
@@ -85,6 +87,37 @@ START_TEST(set_job_comment_test)
 END_TEST
 
 
+void add_resource(
+
+  std::vector<resource> &resources,
+  const char            *name,
+  const char            *str_val,
+  long                   lval1,
+  long                   lval2)
+
+  {
+  resource_def *rd = (resource_def *)calloc(1, sizeof(resource_def));
+  rd->rs_name = strdup(name);
+  resource r;
+
+  r.rs_defin = rd;
+  
+  if (str_val != NULL)
+    {
+    r.rs_value.at_val.at_str = strdup(str_val);
+    }
+  else if (lval2 < 0)
+    r.rs_value.at_val.at_long = lval1;
+  else
+    {
+    r.rs_value.at_val.at_size.atsv_num = lval1;
+    r.rs_value.at_val.at_size.atsv_shift = lval2;
+    }
+
+  resources.push_back(r);
+  } // add_resource()
+
+
 START_TEST(get_used_test)
   {
   std::string data;
@@ -92,6 +125,13 @@ START_TEST(get_used_test)
 
   attr_count = 0;
   next_count = 0;
+
+  std::vector<resource> resources;
+  add_resource(resources, "cput", NULL, 100, -1);
+  add_resource(resources, "mem", NULL, 4096, 20);
+  add_resource(resources, "vmem", NULL, 8192, 20);
+  pjob.ji_wattr[JOB_ATR_resc_used].at_flags |= ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_resc_used].at_val.at_ptr = &resources;
 
   fail_unless(get_used(&pjob, data) == PBSE_NONE);
   fail_unless(data == " resources_used.cput=100 resources_used.mem=4096mb resources_used.vmem=8192mb", "'%s'", data.c_str());

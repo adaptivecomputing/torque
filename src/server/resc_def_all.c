@@ -963,11 +963,11 @@ int decode_nodes(
 
 int ctnodes(
 
-  char *spec)
+  const char *spec)
 
   {
-  int   ct = 0;
-  char *pc;
+  int         ct = 0;
+  const char *pc;
 
   while (1)
     {
@@ -995,7 +995,7 @@ int ctnodes(
 
 long count_proc(
 
-  char *param_spec)
+  const char *param_spec)
 
   {
   long  num_nodes = 0;
@@ -1068,6 +1068,11 @@ int set_node_ct(
 
     return(0);
     }
+  
+  // WARNING: we are potentially re-sizing the vector in the calls to add_resource_entry()
+  // below. All attempts to use pnodesp after the calls to add_resource_entry may be using an
+  // invalid pointer, so copy data here
+  std::string nodes_val(pnodesp->rs_value.at_val.at_str);
 
   /* Set "nodect" to count of nodes in "nodes" */
 
@@ -1086,7 +1091,7 @@ int set_node_ct(
       }
     }
 
-  pnct->rs_value.at_val.at_long = ctnodes(pnodesp->rs_value.at_val.at_str);
+  pnct->rs_value.at_val.at_long = ctnodes(nodes_val.c_str());
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 
@@ -1111,7 +1116,7 @@ int set_node_ct(
     pndef->rs_free(&pnct->rs_value);
     }
 
-  pndef->rs_decode(&pnct->rs_value, NULL, NULL, pnodesp->rs_value.at_val.at_str, ATR_DFLAG_ACCESS);
+  pndef->rs_decode(&pnct->rs_value, NULL, NULL, nodes_val.c_str(), ATR_DFLAG_ACCESS);
 
   pnct->rs_value.at_flags |= ATR_VFLAG_SET;
 
@@ -1142,12 +1147,12 @@ int set_node_ct(
 
   if ((pprocsp = find_resc_entry(pattr, pprocsdef)) == NULL)
     {
-    ppct->rs_value.at_val.at_long = count_proc(pnodesp->rs_value.at_val.at_str);
+    ppct->rs_value.at_val.at_long = count_proc(nodes_val.c_str());
     }
   else
     { 
     ppct->rs_value.at_val.at_long = pprocsp->rs_value.at_val.at_long;
-    ppct->rs_value.at_val.at_long += count_proc(pnodesp->rs_value.at_val.at_str);
+    ppct->rs_value.at_val.at_long += count_proc(nodes_val.c_str());
     }
 
   ppct->rs_value.at_flags |= ATR_VFLAG_SET;
