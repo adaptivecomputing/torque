@@ -146,26 +146,34 @@ void get_status_info(
 
 
 
+/*
+ * is_reporter_node()
+ *
+ * @param node_id - the id of the node that we're checking
+ */
 
-int is_reporter_node(
+bool is_reporter_node(
 
   const char *node_id)
 
   {
-  struct pbsnode *pnode = find_nodebyname(node_id);
-  int             rc = FALSE;
+  pbsnode *pnode = find_nodebyname(node_id);
+  bool     is_reporter = false;
 
   if (pnode != NULL)
     {
-    rc = pnode->nd_is_alps_reporter;
+    is_reporter = (bool)pnode->nd_is_alps_reporter;
     pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
-  return(rc);
+  return(is_reporter);
   } /* END is_reporter_node() */
 
 
 
+/*
+ * is_stat_get()
+ */
 
 int is_stat_get(
 
