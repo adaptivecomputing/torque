@@ -48,7 +48,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\
-		   ../server/job_qs_upgrade.c 
+		   ../server/job_qs_upgrade.c
 if BUILDCPA
 pbs_mom_SOURCES += cray_cpa.c
 endif
@@ -90,7 +90,7 @@ install-exec-hook:
 	  if [ ! -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \
 	    echo $(libdir) > $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
 	    chmod 644 $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
-	    if [ $(FROM_MAKE_PACKAGES)0 -eq 0 ]; then \
+	    if [ $(FROM_MAKE_PACKAGES)0 -eq 0 && $(UID) -eq 0 ]; then \
 	      /sbin/ldconfig; \
 	    fi; \
 	  fi; \
@@ -103,7 +103,7 @@ uninstall-hook:
 	  rm -f $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service || :; \
 	  rm -f $(DESTDIR)/etc/init.d/pbs_mom || :; \
 	  rm -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf || :; \
-	  if [ $(FROM_MAKE_PACKAGES)0 -eq 0 ]; then \
+	  if [ $(FROM_MAKE_PACKAGES)0 -eq 0 && $(UID) -eq 0 ]; then \
 	    /sbin/ldconfig; \
 	  fi; \
 	fi
