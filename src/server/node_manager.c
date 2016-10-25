@@ -182,7 +182,6 @@ extern char            *path_nodenote_new;
 extern char             server_name[];
 
 extern struct server    server;
-extern tlist_head       svr_newnodes;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern int              SvrNodeCt;
 
@@ -1259,7 +1258,6 @@ void setup_notification(
 
   {
   struct pbsnode *pnode;
-  new_node       *nnew;
 
   if (pname != NULL)
     {
@@ -1267,20 +1265,6 @@ void setup_notification(
       {
       /* call it offline until after all nodes get the new ipaddr */
       pnode->nd_state |= INUSE_OFFLINE;
-      
-      nnew = (new_node *)calloc(1, sizeof(new_node));
-      
-      if (nnew == NULL)
-        {
-        pnode->unlock_node(__func__, "nnew == NULL", LOGLEVEL);
-        return;
-        }
-      
-      CLEAR_LINK(nnew->nn_link);
-      
-      nnew->nn_name = strdup(pname);
-      
-      append_link(&svr_newnodes, &nnew->nn_link, nnew);
       
       pnode->unlock_node(__func__, "nnew != NULL", LOGLEVEL);
       }
@@ -5056,6 +5040,7 @@ int set_nodes(
     if ((rc = translate_howl_to_string(mic_list, EMsg, NCount, mic_str, NULL, false)) != PBSE_NONE)
       {
       free_nodes(pjob, spec);
+      delete [] ard_array;
       return(rc);
       }
 

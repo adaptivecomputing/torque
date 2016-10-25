@@ -301,7 +301,6 @@ extern int              listener_command;
 //extern hello_container  hellos;
 //extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
-tlist_head              svr_newnodes;          /* list of newly created nodes      */
 pthread_mutex_t         task_list_timed_mutex;
 pid_t                   sid;
 
