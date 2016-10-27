@@ -610,7 +610,15 @@ void free_resc(
   std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
 
   if (resources != NULL)
+    {
+    for (size_t i = 0; i < resources->size(); i++)
+      {
+      resource &r = resources->at(i);
+      r.rs_defin->rs_free(&r.rs_value);
+      }
+
     delete resources;
+    }
 
   pattr->at_val.at_ptr = NULL;
   pattr->at_flags &= ~ATR_VFLAG_SET;

@@ -461,6 +461,10 @@ int str_to_attr(
 
       unescape_xml(val,buf,sizeof(buf));
 
+      // Free the old value, if present
+      if (attr[index].at_val.at_str != NULL)
+        free(attr[index].at_val.at_str);
+
       attr[index].at_val.at_str = strdup(buf);
 
       if (attr[index].at_val.at_str == NULL)

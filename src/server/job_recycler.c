@@ -171,6 +171,7 @@ int insert_into_recycler(
 
   pthread_mutex_lock(recycler.rc_mutex);
 
+  // Make sure that we aren't inserting a job twice
   if (pjob->ji_being_recycled == true)
     {
     pthread_mutex_unlock(recycler.rc_mutex);
