@@ -611,8 +611,6 @@ int status_nodeattrib(
       atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
       {
-      // NOTE: see below for nd_properties encoding
-      atemp[i].at_val.at_arst = pnode->nd_prop;
       }
     else if (i == ND_ATR_status)
       atemp[i].at_val.at_str = NULL;
@@ -756,6 +754,8 @@ int status_nodeattrib(
         if ((index == ND_ATR_jobs) &&
             (pnode->nd_is_alps_login == TRUE))
           rc = login_encode_jobs(pnode, phead);
+        else if (index == ND_ATR_properties)
+          rc = pnode->encode_properties(phead);
         else
           {
           if (index == ND_ATR_status)

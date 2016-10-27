@@ -190,7 +190,7 @@ int req_stat_job(
   struct batch_request *preq)  /* ptr to the decoded request */
 
   {
-  struct stat_cntl     *cntl; /* see svrfunc.h  */
+  struct stat_cntl      cntl; /* see svrfunc.h  */
   char                 *name;
   job                  *pjob = NULL;
   pbs_queue            *pque = NULL;
@@ -299,17 +299,6 @@ int req_stat_job(
 
   CLEAR_HEAD(preq->rq_reply.brp_un.brp_status);
 
-  cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl));
-
-  if (cntl == NULL)
-    {
-    if (pque != NULL) 
-      unlock_queue(pque, "req_stat_job", (char *)"no memory cntl", LOGLEVEL);
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-
-    return(PBSE_SYSTEM);
-    }
-
   if ((type == tjstTruncatedQueue) ||
       (type == tjstTruncatedServer))
     {
@@ -320,20 +309,21 @@ int req_stat_job(
       }
     }
 
-  cntl->sc_type   = (int)type;
-  cntl->sc_conn   = -1;
-  cntl->sc_pque   = pque;
-  cntl->sc_origrq = preq;
-  cntl->sc_post   = req_stat_job_step2;
-  cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
-  cntl->sc_condensed = condensed;
+  memset(&cntl, 0, sizeof(cntl));
 
-  req_stat_job_step2(cntl); /* go to step 2, see if running is current */
+  cntl.sc_type   = (int)type;
+  cntl.sc_conn   = -1;
+  cntl.sc_pque   = pque;
+  cntl.sc_origrq = preq;
+  cntl.sc_post   = req_stat_job_step2;
+  cntl.sc_jobid[0] = '\0'; /* cause "start from beginning" */
+  cntl.sc_condensed = condensed;
+
+  req_stat_job_step2(&cntl); /* go to step 2, see if running is current */
 
   if (pque != NULL)
     unlock_queue(pque, "req_stat_job", (char *)"success", LOGLEVEL);
 
-  free(cntl);
   return(PBSE_NONE);
   }  /* END req_stat_job() */
 
