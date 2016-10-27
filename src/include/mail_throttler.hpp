@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <pthread.h>
 
 
 class mail_info
@@ -29,6 +30,7 @@ class mail_info
 class mail_throttler
   {
   std::map<std::string, std::vector<mail_info> > pending;
+  pthread_mutex_t                                mt_mutex;
 
   public:
     mail_throttler();
