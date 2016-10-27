@@ -61,7 +61,12 @@ int mail_throttler::get_email_list(
 
   {
   int                                                      rc = PBSE_NONE;
-  std::map<std::string, std::vector<mail_info> >::iterator it = this->pending.find(addressee);
+  std::map<std::string, std::vector<mail_info> >::iterator it;
+
+  // set lock
+  pthread_mutex_lock(&this->mt_mutex);
+
+  it = this->pending.find(addressee);
 
   if (it != this->pending.end())
     {
@@ -74,6 +79,9 @@ int mail_throttler::get_email_list(
     rc = -1;
     list.clear();
     }
+
+  // unlock
+  pthread_mutex_unlock(&this->mt_mutex);
 
   return(rc);
   } // END get_email_list()
@@ -94,7 +102,12 @@ bool mail_throttler::add_email_entry(
 
   {
   bool                                                     is_first = false;
-  std::map<std::string, std::vector<mail_info> >::iterator it = this->pending.find(mi.mailto);
+  std::map<std::string, std::vector<mail_info> >::iterator it;
+
+  // set lock
+  pthread_mutex_lock(&this->mt_mutex);
+
+  it = this->pending.find(mi.mailto);
 
   if (it == this->pending.end())
     {
@@ -110,6 +123,9 @@ bool mail_throttler::add_email_entry(
     this->pending[mi.mailto].push_back(mi);
     is_first = this->pending[mi.mailto].size() == 1;
     }
+
+  // unlock
+  pthread_mutex_unlock(&this->mt_mutex);
 
   return(is_first);
   } // END add_email_entry()
