@@ -188,7 +188,7 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int              resend_join_job_wait_time = RESEND_WAIT_TIME;
 int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
-
+std::string      presetup_prologue;
 
 
 
@@ -298,6 +298,7 @@ unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
 unsigned long setcudavisibledevices(const char *);
+unsigned long set_presetup_prologue(const char *);
 
 struct specials special[] = {
   { "force_overwrite",     setforceoverwrite}, 
@@ -382,6 +383,7 @@ struct specials special[] = {
   { "jobdirectory_sticky", setjobdirectorysticky},
   { "cuda_visible_devices", setcudavisibledevices},
   { "cray_check_rur",       setrur },
+  { "presetup_prologue",    set_presetup_prologue},
   { NULL,                  NULL }
   };
 
@@ -2731,6 +2733,34 @@ unsigned long setmomhierarchyretrytime(
 
   return(1);
   }
+
+
+
+unsigned long set_presetup_prologue(
+
+  const char *value)
+
+  {
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if (value != NULL)
+    {
+    presetup_prologue = value;
+    if (presetup_prologue[0] != '/')
+      {
+      sprintf(log_buffer, "$presetup_prologue must be given an absolute path, but received '%s'",
+        value);
+      log_err(-1, __func__, log_buffer);
+
+      presetup_prologue.clear();
+
+      // FIXME: For some reason, these things use 0 for error. 
+      return(0);
+      }
+    }
+
+  return(1);
+  } // END set_presetup_prologue()
 
 
 
