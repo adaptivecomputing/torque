@@ -273,67 +273,67 @@ void setAllocJson(int test_num)
   //The next 3 configurations(5-7) are from test_json_constructor
   if(test_num < 8)
     {
-    alloc_json[OS_INDEX] = 0;
-    alloc_json[CORES] = "0-15";
-    alloc_json[THREADS] = "16-31";
-    alloc_json[MEM] = "1024";
-    alloc_json[GPUS] = "0-1";
-    alloc_json[MICS] = "2-3";
+    alloc_json[NUMA_NODES][0][NUMA_NODE][OS_INDEX] = 0;
+    alloc_json[NUMA_NODES][0][NUMA_NODE][CORES] = "0-15";
+    alloc_json[NUMA_NODES][0][NUMA_NODE][THREADS] = "16-31";
+    alloc_json[NUMA_NODES][0][NUMA_NODE][MEM] = "1024";
+    alloc_json[NUMA_NODES][0][NUMA_NODE][GPUS] = "0-1";
+    alloc_json[NUMA_NODES][0][NUMA_NODE][MICS] = "2-3";
     
     if(test_num == 5)//j4's config
       {
-      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0-3,16-19";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] ="0";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
-      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
-      alloc_json[ALLOCATIONS][0][ALLOCATION][GPUS] = "0-1";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][CPUS] = "0-3,16-19";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][MEM] ="0";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][GPUS] = "0-1";
 
-      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "4-15";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "0";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
-      alloc_json[ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 1;
-      alloc_json[ALLOCATIONS][1][ALLOCATION][MICS] = "2-3";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][CPUS] = "4-15";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][MEM] = "0";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 1;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][MICS] = "2-3";
       return;
       }
     if(test_num == 6)//j6's config
       {
       for(int i = 0; i < 4; i++)
         {
-        alloc_json[ALLOCATIONS][i][ALLOCATION][EXCLUSIVE] = 0;
-        alloc_json[ALLOCATIONS][i][ALLOCATION][CORES_ONLY] = 0;
+        alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][i][ALLOCATION][EXCLUSIVE] = 0;
+        alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][i][ALLOCATION][CORES_ONLY] = 0;
         }      
-      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] = "10";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][MEM] = "10";
       
-      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "0";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "10";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][CPUS] = "0";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][MEM] = "10";
 
-      alloc_json[ALLOCATIONS][2][ALLOCATION][JOBID] = "0.napali";
-      alloc_json[ALLOCATIONS][2][ALLOCATION][CPUS] = "5";
-      alloc_json[ALLOCATIONS][2][ALLOCATION][MEM] = "10";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][2][ALLOCATION][JOBID] = "0.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][2][ALLOCATION][CPUS] = "5";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][2][ALLOCATION][MEM] = "10";
       
-      alloc_json[ALLOCATIONS][3][ALLOCATION][JOBID] = "2.napali";
-      alloc_json[ALLOCATIONS][3][ALLOCATION][CPUS] = "6-7";
-      alloc_json[ALLOCATIONS][3][ALLOCATION][MEM] = "1000";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][3][ALLOCATION][JOBID] = "2.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][3][ALLOCATION][CPUS] = "6-7";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][3][ALLOCATION][MEM] = "1000";
       return;
       }
-    if(test_num == 7)
+    if(test_num == 7)//j6 after removal
       {
-      alloc_json[ALLOCATIONS][0][ALLOCATION][JOBID] = "1.napali";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][MEM] = "10";
-      alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
-      alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][JOBID] = "1.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][CPUS] = "0";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][MEM] = "10";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 0;
       
-      alloc_json[ALLOCATIONS][1][ALLOCATION][JOBID] = "2.napali";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][CPUS] = "6-7";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][MEM] = "1000";
-      alloc_json[ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
-      alloc_json[ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][JOBID] = "2.napali";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][CPUS] = "6-7";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][MEM] = "1000";
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][EXCLUSIVE] = 0;
+      alloc_json[NUMA_NODES][0][NUMA_NODE][ALLOCATIONS][1][ALLOCATION][CORES_ONLY] = 0;
       }
     }//end if test_num < 8
   }

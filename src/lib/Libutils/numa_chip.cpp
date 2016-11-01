@@ -137,17 +137,17 @@ void Chip::parse_values_from_json_string(
 
   {
   
-  cores = layout[CORES].asString();
-  threads = layout[THREADS].asString();
-  gpus = layout[GPUS].asString();
-  mics = layout[MICS].asString();
-  this->id = layout[OS_INDEX].asInt();
+  cores = layout[NUMA_NODE][CORES].asString();
+  threads = layout[NUMA_NODE][THREADS].asString();
+  gpus = layout[NUMA_NODE][GPUS].asString();
+  mics = layout[NUMA_NODE][MICS].asString();
+  this->id = layout[NUMA_NODE][OS_INDEX].asInt();
   
-  std::string memory = layout[MEM].asString();
+  std::string memory = layout[NUMA_NODE][MEM].asString();
   this->memory = strtol(memory.c_str(), NULL, 0);  
   this->available_memory = this->memory;
  
-  initialize_allocations(layout[ALLOCATIONS], valid_ids);
+  initialize_allocations(layout[NUMA_NODE][ALLOCATIONS], valid_ids);
 
   } // END parse_values_from_json_string()
 

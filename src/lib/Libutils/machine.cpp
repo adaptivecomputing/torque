@@ -157,20 +157,36 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const Json::Value &layout,
+  const std::string        &json_str,
   std::vector<std::string> &valid_ids)
 
   {
-  for (int i = 0 ; i < layout[NODE].size();i++)
+  try
     {
-    Socket s(layout[NODE][i][SOCKET], valid_ids);
-    this->sockets.push_back(s);
-    this->totalSockets++;
-    }
- 
+    Json::Reader read;
+    Json::Value root;
+    read.parse(json_str.c_str(), root);
 
-  update_internal_counts();
-  this->initialized = true;
+    const Json::Value &node = root[NODE];
+
+    for (Json::ValueConstIterator it = node.begin(); it != node.end(); it++)
+      {
+      const Json::Value &sock = *it;
+      Socket s(sock, valid_ids);
+      this->sockets.push_back(s);
+      this->totalSockets++;
+      }
+
+    update_internal_counts();
+    this->initialized = true;
+    }
+  catch (...)
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+
+    snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+    log_err(-1, __func__, log_buf);
+    }
   } // END initialize_from_json()
 
 
@@ -237,10 +253,7 @@ Machine::Machine(const std::string &json_layout,
                                                         NVIDIA_device(), allocations()
 
   {
-  Json::Reader read;
-  Json::Value root;
-  read.parse(json_layout.c_str(), root );
-  this->initialize_from_json(root, valid_ids);
+  this->initialize_from_json(json_layout, valid_ids);
   } // END json constructor
 
 

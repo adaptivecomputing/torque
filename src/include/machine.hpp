@@ -90,25 +90,25 @@ class Core
   char                  core_nodeset_string[MAX_NODESET_SIZE];
   int                   totalThreads;
   bool                  free; // Core is not being used at all
-  std::vector<int>      indices; // OS indexes of my processing units
-  std::vector<bool>     is_index_busy; // Tells whether or not each processing unit is busy
+  vector<int>           indices; // OS indexes of my processing units
+  vector<bool>          is_index_busy; // Tells whether or not each processing unit is busy
   int                   processing_units_open; // Count of currently unused processing units
 
   public:
     Core();
-    Core(const std::string &layout);
+    Core(const string &layout);
     ~Core();
     int get_id() const;
     int getNumberOfProcessingUnits();
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
-    std::vector<int> getPU();
+    vector<int> getPU();
     void displayAsString(stringstream &out) const;
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
     bool is_free() const;
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
-    void append_indices(std::vector<int> core_indices, int which) const;
+    void append_indices(vector<int> core_indices, int which) const;
     bool reserve_processing_unit(int index);
     int  get_thread_index(int thread_indice) const;
   };
@@ -311,7 +311,7 @@ class Machine
   #endif
 #endif
     
-  void initialize_from_json(const Json::Value &layout, std::vector<std::string> &valid_ids);
+  void initialize_from_json(const string &json_str, vector<string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);

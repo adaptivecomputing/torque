@@ -535,20 +535,20 @@ START_TEST(test_json_constructor)
   Json::Value j2_as_Json;
   Json::Value j3_as_Json;
 
-  const char *j1 ="{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":\"3221225472\",\"mics\":\"0-1\"}";
+  const char *j1 ="{\"numanodes\":[{\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":\"3221225472\",\"mics\":\"0-1\"}}]}";
   Json::Reader read;
   read.parse(j1, j1_as_Json);
   
-  const char *j2 ="{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":\"32\",\"gpus\":\"0-3\"}";
+  const char *j2 ="{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":\"32\",\"gpus\":\"0-3\"}}]}";
   read.parse(j2,j2_as_Json);
 
-  const char *j3 ="{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
+  const char *j3 ="{\"numanodes\":[{\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\"}}]}";
   read.parse(j3,j3_as_Json);
 
-  const char *j5 ="{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":\"10\",\"exclusive\":3,\"cores_only\":0]}}}";
+  const char *j5 ="{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":\"10\",\"exclusive\":3,\"cores_only\":0]}}}}]}";
   read.parse(j5,j5_as_Json);
 
-  const char* j6_test_string = "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0}},{\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}]}";
+  const char* j6_test_string = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0}},{\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}]}}}]}";
   Json::Value j6_as_Json;
   read.parse(j6_test_string ,j6_as_Json);
   Json::StreamWriterBuilder wbuilder;
@@ -558,35 +558,35 @@ START_TEST(test_json_constructor)
   valid_ids.push_back("0.napali");
   valid_ids.push_back("2.napali");
   
-  Chip c1(j1_as_Json, valid_ids);
+  Chip c1(j1_as_Json["numanodes"][0], valid_ids);
   fail_unless(c1.get_id() == 1);
   fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
   fail_unless(c1.getTotalThreads() == 8);
   fail_unless(c1.get_available_mics() == 2, "%d mics", c1.get_available_mics());
   fail_unless(c1.get_available_gpus() == 0);
-  c1.displayAsJson(o1, false);
+  c1.displayAsJson(o1["numanodes"][0]["numanode"], false);
   
   std::string out_as_string = Json::writeString(wbuilder,o1);  
   fail_unless(o1 == j1_as_Json,out_as_string.c_str());
 
-  Chip c2(j2_as_Json, valid_ids);
+  Chip c2(j2_as_Json["numanodes"][0], valid_ids);
   fail_unless(c2.get_id() == 0);
   fail_unless(c2.getTotalCores() == 8);
   fail_unless(c2.getTotalThreads() == 16);
   fail_unless(c2.get_available_mics() == 0);
   fail_unless(c2.get_available_gpus() == 4);
-  c2.displayAsJson(o2, false);
+  c2.displayAsJson(o2["numanodes"][0]["numanode"], false);
 
   out_as_string = Json::writeString(wbuilder,o2);
   fail_unless(o2 == j2_as_Json,out_as_string.c_str());
 
-  Chip c3(j3_as_Json, valid_ids);
+  Chip c3(j3_as_Json["numanodes"][0], valid_ids);
   fail_unless(c3.get_id() == 12);
   fail_unless(c3.getTotalCores() == 6);
   fail_unless(c3.getTotalThreads() == 6);
   fail_unless(c3.get_available_mics() == 2);
   fail_unless(c3.get_available_gpus() == 2);
-  c3.displayAsJson(o3, false);
+  c3.displayAsJson(o3["numanodes"][0]["numanode"], false);
 
   out_as_string = Json::writeString(wbuilder,o3);
   fail_unless(o3 == j3_as_Json, out_as_string.c_str());
@@ -594,7 +594,7 @@ START_TEST(test_json_constructor)
   setAllocJson(5);//creates j4's Json config
   Json::Value j4 = alloc_json;
 
-  Chip c4(j4, valid_ids);
+  Chip c4(j4["numanodes"][0], valid_ids);
   fail_unless(c4.get_id() == 0);
   fail_unless(c4.getTotalCores() == 16);
   fail_unless(c4.getTotalThreads() == 32);
@@ -606,7 +606,7 @@ START_TEST(test_json_constructor)
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
 
-  Chip c5(j5_as_Json, valid_ids);
+  Chip c5(j5_as_Json["numanodes"][0], valid_ids);
   fail_unless(c5.get_id() == 0);
   fail_unless(c5.getTotalCores() == 16);
   fail_unless(c5.getTotalThreads() == 32);
@@ -620,15 +620,15 @@ START_TEST(test_json_constructor)
   setAllocJson(6);//creates j6's Json config
   Json::Value j6 = alloc_json;
 
-  Chip c6(j6, valid_ids);
+  Chip c6(j6["numanodes"][0], valid_ids);
   Json::Value o6;
-  c6.displayAsJson(o6, true);
+  c6.displayAsJson(o6["numanodes"][0]["numanode"], true);
 
   out_as_string = Json::writeString(wbuilder,o6);
   fail_unless(o6 == j6, out_as_string.c_str());
   c6.free_task("0.napali");
   o6 = Json::nullValue;
-  c6.displayAsJson(o6, true);
+  c6.displayAsJson(o6["numanodes"][0]["numanode"], true);
 
   setAllocJson(7);//creataes j6's Json config after removal
   out_as_string = Json::writeString(wbuilder,o6);
@@ -818,7 +818,7 @@ START_TEST(test_exclusive_place)
   Json::Reader read;
   read.parse(out1, out1_as_json);
 
-  const char* out2 = "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":\"6\",\"exclusive\":0,\"cores_only\":1}]}}";
+  const char* out2 = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":\"6\",\"exclusive\":0,\"cores_only\":1}]}}}]}";
   Json::Value out2_as_json;
   read.parse(out2, out2_as_json);
 
@@ -843,19 +843,20 @@ START_TEST(test_exclusive_place)
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   tasks = c.place_task(r, a2, 6, host);
   out = Json::nullValue;
-  c.displayAsJson(out, true);
+  c.displayAsJson(out["numanodes"][0]["numanode"], true);
 
   out_as_string = Json::writeString(wbuilder,out);
   fail_unless(out == out2_as_json, out_as_string.c_str());
   fail_unless(tasks == 6);
   fail_unless(recorded == 6);
 
-  Chip c2(out, valid_id);
+  Chip c2(out["numanodes"][0], valid_id);
   Json::Value o2;
   c2.displayAsJson(o2, true);
 
-  out_as_string = Json::writeString(wbuilder,o2);
-  fail_unless(o2 == out, out_as_string.c_str());
+  std::string out2_as_string = Json::writeString(wbuilder,o2);
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(o2 == out["numanodes"][0]["numanode"],"\no2\n%s\nout\n%s", out2_as_string.c_str(),out_as_string.c_str());
   fail_unless(c2.getTotalCores() == 16, "%d total cores", c2.getTotalCores());
   fail_unless(c2.getAvailableCores() == 4, "%d cores available", c2.getAvailableCores());
   fail_unless(c2.getTotalThreads() == 32, "%d total threads", c2.getTotalThreads());
@@ -932,18 +933,18 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
   
-  const char* out5 = "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":\"1\",\"exclusive\":2,\"cores_only\":1}]}}";
+  const char* out5 = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":\"1\",\"exclusive\":2,\"cores_only\":1}]}}}]}";
 
   Json::Value out5_as_json;
   read.parse(out5, out5_as_json);
 
   out = Json::nullValue;
-  c.displayAsJson(out, true);
+  c.displayAsJson(out["numanodes"][0]["numanode"], true);
 
   out_as_string = Json::writeString(wbuilder,out);
   fail_unless(out == out5_as_json, out_as_string.c_str());
 
-  Chip copy_exclusive_socket(out, valid_id);
+  Chip copy_exclusive_socket(out["numanodes"][0], valid_id);
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
   fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
 

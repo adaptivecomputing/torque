@@ -77,10 +77,13 @@ Socket::Socket(
   {
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
-  this->id = layout[OS_INDEX].asInt();
-  for (int i = 0;i < layout[NUMA_NODES].size();i++)
+  this->id = layout[SOCKET][OS_INDEX].asInt();
+
+  const Json::Value &nnodes = layout[SOCKET][NUMA_NODES];
+
+  for (Json::ValueConstIterator it = nnodes.begin(); it != nnodes.end(); it++)
     {
-    Chip c(layout[NUMA_NODES][i][NUMA_NODE], valid_ids);
+    Chip c(*it, valid_ids);
     this->chips.push_back(c);
     }
   }

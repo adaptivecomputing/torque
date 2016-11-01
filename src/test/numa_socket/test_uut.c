@@ -123,13 +123,13 @@ END_TEST
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "{\"os_index\":12,\"numanodes\":[{\"numanode\":{\"os_index\":24,\"cores\":\"48-49\",\"threads\":\"\",\"mem\":\"1\"}},{\"numanode\":{\"os_index\":25,\"cores\":\"50-51\",\"threads\":\"\",\"mem\":\"1\"}}]}";
-  const char *j2 = "{\"os_index\":0,\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-5\",\"threads\":\"12-17\",\"mem\":\"1024\"}},{\"numanode\":{\"os_index\":1,\"cores\":\"6-11\",\"threads\":\"18-23\",\"mem\":\"1024\"}}]}";
-  const char *j3 = "{\"os_index\":2,\"numanodes\":[{\"numanode\":{\"os_index\":2,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":\"10241024\"}}]}";
+  const char *j1 = "{\"socket\":{\"os_index\":12,\"numanodes\":[{\"numanode\":{\"os_index\":24,\"cores\":\"48-49\",\"threads\":\"\",\"mem\":\"1\"}},{\"numanode\":{\"os_index\":25,\"cores\":\"50-51\",\"threads\":\"\",\"mem\":\"1\"}}]}}";
+  const char *j2 = "{\"socket\":{\"os_index\":0,\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-5\",\"threads\":\"12-17\",\"mem\":\"1024\"}},{\"numanode\":{\"os_index\":1,\"cores\":\"6-11\",\"threads\":\"18-23\",\"mem\":\"1024\"}}]}}";
+  const char *j3 = "{\"socket\":{\"os_index\":2,\"numanodes\":[{\"numanode\":{\"os_index\":2,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":\"10241024\"}}]}}";
   Json::Value out;
-  const char *j1_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":12}";
-  const char *j2_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":0}";
-  const char *j3_out = "{\"numanodes\":[{\"numanode\":null}],\"os_index\":2}";
+  const char *j1_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":12}}";
+  const char *j2_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":0}}";
+  const char *j3_out = "{\"numanodes\":[{\"numanode\":null}],\"os_index\":2}}";
 
   std::vector<std::string> valid_ids;
   Json::Reader read;
@@ -143,7 +143,7 @@ START_TEST(test_json_constructor)
 
   std::string out_as_string = Json::writeString(wbuilder,out);
   read.parse(j1_out,job_as_json);
-  fail_unless(out == job_as_json, out_as_string.c_str());
+  fail_unless(out == job_as_json,"%s\n%s", out_as_string.c_str(),j1_out);
 
   
   out = Json::nullValue;
