@@ -163,6 +163,7 @@ extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
 extern time_t         pbs_incoming_tcp_timeout;
+extern int            default_gpu_mode;
 //extern mom_hierarchy_t *mh;
 
 
@@ -2752,6 +2753,67 @@ int extra_resc_chk(
 
   return(TRUE);
   }
+
+
+
+/*
+ * check_default_gpu_mode_str()
+ *
+ * Makes sure the default is a valid gpu mode
+ * @return PBSE_NONE on success of PBSE_ATTRTYPE if a bad value
+ */
+
+int check_default_gpu_mode_str(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int actmode)
+
+  {
+  int   rc = PBSE_NONE;
+  char *gpu_mode = pattr->at_val.at_str;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_ALTER:
+
+      // this shouldn't happen
+      if (gpu_mode == NULL)
+        {
+        return(PBSE_ATTRTYPE);
+        }
+
+      // Make sure it's one of the acceptable gpu modes
+      if (!strcmp(gpu_mode, "exclusive_thread"))
+        {
+        default_gpu_mode = gpu_exclusive_thread;
+        }
+      else if (!strcmp(gpu_mode, "exclusive"))
+        {
+        default_gpu_mode = gpu_exclusive;
+        }
+      else if (!strcmp(gpu_mode, "exclusive_process"))
+        {
+        default_gpu_mode = gpu_exclusive_process;
+        }
+      else if (!strcmp(gpu_mode, "default"))
+        {
+        default_gpu_mode = gpu_normal;
+        }
+      else if (!strcmp(gpu_mode, "shared"))
+        {
+        default_gpu_mode = gpu_normal;
+        }
+      else
+        rc = PBSE_ATTRTYPE;
+
+      break;
+    }
+
+  return(rc);
+  } // END check_default_gpu_mode_str()
+
+
 
 /*
  * free_extraresc() makes sure that the init_resc_defs() is called after
