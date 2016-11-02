@@ -529,3 +529,8 @@ bool job_array::is_deleted() const
   {
   return(this->being_deleted);
   }
+
+int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
+  {
+  return(PBSE_NONE);
+  }

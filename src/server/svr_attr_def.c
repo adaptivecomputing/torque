@@ -119,6 +119,7 @@ extern void restore_attr_default (struct pbs_attribute *);
 int         update_user_acls(pbs_attribute *pattr, void *pobject, int actmode);
 int         update_group_acls(pbs_attribute *pattr, void *pobject, int actmode);
 int         node_exception_check(pbs_attribute *pattr, void *pobject, int actmode);
+int         check_default_gpu_mode_str(pbs_attribute *pattr, void *pobject, int actmode);
 extern int  keep_completed_val_check(pbs_attribute *pattr,void *pobj,int actmode);
 /* DIAGTODO: write diag_attr_def.c */
 
@@ -1634,6 +1635,19 @@ attribute_def svr_attr_def[] =
    NULL_FUNC,
    MGR_ONLY_SET,
    ATR_TYPE_LONG,
+   PARENT_TYPE_SERVER
+  },
+
+  // SRV_ATR_DefaultGpuMode
+  {(char *)ATTR_default_gpu_mode, // "default_gpu_mode"
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_null,
+   check_default_gpu_mode_str,
+   MGR_ONLY_SET,
+   ATR_TYPE_STR,
    PARENT_TYPE_SERVER
   },
 
