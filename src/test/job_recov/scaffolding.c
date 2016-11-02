@@ -446,3 +446,10 @@ void clear_attr(
 
   return;
   }  /*END clear_attr() */
+
+
+int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
+  {
+  return(PBSE_NONE);
+  }
+

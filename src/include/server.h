@@ -229,6 +229,7 @@ enum srv_atr
   SRV_ATR_GhostArrayRecovery,
   SRV_ATR_CgroupPerTask,
   SRV_ATR_NoteAppendOnError,
+  SRV_ATR_DefaultGpuMode,
 
   /* This must be last */
   SRV_ATR_LAST

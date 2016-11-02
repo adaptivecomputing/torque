@@ -39,6 +39,7 @@ attribute_def svr_attr_def[10];
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 int svr_chngNodesfile = 0;
 int svr_totnodes = 0;
+int default_gpu_mode;
 bool exit_called = false;
 acl_special limited_acls;
 time_t pbs_incoming_tcp_timeout;
