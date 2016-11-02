@@ -84,7 +84,7 @@ const char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
 all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
-all_tasks task_list_timed;
+std::list<timed_task>  *task_list_timed;
 pthread_mutex_t task_list_timed_mutex;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
