@@ -223,6 +223,7 @@ enum srv_atr
   SRV_ATR_acl_groups_hosts,
   SRV_ATR_node_submit_exceptions,
   SRV_ATR_EmailBatchSeconds,
+  SRV_ATR_DefaultGpuMode,
 
   /* This must be last */
   SRV_ATR_LAST
