@@ -188,6 +188,7 @@ extern int              SvrNodeCt;
 extern int              multi_mom;
 
 const int               network_fail_wait_time = 300;
+int                     default_gpu_mode = -1;
 
 #define SKIP_NONE       0
 #define SKIP_EXCLUSIVE  1
@@ -2188,9 +2189,15 @@ int proplist(
         have_gpus = TRUE;
         gpu_err_reset = FALSE; /* default to no */
 
-        /* default value if no other gets specified */
+        // default value if no other gets specified
+        char *deflt_gpu_mode = NULL;
 
-        gpu_mode_rqstd = gpu_exclusive_thread;
+        get_svr_attr_str(SRV_ATR_DefaultGpuMode, &deflt_gpu_mode);
+
+        if (deflt_gpu_mode != NULL)
+          gpu_mode_rqstd = default_gpu_mode;
+        else
+          gpu_mode_rqstd = gpu_exclusive_thread;
         }
       else
         {
@@ -2252,7 +2259,6 @@ int proplist(
 
   return(PBSE_NONE);
   }  /* END proplist() */
-
 
 
 

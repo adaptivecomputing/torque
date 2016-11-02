@@ -450,6 +450,11 @@ int get_svr_attr_b(int index, bool *b)
   return(0);
   }
 
+int get_svr_attr_str(int index, char **str_ptr)
+  {
+  return(0);
+  }
+
 int process_alps_status(
 
   char           *nd_name,
