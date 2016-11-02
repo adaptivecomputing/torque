@@ -354,3 +354,8 @@ int node_exception_check(
   return(0);
   }
 
+int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
+  {
+  return(PBSE_NONE);
+  }
+

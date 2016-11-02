@@ -1266,7 +1266,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 20, "gpu_fan_speed=%d%%", tmpint);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1282,7 +1286,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 50, "gpu_memory_used=%lld MB", (mem_info.used/(1024*1024)));
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1328,7 +1336,11 @@ void generate_server_gpustatus_nvml(
         }
       gpu_status.push_back(s);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1345,7 +1357,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 100, "gpu_memory_utilization=%d%%", util_info.memory);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1360,7 +1376,11 @@ void generate_server_gpustatus_nvml(
         (ecc_mode == NVML_FEATURE_ENABLED) ? "Enabled" : "Disabled");
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1375,7 +1395,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 100, "gpu_single_bit_ecc_errors=%lld", ecc_counts);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1390,7 +1414,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 100, "gpu_double_bit_ecc_errors=%lld", ecc_counts);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
@@ -1404,7 +1432,11 @@ void generate_server_gpustatus_nvml(
       snprintf(tmpbuf, 25, "gpu_temperature=%d C", tmpint);
       gpu_status.push_back(tmpbuf);
       }
-    else
+    else if (rc != NVML_ERROR_NOT_SUPPORTED)
+      {
+      log_nvml_error (rc, NULL, __func__);
+      }
+    else if (LOGLEVEL >= 6)
       {
       log_nvml_error (rc, NULL, __func__);
       }
