@@ -90,7 +90,7 @@ install-exec-hook:
 	  if [ ! -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf ]; then \
 	    echo $(libdir) > $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
 	    chmod 644 $(DESTDIR)/etc/ld.so.conf.d/torque.conf; \
-	    if test $(FROM_MAKE_PACKAGES)0 -eq 0 && test $(UID) -eq 0; then \
+	    if test $(FROM_MAKE_PACKAGES)0 -eq 0 && test `id -u` -eq 0; then \
 	      /sbin/ldconfig; \
 	    fi; \
 	  fi; \
@@ -103,7 +103,7 @@ uninstall-hook:
 	  rm -f $(DESTDIR)/usr/lib/systemd/system/pbs_mom.service || :; \
 	  rm -f $(DESTDIR)/etc/init.d/pbs_mom || :; \
 	  rm -f $(DESTDIR)/etc/ld.so.conf.d/torque.conf || :; \
-	  if test $(FROM_MAKE_PACKAGES)0 -eq 0 && test $(UID) -eq 0; then \
+	  if test $(FROM_MAKE_PACKAGES)0 -eq 0 && test `id -u` -eq 0; then \
 	    /sbin/ldconfig; \
 	  fi; \
 	fi
