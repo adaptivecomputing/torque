@@ -2772,7 +2772,6 @@ void check_jobs_queue(
 
   {
   std::string queue_name(pjob->ji_qs.ji_queue);
-  std::string job_id(pjob->ji_qs.ji_jobid);
 
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
@@ -2797,8 +2796,9 @@ void check_jobs_queue(
     }
 
   unlock_queue(pque, __func__, NULL, LOGLEVEL);
-
-  pjob = svr_find_job(job_id.c_str(), TRUE);
+ 
+  // The job hasn't been queued, so we just re-lock it this way
+  lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
   } // END check_jobs_queue()
 
 
