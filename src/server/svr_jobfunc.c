@@ -320,7 +320,7 @@ int insert_into_alljobs_by_rank(
 
   while ((pjcur = iter->get_next_item()) != NULL)
     {
-    mutex_mgr pjcur_mgr(pjcur->ji_mutex, true);
+    mutex_mgr pjcur_mgr(pjcur->ji_mutex, false);
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
       pjcur_mgr.set_unlock_on_exit(false);
