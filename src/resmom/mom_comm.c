@@ -8307,7 +8307,7 @@ static int adoptSession(
   char            jobid_copy[PBS_MAXSVRJOBID+1];
   int             other_id_len;
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#if !defined(PENABLE_LINUX_CGROUPS) and defined(PENABLE_LINUX26_CPUSETS)
   unsigned int len;
 
   FILE *fp;
