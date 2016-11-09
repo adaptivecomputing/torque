@@ -253,7 +253,7 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(bad_relay);
   }
 
-void removeBeforeAnyDependencies(const char *) {}
+void removeBeforeAnyDependencies(job **pjob_ptr) {}
 
 
 /*
