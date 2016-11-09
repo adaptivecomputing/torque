@@ -252,6 +252,8 @@ int req_signaljob(
   return(PBSE_NONE);
   }  /* END req_signaljob() */
 
+
+
 /*
  * issue_signal - send an internally generated signal to a running job
  */
@@ -289,7 +291,8 @@ int issue_signal(
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 
-  snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", signame);
+  snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame),
+    "%s", signame);
 
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
@@ -302,14 +305,14 @@ int issue_signal(
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
     func(newreq);
 
-    *pjob_ptr = svr_find_job((char *)jobid, TRUE);
+    *pjob_ptr = svr_find_job(jobid, TRUE);
     }
   else if ((extend != NULL) && 
       (!strcmp(extend, RERUNFORCE)))
     {
     if (pjob == NULL)
       {
-      *pjob_ptr = svr_find_job((char *)jobid, TRUE);
+      *pjob_ptr = svr_find_job(jobid, TRUE);
       pjob = *pjob_ptr;
       }
     /* The job state is normally set when the obit arrives. But since the 
@@ -336,6 +339,7 @@ int issue_signal(
         pjob->ji_momhandle = -1;
 
         unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
+        *pjob_ptr = NULL;
 
         return(PBSE_SYSTEM);
         }
@@ -353,6 +357,9 @@ int issue_signal(
       func(newreq);
 
       rc = PBSE_NONE;
+
+      // We need to re-acquire the lock or set the pointer to NULL
+      *pjob_ptr = svr_find_job(jobid, TRUE);
       }
     else
       rc = PBSE_JOBNOTFOUND;
