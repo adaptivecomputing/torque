@@ -171,7 +171,7 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 void           remove_stagein(job **pjob_ptr);
-extern void removeBeforeAnyDependencies(const char *pJobID);
+extern void removeBeforeAnyDependencies(job **pjob_ptr);
 
 
 
@@ -368,8 +368,6 @@ void force_purge_work(
 
 
 
-
-
 void ensure_deleted(
 
   struct work_task *ptask)  /* I */
@@ -392,7 +390,6 @@ void ensure_deleted(
   free(ptask->wt_mutex);
   free(ptask);
   } /* END ensure_deleted() */
-
 
 
 
@@ -440,6 +437,15 @@ int execute_job_delete(
     {
     /* preq is rejected in chk_job_req_permissions here */
     return(-1);
+    }
+
+  removeBeforeAnyDependencies(&pjob);
+
+  // The job disappeared unexpectedly
+  if (pjob == NULL)
+    {
+    reply_ack(preq);
+    return(PBSE_NONE);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -1101,10 +1107,7 @@ int handle_single_delete(
     }
   else
     {
-    std::string jobID = pjob->ji_qs.ji_jobid;
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-    removeBeforeAnyDependencies(jobID.c_str());
-
 
     /* send the asynchronous reply if needed */
     if (preq_tmp != NULL)

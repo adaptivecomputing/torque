@@ -3396,16 +3396,17 @@ void removeAfterAnyDependency(
 
 /*
  * removeBeforeAnyDependencies()
- *
- *
+ * Forcibly removes before any dependencies from this job
+ * @param pjob_ptr - a pointer to the job's pointer
  */
 
 void removeBeforeAnyDependencies(
     
-  const char *pJId)
+  job **pjob_ptr)
 
   {
-  job *pLockedJob = svr_find_job(pJId,FALSE);
+  job        *pLockedJob = *pjob_ptr;
+  std::string jobid(pLockedJob->ji_qs.ji_jobid);
 
   if (pLockedJob != NULL)
     {
@@ -3422,10 +3423,13 @@ void removeBeforeAnyDependencies(
         depend_job *pDepJob = pDep->dp_jobs[i];
         std::string depID(pDepJob->dc_child);
         job_mutex.unlock();
-        removeAfterAnyDependency(depID.c_str(),pJId);
-        pLockedJob = svr_find_job(pJId,FALSE);
+        removeAfterAnyDependency(depID.c_str(), jobid.c_str());
+        pLockedJob = svr_find_job(jobid.c_str(), FALSE);
         if (pLockedJob == NULL)
-          return;
+          {
+          *pjob_ptr = NULL;
+          break;
+          }
 
         job_mutex.mark_as_locked();
         }
