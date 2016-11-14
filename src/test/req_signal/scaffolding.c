@@ -154,7 +154,11 @@ char * netaddr_long(long ap, char *out)
   return(NULL);
   }
 
-job::job() {}
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  }
+
 job::~job() {}
 
 int svr_setjobstate(
