@@ -2436,6 +2436,7 @@ int send_depend_req(
     {
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
       {
+      delete preq;
       return(PBSE_BADATVAL);
       }
 
@@ -2502,6 +2503,9 @@ int send_depend_req(
 
   if (rc != PBSE_NONE)
     {
+    if (preq != NULL)
+      delete preq;
+
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child.c_str());
     log_err(rc, __func__, log_buf);
 
