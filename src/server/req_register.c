@@ -3380,31 +3380,28 @@ void removeBeforeAnyDependencies(
   job        *pLockedJob = *pjob_ptr;
   std::string jobid(pLockedJob->ji_qs.ji_jobid);
 
-  if (pLockedJob != NULL)
+  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
+
+  struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
+  if (pDep != NULL)
     {
-    mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-    pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
-    struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
-    if (pDep != NULL)
+    unsigned int dp_jobs_size = pDep->dp_jobs.size();
+    for (unsigned int i = 0; i < dp_jobs_size; i++)
       {
-
-      unsigned int dp_jobs_size = pDep->dp_jobs.size();
-      for (unsigned int i = 0; i < dp_jobs_size; i++)
+      depend_job *pDepJob = pDep->dp_jobs[i];
+      std::string depID(pDepJob->dc_child);
+      job_mutex.unlock();
+      removeAfterAnyDependency(depID.c_str(), jobid.c_str());
+      pLockedJob = svr_find_job(jobid.c_str(), FALSE);
+      if (pLockedJob == NULL)
         {
-        depend_job *pDepJob = pDep->dp_jobs[i];
-        std::string depID(pDepJob->dc_child);
-        job_mutex.unlock();
-        removeAfterAnyDependency(depID.c_str(), jobid.c_str());
-        pLockedJob = svr_find_job(jobid.c_str(), FALSE);
-        if (pLockedJob == NULL)
-          {
-          *pjob_ptr = NULL;
-          break;
-          }
-
-        job_mutex.mark_as_locked();
+        *pjob_ptr = NULL;
+        break;
         }
+
+      job_mutex.mark_as_locked();
       }
     }
 
