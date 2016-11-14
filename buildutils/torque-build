@@ -272,8 +272,10 @@ then
     mkdir -p buildutils/rpmbuild/SOURCES
     mkdir -p buildutils/rpmbuild/SPECS
     mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
-    # get the distro
-    distro=$(buildutils/determine.distro -r)
+
+    # ignore SP version suffix for SLES12
+    echo "${distro}" | fgrep -q sles12. && distro=sles12
+
     if [ "${distro}" = el7 ]; then
       cp buildutils/torque.adaptive.spec.el7 \
           buildutils/rpmbuild/SPECS/torque.adaptive.spec
