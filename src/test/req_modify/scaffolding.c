@@ -218,7 +218,7 @@ int get_svr_attr_b(int index, bool *b)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
