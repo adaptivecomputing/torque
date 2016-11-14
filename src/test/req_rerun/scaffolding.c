@@ -187,7 +187,7 @@ batch_request::batch_request(const batch_request &other)
   {
   }
 
-batch_request::batch_request()
+batch_request::batch_request() : rq_perm(0), rq_fromsvr(0)
   {
   }
 
