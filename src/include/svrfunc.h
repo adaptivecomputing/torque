@@ -5,6 +5,8 @@
 #include "batch_request.h"
 #include "get_path_jobdata.h"
 
+#include <string>
+
 /*
  * misc server function prototypes
  */
@@ -41,7 +43,7 @@ int is_svr_attr_set(int);
 int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
-extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
+extern int   set_nodes(job *, const char *, int, std::string &, std::string &, char *, char *);
 extern void  free_nodes(job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
 

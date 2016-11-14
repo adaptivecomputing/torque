@@ -7185,6 +7185,26 @@ void recover_cpuset_reservation(
 
 
 
+/*
+ * execute_presetup_prologue()
+ *
+ * Executes a prologue that happens prior to the job's setup
+ */
+
+int execute_presetup_prologue(
+    
+  job *pjob)
+
+  {
+  char presetup_path[MAXLINE * 2];
+
+  snprintf(presetup_path, sizeof(presetup_path), "%s", presetup_prologue.c_str());
+
+  return(run_pelog(PE_PRESETUPPROLOG, presetup_path, pjob, PE_IO_TYPE_NULL, FALSE));
+  } // END execute_presetup_prologue()
+
+
+
 /**
  * Start execution of a job.
  *
@@ -7243,6 +7263,11 @@ int start_exec(
   /* update nodes info w/in job based on exec_hosts pbs_attribute */
   if ((ret = job_nodes(*pjob)) != PBSE_NONE)
     return(ret);
+
+  if (presetup_prologue.size() > 0)
+    {
+    execute_presetup_prologue(pjob);
+    }
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */

@@ -13,7 +13,7 @@
 #include "pbs_job.h"
 #include "req.hpp"
 #include "allocation.hpp"
-
+#include "json/json.h"
 extern const int ALL_TASKS;
 
 
@@ -28,8 +28,8 @@ extern const int ALL_TASKS;
 
 extern const int MIC_TYPE;
 extern const int GPU;
-extern const int CORE;
-extern const int THREAD;
+extern const int CORE_INT;
+extern const int THREAD_INT;
 
 using namespace std;
 
@@ -90,25 +90,25 @@ class Core
   char                  core_nodeset_string[MAX_NODESET_SIZE];
   int                   totalThreads;
   bool                  free; // Core is not being used at all
-  std::vector<int>      indices; // OS indexes of my processing units
-  std::vector<bool>     is_index_busy; // Tells whether or not each processing unit is busy
+  vector<int>           indices; // OS indexes of my processing units
+  vector<bool>          is_index_busy; // Tells whether or not each processing unit is busy
   int                   processing_units_open; // Count of currently unused processing units
 
   public:
     Core();
-    Core(const std::string &layout);
+    Core(const string &layout);
     ~Core();
     int get_id() const;
     int getNumberOfProcessingUnits();
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
-    std::vector<int> getPU();
+    vector<int> getPU();
     void displayAsString(stringstream &out) const;
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
     bool is_free() const;
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
-    void append_indices(std::vector<int> core_indices, int which) const;
+    void append_indices(vector<int> core_indices, int which) const;
     bool reserve_processing_unit(int index);
     int  get_thread_index(int thread_indice) const;
   };
@@ -140,7 +140,7 @@ class Chip
   public:
     Chip();
     Chip(int execution_slots, int &es_remainder, int &per_numa_remainder);
-    Chip(const std::string &layout, std::vector<std::string> &valid_ids);
+    Chip(const Json::Value &layout, std::vector<std::string> &valid_ids);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
     ~Chip();
@@ -163,7 +163,7 @@ class Chip
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
-    void parse_values_from_json_string(const std::string &json_layout, std::string &cores,
+    void parse_values_from_json_string(const Json::Value &layout, std::string &cores,
                                        std::string &threads, std::string &gpus, std::string &mics,
                                        std::vector<std::string> &valid_ids);
 
@@ -175,8 +175,8 @@ class Chip
 
     std::vector<Core> getCores();
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out, bool include_jobs) const;
-    void displayAllocationsAsJson(stringstream &out) const;
+    void displayAsJson(Json::Value &out, bool include_jobs) const;
+    void displayAllocationsAsJson(Json::Value &out) const;
     void setMemory(hwloc_uint64_t mem);
     void setId(int id);
     void setCores(int cores); // used for unit tests
@@ -207,8 +207,8 @@ class Chip
     int  reserve_accelerator(int type);
     void free_accelerators(allocation &a);
     void free_accelerator(int index, int type);
-    void initialize_allocations(char *allocations, std::vector<std::string> &valid_ids);
-    void initialize_allocation(char *allocation, std::vector<std::string> &valid_ids);
+    void initialize_allocations(const Json::Value &layout, std::vector<std::string> &valid_ids);
+    void initialize_allocation(const Json::Value &layout, std::vector<std::string> &valid_ids);
     void aggregate_allocation(allocation &a);
     void adjust_open_resources();
     void reserve_allocation_resources(allocation &a);
@@ -245,7 +245,7 @@ class Socket
   public:
     Socket();
     Socket(int execution_slots, int numa_nodes, int &es_remainder);
-    Socket(const std::string &layout, std::vector<std::string> &valid_ids);
+    Socket(const Json::Value &layout, std::vector<std::string> &valid_ids);
     ~Socket();
     Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
@@ -266,7 +266,7 @@ class Socket
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out, bool include_jobs) const;
+    void displayAsJson(Json::Value &out, bool include_jobs) const;
     void setId(int id);
     void addChip(); // used for unit tests
     float how_many_tasks_fit(const req &r, int place_type) const;
@@ -311,7 +311,7 @@ class Machine
   #endif
 #endif
     
-  void initialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
+  void initialize_from_json(const string &json_str, vector<string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);

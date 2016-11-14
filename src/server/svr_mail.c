@@ -440,6 +440,7 @@ void *send_the_mail(
   } /* END send_the_mail() */
 
 
+
 void set_output_files(
 
   job       *pjob,
@@ -553,11 +554,12 @@ void send_email_batch(
 
 void svr_mailowner_with_message(
 
-  job   *pjob,      /* I */
-  int    mailpoint, /* note, single character  */
-  int    force,     /* if set to MAIL_FORCE, force mail delivery */
-  const char  *text, /* text to mail. */
+  job        *pjob,      /* I */
+  int         mailpoint, /* note, single character  */
+  int         force,     /* if set to MAIL_FORCE, force mail delivery */
+  const char *text, /* text to mail. */
   const char *msg)   /* Optional extra message */
+
   {
   if((text == NULL)||(*text == '\0'))
     {
@@ -567,17 +569,15 @@ void svr_mailowner_with_message(
     {
     return svr_mailowner(pjob,mailpoint,force,text);
     }
-  char *newMsg = (char *)malloc(strlen(text) + strlen(msg) + 2);
-  if(newMsg == NULL)
-    {
-    return;
-    }
-  strcpy(newMsg,text);
-  strcat(newMsg,"\n");
-  strcat(newMsg,msg);
-  svr_mailowner(pjob,mailpoint,force,newMsg);
-  free(newMsg);
+
+  std::string newMsg(text);
+  newMsg += "\n";
+  newMsg += msg;
+
+  svr_mailowner(pjob, mailpoint, force, newMsg.c_str());
   }
+
+
 
 void svr_mailowner(
 

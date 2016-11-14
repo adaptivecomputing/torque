@@ -630,9 +630,9 @@ void             free_prop_list(struct prop*);
 void             reinitialize_node_iterator(node_iterator *);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
 
-#ifdef BATCH_REQUEST_H 
 void             setup_notification(char *);
 
+#ifdef BATCH_REQUEST_H 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();

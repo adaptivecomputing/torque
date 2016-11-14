@@ -20,6 +20,7 @@
 #include "complete_req.hpp"
 #include "pmix_operation.hpp"
 #include "pmix_tracker.hpp"
+#include "authorized_hosts.hpp"
 
 
 #ifdef NVIDIA_GPUS
@@ -664,4 +665,14 @@ bool req::is_per_task() const
   }
 
 #endif
+
+bool authorized_hosts::is_authorized(unsigned long addr)
+  {
+  return(true);
+  }
+
+void authorized_hosts::list_authorized_hosts(std::string &output) {}
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;
 

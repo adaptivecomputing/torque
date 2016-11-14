@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <boost/ptr_container/ptr_vector.hpp>
+#include "authorized_hosts.hpp"
 
 extern mom_hierarchy_t *mh;
 
@@ -1124,3 +1125,14 @@ int mkdir_wrapper(const char *path, mode_t mode)
   return(0);
   }
 
+bool authorized_hosts::is_authorized(unsigned long addr)
+  {
+  return(true);
+  }
+
+void authorized_hosts::list_authorized_hosts(std::string &output) {}
+
+void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short port, const std::string &hostname) {}
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;

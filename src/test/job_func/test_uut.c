@@ -12,7 +12,7 @@
 
 extern sem_t *job_clone_semaphore;
 extern attribute_def job_attr_def[];
-int hostname_in_externals(char *, char *);
+int hostname_in_externals(const char *, const char *);
 int fix_cray_exec_hosts(job *);
 int fix_external_exec_hosts(job *);
 int change_external_job_name(job *);
@@ -20,6 +20,7 @@ int split_job(job *);
 bool add_job_called = false;
 bool internal_job_id_exists(int internal_id);
 void job_free(job *pj, int  use_recycle);
+int conn_qsub(const char *hostname, long  port, char *EMsg);
 
 //bool svr_job_purge_called = false;
 extern completed_jobs_map_class completed_jobs_map;

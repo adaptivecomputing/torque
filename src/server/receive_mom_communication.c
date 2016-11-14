@@ -93,6 +93,7 @@
 #include "attribute.h"
 #include "mom_update.h"
 #include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "net_cache.h"
 #include "threadpool.h"
 #include "../lib/Libnet/lib_net.h"
@@ -145,26 +146,34 @@ void get_status_info(
 
 
 
+/*
+ * is_reporter_node()
+ *
+ * @param node_id - the id of the node that we're checking
+ */
 
-int is_reporter_node(
+bool is_reporter_node(
 
   const char *node_id)
 
   {
-  struct pbsnode *pnode = find_nodebyname(node_id);
-  int             rc = FALSE;
+  pbsnode *pnode = find_nodebyname(node_id);
+  bool     is_reporter = false;
 
   if (pnode != NULL)
     {
-    rc = pnode->nd_is_alps_reporter;
+    is_reporter = (bool)pnode->nd_is_alps_reporter;
     pnode->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
-  return(rc);
+  return(is_reporter);
   } /* END is_reporter_node() */
 
 
 
+/*
+ * is_stat_get()
+ */
 
 int is_stat_get(
 
@@ -379,12 +388,11 @@ void *svr_is_request(
     }
 
   ipaddr = args[1];
+
+  node = auth_hosts.get_authorized_node(ipaddr, mom_port);
   
-  if ((node = AVL_find(ipaddr, mom_port, ipaddrs)) != NULL)
-    {
-    node->lock_node(__func__, "AVL_find", LOGLEVEL);
-    } /* END if AVL_find != NULL) */
-  else if (allow_any_mom)
+  if ((node == NULL) &&
+      (allow_any_mom))
     {
     const char *name = get_cached_nameinfo(&addr);
 

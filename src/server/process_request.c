@@ -717,8 +717,8 @@ int process_request(
 
 int dispatch_request(
 
-  int                   sfds,    /* I */
-  struct batch_request *request) /* I */
+  int            sfds,    /* I */
+  batch_request *request) /* I */
 
   {
   int   rc = PBSE_NONE;
@@ -898,8 +898,8 @@ int dispatch_request(
       break;
 
     case PBS_BATCH_RunJob:
-
     case PBS_BATCH_AsyrunJob:
+
       globalset_del_sock(request->rq_conn);
       rc = req_runjob(request);
 
@@ -1042,7 +1042,7 @@ struct batch_request *alloc_br(
 
   struct batch_request *req = NULL;
 
-  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
+  if ((req = (batch_request *)calloc(1, sizeof(batch_request))) == NULL)
     {
     log_err(errno, __func__, msg_err_malloc);
     }
@@ -1186,18 +1186,8 @@ void free_br(
       break;
 
     case PBS_BATCH_MvJobFile:
-
-    case PBS_BATCH_jobscript2:
-
-      if (preq->rq_ind.rq_jobfile.rq_data)
-        {
-        free(preq->rq_ind.rq_jobfile.rq_data);
-        preq->rq_ind.rq_jobfile.rq_data = NULL;
-        }
-      break;
-
-
     case PBS_BATCH_jobscript:
+    case PBS_BATCH_jobscript2:
 
       if (preq->rq_ind.rq_jobfile.rq_data)
         {
@@ -1299,7 +1289,6 @@ void free_br(
       break;
 
     case PBS_BATCH_RunJob:
-
     case PBS_BATCH_AsyrunJob:
 
       if (preq->rq_ind.rq_run.rq_destin)
@@ -1320,8 +1309,6 @@ void free_br(
 
   return;
   }  /* END free_br() */
-
-
 
 
 

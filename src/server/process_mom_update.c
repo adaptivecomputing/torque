@@ -613,11 +613,17 @@ int process_uname_str(
 
 
 
+/*
+ * process_state_str()
+ *
+ * Processes the state string that came from the mom
+ * @retun PBSE_NONE on SUCCESS, PBSE_* on an error
+ */
 
 int process_state_str(
 
-  struct pbsnode *np,
-  const char    *str)
+  pbsnode    *np,
+  const char *str)
 
   {
   char            log_buf[LOCAL_LOG_BUF_SIZE];
@@ -629,7 +635,7 @@ int process_state_str(
       np->get_name());
 
     log_err(-1, __func__, log_buf);
-    return PBSE_HIERARCHY_NOT_SENT;
+    return(PBSE_HIERARCHY_NOT_SENT);
     }
   if (!strncmp(str, "state=down", 10))
     {
@@ -675,6 +681,8 @@ int process_state_str(
   
   return(rc);
   } /* END process_state_str() */
+
+
 
 int update_node_mac_addr(
     struct pbsnode *np,
@@ -792,6 +800,14 @@ void update_layout_if_needed(
 
 
 
+/*
+ * process_status_info()
+ *
+ * @param nd_name - the name of the node who sent this update
+ * @param status_info - a list of each status string sent in
+ * @return PBSE_NONE on SUCCESS, PBSE_* on error
+ */
+
 int process_status_info(
 
   const char               *nd_name,
@@ -799,7 +815,7 @@ int process_status_info(
 
   {
   const char     *name = nd_name;
-  struct pbsnode *current;
+  pbsnode        *current;
   bool            mom_job_sync = true;
   bool            auto_np = false;
   bool            down_on_error = false;
@@ -834,6 +850,7 @@ int process_status_info(
   for (unsigned int i = 0; i != status_info.size(); i++)
     {
     const char *str = status_info[i].c_str();
+
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
       {
@@ -898,7 +915,8 @@ int process_status_info(
 #ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
-      update_layout_if_needed(current, status_info[i]);
+      // Add 7 to skip "layout="
+      update_layout_if_needed(current, str + 7);
 
       continue;
       }
@@ -1012,6 +1030,13 @@ int process_status_info(
   } /* END process_status_info() */
 
 
+
+/*
+ * move_past_gpu_status()
+ *
+ * @param i - the current index of which string we're processing in the list
+ * @param status_info - the list of status strings
+ */
 
 void move_past_gpu_status(
 

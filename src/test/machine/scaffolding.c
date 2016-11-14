@@ -6,6 +6,8 @@
 #include "pbs_error.h"
 #include "allocation.hpp"
 #include "complete_req.hpp"
+#include "json/json.h"
+#include "numa_constants.h"
 
 int num_for_host;
 int num_tasks_fit;
@@ -81,7 +83,7 @@ bool Socket::is_completely_free() const
   return(true);
   }
 
-Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
+Socket::Socket(const Json::Value &json_layout, std::vector<std::string> &valid_ids)
   {
   json_socket++;
   }
@@ -238,7 +240,7 @@ bool Socket::is_available() const
   return(false);
   }
 
-void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
+void Socket::displayAsJson(Json::Value &out, bool jobs) const {}
 
 unsigned long req::getMemory() const
   {
@@ -389,3 +391,24 @@ int  Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t 
   return(0);
   }
 
+//takes a string stream and a test number
+//used in the unit test
+void CreateJsonString(std::string &testString, int testNum)
+  {
+  Json::Value test;
+  //two sockets each with two numanodes
+  if(testNum == 1)
+    {
+    test[NODE][0][SOCKET];
+    test[NODE][1][SOCKET];
+    }
+  
+  //one socket two numanodes
+  else if(testNum == 2)
+    {
+    test[NODE][0][SOCKET];
+    }
+  Json::StreamWriterBuilder builder;
+  builder["indentation"] = "\t";
+  testString = Json::writeString(builder, test);
+  }

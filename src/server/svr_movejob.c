@@ -547,13 +547,13 @@ void finish_moving_processing(
 
 void finish_move_process(
 
-  char                 *job_id,
-  struct batch_request *preq,
-  long                  time,
-  char                 *node_name,
-  int                   status,
-  int                   type,
-  int                   mom_err)
+  char          *job_id,
+  batch_request *preq,
+  long           time,
+  const char    *node_name,
+  int            status,
+  int            type,
+  int            mom_err)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
@@ -1011,8 +1011,8 @@ int commit_job_on_mom(
 
 int get_mom_node_version(
   
-  char *job_id, 
-  int  &version)
+  const char *job_id, 
+  int        &version)
 
   {
   job *pjob;
@@ -1229,7 +1229,7 @@ int send_job_over_network_with_retries(
 int send_job_work(
 
   char           *job_id,
-  char           *node_name, /* I */
+  const char     *node_name, /* I */
   int             type,      /* I */
   int            *my_err,    /* O */
   batch_request  *preq)      /* M */
@@ -1472,7 +1472,7 @@ void *send_job(
 
   {
   send_job_request     *args = (send_job_request *)vp;
-  char                 *job_id = args->jobid;
+  char                 *job_id = strdup(args->jobid.c_str());
   job                  *pjob;
   int                   type = args->move_type; /* move, route, or execute */
   int                   local_errno = 0;
@@ -1480,7 +1480,7 @@ void *send_job(
 
   char                 *node_name = NULL;
 
-  struct batch_request *preq = (struct batch_request *)args->data;
+  batch_request *preq = (struct batch_request *)args->data;
 
   pjob = svr_find_job(job_id, TRUE);
 
@@ -1492,7 +1492,7 @@ void *send_job(
       {
       sprintf(log_buf,"about to send job - type=%d",type);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
     node_name = get_ms_name(*pjob);
@@ -1502,11 +1502,12 @@ void *send_job(
     free(node_name);
     }
 
-  free(vp);
+  delete args;
+
+  free(job_id);
+
   return(NULL);
   }  /* END send_job() */
-
-
 
 
 
@@ -1561,7 +1562,7 @@ int net_move(
 
   svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
 
-  args = (send_job_request *)calloc(1, sizeof(send_job_request));
+  args = new send_job_request();
 
   if (args != NULL)
     {
@@ -1579,8 +1580,6 @@ int net_move(
 
   return(enqueue_threadpool_request(send_job, args, request_pool));
   }  /* END net_move() */
-
-
 
 
 

@@ -849,6 +849,11 @@ static void altdsp_statjob(
     rem_walltime = 0;
     bool dummyProcVal = false;
 
+    // Make the memory take the alphabetically last specification. There is no reason it has
+    // to be this way or should be this way, but I'm making this change so that the behavior
+    // stays the same.
+    char mem_char = 'a';
+
     pat = pstat->attribs;
 
     while (pat != NULL)
@@ -924,23 +929,48 @@ static void altdsp_statjob(
           }
         else if (!strcmp(pat->resource, "mem"))
           {
-          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          if (mem_char < 'm')
+            {
+            mem_char = 'm';
+
+            snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+            }
           }
         else if (!strcmp(pat->resource, "pmem"))
           {
-          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          if (mem_char < 'p')
+            {
+            mem_char = 'p';
+
+            snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+            }
           }
         else if (!strcmp(pat->resource, "dmem"))
           {
-          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          if (mem_char < 'd')
+            {
+            mem_char = 'd';
+  
+            snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+            }
           }
         else if (!strcmp(pat->resource, "vmem"))
           {
-          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          if (mem_char < 'v')
+            {
+            mem_char = 'v';
+  
+            snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+            }
           }
         else if (!strcmp(pat->resource, "pvmem"))
           {
-          snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+          if (mem_char <= 'p')
+            {
+            mem_char = 'p';
+
+            snprintf(rqmem, sizeof(rqmem), "%s", cnv_size(pat->value, alt_opt));
+            }
           }
         else if (!strcmp(pat->resource, "walltime"))
           {

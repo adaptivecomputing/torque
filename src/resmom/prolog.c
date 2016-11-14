@@ -541,6 +541,32 @@ int check_pelog_permissions(
 
 
 /*
+ * get_complete_hostlist()
+ *
+ */
+
+char *get_complete_hostlist(
+
+  job *pjob)
+
+  {
+  std::string complete_hostlist;
+  std::string previous_host;
+
+  for (int i = 0; i < pjob->ji_numnodes; i++)
+    {
+    if (i != 0)
+      complete_hostlist += ",";
+
+    complete_hostlist += pjob->ji_hosts[i].hn_host;
+    }
+
+  return(strdup(complete_hostlist.c_str()));
+  } // END get_complete_hostlist()
+
+
+
+/*
  * setup_pelog_arguments()
  *
  * Sets arg with the correct arguments for the pelog script
@@ -612,13 +638,21 @@ void setup_pelog_arguments(
   else
     {
     /* prologue */
+    int last_arg = 9;
     arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
     arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
     arg[8] = strdup(namebuf);
-    arg[9] = NULL;
 
-    LastArg = 9;
+    if (which == PE_PRESETUPPROLOG)
+      {
+      arg[9] = get_complete_hostlist(pjob);
+      last_arg++;
+      }
+
+    arg[last_arg] = NULL;
+
+    LastArg = last_arg;
     }
 
   for (int aindex = 0;aindex < LastArg; aindex++)

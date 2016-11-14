@@ -229,7 +229,7 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "utils.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "mom_hierarchy.h"
 #include "mom_server.h"
 #include "mom_comm.h"
@@ -297,7 +297,6 @@ extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
 extern int                 verbositylevel;
-extern AvlTree             okclients;
 extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
@@ -583,7 +582,7 @@ int mom_server_add(
 
       if (ipaddr != 0)
         {
-        okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+        auth_hosts.add_authorized_address(ipaddr, 0, "");
         }
 
       }
@@ -2151,12 +2150,6 @@ void mom_server_update_receive_time_by_ip(
 /**
 ** Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
-
-/*tree *okclients = NULL;*/ /* tree of ip addrs */
-AvlTree okclients = NULL;
-
-
-
 /**
  * mom_server_valid_message_source
  *
@@ -2236,7 +2229,7 @@ mom_server *mom_server_valid_message_source(
 
             if (ipaddr == server_ip)
               {
-              okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+              auth_hosts.add_authorized_address(ipaddr, 0, "");
 
               return(pms);
               }
@@ -2296,7 +2289,7 @@ int process_host_name(
       }
 
     /* add to acceptable host tree */
-    okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+    auth_hosts.add_authorized_address(ipaddr, rm_port, "");
     }
   else
     {
@@ -2413,7 +2406,7 @@ void sort_paths()
 void reset_okclients()
 
   {
-  okclients = AVL_clear_tree(okclients);
+  auth_hosts.clear();
 
   // re-add each server
   for (int sindex = 0;sindex < PBS_MAXSERVER;sindex++)
@@ -2440,14 +2433,14 @@ void reset_okclients()
 
         if (ipaddr != 0)
           {
-          okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+          auth_hosts.add_authorized_address(ipaddr, 0, "");
           }
         }
       }
     }
 
   // add localhost
-  okclients = AVL_insert(localaddr, 0, NULL, okclients);
+  auth_hosts.add_authorized_address(localaddr, 0, "");
 
   // BMD: add the node's ip address
 
@@ -2467,10 +2460,7 @@ int read_cluster_addresses(
   int             path_complete = FALSE;
   int             something_added;
   char           *str;
-  char           *okclients_list;
   std::string      hierarchy_file = "/n";
-  long            list_size;
-  long            list_len = 0;
   if (mh != NULL)
     free_mom_hierarchy(mh);
 
@@ -2563,17 +2553,12 @@ int read_cluster_addresses(
     sort_paths();
 
     /* log the hierrarchy */
-    list_size = MAXLINE * 2;
-    if ((okclients_list = (char *)calloc(1, list_size)) != NULL)
-      {
-      AVL_list(okclients, &okclients_list, &list_len, &list_size);
-      snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
-        okclients_list, hierarchy_file.c_str());
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-
-      free(okclients_list);
-      }
+    std::string list;
+    auth_hosts.list_authorized_hosts(list);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
+      list.c_str(), hierarchy_file.c_str());
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
  
     /* tell the mom to go ahead and send an update to pbs_server */
     first_update_time = 0;
@@ -2642,7 +2627,7 @@ void mom_is_request(
     {
     ipaddr = ntohl(pAddr->sin_addr.s_addr);
 
-    if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
+    if (auth_hosts.is_authorized(ipaddr) == false)
       {
       if (err_msg)
         {

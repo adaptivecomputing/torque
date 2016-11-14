@@ -102,6 +102,7 @@ int ac_read_amount;
 int ac_errno;
 int job_saved;
 int task_saved;
+std::string presetup_prologue;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];

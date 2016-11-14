@@ -77,8 +77,23 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
 	ln -s $(program_prefix)pbsnodes$(program_suffix)$(EXEEXT) \
 	  $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  $(install_sh) -d -m 755 $(DESTDIR)/etc/profile.d || :; \
+	  if [ ! -f $(DESTDIR)/etc/profile.d/torque.sh ]; then \
+	    echo "PATH=$(bindir):$(sbindir):\$$PATH" > $(DESTDIR)/etc/profile.d/torque.sh; \
+	    chmod 644 $(DESTDIR)/etc/profile.d/torque.sh; \
+	  fi; \
+	  if [ ! -f $(DESTDIR)/etc/profile.d/torque.csh ]; then \
+	    echo "set path = ($(bindir) $(sbindir) \$$path)" > $(DESTDIR)/etc/profile.d/torque.csh; \
+	    chmod 644 $(DESTDIR)/etc/profile.d/torque.csh; \
+	  fi; \
+	fi
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
 	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  rm -f $(DESTDIR)/etc/profile.d/torque.sh || :; \
+	  rm -f $(DESTDIR)/etc/profile.d/torque.csh || :; \
+	fi
 
