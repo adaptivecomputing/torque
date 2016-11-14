@@ -377,6 +377,7 @@ int is_svr_attr_set(int index)
 
 job::job() : ji_rejectdest()
   {
+  this->ji_wattr[JOB_ATR_hold].at_flags = 0;
   }
 
 job::~job() {}
