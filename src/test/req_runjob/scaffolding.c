@@ -302,7 +302,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, i
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);

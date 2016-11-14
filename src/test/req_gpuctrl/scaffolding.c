@@ -15,7 +15,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);

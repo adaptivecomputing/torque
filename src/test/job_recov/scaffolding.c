@@ -285,7 +285,6 @@ int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char 
 int nextjobnum_chk(pbs_attribute *pattr, void *pobject, int actmode) {return 0;}
 int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
-batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
 
 int issue_to_svr(const char *servern, batch_request *preq, void (*replyfunc)(struct work_task *))

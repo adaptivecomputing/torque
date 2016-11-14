@@ -119,7 +119,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
