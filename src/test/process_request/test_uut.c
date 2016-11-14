@@ -12,8 +12,7 @@ extern struct connection svr_conn[];
 
 int process_request(struct tcp_chan *chan);
 bool request_passes_acl_check(batch_request *request, unsigned long  conn_addr);
-batch_request *alloc_br(int type);
-batch_request *read_request_from_socket(tcp_chan *chan);
+int read_request_from_socket(tcp_chan *chan, batch_request &preq);
 
 extern bool check_acl;
 extern bool find_node;
@@ -46,43 +45,43 @@ void set_connection_type(
 
 START_TEST(test_read_request_from_socket)
   {
-  tcp_chan chan;
+  tcp_chan      chan;
+  batch_request preq;
 
   memset(&chan, 0, sizeof(chan));
 
   chan.sock = -1;
-  fail_unless(read_request_from_socket(&chan) == NULL, "invalid socket (-1) should return NULL");
+  fail_unless(read_request_from_socket(&chan, preq) == -1, "invalid socket (-1) should return NULL");
 
   chan.sock = PBS_NET_MAX_CONNECTIONS;
-  fail_unless(read_request_from_socket(&chan) == NULL, "invalid socket (PBS_NET_MAX_CONNECTIONS) should return NULL");
+  fail_unless(read_request_from_socket(&chan, preq) == -1, "invalid socket (PBS_NET_MAX_CONNECTIONS) should return NULL");
 
   chan.sock = 1;
   initialize_svr_conn(chan.sock);
   set_connection_type(chan.sock, Idle);
-  fail_unless(read_request_from_socket(&chan) == NULL, "Idle connection type should fail");
+  fail_unless(read_request_from_socket(&chan, preq) == -1, "Idle connection type should fail");
 
   strcpy(server_name, "napali");
   set_connection_type(chan.sock, ToServerDIS);
   find_node = false;
   check_acl = true;
   fail_check = false;
-  fail_unless(read_request_from_socket(&chan) == NULL, "Node not found should fail");
+  fail_unless(read_request_from_socket(&chan, preq) == -1, "Node not found should fail");
   fail_check = true;
   find_node = true;
   check_acl = false;
-  fail_unless(read_request_from_socket(&chan) != NULL, "should pass");
+  fail_unless(read_request_from_socket(&chan, preq) == PBSE_NONE, "should pass");
 
   fail_get_connecthost = true;
-  fail_unless(read_request_from_socket(&chan) == NULL, "fail if can't get connect host");
+  fail_unless(read_request_from_socket(&chan, preq) == -1, "fail if can't get connect host");
 
   dis_req_read_rc = PBSE_SYSTEM;
-  batch_request *preq;
-  fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
-  fail_unless(preq->rq_type == PBS_BATCH_Disconnect);
+  fail_unless((read_request_from_socket(&chan, preq)) == PBSE_SYSTEM, "should get bad request: %d");
+  fail_unless(preq.rq_type == PBS_BATCH_Disconnect);
 
   dis_req_read_rc = 5;
-  fail_unless((preq = read_request_from_socket(&chan)) != NULL, "should get bad request");
-  fail_unless(preq->rq_failcode == dis_req_read_rc);
+  fail_unless((read_request_from_socket(&chan, preq)) == dis_req_read_rc, "should get bad request");
+  fail_unless(preq.rq_failcode == dis_req_read_rc);
   }
 END_TEST
 
@@ -116,22 +115,6 @@ START_TEST(test_request_passes_acl_check)
   }
 END_TEST
 
-START_TEST(test_alloc_br)
-  {
-  batch_request *preq = alloc_br(PBS_BATCH_QueueJob);
-
-  fail_unless(preq->rq_type == PBS_BATCH_QueueJob);
-  fail_unless(preq->rq_conn == -1);
-  fail_unless(preq->rq_orgconn == -1);
-  fail_unless(preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_NULL);
-  fail_unless(preq->rq_noreply == FALSE);
-  fail_unless(preq->rq_time > 0);
-
-  free_br(preq);
-  fail_unless(free_attrlist_called > 0);
-  }
-END_TEST
-
 START_TEST(test_process_request_bad_host_err)
   {
   struct tcp_chan chan;
@@ -161,7 +144,7 @@ Suite *process_request_suite(void)
 
   tc_core = tcase_create("test_request_passes_acl_check");
   tcase_add_test(tc_core, test_request_passes_acl_check);
-  tcase_add_test(tc_core, test_alloc_br);
+  suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_process_request_bad_host_err");
   tcase_add_test(tc_core, test_process_request_bad_host_err);

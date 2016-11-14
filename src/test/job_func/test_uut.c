@@ -307,7 +307,7 @@ START_TEST(cpy_checkpoint_test)
                                          test_job,
                                          JOB_ATR_checkpoint_name,
                                          CKPT_DIR_IN);
-  struct batch_request *initial = alloc_br(/*PBS_BATCH_CheckpointJob*/0);
+  struct batch_request *initial = new batch_request(0);
   fail_unless(result == NULL, "NULL batch_request input fail");
 
   result = cpy_checkpoint(initial,

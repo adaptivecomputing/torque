@@ -15,7 +15,6 @@ START_TEST(test_mom_req_quejob)
   {
   batch_request preq;
 
-  memset(&preq, 0, sizeof(preq));
   preq.rq_fromsvr = TRUE;
   strcpy(preq.rq_ind.rq_queuejob.rq_jid, "1.napali");
   CLEAR_HEAD(preq.rq_ind.rq_queuejob.rq_attr);

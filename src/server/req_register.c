@@ -1335,8 +1335,6 @@ void post_doq(
       }
     }
 
-  free_br(preq);
-
   return;
   }  /* END post_doq() */
 
@@ -1380,7 +1378,7 @@ int alter_unreg(
         if ((pnewd == 0) || 
             (find_dependjob(pnewd, oldjd->dc_child.c_str()) == 0))
           {
-          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, free_br,false);
+          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, NULL, false);
 
           if (rc == PBSE_JOBNOTFOUND)
             return(rc);
@@ -1498,7 +1496,7 @@ int depend_on_que(
       for (unsigned int i = 0; i < pparent.size(); i++)
         {
         if ((rc = send_depend_req(pjob, pparent[i], type, JOB_DEPEND_OP_REGISTER,
-                                  SYNC_SCHED_HINT_NULL, post_doq,false)) != PBSE_NONE)
+                                  SYNC_SCHED_HINT_NULL, post_doq, false)) != PBSE_NONE)
           break;
         }
 
@@ -1564,8 +1562,6 @@ void post_doe(
       }
     }
 
-  free_br(preq);
-
   return;
   }  /* END post_doe() */
 
@@ -1606,7 +1602,8 @@ int depend_on_exec(
             pdep->dp_type,
             JOB_DEPEND_OP_RELEASE,
             SYNC_SCHED_HINT_NULL,
-            post_doe,false) == PBSE_JOBNOTFOUND)
+            post_doe,
+            false) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1631,7 +1628,8 @@ int depend_on_exec(
             pdep->dp_type,
             JOB_DEPEND_OP_READY,
             SYNC_SCHED_HINT_NULL,
-            free_br,false) == PBSE_JOBNOTFOUND)
+            NULL,
+            false) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1765,7 +1763,7 @@ int depend_on_term(
             {
             pparent = pdep->dp_jobs[i];
 
-            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, free_br,true);
+            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, NULL, true);
             
             if (rc == PBSE_JOBNOTFOUND)
               {
@@ -1786,7 +1784,7 @@ int depend_on_term(
         pparent = pdep->dp_jobs[i];
 
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, free_br,true)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, NULL, true)) != PBSE_NONE)
           {
           return(rc);
           }
@@ -1847,7 +1845,7 @@ int release_cheapest(
       hint = SYNC_SCHED_HINT_FIRST;
 
     if ((rc = send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
-          JOB_DEPEND_OP_RELEASE, hint, free_br,false)) == PBSE_NONE)
+          JOB_DEPEND_OP_RELEASE, hint, NULL, false)) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
@@ -2427,27 +2425,17 @@ int send_depend_req(
   bool         bAsyncOk)
 
   {
-  int                   rc = 0;
-  int                   i;
-  char                  job_id[PBS_MAXSVRJOBID + 1];
-  char                  br_id[MAXLINE];
+  int            rc = 0;
+  int            i;
+  char           job_id[PBS_MAXSVRJOBID + 1];
 
-  struct batch_request *preq;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  preq = alloc_br(PBS_BATCH_RegistDep);
-
-  if (preq == NULL)
-    {
-    log_err(errno, __func__, msg_err_malloc);
-    return(PBSE_SYSTEM);
-    }
+  batch_request *preq = new batch_request(PBS_BATCH_RegistDep);
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   for (i = 0;i < PBS_MAXUSER;++i)
     {
     if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
       {
-      free_br(preq);
       return(PBSE_BADATVAL);
       }
 
@@ -2501,9 +2489,6 @@ int send_depend_req(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
-  get_batch_request_id(preq);
-  snprintf(br_id, sizeof(br_id), "%s", preq->rq_id);
-
   if (bAsyncOk)
     {
     snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", server_name);
@@ -2512,22 +2497,13 @@ int send_depend_req(
     }
   else
     {
-    rc = issue_to_svr(server_name, &preq, NULL);
+    rc = issue_to_svr(server_name, preq, NULL);
     }
 
   if (rc != PBSE_NONE)
     {
-    /* requests are conditionally freed in issue_to_svr() */
-    if (preq != NULL)
-      {
-      free_br(preq);
-      }
-
     sprintf(log_buf, "Unable to perform dependency with job %s\n", pparent->dc_child.c_str());
     log_err(rc, __func__, log_buf);
-
-    if ((preq = get_remove_batch_request(br_id)) != NULL)
-      free_br(preq);
 
     if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
       {
@@ -2538,8 +2514,12 @@ int send_depend_req(
     }
   /* local requests have already been processed and freed. Do not attempt to
    * free or reference again. */
-  else if (preq != NULL)
+  else if ((preq != NULL) &&
+           (postfunc != NULL))
     postfunc(preq);
+
+  if (preq != NULL)
+    delete preq;
 
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {

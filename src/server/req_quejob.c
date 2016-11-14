@@ -1636,12 +1636,12 @@ int perform_commit_work(
     if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
       {
       /* Create a new batch request and fill it in */
-      preq_run = alloc_br(PBS_BATCH_RunJob);
+      preq_run = new batch_request(PBS_BATCH_RunJob);
       preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
       preq_run->rq_ind.rq_run.rq_resch = 0;
       preq_run->rq_ind.rq_run.rq_destin = rq_destin;
       preq_run->rq_fromsvr = preq->rq_fromsvr;
-      preq_run->rq_noreply = TRUE; /* set for no replies */
+      preq_run->rq_noreply = true; /* set for no replies */
       strcpy(preq_run->rq_user, preq->rq_user);
       strcpy(preq_run->rq_host, preq->rq_host);
       strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);
@@ -2532,12 +2532,12 @@ int req_commit2(
   if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
     {
     /* Create a new batch request and fill it in */
-    preq_run = alloc_br(PBS_BATCH_RunJob);
+    preq_run = new batch_request(PBS_BATCH_RunJob);
     preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
     preq_run->rq_ind.rq_run.rq_resch = 0;
     preq_run->rq_ind.rq_run.rq_destin = rq_destin;
     preq_run->rq_fromsvr = preq->rq_fromsvr;
-    preq_run->rq_noreply = TRUE; /* set for no replies */
+    preq_run->rq_noreply = true; /* set for no replies */
     strcpy(preq_run->rq_user, preq->rq_user);
     strcpy(preq_run->rq_host, preq->rq_host);
     strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);

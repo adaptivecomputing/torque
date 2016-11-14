@@ -1174,7 +1174,7 @@ int send_job_obit(
 
   /* send the job obiturary notice to the server */
 
-  preq = alloc_br(PBS_BATCH_JobObit);
+  preq = new batch_request(PBS_BATCH_JobObit);
 
   if (preq == NULL)
     {
@@ -1490,7 +1490,7 @@ void *obit_reply(
 
   /* read and decode the reply */
 
-  if ((preq = alloc_br(PBS_BATCH_JobObit)) == NULL)
+  if ((preq = new batch_request(PBS_BATCH_JobObit)) == NULL)
     return(NULL);
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);

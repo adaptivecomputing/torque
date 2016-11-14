@@ -66,17 +66,6 @@ long disable_requeue = 0;
 completed_jobs_map_class completed_jobs_map;
 
 
-struct batch_request *alloc_br(int type)
-  {
-  batch_request *preq;
-  if (alloc_br_null)
-    return(NULL);
-
-  preq = (batch_request *)calloc(1, sizeof(batch_request));
-  preq->rq_type = type;
-
-  return(preq);
-  }
 
 char *parse_servername(const char *name, unsigned int *service)
   {
@@ -209,7 +198,9 @@ job *svr_find_job(const char *jobid, int get_subjob)
 
   if (bad_job == 0)
     {
-    pjob = (job *)calloc(1, sizeof(job));
+    pjob = new job();
+
+    memset(pjob->ji_wattr, 0, sizeof(pjob->ji_wattr));
     strcpy(pjob->ji_qs.ji_jobid, jobid);
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
   
@@ -267,7 +258,7 @@ int safe_strncat(char *str, const char *to_append, size_t space_remaining)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -516,3 +507,15 @@ void job_array::update_array_values(
   {
   }
 
+batch_request::batch_request(int type) : rq_type(type)
+  {
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }

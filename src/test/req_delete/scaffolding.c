@@ -41,7 +41,7 @@ int  depend_term_called;
 batch_request *alloc_br(int type)
   {
   if (alloc_work)
-    return((batch_request *)calloc(1, sizeof(batch_request)));
+    return(new batch_request());
   else
     return(NULL);
   }
@@ -66,13 +66,12 @@ int job_save(job *pjob, int updatetype, int mom_port)
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  pthread_mutex_unlock(pjob->ji_mutex);
   return(0);
   }
 
 void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to chk_job_req_permissions needs to be mocked!!\n");
-  exit(1);
   }
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
@@ -113,7 +112,6 @@ void free_nodes(job *pjob, const char *spec)
 
 void free_br(struct batch_request *preq)
   {
-  br_freed = true;
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
@@ -163,7 +161,7 @@ char *pbse_to_txt(int err)
 
 batch_request *cpy_stage(batch_request *preq, job *pjob, enum job_atr ati, int direction)
   {
-  return((batch_request *)calloc(1, sizeof(batch_request)));
+  return(new batch_request());
   }
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
@@ -228,7 +226,7 @@ int get_svr_attr_b(int index, bool *b)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -579,6 +577,8 @@ int depend_on_term(
 job::job() : ji_has_delete_nanny(false)
   {
   memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(this->ji_mutex, NULL);
   }
 
 job::~job() {}
@@ -595,4 +595,19 @@ void job_array::update_array_values(
 
 void job_array::mark_deleted() {}
 
+batch_request::batch_request(const batch_request &other)
+  {
+  if (other.rq_extend == NULL)
+    this->rq_extend = NULL;
+  else
+    this->rq_extend = strdup(other.rq_extend);
+  }
 
+batch_request::~batch_request()
+
+  {
+  br_freed = true;
+  }
+
+batch_request::batch_request() {}
+batch_request::batch_request(int type) : rq_type(type) {}

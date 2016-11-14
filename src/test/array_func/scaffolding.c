@@ -379,3 +379,10 @@ int create_and_queue_array_subjob(
   {
   return(PBSE_NONE);
   }
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+void batch_request::update_object_id(int job_index) {}
+

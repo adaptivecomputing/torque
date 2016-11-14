@@ -133,7 +133,7 @@ void *mom_process_request(
 
   time_now = time(NULL);
 
-  if ((request = alloc_br(0)) == NULL)
+  if ((request = new batch_request(0)) == NULL)
     {
     mom_close_client(sfds);
     return NULL;
@@ -502,44 +502,22 @@ static void mom_close_client(
 
 
 
+batch_request::batch_request(
 
-/*
- * alloc_br - allocate and clear a batch_request structure
- */
-
-struct batch_request *alloc_br(
-
-  int type)
+  int type) : rq_type(type), rq_perm(0), rq_fromsvr(0), rq_conn(-1), rq_orgconn(-1), rq_extsz(0),
+              rq_time(time_now), rq_refcount(0), rq_extra(NULL), rq_noreply(FALSE), rq_failcode(0),
+              rq_extend(NULL), rq_id()
 
   {
+  CLEAR_LINK(this->rq_link);
 
-  struct batch_request *req = NULL;
+  memset(&this->rq_user, 0, sizeof(this->rq_user));
+  memset(&this->rq_host, 0, sizeof(this->rq_host));
+  memset(&this->rq_reply, 0, sizeof(this->rq_reply));
 
-  req = (struct batch_request *)calloc(1, sizeof(struct batch_request));
-
-  if (req == NULL)
-    {
-    log_err(errno, "alloc_br", msg_err_malloc);
-
-    return(NULL);
-    }
-
-  req->rq_type = type;
-
-  req->rq_conn = -1;  /* indicate not connected */
-  req->rq_orgconn = -1;  /* indicate not connected */
-  req->rq_time = time_now;
-  req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-  req->rq_noreply = FALSE;  /* indicate reply is needed */
-
-  CLEAR_LINK(req->rq_link);
-
-  append_link(&svr_requests, &req->rq_link, req);
-
-  return(req);
+  this->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  append_link(&svr_requests, &this->rq_link, this);
   }
-
-
 
 
 
@@ -586,6 +564,105 @@ static void close_quejob(
 
 
 
+batch_request::~batch_request()
+
+  {
+  delete_link(&this->rq_link);
+
+  reply_free(&this->rq_reply);
+
+  if (this->rq_extend)
+    free(this->rq_extend);
+
+  if (this->rq_extra)
+    free(this->rq_extra);
+
+  switch (this->rq_type)
+    {
+    case PBS_BATCH_QueueJob:
+
+      free_attrlist(&this->rq_ind.rq_queuejob.rq_attr);
+
+      break;
+
+    case PBS_BATCH_JobCred:
+
+      if (this->rq_ind.rq_jobcred.rq_data)
+        free(this->rq_ind.rq_jobcred.rq_data);
+
+      break;
+
+    case PBS_BATCH_MvJobFile:
+
+    case PBS_BATCH_jobscript:
+
+      if (this->rq_ind.rq_jobfile.rq_data)
+        free(this->rq_ind.rq_jobfile.rq_data);
+
+      break;
+
+    case PBS_BATCH_HoldJob:
+
+      freebr_manage(&this->rq_ind.rq_hold.rq_orig);
+
+      break;
+
+    case PBS_BATCH_CheckpointJob:
+
+      freebr_manage(&this->rq_ind.rq_manager);
+
+      break;
+
+    case PBS_BATCH_MessJob:
+
+      if (this->rq_ind.rq_message.rq_text)
+        free(this->rq_ind.rq_message.rq_text);
+
+      break;
+
+    case PBS_BATCH_ModifyJob:
+
+    case PBS_BATCH_AsyModifyJob:
+
+      freebr_manage(&this->rq_ind.rq_modify);
+
+      break;
+
+    case PBS_BATCH_StatusJob:
+
+    case PBS_BATCH_StatusQue:
+
+    case PBS_BATCH_StatusNode:
+
+    case PBS_BATCH_StatusSvr:
+      /* DIAGTODO: handle PBS_BATCH_StatusDiag */
+
+      free_attrlist(&this->rq_ind.rq_status.rq_attr);
+
+      break;
+
+    case PBS_BATCH_JobObit:
+
+      free_attrlist(&this->rq_ind.rq_jobobit.rq_attr);
+
+      break;
+
+    case PBS_BATCH_CopyFiles:
+
+    case PBS_BATCH_DelFiles:
+
+      freebr_cpyfile(&this->rq_ind.rq_cpyfile);
+
+      break;
+
+    default:
+
+      /* NO-OP */
+
+      break;
+    }  /* END switch (this->rq_type) */
+  } // END destructor()
+
 
 
 /*
@@ -601,104 +678,7 @@ void free_br(
   if (preq == NULL)
     return;
 
-  delete_link(&preq->rq_link);
-
-  reply_free(&preq->rq_reply);
-
-  if (preq->rq_extend)
-    free(preq->rq_extend);
-
-  if (preq->rq_extra)
-    free(preq->rq_extra);
-
-  switch (preq->rq_type)
-    {
-    case PBS_BATCH_QueueJob:
-
-      free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
-
-      break;
-
-    case PBS_BATCH_JobCred:
-
-      if (preq->rq_ind.rq_jobcred.rq_data)
-        free(preq->rq_ind.rq_jobcred.rq_data);
-
-      break;
-
-    case PBS_BATCH_MvJobFile:
-
-    case PBS_BATCH_jobscript:
-
-      if (preq->rq_ind.rq_jobfile.rq_data)
-        free(preq->rq_ind.rq_jobfile.rq_data);
-
-      break;
-
-    case PBS_BATCH_HoldJob:
-
-      freebr_manage(&preq->rq_ind.rq_hold.rq_orig);
-
-      break;
-
-    case PBS_BATCH_CheckpointJob:
-
-      freebr_manage(&preq->rq_ind.rq_manager);
-
-      break;
-
-    case PBS_BATCH_MessJob:
-
-      if (preq->rq_ind.rq_message.rq_text)
-        free(preq->rq_ind.rq_message.rq_text);
-
-      break;
-
-    case PBS_BATCH_ModifyJob:
-
-    case PBS_BATCH_AsyModifyJob:
-
-      freebr_manage(&preq->rq_ind.rq_modify);
-
-      break;
-
-    case PBS_BATCH_StatusJob:
-
-    case PBS_BATCH_StatusQue:
-
-    case PBS_BATCH_StatusNode:
-
-    case PBS_BATCH_StatusSvr:
-      /* DIAGTODO: handle PBS_BATCH_StatusDiag */
-
-      free_attrlist(&preq->rq_ind.rq_status.rq_attr);
-
-      break;
-
-    case PBS_BATCH_JobObit:
-
-      free_attrlist(&preq->rq_ind.rq_jobobit.rq_attr);
-
-      break;
-
-    case PBS_BATCH_CopyFiles:
-
-    case PBS_BATCH_DelFiles:
-
-      freebr_cpyfile(&preq->rq_ind.rq_cpyfile);
-
-      break;
-
-    default:
-
-      /* NO-OP */
-
-      break;
-    }  /* END switch (preq->rq_type) */
-
-  free(preq);
-
-  return;
+  delete preq;
   }  /* END free_br() */
 
 

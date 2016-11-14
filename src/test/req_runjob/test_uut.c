@@ -38,7 +38,6 @@ START_TEST(test_get_mail_text)
   const char    *txt = "tom is bob";
   char          *ret_txt;
 
-  memset(&preq, 0, sizeof(preq));
   preq.rq_reply.brp_un.brp_txt.brp_txtlen = 999000001;
   preq.rq_reply.brp_un.brp_txt.brp_str = strdup(txt);
   fail_unless(get_mail_text(&preq, "1.napali") == NULL);
@@ -54,7 +53,6 @@ START_TEST(test_two)
   {
   struct batch_request request;
   job myjob;
-  memset(&request, 0, sizeof(struct batch_request));
   memset(&myjob, 0, sizeof(job));
   myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
   myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;

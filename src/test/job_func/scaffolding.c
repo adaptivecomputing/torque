@@ -531,12 +531,11 @@ ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   return(0);
   }
 
-struct batch_request *alloc_br(int type)
+batch_request::batch_request(
+    
+  int type) : rq_type(type)
+
   {
-  struct batch_request *request = NULL;
-  request = (batch_request *)calloc(1, sizeof(struct batch_request));
-  request->rq_type = type;
-  return request;
   }
 
 void free_str(struct pbs_attribute *attr) {}
@@ -715,3 +714,6 @@ bool job_array::is_deleted() const
   {
   return(this->being_deleted);
   }
+
+batch_request::~batch_request() {}
+

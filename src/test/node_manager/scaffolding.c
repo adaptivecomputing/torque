@@ -1092,3 +1092,7 @@ pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned shor
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+batch_request::batch_request(int type) {}
+batch_request::~batch_request() {}
+

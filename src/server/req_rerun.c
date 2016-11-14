@@ -118,7 +118,6 @@ extern char *msg_jobrerun;
 extern void rel_resc(job *);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-extern int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc);
 
@@ -160,7 +159,6 @@ void delay_and_send_sig_kill(
     {
     preq_clt = get_remove_batch_request(preq_sig->rq_extend);
     }
-  free_br(preq_sig);
 
   /* the client request has been handled another way, nothing left to do */
   if (preq_clt == NULL)
@@ -315,8 +313,6 @@ void post_rerun(
       svr_setjobstate(pjob, newstate, newsub, FALSE);
       }
     }
-
-  free_br(preq);
 
   return;
   }  /* END post_rerun() */
@@ -533,25 +529,32 @@ int req_rerunjob(
           (!strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE))))
         {
         std::string extend = RERUNFORCE;
-        batch_request *dup = duplicate_request(preq, -1);
+        batch_request *dup = new batch_request(*preq);
         get_batch_request_id(dup);
-        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(dup->rq_id));
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(dup->rq_id.c_str()));
 
         if (rc == PBSE_NORELYMOM)
           {
           dup->rq_reply.brp_code = PBSE_NORELYMOM;
           pjob_mutex.unlock();
           post_rerun(dup);
+
           pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE);
           if (pjob == NULL)
+            {
+            delete dup;
             return(PBSE_NONE);
+            }
+
           pjob_mutex.set_lock_state(true);
           rc = PBSE_NONE;
           }
+
+        delete dup;
         }
       else
         {
-        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id));
+        rc = issue_signal(&pjob, "SIGTERM", delay_and_send_sig_kill, extra, strdup(preq->rq_id.c_str()));
         if (rc != PBSE_NONE)
           {
           /* cant send to MOM */

@@ -139,8 +139,6 @@ extern struct server server;
 extern int   LOGLEVEL;
 extern all_jobs alljobs;
 
-extern int issue_signal(job **, const char *, void (*)(batch_request *), void *, char *);
-
 /* Private Functions in this file */
 
 void post_delete_route(struct work_task *);
@@ -313,7 +311,7 @@ void remove_stagein(
         "unable to remove staged in files for job");
       }
 
-    free_br(preq);
+    delete preq;
     }
 
   return;
@@ -479,7 +477,7 @@ int execute_job_delete(
   long              force_cancel = FALSE;
   long              status_cancel_queue = FALSE;
 
-  chk_job_req_permissions(&pjob,preq);
+  chk_job_req_permissions(&pjob, preq);
 
   if (pjob == NULL)
     {
@@ -559,7 +557,7 @@ int execute_job_delete(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-    pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
+    pwtnew = set_task(WORK_Timed,time_now + 1, post_delete_route, new batch_request(*preq),FALSE);
 
     if (pwtnew == NULL)
       {
@@ -659,7 +657,7 @@ jump:
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id.c_str()))))
       {
       /* cant send to MOM */
 
@@ -777,183 +775,6 @@ jump:
 
 
 
-int copy_attribute_list(
-
-  batch_request *preq,
-  batch_request *preq_tmp)
-
-  {
-  svrattrl             *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
-  tlist_head           *phead = &preq_tmp->rq_ind.rq_manager.rq_attr;
-  svrattrl             *newpal = NULL;
-  
-  while (pal != NULL)
-    {
-    newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
-    if (!newpal)
-      {
-      free_br(preq_tmp);
-      return(PBSE_SYSTEM);
-      }
-
-    CLEAR_LINK(newpal->al_link);
-    
-    newpal->al_atopl.next = 0;
-    newpal->al_tsize = pal->al_tsize + 1;
-    newpal->al_nameln = pal->al_nameln;
-    newpal->al_flags  = pal->al_flags;
-    newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
-    strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
-    newpal->al_nameln = pal->al_nameln;
-    newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
-
-    if (pal->al_atopl.resource != NULL)
-      strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
-
-    newpal->al_rescln = pal->al_rescln;
-    newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
-    strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
-    newpal->al_valln = pal->al_valln;
-    newpal->al_atopl.op = pal->al_atopl.op;
-    
-    pal = (struct svrattrl *)GET_NEXT(pal->al_link);
-    }
-  
-  if ((phead != NULL) &&
-      (newpal != NULL))
-    append_link(phead, &newpal->al_link, newpal);
-
-  return(PBSE_NONE);
-  } /* END copy_attribute_list() */
-
-
-
-
-/*
- * duplicate_request()
- * duplicates preq and returns the duplicate request
- * @param preq - the request to duplicate
- * @param job_index - if desired, replace the job id with the sub job id. 
- * The sub-job has the index job_index and this is only performed if this
- * value isn't -1
- */
-
-batch_request *duplicate_request(
-
-  batch_request *preq,      /* I */
-  int            job_index) /* I - optional */
-
-  {
-  batch_request *preq_tmp = alloc_br(preq->rq_type);
-  char          *ptr1;
-  char          *ptr2;
-  char           newjobname[PBS_MAXSVRJOBID+1];
-
-  if (preq_tmp == NULL)
-    return(NULL);
-
-  preq_tmp->rq_perm = preq->rq_perm;
-  preq_tmp->rq_fromsvr = preq->rq_fromsvr;
-  preq_tmp->rq_conn = preq->rq_conn;
-  preq_tmp->rq_time = preq->rq_time;
-  preq_tmp->rq_orgconn = preq->rq_orgconn;
-
-  memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
-    preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
-
-  strcpy(preq_tmp->rq_user, preq->rq_user);
-  strcpy(preq_tmp->rq_host, preq->rq_host);
-
-  if (preq->rq_extend != NULL)
-    preq_tmp->rq_extend = strdup(preq->rq_extend);
-
-  switch (preq->rq_type)
-    {
-    /* This function was created for a modify array request (PBS_BATCH_ModifyJob)
-       the preq->rq_ind structure was allocated in dis_request_read. If other
-       BATCH types are needed refer to that function to see how the rq_ind structure
-       was allocated and then copy it here. */
-    case PBS_BATCH_DeleteJob:
-    case PBS_BATCH_HoldJob:
-    case PBS_BATCH_CheckpointJob:
-    case PBS_BATCH_ModifyJob:
-    case PBS_BATCH_AsyModifyJob:
-      
-      /* based on how decode_DIS_Manage allocates data */
-      CLEAR_HEAD(preq_tmp->rq_ind.rq_manager.rq_attr);
-      
-      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
-      
-      if (job_index != -1)
-        {
-        /* If this is a job array it is possible we only have the array name
-           and not the individual job. We need to find out what we have and
-           modify the name if needed */
-        ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
-        if (ptr1)
-          {
-          ptr1++;
-          strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
-
-          if ((ptr2 = strstr(newjobname, "[]")) != NULL)
-            {
-            ptr2++;
-            *ptr2 = 0;
-            }
-
-          sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s", 
-            newjobname, job_index, ptr1);
-          }
-        else
-          strcpy(preq_tmp->rq_ind.rq_manager.rq_objname, preq->rq_ind.rq_manager.rq_objname);
-        }
-
-      /* copy the attribute list */
-      if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
-        return(NULL);
-      
-      break;
-
-    case PBS_BATCH_SignalJob:
-
-      strcpy(preq_tmp->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
-      strcpy(preq_tmp->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
-      preq_tmp->rq_extra = strdup((char *)preq->rq_extra);
-
-      break;
-
-    case PBS_BATCH_MessJob:
-
-      strcpy(preq_tmp->rq_ind.rq_message.rq_jid, preq->rq_ind.rq_message.rq_jid);
-      preq_tmp->rq_ind.rq_message.rq_file = preq->rq_ind.rq_message.rq_file;
-      strcpy(preq_tmp->rq_ind.rq_message.rq_text, preq->rq_ind.rq_message.rq_text);
-
-      break;
-
-    case PBS_BATCH_RunJob:
-    case PBS_BATCH_AsyrunJob:
-  
-      if (preq->rq_ind.rq_run.rq_destin)
-        preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
-
-      break;
-
-    case PBS_BATCH_Rerun:
-
-      strcpy(preq_tmp->rq_ind.rq_rerun, preq->rq_ind.rq_rerun);
-      break;
-      
-    default:
-
-      break;
-    }
-  
-  return(preq_tmp);
-  } /* END duplicate_request() */
-
-
-
 void *delete_all_work(
 
   void *vp)
@@ -967,7 +788,7 @@ void *delete_all_work(
     return(NULL);
     }
 
-  batch_request         *preq_dup = duplicate_request(preq);
+  batch_request          preq_dup(*preq);
   job                   *pjob;
   all_jobs_iterator     *iter = NULL;
   int                    failed_deletes = 0;
@@ -1008,7 +829,7 @@ void *delete_all_work(
     // use mutex manager to make sure job mutex locks are properly handled at exit
     mutex_mgr job_mutex(pjob->ji_mutex, true);
  
-    if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
+    if ((rc = forced_jobpurge(pjob, &preq_dup)) == PURGE_SUCCESS)
       {
       job_mutex.set_unlock_on_exit(false);
 
@@ -1019,12 +840,6 @@ void *delete_all_work(
       {
       job_mutex.unlock();
       
-      if (rc == -1)
-        {
-        //forced_jobpurge freed preq_dup so reallocate it.
-        preq_dup = duplicate_request(preq);
-        preq_dup->rq_noreply = TRUE;
-        }
       continue;
       }
     
@@ -1033,29 +848,17 @@ void *delete_all_work(
     /* mutex is freed below */
     if (rc == PBSE_NONE)
       {
-      if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
+      if ((rc = execute_job_delete(pjob, Msg, &preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
         job_mutex.set_unlock_on_exit(false);
-        reply_ack(preq_dup);
+        reply_ack(&preq_dup);
         }
        
-      /* preq_dup has been freed at this point. Either reallocate it or set it to NULL*/
-      if (rc == PURGE_SUCCESS)
-        {
-        preq_dup = duplicate_request(preq);
-        preq_dup->rq_noreply = TRUE;
-        }
-      else
-        preq_dup = NULL;
       }
     
     if (rc != PURGE_SUCCESS)
       {
-      /* duplicate the preq so we don't have a problem with double frees */
-      preq_dup = duplicate_request(preq);
-      preq_dup->rq_noreply = TRUE;
-      
       if ((rc == MOM_DELETE) ||
           (rc == ROUTE_DELETE))
         failed_deletes++;
@@ -1069,14 +872,6 @@ void *delete_all_work(
   if (failed_deletes == 0)
     {
     reply_ack(preq);
-
-    /* PURGE SUCCESS means this was qdel -p all. In this case no reply_*() 
-     * functions have been called */
-    if (rc == PURGE_SUCCESS)
-      {
-      free_br(preq_dup);
-      preq_dup = NULL;
-      }
     }
   else
     {
@@ -1087,11 +882,6 @@ void *delete_all_work(
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
     }
     
-  /* preq_dup happens at the end of the loop, so free the extra one if
-   * it is there */
-  if (preq_dup != NULL)
-    free_br(preq_dup);
-
   return(NULL);
   } /* END delete_all_work() */
 
@@ -1109,7 +899,7 @@ int handle_delete_all(
   if (preq_tmp != NULL)
     {
     reply_ack(preq_tmp);
-    preq->rq_noreply = TRUE; /* set for no more replies */
+    preq->rq_noreply = true; /* set for no more replies */
     enqueue_threadpool_request(delete_all_work, preq, request_pool);
     }
   else
@@ -1178,7 +968,7 @@ int handle_single_delete(
     if (preq_tmp != NULL)
       {
       reply_ack(preq_tmp);
-      preq->rq_noreply = TRUE; /* set for no more replies */
+      preq->rq_noreply = true; /* set for no more replies */
       enqueue_threadpool_request(single_delete_work, preq, async_pool);
       }
     else
@@ -1279,7 +1069,7 @@ int req_deletejob(
       snprintf(log_buf,sizeof(log_buf), "Deleting job asynchronously");
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
 
-      preq_tmp = duplicate_request(preq);
+      preq_tmp = new batch_request(*preq);
       }
     }
 
@@ -1359,10 +1149,13 @@ void post_delete_route(
   struct work_task *pwt)
 
   {
-  batch_request *preq = get_remove_batch_request((char *)pwt->wt_parm1);
+  batch_request *preq = (batch_request *)pwt->wt_parm1;
 
   if (preq != NULL)
+    {
     req_deletejob(preq);
+    delete preq;
+    }
 
   free(pwt->wt_mutex);
   free(pwt);
@@ -1404,7 +1197,6 @@ void post_delete_mom1(
     {
     preq_clt = get_remove_batch_request(preq_sig->rq_extend);
     }
-  free_br(preq_sig);
 
   /* the client request has been handled another way, nothing left to do */
   if (preq_clt == NULL)
@@ -1529,7 +1321,7 @@ void post_delete_mom2(
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, free_br, NULL, NULL);
+      issue_signal(&pjob, sigk, NULL, NULL, NULL);
       
       if (pjob != NULL)
         {
@@ -1712,7 +1504,7 @@ void job_delete_nanny(
         log_err(-1, "job nanny", log_buf);
         
         /* build up a Signal Job batch request */
-        if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
+        if ((newreq = new batch_request(PBS_BATCH_SignalJob)) != NULL)
           {
           strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
@@ -1769,7 +1561,6 @@ void post_job_delete_nanny(
   if (!nanny)
     {
     /* the admin disabled nanny within the last minute or so */
-    free_br(preq_sig);
 
     return;
     }
@@ -1782,8 +1573,6 @@ void post_job_delete_nanny(
     sprintf(log_buf, "job delete nanny: the job disappeared (this is a BUG!)");
 
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
-
-    free_br(preq_sig);
 
     return;
     }
@@ -1799,18 +1588,13 @@ void post_job_delete_nanny(
     free_nodes(pjob);
 
     set_resc_assigned(pjob, DECR);
-  
-    free_br(preq_sig);
-
+ 
     job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 
     return;
     }
-
-  /* free task */
-  free_br(preq_sig);
 
   return;
   } /* END post_job_delete_nanny() */

@@ -941,7 +941,7 @@ int pbs_getaddrinfo(
 
   if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
-    return 0;
+    return(PBSE_NONE);
     }
 
   if (pHints == NULL)
@@ -955,20 +955,20 @@ int pbs_getaddrinfo(
     {
     if (addrFound)
       {
-      rc = 0;
+      rc = PBSE_NONE;
       }
     else
       {
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
 
-    if (rc == 0)
+    if (rc == PBSE_NONE)
       {
       addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
       if (*ppAddrInfoOut != NULL)
         {
-        return 0;
+        return(PBSE_NONE);
         }
       rc = EAI_AGAIN;
       }
@@ -982,6 +982,7 @@ int pbs_getaddrinfo(
 
   return EAI_FAIL;
   } /* END pbs_getaddrinfo() */
+
 
 
 int connect_to_trqauthd(

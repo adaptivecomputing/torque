@@ -61,7 +61,6 @@ void hold_job(
         (csv_find_string(pattr->at_val.at_str, "enabled") != NULL))))
     {
     /* TODO */
-    /* preq_tmp = alloc_br(preq->rq_type); */
     
     }
   else if (old_hold != *hold_val)

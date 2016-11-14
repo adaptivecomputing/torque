@@ -110,8 +110,6 @@
 #include "job_func.h"
 
 
-int          issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
-
 /* Private Fuctions Local to this File */
 
 /* Private Data Items */

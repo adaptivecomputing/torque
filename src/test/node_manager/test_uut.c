@@ -226,11 +226,7 @@ START_TEST(test_kill_job_on_mom)
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == PBSE_NONE); 
 
-  alloc_br_success = false;
-  rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == -1); 
-
-  alloc_br_success = true;;
+  alloc_br_success = true;
   conn_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == -1); 

@@ -167,7 +167,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   new_link->ll_prior->ll_next = new_link; /* now visible to forward iteration */
   }
 
-int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(const char *servern, batch_request *preq, void (*replyfunc)(struct work_task *))
   {
   fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
   exit(1);
@@ -308,7 +308,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, i
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -393,6 +393,21 @@ array_info::array_info() : struct_version(ARRAY_QS_STRUCT_VERSION), array_size(0
 
 job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
                          ai_mutex(NULL), ai_qs()
+
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }
+
+batch_request::batch_request()
+
+  {
+  }
+
+batch_request::batch_request(int type) : rq_type(type)
 
   {
   }

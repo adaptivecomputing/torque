@@ -274,40 +274,24 @@ void DIS_tcp_cleanup(struct tcp_chan *chan)
   {
   }
 
-/*
- * alloc_br - allocate and clear a batch_request structure
- */
-
-struct batch_request *alloc_br(
+batch_request::batch_request(
 
   int type)
 
   {
+  this->rq_type = type;
 
-  struct batch_request *req = NULL;
+  this->rq_conn = -1;  /* indicate not connected */
+  this->rq_orgconn = -1;  /* indicate not connected */
+  this->rq_time = time(NULL);
+  this->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
+  this->rq_noreply = FALSE;  /* indicate reply is needed */
 
-  if ((req = (struct batch_request *)calloc(1, sizeof(struct batch_request))) == NULL)
-    {
-    fprintf(stderr, "failed to allocate batch request. alloc_br()\n");
-    }
-  else
-    {
-
-    req->rq_type = type;
-
-    req->rq_conn = -1;  /* indicate not connected */
-    req->rq_orgconn = -1;  /* indicate not connected */
-    req->rq_time = time(NULL);
-    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    req->rq_noreply = FALSE;  /* indicate reply is needed */
-    }
-
-  return(req);
-  } /* END alloc_br() */
+  }
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -399,7 +383,7 @@ int copy_attribute_list(
 
 batch_request *duplicate_request(batch_request *preq, int job_index)
   {
-  batch_request *preq_tmp = alloc_br(preq->rq_type);
+  batch_request *preq_tmp = new batch_request(preq->rq_type);
   char          *ptr1;
   char          *ptr2;
   char           newjobname[PBS_MAXSVRJOBID+1];
@@ -544,3 +528,8 @@ void set_reply_type(struct batch_reply *preply, int type)
   {
   preply->brp_choice = type;
   }
+
+batch_request::batch_request() {}
+batch_request::batch_request(const batch_request &other) {}
+batch_request::~batch_request() {}
+

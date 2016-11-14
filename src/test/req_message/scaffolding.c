@@ -68,7 +68,15 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(0);
   }
 
-batch_request *duplicate_request(batch_request *preq, int type) 
+batch_request::batch_request(const batch_request &other)
   {
-  return(NULL);
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
   }

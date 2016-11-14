@@ -553,12 +553,16 @@ int req_job_cleanup_done(batch_request *preq)
   }
 
 int req_quejob2(batch_request *preq)
-    {
-      return(0);
-        }
+  {
+  return(0);
+  }
 
 int req_commit2(batch_request *preq)
-    {
-      return(0);
-        }
+  {
+  return(0);
+  }
+
+batch_request::batch_request() {}
+batch_request::~batch_request() {}
+
 

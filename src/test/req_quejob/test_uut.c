@@ -103,12 +103,11 @@ END_TEST
 
 START_TEST(test_one)
   {
-  struct batch_request req;
+  batch_request req;
   job j;
   char cmd[500];
 
   memset(&j,0,sizeof(j));
-  memset(&req,0,sizeof(req));
 
   fail_unless(req_jobcredential(&req) == PBSE_IVALREQ);
 
@@ -120,17 +119,16 @@ START_TEST(test_one)
 
   fail_unless(req_jobcredential(&req) == PBSE_NONE);
 
-  memset(&req,0,sizeof(req));
-
-  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"NotThisJob");
-  fail_unless(req_jobscript(&req, false) == PBSE_IVALREQ);
+  batch_request req2;
+  strcpy(req2.rq_ind.rq_jobfile.rq_jobid,"NotThisJob");
+  fail_unless(req_jobscript(&req2, false) == PBSE_IVALREQ);
 
   path_jobs = getcwd(path_to_jobs,sizeof(path_to_jobs));
   strcat(path_jobs,"/");
   sprintf(cmd,"rm -f %s*.SC",path_jobs);
   system(cmd);
-  strcpy(req.rq_ind.rq_jobfile.rq_jobid,"1.napali");
-  fail_unless(req_jobscript(&req, false) == PBSE_NONE);
+  strcpy(req2.rq_ind.rq_jobfile.rq_jobid,"1.napali");
+  fail_unless(req_jobscript(&req2, false) == PBSE_NONE);
   system(cmd);
   }
 END_TEST
@@ -142,8 +140,6 @@ START_TEST(test_get_job_id)
   int           resc_access_perm = ATR_DFLAG_USWR | ATR_DFLAG_Creat;
   int           created_here = 0;
   batch_request preq;
-
-  memset(&preq, 0, sizeof(preq));
 
   preq.rq_fromsvr = 1;
   strcpy(preq.rq_ind.rq_queuejob.rq_jid, "1.napali");
@@ -193,9 +189,7 @@ END_TEST
 
 START_TEST(test_req_commit)
   {
-  struct batch_request *preq;
-
-  fail_unless((preq = (struct batch_request *)calloc(1, sizeof(struct batch_request))) != NULL);
+  struct batch_request *preq = new batch_request();
 
   strcpy(preq->rq_ind.rq_commit, "1.napali");
   default_queue = false;

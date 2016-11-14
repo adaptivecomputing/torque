@@ -147,7 +147,6 @@ typedef struct svrattrl svrattrl;
 #define al_op  al_atopl.op
 
 
-
 /*
  * The value of an attribute is contained in the following structure.
  *

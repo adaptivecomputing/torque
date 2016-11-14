@@ -15,7 +15,6 @@ START_TEST(test_one)
   batch_request req;
 
 
-  memset(&req,0,sizeof(batch_request));
   memset(svr_conn,0,sizeof(svr_conn));
   req.rq_ind.rq_authen.rq_port = 42;
   strcpy(req.rq_user,"Tron");
