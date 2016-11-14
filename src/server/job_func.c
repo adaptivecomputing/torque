@@ -161,7 +161,7 @@ extern int LOGLEVEL;
 
 extern completed_jobs_map_class completed_jobs_map;
 
-int conn_qsub(char *, long, char *);
+int conn_qsub(const char *, long, char *);
 
 /* External functions */
 
@@ -252,7 +252,7 @@ static void send_qsub_delmsg(
 
 static int remtree(
 
-  char *dirname)
+  const char *dirname)
 
   {
   DIR           *dir;
@@ -457,8 +457,8 @@ void handle_aborted_job(
 /*
  * job_abt - abort a job
  *
- * The job removed from the system and a mail message is sent
- * to the job owner.
+ * The job is deleted and a mail message is sent to the job owner.
+ * NOTE: The job is always unlocked when this function exits.
  */
 
 /* NOTE:  this routine is called under the following conditions:
@@ -591,7 +591,9 @@ int job_abt(
             
               unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               }
-            pjob = svr_find_job(job_id, TRUE);
+
+            if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
+              pjob_mutex.mark_as_locked();
             }
           }
       
@@ -649,7 +651,9 @@ int job_abt(
         
           unlock_ai_mutex(pa, __func__,(char *) "1", LOGLEVEL);
           }
-        pjob = svr_find_job(job_id, TRUE);
+        
+        if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
+          pjob_mutex.mark_as_locked();
         }
       }
 
@@ -673,9 +677,9 @@ int job_abt(
 
 int conn_qsub(
 
-  char *hostname,  /* I */
-  long  port,      /* I */
-  char *EMsg)      /* O (optional,minsize=1024) */
+  const char *hostname,  /* I */
+  long        port,      /* I */
+  char       *EMsg)      /* O (optional,minsize=1024) */
 
   {
   pbs_net_t hostaddr;
@@ -2205,16 +2209,23 @@ struct pbs_queue *get_jobs_queue(
 
 
 
+/*
+ * Checks if this hostname is in an exec_host-style list
+ *
+ * @param hostname - the hostname we're looking for
+ * @param externals - the exec_host-style list we're searching
+ * @return true if found, false otherwise
+ */
 
-/*static*/ int hostname_in_externals(
+bool hostname_in_externals(
 
-  char *hostname,
-  char *externals)
+  const char *hostname,
+  const char *externals)
 
   {
-  char *ptr = strstr(externals, hostname);
-  int   found = FALSE;
-  char *end_word;
+  const char *ptr = strstr(externals, hostname);
+  bool        found = false;
+  const char *end_word;
 
   if (ptr != NULL)
     {
@@ -2225,9 +2236,9 @@ struct pbs_queue *get_jobs_queue(
       found = FALSE;
     else if ((*end_word != '\0') &&
              (*end_word != '+'))
-      found = FALSE;
+      found = false;
     else
-      found = TRUE;
+      found = true;
     }
 
   return(found);
@@ -2271,7 +2282,7 @@ int fix_external_exec_hosts(
       *slash = '\0';
 
     /* if we find a match, copy in that exec host entry */
-    if (hostname_in_externals(exec_ptr, externals) == TRUE)
+    if (hostname_in_externals(exec_ptr, externals) == true)
       {
       /* capture the first external as my mother superior */
       if (pjob->ji_qs.ji_destin[0] == '\0')
@@ -2338,7 +2349,7 @@ int fix_cray_exec_hosts(
       *slash = '\0';
 
     /* if the hostname isn't in the externals, copy it in */
-    if (hostname_in_externals(exec_ptr, external) == FALSE)
+    if (hostname_in_externals(exec_ptr, external) == false)
       {
       if (slash != NULL)
         *slash = '/';

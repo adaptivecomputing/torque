@@ -11,6 +11,7 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
+#include "authorized_hosts.hpp"
 
 time_t time_now;
 const char *msg_err_malloc = "malloc failed";
@@ -279,3 +280,12 @@ char * netaddr_long(long ap, char *out)
   }
 
 void req_cleanup_job(batch_request *preq) {}
+
+bool authorized_hosts::is_authorized(unsigned long addr)
+  {
+  return(true);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;
+

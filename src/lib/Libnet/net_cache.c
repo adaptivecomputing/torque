@@ -195,7 +195,10 @@ public:
     {
     if ((pAddr->ai_family != AF_INET) ||
         (cacheDestroyed == TRUE))
+      {
+      freeaddrinfo(pAddr);
       return(NULL);
+      }
 
     struct addrinfo    *pTmpAddr = NULL;
     char                key[65];

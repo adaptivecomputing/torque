@@ -97,7 +97,7 @@ void add_to_property_list(std::string &propstr, const char *token)
 
 
 
-void finish_sendmom(char *job_id, batch_request *preq, long start_time, char *node_name, int status, int o)
+void finish_sendmom(const char *job_id, batch_request *preq, long start_time, const char *node_name, int status, int o)
   {
   }
 

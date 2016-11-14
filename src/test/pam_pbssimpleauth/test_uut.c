@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 #include <check.h>
 #include <security/pam_appl.h>
 #include <security/pam_modules.h>

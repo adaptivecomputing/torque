@@ -17,8 +17,8 @@ using namespace std;
 #define INTEL 1
 #define AMD   2
 
-const int CORE = 0;
-const int THREAD = 1;
+const int CORE_INT = 0;
+const int THREAD_INT = 1;
 
 Core::Core() : id(-1), totalThreads(0), free(true), indices(), is_index_busy(),
                processing_units_open(0)
@@ -198,7 +198,7 @@ int Core::add_processing_unit(
   int os_index)
 
   {
-  if (which == CORE)
+  if (which == CORE_INT)
     {
     // We can't have more than 1 core
     if (this->id != -1)

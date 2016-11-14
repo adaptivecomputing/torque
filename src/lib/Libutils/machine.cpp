@@ -24,6 +24,7 @@
 #include "log.h"
 #include "complete_req.hpp"
 #include "utils.h"
+#include "numa_constants.h"
 
 using namespace std;
 
@@ -156,27 +157,36 @@ void Machine::update_internal_counts()
 
 void Machine::initialize_from_json(
 
-  const std::string        &json_layout,
+  const std::string        &json_str,
   std::vector<std::string> &valid_ids)
 
   {
-  const char *socket_str = "\"socket\":{";
-  std::size_t socket_begin = json_layout.find(socket_str);
-
-  while (socket_begin != std::string::npos)
+  try
     {
-    std::size_t next = json_layout.find(socket_str, socket_begin + 1);
-    std::string one_socket = json_layout.substr(socket_begin, next - socket_begin);
+    Json::Reader read;
+    Json::Value root;
+    read.parse(json_str.c_str(), root);
 
-    Socket s(one_socket, valid_ids);
-    this->sockets.push_back(s);
-    this->totalSockets++;
+    const Json::Value &node = root[NODE];
 
-    socket_begin = next;
+    for (Json::ValueConstIterator it = node.begin(); it != node.end(); it++)
+      {
+      const Json::Value &sock = *it;
+      Socket s(sock, valid_ids);
+      this->sockets.push_back(s);
+      this->totalSockets++;
+      }
+
+    update_internal_counts();
+    this->initialized = true;
     }
+  catch (...)
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  update_internal_counts();
-  this->initialized = true;
+    snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+    log_err(-1, __func__, log_buf);
+    }
   } // END initialize_from_json()
 
 
@@ -497,16 +507,13 @@ void Machine::displayAsJson(
   bool          include_jobs) const
 
   {
-  out << "{\"node\":{";
-
+  Json::Value node;
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
-    if (i > 0)
-      out << ",";
-    this->sockets[i].displayAsJson(out, include_jobs);
+    this->sockets[i].displayAsJson(node[NODE][i][SOCKET], include_jobs);
     }
-
-  out << "}}";
+  
+  out << node;
   }
 
 int Machine::getHardwareStyle() const

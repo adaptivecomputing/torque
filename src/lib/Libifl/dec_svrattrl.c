@@ -178,7 +178,7 @@ int decode_DIS_svrattrl(
     hasresc = disrui(chan, &rc);
 
     if (rc) 
-	  break;
+      break;
 
     if (hasresc)
       {

@@ -128,7 +128,7 @@
 #include "dis_init.h"
 #include "batch_request.h"
 #include "pbs_proto.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "utils.h"
 #include "threadpool.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_init */
@@ -301,7 +301,6 @@ extern int              listener_command;
 //extern hello_container  hellos;
 //extern hello_container  failures;
 pthread_mutex_t        *listener_command_mutex;
-tlist_head              svr_newnodes;          /* list of newly created nodes      */
 pthread_mutex_t         task_list_timed_mutex;
 pid_t                   sid;
 
@@ -321,6 +320,7 @@ int                     array_259_upgrade = FALSE;
 
 sem_t                  *job_clone_semaphore; /* used to track the number of job_clone_wt requests are outstanding */
 acl_special             limited_acls;
+authorized_hosts        auth_hosts;
 
 char server_localhost[PBS_MAXHOSTNAME + 1];
 size_t localhost_len = PBS_MAXHOSTNAME;

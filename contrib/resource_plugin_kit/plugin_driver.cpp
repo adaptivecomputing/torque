@@ -40,12 +40,15 @@ void test_usage_information()
   if (max_pid_id == 0)
     max_pid_id = 32768;
 
+  // Decrement because we'll add one later to make sure we avoid process 0
   max_pid_id--;
 
   struct timeval now;
   gettimeofday(&now, 0);
   srand(now.tv_usec);
 
+  // Get one random pid to test. Make changes here if you'd like to test with more than 1
+  // pid, or if you'd like specific pids.
   do
     {
     random_pid = rand() % max_pid_id + 1; // add 1 to avoid process 0
@@ -54,7 +57,7 @@ void test_usage_information()
   job_pids.insert(random_pid);
   report_job_resources(jid, job_pids, usage_information);
 
-  printf("Your plugin reported the following for pid %d:\n", random_pid);
+  printf("Your plugin reported the following for the random pid %d:\n", random_pid);
   for (std::map<std::string, std::string>::iterator it = usage_information.begin();
        it != usage_information.end();
        it++)

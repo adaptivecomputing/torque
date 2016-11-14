@@ -54,8 +54,27 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
 	ln -s $(program_prefix)pbs_server$(program_suffix)$(EXEEXT) \
 	   $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  if systemctl 2>/dev/null | grep -- -\.mount >/dev/null 2>&1; then \
+            if [ -f $(top_srcdir)/contrib/systemd/pbs_server.service ]; then \
+	      echo "$(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service"; \
+	      $(install_sh) -m 644 $(top_srcdir)/contrib/systemd/pbs_server.service $(DESTDIR)/usr/lib/systemd/system/pbs_server.service; \
+	    fi; \
+	  elif [ -f $(top_srcdir)/contrib/init.d/pbs_server ]; then \
+	    prefix=''; \
+            if [ "`$(top_srcdir)/buildutils/determine.distro`" = sles ]; then \
+	      prefix=suse. ; \
+	    fi; \
+	    echo "$(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_server $(DESTDIR)/etc/init.d/pbs_server"; \
+	    $(install_sh) -m 755 $(top_srcdir)/contrib/init.d/$${prefix}pbs_server $(DESTDIR)/etc/init.d/pbs_server; \
+	  fi; \
+	fi
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_ENVIRON) $(DESTDIR)$(PBS_SERVER_HOME)/server_priv/nodes
 	rm -f $(DESTDIR)$(sbindir)/$(program_prefix)qserverd$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  rm -f $(DESTDIR)/usr/lib/systemd/system/pbs_server.service || :; \
+	  rm -f $(DESTDIR)/etc/init.d/pbs_server || :; \
+	fi
 

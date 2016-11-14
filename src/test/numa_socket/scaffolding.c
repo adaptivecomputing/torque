@@ -6,6 +6,7 @@
 #include "pbs_error.h"
 #include "req.hpp"
 #include "allocation.hpp"
+#include "json/json.h"
 
 int hardware_style;
 float tasks;
@@ -103,7 +104,7 @@ hwloc_uint64_t Chip::getMemory() const
   return(this->memory);
   }
 
-Chip::Chip(const std::string &json_layout, std::vector<std::string> &valid_ids)
+Chip::Chip(const Json::Value &json_layout, std::vector<std::string> &valid_ids)
   {
   json_chip++;
   }
@@ -129,7 +130,7 @@ void Chip::aggregate_allocations(std::vector<allocation> &master_list) {}
 
 void Chip::displayAsJson(
 
-  std::stringstream &out,
+  Json::Value  &out,
   bool               jobs) const
 
   {

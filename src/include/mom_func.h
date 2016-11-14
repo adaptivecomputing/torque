@@ -281,12 +281,13 @@ extern int kill_task(job *,struct task *, int, int);
 #define PE_IO_TYPE_ASIS 0
 #define PE_IO_TYPE_STD  1
 
-#define PE_PROLOG   1
-#define PE_EPILOG   2
-#define PE_PROLOGUSER   3
-#define PE_EPILOGUSER   4
-#define PE_PROLOGUSERJOB 5  /* per job prologue script */
-#define PE_EPILOGUSERJOB 6 /* per job epilogue script */
+#define PE_PROLOG         1
+#define PE_EPILOG         2
+#define PE_PROLOGUSER     3
+#define PE_EPILOGUSER     4
+#define PE_PROLOGUSERJOB  5  /* per job prologue script */
+#define PE_EPILOGUSERJOB  6 /* per job epilogue script */
+#define PE_PRESETUPPROLOG 7 /* prior to becoming the user */
 
 #ifdef LIBPBS_H
 extern int   open_std_file(job *, enum job_file, int, gid_t);

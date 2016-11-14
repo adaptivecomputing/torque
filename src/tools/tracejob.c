@@ -94,21 +94,6 @@
 #include "tracejob.h"
 
 
-/* path from pbs home to the log files */
-
-const char *mid_path[] =
-  {
-  "server_priv/accounting",
-  "server_logs",
-  "mom_logs",
-  "sched_logs"
-  };
-
-struct log_entry *log_lines;
-int ll_cur_amm;
-int ll_max_amm;
-
-
 int main(
 
   int   argc,
@@ -116,8 +101,8 @@ int main(
 
   {
   /* Array for the log entries for the specified job */
-  FILE *fp;
-  int i, j;
+  gzFile fp;
+  unsigned int i, j;
   int file_count;
   char *filenames[MAX_LOG_FILES_PER_DAY];  /* full path of logfiles to read */
 
@@ -125,7 +110,7 @@ int main(
   time_t t, t_save;
   signed char c;
   char *prefix_path = NULL;
-  int number_of_days = 1;
+  unsigned int number_of_days = 1;
   char *endp;
   short error = 0;
   int opt;
@@ -136,6 +121,7 @@ int main(
   int event_type;
   char filter_excessive = 0;
   int excessive_count;
+  struct log_array log;
 
 #if defined(FILTER_EXCESSIVE)
   filter_excessive = 1;
@@ -144,6 +130,8 @@ int main(
 #if defined(EXCESSIVE_COUNT)
   excessive_count = EXCESSIVE_COUNT;
 #endif
+
+  memset(&log, 0, sizeof(log));
 
   while ((c = getopt(argc, argv, "qzvamslw:p:n:f:c:")) != EOF)
     {
@@ -218,7 +206,7 @@ int main(
 
       case 'n':
 
-        number_of_days = strtol(optarg, &endp, 10);
+        number_of_days = strtoul(optarg, &endp, 10);
 
         if (*endp != '\0')
           error = 1;
@@ -321,10 +309,10 @@ int main(
           continue;
 
         file_count = log_path(prefix_path, j, tm_ptr, filenames);
-        
+
         /* there can be multiple server and mom log files per day */
         /* traverse filenames until we have got them all */
-        
+
         if (file_count < 0)
           {
           printf("Error getting file names\n");
@@ -333,15 +321,16 @@ int main(
 
         for (; file_count > 0; file_count--)
           {
-          if ((fp = fopen(filenames[file_count-1], "r")) == NULL)
+          if ((fp = gzopen(filenames[file_count-1], "r")) == NULL)
             {
             if (verbosity >= 1)
               perror(filenames[file_count-1]);
 
+            free(filenames[file_count-1]);
             continue;
             }
 
-          if (parse_log(fp, argv[opt], j) < 0)
+          if (parse_log(&fp, argv[opt], j, &log) < 0)
             {
             /* no valid entries located in file */
 
@@ -357,40 +346,44 @@ int main(
                     filenames[file_count-1]);
             }
 
-          fclose(fp);
+          gzclose(fp);
           free(filenames[file_count-1]);
           } /* end of for file_count */
         }
       }    /* END for (i) */
 
     if (filter_excessive)
-      filter_excess(excessive_count);
+      filter_excess(excessive_count, &log);
 
-    qsort(log_lines, ll_cur_amm, sizeof(struct log_entry), sort_by_date);
+    qsort(log.log_lines, log.ll_cur_amm, sizeof(struct log_entry), sort_by_date);
 
-    if (ll_cur_amm != 0)
+    if (log.ll_cur_amm != 0)
       {
       printf("\nJob: %s\n\n",
-             log_lines[0].name);
+             log.log_lines[0].name);
       }
 
-    for (i = 0;i < ll_cur_amm;i++)
+    for (i = 0;i < log.ll_cur_amm;i++)
       {
-      if (log_lines[i].log_file == 'A')
+      if (log.log_lines[i].log_file == 'A')
         event_type = 0;
       else
-        event_type = strtol(log_lines[i].event, &endp, 16);
+        event_type = strtol(log.log_lines[i].event, &endp, 16);
 
-      if (!(log_filter & event_type) && !(log_lines[i].no_print))
+      if (!(log_filter & event_type) && !(log.log_lines[i].no_print))
         {
         printf("%-20s %-5c",
-               log_lines[i].date,
-               log_lines[i].log_file);
+               log.log_lines[i].date,
+               log.log_lines[i].log_file);
 
-        line_wrap(log_lines[i].msg, 26, wrap);
+        line_wrap(log.log_lines[i].msg, 26, wrap);
         }
       }
     }    /* END for (opt) */
+
+  for (i = 0;i < log.ll_cur_amm;i++)
+      free_log_entry(&log.log_lines[i]);
+  free(log.log_lines);
 
   return(0);
   }  /* END main() */
@@ -406,17 +399,18 @@ int main(
  *        fp    - the log file
  *        job   - the name of the job
  *        ind   - which log file - index in enum index
+ *        log   - the log_array where to save the entries
  *
  * returns nothing
- * modifies global variables: loglines, ll_cur_amm, ll_max_amm
  *
  */
 
 int parse_log(
 
-  FILE *fp,   /* I */
+  gzFile *fp,   /* I */
   char *job,  /* I */
-  int   ind)  /* I */
+  int   ind,  /* I */
+  struct log_array *log)  /* I */
 
   {
 
@@ -427,14 +421,14 @@ int parse_log(
   int j = 0;
 
   struct tm tms; /* used to convert date to unix date */
-  static char none[1] = { '\0' };
+  const char none = '\0';
   int lineno = 0;
 
   int logcount = 0;
 
   tms.tm_isdst = -1; /* mktime() will attempt to figure it out */
 
-  while (fgets(buf, sizeof(buf), fp) != NULL)
+  while (gzgets(*fp, buf, sizeof(buf)) != NULL)
     {
     lineno++;
     j++;
@@ -445,24 +439,24 @@ int parse_log(
     pa = buf;
     memset(&tmp, 0, sizeof(struct log_entry));
 
-    for(field_count = 0; (pa != NULL) && (field_count <= FLD_MSG); field_count++) 
+    for(field_count = 0; (pa != NULL) && (field_count <= FLD_MSG); field_count++)
       {
 
       /* instead of using strtok every time, conditionally advance the pa (the field pointer)
        * on semicolons. This prevents data from getting cut out of messages with semicolons in
        * them */
-      if(field_count < FLD_MSG) 
+      if(field_count < FLD_MSG)
         {
         if((pe = strchr(pa, ';')))
           *pe = '\0';
-        } 
-      else 
+        }
+      else
         {
         pe = NULL;
         }
 
-      switch (field_count) 
-        
+      switch (field_count)
+
         {
         case FLD_DATE:
 
@@ -473,34 +467,34 @@ int parse_log(
           break;
 
       case FLD_EVENT:
-        
+
           tmp.event = pa;
-        
+
           break;
 
       case FLD_OBJ:
-        
+
           tmp.obj = pa;
-        
+
           break;
 
       case FLD_TYPE:
-        
+
           tmp.type = pa;
-        
-        
+
+
           break;
 
       case FLD_NAME:
-        
+
           tmp.name = pa;
-        
+
           break;
 
       case FLD_MSG:
-        
+
           tmp.msg = pa;
-        
+
           break;
       }
 
@@ -515,81 +509,81 @@ int parse_log(
         !strncmp(job, tmp.name, strlen(job)) &&
         !isdigit(tmp.name[strlen(job)]))
       {
-      if (ll_cur_amm >= ll_max_amm)
-        alloc_more_space();
+      if (log->ll_cur_amm >= log->ll_max_amm)
+        alloc_more_space(log);
 
-      free_log_entry(&log_lines[ll_cur_amm]);
+      free_log_entry(&log->log_lines[log->ll_cur_amm]);
 
       if (tmp.date != NULL)
         {
-        log_lines[ll_cur_amm].date = strdup(tmp.date);
+        log->log_lines[log->ll_cur_amm].date = strdup(tmp.date);
 
         if (sscanf(tmp.date, "%d/%d/%d %d:%d:%d", &tms.tm_mon, &tms.tm_mday, &tms.tm_year, &tms.tm_hour, &tms.tm_min, &tms.tm_sec) != 6)
-          log_lines[ll_cur_amm].date_time = -1; /* error in date field */
+          log->log_lines[log->ll_cur_amm].date_time = -1; /* error in date field */
         else
           {
           if (tms.tm_year > 1900)
             tms.tm_year -= 1900;
 
-          log_lines[ll_cur_amm].date_time = mktime(&tms);
+          log->log_lines[log->ll_cur_amm].date_time = mktime(&tms);
           }
         }
 
       if (tmp.event != NULL)
-        log_lines[ll_cur_amm].event = strdup(tmp.event);
+        log->log_lines[log->ll_cur_amm].event = strdup(tmp.event);
       else
-        log_lines[ll_cur_amm].event = none;
+        log->log_lines[log->ll_cur_amm].event = strdup(&none);
 
       if (tmp.obj != NULL)
-        log_lines[ll_cur_amm].obj = strdup(tmp.obj);
+        log->log_lines[log->ll_cur_amm].obj = strdup(tmp.obj);
       else
-        log_lines[ll_cur_amm].obj = none;
+        log->log_lines[log->ll_cur_amm].obj = strdup(&none);
 
       if (tmp.type != NULL)
-        log_lines[ll_cur_amm].type = strdup(tmp.type);
+        log->log_lines[log->ll_cur_amm].type = strdup(tmp.type);
       else
-        log_lines[ll_cur_amm].type = none;
+        log->log_lines[log->ll_cur_amm].type = strdup(&none);
 
       if (tmp.name != NULL)
-        log_lines[ll_cur_amm].name = strdup(tmp.name);
+        log->log_lines[log->ll_cur_amm].name = strdup(tmp.name);
       else
-        log_lines[ll_cur_amm].name = none;
+        log->log_lines[log->ll_cur_amm].name = strdup(&none);
 
       if (tmp.msg != NULL)
-        log_lines[ll_cur_amm].msg = strdup(tmp.msg);
+        log->log_lines[log->ll_cur_amm].msg = strdup(tmp.msg);
       else
-        log_lines[ll_cur_amm].msg = none;
+        log->log_lines[log->ll_cur_amm].msg = strdup(&none);
 
       switch (ind)
         {
 
         case IND_SERVER:
-          log_lines[ll_cur_amm].log_file = 'S';
+          log->log_lines[log->ll_cur_amm].log_file = 'S';
           break;
 
         case IND_SCHED:
-          log_lines[ll_cur_amm].log_file = 'L';
+          log->log_lines[log->ll_cur_amm].log_file = 'L';
           break;
 
         case IND_ACCT:
-          log_lines[ll_cur_amm].log_file = 'A';
+          log->log_lines[log->ll_cur_amm].log_file = 'A';
           break;
 
         case IND_MOM:
-          log_lines[ll_cur_amm].log_file = 'M';
+          log->log_lines[log->ll_cur_amm].log_file = 'M';
           break;
 
         default:
-          log_lines[ll_cur_amm].log_file = 'U'; /* undefined */
+          log->log_lines[log->ll_cur_amm].log_file = 'U'; /* undefined */
         }
 
-      log_lines[ll_cur_amm].lineno = lineno;
+      log->log_lines[log->ll_cur_amm].lineno = lineno;
 
-      ll_cur_amm++;
+      log->ll_cur_amm++;
 
       logcount++;
       }
-    }    /* END while (fgets(buf,sizeof(buf),fp) != NULL) */
+    }    /* END while (gzgets(*fp, buf, sizeof(buf)) != NULL) */
 
   if (logcount == 0)
     {
@@ -894,24 +888,26 @@ int get_cols(void)
  *
  * alloc_space - double the allocation of current log entires
  *
+ *   log - the log_array where to save the entries
+ *
  */
 void
-alloc_more_space(void)
+alloc_more_space(struct log_array *log)
   {
-  int old_amm = ll_max_amm;
+  int old_amm = log->ll_max_amm;
 
-  if (ll_max_amm == 0)
-    ll_max_amm = DEFAULT_LOG_LINES;
+  if (log->ll_max_amm == 0)
+    log->ll_max_amm = DEFAULT_LOG_LINES;
   else
-    ll_max_amm *= 2;
+    log->ll_max_amm *= 2;
 
-  if ((log_lines = (struct log_entry *)realloc(log_lines, ll_max_amm * sizeof(struct log_entry))) == NULL)
+  if ((log->log_lines = (struct log_entry *)realloc(log->log_lines, log->ll_max_amm * sizeof(struct log_entry))) == NULL)
     {
     perror("Error allocating memory");
     exit(1);
     }
 
-  memset(&log_lines[old_amm], 0, (ll_max_amm - old_amm) * sizeof(struct log_entry));
+  memset(&log->log_lines[old_amm], 0, (log->ll_max_amm - old_amm) * sizeof(struct log_entry));
   }
 
 
@@ -924,27 +920,28 @@ alloc_more_space(void)
  *         the message threshold
  *
  *   threshold - if the number of messages exceeds this, don't print them
+ *   log       - the log_array where to save the entries
  *
  * returns nothing
  *
  * NOTE: log_lines array will be sorted in place
  */
 
-void filter_excess(int threshold)
+void filter_excess(int threshold, struct log_array *log)
   {
   int cur_count = 1;
   char *msg;
-  int i;
-  int j = 0;
+  unsigned int i;
+  unsigned int j = 0;
 
-  if (ll_cur_amm)
+  if (log->ll_cur_amm)
     {
-    qsort(log_lines, ll_cur_amm, sizeof(struct log_entry), sort_by_message);
-    msg = log_lines[0].msg;
+    qsort(log->log_lines, log->ll_cur_amm, sizeof(struct log_entry), sort_by_message);
+    msg = log->log_lines[0].msg;
 
-    for (i = 1; i < ll_cur_amm; i++)
+    for (i = 1; i < log->ll_cur_amm; i++)
       {
-      if (strcmp(log_lines[i].msg, msg) == 0)
+      if (strcmp(log->log_lines[i].msg, msg) == 0)
         cur_count++;
       else
         {
@@ -954,13 +951,13 @@ void filter_excess(int threshold)
           j++;
 
           for (; j < i; j++)
-            log_lines[j].no_print = 1;
+            log->log_lines[j].no_print = 1;
           }
 
         j = i;
 
         cur_count = 1;
-        msg = log_lines[i].msg;
+        msg = log->log_lines[i].msg;
         }
       }
 
@@ -969,7 +966,7 @@ void filter_excess(int threshold)
       j++;
 
       for (; j < i; j++)
-        log_lines[j].no_print = 1;
+        log->log_lines[j].no_print = 1;
       }
     }
   }

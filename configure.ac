@@ -429,6 +429,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/site_mom_chu/Makefile
     src/test/site_mom_ckp/Makefile
     src/test/site_mom_jst/Makefile
+    src/test/authorized_hosts/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -799,6 +800,10 @@ AC_CHECK_LIB(${xmlLib}, xmlGetProp,
   [AC_MSG_ERROR([TORQUE needs libxml2-devel in order to build]) ])
 
 
+dnl find zlib
+AC_CHECK_LIB(z, gzopen,
+  [],
+  [AC_MSG_ERROR([TORQUE needs zlib-devel in order to build]) ])
 
 
 dnl ###########################################
@@ -1400,7 +1405,7 @@ AS_IF([test -z "$with_pmix" || test "$with_pmix" = "no"],
                                                   #endif
                                                   ], [])],
                                 [AC_MSG_RESULT([found])
-                                 pmix_version=3X
+                                 pmix_version=3
                                  pmix_version_found=1],
                                 [AC_MSG_RESULT([not found])])])
 
@@ -1413,7 +1418,7 @@ AS_IF([test -z "$with_pmix" || test "$with_pmix" = "no"],
                                                   #endif
                                                   ], [])],
                                 [AC_MSG_RESULT([found])
-                                 pmix_version=2X
+                                 pmix_version=2
                                  pmix_version_found=1],
                                 [AC_MSG_RESULT([not found])])])
 
@@ -1426,11 +1431,11 @@ AS_IF([test -z "$with_pmix" || test "$with_pmix" = "no"],
                                                   #endif
                                                   ], [])],
                                 [AC_MSG_RESULT([found])
-                                 pmix_version=1X
+                                 pmix_version=1
                                  pmix_version_found=1],
                                 [AC_MSG_RESULT([not found])])])
 
-       AS_IF([test "x$pmix_version" = "x"],
+       AS_IF([test "x$pmix_version" = "x" || test "$pmix_version" != "1"],
              [AC_MSG_WARN([PMIx support requested, but version])
               AC_MSG_WARN([information of the external lib could not])
               AC_MSG_WARN([be detected])
@@ -1448,6 +1453,7 @@ if test "${build_mom}" = "yes" ; then
     if test "${pmix_happy}" = "yes"; then
       AC_MSG_RESULT([yes - version: $pmix_version])
       AC_DEFINE([ENABLE_PMIX], 1, [Define to enable pmix support])
+      AC_DEFINE([PMIX_VERSION], [$pmix_version], [The PMIx version we are building against])
       CPPFLAGS="-I$pmix_ext_install_dir/include $CPPFLAGS"
       LDFLAGS="-L$pmix_ext_install_dir/lib $LDFLAGS"
       MOMLIBS="$MOMLIBS -lpmix"

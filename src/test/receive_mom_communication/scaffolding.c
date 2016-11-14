@@ -16,6 +16,7 @@
 #include "id_map.hpp"
 #include "node_manager.h"
 #include "pbs_ifl.h"
+#include "authorized_hosts.hpp"
 
 
 id_map      job_mapper;
@@ -925,3 +926,11 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
 #endif
 
 job::job() {}
+
+pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned short port)
+  {
+  return(NULL);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;

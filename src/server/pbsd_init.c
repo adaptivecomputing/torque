@@ -203,7 +203,6 @@ extern char *path_pbs_environment;
 
 extern int                      queue_rank;
 extern char                     server_name[];
-extern tlist_head               svr_newnodes;
 extern std::list<timed_task>   *task_list_timed;
 extern pthread_mutex_t          task_list_timed_mutex;
 task_recycler                   tr;
@@ -982,8 +981,6 @@ int initialize_data_structures_and_mutexes()
   pthread_mutex_init(&task_list_timed_mutex, NULL);
 
   initialize_task_recycler();
-
-  CLEAR_HEAD(svr_newnodes);
 
   if (cray_enabled == true)
     {

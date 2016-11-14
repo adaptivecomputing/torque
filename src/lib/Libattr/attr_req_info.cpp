@@ -9,16 +9,7 @@
 #include "attr_req_info.hpp"
 #include "attribute.h"
 #include "req.hpp"
-
-const char *LPROCS     = "lprocs";
-const char *NODES      = "node";
-const char *SOCKETS    = "socket";
-const char *NUMA_NODE = "numanode";
-const char *CORES      = "core";
-const char *THREADS    = "thread";
-const char *MEMORY     = "memory";
-const char *SWAP       = "swap";
-const char *DISK       = "disk";
+#include "numa_constants.h"
 
 
 attr_req_info& attr_req_info::operator= (const attr_req_info& newattr_req_info)
@@ -125,15 +116,15 @@ int attr_req_info::set_min_limit_value(
       return(ret);
     min_disk = min_disk_value.atsv_num << min_disk_value.atsv_shift;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     min_nodes = atoi(val);
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     min_sockets = atoi(val);
     }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
+  else if (!strncmp(rescn, CORE, strlen(CORE)))
     {
     min_cores = atoi(val);
     }
@@ -141,7 +132,7 @@ int attr_req_info::set_min_limit_value(
     {
     min_numa_nodes = atoi(val);
     }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
+  else if (!strncmp(rescn, THREAD, strlen(THREAD)))
     {
     min_threads = atoi(val);
     }
@@ -187,15 +178,15 @@ int attr_req_info::set_max_limit_value(
       return(ret);
     max_disk = max_disk_value.atsv_num << max_disk_value.atsv_shift;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     max_nodes = atoi(val);
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     max_sockets = atoi(val);
     }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
+  else if (!strncmp(rescn, CORE, strlen(CORE)))
     {
     max_cores = atoi(val);
     }
@@ -203,7 +194,7 @@ int attr_req_info::set_max_limit_value(
     {
     max_numa_nodes = atoi(val);
     }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
+  else if (!strncmp(rescn, THREAD, strlen(THREAD)))
     {
     max_threads = atoi(val);
     }
@@ -250,11 +241,11 @@ int attr_req_info::set_default_limit_value(
       return(ret);
     default_disk = default_disk_value.atsv_num << default_disk_value.atsv_shift;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     default_nodes = atoi(val);
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     default_sockets = atoi(val);
     }
@@ -281,11 +272,11 @@ int attr_req_info::get_signed_min_limit_value(
     {
     value = min_lprocs;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     value = min_nodes;
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     value = min_sockets;
     }
@@ -293,11 +284,11 @@ int attr_req_info::get_signed_min_limit_value(
     {
     value = min_numa_nodes;
     }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
+  else if (!strncmp(rescn, CORE, strlen(CORE)))
     {
     value = min_cores;
     }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
+  else if (!strncmp(rescn, THREAD, strlen(THREAD)))
     {
     value = min_threads;
     }
@@ -345,11 +336,11 @@ int attr_req_info::get_signed_max_limit_value(
     {
     value = max_lprocs;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     value = max_nodes;
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     value = max_sockets;
     }
@@ -357,11 +348,11 @@ int attr_req_info::get_signed_max_limit_value(
     {
     value = max_numa_nodes;
     }
-  else if (!strncmp(rescn, CORES, strlen(CORES)))
+  else if (!strncmp(rescn, CORE, strlen(CORE)))
     {
     value = max_cores;
     }
-  else if (!strncmp(rescn, THREADS, strlen(THREADS)))
+  else if (!strncmp(rescn, THREAD, strlen(THREAD)))
     {
     value = max_threads;
     }
@@ -407,11 +398,11 @@ int attr_req_info::get_signed_default_limit_value(
     {
     value = default_lprocs;
     }
-  else if (!strncmp(rescn, NODES, strlen(NODES)))
+  else if (!strncmp(rescn, NODE, strlen(NODE)))
     {
     value = default_nodes;
     }
-  else if (!strncmp(rescn, SOCKETS, strlen(SOCKETS)))
+  else if (!strncmp(rescn, SOCKET, strlen(SOCKET)))
     {
     value = default_sockets;
     }
@@ -488,7 +479,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_nodes != 0)
     {
-    sprintf(buf, "%s", NODES);
+    sprintf(buf, "%s", NODE);
     names.push_back(buf);
     sprintf(buf, "%d", max_nodes);
     values.push_back(buf);
@@ -496,7 +487,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_sockets != 0)
     {
-    sprintf(buf, "%s", SOCKETS);
+    sprintf(buf, "%s", SOCKET);
     names.push_back(buf);
     sprintf(buf, "%d", max_sockets);
     values.push_back(buf);
@@ -512,7 +503,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_cores != 0)
     {
-    sprintf(buf,"%s", CORES);
+    sprintf(buf,"%s", CORE);
     names.push_back(buf);
     sprintf(buf, "%d", max_cores);
     values.push_back(buf);
@@ -520,7 +511,7 @@ int attr_req_info::get_max_values(std::vector<std::string>& names, std::vector<s
 
   if (max_threads != 0)
     {
-    sprintf(buf, "%s", THREADS);
+    sprintf(buf, "%s", THREAD);
     names.push_back(buf);
     sprintf(buf, "%d", max_threads);
     values.push_back(buf);
@@ -567,7 +558,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_nodes != 0)
     {
-    sprintf(buf, "%s", NODES);
+    sprintf(buf, "%s", NODE);
     names.push_back(buf);
     sprintf(buf, "%d", min_nodes);
     values.push_back(buf);
@@ -575,7 +566,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_sockets != 0)
     {
-    sprintf(buf, "%s", SOCKETS);
+    sprintf(buf, "%s", SOCKET);
     names.push_back(buf);
     sprintf(buf, "%d", min_sockets);
     values.push_back(buf);
@@ -592,7 +583,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_cores != 0)
     {
-    sprintf(buf, "%s", CORES);
+    sprintf(buf, "%s", CORE);
     names.push_back(buf);
     sprintf(buf, "%d", min_cores);
     values.push_back(buf);
@@ -600,7 +591,7 @@ int attr_req_info::get_min_values(std::vector<std::string>& names, std::vector<s
 
   if (min_threads != 0)
     {
-    sprintf(buf, "%s", THREADS);
+    sprintf(buf, "%s", THREAD);
     names.push_back(buf);
     sprintf(buf, "%d", min_threads);
     values.push_back(buf);
@@ -649,7 +640,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_nodes != 0)
     {
-    sprintf(buf, "%s", NODES);
+    sprintf(buf, "%s", NODE);
     names.push_back(buf);
     sprintf(buf, "%d", default_nodes);
     values.push_back(buf);
@@ -657,7 +648,7 @@ int attr_req_info::get_default_values(std::vector<std::string>& names, std::vect
 
   if (default_sockets != 0)
     {
-    sprintf(buf, "%s", SOCKETS);
+    sprintf(buf, "%s", SOCKET);
     names.push_back(buf);
     sprintf(buf, "%d", default_sockets);
     values.push_back(buf);

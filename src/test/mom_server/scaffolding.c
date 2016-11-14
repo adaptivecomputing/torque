@@ -22,6 +22,7 @@
 #include "machine.hpp"
 #include "dis.h"
 #include "mom_func.h"
+#include "authorized_hosts.hpp"
 
 #define MAXLINE 1024
 
@@ -453,3 +454,16 @@ void report_node_varattrs(std::map<std::string, std::string> &varattrs) {}
 void report_node_features(std::set<std::string> &features) {}
 #endif
 
+bool authorized_hosts::is_authorized(unsigned long addr)
+  {
+  return(true);
+  }
+
+void authorized_hosts::list_authorized_hosts(std::string &output) {}
+
+void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short port, const std::string &hostname) {}
+
+void authorized_hosts::clear() {}
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;
