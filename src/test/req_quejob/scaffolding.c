@@ -526,6 +526,13 @@ int req_runjob(batch_request *preq)
   return(0);
   }
 
+batch_request::batch_request() {}
+batch_request::batch_request(int type) : rq_type(type) {}
+
+batch_request::~batch_request()
+
+  {
+  }
 
 
 

@@ -731,16 +731,16 @@ int stat_to_mom(
   struct stat_cntl *cntl)  /* M */
 
   {
-  struct batch_request *newrq;
-  int                   rc = PBSE_NONE;
-  unsigned long         addr;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
-  struct pbsnode       *node;
-  int                   handle = -1;
-  unsigned long         job_momaddr = -1;
-  unsigned short        job_momport = -1;
-  char                 *job_momname = NULL;
-  job                  *pjob = NULL;
+  batch_request   newrq(PBS_BATCH_StatusJob);
+  int             rc = PBSE_NONE;
+  unsigned long   addr;
+  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
+  pbsnode        *node;
+  int             handle = -1;
+  unsigned long   job_momaddr = -1;
+  unsigned short  job_momport = -1;
+  char           *job_momname = NULL;
+  job            *pjob = NULL;
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
@@ -765,18 +765,12 @@ int stat_to_mom(
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
 
-  if ((newrq = alloc_br(PBS_BATCH_StatusJob)) == NULL)
-    {
-    free(job_momname);
-    return PBSE_MEM_MALLOC;
-    }
-
   if (cntl->sc_type == 1)
-    snprintf(newrq->rq_ind.rq_status.rq_id, sizeof(newrq->rq_ind.rq_status.rq_id), "%s", job_id);
+    snprintf(newrq.rq_ind.rq_status.rq_id, sizeof(newrq.rq_ind.rq_status.rq_id), "%s", job_id);
   else
-    newrq->rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
+    newrq.rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
 
-  CLEAR_HEAD(newrq->rq_ind.rq_status.rq_attr);
+  CLEAR_HEAD(newrq.rq_ind.rq_status.rq_attr);
 
   /* if MOM is down just return stale information */
   addr = job_momaddr;
@@ -785,7 +779,10 @@ int stat_to_mom(
   free(job_momname);
 
   if (node == NULL)
+    {
     return PBSE_UNKNODE;
+    }
+
   if ((node->nd_state & INUSE_NOT_READY)||(node->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 6)
@@ -798,7 +795,6 @@ int stat_to_mom(
       }
 
     node->unlock_node(__func__, "no rely mom", LOGLEVEL);
-    free_br(newrq);
 
     return PBSE_NORELYMOM;
     }
@@ -809,9 +805,9 @@ int stat_to_mom(
 
   if (handle >= 0)
     {
-    if ((rc = issue_Drequest(handle, newrq, true)) == PBSE_NONE)
+    if ((rc = issue_Drequest(handle, &newrq, true)) == PBSE_NONE)
       {
-      stat_update(newrq, cntl);
+      stat_update(&newrq, cntl);
       }
     }
   else
@@ -819,8 +815,6 @@ int stat_to_mom(
 
   if (rc == PBSE_SYSTEM)
     rc = PBSE_MEM_MALLOC;
-
-  free_br(newrq);
 
   return(rc);
   }  /* END stat_to_mom() */
@@ -835,8 +829,8 @@ int stat_to_mom(
 
 void stat_update(
     
-  struct batch_request *preq,
-  struct stat_cntl     *cntl)
+  batch_request    *preq,
+  struct stat_cntl *cntl)
 
   {
   job                  *pjob;

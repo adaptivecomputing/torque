@@ -96,7 +96,7 @@ job *chk_job_request(char *jobid, struct batch_request *preq)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -182,3 +182,17 @@ batch_request *duplicate_request(
   {
   return(NULL);
   }
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }
+

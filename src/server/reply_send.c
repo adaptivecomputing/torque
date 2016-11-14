@@ -168,7 +168,7 @@ int reply_send_svr(
     {
     /* Otherwise, the reply is to be sent to a remote client */
 
-    if (request->rq_noreply != TRUE)
+    if (request->rq_noreply != true)
       {
       rc = dis_reply_write(sfds, &request->rq_reply);
 
@@ -181,14 +181,6 @@ int reply_send_svr(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
-    }
-
-  if (((request->rq_type != PBS_BATCH_AsyModifyJob) && 
-       (request->rq_type != PBS_BATCH_AsyrunJob) &&
-       (request->rq_type != PBS_BATCH_AsySignalJob)) ||
-      (request->rq_noreply == TRUE))
-    {
-    free_br(request);
     }
 
   return(rc);

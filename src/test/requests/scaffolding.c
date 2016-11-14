@@ -536,3 +536,5 @@ int send_job_obit(job *pjob, int exit_status)
   {
   return(PBSE_NONE);
   }
+
+batch_request::batch_request(int type) : rq_type(type) {}

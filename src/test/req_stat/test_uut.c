@@ -47,7 +47,6 @@ START_TEST(test_stat_update)
   batch_request preq;
   stat_cntl     cntl;
 
-  memset(&preq, 0, sizeof(preq));
   memset(&cntl, 0, sizeof(cntl));
   abort_called = 0;
 

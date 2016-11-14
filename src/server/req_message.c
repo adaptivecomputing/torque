@@ -128,7 +128,6 @@ void *req_messagejob(
   {
   job           *pjob;
   int            rc;
-  batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == NULL)
     return(NULL);
@@ -144,22 +143,15 @@ void *req_messagejob(
     return(NULL);
     }
 
-  if ((dup_req = duplicate_request(preq)) == NULL)
-    {
-    req_reject(PBSE_MEM_MALLOC, 0, preq, NULL, NULL);
-    }
-  /* pass the request on to MOM */
-  /* The dup_req is freed in relay_to_mom (failure)
-   * or in issue_Drequest (success) */
-  else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
+  batch_request dup_req(*preq);
+  
+  if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
     {
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
-    free_br(dup_req);
     }
   else
     {
-    post_message_req(dup_req);
-    free_br(preq);
+    post_message_req(&dup_req);
     }
 
   /* After MOM acts and replies to us, we pick up in post_message_req() */

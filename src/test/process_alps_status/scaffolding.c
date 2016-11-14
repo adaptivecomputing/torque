@@ -1914,3 +1914,7 @@ void Machine::setMemory(long long mem)
   }
 #endif
 
+batch_request::batch_request(int type) {}
+batch_request::batch_request() {}
+batch_request::~batch_request() {}
+

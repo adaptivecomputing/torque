@@ -20,7 +20,6 @@ START_TEST(test_req_signaljob_relaying_msg)
   {
   struct batch_request request;
   job myjob;
-  memset(&request, 0, sizeof(struct batch_request));
   memset(&myjob, 0, sizeof(job));
   myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
   myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;

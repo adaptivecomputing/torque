@@ -188,9 +188,6 @@ static const int munge_on = 1;
 static const int munge_on = 0;
 #endif 
 
-static void freebr_manage(struct rq_manage *);
-static void freebr_cpyfile(struct rq_cpyfile *);
-static void free_rescrq(struct rq_rescq *);
 void        close_quejob(int sfds);
 
 /* END private prototypes */
@@ -332,13 +329,22 @@ bool request_passes_acl_check(
 
 
 
-batch_request *read_request_from_socket(
+/*
+ * read_request_from_socket()
+ *
+ * Initializes request from the data on the socket
+ * @param chan - the wrapper for the socket we're reading data from
+ * @param request - the request we're initializing
+ * @return PBSE_* to indicate what happened
+ */
 
-  tcp_chan *chan)
+int read_request_from_socket(
+
+  tcp_chan      *chan,
+  batch_request &request)
 
   {
   int                   rc = PBSE_NONE;
-  struct batch_request *request = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   time_t                time_now = time(NULL);
@@ -353,7 +359,7 @@ batch_request *read_request_from_socket(
 
   if ((sfds < 0) ||
       (sfds >= PBS_NET_MAX_CONNECTIONS))
-    return(NULL);
+    return(-1);
 
   pthread_mutex_lock(svr_conn[sfds].cn_mutex);
   conn_active = svr_conn[sfds].cn_active;
@@ -365,10 +371,7 @@ batch_request *read_request_from_socket(
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  if ((request = alloc_br(0)) == NULL)
-    return(NULL);
-
-  request->rq_conn = sfds;
+  request.rq_conn = sfds;
 
   /*
    * Read in the request and decode it to the internal request structure.
@@ -386,14 +389,14 @@ batch_request *read_request_from_socket(
       }
 
 #endif /* END ENABLE_UNIX_SOCKETS */
-    rc = dis_request_read(chan, request);
+    rc = dis_request_read(chan, &request);
 
     if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
       {
       /* read error, likely cannot send reply so just disconnect, indicate permanent
        * failure by setting the type to PBS_BATCH_Disconnect */
-      request->rq_type = PBS_BATCH_Disconnect;
-      return(request);
+      request.rq_type = PBS_BATCH_Disconnect;
+      return(rc);
       }
     else if (rc > 0)
       {
@@ -403,8 +406,8 @@ batch_request *read_request_from_socket(
        * request didn't decode, either garbage or unknown
        * request type, in either case, return reject-reply
        */
-      request->rq_failcode = rc;
-      return(request);
+      request.rq_failcode = rc;
+      return(rc);
       }
     }
   else
@@ -419,11 +422,11 @@ batch_request *read_request_from_socket(
         "request on invalid type of connection (%d) from %s",
         conn_active,
         netaddr_long(conn_addr, out));
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    return(NULL);
+    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+    return(-1);
     }
 
-  if (get_connecthost(sfds, request->rq_host, PBS_MAXHOSTNAME) != 0)
+  if (get_connecthost(sfds, request.rq_host, PBS_MAXHOSTNAME) != 0)
     {
     char ipstr[80];
     sprintf(log_buf, "%s: %s",
@@ -437,17 +440,17 @@ batch_request *read_request_from_socket(
         "cannot determine hostname for connection from %s",
         log_buf);
 
-    req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-    return(NULL);
+    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+    return(-1);
     }
 
   if (LOGLEVEL >= 8)
     {
     sprintf(log_buf,
       msg_request,
-      reqtype_to_txt(request->rq_type),
-      request->rq_user,
-      request->rq_host,
+      reqtype_to_txt(request.rq_type),
+      request.rq_user,
+      request.rq_host,
       sfds);
 
     log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buf);
@@ -455,22 +458,22 @@ batch_request *read_request_from_socket(
 
   /* is the request from a host acceptable to the server */
   if (conn_socktype & PBS_SOCK_UNIX)
-    strcpy(request->rq_host, server_name);
+    strcpy(request.rq_host, server_name);
 
-  if (request_passes_acl_check(request, conn_addr) == false)
+  if (request_passes_acl_check(&request, conn_addr) == false)
     {
     /* See if the request is in the limited acl list */
-    if (limited_acls.is_authorized(request->rq_host, request->rq_user) == false)
+    if (limited_acls.is_authorized(request.rq_host, request.rq_user) == false)
       {
       char tmpLine[MAXLINE];
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-        request->rq_host);
-      req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
-      return(NULL);
+        request.rq_host);
+      req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+      return(-1);
       }
     }
 
-  return(request);
+  return(PBSE_NONE);
   } /* END read_request_from_socket() */
 
 
@@ -494,7 +497,7 @@ int process_request(
 
   {
   int                   rc = PBSE_NONE;
-  struct batch_request *request = NULL;
+  batch_request         request;
   long                  state = SV_STATE_DOWN;
 
   time_t                time_now = time(NULL);
@@ -513,18 +516,13 @@ int process_request(
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  request = read_request_from_socket(chan);
+  rc = read_request_from_socket(chan, request);
 
-  if (request == NULL)
-    rc = -1;
-  else if (request->rq_type == PBS_BATCH_Disconnect)
+  if (request.rq_type == PBS_BATCH_Disconnect)
     rc = PBSE_SOCKET_CLOSE;
-  else
-    rc = request->rq_failcode;
 
   if (rc != PBSE_NONE)
     {
-    free_br(request);
     return(rc);
     }
 
@@ -537,9 +535,9 @@ int process_request(
     {
     /* request came from another server */
 
-    request->rq_fromsvr = 1;
+    request.rq_fromsvr = 1;
 
-    request->rq_perm =
+    request.rq_perm =
       ATR_DFLAG_USRD | ATR_DFLAG_USWR |
       ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
       ATR_DFLAG_MGRD | ATR_DFLAG_MGWR |
@@ -550,7 +548,7 @@ int process_request(
     /* request not from another server */
     conn_credent[sfds].timestamp = time_now;
 
-    request->rq_fromsvr = 0;
+    request.rq_fromsvr = 0;
 
     /*
      * Client must be authenticated by an Authenticate User Request, if not,
@@ -568,9 +566,9 @@ int process_request(
      * creds.  Authorization is still granted in svr_get_privilege below
      */
 
-    if (request->rq_type == PBS_BATCH_Connect)
+    if (request.rq_type == PBS_BATCH_Connect)
       {
-      return(req_connect(request));
+      return(req_connect(&request));
       }
 
     if (conn_socktype & PBS_SOCK_UNIX)
@@ -586,14 +584,14 @@ int process_request(
     else if (munge_on)
       {
       /* If munge_on is true we will validate the connection now */
-      if (request->rq_type == PBS_BATCH_AltAuthenUser)
+      if (request.rq_type == PBS_BATCH_AltAuthenUser)
         {
-        rc = req_altauthenuser(request);
+        rc = req_altauthenuser(&request);
         return(rc);
         }
       else
         {
-        rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
+        rc = authenticate_user(&request, &conn_credent[sfds], &auth_err);
         }
       }
 #endif
@@ -601,11 +599,11 @@ int process_request(
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
     else
-      rc = authenticate_user(request, &conn_credent[sfds], &auth_err);
+      rc = authenticate_user(&request, &conn_credent[sfds], &auth_err);
 
     if (rc != 0)
       {
-      req_reject(rc, 0, request, NULL, auth_err);
+      req_reject(rc, 0, &request, NULL, auth_err);
       if (auth_err != NULL)
         free(auth_err);
 
@@ -618,9 +616,9 @@ int process_request(
      * for root on the jobs execution node.
      */
      
-    if (((request->rq_type == PBS_BATCH_ModifyJob) ||
-        (request->rq_type == PBS_BATCH_ReleaseJob)) &&
-        (strcmp(request->rq_user, PBS_DEFAULT_ADMIN) == 0))
+    if (((request.rq_type == PBS_BATCH_ModifyJob) ||
+        (request.rq_type == PBS_BATCH_ReleaseJob)) &&
+        (strcmp(request.rq_user, PBS_DEFAULT_ADMIN) == 0))
       {
       job *pjob;
       char *dptr;
@@ -629,13 +627,13 @@ int process_request(
 
       /* make short host name */
 
-      strcpy(short_host, request->rq_host);
+      strcpy(short_host, request.rq_host);
       if ((dptr = strchr(short_host, '.')) != NULL)
         {
         *dptr = '\0';
         }
       
-      if ((pjob = svr_find_job(request->rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
+      if ((pjob = svr_find_job(request.rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
         {
         mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
@@ -647,7 +645,7 @@ int process_request(
                (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
               (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
             {
-            request->rq_perm = svr_get_privilege(request->rq_user, server_host);
+            request.rq_perm = svr_get_privilege(request.rq_user, server_host);
             skip = TRUE;
             }
           }
@@ -656,18 +654,18 @@ int process_request(
       
       if (!skip)
         {
-        request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
+        request.rq_perm = svr_get_privilege(request.rq_user, request.rq_host);
         }
       }
     else
       {
-      request->rq_perm = svr_get_privilege(request->rq_user, request->rq_host);
+      request.rq_perm = svr_get_privilege(request.rq_user, request.rq_host);
       }
     }  /* END else (conn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
-  if (threadpool_is_too_busy(request_pool, request->rq_perm))
+  if (threadpool_is_too_busy(request_pool, request.rq_perm))
     {
-    req_reject(PBSE_SERVER_BUSY, 0, request, NULL, NULL);
+    req_reject(PBSE_SERVER_BUSY, 0, &request, NULL, NULL);
     return(PBSE_SERVER_BUSY);
     }
 
@@ -676,7 +674,7 @@ int process_request(
 
   if (state > SV_STATE_RUN)
     {
-    switch (request->rq_type)
+    switch (request.rq_type)
       {
       case PBS_BATCH_AsyrunJob:
       case PBS_BATCH_JobCred:
@@ -688,7 +686,7 @@ int process_request(
       case PBS_BATCH_jobscript:
       case PBS_BATCH_jobscript2:
 
-        req_reject(PBSE_SVRDOWN, 0, request, NULL, NULL);
+        req_reject(PBSE_SVRDOWN, 0, &request, NULL, NULL);
 
         return(PBSE_SVRDOWN);
       }
@@ -700,7 +698,7 @@ int process_request(
    * the request struture.
    */
 
-  rc = dispatch_request(sfds, request);
+  rc = dispatch_request(sfds, &request);
 
   return(rc);
   }  /* END process_request() */
@@ -1029,40 +1027,6 @@ int dispatch_request(
 
 
 
-
-/*
- * alloc_br - allocate and clear a batch_request structure
- */
-
-struct batch_request *alloc_br(
-
-  int type)
-
-  {
-
-  struct batch_request *req = NULL;
-
-  if ((req = (batch_request *)calloc(1, sizeof(batch_request))) == NULL)
-    {
-    log_err(errno, __func__, msg_err_malloc);
-    }
-  else
-    {
-
-    req->rq_type = type;
-
-    req->rq_conn = -1;  /* indicate not connected */
-    req->rq_orgconn = -1;  /* indicate not connected */
-    req->rq_time = time(NULL);
-    req->rq_reply.brp_choice = BATCH_REPLY_CHOICE_NULL;
-    req->rq_noreply = FALSE;  /* indicate reply is needed */
-    }
-
-  return(req);
-  } /* END alloc_br() */
-
-
-
 /*
  * close_quejob()
  *
@@ -1139,240 +1103,14 @@ void close_quejob(
 
 void free_br(
 
-  struct batch_request *preq)
+  batch_request *preq)
 
   {
   if (preq == NULL)
     return;
 
-  if (preq->rq_id != NULL)
-    {
-    remove_batch_request(preq->rq_id);
-    free(preq->rq_id);
-    preq->rq_id = NULL;
-    }
-
-  reply_free(&preq->rq_reply);
-
-  if (preq->rq_extend) 
-    {
-    free(preq->rq_extend);
-    preq->rq_extend = NULL;
-    }
-
-  if (preq->rq_extra)
-    {
-    free(preq->rq_extra);
-    preq->rq_extra = NULL;
-    }
-
-  switch (preq->rq_type)
-    {
-    case PBS_BATCH_QueueJob:
-    case PBS_BATCH_QueueJob2:
-
-      free_attrlist(&preq->rq_ind.rq_queuejob.rq_attr);
-
-      break;
-
-    case PBS_BATCH_JobCred:
-
-      if (preq->rq_ind.rq_jobcred.rq_data)
-        {
-        free(preq->rq_ind.rq_jobcred.rq_data);
-        preq->rq_ind.rq_jobcred.rq_data = NULL;
-        }
-
-      break;
-
-    case PBS_BATCH_MvJobFile:
-    case PBS_BATCH_jobscript:
-    case PBS_BATCH_jobscript2:
-
-      if (preq->rq_ind.rq_jobfile.rq_data)
-        {
-        free(preq->rq_ind.rq_jobfile.rq_data);
-        preq->rq_ind.rq_jobfile.rq_data = NULL;
-        }
-      break;
-
-    case PBS_BATCH_HoldJob:
-
-      freebr_manage(&preq->rq_ind.rq_hold.rq_orig);
-
-      break;
-
-    case PBS_BATCH_CheckpointJob:
-
-      freebr_manage(&preq->rq_ind.rq_manager);
-
-      break;
-
-    case PBS_BATCH_MessJob:
-
-      if (preq->rq_ind.rq_message.rq_text)
-        {
-        free(preq->rq_ind.rq_message.rq_text);
-        preq->rq_ind.rq_message.rq_text = NULL;
-        }
-
-      break;
-
-    case PBS_BATCH_ModifyJob:
-
-    case PBS_BATCH_AsyModifyJob:
-
-      freebr_manage(&preq->rq_ind.rq_modify);
-
-      break;
-
-    case PBS_BATCH_StatusJob:
-
-    case PBS_BATCH_StatusQue:
-
-    case PBS_BATCH_StatusNode:
-
-    case PBS_BATCH_StatusSvr:
-      /* DIAGTODO: handle PBS_BATCH_StatusDiag */
-
-      free_attrlist(&preq->rq_ind.rq_status.rq_attr);
-
-      break;
-
-    case PBS_BATCH_JobObit:
-
-      free_attrlist(&preq->rq_ind.rq_jobobit.rq_attr);
-
-      break;
-
-    case PBS_BATCH_CopyFiles:
-
-    case PBS_BATCH_DelFiles:
-
-      freebr_cpyfile(&preq->rq_ind.rq_cpyfile);
-
-      break;
-
-    case PBS_BATCH_ModifyNode:
-
-    case PBS_BATCH_Manager:
-
-      freebr_manage(&preq->rq_ind.rq_manager);
-
-      break;
-
-    case PBS_BATCH_ReleaseJob:
-
-      freebr_manage(&preq->rq_ind.rq_release);
-
-      break;
-
-    case PBS_BATCH_Rescq:
-
-      free_rescrq(&preq->rq_ind.rq_rescq);
-
-      break;
-
-    case PBS_BATCH_SelectJobs:
-
-    case PBS_BATCH_SelStat:
-
-      free_attrlist(&preq->rq_ind.rq_select);
-
-      break;
-
-    case PBS_BATCH_SelStatAttr:
-
-      free_attrlist(&preq->rq_ind.rq_select);
-      free_attrlist(&preq->rq_ind.rq_status.rq_attr);
-
-      break;
-
-    case PBS_BATCH_RunJob:
-    case PBS_BATCH_AsyrunJob:
-
-      if (preq->rq_ind.rq_run.rq_destin)
-        {
-        free(preq->rq_ind.rq_run.rq_destin);
-        preq->rq_ind.rq_run.rq_destin = NULL;
-        }
-      break;
-
-    default:
-
-      /* NO-OP */
-
-      break;
-    }  /* END switch (preq->rq_type) */
-
-  free(preq);
-
-  return;
+  delete preq;
   }  /* END free_br() */
-
-
-
-static void freebr_manage(
-
-  struct rq_manage *pmgr)
-
-  {
-  free_attrlist(&pmgr->rq_attr);
-
-  return;
-  }  /* END freebr_manage() */
-
-
-
-
-static void freebr_cpyfile(
-
-  struct rq_cpyfile *pcf)
-
-  {
-
-  struct rqfpair *ppair;
-
-  while ((ppair = (struct rqfpair *)GET_NEXT(pcf->rq_pair)) != NULL)
-    {
-    delete_link(&ppair->fp_link);
-
-    if (ppair->fp_local != NULL)
-      free(ppair->fp_local);
-
-    if (ppair->fp_rmt != NULL)
-      free(ppair->fp_rmt);
-
-    free(ppair);
-    }
-
-  return;
-  }  /* END freebr_cpyfile() */
-
-
-
-
-
-static void free_rescrq(
-
-  struct rq_rescq *pq)
-
-  {
-  int i;
-
-  i = pq->rq_num;
-
-  while (i--)
-    {
-    if (*(pq->rq_list + i) != NULL)
-      free(*(pq->rq_list + i));
-    }
-
-  if (pq->rq_list != NULL)
-    free(pq->rq_list);
-
-  return;
-  }  /* END free_rescrq() */
 
 /* END process_requests.c */
 

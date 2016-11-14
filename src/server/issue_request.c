@@ -145,9 +145,9 @@ int issue_Drequest(int conn, struct batch_request  *request);
 
 int relay_to_mom(
 
-  job                   **pjob_ptr,
-  struct batch_request   *request, /* the request to send */
-  void                  (*func)(struct work_task *))
+  job            **pjob_ptr,
+  batch_request   *request, /* the request to send */
+  void           (*func)(struct work_task *))
 
   {
   int             handle; /* a client style connection handle */
@@ -261,6 +261,8 @@ void reissue_to_svr(
 
   br_id = (char *)pwt->wt_parm1;
   preq = get_remove_batch_request(br_id);
+  free(br_id);
+
   /* if not timed-out, retry send to remote server */
   if (preq != NULL)
     {
@@ -274,7 +276,7 @@ void reissue_to_svr(
      }
 
    if (((time_now - preq->rq_time) > PBS_NET_RETRY_LIMIT) ||
-        (issue_to_svr(serverName, &preq, pwt->wt_parmfunc) != PBSE_NONE))
+        (issue_to_svr(serverName, preq, pwt->wt_parmfunc) != PBSE_NONE))
       {
       /* either timed-out or got hard error, tell post-function  */
       
@@ -284,6 +286,8 @@ void reissue_to_svr(
       if (pwt->wt_parmfunc != NULL)
         (* pwt->wt_parmfunc)(pwt);
       }
+
+    delete preq;
     }
 
   if (serverName)
@@ -302,12 +306,12 @@ void queue_a_retry_task(
 
   {
   /* create a new batch_request because preq is going to be freed when issue_to_svr returns success */
-  batch_request    *new_preq = duplicate_request(preq, -1);
+  batch_request    *new_preq = new batch_request(*preq);
   struct work_task *pwt;
 
   get_batch_request_id(new_preq);
 
-  pwt = set_task(WORK_Timed, (time(NULL) + PBS_NET_RETRY_TIME), reissue_to_svr, new_preq->rq_id, TRUE);
+  pwt = set_task(WORK_Timed, (time(NULL) + PBS_NET_RETRY_TIME), reissue_to_svr, strdup(new_preq->rq_id.c_str()), TRUE);
 
   pwt->wt_parmfunc = replyfunc;
 
@@ -326,13 +330,17 @@ void queue_a_retry_task(
  *   -1 on permanent error (no such host)
  *
  * On temporary error, establish a work_task to retry after a delay.
+ *
+ * @param servern - the name of the destination server for this request
+ * @param preq - the batch request we're sending
+ * @param replyfunc - function that should be called after sending the request
  */
 
 int issue_to_svr(
 
-  const char            *servern,                  /* I */
-  struct batch_request **preq_ptr,                 /* I */
-  void (*replyfunc)      (struct work_task *))     /* I */
+  const char     *servern,
+  batch_request  *preq,
+  void          (*replyfunc)(struct work_task *))
 
   {
   int             rc = PBSE_NONE;
@@ -342,7 +350,6 @@ int issue_to_svr(
   pbs_net_t       svraddr;
   char           *svrname;
   unsigned int    port = pbs_server_port_dis;
-  batch_request  *preq = *preq_ptr;
 
   snprintf(preq->rq_host, sizeof(preq->rq_host), "%s", servern);
 
@@ -372,12 +379,8 @@ int issue_to_svr(
       if (((rc = issue_Drequest(handle, preq, true)) == PBSE_NONE) &&
           (handle != PBS_LOCAL_CONNECTION))
         {
-        /* preq is already freed if handle == PBS_LOCAL_CONNECTION - a reply 
-         * has always been sent */
         rc = preq->rq_reply.brp_code;
         }
-      else if (handle == PBS_LOCAL_CONNECTION)
-        *preq_ptr = NULL;
 
       return(rc);
       }
@@ -418,10 +421,10 @@ int que_to_local_svr(struct batch_request *preq)                     /* I */
   preq->rq_fromsvr = 1;
   preq->rq_perm = ATR_DFLAG_MGRD | ATR_DFLAG_MGWR | ATR_DFLAG_SvWR;
 
-  if (preq->rq_id == NULL)
+  if (preq->rq_id.size() == 0)
     get_batch_request_id(preq);
 
-  set_task(WORK_Immed, 0, reissue_to_svr, preq->rq_id, TRUE);
+  set_task(WORK_Immed, 0, reissue_to_svr, strdup(preq->rq_id.c_str()), TRUE);
   return(PBSE_NONE);
   }  /* END que_to_local_svr() */
 
@@ -439,6 +442,8 @@ int que_to_local_svr(struct batch_request *preq)                     /* I */
  *
  * THIS SHOULD NOT BE USED IF AN EXTERNAL (CLIENT) REQUEST WAS "relayed".
  * The request/reply structure is still needed to reply to the client.
+ *
+ * FIXME: This also appears to be dead code
  */
 
 void release_req(
@@ -450,7 +455,7 @@ void release_req(
   char          *br_id = (char *)pwt->wt_parm1;
 
   if ((preq = get_remove_batch_request(br_id)) != NULL)
-    free_br(preq);
+    delete preq;
 
   if (pwt->wt_event != -1)
     svr_disconnect(pwt->wt_event);

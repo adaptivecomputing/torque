@@ -12,6 +12,4 @@ void reissue_to_svr(struct work_task *);
 
 int handle_local_request(int conn, batch_request *request);
 
-void release_req(struct work_task *pwt);
-
 #endif /* _ISSUE_REQUEST_H */

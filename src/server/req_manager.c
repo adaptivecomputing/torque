@@ -2027,8 +2027,8 @@ static bool requeue_or_delete_jobs(
     if(pjob != NULL)
       {
       char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
-      batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
-      batch_request *brDelete = alloc_br(PBS_BATCH_DeleteJob);
+      batch_request *brRerun = new batch_request(PBS_BATCH_Rerun);
+      batch_request *brDelete = new batch_request(PBS_BATCH_DeleteJob);
       if((brRerun == NULL)||(brDelete == NULL))
         {
         free_br(brRerun);

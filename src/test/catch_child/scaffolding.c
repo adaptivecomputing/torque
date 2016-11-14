@@ -1418,3 +1418,7 @@ int send_back_std_and_staged_files(job *pjob, int exit_value)
 
 
 task::~task() {}
+
+batch_request::batch_request(int type) : rq_type(type)
+  {
+  }

@@ -87,3 +87,17 @@ mutex_mgr::~mutex_mgr()
   {
   }
 
+batch_request::~batch_request()
+
+  {
+  }
+
+batch_request::batch_request(const batch_request &other)
+
+  {
+  }
+
+batch_request::batch_request()
+  {
+  }
+

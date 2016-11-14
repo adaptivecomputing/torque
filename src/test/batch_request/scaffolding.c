@@ -9,3 +9,10 @@ int    LOGLEVEL = 10;
 
 
 void log_err(int errnum, const char *routine, const char *text) {}
+
+void reply_free(
+
+  struct batch_reply *prep)
+
+  {
+  }

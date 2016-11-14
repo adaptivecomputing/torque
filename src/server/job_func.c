@@ -142,7 +142,6 @@
 #include "array.h"
 #include "pbs_job.h"
 #include "svr_func.h" /* get_svr_attr_* */
-#include "issue_request.h" /* release_req */
 #include "ji_mutex.h"
 #include "user_info.h"
 #include "mutex_mgr.hpp"
@@ -170,7 +169,6 @@ extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,c
 extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
-int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 void handle_complete_second_time(struct work_task *ptask);
 
 /* Local Private Functions */
@@ -547,7 +545,7 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((rc = issue_signal(&pjob, "SIGKILL", free_br, NULL, NULL)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", NULL, NULL, NULL)) != 0)
       {
       if (pjob != NULL)
         {
@@ -1632,9 +1630,9 @@ void remove_checkpoint(
   job **pjob_ptr)  /* I */
 
   {
-  struct batch_request *preq = NULL;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-  job                  *pjob = NULL;
+  batch_request *preq = NULL;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
+  job           *pjob = NULL;
 
   if (pjob_ptr == NULL)
     {
@@ -1684,7 +1682,7 @@ void remove_checkpoint(
         (char *)"unable to remove checkpoint file for job");
       }
 
-    free_br(preq);
+    delete preq;
     }
 
   return;

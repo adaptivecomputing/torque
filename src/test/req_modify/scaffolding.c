@@ -330,3 +330,22 @@ void job::set_plugin_resource_usage(
   }
 
 void update_slot_held_jobs(job_array *pa, int num_to_release) {}
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+batch_request::batch_request(int type)
+  {
+  }
+
+void batch_request::update_object_id(int index) {}
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }

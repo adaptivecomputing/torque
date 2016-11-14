@@ -1337,6 +1337,8 @@ bool   have_reservation(job *, struct pbs_queue *);
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
+
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);
 extern int   net_move(job *, struct batch_request *);
@@ -1345,7 +1347,6 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
-int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
 
 #endif /* BATCH_REQUEST_H */
 

@@ -229,3 +229,6 @@ void free_pwnam(struct passwd *pwdp, char *buf)
 
 void send_update_soon()
   {}
+
+batch_request::batch_request() {}
+batch_request::~batch_request() {}

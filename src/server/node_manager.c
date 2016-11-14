@@ -572,7 +572,6 @@ int kill_job_on_mom(
   struct pbsnode *pnode)
 
   {
-  batch_request *preq;
   int            rc = -1;
   int            conn;
   int            local_errno = 0;
@@ -587,27 +586,20 @@ int kill_job_on_mom(
 
   if (conn >= 0)
     {
-    if ((preq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
-      {
-      log_err(-1, __func__, "unable to allocate SignalJob request-trouble!");
-      svr_disconnect(conn);
-      }
+    batch_request preq(PBS_BATCH_SignalJob);
+    
+    snprintf(preq.rq_ind.rq_signal.rq_jid, sizeof(preq.rq_ind.rq_signal.rq_jid), "%s", job_id);
+    snprintf(preq.rq_ind.rq_signal.rq_signame, sizeof(preq.rq_ind.rq_signal.rq_signame), "SIGKILL");
+    preq.rq_extra = strdup(SYNC_KILL);
+    pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
+    rc = issue_Drequest(conn, &preq, true);
+
+    if (preq.rq_reply.brp_code == PBSE_TIMEOUT)
+      update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
     else
-      {
-      snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", job_id);
-      snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
-      preq->rq_extra = strdup(SYNC_KILL);
-      pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      rc = issue_Drequest(conn, preq, true);
+      update_failure_counts(node_name.c_str(), 0);
 
-      if (preq->rq_reply.brp_code == PBSE_TIMEOUT)
-        update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
-      else
-        update_failure_counts(node_name.c_str(), 0);
-
-      free_br(preq);
-      pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
-      }
+    pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
     }
   else
     {

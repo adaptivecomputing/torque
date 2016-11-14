@@ -136,9 +136,7 @@ int req_signaljob(
   job           *pjob;
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  batch_request *dup_req = NULL;
 
-  /* preq free'd in error cases */
   if ((pjob = chk_job_request(preq->rq_ind.rq_signal.rq_jid, preq)) == 0)
     {
     return(PBSE_NONE);
@@ -202,49 +200,27 @@ int req_signaljob(
   /* send reply for asynchronous suspend */
   if (preq->rq_type == PBS_BATCH_AsySignalJob)
     {
-    /* reply_ack will free preq. We need to copy it before we call reply_ack */
-    batch_request *new_preq;
-
-    new_preq = duplicate_request(preq, -1);
-    if (new_preq == NULL)
-      {
-      sprintf(log_buf, "failed to duplicate batch request");
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      return(PBSE_MEM_MALLOC);
-      }
-
-    get_batch_request_id(new_preq);
-
-    reply_ack(new_preq);
-    preq->rq_noreply = TRUE;
+    reply_ack(preq);
+    preq->rq_noreply = true;
     }
 
   /* pass the request on to MOM */
-  if ((dup_req = duplicate_request(preq)) == NULL)
+  batch_request dup_req(*preq);
+    
+  rc = relay_to_mom(&pjob, &dup_req, NULL);
+    
+  if (pjob != NULL)
+    job_mutex.unlock();
+  else
+    job_mutex.set_unlock_on_exit(false);
+
+  if (rc != PBSE_NONE)
     {
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, "can not allocate memory");
+    req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
     }
-  /* The dup_req is freed in relay_to_mom (failure)
-   * or in issue_Drequest (success) */
-  else 
+  else
     {
-    rc = relay_to_mom(&pjob, dup_req, NULL);
-
-    if (pjob != NULL)
-      job_mutex.unlock();
-    else
-      job_mutex.set_unlock_on_exit(false);
-
-    if (rc != PBSE_NONE)
-      {
-      free_br(dup_req);
-      req_reject(rc, 0, preq, NULL, NULL);  /* unable to get to MOM */
-      }
-    else
-      {
-      post_signal_req(dup_req);
-      free_br(preq);
-      }
+    post_signal_req(&dup_req);
     }
 
   /* If successful we ack after mom replies to us, we pick up in post_signal_req() */
@@ -256,54 +232,51 @@ int req_signaljob(
 
 /*
  * issue_signal - send an internally generated signal to a running job
+ *
+ * @param pjob_ptr - a pointer to a potiner to the job
+ * @param signame - the name of the signal we're sending
+ * @param func - optional function pointer to call after sending the signal
+ * @param extra - optional extra info for the batch request
+ * @param extend - optional extend info for the batch request (basically more extra info)
  */
 
 int issue_signal(
 
   job        **pjob_ptr,
-  const char  *signame, /* name of the signal to send */
+  const char  *signame,
   void       (*func)(struct batch_request *),
-  void        *extra, /* extra parameter to be stored in sig request */
-  char        *extend) /* Parameter to put in extended part of request */
+  void        *extra,
+  char        *extend)
 
   {
-  int                   rc;
-  job                  *pjob = *pjob_ptr;
-  struct batch_request *newreq;
-  char                  jobid[PBS_MAXSVRJOBID + 1];
+  int            rc;
+  job           *pjob = *pjob_ptr;
+  batch_request  newreq;
+  char           jobid[PBS_MAXSVRJOBID + 1];
 
-  /* build up a Signal Job batch request */
-
-  if ((newreq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
-    {
-    /* FAILURE */
-
-    return(PBSE_SYSTEM);
-    }
-
-  newreq->rq_extra = extra;
-  newreq->rq_extend = extend;
+  newreq.rq_extra = extra;
+  newreq.rq_extend = extend;
   if (extend != NULL)
     {
-    newreq->rq_extsz = strlen(extend);
+    newreq.rq_extsz = strlen(extend);
     }
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
+  strcpy(newreq.rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
 
-  snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame),
+  snprintf(newreq.rq_ind.rq_signal.rq_signame, sizeof(newreq.rq_ind.rq_signal.rq_signame),
     "%s", signame);
 
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  rc = relay_to_mom(&pjob, newreq, NULL);
+  rc = relay_to_mom(&pjob, &newreq, NULL);
 
   if ((rc == PBSE_NONE) &&
       (pjob != NULL))
     {
     strcpy(jobid, pjob->ji_qs.ji_jobid);
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-    func(newreq);
+    func(&newreq);
 
     *pjob_ptr = svr_find_job(jobid, TRUE);
     }
@@ -354,7 +327,9 @@ int issue_signal(
 
       svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
       unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-      func(newreq);
+
+      if (func != NULL)
+        func(&newreq);
 
       rc = PBSE_NONE;
 
@@ -366,8 +341,6 @@ int issue_signal(
     }
   else
     {
-    free_br(newreq);
-
     if (pjob == NULL)
       *pjob_ptr = NULL;
     }

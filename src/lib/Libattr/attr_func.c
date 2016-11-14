@@ -405,7 +405,6 @@ svrattrl *attrlist_create(
 
 
 
-
 /*
  * free_attrlist - free the space allocated to a list of svrattrl
  * structures

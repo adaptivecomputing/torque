@@ -35,7 +35,6 @@ extern int has_job_delete_nanny(struct job *);
 extern void setup_apply_job_delete_nanny(struct job *, time_t  time_now);
 extern void remove_stagein(job **pjob);
 extern void change_restart_comment_if_needed(struct job *);
-int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
@@ -108,7 +107,7 @@ bool attempt_delete(
 
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
-      issue_signal(&pjob, "SIGTERM", free_br, NULL, NULL);
+      issue_signal(&pjob, "SIGTERM", NULL, NULL, NULL);
       }
 
     if (pjob != NULL)

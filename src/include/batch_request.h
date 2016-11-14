@@ -319,8 +319,10 @@ struct rq_jobobit
  * so here is the union ...
  */
 
-struct batch_request
+
+class batch_request
   {
+  public:
   list_link           rq_link; /* linkage of all requests   */
   int                 rq_type; /* type of request   */
   int                 rq_perm; /* access permissions for the user */
@@ -333,10 +335,10 @@ struct batch_request
   char                rq_host[PBS_MAXHOSTNAME+1]; /* name of host sending request */
   int                 rq_refcount;
   void               *rq_extra; /* optional ptr to extra info  */
-  int                 rq_noreply; /* Set true if no reply is required */
+  bool                rq_noreply; /* Set true if no reply is required */
   int                 rq_failcode;
   char               *rq_extend; /* request "extension" data  */
-  char               *rq_id;      /* the batch request's id */
+  std::string         rq_id;     /* the batch request's id */
 
   struct batch_reply  rq_reply;   /* the reply area for this request */
 
@@ -394,9 +396,16 @@ struct batch_request
 
     struct rq_jobobit     rq_jobobit;
     } rq_ind;
-  };
 
-typedef struct batch_request batch_request;
+  batch_request();
+  batch_request(int type);
+  batch_request(const batch_request &other);
+  ~batch_request();
+  batch_request &operator =(const batch_request &other);
+
+  void update_object_id(int job_index);
+  int  copy_attribute_list(const batch_request &other);
+  };
  
 typedef container::item_container<batch_request *>                  batch_request_holder;
 typedef container::item_container<batch_request *>::item_iterator   batch_request_holder_iterator;
@@ -404,7 +413,6 @@ typedef container::item_container<batch_request *>::item_iterator   batch_reques
 extern batch_request_holder brh;
 
 
-batch_request *alloc_br (int type);
 extern void    reply_ack (struct batch_request *);
 extern void    req_reject (int code, int aux, struct batch_request *, const char *, const char *);
 extern void    reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
@@ -419,9 +427,9 @@ int            process_request(struct tcp_chan *chan);
 
 int            get_batch_request_id(batch_request *preq);
 int            insert_batch_request(batch_request *preq);
-batch_request *get_batch_request(char *br_id);
-batch_request *get_remove_batch_request(char *br_id);
-int            remove_batch_request(char *br_id);
+batch_request *get_batch_request(const char *br_id);
+batch_request *get_remove_batch_request(const char *br_id);
+int            remove_batch_request(const char *br_id);
 
 int req_gpuctrl_svr(struct batch_request *preq);
 
@@ -484,5 +492,4 @@ extern int encode_DIS_svrattrl (struct tcp_chan *chan, svrattrl *);
 extern int dis_request_read (struct tcp_chan *chan, struct batch_request *);
 extern int dis_reply_read (struct tcp_chan *chan, struct batch_reply *);
 
-batch_request *duplicate_request(batch_request *preq, int job_index = -1);
 #endif /* BATCH_REQUEST_H */
