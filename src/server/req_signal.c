@@ -251,7 +251,7 @@ int issue_signal(
   {
   int            rc;
   job           *pjob = *pjob_ptr;
-  batch_request  newreq;
+  batch_request  newreq(PBS_BATCH_SignalJob);
   char           jobid[PBS_MAXSVRJOBID + 1];
 
   newreq.rq_extra = extra;
