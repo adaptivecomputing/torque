@@ -9637,10 +9637,31 @@ void add_wkm_end(
 
   return;
   }   /* END add_wkm_end() */
-
-
-
 #endif /* ENABLE_CSA */
+
+
+
+void escape_spaces(
+
+  const char  *str,
+  std::string &escaped)
+
+  {
+  if (str != NULL)
+    {
+    const char *ptr = str;
+
+    while (*ptr != '\0')
+      {
+      if (*ptr == ' ')
+        escaped += '\\';
+
+      escaped += *ptr++;
+      }
+    }
+  } // escape_spaces()
+
+
 
 /*
  * @param pjob - used to set up the user's environment if desired
@@ -9693,9 +9714,11 @@ int expand_path(
     environ = vtable.v_envp;
     }
 
+  std::string escaped;
+  escape_spaces(path_in, escaped);
 
   /* expand the path */
-  switch (wordexp(path_in, &exp, WRDE_NOCMD | WRDE_UNDEF))
+  switch (wordexp(escaped.c_str(), &exp, WRDE_NOCMD | WRDE_UNDEF))
     {
     case 0:
 
