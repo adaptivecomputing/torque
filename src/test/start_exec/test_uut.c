@@ -43,12 +43,41 @@ extern bool addr_fail;
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
 void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
+void escape_spaces(const char *str, std::string &escaped);
 
 #ifdef PENABLE_LINUX_CGROUPS
 unsigned long long get_memory_limit_from_resource_list(job *pjob);
 #endif
 
 int jobstarter_privileged = 0;
+ 
+ 
+START_TEST(test_escape_spaces)
+  {
+  std::string escaped;
+
+  const char *ws1 = "one two";
+  const char *ws2 = "one two three";
+  const char *ws3 = "one two three four";
+
+  escape_spaces(ws1, escaped);
+  // should have added a slash
+  fail_unless(escaped.size() == strlen(ws1) + 1);
+  fail_unless(escaped == "one\\ two");
+
+  escaped.clear();
+  escape_spaces(ws2, escaped);
+  // should have added two slashes
+  fail_unless(escaped.size() == strlen(ws2) + 2);
+  fail_unless(escaped == "one\\ two\\ three");
+
+  escaped.clear();
+  escape_spaces(ws3, escaped);
+  // should have added three slashes
+  fail_unless(escaped.size() == strlen(ws3) + 3);
+  fail_unless(escaped == "one\\ two\\ three\\ four");
+  }
+END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
 START_TEST(get_memory_limit_from_resource_list_test)
@@ -547,6 +576,7 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_get_num_nodes_ppn");
   tcase_add_test(tc_core, test_get_num_nodes_ppn);
+  tcase_add_test(tc_core, test_escape_spaces);
 #ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, get_memory_limit_from_resource_list_test);
 #endif
