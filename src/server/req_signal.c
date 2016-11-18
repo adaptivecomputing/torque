@@ -274,11 +274,16 @@ int issue_signal(
   if ((rc == PBSE_NONE) &&
       (pjob != NULL))
     {
-    strcpy(jobid, pjob->ji_qs.ji_jobid);
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-    func(&newreq);
+    if (func != NULL)
+      {
+      strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-    *pjob_ptr = svr_find_job(jobid, TRUE);
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+      func(&newreq);
+
+      *pjob_ptr = svr_find_job(jobid, TRUE);
+      }
     }
   else if ((extend != NULL) && 
       (!strcmp(extend, RERUNFORCE)))
