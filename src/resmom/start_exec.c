@@ -252,6 +252,9 @@ extern int            numa_index;
 
 extern int            linux_time;
 
+// Default to version 7.0
+int                   cuda_version = 70;
+
 /* Local Variables */
 
 static int      script_in; /* script file, will be stdin   */
@@ -1331,7 +1334,6 @@ int TMakeTmpDir(
 
 
 
-
 /*
  * get_indices_from_exec_str
  *
@@ -1348,13 +1350,17 @@ int TMakeTmpDir(
  * @param exec_str - the string we're parsing
  * @param buf - where the list of absolute mic indices goes
  * @param buf_size - maximum size that can be written into buf
+ * @param cuda_version - -1 if we're not doing gpus, or the version of cuda otherwise
+ *                       If we are doing cuda, and we're above version 7.0, we ignore the index
+ *                       in the string and count from 0.
  */
 
 int get_indices_from_exec_str(
 
-  const char *exec_str, /* I */
-  char       *buf,      /* O */
-  int         buf_size) /* I */
+  const char *exec_str,
+  char       *buf,     
+  int         buf_size,
+  int         cuda_version)
 
   {
   char *work_str;
@@ -1367,6 +1373,7 @@ int get_indices_from_exec_str(
 #endif
   int   numa_offset = 0;
   int   index;
+  int   relative_count = 0;
 
   if ((buf == NULL) ||
       (exec_str == NULL))
@@ -1408,12 +1415,19 @@ int get_indices_from_exec_str(
 
         if ((slash = strchr(tok, '/')) != NULL)
           {
-          index = strtol(slash+1, NULL, 10) + numa_offset;
+          // CUDA versions 7.0 and greater always index from 0 on up for the program, so if you
+          // have gpus 2 and 3, we should pass 0 and 1
+          if (cuda_version >= 70)
+            index = relative_count;
+          else
+            index = strtol(slash+1, NULL, 10) + numa_offset;
 
           if (buf[0] != '\0')
             snprintf(buf + strlen(buf), buf_size - strlen(buf), ",%d", index);
           else
             snprintf(buf, buf_size, "%d", index);
+
+          relative_count++;
           }
         }
 
@@ -1425,6 +1439,7 @@ int get_indices_from_exec_str(
 
   return(PBSE_NONE);
   } /* END get_indices_from_exec_str() */
+
 
 
 /*
@@ -1745,7 +1760,7 @@ int InitUserEnv(
 
   if (pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str != NULL)
     {
-    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str, buf, sizeof(buf));
+    get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_mics].at_val.at_str, buf, sizeof(buf), -1);
     bld_env_variables(&vtable, variables_else[tveOffloadDevices], buf);
     }
 
@@ -1753,7 +1768,8 @@ int InitUserEnv(
     {
     if (MOMCudaVisibleDevices)
       {
-      get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf));
+      get_indices_from_exec_str(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str, buf, sizeof(buf), 
+                                cuda_version);
       bld_env_variables(&vtable, variables_else[tveCudaVisibleDevices], buf);
       }
     }
