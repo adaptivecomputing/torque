@@ -165,36 +165,19 @@ int completed_jobs_map_class::cleanup_completed_jobs(
        it != completed_jobs_map.end();
        ++it)
     {
-    bool rc = false;
-
     // if cleanup time is before/at now, then clean up
     if (it->second <= now)
       {
-      int retcode = PBSE_NONE;
       work_task *pnew;
 
-      // Does job exist
-      
-      while((rc = job_id_exists(it->first, &retcode)) == false)
+      // Does job still exist
+      if (job_id_exists(it->first) == false)
         {
-        if (retcode != 0)
-          {
-          // Someone else has a lock we want. give ours up and try again
-          pthread_mutex_unlock(&completed_jobs_map_mutex);
-          pthread_mutex_lock(&completed_jobs_map_mutex);
-          continue;
-          }
-        else
-          break;
+        // Job is gone, mark it for removal
+        to_remove.push_back(it->first);
+
+        continue;
         }
-
-        if (rc == false)
-          {
-          // Job is gone, mark it for removal
-          to_remove.push_back(it->first);
-
-          continue;
-          }
 
       // create a work task struct to be passed to handle_complete_second_time()
       if ((pnew = (struct work_task *)calloc(1, sizeof(struct work_task))) == NULL)
