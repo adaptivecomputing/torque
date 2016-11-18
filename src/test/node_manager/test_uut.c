@@ -858,7 +858,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   /* set job_exclusive_on_use true */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
-  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 1;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool = 1;
 
   job_reservation_info jri;
   int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, buf);
@@ -868,7 +868,7 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   /* turn job_exclusive_on_use off and reset the node state */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
-  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long = 0;
+  server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool = 0;
   pnode->nd_state = 0;
 
   job_reservation_info jri2;

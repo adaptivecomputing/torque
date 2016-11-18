@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <string.h>
 #include <vector>
+#include <string>
 
 #if TCL_QSTAT
 #include <sys/stat.h>
@@ -33,6 +34,7 @@
 #endif
 #endif
 
+#include <libxml/tree.h>
 #include "cmds.h"
 #include "mcom.h"
 #include "utils.h"
@@ -1619,10 +1621,9 @@ void add_xml_resource(
 void print_req_information(
 
   struct attrl *req_information_attr,
-  mxml_t       *JE)
+  xmlNodePtr    node)
 
   {
-  mxml_t      *RE;
   std::string  out;
   char         buf[100];
   char         name[1024];
@@ -1633,50 +1634,30 @@ void print_req_information(
   allocation   a;
   a.initialize_from_string(req_information_attr->value);
 
+  
+
   if ((left_dot = strchr(req_information_attr->resource, '.')) != NULL)
     req_index = strtol(left_dot + 1, NULL, 10);
 
   if ((right_dot = strrchr(req_information_attr->resource, '.')) != NULL)
     task_index = strtol(right_dot + 1, NULL, 10);
 
-  if (JE == NULL)
-    sprintf(name, "%s.task_usage.%d.task.%d", ATTR_req_information, req_index, task_index);
-  else
-    sprintf(name, "task_usage.%d.task.%d", req_index, task_index);
+  sprintf(name, "%s.task_usage.%d.task.%d", ATTR_req_information, req_index, task_index);
         
   translate_vector_to_range_string(out, a.cpu_indices);
-  if (JE == NULL)
-    {
-    prt_attr(name, "cpu_list", out.c_str());
-    printf("\n");
-    }
-  else
-    {
-    MXMLCreateE(&RE, name);
-    MXMLAddE(JE, RE);
-    add_xml_resource(RE, "cpu_list", out.c_str());
-    }
+  prt_attr(name, "cpu_list", out.c_str());
+  printf("\n");
     
   translate_vector_to_range_string(out, a.mem_indices);
-  if (JE == NULL)
-    {
-    prt_attr(name, "mem_list", out.c_str());
-    printf("\n");
-    }
-  else
-    add_xml_resource(RE, "mem_list", out.c_str());
+  prt_attr(name, "mem_list", out.c_str());
+  printf("\n");
     
   if (a.task_cput_used != 0)
     {
     sprintf(buf, "%lu", a.task_cput_used);
     
-    if (JE == NULL)
-      {
-      prt_attr(name, "cpu_time_used", buf);
-      printf("\n");
-      }
-    else
-      add_xml_resource(RE, "cpu_time_used", buf);
+    prt_attr(name, "cpu_time_used", buf);
+    printf("\n");
     }
     
   if (a.task_memory_used != 0)
@@ -1687,43 +1668,122 @@ void print_req_information(
 
     sprintf(buf, "%llukb", mem_used);
 
-    if (JE == NULL)
-      {
-      prt_attr(name, "memory_used", buf);
-      printf("\n");
-      }
-    else
-      add_xml_resource(RE, "memory_used", buf);
+    prt_attr(name, "memory_used", buf);
+    printf("\n");
     }
     
   sprintf(buf, "%d", a.cores);
-  if (JE == NULL)
-    {
-    prt_attr(name, "cores", buf);
-    printf("\n");
-    }
-  else
-    add_xml_resource(RE, "cores", buf);
+  prt_attr(name, "cores", buf);
+  printf("\n");
     
   sprintf(buf, "%d", a.threads);
-  if (JE == NULL)
-    {
-    prt_attr(name, "threads", buf);
-    printf("\n");
-    }
-  else
-    add_xml_resource(RE, "threads", buf);
+  prt_attr(name, "threads", buf);
+  printf("\n");
 
-  if (JE == NULL)
-    {
-    prt_attr(name, "host", a.hostname.c_str());
-    printf("\n");
-    }
-  else
-    add_xml_resource(RE, "host", a.hostname.c_str());
-
+  prt_attr(name, "host", a.hostname.c_str());
+  printf("\n");
   } // END print_req_information()
 
+
+
+/*
+ * print_req_information_xml()
+ *
+ * Adds the req_information attribute to the xml structure for printing
+ * @param req_information_attr - the req_information attrl sent from the server
+ * @param node - the xml structure to which we're adding
+ */
+
+void print_req_information_xml(
+
+  struct attrl *req_information_attr,
+  xmlNodePtr    &node)
+
+  {
+  char         buf[100];
+  char         name[1024];
+  char        *left_dot;
+  char        *right_dot;
+  int          req_index = 0;
+  int          task_index = 0;
+  std::string out;
+  std::ostringstream osstream;
+  allocation   a;
+  
+  a.initialize_from_string(req_information_attr->value);
+  
+  if ((left_dot = strchr(req_information_attr->resource, '.')) != NULL)
+       req_index = strtol(left_dot + 1, NULL, 10);
+  if ((right_dot = strrchr(req_information_attr->resource, '.')) != NULL)
+       task_index = strtol(right_dot + 1, NULL, 10);
+  sprintf(name, "task_usage.%d.task.%d", req_index, task_index);
+  
+  translate_vector_to_range_string(out, a.cpu_indices);
+  
+  xmlNewChild(node, NULL, BAD_CAST req_information_attr->resource,NULL);
+  xmlNodePtr RE = node;
+  xmlNewChild(RE, NULL,  BAD_CAST "cpu_list",BAD_CAST out.c_str()); 
+
+  translate_vector_to_range_string(out, a.mem_indices);
+  xmlNewChild(RE,NULL,BAD_CAST "mem_list", BAD_CAST out.c_str());
+
+  if (a.task_cput_used != 0)
+    {
+    sprintf(buf, "%lu", a.task_cput_used);
+    xmlNewChild(RE,NULL, BAD_CAST "cpu_time_used", BAD_CAST a.task_cput_used);
+    }
+  if (a.task_memory_used != 0)
+    {
+    unsigned long long mem_used;
+    mem_used = a.task_memory_used/1024;
+    sprintf(buf, "%llukb", mem_used);
+  
+    xmlNewChild(RE,NULL,BAD_CAST "memory_used", BAD_CAST mem_used);
+    }
+  
+  osstream <<  a.cores;
+  std::string cores = osstream.str();
+  xmlNewChild(RE,NULL, BAD_CAST "cores", BAD_CAST cores.c_str());
+
+  osstream << a.threads;
+  std::string threads = osstream.str();
+  xmlNewChild(RE,NULL, BAD_CAST "threads", BAD_CAST threads.c_str());
+
+  xmlNewChild(RE,NULL,BAD_CAST "host", BAD_CAST a.hostname.c_str());
+  } // END print_req_information_xml()
+
+
+
+/*
+ * add_xml_resource()
+ * 
+ * Adds a resource attribute to the xml structure for printing
+ * @param node - the structure to which we're adding
+ * @param attribute - the resource attribute
+ */
+
+void add_xml_resource(
+    
+  xmlNodePtr &node,
+  attrl      *attribute)
+
+  {
+  std::string content;
+  xmlNodePtr current = NULL;
+  for (current = node->xmlChildrenNode; current != NULL;current = current->next)
+     {
+     if (!xmlStrcmp(current->name, BAD_CAST "Resources"))
+       {
+       content = *(attribute->resource) +"="+*(attribute->value);
+       xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
+       return;
+       }
+     } 
+
+  xmlNewChild(node, NULL, BAD_CAST "Resources", NULL);
+  content = *(attribute->resource) +"="+*(attribute->value);
+  xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
+  } // END add_xml_resource()
 
 
 /*
@@ -1737,24 +1797,21 @@ void print_req_information(
 void create_full_job_xml(
 
   struct batch_status *p,
-  mxml_t              *DE)
+  xmlDocPtr            doc)
 
   {
-  mxml_t       *JE = NULL;
-  mxml_t       *AE;
-  mxml_t       *RE1 = NULL;
-  mxml_t       *JI = NULL;
+  
   struct attrl *attribute;
   
-  MXMLCreateE(&JE, "Job");
-
-  MXMLAddE(DE, JE);
-
-  MXMLCreateE(&JI, "Job_Id");
-
-  MXMLSetVal(JI, p->name,mdfString);
-
-  MXMLAddE(JE, JI);
+  xmlNodePtr root_node = NULL;
+  root_node = xmlNewNode(NULL, BAD_CAST "Data");
+  
+  xmlDocSetRootElement(doc, root_node);
+  xmlNewChild(root_node, NULL, BAD_CAST "Job", NULL);
+  
+  xmlNodePtr node = root_node->children;
+  xmlNewChild(node, NULL, BAD_CAST "Job_Id", BAD_CAST p->name);
+  
 
   for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
     {
@@ -1767,32 +1824,17 @@ void create_full_job_xml(
       if ((attribute->resource != NULL) &&
           (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
         {
-        print_req_information(attribute, RE1);
+        print_req_information_xml(attribute, node);
         }
       else
         {
-
-        AE = NULL;
-
         if (attribute->resource != NULL)
           {
-          if (RE1 == NULL)
-            {
-            MXMLCreateE(&RE1, attribute->name);
-            MXMLAddE(JE, RE1);
-            }
-
-          MXMLCreateE(&AE, attribute->resource);
-
-          MXMLSetVal(AE, attribute->value, mdfString);
-          MXMLAddE(RE1, AE);
+          add_xml_resource(node,attribute); 
           }
         else
           {
-          RE1 = NULL;
-          MXMLCreateE(&AE, attribute->name);
-          MXMLSetVal(AE, attribute->value, mdfString);
-          MXMLAddE(JE, AE);
+		      xmlNewChild(node, NULL, BAD_CAST attribute->name, BAD_CAST attribute->value);
           }
         }
       }
@@ -1873,7 +1915,7 @@ void display_single_job(
   struct batch_status *p,
   char                *user,
   const char          *format,
-  mxml_t              *DE,
+  xmlDocPtr            doc,
   bool                 full)
 
   {
@@ -1889,7 +1931,7 @@ void display_single_job(
   if (full)
     {
     if (DisplayXML == true)
-      create_full_job_xml(p, DE);
+      create_full_job_xml(p, doc);
     else
       display_full_job(p);
     }   /* END if (full) */
@@ -1920,13 +1962,13 @@ void display_statjob(
 
   char                 format[80];
 
-  mxml_t              *DE;
-
+  xmlDocPtr doc = NULL;
+  doc = xmlNewDoc(BAD_CAST "1.0");
+  
   /* XML only support for full output */
 
   if (DisplayXML == true)
     {
-    printf("<?xml version=\"1.0\"?>\n");
     full = true;
     }
 
@@ -1949,31 +1991,24 @@ void display_statjob(
       }
     }    /* END if (!full) */
 
-  if (DisplayXML == true)
-    {
-    /* create parent */
-
-    DE = NULL;
-
-    MXMLCreateE(&DE, "Data");
-    }
+  
 
   for (p = status; p != NULL; p = p->next)
     {
-    display_single_job(p, user, format, DE, full);
+    display_single_job(p, user, format, doc, full);
     }  /* END for (p = status) */
 
   if (DisplayXML == true)
     {
-    char *tmpBuf = NULL, *tail = NULL;
-    int  bufsize;
-
-    MXMLToXString(DE, &tmpBuf, &bufsize, INT_MAX, &tail, TRUE);
-
-    MXMLDestroyE(&DE);
-
+       
+    xmlBuffer *buffer = xmlBufferCreate();
+    xmlOutputBuffer *outputBuffer = xmlOutputBufferCreateBuffer( buffer, NULL );
+    xmlSaveFormatFileTo( outputBuffer, doc, "utf-8", 1 );
+    std::string str( (char*) buffer->content, buffer->use );
+    
     fprintf(stdout, "%s\n",
-            tmpBuf);
+            str.c_str());
+    xmlCleanupParser();
     }
 
   return;

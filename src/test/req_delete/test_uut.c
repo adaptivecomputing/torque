@@ -324,7 +324,7 @@ START_TEST(test_setup_apply_job_delete_nanny)
   server.sv_attr[SRV_ATR_KeepCompleted].at_val.at_long = 200;
 
   server.sv_attr[SRV_ATR_JobNanny].at_flags = ATR_VFLAG_SET;
-  server.sv_attr[SRV_ATR_JobNanny].at_val.at_long = 1;
+  server.sv_attr[SRV_ATR_JobNanny].at_val.at_bool = 1;
 
   job myjob;
 

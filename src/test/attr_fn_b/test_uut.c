@@ -45,7 +45,7 @@ START_TEST(test_one)
     {
     memset(&attr,0,sizeof(attr));
     fail_unless(decode_b(&attr,NULL,NULL,tVals[i],0) == 0);
-    fail_unless(attr.at_val.at_long == 1);
+    fail_unless(attr.at_val.at_bool == 1);
     fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY));
     }
 
@@ -88,7 +88,7 @@ START_TEST(test_three)
   fail_unless(comp_b(&t,&f)==1);
 
   set_b(&f,&t,SET);
-  fail_unless(f.at_val.at_long == 1);
+  fail_unless(f.at_val.at_bool == 1);
   fail_unless(comp_b(&t,&f)==0);
 
   memset(&f,0,sizeof(f));
@@ -97,7 +97,7 @@ START_TEST(test_three)
   decode_b(&t,NULL,NULL,"t",0);
 
   set_b(&f,&t,INCR);
-  fail_unless(f.at_val.at_long == 1);
+  fail_unless(f.at_val.at_bool == 1);
 
   memset(&f,0,sizeof(f));
   decode_b(&f,NULL,NULL,"f",0);
