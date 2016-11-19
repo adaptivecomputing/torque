@@ -1791,27 +1791,19 @@ void add_xml_resource(
  *
  * Builds the xml for the job's full ouput
  * @param p - the source for the job's information
- * @param DE - the document element we're adding to
+ * @param root_node - the root of the document we're adding to
  */
 
 void create_full_job_xml(
 
   struct batch_status *p,
-  xmlDocPtr            doc)
+  xmlNodePtr           root_node)
 
   {
-  
   struct attrl *attribute;
   
-  xmlNodePtr root_node = NULL;
-  root_node = xmlNewNode(NULL, BAD_CAST "Data");
-  
-  xmlDocSetRootElement(doc, root_node);
-  xmlNewChild(root_node, NULL, BAD_CAST "Job", NULL);
-  
-  xmlNodePtr node = root_node->children;
+  xmlNodePtr node = xmlNewChild(root_node, NULL, BAD_CAST "Job", NULL);
   xmlNewChild(node, NULL, BAD_CAST "Job_Id", BAD_CAST p->name);
-  
 
   for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
     {
@@ -1915,7 +1907,7 @@ void display_single_job(
   struct batch_status *p,
   char                *user,
   const char          *format,
-  xmlDocPtr            doc,
+  xmlNodePtr           root_node,
   bool                 full)
 
   {
@@ -1931,7 +1923,9 @@ void display_single_job(
   if (full)
     {
     if (DisplayXML == true)
-      create_full_job_xml(p, doc);
+      {
+      create_full_job_xml(p, root_node);
+      }
     else
       display_full_job(p);
     }   /* END if (full) */
@@ -1962,13 +1956,17 @@ void display_statjob(
 
   char                 format[80];
 
-  xmlDocPtr doc = NULL;
-  doc = xmlNewDoc(BAD_CAST "1.0");
+  xmlDocPtr  doc = NULL;
+  xmlNodePtr root_node = NULL;
   
   /* XML only support for full output */
 
   if (DisplayXML == true)
     {
+    doc = xmlNewDoc(BAD_CAST "1.0");
+    root_node = xmlNewNode(NULL, BAD_CAST "Data");
+    xmlDocSetRootElement(doc, root_node);
+      
     full = true;
     }
 
@@ -1995,7 +1993,7 @@ void display_statjob(
 
   for (p = status; p != NULL; p = p->next)
     {
-    display_single_job(p, user, format, doc, full);
+    display_single_job(p, user, format, root_node, full);
     }  /* END for (p = status) */
 
   if (DisplayXML == true)
