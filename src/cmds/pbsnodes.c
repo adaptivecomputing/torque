@@ -110,6 +110,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <map>
+#include <libxml/tree.h>
 
 #include "portability.h"
 #include "pbs_ifl.h"
@@ -537,43 +538,33 @@ struct batch_status *statnode(
 
 
 
+/*
+ * addxmlnode()
+ *
+ * Adds an xml node to the document
+ * @param root_node - the root node of the document
+ * @param pbstat - the status information for this node, from the server
+ */
 
 void addxmlnode(
 
-  mxml_t              *DE,
+  xmlNodePtr           root_node,
   struct batch_status *pbstat)
 
   {
-  mxml_t *NE;
-  mxml_t *AE;
-
   struct attrl *pat;
 
-  NE = NULL;
-
-  MXMLCreateE(&NE, "Node");
-
-  MXMLAddE(DE, NE);
-
-  /* add nodeid */
-
-  AE = NULL;
-  MXMLCreateE(&AE, "name");
-  MXMLSetVal(AE, pbstat->name, mdfString);
-  MXMLAddE(NE, AE);
+  /* add this node */
+  xmlNodePtr node = xmlNewChild(root_node, NULL, BAD_CAST "Node", NULL);
+  xmlNewChild(node, NULL, BAD_CAST "name", BAD_CAST pbstat->name);
 
   for (pat = pbstat->attribs;pat;pat = pat->next)
     {
-    AE = NULL;
 
     if (pat->value == NULL)
       continue;
 
-    MXMLCreateE(&AE, pat->name);
-
-    MXMLSetVal(AE, pat->value, mdfString);
-
-    MXMLAddE(NE, AE);
+    xmlNewChild(node, NULL, BAD_CAST pat->name, BAD_CAST pat->value);
     }
 
   return;
@@ -1123,14 +1114,12 @@ int main(
       if (DisplayXML == TRUE)
         {
 
-        char *tmpBuf = NULL, *tail = NULL;
-        int  bufsize;
+        xmlDocPtr doc = NULL;
+        doc = xmlNewDoc(BAD_CAST "1.0");
+        xmlNodePtr root_node = NULL;
+        root_node = xmlNewNode(NULL, BAD_CAST "Data");
 
-        mxml_t *DE;
-
-        DE = NULL;
-
-        MXMLCreateE(&DE, "Data");
+        xmlDocSetRootElement(doc, root_node);
 
         for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
           {
@@ -1138,18 +1127,19 @@ int main(
 
           for (pbstat = bstatus;pbstat;pbstat = pbstat->next)
             {
-            addxmlnode(DE, pbstat);
+            addxmlnode(root_node, pbstat);
             }    /* END for (pbstat) */
 
           pbs_statfree(pbstat);
           }
+       
+        xmlBuffer *buffer = xmlBufferCreate();
+        xmlOutputBuffer *outputBuffer = xmlOutputBufferCreateBuffer( buffer, NULL );
+        xmlSaveFormatFileTo( outputBuffer, doc, "utf-8", 1 );
+        std::string str( (char*) buffer->content, buffer->use );
 
-        MXMLToXString(DE, &tmpBuf, &bufsize, INT_MAX, &tail, TRUE);
-
-        MXMLDestroyE(&DE);
-
-        fprintf(stdout, "%s\n",
-                tmpBuf);
+        fprintf(stdout, "%s\n", str.c_str());
+        xmlCleanupParser();
         }
       else
         {
