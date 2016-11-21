@@ -1772,7 +1772,7 @@ void add_xml_resource(
   xmlNodePtr current = NULL;
   for (current = node->xmlChildrenNode; current != NULL;current = current->next)
      {
-     if (!xmlStrcmp(current->name, BAD_CAST "Resources"))
+     if (!xmlStrcmp(current->name, BAD_CAST ATTR_l))
        {
        content = *(attribute->resource) +"="+*(attribute->value);
        xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
@@ -1780,7 +1780,7 @@ void add_xml_resource(
        }
      } 
 
-  xmlNewChild(node, NULL, BAD_CAST "Resources", NULL);
+  xmlNewChild(node, NULL, BAD_CAST ATTR_l, NULL);
   content = *(attribute->resource) +"="+*(attribute->value);
   xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
   } // END add_xml_resource()
