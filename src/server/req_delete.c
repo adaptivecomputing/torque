@@ -775,17 +775,23 @@ jump:
 
 
 
-void *delete_all_work(
+/*
+ * delete_all_work()
+ *
+ * Does the work to delete all jobs
+ * @param preq - the batch_request to delete all jobs.
+ * @return PBSE_NONE on success or the number of failed deletes.
+ */
 
-  void *vp)
+int delete_all_work(
+
+  batch_request *preq)
 
   {
-  batch_request *preq = (batch_request *)vp;
-
   if (qdel_all_tracker.start_deleting_all_if_possible(preq->rq_user, preq->rq_perm) == false)
     {
     reply_ack(preq);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
   batch_request          preq_dup(*preq);
@@ -852,7 +858,6 @@ void *delete_all_work(
         {
         // execute_job_delete() handles mutex so don't unlock on exit
         job_mutex.set_unlock_on_exit(false);
-        reply_ack(&preq_dup);
         }
        
       }
@@ -872,6 +877,7 @@ void *delete_all_work(
   if (failed_deletes == 0)
     {
     reply_ack(preq);
+    rc = PBSE_NONE;
     }
   else
     {
@@ -880,27 +886,62 @@ void *delete_all_work(
       total_jobs);
     
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
+    rc = failed_deletes;
     }
     
-  return(NULL);
+  return(rc);
   } /* END delete_all_work() */
 
 
 
+/*
+ * delete_all_task()
+ *
+ * The asynchronous work task for deleting all jobs
+ * @param vp - the batch_request to delete all jobs. Always deleted by the end of this function,
+ *             unless it is NULL.
+ */
+
+void *delete_all_task(
+
+  void *vp)
+
+  {
+  batch_request *preq = (batch_request *)vp;
+
+  if (preq != NULL)
+    {
+    delete_all_work(preq);
+
+    delete preq;
+    }
+
+  return(NULL);
+  } // END delete_all_task()
+
+
+
+/*
+ * handle_delete_all()
+ *
+ * Handles the logic for deleting all jobs
+ * @param preq - tells us what to delete and how.
+ * @param Msg - (optional) a message explaining why we're deleting these jobs
+ * @return PBSE_NONE
+ */
 
 int handle_delete_all(
 
   batch_request *preq,
-  batch_request *preq_tmp,
   char          *Msg)
 
   {
-  /* preq_tmp is not null if this is an asynchronous request */
-  if (preq_tmp != NULL)
+  if ((preq->rq_extend != NULL) &&
+      (!strncmp(preq->rq_extend,delasyncstr,strlen(delasyncstr))))
     {
-    reply_ack(preq_tmp);
+    reply_ack(preq);
     preq->rq_noreply = true; /* set for no more replies */
-    enqueue_threadpool_request(delete_all_work, preq, request_pool);
+    enqueue_threadpool_request(delete_all_task, new batch_request(*preq), request_pool);
     }
   else
     delete_all_work(preq);
@@ -910,13 +951,20 @@ int handle_delete_all(
 
 
 
-void *single_delete_work(
+/*
+ * single_delete_work()
+ *
+ * Performs the work of deleting a single job
+ * @param preq - the batch_request instructing us what to delete and how
+ * @return PBSE_* to indicate status
+ */
 
-  void *vp)
+int single_delete_work(
+
+  batch_request *preq)
 
   {
   int              rc = -1;
-  batch_request   *preq = (batch_request *)vp;
   char            *jobid = preq->rq_ind.rq_delete.rq_objname;
   job             *pjob;
   char            *Msg = preq->rq_extend;
@@ -927,7 +975,8 @@ void *single_delete_work(
 
   if (pjob == NULL)
     {
-    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job unexpectedly deleted");
+    rc = PBSE_JOBNOTFOUND;
+    req_reject(rc, 0, preq, NULL, "job unexpectedly deleted");
     }
   else
     {
@@ -937,17 +986,57 @@ void *single_delete_work(
  
     if ((rc == PBSE_NONE) ||
         (rc == PURGE_SUCCESS))
+      {
       reply_ack(preq);
+      rc = PBSE_NONE;
+      }
+    }
+
+  return(rc);
+  } /* END single_delete_work() */
+
+
+
+/*
+ * single_delete_task()
+ *
+ * The taskpool task for performing a single job delete
+ *
+ * @param vp - a void pointer to the batch_request pointer we need. This is always deleted
+ *             by the end of this function, unless it is NULL.
+ */
+
+void *single_delete_task(
+
+  void *vp)
+
+  {
+  if (vp != NULL)
+    {
+    batch_request *preq = (batch_request *)vp;
+
+    single_delete_work(preq);
+
+    delete preq;
     }
 
   return(NULL);
-  } /* END single_delete_work() */
+  } // END single_delete_task()
 
+
+
+/*
+ * handle_single_delete()
+ *
+ * Handles the logic for deleting a single a job.
+ * @param preq - the batch_request telling us what to delete and how.
+ * @param Msg - (optional) a message stating why we're deleting this job.
+ * @return PBSE_NONE
+ */
 
 int handle_single_delete(
 
   batch_request *preq,
-  batch_request *preq_tmp,
   char          *Msg)
 
   {
@@ -965,11 +1054,12 @@ int handle_single_delete(
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
     /* send the asynchronous reply if needed */
-    if (preq_tmp != NULL)
+    if ((preq->rq_extend != NULL) &&
+        (!strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr))))
       {
-      reply_ack(preq_tmp);
+      reply_ack(preq);
       preq->rq_noreply = true; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq, async_pool);
+      enqueue_threadpool_request(single_delete_task, new batch_request(*preq), async_pool);
       }
     else
       single_delete_work(preq);
@@ -977,7 +1067,6 @@ int handle_single_delete(
 
   return(PBSE_NONE);
   } /* END handle_single_delete() */
-
 
 
 
@@ -1028,7 +1117,6 @@ int req_deletejob(
 
   {
   char                 *Msg = NULL;
-  struct batch_request *preq_tmp = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if we are getting a purgecomplete from scheduler */
@@ -1068,18 +1156,16 @@ int req_deletejob(
        */
       snprintf(log_buf,sizeof(log_buf), "Deleting job asynchronously");
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
-
-      preq_tmp = new batch_request(*preq);
       }
     }
 
   if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
     {
-    handle_delete_all(preq, preq_tmp, Msg);
+    handle_delete_all(preq, Msg);
     }
   else
     {
-    handle_single_delete(preq, preq_tmp, Msg);
+    handle_single_delete(preq, Msg);
     }
 
   return(PBSE_NONE);

@@ -158,3 +158,7 @@ AvlTree AVL_clear_tree(AvlTree a)
   fprintf(stderr, "The call to AVL_clear_tree needs to be mocked!!\n");
   exit(1);
   }
+
+batch_request::batch_request(const batch_request &other) {}
+batch_request::~batch_request() {}
+

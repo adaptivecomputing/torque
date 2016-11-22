@@ -2027,29 +2027,25 @@ static bool requeue_or_delete_jobs(
     if(pjob != NULL)
       {
       char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
-      batch_request *brRerun = new batch_request(PBS_BATCH_Rerun);
-      batch_request *brDelete = new batch_request(PBS_BATCH_DeleteJob);
-      if((brRerun == NULL)||(brDelete == NULL))
-        {
-        free_br(brRerun);
-        free_br(brDelete);
-        free(dup_jobid);
-        return true; //Ignoring this error.
-        }
-      strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
-      strcpy(brDelete->rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
-      brRerun->rq_conn = PBS_LOCAL_CONNECTION;
-      brDelete->rq_conn = PBS_LOCAL_CONNECTION;
-      brRerun->rq_perm = preq->rq_perm;
-      brDelete->rq_perm = preq->rq_perm;
-      brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
-      brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
+      batch_request brRerun(PBS_BATCH_Rerun);
+      batch_request brDelete(PBS_BATCH_DeleteJob);
+      
+      strcpy(brRerun.rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      strcpy(brDelete.rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
+
+      brRerun.rq_conn = PBS_LOCAL_CONNECTION;
+      brDelete.rq_conn = PBS_LOCAL_CONNECTION;
+      brRerun.rq_perm = preq->rq_perm;
+      brDelete.rq_perm = preq->rq_perm;
+      brDelete.rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
+      brDelete.rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
+
       unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
       pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      int rc = req_rerunjob(brRerun);
+      int rc = req_rerunjob(&brRerun);
       if(rc != PBSE_NONE)
         {
-        rc = req_deletejob(brDelete);
+        rc = req_deletejob(&brDelete);
         if(rc == PBSE_NONE)
           {
           get_svr_attr_l(SRV_ATR_TimeoutForJobDelete, &delete_timeout);
@@ -2064,7 +2060,6 @@ static bool requeue_or_delete_jobs(
         }
       else
         {
-        free_br(brDelete);
         get_svr_attr_l(SRV_ATR_TimeoutForJobRequeue, &requeue_timeout);
 
         if(!wait_for_job_state(*jid,JOB_STATE_QUEUED,requeue_timeout))

@@ -653,7 +653,6 @@ int modify_job(
   else
     {
     reply_ack(preq);
-    preq = NULL;
     }
 
   if (copy_checkpoint_files)
@@ -730,12 +729,12 @@ int modify_whole_array(
     else
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
-      batch_request *array_req = new batch_request(*preq);
-      array_req->update_object_id(i);
+      batch_request array_req(*preq);
+      array_req.update_object_id(i);
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pthread_mutex_unlock(pa->ai_mutex);
-      array_req->rq_noreply = true;
-      rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+      array_req.rq_noreply = true;
+      rc = modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
       if (rc != PBSE_NONE)
         {
         modify_job_rc = rc;
