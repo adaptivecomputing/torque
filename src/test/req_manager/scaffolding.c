@@ -516,3 +516,4 @@ batch_request::batch_request(int type) : rq_type(type)
   {
   }
 
+batch_request::~batch_request() {}
