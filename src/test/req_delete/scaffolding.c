@@ -53,14 +53,11 @@ job_array *get_jobs_array(job **pjob)
 
 void account_record(int acctype, job *pjob, const char *text)
   {
-  fprintf(stderr, "The call to acctype needs to be mocked!!\n");
-  exit(1);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
@@ -76,8 +73,6 @@ void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
-  fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
-  exit(1);
   }
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)

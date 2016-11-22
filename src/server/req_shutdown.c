@@ -114,7 +114,7 @@
 
 /* Private Data Items */
 
-static struct batch_request *pshutdown_request = 0;
+static batch_request *pshutdown_request = NULL;
 
 /* Global Data Items: */
 
@@ -250,6 +250,8 @@ void shutdown_ack(void)
     {
     reply_ack(pshutdown_request);
 
+    delete pshutdown_request;
+
     pshutdown_request = 0;
     }
 
@@ -288,7 +290,7 @@ void req_shutdown(
     msg_daemonname,
     log_buf);
 
-  pshutdown_request = preq;    /* save for reply from main() when done */
+  pshutdown_request = new batch_request(*preq);    /* save for reply from main() when done */
 
   svr_shutdown(preq->rq_ind.rq_shutdown);
 

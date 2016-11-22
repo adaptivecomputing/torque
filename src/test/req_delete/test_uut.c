@@ -21,15 +21,15 @@
 
 int delete_inactive_job(job **, const char *);
 void force_purge_work(job *pjob);
-void *delete_all_work(void *vp);
+int delete_all_work(batch_request *);
 void ensure_deleted(struct work_task *ptask);
 int  apply_job_delete_nanny(job *pjob, int delay);
 void job_delete_nanny(struct work_task *ptask);
 void post_job_delete_nanny(batch_request *preq_sig);
 int forced_jobpurge(job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
-int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
-int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
+int handle_delete_all(batch_request *preq, char *Msg);
+int handle_single_delete(batch_request *preq, char *Msg);
 bool exit_called;
 extern int  depend_term_called;
 extern long keep_seconds;
@@ -79,21 +79,24 @@ START_TEST(test_handle_single_delete)
   {
   batch_request *preq = new batch_request();
   strcpy(preq->rq_ind.rq_delete.rq_objname, "2.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE);
+  fail_unless(handle_single_delete(preq, NULL) == PBSE_NONE);
   fail_unless(preq->rq_noreply == FALSE);
 
+  // Now an asynchronous delete
+  preq->rq_extend = strdup(DELASYNC);
   strcpy(preq->rq_ind.rq_delete.rq_objname, "1.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE);
-  fail_unless(preq->rq_noreply == TRUE);
+  fail_unless(handle_single_delete(preq, NULL) == PBSE_NONE);
+  fail_unless(preq->rq_noreply == true);
   }
 END_TEST
 
 START_TEST(test_handle_delete_all)
   {
   batch_request preq;
+  preq.rq_extend = strdup(DELASYNC);
 
-  fail_unless(handle_delete_all(&preq, &preq, NULL) == PBSE_NONE);
-  fail_unless(preq.rq_noreply == TRUE);
+  fail_unless(handle_delete_all(&preq, NULL) == PBSE_NONE);
+  fail_unless(preq.rq_noreply == true);
   }
 END_TEST
 
@@ -143,12 +146,8 @@ END_TEST
 START_TEST(test_delete_all_work)
   {
   //struct all_jobs  alljobs;
-  job             *pjob;
-  batch_request   *preq;
-
-  pjob = new job();
-
-  preq = new batch_request();
+  job           *pjob = new job();
+  batch_request *preq = new batch_request();
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
 
@@ -156,7 +155,7 @@ START_TEST(test_delete_all_work)
 
   // no lock should remain on job after delete_all_work() 
   //  so test by making sure we can set lock 
-  fail_unless(delete_all_work((void *) preq) == NULL);
+  fail_unless(delete_all_work(preq) == PBSE_NONE);
   fail_unless(pthread_mutex_trylock(pjob->ji_mutex) == 0);
 
   nanny = 1;
