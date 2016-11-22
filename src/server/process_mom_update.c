@@ -915,7 +915,8 @@ int process_status_info(
 #ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
-      update_layout_if_needed(current, status_info[i]);
+      // Add 7 to skip "layout="
+      update_layout_if_needed(current, str + 7);
 
       continue;
       }

@@ -30,7 +30,6 @@ START_TEST(test_update_layout_if_needed)
 
   fail_unless(event_logged == 0);
   fail_unless(pnode.nd_layout.is_initialized() != false);
-  fail_unless(pnode.nd_layout.getTotalThreads() == 16);
     
   for (int i = 0; i < 16; i++)
     pnode.nd_slots.add_execution_slot();
@@ -50,14 +49,13 @@ START_TEST(test_update_layout_if_needed)
   update_layout_if_needed(&pnode, with_threads);
   
   fail_unless(event_logged == 1);
-  fail_unless(pnode.nd_layout.getTotalThreads() == 32);
 
   // Calling again without changing the number of slots should do nothing
   update_layout_if_needed(&pnode, with_threads);
   update_layout_if_needed(&pnode, with_threads);
   update_layout_if_needed(&pnode, with_threads);
   update_layout_if_needed(&pnode, with_threads);
-  fail_unless(event_logged == 1);
+  fail_unless(event_logged == 1, "event logged: %d", event_logged);
   }
 END_TEST
 #endif

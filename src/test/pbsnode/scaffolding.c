@@ -191,10 +191,10 @@ void append_link(
 int decode_arst(
 
   pbs_attribute *patr,    /* O (modified) */
-  const char *  UNUSED(name),    /* I pbs_attribute name (notused) */
-  const char *  UNUSED(rescn),   /* I resource name (notused) */
+  const char    *name,    /* I pbs_attribute name (notused) */
+  const char    *rescn,   /* I resource name (notused) */
   const char    *val,     /* I pbs_attribute value */
-  int           UNUSED(perm)) /* only used for resources */
+  int           perm) /* only used for resources */
 
   {
   return(0);

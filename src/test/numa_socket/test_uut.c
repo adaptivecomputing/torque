@@ -8,6 +8,7 @@
 #include "pbs_error.h"
 #include "allocation.hpp"
 #include "req.hpp"
+#include "json/json.h"
 
 extern float tasks;
 extern int placed;
@@ -122,29 +123,52 @@ END_TEST
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
-  const char *j2 = "\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}";
-  const char *j3 = "\"socket\":{\"os_index\":2,\"numanode\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
-  std::stringstream out;
+  const char *j1 = "{\"socket\":{\"os_index\":12,\"numanodes\":[{\"numanode\":{\"os_index\":24,\"cores\":\"48-49\",\"threads\":\"\",\"mem\":\"1\"}},{\"numanode\":{\"os_index\":25,\"cores\":\"50-51\",\"threads\":\"\",\"mem\":\"1\"}}]}}";
+  const char *j2 = "{\"socket\":{\"os_index\":0,\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-5\",\"threads\":\"12-17\",\"mem\":\"1024\"}},{\"numanode\":{\"os_index\":1,\"cores\":\"6-11\",\"threads\":\"18-23\",\"mem\":\"1024\"}}]}}";
+  const char *j3 = "{\"socket\":{\"os_index\":2,\"numanodes\":[{\"numanode\":{\"os_index\":2,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":\"10241024\"}}]}}";
+  Json::Value out;
+  const char *j1_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":12}}";
+  const char *j2_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":0}}";
+  const char *j3_out = "{\"numanodes\":[{\"numanode\":null}],\"os_index\":2}}";
 
   std::vector<std::string> valid_ids;
+  Json::Reader read;
+  Json::StreamWriterBuilder wbuilder;
+  Json::Value job_as_json;  
 
-  Socket s1(j1, valid_ids);
+  read.parse(j1,job_as_json);
+  Socket s1(job_as_json, valid_ids);
   fail_unless(json_chip == 2, "%d times", json_chip);
   s1.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":12,,}", out.str().c_str());
 
-  out.str("");
-  Socket s2(j2, valid_ids);
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j1_out,job_as_json);
+  fail_unless(out == job_as_json,"%s\n%s", out_as_string.c_str(),j1_out);
+
+  
+  out = Json::nullValue;
+  job_as_json = Json::nullValue;
+
+  read.parse(j2,job_as_json);
+  Socket s2(job_as_json, valid_ids);
   fail_unless(json_chip == 4, "%d times", json_chip);
   s2.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":0,,}", out.str().c_str());
+  
+  out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j2_out,job_as_json);
+  fail_unless(out == job_as_json, out_as_string.c_str());
 
-  out.str("");
-  Socket s3(j3, valid_ids);
+  out = Json::nullValue;
+  job_as_json = Json::nullValue;
+
+  read.parse(j3,job_as_json);
+  Socket s3(job_as_json, valid_ids);
   fail_unless(json_chip == 5, "%d times", json_chip);
   s3.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":2,}", out.str().c_str());
+  
+  out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j3_out,job_as_json);
+  fail_unless(out == job_as_json, out_as_string.c_str());
   }
 END_TEST
 

@@ -6,6 +6,7 @@
 #include "pbs_config.h"
 #include "pbs_error.h"
 #include "log.h"
+#include "numa_constants.h"
 
 using namespace std;
 
@@ -68,38 +69,22 @@ Socket::Socket(
 
 Socket::Socket(
 
-  const std::string &json_layout,
+  const Json::Value        &layout,
   std::vector<std::string> &valid_ids) : id(0), memory(0), totalCores(0), totalThreads(0),
                                          availableCores(0), availableThreads(0), chips(),
                                          socket_exclusive(false)
 
   {
-  const char *chip_str = "\"numanode\":{";
-  const char *os_str = "\"os_index\":";
-  std::size_t chip_begin = json_layout.find(chip_str);
-  std::size_t os_begin = json_layout.find(os_str);
-  
   memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+  this->id = layout[SOCKET][OS_INDEX].asInt();
 
-  if ((os_begin == std::string::npos) ||
-      (os_begin > chip_begin))
-    return;
-  else
+  const Json::Value &nnodes = layout[SOCKET][NUMA_NODES];
+
+  for (Json::ValueConstIterator it = nnodes.begin(); it != nnodes.end(); it++)
     {
-    std::string os = json_layout.substr(os_begin + strlen(os_str));
-    this->id = strtol(os.c_str(), NULL, 10);
-    }
-
-  while (chip_begin != std::string::npos)
-    {
-    std::size_t next = json_layout.find(chip_str, chip_begin + 1);
-    std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
-
-    Chip c(one_chip, valid_ids);
+    Chip c(*it, valid_ids);
     this->chips.push_back(c);
-
-    chip_begin = next;
     }
   }
 
@@ -445,19 +430,15 @@ void Socket::displayAsString(
 
 void Socket::displayAsJson(
 
-  stringstream &out,
+  Json::Value &out,
   bool          include_jobs) const
 
   {
-  out << "\"socket\":{\"os_index\":" << this->id;
-
+  out[OS_INDEX] = this->id;
   for (unsigned int i = 0; i < this->chips.size(); i++)
     {
-    out << ",";
-    this->chips[i].displayAsJson(out, include_jobs);
+    this->chips[i].displayAsJson(out[NUMA_NODES][i][NUMA_NODE], include_jobs);
     }
-
-  out << "}";
   } // END displayAsJson()
 
 

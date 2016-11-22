@@ -21,6 +21,7 @@
 #include "pbs_error.h"
 #include "log.h"
 #include "utils.h"
+#include "numa_constants.h"
 
 using namespace std;
 
@@ -113,7 +114,7 @@ Chip::Chip(
   for (int i = 0; i < execution_slots; i++)
     {
     Core c;
-    c.add_processing_unit(CORE, i);
+    c.add_processing_unit(CORE_INT, i);
 
     this->cores.push_back(c);
     }
@@ -127,7 +128,7 @@ Chip::Chip(
 
 void Chip::parse_values_from_json_string(
 
-  const std::string        &json_layout,
+  const Json::Value        &layout,
   std::string              &cores,
   std::string              &threads,
   std::string              &gpus,
@@ -135,50 +136,19 @@ void Chip::parse_values_from_json_string(
   std::vector<std::string> &valid_ids)
 
   {
-  char        *work_str = strdup(json_layout.c_str());
-  char        *ptr = strstr(work_str, "os_index\":");
-  char        *val = work_str;
+  
+  cores = layout[NUMA_NODE][CORES].asString();
+  threads = layout[NUMA_NODE][THREADS].asString();
+  gpus = layout[NUMA_NODE][GPUS].asString();
+  mics = layout[NUMA_NODE][MICS].asString();
+  this->id = layout[NUMA_NODE][OS_INDEX].asInt();
+  
+  std::string memory = layout[NUMA_NODE][MEM].asString();
+  this->memory = strtol(memory.c_str(), NULL, 0);  
+  this->available_memory = this->memory;
+ 
+  initialize_allocations(layout[NUMA_NODE][ALLOCATIONS], valid_ids);
 
-  if (ptr != NULL)
-    {
-    val = ptr + strlen("os_index\":");
-    this->id = strtol(val, &val, 10);
-    }
-
-  if ((ptr = strstr(val, "cores\":")) != NULL)
-    {
-    val = ptr + strlen("cores\":") + 1; // add 1 for the open quote
-    capture_until_close_character(&val, cores, '"');
-    }
-
-  if ((ptr = strstr(val, "threads\":")) != NULL)
-    {
-    val = ptr + strlen("threads\":") + 1; // add 1 for the open quote
-    capture_until_close_character(&val, threads, '"');
-    }
-
-  if ((ptr = strstr(val, "mem\":")) != NULL)
-    {
-    val = ptr + strlen("mem\":");
-    this->memory = strtol(val, &val, 10);
-    this->available_memory = this->memory;
-    }
-
-  if ((ptr = strstr(val, "gpus\":")) != NULL)
-    {
-    val = ptr + strlen("gpus\":") + 1;
-    capture_until_close_character(&val, gpus, '"');
-    }
-
-  if ((ptr = strstr(val, "mics\":")) != NULL)
-    {
-    val = ptr + strlen("mics\":") + 1;
-    capture_until_close_character(&val, mics, '"');
-    }
-
-  initialize_allocations(val, valid_ids);
-
-  free(work_str);
   } // END parse_values_from_json_string()
 
 
@@ -207,12 +177,12 @@ void Chip::initialize_cores_from_strings(
     {
     Core c;
 
-    c.add_processing_unit(CORE, core_indices[i]);
+    c.add_processing_unit(CORE_INT, core_indices[i]);
     this->totalThreads++;
 
     for (int t = 0; t < ratio; t++)
       {
-      c.add_processing_unit(THREAD, thread_indices[j++]);
+      c.add_processing_unit(THREAD_INT, thread_indices[j++]);
       this->totalThreads++;
       }
 
@@ -246,24 +216,16 @@ void Chip::initialize_cores_from_strings(
 
 void Chip::initialize_allocation(
 
-  char                     *allocation_str,
+  const Json::Value &layout,
   std::vector<std::string> &valid_ids)
 
   {
   allocation   a;
-  char        *ptr = strstr(allocation_str, "jobid\":");
-  char        *val = allocation_str;
-  std::string  tmp_val;
-
-  if (ptr != NULL)
-    {
-    val = ptr + 8; // move past "jobid\":\""
-    capture_until_close_character(&val, tmp_val, '"');
-    a.jobid = tmp_val;
-    }
+  a.jobid = layout[JOBID].asString(); 
 
   // check if the id is valid
   bool id_valid = false;
+  
   for (size_t i = 0; i < valid_ids.size(); i++)
     {
     if (valid_ids[i] == a.jobid)
@@ -276,49 +238,23 @@ void Chip::initialize_allocation(
   // Only keep this allocation if the id is valid
   if (id_valid == true)
     {
-    ptr = strstr(val, "cpus\":");
-    if (ptr != NULL)
+    string cpus = layout[CPUS].asString();
+    translate_range_string_to_vector(cpus.c_str(), a.cpu_indices);
+    
+    string memory = layout[MEM].asString();
+    a.memory = strtoul(memory.c_str(),NULL,0); 
+    a.place_type = layout[EXCLUSIVE].asInt();
+    a.cores_only = layout[CORES_ONLY].asInt();
+    
+    if (layout[GPUS] != Json::nullValue)
       {
-      val = ptr + 7; // move past "cpus\":\""
-      capture_until_close_character(&val, tmp_val, '"');
-      translate_range_string_to_vector(tmp_val.c_str(), a.cpu_indices);
+      string  gpus = layout[GPUS].asString();
+      translate_range_string_to_vector(gpus.c_str(), a.gpu_indices);
       }
-
-    ptr = strstr(val, "mem\":");
-    if (ptr != NULL)
+    if (layout[MICS] != Json::nullValue)
       {
-      val = ptr + 5; // move past "mem\":"
-      a.memory = strtol(val, &val, 10);
-      }
-
-    ptr = strstr(val, "exclusive\":");
-    if (ptr != NULL)
-      {
-      val = ptr + 11; // move past "exclusive\":"
-      a.place_type = strtol(val, &val, 10);
-      }
-
-    ptr = strstr(val, "cores_only\":");
-    if (ptr != NULL)
-      {
-      val = ptr + 12; // move past "cores_only\":"
-      a.cores_only = (bool)strtol(val, &val, 10);
-      }
-
-    ptr = strstr(val, "gpus\":");
-    if (ptr != NULL)
-      {
-      val = ptr + 7; // move past "gpus\":\"
-      capture_until_close_character(&val, tmp_val, '"');
-      translate_range_string_to_vector(tmp_val.c_str(), a.gpu_indices);
-      }
-
-    ptr = strstr(val, "mics\":");
-    if (ptr != NULL)
-      {
-      val = ptr + 7; // move past "mics\":\"
-      capture_until_close_character(&val, tmp_val, '"');
-      translate_range_string_to_vector(tmp_val.c_str(), a.mic_indices);
+      string mics = layout[MICS].asString();
+      translate_range_string_to_vector(mics.c_str(), a.mic_indices);
       }
 
     a.mem_indices.push_back(this->id);
@@ -336,35 +272,17 @@ void Chip::initialize_allocation(
 
 void Chip::initialize_allocations(
 
-  char                     *allocations,
+  const Json::Value &layout,
   std::vector<std::string> &valid_ids)
-
+  
   {
-  static const char *allocation_start = "allocation\":{";
-  static const int   allocation_start_len = strlen(allocation_start);
-
-  if ((allocations == NULL) ||
-      (*allocations == '\0'))
+  if(layout.size() == 0)
     return;
 
-  char *current = strstr(allocations, allocation_start);
-  char *next;
-
-  while (current != NULL)
-    {
-    current += allocation_start_len;
-    next = strstr(current, allocation_start);
-    if (next != NULL)
+    for (int i = 0; i < layout.size();i++)
       {
-      // Make sure there's a termination to the current string
-      *next = '\0';
+      initialize_allocation(layout[i][ALLOCATION], valid_ids);
       }
-
-    initialize_allocation(current, valid_ids);
-
-    current = next;
-    }
-
   } // END initialize_allocations()
 
 
@@ -525,7 +443,7 @@ void Chip::initialize_accelerators_from_strings(
 
 Chip::Chip(
    
-  const std::string        &json_layout,
+  const Json::Value &layout,
   std::vector<std::string> &valid_ids) : id(0), totalCores(0), totalThreads(0), availableCores(0),
                                          availableThreads(0), total_gpus(0), available_gpus(0),
                                          total_mics(0), available_mics(0), chip_exclusive(false),
@@ -536,15 +454,16 @@ Chip::Chip(
   memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
   memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
 
-  if (json_layout.size() == 0)
+  if (layout.size() == 0)
     return;
 
   std::string cores;
   std::string threads;
   std::string gpus;
   std::string mics;
-
-  parse_values_from_json_string(json_layout, cores, threads, gpus, mics, valid_ids);
+  
+  
+  parse_values_from_json_string(layout, cores, threads, gpus, mics, valid_ids);
 
   initialize_cores_from_strings(cores, threads);
   
@@ -729,9 +648,10 @@ int Chip::initializePCIDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
 
 void Chip::displayAllocationsAsJson(
 
-  stringstream &out) const
+  Json::Value &out) const
 
   {
+  
   for (unsigned int i = 0; i < this->allocations.size(); i++)
     {
     const allocation  &a = this->allocations[i];
@@ -743,26 +663,36 @@ void Chip::displayAllocationsAsJson(
     translate_vector_to_range_string(gpus, a.gpu_indices);
     translate_vector_to_range_string(mics, a.mic_indices);
 
-    out << ",\"allocation\":{\"jobid\":\"" << a.jobid;
-    out << "\",\"cpus\":\"" << cpus << "\",\"mem\":" << a.memory;
-    out << ",\"exclusive\":" << a.place_type;
+    
+    out[i][ALLOCATION][JOBID] = a.jobid;
+    out[i][ALLOCATION][CPUS] = cpus;
+    
+    //Json does not support long ints, convert to a string first   
+    std::stringstream mem_string;
+    mem_string << a.memory;
+    std::string mem = mem_string.str();
+ 
+    out[i][ALLOCATION][MEM] = mem;
+    
+    out[i][ALLOCATION][EXCLUSIVE] = a.place_type;
     if (a.cores_only == true)
-      out << ",\"cores_only\":1";
+      out[i][ALLOCATION][CORES_ONLY] = 1; 
     else
-      out << ",\"cores_only\":0";
+      out[i][ALLOCATION][CORES_ONLY] = 0;
+    
     if (gpus.size() != 0)
-      out << ",\"gpus\":\"" << gpus << "\"";
+      out[i][ALLOCATION][GPUS] = gpus;
     if (mics.size() != 0)
-      out << ",\"mics\":\"" << mics << "\"";
-    out << "}";
+      out[i][ALLOCATION][MICS] = mics;
     }
+    
   } // END displayAllocationsAsJson()
 
 
 
 void Chip::displayAsJson(
 
-  stringstream &out,
+  Json::Value &out,
   bool          include_jobs) const
 
   {
@@ -798,22 +728,26 @@ void Chip::displayAsJson(
   
   translate_vector_to_range_string(gpu_range, gpu_indices);
   translate_vector_to_range_string(mic_range, mic_indices);
-
-  // Format the output as json
-  out << "\"numanode\":{\"os_index\":" << this->id << ",\"cores\":\"" << core_range;
-  out << "\",\"threads\":\"" << thread_range << "\",\"mem\":" << this->memory;
-
+ 
+  
+  out[OS_INDEX] = this->id;
+  out[CORES] = core_range;
+  out[THREADS] = thread_range;
+  
+  //Json does not support long ints, convert to a string first   
+  std::stringstream mem_string;
+  mem_string << this->memory;
+  std::string mem = mem_string.str();
+  out[MEM] = mem;  
+  
   if (gpu_range.size() != 0)
-    out << ",\"gpus\":\"" << gpu_range << "\"";
-
+    out[GPUS] = gpu_range;
   if (mic_range.size() != 0)
-    out << ",\"mics\":\"" << mic_range << "\"";
-
+    out[MICS] = mic_range;
+  
+  
   if (include_jobs)
-    this->displayAllocationsAsJson(out);
-
-  // close the json
-  out << "}";
+    this->displayAllocationsAsJson(out[ALLOCATIONS]);
   } // END displayAsJson()
 
 
@@ -1330,7 +1264,7 @@ void Chip::place_tasks_execution_slots(
     total_needed = to_rsv;
     }
  
-  if (type == CORE)
+  if (type == CORE_INT)
     this->getContiguousCoreVector(slots, total_needed);
   else
     this->getContiguousThreadVector(slots, total_needed);
@@ -1340,7 +1274,7 @@ void Chip::place_tasks_execution_slots(
     if ((it - slots.begin() == floor(pin_index + 0.5)) &&
         (execution_slots_per_task > 0))
       {
-      if (type == CORE)
+      if (type == CORE_INT)
         this->reserve_core(*it, chip_alloc);
       else
         this->reserve_place_thread(*it, chip_alloc);
@@ -1349,7 +1283,7 @@ void Chip::place_tasks_execution_slots(
       }
     else
       {
-      if (type == CORE)
+      if (type == CORE_INT)
         this->reserve_chip_core(*it, chip_alloc);
       else
         this->reserve_chip_place_thread(*it, chip_alloc);
@@ -2095,7 +2029,7 @@ int Chip::place_task(
           if(r.getPlaceCores() > 0)
             cores_to_rsv = r.getPlaceCores();
 
-          place_tasks_execution_slots(execution_slots_per_task, cores_to_rsv, task_alloc, CORE);
+          place_tasks_execution_slots(execution_slots_per_task, cores_to_rsv, task_alloc, CORE_INT);
           }
         else if ((chip_alloc.place_type == exclusive_legacy) || 
                  (chip_alloc.place_type == exclusive_legacy2))
@@ -2112,7 +2046,7 @@ int Chip::place_task(
           if(r.getPlaceThreads() > 0)
             threads_to_rsv = r.getPlaceThreads();
 
-          place_tasks_execution_slots(execution_slots_per_task, threads_to_rsv, task_alloc, THREAD);
+          place_tasks_execution_slots(execution_slots_per_task, threads_to_rsv, task_alloc, THREAD_INT);
           }
 
         allocation remaining(r);
@@ -2359,7 +2293,7 @@ bool Chip::partially_place_task(
 
   if (remaining.cores_only == true)
     {
-    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, CORE);
+    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, CORE_INT);
     chip_alloc.cores_only = true;
     }
   else if ((place_type == exclusive_legacy) || (place_type == exclusive_legacy2))
@@ -2367,7 +2301,7 @@ bool Chip::partially_place_task(
     place_task_for_legacy_threads(remaining.cpus, max_cpus, task_alloc, chip_alloc);
     }
   else
-    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, THREAD);
+    place_tasks_execution_slots(remaining.cpus, max_cpus, chip_alloc, THREAD_INT);
 
   place_accelerators(remaining, chip_alloc);
   

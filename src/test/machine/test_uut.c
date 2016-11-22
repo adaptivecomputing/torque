@@ -9,11 +9,13 @@
 #include "pbs_job.h"
 #include "complete_req.hpp"
 #include "pbs_config.h"
+#include "json/json.h"
 
 extern int hardware_style;
 
 int get_hardware_style(hwloc_topology_t topology);
 
+extern void CreateJsonString(std::string &testString, int testNum);
 extern int my_req_count;
 extern int my_core_count;
 extern int num_tasks_fit;
@@ -79,7 +81,7 @@ START_TEST(test_place_all_execution_slots)
   placed_all = 0;
   exec_slots = -1;
   m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(placed_all == 2);
+  fail_unless(placed_all == 2, "placed all: %d", placed_all);
   }
 END_TEST
 
@@ -177,8 +179,15 @@ END_TEST
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"node\":{\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}},\"socket\":{\"os_index\":13,\"numanode\":{\"os_index\":26,\"cores\":52-53,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":26,\"cores\":54-55,\"threads\":\"\",\"mem\"=1}}}";
-  const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
+
+  std::string j1;
+  CreateJsonString(j1,1);
+  //const char *j1 = (t1.str()).c_str();
+  std::string j2;
+  CreateJsonString(j2,2);
+  //const char *j2 = (t2.str()).c_str();
+ 
+
   std::stringstream out;
 
   std::vector<std::string> valid_ids;
@@ -186,14 +195,14 @@ START_TEST(test_json_constructor)
   Machine m1(j1, valid_ids);
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
-  fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
+  fail_unless(out.str() == j1, out.str().c_str());
   fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
   Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
-  fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
+  fail_unless(out.str() == j2, out.str().c_str());
   fail_unless(m2.getTotalSockets() == 1);
   }
 END_TEST
