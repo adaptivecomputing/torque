@@ -1580,9 +1580,9 @@ int depend_on_exec(
   job *pjob)
 
   {
-  struct depend     *pdep;
-  depend_job        *pdj;
-  char               jobid[PBS_MAXSVRJOBID+1];
+  depend     *pdep;
+  depend_job *pdj;
+  char        jobid[PBS_MAXSVRJOBID+1];
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
   /* If any jobs come after my start, release them */
@@ -1592,10 +1592,11 @@ int depend_on_exec(
 
   if (pdep != NULL)
     {
+    std::vector<depend_job *> depend_jobs = pdep->dp_jobs;
 
-    for (unsigned int i = 0; i < pdep->dp_jobs.size(); i++)
+    for (unsigned int i = 0; i < depend_jobs.size(); i++)
       {
-      pdj = pdep->dp_jobs[i];
+      pdj = depend_jobs[i];
     
       if (send_depend_req(pjob,
             pdj,
@@ -1655,9 +1656,6 @@ int depend_on_exec(
 
   return(PBSE_NONE);
   }  /* END depend_on_exec() */
-
-
-
 
 
 
