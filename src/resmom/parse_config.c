@@ -2293,7 +2293,11 @@ void reset_config_vars()
   memset(MOMConfigVersion, 0, sizeof(MOMConfigVersion));
   MOMConfigDownOnError = 0;
   MOMConfigRestart = 0;
+#ifdef PENABLE_LINUX_CGROUPS
+  MOMCudaVisibleDevices = 0;
+#else
   MOMCudaVisibleDevices = 1;
+#endif
   wallfactor = 1.00;
   pcphosts.clear();
   pe_alarm_time = PBS_PROLOG_TIME;
