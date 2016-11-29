@@ -306,7 +306,7 @@ void disconnect_from_server();
   "resources_cost - the cost factors of resources.  Used for sync. job starting\n" \
   "resources_default - the default resource value when the job does not specify\n" \
   "resource_max - the maximum amount of resources that are on the system\n" \
-  "scheduler_iteration - the amount of seconds between timed scheduler iterations\n" \
+  "scheduler_iteration - has no effect\n" \
   "scheduling - when true the server should tell the scheduler to run\n" \
   "system_cost - arbitrary value factored into resource costs\n" \
   "use_jobs_subdirs - when true divide storage of jobs into subdirectories in $PBS_HOME/server_priv/{jobs,arrays}\n" \
