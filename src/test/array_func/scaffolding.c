@@ -386,3 +386,4 @@ batch_request::batch_request(const batch_request &other)
 
 void batch_request::update_object_id(int job_index) {}
 
+batch_request::~batch_request() {}
