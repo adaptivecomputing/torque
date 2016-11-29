@@ -1179,6 +1179,8 @@ static int get_script(
           directive_prefix[0] = '\\';
           strcat(directive_prefix, ArgV[index]);
           directive_prefix_on = false;
+
+          cfilter += directive_prefix;
           continue;
           }
 
