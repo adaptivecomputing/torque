@@ -2235,7 +2235,7 @@ bool matches_version_string(
   int   tmp_version;
   bool  match = false;
 
-  tmp_version += strtol(ptr, &end, 10) * 10;
+  tmp_version = strtol(ptr, &end, 10) * 10;
 
   if (*end == '.')
     {

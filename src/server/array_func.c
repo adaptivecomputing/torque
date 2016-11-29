@@ -1800,12 +1800,12 @@ int modify_array_range(
         }
       else
         {
-        batch_request *array_req = new batch_request(*preq);
-        array_req->update_object_id(index);
+        batch_request array_req(*preq);
+        array_req.update_object_id(index);
         mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         pthread_mutex_unlock(pa->ai_mutex);
-        array_req->rq_noreply = true;
-        modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+        array_req.rq_noreply = true;
+        modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
         pa = get_jobs_array(&pjob);
 
         if (pa == NULL)
