@@ -55,10 +55,6 @@ int PBSD_gpu_put(int c, char *node, char *gpuid, int gpumode, int reset_perm, in
   return(0);
   }
 
-int PBSD_mgr_put(int c, int function, int command, int objtype, char *objname, struct attropl *aoplp, char *extend)
-  {
-  return(0);
-  }
 
 int encode_DIS_JobId(struct tcp_chan *chan, char *jobid)
   {
@@ -269,11 +265,6 @@ int encode_DIS_ReqExtend(struct tcp_chan *chan, char *extend)
   return(0);
   }
 
-int PBSD_sig_put(int c, char *jobid, char *signal, char *extend)
-  {
-  return(0);
-  }
-
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
   return 0;
@@ -351,7 +342,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   return(0);
   }
@@ -539,3 +530,17 @@ void update_failure_counts(
   {
   }
 
+int PBSD_sig_put(int c, const char *jobid, const char *signal, char *extend)
+  {
+  return(0);
+  }
+
+int PBSD_mgr_put(int c, int function, int command, int objtype, const char *objname, struct attropl *aoplp, char *extend)
+  {
+  return(0);
+  }
+
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }

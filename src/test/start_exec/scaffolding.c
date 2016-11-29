@@ -37,8 +37,10 @@ std::string cg_memory_path;
 std::string cg_cpuacct_path;
 std::string cg_cpuset_path;
 std::string cg_devices_path;
+
 #define LDAP_RETRIES 5
 
+// Sensing and control variables
 unsigned linux_time = 0;
 int  send_ms_called;
 int  send_sisters_called;
@@ -47,6 +49,11 @@ bool am_ms = false;
 bool bad_pwd = false;
 bool fail_init_groups = false;
 bool fail_site_grp_check = false;
+bool addr_fail = false;
+
+
+bool force_file_overwrite;
+int use_nvidia_gpu = TRUE;
 int logged_event;
 int MOMCudaVisibleDevices;
 int exec_with_exec;
@@ -95,6 +102,7 @@ int ac_read_amount;
 int ac_errno;
 int job_saved;
 int task_saved;
+std::string presetup_prologue;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -118,7 +126,7 @@ int DIS_tcp_wflush (struct tcp_chan *chan) { return 0; }
 int move_to_job_cpuset(pid_t, job *) { return 0; }
 int diswsi(tcp_chan *chan, int i) { return 0; }
 int encode_DIS_svrattrl(tcp_chan *chan, svrattrl *s) { return 0; }
-int im_compose(tcp_chan *chan, char *arg2, char *a3, int a4, int a5, unsigned int a6) { return 0; }
+int im_compose(tcp_chan *chan, char *arg2, const char *a3, int a4, int a5, unsigned int a6) { return 0; }
 int create_alps_reservation(char *a1, char *a2, char *a3, char *a4, char *a5, long long a6, int a7, int a8, int a9, char **a10,const char *a11, std::string& cray_frequency) { return 0; }
 int mom_close_poll(void)
   {
@@ -695,9 +703,18 @@ int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apb
   return(0);
   }
 
-int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **)
+int pbs_getaddrinfo(const char *hostname, struct addrinfo *bob, struct addrinfo **ppAddrInfoOut)
   {
-  return -1;
+  if (addr_fail == true)
+    return(-1);
+  else
+    {
+    char buf[MAXLINE];
+    gethostname(buf, sizeof(buf));
+    getaddrinfo(buf, NULL, NULL, ppAddrInfoOut);
+
+    return(0);
+    }
   }
 
 bool am_i_mother_superior(const job &pjob)
@@ -705,7 +722,7 @@ bool am_i_mother_superior(const job &pjob)
   return(am_ms);
   }
 
-int ctnodes(char *epec)
+int ctnodes(const char *epec)
   {
   fprintf(stderr, "The call to append_link needs to be mocked!!\n");
   exit(1);
@@ -750,7 +767,7 @@ void numa_node::recover_reservation(
 
 #endif
 
-void translate_range_string_to_vector(const char *range, std::vector<int> &indices)
+int translate_range_string_to_vector(const char *range, std::vector<int> &indices)
   {
   indices.push_back(0);
   indices.push_back(1);
@@ -762,6 +779,8 @@ void translate_range_string_to_vector(const char *range, std::vector<int> &indic
   indices.push_back(7);
   indices.push_back(8);
   indices.push_back(9);
+
+  return(PBSE_NONE);
   }
 
 int initgroups_ext(const char *username, gid_t gr_id)
@@ -830,7 +849,14 @@ int csv_length(const char *csv_str)
   }
 
 #ifdef PENABLE_LINUX_CGROUPS
+Machine this_node;
+
 int trq_cg_add_process_to_cgroup(std::string &path, const char *suffix, int gpu)
+  {
+  return(PBSE_NONE);
+  }
+
+int init_torque_cgroups()
   {
   return(PBSE_NONE);
   }
@@ -941,6 +967,20 @@ int trq_cg_set_resident_memory_limit(
   {
   return(PBSE_NONE);
   }
+
+Machine::Machine() {}
+Machine::~Machine() {}
+
+hwloc_uint64_t Machine::getTotalMemory() const
+  {
+  return(this->totalMemory);
+  }
+
+PCI_Device::~PCI_Device() {}
+Socket::~Socket() {}
+Chip::~Chip() {}
+Core::~Core() {}
+
 #endif
 
 
@@ -1029,7 +1069,7 @@ struct passwd *get_password_entry_by_uid(
 
 bool have_incompatible_dash_l_resource(
     
-    job *pjob)
+    pbs_attribute *pattr)
 
   {
   return(false);
@@ -1050,4 +1090,11 @@ req &complete_req::get_req(int i)
 
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libutils/allocation.cpp"
+
+#ifdef ENABLE_PMIX
+void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
+#endif
+
+int setup_gpus_for_job(job *pjob)
+  {return(0);}
 

@@ -200,14 +200,14 @@ attribute_def node_attr_def[] =
   
 	/* ND_ATR_status */
 	{  (char *)ATTR_NODE_status,
-	   decode_arst,
-	   encode_arst,
-	   set_arst,
-	   comp_null,
-	   free_arst,
-	   node_status_list,
+	   decode_str,
+	   encode_str,
+	   set_str,
+	   comp_str,
+	   free_str,
+	   NULL_FUNC,
 	   MGR_ONLY_SET,
-	   ATR_TYPE_ARST,
+	   ATR_TYPE_STR,
 	   PARENT_TYPE_NODE,
 	},
   

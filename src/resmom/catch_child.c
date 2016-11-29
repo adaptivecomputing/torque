@@ -35,9 +35,10 @@
 #include "mom_comm.h" /* im_compose */
 #include "pbs_error.h"
 #include "pbs_proto.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "../server/svr_connect.h" /* svr_disconnect_sock */
 #include "mom_job_func.h" /* mom_job_purge */
+#include "mom_func.h" /* mom_job_purge */
 #include "mom_job_cleanup.h"
 #include "cray_energy.h"
 #ifdef PENABLE_LINUX_CGROUPS
@@ -50,6 +51,7 @@
 #include "pbs_cpuset.h"
 #endif
 #include "mom_config.h"
+#include "json/json.h"
 
 #define DIS_REPLY_READ_RETRY 10
 
@@ -68,6 +70,7 @@ extern tlist_head mom_polljobs;
 extern int  exiting_tasks;
 extern char  *msg_daemonname;
 extern int  termin_child;
+extern bool check_rur;
 
 extern char  *path_aux;
 
@@ -85,9 +88,9 @@ u_long resc_used(job *, const char *, u_long(*f) (resource *));
 void preobit_preparation (job *);
 void *obit_reply (void *);
 extern u_long addclient (const char *);
-extern void encode_used (job *, int, std::stringstream *, tlist_head *);
-extern void encode_flagged_attrs (job *, int, std::stringstream *, tlist_head *);
-extern void job_nodes (job &);
+extern void encode_used (job *, int, Json::Value *, tlist_head *);
+extern void encode_flagged_attrs (job *, int, Json::Value *, tlist_head *);
+extern int job_nodes (job &);
 extern int task_recov (job *);
 extern void mom_server_all_update_stat(void);
 extern void check_state(int);
@@ -100,6 +103,7 @@ extern int no_mom_servers_down();
 extern char *get_local_script_path(job *pjob, char *base);
 u_long gettime(resource *);
 u_long getsize(resource *);
+int send_back_std_and_staged_files(job *pjob, int exit_status);
 
 
 /* END external prototypes */
@@ -284,7 +288,7 @@ int send_task_obit_response(
   for (i = 0; i < 5; i++)
     {
     ret = -1;
-    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&pnode->sock_addr,sizeof(pnode->sock_addr), false);
 
     if (IS_VALID_STREAM(stream))
       {
@@ -524,14 +528,14 @@ void process_tm_obits(
   char *cookie)
 
   {
-  obitent      *pobit;
-
-  while ((pobit = (obitent *)GET_NEXT(ptask->ti_obits)) != NULL)
+  for (unsigned int i = 0; i < ptask->ti_obits.size(); i++)
     {
+    obitent &pobit = ptask->ti_obits[i];
+
 #ifndef NUMA_SUPPORT
     hnodent *pnode;
 
-    pnode = get_node(pjob, pobit->oe_info.fe_node);
+    pnode = get_node(pjob, pobit.oe_info.fe_node);
 
     /* see if this is me or another MOM */
 
@@ -545,12 +549,12 @@ void process_tm_obits(
 
       /* send event to local child */
 
-      tmp_task = task_find(pjob, pobit->oe_info.fe_taskid);
+      tmp_task = task_find(pjob, pobit.oe_info.fe_taskid);
 
       if ((tmp_task != NULL) &&
           (tmp_task->ti_chan != NULL))
         {
-        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit->oe_info.fe_event);
+        tm_reply(tmp_task->ti_chan, IM_ALL_OKAY, pobit.oe_info.fe_event);
 
         diswsi(tmp_task->ti_chan, ptask->ti_qs.ti_exitstat);
 
@@ -562,14 +566,10 @@ void process_tm_obits(
       {
       /* Send a response over to MOM whose child sent the request. */
       if (pnode != NULL)
-        send_task_obit_response(pjob, pnode, cookie, pobit, ptask->ti_qs.ti_exitstat);
+        send_task_obit_response(pjob, pnode, cookie, &pobit, ptask->ti_qs.ti_exitstat);
       }
 #endif /* ndef NUMA_SUPPORT */
-
-    delete_link(&pobit->oe_next);
-
-    free(pobit);
-    }  /* END while (pobit) */
+    }  // END for each obit
   } /* END process_tm_obits() */
 
 
@@ -618,8 +618,6 @@ void update_job_based_on_tasks(
   job *pjob)
 
   {
-  task         *ptask;
-
   /* Check each EXITED task.  They transition to DEAD here. */
   if (LOGLEVEL >= 6)
     {
@@ -628,11 +626,10 @@ void update_job_based_on_tasks(
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
 
-  for (ptask = (task *)GET_NEXT(pjob->ji_tasks);
-       ptask != NULL;
-       ptask = (task *)GET_NEXT(ptask->ti_jobtask))
-
+  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
     {
+    task *ptask = pjob->ji_tasks->at(i);
+
     if (ptask->ti_qs.ti_status != TI_STATE_EXITED)
       continue;
 
@@ -643,7 +640,7 @@ void update_job_based_on_tasks(
     process_tm_obits(pjob, ptask, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str);
 
     cleanup_task(pjob, ptask);
-    }  /* END for (ptask) */
+    }  /* END for each ptask */
   } /* END update_job_based_on_tasks() */
 
 
@@ -685,7 +682,7 @@ bool is_job_state_exiting(
          we have not received a PBS_BATCH_DeleteJob request from the 
          server. If we have tasks to complete continue. But if there
          are no tasks left to run we need to delete the job.*/
-      if (GET_NEXT(pjob->ji_tasks) == NULL)
+      if (pjob->ji_tasks->size() == 0)
         mom_deljob(pjob);
       }
 
@@ -782,7 +779,6 @@ bool mother_superior_cleanup(
   int *found_one)
 
   {
-  task *ptask;
   time_t time_now;
 
   pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
@@ -792,10 +788,10 @@ bool mother_superior_cleanup(
     kill_job(pjob, SIGKILL, __func__, "local task termination detected");
   else
     {
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
+      task *ptask = pjob->ji_tasks->at(i);
+
       if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
         {
         if (LOGLEVEL >= 4)
@@ -816,8 +812,6 @@ bool mother_superior_cleanup(
 
         task_save(ptask);
         }
-
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
       }  /* END while (ptask != NULL) */
 
     }
@@ -976,6 +970,7 @@ void scan_for_exiting(void)
   {
   job          *pjob = NULL;
   int           found_one = 0;
+  bool          finished_checking = true;
 
   static int    ForceObit    = -1;   /* boolean - if TRUE, ObitsAllowed will be enforced */
   static int    ObitsAllowed = 1;
@@ -1040,12 +1035,14 @@ void scan_for_exiting(void)
       if (mother_superior_cleanup(pjob, ObitsAllowed, &found_one) == true)
         {
         /* returning true means we can't process any more jobs this iteration */
+        finished_checking = false;
         break;
         }
       }
+
     }  /* END for (pjob) */
 
-  if ((pjob == NULL) &&
+  if ((finished_checking == true) &&
       (no_mom_servers_down()))
     {
     /* search finished */
@@ -1128,6 +1125,7 @@ int run_epilogues(
 
 
 /**
+ * send_job_obit()
  * Send obit to server.
  *
  * @see scan_for_terminated() - calls post_epilog() via ji_mompost job pbs_attribute
@@ -1137,16 +1135,18 @@ int run_epilogues(
  * @see scan_for_exiting() for Obit overview
  */
 
-int post_epilogue(
+int send_job_obit(
 
   job *pjob,  /* I */
-  int  ev)    /* I exit value (only used to determine if retrying obit) */
+  int  ev)    /* I exit value (COPY_FILE_FAIL means we didn't copy the output files successfully) */
 
   {
   int                   sock;
   int                   resc_access_perm;
   struct batch_request *preq;
   struct tcp_chan *chan = NULL;
+  
+  set_jobs_substate(pjob, JOB_SUBSTATE_OBIT);
 
   pjob->ji_obit_sent = time(NULL);
 
@@ -1156,34 +1156,20 @@ int post_epilogue(
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
+  if (ev == COPY_FILE_FAIL)
+    {
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET | ATR_VFLAG_SEND;
+    pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str = strdup("Unable to copy files back - please see the mother superior's log for exact details.");
+    }
+
   /* This is the child code */
   /* open new connection - register obit_reply as handler */
-  sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
+  sock = mom_open_socket_to_jobs_server_with_retries(pjob, __func__, obit_reply, 2);
 
   if (sock < 0)
     {
-    /* FAILURE */
-
-    if ((errno == EINTR) || (errno == ETIMEDOUT) || (errno == EINPROGRESS))
-      {
-      /* transient failure - server/network up but busy... retry */
-
-      int retrycount;
-
-      for (retrycount = 0;retrycount < 2;retrycount++)
-        {
-        sock = mom_open_socket_to_jobs_server(pjob, __func__, obit_reply);
-
-        if (sock >= 0)
-          break;
-        }  /* END for (retrycount) */
-      }
-
-    if (sock < 0)
-      {
-      // jobs stuck in JOB_SUBSTATE_PREOBIT are retried
-      return(1);
-      }
+    // jobs stuck in JOB_SUBSTATE_OBIT are retried
+    return(1);
     }
 
   /* send the job obiturary notice to the server */
@@ -1216,8 +1202,11 @@ int post_epilogue(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  get_energy_used(pjob);
-
+  if (check_rur == true)
+    {
+    get_energy_used(pjob);
+    }
+  
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
 
   encode_flagged_attrs(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
@@ -1260,7 +1249,7 @@ int post_epilogue(
   log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "obit sent to server");
 
   return(0);
-  } /* END post_epilogue() */
+  } /* END send_job_obit() */
 
 
 
@@ -1274,7 +1263,7 @@ int post_epilogue(
  * This function is run from scan_for_exiting().
  * It will fork:
  * - the child will run the epilogues and release the ALPS reservation if this is a login node.
- * - the parent will mark this job as ready to send the obit and mark post_epilogue as the 
+ * - the parent will mark this job as ready to send the obit and mark send_job_obit as the 
  *   next step for its processing.
  *
  * @pre-cond:  pjob must be a valid job
@@ -1312,15 +1301,15 @@ void preobit_preparation(
     /* NOTE:  pjob->ji_mompost will be executed in scan_for_terminated() */
     exiting_job_list.push_back(exiting_job_info(pjob->ji_qs.ji_jobid));
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
+    set_jobs_substate(pjob, JOB_SUBSTATE_PRECLEAN);
     pjob->ji_momsubt = cpid;
-    pjob->ji_mompost = post_epilogue;
+    pjob->ji_mompost = send_back_std_and_staged_files;
     pjob->ji_momhandle = -1;
 
     if (LOGLEVEL >= 2)
       {
       snprintf(log_buffer, sizeof(log_buffer),
-        "epilog subtask created with pid %d - substate set to JOB_SUBSTATE_OBIT - registered post_epilogue",
+        "epilog subtask created with pid %d - substate set to JOB_SUBSTATE_OBIT - registered send_job_obit",
         cpid);
 
       log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
@@ -1360,7 +1349,6 @@ int process_jobs_obit_reply(
 
   {
   int          rc = preq->rq_reply.brp_code;
-  unsigned int momport = 0;
   char         tmp_line[MAXLINE];
 
   // Make sure we have cleared a previous busy reply from the server.
@@ -1368,69 +1356,19 @@ int process_jobs_obit_reply(
 
   switch (rc)
     {
-
-    case PBSE_NONE:
-
-      /* normal ack, mark job as exited */
-      pjob->ji_qs.ji_destin[0] = '\0';
-
-      pjob->ji_exited_time = time(NULL);
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-      if (multi_mom)
-        {
-        momport = pbs_rm_port;
-        }
-
-      job_save(pjob, SAVEJOB_QUICK, momport);
-
-      if (LOGLEVEL >= 4)
-        {
-        log_event(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "job obit acknowledge received - substate set to JOB_SUBSTATE_EXITED");
-        }
-
-      break;
-      
     case PBSE_UNKJOBID:
 
       // pbs_server doesn't know this job, get rid of it
       sprintf(log_buffer, "Unknown job id on server. Setting to exited and deleting");
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-      mom_deljob(pjob);
 
-      break;
-
+      // Fall through
+    
+    case PBSE_NONE:
     case PBSE_ALRDYEXIT:
 
-      /* have already told the server before recovery */
-      /* the server will contact us to continue       */
-
-      if (LOGLEVEL >= 7)
-        {
-        log_record(
-          PBSEVENT_ERROR,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "setting already exited job substate to EXITED");
-        }
-
-      pjob->ji_qs.ji_destin[0] = '\0';
-
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
-
-      pjob->ji_exited_time = time(NULL);
-
-      if (multi_mom)
-        {
-        momport = pbs_rm_port;
-        }
-
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      mom_deljob(pjob);
 
       break;
 
@@ -1466,7 +1404,7 @@ int process_jobs_obit_reply(
 
     case - 1:
 
-      /* FIXME - causes epilogue to be run twice! */
+      // Try again soon
       pjob->ji_obit_minus_one_time = time(NULL);
 
       pjob->ji_qs.ji_destin[0] = '\0';
@@ -1480,6 +1418,7 @@ int process_jobs_obit_reply(
     default:
 
       {
+      // Random other cases, also delete
 
       switch (preq->rq_reply.brp_code)
         {
@@ -1507,11 +1446,11 @@ int process_jobs_obit_reply(
       log_ext(-1,__func__,tmp_line,LOG_ALERT);
 
       log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, tmp_line);
+
+      mom_deljob(pjob);
+
+      break;
       }  /* END BLOCK */
-
-    mom_deljob(pjob);
-
-    break;
     }  /* END switch (preq->rq_reply.brp_code) */
 
   return(rc);
@@ -1523,7 +1462,7 @@ int process_jobs_obit_reply(
  * obit_reply
  *
  * This function is a message handler that is hooked to a server connection.
- * The connection is established in post_epilogue().
+ * The connection is established in send_job_obit().
  *
  * A socket connection to the server is opened, a job obituary notice
  * message is sent to the server, and then at some later time, the server
@@ -1531,7 +1470,7 @@ int process_jobs_obit_reply(
  *
  * On success, this routine sets the job's substate to EXITED
  *
- * @see post_epilogue() - registers obit_reply via add_conn()
+ * @see send_job_obit() - registers obit_reply via add_conn()
  */
 
 void *obit_reply(
@@ -2039,8 +1978,8 @@ int needs_and_ready_for_reply(
   job *pjob)
 
   {
-  int   needs_and_ready = FALSE;
-  task *ptask;
+  int  needs_and_ready = FALSE;
+  bool running = false;
   
   if (pjob->ji_obit == TM_NULL_EVENT)
     {
@@ -2057,18 +1996,19 @@ int needs_and_ready_for_reply(
   else
     {
     /* Are any tasks running? If so we're not ready */
-    ptask = (task *)GET_NEXT(pjob->ji_tasks);
-    
-    while (ptask != NULL)
+    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
       {
-      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
-        break;
+      task *ptask = pjob->ji_tasks->at(i);
       
-      ptask = (task *)GET_NEXT(ptask->ti_jobtask);
+      if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
+        {
+        running = true;
+        break;
+        }
       }
   
     /* Still somebody there so don't send it yet. */
-    if (ptask != NULL)
+    if (running == true)
       {
       if (LOGLEVEL >= 3)
         {
@@ -2135,7 +2075,7 @@ int send_job_obit_to_ms(
 
   for (i = 0; i < 5; i++)
     {
-    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr));
+    stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), false);
       
     if (IS_VALID_STREAM(stream))
       {
@@ -2256,7 +2196,13 @@ int send_job_obit_to_ms(
     mc->mc_type   = KILLJOB_REPLY;
     mc->mc_struct = kj;
     
-    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, cookie, np, command, event, TM_NULL_TASK);
+    kj->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+                                        cookie,
+                                        np,
+                                        command,
+                                        event,
+                                        TM_NULL_TASK,
+                                        NULL);
     
     if (kj->ici == NULL)
       {

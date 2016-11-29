@@ -5,10 +5,13 @@
 #include "batch_request.h"
 #include "get_path_jobdata.h"
 
+#include <string>
+
 /*
  * misc server function prototypes
  */
 
+int get_svr_attr_b(int index, bool *b);
 int get_svr_attr_l(int index, long *l);
 int get_svr_attr_str(int index, char **str);
 int get_svr_attr_arst(int index, struct array_strings **arst);
@@ -40,8 +43,8 @@ int is_svr_attr_set(int);
 int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
-extern int   set_nodes(job *, char *, int, char **, char **, char *, char *);
-extern void  free_nodes(job *);
+extern int   set_nodes(job *, const char *, int, std::string &, std::string &, char *, char *);
+extern void  free_nodes(job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H

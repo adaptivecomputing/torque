@@ -146,6 +146,12 @@ void insert_timed_task(
 
 
 
+/*
+ * pop_timed_task - return task from list of timed tasks.
+ *
+ * Returns NULL or pointer to a timed task with its mutex locked.
+ */
+
 work_task *pop_timed_task(
 
   time_t  time_now)
@@ -154,6 +160,7 @@ work_task *pop_timed_task(
   struct work_task                *wt = NULL;
   std::list<timed_task>::iterator  it;
 
+  // lock the mutex for the timed task list
   pthread_mutex_lock(&task_list_timed_mutex);
 
   if (task_list_timed->begin() != task_list_timed->end())
@@ -166,7 +173,12 @@ work_task *pop_timed_task(
       task_list_timed->pop_front();
       }
     }
+
+  // lock the mutex for the task
+  if (wt != NULL)
+    pthread_mutex_lock(wt->wt_mutex);
   
+  // unlock the mutex for the timed task list
   pthread_mutex_unlock(&task_list_timed_mutex);
 
   return(wt);
@@ -214,13 +226,12 @@ struct work_task *set_task(
       }
     
     pthread_mutex_init(pnew->wt_mutex,NULL);
-    pthread_mutex_lock(pnew->wt_mutex);
    
     insert_timed_task(pnew);
 
-    /* only keep the lock if they want it */
-    if (get_lock == FALSE)
-      pthread_mutex_unlock(pnew->wt_mutex);
+    /* set the lock if the caller wants it */
+    if (get_lock == TRUE)
+      pthread_mutex_lock(pnew->wt_mutex);
     }
 
   return(pnew);
@@ -510,7 +521,6 @@ void *remove_some_recycle_tasks(
 
   return(NULL);
   } /* END remove_some_recycle_tasks() */
-
 
 
 

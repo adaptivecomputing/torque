@@ -101,7 +101,7 @@
 #include "attribute.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "svrfunc.h"
 #include "utils.h"
 #include "server.h"

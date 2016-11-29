@@ -23,6 +23,9 @@
 
 class mom_hierarchy_handler
   {
+#ifdef TEST_FUNCTION
+friend class test_mom_hierarchy_handler;
+#endif
 private:
   bool           sendOnStartup; //Send the hierarchy to all moms on startup. (Default is true.)
   bool           sendOnDemand;  //Only send the hierarchy if requested.

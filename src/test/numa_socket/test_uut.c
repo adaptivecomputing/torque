@@ -8,8 +8,9 @@
 #include "pbs_error.h"
 #include "allocation.hpp"
 #include "req.hpp"
+#include "json/json.h"
 
-extern int tasks;
+extern float tasks;
 extern int placed;
 extern int called_place;
 extern int oscillate;
@@ -20,6 +21,8 @@ extern int called_spread_place_threads;
 extern int place_amount;
 extern int json_chip;
 extern int placed_all;
+extern int partially_placed;
+extern bool completely_free;
 extern std::string my_placement_type;
 
 
@@ -67,13 +70,16 @@ START_TEST(test_spread_place)
   s.addChip();
   s.addChip();
 
+  completely_free = true;
   called_spread_place = 0;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
   fail_unless(called_spread_place == 2);
   
+  completely_free = false;
   fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
   fail_unless(called_spread_place == 2);
 
+  completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
   fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
@@ -106,39 +112,63 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Socket s(5);
-  s.setMemory(50);
+  int remainder = 0;
+  Socket s(5, 1, remainder);
 
   fail_unless(s.getTotalChips() == 1);
   fail_unless(s.getAvailableChips() == 1);
-  fail_unless(s.getMemory() == 50);
   }
 END_TEST
 
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}}";
-  const char *j2 = "\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}";
-  const char *j3 = "\"socket\":{\"os_index\":2,\"numanode\":{\"os_index\":2,\"cores\":0-11,\"threads\":\"12-23\",\"mem\"=10241024}}";
-  std::stringstream out;
+  const char *j1 = "{\"socket\":{\"os_index\":12,\"numanodes\":[{\"numanode\":{\"os_index\":24,\"cores\":\"48-49\",\"threads\":\"\",\"mem\":\"1\"}},{\"numanode\":{\"os_index\":25,\"cores\":\"50-51\",\"threads\":\"\",\"mem\":\"1\"}}]}}";
+  const char *j2 = "{\"socket\":{\"os_index\":0,\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-5\",\"threads\":\"12-17\",\"mem\":\"1024\"}},{\"numanode\":{\"os_index\":1,\"cores\":\"6-11\",\"threads\":\"18-23\",\"mem\":\"1024\"}}]}}";
+  const char *j3 = "{\"socket\":{\"os_index\":2,\"numanodes\":[{\"numanode\":{\"os_index\":2,\"cores\":\"0-11\",\"threads\":\"12-23\",\"mem\":\"10241024\"}}]}}";
+  Json::Value out;
+  const char *j1_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":12}}";
+  const char *j2_out = "{\"numanodes\":[{\"numanode\":null},{\"numanode\":null}],\"os_index\":0}}";
+  const char *j3_out = "{\"numanodes\":[{\"numanode\":null}],\"os_index\":2}}";
 
-  Socket s1(j1);
+  std::vector<std::string> valid_ids;
+  Json::Reader read;
+  Json::StreamWriterBuilder wbuilder;
+  Json::Value job_as_json;  
+
+  read.parse(j1,job_as_json);
+  Socket s1(job_as_json, valid_ids);
   fail_unless(json_chip == 2, "%d times", json_chip);
   s1.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":12,,}", out.str().c_str());
 
-  out.str("");
-  Socket s2(j2);
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j1_out,job_as_json);
+  fail_unless(out == job_as_json,"%s\n%s", out_as_string.c_str(),j1_out);
+
+  
+  out = Json::nullValue;
+  job_as_json = Json::nullValue;
+
+  read.parse(j2,job_as_json);
+  Socket s2(job_as_json, valid_ids);
   fail_unless(json_chip == 4, "%d times", json_chip);
   s2.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":0,,}", out.str().c_str());
+  
+  out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j2_out,job_as_json);
+  fail_unless(out == job_as_json, out_as_string.c_str());
 
-  out.str("");
-  Socket s3(j3);
+  out = Json::nullValue;
+  job_as_json = Json::nullValue;
+
+  read.parse(j3,job_as_json);
+  Socket s3(job_as_json, valid_ids);
   fail_unless(json_chip == 5, "%d times", json_chip);
   s3.displayAsJson(out, false);
-  fail_unless(out.str() == "\"socket\":{\"os_index\":2,}", out.str().c_str());
+  
+  out_as_string = Json::writeString(wbuilder,out);
+  read.parse(j3_out,job_as_json);
+  fail_unless(out == job_as_json, out_as_string.c_str());
   }
 END_TEST
 
@@ -146,7 +176,8 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   std::stringstream out;
-  Socket s(1);
+  int remainder = 0;
+  Socket s(1, 1, remainder);
   s.setMemory(2);
   s.setId(0);
 
@@ -195,8 +226,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeNonNUMASocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize non NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -211,8 +240,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeIntelSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc == 0, "failed to get socket memory");
       }
     else
       {
@@ -227,8 +254,6 @@ START_TEST(test_initializeSocket)
       {
       rc = new_socket.initializeAMDSocket(socket_obj, topology);
       fail_unless(rc==PBSE_NONE, "could not initialize Intel  NUMA socket");
-      rc = new_socket.getMemory();
-      fail_unless(rc != 0, "failed to get socket memory");
       }
     else
       {
@@ -286,8 +311,9 @@ START_TEST(test_place_task)
   a.place_type = exclusive_socket;
   tasks = 1;
   placed = 1;
+  place_amount = 4; // make partially place do nothing
   int num = s.place_task(r, a, 3, "napali");
-  fail_unless(num == 1, "Expected 2, got %d", num);
+  fail_unless(num == 1, "Expected 1, got %d", num);
   fail_unless(called_place = 1);
 
   fail_unless(s.is_available() == false);
@@ -295,6 +321,14 @@ START_TEST(test_place_task)
   fail_unless(s.free_task("1.napali") == true);
   fail_unless(s.is_available() == true);
 
+  // Make sure we'll place a task that fits on this socket but has to span numa nodes
+  tasks = 0.5;
+  placed = 0;
+  place_amount = 3;
+  partially_placed = 0;
+  num = s.place_task(r, a, 1, "napali");
+  fail_unless(num == 1, "Expected 1, got %d", num);
+  fail_unless(partially_placed == 2);
   }
 END_TEST
 

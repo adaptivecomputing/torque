@@ -86,6 +86,11 @@
 
 #include "req.hpp"
 
+#define _MEM_   0
+#define _PMEM_  1
+#define _VMEM_  2
+#define _PVMEM_ 3
+
 
 class complete_req
   {
@@ -94,14 +99,14 @@ class complete_req
   public:
 
     complete_req();
-    complete_req(tlist_head &at_list, bool legacy_vmem);
+    complete_req(void *at_list, int ppn_needed, bool legacy_vmem);
     complete_req(const complete_req &other);
     complete_req &operator =(const complete_req &other);
 
     void           add_req(req &r);
     void           set_from_string(const std::string &obj_string);
-    int            set_value(int index, const char *name, const char *value);
-    int            set_value(const char *name, const char *value);
+    int            set_value(int index, const char *name, const char *value, bool is_default);
+    int            set_task_value(const char *name, const char *value);
     void           toString(std::string &output) const;
     int            req_count() const;
     void           get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
@@ -112,9 +117,10 @@ class complete_req
     req           &get_req(int i);
     int            get_req_index_for_host(const char *host, unsigned int &req_index);
     int            get_req_and_task_index(const int rank, unsigned int &req_index, unsigned int &task_index);
+    int            get_req_and_task_index_from_local_rank(int rank, unsigned int &req_index, unsigned int &task_index, const char *host) const;
     int            update_hostlist(const std::string &host_spec, int req_index);
     void           set_hostlists(const char *job_id, const char *host_list);
-    void           set_value_from_nodes(const char *node_val);
+    void           set_value_from_nodes(const char *node_val, int &task_count);
     int            set_task_memory_used(int req_index, int task_index, const unsigned long long mem_used);
     int            set_task_cput_used(int req_index, int task_index, const unsigned long cput_used);
     void           clear_allocations();

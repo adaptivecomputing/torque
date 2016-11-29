@@ -122,7 +122,7 @@
 #include "net_connect.h"
 #include "log.h" /* log */
 #include "../Libnet/lib_net.h" /* socket_* */
-#include "../Libifl/lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
+#include "lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
 #include "pbs_constants.h" /* LOCAL_IP */
 #include "net_cache.h"
 

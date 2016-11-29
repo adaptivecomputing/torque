@@ -267,11 +267,15 @@ When set to TRUE, the nodes file cannot be overwritten for any reason; qmgr
 commands to edit nodes will be rejected.
 Format: boolean; default value: false.
 .Ig
+.Al note_append_on_error
+Append the error string to the end of the current nodes note if MOM reports a message
+beginning with the string "ERROR". Format: boolean; default value: true.
+.Ig
 .Al down_on_error
 Set a node's state to "down" if MOM reports a message beginning with the string
 "ERROR".  This might interfere with moab's node error handling.  See the HEALTH
 CHECK section in pbs_mom(8B).  This is an EXPERIMENTAL feature and may be
-removed in the future.  Format: boolean; default value: false.
+removed in the future.  Format: boolean; default value: true.
 .if !\n(Pb .ig Ig
 [internal type: boolean]
 .Ig

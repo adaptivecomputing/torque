@@ -99,7 +99,7 @@
 #include "pbs_job.h"
 #include "log.h"
 #include "../lib/Liblog/pbs_log.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "../lib/Libutils/lib_utils.h"
 #include "mom_mach.h"
 #include "mom_func.h"
@@ -108,6 +108,7 @@
 #include "net_connect.h"
 #include "utils.h"
 #include "mom_config.h"
+#include "json/json.h"
 
 
 const int   PELOG_DOESNT_EXIST = -1;
@@ -137,7 +138,7 @@ extern unsigned int pbs_rm_port;
 /* external prototypes */
 
 extern int pe_input(char *);
-extern void encode_used(job *, int, std::stringstream *, tlist_head *);
+extern void encode_used(job *, int, Json::Value *, tlist_head *);
 #ifdef ENABLE_CSA
 extern void add_wkm_end(uint64_t, int64_t, char *);
 
@@ -540,6 +541,32 @@ int check_pelog_permissions(
 
 
 /*
+ * get_complete_hostlist()
+ *
+ */
+
+char *get_complete_hostlist(
+
+  job *pjob)
+
+  {
+  std::string complete_hostlist;
+  std::string previous_host;
+
+  for (int i = 0; i < pjob->ji_numnodes; i++)
+    {
+    if (i != 0)
+      complete_hostlist += ",";
+
+    complete_hostlist += pjob->ji_hosts[i].hn_host;
+    }
+
+  return(strdup(complete_hostlist.c_str()));
+  } // END get_complete_hostlist()
+
+
+
+/*
  * setup_pelog_arguments()
  *
  * Sets arg with the correct arguments for the pelog script
@@ -611,13 +638,21 @@ void setup_pelog_arguments(
   else
     {
     /* prologue */
+    int last_arg = 9;
     arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
     arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
     arg[8] = strdup(namebuf);
-    arg[9] = NULL;
 
-    LastArg = 9;
+    if (which == PE_PRESETUPPROLOG)
+      {
+      arg[9] = get_complete_hostlist(pjob);
+      last_arg++;
+      }
+
+    arg[last_arg] = NULL;
+
+    LastArg = last_arg;
     }
 
   for (int aindex = 0;aindex < LastArg; aindex++)
@@ -915,17 +950,21 @@ void setup_pelog_outputs(
         (fds2 < 0))
       {
       if (fds1 >= 0)
+        {
         close(fds1);
+        fds1 = -1;
+        }
 
       if (fds2 >= 0)
+        {
         close(fds2);
+        fds2 = -1;
+        }
 
       if ((pe_io_type == PE_IO_TYPE_STD) &&
           (strlen(specpelog) == strlen(path_epilogp)) &&
           (strcmp(path_epilogp, specpelog) == 0))
         dupeStdFiles = 0;
-      else
-        exit(-1);
       }
     }
 
@@ -941,7 +980,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds1 >= 0)&&(dup(fds1) >= 0))
+        if ((fds1 >= 0) &&
+            (dup(fds1) >= 0))
           close(fds1);
         }
       }
@@ -952,7 +992,8 @@ void setup_pelog_outputs(
 
       if (dupeStdFiles)
         {
-        if ((fds2 >= 0)&&(dup(fds2) >= 0))
+        if ((fds2 >= 0) &&
+            (dup(fds2) >= 0))
           close(fds2);
         }
       }

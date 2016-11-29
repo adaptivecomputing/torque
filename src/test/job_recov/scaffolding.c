@@ -42,6 +42,8 @@ char *path_jobinfo_log;
 pthread_mutex_t *svr_do_schedule_mutex;
 pthread_mutex_t *listener_command_mutex;
 threadpool_t    *task_pool;
+bool ghost_array_recovery = false;
+bool cray_enabled = false;
 
 completed_jobs_map_class completed_jobs_map;
 
@@ -63,7 +65,7 @@ ssize_t write_nonblocking_socket(int fd, const void *buf, ssize_t count)
   return(PBSE_NONE);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   return(NULL);
   }
@@ -149,7 +151,7 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reser
 
 char *get_variable(job *pjob, const char *variable)
   {
-  return(NULL);
+  return(strdup("napali"));
   }
 
 int safe_strncat(
@@ -203,7 +205,6 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval) {}
 int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status){}
 int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 void issue_track(job *pjob) {}
 int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
@@ -225,7 +226,12 @@ int job_log_open(char *filename, char *directory) {return 0;}
 char *threadsafe_tokenizer(char **str, const char *delims) {return NULL;}
 int set_ll(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int set_l(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
-int array_delete(job_array *pa) {return 0;}
+
+int array_delete(const char *array_id) 
+  {
+  return(PBSE_NONE);
+  }
+
 int array_save(job_array *pa) {return 0;}
 int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
 void mutex_mgr::set_unlock_on_exit(bool val) {}
@@ -250,6 +256,7 @@ int mutex_mgr::lock(){return 0;}
 int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *)) {return 0;}
 int  decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
+int req_runjob(batch_request *preq) {return(0);}
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq) {}
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 void free_unkn(pbs_attribute *pattr) {}
@@ -304,6 +311,11 @@ int id_map::get_new_id(const char *job_name)
   static int id = 0;
 
   return(id++);
+  }
+
+const char *id_map::get_name(int internal_job_id)
+  {
+  return("1.napali");
   }
 
 id_map job_mapper;
@@ -419,3 +431,106 @@ job::job()
 
 job::~job() {}
 
+int node_avail_complex(
+
+  char *spec,   /* I - node spec */
+  int  *navail, /* O - number available */
+  int  *nalloc, /* O - number allocated */
+  int  *nresvd, /* O - number reserved  */
+  int  *ndown)  /* O - number down      */
+
+  {
+  return(0);
+  }
+
+int lock_ai_mutex(
+
+  job_array  *pa,
+  const char *id,
+  const char *msg,
+  int        logging)
+
+  {
+  return(0);
+  }
+
+int insert_array(
+
+  job_array *pa)
+
+  {
+  return(0);
+  }
+
+void clear_attr(
+
+  pbs_attribute *pattr, /* O */
+  attribute_def *pdef)  /* I */
+
+  {
+  memset(pattr, 0, sizeof(pbs_attribute));
+
+  pattr->at_type = pdef->at_type;
+
+  if ((pattr->at_type == ATR_TYPE_RESC) ||
+      (pattr->at_type == ATR_TYPE_LIST))
+    {
+    CLEAR_HEAD(pattr->at_val.at_list);
+    }
+
+  return;
+  }  /*END clear_attr() */
+
+array_info::array_info() {}
+
+job_array::job_array() : job_ids(NULL), jobs_recovered(0), ai_ghost_recovered(false), uncreated_ids(),
+                         ai_mutex(NULL), ai_qs()
+
+  {
+  this->ai_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(this->ai_mutex, NULL);
+  }
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  int                   job_exit_status)
+
+  {
+  }
+
+void job_array::set_array_id(
+
+  const char *array_id)
+
+  {
+  snprintf(this->ai_qs.parent_id, sizeof(this->ai_qs.parent_id), "%s", array_id);
+  }
+
+void job_array::set_arrays_fileprefix(
+
+  const char *file_prefix)
+
+  {
+  snprintf(this->ai_qs.fileprefix, sizeof(this->ai_qs.fileprefix), "%s", file_prefix);
+  }
+
+void job_array::set_owner(
+
+  const char *owner)
+
+  {
+  snprintf(this->ai_qs.owner, sizeof(this->ai_qs.owner), "%s", owner);
+  }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
+  }
+
+int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
+  {
+  return(PBSE_NONE);
+  }

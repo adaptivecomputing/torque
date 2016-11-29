@@ -20,6 +20,7 @@ extern time_t LastServerUpdateTime;
 extern time_t last_poll_time;
 extern bool ForceServerUpdate;
 extern int MOMCudaVisibleDevices;
+extern bool daemonize_mom;
 
 time_t pbs_tcp_timeout;
 unsigned long setcudavisibledevices(const char *);
@@ -29,22 +30,134 @@ int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_select_timeout();
 int process_layout_request(tcp_chan *chan);
 bool should_resend_obit(job *pjob, int diff);
+void check_job_in_mom_wait(job *pjob);
+void evaluate_job_in_prerun(job *pjob);
 
+extern attribute_def job_attr_def[];
 extern int  exiting_tasks;
+extern int  job_exit_wait_time;
 
-bool call_scan_for_exiting();
+void check_job_substates(bool &call_exiting);
 extern tlist_head svr_alljobs;
 extern int wsi_ret;
 extern int wcs_ret;
 extern int flush_ret;
+extern int job_bailed;
+extern bool am_i_ms;
 
+bool are_we_forking()
+
+  {
+  char *forking = getenv("CK_FORK");
+
+  if ((forking != NULL) &&  
+      (!strcasecmp(forking, "no")))
+    return(false);
+
+  return(true);
+  }
+
+void set_optind()
+
+  {
+  if (are_we_forking() == false)
+    optind = 0;
+  }
+
+int encode_fake(
+
+  pbs_attribute  *attr,    /* ptr to pbs_attribute */
+  tlist_head     *phead,   /* head of attrlist */
+  const char     *atname,  /* name of pbs_attribute */
+  const char     *rsname,  /* resource name or null */
+  int             mode,    /* encode mode, unused here */
+  int             perm)    /* only used for resources */
+
+  {
+  return(0);
+  }
+
+
+START_TEST(test_evaluate_job_in_prerun)
+  {
+  job    pjob;
+
+  time_now = time(NULL);
+
+  max_join_job_wait_time = 30;
+  resend_join_job_wait_time = 15;
+
+  // Set this so we don't actually try to re-connect to the sisters
+  pjob.ji_numnodes = 1;
+  pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
+  pjob.ji_joins_sent = time_now - max_join_job_wait_time - 1;
+  pjob.ji_joins_resent = FALSE;
+  am_i_ms = false;
+  job_bailed = 0;
+
+  // If I'm not mother superior, we shouldn't do anything
+  evaluate_job_in_prerun(&pjob);
+  fail_unless(job_bailed == 0);
+
+  // Make me mother superior, now we should do something
+  am_i_ms = true;
+  pjob.ji_joins_resent = FALSE;
+  evaluate_job_in_prerun(&pjob);
+  fail_unless(job_bailed == 1);
+  
+  // If my state isn't running, we shouldn't do anything
+  pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
+  pjob.ji_joins_resent = FALSE;
+  evaluate_job_in_prerun(&pjob);
+  fail_unless(job_bailed == 1); // shouldn't change
+
+  // I have to set this up so we don't segfault
+  for (int i = 0; i < JOB_ATR_LAST; i++)
+    job_attr_def[i].at_encode = encode_fake;
+  
+  // Now make me re-send the joins
+  pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  pjob.ji_joins_sent = time_now - resend_join_job_wait_time - 1;
+  pjob.ji_joins_resent = FALSE;
+  evaluate_job_in_prerun(&pjob);
+  fail_unless(pjob.ji_joins_resent == TRUE);
+  fail_unless(job_bailed == 1); // shouldn't change
+
+  }
+END_TEST
+
+
+START_TEST(test_check_job_in_mom_wait)
+  {
+  job    pjob;
+
+  memset(&pjob, 0, sizeof(pjob));
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+
+  time_now = time(NULL);
+
+  // Make sure we don't transition if ji_kill_started == 0
+  check_job_in_mom_wait(&pjob);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT);
+  
+  // Make sure we have to wait the specified timeout
+  pjob.ji_kill_started = time_now - job_exit_wait_time;
+  check_job_in_mom_wait(&pjob);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT);
+
+  // Make sure we transition once we pass it
+  pjob.ji_kill_started = time_now - job_exit_wait_time - 1;
+  check_job_in_mom_wait(&pjob);
+  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING);
+  }
+END_TEST
 
 
 START_TEST(test_should_resend_obit)
   {
   job    pjob;
   int    diff = 10;
-  extern time_t time_now;
   time_now = time(NULL);
 
   memset(&pjob, 0, sizeof(pjob));
@@ -127,11 +240,13 @@ START_TEST(test_read_mom_hierarchy)
 END_TEST
 
 
-START_TEST(test_call_scan_for_exiting)
+START_TEST(test_check_job_substates)
   {
+  bool check_exiting = false;
   exiting_tasks = true;
-
-  fail_unless(call_scan_for_exiting() == true);
+  
+  check_job_substates(check_exiting);
+  fail_unless(check_exiting == true);
 
   exiting_tasks = false;
 
@@ -143,11 +258,13 @@ START_TEST(test_call_scan_for_exiting)
   alljobs_list.push_back(job2);
   alljobs_list.push_back(job3);
 
-  fail_unless(call_scan_for_exiting() == false);
+  check_job_substates(check_exiting);
+  fail_unless(check_exiting == false);
 
   job2->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
 
-  fail_unless(call_scan_for_exiting() == true);
+  check_job_substates(check_exiting);
+  fail_unless(check_exiting == true);
 
   alljobs_list.clear();
   }
@@ -295,6 +412,42 @@ START_TEST(calculate_select_timeout_test)
 END_TEST
 
 
+START_TEST(test_parse_command_line1)
+  {
+  char *argv[] = {strdup("pbs_mom"), strdup("-D")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(2, argv);
+  fail_unless(daemonize_mom == false);
+  }
+END_TEST
+
+
+START_TEST(test_parse_command_line2)
+  {
+  char *argv[] = {strdup("pbs_mom"), strdup("-F")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(2, argv);
+  fail_unless(daemonize_mom == false);
+  }
+END_TEST
+
+
+START_TEST(test_parse_command_line3)
+  {
+  char *argv[] = {strdup("pbs_mom")};
+  set_optind();
+
+  daemonize_mom = true;
+  parse_command_line(1, argv);
+  fail_unless(daemonize_mom == true);
+  }
+END_TEST
+
+
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
@@ -306,15 +459,29 @@ Suite *mom_main_suite(void)
   tc_core = tcase_create("test_mom_job_dir_sticky_config");
   tcase_add_test(tc_core, test_mom_job_dir_sticky_config);
   tcase_add_test(tc_core, test_parse_integer_range);
+  tcase_add_test(tc_core, test_check_job_in_mom_wait);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("calculate_select_timeout_test");
   tcase_add_test(tc_core, calculate_select_timeout_test);
+  tcase_add_test(tc_core, test_evaluate_job_in_prerun);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_call_scan_for_exiting");
-  tcase_add_test(tc_core, test_call_scan_for_exiting);
+  tc_core = tcase_create("test_check_job_substates");
+  tcase_add_test(tc_core, test_check_job_substates);
   tcase_add_test(tc_core, test_should_resend_obit);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line1");
+  tcase_add_test(tc_core, test_parse_command_line1);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line2");
+  tcase_add_test(tc_core, test_parse_command_line2);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_parse_command_line3");
+  tcase_add_test(tc_core, test_parse_command_line3);
   suite_add_tcase(s, tc_core);
 
   return s;

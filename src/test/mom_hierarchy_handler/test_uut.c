@@ -7,6 +7,7 @@
 
 extern char      *path_mom_hierarchy;
 extern all_nodes allnodes;
+extern int lock_node_count;
 
 class sendNodeHolder
   {
@@ -20,7 +21,58 @@ public:
     }
   };
 
+class test_mom_hierarchy_handler
+  {
+public:
+  pbsnode *call_nextNode(mom_hierarchy_handler hierarchy_handler)
+    {
+    all_nodes_iterator *iter = NULL; 
+
+    return hierarchy_handler.nextNode(&iter);
+    }
+  };
+
+
 extern int xml_index;
+
+START_TEST(test_next_node)
+  {
+  pbsnode *np;
+  u_long pul = 0;
+  pbsnode node("foo", &pul, true);
+  test_mom_hierarchy_handler test_hierarchy_handler;
+
+  // insert node into allnodes
+  //node.change_name("foo");
+  insert_node(&allnodes, &node);
+
+  // confirm nextNode locks node
+  lock_node_count = 0;
+  np = test_hierarchy_handler.call_nextNode(hierarchy_handler);
+  fail_unless(np != NULL);
+  fail_unless(lock_node_count == 1);
+  }
+END_TEST
+
+
+START_TEST(test_checkAndSendHierarchy)
+  {
+  u_long pul = 0;
+  pbsnode node("foo", &pul, true);
+
+  // first, remove node from allnodes (from previous test)
+  allnodes.unlock();
+  remove_node(&allnodes, &node);
+
+  // insert node into allnodes
+  node.nd_state = INUSE_DOWN|INUSE_OFFLINE|INUSE_NOHIERARCHY;
+  insert_node(&allnodes, &node);
+
+  hierarchy_handler.checkAndSendHierarchy(false);
+  fail_unless(node.nd_state == INUSE_DOWN);
+  }
+END_TEST
+
 
 START_TEST(load_hierarchy_test)
   {
@@ -67,6 +119,13 @@ Suite *mom_hierarchy_handler_suite(void)
   tcase_add_test(tc_core, load_hierarchy_test);
   suite_add_tcase(s, tc_core);
 
+  tc_core = tcase_create("test_next_node");
+  tcase_add_test(tc_core, test_next_node);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_checkAndSendHierarchy");
+  tcase_add_test(tc_core, test_checkAndSendHierarchy);
+  suite_add_tcase(s, tc_core);
   return s;
   }
 

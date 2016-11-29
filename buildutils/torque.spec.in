@@ -197,8 +197,10 @@ This package contains a DRMAA 1.0 implementation for use with TORQUE.
 %build
 CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
 CXXFLAGS="%{?cxxflags:%{cxxflags}}%{!?cxxflags:$RPM_OPT_FLAGS}"
-export CFLAGS CXXFLAGS
-
+LDFLAGS="%{?ldflags:%{ldflags}}%{!?ldflags:$RPM_LD_FLAGS}"
+export CFLAGS CXXFLAGS LDFLAGS
+# use cached configure DOXYGEN
+export ac_cv_path_DOXYGEN=none
 %configure --includedir=%{_includedir}/%{name} --with-default-server=%{torque_server} \
     --with-server-home=%{torque_home} %{ac_with_debug} %{ac_with_libcpuset} \
     --with-sendmail=%{sendmail_path} %{ac_with_numa} %{ac_with_memacct} %{ac_with_top} \
@@ -408,7 +410,7 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %if %{without scp}
 %attr(4755, root, root) %{_sbindir}/pbs_rcp
 %endif
-%{_libdir}/lib%{name}.so.*
+%{_libdir}/lib%{name}.so*
 %{torque_home}/aux
 %{torque_home}/spool
 %{torque_home}/checkpoint

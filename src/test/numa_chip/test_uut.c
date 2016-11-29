@@ -6,11 +6,87 @@
 #include "hwloc.h"
 #include "pbs_error.h"
 #include <sstream>
+#include "json/json.h"
 
 extern int recorded;
 
 extern std::string my_placement_type;
 extern std::string thread_type;
+
+extern Json::Value alloc_json;
+extern void setAllocJson(int);
+
+START_TEST(test_place_tasks_execution_slots)
+  {
+  const char        *jobid = "1.napali";
+
+  allocation         a(jobid);
+  Chip               c;
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  a.cores_only = true;
+
+  c.place_tasks_execution_slots(2, 8, a, CORE_INT);
+  fail_unless(a.cpu_indices.size() == 2);
+  fail_unless(a.cpu_place_indices.size() == 6);
+  
+  c.place_tasks_execution_slots(2, 8, a, CORE_INT);
+  fail_unless(a.cpu_indices.size() == 4);
+  fail_unless(a.cpu_place_indices.size() == 12);
+  fail_unless(c.free_core_count() == 0);
+
+  Chip               c2;
+  c2.setId(0);
+  c2.setThreads(32);
+  c2.setCores(16);
+  c2.setMemory(6);
+  c2.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c2.make_core(i);
+
+  allocation b(jobid);
+  c2.place_tasks_execution_slots(0, 2, b, THREAD_INT);
+  fail_unless(b.cpu_indices.size() == 0);
+  fail_unless(b.cpu_place_indices.size() == 2, "size is %u", b.cpu_place_indices.size());
+  fail_unless(c2.free_core_count() == 15, "%d are free", c2.free_core_count());
+  }
+END_TEST
+
+
+START_TEST(test_initialize_allocation)
+  {
+  Chip c;
+  Json::Value out;
+  std::vector<std::string> valid_ids;
+  
+  setAllocJson(1);//initialize alloc_json to this test configuration
+
+  // Make sure this doesn't last forever - we need to handle empty cpus: values
+  c.initialize_allocation(alloc_json, valid_ids);
+  c.displayAllocationsAsJson(out);
+
+  Json::StreamWriterBuilder wbuilder;
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out != alloc_json,out_as_string.c_str());
+
+  //test to ensure the only the valid ids are being processed
+  valid_ids.push_back("666979[0].mgr.bwfor.privat");
+  c.initialize_allocation(alloc_json, valid_ids);
+  c.displayAllocationsAsJson(out);
+  
+  Json::Value out_valid_id_test;
+  out_valid_id_test[0]["allocation"] = alloc_json;
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out_valid_id_test, out_as_string.c_str());
+
+  }
+END_TEST
 
 
 START_TEST(test_place_all_execution_slots)
@@ -45,8 +121,7 @@ START_TEST(test_spread_place_threads)
   {
   const char        *jobid = "1.napali";
   req                r;
-  std::stringstream  out;
-
+  Json::Value        out;
   allocation         a(jobid);
   Chip               c;
   c.setId(0);
@@ -64,9 +139,14 @@ START_TEST(test_spread_place_threads)
   a.place_type = exclusive_core;
 
   fail_unless(c.spread_place_threads(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
-  out.str("");
+  
+  setAllocJson(2);//initialize alloc_json to this tests configuration
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"16\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
+  
+  Json::StreamWriterBuilder wbuilder;
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  std::string alloc_json_as_string = Json::writeString(wbuilder,alloc_json);
+  fail_unless(out_as_string == alloc_json_as_string, out_as_string.c_str()); 
 
   fail_unless(a.cpu_indices.size() == 1);
   fail_unless(a.cpu_indices[0] == 16);
@@ -185,7 +265,7 @@ START_TEST(test_spread_place_cores)
   {
   const char        *jobid = "1.napali";
   req                r;
-  std::stringstream  out;
+  Json::Value        out;
 
   allocation         a(jobid);
   Chip               c;
@@ -205,9 +285,13 @@ START_TEST(test_spread_place_cores)
   a.place_type = exclusive_core;
 
   fail_unless(c.spread_place_cores(r, a, cores_remaining, lprocs_remaining, gpus_remaining, mics_remaining) == true);
-  out.str("");
+  
+  setAllocJson(3);//initialize alloc_json to this tests configuration
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+
+  Json::StreamWriterBuilder wbuilder;
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == alloc_json, out_as_string.c_str());
 
   fail_unless(c.reserve_core(0,a) == false);
   fail_unless(c.reserve_core(1,a) == false);
@@ -331,8 +415,9 @@ END_TEST
 START_TEST(test_spread_place)
   {
   const char        *jobid = "1.napali";
+  const char        *jobid2 = "2.scadrial";
   req                r;
-  std::stringstream  out;
+  Json::Value        out;
 
   allocation         a(jobid);
   Chip               c;
@@ -349,9 +434,15 @@ START_TEST(test_spread_place)
 
   // Make sure we get 4 evenly spread cores
   fail_unless(c.spread_place(r, a, 4, remaining) == true);
-  out.str("");
+  
+
+
+  setAllocJson(4);//initialize alloc_json to this tests configuration
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,4,8,12\",\"mem\":0,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
+  
+  Json::StreamWriterBuilder wbuilder;
+  std::string out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == alloc_json, out_as_string.c_str());
 
   // Make sure we do not place another task on this chip before freeing the old one
   fail_unless(c.reserve_core(0, a) == false);
@@ -385,20 +476,33 @@ START_TEST(test_spread_place)
   fail_unless(c.has_socket_exclusive_allocation() == true);
 
   c.free_task(jobid);
-  allocation a2;
+  allocation a2(jobid2);
   a2.place_type = exclusive_chip;
   remaining = 0;
   fail_unless(c.spread_place(r, a2, 40, remaining) == false);
   fail_unless(c.spread_place(r, a2, 18, remaining) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
+  c.free_task(jobid2);
+  
+  req r2;
+  allocation a3;
+  const char *host = "scadrial";
+  r2.set_value("lprocs", "2", false);
+  r2.set_value("memory", "1kb", false);
+  int tasks = c.place_task(r2, a3, 1, host);
+  fail_unless(tasks == 1);
+  // We shouldn't place anything in spread place unless we're completely free
+  fail_unless(c.spread_place(r, a2, 18, remaining) == false);
   }
 END_TEST
 
 
 START_TEST(test_basic_constructor)
   {
-  Chip c(4);
+  int remainder = 0;
+  int pn_remainder = 0;
+  Chip c(4, remainder, pn_remainder);
   c.setMemory(20);
 
   fail_unless(c.getTotalCores() == 4);
@@ -407,50 +511,90 @@ START_TEST(test_basic_constructor)
   fail_unless(c.getAvailableThreads() == 4);
   fail_unless(c.getMemory() == 20);
   fail_unless(c.getAvailableMemory() == 20);
+
+  remainder = 1;
+  pn_remainder = 1;
+  Chip c2(4, remainder, pn_remainder);
+  fail_unless(c2.getTotalCores() == 6);
+  fail_unless(c2.getTotalThreads() == 6);
+  fail_unless(c2.getAvailableCores() == 6);
+  fail_unless(c2.getAvailableThreads() == 6);
+  fail_unless(remainder == 0);
+  fail_unless(pn_remainder == 0);
   }
 END_TEST
 
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 ="\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":3221225472,\"mics\":\"0-1\"}";
-  const char *j2 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":32,\"gpus\":\"0-3\"}";
-  const char *j3 ="\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\"}";
-  const char *j4 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0-3,16-19\",\"mem\":0,\"exclusive\":0,\"cores_only\":0,\"gpus\":\"0-1\"},\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"4-15\",\"mem\":0,\"exclusive\":0,\"cores_only\":1,\"mics\":\"2-3\"}}";
-  const char *j5 ="\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":10,\"exclusive\":3,\"cores_only\":0}}";
+  Json::Value o1;
+  Json::Value o2;
+  Json::Value o3;
+  Json::Value j5_as_Json;
+  Json::Value j1_as_Json;
+  Json::Value j2_as_Json;
+  Json::Value j3_as_Json;
 
-  std::stringstream o1;
-  std::stringstream o2;
-  std::stringstream o3;
+  const char *j1 ="{\"numanodes\":[{\"numanode\":{\"os_index\":1,\"cores\":\"0-3\",\"threads\":\"4-7\",\"mem\":\"3221225472\",\"mics\":\"0-1\"}}]}";
+  Json::Reader read;
+  read.parse(j1, j1_as_Json);
   
-  Chip c1(j1);
+  const char *j2 ="{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"8-15\",\"mem\":\"32\",\"gpus\":\"0-3\"}}]}";
+  read.parse(j2,j2_as_Json);
+
+  const char *j3 ="{\"numanodes\":[{\"numanode\":{\"os_index\":12,\"cores\":\"0-5\",\"threads\":\"\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\"}}]}";
+  read.parse(j3,j3_as_Json);
+
+  const char *j5 ="{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"1024\",\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"0.napali\",\"cpus\":\"0\",\"mem\":\"10\",\"exclusive\":3,\"cores_only\":0]}}}}]}";
+  read.parse(j5,j5_as_Json);
+
+  const char* j6_test_string = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":1024,\"gpus\":\"0-1\",\"mics\":\"2-3\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"1-4\",\"mem\":100,\"exclusive\":0,\"cores_only\":0}},{\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"6-7\",\"mem\":1000,\"exclusive\":0,\"cores_only\":0}]}}}]}";
+  Json::Value j6_as_Json;
+  read.parse(j6_test_string ,j6_as_Json);
+  Json::StreamWriterBuilder wbuilder;
+
+  std::vector<std::string> valid_ids;
+  valid_ids.push_back("1.napali");
+  valid_ids.push_back("0.napali");
+  valid_ids.push_back("2.napali");
+  
+  Chip c1(j1_as_Json["numanodes"][0], valid_ids);
   fail_unless(c1.get_id() == 1);
   fail_unless(c1.getTotalCores() == 4, "total %d", c1.getTotalCores());
   fail_unless(c1.getTotalThreads() == 8);
   fail_unless(c1.get_available_mics() == 2, "%d mics", c1.get_available_mics());
   fail_unless(c1.get_available_gpus() == 0);
-  c1.displayAsJson(o1, false);
-  fail_unless(o1.str() == j1, o1.str().c_str());
+  c1.displayAsJson(o1["numanodes"][0]["numanode"], false);
+  
+  std::string out_as_string = Json::writeString(wbuilder,o1);  
+  fail_unless(o1 == j1_as_Json,out_as_string.c_str());
 
-  Chip c2(j2);
+  Chip c2(j2_as_Json["numanodes"][0], valid_ids);
   fail_unless(c2.get_id() == 0);
   fail_unless(c2.getTotalCores() == 8);
   fail_unless(c2.getTotalThreads() == 16);
   fail_unless(c2.get_available_mics() == 0);
   fail_unless(c2.get_available_gpus() == 4);
-  c2.displayAsJson(o2, false);
-  fail_unless(o2.str() == j2, o2.str().c_str());
+  c2.displayAsJson(o2["numanodes"][0]["numanode"], false);
 
-  Chip c3(j3);
+  out_as_string = Json::writeString(wbuilder,o2);
+  fail_unless(o2 == j2_as_Json,out_as_string.c_str());
+
+  Chip c3(j3_as_Json["numanodes"][0], valid_ids);
   fail_unless(c3.get_id() == 12);
   fail_unless(c3.getTotalCores() == 6);
   fail_unless(c3.getTotalThreads() == 6);
   fail_unless(c3.get_available_mics() == 2);
   fail_unless(c3.get_available_gpus() == 2);
-  c3.displayAsJson(o3, false);
-  fail_unless(o3.str() == j3, o3.str().c_str());
+  c3.displayAsJson(o3["numanodes"][0]["numanode"], false);
 
-  Chip c4(j4);
+  out_as_string = Json::writeString(wbuilder,o3);
+  fail_unless(o3 == j3_as_Json, out_as_string.c_str());
+
+  setAllocJson(5);//creates j4's Json config
+  Json::Value j4 = alloc_json;
+
+  Chip c4(j4["numanodes"][0], valid_ids);
   fail_unless(c4.get_id() == 0);
   fail_unless(c4.getTotalCores() == 16);
   fail_unless(c4.getTotalThreads() == 32);
@@ -461,8 +605,8 @@ START_TEST(test_json_constructor)
   fail_unless(c4.getAvailableThreads() == 0);
   fail_unless(c4.get_available_mics() == 0, "%d available mics", c4.get_available_mics());
   fail_unless(c4.get_available_gpus() == 0, "%d available gpus", c4.get_available_gpus());
-  
-  Chip c5(j5);
+
+  Chip c5(j5_as_Json["numanodes"][0], valid_ids);
   fail_unless(c5.get_id() == 0);
   fail_unless(c5.getTotalCores() == 16);
   fail_unless(c5.getTotalThreads() == 32);
@@ -472,6 +616,23 @@ START_TEST(test_json_constructor)
   fail_unless(c5.getAvailableThreads() == 0);
   fail_unless(c5.get_available_mics() == 0, "%d available mics", c5.get_available_mics());
   fail_unless(c5.get_available_gpus() == 0, "%d available gpus", c5.get_available_gpus());
+
+  setAllocJson(6);//creates j6's Json config
+  Json::Value j6 = alloc_json;
+
+  Chip c6(j6["numanodes"][0], valid_ids);
+  Json::Value o6;
+  c6.displayAsJson(o6["numanodes"][0]["numanode"], true);
+
+  out_as_string = Json::writeString(wbuilder,o6);
+  fail_unless(o6 == j6, out_as_string.c_str());
+  c6.free_task("0.napali");
+  o6 = Json::nullValue;
+  c6.displayAsJson(o6["numanodes"][0]["numanode"], true);
+
+  setAllocJson(7);//creataes j6's Json config after removal
+  out_as_string = Json::writeString(wbuilder,o6);
+  fail_unless(o6 == alloc_json,out_as_string.c_str()); 
   }
 END_TEST
 
@@ -564,8 +725,8 @@ END_TEST
 START_TEST(test_how_many_tasks_fit)
   {
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   Chip c;
   c.setThreads(12);
@@ -586,22 +747,32 @@ START_TEST(test_how_many_tasks_fit)
   tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 0, "%d tasks fit, expected 0", tasks);
 
+  // Make sure we can do fractional fits
+  c.setCores(1);
+  for (int i = 0; i < 1; i++)
+    c.make_core(i);
+  fail_unless(c.how_many_tasks_fit(r, 0) == 0.5);
+
   c.setCores(2);
+  for (int i = 1; i < 2; i++)
+    c.make_core(i);
   tasks = c.how_many_tasks_fit(r, 0);
-  fail_unless(tasks == 1, "%d tasks fit, expected 0", tasks);
+  fail_unless(tasks == 1, "%d tasks fit, expected 1", tasks);
 
   // make sure that we can handle a request without memory
   req r2;
-  r2.set_value("lprocs", "2");
+  r2.set_value("lprocs", "2", false);
   c.setCores(10);
+  for (int i = 2; i < 10; i++)
+    c.make_core(i);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
 
   // make sure we account for gpus and mics
-  r2.set_value("gpus", "1");
+  r2.set_value("gpus", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
-  r2.set_value("gpus", "0");
+  r2.set_value("gpus", "0", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
-  r2.set_value("mics", "1");
+  r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
   }
 END_TEST
@@ -612,8 +783,11 @@ START_TEST(test_exclusive_place)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
+
+  std::vector<std::string> valid_id;
+  valid_id.push_back(jobid);
 
   allocation a(jobid);
   a.place_type = exclusive_chip;
@@ -637,9 +811,23 @@ START_TEST(test_exclusive_place)
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
   
-  std::stringstream out;
+  Json::Value out;
+  const char* out1 = "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":\"1\",\"exclusive\":3,\"cores_only\":1}]}}";
+  Json::Value out1_as_json;
+  
+  Json::Reader read;
+  read.parse(out1, out1_as_json);
+
+  const char* out2 = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":\"6\",\"exclusive\":0,\"cores_only\":1}]}}}]}";
+  Json::Value out2_as_json;
+  read.parse(out2, out2_as_json);
+
+  Json::StreamWriterBuilder wbuilder;
+
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":3,\"cores_only\":1}}", out.str().c_str());
+  
+  std::string out_as_string = Json::writeString(wbuilder,out);  
+  fail_unless(out == out1_as_json, out_as_string.c_str()); 
   my_placement_type.clear();
   
   a.place_type = exclusive_none;
@@ -654,16 +842,21 @@ START_TEST(test_exclusive_place)
   a2.place_type = exclusive_none;
   fail_unless(c.how_many_tasks_fit(r, 0) == 6);
   tasks = c.place_task(r, a2, 6, host);
-  out.str("");
-  c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-11\",\"mem\":6,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+  out = Json::nullValue;
+  c.displayAsJson(out["numanodes"][0]["numanode"], true);
+
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out2_as_json, out_as_string.c_str());
   fail_unless(tasks == 6);
   fail_unless(recorded == 6);
 
-  Chip c2(out.str());
-  std::stringstream o2;
+  Chip c2(out["numanodes"][0], valid_id);
+  Json::Value o2;
   c2.displayAsJson(o2, true);
-  fail_unless(o2.str() == out.str(), o2.str().c_str());
+
+  std::string out2_as_string = Json::writeString(wbuilder,o2);
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(o2 == out["numanodes"][0]["numanode"],"\no2\n%s\nout\n%s", out2_as_string.c_str(),out_as_string.c_str());
   fail_unless(c2.getTotalCores() == 16, "%d total cores", c2.getTotalCores());
   fail_unless(c2.getAvailableCores() == 4, "%d cores available", c2.getAvailableCores());
   fail_unless(c2.getTotalThreads() == 32, "%d total threads", c2.getTotalThreads());
@@ -683,15 +876,22 @@ START_TEST(test_exclusive_place)
   req r2;
   allocation a3(jobid);
   a3.place_type = exclusive_none;
-  r2.set_value("lprocs", "32");
+  r2.set_value("lprocs", "32", false);
   thread_type.clear();
   recorded = 0;
   tasks = c3.place_task(r2, a3, 1, host);
   fail_unless(tasks == 1, "%d tasks", tasks);
   fail_unless(recorded == 1);
-  out.str("");
+  
+  const char* out3 =  "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"32\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":\"0\",\"exclusive\":0,\"cores_only\":0}]}}";
+  Json::Value out3_as_json;
+  read.parse(out3, out3_as_json);
+  
+  out = Json::nullValue;
   c3.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":32,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23,8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
+  
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out3_as_json,out_as_string.c_str());
 
   Chip c4;
   c4.setId(0);
@@ -704,15 +904,23 @@ START_TEST(test_exclusive_place)
   thread_type = use_cores;
 
   req r3;
-  r3.set_value("lprocs", "16");
+  r3.set_value("lprocs", "16", false);
   allocation remaining(r3);
   allocation master("2.napali");
 
   recorded = 0;
   c4.partially_place_task(remaining, master);
-  out.str("");
+  
+  const char* out4 = "{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":\"16\",\"allocations\":[{\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":\"0\",\"exclusive\":0,\"cores_only\":1}]}}";
+  Json::Value out4_as_json;
+  read.parse(out4, out4_as_json);
+
+  out = Json::nullValue;
   c4.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-7\",\"threads\":\"16-23\",\"mem\":16,\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"0-7\",\"mem\":0,\"exclusive\":0,\"cores_only\":1}}", out.str().c_str());
+ 
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out4_as_json,out_as_string.c_str());
+  
   // The reservations are recorded differently for partial placing
   fail_unless(recorded == 0, "actual %d", recorded);
 
@@ -724,11 +932,19 @@ START_TEST(test_exclusive_place)
   tasks = c.place_task(r, a4, 1, host);
   fail_unless(tasks == 1);
   fail_unless(recorded == 1);
-  out.str("");
-  c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
+  
+  const char* out5 = "{\"numanodes\":[{\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-1\",\"mem\":\"1\",\"exclusive\":2,\"cores_only\":1}]}}}]}";
 
-  Chip copy_exclusive_socket(out.str());
+  Json::Value out5_as_json;
+  read.parse(out5, out5_as_json);
+
+  out = Json::nullValue;
+  c.displayAsJson(out["numanodes"][0]["numanode"], true);
+
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out5_as_json, out_as_string.c_str());
+
+  Chip copy_exclusive_socket(out["numanodes"][0], valid_id);
   fail_unless(copy_exclusive_socket.getAvailableThreads() == 0);
   fail_unless(copy_exclusive_socket.getAvailableCores() == 0);
 
@@ -736,17 +952,35 @@ START_TEST(test_exclusive_place)
   to_add.cpu_indices.push_back(2);
   to_add.cpu_indices.push_back(3);
   c.aggregate_allocation(to_add);
-  out.str("");
+  
+  const char* out6 ="{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":\"1\",\"exclusive\":2,\"cores_only\":1}]}}";
+
+  Json::Value out6_as_json;
+  read.parse(out6, out6_as_json);
+
+  
+  out = Json::nullValue;
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":1,\"exclusive\":2,\"cores_only\":1}}", out.str().c_str());
+
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out6_as_json,out_as_string.c_str());
 
   allocation one_more("2.napali");
   one_more.cpu_indices.push_back(9);
   one_more.mem_indices.push_back(2);
   c.aggregate_allocation(one_more);
-  out.str("");
+  
+  const char* out7 = "{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":\"6\",\"allocations\":[{\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":\"1\",\"exclusive\":2,\"cores_only\":1}},{\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"9\",\"mem\":\"0\",\"exclusive\":0,\"cores_only\":0}}]}";
+
+  Json::Value out7_as_json;
+  read.parse(out7, out7_as_json);
+
+
+  out = Json::nullValue;
   c.displayAsJson(out, true);
-  fail_unless(out.str() == "\"numanode\":{\"os_index\":0,\"cores\":\"0-15\",\"threads\":\"16-31\",\"mem\":6,\"allocation\":{\"jobid\":\"1.napali\",\"cpus\":\"0-3\",\"mem\":1,\"exclusive\":2,\"cores_only\":1},\"allocation\":{\"jobid\":\"2.napali\",\"cpus\":\"9\",\"mem\":0,\"exclusive\":0,\"cores_only\":0}}", out.str().c_str());
+
+  out_as_string = Json::writeString(wbuilder,out);
+  fail_unless(out == out7_as_json,out_as_string.c_str());
   }
 END_TEST
 
@@ -867,8 +1101,8 @@ START_TEST(test_place_and_free_task)
   const char *jobid = "1.napali";
   const char *host = "napali";
   req r;
-  r.set_value("lprocs", "2");
-  r.set_value("memory", "1kb");
+  r.set_value("lprocs", "2", false);
+  r.set_value("memory", "1kb", false);
 
   allocation a(jobid);
 
@@ -973,6 +1207,8 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_json_constructor);
   tcase_add_test(tc_core, test_basic_constructor);
   tcase_add_test(tc_core, test_place_all_execution_slots);
+  tcase_add_test(tc_core, test_initialize_allocation);
+  tcase_add_test(tc_core, test_place_tasks_execution_slots);
   suite_add_tcase(s, tc_core);
   
   return(s);

@@ -172,6 +172,7 @@ typedef struct im_compose_info
   int         command;
   tm_event_t  event;
   tm_task_id  taskid;
+  char       *data;
   } im_compose_info;
 
 typedef struct spawn_task_info
@@ -196,11 +197,13 @@ typedef struct obit_task_info
   } obit_task_info;
 
 int add_to_resend_things(resend_momcomm *mc);
-im_compose_info *create_compose_reply_info(char *, char *, hnodent *, int command, tm_event_t, tm_task_id);
+im_compose_info *create_compose_reply_info(const char *, const char *, hnodent *, int command, tm_event_t, tm_task_id, const char *);
 int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
 
 void exec_bail(job *pjob, int code, std::set<int> *nodes_contacted = NULL);
 int send_sisters(struct job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact = NULL);
+int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie,
+               int command, tm_event_t event, tm_task_id taskid);
 
 /* public funtions within MOM */
 
@@ -259,8 +262,11 @@ extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
 extern char *get_job_envvar(job *, const char *);
-extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
+int          mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
+int          mom_open_socket_to_jobs_server_with_retries(job* pjob, const char *id, void *(*message_hander)(void *), int retry_limit);
 void         clear_servers();
+
+void         set_jobs_substate(job *pjob, int new_substate);
 
 int          become_the_user(job *pjob);
 
@@ -275,12 +281,13 @@ extern int kill_task(job *,struct task *, int, int);
 #define PE_IO_TYPE_ASIS 0
 #define PE_IO_TYPE_STD  1
 
-#define PE_PROLOG   1
-#define PE_EPILOG   2
-#define PE_PROLOGUSER   3
-#define PE_EPILOGUSER   4
-#define PE_PROLOGUSERJOB 5  /* per job prologue script */
-#define PE_EPILOGUSERJOB 6 /* per job epilogue script */
+#define PE_PROLOG         1
+#define PE_EPILOG         2
+#define PE_PROLOGUSER     3
+#define PE_EPILOGUSER     4
+#define PE_PROLOGUSERJOB  5  /* per job prologue script */
+#define PE_EPILOGUSERJOB  6 /* per job epilogue script */
+#define PE_PRESETUPPROLOG 7 /* prior to becoming the user */
 
 #ifdef LIBPBS_H
 extern int   open_std_file(job *, enum job_file, int, gid_t);

@@ -123,6 +123,7 @@
 #include "threadpool.h"
 #include "node_func.h" /* find_nodebyname */
 #include "../lib/Libnet/lib_net.h" /* socket_read_flush */
+#include "../lib/Libutils/lib_utils.h" /* have_incompatible_dash_l_resource */
 #include "svr_func.h" /* get_svr_attr_* */
 #include "alps_functions.h"
 #include "login_nodes.h"
@@ -133,10 +134,14 @@
 #include "mutex_mgr.hpp"
 #include "timer.hpp"
 #include "id_map.hpp"
+#include "policy_values.h"
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
 #include "runjob_help.hpp"
+#include "plugin_internal.h"
+#include "json/json.h"
+#include "authorized_hosts.hpp"
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -166,8 +171,6 @@ extern int              has_nodes;
 extern int create_a_gpusubnode(struct pbsnode *);
 int        is_gpustat_get(struct pbsnode *np, char **str_ptr);
 
-extern int              ctnodes(char *);
-
 extern char            *path_home;
 extern char            *path_nodes;
 extern char            *path_node_usage;
@@ -179,13 +182,13 @@ extern char            *path_nodenote_new;
 extern char             server_name[];
 
 extern struct server    server;
-extern tlist_head       svr_newnodes;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 extern int              SvrNodeCt;
 
 extern int              multi_mom;
 
-const int network_fail_wait_time = 300;
+const int               network_fail_wait_time = 300;
+int                     default_gpu_mode = -1;
 
 #define SKIP_NONE       0
 #define SKIP_EXCLUSIVE  1
@@ -232,12 +235,10 @@ struct pbsnode *tfind_addr(
   char         *job_momname)
 
   {
-  struct pbsnode *pn = AVL_find(key,port,ipaddrs);
+  pbsnode *pn = auth_hosts.get_authorized_node(key, port);
 
   if (pn == NULL)
     return(NULL);
-
-  pn->lock_node(__func__, "pn", LOGLEVEL);
 
   if ((pn->num_node_boards == 0) ||
       (job_momname == NULL))
@@ -276,7 +277,9 @@ struct pbsnode *tfind_addr(
     numa = AVL_find(index, pn->nd_mom_port, pn->node_boards);
 
     pn->unlock_node(__func__, "pn->numa", LOGLEVEL);
-    numa->lock_node(__func__, "numa", LOGLEVEL);
+
+    if (numa != NULL)
+      numa->lock_node(__func__, "numa", LOGLEVEL);
 
     if (plus != NULL)
       *plus = '+';
@@ -284,6 +287,55 @@ struct pbsnode *tfind_addr(
     return(numa);
     }
   } /* END tfind_addr() */
+
+
+
+void check_node_jobs_existence(
+    
+  struct work_task *pwt)
+
+  {
+  char *node_name = (char *)pwt->wt_parm1;
+
+  free(pwt->wt_mutex);
+  free(pwt);
+
+  pbsnode *pnode = find_nodebyname(node_name);
+
+  if (pnode != NULL)
+    {
+    std::vector<int> internal_ids;
+    std::vector<int> ids_to_remove;
+    
+    for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
+      internal_ids.push_back(pnode->nd_job_usages[i].internal_job_id);
+
+    pnode->unlock_node(__func__, "", LOGLEVEL);
+
+    for (size_t i = 0; i < internal_ids.size(); i++)
+      {
+      // Job doesn't exist, mark this usage record for removal
+      if (internal_job_id_exists(internal_ids[i]) == false)
+        ids_to_remove.push_back(internal_ids[i]);
+      }
+
+    if (ids_to_remove.size() > 0)
+      {
+      pbsnode *pnode = find_nodebyname(node_name);
+
+      if (pnode != NULL)
+        {
+        // Erase non-existent job ids
+        for (size_t i = 0; i < ids_to_remove.size(); i++)
+          remove_job_from_node(pnode, ids_to_remove[i]);
+    
+        pnode->unlock_node(__func__, "", LOGLEVEL);
+        }
+      }
+    }
+
+  free(node_name);
+  } // END check_node_jobs_existence()
 
 
 
@@ -369,6 +421,8 @@ void update_node_state(
     np->nd_state &= ~INUSE_BUSY;
     np->nd_state &= ~INUSE_UNKNOWN;
     np->nd_state &= ~INUSE_DOWN;
+
+    set_task(WORK_Immed, 0, check_node_jobs_existence, strdup(np->get_name()), FALSE);
     }    /* END else if (newstate == INUSE_FREE) */
   else if (newstate & INUSE_NETWORK_FAIL)
     {
@@ -408,7 +462,6 @@ int check_node_for_job(
   /* not found */
   return(FALSE);
   } /* END check_node_for_job() */
-
 
 
 
@@ -453,7 +506,6 @@ int is_job_on_node(
 
 
 
-
 /*
  * If nodes have similiar names this will make sure the name is an exact match.
  * Not just found inside another name.
@@ -472,11 +524,8 @@ bool node_in_exechostlist(
   char *cur_pos = node_ehl;
   char *new_pos = cur_pos;
   int   name_len = strlen(node_name);
-  long  cray_enabled = FALSE;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if ((login_node_name != NULL) &&
         (!strcmp(login_node_name, node_name)))
@@ -728,96 +777,55 @@ void *finish_job(
 
 
 /*
- * is_jobid_in_mom()
- * returns: true if jobid was found; false otherwise.
- */
-bool is_jobid_in_mom(
-
-  const char *jobs,
-  const char *jobid)
-
-  {
-  char *joblist = strdup(jobs);
-  char *jobptr = joblist;
-  char *jobidstr = NULL;
-
-  jobidstr = threadsafe_tokenizer(&jobptr, " ");
-  while (jobidstr != NULL)
-    {
-    if (strcmp(jobid, jobidstr) == 0)
-      {
-      free(joblist);
-      return(true);
-      }
-
-    jobidstr = threadsafe_tokenizer(&jobptr, " ");
-    }
-
-  free(joblist);
-
-  return(false);
-  } /* END is_jobid_in_mom() */
-
-
-
-
-/*
  * sync_node_jobs_with_moms() - remove any jobs in the pbsnode (np) that was not
  * reported by the mom that it's currently running in its status update.
+ *
+ * @param np - the node we are checking
+ * @param job_id_list - a list of the valid job ids for the mom
  */
 void sync_node_jobs_with_moms(
 
-  struct pbsnode *np,        /* I */
-  const char *jobs_in_mom)   /* I */
+  pbsnode                  *np,
+  std::vector<std::string> &job_id_list)
 
   {
-  std::vector<int> jobsRemoveFromNode;
-  bool removealljobs = (strlen(jobs_in_mom) == 0);
+  std::vector<int> jobs_to_remove;
+  char             log_buf[LOCAL_LOG_BUF_SIZE + 1];
 
   for (int i = 0; i < (int)np->nd_job_usages.size(); i++)
     {
-    bool            removejob = false;
+    bool            removejob = true;
     // this one has to be a copy instead of a reference because we lose the mutex
     // below which can make the pointer invalid
     job_usage_info  jui = np->nd_job_usages[i];
     const char     *jobid = job_mapper.get_name(jui.internal_job_id);
     int             internal_job_id = jui.internal_job_id;
 
-    if (!removealljobs)
+    for (size_t i = 0; i < job_id_list.size(); i++)
       {
-      char *p = strstr((char *)jobs_in_mom, jobid);
-      /* job is in the node but not in mom */
-      if (!p)
-        removejob = true;
-      else if (is_jobid_in_mom(jobs_in_mom, jobid) == false)
-        removejob = true;
+      if (job_id_list[i] == jobid)
+        {
+        removejob = false;
+        break;
+        }
       }
-    if (removejob || removealljobs)
-      {
-      np->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      job *pjob = svr_find_job(jobid, TRUE);
-      np->tmp_lock_node(__func__, NULL, LOGLEVEL);
 
-      if (pjob)
-        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-      else
-        jobsRemoveFromNode.push_back(internal_job_id);
+    if (removejob)
+      {
+      if (internal_job_id_exists(internal_job_id) == false)
+        jobs_to_remove.push_back(internal_job_id);
       }
     }
 
-  char log_buf[LOCAL_LOG_BUF_SIZE + 1];
-  for (unsigned int i = 0; i < jobsRemoveFromNode.size(); i++)
+  for (unsigned int i = 0; i < jobs_to_remove.size(); i++)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Job %s was not reported in %s update status. Freeing job from node.",
-      job_mapper.get_name(jobsRemoveFromNode[i]), np->get_name());
+      job_mapper.get_name(jobs_to_remove[i]), np->get_name());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    remove_job_from_node(np, jobsRemoveFromNode[i]);
+    remove_job_from_node(np, jobs_to_remove[i]);
     }
   } /* end of sync_node_jobs_with_moms */
-
-
-
 
 
 
@@ -825,18 +833,82 @@ void sync_node_jobs_with_moms(
  * process_job_attribute_information()
  *
  * @post-cond: the job with id job_id has its attribute values updated to match
- * the values parsed from attributes
- * @param attributes - a string object with job attributes and values in the 
- * format (name1=val1[,name2=val2[...]])
+ * the values in job_info
  * @param jobid - a string object containing the job's id
+ * @param attributes - a json object with job attributes and values in it
+ * @param node_addr - the address of the node who sent this update
  */
+
 void process_job_attribute_information(
-    
+
   std::string &job_id,
-  std::string &attributes)
+  Json::Value &job_info,
+  pbs_net_t    node_addr)
 
   {
-  char *job_id_dup = strdup(job_id.c_str());
+  job  *pjob;
+
+  if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
+    {
+    mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+      {
+      std::vector<std::string> keys = job_info.getMemberNames();
+
+      for (int i = 0; i < keys.size(); i++)
+        {
+        if (keys[i] == PLUGIN_RESC)
+          {
+          // plugin resources are themselves a json object
+          pjob->set_plugin_resource_usage_from_json(job_info[keys[i]]);
+          }
+        else
+          {
+          // Regular attribute or resource usage information
+          const char  *attr_name = keys[i].c_str();
+          char        *val = strdup(job_info[keys[i]].asString().c_str());
+
+          if ((attr_name != NULL) &&
+              (*val != '\0'))
+            {
+            if (str_to_attr(attr_name, val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+              {
+              // should be resources used if not found as attribute
+              decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
+              }
+            }
+
+          free(val);
+          }
+        }
+
+      // Only update the last reported time if the mother superior is reporting it.
+      if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+        pjob->ji_last_reported_time = time(NULL);
+      }
+    }
+  } /* END process_job_attribute_information() */
+
+
+
+/*
+ * process_legacy_job_attribute_information()
+ *
+ * @post-cond: the job with id job_id has its attribute values updated to match
+ * the values parsed from attributes
+ * @param job_id - a string object containing the job's id
+ * @param attributes - a string object with job attributes and values in the 
+ * format (name1=val1[,name2=val2[...]])
+ */
+
+void process_legacy_job_attribute_information(
+
+  std::string &job_id,
+  std::string &attributes,
+  pbs_net_t    node_addr)
+
+  {
   char *attr_dup = strdup(attributes.c_str());
   // move past '(' at front
   char *attr_work = attr_dup + 1;
@@ -848,7 +920,7 @@ void process_job_attribute_information(
   if (paren != NULL)
     *paren = '\0';
 
-  if ((pjob = svr_find_job(job_id_dup, TRUE)) != NULL)
+  if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
     char *attr_val = threadsafe_tokenizer(&attr_work, ",");
@@ -870,79 +942,41 @@ void process_job_attribute_information(
       attr_val = threadsafe_tokenizer(&attr_work, ",");
       }
 
-    pjob->ji_last_reported_time = time(NULL);
+    // Only update the last reported time if the mother superior is reporting it.
+    if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+      pjob->ji_last_reported_time = time(NULL);
     }
 
-  free(job_id_dup);
   free(attr_dup);
-  } /* END process_job_attribute_information() */
+  } // END process_legacy_job_attribute_information()
 
 
 
 /*
- * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ * Attempts to parse the raw information sent from the mom according to the old format:
+ * [jobid1[(name1=value1[,name2=value2...])[jobid2[(name1=value1[,name2=value2...])]]]]
+ * NOTE: Each name/value pair is either resource usage or a flagged attribute.
  *
- * This function is called every time we get a node stat from the pbs_mom.
- *
- * NOTE: changed to be processed in a thread so that processing here doesn't hinder
- * the server's ability to reply to the status
- *
- * @see is_stat_get()
+ * @param np - the node that sent this string in
  */
 
-void *sync_node_jobs(
+int parse_job_information_from_legacy_format(
 
-  void *vp)
+  pbsnode                  *np,
+  std::vector<std::string> &job_id_list,
+  std::string              &raw_job_info,
+  std::string              &job_list,
+  const std::string        &node_name,
+  bool                      sync)
 
   {
-  struct pbsnode       *np;
-  sync_job_info        *sji = (sync_job_info *)vp;
-  char                 *raw_input;
-  char                 *node_id;
-  char                 *jobstring_in;
-  char                 *joblist;
-  char                 *jobidstr;
-  long                  job_sync_timeout = JOB_SYNC_TIMEOUT;
-  char                 *jobs_in_mom = NULL;
-
-  if (vp == NULL)
-    return(NULL);
-
-  raw_input = sji->input;
-
-  free(sji);
-
-  /* raw_input's format is:
-   *   node name:<JOBID>(resource_name=usage_val[,resource_name2=usage_val2...])[ <JOBID>]... */
-  if ((jobstring_in = strchr(raw_input, ':')) != NULL)
-    {
-    node_id = raw_input;
-    *jobstring_in = '\0';
-    jobstring_in++;
-    }
-  else
-    {
-    /* bad input */
-    free(raw_input);
-
-    return(NULL);
-    }
-    
-  if ((np = find_nodebyname(node_id)) == NULL)
-    {
-    free(raw_input);
-
-    return(NULL);
-    }
-
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
-
-  /* FORMAT <JOBID>[ <JOBID>]... */
-  jobs_in_mom = strdup(jobstring_in);
-  joblist = jobstring_in;
-  jobidstr = threadsafe_tokenizer(&joblist, " ");
+  long  job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char *raw_job_data = strdup(raw_job_info.c_str());
+  char *joblist = raw_job_data;
+  char *jobidstr;
 
   get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
+  jobidstr = threadsafe_tokenizer(&joblist, " ");
 
   while ((jobidstr != NULL) && 
          (isdigit(*jobidstr)) != FALSE)
@@ -951,26 +985,31 @@ void *sync_node_jobs(
     size_t      pos;
     int         internal_job_id;
 
+    if (job_id_list.size() == 0)
+      job_list += job_id;
+    else
+      job_list += "," + job_id;
+
+    job_id_list.push_back(job_id);
+
     if ((pos = job_id.find("(")) != std::string::npos)
       {
       std::string attributes = job_id.substr(pos);
       job_id.erase(pos);
+      pbs_net_t    node_addr = np->nd_sock_addr.sin_addr.s_addr;
 
       // must unlock the node to lock the job in this sub-function
-      np->unlock_node(__func__, NULL, LOGLEVEL);
-      process_job_attribute_information(job_id, attributes);
+      np->unlock_node( __func__, NULL, LOGLEVEL);
+      process_legacy_job_attribute_information(job_id, attributes, node_addr);
 
       // re-lock the node
-      if ((np = find_nodebyname(node_id)) == NULL)
+      if ((np = find_nodebyname(node_name.c_str())) == NULL)
         {
-        free(raw_input);
+        free(raw_job_data);
 
-        if (jobs_in_mom)
-          free(jobs_in_mom);
-  
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
-        return(NULL);
+        throw (int)PBSE_NODE_DELETED;
         }
       }
 
@@ -987,6 +1026,7 @@ void *sync_node_jobs(
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
+
     if (job_should_be_killed(job_id, internal_job_id, np))
       {
       if (kill_job_on_mom(job_id.c_str(), np) == PBSE_NONE)
@@ -1006,15 +1046,195 @@ void *sync_node_jobs(
     
     jobidstr = threadsafe_tokenizer(&joblist, " ");
     } /* END while ((jobidstr != NULL) && ...) */
+        
+  free(raw_job_data);
+
+  return(PBSE_NONE);
+  } // END parse_job_information_from_legacy_format()
+
+
+
+/*
+ * process_job_info_from_json()
+ *
+ * Processes the json object to get the current job usage and any flagged attributes
+ * @param np - the node that sent us this json
+ * @param node_job_info - the json object specifying the jobs and their attribute information
+ * @param job_id_list - add each job id here
+ * @param job_list - concatenate each job id here
+ * @param sync - true if we should kill jobs that we don't think should be on these nodes
+ */
+
+void process_job_info_from_json(
+
+  pbsnode                  *np,
+  Json::Value              &node_job_info,
+  std::vector<std::string> &job_id_list,
+  std::string              &job_list,
+  const std::string        &node_name,
+  bool                      sync)
+    
+  {
+  long job_sync_timeout = JOB_SYNC_TIMEOUT;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  job_id_list = node_job_info.getMemberNames();
+
+  get_svr_attr_l(SRV_ATR_job_sync_timeout, &job_sync_timeout);
+
+  for (size_t i = 0; i < job_id_list.size(); i++)
+    {
+    if (i > 0)
+      job_list += " " + job_id_list[i];
+    else
+      job_list += job_id_list[i];
+
+    Json::Value &single_job_info = node_job_info[job_id_list[i]];
+    int          internal_job_id;
+    pbs_net_t    node_addr = np->nd_sock_addr.sin_addr.s_addr;
+
+    // must unlock the node to lock the job in this sub-function
+    np->unlock_node(__func__, NULL, LOGLEVEL);
+    process_job_attribute_information(job_id_list[i], single_job_info, node_addr);
+
+    // re-lock the node
+    if ((np = find_nodebyname(node_name.c_str())) == NULL)
+      {
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+
+      throw (int)PBSE_NODE_DELETED;
+      }
+
+    // Only look to kill jobs if sync jobs is true
+    if (sync == true)
+      {
+      internal_job_id = job_mapper.get_id(job_id_list[i].c_str());
+
+      if (internal_job_id == -1)
+        {
+        /* log a message if it's at loglevel 7 and proceed to kill the job.
+        */
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "jobid: %s not found in job_mapper", job_id_list[i].c_str());
+          log_ext(-1, __func__, log_buf, LOG_WARNING);
+          }
+        }
+
+      if (job_should_be_killed(job_id_list[i], internal_job_id, np))
+        {
+        if (kill_job_on_mom(job_id_list[i].c_str(), np) == PBSE_NONE)
+          {
+          pthread_mutex_lock(&jobsKilledMutex);
+          jobsKilled.push_back(internal_job_id);
+          pthread_mutex_unlock(&jobsKilledMutex);
+
+          int *dup_id = new int(internal_job_id);
+          set_task(WORK_Timed, 
+                   time(NULL) + job_sync_timeout,
+                   remove_job_from_already_killed_list,
+                   dup_id,
+                   FALSE);
+          }
+        }
+      }
+    } /* END for each job reported */
+  } // process_job_info_from_json()
+
+
+
+/*
+ * sync_node_jobs() - determine if a MOM has a stale job and possibly delete it
+ *
+ * This function is called every time we get a node stat from the pbs_mom.
+ *
+ * NOTE: changed to be processed in a thread so that processing here doesn't hinder
+ * the server's ability to reply to the status
+ *
+ * @see is_stat_get()
+ */
+
+void *sync_node_jobs(
+
+  void *vp)
+
+  {
+  if (vp == NULL)
+    return(NULL);
+
+  struct pbsnode       *np;
+  sync_job_info        *sji = (sync_job_info *)vp;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  bool                  sync = sji->sync_jobs;
+  std::string           node_name(sji->node_name);
+  std::string           raw_job_info(sji->job_info);
+
+  delete sji;
+
+  if ((np = find_nodebyname(node_name.c_str())) == NULL)
+    {
+    return(NULL);
+    }
+
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  
+  std::vector<std::string> job_id_list;
+  std::string              job_list_str("jobs=");
+  int                      rc = PBSE_NONE;
+    
+  if (raw_job_info.find_first_not_of(" \n\r\t") != std::string::npos)
+    {
+    // Process the old way if the node is older
+    try
+      {
+      if (np->get_version() < 610)
+        {
+        rc = parse_job_information_from_legacy_format(np, job_id_list, raw_job_info, job_list_str,
+                                                      node_name, sync);
+        }
+      else
+        {
+        Json::Value  job_list;
+        Json::Reader reader;
+    
+        if (reader.parse(raw_job_info, job_list) == false)
+          rc = -1;
+        else
+          process_job_info_from_json(np, job_list, job_id_list, job_list_str, node_name, sync);
+        }
+      }
+    catch (int error)
+      {
+      if (error != PBSE_NODE_DELETED)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Caught unknown error %d", error);
+        log_err(error, __func__, log_buf);
+        np->unlock_node(__func__, NULL, LOGLEVEL);
+        }
+
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+      return(NULL);
+      }
+    }
+
+  // Couldn't parse this job information
+  if (rc != PBSE_NONE)
+    {
+    snprintf(log_buf, sizeof(log_buf), "Error parsing job information json: '%s'",
+      raw_job_info.c_str());
+    log_err(-1, __func__, log_buf);
+    
+    np->unlock_node(__func__, NULL, LOGLEVEL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    return(NULL);
+    }
+
 
   /* SUCCESS */
-  free(raw_input);
+  if (sync == true)
+    sync_node_jobs_with_moms(np, job_id_list);
 
-  if (jobs_in_mom)
-    {
-    sync_node_jobs_with_moms(np, jobs_in_mom);
-    free(jobs_in_mom);
-    }
+  np->add_job_list_to_status(job_list_str);
 
   np->unlock_node(__func__, NULL, LOGLEVEL);
   
@@ -1039,7 +1259,6 @@ void setup_notification(
 
   {
   struct pbsnode *pnode;
-  new_node       *nnew;
 
   if (pname != NULL)
     {
@@ -1047,20 +1266,6 @@ void setup_notification(
       {
       /* call it offline until after all nodes get the new ipaddr */
       pnode->nd_state |= INUSE_OFFLINE;
-      
-      nnew = (new_node *)calloc(1, sizeof(new_node));
-      
-      if (nnew == NULL)
-        {
-        pnode->unlock_node(__func__, "nnew == NULL", LOGLEVEL);
-        return;
-        }
-      
-      CLEAR_LINK(nnew->nn_link);
-      
-      nnew->nn_name = strdup(pname);
-      
-      append_link(&svr_newnodes, &nnew->nn_link, nnew);
       
       pnode->unlock_node(__func__, "nnew != NULL", LOGLEVEL);
       }
@@ -1154,7 +1359,7 @@ void stream_eof(
 
   if (addr != 0)
     {
-    np = AVL_find(addr, port, ipaddrs);
+    np = auth_hosts.get_authorized_node(addr, port);
     }
 
   if (np == NULL)
@@ -1165,7 +1370,6 @@ void stream_eof(
     }
 
   /* Before we mark this node down see if we can connect */
-  np->lock_node(__func__, "parent", LOGLEVEL);
   conn = svr_connect(addr, port, &my_err, np, NULL);
   if (conn >= 0)
     {
@@ -1322,10 +1526,8 @@ void *write_node_state_work(
   struct pbsnode *np = NULL;
   static char    *fmt = (char *)"%s %d\n";
   static FILE    *nstatef = NULL;
-  long            cray_enabled = FALSE;
   int             savemask;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   pthread_mutex_lock(node_state_mutex);
 
   if (LOGLEVEL >= 5)
@@ -1368,7 +1570,7 @@ void *write_node_state_work(
   ** The only state that carries forward is if the
   ** node has been marked offline.
   */
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     node_iterator   iter;
     reinitialize_node_iterator(&iter);
@@ -1875,13 +2077,10 @@ static int property(
   char        *dest = *prop;
   int          i = 0;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  long         cray_enabled = FALSE;
-
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   if (!isalpha(*str))
     {
-    if ((cray_enabled == FALSE) ||
+    if ((cray_enabled == false) ||
         (is_compute_node(str) == FALSE))
       {
       sprintf(log_buf, "first character of property (%s) not a letter", str);
@@ -1990,9 +2189,15 @@ int proplist(
         have_gpus = TRUE;
         gpu_err_reset = FALSE; /* default to no */
 
-        /* default value if no other gets specified */
+        // default value if no other gets specified
+        char *deflt_gpu_mode = NULL;
 
-        gpu_mode_rqstd = gpu_exclusive_thread;
+        get_svr_attr_str(SRV_ATR_DefaultGpuMode, &deflt_gpu_mode);
+
+        if (deflt_gpu_mode != NULL)
+          gpu_mode_rqstd = default_gpu_mode;
+        else
+          gpu_mode_rqstd = gpu_exclusive_thread;
         }
       else
         {
@@ -2023,6 +2228,14 @@ int proplist(
       {
       gpu_err_reset = TRUE;
       }
+    else if ((have_gpus) && 
+             (!strcasecmp(pname, "prohibited")))
+      {
+      // Do not allow users to request prohibited mode
+      throw (int)PBSE_GPU_PROHIBITED_MODE;
+
+      // NOT REACHED
+      }
     else
       {
       prop p(pname);
@@ -2046,7 +2259,6 @@ int proplist(
 
   return(PBSE_NONE);
   }  /* END proplist() */
-
 
 
 
@@ -2231,16 +2443,13 @@ int parse_req_data(
   {
   int               i;
   int               j = 0;
-  long              cray_enabled = FALSE;
-
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
   all_reqs.total_nodes = 0;
 
   for (i = 0; i < all_reqs.num_reqs; i++)
     {
     single_spec_data &req = all_reqs.reqs[i];
 
-    if ((cray_enabled == FALSE) ||
+    if ((cray_enabled == false) ||
         (is_compute_node(all_reqs.req_start[i]) == FALSE))
       {
       if ((j = number(&(all_reqs.req_start[i]), &(req.nodes))) == -1)
@@ -2372,8 +2581,8 @@ int save_node_for_adding(
 
 void set_first_node_name(
     
-  char *spec_param,      /* I */
-  char *first_node_name) /* O */
+  const char *spec_param,      /* I */
+  char       *first_node_name) /* O */
 
   {
   int   i;
@@ -2976,7 +3185,7 @@ bool process_as_node_list(
 
 int node_spec(
 
-  char                          *spec_param, /* I */
+  const char                    *spec_param, /* I */
   int                            early,      /* I (boolean) */
   int                            exactmatch, /* I (boolean) - NOT USED */
   char                          *ProcBMStr,  /* I */
@@ -3005,7 +3214,6 @@ int node_spec(
   complete_spec_data   all_reqs;
   char                *spec;
   char                *plus;
-  long                 cray_enabled = FALSE;
   int                  num_alps_reqs = 0;
 
   FUNCTION_TIMER
@@ -3029,7 +3237,6 @@ int node_spec(
 
   set_first_node_name(spec_param, first_node_name);
   first_node_id = node_mapper.get_id(first_node_name);
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   spec = strdup(spec_param);
 
@@ -3647,6 +3854,7 @@ int place_gpus_in_hostlist(
     if (pnode->nd_gpus_real)
       {
       if ((gn.state == gpu_unavailable) ||
+          (gn.state == gpu_shared) ||
           (gn.state == gpu_exclusive) ||
           ((((int)gn.mode == gpu_normal)) &&
            (gpu_mode_rqstd != gpu_normal) &&
@@ -3821,7 +4029,8 @@ void save_cpus_and_memory_cpusets(
   if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
     {
     std::string formatted(node_name);
-    formatted += ":" + cpus;
+    if (cpus.size() != 0)
+      formatted += ":" + cpus;
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
     }
@@ -3830,7 +4039,8 @@ void save_cpus_and_memory_cpusets(
     std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
     all_cpus += "+";
     all_cpus += node_name;
-    all_cpus += ":" + cpus;
+    if (cpus.size() != 0)
+      all_cpus += ":" + cpus;
     free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
     pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
     }
@@ -3838,7 +4048,8 @@ void save_cpus_and_memory_cpusets(
   if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
     {
     std::string formatted(node_name);
-    formatted += ":" + mems;
+    if (mems.size() != 0)
+      formatted += ":" + mems;
     pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
     pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
     }
@@ -3847,7 +4058,8 @@ void save_cpus_and_memory_cpusets(
     std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
     all_mems += "+";
     all_mems += node_name;
-    all_mems += ":" + mems;
+    if (mems.size() != 0)
+      all_mems += ":" + mems;
     free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
     pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
     }
@@ -3920,7 +4132,6 @@ void update_req_hostlist(
   int         ppn_needed)
 
   {
-  long          cray_enabled = FALSE;
   complete_req *cr;
   char          host_spec[MAXLINE];
   long          legacy_vmem = FALSE;
@@ -3930,17 +4141,16 @@ void update_req_hostlist(
   if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
     {
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_list, (bool)legacy_vmem);
+    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr, ppn_needed, (bool)legacy_vmem);
     pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
+    pjob->ji_wattr[JOB_ATR_req_information].at_flags |= ATR_VFLAG_SET;
     }
   else
     {
     cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
     }
-  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     // In cray enabled mode, only create this information for the login node
     // which will have req_index 0.
@@ -4004,7 +4214,7 @@ int place_subnodes_in_hostlist(
 
     bool job_exclusive_on_use = false;
     if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
-        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+        (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool == true))
       job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
@@ -4015,8 +4225,8 @@ int place_subnodes_in_hostlist(
 #ifdef PENABLE_LINUX_CGROUPS
     std::string       cpus;
     std::string       mems;
-    long              legacy_vmem = FALSE;
-    get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
+    bool              legacy_vmem = false;
+    get_svr_attr_b(SRV_ATR_LegacyVmem, &legacy_vmem);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout.is_initialized() == false)
@@ -4024,9 +4234,33 @@ int place_subnodes_in_hostlist(
 
     update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed);
 
-    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), (bool)legacy_vmem);
+    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), legacy_vmem);
     if (rc != PBSE_NONE)
       return(rc);
+
+    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
+         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+      {
+      char buf[MAXLINE];
+
+      if (pnode->nd_layout.getTotalThreads() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalThreads() - 1);
+        cpus = buf;
+        }
+      else
+        cpus = "0";
+
+      if (pnode->nd_layout.getTotalChips() > 1)
+        {
+        sprintf(buf, "0-%d", pnode->nd_layout.getTotalChips() - 1);
+        mems = buf;
+        }
+      else
+        mems = "0";
+      }
 
     save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cpus, mems);
     save_node_usage(pnode);
@@ -4046,94 +4280,56 @@ int place_subnodes_in_hostlist(
 
 
 /*
- * takes a struct howl and translates it to a string that will
+ * translate_howl_to_string()
+ *
+ * Takes a list of howl objects and translates it to a string that will
  * become a job pbs_attribute (exec_hosts, exec_gpus, exec_ports)
- * NOTE: frees list (the struct howl)
+ *
+ * @param hlist - a std list of the howl objects
+ * @param EMsg - output any error message here
+ * @param NCount - the count of nodes in the string
+ * @param str - output the populated string here
+ * @param portstr - output the populated port string here
+ * @param port - if true, populate the port string
+ * @retunrn PBSE_NONE on success of PBSE_* on error
  */
 
 int translate_howl_to_string(
 
   std::list<howl>  &hlist,
   char             *EMsg,
-  int              *NCount,
-  char            **str_ptr,
-  char            **portstr_ptr,
-  int               port)
+  int              &NCount,
+  std::string      &str,
+  std::string      *portstr,
+  bool              port)
 
   {
-  size_t  len = 1;
-  int     count = 1;
-  char   *str;
-  char   *end;
-  char   *portlist = NULL;
-  char   *endport;
-
-  for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
-    {
-    len += it->hostname.size() + 8;
-    count++;
-    }
-
-  if ((str = (char *)calloc(1, len + 1)) == NULL)
-    {
-    log_err(ENOMEM, __func__, "Cannot allocate memory!");
-
-    if (EMsg != NULL)
-      sprintf(EMsg,"no nodes can be allocated to job");
-    
-    return(PBSE_RESCUNAV);
-    }
-
-  *str = '\0';
-
-  if (port == TRUE)
-    {
-    /* port list will have a string of sister port addresses */
-    if ((portlist = (char *)calloc(1, (count * PBS_MAXPORTNUM) + count)) == NULL)
-      {
-      log_err(ENOMEM, __func__, "Cannot allocate memory!");
-      
-      if (EMsg != NULL)
-        sprintf(EMsg,"no nodes can be allocated to job");
-
-      free(str);
-      
-      return(PBSE_RESCUNAV);
-      }
-  
-    *portlist = '\0';
-    }
+  char    buf[MAXLINE];
 
   /* now copy in name+name+... */
-  *NCount = 0;
+  NCount = 0;
 
-  end = str;
-  endport = portlist;
   for (std::list<howl>::iterator it = hlist.begin(); it != hlist.end(); it++)
     {
-    (*NCount)++;
+    NCount++;
 
-    sprintf(end, "%s/%d+",
-      it->hostname.c_str(),
-      it->index);
+    if (str.size() != 0)
+      str += "+";
+    
+    str += it->hostname + "/";
 
-    end += strlen(end);
+    sprintf(buf, "%d", it->index);
+    str += buf;
 
-    if (port == TRUE)
+    if ((port == true) &&
+        (portstr != NULL))
       {
-      sprintf(endport, "%d+", it->port);
-      endport += strlen(endport);
+      if (portstr->size() != 0)
+        portstr->append("+");
+
+      sprintf(buf, "%d", it->port);
+      portstr->append(buf);
       }
-    }
-
-  /* strip trailing '+' and assign pointers */
-  str[strlen(str) - 1] = '\0';
-  *str_ptr = str;
-
-  if (port == TRUE)
-    {
-    portlist[strlen(portlist) - 1] = '\0';
-    *portstr_ptr = portlist;
     }
 
   return(PBSE_NONE);
@@ -4309,7 +4505,7 @@ int build_hostlist_nodes_req(
 
   job                                *pjob,      /* M */
   char                               *EMsg,      /* O */
-  char                               *spec,      /* I */
+  const char                         *spec,      /* I */
   short                               newstate,  /* I */
   std::vector<job_reservation_info>  &host_info, /* O */
   std::list<howl>                    &gpu_list,  /* O */
@@ -4352,6 +4548,8 @@ int build_hostlist_nodes_req(
             record_external_node(pjob, pnode);
             }
           }
+        else
+          failure = true;
 
         /* NOTE: continue through the loop if failure is true just to clean up amounts needed */
 
@@ -4370,6 +4568,10 @@ int build_hostlist_nodes_req(
           remove_job_from_node(pnode, pjob->ji_internal_id);
 #endif
           }
+#ifdef PENABLE_LINUX_CGROUPS
+        else if (failure == true)
+          remove_job_from_node(pnode, pjob->ji_internal_id);
+#endif
         }
 
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
@@ -4653,18 +4855,17 @@ int locate_resource_request_20_nodes(
 
 int set_nodes(
 
-  job   *pjob,        /* I */
-  char  *spec,        /* I */
-  int    procs,       /* I */
-  char **rtnlist,     /* O */
-  char **rtnportlist, /* O */
-  char  *FailHost,    /* O (optional,minsize=1024) */
-  char  *EMsg)        /* O (optional,minsize=1024) */
+  job         *pjob,        /* I */
+  const char  *spec,        /* I */
+  int          procs,       /* I */
+  std::string &node_list,   /* O */
+  std::string &rtnportlist, /* O */
+  char        *FailHost,    /* O (optional,minsize=1024) */
+  char        *EMsg)        /* O (optional,minsize=1024) */
 
   {
   FUNCTION_TIMER
   std::vector<job_reservation_info> host_info;
-  std::string                       exec_hosts;
   std::stringstream                 exec_ports;
   std::list<node_job_add_info>      naji_list;
   std::list<howl>                   gpu_list;
@@ -4676,13 +4877,12 @@ int set_nodes(
   short              newstate;
 
   char              *login_prop = NULL;
-  char              *gpu_str = NULL;
-  char              *mic_str = NULL;
+  std::string        gpu_str;
+  std::string        mic_str;
   char               ProcBMStr[MAX_BM];
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   alps_req_data     *ard_array = NULL;
   int                num_reqs = 0;
-  long               cray_enabled = FALSE; 
   enum job_types     job_type;
 
   int gpu_flags = 0;
@@ -4759,8 +4959,7 @@ int set_nodes(
     return(PBSE_UNKNODE);
     }
  
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     // JOB_TYPE_normal means no component from the Cray will be used
     if ((job_type != JOB_TYPE_normal) && 
@@ -4785,14 +4984,14 @@ int set_nodes(
                                      &naji_list,
                                      ProcBMStr)) != PBSE_NONE)
     {
-    free_nodes(pjob);
+    free_nodes(pjob, spec);
     delete [] ard_array;
     return(rc);
     }
 
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, host_info)) != PBSE_NONE)
     {
-    free_nodes(pjob);
+    free_nodes(pjob, spec);
     delete [] ard_array;
     return(rc);
     }
@@ -4809,7 +5008,8 @@ int set_nodes(
 
     if (EMsg != NULL)
       sprintf(EMsg, "no nodes can be allocated to job");
-    
+   
+    free_nodes(pjob, spec); 
     delete [] ard_array;
 
     return(PBSE_RESCUNAV);
@@ -4818,37 +5018,35 @@ int set_nodes(
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
 
   /* build list of allocated nodes, gpus, and ports */
-  rc = translate_job_reservation_info_to_string(host_info, &NCount, exec_hosts, &exec_ports);
+  rc = translate_job_reservation_info_to_string(host_info, &NCount, node_list, &exec_ports);
   if (rc != PBSE_NONE)
     {
+    free_nodes(pjob, spec); 
     delete [] ard_array;
     return(rc);
     }
 
-  *rtnlist = strdup(exec_hosts.c_str());
-  *rtnportlist = strdup(exec_ports.str().c_str());
+  rtnportlist = exec_ports.str();
 
   // JOB_TYPE_normal means no component from the Cray will be used
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (job_type != JOB_TYPE_normal))
     {
-    char *plus = strchr(*rtnlist, '+');
+    size_t pos = node_list.find('+');
 
     /* only do this if there's more than one host in the host list */
-    if (plus != NULL)
+    if (pos != std::string::npos)
       {
-      char *to_free = *rtnlist;
-
-      *plus = '\0';
-      *rtnlist = strdup(plus + 1);
-      free(to_free);
+      node_list = node_list.substr(pos + 1);
       }
     }
 
   if (mic_list.size() != 0)
     {
-    if ((rc = translate_howl_to_string(mic_list, EMsg, &NCount, &mic_str, NULL, FALSE)) != PBSE_NONE)
+    if ((rc = translate_howl_to_string(mic_list, EMsg, NCount, mic_str, NULL, false)) != PBSE_NONE)
       {
+      free_nodes(pjob, spec);
+      delete [] ard_array;
       return(rc);
       }
 
@@ -4859,16 +5057,15 @@ int set_nodes(
       &pjob->ji_wattr[JOB_ATR_exec_mics],
       NULL,
       NULL,
-      mic_str,
+      mic_str.c_str(),
       0);
-
-    free(mic_str);
     }
 
   if (gpu_list.size() != 0)
     {
-    if ((rc = translate_howl_to_string(gpu_list, EMsg, &NCount, &gpu_str, NULL, FALSE)) != PBSE_NONE)
+    if ((rc = translate_howl_to_string(gpu_list, EMsg, NCount, gpu_str, NULL, false)) != PBSE_NONE)
       {
+      free_nodes(pjob, spec);
       delete [] ard_array;
       return(rc);
       }
@@ -4880,11 +5077,9 @@ int set_nodes(
       &pjob->ji_wattr[JOB_ATR_exec_gpus],
       NULL,
       NULL,
-      gpu_str,
+      gpu_str.c_str(),
       0);  /* O */
     
-    free(gpu_str);
-
     if (gpu_mode_rqstd != -1)
       gpu_flags = gpu_mode_rqstd;
     if (gpu_err_reset)
@@ -4912,7 +5107,7 @@ int set_nodes(
     snprintf(log_buf, sizeof(log_buf), "job %s allocated %d nodes (nodelist=%.4000s)",
       pjob->ji_qs.ji_jobid,
       NCount,
-      *rtnlist);
+      node_list.c_str());
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
@@ -5287,6 +5482,7 @@ char *get_next_exec_host(
   char *name_ptr = *current;
   char *plus;
   char *slash;
+  char *colon;
   
   if (name_ptr != NULL)
     {
@@ -5300,6 +5496,9 @@ char *get_next_exec_host(
 
     if ((slash = strchr(name_ptr, '/')) != NULL)
       *slash = '\0';
+
+    if ((colon = strchr(name_ptr, ':')) != NULL)
+      *colon = '\0';
     }
 
   return(name_ptr);
@@ -5439,11 +5638,15 @@ int remove_job_from_node(
 
 /*
  * free_nodes - free nodes allocated to a job
+ *
+ * First attempts to free the job from nodes that are in the exec_host string, but
+ * falls back to spec if exec_host isn't specified and spec is non NULL
  */
 
 void free_nodes(
 
-  job *pjob)  /* I (modified) */
+  job        *pjob, // M
+  const char *spec) // I
 
   {
   FUNCTION_TIMER
@@ -5466,6 +5669,16 @@ void free_nodes(
     if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
       {
       exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+      host_ptr = exec_hosts;
+      }
+    }
+
+  // Attempt to use spec if the exec host list isn't populated and spec is
+  if (host_ptr == NULL)
+    {
+    if (spec != NULL)
+      {
+      exec_hosts = strdup(spec);
       host_ptr = exec_hosts;
       }
     }
@@ -5575,7 +5788,6 @@ int set_one_old(
   struct pbsnode *pnode;
   char           *pc;
   char           *dash;
-  long            cray_enabled = FALSE;
 
   if ((pc = strchr(name, (int)'/')))
     {
@@ -5594,11 +5806,9 @@ int set_one_old(
     last = first;
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   pnode = find_nodebyname(name);
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (pnode == NULL)
       pnode = get_compute_node(name);
@@ -5681,7 +5891,6 @@ int set_old_nodes(
   {
   char     *old;
   char     *po;
-  long      cray_enabled = FALSE;
   int       rc = PBSE_NONE;
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
@@ -5714,8 +5923,7 @@ int set_old_nodes(
     } /* END if pjobs exec host is set */
 
   /* record the job on the alps_login if cray_enabled */
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
     rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);

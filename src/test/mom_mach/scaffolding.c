@@ -253,7 +253,7 @@ void translate_vector_to_range_string(std::string &range_string, const std::vect
   }
 
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
@@ -283,19 +283,20 @@ void translate_range_string_to_vector(
       if ((*ptr == ',') ||
           (is_whitespace(*ptr)))
        ptr++;
-     }
-   else
-     {
-     indices.push_back(prev);
+      }
+    else
+      {
+      indices.push_back(prev);
 
-     if ((*ptr == ',') ||
-         (is_whitespace(*ptr)))
-       ptr++;
-     }
-   }
+      if ((*ptr == ',') ||
+          (is_whitespace(*ptr)))
+        ptr++;
+      }
+    }
 
-   free(str);
-   } /* END translate_range_string_to_vector() */
+  free(str);
+  return(PBSE_NONE);
+  } /* END translate_range_string_to_vector() */
 
 
 void capture_until_close_character(
@@ -455,6 +456,15 @@ struct group *getgrnam_ext(
   } /* END getgrnam_ext() */
 
 
+task::~task() {}
+
+#ifdef USE_RESOURCE_PLUGIN
+void report_job_resources(
+  
+  const std::string &jid,
+  const std::set<pid_t> &job_pids,
+  std::map<std::string, std::string> &usage_info) {}
+#endif
 
 #include "../../src/lib/Libattr/req.cpp"
 #include "../../src/lib/Libattr/complete_req.cpp"

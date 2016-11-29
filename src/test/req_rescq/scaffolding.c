@@ -40,3 +40,8 @@ int node_reserve(char *nspec, resource_t tag)
   fprintf(stderr, "The call to node_reserve to be mocked!!\n");
   exit(1);
   }
+
+void set_reply_type(struct batch_reply *preply, int type)
+  {
+  preply->brp_choice = type;
+  }

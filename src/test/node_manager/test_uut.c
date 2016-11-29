@@ -2,14 +2,16 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include "license_pbs.h" /* See here for the software license */
-#include "node_manager.h"
-#include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <list>
+
+#include "license_pbs.h" /* See here for the software license */
+#include "node_manager.h"
+#include "test_uut.h"
 #include "pbs_error.h"
 #include "server.h" /* server */
+#include "json/json.h"
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -27,7 +29,7 @@ int   record_external_node(job *, struct pbsnode *);
 int save_node_for_adding(std::list<node_job_add_info> *naji_list, struct pbsnode *pnode, single_spec_data &req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
-void process_job_attribute_information(std::string &job_id, std::string &attributes);
+void process_job_attribute_information(std::string &job_id, Json::Value &job_info, pbs_net_t addr);
 bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_list);
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data &spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
@@ -38,13 +40,47 @@ int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
 int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
+void check_node_jobs_existence(struct work_task *pwt);
+
+
 
 extern std::vector<int> jobsKilled;
 
+extern pbsnode napali_node;
 extern int str_to_attr_count;
 extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
+extern bool cray_enabled;
+
+
+START_TEST(check_node_jobs_exitence_test)
+  {
+  napali_node.change_name(napali);
+  std::vector<job_usage_info> usages;
+  
+  for (int i = 5; i < 15; i++)
+    {
+    job_usage_info jui(i);
+    usages.push_back(jui);
+    }
+
+  napali_node.nd_job_usages = usages;
+  fail_unless(napali_node.nd_job_usages.size() == 10);
+
+  work_task *pwt = (work_task *)calloc(1, sizeof(work_task));
+  pwt->wt_parm1 = strdup(napali_node.get_name());
+  pwt->wt_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+
+  check_node_jobs_existence(pwt);
+
+  // Should have removed all usages 10 and higher -- see scaffolding.c
+  fail_unless(napali_node.nd_job_usages.size() == 5);
+  for (size_t i = 0; i < napali_node.nd_job_usages.size(); i++)
+    fail_unless(napali_node.nd_job_usages[i].internal_job_id < 10);
+
+  }
+END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
 void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
@@ -395,12 +431,15 @@ END_TEST
 
 START_TEST(process_job_attribute_information_test)
   {
-  std::string attr_str("(cput=100,vmem=100101,mem=100020)");
+  Json::Value job_attrs;
+  job_attrs["cput"] = "100";
+  job_attrs["vmem"] = "100101";
+  job_attrs["mem"] = "100020";
   std::string jobid("2.napali");
 
   str_to_attr_count = 0;
-  process_job_attribute_information(jobid, attr_str);
-  fail_unless(str_to_attr_count == 3);
+  process_job_attribute_information(jobid, job_attrs, 0);
+  fail_unless(str_to_attr_count == 3, "expected 3, got %d", str_to_attr_count);
   fail_unless(decode_resc_count == 3);
   }
 END_TEST
@@ -516,16 +555,16 @@ START_TEST(sync_node_jobs_with_moms_test)
     pnode->nd_slots.add_execution_slot();
 
   /* Job #1 */
-  job_usage_info jui(1);
+  job_usage_info jui(11);
   pnode->nd_slots.reserve_execution_slots(2, jui.est);
   pnode->nd_job_usages.push_back(jui);
 
   /* Job #2 */
-  job_usage_info jui2(2);
+  job_usage_info jui2(12);
   pnode->nd_slots.reserve_execution_slots(4, jui2.est);
   pnode->nd_job_usages.push_back(jui2);
   
-  job_usage_info jui3(3);
+  job_usage_info jui3(13);
   pnode->nd_slots.reserve_execution_slots(3, jui3.est);
   pnode->nd_job_usages.push_back(jui3);
 
@@ -533,22 +572,31 @@ START_TEST(sync_node_jobs_with_moms_test)
   fail_unless(pnode->nd_slots.get_number_free() == 0);
 
   /* No jobs to be cleaned from the node */
-  sync_node_jobs_with_moms(pnode, "1.lei.ac 2.lei.ac 3.lei.ac");
+  std::vector<std::string> job_list;
+  job_list.push_back("11.lei.ac");
+  job_list.push_back("12.lei.ac");
+  job_list.push_back("13.lei.ac");
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 0);
 
   /* Clean the 2nd job from the node */
-  sync_node_jobs_with_moms(pnode, "1.lei.ac 3.lei.ac");
+  job_list.clear();
+  job_list.push_back("11.lei.ac");
+  job_list.push_back("13.lei.ac");
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 4);
 
   /* Clean all jobs from the node */
-  sync_node_jobs_with_moms(pnode, "");
+  job_list.clear();
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 9);
 
   /* This job should not be clean as svr_find_job should find it */
   job_usage_info jui4(4);
   pnode->nd_slots.reserve_execution_slots(3, jui4.est);
   pnode->nd_job_usages.push_back(jui4);
-  sync_node_jobs_with_moms(pnode, "");
+  job_list.clear();
+  sync_node_jobs_with_moms(pnode, job_list);
   fail_unless(pnode->nd_slots.get_number_free() == 6);
   job_mode = false;
   }
@@ -598,6 +646,7 @@ START_TEST(node_in_exechostlist_test)
   fail_unless(node_in_exechostlist(node5, eh2, NULL) == true, "blah10");
   
   // Test the login node piece working
+  cray_enabled = true;
   fail_unless(node_in_exechostlist(node1, eh2, node1) == true);
   fail_unless(node_in_exechostlist(node3, eh1, node3) == true);
   fail_unless(node_in_exechostlist(node3, eh1, node1) == false);
@@ -901,6 +950,7 @@ Suite *node_manager_suite(void)
   tc_core = tcase_create("even more tests");
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
+  tcase_add_test(tc_core, check_node_jobs_exitence_test);
   suite_add_tcase(s, tc_core);
 
   return(s);

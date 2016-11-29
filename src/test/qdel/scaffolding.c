@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
 #include <vector>
+#include <string>
 
 #include "u_hash_map_structs.h"
 
@@ -41,14 +42,19 @@ int cnt2server(const char *SpecServer)
 
 int locate_job(char *job_id, char *parent_server, char *located_server)
   { 
-  fprintf(stderr, "The call to locate_job needs to be mocked!!\n");
-  exit(1);
+  return(TRUE);
   }
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
   { 
   return(PBSE_NONE);
   }
+
+int pbs_deljob_err( int c, const char *jobid, char *extend, int *local_errno)
+  { 
+  return(0);
+  }
+
 
 int pbs_deljob( int c, char *jobid, char *extend)
   { 
@@ -63,8 +69,7 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
 
 void prt_job_err(const char *cmd, int connect, const char *id)
   { 
-  fprintf(stderr, "The call to prt_job_err needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 void initialize_network_info() {}
@@ -97,4 +102,14 @@ void hash_add_or_exit(job_data_container *head, const char *name, const char *va
 
 void set_env_opts(job_data_container *env_attr, char **envp)
   {
+  }
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
   }

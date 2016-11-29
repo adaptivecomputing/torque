@@ -7,6 +7,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <vector>
+#include <string>
+
 extern "C"
 {
 int tm_adopt(char *id, int adoptCmd, pid_t pid)
@@ -38,6 +41,16 @@ const char *pbse_to_txt(int err)
   return message.c_str();
   }
 }
+      
+int get_server_and_job_ids(
+    
+  const char *job_id,
+  std::vector<std::string> &id_list,
+  std::string &server_name)
+
+  {
+  return(0);
+  }
 
 int get_server(const char *job_id_in, char *job_id_out, int jobid_size, char *server_out, int server_size)
   { 

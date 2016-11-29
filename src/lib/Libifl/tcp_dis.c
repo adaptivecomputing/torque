@@ -88,7 +88,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fcntl.h>
-#include "../lib/Libifl/lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
+#include "lib_ifl.h" /* DIS_tcp_setup, DIS_tcp_cleanup */
 
 
 #if defined(FD_SET_IN_SYS_SELECT_H)
@@ -681,6 +681,8 @@ struct tcp_chan * DIS_tcp_setup(
   /* Assign socket to struct */
   chan->sock = fd;
 
+  chan->reused = FALSE;
+
   /* Setting up the read buffer */
   tp = &chan->readbuf;
   if ((tp->tdis_thebuf = (char *)calloc(1, THE_BUF_SIZE+1)) == NULL)
@@ -711,6 +713,12 @@ struct tcp_chan * DIS_tcp_setup(
 
 
 
+/*
+ * DIS_tcp_cleanup()
+ *
+ * The desctructor for tcp_chan - frees it and its members
+ */
+
 void DIS_tcp_cleanup(
     
   struct tcp_chan *chan)
@@ -721,13 +729,17 @@ void DIS_tcp_cleanup(
   if (chan == NULL)
     return;
   tp = &chan->readbuf;
-  free(tp->tdis_thebuf);
+  if (tp->tdis_thebuf != NULL)
+    free(tp->tdis_thebuf);
 
   tp = &chan->writebuf;
-  free(tp->tdis_thebuf);
+  if (tp->tdis_thebuf != NULL)
+    free(tp->tdis_thebuf);
 
   free(chan);
-  }
+  } // END DIS_tcp_cleanup()
+
+
 
 void DIS_tcp_close(
     

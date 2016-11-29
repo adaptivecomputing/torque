@@ -31,6 +31,12 @@
 #include <jobs.h>
 #include <attrib.h>
 
+#include "lib_ifl.h"
+#ifdef __cplusplus
+extern "C"
+ {
+#endif
+
 #ifndef lint
 static char rcsid[]
 # ifdef __GNUC__
@@ -41,7 +47,7 @@ __attribute__((unused))
 
 pthread_mutex_t drmaa_session_mutex = PTHREAD_MUTEX_INITIALIZER;
 drmaa_session_t *drmaa_session = NULL;
-struct batch_status *pbs_statjob_err(int c, char *id, struct attrl *attrib, char *extend, int *local_errno);
+struct batch_status *pbs_statjob(int c, char *id, struct attrl *attrib, char *extend);
 
 int
 drmaa_init(const char *contact, char *errmsg, size_t errlen)
@@ -394,10 +400,12 @@ drmaa_set_vector_attribute(
 
 int
 drmaa_get_vector_attribute(
+
   drmaa_job_template_t *jt,
-  const char *name, drmaa_attr_values_t **out_values,
-  char *errmsg, size_t errlen
-)
+  const char *name, 
+  drmaa_attr_values_t **out_values,
+  char *errmsg, size_t errlen )
+
   {
   const drmaa_attrib_info_t *attr;
   unsigned i, n_values;
@@ -538,7 +546,6 @@ int drmaa_job_ps(
   int rc = DRMAA_ERRNO_SUCCESS;
   char pbs_state = 0;
   int exit_status = -1;
-  int local_errno = 0;
 
   struct batch_status *status;
 
@@ -576,7 +583,7 @@ int drmaa_job_ps(
 
   pthread_mutex_lock(&c->conn_mutex);
 
-  status = pbs_statjob_err(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL, &local_errno);
+  status = pbs_statjob(c->pbs_conn, (char*)job_id, (struct attrl*)attribs, NULL);
 
   pthread_mutex_unlock(&c->conn_mutex);
 
@@ -694,3 +701,6 @@ int drmaa_job_ps(
   }
 
 
+#ifdef __cplusplus
+} 
+#endif

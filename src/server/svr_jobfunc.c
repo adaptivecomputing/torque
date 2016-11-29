@@ -151,6 +151,7 @@
 #include <algorithm>
 #include "utils.h"
 #include "pbs_nodes.h"
+#include "policy_values.h"
 
 #include "user_info.h" /* remove_server_suffix() */
 
@@ -198,6 +199,8 @@ extern int procs_requested(char *spec);
 #ifndef NDEBUG
 static void correct_ct();
 #endif  /* NDEBUG */
+
+extern const char *incompatible_l[];
 
 /* sync w/#define JOB_STATE_XXX */
 
@@ -337,7 +340,7 @@ int insert_into_alljobs_by_rank(
 
   if (pjcur != NULL)
     {
-    if(aj->find(pjcur->ji_qs.ji_jobid))
+    if (aj->find(pjcur->ji_qs.ji_jobid))
       {
       curJobid = pjcur->ji_qs.ji_jobid;
       }
@@ -654,7 +657,15 @@ int svr_enquejob(
         (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
         (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
       {
-      rc = depend_on_que(& pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      try
+        {
+        rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+        }
+      catch (int pbs_errcode)
+        {
+        rc = pbs_errcode;
+        }
+
       if (rc == PBSE_JOBNOTFOUND)
         return(rc);
       else if (rc != PBSE_NONE)
@@ -715,7 +726,6 @@ int svr_dequejob(
   int            rc = PBSE_NONE;
   pbs_attribute *pattr;
   pbs_queue     *pque;
-  resource      *presc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* make sure pjob isn't null */
@@ -746,7 +756,8 @@ int svr_dequejob(
       }
     if (pque == NULL)
       {
-      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, "Job has no queue");
+      snprintf(log_buf, sizeof(log_buf), "Job %s has no queue", pjob->ji_qs.ji_jobid);
+      log_err(PBSE_JOB_NOT_IN_QUEUE, __func__, log_buf);
       return(PBSE_JOB_NOT_IN_QUEUE);
       }
     }
@@ -823,16 +834,17 @@ int svr_dequejob(
 
   pattr = &pjob->ji_wattr[JOB_ATR_resource];
 
-  if (pattr->at_flags & ATR_VFLAG_SET)
+  if ((pattr->at_flags & ATR_VFLAG_SET) &&
+      (pattr->at_val.at_ptr != NULL))
     {
-    presc = (resource *)GET_NEXT(pattr->at_val.at_list);
-
-    while (presc != NULL)
+    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
+    
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      if (presc->rs_value.at_flags & ATR_VFLAG_DEFLT)
-        presc->rs_defin->rs_free(&presc->rs_value);
+      resource &r = resources->at(i);
 
-      presc = (resource *)GET_NEXT(presc->rs_link);
+      if (r.rs_value.at_flags & ATR_VFLAG_DEFLT)
+        r.rs_defin->rs_free(&r.rs_value);
       }
     }
 
@@ -948,6 +960,8 @@ void release_node_allocation(
     free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
     pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
+    /* additionally clear the StagedIn flag if set */
+    pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
     }
   } /* END release_node_allocation() */
 
@@ -1627,10 +1641,8 @@ int chk_svr_resc_limit(
   int           dummy;
   int           rc;
   int           req_procs = 0; /* must start at 0 */
-  resource     *jbrc;
   resource     *jbrc_nodes = NULL;
   resource     *qurc;
-  resource     *svrc;
   resource     *cmpwith;
 
   int           LimitIsFromQueue = FALSE;
@@ -1646,7 +1658,6 @@ int chk_svr_resc_limit(
   long          mpp_width = 0;
   resource     *mppnodect_resource = NULL;
   long          proc_ct = 0;
-  long          cray_enabled = FALSE;
 
   resource_def *noderesc     = NULL;
   resource_def *needresc     = NULL;
@@ -1668,28 +1679,28 @@ int chk_svr_resc_limit(
   if (nodectresc != NULL)
     {
     pthread_mutex_lock(server.sv_attr_mutex);
-    svrc = (resource *)GET_NEXT(
-        server.sv_attr[SRV_ATR_resource_avail].at_val.at_list);
-    
-    while (svrc != NULL)
-      {
-      if (svrc->rs_defin == nodectresc)
-        {
-        svrc = find_resc_entry(
-            &server.sv_attr[SRV_ATR_resource_avail],
-            svrc->rs_defin);
-        
-        if ((svrc != NULL) && (svrc->rs_value.at_flags & ATR_VFLAG_SET))
-          {
-          SvrNodeCt = svrc->rs_value.at_val.at_long;
-          }
+    std::vector<resource> *svr_resc = (std::vector<resource> *)server.sv_attr[SRV_ATR_resource_avail].at_val.at_ptr;
 
-        if (svrc == NULL)
+    if (svr_resc != NULL)
+      {
+      for (size_t i = 0; i < svr_resc->size(); i++)
+        {
+        resource &r = svr_resc->at(i);
+
+        if (r.rs_defin == nodectresc)
+          {
+          resource *svrc = find_resc_entry(&server.sv_attr[SRV_ATR_resource_avail], r.rs_defin);
+          
+          if ((svrc != NULL) &&
+              (svrc->rs_value.at_flags & ATR_VFLAG_SET))
+            {
+            SvrNodeCt = svrc->rs_value.at_val.at_long;
+            }
+
           break;
+          }
         }
-      
-      svrc = (resource *)GET_NEXT(svrc->rs_link);
-      } /* END while (svrc != NULL) */
+      }
     
     pthread_mutex_unlock(server.sv_attr_mutex);
     }   /* END if (nodectresc != NULL) */
@@ -1697,143 +1708,143 @@ int chk_svr_resc_limit(
   /* return values via global comp_resc_gt and comp_resc_lt */
   comp_resc_gt = 0;
 
-
-  jbrc = (resource *)GET_NEXT(jobatr->at_val.at_list);
-
-  while (jbrc != NULL)
+  std::vector<resource> *job_resc = (std::vector<resource> *)jobatr->at_val.at_ptr;
+  if (job_resc != NULL)
     {
-    cmpwith = NULL;
-
-    if ((jbrc->rs_value.at_flags & (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
+    for (size_t i = 0; i < job_resc->size(); i++)
       {
-      qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], jbrc->rs_defin);
+      resource &r = job_resc->at(i);
 
-      LimitName = (jbrc->rs_defin->rs_name == NULL)?"resource":jbrc->rs_defin->rs_name;
+      cmpwith = NULL;
 
-      pthread_mutex_lock(server.sv_attr_mutex);
-      cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
-          &server.sv_attr[SRV_ATR_ResourceMax],
-          jbrc->rs_defin,
-          &LimitIsFromQueue);
-      pthread_mutex_unlock(server.sv_attr_mutex);
-
-      if (strcmp(LimitName,"mppnppn") == 0)
+      if ((r.rs_value.at_flags & (ATR_VFLAG_SET | ATR_VFLAG_DEFLT)) == ATR_VFLAG_SET)
         {
-        mpp_nppn = jbrc->rs_value.at_val.at_long;
-        }
-      else if (strcmp(LimitName,"mppwidth") == 0)
-        {
-        mpp_width = jbrc->rs_value.at_val.at_long;
-        }
+        qurc = find_resc_entry(&pque->qu_attr[QA_ATR_ResourceMax], r.rs_defin);
 
-      if ((jbrc->rs_defin == noderesc) && 
-          (qtype == QTYPE_Execution))
-        {
-        /* NOTE:  process after loop so SvrNodeCt is loaded */
-        /* can check pure nodes violation right here */
-        int job_nodes;
-        int queue_nodes;
+        LimitName = (r.rs_defin->rs_name == NULL)? "resource" : r.rs_defin->rs_name;
 
-        jbrc_nodes = jbrc;
-        if ((jbrc_nodes != NULL) && 
-            (qurc != NULL))
+        pthread_mutex_lock(server.sv_attr_mutex);
+        cmpwith = get_resource(&pque->qu_attr[QA_ATR_ResourceMax],
+            &server.sv_attr[SRV_ATR_ResourceMax],
+            r.rs_defin,
+            &LimitIsFromQueue);
+        pthread_mutex_unlock(server.sv_attr_mutex);
+
+        if (strcmp(LimitName,"mppnppn") == 0)
           {
-          if ((isdigit(*(jbrc_nodes->rs_value.at_val.at_str))) &&
-              (isdigit(*(qurc->rs_value.at_val.at_str))))
-            {
-            job_nodes   = atoi(jbrc_nodes->rs_value.at_val.at_str);
-            queue_nodes = atoi(qurc->rs_value.at_val.at_str);
+          mpp_nppn = r.rs_value.at_val.at_long;
+          }
+        else if (strcmp(LimitName,"mppwidth") == 0)
+          {
+          mpp_width = r.rs_value.at_val.at_long;
+          }
 
-            if (queue_nodes < job_nodes)
-              comp_resc_lt++;
+        if ((r.rs_defin == noderesc) && 
+            (qtype == QTYPE_Execution))
+          {
+          /* NOTE:  process after loop so SvrNodeCt is loaded */
+          /* can check pure nodes violation right here */
+          int job_nodes;
+          int queue_nodes;
+
+          jbrc_nodes = &r;
+          if ((jbrc_nodes != NULL) && 
+              (qurc != NULL))
+            {
+            if ((isdigit(*(jbrc_nodes->rs_value.at_val.at_str))) &&
+                (isdigit(*(qurc->rs_value.at_val.at_str))))
+              {
+              job_nodes   = atoi(jbrc_nodes->rs_value.at_val.at_str);
+              queue_nodes = atoi(qurc->rs_value.at_val.at_str);
+
+              if (queue_nodes < job_nodes)
+                comp_resc_lt++;
+              }
             }
           }
-        }
 
-      /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-      else if ((jbrc->rs_defin == procresc) &&
-               (qtype == QTYPE_Execution))
-        {
-        proc_ct = jbrc->rs_value.at_val.at_long;
-        }
+        /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
+        else if ((r.rs_defin == procresc) &&
+                 (qtype == QTYPE_Execution))
+          {
+          proc_ct = r.rs_value.at_val.at_long;
+          }
 
 #ifdef NERSCDEV
-      else if (jbrc->rs_defin == mppwidthresc)
-        {
-        if (jbrc->rs_value.at_flags & ATR_VFLAG_SET)
+        else if (r.rs_defin == mppwidthresc)
           {
-          MPPWidth = jbrc->rs_value.at_val.at_long;
-          }
-        }
-
-#endif /* NERSCDEV */
-      else if ((strcmp(LimitName,"mppnodect") == 0) &&
-               (jbrc->rs_value.at_val.at_long == -1))
-        {
-        /*
-         * mppnodect is a special attrtibute,  It gets set based upon the
-         * values of mppwidth and mppnppn. -1 signifies the case where mppwidth
-         * and mppnppn were not both specified for the job. We will need to
-         * check mppnodect limits against queue/server defaults, if any.
-         */
-         
-        mppnodect_resource = jbrc;
-        }
-      else if ((cmpwith != NULL) && 
-               (jbrc->rs_defin != needresc))
-        {
-        /* don't check neednodes */
-
-        rc = jbrc->rs_defin->rs_comp(
-               &cmpwith->rs_value,
-               &jbrc->rs_value);
-
-        if (rc > 0)
-          {
-          comp_resc_gt++;
-          }
-        else if (rc < 0)
-          {
-          /* only record if:
-           *     is_transit flag is not set
-           * or  is_transit is set, but not to true
-           * or  the value comes from queue limit
-           */
-          if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
-              (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
-              (LimitIsFromQueue))
+          if (r.rs_value.at_flags & ATR_VFLAG_SET)
             {
-            if ((EMsg != NULL) && (EMsg[0] == '\0'))
-              {
-              sprintf(EMsg, "cannot satisfy %s max %s requirement",
-                      (LimitIsFromQueue == 1) ? "queue" : "server",LimitName);
-              }
-
-              comp_resc_lt++;
+            MPPWidth = r.rs_value.at_val.at_long;
             }
           }
-        }
-      }    /* END if () */
 
-    jbrc = (resource *)GET_NEXT(jbrc->rs_link);
-    }  /* END while (jbrc != NULL) */
+#endif /* NERSCDEV */
+        else if ((strcmp(LimitName,"mppnodect") == 0) &&
+                 (r.rs_value.at_val.at_long == -1))
+          {
+          /*
+           * mppnodect is a special attrtibute,  It gets set based upon the
+           * values of mppwidth and mppnppn. -1 signifies the case where mppwidth
+           * and mppnppn were not both specified for the job. We will need to
+           * check mppnodect limits against queue/server defaults, if any.
+           */
+           
+          mppnodect_resource = &r;
+          }
+        else if ((cmpwith != NULL) && 
+                 (r.rs_defin != needresc))
+          {
+          /* don't check neednodes */
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
+          rc = r.rs_defin->rs_comp(&cmpwith->rs_value, &r.rs_value);
+
+          if (rc > 0)
+            {
+            comp_resc_gt++;
+            }
+          else if (rc < 0)
+            {
+            /* only record if:
+             *     is_transit flag is not set
+             * or  is_transit is set, but not to true
+             * or  the value comes from queue limit
+             */
+            if ((!(pque->qu_attr[QE_ATR_is_transit].at_flags & ATR_VFLAG_SET)) ||
+                (!pque->qu_attr[QE_ATR_is_transit].at_val.at_long) ||
+                (LimitIsFromQueue))
+              {
+              if ((EMsg != NULL) && (EMsg[0] == '\0'))
+                {
+                sprintf(EMsg, "cannot satisfy %s max %s requirement",
+                        (LimitIsFromQueue == 1) ? "queue" : "server",LimitName);
+                }
+
+                comp_resc_lt++;
+              }
+            }
+          }
+        }    /* END if () */
+      }  // END for each job resource
+    }
+
+
   /* If we restart pbs_server while the cray is down, pbs_server won't know about
    * the computes. Don't perform this check for this case. */
   if(alps_reporter != NULL)
     {
     alps_reporter->alps_subnodes->lock();
     }
-  if ((cray_enabled != TRUE) || 
+  if ((cray_enabled != true) || 
       (alps_reporter == NULL) ||
       (alps_reporter->alps_subnodes->count() != 0))
     {
-    if(alps_reporter != NULL)
+    if (alps_reporter != NULL)
       {
       alps_reporter->alps_subnodes->unlock();
       }
-    if (cray_enabled == TRUE)
+
+    if (cray_enabled == true)
       {
       if (mppnodect_resource != NULL)
         {
@@ -2033,7 +2044,7 @@ int chk_resc_limits(
   pthread_mutex_lock(server.sv_attr_mutex);
   resc_gt = comp_resc2(&pque->qu_attr[QA_ATR_ResourceMin],
          pattr,
-         server.sv_attr[SRV_ATR_QCQLimits].at_val.at_long,
+         server.sv_attr[SRV_ATR_QCQLimits].at_val.at_bool,
          EMsg,
          GREATER);
   pthread_mutex_unlock(server.sv_attr_mutex);
@@ -2227,10 +2238,10 @@ static int check_queue_group_ACL(
     struct array_strings *pas;
 
     pthread_mutex_lock(server.sv_attr_mutex);
-    slpygrp = attr_ifelse_long(
+    slpygrp = attr_ifelse_bool(
       &pque->qu_attr[QA_ATR_AclGroupSloppy],
       &server.sv_attr[SRV_ATR_AclGroupSloppy],
-      0);
+      false);
     pthread_mutex_unlock(server.sv_attr_mutex);
 
     rc = acl_check(
@@ -2297,9 +2308,9 @@ static int check_queue_group_ACL(
         int logic_or;
 
         pthread_mutex_lock(server.sv_attr_mutex);
-        logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
+        logic_or = attr_ifelse_bool(&pque->qu_attr[QA_ATR_AclLogic],
                                     &server.sv_attr[SRV_ATR_AclLogic],
-                                    0);
+                                    false);
         pthread_mutex_unlock(server.sv_attr_mutex);
 
         if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
@@ -2372,9 +2383,9 @@ static int check_queue_user_ACL(
       int logic_or;
 
       pthread_mutex_lock(server.sv_attr_mutex);
-      logic_or = attr_ifelse_long(&pque->qu_attr[QA_ATR_AclLogic],
+      logic_or = attr_ifelse_bool(&pque->qu_attr[QA_ATR_AclLogic],
                                   &server.sv_attr[SRV_ATR_AclLogic],
-                                  0);
+                                  false);
       pthread_mutex_unlock(server.sv_attr_mutex);
 
       if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
@@ -2771,25 +2782,42 @@ bool has_conflicting_resource_requests(
   pbs_queue *pque)
 
   {
-  // check to make sure we don't have certain -l defaults and a -L request
+
+  bool conflict = false;
+
   if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+      ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET) == 0) &&
       (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET))
     {
-    static const char *conflicting_types[] = { "nodes", "size", "mppwidth", "mem", "hostlist",
-                                      "ncpus", "procs", "pvmem", "pmem", "vmem", "reqattr",
-                                      "software", "geometry", "opsys", "tpn", "trl", NULL };
     pbs_attribute *pattr = &pque->qu_attr[QA_ATR_ResourceDefault];
 
-    // Return true if the queue has any of the conflicting_types in its -l defaults
-    for (int i = 0; conflicting_types[i] != NULL; i++)
+    // Return true if the queue has any of the incompatible_l in its -l defaults
+    for (int i = 0; incompatible_l[i] != NULL; i++)
       {
-      resource_def *prd = find_resc_def(svr_resc_def, conflicting_types[i], svr_resc_size);
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
       if (find_resc_entry(pattr, prd) != NULL)
-        return(true);
+        {
+        conflict = true;
+        break;
+        }
+      }
+    }
+  else if (((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) == 0) &&
+           ((pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET)))
+    {
+    pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_resource];
+    for (int i = 0; incompatible_l[i] != NULL; i++)
+      {
+      resource_def *prd = find_resc_def(svr_resc_def, incompatible_l[i], svr_resc_size);
+      if (find_resc_entry(pattr, prd) != NULL)
+        {
+        conflict = true;
+        break;
+        }
       }
     }
 
-  return(false);
+  return(conflict);
   } /* END has_conflicting_resource_requests() */
 
 
@@ -3336,24 +3364,23 @@ void set_deflt_resc(
 
   {
   resource *prescjb;
-  resource *prescdt;
 
   if (dflt->at_flags & ATR_VFLAG_SET)
     {
 
-    if ((dflt->at_type == ATR_TYPE_REQ) || (dflt->at_type == ATR_TYPE_RESC))
+    if ((dflt->at_type == ATR_TYPE_REQ) ||
+        (dflt->at_type == ATR_TYPE_RESC))
       {
       /* for each resource in the default value list */
+      std::vector<resource> *resc_deflt = (std::vector<resource> *)dflt->at_val.at_ptr;
 
-      prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
-
-      while (prescdt != NULL)
+      if (resc_deflt != NULL)
         {
-        if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
+        for (size_t i = 0; i < resc_deflt->size(); i++)
           {
-          /* see if the job already has that resource */
+          resource &r = resc_deflt->at(i);
 
-          prescjb = find_resc_entry(jb, prescdt->rs_defin);
+          prescjb = find_resc_entry(jb, r.rs_defin);
 
           if ((prescjb == NULL) ||
               ((prescjb->rs_value.at_flags & ATR_VFLAG_SET) == 0))
@@ -3361,43 +3388,40 @@ void set_deflt_resc(
             /* resource does not exist or value is not set */
 
             if (prescjb == NULL)
-              prescjb = add_resource_entry(jb, prescdt->rs_defin);
+              prescjb = add_resource_entry(jb, r.rs_defin);
 
             if (prescjb != NULL)
               {
-              if (prescdt->rs_defin->rs_set(
-                    &prescjb->rs_value,
-                    &prescdt->rs_value,
-                    SET) == 0)
+              if (r.rs_defin->rs_set(&prescjb->rs_value, &r.rs_value, SET) == 0)
                 {
                 prescjb->rs_value.at_flags |= (ATR_VFLAG_SET | ATR_VFLAG_DEFLT | ATR_VFLAG_MODIFY);
                 }
               }
             }
           }
-
-        prescdt = (resource *)GET_NEXT(prescdt->rs_link);
         }
       }
     else if (dflt->at_type == ATR_TYPE_ATTR_REQ_INFO)
       {
-      std::vector<std::string> req_names, req_values;
-      std::vector<std::string> default_names, default_values;
+      std::vector<std::string> default_names;
+      std::vector<std::string> default_values;
       complete_req  *cr  = (complete_req *)jb->at_val.at_ptr;
       attr_req_info *ari = (attr_req_info *)dflt->at_val.at_ptr;
       int req_count;
 
       if (cr == NULL)
         return;
-      cr->get_values(req_names, req_values);
+
       req_count = cr->req_count();
-      ari->add_default_values(req_names, req_values, default_names, default_values);
+
+      ari->get_default_values(default_names, default_values);
 
       for (unsigned int i = 0; i < default_names.size(); i++)
         {
         for (unsigned int j = 0; j < (unsigned int)req_count; j++)
           {
-          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str());
+          // Let the complete req know this is a default so it won't overwrite an existing value.
+          cr->set_value(j, default_names[i].c_str(), default_values[i].c_str(), true);
           }
         }
       }
@@ -3510,6 +3534,7 @@ void set_resc_deflt(
   attribute_def *pdef;
   int            i;
   int            rc;
+  long           cgroup_per_task = FALSE;
 
   if (ji_wattr != NULL)
     {
@@ -3538,11 +3563,39 @@ void set_resc_deflt(
   else
     pque = pjob->ji_qhdr;
 
-  /* apply queue defaults first since they take precedence */
+  if ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) &&
+      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long == 2) &&
+      (get_svr_attr_l(SRV_ATR_CgroupPerTask, &cgroup_per_task) == PBSE_NONE))
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    char          val[MAXLINE];
+
+    if (cgroup_per_task == TRUE)
+      strcpy(val, "true");
+    else
+      strcpy(val, "false");
+
+    for (int r = 0; r < cr->req_count(); r++)
+      cr->set_value(r, "cpt", val, true);
+    }
+
+  // apply queue defaults first since they take precedence
   if (pque != NULL)
     {
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+    if ((pque->qu_attr[QA_ATR_ResourceDefault].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationDefault].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceDefault]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationDefault]);
+      }
     
     pthread_mutex_lock(server.sv_attr_mutex);
     /* server defaults will only be applied to attributes which have
@@ -3550,9 +3603,21 @@ void set_resc_deflt(
     set_deflt_resc(ja, &server.sv_attr[SRV_ATR_resource_deflt]);
     
 #ifdef RESOURCEMAXDEFAULT
-    /* apply queue max limits first since they take precedence */
-    set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
-    set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+    // apply queue max limits first since they take precedence
+    if ((pque->qu_attr[QA_ATR_ResourceMax].at_flags & ATR_VFLAG_SET) &&
+        (pque->qu_attr[QA_ATR_ReqInformationMax].at_flags & ATR_VFLAG_SET))
+      {
+      // If both are set then apply the defaults according to which request version the job used
+      if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long != 2)
+        set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      else
+        set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
+    else
+      {
+      set_deflt_resc(ja, &pque->qu_attr[QA_ATR_ResourceMax]);
+      set_deflt_resc(L_ja, &pque->qu_attr[QA_ATR_ReqInformationMax]);
+      }
     
     /* server max limits will only be applied to attributes which have
        not yet been set */
@@ -3864,6 +3929,7 @@ static void correct_ct()
   }  /* END correct_ct() */
 
 
+
 int lock_ji_mutex(
 
   job        *pjob,
@@ -3872,16 +3938,12 @@ int lock_ji_mutex(
   int        logging)
 
   {
-  int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
+  int  rc = PBSE_NONE;
+  char err_msg[MSG_LEN_LONG];
 
   if (logging >= 10)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    snprintf(err_msg, sizeof(err_msg), "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
@@ -3891,8 +3953,8 @@ int lock_ji_mutex(
       {
       if (logging >= 20)
         {
-        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
-                                     pjob->ji_qs.ji_jobid, id);
+        snprintf(err_msg, sizeof(err_msg), "ALERT: cannot lock job %s mutex in method %s",
+          pjob->ji_qs.ji_jobid, id);
         log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
         }
       rc = PBSE_MUTEX;
@@ -3903,9 +3965,6 @@ int lock_ji_mutex(
     rc = -1;
     log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_lock!");
     }
-
-  if (err_msg != NULL)
-  free(err_msg);
 
   return rc;
   }
@@ -3920,16 +3979,12 @@ int unlock_ji_mutex(
   int        logging)
 
   {
-  int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
+  int  rc = PBSE_NONE;
+  char err_msg[MSG_LEN_LONG];
 
   if (logging >= 10)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
+    snprintf(err_msg, sizeof(err_msg), "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
@@ -3939,8 +3994,8 @@ int unlock_ji_mutex(
       {
     if (logging >= 20)
         {
-        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
-                                            pjob->ji_qs.ji_jobid, id);
+        snprintf(err_msg, sizeof(err_msg), "ALERT: cannot unlock job %s mutex in method %s",
+          pjob->ji_qs.ji_jobid, id);
         log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
         }
       rc = PBSE_MUTEX;
@@ -3951,9 +4006,6 @@ int unlock_ji_mutex(
     rc = -1;
     log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_unlock!");
     }
-
-   if (err_msg != NULL)
-     free(err_msg);
 
    return rc;
    }
@@ -3967,16 +4019,12 @@ int lock_ai_mutex(
   int        logging)
 
   {
-  int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
+  int  rc = PBSE_NONE;
+  char err_msg[MSG_LEN_LONG];
 
   if (logging >= 10)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
+    snprintf(err_msg, sizeof(err_msg), "locking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
@@ -3984,15 +4032,12 @@ int lock_ai_mutex(
     {
     if (logging >= 20)
       {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job array %s mutex in method %s",
-                                   pa->ai_qs.parent_id, id);
+      snprintf(err_msg, sizeof(err_msg), "ALERT: cannot lock job array %s mutex in method %s",
+        pa->ai_qs.parent_id, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
     rc = PBSE_MUTEX;
     }
-
-  if (err_msg != NULL)
-  free(err_msg);
 
   return rc;
   }
@@ -4006,16 +4051,12 @@ int unlock_ai_mutex(
   int        logging)
 
   {
-  int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
+  int  rc = PBSE_NONE;
+  char err_msg[MSG_LEN_LONG];
 
   if (logging >= 10)
     {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
+    snprintf(err_msg, sizeof(err_msg), "unlocking %s in method %s-%s", pa->ai_qs.parent_id, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
     }
 
@@ -4023,15 +4064,12 @@ int unlock_ai_mutex(
     {
     if (logging >= 20)
       {
-      snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job array %s mutex in method %s",
-                                   pa->ai_qs.parent_id, id);
+      snprintf(err_msg, sizeof(err_msg), "ALERT: cannot unlock job array %s mutex in method %s",
+        pa->ai_qs.parent_id, id);
       log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
       }
     rc = PBSE_MUTEX;
     }
-
-  if (err_msg != NULL)
-  free(err_msg);
 
   return rc;
   }

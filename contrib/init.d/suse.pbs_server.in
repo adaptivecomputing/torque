@@ -46,7 +46,13 @@ case "$1" in
 		;;
 	stop)
 		echo -n "Shutting down TORQUE Server: "
-    $PBS_BIN_DIR/qterm
+                pid=`pidof -s $PBS_DAEMON`
+		# use SIGTERM not qterm to stop local pbs_server
+		# note that qterm will halt the master pbs_server which
+		# may be running on a different note in HA mode.
+                if [ $? -eq 0 ]; then
+			kill -TERM $pid
+		fi
 		rc_status -v
 		;;
 	status)

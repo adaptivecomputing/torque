@@ -63,9 +63,17 @@
   unset CONFFLAGS \
   CONFFLAGS_FILE=`mktemp %{_tmppath}/confflags.XXXX` \
   ./configure --help 2>&1 > ${CONFFLAGS_FILE} \
+  if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+  then \
+      CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+  fi \
+  if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \
+  then \
+      CONFFLAGS="${CONFFLAGS} %{_cgroupsopt}" \
+  fi \
   if grep -q  -- '--oldincludedir' "${CONFFLAGS_FILE}" \
   then \
-      CONFFLAGS='--oldincludedir=%{_oldincludedir}' \
+      CONFFLAGS="${CONFFLAGS} --oldincludedir=%{_oldincludedir}" \
   fi \
   if grep -q  -- '--datarootdir' ${CONFFLAGS_FILE} \
   then \
@@ -305,6 +313,7 @@
 %bcond_with    top
 
 ### Features enabled by default
+%bcond_without cgroups
 %bcond_without scp
 %bcond_without spool
 %bcond_without syslog
@@ -312,6 +321,7 @@
 ### Autoconf macro expansions
 %define ac_with_blcr       --%{?with_blcr:en}%{!?with_blcr:dis}able-blcr
 %define ac_with_cpuset     --%{?with_cpuset:en}%{!?with_cpuset:dis}able-cpuset
+%define ac_with_cgroups    --%{?with_cgroups:en}%{!?with_cgroups:dis}able-cgroups
 %define ac_with_drmaa      --%{?with_drmaa:en}%{!?with_drmaa:dis}able-drmaa
 %define ac_with_munge      --%{?with_munge:en}%{!?with_munge:dis}able-munge-auth
 %define ac_with_numa       --%{?with_numa:en}%{!?with_numa:dis}able-numa-support
@@ -327,6 +337,7 @@
 %define breq_munge %{?with_munge:munge-devel}
 %define breq_pam   %{?with_pam:pam-devel}
 %define breq_scp   %{?with_scp:/usr/bin/scp}
+%define breq_cgroups   %{?with_cgroups:libcgroup-tools} %{?with_cgroups:hwloc >= 1.9.1}
 
 # Missing:
 # libcpuset -> libcpuset.so.*
@@ -429,6 +440,9 @@ Suite.
 %package    %{common_sub}
 Group:      Applications/System
 Summary:    TORQUE Common Files
+%if %{with cgroups}
+Requires: %{breq_cgroups}
+%endif
 
 %description %{common_sub}
 Common files shared by TORQUE Server, Client, and MOM packages
@@ -463,6 +477,9 @@ Obsoletes:  %{community_server_pkg} < %{version}-%{release}
 Provides:   %{community_server_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_server_pkg}(x86-64) < %{version}-%{release}
 %endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
+%endif
 Requires:   %{common_pkg}
 Requires:   %{client_pkg}
 
@@ -484,6 +501,9 @@ Obsoletes:  %{community_devel_pkg} < %{version}-%{release}
 Provides:   %{community_devel_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_devel_pkg}(x86-64) < %{version}-%{release}
 %endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
+%endif
 
 %description %{devel_sub}
 Development headers and libraries for TORQUE
@@ -504,6 +524,9 @@ Obsoletes:  %{community_mom_pkg} < %{version}-%{release}
 %ifarch x86_64 amd64
 Provides:   %{community_mom_pkg}(x86-64) = %{version}-%{release}
 Obsoletes:  %{community_mom_pkg}(x86-64) < %{version}-%{release}
+%endif
+%if %{with cgroups}
+Requires: %{breq_cgroups}
 %endif
 
 %description %{mom_sub}
@@ -529,7 +552,9 @@ CXXFLAGS="-g3 -O0"
             --without-tcl \
             %{ac_with_scp} %{ac_with_syslog} \
             %{ac_with_munge} %{ac_with_pam} \
-            %{ac_with_blcr} %{ac_with_cpuset} %{ac_with_spool} %{?acflags}
+            %{ac_with_blcr} %{ac_with_cpuset} \
+            %{ac_with_cgroups} %{ac_with_spool} %{?acflags}
+            
 %{__make} clean
 %{__make} %{?_smp_mflags} %{?mflags}
 
@@ -570,8 +595,14 @@ done
 ## Configuration
 echo '__AC_HOSTNAME_NOT_SET__ np=__AC_PROCS_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/server_priv/nodes
-echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
+echo '$logevent 225 # bitmap of which events to log' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
+
+%{__mkdir_p} %{buildroot}/etc/profile.d
+echo 'test -d ${_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
+echo 'test `id -u` = 0 && test -d %{_sbindir} && export PATH=%{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.sh
+echo 'test -d ${_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
+echo 'test `id -u` = 0 && test-d ${_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
 
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0
@@ -612,9 +643,12 @@ done
 %{pre_add_back_up_dir  %{torque_appstatedir}/checkpoint %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/pbs_environment %{common_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file /etc/ld.so.conf.d/torque.conf %{common_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file %{torque_sysconfdir}/server_name %{common_sub}-${TIMESTAMP}}
 %{pre_zip_back_up %{common_sub}-${TIMESTAMP}}
 
 %post %{common_sub}
+%grep_safety_net %{torque_home} __AC_HOSTNAME_NOT_SET__ ${HOSTNAME}
+
 echo "  Running 'ldconfig'..."
 ldconfig
 
@@ -627,6 +661,8 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{client_sub}-${TIMESTAMP}}
 # Taken from the client's file list
 %{pre_add_back_up_file %{_unitdir}/trqauthd.service %{client_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.sh %{client_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.csh %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/chk_tree %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/hostn %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/nqs2pbs %{client_sub}-${TIMESTAMP}}
@@ -672,11 +708,12 @@ fi
 %pre %{server_sub}
 TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_clear_back_up %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.sh %{server_sub}-${TIMESTAMP}}
+%{pre_add_back_up_file /etc/profile.d/torque.csh %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{server_pkg_doc_dir}/doc/admin_guide.ps %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_sbindir}/torque.setup %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/mom_hierarchy \
                        %{server_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{torque_sysconfdir}/server_name %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{torque_sysconfdir}/server_priv/nodes \
                        %{server_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_unitdir}/pbs_server.service %{server_sub}-${TIMESTAMP}}
@@ -875,6 +912,7 @@ ldconfig
 %attr(-,root,root) %{_libdir}/lib%{project_name}.so*
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/pbs_environment
 %attr(-,root,root) %config(noreplace) /etc/ld.so.conf.d/torque.conf
+%attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.*
 %attr(-,root,root) %doc Release_Notes src/pam/README.pam
 %attr(-,root,root) %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
@@ -885,6 +923,8 @@ ldconfig
 
 %files %{client_sub}
 %attr(-,root,root) %config(noreplace) %{_unitdir}/trqauthd.service
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %{_bindir}/chk_tree
 %attr(-,root,root) %{_bindir}/hostn
 %attr(-,root,root) %{_bindir}/nqs2pbs
@@ -902,9 +942,10 @@ ldconfig
 %files %{server_sub}
 %attr(-,root,root) %doc doc/admin_guide.ps
 %attr(0755,root,root) %{_sbindir}/torque.setup
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/mom_hierarchy
 %attr(-,root,root) %config(noreplace) %{torque_appstatedir}/server_priv/serverdb
-%attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_name
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/server_priv/nodes
 %attr(-,root,root) %config(noreplace) %{_unitdir}/pbs_server.service
 %attr(-,root,root) %{_sbindir}/pbs_server
@@ -935,6 +976,8 @@ ldconfig
 %attr(-,root,root) %dir %{torque_spooldir}/undelivered
 %attr(-,root,root) %config(noreplace) %{torque_sysconfdir}/mom_priv/config
 %attr(-,root,root) %config(noreplace) %{_unitdir}/pbs_mom.service
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.sh
+%attr(-,root,root) %config(noreplace) /etc/profile.d/torque.csh
 %attr(-,root,root) %{_sbindir}/pbs_demux
 %attr(-,root,root) %{_sbindir}/pbs_mom
 %attr(-,root,root) %{_sbindir}/momctl

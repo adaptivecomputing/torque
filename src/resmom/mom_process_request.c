@@ -36,7 +36,7 @@
 #include "svrfunc.h"
 #include "pbs_proto.h"
 #include "csv.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "threadpool.h"
 #include "dis.h"
 #include "mom_job_func.h"
@@ -72,8 +72,6 @@ extern char  *msg_err_noqueue;
 extern char  *msg_err_malloc;
 extern char  *msg_request;
 
-extern AvlTree okclients;
-
 extern int LOGLEVEL;
 
 /* private functions local to this file */
@@ -103,7 +101,7 @@ void req_rerunjob(struct batch_request *preq);
 void req_modifyjob(struct batch_request *preq);
 
 void req_shutdown(struct batch_request *preq);
-void req_signaljob(struct batch_request *preq);
+void mom_req_signal_job(struct batch_request *preq);
 void req_mvjobfile(struct batch_request *preq);
 void req_checkpointjob(struct batch_request *preq);
 void req_messagejob(struct batch_request *preq);
@@ -226,8 +224,6 @@ void *mom_process_request(
   /* is the request from a host acceptable to the server */
 
     {
-    /*extern tree *okclients; */
-
     extern void mom_server_update_receive_time_by_ip(u_long ipaddr, const char *cmd);
 
     /* check connecting host against allowed list of ok clients */
@@ -254,7 +250,7 @@ void *mom_process_request(
       return NULL;
       }
 
-    if (!AVL_is_in_tree_no_port_compare(svr_conn[chan->sock].cn_addr, 0, okclients))
+    if (auth_hosts.is_authorized(svr_conn[chan->sock].cn_addr) == false)
       {
       sprintf(log_buffer, "request type %s from host %s rejected (host not authorized)",
         reqtype_to_txt(request->rq_type),
@@ -302,7 +298,7 @@ void *mom_process_request(
 
 
 /*
- * dispatch_request - Determine the request type and invoke the corresponding
+ * mom_dispatch_request - Determine the request type and invoke the corresponding
  * function.  The function will perform the request action and return the
  * reply.  The function MUST also reply and free the request by calling
  * reply_send().
@@ -409,7 +405,7 @@ void mom_dispatch_request(
 
     case PBS_BATCH_AsySignalJob:
 
-      req_signaljob(request);
+      mom_req_signal_job(request);
 
       break;
 
@@ -465,7 +461,7 @@ void mom_dispatch_request(
     }  /* END switch (request->rq_type) */
 
   return;
-  }  /* END dispatch_request() */
+  }  /* END mom_dispatch_request() */
 
 
 

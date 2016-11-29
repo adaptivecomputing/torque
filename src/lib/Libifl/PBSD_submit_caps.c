@@ -87,7 +87,7 @@
 #include "dis.h"
 #include "u_hash_map_structs.h"
 #include "pbs_ifl.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 #include "server_limits.h"
 
 /* PBSD_submit.c
@@ -239,6 +239,63 @@ int PBSD_commit_get_sid(
   } /* END PBSD_commit_get_sid() */
 
 
+/* PBS_commit2.c
+
+ This function does the Commit sub-function of
+ the Queue Job request.
+*/
+
+int PBSD_commit2(
+
+  int   connect,  /* I */
+  char *jobid)    /* I */
+
+  {
+
+  struct batch_reply *reply;
+  int                 rc;
+  int                 sock;
+  struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+  sock = connection[connect].ch_socket;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    return(PBSE_MEM_MALLOC);
+    }
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_Commit2, pbs_current_user)) ||
+      (rc = encode_DIS_JobId(chan, jobid)) ||
+      (rc = encode_DIS_ReqExtend(chan, NULL)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
+    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+    DIS_tcp_cleanup(chan);
+    return(PBSE_PROTOCOL);
+    }
+
+  if (DIS_tcp_wflush(chan))
+    {
+    DIS_tcp_cleanup(chan);
+    return(PBSE_PROTOCOL);
+    }
+  DIS_tcp_cleanup(chan);
+
+  /* PBSD_rdrpy sets connection[connect].ch_errno */
+  reply = PBSD_rdrpy(&rc, connect);
+
+  PBSD_FreeReply(reply);
+  return(rc);
+  }  /* END PBSD_commit2() */
+
 
 
 
@@ -316,7 +373,7 @@ int PBSD_scbuf(
   int   seq,  /* file chunk sequence number */
   char *buf,  /* file chunk */
   int   len,  /* length of chunk */
-  char *jobid,  /* job id (for types 1 and 2 only) */
+  const char *jobid,  /* job id (for types 1 and 2 only) */
   enum job_file which) /* standard file type, see libpbs.h */
 
   {
@@ -391,8 +448,8 @@ int PBSD_scbuf(
 int PBSD_jscript(
     
   int   c,
-  char *script_file,
-  char *jobid)
+  const char *script_file,
+  const char *jobid)
 
   {
   int  i;
@@ -417,6 +474,61 @@ int PBSD_jscript(
   cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
 
   while ((cc > 0) && (PBSD_scbuf(c, PBS_BATCH_jobscript, i, s_buf, cc, jobid, JScript) == 0))
+    {
+    i++;
+    cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
+    }
+
+  close(fd);
+
+  if (cc < 0) /* read failed */
+    return (-1);
+
+  pthread_mutex_lock(connection[c].ch_mutex);
+
+  rc = connection[c].ch_errno;
+
+  pthread_mutex_unlock(connection[c].ch_mutex);
+
+  return(rc);
+  }
+
+/* PBS_jscript.c
+ *
+ * The Job Script subfunction of the Queue Job request
+ * -- the function PBS_scbuf is called repeatedly to
+ * transfer chunks of the script to the server.
+*/
+
+int PBSD_jscript2(
+    
+  int   c,
+  const char *script_file,
+  const char *jobid)
+
+  {
+  int  i;
+  int  fd;
+  int  cc;
+  int  rc;
+  char s_buf[SCRIPT_CHUNK_Z];
+  
+  if ((c < 0) || 
+      (c >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
+
+  if ((fd = open(script_file, O_RDONLY, 0)) < 0)
+    {
+    return (-1);
+    }
+
+  i = 0;
+
+  cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
+
+  while ((cc > 0) && (PBSD_scbuf(c, PBS_BATCH_jobscript2, i, s_buf, cc, jobid, JScript) == 0))
     {
     i++;
     cc = read_ac_socket(fd, s_buf, SCRIPT_CHUNK_Z);
@@ -505,6 +617,90 @@ int PBSD_jobfile(
   return(rc);
   }  /* END PBSD_jobfile() */
 
+/* PBS_queuejob.c
+
+ This function sends the first part of the Queue Job request
+*/
+
+char *PBSD_queuejob2(
+
+  int             connect,     /* I */
+  int            *local_errno, /* O */
+  const char     *jobid,       /* I */
+  const char     *destin,
+  struct attropl *attrib,
+  char           *extend)
+
+  {
+  struct batch_reply *reply;
+  char               *return_jobid = NULL;
+  int                 rc;
+  int                 sock;
+  struct tcp_chan    *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(NULL);
+    }
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+  sock = connection[connect].ch_socket;
+  connection[connect].ch_errno = 0;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    return(NULL);
+    }
+  /* first, set up the body of the Queue Job request */
+  else if ((rc = encode_DIS_ReqHdr(chan,PBS_BATCH_QueueJob2,pbs_current_user)) ||
+           (rc = encode_DIS_QueueJob(chan, jobid, destin, attrib)) ||
+           (rc = encode_DIS_ReqExtend(chan, extend)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
+    connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+
+    *local_errno = PBSE_PROTOCOL;
+    DIS_tcp_cleanup(chan);
+    return(NULL);
+    }
+
+  if (DIS_tcp_wflush(chan))
+    {
+    *local_errno = PBSE_PROTOCOL;
+    DIS_tcp_cleanup(chan);
+    return(NULL);
+    }
+
+  DIS_tcp_cleanup(chan);
+
+  /* read reply from stream into presentation element */
+
+  reply = PBSD_rdrpy(local_errno, connect);
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+  if (reply == NULL)
+    {
+    }
+  else if (reply->brp_choice &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
+    {
+    *local_errno = PBSE_PROTOCOL;
+    }
+  else if (connection[connect].ch_errno == 0)
+    {
+    return_jobid = strdup(reply->brp_un.brp_jid);
+    }
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+
+  PBSD_FreeReply(reply);
+
+  return(return_jobid);
+  }  /* END PBSD_queuejob() */
+
 
 
 
@@ -517,8 +713,8 @@ char *PBSD_queuejob(
 
   int             connect,     /* I */
   int            *local_errno, /* O */
-  char           *jobid,       /* I */
-  char           *destin,
+  const char     *jobid,       /* I */
+  const char     *destin,
   struct attropl *attrib,
   char           *extend)
 
@@ -590,6 +786,113 @@ char *PBSD_queuejob(
   PBSD_FreeReply(reply);
 
   return(return_jobid);
+  }  /* END PBSD_queuejob() */
+
+
+int PBSD_QueueJob2_hash(
+
+  int                connect,     /* I */
+  const char         *jobid,       /* I */
+  const char         *destin,
+  job_data_container *job_attr,
+  job_data_container *res_attr,
+  const char         *extend,
+  char              **job_id,
+  char              **msg)
+
+  {
+  struct batch_reply *reply;
+  int                 rc = PBSE_NONE;
+  int                 sock;
+  struct tcp_chan *chan = NULL;
+  
+  if ((connect < 0) || 
+      (connect >= PBS_NET_MAX_CONNECTIONS))
+    {
+    return(PBSE_IVALREQ);
+    }
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+  sock = connection[connect].ch_socket;
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+
+  if ((chan = DIS_tcp_setup(sock)) == NULL)
+    {
+    return(PBSE_PROTOCOL);
+    }
+  /* first, set up the body of the Queue Job request */
+  else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_QueueJob2, pbs_current_user)) ||
+           (rc = encode_DIS_QueueJob_hash(chan, const_cast<char *>(jobid), const_cast<char *>(destin), job_attr, res_attr)) ||
+           (rc = encode_DIS_ReqExtend(chan, const_cast<char *>(extend))))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
+    if (connection[connect].ch_errtxt == NULL)
+      {
+      if ((rc >= 0) &&
+          (rc <= DIS_INVALID))
+        connection[connect].ch_errtxt = strdup(dis_emsg[rc]);
+      }
+
+    if (connection[connect].ch_errtxt != NULL)  
+      *msg = strdup(connection[connect].ch_errtxt);
+
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+
+    DIS_tcp_cleanup(chan);
+
+    return(rc);
+    }
+
+  if ((rc = DIS_tcp_wflush(chan)))
+    {
+    pthread_mutex_lock(connection[connect].ch_mutex);
+    if (connection[connect].ch_errtxt != NULL)
+      {
+      *msg = strdup(connection[connect].ch_errtxt);
+      }
+    pthread_mutex_unlock(connection[connect].ch_mutex);
+
+    DIS_tcp_cleanup(chan);
+
+    return(rc);
+    }
+    
+  DIS_tcp_cleanup(chan);
+
+  /* read reply from stream into presentation element */
+  reply = PBSD_rdrpy(&rc, connect);
+
+  pthread_mutex_lock(connection[connect].ch_mutex);
+  if (reply == NULL)
+    {
+    if (rc == PBSE_TIMEOUT)
+      rc = PBSE_EXPIRED;
+    }
+  else if (reply->brp_choice &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Text &&
+           reply->brp_choice != BATCH_REPLY_CHOICE_Queue)
+    {
+    rc = PBSE_PROTOCOL;
+    
+    if (connection[connect].ch_errtxt == NULL)
+      {
+      *msg = NULL;
+      }
+    }
+  else if (reply->brp_choice == BATCH_REPLY_CHOICE_Text)
+    {
+    *msg = strdup(reply->brp_un.brp_txt.brp_str);
+    }
+  else if (connection[connect].ch_errno == 0)
+    {
+    *job_id = strdup(reply->brp_un.brp_jid);
+    }
+    
+  pthread_mutex_unlock(connection[connect].ch_mutex);
+
+  PBSD_FreeReply(reply);
+
+  return rc;
   }  /* END PBSD_queuejob() */
 
 

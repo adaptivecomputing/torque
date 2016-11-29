@@ -121,6 +121,9 @@ pbsnode *mom_hierarchy_handler::nextNode(all_nodes_iterator **iter)
     *iter = NULL;
     allnodes.unlock();
     }
+  else
+    pNode->lock_node(__func__, NULL, LOGLEVEL);
+
   return pNode;
   }
 
@@ -747,9 +750,8 @@ void mom_hierarchy_handler::checkAndSendHierarchy(
         {
         if (pnode->nd_state & INUSE_NOHIERARCHY)
           {
-          pnode->nd_state = INUSE_FREE; //This was created as a dynamic node and
-                                        //it now has a good ok host list so mark
-                                        //it ready for use.
+          // This was created as a dynamic node and it now has a good ok host list.
+          pnode->nd_state &= ~(INUSE_NOHIERARCHY|INUSE_OFFLINE);
           }
         pnode->unlock_node(__func__, NULL, LOGLEVEL);
         }

@@ -18,6 +18,7 @@
 #include "mom_hierarchy_handler.h"
 #include "completed_jobs_map.h"
 #include "acl_special.hpp"
+#include "authorized_hosts.hpp"
 
 bool exit_called = false;
 pthread_mutex_t *job_log_mutex;
@@ -369,6 +370,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 void *send_hierarchy_threadtask(void *vp)
   {
   return(NULL);
@@ -511,3 +517,5 @@ completed_jobs_map_class::~completed_jobs_map_class() {}
 void *remove_completed_jobs(void *vp) {return(NULL);}
 
 acl_special::acl_special() {}
+
+authorized_hosts::authorized_hosts() {}

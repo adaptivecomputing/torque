@@ -119,6 +119,9 @@
 #define FALSE 0
 #endif
 
+#define FATAL_ERROR    -2
+#define NONFATAL_ERROR -1
+
 #define BUFFER_OVERFLOW -5
 #define LT_ESCAPED       "&lt;"
 #define LT_ESCAPED_LEN   4
@@ -165,7 +168,7 @@ extern int write_buffer (char *,int,int);
 extern void save_args(int, char **);
 extern char *find_command(char *, char *);
 void         translate_vector_to_range_string(std::string &range_string, const std::vector<int> &indices);
-void         translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
+int          translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 void         capture_until_close_character(char **start, std::string &storage, char end);
 bool         task_hosts_match(const char *, const char *);
 
@@ -204,6 +207,7 @@ int put_env_var(const char *, const char *);
 // from u_wrapper.c
 int rmdir_ext(const char *dir, int retry_limit = 20);
 int unlink_ext(const char *filename, int retry_limit = 20);
+int mkdir_wrapper(const char *pathname, mode_t mode);
 
 #endif /* END #ifndef UTILS_H */
  

@@ -13,8 +13,6 @@ int set_resc(struct pbs_attribute *old, struct pbs_attribute *newAttr, enum batc
 
 int comp_resc(struct pbs_attribute *attr, struct pbs_attribute *with); 
 
-int comp_resc2(struct pbs_attribute *attr, struct pbs_attribute *with, int IsQueueCentric, char *EMsg, enum compare_types type); 
-
 void free_resc(pbs_attribute *pattr);
 
 resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit); 

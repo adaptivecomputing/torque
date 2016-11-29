@@ -49,6 +49,7 @@ int svr_totnodes = 0;
 threadpool_t *request_pool;
 char scaff_buffer[1024];
 threadpool_t *async_pool;
+bool cray_enabled;
 
 
 
@@ -88,10 +89,8 @@ char *find_ts_node(void)
   exit(1);
   }
 
-void stat_mom_job(char *job_id)
+void stat_mom_job(const char *job_id)
   {
-  fprintf(stderr, "The call to stat_mom_job to be mocked!!\n");
-  exit(1);
   }
 
 pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
@@ -112,7 +111,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-void free_nodes(job *)
+void free_nodes(job *pjob, const char *spec)
   {
   fprintf(stderr, "The call to free_nodes to be mocked!!\n");
   exit(1);
@@ -197,19 +196,13 @@ int job_set_wait(pbs_attribute *pattr, void *pjob, int mode)
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
-  {
-  fprintf(stderr, "The call to update_array_values to be mocked!!\n");
-  exit(1);
-  }
-
 void release_req(struct work_task *pwt)
   {
   fprintf(stderr, "The call to release_req to be mocked!!\n");
   exit(1);
   }
 
- int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg)
+ int set_nodes(job *pjob, const char *spec, int procs, std::string &node_list, std::string &portlist, char *FailHost, char *EMsg)
   {
   fprintf(stderr, "The call to set_nodes to be mocked!!\n");
   exit(1);
@@ -250,7 +243,7 @@ void DIS_tcp_settimeout(long timeout)
   {
   }
 
-int send_job_work(char *job_id, char *node_name, int type, int *my_err, struct batch_request *preq)
+int send_job_work(char *job_id, const char *node_name, int type, int *my_err, struct batch_request *preq)
   {
   //returning failure
   return -1;
@@ -281,6 +274,11 @@ char *threadsafe_tokenizer(char **str, const char *delims)
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }
@@ -394,4 +392,14 @@ void complete_req::set_hostlists(const char *jobid, const char *list) {}
 
 job::job() {}
 job::~job() {}
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  int                   job_exit_status)
+
+  {
+  }
 

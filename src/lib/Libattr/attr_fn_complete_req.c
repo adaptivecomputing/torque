@@ -145,6 +145,27 @@ int  decode_complete_req(
       return(PBSE_BAD_PARAMETER);
       }
 
+    /* See if we set memory and swap and if we did memory must be less or equal  than swap */
+    for (int i = 0; i < cr->req_count(); i++)
+      {
+      unsigned long long mem;
+      unsigned long long swap;
+      req &r = cr->get_req(i);
+
+      mem = r.getMemory();
+      swap = r.getSwap();
+
+      if (swap != 0)
+        {
+        if (swap < mem)
+          {
+          delete cr;
+          return(PBSE_BAD_PARAMETER);
+          }
+        }
+      }
+
+
     free_complete_req(patr);
 
     patr->at_val.at_ptr = cr;
@@ -171,7 +192,7 @@ int  decode_complete_req(
     
     if (!strncmp(attr_name, "task_usage", strlen("task_usage")))
       {
-      rc = cr->set_value(attr_name, val);
+      rc = cr->set_task_value(attr_name, val);
       }
     else
       {
@@ -180,7 +201,7 @@ int  decode_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        rc = cr->set_value(index, attr_name, val);
+        rc = cr->set_value(index, attr_name, val, false);
         }
       }
 
@@ -191,6 +212,28 @@ int  decode_complete_req(
       free_complete_req(patr);
       return(PBSE_BAD_PARAMETER);
       }
+
+    /* See if we set memory and swap and if we did memory must be less or equal  than swap */
+    for (int i = 0; i < cr->req_count(); i++)
+      {
+      unsigned long long mem;
+      unsigned long long swap;
+      req &r = cr->get_req(i);
+
+      mem = r.getMemory();
+      swap = r.getSwap();
+
+      if (swap != 0)
+        {
+        if (swap < mem)
+          {
+          /* free_complete_req implies a 'delete cr' */
+          free_complete_req(patr);
+          return(PBSE_BAD_PARAMETER);
+          }
+        }
+      }
+
 
     patr->at_flags |= ATR_VFLAG_SET;
     return(rc);
@@ -294,7 +337,7 @@ void overwrite_complete_req(
     {
     if (!strncmp("task_usage", names[i].c_str(), strlen("task_usage")))
       {
-      cr->set_value(names[i].c_str(), values[i].c_str());
+      cr->set_task_value(names[i].c_str(), values[i].c_str());
       }
     else
       {
@@ -306,7 +349,7 @@ void overwrite_complete_req(
         {
         int index = strtol(dot + 1, NULL, 10);
         *dot = '\0';
-        cr->set_value(index, attr_name, values[i].c_str());
+        cr->set_value(index, attr_name, values[i].c_str(), false);
         }
 
       free(attr_name);

@@ -3,10 +3,14 @@
 
 #include "job_usage_info.hpp"
 
-job_usage_info::job_usage_info(int internal_job_id)
+job_usage_info::job_usage_info(
+    
+  int internal_jid) : internal_job_id(internal_jid), est()
+
   {
-  this->internal_job_id = internal_job_id;
   }
+
+
 
 bool job_usage_info::operator ==(
 
@@ -18,8 +22,10 @@ bool job_usage_info::operator ==(
   else
     return(false);
   }
-   
-job_usage_info &job_usage_info::operator= (
+
+
+
+job_usage_info &job_usage_info::operator =(
     
   const job_usage_info &other_jui)
 
@@ -65,3 +71,5 @@ job_reservation_info &job_reservation_info::operator =(
     
   return(*this);
   }
+
+

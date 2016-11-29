@@ -2,9 +2,13 @@ include $(top_srcdir)/buildutils/config.mk
 
 DIST_SUBDIRS=
 
-include_HEADERS = common_cmds.h pbsnodes.h qsub_functions.h
 PBS_LIBS = ../lib/Libpbs/libtorque.la \
-					 ../lib/Libutils/libutils.a
+           ../lib/Libutils/libutils.a
+
+noinst_HEADERS = common_cmds.h pbsnodes.h pbs_track.h qdisable.h qgpureset.h qmove.h qrerun.h qselect.h qstat.h qterm.h \
+                 MXML.h pbspd.h qalter.h qenable.h qhold.h qmsg.h qrls.h qsig.h qstop.h pbsdsh.h pbspoe.h qchkpt.h \
+                 qgpumode.h qmgr_functions.h qorder.h qrun.h qstart.h qsub_functions.h
+
 
 dist_bin_SCRIPTS = nqs2pbs
 bin_PROGRAMS = qalter qdel qhold qmove qorder qmsg qrerun qrls qselect qsig \
@@ -73,8 +77,23 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
 	ln -s $(program_prefix)pbsnodes$(program_suffix)$(EXEEXT) \
 	  $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  $(install_sh) -d -m 755 $(DESTDIR)/etc/profile.d || :; \
+	  if [ ! -f $(DESTDIR)/etc/profile.d/torque.sh ]; then \
+	    echo "PATH=$(bindir):$(sbindir):\$$PATH" > $(DESTDIR)/etc/profile.d/torque.sh; \
+	    chmod 644 $(DESTDIR)/etc/profile.d/torque.sh; \
+	  fi; \
+	  if [ ! -f $(DESTDIR)/etc/profile.d/torque.csh ]; then \
+	    echo "set path = ($(bindir) $(sbindir) \$$path)" > $(DESTDIR)/etc/profile.d/torque.csh; \
+	    chmod 644 $(DESTDIR)/etc/profile.d/torque.csh; \
+	  fi; \
+	fi
 
 uninstall-hook:
 	rm -f $(DESTDIR)$(PBS_DEFAULT_FILE)
 	rm -f $(DESTDIR)$(bindir)/$(program_prefix)qnodes$(program_suffix)$(EXEEXT)
+	if [ $(FROM_TORQUE_BUILD)0 -eq 0 ]; then \
+	  rm -f $(DESTDIR)/etc/profile.d/torque.sh || :; \
+	  rm -f $(DESTDIR)/etc/profile.d/torque.csh || :; \
+	fi
 

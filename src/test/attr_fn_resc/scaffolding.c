@@ -16,7 +16,7 @@ resource_def svr_resc_def_const[] =
 int svr_resc_size = sizeof(svr_resc_def_const)/sizeof(resource_def);
 resource_def *svr_resc_def = svr_resc_def_const;
 
-int ctnodes(char *spec)
+int ctnodes(const char *spec)
   {
   fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
   exit(1);

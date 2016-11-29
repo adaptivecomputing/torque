@@ -21,8 +21,11 @@
 #include "id_map.hpp"
 #include "machine.hpp"
 #include "complete_req.hpp"
+#include "json/json.h"
+#include "authorized_hosts.hpp"
 
 
+bool cray_enabled;
 bool conn_success = true;
 bool alloc_br_success = true;
 char *path_node_usage = strdup("/tmp/idontexistatallnotevenalittle");
@@ -52,6 +55,7 @@ const char *alps_starter_feature   = "alps_login";
 threadpool_t    *task_pool;
 bool             job_mode = false;
 int              can_place = 0;
+pbsnode          napali_node;
 
 
 struct batch_request *alloc_br(int type)
@@ -84,12 +88,6 @@ struct batch_request *alloc_br(int type)
 void DIS_tcp_reset(int fd, int i)
   {
   fprintf(stderr, "The call to DIS_tcp_reset needs to be mocked!!\n");
-  exit(1);
-  }
-
-int ctnodes(char *spec)
-  {
-  fprintf(stderr, "The call to ctnodes needs to be mocked!!\n");
   exit(1);
   }
 
@@ -147,7 +145,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
   if (!strcmp(nodename, "bob"))
     return(&bob);
   else if (!strcmp(nodename, "napali"))
-    return(&bob);
+    return(&napali_node);
   else if (!strcmp(nodename, "waimea"))
     return(&bob);
   else if (!strcmp(nodename, "2"))
@@ -336,6 +334,10 @@ job *svr_find_job(const char *jobid, int get_subjob)
     {
     return(NULL);
     }
+  else if (!strcmp(jobid, "2.napali"))
+    {
+    pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+    }
   else if (strcmp(jobid, "2"))
     {
     pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob/5");
@@ -437,6 +439,19 @@ int get_svr_attr_l(int index, long *l)
   if (index == SRV_ATR_CrayEnabled)
     *l = 1;
 
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
+  {
+  if (index == SRV_ATR_CrayEnabled)
+    *b = true;
+
+  return(0);
+  }
+
+int get_svr_attr_str(int index, char **str_ptr)
+  {
   return(0);
   }
 
@@ -581,9 +596,9 @@ const char *id_map::get_name(int id)
     {
     switch (id)
       {
-      case 1:
-      case 2:
-      case 3:
+      case 11:
+      case 12:
+      case 13:
 
         snprintf(buf, sizeof(buf), "%d.lei.ac", id);
         return(strdup(buf));
@@ -619,12 +634,13 @@ void translate_vector_to_range_string(
   } // END translate_vector_to_range_string()
   
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
 
   {
+  return(PBSE_NONE);
   } /* END translate_range_string_to_vector() */
 
 void capture_until_close_character(
@@ -673,7 +689,7 @@ ssize_t write_ac_socket(int fd, const void *buf, ssize_t count)
 
 
 pbsnode::pbsnode() : nd_error(0), nd_properties(),
-                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(NULL),
+                     nd_mutex(), nd_id(-1), nd_addrs(), nd_prop(NULL), nd_status(),
                      nd_note(),
                      nd_stream(-1),
                      nd_flag(okay), nd_mom_port(PBS_MOM_SERVICE_PORT),
@@ -706,7 +722,7 @@ pbsnode::pbsnode(
   const char *pname,
   u_long     *pul,
   bool        skip_address_lookup) : nd_error(0), nd_properties(), nd_mutex(), nd_prop(NULL),
-                                     nd_status(NULL),
+                                     nd_status(),
                                      nd_note(),
                                      nd_stream(-1),
                                      nd_flag(okay),
@@ -730,8 +746,6 @@ pbsnode::pbsnode(
                                      nd_requestid(), nd_tmp_unlock_count(0)
 
   {
-  struct addrinfo *pAddrInfo;
-
   this->nd_name            = pname;
   this->nd_properties.push_back(this->nd_name);
   this->nd_id              = 1;
@@ -954,6 +968,8 @@ void pbsnode::remove_node_state_flag(
   this->nd_state &= ~flag;
   }
 
+void pbsnode::add_job_list_to_status(const std::string &job_list) {}
+
 Machine::Machine() {}
 Machine::~Machine() {}
 
@@ -974,6 +990,17 @@ int Machine::place_job(
   {
   return(0);
   }
+
+int Machine::getTotalThreads() const
+ {
+ return(0);
+ }
+
+
+int Machine::getTotalChips() const
+ {
+ return(0);
+ }
 
 int Machine::how_many_tasks_can_be_placed(req &r) const
   {
@@ -1035,3 +1062,33 @@ job::job()
 
 job::~job() {}
 
+void job::set_plugin_resource_usage_from_json(Json::Value &usage) {}
+
+bool have_incompatible_dash_l_resource(job *pjob)
+  {
+  return(true);
+  }
+
+
+bool internal_job_id_exists(int internal_job_id)
+  {
+  if (internal_job_id < 10)
+    return(true);
+  else
+    return(false);
+  }
+
+bool have_incompatible_dash_l_resource(pbs_attribute *pattr)
+  {
+  return(true);
+  }
+
+int pbsnode::get_version() const {return 0;}
+
+pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned short port)
+  {
+  return(NULL);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;

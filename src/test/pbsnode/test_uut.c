@@ -13,10 +13,58 @@
 
 std::string global_string = "";
 
+extern std::map<std::string, std::string> encoded;
+
+START_TEST(test_plugin_things)
+  {
+  pbsnode pnode;
+
+  const char *json = "{\"generic_resources\":{\"awakened_objects\":100},\"generic_metrics\":{\"reversals\":1.5},\"varattrs\":{\"breaths\":\"4\"},\"features\":\"royal,knows_password\"}";
+  pnode.capture_plugin_resources(json);
+
+  encoded.clear();
+  tlist_head phead;
+  pnode.add_plugin_resources(&phead);
+  fail_unless(encoded["gres:awakened_objects"] == "100");
+  fail_unless(encoded["gmetric:reversals"] == "1.50");
+  fail_unless(encoded["varattr:breaths"] == "4");
+  fail_unless(encoded["features"] == "royal,knows_password");
+  }
+END_TEST
+
+
+START_TEST(test_version)
+  {
+  pbsnode pnode;
+
+  fail_unless(pnode.get_version() == 0);
+  
+  // Make sure poorly formatted versions do nothing
+  pnode.set_version("1.afadj");
+  fail_unless(pnode.get_version() == 0);
+  pnode.set_version("99999");
+  fail_unless(pnode.get_version() == 0);
+
+  // Make sure that good versions work
+  pnode.set_version("6.1.0");
+  fail_unless(pnode.get_version() == 610);
+  pnode.set_version("7.0.0");
+  fail_unless(pnode.get_version() == 700);
+  pnode.set_version("10.4.1");
+  fail_unless(pnode.get_version() == 1041, "Version is %d", pnode.get_version());
+  pnode.set_version("6.1.8");
+  fail_unless(pnode.get_version() == 618);
+  pnode.set_version("6.1");
+  fail_unless(pnode.get_version() == 610);
+  }
+END_TEST
+
+
 START_TEST(test_constructors)
   {
   }
 END_TEST
+
 
 START_TEST(test_copy_properties)
   {
@@ -83,11 +131,13 @@ Suite *pbsnode_suite(void)
   Suite *s = suite_create("pbsnode test suite methods");
   TCase *tc_core = tcase_create("test_constructors");
   tcase_add_test(tc_core, test_constructors);
+  tcase_add_test(tc_core, test_version);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("more_tests");
   tcase_add_test(tc_core, test_copy_properties);
   tcase_add_test(tc_core, test_encode_properties);
+  tcase_add_test(tc_core, test_plugin_things);
   suite_add_tcase(s, tc_core);
   
   return(s);

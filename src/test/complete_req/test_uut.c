@@ -1,22 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <vector>
 
 #include "complete_req.hpp"
 #include "pbs_error.h"
+#include "resource.h"
 
 extern int called_log_event;
+
+
+START_TEST(test_set_value_from_nodes)
+  {
+  complete_req c;
+  int          task_count;
+
+  // Make sure this doesn't segfault
+  c.set_value_from_nodes(NULL, task_count);
+  c.set_value_from_nodes("4", task_count);
+  fail_unless(task_count == 4);
+  fail_unless(c.req_count() == 1);
+
+  complete_req c2;
+  c2.set_value_from_nodes("bob+tim", task_count);
+  fail_unless(task_count == 2);
+  fail_unless(c2.req_count() == 2);
+  }
+END_TEST
 
 
 START_TEST(test_set_get_value)
   {
   complete_req c;
 
-  fail_unless(c.set_value(1, "task_count", "5") == PBSE_NONE);
-  fail_unless(c.set_value(0, "task_count", "4") == PBSE_NONE);
-  fail_unless(c.set_value(0, "lprocs", "4") == PBSE_NONE);
-  fail_unless(c.set_value(1, "gpus", "2") == PBSE_NONE);
-  fail_unless(c.set_value(-1, "blah", "blah") == PBSE_BAD_PARAMETER);
+  fail_unless(c.set_value(1, "task_count", "5", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "task_count", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(0, "lprocs", "4", false) == PBSE_NONE);
+  fail_unless(c.set_value(1, "gpus", "2", false) == PBSE_NONE);
+  fail_unless(c.set_value(-1, "blah", "blah", false) == PBSE_BAD_PARAMETER);
   fail_unless(c.req_count() == 2);
 
   std::vector<std::string> names;
@@ -39,6 +60,37 @@ START_TEST(test_set_get_value)
   fail_unless(values[5] == "2");
   }
 END_TEST
+
+
+void add_resource(
+
+  std::vector<resource> &resources,
+  const char            *name,
+  const char            *str_val,
+  long                   lval1,
+  long                   lval2)
+
+  {
+  resource_def *rd = (resource_def *)calloc(1, sizeof(resource_def));
+  rd->rs_name = strdup(name);
+  resource r;
+
+  r.rs_defin = rd;
+  
+  if (str_val != NULL)
+    {
+    r.rs_value.at_val.at_str = strdup(str_val);
+    }
+  else if (lval2 < 0)
+    r.rs_value.at_val.at_long = lval1;
+  else
+    {
+    r.rs_value.at_val.at_size.atsv_num = lval1;
+    r.rs_value.at_val.at_size.atsv_shift = lval2;
+    }
+  
+  resources.push_back(r);
+  } // add_resource()
 
 
 START_TEST(test_constructor)
@@ -76,40 +128,109 @@ START_TEST(test_constructor)
 
   fail_unless(equals_out == c_out);
 
-  tlist_head h;
-  complete_req list1(h, false);
+  std::vector<resource> resources;
+  add_resource(resources, "nodes", "1:ppn=2+2:gpus=1", 0, 0);
+  add_resource(resources, "mem", NULL, 40, 20);
+  complete_req list1(&resources, 2, false);
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
-  complete_req list2(h, true);
+  resources.clear();
+  add_resource(resources, "size", NULL, 20, -1);
+  add_resource(resources, "mem", NULL, 40, 10);
+  complete_req list2(&resources, 2, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
   fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
  
-  complete_req list3(h, false);
+  resources.clear();
+  add_resource(resources, "ncpus", NULL, 16, -1);
+  add_resource(resources, "mem", NULL, 40, 10);
+  complete_req list3(&resources, 2, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
   fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
+
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "pmem", NULL, 80, 10);
+  complete_req list4(&resources, 2, true);
+  fail_unless(list4.req_count() == 1);
+  const req &rl2 = list4.get_req(0);
+  fail_unless(rl2.getTaskCount() == 1);
+  fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
+
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "pvmem", NULL, 80, 10);
+  complete_req list5(&resources, 2, true);
+  fail_unless(list5.req_count() == 1);
+  const req &rl3 = list5.get_req(0);
+  fail_unless(rl3.getTaskCount() == 1);
+  fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
+  fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
+
+  resources.clear();
+  add_resource(resources, "nodes", "1:ppn=2", 16, -1);
+  add_resource(resources, "vmem", NULL, 80, 10);
+  complete_req list6(&resources, 2, true);
+  fail_unless(list6.req_count() == 1);
+  const req &rl4 = list6.get_req(0);
+  fail_unless(rl4.getTaskCount() == 1);
+  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
+  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
+
+  resources.clear();
+  add_resource(resources, "procs", NULL, 2, -1);
+  add_resource(resources, "pmem", NULL, 1024, 10);
+  complete_req list7(&resources, 2, false);
+  fail_unless(list7.req_count() == 1);
+  const req &rl7 = list7.get_req(0);
+  fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
+  fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+
+  // Make sure that we'll set memory to the higher of pmem and mem, and set swap
+  // as well for the same job
+  resources.clear();
+  add_resource(resources, "procs", NULL, 1, -1);
+  add_resource(resources, "mem", NULL, 4096, 10);
+  add_resource(resources, "pmem", NULL, 5, 10);
+  add_resource(resources, "vmem", NULL, 8192, 10);
+  complete_req list8(&resources, 1, false);
+  fail_unless(list8.req_count() == 1);
+  const req &rl8 = list8.get_req(0);
+  fail_unless(rl8.getTaskCount() == 1);
+  fail_unless(rl8.getMemory() == 4096);
+  fail_unless(rl8.getSwap() == 8192);
+
+  resources.clear();
+  add_resource(resources, "procs", NULL, 1, -1);
+  add_resource(resources, "mem", NULL, 100, 10);
+  add_resource(resources, "pmem", NULL, 5000, 10);
+  complete_req list9(&resources, 1, false);
+  fail_unless(list9.req_count() == 1);
+  const req &rl9 = list9.get_req(0);
+  fail_unless(rl9.getMemory() == 5000);
+
   }
 END_TEST
 
 
 START_TEST(test_constructor_oldstyle_req)
   {
-  tlist_head h;
-  extern int gn_count;
-  gn_count = 9;
-  complete_req list1(h, false);
+  std::vector<resource> resources;
+  add_resource(resources, "vmem", NULL, 2048, 0);
+  complete_req list1(&resources, 2, false);
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);
-  fail_unless(rm1.getMemory() == 2, "mem is %lu", rm1.getMemory());
+  fail_unless(rm1.getMemory() == 0, "mem is %lu", rm1.getMemory());
   }
 END_TEST
 
@@ -326,6 +447,7 @@ Suite *complete_req_suite(void)
 
   tc_core = tcase_create("test_get_memory_for_this_host");
   tcase_add_test(tc_core, test_get_memory_for_this_host);
+  tcase_add_test(tc_core, test_set_value_from_nodes);
   tcase_add_test(tc_core, test_get_req_index_for_host);
   suite_add_tcase(s, tc_core);
 

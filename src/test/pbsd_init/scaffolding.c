@@ -92,7 +92,7 @@ const char *msg_init_unkstate = "Unable to recover job in strange substate: %d";
 all_jobs array_summary;
 attribute_def svr_attr_def[10];
 int a_opt_init = -1;
-all_tasks task_list_timed;
+std::list<timed_task>  *task_list_timed;
 pthread_mutex_t task_list_timed_mutex;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
@@ -115,6 +115,11 @@ struct pbs_queue *allocd_queue = NULL;
 int enque_rc;
 int evaluated;
 int aborted;
+int freed_job_allocation;
+int job_state;
+
+bool dont_find_job;
+bool dont_find_node;
 
 char global_log_ext_msg[LOCAL_LOG_BUF_SIZE] = { '\0' };
 
@@ -269,8 +274,7 @@ int insert_job(all_jobs *aj, job *pjob)
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
   {
-  fprintf(stderr, "The call to unlock_node needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void depend_clrrdy(job *pjob)
@@ -380,16 +384,9 @@ void initialize_recycler()
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, char *job_id, long job_atr_hold, int job_exit_status)
+int array_delete(const char *array_id)
   {
-  fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
-  exit(1);
-  }
-
-int array_delete(job_array *pa)
-  {
-  fprintf(stderr, "The call to array_delete needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 pbs_queue *que_recov_xml(char *filename)
@@ -447,7 +444,13 @@ void acct_close(bool acct_mutex_locked)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  return(NULL);
+  if (dont_find_job)
+    return(NULL);
+
+  job *pjob = (job *)calloc(1, sizeof(job));
+  strcpy(pjob->ji_qs.ji_jobid, jobid);
+  pjob->ji_qs.ji_state = job_state;
+  return(pjob);
   }
 
 int svr_save(struct server *ps, int mode)
@@ -484,6 +487,11 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
+int get_svr_attr_b(int index, bool *b)
+  {
+  return(0);
+  }
+
 int get_parent_and_child(char *start, char **parent, char **child, char **end)
   {
   return(0);
@@ -496,7 +504,12 @@ int create_partial_pbs_node(char *nodename, unsigned long addr, int perms)
 
 struct pbsnode *find_nodebyname(const char *name)
   {
-  return(NULL);
+  if (dont_find_node)
+    return(NULL);
+
+  pbsnode *pnode = new pbsnode();
+  pnode->change_name(name);
+  return(pnode);
   }
 
 void initialize_queue_recycler() {}
@@ -584,7 +597,7 @@ int unlock_ai_mutex(job_array *pa, const char *func_id, const char *msg, int log
 
 job_array *get_array(
     
-  char *id)
+  const char *id)
 
   {
   return(NULL);
@@ -650,6 +663,11 @@ int id_map::get_new_id(const char *name)
   return 0;
   }
 
+const char *id_map::get_name(int id)
+  {
+  return 0;
+  }
+
 void rel_resc(job *pjob) {}
 
 void mom_hierarchy_handler::initialLoadHierarchy() {}
@@ -659,6 +677,20 @@ mom_hierarchy_handler hierarchy_handler; //The global declaration.
 int is_svr_attr_set(int i) {return 0;}
 
 std::string get_path_jobdata(const char *a, const char *b) {return "";}
+
+const char *pbsnode::get_name() const
+  {
+  return(this->nd_name.c_str());
+  }
+
+void pbsnode::change_name(const char *id)
+  {
+  this->nd_name = id;
+  }
+
+pbsnode::pbsnode()
+  {
+  }
 
 int pbsnode::unlock_node(const char *id, const char *msg, int level)
   {
@@ -718,13 +750,13 @@ void translate_vector_to_range_string(
   return;
   }
 
-void translate_range_string_to_vector(
+int translate_range_string_to_vector(
 
   const char       *range_string,
   std::vector<int> &indices)
 
   {
-  return;
+  return(PBSE_NONE);
   }
 
 
@@ -771,26 +803,135 @@ bool task_hosts_match(const char *one, const char *two)
   }
   
 
-#include "../../lib/Libutils/machine.cpp"
-#include "../../lib/Libutils/numa_pci_device.cpp"
-#include "../../lib/Libutils/numa_socket.cpp"
-#include "../../lib/Libutils/numa_chip.cpp"
-#include "../../lib/Libutils/numa_core.cpp"
-#include "../../lib/Libutils/allocation.cpp"
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
 
 #ifdef NVML_API
-void PCI_Device::initializeGpu(int x, hwloc_topology *fred)
-  {
-  return;
-  }
-
-
+#ifdef PENABLE_LINUX_CGROUPS
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
   return(0);
   }
+#endif
+
+#endif
+
+const int exclusive_none   = 0;
+const int exclusive_node   = 1;
+const int exclusive_socket = 2;
+const int exclusive_chip   = 3;
+const int exclusive_core   = 4;
+const int exclusive_thread = 5;
+const int exclusive_legacy = 6; /* for the -l resource request. Direct pbs_server to allocate cores only */
+const int exclusive_legacy2 = 7; /* for the -l resource request. Direct pbs_server to allocate cores and threads */
+
+void allocation::get_stats_used(
+
+  unsigned long &cput_used, 
+  unsigned long long &memory_used)
+
+  {
+  }
+
+void allocation::initialize_from_string(
+
+  const std::string &task_info)
+
+  {
+  }
+
+void allocation::get_task_host_name(
+
+  std::string &host)
+
+  {
+  }
+
+allocation::allocation(const allocation &other) {}
+
+allocation &allocation::operator =(const allocation &other) 
+  
+  {
+  return(*this);
+  }
+
+void allocation::set_task_usage_stats(
+
+  unsigned long      cput_used,
+  unsigned long long mem_used)
+
+  {
+  }
+
+allocation::allocation() {}
+
+void allocation::write_task_information(
+
+  std::string &task_info) const
+
+  {
+  }
+
+void allocation::set_memory_used(
+
+  const unsigned long long mem_used)
+
+  {
+  }
+
+void allocation::set_cput_used(
+
+  const unsigned long cput_used)
+
+  {
+  }
+
+#ifdef PENABLE_LINUX_CGROUPS
+Machine::Machine() {}
+Machine::~Machine() {}
+
+void Machine::reinitialize_from_json(const std::string &layout, std::vector<std::string> &valid_ids)
+  {
+  }
+
+Machine::Machine(const std::string &layout, std::vector<std::string> &valid_ids) {}
+
+bool Machine::is_initialized() const
+  {
+  return(true);
+  }
+
+int get_machine_total_memory(hwloc_topology_t topology, hwloc_uint64_t *memory)
+  {
+  return(0);
+  }
+
+void save_node_usage(pbsnode *pnode) {}
+    
+void Machine::populate_job_ids(std::vector<std::string> &job_ids) const
+  {
+  job_ids.push_back("1.napali");
+  job_ids.push_back("2.napali");
+  job_ids.push_back("3.napali");
+  }
+    
+void Machine::free_job_allocation(const char *jobid)
+  {
+  freed_job_allocation++;
+  }
+
+
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+
+Socket::Socket() {}
+Socket::~Socket() {}
+
+Chip::Chip() {}
+Chip::~Chip() {}
+
+Core::Core() {}
+Core::~Core() {}
 
 #endif
 
@@ -835,3 +976,13 @@ job::job() {}
 job::~job() {}
 
 reservation_holder::reservation_holder() {}
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  int                   job_exit_status)
+
+  {
+  }

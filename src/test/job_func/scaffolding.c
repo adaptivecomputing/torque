@@ -44,6 +44,7 @@ char *path_spool;
 const char *msg_err_purgejob = "Unlink of job file failed";
 struct server server;
 all_jobs array_summary;
+all_jobs alljobs;
 char *path_jobinfo_log;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 pthread_mutex_t job_log_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -179,7 +180,7 @@ void initialize_all_tasks_array(all_tasks *at)
   exit(1);
   }
 
-job_array *get_array(char *id)
+job_array *get_array(const char *id)
   {
   return(NULL);
   }
@@ -224,16 +225,9 @@ int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_jobid, bool re
   exit(1);
   }
 
-void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status)
+int array_delete(const char *array_id)
   {
-  fprintf(stderr, "The call to update_array_values needs to be mocked!!\n");
-  exit(1);
-  }
-
-int array_delete(job_array *pa)
-  {
-  fprintf(stderr, "The call to array_delete needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void release_req(struct work_task *pwt)
@@ -314,6 +308,11 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char 
   }
 
 int get_svr_attr_l(int index, long *l)
+  {
+  return(0);
+  }
+
+int get_svr_attr_b(int index, bool *b)
   {
   return(0);
   }
@@ -608,6 +607,20 @@ int id_map::get_new_id(const char *id)
   return(-1);
   }
 
+const char *id_map::get_name(int internal_job_id)
+  {
+  static char buf[1024];
+
+  if (internal_job_id < 5)
+    {
+    snprintf(buf, sizeof(buf), "%d.napali", internal_job_id);
+
+    return(buf);
+    }
+
+  return(NULL);
+  }
+
 id_map job_mapper;
 
 int encode_complete_req(
@@ -678,10 +691,27 @@ void add_to_completed_jobs(work_task *ptask) {}
 
 job::job() 
   {
+  this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+ 
   memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
   memset(&this->ji_qs, 0, sizeof(struct jobfix));
   }
 
 job::~job() 
   {
+  }
+
+void job_array::update_array_values(
+
+  int                   old_state, /* I */
+  enum ArrayEventsEnum  event,     /* I */
+  const char           *job_id,
+  int                   job_exit_status)
+
+  {
+  }
+
+bool job_array::is_deleted() const
+  {
+  return(this->being_deleted);
   }

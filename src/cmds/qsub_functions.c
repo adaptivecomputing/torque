@@ -21,7 +21,7 @@
 #include <pbs_error.h>    /* all static defines,  message & error codes */
 #include "qsub_functions.h"
 #include "common_cmds.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -64,7 +64,7 @@
 #if defined(PBS_NO_POSIX_VIOLATION)
 #define GETOPT_ARGS "a:A:c:C:e:EF:hj:k:K:l:m:M:nN:o:p:q:r:S:u:v:VW:z"
 #else
-#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hIj:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
+#define GETOPT_ARGS "a:A:b:c:C:d:D:e:EfF:hi:Ij:J:k:K:l:L:m:M:nN:o:p:P:q:r:S:t:T:u:v:Vw:W:Xxz-:"
 #endif /* PBS_NO_POSIX_VIOLATION */
 
 #define MAXBUF 2048
@@ -88,7 +88,9 @@ char *host_name_suffix = NULL;
 int    J_opt = FALSE;
 int    P_opt = FALSE;
 
-const char   *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
+char       *alternate_dependency;
+int         alternate_data_type;
 complete_req  cr;
 
 /* adapted from openssh */
@@ -811,6 +813,7 @@ void validate_pbs_o_workdir(
     the_val = tmp_job_info->value.c_str();
 
   hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
@@ -997,6 +1000,23 @@ void validate_basic_resourcing(
 
 
 
+void validate_array_options(
+
+  job_info *ji)
+
+  {
+  job_data *dummy;
+
+  if ((hash_find(ji->job_attr, ATTR_t, &dummy) == FALSE) &&
+      (hash_find(ji->job_attr, ATTR_idle_slot_limit, &dummy)))
+    {
+    fprintf(stderr, "qsub: the idle array slot limit (-i) can only be applied to array jobs (-t)\n");
+    exit(4);
+    }
+  } // END validate_basic_resourcing()
+
+
+
 /*
  * Set up (or enforce) errpath or outpath when join option specified
  * so that qstat will diplay it properly.
@@ -1065,6 +1085,8 @@ void post_check_attributes(job_info *ji, char *script_tmp)
    * -j oe (or eo) specified.)
    */
   validate_join_options(ji->job_attr, script_tmp);
+
+  validate_array_options(ji);
   } /* END post_check_attributes() */
 
 
@@ -1122,6 +1144,7 @@ static int get_script(
   FILE        *filter_pipe;
   int          rc;
   job_data    *tmp_job_info = NULL;
+  bool         directive_prefix_on = false;
 
   /* if the submit_filter exists, run it.                               */
 
@@ -1163,6 +1186,26 @@ static int get_script(
       if (ArgV[index] != NULL)
         {
         cfilter += " ";
+
+        /* This is ugly. But we have to escape the '#' character
+           of a -C directive prefix otherwise scripts interpret this
+           as a comment and the rest of the qsub line is deleted */
+        if (directive_prefix_on == true)
+          {
+          char directive_prefix[PBS_MAXHOSTNAME];
+
+          memset(directive_prefix, 0, PBS_MAXHOSTNAME);
+          directive_prefix[0] = '\\';
+          strcat(directive_prefix, ArgV[index]);
+          directive_prefix_on = false;
+          continue;
+          }
+
+        if (!strcmp(ArgV[index], "-C"))
+          {
+          directive_prefix_on = true;
+          }
+
         cfilter += ArgV[index];
         }
       }    /* END for (index) */
@@ -2115,6 +2158,7 @@ void x11handler(
   if (!display)
     {
     fprintf(stderr, "DISPLAY not set.");
+    free(socks);
     return;
     }
 
@@ -2507,6 +2551,14 @@ void process_opt_L(
     print_qsub_usage_exit(err_buf);
     }
 
+  if ((cr.req_count() > 0) &&
+      (r.cgroup_preference_set() == true))
+    {
+    snprintf(err_buf, sizeof(err_buf),
+      "qsub: cgroup_per_task (cpt) and cgroup_per_host (cph) may only be specified for the first req");
+    print_qsub_usage_exit(err_buf);
+    }
+
   cr.add_req(r);
   } // END process_opt_L()
 
@@ -2575,6 +2627,43 @@ int process_opt_d(
 
   return(PBSE_NONE);
   } // END process_opt_d() 
+
+
+
+/*
+ * process_opt_i()
+ *
+ * Verifies and adds the idle slot limit argument to the job
+ * @param ji - where we store the job information
+ * @param cmd_arg - the command line argument passed to qsub after -i
+ * @param data_type - the source of this argument
+ * @return PBSE_NONE if a valid number, -1 if invalid
+ */
+
+int process_opt_i(
+
+  job_info   *ji,
+  const char *cmd_arg,
+  int         data_type)
+
+  {
+  if (cmd_arg != NULL)
+    {
+    char *end;
+
+    int limit = strtol(cmd_arg, &end, 10);
+
+    if ((limit > 0) &&
+        (end != cmd_arg))
+      {
+      hash_add_or_exit(ji->job_attr, ATTR_idle_slot_limit, cmd_arg, data_type);
+     
+      return(PBSE_NONE);
+      }
+    }
+
+  return(-1);
+  } // END process_opt_i()
 
 
 
@@ -2701,12 +2790,31 @@ int process_opt_m(
       {
       if ((*pc != 'a') &&
           (*pc != 'b') &&
-          (*pc != 'e'))
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'p'))
         return(-1);
 
       pc++;
       }
     } /* END if (strcmp(cmd_arg,"n") != 0) */
+  if (strcmp(cmd_arg, "p") != 0)
+    {
+    const char *pc = cmd_arg;
+    
+    while (*pc)
+      {
+      if ((*pc != 'a') &&
+          (*pc != 'b') &&
+          (*pc != 'e') &&
+          (*pc != 'f') &&
+          (*pc != 'n'))
+        return(-1);
+
+      pc++;
+      }
+    } /* END if (strcmp(cmd_arg,"p") != 0) */
+    
           
   hash_add_or_exit(ji->job_attr, ATTR_m, cmd_arg, data_type);
 
@@ -2793,7 +2901,6 @@ void process_opts(
   char         a_value[80];
   char        *keyword;
   char        *valuewd;
-  char        *pdepend;
 
   FILE        *fP = NULL;
 
@@ -2976,6 +3083,17 @@ void process_opts(
       case 'h':
 
         hash_add_or_exit(ji->job_attr, ATTR_h, "u", data_type);
+        break;
+
+      case 'i':
+
+        if (process_opt_i(ji, optarg, data_type) != PBSE_NONE)
+          {
+          char buf[MAXLINE];
+          snprintf(buf, sizeof(buf), "qsub: illegal -i value '%s'", optarg);
+          print_qsub_usage_exit(buf);
+          }
+
         break;
 
       case 'I':
@@ -3228,34 +3346,38 @@ void process_opts(
           {
           if (!strcmp(keyword, ATTR_depend))
             {
-/*            if_cmd_line(Depend_opt)
+            std::vector<std::string> dependency_options;
+
+            if (((rc = parse_depend_list(valuewd, dependency_options)) != PBSE_NONE) ||
+                (dependency_options.size() == 0))
               {
-              int rtn = 0;
-              Depend_opt = passet;
-              */
+              /* cannot parse 'depend' value */
+              char err_msg[MAXLINE];
 
-              pdepend = (char *)calloc(1, PBS_DEPEND_LEN);
-
-              if ((pdepend == NULL) ||
-                   (rc = parse_depend_list(valuewd,pdepend,PBS_DEPEND_LEN)))
+              if (rc == 2)
                 {
-                /* cannot parse 'depend' value */
+                snprintf(err_msg, sizeof(err_msg),
+                  "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
+                print_qsub_usage_exit(err_msg);
+                }
+              else
+                {
+                snprintf(err_msg, sizeof(err_msg),
+                  "qsub: illegal -W dependency value: '%s'", valuewd);
 
-                if (rc == 2)
-                  {
-                  char *err_msg = NULL;
-                  alloc_len =  80;
-                  calloc_or_fail(&err_msg, alloc_len, " -W attribute");
-                  snprintf(err_msg, alloc_len, "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
-                  print_qsub_usage_exit(err_msg);
-                  }
-                else
-                  print_qsub_usage_exit("qsub: illegal -W value");
-
-                break;
+                print_qsub_usage_exit(err_msg);
                 }
 
-              hash_add_or_exit(ji->job_attr, ATTR_depend, pdepend, data_type);
+              break;
+              }
+
+            hash_add_or_exit(ji->job_attr, ATTR_depend, dependency_options[0].c_str(), data_type);
+
+            if (dependency_options.size() > 1)
+              {
+              alternate_dependency = strdup(dependency_options[1].c_str());
+              alternate_data_type = data_type;
+              }
             }
           else if (!strcmp(keyword, ATTR_job_radix))
             {
@@ -3650,6 +3772,10 @@ void process_opts(
       {
       while (fgets(cline, sizeof(cline), fP) != NULL)
         {
+        // Skip blank lines
+        if (*cline == '\n')
+          continue;
+
         if (strlen(cline) < 5)
           break;
 
@@ -4163,6 +4289,7 @@ bool retry_submit_error(
  *
  * @see process_opts() - child
  */
+
 void main_func(
 
   int    argc,  /* I */
@@ -4532,6 +4659,13 @@ void main_func(
     print_qsub_usage_exit("unable to catch signals");
     }
 
+  // If we are doing an interactive job, don't send the job script even if one exists
+  if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info))
+    {
+    unlink(script_tmp);
+    memset(script_tmp, 0, sizeof(script_tmp));
+    }
+
   /* Send submit request to the server. */
 
   int retries = 0;
@@ -4551,7 +4685,13 @@ void main_func(
     /* If we get a timeout the server is busy. Let the user 
        know what is taking so long */
     if (local_errno == PBSE_TIMEOUT)
-      fprintf(stdout, "Connection to server timed out. Trying again");
+      fprintf(stderr, "Connection to server timed out. Trying again");
+    else if ((local_errno == PBSE_BADDEPEND) &&
+             (alternate_dependency != NULL))
+      {
+      // Replace the old dependency string with the new one
+      hash_add_or_exit(ji.job_attr, ATTR_depend, alternate_dependency, alternate_data_type);
+      }
     else if ((local_errno != PBSE_STAGEIN) &&
 	           (local_errno != PBSE_NOCOPYFILE) &&
 	           (local_errno != PBSE_DISPROTO) &&
@@ -4562,6 +4702,9 @@ void main_func(
 
 
     } while((++retries < MAX_RETRIES) && (local_errno != PBSE_NONE));
+
+  if (alternate_dependency != NULL)
+    free(alternate_dependency);
 
   if (local_errno != PBSE_NONE)
     {

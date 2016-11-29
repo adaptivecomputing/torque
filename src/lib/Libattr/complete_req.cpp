@@ -21,130 +21,215 @@ complete_req::complete_req() : reqs()
 
 void complete_req::set_value_from_nodes(
 
-  const char *node_val)
+  const char *node_val,
+  int        &task_count)
 
   {
-  char *work_str = strdup(node_val);
-  char *ptr = work_str;
-
-  while (ptr != NULL)
+  if (node_val != NULL)
     {
-    char *next = strchr(ptr, '+');
+    char *work_str = strdup(node_val);
+    char *ptr = work_str;
+    task_count = 0;
 
-    if (next != NULL)
+    while (ptr != NULL)
       {
-      *next = '\0';
-      next++;
+      char *next = strchr(ptr, '+');
+
+      if (next != NULL)
+        {
+        *next = '\0';
+        next++;
+        }
+
+      req r(ptr);
+      task_count += r.getTaskCount();
+      this->add_req(r);
+
+      ptr = next;
       }
 
-    req r(ptr);
-    this->add_req(r);
-
-    ptr = next;
+    free(work_str);
     }
-
-  free(work_str);
   } // END set_value_from_nodes()
 
 
 
+/*
+ * Constructor from a resource list (-l request)
+ *
+ * @param resc_ptr - a pointer to the vector of resources
+ * @param ppn_needed - ppn required for the job described by this completed req
+ * @param legacy_vmem - true if vmem should be considered per node, false if per job
+ */
+
 complete_req::complete_req(
 
-  tlist_head &resources,
-  bool        legacy_vmem) : reqs()
+  void  *resc_ptr,
+  int    ppn_needed, // UNUSED
+  bool   legacy_vmem) : reqs()
 
   {
-  resource      *pr = (resource *)GET_NEXT(resources);
-  int            task_count = 0;
-  int            execution_slots = 0;
-  unsigned long  mem = 0;
+  std::vector<resource> *resources = (std::vector<resource> *)resc_ptr;
+  int                    task_count = 0;
+  int                    execution_slots = 0;
+  unsigned long long     mem_values[4];
+  int                    active_index[2];
 
-  while (pr != NULL)
+  if (resources == NULL)
+    return;
+
+  active_index[0] = _MEM_;
+  active_index[1] = _VMEM_;
+  memset(mem_values, 0, sizeof(mem_values));
+
+  for (size_t i = 0; i < resources->size(); i++)
     {
-    if (!strcmp(pr->rs_defin->rs_name, "nodes"))
+    resource &r = resources->at(i);
+
+    if (!strcmp(r.rs_defin->rs_name, "nodes"))
       {
-      this->set_value_from_nodes(pr->rs_value.at_val.at_str);
+      this->set_value_from_nodes(r.rs_value.at_val.at_str, task_count);
       }
-    else if ((!strcmp(pr->rs_defin->rs_name, "procs")) ||
-             (!strcmp(pr->rs_defin->rs_name, "size")))
+    else if ((!strcmp(r.rs_defin->rs_name, "procs")) ||
+             (!strcmp(r.rs_defin->rs_name, "size")))
       {
-      task_count = pr->rs_value.at_val.at_long;
+      task_count = r.rs_value.at_val.at_long;
       execution_slots = 1;
       }
-    else if (!strcmp(pr->rs_defin->rs_name, "ncpus"))
+    else if (!strcmp(r.rs_defin->rs_name, "ncpus"))
       {
       task_count = 1;
-      execution_slots = pr->rs_value.at_val.at_long;
+      execution_slots = r.rs_value.at_val.at_long;
       }
-    else if ((!strcmp(pr->rs_defin->rs_name, "pmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "vmem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "mem")) ||
-             (!strcmp(pr->rs_defin->rs_name, "pvmem")))
+    else if ((!strcmp(r.rs_defin->rs_name, "pmem")) ||
+             (!strcmp(r.rs_defin->rs_name, "mem")) ||
+             (!strcmp(r.rs_defin->rs_name, "vmem")) ||
+             (!strcmp(r.rs_defin->rs_name, "pvmem")))
       {
-      mem = pr->rs_value.at_val.at_size.atsv_num;
-      int shift = pr->rs_value.at_val.at_size.atsv_shift;
+      int index;
+
+      // pmem is per task
+      if (r.rs_defin->rs_name[0] == 'm')
+        index = _MEM_;
+      else if (r.rs_defin->rs_name[0] == 'v')
+        index = _VMEM_;
+      else
+        {
+        // It is either pmem or pvmem at this point
+        if (r.rs_defin->rs_name[1] == 'm')
+          index = _PMEM_;
+        else
+          index = _PVMEM_;
+        }
+
+      // Make sure that we take mem over 
+      mem_values[index] = r.rs_value.at_val.at_size.atsv_num;
+      int shift = r.rs_value.at_val.at_size.atsv_shift;
 
       if (shift == 0)
         {
         // -l used in submission so convert
         //   bytes to kb
-        mem /= 1024;
+        mem_values[index] /= 1024;
         }
       else    
         {
         // Convert to kb
         while (shift > 10) 
           {
-          mem *= 1024;
+          mem_values[index] *= 1024;
           shift -= 10;  
           }
         }
       }
+    }
 
-    pr = (resource *)GET_NEXT(pr->rs_link);
+  // Set mem and swap from mem_values
+  unsigned long long mem = mem_values[_MEM_];
+  if ((legacy_vmem == false) &&
+      (task_count != 0))
+    mem /= task_count;
+  if (mem_values[_PMEM_] > mem)
+    {
+    active_index[0] = _PMEM_;
+    mem = mem_values[_PMEM_];
+    }
+
+  unsigned long long vmem = mem_values[_VMEM_];
+  if ((legacy_vmem == false) &&
+      (task_count != 0))
+    vmem /= task_count;
+  if (mem_values[_PVMEM_] > vmem)
+    {
+    active_index[1] = _PVMEM_;
+    vmem = mem_values[_PVMEM_];
     }
  
   if (this->reqs.size() == 0)
     {
     // Handle the case where no -lnodes request was made
     // Distribute the memory across the tasks as -l memory is per job
-    if (legacy_vmem == false)
-      {
-      if (task_count > 1)
-        mem /= task_count;
-      }
-    
     req r;
     if (task_count != 0)
+      {
       r.set_task_count(task_count);
+      r.set_placement_type(place_legacy);
+      }
 
     r.set_memory(mem);
-    r.set_swap(mem);
+    r.set_swap(vmem);
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
 
     this->add_req(r);
     }
-  else if (mem != 0)
+  else
     {
     // Handle the case where a -lnodes request was made
-    unsigned long mem_per_task = mem;
-
-    if (legacy_vmem == false)
+    if (mem != 0)
       {
-      int           total_tasks = 0;
-      for (unsigned int i = 0; i < this->reqs.size(); i++)
-        total_tasks += this->reqs[i].getTaskCount();
+      if (active_index[0] == _MEM_)
+        {
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          r.set_memory(mem);
+          }
+        }
+      else if (active_index[0] == _PMEM_)
+        {
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          int  ppn_per_req = r.get_execution_slots();
 
-      mem_per_task /= total_tasks;
+          r.set_memory(mem * ppn_per_req);
+          }
+        }
       }
-
-    for (unsigned int i = 0; i < this->reqs.size(); i++)
+  
+    if (vmem != 0)
       {
-      req &r = this->reqs[i];
-      r.set_memory(mem_per_task);
-      r.set_swap(mem_per_task);
+      // Handle the case where a -lnodes request was made
+      if (active_index[1] == _VMEM_)
+        {
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          r.set_swap(vmem);
+          }
+        }
+      else if (active_index[1] == _PVMEM_)
+        {
+        for (unsigned int i = 0; i < this->reqs.size(); i++)
+          {
+          req &r = this->reqs[i];
+          int ppn_per_req = r.get_execution_slots();
+
+          r.set_swap(vmem * ppn_per_req);
+          }
+        }
       }
     }
   } // END constructor from resource list
@@ -318,33 +403,30 @@ int complete_req::set_task_cput_used(
  */
 
 
-int complete_req::set_value(
+int complete_req::set_task_value(
 
   const char *name,
   const char *value)
   
   {
   int   rc = PBSE_NONE;
-  char *attr_name = strdup(name);
-  char *dot1;
-  char *dot2;
+  const char *dot1;
+  const char *dot2;
   unsigned int   req_index;
   unsigned int   task_index;
 
-  dot1 = strchr(attr_name, '.');
-  dot2 = strrchr(attr_name, '.');
+  dot1 = strchr(name, '.');
+  dot2 = strrchr(name, '.');
 
   if ((dot1 == NULL) || (dot2 == NULL))
     {
-    free(attr_name);
     return(PBSE_BAD_PARAMETER);
     }
 
   req_index = strtol(dot1 + 1, NULL, 10);
-  *dot1 = '\0';
   task_index = strtol(dot2 + 1, NULL, 10);
-  *dot2 = '\0';
 
+  // Add new reqs if needed
   while (this->reqs.size() <= req_index)
     {
     req r;
@@ -352,9 +434,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  rc = this->reqs[req_index].set_value(attr_name, value, task_index);
-
-  free(attr_name);
+  rc = this->reqs[req_index].set_task_value(value, task_index);
 
   return(rc);
  
@@ -377,7 +457,8 @@ int complete_req::set_value(
 
   int         index,
   const char *name,
-  const char *value)
+  const char *value,
+  bool        is_default)
 
   {
   if (index < 0)
@@ -390,7 +471,7 @@ int complete_req::set_value(
     this->reqs.push_back(r);
     }
 
-  return(this->reqs[index].set_value(name, value));
+  return(this->reqs[index].set_value(name, value, is_default));
   } // END set_value()
 
 
@@ -594,6 +675,7 @@ int complete_req::get_req_and_task_index(
           task_index = task_count;
           return(PBSE_NONE);
           }
+
         tasks_counted++;
         }
       }
@@ -601,6 +683,61 @@ int complete_req::get_req_and_task_index(
 
   return(PBSE_NO_PROCESS_RANK);
   }
+
+
+
+/*
+ * get_req_and_task_index_from_local_rank()
+ *
+ * From the local rank, determines which req and task this is a part of
+ * @param local_rank (I) - the rank for this process among processes on this node
+ * @param req_index (O) - we write the index of the req here
+ * @param task_index (O) - we write the index of the task here
+ * @param host - the current hostname. Do not count ranks from other nodes.
+ * @return PBSE_NONE - if we could locate a local rank for this job, PBSE_NO_PROCESS_RANK otherwise.
+ * Returning PBSE_NO_PROCESS_RANK should cause this to be placed in the cgroup for the entire host
+ */
+
+int complete_req::get_req_and_task_index_from_local_rank(
+    
+  int           local_rank,
+  unsigned int &req_index,
+  unsigned int &task_index,
+  const char   *host) const
+
+  {
+  int rc = PBSE_NO_PROCESS_RANK;
+  int tasks_counted = 0;
+
+  for (unsigned int req_count = 0; req_count < this->req_count(); req_count++)
+    {
+    for (unsigned int task_count = 0; task_count < this->reqs[req_count].getTaskCount(); task_count++)
+      {
+      int rc;
+      allocation al;
+      rc = this->reqs[req_count].get_task_allocation(task_count, al);
+      if (rc != PBSE_NONE)
+        continue;
+
+      if (al.hostname != host)
+        continue;
+
+      for (unsigned int cpus_per_task = 0; cpus_per_task < al.cpu_indices.size(); cpus_per_task++)
+        {
+        if (tasks_counted == local_rank)
+          {
+          req_index = req_count;
+          task_index = task_count;
+          return(PBSE_NONE);
+          }
+
+        tasks_counted++;
+        }
+      }
+    }
+
+  return(rc);
+  } // END get_req_and_task_index_from_local_rank()
 
 
 

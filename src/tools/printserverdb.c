@@ -12,7 +12,7 @@
 #include "attribute.h"
 #include "server_limits.h"
 #include "server.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 int no_attributes = 0;

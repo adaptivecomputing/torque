@@ -64,6 +64,8 @@
 #include "timer.hpp"
 #include "mom_hierarchy_handler.h"
 #include "runjob_help.hpp"
+#include "policy_values.h"
+#include "authorized_hosts.hpp"
 
 #if !defined(H_ERRNO_DECLARED) && !defined(_AIX)
 /*extern int h_errno;*/
@@ -83,7 +85,6 @@ extern char            *path_nodepowerstate;
 extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
-extern AvlTree          ipaddrs;
 
 job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
@@ -267,7 +268,6 @@ struct pbsnode *find_nodebyname(
   struct pbsnode *numa  = NULL;
 
   int             numa_index;
-  long            cray_enabled = FALSE;
 
   if (nodename == NULL)
     {
@@ -287,8 +287,7 @@ struct pbsnode *find_nodebyname(
     }
   else
     {
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-    if (cray_enabled == TRUE)
+    if (cray_enabled == true)
       {
       if (alps_reporter != NULL)
         {
@@ -612,11 +611,9 @@ int status_nodeattrib(
       atemp[i].at_val.at_short = pnode->nd_power_state;
     else if (i == ND_ATR_properties)
       {
-      // NOTE: see below for nd_properties encoding
-      atemp[i].at_val.at_arst = pnode->nd_prop;
       }
     else if (i == ND_ATR_status)
-      atemp[i].at_val.at_arst = pnode->nd_status;
+      atemp[i].at_val.at_str = NULL;
     else if (i == ND_ATR_ntype)
       atemp[i].at_val.at_short = pnode->nd_ntype;
     else if (i == ND_ATR_ttl)
@@ -757,10 +754,12 @@ int status_nodeattrib(
         if ((index == ND_ATR_jobs) &&
             (pnode->nd_is_alps_login == TRUE))
           rc = login_encode_jobs(pnode, phead);
+        else if (index == ND_ATR_properties)
+          rc = pnode->encode_properties(phead);
         else
           {
           if (index == ND_ATR_status)
-            atemp[index].at_val.at_arst = pnode->nd_status;
+            atemp[index].at_val.at_str = strdup(pnode->nd_status.c_str());
 
           rc = ((padef + index)->at_encode(
                 &atemp[index],
@@ -769,6 +768,8 @@ int status_nodeattrib(
                 NULL,
                 ATR_ENCODE_CLIENT,
                 0));
+
+          free(atemp[index].at_val.at_str);
           }
 
         if (rc < 0)
@@ -802,7 +803,7 @@ int status_nodeattrib(
                !((padef + index)->at_flags & ATR_DFLAG_NOSTAT))
         {
         if (index == ND_ATR_status)
-          atemp[index].at_val.at_arst = pnode->nd_status;
+          atemp[index].at_val.at_str = strdup(pnode->nd_status.c_str());
 
         rc = (padef + index)->at_encode(
                &atemp[index],
@@ -811,6 +812,9 @@ int status_nodeattrib(
                NULL,
                ATR_ENCODE_CLIENT,
                0);
+          
+        if (index == ND_ATR_status)
+          free(atemp[index].at_val.at_str);
 
         if (rc < 0)
           {
@@ -826,6 +830,8 @@ int status_nodeattrib(
           }
         }
       }    /* END for (index) */
+
+    pnode->add_plugin_resources(phead);
     }      /* END else (pal != NULL) */
 
   return(rc);
@@ -881,7 +887,7 @@ void effective_node_delete(
   for (unsigned int i = 0; i < pnode->nd_addrs.size(); i++)
     {
     /* del node's IP addresses from tree  */
-    ipaddrs = AVL_delete_node(pnode->nd_addrs[i], pnode->nd_mom_port, ipaddrs);
+    auth_hosts.remove_address(pnode->nd_addrs[i], pnode->nd_mom_port);
     }
 
   delete pnode;
@@ -1133,11 +1139,10 @@ int update_nodes_file(
   struct pbsnode     *np;
   all_nodes_iterator *iter = NULL;
   FILE               *nin;
-  long                cray_enabled = FALSE;
-  long                dont_update_file = FALSE;
+  bool                dont_update_file = false;
     
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_file);
-  if (dont_update_file == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_file);
+  if (dont_update_file == true)
     return(PBSE_NONE);
 
   if (LOGLEVEL >= 2)
@@ -1168,8 +1173,6 @@ int update_nodes_file(
 
     return(-1);
     }
-    
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
 
   /* for each node ... */
   /* NOTE: DO NOT change this loop to iterate over numa nodes. Since they
@@ -1177,7 +1180,7 @@ int update_nodes_file(
 
   while ((np = next_host(&allnodes,&iter,held)) != NULL)
     {
-    np->write_to_nodes_file(nin, cray_enabled);
+    np->write_to_nodes_file(nin);
 
     fflush(nin);
 
@@ -1314,7 +1317,7 @@ int add_execution_slot(
   bool job_exclusive_on_use = false;
 
   if ((server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags & ATR_VFLAG_SET) &&
-      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_long != 0))
+      (server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_val.at_bool == true))
     job_exclusive_on_use = true;
 
   if (((pnode->nd_state & INUSE_JOB) != 0) &&
@@ -1333,7 +1336,6 @@ int create_a_gpusubnode(
 
   {
   int     rc = PBSE_NONE;
-  gpusubn tmp;
 
   if (pnode == NULL)
     {
@@ -1342,16 +1344,7 @@ int create_a_gpusubnode(
     return(rc);
     }
   
-  /* now use the new memory */
-
-  /* initialize the node */
-  pnode->nd_gpus_real = FALSE;
-  tmp.inuse = FALSE;
-  tmp.job_internal_id = -1;
-  tmp.mode = gpu_normal;
-  tmp.state = gpu_unallocated;
-  tmp.flag = okay;
-  tmp.index = pnode->nd_gpusn.size();
+  gpusubn tmp(pnode->nd_gpusn.size());
 
   /* increment the number of gpu subnodes and gpus free */
   pnode->nd_gpusn.push_back(tmp);
@@ -1652,7 +1645,7 @@ static int finalize_create_pbs_node(char     *pname, /* node name w/o any :ts   
       }
 
     addr = pul[i];
-    ipaddrs = AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+    auth_hosts.add_authorized_address(addr, pnode->nd_mom_port, pnode->get_name());
     }  /* END for (i) */
 
   if ((rc = setup_node_boards(pnode, pul)) != PBSE_NONE)
@@ -1977,12 +1970,11 @@ void add_to_property_list(
 /*
  * load_node_notes()
  *
- * @param cray_enabled - 1 if Cray, 0 otherwise
+ * Loads the notes for each node
+ *
  */
 
-void load_node_notes(
-    
-  bool cray_enabled)
+void load_node_notes()
 
   {
   std::string     line;
@@ -2006,7 +1998,7 @@ void load_node_notes(
       pnode = find_nodebyname(node_name.c_str());
 
       if ((pnode == NULL) &&
-          (cray_enabled == TRUE) &&
+          (cray_enabled == true) &&
           (isdigit(node_name.at(0))))
         {
         pnode = create_alps_subnode(alps_reporter, node_name.c_str());
@@ -2233,7 +2225,6 @@ int create_node_range(
 void handle_cray_specific_node_values(
     
   char     *nodename,
-  bool      cray_enabled,
   bool      is_alps_reporter,
   bool      is_alps_starter,
   bool      is_alps_compute,
@@ -2299,8 +2290,7 @@ char *parse_node_name(
 
   char **ptr,
   int   &err,
-  int    linenum,
-  bool   cray_enabled)
+  int    linenum)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2346,8 +2336,7 @@ int parse_line_in_nodes_file(
     
   char *line,
   int   line_size,
-  int   linenum,
-  bool  cray_enabled)
+  int   linenum)
 
   {
   if (line[0] == '#') /* comment */
@@ -2373,7 +2362,7 @@ int parse_line_in_nodes_file(
 
   CLEAR_HEAD(atrlist);
 
-  nodename = parse_node_name(&ptr, err, linenum, cray_enabled);
+  nodename = parse_node_name(&ptr, err, linenum);
 
   if (err != PBSE_NONE)
     return(-1);
@@ -2448,7 +2437,7 @@ int parse_line_in_nodes_file(
     return(PBSE_NONE);
     }
 
-  handle_cray_specific_node_values(nodename, cray_enabled, is_alps_reporter, is_alps_starter, is_alps_compute, pal);
+  handle_cray_specific_node_values(nodename, is_alps_reporter, is_alps_starter, is_alps_compute, pal);
 
   if (LOGLEVEL >= 3)
     {
@@ -2481,7 +2470,6 @@ int parse_nodes_file()
   FILE              *nin;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   extern char        server_name[];
-  long               cray_enabled = FALSE;
   char               line[MAXLINE << 4];
 
   extern resource_t  next_resource_tag;
@@ -2501,14 +2489,12 @@ int parse_nodes_file()
 
   svr_totnodes = 0;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* clear out line so we don't have residual data if there is no LF */
   memset(line, 0, sizeof(line));
 
   for (int linenum = 1; fgets(line, sizeof(line) - 1, nin); linenum++)
     {
-    int err = parse_line_in_nodes_file(line, sizeof(line), linenum, cray_enabled);
+    int err = parse_line_in_nodes_file(line, sizeof(line), linenum);
 
     if (err != PBSE_NONE)
       {
@@ -2517,7 +2503,7 @@ int parse_nodes_file()
       }
     }  /* END for (linenum) */
 
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (login_node_count() == 0)
       {
@@ -2555,7 +2541,6 @@ int setup_nodes(void)
   int                num;
   int                err;
   char               line[MAXLINE << 4];
-  long cray_enabled = FALSE;
 
   struct pbsnode    *np;
 
@@ -2566,8 +2551,6 @@ int setup_nodes(void)
   if ((err = parse_nodes_file()) != PBSE_NONE)
     return(err);
     
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   nin = fopen(path_nodestate, "r");
 
   if (nin != NULL)
@@ -2627,7 +2610,7 @@ int setup_nodes(void)
     fclose(nin);
     }
 
-  load_node_notes(cray_enabled);
+  load_node_notes();
 
   /* SUCCESS */
 
@@ -3157,6 +3140,8 @@ int create_partial_pbs_node(
   *pul = addr;
 
   pnode = new pbsnode(nodename, pul, false);
+    
+  free(pul);
 
   if ((rc = pnode->get_error()) != PBSE_NONE)
     {
@@ -3188,7 +3173,7 @@ int create_partial_pbs_node(
     }
 
   insert_node(&allnodes,pnode);
-  AVL_insert(addr, pnode->nd_mom_port, pnode, ipaddrs);
+  auth_hosts.add_authorized_address(addr, pnode->nd_mom_port, pnode->get_name());
   
   svr_totnodes++;
   recompute_ntype_cnts();
@@ -3309,8 +3294,6 @@ struct pbsnode *next_node(
     } /* END first iteration */
   else
     {
-    long cray_enabled = FALSE;
-
     /* if current is a numa subnode, go back to the parent */
     if ((iter->numa_index >= 0) ||
         (iter->alps_index !=  NULL))
@@ -3326,10 +3309,8 @@ struct pbsnode *next_node(
       current = tmp;
       }
 
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
     /* move to the next host or get my next node board? */
-    if (cray_enabled == TRUE)
+    if (cray_enabled == true)
       {
       if (current->nd_is_alps_reporter == TRUE)
         {

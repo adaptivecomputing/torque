@@ -37,6 +37,7 @@ int trq_cg_add_process_to_task_cgroup(std::string &cgroup_path, const char *job_
 int trq_cg_get_task_memory_stats(const char *job_id, const unsigned int req_index, const unsigned int task_index, unsigned long long &mem_used);
 int trq_cg_get_task_cput_stats(const char *job_id, const unsigned int req_index, const unsigned int task_index, unsigned long &cput_used);
 void trq_cg_delete_job_cgroups(const char *job_id, bool successfully_created);
-bool have_incompatible_dash_l_resource(job *pjob);
+bool have_incompatible_dash_l_resource(pbs_attribute *pattr);
 int  trq_cg_add_devices_to_cgroup(job *pjob);
+int  init_torque_cgroups();
 #endif /* _TRQ_CGROUPS_H_ */

@@ -85,7 +85,6 @@ int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topol
 #ifdef NVIDIA_GPUS
   this->initializeGpu(idx, topology);
 #endif
-
   return(PBSE_NONE);
   }
 

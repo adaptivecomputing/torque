@@ -123,7 +123,7 @@
 
 /* External functions called */
 int svr_movejob(job *, char *, int *, struct batch_request *);
-long count_proc(char *spec);
+long count_proc(const char *spec);
 
 /* Local Functions */
 
@@ -731,6 +731,11 @@ int initialize_procct(
         pbs_errno = PBSE_INTERNAL;
         return(ROUTE_PERM_FAILURE);
         }
+      
+      // We have to refresh our pointers after adding a resource entry because resources are in a vector
+      // now and it may have been re-allocated.
+      pprocsp = find_resc_entry(pattr, pprocs_def);
+      pnodesp = find_resc_entry(pattr, pnodes_def);
       }
 
     /* Finally the moment of truth. We have the nodes and procs resources. Add them

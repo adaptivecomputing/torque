@@ -79,6 +79,7 @@
 
 
 #include <limits.h>
+#include <string>
 
 #include "resmon.h"
 #include "pbs_ifl.h"
@@ -172,6 +173,7 @@ extern int              max_join_job_wait_time;
 extern int              resend_join_job_wait_time;
 extern int              mom_hierarchy_retry_time;
 extern int              MOMJobDirStickySet;
+extern std::string      presetup_prologue;
 
 struct specials
   {

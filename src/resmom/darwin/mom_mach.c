@@ -131,6 +131,7 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <signal.h>
+#include <vector>
 
 #include <mach/mach_init.h>
 #include <mach/vm_map.h>
@@ -741,87 +742,56 @@ mom_set_limits(
   DBPRT(("%s: entered\n", id))
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-  pres = (resource *)
-         GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
   /*
    * Cycle through all the resource specifications,
    * setting limits appropriately (SET_LIMIT_SET).
    */
-
-  while (pres != NULL)
+  if (resources != NULL)
     {
-    assert(pres->rs_defin != NULL);
-    pname = pres->rs_defin->rs_name;
-    assert(pname != NULL);
-    assert(*pname != '\0');
-
-    if (strcmp(pname, "cput") == 0)
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      if (igncput == FALSE)
+      resource &r = resources->at(i);
+
+      assert(r.rs_defin != NULL);
+      pname = r.rs_defin->rs_name;
+      assert(pname != NULL);
+      assert(*pname != '\0');
+
+      if (strcmp(pname, "cput") == 0)
         {
-        /* cpu time - check, if less than pcput use it */
-        retval = mm_gettime(pres, &value);
+        if (igncput == FALSE)
+          {
+          /* cpu time - check, if less than pcput use it */
+          retval = mm_gettime(&r, &value);
 
-        if (retval != PBSE_NONE)
-          return (error(pname, retval));
+          if (retval != PBSE_NONE)
+            return (error(pname, retval));
+          }
         }
-      }
-    else if (strcmp(pname, "pcput") == 0)
-      {
-      if (igncput == FALSE)
+      else if (strcmp(pname, "pcput") == 0)
         {
-        /* process cpu time - set */
-        retval = mm_gettime(pres, &value);
+        if (igncput == FALSE)
+          {
+          /* process cpu time - set */
+          retval = mm_gettime(&r, &value);
 
-        if (retval != PBSE_NONE)
-          return (error(pname, retval));
+          if (retval != PBSE_NONE)
+            return (error(pname, retval));
 
-        reslim.rlim_cur = reslim.rlim_max =
-          (unsigned long)((double)value / cputfactor);
+          reslim.rlim_cur = reslim.rlim_max =
+            (unsigned long)((double)value / cputfactor);
 
-        if (setrlimit(RLIMIT_CPU, &reslim) < 0)
-          return (error("RLIMIT_CPU", PBSE_SYSTEM));
+          if (setrlimit(RLIMIT_CPU, &reslim) < 0)
+            return (error("RLIMIT_CPU", PBSE_SYSTEM));
+          }
         }
-      }
-    else if (strcmp(pname, "file") == 0)   /* set */
-      {
-      if (set_mode == SET_LIMIT_SET)
-        {
-        retval = mm_getsize(pres, &value);
-
-        if (retval != PBSE_NONE)
-          return (error(pname, retval));
-
-        if (value > ULONG_MAX)
-          return (error(pname, PBSE_BADATVAL));
-
-        reslim.rlim_cur = reslim.rlim_max = value;
-
-        if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
-          return (error(pname, PBSE_SYSTEM));
-        }
-      }
-    else if (strcmp(pname, "vmem") == 0)   /* check */
-      {
-      if (ignvmem == FALSE)
-        {
-        retval = mm_getsize(pres, &value);
-
-        if (retval != PBSE_NONE)
-          return (error(pname, retval));
-
-        if ((mem_limit == 0) || (value < mem_limit))
-          mem_limit = value;
-        }
-      }
-    else if (strcmp(pname, "pvmem") == 0)   /* set */
-      {
-      if (ignvmem == FALSE)
+      else if (strcmp(pname, "file") == 0)   /* set */
         {
         if (set_mode == SET_LIMIT_SET)
           {
-          retval = mm_getsize(pres, &value);
+          retval = mm_getsize(&r, &value);
 
           if (retval != PBSE_NONE)
             return (error(pname, retval));
@@ -829,56 +799,87 @@ mom_set_limits(
           if (value > ULONG_MAX)
             return (error(pname, PBSE_BADATVAL));
 
-          if ((mem_limit == 0) || (value < mem_limit))
-            mem_limit = value;
+          reslim.rlim_cur = reslim.rlim_max = value;
+
+          if (setrlimit(RLIMIT_FSIZE, &reslim) < 0)
+            return (error(pname, PBSE_SYSTEM));
           }
         }
-      }
-    else if (strcmp(pname, "mem") == 0)    /* ignore */
-      {
-      }
-    else if (strcmp(pname, "pmem") == 0)   /* set */
-      {
-      if (ignmem == FALSE)
+      else if (strcmp(pname, "vmem") == 0)   /* check */
         {
-        if (set_mode == SET_LIMIT_SET)
+        if (ignvmem == FALSE)
           {
-          retval = mm_getsize(pres, &value);
+          retval = mm_getsize(&r, &value);
 
           if (retval != PBSE_NONE)
             return (error(pname, retval));
 
-          reslim.rlim_cur = reslim.rlim_max = value;
-
-          if (setrlimit(RLIMIT_RSS, &reslim) < 0)
-            return (error("RLIMIT_RSS", PBSE_SYSTEM));
+          if ((mem_limit == 0) || (value < mem_limit))
+            mem_limit = value;
           }
         }
-      }
-    else if (strcmp(pname, "walltime") == 0)   /* Check */
-      {
-      retval = mm_gettime(pres, &value);
-
-      if (retval != PBSE_NONE)
-        return (error(pname, retval));
-      }
-    else if (strcmp(pname, "nice") == 0)   /* set nice */
-      {
-      if (set_mode == SET_LIMIT_SET)
+      else if (strcmp(pname, "pvmem") == 0)   /* set */
         {
-        errno = 0;
+        if (ignvmem == FALSE)
+          {
+          if (set_mode == SET_LIMIT_SET)
+            {
+            retval = mm_getsize(&r, &value);
 
-        if ((nice((int)pres->rs_value.at_val.at_long) == -1)
-            && (errno != 0))
-          return (error(pname, PBSE_BADATVAL));
+            if (retval != PBSE_NONE)
+              return (error(pname, retval));
+
+            if (value > ULONG_MAX)
+              return (error(pname, PBSE_BADATVAL));
+
+            if ((mem_limit == 0) || (value < mem_limit))
+              mem_limit = value;
+            }
+          }
         }
-      }
-    else if ((pres->rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
-      /* don't recognize and not marked as ignore by mom */
-      return (error(pname, PBSE_UNKRESC));
+      else if (strcmp(pname, "mem") == 0)    /* ignore */
+        {
+        }
+      else if (strcmp(pname, "pmem") == 0)   /* set */
+        {
+        if (ignmem == FALSE)
+          {
+          if (set_mode == SET_LIMIT_SET)
+            {
+            retval = mm_getsize(&r, &value);
 
-    pres = (resource *)GET_NEXT(pres->rs_link);
-    }
+            if (retval != PBSE_NONE)
+              return (error(pname, retval));
+
+            reslim.rlim_cur = reslim.rlim_max = value;
+
+            if (setrlimit(RLIMIT_RSS, &reslim) < 0)
+              return (error("RLIMIT_RSS", PBSE_SYSTEM));
+            }
+          }
+        }
+      else if (strcmp(pname, "walltime") == 0)   /* Check */
+        {
+        retval = mm_gettime(&r, &value);
+
+        if (retval != PBSE_NONE)
+          return (error(pname, retval));
+        }
+      else if (strcmp(pname, "nice") == 0)   /* set nice */
+        {
+        if (set_mode == SET_LIMIT_SET)
+          {
+          errno = 0;
+
+          if ((nice((int)r.rs_value.at_val.at_long) == -1)
+              && (errno != 0))
+            return (error(pname, PBSE_BADATVAL));
+          }
+        }
+      else if ((r.rs_defin->rs_flags & ATR_DFLAG_RMOMIG) == 0)
+        /* don't recognize and not marked as ignore by mom */
+        return (error(pname, PBSE_UNKRESC));
+      }
 
   if (set_mode == SET_LIMIT_SET)
     {
@@ -914,30 +915,28 @@ int mom_do_poll(
   char  *id = "mom_do_poll";
 #endif
   char  *pname;
-  resource *pres;
 
   DBPRT(("%s: entered\n", id))
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-  pres = (resource *)
-         GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
-  while (pres != NULL)
+  if (resources != NULL)
     {
-    assert(pres->rs_defin != NULL);
-    pname = pres->rs_defin->rs_name;
-    assert(pname != NULL);
-    assert(*pname != '\0');
-
-    if (strcmp(pname, "walltime") == 0 ||
-        strcmp(pname, "cput") == 0 ||
-        strcmp(pname, "pvmem") == 0 ||
-        strcmp(pname, "vmem") == 0)
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      return (TRUE);
-      }
+      pname = resources->at(i).rs_defin->rs_name;
+      assert(pname != NULL);
+      assert(*pname != '\0');
 
-    pres = (resource *)GET_NEXT(pres->rs_link);
+      if (strcmp(pname, "walltime") == 0 ||
+          strcmp(pname, "cput") == 0 ||
+          strcmp(pname, "pvmem") == 0 ||
+          strcmp(pname, "vmem") == 0)
+        {
+        return (TRUE);
+        }
+      }
     }
 
   return(FALSE);
@@ -1185,98 +1184,102 @@ int mom_over_limit(
   assert(pjob != NULL);
   assert(pjob->ji_wattr[(int)JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  pres = (resource *)GET_NEXT(pjob->ji_wattr[(int)JOB_ATR_resource].at_val.at_list);
+  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
 
   DBPRT(("%s: entered\n", id))
 
-  for (;pres != NULL;pres = (resource *)GET_NEXT(pres->rs_link))
+  if (resources != NULL)
     {
-    assert(pres->rs_defin != NULL);
-
-    pname = pres->rs_defin->rs_name;
-
-    assert(pname != NULL);
-    assert(*pname != '\0');
-
-    if ((igncput == FALSE) && (!strcmp(pname, "cput")))
+    for (size_t i = 0; i < resources->size(); i++)
       {
-      retval = mm_gettime(pres, &value);
+      resource &r = resources->at(i);
+      assert(r.rs_defin != NULL);
 
-      if (retval != PBSE_NONE)
-        continue;
+      pname = r.rs_defin->rs_name;
 
-      if ((num = cput_sum(pjob)) > value)
+      assert(pname != NULL);
+      assert(*pname != '\0');
+
+      if ((igncput == FALSE) && (!strcmp(pname, "cput")))
         {
-        sprintf(log_buffer, "cput %lu exceeded limit %lu",
-                num, value);
+        retval = mm_gettime(&r, &value);
 
-        return(TRUE);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((num = cput_sum(pjob)) > value)
+          {
+          sprintf(log_buffer, "cput %lu exceeded limit %lu",
+                  num, value);
+
+          return(TRUE);
+          }
         }
-      }
-    else if (!strcmp(pname, "mem"))
-      {
-      retval = mm_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      if ((num = resi_sum(pjob)) > value)
+      else if (!strcmp(pname, "mem"))
         {
-        sprintf(log_buffer, "mem %lu exceeded limit %lu",
-                num, value);
+        retval = mm_getsize(&r, &value);
 
-        return(TRUE);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((num = resi_sum(pjob)) > value)
+          {
+          sprintf(log_buffer, "mem %lu exceeded limit %lu",
+                  num, value);
+
+          return(TRUE);
+          }
         }
-      }
-    else if (!strcmp(pname, "vmem"))
-      {
-      retval = mm_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      if ((ignvmem == 0) && ((num = mem_sum(pjob)) > value))
+      else if (!strcmp(pname, "vmem"))
         {
-        sprintf(log_buffer, "vmem %lu exceeded limit %lu",
-                num, value);
+        retval = mm_getsize(&r, &value);
 
-        return(TRUE);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((ignvmem == 0) && ((num = mem_sum(pjob)) > value))
+          {
+          sprintf(log_buffer, "vmem %lu exceeded limit %lu",
+                  num, value);
+
+          return(TRUE);
+          }
         }
-      }
-    else if (!strcmp(pname, "pvmem"))
-      {
-      retval = mm_getsize(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      if ((ignvmem == 0) && (overmem_proc(pjob, value)))
+      else if (!strcmp(pname, "pvmem"))
         {
-        sprintf(log_buffer, "pvmem exceeded limit %lu",
-                value);
+        retval = mm_getsize(&r, &value);
 
-        return(TRUE);
+        if (retval != PBSE_NONE)
+          continue;
+
+        if ((ignvmem == 0) && (overmem_proc(pjob, value)))
+          {
+          sprintf(log_buffer, "pvmem exceeded limit %lu",
+                  value);
+
+          return(TRUE);
+          }
         }
-      }
-    else if (ignwalltime == 0 && !strcmp(pname, "walltime"))
-      {
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
-        continue;
-
-      retval = mm_gettime(pres, &value);
-
-      if (retval != PBSE_NONE)
-        continue;
-
-      num = (unsigned long)(wallfactor * (double)(time_now -
-                            pjob->ji_qs.ji_stime));
-
-      if (num > value)
+      else if (ignwalltime == 0 && !strcmp(pname, "walltime"))
         {
-        sprintf(log_buffer, "walltime %lu exceeded limit %lu",
-                num, value);
+        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+          continue;
 
-        return(TRUE);
+        retval = mm_gettime(&r, &value);
+
+        if (retval != PBSE_NONE)
+          continue;
+
+        num = (unsigned long)(wallfactor * (double)(time_now -
+                              pjob->ji_qs.ji_stime));
+
+        if (num > value)
+          {
+          sprintf(log_buffer, "walltime %lu exceeded limit %lu",
+                  num, value);
+
+          return(TRUE);
+          }
         }
       }
     }

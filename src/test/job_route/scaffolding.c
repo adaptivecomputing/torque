@@ -112,7 +112,7 @@ resource *add_resource_entry(pbs_attribute *pattr, resource_def *prdef)
   return(NULL);
   }
 
-long count_proc(char *param_spec)
+long count_proc(const char *param_spec)
 
   {
   return(0);

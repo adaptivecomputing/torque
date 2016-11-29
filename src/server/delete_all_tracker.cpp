@@ -82,7 +82,7 @@
 
 const char *mgr = "manager";
 
-delete_all_tracker::delete_all_tracker()
+delete_all_tracker::delete_all_tracker() : qdel_map()
 
   {
   pthread_mutex_init(&this->lock, NULL);

@@ -190,7 +190,7 @@ int req_stat_job(
   struct batch_request *preq)  /* ptr to the decoded request */
 
   {
-  struct stat_cntl     *cntl; /* see svrfunc.h  */
+  struct stat_cntl      cntl; /* see svrfunc.h  */
   char                 *name;
   job                  *pjob = NULL;
   pbs_queue            *pque = NULL;
@@ -295,20 +295,9 @@ int req_stat_job(
     return(rc);
     }
 
-  preq->rq_reply.brp_choice = BATCH_REPLY_CHOICE_Status;
+  set_reply_type(&preq->rq_reply, BATCH_REPLY_CHOICE_Status);
 
   CLEAR_HEAD(preq->rq_reply.brp_un.brp_status);
-
-  cntl = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl));
-
-  if (cntl == NULL)
-    {
-    if (pque != NULL) 
-      unlock_queue(pque, "req_stat_job", (char *)"no memory cntl", LOGLEVEL);
-    req_reject(PBSE_SYSTEM, 0, preq, NULL, NULL);
-
-    return(PBSE_SYSTEM);
-    }
 
   if ((type == tjstTruncatedQueue) ||
       (type == tjstTruncatedServer))
@@ -320,20 +309,21 @@ int req_stat_job(
       }
     }
 
-  cntl->sc_type   = (int)type;
-  cntl->sc_conn   = -1;
-  cntl->sc_pque   = pque;
-  cntl->sc_origrq = preq;
-  cntl->sc_post   = req_stat_job_step2;
-  cntl->sc_jobid[0] = '\0'; /* cause "start from beginning" */
-  cntl->sc_condensed = condensed;
+  memset(&cntl, 0, sizeof(cntl));
 
-  req_stat_job_step2(cntl); /* go to step 2, see if running is current */
+  cntl.sc_type   = (int)type;
+  cntl.sc_conn   = -1;
+  cntl.sc_pque   = pque;
+  cntl.sc_origrq = preq;
+  cntl.sc_post   = req_stat_job_step2;
+  cntl.sc_jobid[0] = '\0'; /* cause "start from beginning" */
+  cntl.sc_condensed = condensed;
+
+  req_stat_job_step2(&cntl); /* go to step 2, see if running is current */
 
   if (pque != NULL)
     unlock_queue(pque, "req_stat_job", (char *)"success", LOGLEVEL);
 
-  free(cntl);
   return(PBSE_NONE);
   }  /* END req_stat_job() */
 
@@ -630,13 +620,20 @@ void req_stat_job_step2(
   else if (type == tjstJob)
     {
     pjob = svr_find_job(preq->rq_ind.rq_status.rq_id, FALSE);
-    
-    if ((rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, cntl->sc_condensed, &bad)))
-      req_reject(rc, bad, preq, NULL, NULL);
-    else
-      reply_send_svr(preq);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    if (pjob != NULL)
+      {
+      if ((rc = status_job(pjob, preq, pal, &preply->brp_un.brp_status, cntl->sc_condensed, &bad)))
+        req_reject(rc, bad, preq, NULL, NULL);
+      else
+        reply_send_svr(preq);
+
+      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      }
+    else
+      {
+      req_reject(PBSE_JOBNOTFOUND, bad, preq, NULL, NULL);
+      }
     }
   else
     {
@@ -730,7 +727,7 @@ void req_stat_job_step2(
 
 int stat_to_mom(
 
-  char             *job_id,
+  const char       *job_id,
   struct stat_cntl *cntl)  /* M */
 
   {
@@ -967,7 +964,7 @@ void stat_update(
 
 void stat_mom_job(
 
-  char *job_id)
+  const char *job_id)
 
   {
   struct stat_cntl *cntl;
@@ -1011,7 +1008,6 @@ void poll_job_task(
   char      *job_id = (char *)ptask->wt_parm1;
   job       *pjob;
   time_t     time_now = time(NULL);
-  long       poll_jobs = 0;
   long       job_stat_rate;
 
   free(ptask->wt_mutex);
@@ -1035,12 +1031,8 @@ void poll_job_task(
 
         get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
 
-        if (time(NULL) - pjob->ji_last_reported_time > job_stat_rate)
-          {
-          get_svr_attr_l(SRV_ATR_PollJobs, &poll_jobs);
-          if (poll_jobs)
-            stat_mom_job(job_id);
-          }
+        if (time_now - pjob->ji_last_reported_time > job_stat_rate)
+          stat_mom_job(job_id);
 
         /* add another task */
         set_task(WORK_Timed, time_now + (job_stat_rate / 3), poll_job_task, strdup(job_id), FALSE);
@@ -1100,7 +1092,7 @@ int req_stat_que(
 
   preply = &preq->rq_reply;
 
-  preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+  set_reply_type(preply, BATCH_REPLY_CHOICE_Status);
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 
@@ -1352,7 +1344,7 @@ int req_stat_node(
 
   preply = &preq->rq_reply;
 
-  preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+  set_reply_type(preply, BATCH_REPLY_CHOICE_Status);
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 
@@ -1562,7 +1554,7 @@ int req_stat_svr(
   /* allocate a reply structure and a status sub-structure */
 
   preply = &preq->rq_reply;
-  preply->brp_choice = BATCH_REPLY_CHOICE_Status;
+  set_reply_type(preply, BATCH_REPLY_CHOICE_Status);
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 

@@ -85,8 +85,11 @@
 
 #include <pthread.h>
 #include <netinet/in.h> /* sockaddr_in */
+#include <map>
 #include <set>
 #include <sys/types.h>
+#include <vector>
+#include <string>
 
 #include "execution_slot_tracker.hpp"
 #include "net_connect.h" /* pbs_net_t */
@@ -94,8 +97,6 @@
 
 /* NOTE:  requires server_limits.h */
 
-#include <vector>
-#include <string>
 #include "container.hpp"
 #include "job_usage_info.hpp"
 #include "attribute.h"
@@ -174,6 +175,16 @@ class gpusubn
   short           index;  /* gpu index */
   std::string     gpuid;  /* gpu id */
   int             job_count;
+
+  gpusubn() : job_internal_id(-1), inuse(false), state(gpu_unallocated), mode(gpu_normal),
+              driver_ver(-1), flag(okay), index(-1), gpuid(), job_count(0)
+    {
+    }
+
+  gpusubn(int gindex) : job_internal_id(-1), inuse(false), state(gpu_unallocated), mode(gpu_normal),
+              driver_ver(-1), flag(okay), index(gindex), gpuid(), job_count(0)
+    {
+    }
   };
 
 
@@ -216,9 +227,14 @@ class received_node
 class pbsnode
   {
 private:
-  std::string                   nd_name;             /* node's host name */
-  int                           nd_error;            // set if there's an error
-  std::vector<std::string>      nd_properties;       // The node's properties
+  std::string                          nd_name;             /* node's host name */
+  int                                  nd_error;            // set if there's an error
+  std::vector<std::string>             nd_properties;       // The node's properties
+  int                                  nd_version;          // The node's software version
+  std::map<std::string, unsigned int>  nd_plugin_generic_resources; // Plugin-supplied gres
+  std::map<std::string, double>        nd_plugin_generic_metrics; // Plugin-supplied gmetrics
+  std::map<std::string, std::string>   nd_plugin_varattrs; // Plugin-supplied varattrs
+  std::string                          nd_plugin_features;
 
 public:
   // Network failures without two consecutive successive between them.
@@ -235,7 +251,7 @@ public:
 
   struct array_strings         *nd_prop;             /* array of properities */
 
-  struct array_strings         *nd_status;
+  std::string                   nd_status;
   std::string                   nd_note;             /* note set by administrator */
   int                           nd_stream;           /* stream to Mom on host */
   enum psit                     nd_flag;
@@ -316,11 +332,14 @@ public:
   const char *get_name() const;
   bool        hasprop(std::vector<prop> *props) const;
   void        write_compute_node_properties(FILE *nin) const;
-  void        write_to_nodes_file(FILE *nin, bool cray_enabled) const;
+  void        write_to_nodes_file(FILE *nin) const;
   int         copy_properties(pbsnode *dest) const;
+  int         get_version() const;
+  void        add_plugin_resources(tlist_head *phead) const;
 
   // NON-CONST methods
   void change_name(const char *new_name);
+  void set_version(const char *version_str);
   void update_properties();
   bool update_internal_failure_counts(int rc);
   void add_property(const std::string &prop);
@@ -331,6 +350,8 @@ public:
   int encode_properties(tlist_head *);
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
+  void capture_plugin_resources(const char *str);
+  void add_job_list_to_status(const std::string &job_list);
   };
 
 
@@ -569,11 +590,19 @@ public:
   };
 
 
-typedef struct sync_job_info
+class sync_job_info
   {
-  char   *input;
+  public:
+  std::string job_info;
+  std::string node_name;
   time_t  timestamp;
-  } sync_job_info;
+  bool    sync_jobs;
+
+  sync_job_info() : job_info(), node_name(), sync_jobs(false)
+    {
+    this->timestamp = time(NULL);
+    }
+  } ;
 
 
 
@@ -601,9 +630,9 @@ void             free_prop_list(struct prop*);
 void             reinitialize_node_iterator(node_iterator *);
 int              mgr_set_node_attr(struct pbsnode *, attribute_def *, int, svrattrl *, int, int *, void *, int, bool);
 
-#ifdef BATCH_REQUEST_H 
 void             setup_notification(char *);
 
+#ifdef BATCH_REQUEST_H 
 struct pbsnode  *find_nodebynameandaltname(char *, char *);
 void             free_prop_attr(pbs_attribute*);
 void             recompute_ntype_cnts();

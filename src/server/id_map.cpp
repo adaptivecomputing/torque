@@ -140,16 +140,19 @@ const char *id_map::get_name(
   {
   const char *name = NULL;
 
-  pthread_mutex_lock(&this->mutex);
-  try
+  if (id >= 0)
     {
-    std::string const &nname = this->names->at(id);
-    name = nname.c_str();
+    pthread_mutex_lock(&this->mutex);
+    try
+      {
+      std::string const &nname = this->names->at(id);
+      name = nname.c_str();
+      }
+    catch (...)
+      {
+      }
+    pthread_mutex_unlock(&this->mutex);
     }
-  catch (...)
-    {
-    }
-  pthread_mutex_unlock(&this->mutex);
 
   return(name);
   }

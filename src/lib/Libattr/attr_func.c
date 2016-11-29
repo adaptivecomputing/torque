@@ -129,11 +129,8 @@ void clear_attr(
 
   pattr->at_type = pdef->at_type;
 
-  if ((pattr->at_type == ATR_TYPE_RESC) ||
-      (pattr->at_type == ATR_TYPE_LIST))
-    {
+  if (pattr->at_type == ATR_TYPE_LIST)
     CLEAR_HEAD(pattr->at_val.at_list);
-    }
 
   return;
   }  /*END clear_attr() */
@@ -223,6 +220,23 @@ long attr_ifelse_long(
     return (attr2->at_val.at_long);
   else
     return (deflong);
+  }
+
+
+
+bool attr_ifelse_bool(
+
+  pbs_attribute *attr1,
+  pbs_attribute *attr2,
+  bool           defbool)
+
+  {
+  if (attr1->at_flags & ATR_VFLAG_SET)
+    return(attr1->at_val.at_bool);
+  else if (attr2->at_flags & ATR_VFLAG_SET)
+    return(attr2->at_val.at_bool);
+  else
+    return(defbool);
   }
 
 

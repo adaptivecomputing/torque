@@ -17,8 +17,6 @@ job *find_job_by_node(struct pbsnode *pnode, char *jobid);
 
 void update_job_data(struct pbsnode *np, char *jobstring_in);
 
-void setup_notification(char *pname);
-
 int is_stat_get(const char *node_name, struct tcp_chan *chan);
 
 int is_compose(struct tcp_chan *chan, int command);
@@ -69,8 +67,6 @@ int node_avail(char *spec, int *navail, int *nalloc, int *nresvd, int *ndown);
 
 int node_reserve(char *nspec, resource_t tag);
 
-void free_nodes(job *pjob);
-
-void sync_node_jobs_with_moms(struct pbsnode *np, const char *jobs_in_mom);
+void sync_node_jobs_with_moms(struct pbsnode *np, std::vector<std::string> &job_list);
 
 #endif /* _NODE_MANAGER_H */

@@ -11,6 +11,7 @@
 #include "log.h" /* LOG_BUF_SIZE */
 #include "batch_request.h" /* batch_request */
 #include "pbs_job.h" /* job */
+#include "authorized_hosts.hpp"
 
 time_t time_now;
 const char *msg_err_malloc = "malloc failed";
@@ -170,10 +171,8 @@ void req_delfile(struct batch_request *preq)
   exit(1);
   }
  
-void req_signaljob(struct batch_request *preq)
+void mom_req_signal_job(struct batch_request *preq)
   {
-  fprintf(stderr, "The call to req_signaljob needs to be mocked!!\n");
-  exit(1);
   }
 
 void req_cpyfile(struct batch_request *preq)
@@ -279,3 +278,14 @@ char * netaddr_long(long ap, char *out)
   {
   return(NULL);
   }
+
+void req_cleanup_job(batch_request *preq) {}
+
+bool authorized_hosts::is_authorized(unsigned long addr)
+  {
+  return(true);
+  }
+
+authorized_hosts::authorized_hosts() {}
+authorized_hosts auth_hosts;
+

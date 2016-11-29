@@ -28,6 +28,7 @@ EXTRA_DIST = acinclude.m4 \
 	torque.setup \
 	torque.spec \
 	buildutils/config.mk \
+	buildutils/determine.distro \
 	buildutils/modulefiles.in \
 	buildutils/modulefiles.vers.in \
 	buildutils/pbs_mach_type \
@@ -54,6 +55,9 @@ EXTRA_DIST = acinclude.m4 \
 	contrib/README.pbs_weblite \
 	contrib/README.pestat \
 	contrib/README.qpeek \
+	contrib/resource_plugin_kit/plugin_driver.cpp \
+	contrib/resource_plugin_kit/README \
+	contrib/resource_plugin_kit/resource_plugin.cpp \
 	contrib/showjobs \
 	contrib/diag/tdiag.sh \
 	contrib/use_jobs_subdirs_setup \
@@ -91,7 +95,7 @@ dist-hook:
 	sed -e 's/TORQUE .* README .*/TORQUE $(VERSION) README (released '"`date '+%b, %d %Y'`"')/' $(srcdir)/README.torque > $(distdir)/README.torque
 
 srpm: dist
-	rpmbuild -ts $(distdir).tar.gz
+	rpmbuild $(RPMOPTS) -ts $(distdir).tar.gz
 
 rpm: dist
 	rpmbuild $(RPM_AC_OPTS) $(RPMOPTS) -tb $(distdir).tar.gz
@@ -159,7 +163,7 @@ packages:
            tarball=$(PKGROOT)/$(PACKAGE_NAME)-$$pname-$$d-$$phost.tar.gz; \
            pkgfile=./$(PACKAGE_NAME)-$$pname-$$d-$$phost.sh; \
            echo "Building $$pkgfile ..."; \
-           $(MAKE) DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
+           $(MAKE) FROM_MAKE_PACKAGES=1 DESTDIR=$$proot install_$$d >/dev/null || exit 1; \
 	   case $$d in \
 	      devel) :;; \
 	      *) rm -f $$proot/$(libdir)/*a $$proot/$(libdir)/*.so;; \
@@ -171,6 +175,15 @@ packages:
            test $$d = gui && echo dummy > $$proot/regen-tclIndex; \
            ( cd $$proot; tar cf - * ) | gzip > $$tarball && \
            ( cd $$proot; tar cf - \
+                           `test -f ./usr/lib/systemd/system/pbs_server.service && echo ./usr/lib/systemd/system/pbs_server.service` \
+                           `test -f ./etc/init.d/pbs_server && echo ./etc/init.d/pbs_server` \
+                           `test -f ./usr/lib/systemd/system/pbs_mom.service && echo ./usr/lib/systemd/system/pbs_mom.service` \
+                           `test -f ./etc/init.d/pbs_mom && echo ./etc/init.d/pbs_mom` \
+                           `test -f ./usr/lib/systemd/system/trqauthd.service && echo ./usr/lib/systemd/system/trqauthd.service` \
+                           `test -f ./etc/init.d/trqauthd && echo ./etc/init.d/trqauthd` \
+                           `test -f ./etc/ld.so.conf.d/torque.conf && echo ./etc/ld.so.conf.d/torque.conf` \
+                           `test -f ./etc/profile.d/torque.sh && echo ./etc/profile.d/torque.sh` \
+                           `test -f ./etc/profile.d/torque.csh && echo ./etc/profile.d/torque.csh` \
                            `test -f ./post-install && echo ./post-install` \
                            `test -f ./regen-tclIndex && echo ./regen-tclIndex` \
                            `test -d .$(sbindir) && echo .$(sbindir)/*` \
@@ -213,3 +226,6 @@ endif
 .PHONY: cleancheck
 cleancheck:
 	$(MAKE) -C $(CHECK_DIRS) $(MAKECMDGOALS)
+
+doxygen:
+	doxygen Doxyfile

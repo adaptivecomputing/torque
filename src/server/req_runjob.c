@@ -119,6 +119,7 @@
 #include "mutex_mgr.hpp"
 #include "../lib/Libnet/lib_net.h"
 #include "complete_req.hpp"
+#include "policy_values.h"
 
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -126,7 +127,7 @@
 
 /* External Functions Called: */
 
-extern int   send_job_work(char *job_id,char *,int,int *,struct batch_request *);
+extern int   send_job_work(char *job_id, const char *,int,int *,struct batch_request *);
 extern void  set_resc_assigned(job *, enum batch_op);
 
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
@@ -190,7 +191,6 @@ int check_and_run_job_work(
   int              rc = PBSE_NONE;
   char             failhost[MAXLINE];
   char             emsg[MAXLINE];
-  long             job_atr_hold;
   int              job_exit_status;
   int              job_state;
   char             job_id[PBS_MAXSVRJOBID+1];
@@ -230,14 +230,12 @@ int check_and_run_job_work(
       if ((pa->ai_qs.slot_limit < 0) ||
           (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
         {
-        job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         job_state = pjob->ji_qs.ji_state;
 
         job_mutex.unlock();
 
-        update_array_values(pa,job_state,aeRun,
-            job_id, job_atr_hold, job_exit_status);
+        pa->update_array_values(job_state, aeRun, job_id, job_exit_status);
 
         if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
           {
@@ -371,18 +369,7 @@ int req_runjob(
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
-    batch_request *new_preq = duplicate_request(preq, -1);
-
-    if (new_preq == NULL)
-      {
-      sprintf(log_buf, "failed to duplicate batch request");
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      free_br(preq);
-      return(PBSE_MEM_MALLOC);
-      }
-
-    reply_ack(new_preq);
-    free_br(new_preq);
+    reply_ack(preq);
     preq->rq_noreply = TRUE;
     enqueue_threadpool_request(check_and_run_job, preq, async_pool);
     }
@@ -917,6 +904,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot lookup master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -942,6 +930,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot create socket for master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -970,6 +959,7 @@ int verify_moms_up(
       pjob->ji_rejectdest.push_back(nodestr);
 
       /* FAILURE - cannot connect to master compute host */
+      free(hostlist);
       return(PBSE_RESCUNAV);
       }
 
@@ -1005,7 +995,6 @@ int svr_startjob(
   {
   int     f;
   int     rc;
-  long    cray_enabled = FALSE;
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
@@ -1068,10 +1057,8 @@ int svr_startjob(
     return(rc);
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* copy the server nppcu value to the job */
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (!(pjob->ji_wattr[JOB_ATR_nppcu].at_flags & ATR_VFLAG_SET)))
     {
     long svr_nppcu_value = 0;
@@ -1397,7 +1384,6 @@ int svr_strtjob2(
   struct timeval   start_time;
   struct timezone  tz;
   int              rc = PBSE_NONE;
-  long             cray_enabled = FALSE;
 
   pattr = &pjob->ji_wattr[JOB_ATR_start_time];
 
@@ -1420,10 +1406,8 @@ int svr_strtjob2(
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
     }
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
   /* check if this is a special heterogeneous job */
-  if ((cray_enabled == TRUE) &&
+  if ((cray_enabled == true) &&
       (pjob->ji_external_clone != NULL))
     rc = handle_heterogeneous_job_launch(pjob, preq);
   else
@@ -1438,10 +1422,10 @@ int svr_strtjob2(
 
 void finish_sendmom(
 
-  char                  *job_id,
+  const char            *job_id,
   struct batch_request *preq,
   long                  start_time,
-  char                 *node_name,
+  const char           *node_name,
   int                   status,
   int                   mom_err)
 
@@ -1748,9 +1732,17 @@ job *chk_job_torun(
     {
     /* job has been checkpointed or files already staged in */
     /* in this case, exec_host must be already set          */
-
+    /* this is an unsafe assumption so let's be extra sure before doing strdup() */
     if (prun->rq_destin && *prun->rq_destin) /* If a destination has been specified */
       {
+      /* check that execution host is actually set */
+      /* this can happen if running the job failed after stagein */
+      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+        {
+        req_reject(PBSE_EXECTHERE, 0, preq, NULL, "exec host not set but files staged in");
+        return(NULL);
+        }
+
       /* specified destination must match exec_host */
       if ((exec_host = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str)) == NULL)
         {
@@ -1885,12 +1877,12 @@ job *chk_job_torun(
 
 int set_job_exec_info(
     
-  job  *pjob,
-  char *list)
+  job        *pjob,
+  const char *list)
 
   {
   char            ms[PBS_MAXHOSTNAME];
-  char           *ptr;
+  const char     *ptr;
   int             i;
   struct pbsnode *pnode;
   struct in_addr  hostaddr;
@@ -2103,9 +2095,9 @@ int assign_hosts(
 
   {
   unsigned int  dummy;
-  char         *list = NULL;
-  char         *portlist = NULL;
-  char         *hosttoalloc = NULL;
+  std::string   list;
+  std::string   portlist;
+  const char   *hosttoalloc = NULL;
   resource     *pres;
   int           rc = 0;
   int           procs=0;
@@ -2113,7 +2105,6 @@ int assign_hosts(
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   char         *def_node = NULL;
   char         *to_free = NULL;
-  long          cray_enabled = FALSE;
 
   if (EMsg != NULL)
     EMsg[0] = '\0';
@@ -2133,8 +2124,8 @@ int assign_hosts(
 
   if ((given != NULL) && (given[0] != '\0'))
     {
-    hosttoalloc = get_correct_spec_string(given, pjob);
-    to_free = hosttoalloc;
+    to_free = get_correct_spec_string(given, pjob);
+    hosttoalloc = to_free;
     }
   else
     {
@@ -2178,8 +2169,8 @@ int assign_hosts(
       (procs == 0) &&
       (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL))
     {
-    hosttoalloc = strdup(RESOURCE_20_FIND);
-    to_free = hosttoalloc;
+    to_free = strdup(RESOURCE_20_FIND);
+    hosttoalloc = to_free;
     }
 
   get_svr_attr_str(SRV_ATR_DefNode, &def_node);
@@ -2210,19 +2201,18 @@ int assign_hosts(
     {
     /* fall back to 1 cluster node */
 
-    hosttoalloc = strdup(PBS_DEFAULT_NODE);
-    to_free = hosttoalloc;
+    hosttoalloc = PBS_DEFAULT_NODE;
     }
 
   /* do we need to allocate the (cluster) node(s)? */
 
   if (svr_totnodes != 0)
     {
-    rc = set_nodes(pjob, (char *)hosttoalloc, procs, &list, &portlist, FailHost, EMsg);
+    rc = set_nodes(pjob, hosttoalloc, procs, list, portlist, FailHost, EMsg);
     
     set_exec_host = 1; /* maybe new VPs, must set */
     
-    hosttoalloc = list;
+    hosttoalloc = list.c_str();
     }
 
   if (rc == 0)
@@ -2249,7 +2239,7 @@ int assign_hosts(
         &pjob->ji_wattr[JOB_ATR_exec_port],
         NULL,
         NULL,
-        portlist,
+        portlist.c_str(),
         0);  /* O */
 
       pjob->ji_modified = 1;
@@ -2261,18 +2251,17 @@ int assign_hosts(
       portlist = pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str;
       }
 
-    get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
       tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
     else
-      tmp = parse_servername((char *)hosttoalloc, &dummy);
+      tmp = parse_servername(hosttoalloc, &dummy);
     
     snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", tmp);
     
     free(tmp);
 
-    if ((cray_enabled == TRUE) &&
+    if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
       {
       split_job(pjob);
@@ -2288,9 +2277,6 @@ int assign_hosts(
       {
       free_nodes(pjob);
       
-      if (list != NULL)
-        free(list);
-      
       sprintf(log_buf, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
         pjob->ji_qs.ji_destin);
       
@@ -2303,12 +2289,6 @@ int assign_hosts(
       }
 
     }  /* END if (rc == 0) */
-
-  if (list != NULL)
-    free(list);
-        
-  if (portlist != NULL)
-    free(portlist);
 
   if (to_free != NULL)
     free(to_free);

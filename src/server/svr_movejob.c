@@ -119,6 +119,7 @@
 #include "ji_mutex.h"
 #include "mutex_mgr.hpp"
 #include "job_func.h"
+#include "policy_values.h"
 
 #if __STDC__ != 1
 #include <memory.h>
@@ -546,13 +547,13 @@ void finish_moving_processing(
 
 void finish_move_process(
 
-  char                 *job_id,
-  struct batch_request *preq,
-  long                  time,
-  char                 *node_name,
-  int                   status,
-  int                   type,
-  int                   mom_err)
+  char          *job_id,
+  batch_request *preq,
+  long           time,
+  const char    *node_name,
+  int            status,
+  int            type,
+  int            mom_err)
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
@@ -755,7 +756,7 @@ int queue_job_on_mom(
   char           *pc;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pc = PBSD_queuejob(con, my_err, job_id, job_destin, pqjatr, NULL)) == NULL)
+  if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
     if (*my_err == PBSE_EXPIRED)
       {
@@ -798,7 +799,7 @@ int send_job_script_if_needed(
   {
   if (need_to_send_job_script == true)
     {
-    if (PBSD_jscript(con, (char *)script_name, job_id) != PBSE_NONE)
+    if (PBSD_jscript(con, (char *)script_name, (const char *)job_id) != PBSE_NONE)
       return(LOCUTION_RETRY);
     }
 
@@ -998,6 +999,47 @@ int commit_job_on_mom(
 
 
 
+/*
+ * get_mom_node_version()
+ *
+ * Finds the node version for the mother superior for the job that matches job_id
+ *
+ * @param job_id - the id of the job in question
+ * @param version - we write the node's version here
+ * @return PBSE_NONE on SUCCESS or PBSE_* if we can't find the job or node
+ */
+
+int get_mom_node_version(
+  
+  const char *job_id, 
+  int        &version)
+
+  {
+  job *pjob;
+  pbsnode *pnode;
+
+  pjob = svr_find_job(job_id, TRUE);
+  if (pjob == NULL)
+    return(PBSE_UNKJOBID);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  if (pnode == NULL)
+    return(PBSE_UNKNODE);
+
+  mutex_mgr node_mutex(&pnode->nd_mutex, true);
+  version = pnode->get_version();
+
+  return(PBSE_NONE);
+  }
+
+
+
+/*
+ * send_job_over_network()
+ */
+
 int send_job_over_network(
 
   char          *job_id,
@@ -1020,6 +1062,7 @@ int send_job_over_network(
 
   {
   int  rc;
+  int  node_version;
 
   if (attempt_to_queue_job == true)
     {
@@ -1045,9 +1088,26 @@ int send_job_over_network(
       return(rc);
     }
 
-  if (PBSD_rdytocmt(con, job_id) != 0)
+  bool queue_to_server = strchr(job_destin, '@') != NULL;
+
+  if (queue_to_server == true)
     {
-    return(LOCUTION_RETRY);
+    // Force the commit to be executed
+    node_version = 1;
+    }
+  else
+    {
+    rc = get_mom_node_version(job_id, node_version);
+    if (rc != PBSE_NONE)
+      return(rc);
+    }
+
+  if (node_version < 610)
+    {
+    if (PBSD_rdytocmt(con, job_id) != 0)
+      {
+      return(LOCUTION_RETRY);
+      }
     }
 
   rc = commit_job_on_mom(con, job_id, timeout,mom_err);
@@ -1095,7 +1155,8 @@ int send_job_over_network_with_retries(
         }
 
       /* check my_err from previous attempt */
-      if (should_retry_route(*my_err) == -1)
+      if ((should_retry_route(*my_err) == -1) ||
+          (should_retry_route(*mom_err) == -1))
         {
         sprintf(log_buf, "child failed in previous commit request for job %s", job_id);
 
@@ -1168,7 +1229,7 @@ int send_job_over_network_with_retries(
 int send_job_work(
 
   char           *job_id,
-  char           *node_name, /* I */
+  const char     *node_name, /* I */
   int             type,      /* I */
   int            *my_err,    /* O */
   batch_request  *preq)      /* M */
@@ -1373,13 +1434,10 @@ char *get_ms_name(
   job &pjob)
 
   {
-  long          cray_enabled = 0;
   char         *ms_name = NULL;
   unsigned int  dummy;
 
-  get_svr_attr_l(SRV_ATR_CrayEnabled, &cray_enabled);
-
-  if (cray_enabled == TRUE)
+  if (cray_enabled == true)
     {
     if (pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
       ms_name = strdup(pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
@@ -1414,7 +1472,7 @@ void *send_job(
 
   {
   send_job_request     *args = (send_job_request *)vp;
-  char                 *job_id = args->jobid;
+  char                 *job_id = strdup(args->jobid.c_str());
   job                  *pjob;
   int                   type = args->move_type; /* move, route, or execute */
   int                   local_errno = 0;
@@ -1422,7 +1480,7 @@ void *send_job(
 
   char                 *node_name = NULL;
 
-  struct batch_request *preq = (struct batch_request *)args->data;
+  batch_request *preq = (struct batch_request *)args->data;
 
   pjob = svr_find_job(job_id, TRUE);
 
@@ -1434,7 +1492,7 @@ void *send_job(
       {
       sprintf(log_buf,"about to send job - type=%d",type);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, job_id, log_buf);
       }
 
     node_name = get_ms_name(*pjob);
@@ -1444,11 +1502,12 @@ void *send_job(
     free(node_name);
     }
 
-  free(vp);
+  delete args;
+
+  free(job_id);
+
   return(NULL);
   }  /* END send_job() */
-
-
 
 
 
@@ -1503,7 +1562,7 @@ int net_move(
 
   svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
 
-  args = (send_job_request *)calloc(1, sizeof(send_job_request));
+  args = new send_job_request();
 
   if (args != NULL)
     {
@@ -1521,8 +1580,6 @@ int net_move(
 
   return(enqueue_threadpool_request(send_job, args, request_pool));
   }  /* END net_move() */
-
-
 
 
 

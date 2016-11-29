@@ -9,11 +9,13 @@
 #include "pbs_job.h"
 #include "complete_req.hpp"
 #include "pbs_config.h"
+#include "json/json.h"
 
 extern int hardware_style;
 
 int get_hardware_style(hwloc_topology_t topology);
 
+extern void CreateJsonString(std::string &testString, int testNum);
 extern int my_req_count;
 extern int my_core_count;
 extern int num_tasks_fit;
@@ -35,7 +37,8 @@ extern bool socket_fit;
 extern bool partially_placed;
 extern bool spreaded;
 extern int  my_placement_type;
-
+extern int  req_mem;
+extern int  sock_mem;
 
 START_TEST(test_check_if_possible)
   {
@@ -78,7 +81,7 @@ START_TEST(test_place_all_execution_slots)
   placed_all = 0;
   exec_slots = -1;
   m.place_job(&pjob, cpu, mem, "napali", false);
-  fail_unless(placed_all == 2);
+  fail_unless(placed_all == 2, "placed all: %d", placed_all);
   }
 END_TEST
 
@@ -126,13 +129,27 @@ START_TEST(test_spread_place)
   called_spread_place = 0;
   m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(called_spread_place == 6);
+  
+  called_spread_place = 0;
+  sockets = 1;
+  req_mem = 10;
+  sock_mem = 5;
+  num_for_host = 1;
+
+  // the req is set to need 10 memory and each socket is set to only have 5, so even
+  // though we set the req to need one socket, we should get two
+  m.place_job(&pjob, cpu, mem, "napali", false);
+  fail_unless(called_spread_place == 2, "called %d times", called_spread_place);
+  
+  req_mem = 0;
+  sock_mem = 0;
   }
 END_TEST
 
 
 START_TEST(test_displayAsString)
   {
-  Machine           new_machine(1);
+  Machine           new_machine(1, 1, 1);
   std::stringstream out;
 
   new_machine.setMemory(2);
@@ -144,33 +161,48 @@ END_TEST
 
 START_TEST(test_basic_constructor)
   {
-  Machine m(3);
+  Machine m(3, 1, 1);
 
   fail_unless(m.getTotalSockets() == 1);
   fail_unless(m.getAvailableSockets() == 1);
   fail_unless(m.getTotalCores() == 3);
   fail_unless(m.getTotalThreads() == 3);
+
+  Machine m2(12, 2, 2);
+  fail_unless(m2.getTotalSockets() == 2);
+  fail_unless(m2.getAvailableSockets() == 2);
+  fail_unless(m2.getTotalCores() == 12);
+  fail_unless(m2.getTotalThreads() == 12);
   }
 END_TEST
 
 
 START_TEST(test_json_constructor)
   {
-  const char *j1 = "\"node\":{\"socket\":{\"os_index\":12,\"numanode\":{\"os_index\":24,\"cores\":48-49,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":25,\"cores\":50-51,\"threads\":\"\",\"mem\"=1}},\"socket\":{\"os_index\":13,\"numanode\":{\"os_index\":26,\"cores\":52-53,\"threads\":\"\",\"mem\"=1},\"numanode\":{\"os_index\":26,\"cores\":54-55,\"threads\":\"\",\"mem\"=1}}}";
-  const char *j2 = "\"node\":{\"socket\":{\"os_index\":0,\"numanode\":{\"os_index\":0,\"cores\":0-5,\"threads\":\"12-17\",\"mem\"=1024},\"numanode\":{\"os_index\":1,\"cores\":6-11,\"threads\":\"18-23\",\"mem\"=1024}}}";
+
+  std::string j1;
+  CreateJsonString(j1,1);
+  //const char *j1 = (t1.str()).c_str();
+  std::string j2;
+  CreateJsonString(j2,2);
+  //const char *j2 = (t2.str()).c_str();
+ 
+
   std::stringstream out;
 
-  Machine m1(j1);
+  std::vector<std::string> valid_ids;
+
+  Machine m1(j1, valid_ids);
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
-  fail_unless(out.str() == "{\"node\":{,}}", out.str().c_str());
+  fail_unless(out.str() == j1, out.str().c_str());
   fail_unless(m1.getTotalSockets() == 2);
 
   out.str("");
-  Machine m2(j2);
+  Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
-  fail_unless(out.str() == "{\"node\":{}}", out.str().c_str());
+  fail_unless(out.str() == j2, out.str().c_str());
   fail_unless(m2.getTotalSockets() == 1);
   }
 END_TEST

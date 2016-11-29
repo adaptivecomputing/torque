@@ -13,7 +13,7 @@
 #include "pbs_job.h"
 #include "req.hpp"
 #include "allocation.hpp"
-
+#include "json/json.h"
 extern const int ALL_TASKS;
 
 
@@ -28,8 +28,8 @@ extern const int ALL_TASKS;
 
 extern const int MIC_TYPE;
 extern const int GPU;
-extern const int CORE;
-extern const int THREAD;
+extern const int CORE_INT;
+extern const int THREAD_INT;
 
 using namespace std;
 
@@ -54,11 +54,12 @@ class PCI_Device
     PCI_Device &operator=(const PCI_Device &other);
     ~PCI_Device();
     int initializePCIDevice(hwloc_obj_t, int, hwloc_topology_t);
-#ifdef NVML_API
-    void initializeGpu(int idx, hwloc_topology_t topology);
-#endif
 #ifdef MIC
     void initializeMic(int idx, hwloc_topology_t topology);
+#endif
+
+#ifdef NVIDIA_GPUS
+    void initializeGpu(int idx, hwloc_topology_t topology);
 #endif
     void displayAsString(stringstream &out) const;
     void setName(const string &name);
@@ -89,25 +90,25 @@ class Core
   char                  core_nodeset_string[MAX_NODESET_SIZE];
   int                   totalThreads;
   bool                  free; // Core is not being used at all
-  std::vector<int>      indices; // OS indexes of my processing units
-  std::vector<bool>     is_index_busy; // Tells whether or not each processing unit is busy
+  vector<int>           indices; // OS indexes of my processing units
+  vector<bool>          is_index_busy; // Tells whether or not each processing unit is busy
   int                   processing_units_open; // Count of currently unused processing units
 
   public:
     Core();
-    Core(const std::string &layout);
+    Core(const string &layout);
     ~Core();
     int get_id() const;
     int getNumberOfProcessingUnits();
     int initializeCore(hwloc_obj_t obj, hwloc_topology_t topology);
-    std::vector<int> getPU();
+    vector<int> getPU();
     void displayAsString(stringstream &out) const;
     int  get_open_processing_unit();
     int  add_processing_unit(int which, int os_index);
     bool is_free() const;
     bool free_pu_index(int index, bool &core_is_now_free);
     void unit_test_init(); // Only for unit tests
-    void append_indices(std::vector<int> core_indices, int which) const;
+    void append_indices(vector<int> core_indices, int which) const;
     bool reserve_processing_unit(int index);
     int  get_thread_index(int thread_indice) const;
   };
@@ -138,8 +139,8 @@ class Chip
 
   public:
     Chip();
-    Chip(int execution_slots);
-    Chip(const std::string &layout);
+    Chip(int execution_slots, int &es_remainder, int &per_numa_remainder);
+    Chip(const Json::Value &layout, std::vector<std::string> &valid_ids);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
     ~Chip();
@@ -158,11 +159,13 @@ class Chip
     void initialize_cores_from_strings(std::string &cores, std::string &threads);
     void initialize_accelerators_from_strings(std::string &gpus, std::string &mics);
     bool chipIsAvailable() const;
+    bool is_completely_free() const;
 #ifdef MIC
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
-    void parse_values_from_json_string(const std::string &json_layout, std::string &cores,
-         std::string &threads, std::string &gpus, std::string &mics);
+    void parse_values_from_json_string(const Json::Value &layout, std::string &cores,
+                                       std::string &threads, std::string &gpus, std::string &mics,
+                                       std::vector<std::string> &valid_ids);
 
 #ifdef NVIDIA_GPUS
   #ifdef NVML_API
@@ -172,43 +175,47 @@ class Chip
 
     std::vector<Core> getCores();
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out, bool include_jobs) const;
-    void displayAllocationsAsJson(stringstream &out) const;
+    void displayAsJson(Json::Value &out, bool include_jobs) const;
+    void displayAllocationsAsJson(Json::Value &out) const;
     void setMemory(hwloc_uint64_t mem);
     void setId(int id);
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    int  how_many_tasks_fit(const req &r, int place_type) const;
+    float  how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
-    bool task_will_fit(const req &r) const;
+    bool task_will_fit(const req &r, int place_type) const;
+    int  free_core_count() const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
     bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
-    void place_task_by_cores(int cores_to_bind, int cores_to_place, allocation &master, allocation &a);
-    void place_task_by_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void place_tasks_execution_slots(int to_bind, int to_place, allocation &a, int type);
+    void place_task_for_legacy_threads(int threads_to_bind, int threads_to_place, allocation &master, allocation &a);
+    void uncount_allocation(int index);
     bool free_task(const char *jobid);
+    void remove_last_allocation(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
     void set_cpuset(const char *cpuset); // used for unit tests
-    void partially_place_task(allocation &remaining, allocation &master);
+    bool partially_place_task(allocation &remaining, allocation &master);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
     bool cpusets_overlap(const std::string &other) const;
     void place_accelerators(allocation &remaining, allocation &a);
     int  reserve_accelerator(int type);
     void free_accelerators(allocation &a);
     void free_accelerator(int index, int type);
-    void initialize_allocations(char *allocations);
-    void initialize_allocation(char *allocation);
+    void initialize_allocations(const Json::Value &layout, std::vector<std::string> &valid_ids);
+    void initialize_allocation(const Json::Value &layout, std::vector<std::string> &valid_ids);
     void aggregate_allocation(allocation &a);
     void adjust_open_resources();
     void reserve_allocation_resources(allocation &a);
     void aggregate_allocations(vector<allocation> &master_list);
     bool reserve_core(int core_index, allocation &a);
     bool reserve_chip_core(int core_index, allocation &a);
+    bool getOpenThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousThreadVector(std::vector<int> &slots, int execution_slots_per_task);
     bool getContiguousCoreVector(std::vector<int> &slots, int execution_slots_per_task);
     bool reserve_thread(int core_index, allocation &a);
@@ -237,8 +244,8 @@ class Socket
 
   public:
     Socket();
-    Socket(int execution_slots);
-    Socket(const std::string &layout);
+    Socket(int execution_slots, int numa_nodes, int &es_remainder);
+    Socket(const Json::Value &layout, std::vector<std::string> &valid_ids);
     ~Socket();
     Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
@@ -249,15 +256,17 @@ class Socket
     int getTotalThreads() const;
     int getAvailableChips() const;
     int getAvailableCores() const;
+    int get_free_cores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
     int getid();
-    hwloc_uint64_t getMemory();
+    hwloc_uint64_t getMemory() const;
+    hwloc_uint64_t get_memory_for_completely_free_chips(unsigned long diff, int &count) const;
     int initializeAMDSocket(hwloc_obj_t, hwloc_topology_t);
     int initializeIntelSocket(hwloc_obj_t, hwloc_topology_t);
     void setMemory(hwloc_uint64_t mem);
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out, bool include_jobs) const;
+    void displayAsJson(Json::Value &out, bool include_jobs) const;
     void setId(int id);
     void addChip(); // used for unit tests
     float how_many_tasks_fit(const req &r, int place_type) const;
@@ -267,6 +276,7 @@ class Socket
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
     bool is_available() const;
+    bool is_completely_free() const;
     bool fits_on_socket(const allocation &remaining) const;
     bool partially_place(allocation &remaining, allocation &a);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);
@@ -301,12 +311,12 @@ class Machine
   #endif
 #endif
     
-  void initialize_from_json(const std::string &json_layout);
+  void initialize_from_json(const string &json_str, vector<string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);
-    Machine(const std::string &layout);
-    Machine(int execution_slots);
+    Machine(const std::string &layout, std::vector<std::string> &valid_ids);
+    Machine(int execution_slots, int numa_nodes, int sockets);
     Machine();
     ~Machine();
     Socket getSocket();
@@ -342,13 +352,14 @@ class Machine
     void setIsNuma(bool is_numa); // used for unit tests
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
+    int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
     int  how_many_tasks_can_be_placed(req &r) const;
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
     bool is_initialized() const;
-    void reinitialize_from_json(const std::string &json_layout);
+    void reinitialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
   };
 
 extern Machine this_node;

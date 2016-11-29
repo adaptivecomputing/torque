@@ -120,7 +120,7 @@ class alps_accelerator_info
 class alps_node_info
   {
   public:
-  std::string index;
+  std::string node_header;
   std::string availmem;
   std::string state;
   std::string os;
@@ -132,9 +132,12 @@ class alps_node_info
   std::string ccu;
   std::string name;
   std::string arch;
-  std::string hbm;      // Not always populated
-  std::string rsv;      // Not always populated
-  std::string features; // Not always populated
+  std::string node_index;
+  std::string hbm;        // Not always populated
+  std::string rsv;        // Not always populated
+  std::string features;   // Not always populated
+  std::string numa_nodes; // Not always populated
+  std::string socket;     // Not always populated
   std::vector<alps_accelerator_info> accelerators;
 
   void add_to_status(std::vector<std::string> &status);

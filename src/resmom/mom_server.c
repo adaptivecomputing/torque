@@ -229,14 +229,14 @@
 #include "server_limits.h"
 #include "pbs_job.h"
 #include "utils.h"
-#include "u_tree.h"
+#include "authorized_hosts.hpp"
 #include "mom_hierarchy.h"
 #include "mom_server.h"
 #include "mom_comm.h"
 #include "mcom.h"
 #include "pbs_constants.h" /* Long */
 #include "mom_server_lib.h"
-#include "../lib/Libifl/lib_ifl.h" /* pbs_disconnect_socket */
+#include "lib_ifl.h" /* pbs_disconnect_socket */
 #include "alps_functions.h"
 #include "../lib/Libnet/lib_net.h" /* netaddr */
 #include "net_cache.h"
@@ -250,6 +250,12 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
+#ifdef USE_RESOURCE_PLUGIN
+#include "json/json.h"
+#include "trq_plugin_api.h"
+#include "plugin_internal.h"
+#endif
+
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
 #define UPDATE_TO_SERVER                  0
@@ -291,7 +297,6 @@ extern long                system_ncpus;
 extern int                 alarm_time; /* time before alarm */
 extern time_t              time_now;
 extern int                 verbositylevel;
-extern AvlTree             okclients;
 extern tlist_head          mom_polljobs;
 extern char                mom_alias[];
 extern int                 updates_waiting_to_send;
@@ -577,7 +582,7 @@ int mom_server_add(
 
       if (ipaddr != 0)
         {
-        okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+        auth_hosts.add_authorized_address(ipaddr, 0, "");
         }
 
       }
@@ -1026,6 +1031,105 @@ stat_record stats[] = {
 
 
 
+/*
+ * add_custom_node_resources()
+ *
+ * Adds the custom things people want to report. This is the interaction point for the
+ * resource plugin for node resource piece
+ */
+
+void add_custom_node_resources()
+
+  {
+#ifdef USE_RESOURCE_PLUGIN
+  static const int                           node_resource_alarm_seconds = 5;
+  static std::map<std::string, std::string>  varattrs;
+  static std::map<std::string, unsigned int> greses;
+  static std::map<std::string, double>       gmetrics;
+  static std::set<std::string>               features;
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Starting the node resource plugin");
+
+  // Set an alarm so the plug-in can't bring the mom to its knees
+  alarm(node_resource_alarm_seconds);
+  report_node_generic_resources(greses);
+  report_node_generic_metrics(gmetrics);
+  report_node_varattrs(varattrs);
+  report_node_features(features);
+  alarm(0);
+
+  if ((varattrs.size() > 0) ||
+      (greses.size() > 0) ||
+      (gmetrics.size() > 0) ||
+      (features.size() > 0))
+    {
+    Json::Value plugin_info;
+    std::string status_entry(PLUGIN_EQUALS);
+
+    if (greses.size() > 0)
+      {
+      Json::Value gres_values;
+
+      for (std::map<std::string, unsigned int>::iterator it = greses.begin();
+           it != greses.end();
+           it++)
+        gres_values[it->first] = it->second;
+
+      plugin_info[GRES] = gres_values;
+      }
+
+    if (varattrs.size() > 0)
+      {
+      Json::Value varattr_info;
+
+      for (std::map<std::string, std::string>::iterator it = varattrs.begin();
+           it != varattrs.end();
+           it++)
+        varattr_info[it->first] = it->second;
+
+      plugin_info[VARATTRS] = varattr_info;
+      }
+
+    if (gmetrics.size() > 0)
+      {
+      Json::Value gmetric_info;
+
+      for (std::map<std::string, double>::iterator it = gmetrics.begin();
+           it != gmetrics.end();
+           it++)
+        gmetric_info[it->first] = it->second;
+
+      plugin_info[GMETRICS] = gmetric_info;
+      }
+
+    if (features.size() > 0)
+      {
+      std::string feature_list;
+
+      for (std::set<std::string>::iterator it = features.begin(); it != features.end(); it++)
+        {
+        if (feature_list.size() > 0)
+          feature_list += ",";
+
+        feature_list += *it;
+        }
+
+      plugin_info[FEATURES] = feature_list;
+      }
+
+    status_entry += plugin_info.toStyledString();
+    mom_status.push_back(status_entry);
+    }
+
+  if (LOGLEVEL >= 3)
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Finished the node resource plugin");
+#endif
+
+  } // END add_custom_node_resources()
+
+
+
 /**
  * generate_server_status
  *
@@ -1065,6 +1169,7 @@ void generate_server_status(
   ss << NUMA_KEYWORD;
   ss << numa_index;
   status.push_back(ss.str());
+  ss.str("");
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1078,6 +1183,11 @@ void generate_server_status(
 
     alarm(0);
     }  /* END for (i) */
+
+  ss << "version=" << PACKAGE_VERSION;
+  status.push_back(ss.str());
+
+  add_custom_node_resources();
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */
@@ -2040,12 +2150,6 @@ void mom_server_update_receive_time_by_ip(
 /**
 ** Modified by Tom Proett <proett@nas.nasa.gov> for PBS.
 */
-
-/*tree *okclients = NULL;*/ /* tree of ip addrs */
-AvlTree okclients = NULL;
-
-
-
 /**
  * mom_server_valid_message_source
  *
@@ -2125,7 +2229,7 @@ mom_server *mom_server_valid_message_source(
 
             if (ipaddr == server_ip)
               {
-              okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+              auth_hosts.add_authorized_address(ipaddr, 0, "");
 
               return(pms);
               }
@@ -2185,7 +2289,7 @@ int process_host_name(
       }
 
     /* add to acceptable host tree */
-    okclients = AVL_insert(ipaddr, rm_port, NULL, okclients);
+    auth_hosts.add_authorized_address(ipaddr, rm_port, "");
     }
   else
     {
@@ -2302,7 +2406,7 @@ void sort_paths()
 void reset_okclients()
 
   {
-  okclients = AVL_clear_tree(okclients);
+  auth_hosts.clear();
 
   // re-add each server
   for (int sindex = 0;sindex < PBS_MAXSERVER;sindex++)
@@ -2329,14 +2433,14 @@ void reset_okclients()
 
         if (ipaddr != 0)
           {
-          okclients = AVL_insert(ipaddr, 0, NULL, okclients);
+          auth_hosts.add_authorized_address(ipaddr, 0, "");
           }
         }
       }
     }
 
   // add localhost
-  okclients = AVL_insert(localaddr, 0, NULL, okclients);
+  auth_hosts.add_authorized_address(localaddr, 0, "");
 
   // BMD: add the node's ip address
 
@@ -2356,11 +2460,7 @@ int read_cluster_addresses(
   int             path_complete = FALSE;
   int             something_added;
   char           *str;
-  char           *okclients_list;
   std::string      hierarchy_file = "/n";
-  long            list_size;
-  long            list_len = 0;
-
   if (mh != NULL)
     free_mom_hierarchy(mh);
 
@@ -2453,17 +2553,12 @@ int read_cluster_addresses(
     sort_paths();
 
     /* log the hierrarchy */
-    list_size = MAXLINE * 2;
-    if ((okclients_list = (char *)calloc(1, list_size)) != NULL)
-      {
-      AVL_list(okclients, &okclients_list, &list_len, &list_size);
-      snprintf(log_buffer, sizeof(log_buffer),
-        "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
-        okclients_list, hierarchy_file.c_str());
-      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
-
-      free(okclients_list);
-      }
+    std::string list;
+    auth_hosts.list_authorized_hosts(list);
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Successfully received the mom hierarchy file. My okclients list is '%s', and the hierarchy file is '%s'",
+      list.c_str(), hierarchy_file.c_str());
+    log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_NODE, __func__, log_buffer);
  
     /* tell the mom to go ahead and send an update to pbs_server */
     first_update_time = 0;
@@ -2532,7 +2627,7 @@ void mom_is_request(
     {
     ipaddr = ntohl(pAddr->sin_addr.s_addr);
 
-    if (AVL_is_in_tree_no_port_compare(ipaddr, 0, okclients) == 0)
+    if (auth_hosts.is_authorized(ipaddr) == false)
       {
       if (err_msg)
         {
@@ -3091,7 +3186,7 @@ void state_to_server(
     return;    /* Do nothing, just return */
     }
 
-  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr));
+  stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), true);
 
   if (IS_VALID_STREAM(stream))
     {
@@ -3298,6 +3393,45 @@ int mom_open_socket_to_jobs_server(
   }  /* END mom_open_socket_to_jobs_server() */
 
 
+int mom_open_socket_to_jobs_server_with_retries(
+
+  job        *pjob,
+  const char *caller_id,
+  void       *(*message_handler)(void *),
+  int         retry_limit)
+
+  {
+  int retries = -1;
+  int sock = -1;
+
+  while ((sock < 0) &&
+         (retries < retry_limit))
+    {
+    sock = mom_open_socket_to_jobs_server(pjob, __func__, message_handler);
+
+    switch (errno)
+      {
+      case EINTR:
+      case ETIMEDOUT:
+      case EINPROGRESS:
+
+        retries++;
+
+        break;
+
+      default:
+
+        retries = retry_limit;
+
+        break;
+      }
+    }
+
+  return(sock);
+  } // END mom_open_socket_to_jobs_server_with_retries()
+
+
+
 /**
  * clear_down_mom_servers
  *
@@ -3369,7 +3503,7 @@ bool is_for_this_host(
   char  *ptr;
   char  temp_char_string[THIS_HOST_LEN];
 
-  strcpy(temp_char_string, device_spec.c_str());
+  snprintf(temp_char_string, sizeof(temp_char_string), "%s", device_spec.c_str());
 
   /* peel off the -device part of the device_spec */
   ptr = strstr(temp_char_string, suffix);

@@ -160,7 +160,8 @@ extern char          *msg_man_cre;
 extern char          *msg_man_del;
 extern char          *msg_man_set;
 extern char          *msg_man_uns;
-extern int            disable_timeout_check;
+extern time_t         pbs_incoming_tcp_timeout;
+extern int            default_gpu_mode;
 //extern mom_hierarchy_t *mh;
 
 
@@ -542,10 +543,7 @@ static int mgr_set_attr(
           }
         }
 
-      if ((index == SRV_ATR_tcp_timeout) &&
-          (pnew->at_val.at_long < 300))
-        disable_timeout_check = TRUE;
-      else if (pdef == svr_attr_def)
+      if (pdef == svr_attr_def)
         {
         if (index == SRV_ATR_acl_users_hosts)
           {
@@ -561,16 +559,23 @@ static int mgr_set_attr(
           else
             update_group_acls(pnew, plist->al_op);
           }
+        else if (index == SRV_ATR_tcp_incoming_timeout)
+          pbs_incoming_tcp_timeout = pnew->at_val.at_long;
         }
 
       /* now replace the old values with any modified new values */
 
       (pdef + index)->at_free(pold);
 
-      if ((pold->at_type == ATR_TYPE_LIST) ||
-          (pold->at_type == ATR_TYPE_RESC))
+      if (pold->at_type == ATR_TYPE_LIST)
         {
         list_move(&pnew->at_val.at_list, &pold->at_val.at_list);
+        }
+      else if (pold->at_type == ATR_TYPE_RESC)
+        {
+        void *old_ptr = pold->at_val.at_ptr;
+        pold->at_val.at_ptr = pnew->at_val.at_ptr;
+        pnew->at_val.at_ptr = old_ptr;
         }
       else if (pold->at_type == ATR_TYPE_ATTR_REQ_INFO)
         {
@@ -618,7 +623,6 @@ int mgr_unset_attr(
   int   ord;
   svrattrl *pl;
   resource_def *prsdef;
-  resource *presc;
 
   /* first check the pbs_attribute exists and we have privilege to set */
 
@@ -699,18 +703,28 @@ int mgr_unset_attr(
                  plist->al_resc,
                  svr_resc_size);
 
-      if ((presc = find_resc_entry(pattr + index, prsdef)))
+      std::vector<resource> *resources = (std::vector<resource> *)pattr[index].at_val.at_ptr;
+
+      if (resources != NULL)
         {
-        if ((pdef->at_parent != PARENT_TYPE_SERVER) ||
-            (index != SRV_ATR_resource_cost))
+        int index = -1;
+
+        for (size_t i = 0; i < resources->size(); i++)
           {
-          prsdef->rs_free(&presc->rs_value);
+          resource &r = resources->at(i);
+          if (!strcmp(r.rs_defin->rs_name, prsdef->rs_name))
+            {
+            prsdef->rs_free(&r.rs_value);
+            index = i;
+            break;
+            }
           }
 
-        delete_link(&presc->rs_link);
+        if (index != -1)
+          {
+          resources->erase(resources->begin() + index);
+          }
         }
-
-      free(presc);
       }
     else
       {
@@ -930,8 +944,6 @@ int mgr_set_node_attr(
     pnode->nd_prop = NULL;
     }
 
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
   if ((pnode->nd_state != tnode.nd_state))
     {
     char OrigState[1024];
@@ -962,20 +974,6 @@ int mgr_set_node_attr(
       log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_NODE, pnode->get_name(), log_buf);
       }
     }
-
-  /* NOTE:  nd_status properly freed during pbs_attribute alter */
-
-  /*
-    if ((pnode->nd_status != NULL) && (pnode->nd_status != tnode.nd_status))
-      {
-      if (pnode->nd_status->as_buf != NULL)
-        free(pnode->nd_status->as_buf);
-
-      free(pnode->nd_status);
-
-      pnode->nd_status = NULL;
-      }
-  */
 
   *pnode              = tnode;        /* updates all data including linking in props */
 
@@ -1543,7 +1541,10 @@ void mgr_queue_set(
       mgr_log_attr(msg_man_set, plist, PBS_EVENTCLASS_QUEUE, pque->qu_qs.qu_name);
 
       if (allques == FALSE)
+        {
+        que_mutex.set_unlock_on_exit(false);
         break;
+        }
 
       }
 
@@ -1723,9 +1724,9 @@ void mgr_node_set(
   struct pbsnode   *pnode = NULL;
   struct pbsnode  **problem_nodes = NULL;
   prop              props;
-  long              dont_update_nodes = FALSE;
+  bool              dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
 
   if ((strcmp(preq->rq_ind.rq_manager.rq_objname, "all") == 0) ||
       (strcmp(preq->rq_ind.rq_manager.rq_objname, "ALL") == 0))
@@ -2109,10 +2110,10 @@ static void mgr_node_delete(
   svrattrl       *plist;
 
   char            log_buf[LOCAL_LOG_BUF_SIZE];
-  long            dont_update_nodes = FALSE;
+  bool            dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == true)
     {
     req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
     return;
@@ -2260,10 +2261,10 @@ void mgr_node_create(
   int       bad;
   svrattrl *plist;
   int       rc;
-  long      dont_update_nodes = FALSE;
+  bool      dont_update_nodes = false;
 
-  get_svr_attr_l(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
-  if (dont_update_nodes == TRUE)
+  get_svr_attr_b(SRV_ATR_DontWriteNodesFile, &dont_update_nodes);
+  if (dont_update_nodes == true)
     {
     req_reject(PBSE_CANT_EDIT_NODES, 0, preq, NULL, NULL);
     return;
@@ -2691,6 +2692,67 @@ int extra_resc_chk(
 
   return(TRUE);
   }
+
+
+
+/*
+ * check_default_gpu_mode_str()
+ *
+ * Makes sure the default is a valid gpu mode
+ * @return PBSE_NONE on success of PBSE_ATTRTYPE if a bad value
+ */
+
+int check_default_gpu_mode_str(
+
+  pbs_attribute *pattr,
+  void          *pobj,
+  int actmode)
+
+  {
+  int   rc = PBSE_NONE;
+  char *gpu_mode = pattr->at_val.at_str;
+
+  switch (actmode)
+    {
+    case ATR_ACTION_ALTER:
+
+      // this shouldn't happen
+      if (gpu_mode == NULL)
+        {
+        return(PBSE_ATTRTYPE);
+        }
+
+      // Make sure it's one of the acceptable gpu modes
+      if (!strcmp(gpu_mode, "exclusive_thread"))
+        {
+        default_gpu_mode = gpu_exclusive_thread;
+        }
+      else if (!strcmp(gpu_mode, "exclusive"))
+        {
+        default_gpu_mode = gpu_exclusive;
+        }
+      else if (!strcmp(gpu_mode, "exclusive_process"))
+        {
+        default_gpu_mode = gpu_exclusive_process;
+        }
+      else if (!strcmp(gpu_mode, "default"))
+        {
+        default_gpu_mode = gpu_normal;
+        }
+      else if (!strcmp(gpu_mode, "shared"))
+        {
+        default_gpu_mode = gpu_normal;
+        }
+      else
+        rc = PBSE_ATTRTYPE;
+
+      break;
+    }
+
+  return(rc);
+  } // END check_default_gpu_mode_str()
+
+
 
 /*
  * free_extraresc() makes sure that the init_resc_defs() is called after

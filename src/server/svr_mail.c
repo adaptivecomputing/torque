@@ -440,6 +440,7 @@ void *send_the_mail(
   } /* END send_the_mail() */
 
 
+
 void set_output_files(
 
   job       *pjob,
@@ -553,11 +554,12 @@ void send_email_batch(
 
 void svr_mailowner_with_message(
 
-  job   *pjob,      /* I */
-  int    mailpoint, /* note, single character  */
-  int    force,     /* if set to MAIL_FORCE, force mail delivery */
-  const char  *text, /* text to mail. */
+  job        *pjob,      /* I */
+  int         mailpoint, /* note, single character  */
+  int         force,     /* if set to MAIL_FORCE, force mail delivery */
+  const char *text, /* text to mail. */
   const char *msg)   /* Optional extra message */
+
   {
   if((text == NULL)||(*text == '\0'))
     {
@@ -567,17 +569,15 @@ void svr_mailowner_with_message(
     {
     return svr_mailowner(pjob,mailpoint,force,text);
     }
-  char *newMsg = (char *)malloc(strlen(text) + strlen(msg) + 2);
-  if(newMsg == NULL)
-    {
-    return;
-    }
-  strcpy(newMsg,text);
-  strcat(newMsg,"\n");
-  strcat(newMsg,msg);
-  svr_mailowner(pjob,mailpoint,force,newMsg);
-  free(newMsg);
+
+  std::string newMsg(text);
+  newMsg += "\n";
+  newMsg += msg;
+
+  svr_mailowner(pjob, mailpoint, force, newMsg.c_str());
   }
+
+
 
 void svr_mailowner(
 
@@ -591,7 +591,7 @@ void svr_mailowner(
   char                 *domain = NULL;
   int                   i;
   mail_info             mi;
-  long                  no_force = FALSE;
+  bool                  no_force = false;
 
   struct array_strings *pas;
   memset(mailto, 0, sizeof(mailto));
@@ -599,7 +599,7 @@ void svr_mailowner(
   get_svr_attr_str(SRV_ATR_MailDomain, &domain);
   if ((domain != NULL) &&
       (!strcasecmp("never", domain)))
-    {
+    {		
     /* never send user mail under any conditions */
     if (LOGLEVEL >= 3) 
       {
@@ -610,6 +610,21 @@ void svr_mailowner(
       }
 
     return;
+    }
+    
+    //check to see if the user does not want any mail sent, not even on job failures
+	if ((pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str != NULL) && 
+	    (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NOJOBMAIL))
+    {
+    if (LOGLEVEL >= 3)
+      {
+      log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        "Not sending email: mail option disabled by user for this job \n");			
+      }
+    
+    return;        
     }
 
   if (LOGLEVEL >= 3)
@@ -633,15 +648,35 @@ void svr_mailowner(
    * if force is true, force the mail out regardless of mailpoint
    * unless server no_mail_force attribute is set to true
    */
-  get_svr_attr_l(SRV_ATR_NoMailForce, &no_force);
+  get_svr_attr_b(SRV_ATR_NoMailForce, &no_force);
 
   if ((force != MAIL_FORCE) ||
-      (no_force == TRUE))
+      (no_force == true))
     {
 
     if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
       {
-      if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
+      if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
+          (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == JOB_EXEC_OK))
+        {
+        log_event(PBSEVENT_JOB,
+                  PBS_EVENTCLASS_JOB,
+                  pjob->ji_qs.ji_jobid,
+                  "Not sending email: User does not want mail of a zero exit code for a job.\n");
+        return;
+        }
+      else if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
+               (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != JOB_EXEC_OK))
+        {
+        if (LOGLEVEL >= 3)
+          {
+          log_event(PBSEVENT_JOB,
+                    PBS_EVENTCLASS_JOB,
+                    pjob->ji_qs.ji_jobid,
+                    "sending email: job requested e-mail on all non-zero exit codes");
+          }
+        }
+      else if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
         {
         /* do not send mail. No mail requested on job */
         log_event(PBSEVENT_JOB,
@@ -651,7 +686,7 @@ void svr_mailowner(
         return;
         }
       /* see if user specified mail of this type */
-      if (strchr(
+      else if (strchr(
             pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str,
             mailpoint) == NULL)
         {

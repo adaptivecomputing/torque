@@ -104,7 +104,7 @@
 #include "prime.h"
 #include "dedtime.h"
 #include "token_acct.h"
-#include "../lib/Libifl/lib_ifl.h"
+#include "lib_ifl.h"
 
 
 /* a list of running jobs from the last scheduling cycle */

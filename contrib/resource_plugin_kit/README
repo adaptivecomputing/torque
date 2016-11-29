@@ -1,0 +1,105 @@
+
+I. Description:
+We now have resource plugin capability for Torque. Specifically, this plugin provides an API
+through which arbitrary generic resources, generic metrics, varattrs, and features can be added
+per node. Additionally, arbitrary resource usage can be added per job.
+
+The API can be found in trq_plugin_api.h. To implement a plugin, all of these functions must
+be implemented, even if the function does nothing. An implementation that does nothing may be
+found in contrib/resource_plugin.cpp. If you wish, you may simply add the desired functionality
+to this file, build the library, and link it to the mom at build time.
+
+
+II. Implementing and Building the Plugin:
+
+i. Implementation Recommendations:
+Your plugin must execute very quickly in order to avoid causing problems for the pbs_mom daemon.
+The node resource portion of the plugin has a 5 second time limit, and the job resource usage
+portion has a 3 second time limit. The node resource portion will execute once each time that the
+mom sends a status to pbs_server, and the job resource usage portion will once per job at the 
+same interval of time. These block pbs_mom while they are executing, so you want them to execute
+in a short, deterministic amount of time.
+
+Remember, you are responsible for plugins, so please design well and test thoroughly.
+
+ii. Building:
+If you do not change the name of the .cpp file and you wish to build it, you may execute:
+
+export TRQ_HEADER_LOCATION=/usr/local/include/
+g++ -fPIC -I $TRQ_HEADER_LOCATION resource_plugin.cpp -shared -o libresource_plugin.so
+
+NOTE: Change TRQ_HEADER_LOCATION if you configured torque with --prefix.
+
+III. Testing your plugin:
+
+NOTE: You assume all responsibility for any plugins. We desire to assist you in testing the plugins,
+but this list may not be comprehensive. We do not assume responsibility if these suggested tests
+do not cover everything.
+
+i. Basic functionality:
+Once you've implemented and built your library, you can begin testing. For your convenience, a 
+simple test driver can be found in plugin_driver.cpp. You can build this executable and link it
+against your library in order to manually verify the output:
+
+export PLUGIN_LIB_PATH=/usr/local/lib
+g++ plugin_driver.cpp -I $TRQ_HEADER_LOCATION -L $PLUGIN_LIB_PATH -lresource_plugin -o driver
+
+Then, execute it and manually inspect the output:
+./driver
+
+NOTE: Change PLUGIN_LIB_PATH if you have installed it elsewhere.
+
+ii. Testing for Memory Leaks:
+In order to prevent your compute nodes from being compromised for speed or even going down due
+to out-of-memory conditions, you should run your plugin under valigrind to test that it is 
+correctly managing memory. 
+
+Assuming you've being the driver from the 'Basic functionality' section, you can run:
+
+valgrind --tool=memcheck --leak-check=full --log-file=plugin_valgrind_output.txt ./driver
+
+If you aren't familiar with valgrind, a good primer can be found here: 
+
+http://valgrind.org/docs/manual/QuickStart.html
+
+We recommend that you fix any and all errors reported by valgrind.
+
+
+IV. Enabling the plugin:
+Once you've implemented, built, and thoroughly tested (remember that our suggestions may not 
+address everything) your plugin, you'll want to enable it in Torque. It can be linked in at
+build time:
+
+./configure <your other options> --with-resource-plugin=<path to your resource plugin>
+
+NOTE: You'll want to make sure that the path you specify is in $LD_LIBRARY_PATH or can otherwise
+be found by pbs_mom when you start the daemon.
+
+Once you build, you can now start the new mom and you should be able to observe the plugin's output
+in pbsnodes, qstat -f, and in the accounting file.
+
+Sample pbsnodes Output:
+
+<normal output>
+gres:hbmem = 20
+gmetric:temperature = 76.20
+varattr:octave = 3.2.4
+features = haswell
+
+The keywords at the front let Moab know what each one means so it can use them accordingly.
+
+Sample Accounting File Entry:
+<normal entry until resources used> resources_used.cput=0 resources_used.energy_used=0 resources_used.mem=452kb resources_used.vmem=22372kb resources_used.walltime=00:05:00 resources_used.stormlight=2broams
+
+Your plugin resources reported will appear in the form:
+resources_used.<name you supplied>=<value you supplied>
+
+For the above example I added the arbitrary resource stormlight and the value of 2broams.
+
+Sample qstat -f Output:
+<normal qstat -f output>
+resources_used.stormlight = 2broams
+
+The resources used reported from the plugin will appear at the end of the qstat -f output in the
+same format it does in the accounting file. 
+
