@@ -21,7 +21,25 @@ void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id);
 
 
 #ifdef NVML_API
-hwloc_obj_t Machine::get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device)
+
+/*
+ * get_non_nvml_device()
+ *
+ * hwloc's method to identify a GPU failed, so use ours. Theirs fails a lot.
+ *
+ * @param topology - the topology that the device should fall under
+ * @param device - the nvml device handle
+ * @param identified - a list of the previously identified devices to make sure
+ *                     we aren't storing the same one multiple times.
+ * @return an hwloc obj pointing to the GPU
+ */
+
+hwloc_obj_t Machine::get_non_nvml_device(
+    
+  hwloc_topology_t       topology,
+  nvmlDevice_t           device,
+  std::set<hwloc_obj_t> &identified)
+
   {
   hwloc_obj_t osdev;
   nvmlReturn_t nvres;
@@ -33,27 +51,39 @@ hwloc_obj_t Machine::get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t
     return NULL;
     }
 
-    nvres = nvmlDeviceGetPciInfo(device, &pci);
-    if (NVML_SUCCESS != nvres)
-      return NULL;
+  nvres = nvmlDeviceGetPciInfo(device, &pci);
+  if (NVML_SUCCESS != nvres)
+    return(NULL);
 
-    osdev = NULL;
-    while ((osdev = hwloc_get_next_osdev(topology, osdev)) != NULL) 
-      {
-      hwloc_obj_t pcidev = osdev->parent;
-      if (strncmp(osdev->name, "card", 4))
-        continue;
-      if (pcidev
-          && pcidev->type == HWLOC_OBJ_PCI_DEVICE
-          && pcidev->attr->pcidev.domain == pci.domain
-          && pcidev->attr->pcidev.bus == pci.bus
-          && pcidev->attr->pcidev.dev == pci.device
-          && pcidev->attr->pcidev.func == 0)
-        return osdev;
-      }
+  osdev = NULL;
+  while ((osdev = hwloc_get_next_osdev(topology, osdev)) != NULL) 
+    {
+    hwloc_obj_t pcidev = osdev->parent;
+    if ((strncmp(osdev->name, "card", 4)) &&
+        (strncmp(osdev->name, "controlD", 8)))
+      continue;
+
+    if ((pcidev != NULL) &&
+        (pcidev->type == HWLOC_OBJ_PCI_DEVICE) &&
+        (pcidev->attr->pcidev.domain == pci.domain) &&
+        (pcidev->attr->pcidev.bus == pci.bus) &&
+        (pcidev->attr->pcidev.dev == pci.device) &&
+        (pcidev->attr->pcidev.func == 0))
+      return(osdev);
+    }
+
+  // We haven't found it yet, but there are GPUs and hwloc knows it. Just match on type.
+  osdev = NULL;
+  while ((osdev = hwloc_get_next_osdev(topology, osdev)) != NULL)
+    {
+    if ((osdev->attr->osdev.type == HWLOC_OBJ_OSDEV_GPU) &&
+        (identified.find(osdev) == identified.end()))
+      return(osdev);
+    }
 
   return(NULL);
-  }
+  } // END get_non_nvml_device()
+
 
 
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
@@ -74,12 +104,14 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
     }
 
   unsigned int device_count = 0;
+  unsigned int found_devices = 0;
 
   /* Get the device count. */
   rc = nvmlDeviceGetCount(&device_count);
   if (rc == NVML_SUCCESS)
     {
     nvmlDevice_t gpu;
+    std::set<hwloc_obj_t> identified;
 
     /* Get the nvml device handle at each index */
     for (unsigned int idx = 0; idx < device_count; idx++)
@@ -100,22 +132,46 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
       gpu_obj = hwloc_nvml_get_device_osdev(topology, gpu);
       if (gpu_obj == NULL)
         {
-        /* This was not an nvml device. We will look for a "card" device (GeForce or Quadra) */
-        gpu_obj = this->get_non_nvml_device(topology, gpu);
+        // This was not an nvml device. We'll look for a different GPU - many aren't recognized,
+        // including k80s.
+        gpu_obj = this->get_non_nvml_device(topology, gpu, identified);
         if (gpu_obj == NULL)
-        continue;
+          continue;
         }
+
+      identified.insert(gpu_obj);
+      found_devices++;
         
       /* The ancestor was not a numa chip. Is it the machine? */
       ancestor_obj = hwloc_get_ancestor_obj_by_type(topology, HWLOC_OBJ_MACHINE, gpu_obj);
       if (ancestor_obj != NULL)
         {
+        char buf[MAXLINE];
+        rc = nvmlDeviceGetName(gpu, buf, sizeof(buf));
+
         PCI_Device new_device;
   
         new_device.initializePCIDevice(gpu_obj, idx, topology);
 
         store_device_on_appropriate_chip(new_device);
+
+        // hwloc sees the K80 as a single device. We want to display two to stay in sync
+        // with NVML, so store an extra for each K80
+        if (!strncmp(buf, "Tesla K80", 9))
+          {
+          new_device.setId(new_device.get_id() + 1);
+          store_device_on_appropriate_chip(new_device);
+          found_devices++;
+          idx++;
+          }
         }
+      }
+
+    if (found_devices != device_count)
+      {
+      sprintf(log_buffer, "NVML reports %u devices, but we only found %u",
+        device_count, found_devices);
+      log_err(-1, __func__, log_buffer);
       }
     }
   else
