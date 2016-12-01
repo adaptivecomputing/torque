@@ -62,7 +62,7 @@ LIBNET_UT_DIRS = conn_table get_hostaddr get_hostname md5 net_client net_common 
 LIBSITE_UT_DIRS = site_allow_u site_alt_rte site_check_u site_map_usr site_mom_chu site_mom_ckp \
 		site_mom_jst
 
-CMDS_UT_DIRS = MXML common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qchkpt qdel qdisable \
+CMDS_UT_DIRS = common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qchkpt qdel qdisable \
                qenable qgpumode qgpureset qhold qmgr qmove qmsg qorder qrerun qrls qrun qselect \
 	       qsig qstart qstat qstop qsub_functions qterm
 

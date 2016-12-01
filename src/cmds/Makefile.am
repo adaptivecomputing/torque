@@ -6,7 +6,7 @@ PBS_LIBS = ../lib/Libpbs/libtorque.la \
            ../lib/Libutils/libutils.a
 
 noinst_HEADERS = common_cmds.h pbsnodes.h pbs_track.h qdisable.h qgpureset.h qmove.h qrerun.h qselect.h qstat.h qterm.h \
-                 MXML.h pbspd.h qalter.h qenable.h qhold.h qmsg.h qrls.h qsig.h qstop.h pbsdsh.h pbspoe.h qchkpt.h \
+                 pbspd.h qalter.h qenable.h qhold.h qmsg.h qrls.h qsig.h qstop.h pbsdsh.h pbspoe.h qchkpt.h \
                  qgpumode.h qmgr_functions.h qorder.h qrun.h qstart.h qsub_functions.h
 
 
@@ -33,7 +33,7 @@ qsub_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\" \
               -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 pbsdsh_SOURCES = pbsdsh.c
-pbsnodes_SOURCES = pbsnodes.c MXML.c
+pbsnodes_SOURCES = pbsnodes.c
 pbspd_SOURCES = pbspd.c
 pbspoe_SOURCES = pbspoe.c
 qalter_SOURCES = qalter.c
@@ -51,7 +51,7 @@ qrun_SOURCES = qrun.c
 qselect_SOURCES = qselect.c
 qsig_SOURCES = qsig.c
 qstart_SOURCES = qstart.c
-qstat_SOURCES = qstat.c MXML.c
+qstat_SOURCES = qstat.c
 qstop_SOURCES = qstop.c
 qsub_SOURCES = qsub.c qsub_functions.c common_cmds.c
 #qsub_LDFLAGS = -all-static

@@ -443,7 +443,6 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/u_tree/Makefile
     src/test/u_users/Makefile
     src/test/u_xml/Makefile
-    src/test/MXML/Makefile
     src/test/common_cmds/Makefile
     src/test/pbs_track/Makefile
     src/test/pbsdsh/Makefile
