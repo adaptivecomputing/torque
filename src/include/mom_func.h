@@ -265,7 +265,7 @@ extern char *get_job_envvar(job *, const char *);
 extern int   mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
 void         clear_servers();
 
-int          become_the_user(job *pjob);
+int          become_the_user(job *pjob, bool want_effective);
 
 bool         am_i_mother_superior(const job &pjob);
 

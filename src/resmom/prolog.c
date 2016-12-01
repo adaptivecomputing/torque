@@ -1148,7 +1148,7 @@ void prepare_and_run_pelog_as_child(
     setuid_ext(pbsuser, TRUE);
     setegid(pbsgroup);
 
-    if (become_the_user(pjob) != PBSE_NONE)
+    if (become_the_user(pjob, false) != PBSE_NONE)
       {
       exit(-1);
       }

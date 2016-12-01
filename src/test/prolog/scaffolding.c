@@ -66,7 +66,8 @@ void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead
 
 int become_the_user(
 
-  job *pjob)
+  job *pjob,
+  bool want_effective)
   
   {
   return(0);

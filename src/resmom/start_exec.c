@@ -687,12 +687,14 @@ void exec_bail(
  * becomes the user for pjob
  *
  * @param pjob - the job whose user we should become
+ * @param want_effective - whether or not to set euid/eguid rather than uid/gid
  * @return PBSE_BADUSER on failure
  */
 
 int become_the_user(
 
-  job *pjob)
+  job *pjob,
+  bool want_effective)
 
   {
   log_buffer[0] = '\0';
@@ -705,20 +707,41 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
     }
-  else if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+  else if (want_effective)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "PBS: setgid to %lu for UID = %lu failed: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setegid to %lu for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
+    else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) < 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: seteuid to %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
     }
-  else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
+  else
     {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "PBS: setuid to %lu failed: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setgid to %lu for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
+    else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setuid to %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
     }
 
   if (log_buffer[0] != '\0')
@@ -738,7 +761,7 @@ int become_the_user_sjr(
   struct startjob_rtn *sjr)
 
   {
-  if (become_the_user(pjob) != PBSE_NONE)
+  if (become_the_user(pjob, false) != PBSE_NONE)
     {
     if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
@@ -7608,6 +7631,90 @@ int remove_leading_hostname(
   } /* END remove_leading_hostname() */
 
 
+#if NO_SPOOL_OUTPUT == 1
+/*
+ * save_supplementary_group_list
+ *
+ * saves the supplementary group list for calling process
+ * into a buffer
+ * 
+ * see restore_supplementary_group_list
+ *
+ * Note: it is up to the caller to free the allocated space
+ * malloc'ed in this function. This is normally done in
+ * restore_supplementary_group_list.
+ *
+ * @param *grp_list_size - pointer to size of group list
+ * @param **grp_list - pointer to address of group list
+ * @return 0 if group list saved to buffer, -1 otherwise
+ */
+
+int save_supplementary_group_list(
+
+  int *grp_list_size, /* O */
+  gid_t **grp_list)   /* O */
+
+  {
+  int ngroups_expected;
+
+  // get expected number of groups
+  ngroups_expected = getgroups(0, NULL);
+  if (ngroups_expected < 0)
+    return(-1);
+
+  // allocate space for group list
+  *grp_list = (gid_t *)malloc(ngroups_expected * sizeof(gid_t));
+  if (*grp_list == NULL)
+    return(-1);
+
+  // get the group list
+  *grp_list_size = getgroups(ngroups_expected, *grp_list);
+  if (*grp_list_size != ngroups_expected)
+    {
+    free(*grp_list);
+    *grp_list = NULL;
+    return(-1);
+    }
+
+  // success
+  return(0);
+  }
+
+
+/*
+ * restore_supplementary_group_list
+ *
+ * restores the supplementary group list for calling process
+ * from a buffer and frees the buffer space
+ * 
+ * see save_supplementary_group_list
+ *
+ * @param grp_list_size - size of group list
+ * @param *grp_list - pointer to saved group list
+ * @return 0 if group list restored from buffer, -1 otherwise
+ */
+
+int restore_supplementary_group_list(
+
+  int grp_list_size, /* I */
+  gid_t *grp_list)   /* I */
+
+  {
+  int rc = -1;
+
+  if (grp_list == NULL)
+    return(rc);
+
+  // restore the supplementary group list
+  if (setgroups((size_t)grp_list_size, grp_list) == 0)
+    rc = 0;
+
+  // free the buffer space
+  free(grp_list);
+
+  return(rc);
+  }
+#endif // NO_SPOOL_OUTPUT
 
 
 /*
@@ -7844,6 +7951,9 @@ char *std_file_name(
 
     if (spoolasfinalname == FALSE)
       {
+      gid_t *grp_list_saved;
+      int grp_list_saved_size;
+
       /* force all output to user's HOME */
       snprintf(path, sizeof(path), "%s", pjob->ji_grpcache->gc_homedir);
 
@@ -7851,14 +7961,67 @@ char *std_file_name(
       /* if it's not a directory, just use $HOME us usual */
       snprintf(path_alt, sizeof(path_alt), "%s/.pbs_spool/", path);
 
-      if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1)
+      // For network file systems like NFS and GPFS and regardless of the root
+      // squashing mode (enabled or disabled) the user's supplementary group
+      // list must be set for the caller before doing the stat() call below.
+
+      // save supplementary groups
+      if (save_supplementary_group_list(&grp_list_saved_size, &grp_list_saved) < 0)
         {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to save supplementary groups");
+        log_err(errno, __func__, log_buffer);
+
         return(NULL);
         }
 
+      // set effective uid, gid
+      if (become_the_user(pjob, true) != PBSE_NONE)
+        {
+        restore_supplementary_group_list(grp_list_saved_size, grp_list_saved);
+        setegid(pbsgroup);
+
+        log_err(errno, __func__, log_buffer);
+        return(NULL);
+        }
+
+      // now do the stat()
       rcstat = stat(path_alt, &myspooldir);
 
-      setuid_ext(pbsuser, TRUE);
+      // restore the euid
+      if (setuid_ext(pbsuser, TRUE) == -1)
+        {
+        restore_supplementary_group_list(grp_list_saved_size, grp_list_saved);
+        setegid(pbsgroup);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore the euid");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
+
+      // restore supplementary groups
+      if (restore_supplementary_group_list(grp_list_saved_size, grp_list_saved) < 0)
+        {
+        setegid(pbsgroup);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore supplementary groups");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
+
+      // restore the egid
+      if (setegid(pbsgroup) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore the egid");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
 
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         snprintf(path, sizeof(path), "%s", path_alt);
@@ -8028,36 +8191,8 @@ int open_std_file(
       (geteuid() != pjob->ji_qs.ji_un.ji_momt.ji_exuid))
 #endif
     {
-    if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != PBSE_NONE)
+    if (become_the_user(pjob, true) != PBSE_NONE)
       {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "setgroups failed for UID = %lu, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
-      log_err(errno, __func__, log_buffer);
-      }
-
-    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer),
-        "setegid(%lu) failed for UID = %lu, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
-      log_err(errno, __func__, log_buffer);
-
-      return(-1);
-      }
-
-    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != PBSE_NONE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer),
-        "seteuid(%lu) failed, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
       log_err(errno, __func__, log_buffer);
 
       setegid(pbsgroup);

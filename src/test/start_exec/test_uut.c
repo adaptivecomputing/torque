@@ -7,8 +7,12 @@
 #include <set>
 #include <map>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <limits.h>
+#include <unistd.h>
+#include <string.h>
+#include <grp.h>
 
 #include "pbs_error.h"
 #include "pbs_nodes.h"
@@ -18,6 +22,12 @@ int job_nodes(job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size, int cuda_version);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
+int become_the_user(job*, bool);
+
+#if NO_SPOOL_OUTPUT == 1
+int save_supplementary_group_list(int*, gid_t**);
+int restore_supplementary_group_list(int, gid_t*);
+#endif
 
 #ifdef NUMA_SUPPORT
 extern nodeboard node_boards[];
@@ -554,6 +564,135 @@ START_TEST(test_get_num_nodes_ppn)
   }
 END_TEST
 
+
+#if NO_SPOOL_OUTPUT == 1
+START_TEST(test_save_supplementary_group_list)
+  {
+  int ngroups;
+  gid_t *group_list;
+  int rc;
+
+  rc = save_supplementary_group_list(&ngroups, &group_list);
+  fail_unless(rc == 0);
+  fail_unless(ngroups > 0);
+  fail_unless((rc == 0) && (group_list != NULL));
+
+  if (rc == 0)
+    free(group_list);
+  }
+END_TEST
+
+START_TEST(restore_supplementary_group_list_test)
+  {
+  int ngroups;
+  gid_t *group_list;
+  int rc;
+
+  rc = restore_supplementary_group_list(0, NULL);
+  fail_unless(rc < 0);
+
+
+  // must be root to run the following since they call setgroups()
+  if (getuid() == 0)
+    {
+    int i;
+    int ngroups_alt;
+    gid_t *group_list_alt;
+
+    // save the supplementary groups
+    rc = save_supplementary_group_list(&ngroups, &group_list);
+    fail_unless(rc == 0);
+
+    // make a back up copy of the array
+    group_list_alt = (gid_t *)malloc(ngroups * sizeof(gid_t));
+    fail_unless(group_list_alt != NULL);
+    memcpy(group_list_alt, group_list, ngroups * sizeof(gid_t));
+
+    // set to a smaller set
+    rc = setgroups(1, group_list);
+    fail_unless(rc == 0);
+
+    // restore the full set
+    rc = restore_supplementary_group_list(ngroups, group_list);
+    fail_unless(rc == 0);
+
+    // check to make sure full set restored
+    ngroups = getgroups(0, NULL);
+    group_list = (gid_t *)malloc(ngroups * sizeof(gid_t));
+    fail_unless(group_list != NULL);
+    rc = getgroups(ngroups, group_list);
+
+    for (i = 0; i < ngroups; i++)
+      fail_unless(group_list[i] == group_list_alt[i]);
+
+    free(group_list_alt);
+    }
+  }
+END_TEST
+#endif
+
+START_TEST(test_become_the_user)
+  {
+  int rc;
+  job *pjob;
+  int uid;
+  int gid;
+
+  // must be root to run this test
+  if (getuid() != 0)
+    return;
+
+  pjob = (job *)calloc(1, sizeof(job));
+  fail_unless(pjob != NULL);
+
+  pjob->ji_grpcache = (struct grpcache *)calloc(1, sizeof(struct grpcache));
+  fail_unless(pjob->ji_grpcache != NULL);
+
+  pjob->ji_qs.ji_un.ji_momt.ji_exuid = 500;
+  pjob->ji_qs.ji_un.ji_momt.ji_exgid = 500;
+
+  pjob->ji_grpcache->gc_ngroup = 1;
+  pjob->ji_grpcache->gc_groups[0] = 500;
+
+  // fork so we can test the setxid/setexid calls in the child
+  rc = fork();
+  fail_unless(rc != -1);
+
+  if (rc > 0)
+    {
+    int status;
+
+    // parent
+    wait(&status);
+    return;
+    }
+
+  // child
+  
+  rc = become_the_user(pjob, true);
+  fail_unless(rc == PBSE_NONE);
+
+  // check the group list, uid, gid
+  uid = geteuid();
+  gid = getegid();
+  fail_unless(uid != 500);
+  fail_unless(gid != 500);
+
+  // put things back in place
+  fail_unless(seteuid(0) == 0);
+  fail_unless(setegid(0) == 0);
+
+  rc = become_the_user(pjob, false);
+  fail_unless(rc == PBSE_NONE);
+
+  // check the uid, gid
+  uid = getuid();
+  gid = getgid();
+  fail_unless(uid != 500);
+  fail_unless(gid != 500);
+  }
+END_TEST
+
 Suite *start_exec_suite(void)
   {
   Suite *s = suite_create("start_exec_suite methods");
@@ -601,6 +740,17 @@ Suite *start_exec_suite(void)
 #ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, get_memory_limit_from_resource_list_test);
 #endif
+  suite_add_tcase(s, tc_core);
+
+#if NO_SPOOL_OUTPUT == 1
+  tc_core = tcase_create("test_save_supplementary_group_list");
+  tcase_add_test(tc_core, test_save_supplementary_group_list);
+  tcase_add_test(tc_core, restore_supplementary_group_list_test);
+  suite_add_tcase(s, tc_core);
+#endif
+
+  tc_core = tcase_create("test_become_the_user");
+  tcase_add_test(tc_core, test_become_the_user);
   suite_add_tcase(s, tc_core);
 
   return s;
