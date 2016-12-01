@@ -282,6 +282,26 @@ int Socket::getTotalChips() const
   return(this->chips.size());
   }
 
+int Socket::get_total_gpus() const
+  {
+  int total_gpus = 0;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    total_gpus += this->chips[i].get_total_gpus();
+
+  return(total_gpus);
+  }
+
+int Socket::get_available_gpus() const
+  {
+  int available_gpus;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    available_gpus += this->chips[i].get_available_gpus();
+
+  return(available_gpus);
+  }
+
 int Socket::getAvailableChips() const
   {
   int available_numa_nodes = 0;
@@ -805,17 +825,20 @@ bool Socket::fits_on_socket(
     if (remaining.place_cpus > 0)
       max_cpus = remaining.place_cpus;
 
-    if ((remaining.cores_only == true) &&
-        (this->get_free_cores() >= max_cpus))
-      fits = true;
-    else if (remaining.place_type == exclusive_legacy)
+    if (this->get_available_gpus() >= remaining.gpus)
       {
-      if (this->get_free_cores() >= max_cpus)
+      if ((remaining.cores_only == true) &&
+          (this->get_free_cores() >= max_cpus))
+        fits = true;
+      else if (remaining.place_type == exclusive_legacy)
+        {
+        if (this->get_free_cores() >= max_cpus)
+          fits = true;
+        }
+      else if ((remaining.cores_only == false) &&
+               (this->getAvailableThreads() >= max_cpus))
         fits = true;
       }
-    else if ((remaining.cores_only == false) &&
-             (this->getAvailableThreads() >= max_cpus))
-      fits = true;
     }
 
   return(fits);
