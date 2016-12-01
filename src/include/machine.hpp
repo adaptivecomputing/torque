@@ -2,6 +2,7 @@
 #define __MACHINE_HPP__
 #include <string>
 #include <vector>
+#include <set>
 #include <sstream>
 #include <hwloc.h>
 #ifdef NVIDIA_GPUS
@@ -147,6 +148,7 @@ class Chip
     int get_id() const;
     int getTotalCores() const;
     int getTotalThreads() const;
+    int get_total_gpus() const;
     int getAvailableCores() const;
     int getAvailableThreads() const;
     hwloc_uint64_t getAvailableMemory() const;
@@ -254,6 +256,8 @@ class Socket
     int getTotalChips() const;
     int getTotalCores() const;
     int getTotalThreads() const;
+    int get_total_gpus() const;
+    int get_available_gpus() const;
     int getAvailableChips() const;
     int getAvailableCores() const;
     int get_free_cores() const;
@@ -307,7 +311,7 @@ class Machine
   vector<allocation>  allocations;
 #ifdef NVIDIA_GPUS
   #ifdef NVML_API
-  hwloc_obj_t get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device);
+  hwloc_obj_t get_non_nvml_device(hwloc_topology_t topology, nvmlDevice_t device, std::set<hwloc_obj_t> &);
   #endif
 #endif
     
@@ -328,6 +332,7 @@ class Machine
     int getTotalChips() const;
     int getTotalCores() const;
     int getTotalThreads() const;
+    int get_total_gpus() const;
     int getAvailableSockets() const;
     int getAvailableChips() const;
     int getAvailableMemory() const;

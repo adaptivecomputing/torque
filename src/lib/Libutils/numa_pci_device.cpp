@@ -93,7 +93,10 @@ void PCI_Device::displayAsString(
   stringstream &out) const
 
   {
-  out << "      pci " << this->id << " " << this->name << "\n";
+  if (this->type == GPU)
+    out << "      GPU " << this->id << " " << this->name << "\n";
+  else
+    out << "      MIC " << this->id << " " << this->name << "\n";
   } // end displayasstring()
   
 void PCI_Device::setName(
