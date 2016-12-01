@@ -655,6 +655,11 @@ int Chip::getTotalThreads() const
   return(this->totalThreads);
   }
 
+int Chip::get_total_gpus() const
+  {
+  return(this->total_gpus);
+  }
+
 int Chip::getAvailableCores() const
   {
   if (this->chip_exclusive == true)

@@ -421,6 +421,16 @@ int Machine::getTotalSockets() const
   return(this->totalSockets);
   }
 
+int Machine::get_total_gpus() const
+  {
+  int total_gpus = 0;
+
+  for (size_t i = 0; i < this->sockets.size(); i++)
+    total_gpus += this->sockets[i].get_total_gpus();
+
+  return(total_gpus);
+  }
+
 int Machine::getTotalChips() const
   {
   return(this->totalChips);
