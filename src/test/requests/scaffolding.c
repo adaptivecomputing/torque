@@ -60,7 +60,7 @@ const char *wdir_ret;
 void log_event(int event, int event_class, char *func_name, char *buf)
   {}
 
-int become_the_user(job *pjob)
+int become_the_user(job *pjob, bool want_effective)
   {
   return(0);
   }

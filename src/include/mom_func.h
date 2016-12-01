@@ -268,7 +268,7 @@ void         clear_servers();
 
 void         set_jobs_substate(job *pjob, int new_substate);
 
-int          become_the_user(job *pjob);
+int          become_the_user(job *pjob, bool want_effective);
 
 bool         am_i_mother_superior(const job &pjob);
 

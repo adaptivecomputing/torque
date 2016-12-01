@@ -695,7 +695,10 @@ proc_stat_t *get_proc_stat(int pid)
 
 int setuid_ext(uid_t uid, int set_euid)
   {
-  return(0);
+  if (set_euid == TRUE)
+    return(seteuid(uid));
+
+  return(setuid(uid));
   }
 
 int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries)
