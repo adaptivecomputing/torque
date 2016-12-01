@@ -67,7 +67,8 @@ void encode_used(job *pjob, int perm, Json::Value *list, tlist_head *phead)
 
 int become_the_user(
 
-  job *pjob)
+  job *pjob,
+  bool want_effective)
   
   {
   return(0);

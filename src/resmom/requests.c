@@ -1271,7 +1271,7 @@ int message_job(
     }
 
   /* only the child reaches here, become the user for root-squashing as well */
-  if (become_the_user(pjob) != PBSE_NONE)
+  if (become_the_user(pjob, false) != PBSE_NONE)
     {
     /* log_buffer is populated by become_the_user */
     log_err(errno, __func__, log_buffer);
