@@ -21,6 +21,9 @@ START_TEST(test_determine_spooldir)
   std::string  spooldir;
   const char  *val_ptr;
 
+  memset(&pjob, 0, sizeof(job));
+  pjob.ji_grpcache = (struct grpcache *)calloc(1, sizeof(struct grpcache));
+
   // If the spool directories don't match, we should get the default
   TNoSpoolDirList[0] = strdup("/home/bob/jobs/");
   wdir_ret = "PBS_O_WORKDIR=/home/dbeer/jobs/";
