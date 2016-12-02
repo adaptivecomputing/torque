@@ -342,6 +342,7 @@ char           *path_log;
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 bool                    daemonize_mom = true;
+bool                    force_layout_update = false;
 long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
@@ -4224,7 +4225,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:A:c:C:d:DFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DfFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
     {
     switch (c)
       {
@@ -4329,6 +4330,12 @@ void parse_command_line(
       case 'D':  /* debug */
 
         daemonize_mom = false;
+
+        break;
+
+      case 'f': // force layout update
+
+        force_layout_update = true;
 
         break;
 

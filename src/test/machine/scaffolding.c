@@ -235,6 +235,13 @@ bool Socket::is_available() const
 
 void Socket::displayAsJson(std::stringstream &out, bool jobs) const {}
 
+void Socket::save_allocations(const Socket &other) {}
+
+int Socket::get_total_gpus() const 
+  {
+  return(0);
+  }
+
 unsigned long req::getMemory() const
   {
   return(req_mem);

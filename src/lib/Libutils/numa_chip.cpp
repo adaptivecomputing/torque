@@ -2655,4 +2655,21 @@ bool Chip::has_socket_exclusive_allocation() const
   } // END has_socket_exclusive_allocation()
 
 
+
+/*
+ * Preserves all relevant information from the allocations for Chip other on this Chip
+ * This is called when replacing one Machine object with another, but we are trying to
+ * keep the information about running jobs.
+ */
+
+void Chip::save_allocations(
+
+  const Chip &other)
+
+  {
+  this->allocations = other.allocations;
+  this->adjust_open_resources();
+  } // END save_allocations()
+
+
 #endif /* PENABLE_LINUX_CGROUPS */  
