@@ -48,18 +48,6 @@ int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned i
 extern bool per_task;
 
 
-START_TEST(test_get_reply_stream)
-  {
-  job pjob;
-  pjob.ji_hosts = NULL;
-
-  // Make sure we don't segfault
-  fail_unless(get_reply_stream(NULL) == -1);
-  fail_unless(get_reply_stream(&pjob) == -1);
-  }
-END_TEST
-
-
 START_TEST(test_get_req_and_task_index_from_local_rank)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
@@ -83,6 +71,18 @@ START_TEST(test_get_req_and_task_index_from_local_rank)
 END_TEST
 
 #endif
+
+
+START_TEST(test_get_reply_stream)
+  {
+  job pjob;
+  pjob.ji_hosts = NULL;
+
+  // Make sure we don't segfault
+  fail_unless(get_reply_stream(NULL) == -1);
+  fail_unless(get_reply_stream(&pjob) == -1);
+  }
+END_TEST
 
 
 START_TEST(test_find_task_by_pid)
@@ -626,9 +626,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("send_update_soon_test");
   tcase_add_test(tc_core, send_update_soon_test);
-#ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, test_get_reply_stream);
-#endif
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("get_stat_update_interval_test");
