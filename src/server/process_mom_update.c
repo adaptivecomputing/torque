@@ -749,13 +749,15 @@ int save_node_status(
 void update_layout_if_needed(
 
   pbsnode           *pnode,
-  const std::string &layout)
+  const std::string &layout,
+  bool               force)
 
   {
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   std::vector<std::string> valid_ids;
 
-  if (pnode->nd_layout.is_initialized() == false)
+  if ((pnode->nd_layout.is_initialized() == false)
+      (force == true))
     {
     for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
       {
@@ -765,7 +767,12 @@ void update_layout_if_needed(
         valid_ids.push_back(id);
       }
 
-    pnode->nd_layout.reinitialize_from_json(layout, valid_ids);
+    Machine m(layout, valid_ids);
+
+    if (pnode->nd_layout.is_initialized() == true)
+      m.save_allocations(pnode->nd_layout);
+
+    pnode->nd_layout = m;
     }
   else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
            (pnode->nd_job_usages.size() == 0))
@@ -824,6 +831,9 @@ int process_status_info(
   int             rc = PBSE_NONE;
   bool            send_hello = false;
   std::string     temp;
+#ifdef PENABLE_LINUX_CGROUPS
+  bool            force_layout_update = false;
+#endif
 
   get_svr_attr_b(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_b(SRV_ATR_AutoNodeNP, &auto_np);
@@ -913,10 +923,15 @@ int process_status_info(
       str = status_info[i].c_str();
       }
 #ifdef PENABLE_LINUX_CGROUPS
+    else if (!strcmp(str, "force_layout_update"))
+      force_layout_update = true;
     else if (!strncmp(str, "layout", 6))
       {
       // Add 7 to skip "layout="
-      update_layout_if_needed(current, str + 7);
+      update_layout_if_needed(current, str + 7, force_layout_update);
+
+      // reset this to false in case we have a mom hierarchy in place
+      force_layout_update = false;
 
       continue;
       }
