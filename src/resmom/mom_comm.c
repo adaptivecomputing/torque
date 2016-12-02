@@ -3825,6 +3825,10 @@ int get_reply_stream(
   job *pjob) /* I */
 
   {
+  if ((pjob == NULL) ||
+      (pjob->ji_hosts == NULL))
+    return(-1);
+
   hnodent *np = pjob->ji_hosts;
 
   return (tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,sizeof(np->sock_addr), true));
