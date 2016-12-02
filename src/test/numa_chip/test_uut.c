@@ -774,6 +774,19 @@ START_TEST(test_how_many_tasks_fit)
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
   r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
+
+  Chip large_mem;
+  large_mem.setThreads(8);
+  large_mem.setMemory(128849018880); // 256 GB
+  large_mem.setCores(8);
+  large_mem.setChipAvailable(true);
+  for (int i = 0; i < 8; i++)
+    large_mem.make_core(i);
+  req r3;
+  r3.set_value("lprocs", "8", false);
+  r3.set_value("memory", "128849018880kb", false); // 256 gb
+  float fitting_tasks = large_mem.how_many_tasks_fit(r3, exclusive_none);
+  fail_unless(fitting_tasks == 1.0);
   }
 END_TEST
 

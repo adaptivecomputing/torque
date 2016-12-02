@@ -184,7 +184,7 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
-    float  how_many_tasks_fit(const req &r, int place_type) const;
+    double how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r, int place_type) const;
     int  free_core_count() const;
@@ -274,7 +274,7 @@ class Socket
     void displayAsJson(Json::Value &out, bool include_jobs) const;
     void setId(int id);
     void addChip(); // used for unit tests
-    float how_many_tasks_fit(const req &r, int place_type) const;
+    double how_many_tasks_fit(const req &r, int place_type) const;
     void place_all_execution_slots(req &r, allocation &task_alloc);
     bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
     bool spread_place_pu(req &r, allocation &task_alloc, int &cores, int &lprocs, int &gpus, int &mics);

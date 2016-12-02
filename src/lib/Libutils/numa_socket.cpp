@@ -487,13 +487,13 @@ void Socket::update_internal_counts(
  * @return - the number of tasks from r that could be placed on this socket
  */
 
-float Socket::how_many_tasks_fit(
+double Socket::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  float num_that_fit = 0;
+  double num_that_fit = 0;
 
   if ((this->socket_exclusive == false) &&
       ((place_type != exclusive_socket) ||
