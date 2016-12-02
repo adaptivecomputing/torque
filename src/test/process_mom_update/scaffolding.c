@@ -650,6 +650,8 @@ Chip::~Chip() {}
 Core::Core() {}
 Core::~Core() {}
 
+void Machine::save_allocations(const Machine &other) {}
+
 bool Machine::is_initialized() const
   {
   return(this->initialized);
