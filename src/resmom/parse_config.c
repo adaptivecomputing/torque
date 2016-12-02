@@ -164,7 +164,13 @@ char           **maskclient = NULL; /* wildcard connections */
 char             MOMConfigVersion[64];
 int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
+// Setting this variable is redundant for cgroups, so we'll default to false
+// It can only cause us pain.
+#ifdef PENABLE_LINUX_CGROUPS
+int              MOMCudaVisibleDevices     = 0;
+#else
 int              MOMCudaVisibleDevices     = 1;
+#endif
 double           wallfactor = 1.00;
 std::vector<cphosts> pcphosts;
 long             pe_alarm_time = PBS_PROLOG_TIME;
@@ -2285,7 +2291,11 @@ void reset_config_vars()
   memset(MOMConfigVersion, 0, sizeof(MOMConfigVersion));
   MOMConfigDownOnError = 0;
   MOMConfigRestart = 0;
+#ifdef PENABLE_LINUX_CGROUPS
+  MOMCudaVisibleDevices = 0;
+#else
   MOMCudaVisibleDevices = 1;
+#endif
   wallfactor = 1.00;
   pcphosts.clear();
   pe_alarm_time = PBS_PROLOG_TIME;
