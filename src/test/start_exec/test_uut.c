@@ -19,7 +19,7 @@
 #include "test_uut.h"
 
 int job_nodes(job &pjob);
-int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size, int cuda_version);
+int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
 int setup_process_launch_pipes(int &kid_read, int &kid_write, int &parent_read, int &parent_write);
@@ -505,40 +505,19 @@ START_TEST(test_get_indices_from_exec_str)
   {
   char  buf[1024];
 
-  fail_unless(get_indices_from_exec_str(NULL, NULL, 0, -1) != PBSE_NONE);
+  fail_unless(get_indices_from_exec_str(NULL, NULL, 0) != PBSE_NONE);
 
   strcpy(mom_alias, "slesmic");
 
-  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0",
-                                        buf,
-                                        sizeof(buf),
-                                        -1) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("slesmic-0-mic/1+slesmic-0-mic/0", buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(!strcmp(buf, "1,0"));
   
   strcpy(mom_alias, "napali");
 
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3",
-                                         buf,
-                                         sizeof(buf),
-                                         -1) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3", buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(!strcmp(buf, "1,2,3"), buf);
-
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3",
-                                         buf,
-                                         sizeof(buf),
-                                         70) == PBSE_NONE);
-  fail_unless(!strcmp(buf, "0,1,2"), buf);
-
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3",
-                                         buf,
-                                         sizeof(buf),
-                                         80) == PBSE_NONE);
-  fail_unless(!strcmp(buf, "0,1,2"), buf);
   
-  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2",
-                                        buf,
-                                        sizeof(buf),
-                                        -1) == PBSE_NONE);
+  fail_unless(get_indices_from_exec_str("napali-gpu/1+napali-gpu/2+napali-gpu/3+waimea-gpu/0+waimea-gpu/1+waimea-gpu/2", buf, sizeof(buf)) == PBSE_NONE);
   fail_unless(!strcmp(buf, "1,2,3"), buf);
   }
 END_TEST
