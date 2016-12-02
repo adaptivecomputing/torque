@@ -922,4 +922,15 @@ int Socket::get_mics_remaining()
   }
 
 
+
+void Socket::save_allocations(
+
+  const Socket &other)
+
+  {
+  for (size_t c = 0; c < this->chips.size() && c < other.chips.size(); c++)
+    this->chips[c].save_allocations(other.chips[c]);
+  }
+
+
 #endif /* PENABLE_LINUX_CGROUPS */  

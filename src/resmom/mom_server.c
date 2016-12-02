@@ -304,6 +304,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern u_long              localaddr;
+extern bool                force_layout_update;
 extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
@@ -695,6 +696,11 @@ void gen_layout(
   std::vector<std::string> &status)
 
   {
+  if (force_layout_update == true)
+    {
+    status.push_back("force_layout_update");
+    }
+
   std::stringstream layout;
   layout << name << "=";
   this_node.displayAsJson(layout, false);
@@ -1758,6 +1764,8 @@ void mom_server_all_update_stat(void)
         num_stat_update_failures++;
       else
         {
+        force_layout_update = false;
+
         num_stat_update_failures = 0;
         for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
           {

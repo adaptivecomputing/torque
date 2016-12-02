@@ -1208,4 +1208,19 @@ int Machine::how_many_tasks_can_be_placed(
 
 
 
+void Machine::save_allocations(
+
+  const Machine &other)
+
+  {
+  this->allocations = other.allocations;
+
+  for (size_t s = 0; s < other.sockets.size() && s < this->sockets.size(); s++)
+    {
+    this->sockets[s].save_allocations(other.sockets[s]);
+    }
+  } // END save_allocations()
+
+
+
 #endif /* PENABLE_LINUX_CGROUPS */

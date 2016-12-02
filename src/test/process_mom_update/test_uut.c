@@ -12,7 +12,7 @@ int set_note_error(struct pbsnode *np, const char *str);
 int restore_note(struct pbsnode *np);
 
 #ifdef PENABLE_LINUX_CGROUPS
-void update_layout_if_needed(pbsnode *pnode, const std::string &layout);
+void update_layout_if_needed(pbsnode *pnode, const std::string &layout, bool force);
 
 extern int event_logged;
 
@@ -26,7 +26,7 @@ START_TEST(test_update_layout_if_needed)
 
   event_logged = 0;
   pnode->nd_layout = NULL;
-  update_layout_if_needed(pnode, sans_threads);
+  update_layout_if_needed(pnode, sans_threads, false);
 
   fail_unless(event_logged == 0);
   fail_unless(pnode->nd_layout != NULL);
@@ -36,10 +36,10 @@ START_TEST(test_update_layout_if_needed)
     pnode->nd_slots.add_execution_slot();
 
   // Calling again without changing the number of slots should do nothing
-  update_layout_if_needed(pnode, sans_threads);
-  update_layout_if_needed(pnode, sans_threads);
-  update_layout_if_needed(pnode, sans_threads);
-  update_layout_if_needed(pnode, sans_threads);
+  update_layout_if_needed(pnode, sans_threads, false);
+  update_layout_if_needed(pnode, sans_threads, false);
+  update_layout_if_needed(pnode, sans_threads, false);
+  update_layout_if_needed(pnode, sans_threads, false);
   fail_unless(event_logged == 0);
 
   // Simulate that threads were turned on in this machine, therefore increasing the number of
@@ -47,16 +47,16 @@ START_TEST(test_update_layout_if_needed)
   for (int i = 0; i < 16; i++)
     pnode->nd_slots.add_execution_slot();
 
-  update_layout_if_needed(pnode, with_threads);
+  update_layout_if_needed(pnode, with_threads, false);
   
   fail_unless(event_logged == 1);
   fail_unless(pnode->nd_layout->getTotalThreads() == 32);
 
   // Calling again without changing the number of slots should do nothing
-  update_layout_if_needed(pnode, with_threads);
-  update_layout_if_needed(pnode, with_threads);
-  update_layout_if_needed(pnode, with_threads);
-  update_layout_if_needed(pnode, with_threads);
+  update_layout_if_needed(pnode, with_threads, false);
+  update_layout_if_needed(pnode, with_threads, false);
+  update_layout_if_needed(pnode, with_threads, false);
+  update_layout_if_needed(pnode, with_threads, false);
   fail_unless(event_logged == 1);
   }
 END_TEST

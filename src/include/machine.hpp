@@ -224,6 +224,7 @@ class Chip
     bool reserve_chip_thread(int core_index, allocation &a);
     bool reserve_place_thread(int core_index, allocation &a);
     bool reserve_chip_place_thread(int core_index, allocation &a);
+    void save_allocations(const Chip &other);
   };
 
 
@@ -286,6 +287,7 @@ class Socket
     void update_internal_counts(vector<allocation> &allocs);
     int  get_gpus_remaining();
     int  get_mics_remaining();
+    void save_allocations(const Socket &other);
   };
 
 
@@ -351,6 +353,7 @@ class Machine
     void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
+    void save_allocations(const Machine &other);
     void free_job_allocation(const char *jobid);
     int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
     int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
