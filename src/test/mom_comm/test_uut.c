@@ -626,7 +626,9 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("send_update_soon_test");
   tcase_add_test(tc_core, send_update_soon_test);
+#ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, test_get_reply_stream);
+#endif
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("get_stat_update_interval_test");
