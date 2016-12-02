@@ -128,12 +128,19 @@ Chip::~Chip()
 
 void Chip::aggregate_allocations(std::vector<allocation> &master_list) {}
 
+void Chip::save_allocations(const Chip &other) {}
+
 void Chip::displayAsJson(
 
   Json::Value  &out,
   bool               jobs) const
 
   {
+  }
+
+int Chip::get_total_gpus() const
+  {
+  return(0);
   }
 
 
