@@ -843,7 +843,9 @@ int process_status_info(
   pbs_attribute   temp;
   int             rc = PBSE_NONE;
   bool            send_hello = false;
+#ifdef PENABLE_LINUX_CGROUPS
   bool            force_layout_update = false;
+#endif
 
   get_svr_attr_l(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_l(SRV_ATR_AutoNodeNP, &auto_np);
@@ -935,9 +937,9 @@ int process_status_info(
       process_mic_status(current, i, status_info);
       str = status_info[i].c_str();
       }
+#ifdef PENABLE_LINUX_CGROUPS
     else if (!strcmp(str, "force_layout_update"))
       force_layout_update = true;
-#ifdef PENABLE_LINUX_CGROUPS
     else if (!strncmp(str, "layout", 6))
       {
       update_layout_if_needed(current, status_info[i], force_layout_update);
