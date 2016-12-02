@@ -151,14 +151,6 @@ extern nodeboard node_boards[];
 #endif
 
 
-// Default to version 7.0
-extern int cuda_version;
-std::string nvcc_version_cmd("/usr/local/cuda/bin/nvcc --version");
-
-// Forward declaration
-void  set_cuda_version();
-
-
 /*
  * Function to log nvml errors
  */
@@ -493,9 +485,6 @@ int check_nvidia_setup()
     nvidia_setup_is_ok = TRUE;
 #endif  /* NVML_API */
     }
-
-  set_cuda_version();
-
   return (nvidia_setup_is_ok);
   }
 
@@ -2213,107 +2202,5 @@ int add_gpu_status(
 
   return(PBSE_NONE);
   } /* END add_gpu_status() */
-
-
-
-/*
- * matches_version_string()
- *
- * Sets the global variable cuda_version from versiong_string, if possible
- *
- * @param version_string - a string that should match the format number.number.number
- * @return true if the string matched the appropriate format and the version was set
- */
-
-bool matches_version_string(
-
-  char *version_string)
-
-  {
-  char *ptr = version_string;
-  char *end = ptr;
-  int   tmp_version;
-  bool  match = false;
-
-  tmp_version = strtol(ptr, &end, 10) * 10;
-
-  if (*end == '.')
-    {
-    ptr = end + 1;
-
-    tmp_version += strtol(ptr, &end, 10);
-
-    if (*end == '.')
-      {
-      // valid format
-      match = true;
-      cuda_version = tmp_version;
-      }
-    }
-
-  return(match);
-  } // END matches_version_string()
-
-
-
-/*
- * set_cuda_version()
- *
- * Determines what version of CUDA is installed on this machine
- */
-
-void set_cuda_version()
-  {
-  char  buf[MAXLINE * 4];
-  FILE *nvcc_pipe;
-  char *ptr = buf;
-  int   bytes_read = 0;
-  bool  version_set = false;
-
-  if ((nvcc_pipe = popen(nvcc_version_cmd.c_str(), "r")) == NULL)
-    {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "Cannot open pipe to get CUDA version with command '%s' - assuming version %d",
-      nvcc_version_cmd.c_str(), cuda_version);
-    log_err(errno, __func__, log_buffer);
-    }
-
-  memset(buf, 0, sizeof(buf));
-  int fd = fileno(nvcc_pipe);
-
-  while ((version_set == false) &&
-         ((bytes_read = read(fd, ptr, sizeof(buf) - 1)) > 0))
-    {
-    char *tmpptr = ptr;
-
-    // Version string appears in the format V<number>.<number>.<number>, so find the V
-    // and check if the rest matches
-    while ((tmpptr = strrchr(tmpptr, 'V')) != NULL)
-      {
-      if (matches_version_string(tmpptr + 1) == true)
-        {
-        version_set = true;
-        break;
-        }
-
-      // At the beginning
-      if (tmpptr == ptr)
-        break;
-      else
-        tmpptr--;
-      }
-    }
-
-  pclose(nvcc_pipe);
-
-  if (version_set == false)
-    {
-    snprintf(log_buffer, sizeof(log_buffer),
-      "Couldn't find a CUDA version string with command '%s', defaulting to version %d",
-      nvcc_version_cmd.c_str(), cuda_version);
-    log_err(-1, __func__, log_buffer);
-    }
-
-  } // END set_cuda_version()
 
 
