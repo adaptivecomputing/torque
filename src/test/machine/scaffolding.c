@@ -200,7 +200,7 @@ int Socket::getAvailableChips() const
   return(1);
   }
 
-float Socket::how_many_tasks_fit(const req &r, int place_type) const
+double Socket::how_many_tasks_fit(const req &r, int place_type) const
 
   {
   return(num_tasks_fit);

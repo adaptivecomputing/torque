@@ -171,7 +171,7 @@ int req::set_value(const char *name, const char *value, bool is_default)
   if (!strcmp(name, "lprocs"))
     this->execution_slots = atoi(value);
   else if (!strcmp(name, "memory"))
-    this->mem = atoi(value);
+    this->mem = strtol(value, NULL, 10);
   else if (!strcmp(name, "gpus"))
     this->gpus = atoi(value);
   else if (!strcmp(name, "mics"))
