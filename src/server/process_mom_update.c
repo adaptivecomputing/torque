@@ -756,7 +756,7 @@ void update_layout_if_needed(
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   std::vector<std::string> valid_ids;
 
-  if ((pnode->nd_layout.is_initialized() == false)
+  if ((pnode->nd_layout.is_initialized() == false) ||
       (force == true))
     {
     for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
