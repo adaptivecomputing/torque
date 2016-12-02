@@ -48,18 +48,6 @@ int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned i
 extern bool per_task;
 
 
-START_TEST(test_get_reply_stream)
-  {
-  job pjob;
-  pjob.ji_hosts = NULL;
-
-  // Make sure we don't segfault
-  fail_unless(get_reply_stream(NULL) == -1);
-  fail_unless(get_reply_stream(&pjob) == -1);
-  }
-END_TEST
-
-
 START_TEST(test_get_req_and_task_index_from_local_rank)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
@@ -83,6 +71,18 @@ START_TEST(test_get_req_and_task_index_from_local_rank)
 END_TEST
 
 #endif
+
+
+START_TEST(test_get_reply_stream)
+  {
+  job pjob;
+  pjob.ji_hosts = NULL;
+
+  // Make sure we don't segfault
+  fail_unless(get_reply_stream(NULL) == -1);
+  fail_unless(get_reply_stream(&pjob) == -1);
+  }
+END_TEST
 
 
 START_TEST(test_find_task_by_pid)
