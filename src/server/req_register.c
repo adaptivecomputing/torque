@@ -122,7 +122,7 @@
 
 extern int que_to_local_svr(struct batch_request *preq);
 extern long calc_job_cost(job *);
-char *get_correct_jobname(const char *jobid);
+const char *get_correct_jobname(const char *jobid, std::string &corrected);
 
 
 /* Local Private Functions */
@@ -375,13 +375,12 @@ bool job_ids_match(
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
     {
-    char *correct_parent = get_correct_jobname(parent);
-    char *correct_child = get_correct_jobname(child);
+    std::string correct_parent;
+    std::string correct_child;
+    get_correct_jobname(parent, correct_parent);
+    get_correct_jobname(child, correct_child);
 
-    match = strcmp(correct_parent, correct_child) == 0;
-
-    free(correct_parent);
-    free(correct_child);
+    match = correct_parent == correct_child;
     }
   else
     match = strcmp(parent, child) == 0;
@@ -3221,13 +3220,16 @@ int build_depend(
     else   /* all other dependency types */
       {
       /* a set of job_id[\:port][@server[\:port]] */
+      std::string correct_id;
       pdjb = new depend_job();
+
+      get_correct_jobname(valwd, correct_id);
 
       if (pdjb)
         {
         pdjb->dc_state = 0;
         pdjb->dc_cost  = 0;
-        pdjb->dc_child = valwd;
+        pdjb->dc_child = correct_id;
 
         std::size_t pos = pdjb->dc_child.find("@");
 
