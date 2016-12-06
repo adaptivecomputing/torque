@@ -3816,7 +3816,7 @@ void process_opts(
 
           case 'l':
 
-            if (add_verify_resources(ji->res_attr, vptr, data_type))
+            if (add_verify_resources(ji->res_attr, vptr, FILTER_DATA))
               print_qsub_usage_exit("qsub: illegal -l value");
 
             break;

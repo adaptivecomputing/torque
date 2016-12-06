@@ -109,9 +109,10 @@
 /* hostlist=name1+name2,mppnodes=name1+name2,param=val1+val23+val24+val25*/
 
 int add_verify_resources(
+
   job_data_container *res_attr, /* M */
-  char           *resources, /* I */
-  int             p_type)    /* I */
+  char               *resources, /* I */
+  int                 p_type)    /* I */
 
   {
   char *r;

@@ -107,10 +107,25 @@ int hash_add_item(
 
   {
   job_data *item = new job_data(name,value,var_type,op_type);
+  bool      replace = false;
 
   head->lock();
-  int ret =  head->insert(item,name,true);
+  job_data *old_item = head->find(name);
+  int ret = 1;
+
+  if (old_item != NULL)
+    {
+    // Only call insert if we are replacing the old item
+    if (var_type < old_item->var_type)
+      ret = head->insert(item, name, true);
+    else
+      delete item;
+    }
+  else
+    ret = head->insert(item, name, replace);
+
   head->unlock();
+
   return ret;
   } /* END hash_add_item() */
 
