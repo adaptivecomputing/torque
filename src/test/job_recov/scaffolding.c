@@ -323,9 +323,10 @@ const char *id_map::get_name(int internal_job_id)
 
 id_map job_mapper;
 
-char *get_correct_jobname(const char *id)
+const char *get_correct_jobname(const char *id, std::string &correct)
   {
-  return(strdup(id));
+  correct = id;
+  return(correct.c_str());
   }
 
 int encode_complete_req(
