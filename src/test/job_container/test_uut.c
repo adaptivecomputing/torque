@@ -5,7 +5,7 @@
 #include "pbs_error.h"
 #include <check.h>
 
-char *get_correct_jobname(const char *jobid);
+const char *get_correct_jobname(const char *jobid, std::string &correct);
 
 void log_err(int,const char *,const char *)
 {}
@@ -53,8 +53,9 @@ END_TEST
 START_TEST(get_correct_jobname_test)
   {
   // with nothing set, get_correct_jobname should just return the jobid passed in.
-  char *jobid = get_correct_jobname("1.napali.ac");
-  fail_unless(!strcmp(jobid, "1.napali.ac"));
+  std::string correct;
+  get_correct_jobname("1.napali.ac", correct);
+  fail_unless(correct == "1.napali.ac");
   }
 END_TEST
 

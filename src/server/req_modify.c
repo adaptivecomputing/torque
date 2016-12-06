@@ -143,7 +143,7 @@ extern void rel_resc(job *);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 
-extern char *get_correct_jobname(const char *jobid);
+extern const char *get_correct_jobname(const char *jobid, std::string &correct);
 
 /* prototypes */
 void post_modify_arrayreq(batch_request *preq);
@@ -967,9 +967,9 @@ void *req_modifyjob(
   batch_request *preq) /* I */
 
   {
-  job       *pjob;
-  svrattrl  *plist;
-  char      *correct_jobname_p;
+  job         *pjob;
+  svrattrl    *plist;
+  std::string  correct_jobname;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -979,22 +979,17 @@ void *req_modifyjob(
     }
 
   // get the correct job name
-  correct_jobname_p = get_correct_jobname(preq->rq_ind.rq_modify.rq_objname);
+  get_correct_jobname(preq->rq_ind.rq_modify.rq_objname, correct_jobname);
 
   // if correct job name and one passed in don't match, adjust one passed in
   //  so that mom will be able to match it and not reject modify request due
   //  to job not found
-  if (correct_jobname_p != NULL)
+  if (correct_jobname != preq->rq_ind.rq_modify.rq_objname)
     {
-    if (strcmp(correct_jobname_p, preq->rq_ind.rq_modify.rq_objname) != 0)
-      {
-      // job names don't match so need to modify the requested jobname
-      snprintf(preq->rq_ind.rq_modify.rq_objname,
-               sizeof(preq->rq_ind.rq_modify.rq_objname),
-               "%s", correct_jobname_p);
-      }
-    
-    free(correct_jobname_p);
+    // job names don't match so need to modify the requested jobname
+    snprintf(preq->rq_ind.rq_modify.rq_objname,
+             sizeof(preq->rq_ind.rq_modify.rq_objname),
+             "%s", correct_jobname.c_str());
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);

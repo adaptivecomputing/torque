@@ -7,14 +7,14 @@
 
 batch_request *preq;
 
-extern char *get_correct_jobname_return;
+extern std::string get_correct_jobname_return;
 
 bool allowed_gres_modifier(const char*, const char *);
 
 START_TEST(test_req_modifyjob)
   {
   // initialize
-  get_correct_jobname_return = NULL;
+  get_correct_jobname_return.clear();
 
   // create space for the req
   preq = (batch_request *)calloc(1, sizeof(batch_request));
@@ -32,7 +32,7 @@ START_TEST(test_req_modifyjob)
     sizeof(preq->rq_ind.rq_modify.rq_objname)));
 
   // set up get_correct_jobname() to return a different value
-  get_correct_jobname_return = strdup("123");
+  get_correct_jobname_return = "123";
 
   // call the function to unit test
   req_modifyjob(preq);
