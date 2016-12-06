@@ -128,6 +128,8 @@ START_TEST(test_hash_print)
   rc = hash_clear(&the_map);
   }
 END_TEST
+
+
 /* Testing this involves forcing this to exit - causing a failure. Don't test.
 START_TEST(test_add_or_exit)
   {
@@ -183,6 +185,19 @@ START_TEST(test_hash_add_hash)
   fail_unless(rc == 4, "4 items should exist in the hash_map, %d do", rc);
   fail_unless(hash_find(&map1, "name4", &tmp_item) == TRUE, "hash item name4 not found");
   fail_unless(strcmp(tmp_item->value.c_str(), "value6") == 0, "value for name4 should have been value6, but was %s", tmp_item->value.c_str());
+
+  // Make sure we don't update the lower priority value
+  rc = hash_add_item(&map1, "name1", "bob", SCRIPT_DATA, SET);
+  fail_unless(rc == 1, "We should get success even though we didn't update lower priority data");
+  job_data *stored;
+  fail_unless(hash_find(&map1, "name1", &stored) == 1);
+  fail_unless(stored->value == "value1");
+
+  fail_unless(hash_add_item(&map1, "planet", "sel", SCRIPT_DATA, SET) == 1);
+  fail_unless(hash_add_item(&map1, "planet", "roshar", ENV_DATA, SET) == 1);
+  // Make sure the value is now roshar - it is higher priority
+  fail_unless(hash_find(&map1, "planet", &stored) == 1);
+  fail_unless(stored->value == "roshar");
   }
 END_TEST
 
