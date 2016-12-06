@@ -8,12 +8,13 @@
 START_TEST(test_displayAsString)
   {
   PCI_Device p;
-  p.setName("gpu");
+  p.setName("k80");
+  p.set_type(GPU);
   p.setId(0);
   std::stringstream out;
 
   p.displayAsString(out);
-  fail_unless(out.str() == "      pci 0 gpu\n", out.str().c_str());
+  fail_unless(out.str() == "      GPU 0 k80\n", out.str().c_str());
   }
 END_TEST
 
