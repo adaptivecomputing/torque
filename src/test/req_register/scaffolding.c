@@ -364,7 +364,7 @@ job *job_alloc(void)
   return(pj);
   }
 
-char *get_correct_jobname(const char *jobid)
+const char *get_correct_jobname(const char *jobid, std::string &correct)
 
   {
   char *rv = strdup(jobid);
@@ -373,7 +373,10 @@ char *get_correct_jobname(const char *jobid)
   if ((dot = strchr(rv, '.')) != NULL)
     *dot = '\0';
 
-  return(rv);
+  correct = rv;
+  free(rv);
+
+  return(correct.c_str());
   }
 
 int is_svr_attr_set(int index)

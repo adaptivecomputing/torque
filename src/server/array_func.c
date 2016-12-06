@@ -63,7 +63,7 @@
 
 
 extern int array_upgrade(job_array *, int, int, int *);
-extern char *get_correct_jobname(const char *jobid);
+extern const char *get_correct_jobname(const char *jobid, std::string &correct);
 extern int count_user_queued_jobs(pbs_queue *,char *);
 extern void post_modify_arrayreq(batch_request *preq);
 
@@ -98,25 +98,16 @@ int is_array(
   char *id)
 
   {
-  int        rc = FALSE;
+  int          rc = FALSE;
 
-  char      *bracket_ptr;
-  char      *end_bracket_ptr;
-  char      *tmpjobid;
-  char       jobid[PBS_MAXSVRJOBID];
-  char       temp_jobid[PBS_MAXSVRJOBID];
+  char        *bracket_ptr;
+  char        *end_bracket_ptr;
+  char         jobid[PBS_MAXSVRJOBID];
+  char         temp_jobid[PBS_MAXSVRJOBID];
+  std::string  tmpjobid;
 
-  tmpjobid = get_correct_jobname(id);
-  if (tmpjobid == NULL)
-    {
-    /* Maybe we should just return ENOMEM? */
-    snprintf(jobid, sizeof(jobid), "%s", id);
-    }
-  else
-    {
-    snprintf(jobid, sizeof(jobid), "%s", tmpjobid);
-    free(tmpjobid);
-    }
+  get_correct_jobname(id, tmpjobid);
+  snprintf(jobid, sizeof(jobid), "%s", tmpjobid.c_str());
 
   /* Check to see if we have an array dependency */
   /* If there is an array dependency count then we will */
@@ -176,12 +167,10 @@ job_array *get_array(
   const char *id)
 
   {
-  job_array *pa;
-  char      *tmpjobid;
+  job_array   *pa;
+  std::string  tmpjobid;
 
-  tmpjobid = get_correct_jobname(id);
-  if (tmpjobid == NULL)
-    return(NULL);
+  get_correct_jobname(id, tmpjobid);
 
   allarrays.lock();
 
@@ -191,9 +180,6 @@ job_array *get_array(
     lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
 
   allarrays.unlock();
-
-  if (tmpjobid != NULL)
-    free(tmpjobid);
 
   return(pa);
   } /* END get_array() */
