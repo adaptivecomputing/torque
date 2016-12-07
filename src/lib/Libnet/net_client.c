@@ -95,6 +95,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <poll.h>
 
 #ifdef _AIX
 #include <arpa/aixrcmds.h>
@@ -124,48 +125,41 @@ int get_max_num_descriptors(void)
   return(max_num_descriptors);
   }  /* END get_num_max_descriptors() */
 
-/**
- * Returns the number of bytes needed to allocate
- * a fd_set array that can hold all of the possible
- * socket descriptors.
+/*
+ * wait_for_write_ready
+ *
+ * Wait for file descriptor to be ready for writing
+ * within timeout period.
+ *
+ * @param fd - file descriptor
+ * @param timeout_ms - timeout in milliseconds
+ * @return true if file descriptor ready for writing, false otherwise
  */
 
-int get_fdset_size(void)
+bool wait_for_write_ready(
+
+  int fd,
+  int timeout_ms)
 
   {
-  unsigned int MaxNumDescriptors = 0;
-  int NumFDSetsNeeded = 0;
-  int NumBytesInFDSet = 0;
-  int Result = 0;
+  struct pollfd PollArray;
 
-  MaxNumDescriptors = get_max_num_descriptors();
+  // initialize
+  PollArray.fd = fd;
+  PollArray.events = POLLOUT;
+  PollArray.revents = 0;
 
-  NumBytesInFDSet = sizeof(fd_set);
-  NumFDSetsNeeded = MaxNumDescriptors / FD_SETSIZE;
-
-  if (MaxNumDescriptors < FD_SETSIZE)
+  // wait
+  if ((poll(&PollArray, 1, timeout_ms) == 1) &&
+     ((PollArray.revents & POLLOUT) != 0))
     {
-    /* the default size already provides sufficient space */
-
-    Result = NumBytesInFDSet;
-    }
-  else if ((MaxNumDescriptors % FD_SETSIZE) > 0)
-    {
-    /* we need to allocate more memory to cover extra
-     * bits--add an extra FDSet worth of memory to the size */
-
-    Result = (NumFDSetsNeeded + 1) * NumBytesInFDSet;
-    }
-  else
-    {
-    /* division was exact--we know exactly how many bytes we need */
-
-    Result = NumFDSetsNeeded * NumBytesInFDSet;
+    // ready to write
+    return(true);
     }
 
-  return(Result);
-  }  /* END get_fdset_size() */
-
+  // not ready to write
+  return(false);
+  }
 
 /*
 ** wait for connect to complete.  We use non-blocking sockets,
@@ -174,45 +168,19 @@ int get_fdset_size(void)
 
 static int await_connect(
 
-  long timeout,   /* I */
+  int timeout_ms,   /* I - milliseconds */
   int sockd)     /* I */
 
   {
-  int               n;
   int               val;
   int               rc;
 
-  fd_set           *BigFDSet = NULL;
-
-  struct timeval    tv;
-
   torque_socklen_t  len;
 
-  /* 
-   * some operating systems (like FreeBSD) cannot have a value for tv.tv_usec
-   * larger than 1,000,000 so we need to split up the timeout duration between
-   * seconds and microseconds
-   */
-
-  tv.tv_sec = timeout / 1000000;
-  tv.tv_usec = timeout % 1000000;
-
-  /* calculate needed size for fd_set in select() */
-
-  BigFDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
-  if (!BigFDSet)
-    {
-    log_err(ENOMEM,__func__,"Could not allocate memory to set file descriptor");
-    return -1;
-    }
-
-  FD_SET(sockd, BigFDSet);
-
-  if ((n = select(sockd+1,0,BigFDSet,0,&tv)) != 1)
+  if (wait_for_write_ready(sockd, timeout_ms) == false)
     {
     /* FAILURE:  socket not ready for write */
 
-    free(BigFDSet);
     return(-1);
     }
 
@@ -224,7 +192,6 @@ static int await_connect(
     {
     /* SUCCESS:  no failures detected */
 
-    free(BigFDSet);
     return(0);
     }
 
@@ -232,7 +199,6 @@ static int await_connect(
 
   /* FAILURE:  socket error detected */
 
-  free(BigFDSet);
   return(-1);
   }  /* END await_connect() */
 
@@ -240,7 +206,7 @@ static int await_connect(
 
 
 /* global */
-long MaxConnectTimeout = 5000000; /* in microseconds */
+int MaxConnectTimeout = 5000; /* in milliseconds */
 
 /*
  * client_to_svr - connect to a server
@@ -257,7 +223,7 @@ long MaxConnectTimeout = 5000000; /* in microseconds */
  * hosts with the same port.  Let the caller keep the addresses around
  * rather than look it up each time.
  *
- * NOTE:  will wait up to MaxConnectTimeout microseconds for transient network failures
+ * NOTE:  will wait up to MaxConnectTimeout milliseconds for transient network failures
  */
 
 /* NOTE:  create new connection on reserved port to validate root/trusted authority */
@@ -562,7 +528,7 @@ jump_to_check:
       
       if (await_connect(MaxConnectTimeout, sock) == 0)
         {
-        /* socket not ready for writing after MaxConnectTimeout microseconds timeout */
+        /* socket not ready for writing after MaxConnectTimeout milliseconds timeout */
         /* no network failures detected */
         
         break;

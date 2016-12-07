@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <poll.h>
 
 #include "pbs_error.h"
 #include "net_cache.h"
@@ -15,6 +16,12 @@ bool connect_success;
 
 int get_random_reserved_port();
 int process_and_save_socket_error(int socket_errno);
+int socket_wait_for_write(int);
+
+extern int   global_poll_rc;
+extern short global_poll_revents;
+extern int   global_getsockopt_rc;
+extern int   global_sock_errno;
 
 START_TEST(test_get_random_reserved_port)
   {
@@ -105,6 +112,38 @@ START_TEST(test_socket_connect_unix)
   }
 END_TEST
 
+START_TEST(test_socket_wait_for_write)
+  {
+  global_poll_rc = 0;
+  fail_unless(socket_wait_for_write(0) == PERMANENT_SOCKET_FAIL);
+
+  global_poll_rc = -1;
+  fail_unless(socket_wait_for_write(0) == PERMANENT_SOCKET_FAIL);
+
+  global_poll_rc = 1;
+  global_poll_revents = 0;
+  fail_unless(socket_wait_for_write(0) == PERMANENT_SOCKET_FAIL);
+
+  global_poll_rc = 1;
+  global_poll_revents = POLLOUT;
+  global_getsockopt_rc = 1;
+  global_sock_errno = EALREADY;
+  fail_unless(socket_wait_for_write(0) == TRANSIENT_SOCKET_FAIL);
+
+  global_poll_rc = 1;
+  global_poll_revents = POLLOUT;
+  global_getsockopt_rc = 0;
+  global_sock_errno = EINPROGRESS;
+  fail_unless(socket_wait_for_write(0) == TRANSIENT_SOCKET_FAIL);
+
+  global_poll_rc = 1;
+  global_poll_revents = POLLOUT;
+  global_getsockopt_rc = 0;
+  global_sock_errno = 0;
+  fail_unless(socket_wait_for_write(0) == PBSE_NONE);
+  }
+END_TEST
+
 Suite *net_common_suite(void)
   {
   Suite *s = suite_create("net_common_suite methods");
@@ -126,6 +165,10 @@ Suite *net_common_suite(void)
 
   tc_core = tcase_create("test_socket_connect_unix");
   tcase_add_test(tc_core, test_socket_connect_unix);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_socket_wait_for_write");
+  tcase_add_test(tc_core, test_socket_wait_for_write);
   suite_add_tcase(s, tc_core);
 
   return s;

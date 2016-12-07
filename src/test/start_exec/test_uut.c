@@ -23,6 +23,7 @@ int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
 int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
 int become_the_user(job*, bool);
+int TMomCheckJobChild(pjobexec_t*, int, int*, int*);
 
 #if NO_SPOOL_OUTPUT == 1
 int save_supplementary_group_list(int*, gid_t**);
@@ -49,6 +50,9 @@ extern bool fail_init_groups;
 extern bool fail_site_grp_check;
 extern bool am_ms;
 extern bool addr_fail;
+
+extern int global_poll_fd;
+extern int global_poll_timeout_ms;
 
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
@@ -672,6 +676,21 @@ START_TEST(test_become_the_user)
   }
 END_TEST
 
+START_TEST(test_TMomCheckJobChild)
+  {
+  pjobexec_t TJE;
+  int timeout_sec = 39;
+  int count;
+  int rc;
+  int fd = 99;
+
+  TJE.jsmpipe[0] = fd;
+  TMomCheckJobChild(&TJE, timeout_sec, &count, &rc);
+  fail_unless(global_poll_fd == fd);
+  fail_unless(global_poll_timeout_ms == timeout_sec * 1000);
+  }
+END_TEST
+
 Suite *start_exec_suite(void)
   {
   Suite *s = suite_create("start_exec_suite methods");
@@ -730,6 +749,10 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_become_the_user");
   tcase_add_test(tc_core, test_become_the_user);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_TMomCheckJobChild");
+  tcase_add_test(tc_core, test_TMomCheckJobChild);
   suite_add_tcase(s, tc_core);
 
   return s;

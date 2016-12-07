@@ -27,7 +27,7 @@ unsigned long setcudavisibledevices(const char *);
 void set_report_mom_cuda_visible_devices(std::stringstream &output, char *curr);
 void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
-time_t calculate_select_timeout();
+time_t calculate_poll_timeout();
 int process_layout_request(tcp_chan *chan);
 bool should_resend_obit(job *pjob, int diff);
 
@@ -244,7 +244,7 @@ END_TEST
 
 
 /**
- * time_t calculate_select_timeout(void)
+ * time_t calculate_poll_timeout(void)
  * Input:
  *  (G) time_t time_now - periodically updated current time.
  *  (G) time_t wait_time - constant systme-dependent value.
@@ -253,7 +253,7 @@ END_TEST
  *  (G) time_t last_poll_time - last poll timestamp.
  *  (G) int CheckPollTime - poll interval.
  */
-START_TEST(calculate_select_timeout_test)
+START_TEST(calculate_poll_timeout_test)
   {
   ForceServerUpdate = false;
 
@@ -264,7 +264,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_poll_timeout() == 9);
 
   /* status update is minimum */
   time_now = 110;
@@ -273,7 +273,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 19; /* 9 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_poll_timeout() == 9);
 
   /* poll is minimum */
   time_now = 110;
@@ -282,7 +282,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 29; /* 9 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 9);
+  fail_unless(calculate_poll_timeout() == 9);
 
   /* LastServerUpdateTime is zero */
   time_now = 110;
@@ -291,7 +291,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20;
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_poll_timeout() == 1);
 
   /* status update is minimum and was needed to be sent some time ago */
   time_now = 110;
@@ -300,7 +300,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* -1 seconds till the next status update */
   last_poll_time = 90;
   CheckPollTime = 30; /* 10 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_poll_timeout() == 1);
 
   /* poll is minimum and was needed to be sent some time ago */
   time_now = 110;
@@ -309,7 +309,7 @@ START_TEST(calculate_select_timeout_test)
   ServerStatUpdateInterval = 20; /* 10 seconds till the next status update */
   last_poll_time = 79;
   CheckPollTime = 30; /* -1 seconds till the next poll */
-  fail_unless(calculate_select_timeout() == 1);
+  fail_unless(calculate_poll_timeout() == 1);
   }
 END_TEST
 
@@ -363,8 +363,8 @@ Suite *mom_main_suite(void)
   tcase_add_test(tc_core, test_parse_integer_range);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("calculate_select_timeout_test");
-  tcase_add_test(tc_core, calculate_select_timeout_test);
+  tc_core = tcase_create("calculate_poll_timeout_test");
+  tcase_add_test(tc_core, calculate_poll_timeout_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_call_scan_for_exiting");

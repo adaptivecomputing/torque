@@ -6399,7 +6399,7 @@ void prepare_child_tasks_for_delete()
 
 
 
-time_t calculate_select_timeout() {
+time_t calculate_poll_timeout() {
   time_t tmpTime;
   extern time_t wait_time;
 
@@ -6545,11 +6545,11 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = calculate_select_timeout();
+    tmpTime = calculate_poll_timeout();
 
     resend_things();
 
-    /* wait_request does a select and then calls the connection's cn_func for sockets with data */
+    /* wait_request does a poll and then calls the connection's cn_func for sockets with data */
 
     if (wait_request(tmpTime, NULL) != 0)
       {

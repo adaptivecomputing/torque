@@ -64,15 +64,10 @@ int start_listener_addrinfo(char *host_name, int server_port, void *(*process_me
 int bindresvport(int sd, struct sockaddr_in *sin);
 #endif
 int get_max_num_descriptors(void);
-int get_fdset_size(void);
 /* static int await_connect(long timeout, int sockd); */
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg);
 
 /* from file net_server.c */
-void global_sock_add(int new_sock);
-void global_sock_rem(int new_sock);
-fd_set *global_sock_getlist();
-int global_sock_verify();
 void netcounter_incr(void);
 int get_num_connections();
 void netcounter_get(int netrates[]);
@@ -80,7 +75,6 @@ int init_network(unsigned int port, void *(*readfunc)(void *));
 int check_network_port(unsigned int port);
 int check_trqauthd_unix_domain_port(const char *);
 int ping_trqauthd(const char *);
-int thread_func(int active_sockets, fd_set *select_set);
 int wait_request(time_t waittime, long *SState);
 /* static void accept_conn(void *new_conn); */
 void globalset_add_sock(int sock);
