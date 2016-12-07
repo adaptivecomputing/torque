@@ -1370,7 +1370,7 @@ bool Chip::task_will_fit(
   bool           fits = false;
   int            max_cpus = r.getExecutionSlots();
   hwloc_uint64_t mem_per_task = r.getMemory();
-  int            gpus_per_task = r.getGpus();
+  int            gpus_per_task = r.get_gpus();
   int            mics_per_task = r.getMics();
   bool           cores_only = (r.getThreadUsageString() == use_cores);
 

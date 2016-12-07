@@ -189,7 +189,7 @@ int req::getMics() const
   return(this->mics);
   }
  
-int req::getGpus() const
+int req::get_gpus() const
   {
   return(this->gpus);
   }
