@@ -378,7 +378,7 @@ int req::getMics() const
   return(0);
   }
 
-int req::getGpus() const
+int req::get_gpus() const
   {
   return(0);
   }

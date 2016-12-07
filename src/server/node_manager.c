@@ -4181,6 +4181,49 @@ void update_req_hostlist(
     }
 
   } // END update_req_hostlist()
+
+
+
+/*
+ * set_gpu_mode_if_needed()
+ * Sets the gpu mode if there's a default gpu mode, this job requests gpus, and this job
+ * doesn't set the gpu mode
+ *
+ * @param pjob - the job whose gpu mode we may set
+ */
+
+void set_gpu_mode_if_needed(
+
+  job *pjob)
+
+  {
+  char *default_gpu_mode = NULL;
+
+  if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long > 1)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+    if (cr != NULL)
+      {
+      get_svr_attr_str(SRV_ATR_DefaultGpuMode, &default_gpu_mode);
+
+      if (default_gpu_mode != NULL)
+        {
+        for (unsigned int i = 0; i < cr->get_num_reqs(); i++)
+          {
+          req &r = cr->get_req(i);
+
+          if ((r.get_gpus() > 0) &&
+              (r.get_gpu_mode().size() == 0))
+            {
+            r.set_attribute(default_gpu_mode);
+            }
+          }
+        }
+      }
+    }
+
+  } // END set_gpu_mode_if_needed()
 #endif
 
 
@@ -4244,6 +4287,8 @@ int place_subnodes_in_hostlist(
     std::string       mems;
     long              legacy_vmem = FALSE;
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
+
+    set_gpu_mode_if_needed(pjob);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout == NULL)
@@ -4811,7 +4856,7 @@ void add_entry_to_naji_list(
 
   naji.node_id = pnode->nd_id;
   naji.ppn_needed = r.get_execution_slots() * tasks_placed;
-  naji.gpu_needed = r.getGpus() * tasks_placed;
+  naji.gpu_needed = r.get_gpus() * tasks_placed;
   naji.mic_needed = r.getMics() * tasks_placed;
   naji.is_external = false;
 

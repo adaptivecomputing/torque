@@ -69,7 +69,7 @@ START_TEST(test_get_gpu_mode)
 
   r.set_value("gpus", "1", false);
   r.set_value("gpu_mode", "exclusive_thread", false);
-  fail_unless(r.getGpus() == 1);
+  fail_unless(r.get_gpus() == 1);
   gpu_mode = r.get_gpu_mode();
   fail_unless(gpu_mode.compare("exclusive_thread") == 0);
   }
@@ -136,7 +136,7 @@ START_TEST(test_string_constructor)
   req r3(strdup("2:ppn=8:fast:gpus=2"));
   fail_unless(r3.getTaskCount() == 2);
   fail_unless(r3.getExecutionSlots() == 8);
-  fail_unless(r3.getGpus() == 2);
+  fail_unless(r3.get_gpus() == 2);
   }
 END_TEST
 
@@ -465,7 +465,7 @@ START_TEST(test_equals_operator)
   fail_unless(r2.getExecutionSlots() == ALL_EXECUTION_SLOTS);
   fail_unless(r2.getMemory() == 1024 * 1024 * 1024);
   fail_unless(r2.getMaxtpn() == 4);
-  fail_unless(r2.getGpuMode() == "exclusive_thread");
+  fail_unless(r2.get_gpu_mode() == "exclusive_thread");
   fail_unless(r2.getReqAttr() == "matlab>=7", "reqattr: '%s'", r2.getReqAttr().c_str());
 
   // make sure this doesn't segfault

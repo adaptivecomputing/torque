@@ -727,7 +727,7 @@ int Machine::spread_place_pu(
 
     pu_per_task_remaining = pu_per_task;
     lprocs_per_task_remaining = lprocs_per_task;
-    gpus_remaining = r.getGpus();
+    gpus_remaining = r.get_gpus();
     mics_remaining = r.getMics();
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
