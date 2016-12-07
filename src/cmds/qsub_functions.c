@@ -3330,7 +3330,8 @@ void process_opts(
             if (dependency_options.size() > 1)
               {
               alternate_dependency = strdup(dependency_options[1].c_str());
-              alternate_data_type = data_type;
+              // Make this overwrite the previous value if needed
+              alternate_data_type = data_type - 1;
               }
             }
           else if (!strcmp(keyword, ATTR_job_radix))
