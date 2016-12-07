@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include <poll.h>
 
 #include "qsub_functions.h"
 #include "test_qsub_functions.h"
@@ -21,6 +22,7 @@ int  process_opt_K(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
 bool is_memory_request_valid(job_info *ji, std::string &err_msg);
+int  wait_for_read_ready(int, int);
 
 extern complete_req cr;
 extern bool         mem_fail;
@@ -32,6 +34,10 @@ extern bool         find_size;
 extern bool         validate_path;
 extern std::string  added_value;
 extern std::string  added_name;
+
+extern int global_poll_rc;
+extern short global_poll_revents;
+extern int global_poll_errno;
 
 bool are_we_forking()
 
@@ -396,6 +402,44 @@ START_TEST(test_make_argv)
   }
 END_TEST
 
+START_TEST(test_wait_for_read_ready)
+  {
+  int rc;
+  int some_fd = 0; // arbitrary value
+  int some_timeout_sec = 1; // arbitrary value > 0
+
+  // emulate timeout
+  global_poll_rc = 0;
+  global_poll_revents = 0;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+
+  // emulate ready to read
+  global_poll_rc = 1;
+  global_poll_revents = POLLIN;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 1);
+
+  // emulate not ready to read
+  global_poll_rc = 1;
+  global_poll_revents = 0;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+
+  // emulate failure
+  global_poll_rc = -1;
+  global_poll_errno = EFAULT;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == -1);
+
+  // emulate recoverable failure
+  global_poll_rc = -1;
+  global_poll_errno = EINTR;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+  }
+
+END_TEST
 Suite *qsub_functions_suite(void)
   {
   Suite *s = suite_create("qsub_functions methods");
@@ -430,7 +474,8 @@ Suite *qsub_functions_suite(void)
   tcase_add_test(tc_core, test_is_resource_request_valid);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_is_memory_request_valid");
+  tc_core = tcase_create("test_wait_for_read_ready");
+  tcase_add_test(tc_core, test_wait_for_read_ready);
   tcase_add_test(tc_core, test_is_memory_request_valid);
   suite_add_tcase(s, tc_core);
 

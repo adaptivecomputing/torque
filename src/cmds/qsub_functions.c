@@ -38,6 +38,7 @@
 #include <grp.h>
 #include <csv.h>
 #include <pwd.h>
+#include <poll.h>
 
 #ifdef sun
 #include <sys/stream.h>
@@ -45,10 +46,6 @@
 
 #if defined(HAVE_SYS_TTY_H)
 #include <sys/tty.h>
-#endif
-
-#if defined(FD_SET_IN_SYS_SELECT_H)
-#include <sys/select.h>
 #endif
 
 #include "libcmds.h" /* TShowAbout_exit */
@@ -2255,6 +2252,48 @@ void x11handler(
   exit(EXIT_FAILURE);
   }
 
+/*
+ * wait_for_read_ready()
+ *
+ * Wait for a file descriptor to be ready to read before timeout elapsed
+ * @param fd - file descriptor
+ * @param timeout_sec - time in seconds to wait for read activity
+ * @return -1 if error, 0 if not ready, >1 if ready
+ */
+
+int wait_for_read_ready(
+
+  int fd,
+  int timeout_sec)
+
+  { 
+  struct pollfd PollArray;
+  int n;
+
+  PollArray.fd = fd;
+  PollArray.events = POLLIN;
+  PollArray.revents = 0;
+
+  // wait for data ready to read
+  n = poll(&PollArray, 1, timeout_sec * 1000);
+
+  if (n > 0)
+    {
+    // events returned, fd ready for reading?
+    if ((PollArray.revents & POLLIN) == 0)
+      {
+      // none ready to read after timeout
+      n = 0;
+      }
+    }
+  else if ((n == -1) && (errno == EINTR))
+    {
+    // ignore signals -- none ready to read
+    n = 0;
+    }
+
+  return(n);
+  }
 
 
 /*
@@ -2270,16 +2309,12 @@ void interactive(
 
   char momjobid[LOG_BUF_SIZE+1];
   int  news;
-  int  nsel;
   char *pc;
-  fd_set selset;
 
   struct sigaction act;
 
   struct sockaddr_in from;
   torque_socklen_t fromlen;
-
-  struct timeval timeout;
 
   struct winsize wsz;
   job_data *tmp_job_info;
@@ -2322,31 +2357,15 @@ void interactive(
 
   /* Accept connection on socket set up earlier */
 
-  nsel = 0;
-
-  while (nsel == 0)
+  while (true)
     {
-    FD_ZERO(&selset);
-    FD_SET(inter_sock, &selset);
+    int rc;
 
-    timeout.tv_usec = 0;
-    timeout.tv_sec  = 30;
+    if ((rc = wait_for_read_ready(inter_sock, 30)) < 0)
+      print_qsub_usage_exit("qsub: poll failed");
 
-    nsel = select(FD_SETSIZE, &selset, NULL, NULL, &timeout);
-
-    if (nsel > 0)
-      {
+    if (rc > 0)
       break;
-      }
-    else if (nsel == -1)
-      {
-      if (errno == EINTR)
-        {
-        nsel = 0;
-        }
-      else
-        print_qsub_usage_exit("qsub: select failed");
-      }
 
     /* connect to server, status job to see if still there */
 

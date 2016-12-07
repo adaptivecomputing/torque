@@ -88,6 +88,7 @@ extern "C"
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
+#include <poll.h>
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -9212,10 +9213,9 @@ int TMomCheckJobChild(
 
   {
   int i;
-  fd_set fdset;
+  struct pollfd PollArray;
   int rc;
   int read_size = sizeof(struct startjob_rtn);
-  struct timeval timeout;
 
   /* NOTE:  assume if anything is on pipe, everything is on pipe
             (may reasult in hang) */
@@ -9225,24 +9225,17 @@ int TMomCheckJobChild(
 
   /* read returns the session id or error */
 
-  timeout.tv_sec  = Timeout;
-  timeout.tv_usec = 0;
   errno = 0;
 
-  FD_ZERO(&fdset);
+  PollArray.fd = TJE->jsmpipe[0];
+  PollArray.events = POLLIN;
+  PollArray.revents = 0;
 
-  FD_SET(TJE->jsmpipe[0], &fdset);
+  rc = poll(&PollArray, 1, Timeout * 1000);
 
-  rc = select(
-             TJE->jsmpipe[0] + 1,
-             &fdset,
-             (fd_set *)NULL,
-             (fd_set *)NULL,
-             &timeout);
-
-  if (rc <= 0)
+  if ((rc <= 0) || ((PollArray.revents & POLLIN) == 0))
     {
-    /* TIMEOUT - data not yet available */
+    /* error, timeout or no data not yet available */
 
     return(FAILURE);
     }

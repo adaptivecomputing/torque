@@ -95,13 +95,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <poll.h>
 #ifdef ENABLE_BLCR
 #include <libcr.h>
 #endif /* ENABLE_BLCR */
 
-#if defined(FD_SET_IN_SYS_SELECT_H)
-#  include <sys/select.h>
-#endif
 #include "lib_ifl.h"
 #include "pbs_helper.h"
 
@@ -114,7 +112,7 @@ struct routem
   short  r_nl;
   };
 
-fd_set readset;
+struct pollfd *readset = NULL;
 
 
 void readit(
@@ -128,6 +126,10 @@ void readit(
   FILE *fil;
   int   i;
   char *pc;
+
+  // confirm readset has been initialized
+  if (readset == NULL)
+    return;
 
   if (prm->r_where == old_out)
     fil = stdout;
@@ -169,7 +171,10 @@ void readit(
 
     prm->r_where = invalid;
 
-    FD_CLR(sock, &readset);
+    // remove socket from readset
+    readset[sock].fd = -1;
+    readset[sock].events = 0;
+    readset[sock].revents = 0;
     }
 
   return;
@@ -193,7 +198,6 @@ int main(
   char *argv[])
 
   {
-  struct timeval timeout;
   int i;
   int maxfd;
   int main_sock_out = 3;
@@ -201,7 +205,9 @@ int main(
   int n;
   int newsock;
   pid_t parent;
-  fd_set selset;
+
+  struct pollfd *pollset;
+  int pollset_size_bytes;
 
   struct routem *routem;
 
@@ -247,7 +253,7 @@ int main(
 
   if (routem == NULL)
     {
-    perror("cannot alloc memory");
+    perror("cannot alloc memory for routem");
 
     exit(5);
     }
@@ -261,9 +267,40 @@ int main(
   routem[main_sock_out].r_where = new_out;
   routem[main_sock_err].r_where = new_err;
 
-  FD_ZERO(&readset);
-  FD_SET(main_sock_out, &readset);
-  FD_SET(main_sock_err, &readset);
+  pollset_size_bytes = maxfd * sizeof(struct pollfd);
+
+  readset = (struct pollfd *)malloc(pollset_size_bytes);
+  if (readset == NULL)
+    {
+    perror("cannot alloc memory for readset");
+
+    exit(5);
+    }
+
+  // initialize readset
+  for (i = 0; i < maxfd; i++)
+    {
+    readset[i].fd = -1;
+    readset[i].events = 0;
+    readset[i].revents = 0;
+    }
+
+  readset[main_sock_out].fd = main_sock_out;
+  readset[main_sock_out].events = POLLIN;
+  readset[main_sock_out].revents = 0;
+
+  readset[main_sock_err].fd = main_sock_err;
+  readset[main_sock_err].events = POLLIN;
+  readset[main_sock_err].revents = 0;
+
+  // allocate local pollset to hold a copy of readset
+  pollset = (struct pollfd *)malloc(pollset_size_bytes);
+  if (pollset == NULL)
+    {
+    perror("cannot alloc memory for pollset");
+
+    exit(5);
+    }
 
   if (listen(main_sock_out, TORQUE_LISTENQUEUE) < 0)
     {
@@ -281,11 +318,11 @@ int main(
 
   while (1)
     {
-    selset = readset;
-    timeout.tv_usec = 0;
-    timeout.tv_sec  = 10;
+    // copy readset to local set for poll
+    memcpy(pollset, readset, pollset_size_bytes);
 
-    n = select(FD_SETSIZE, &selset, (fd_set *)0, (fd_set *)0, &timeout);
+    // wait for up to 10sec
+    n = poll(pollset, maxfd, 10000);
 
     if (n == -1)
       {
@@ -295,7 +332,7 @@ int main(
         }
       else
         {
-        fprintf(stderr, "%s: select failed\n",
+        fprintf(stderr, "%s: poll failed\n",
           argv[0]);
 
         exit(1);
@@ -316,12 +353,14 @@ int main(
         }
       }    /* END else if (n == 0) */
 
-    for (i = 0;(n != 0) && (i < maxfd);++i)
+    for (i = 0; (n > 0) && (i < maxfd); i++)
       {
-      if (FD_ISSET(i, &selset))
+      // decrement count of structures with non-zero return events
+      n--;
+
+      if ((pollset[i].revents & POLLIN))
         {
         /* this socket has data */
-        n--;
 
         switch ((routem + i)->r_where)
           {
@@ -336,7 +375,10 @@ int main(
             old_out :
             old_err;
 
-            FD_SET(newsock, &readset);
+            // add new socket to readset for future polling
+            readset[newsock].fd = newsock;
+            readset[newsock].events = POLLIN;
+            readset[newsock].revents = 0;
 
             break;
 

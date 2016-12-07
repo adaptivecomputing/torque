@@ -99,6 +99,7 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/wait.h>
+#include <poll.h>
 
 #include "libpbs.h"
 #include "list_link.h"
@@ -209,7 +210,7 @@ struct routefd
   unsigned short    r_fd;
   };
 
-fd_set readset;
+struct pollfd *readset = NULL;
 
 
 /* external functions */
@@ -8856,6 +8857,10 @@ int readit(
   char    buf[READ_BUF_SIZE];
   size_t  ret;
 
+  // confirm readset has been initialized
+  if (readset == NULL)
+    return(-2);
+
   if ((amt = recv(sock, buf, READ_BUF_SIZE, 0)) > 0)
     {
     ret = send(fd, buf, amt, 0);
@@ -8863,14 +8868,21 @@ int readit(
       {
       close(sock);
       close(fd);
-      FD_CLR(sock, &readset);
+
+      // remove sock from readset
+      readset[sock].fd = -1;
+      readset[sock].events = 0;
+      readset[sock].revents = 0;
       }
     }
   else
     {
     close(sock);
 
-    FD_CLR(sock, &readset);
+    // remove sock from readset
+    readset[sock].fd = -1;
+    readset[sock].events = 0;
+    readset[sock].revents = 0;
     }
 
   return(amt);
@@ -8895,7 +8907,6 @@ void fork_demux(
 
   {
   pid_t             cpid;
-  struct timeval    timeout;
   int               i;
   int               retries;
   int               maxfd;
@@ -8905,7 +8916,6 @@ void fork_demux(
   int               fd2;
   int               im_mom_stdout; 
   int               im_mom_stderr;
-  fd_set            selset;
   pid_t             parent;
   u_long            ipaddr;
 	struct sigaction  act;
@@ -8915,6 +8925,8 @@ void fork_demux(
   int               pipes[2];
   int               pipe_failed = FALSE;
   char              buf[MAXLINE];
+  int               pollset_size_bytes;
+  struct pollfd    *pollset;
 
   if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
     {
@@ -9011,9 +9023,37 @@ void fork_demux(
 
   /*  maxfd = sysconf(_SC_OPEN_MAX); */
 
-  FD_ZERO(&readset);
-  FD_SET(im_mom_stdout, &readset);
-  FD_SET(im_mom_stderr, &readset);
+  pollset_size_bytes = maxfd * sizeof(struct pollfd);
+
+  readset = (struct pollfd *)malloc(pollset_size_bytes);
+  if (readset == NULL)
+    {
+    perror("failed to malloc memory for readset");
+    _exit(5);
+    }
+
+  // initialize readset
+  for (i = 0; i < maxfd; i++)
+    {
+    readset[i].fd = -1;
+    readset[i].events = 0;
+    readset[i].revents = 0;
+    }
+
+  readset[im_mom_stdout].fd = im_mom_stdout;
+  readset[im_mom_stdout].events = POLLIN;
+  readset[im_mom_stdout].revents = 0;
+
+  readset[im_mom_stderr].fd = im_mom_stderr;
+  readset[im_mom_stderr].events = POLLIN;
+  readset[im_mom_stderr].revents = 0;
+
+  pollset = (struct pollfd *)malloc(pollset_size_bytes);
+  if (pollset == NULL)
+    {
+    perror("failed to malloc memory for pollset");
+    _exit(5);
+    }
 
   if (listen(im_mom_stdout, TORQUE_LISTENQUEUE) < 0)
     {
@@ -9094,11 +9134,11 @@ void fork_demux(
   
   while (1)
     {
-    selset = readset;
-    timeout.tv_usec = 0;
-    timeout.tv_sec  = 20;
-    
-    n = select(FD_SETSIZE, &selset, (fd_set *)0, (fd_set *)0, &timeout);
+    // copy readset to local set for poll
+    memcpy(pollset, readset, pollset_size_bytes);
+
+    // wait for up to 20sec
+    n = poll(pollset, maxfd, 20000);
     
     if (n == -1)
       {
@@ -9108,7 +9148,7 @@ void fork_demux(
         }
       else
         {
-        perror("fork_demux: select failed\n");
+        perror("fork_demux: poll failed\n");
         close(im_mom_stdout);
         close(im_mom_stderr);
         close(fd1);
@@ -9131,12 +9171,14 @@ void fork_demux(
       }    /* END else if (n == 0) */
     
     
-    for (i = 0;(n != 0) && (i < maxfd);++i)
+    for (i = 0; (n > 0) && (i < maxfd); i++)
       {
-      if (FD_ISSET(i, &selset))
+      // decrement count of structures that have return events
+      n--;
+
+      if ((pollset[i].revents & POLLIN))
         {
         /* this socket has data */
-        n--;
         
         switch (routem[i].r_which)
           {
@@ -9159,8 +9201,11 @@ void fork_demux(
             routem[newsock].r_which = routem[i].r_which == listen_out ? new_out : new_err;
             routem[newsock].r_fd = newsock;
             open_sockets++;
-            
-            FD_SET(newsock, &readset);
+           
+            // add new socket to readset for future polling 
+            readset[newsock].fd = newsock;
+            readset[newsock].events = POLLIN;
+            readset[newsock].revents = 0;
             
             break;
             

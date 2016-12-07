@@ -213,7 +213,6 @@ void net_close(int);
 int  wait_request(time_t waittime, long *);
 void net_add_close_func(int, void(*func)(int));
 int get_max_num_descriptors(void);
-int get_fdset_size(void);
 char * netaddr_pbs_net_t(pbs_net_t);
 #ifdef __cplusplus
 }

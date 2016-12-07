@@ -16,6 +16,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <poll.h>
 #include "lib_ifl.h"
 
 
@@ -39,8 +40,9 @@ void port_forwarder(
   char            *EMsg)  /* O */
 
   {
-  fd_set rfdset, wfdset, efdset;
-  int rc, maxsock = 0;
+  struct pollfd *PollArray;
+  int rc;
+  int i;
 
   struct sockaddr_in from;
   torque_socklen_t fromlen;
@@ -48,12 +50,22 @@ void port_forwarder(
 
   fromlen = sizeof(from);
 
+  PollArray = (struct pollfd *)malloc(NUM_SOCKS * sizeof(struct pollfd));
+
+  if (PollArray == NULL)
+    {
+    return; // no memory
+    }
+
   while (1)
     {
-    FD_ZERO(&rfdset);
-    FD_ZERO(&wfdset);
-    FD_ZERO(&efdset);
-    maxsock = 0;
+    // clear the array
+    for (i = 0; i < NUM_SOCKS; i++)
+      {
+      PollArray[i].fd = -1;
+      PollArray[i].events = 0;
+      PollArray[i].revents = 0;
+      }
 
     for (n = 0; n < NUM_SOCKS; n++)
       {
@@ -62,42 +74,46 @@ void port_forwarder(
 
       if ((socks + n)->listening)
         {
-        FD_SET((socks + n)->sock, &rfdset);
+        PollArray[n].fd = (socks + n)->sock;
+        PollArray[n].events = POLLIN;
+        PollArray[n].revents = 0;
         }
       else
         {
         if ((socks + n)->bufavail < BUF_SIZE)
-          FD_SET((socks + n)->sock, &rfdset);
+          {
+          PollArray[n].fd = (socks + n)->sock;
+          PollArray[n].events = POLLIN;
+          PollArray[n].revents = 0;
+          }
 
         if ((socks + ((socks + n)->peer))->bufavail - (socks + ((socks + n)->peer))->bufwritten > 0)
-          FD_SET((socks + n)->sock, &wfdset);
-
-        /*FD_SET((socks+n)->sock,&efdset);*/
+          {
+          PollArray[n].fd = (socks + n)->sock;
+          PollArray[n].events |= POLLOUT;
+          PollArray[n].revents = 0;
+          }
         }
-
-      maxsock = (socks + n)->sock > maxsock ? (socks + n)->sock : maxsock;
       }
 
-    maxsock++;
-
-    rc = select(maxsock, &rfdset, &wfdset, &efdset, NULL);
+    rc = poll(PollArray, NUM_SOCKS, -1);
 
     if ((rc == -1) && (errno == EINTR))
       continue;
 
     if (rc < 0)
       {
-      perror("port forwarding select()");
+      perror("port forwarding poll()");
 
       exit(EXIT_FAILURE);
       }
 
-    for (n = 0;n < NUM_SOCKS;n++)
+    for (n = 0; n < NUM_SOCKS; n++)
       {
       if (!(socks + n)->active)
         continue;
 
-      if (FD_ISSET((socks + n)->sock, &rfdset))
+      if ((PollArray[n].revents & POLLIN))
         {
         if ((socks + n)->listening)
           {
@@ -160,15 +176,9 @@ void port_forwarder(
             (socks + n)->bufavail += rc;
             }
           }
-        } /* END if rfdset */
-      } /* END foreach fd */
+        } /* END if read */
 
-    for (n = 0; n < NUM_SOCKS; n++)
-      {
-      if (!(socks + n)->active)
-        continue;
-
-      if (FD_ISSET((socks + n)->sock, &wfdset))
+      if ((PollArray[n].revents & POLLOUT))
         {
         int peer = (socks + n)->peer;
 
@@ -187,8 +197,7 @@ void port_forwarder(
           {
           (socks + peer)->bufwritten += rc;
           }
-        } /* END if wfdset */
-
+        } /* END if write */
       } /* END foreach fd */
 
     for (n2 = 0; n2 <= 1;n2++)
@@ -217,6 +226,10 @@ void port_forwarder(
         }
       }
     }   /* END while(1) */
+
+    // never executed but should satisfy code profilers looking
+    // for a malloc/free pairing
+    free(PollArray);
   }     /* END port_forwarder() */
 
 
