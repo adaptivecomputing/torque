@@ -96,6 +96,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <poll.h>
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"
@@ -1048,70 +1049,65 @@ int activereq(void)
 #endif
 
   int            i, num;
+  int            PollArraySize;
+  int            PollArrayIndex = 0;
 
-  struct timeval tv;
-
-  fd_set *FDSet;
-
-  int MaxNumDescriptors = 0;
+  struct pollfd *PollArray;
 
   flushreq();
 
-  MaxNumDescriptors = get_max_num_descriptors();
-  FDSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
+  // initialize the poll array
+  PollArraySize = get_max_num_descriptors();
+  PollArray = (struct pollfd *)calloc(PollArraySize, sizeof(struct pollfd));
 
-  for (i = 0; i < HASHOUT; i++)
+  if (PollArray == NULL)
     {
+    // no memory
+    DBPRT(("%s: calloc %d %s\n", id, errno, pbs_strerror(errno)))
+    return(-1);
+    }
 
+  for (i = 0; (i < HASHOUT) && (PollArrayIndex < PollArraySize); i++)
+    {
     struct out *op;
 
-    op = outs[i];
-
-    while (op)
+    for (op = outs[i]; (op != NULL) && (PollArrayIndex < PollArraySize); op = op->next)
       {
-			FD_SET(op->chan->sock, FDSet);
-      op = op->next;
+      PollArray[PollArrayIndex].fd = op->chan->sock;
+      PollArray[PollArrayIndex].events = POLLIN;
+      PollArray[PollArrayIndex].revents = 0;
+      PollArrayIndex++;
       }
     }
 
-  tv.tv_sec = 15;
-
-  tv.tv_usec = 0;
-
-  num = select(MaxNumDescriptors, FDSet, NULL, NULL, &tv);
+  // poll with 15sec timeout
+  num = poll(PollArray, PollArrayIndex, 15000);
 
   if (num == -1)
     {
-    DBPRT(("%s: select %d %s\n", id, errno, pbs_strerror(errno)))
-    free(FDSet);
+    DBPRT(("%s: poll %d %s\n", id, errno, pbs_strerror(errno)))
+    free(PollArray);
     return -1;
     }
   else if (num == 0)
     {
-    free(FDSet);
-		return -2;
+    free(PollArray);
+    return -2;
     }
 
-  for (i = 0; i < HASHOUT; i++)
+  for (i = 0; i < PollArrayIndex; i++)
     {
-
-    struct out *op;
-
-    op = outs[i];
-
-    while (op)
+    // something to read?
+    if ((PollArray[i].revents & POLLIN))
       {
-			if (FD_ISSET(op->chan->sock, FDSet))
-        {
-        free(FDSet);
-				return op->chan->sock;
-        }
-
-      op = op->next;
+      // return socket id that is ready for reading
+      int sock = PollArray[i].fd;
+      free(PollArray);
+      return(sock);
       }
     }
 
-  free(FDSet);
+  free(PollArray);
 
   return(-2);
   }  /* END activereq() */

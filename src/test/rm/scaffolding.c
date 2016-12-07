@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <poll.h>
 
 #include "dis.h"
 #include "tcp.h"
@@ -87,14 +89,7 @@ int connect(int sock,const sockaddr *addr,socklen_t addrLen)
 
 int get_max_num_descriptors()
   {
-  fprintf(stderr, "The call to get_max_num_descriptors needs to be mocked!!\n");
-  exit(1);
-  }
-
-int get_fdset_size()
-  {
-  fprintf(stderr, "The call to get_fdset_size needs to be mocked!!\n");
-  exit(1);
+  return(getdtablesize());
   }
 
 char *pbs_strerror(int err)
@@ -108,5 +103,10 @@ int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **
   {
   *ppAddrInfoOut = (struct addrinfo *)calloc(1,sizeof(struct addrinfo));
   (*ppAddrInfoOut)->ai_addr = (struct sockaddr *)calloc(1,sizeof(struct sockaddr_in));
+  return(0);
+  }
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+  {
   return(0);
   }

@@ -11,6 +11,7 @@
 #include <string> /* std::string */
 #include <sys/types.h>
 #include <grp.h>
+#include <poll.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -103,6 +104,9 @@ int ac_errno;
 int job_saved;
 int task_saved;
 std::string presetup_prologue;
+
+int global_poll_fd = -1;
+int global_poll_timeout_ms = -1;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -1101,3 +1105,14 @@ void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
 int setup_gpus_for_job(job *pjob)
   {return(0);}
 
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+  {
+  if (nfds > 0)
+    {
+    global_poll_fd = fds[0].fd;
+    global_poll_timeout_ms = timeout;
+    }
+
+  return(0);
+  }

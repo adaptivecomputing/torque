@@ -41,6 +41,7 @@ int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, h
 received_node *get_received_node_entry(char *str);
 bool is_nodeid_on_this_host(job *pjob, tm_node_id nodeid);
 task *find_task_by_pid(job *pjob, int pid);
+int readit(int, int);
 
 #ifdef PENABLE_LINUX_CGROUPS
 int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
@@ -578,6 +579,13 @@ START_TEST(get_stat_update_interval_test)
   }
 END_TEST
 
+START_TEST(test_readit)
+  {
+  // readset uninitialized so expect failure
+  fail_unless(readit(0, 0) == -2);
+  }
+END_TEST
+
 Suite *mom_comm_suite(void)
   {
   Suite *s = suite_create("mom_comm_suite methods");
@@ -634,6 +642,10 @@ Suite *mom_comm_suite(void)
 #ifdef PENABLE_LINUX_CGROUPS
   tcase_add_test(tc_core, test_get_req_and_task_index_from_local_rank);
 #endif
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_readit");
+  tcase_add_test(tc_core, test_readit);
   suite_add_tcase(s, tc_core);
 
   return(s);
