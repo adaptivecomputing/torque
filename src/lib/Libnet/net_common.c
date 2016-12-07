@@ -500,7 +500,7 @@ int process_and_save_socket_error(
  * socket_wait_for_write()
  *
  * connect failed, this function determines why. For non-blocking sockets,
- * EINPROGRESS is almost always set, and you need to select the socket and then
+ * EINPROGRESS is almost always set, and you need to poll the socket and then
  * read error using getsockopt(), as is done below.
  *
  * if the failure is a permanent failure, pass that back to the caller
@@ -520,25 +520,23 @@ int socket_wait_for_write(
   int            write_soc = 0;
   int            sock_errno = 0;
   socklen_t      len = sizeof(int);
-  fd_set         wfd;
-  struct timeval timeout;
+  struct pollfd  PollArray;
 
-  timeout.tv_sec = pbs_tcp_timeout;
-  timeout.tv_usec = 0;
+  PollArray.fd = socket;
+  PollArray.events = POLLOUT;
+  PollArray.revents = 0;
 
-  FD_ZERO(&wfd);
-  FD_SET(socket, &wfd);
-
-  if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
+  if ((write_soc = poll(&PollArray, 1, pbs_tcp_timeout * 1000)) != 1)
     {
     /* timeout is now seen as a permanent failure */
     rc = PERMANENT_SOCKET_FAIL;
     }
-  else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) && 
+  else if ((PollArray.revents & POLLOUT) &&
+    ((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) && 
            (sock_errno == 0))
-    {
-    rc = PBSE_NONE;
-    }
+      {
+      rc = PBSE_NONE;
+      }
   else
     {
     rc = process_and_save_socket_error(sock_errno);
@@ -579,7 +577,7 @@ int socket_wait_for_xbytes(
 int socket_wait_for_read(
     
   int          socket,
-  unsigned int timeout)
+  unsigned int timeout) // seconds
 
   {
   int           rc = PBSE_NONE;

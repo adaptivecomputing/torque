@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <grp.h>
 #include <time.h>
+#include <poll.h>
 #include "u_hash_map_structs.h"
 #include "port_forwarding.h"
 #include "req.hpp"
@@ -29,6 +30,10 @@ bool  find_nodes = false;
 bool  find_size = false;
 bool  validate_path = false;
 int   req_val = 0;
+
+int   global_poll_rc = 0;
+short global_poll_revents = 0;
+int   global_poll_errno = 0;
 
 std::string added_value;
 std::string added_name;
@@ -480,4 +485,10 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+  {
+  fds->revents = global_poll_revents;
+  errno = global_poll_errno;
 
+  return(global_poll_rc);
+  }

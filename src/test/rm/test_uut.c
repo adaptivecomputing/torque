@@ -11,7 +11,6 @@
 extern int debug_read(int sock,char **bf,long long *len);
 extern int debug_write(int sock,char *bf,long long len);
 
-
 START_TEST(test_addreq)
   {
 
@@ -123,6 +122,15 @@ START_TEST(test_getreq)
   }
 END_TEST
 
+START_TEST(test_activereq)
+  {
+  int rc;
+
+  rc = activereq();
+  fail_unless(rc == -2);
+  }
+END_TEST
+
 Suite *rm_suite(void)
   {
   Suite *s = suite_create("rm_suite methods");
@@ -148,6 +156,10 @@ Suite *rm_suite(void)
 
   tc_core = tcase_create("test_getreq");
   tcase_add_test(tc_core, test_getreq);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_activereq");
+  tcase_add_test(tc_core, test_activereq);
   suite_add_tcase(s, tc_core);
 
   return s;

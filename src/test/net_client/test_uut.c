@@ -3,14 +3,32 @@
 #include "test_net_client.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <poll.h>
 
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+bool wait_for_write_ready(int, int);
+
+extern int   global_poll_rc;
+extern short global_poll_revents;
+
+START_TEST(test_wait_for_write_ready)
   {
 
+  global_poll_rc = 0;
+  fail_unless(wait_for_write_ready(0, 0) == false);
 
+  global_poll_rc = -1;
+  fail_unless(wait_for_write_ready(0, 0) == false);
+
+  global_poll_rc = 1;
+  global_poll_revents = 0;
+  fail_unless(wait_for_write_ready(0, 0) == false);
+
+  global_poll_rc = 1;
+  global_poll_revents = POLLOUT;
+  fail_unless(wait_for_write_ready(0, 0) == true);
   }
 END_TEST
 
@@ -24,8 +42,8 @@ END_TEST
 Suite *net_client_suite(void)
   {
   Suite *s = suite_create("net_client_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_wait_for_write_ready");
+  tcase_add_test(tc_core, test_wait_for_write_ready);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
