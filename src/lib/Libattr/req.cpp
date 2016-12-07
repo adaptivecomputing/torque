@@ -2294,12 +2294,6 @@ int req::getMaxtpn() const
   return(this->maxtpn);
   }
 
-std::string req::getGpuMode() const
-
-  {
-  return(this->gpu_mode);
-  }
-
 std::string req::getReqAttr() const
 
   {
@@ -2318,7 +2312,7 @@ int req::getIndex() const
   return(this->index);
   }
 
-int req::getGpus() const
+int req::get_gpus() const
 
   {
   return(this->gpus);
