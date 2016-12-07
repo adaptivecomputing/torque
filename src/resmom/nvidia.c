@@ -1122,7 +1122,7 @@ int set_gpu_req_modes(
         /* Look through each req and see if there is a mode to set */
         r = cr->get_req(i);
         gpu_mode = r.get_gpu_mode(); /* returns a string indicating the gpu mode */
-        total_req_gpus = r.getGpus();
+        total_req_gpus = r.get_gpus();
 
         for (unsigned int j = 0; j < total_req_gpus && it != gpu_indices.end(); j++)
           {
