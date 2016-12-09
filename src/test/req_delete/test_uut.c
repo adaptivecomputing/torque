@@ -30,6 +30,7 @@ int forced_jobpurge(job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
 int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
 int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
+int perform_job_delete_array_bookkeeping(job *pjob);
 bool exit_called;
 extern int  depend_term_called;
 extern long keep_seconds;
@@ -39,6 +40,8 @@ extern int signal_issued;
 extern int nanny;
 extern bool br_freed;
 extern int alloc_work;
+extern int  updated_array_values;
+extern bool find_job_fail;
 struct server server;
 extern const char *delpurgestr;
 
@@ -74,6 +77,23 @@ int set_pbs_server_name()
   freeaddrinfo(info);
   return 0;
   }
+
+START_TEST(test_perform_job_delete_array_bookkeeping)
+  {
+  job           *pjob = (job *)calloc(1, sizeof(job));
+  sprintf(pjob->ji_arraystructid, "1[].roshar");
+  sprintf(pjob->ji_qs.ji_jobid, "1[0].roshar");
+
+  find_job_fail = false;
+  updated_array_values = 0;
+  fail_unless(perform_job_delete_array_bookkeeping(pjob) == PBSE_NONE);
+  fail_unless(updated_array_values == 1);
+  
+  find_job_fail = true;
+  fail_unless(perform_job_delete_array_bookkeeping(pjob) != PBSE_NONE);
+  fail_unless(updated_array_values == 2);
+  }
+END_TEST
 
 START_TEST(test_handle_single_delete)
   {
@@ -414,6 +434,7 @@ Suite *req_delete_suite(void)
   tcase_add_test(tc_core, test_duplicate_request);
   tcase_add_test(tc_core, test_handle_delete_all);
   tcase_add_test(tc_core, test_handle_single_delete);
+  tcase_add_test(tc_core, test_perform_job_delete_array_bookkeeping);
   suite_add_tcase(s, tc_core);
 
   return s;

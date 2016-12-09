@@ -1703,7 +1703,10 @@ int delete_array_range(
     free(to_free);
     }
 
+  pa->ai_qs.jobs_done += num_deleted;
   pa->ai_qs.num_failed += num_deleted;
+
+  set_array_depend_holds(pa);
 
   return(num_skipped);
   } /* END delete_array_range() */
@@ -1800,7 +1803,10 @@ int delete_whole_array(
       }
     }
 
+  pa->ai_qs.jobs_done += num_deleted;
   pa->ai_qs.num_failed += num_deleted;
+  
+  set_array_depend_holds(pa);
 
   if (num_jobs == 0)
     return(NO_JOBS_IN_ARRAY);

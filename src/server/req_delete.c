@@ -321,6 +321,68 @@ void remove_stagein(
 
 
 
+/*
+ * perform_job_delete_array_bookkeeping()
+ *
+ * Updates the array values to account for pjob's deletion if pjob is an array subjob
+ * @param pjob - the job being deleted
+ * @return PBSE_NONE on success, PBSE_JOBNOTFOUND if the job disappears
+ */
+
+int perform_job_delete_array_bookkeeping(
+
+  job *pjob)
+
+  {
+  int rc = PBSE_NONE;
+
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      {
+      return(PBSE_JOBNOTFOUND);
+      }
+
+    std::string dup_job_id(pjob->ji_qs.ji_jobid);
+
+    if (pa != NULL)
+      {
+      if (pjob != NULL)
+        {
+        long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+        int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+        int job_state = pjob->ji_qs.ji_state;
+  
+        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+
+        update_array_values(pa, job_state, aeTerminate,
+          dup_job_id.c_str(), job_atr_hold, job_exit_status);
+
+        if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) == NULL)
+          {
+          rc = PBSE_JOBNOTFOUND;
+          }
+        }
+
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      }
+    }
+
+  return(rc);
+  } // END perform_job_delete_array_bookkeeping()
+
+
+
+/*
+ * force_purge_work()
+ *
+ * Performs the purging of pjob. The job comes in locked but is never locked when this function 
+ * exits.
+ * @param pjob - the job that is getting purged
+ */
 
 void force_purge_work(
 
@@ -345,25 +407,31 @@ void force_purge_work(
       }
     }
 
-  depend_on_term(pjob);
-
-  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
-  
-  if (pjob != NULL)
+  // On error, the job has disappeared, which should happen once we're done with this function
+  // anyway.
+  if (perform_job_delete_array_bookkeeping(pjob) == PBSE_NONE)
     {
-    if (is_ms_on_server(pjob))
+    depend_on_term(pjob);
+
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    
+    if (pjob != NULL)
       {
-      char  log_buf[LOCAL_LOG_BUF_SIZE];
-      if (LOGLEVEL >= 7)
+      if (is_ms_on_server(pjob))
         {
-        snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        char  log_buf[LOCAL_LOG_BUF_SIZE];
+        if (LOGLEVEL >= 7)
+          {
+          snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+          }
+        svr_job_purge(pjob, 1);
         }
-      svr_job_purge(pjob, 1);
+      else
+        svr_job_purge(pjob);
       }
-    else
-      svr_job_purge(pjob);
     }
+
   } /* END force_purge_work() */
 
 
@@ -410,7 +478,6 @@ void setup_apply_job_delete_nanny(
 
 
 
-
 int execute_job_delete(
 
   job                  *pjob,            /* M */
@@ -428,7 +495,6 @@ int execute_job_delete(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   time_t            time_now = time(NULL);
   long              force_cancel = FALSE;
-  long              array_compatible = FALSE;
   long              status_cancel_queue = FALSE;
 
   chk_job_req_permissions(&pjob,preq);
@@ -643,50 +709,9 @@ jump:
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
     }
 
-  /* if configured, and this job didn't have a slot limit hold, free a job
-   * held with the slot limit hold */
-  get_svr_attr_l(SRV_ATR_MoabArrayCompatible, &array_compatible);
-  if ((array_compatible != FALSE) &&
-      ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == FALSE))
+  if (perform_job_delete_array_bookkeeping(pjob) != PBSE_NONE)
     {
-    if ((pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == FALSE))
-      {
-      job_array *pa = get_jobs_array(&pjob);
-
-      if (pjob == NULL)
-        {
-        job_mutex.set_unlock_on_exit(false);
-        return(-1);
-        }
-      std::string dup_job_id(pjob->ji_qs.ji_jobid);
-
-      if (pa != NULL)
-        {
-        if (pjob != NULL)
-          {
-          if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
-            {
-            long job_atr_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-            int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            int job_state = pjob->ji_qs.ji_state;
-
-            job_mutex.unlock();
-            update_array_values(pa,job_state,aeTerminate,
-              (char*)dup_job_id.c_str(), job_atr_hold, job_exit_status);
-
-            if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-              job_mutex.mark_as_locked();
-            }
-          }
-
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        }
-      }
-    } /* END MoabArrayCompatible check */
-
-  if (pjob == NULL)
-    {
+    // The job disappeared while updating the array
     job_mutex.set_unlock_on_exit(false);
     return -1;
     }
