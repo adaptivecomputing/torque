@@ -82,7 +82,7 @@ void node_comm_error(node_comm_t *nc, const char *message);
 
 int write_status_strings(char *stat_str, node_comm_t *nc);
 
-int send_update();
+bool send_update();
 
 void mom_server_all_update_stat(void);
 
