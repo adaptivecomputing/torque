@@ -1130,11 +1130,13 @@ bool set_array_depend_holds(
   job_array *pa)
 
   {
-  int                      compareNumber;
+  int                      compare_number;
+  int                      could_fulfill_dependency;
   bool                     dependency_satisfied = false;
 
   job                     *pjob;
   array_depend_job        *pdj;
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* loop through dependencies to update holds */
   for (std::list<array_depend *>::iterator it = pa->ai_qs.deps.begin();
@@ -1142,55 +1144,38 @@ bool set_array_depend_holds(
     {
     array_depend *pdep = *it;
 
-    compareNumber = -1;
+    compare_number = -1;
 
     switch (pdep->dp_type)
       {
       case JOB_DEPEND_TYPE_AFTERSTARTARRAY:
+      case JOB_DEPEND_TYPE_BEFORESTARTARRAY:
 
-        compareNumber = pa->ai_qs.num_started;
+        compare_number = pa->ai_qs.num_started;
+        could_fulfill_dependency = pa->ai_qs.num_jobs - pa->ai_qs.jobs_done;
 
         break;
 
       case JOB_DEPEND_TYPE_AFTEROKARRAY:
+      case JOB_DEPEND_TYPE_BEFOREOKARRAY:
 
-        compareNumber = pa->ai_qs.num_successful;
+        compare_number = pa->ai_qs.num_successful;
+        could_fulfill_dependency = pa->ai_qs.num_jobs - pa->ai_qs.num_failed;
 
         break;
 
       case JOB_DEPEND_TYPE_AFTERNOTOKARRAY:
+      case JOB_DEPEND_TYPE_BEFORENOTOKARRAY:
 
-        compareNumber = pa->ai_qs.num_failed;
+        compare_number = pa->ai_qs.num_failed;
+        could_fulfill_dependency = pa->ai_qs.num_jobs - pa->ai_qs.num_successful;
 
         break;
 
       case JOB_DEPEND_TYPE_AFTERANYARRAY:
-
-        compareNumber = pa->ai_qs.jobs_done;
-
-        break;
-
-      case JOB_DEPEND_TYPE_BEFORESTARTARRAY:
-
-        compareNumber = pa->ai_qs.num_started;
-
-        break;
-
-      case JOB_DEPEND_TYPE_BEFOREOKARRAY:
-
-        compareNumber = pa->ai_qs.num_successful;
-
-        break;
-
-      case JOB_DEPEND_TYPE_BEFORENOTOKARRAY:
-
-        compareNumber = pa->ai_qs.num_failed;
-
-        break;
-
       case JOB_DEPEND_TYPE_BEFOREANYARRAY:
 
-        compareNumber = pa->ai_qs.jobs_done;
+        compare_number = pa->ai_qs.jobs_done;
 
         break;
       }
@@ -1207,25 +1192,49 @@ bool set_array_depend_holds(
         {
         mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-        if (((compareNumber < pdj->dc_num) &&
+        if (((compare_number < pdj->dc_num) &&
              (pdep->dp_type < JOB_DEPEND_TYPE_BEFORESTARTARRAY)) ||
-            ((compareNumber >= pdj->dc_num) && 
+            ((compare_number >= pdj->dc_num) && 
              (pdep->dp_type > JOB_DEPEND_TYPE_AFTERANYARRAY)))
           {
-          /* hold */
-          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
-          pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-
-          if (LOGLEVEL >= 8)
+          // AFTERANYARRAY can always be potentially fulfilled, and any BEFORE* dependency
+          // that isn't satisfied means it can never be fulfilled
+          if ((pdep->dp_type > JOB_DEPEND_TYPE_AFTERANYARRAY) ||
+              ((pdep->dp_type < JOB_DEPEND_TYPE_AFTERANYARRAY) &&
+               (could_fulfill_dependency < pdj->dc_num)))
             {
-            log_event(
-              PBSEVENT_JOB,
-              PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
-              "Setting HOLD_s due to dependencies\n");
+            // These are dependencies that can never be fulfilled
+            if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
+                (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
+              {
+              sprintf(log_buf, 
+                "Job %s deleted because its dependency of array %s can never be satisfied",
+                pjob->ji_qs.ji_jobid, pa->ai_qs.parent_id);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+              
+              /* pjob freed and set to NULL */
+              job_abt(&pjob, log_buf, true);
+              if (pjob == NULL)
+                job_mutex.set_unlock_on_exit(false);
+              }
             }
+          else
+            {
+            // hold
+            pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
+            pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
 
-          svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD, FALSE);
+            if (LOGLEVEL >= 8)
+              {
+              log_event(
+                PBSEVENT_JOB,
+                PBS_EVENTCLASS_JOB,
+                pjob->ji_qs.ji_jobid,
+                "Setting HOLD_s due to dependencies\n");
+              }
+
+            svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD, FALSE);
+            }
           }
         else 
           {

@@ -320,9 +320,56 @@ void remove_stagein(
 
 
 /*
+ * perform_job_delete_array_bookkeeping()
+ *
+ * Updates the array values to account for pjob's deletion if pjob is an array subjob
+ * @param pjob - the job being deleted
+ * @param cancel_exit_code - the exit code for this job
+ * @return PBSE_NONE on success, PBSE_JOBNOTFOUND if the job disappears
+ */
+
+int perform_job_delete_array_bookkeeping(
+
+  job *pjob,
+  int  cancel_exit_code)
+
+  {
+  int rc = PBSE_NONE;
+
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      return(PBSE_JOBNOTFOUND);
+
+    int old_state = pjob->ji_qs.ji_state;
+    std::string jobid(pjob->ji_qs.ji_jobid);
+
+    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      
+    pa->update_array_values(old_state,
+                            aeTerminate,
+                            jobid.c_str(),
+                            cancel_exit_code);
+          
+    if ((pjob = svr_find_job((char *)jobid.c_str(),FALSE)) == NULL)
+      rc = PBSE_JOBNOTFOUND;
+
+    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+    }
+
+  return(rc);
+  } // END perform_job_delete_array_bookkeeping()
+
+
+
+/*
  * force_purge_work()
  *
- * Performs the work of purging an individual job (qdel -p)
+ * Performs the work of purging an individual job (qdel -p). The job comes in locked, 
+ * but is never locked when this function exits.
  * @param pjob - the job that will be purged
  */
 
@@ -352,31 +399,14 @@ void force_purge_work(
       }
     }
 
-  depend_on_term(pjob);
-  
-  if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == false))
+  // On error, the job has disappeared, which should happen once we're done with this function
+  // anyway.
+  if (perform_job_delete_array_bookkeeping(pjob, cancel_exit_code) == PBSE_NONE)
     {
-    job_array *pa = get_jobs_array(&pjob);
-
-    if (pjob == NULL)
-      throw (int)PBSE_JOB_RECYCLED;
-
-    if (pa != NULL)
-      {
-      pa->update_array_values(pjob->ji_qs.ji_state,
-                              aeTerminate,
-                              pjob->ji_qs.ji_jobid,
-                              cancel_exit_code);
-
-      unlock_ai_mutex(pa, __func__, "", LOGLEVEL);
-      }
-    }
-
-  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    depend_on_term(pjob);
+    
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
-  if (pjob != NULL)
-    {
     if (is_ms_on_server(pjob))
       {
       char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -390,6 +420,9 @@ void force_purge_work(
     else
       svr_job_purge(pjob);
     }
+  else
+    throw (int)PBSE_JOB_RECYCLED;
+
   } /* END force_purge_work() */
 
 
@@ -689,43 +722,9 @@ jump:
     pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
     }
 
-  // Update the array book-keeping values if this is an array subjob
-  if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == false))
+  if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
     {
-    job_array *pa = get_jobs_array(&pjob);
-
-    if (pjob == NULL)
-      {
-      job_mutex.set_unlock_on_exit(false);
-      return(-1);
-      }
-
-    std::string dup_job_id(pjob->ji_qs.ji_jobid);
-
-    if (pa != NULL)
-      {
-      if (pjob != NULL)
-        {
-        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
-          {
-          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          int job_state = pjob->ji_qs.ji_state;
-
-          job_mutex.unlock();
-          pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_exit_status);
-
-          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-            job_mutex.mark_as_locked();
-          }
-        }
-
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      }
-    }
-
-  if (pjob == NULL)
-    {
+    // The job disappeared while updating the array
     job_mutex.set_unlock_on_exit(false);
     return -1;
     }
