@@ -101,7 +101,7 @@ char log_buffer[LOG_BUF_SIZE];
 char mom_alias[1024];
 
 int global_poll_fd = -1;
-int global_poll_timeout_ms = -1;
+int global_poll_timeout_sec = -1;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -1097,12 +1097,12 @@ int setup_gpus_for_job(job *pjob)
   {return(0);}
 
 
-int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
   {
   if (nfds > 0)
     {
     global_poll_fd = fds[0].fd;
-    global_poll_timeout_ms = timeout;
+    global_poll_timeout_sec = timeout->tv_sec;
     }
 
   return(0);

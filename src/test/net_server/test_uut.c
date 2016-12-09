@@ -23,7 +23,7 @@ extern bool  socket_read_success;
 extern bool  socket_read_code;
 
 extern nfds_t global_poll_nfds;
-extern int global_poll_timeout_ms;
+extern int global_poll_timeout_sec;
 
 int add_connection(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *), int add_wait_request);
 void *accept_conn(void *new_conn);
@@ -166,7 +166,7 @@ START_TEST(test_init_network)
 
   // examine the values passed to poll() to see if they were expected
   fail_unless(global_poll_nfds == MaxNumDescriptors);
-  fail_unless(global_poll_timeout_ms == timeout_sec * 1000);
+  fail_unless(global_poll_timeout_sec == timeout_sec);
   }
 END_TEST
 
