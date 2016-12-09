@@ -344,20 +344,23 @@ int perform_job_delete_array_bookkeeping(
     if (pjob == NULL)
       return(PBSE_JOBNOTFOUND);
 
-    int old_state = pjob->ji_qs.ji_state;
-    std::string jobid(pjob->ji_qs.ji_jobid);
+    if (pa != NULL)
+      {
+      int old_state = pjob->ji_qs.ji_state;
+      std::string jobid(pjob->ji_qs.ji_jobid);
 
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-      
-    pa->update_array_values(old_state,
-                            aeTerminate,
-                            jobid.c_str(),
-                            cancel_exit_code);
-          
-    if ((pjob = svr_find_job((char *)jobid.c_str(),FALSE)) == NULL)
-      rc = PBSE_JOBNOTFOUND;
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+        
+      pa->update_array_values(old_state,
+                              aeTerminate,
+                              jobid.c_str(),
+                              cancel_exit_code);
+            
+      if ((pjob = svr_find_job((char *)jobid.c_str(),FALSE)) == NULL)
+        rc = PBSE_JOBNOTFOUND;
 
-    unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      }
     }
 
   return(rc);
