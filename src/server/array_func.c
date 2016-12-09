@@ -1482,6 +1482,7 @@ int delete_array_range(
       }
     }
 
+  pa->ai_qs.jobs_done += num_deleted;
   pa->ai_qs.num_failed += num_deleted;
 
   return(num_skipped);
@@ -1618,7 +1619,10 @@ int delete_whole_array(
     }
 
   if (pa != NULL)
+    {
     pa->ai_qs.num_failed += num_deleted;
+    pa->ai_qs.jobs_done += num_deleted;
+    }
 
   if (num_jobs == 0)
     return(NO_JOBS_IN_ARRAY);
