@@ -38,6 +38,10 @@
 #include <grp.h>
 #include <csv.h>
 #include <pwd.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <poll.h>
 
 #ifdef sun
@@ -2267,15 +2271,19 @@ int wait_for_read_ready(
   int timeout_sec)
 
   { 
-  struct pollfd PollArray;
-  int n;
+  struct pollfd   PollArray;
+  struct timespec ts;
+  int             n;
 
   PollArray.fd = fd;
   PollArray.events = POLLIN;
   PollArray.revents = 0;
 
+  ts.tv_sec = timeout_sec;
+  ts.tv_nsec = 0;
+
   // wait for data ready to read
-  n = poll(&PollArray, 1, timeout_sec * 1000);
+  n = ppoll(&PollArray, 1, &ts, NULL);
 
   if (n > 0)
     {

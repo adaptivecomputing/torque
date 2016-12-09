@@ -88,7 +88,12 @@ extern "C"
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <poll.h>
+
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -9212,10 +9217,11 @@ int TMomCheckJobChild(
   int        *RC)       /* O (return code/errno) */
 
   {
-  int i;
-  struct pollfd PollArray;
-  int rc;
-  int read_size = sizeof(struct startjob_rtn);
+  int             i;
+  struct pollfd   PollArray;
+  struct timespec ts;
+  int             rc;
+  int             read_size = sizeof(struct startjob_rtn);
 
   /* NOTE:  assume if anything is on pipe, everything is on pipe
             (may reasult in hang) */
@@ -9231,7 +9237,10 @@ int TMomCheckJobChild(
   PollArray.events = POLLIN;
   PollArray.revents = 0;
 
-  rc = poll(&PollArray, 1, Timeout * 1000);
+  ts.tv_sec = Timeout;
+  ts.tv_nsec = 0;
+
+  rc = ppoll(&PollArray, 1, &ts, NULL);
 
   if ((rc <= 0) || ((PollArray.revents & POLLIN) == 0))
     {
