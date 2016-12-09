@@ -1096,6 +1096,10 @@ int activereq(void)
 
   for (i = 0; (num > 0) && (i < PollArraySize); i++)
     {
+    // skip entry with no return events
+    if (PollArray[i].revents == 0)
+      continue;
+
     // decrement count of structures with return events
     num--;
 
