@@ -1140,6 +1140,7 @@ bool set_array_depend_holds(
   while (pdep != NULL)
     {
     compare_number = -1;
+    could_fulfill_dependency = pa->ai_qs.array_size;
 
     switch (pdep->dp_type)
       {
