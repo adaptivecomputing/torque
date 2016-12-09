@@ -1144,6 +1144,7 @@ bool set_array_depend_holds(
     {
     array_depend *pdep = *it;
 
+    could_fulfill_dependency = pa->ai_qs.array_size;
     compare_number = -1;
 
     switch (pdep->dp_type)
