@@ -790,62 +790,62 @@ int wait_request(
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
-  for (i = 0; (i < max_connection) && (n > 0); i++)
+  for (i = 0; (n > 0) && (i < max_connection); i++)
     {
-    // any events?
-    if (PollArray[i].revents != 0)
+    // skip entry if it has no return events
+    if (PollArray[i].revents == 0)
+      continue;
+
+    // decrement the count of structures that have non-zero revents
+    n--;
+
+    // is there data ready to read?
+    if ((PollArray[i].revents & POLLIN))
       {
-      // decrement the count of structures that have non-zero revents
-      n--;
+      pthread_mutex_lock(svr_conn[i].cn_mutex);
+      /* this socket has data */
 
-      // is there data ready to read?
-      if ((PollArray[i].revents & POLLIN))
+      svr_conn[i].cn_lasttime = time(NULL);
+
+      if (svr_conn[i].cn_active != Idle)
         {
-        pthread_mutex_lock(svr_conn[i].cn_mutex);
-        /* this socket has data */
+        void *(*func)(void *) = svr_conn[i].cn_func;
 
-        svr_conn[i].cn_lasttime = time(NULL);
+        netcounter_incr();
 
-        if (svr_conn[i].cn_active != Idle)
+        pthread_mutex_unlock(svr_conn[i].cn_mutex);
+
+        if (func != NULL)
           {
-          void *(*func)(void *) = svr_conn[i].cn_func;
+          int args[3];
 
-          netcounter_incr();
-
-          pthread_mutex_unlock(svr_conn[i].cn_mutex);
-
-          if (func != NULL)
-            {
-            int args[3];
-
-            args[0] = i;
-            args[1] = (int)SocketAddrSet[i];
-            args[2] = (int)SocketPortSet[i];
-            func((void *)args);
-            }
-
-          /* NOTE:  breakout if state changed (probably received shutdown request) */
-
-          if ((SState != NULL) && 
-              (OrigState != *SState))
-            break;
+          args[0] = i;
+          args[1] = (int)SocketAddrSet[i];
+          args[2] = (int)SocketPortSet[i];
+          func((void *)args);
           }
-        else
-          {
-          pthread_mutex_unlock(svr_conn[i].cn_mutex);
 
-          globalset_del_sock(i);
-          close_conn(i, FALSE);
+        /* NOTE:  breakout if state changed (probably received shutdown request) */
 
-          pthread_mutex_lock(num_connections_mutex);
+        if ((SState != NULL) && 
+            (OrigState != *SState))
+          break;
+        }
+      else
+        {
+        pthread_mutex_unlock(svr_conn[i].cn_mutex);
 
-          sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (poll bad socket)",
-            i,
-            num_connections);
+        globalset_del_sock(i);
+        close_conn(i, FALSE);
 
-          pthread_mutex_unlock(num_connections_mutex);
-          log_err(-1, __func__, tmpLine);
-          }
+        pthread_mutex_lock(num_connections_mutex);
+
+        sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (poll bad socket)",
+          i,
+          num_connections);
+
+        pthread_mutex_unlock(num_connections_mutex);
+        log_err(-1, __func__, tmpLine);
         }
       }
     } /* END for i */
