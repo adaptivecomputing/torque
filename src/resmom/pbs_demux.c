@@ -172,7 +172,6 @@ void readit(
     prm->r_where = invalid;
 
     // remove socket from readset
-    readset[sock].fd = -1;
     readset[sock].events = 0;
     readset[sock].revents = 0;
     }
@@ -345,6 +344,9 @@ int main(
 
     for (i = 0; (n > 0) && (i < maxfd); i++)
       {
+      if (pollset[i].revents == 0)
+        continue;
+
       // decrement count of structures with non-zero return events
       n--;
 
