@@ -17,7 +17,7 @@ bool  socket_read_success = true;
 bool  socket_read_code = true;
 
 nfds_t global_poll_nfds = 0;
-int global_poll_timeout_ms = 0;
+int global_poll_timeout_sec = 0;
 
 const char *msg_daemonname = "unset";
 
@@ -152,9 +152,9 @@ int get_max_num_descriptors(void)
   return(getdtablesize());
   }
 
-int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
   {
   global_poll_nfds = nfds;
-  global_poll_timeout_ms = timeout;
+  global_poll_timeout_sec = timeout->tv_sec;
   return(0);
   }

@@ -46,7 +46,7 @@ extern bool am_ms;
 extern bool addr_fail;
 
 extern int global_poll_fd;
-extern int global_poll_timeout_ms;
+extern int global_poll_timeout_sec;
 
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
@@ -778,7 +778,7 @@ START_TEST(test_TMomCheckJobChild)
   TJE.jsmpipe[0] = fd;
   TMomCheckJobChild(&TJE, timeout_sec, &count, &rc);
   fail_unless(global_poll_fd == fd);
-  fail_unless(global_poll_timeout_ms == timeout_sec * 1000);
+  fail_unless(global_poll_timeout_sec == timeout_sec);
   }
 END_TEST
 

@@ -1048,9 +1048,9 @@ int activereq(void)
   static char id[] = "activereq";
 #endif
 
-  int            i, num;
+  int            i;
+  int            num;
   int            PollArraySize;
-  int            PollArrayIndex = 0;
 
   struct pollfd *PollArray;
 
@@ -1067,21 +1067,20 @@ int activereq(void)
     return(-1);
     }
 
-  for (i = 0; (i < HASHOUT) && (PollArrayIndex < PollArraySize); i++)
+  // now include the sockets to read
+  for (i = 0; i < HASHOUT; i++)
     {
     struct out *op;
 
-    for (op = outs[i]; (op != NULL) && (PollArrayIndex < PollArraySize); op = op->next)
+    for (op = outs[i]; op != NULL; op = op->next)
       {
-      PollArray[PollArrayIndex].fd = op->chan->sock;
-      PollArray[PollArrayIndex].events = POLLIN;
-      PollArray[PollArrayIndex].revents = 0;
-      PollArrayIndex++;
+      PollArray[op->chan->sock].fd = op->chan->sock;
+      PollArray[op->chan->sock].events = POLLIN;
       }
     }
 
   // poll with 15sec timeout
-  num = poll(PollArray, PollArrayIndex, 15000);
+  num = poll(PollArray, PollArraySize, 15000);
 
   if (num == -1)
     {
@@ -1095,15 +1094,17 @@ int activereq(void)
     return -2;
     }
 
-  for (i = 0; i < PollArrayIndex; i++)
+  for (i = 0; (num > 0) && (i < PollArraySize); i++)
     {
+    // decrement count of structures with return events
+    num--;
+
     // something to read?
     if ((PollArray[i].revents & POLLIN))
       {
       // return socket id that is ready for reading
-      int sock = PollArray[i].fd;
       free(PollArray);
-      return(sock);
+      return(i);
       }
     }
 
