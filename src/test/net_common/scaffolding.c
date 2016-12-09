@@ -84,7 +84,7 @@ int connect(
     return(-1);
   }
 
-int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
   {
   fds->revents = global_poll_revents;
 

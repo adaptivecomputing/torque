@@ -20,7 +20,12 @@
 #include <errno.h> /* errno */
 #include <fcntl.h> /* fcntl, F_GETFL */
 #include <sys/time.h> /* gettimeofday */
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <poll.h> /* poll functionality */
+
 #include <iostream>
 #include <pthread.h>
 #include "../lib/Liblog/pbs_log.h" /* log_err */
@@ -516,17 +521,21 @@ int socket_wait_for_write(
   int socket)
 
   {
-  int            rc = PBSE_NONE;
-  int            write_soc = 0;
-  int            sock_errno = 0;
-  socklen_t      len = sizeof(int);
-  struct pollfd  PollArray;
+  int             rc = PBSE_NONE;
+  int             write_soc = 0;
+  int             sock_errno = 0;
+  socklen_t       len = sizeof(int);
+  struct pollfd   PollArray;
+  struct timespec ts;
 
   PollArray.fd = socket;
   PollArray.events = POLLOUT;
   PollArray.revents = 0;
 
-  if ((write_soc = poll(&PollArray, 1, pbs_tcp_timeout * 1000)) != 1)
+  ts.tv_sec = pbs_tcp_timeout;
+  ts.tv_nsec = 0;
+
+  if ((write_soc = ppoll(&PollArray, 1, &ts, NULL)) != 1)
     {
     /* timeout is now seen as a permanent failure */
     rc = PERMANENT_SOCKET_FAIL;
@@ -580,15 +589,19 @@ int socket_wait_for_read(
   unsigned int timeout) // seconds
 
   {
-  int           rc = PBSE_NONE;
-  int           ret;
-  struct pollfd pfd;
+  int             rc = PBSE_NONE;
+  int             ret;
+  struct pollfd   pfd;
+  struct timespec ts;
 
   pfd.fd = socket;
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
   pfd.revents = 0;
 
-  ret = poll(&pfd, 1, timeout * 1000); /* poll's timeout is in milliseconds */
+  ts.tv_sec = timeout;
+  ts.tv_nsec = 0;
+
+  ret = ppoll(&pfd, 1, &ts, NULL);
   if (ret > 0)
     {
     char buf[8];

@@ -102,6 +102,9 @@
 #include <arpa/inet.h>
 #include <pthread.h> /* thread_func functions */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <poll.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
@@ -335,17 +338,10 @@ int init_network(
     /* initialize global "read" socket array */
     MaxNumDescriptors = get_max_num_descriptors();
 
-    GlobalSocketReadArray = (struct pollfd *)malloc(MaxNumDescriptors * sizeof(struct pollfd));
+    GlobalSocketReadArray = (struct pollfd *)calloc(MaxNumDescriptors, sizeof(struct pollfd));
     if (GlobalSocketReadArray == NULL)
       {
       return(-1); // no memory
-      }
-
-    for (i = 0; i < MaxNumDescriptors; i++)
-      { 
-      GlobalSocketReadArray[i].fd = -1;
-      GlobalSocketReadArray[i].events = 0;
-      GlobalSocketReadArray[i].revents = 0;
       }
 
     GlobalSocketAddrSet = (u_long *)calloc(MaxNumDescriptors, sizeof(ulong));
@@ -691,6 +687,7 @@ int wait_request(
   time_t          now;
 
   struct pollfd  *PollArray = NULL;
+  struct timespec ts;
   int             PollArraySize = 0;
   int             MaxNumDescriptors = 0;
   int             SetSize = 0;
@@ -699,14 +696,14 @@ int wait_request(
 
 
   char            tmpLine[1024];
-  int             timeout_ms;
   long            OrigState = 0;
 
   if (SState != NULL)
     OrigState = *SState;
 
-  // scale seconds to milliseconds
-  timeout_ms = waittime * 1000;
+  // set timeout for ppoll()
+  ts.tv_sec = waittime;
+  ts.tv_nsec = 0;
 
   MaxNumDescriptors = get_max_num_descriptors();
 
@@ -749,7 +746,7 @@ int wait_request(
 
   pthread_mutex_unlock(global_sock_read_mutex);
 
-  n = poll(PollArray, MaxNumDescriptors, timeout_ms);
+  n = ppoll(PollArray, MaxNumDescriptors, &ts, NULL);
 
   if (n == -1)
     {
@@ -1028,7 +1025,6 @@ void globalset_del_sock(
 
   {
   pthread_mutex_lock(global_sock_read_mutex);
-  GlobalSocketReadArray[sock].fd = -1;
   GlobalSocketReadArray[sock].events = 0;
   GlobalSocketReadArray[sock].revents = 0;
   GlobalSocketAddrSet[sock] = 0;

@@ -269,7 +269,7 @@ int main(
 
   pollset_size_bytes = maxfd * sizeof(struct pollfd);
 
-  readset = (struct pollfd *)malloc(pollset_size_bytes);
+  readset = (struct pollfd *)calloc(maxfd, sizeof(struct pollfd));
   if (readset == NULL)
     {
     perror("cannot alloc memory for readset");
@@ -277,21 +277,11 @@ int main(
     exit(5);
     }
 
-  // initialize readset
-  for (i = 0; i < maxfd; i++)
-    {
-    readset[i].fd = -1;
-    readset[i].events = 0;
-    readset[i].revents = 0;
-    }
-
   readset[main_sock_out].fd = main_sock_out;
   readset[main_sock_out].events = POLLIN;
-  readset[main_sock_out].revents = 0;
 
   readset[main_sock_err].fd = main_sock_err;
   readset[main_sock_err].events = POLLIN;
-  readset[main_sock_err].revents = 0;
 
   // allocate local pollset to hold a copy of readset
   pollset = (struct pollfd *)malloc(pollset_size_bytes);

@@ -40,13 +40,14 @@ void port_forwarder(
   char            *EMsg)  /* O */
 
   {
-  struct pollfd *PollArray;
-  int rc;
-  int i;
-
+  int                n;
+  int                n2;
+  int                sock;
+  int                num_events;
+  int                rc;
   struct sockaddr_in from;
-  torque_socklen_t fromlen;
-  int n, n2, sock;
+  torque_socklen_t   fromlen;
+  struct pollfd     *PollArray;
 
   fromlen = sizeof(from);
 
@@ -59,16 +60,12 @@ void port_forwarder(
 
   while (1)
     {
-    // clear the array
-    for (i = 0; i < NUM_SOCKS; i++)
-      {
-      PollArray[i].fd = -1;
-      PollArray[i].events = 0;
-      PollArray[i].revents = 0;
-      }
-
     for (n = 0; n < NUM_SOCKS; n++)
       {
+      // clear the entry
+      PollArray[n].events = 0;
+      PollArray[n].revents = 0;
+
       if (!(socks + n)->active)
         continue;
 
@@ -76,7 +73,6 @@ void port_forwarder(
         {
         PollArray[n].fd = (socks + n)->sock;
         PollArray[n].events = POLLIN;
-        PollArray[n].revents = 0;
         }
       else
         {
@@ -84,32 +80,33 @@ void port_forwarder(
           {
           PollArray[n].fd = (socks + n)->sock;
           PollArray[n].events = POLLIN;
-          PollArray[n].revents = 0;
           }
 
         if ((socks + ((socks + n)->peer))->bufavail - (socks + ((socks + n)->peer))->bufwritten > 0)
           {
           PollArray[n].fd = (socks + n)->sock;
           PollArray[n].events |= POLLOUT;
-          PollArray[n].revents = 0;
           }
         }
       }
 
-    rc = poll(PollArray, NUM_SOCKS, -1);
+    num_events = poll(PollArray, NUM_SOCKS, -1);
 
-    if ((rc == -1) && (errno == EINTR))
+    if ((num_events == -1) && (errno == EINTR))
       continue;
 
-    if (rc < 0)
+    if (num_events < 0)
       {
       perror("port forwarding poll()");
 
       exit(EXIT_FAILURE);
       }
 
-    for (n = 0; n < NUM_SOCKS; n++)
+    for (n = 0; (num_events > 0) && (n < NUM_SOCKS); n++)
       {
+      // decrement the count of events returned
+      num_events--;
+
       if (!(socks + n)->active)
         continue;
 
@@ -200,7 +197,7 @@ void port_forwarder(
         } /* END if write */
       } /* END foreach fd */
 
-    for (n2 = 0; n2 <= 1;n2++)
+    for (n2 = 0; n2 <= 1; n2++)
       {
       for (n = 0; n < NUM_SOCKS; n++)
         {
