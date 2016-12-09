@@ -9161,6 +9161,10 @@ void fork_demux(
     
     for (i = 0; (n > 0) && (i < maxfd); i++)
       {
+      // skip entry with no return events
+      if (pollset[i].revents == 0)
+        continue;
+
       // decrement count of structures that have return events
       n--;
 

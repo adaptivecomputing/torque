@@ -104,6 +104,10 @@ void port_forwarder(
 
     for (n = 0; (num_events > 0) && (n < NUM_SOCKS); n++)
       {
+      // skip entry with no return events
+      if (PollArray[n].revents == 0)
+        continue;
+
       // decrement the count of events returned
       num_events--;
 
