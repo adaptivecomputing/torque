@@ -25,7 +25,7 @@ const char *msg_registerrel = "Dependency on job %s released.";
 int   i = 2;
 int   svr = 2;
 int   is_attr_set;
-
+int   job_aborted;
 
 struct batch_request *alloc_br(int type)
   {
@@ -121,6 +121,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
 int job_abt(struct job **pjobp, const char *text, bool b=false)
   {
   *pjobp = NULL;
+  job_aborted++;
   return(0);
   }
 
