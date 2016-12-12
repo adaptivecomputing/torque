@@ -2092,7 +2092,8 @@ void send_im_error(
   int              rc = DIS_SUCCESS;
   struct tcp_chan *local_chan = NULL;
   
-  if (reply)
+  if ((reply) &&
+      (pjob->ji_hosts != NULL))
     {
     for (i = 0; i < 5; i++)
       {
@@ -2156,6 +2157,13 @@ void send_im_error(
       
       log_err(-1, __func__, log_buffer);
       }
+    } 
+  else if (pjob->ji_hosts == NULL)
+    {
+    sprintf(log_buffer,
+      "Cannot send error reply on event %d for job %s because the hosts weren't correctly decoded.",
+      event, pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buffer);
     }
 
   } /* END send_im_error() */
