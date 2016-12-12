@@ -63,6 +63,7 @@ void port_forwarder(
     for (n = 0; n < NUM_SOCKS; n++)
       {
       // clear the entry
+      PollArray[n].fd = -1;
       PollArray[n].events = 0;
       PollArray[n].revents = 0;
 

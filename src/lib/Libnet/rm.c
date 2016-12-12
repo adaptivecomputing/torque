@@ -1058,13 +1058,21 @@ int activereq(void)
 
   // initialize the poll array
   PollArraySize = get_max_num_descriptors();
-  PollArray = (struct pollfd *)calloc(PollArraySize, sizeof(struct pollfd));
+  PollArray = (struct pollfd *)malloc(PollArraySize * sizeof(struct pollfd));
 
   if (PollArray == NULL)
     {
     // no memory
-    DBPRT(("%s: calloc %d %s\n", id, errno, pbs_strerror(errno)))
+    DBPRT(("%s: malloc %d %s\n", id, errno, pbs_strerror(errno)))
     return(-1);
+    }
+
+  // set initial values
+  for (i = 0; i < PollArraySize; i++)
+    {
+    PollArray[i].fd = -1;
+    PollArray[i].events = 0;
+    PollArray[i].revents = 0;
     }
 
   // now include the sockets to read
