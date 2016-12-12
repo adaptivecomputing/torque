@@ -172,6 +172,7 @@ void readit(
     prm->r_where = invalid;
 
     // remove socket from readset
+    readset[sock].fd = -1;
     readset[sock].events = 0;
     readset[sock].revents = 0;
     }
@@ -268,12 +269,20 @@ int main(
 
   pollset_size_bytes = maxfd * sizeof(struct pollfd);
 
-  readset = (struct pollfd *)calloc(maxfd, sizeof(struct pollfd));
+  readset = (struct pollfd *)malloc(maxfd * sizeof(struct pollfd));
   if (readset == NULL)
     {
     perror("cannot alloc memory for readset");
 
     exit(5);
+    }
+
+  // set initial values
+  for (i = 0; i < maxfd; i++)
+    {
+    readset[i].fd = -1;
+    readset[i].events = 0;
+    readset[i].revents = 0;
     }
 
   readset[main_sock_out].fd = main_sock_out;
