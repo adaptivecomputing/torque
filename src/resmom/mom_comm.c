@@ -8870,6 +8870,7 @@ int readit(
       close(fd);
 
       // remove sock from readset
+      readset[sock].fd = -1;
       readset[sock].events = 0;
       readset[sock].revents = 0;
       }
@@ -8879,6 +8880,7 @@ int readit(
     close(sock);
 
     // remove sock from readset
+    readset[sock].fd = -1;
     readset[sock].events = 0;
     readset[sock].revents = 0;
     }
@@ -9023,11 +9025,19 @@ void fork_demux(
 
   pollset_size_bytes = maxfd * sizeof(struct pollfd);
 
-  readset = (struct pollfd *)calloc(maxfd, sizeof(struct pollfd));
+  readset = (struct pollfd *)malloc(maxfd * sizeof(struct pollfd));
   if (readset == NULL)
     {
-    perror("failed to calloc memory for readset");
+    perror("failed to malloc memory for readset");
     _exit(5);
+    }
+
+  // set initial values
+  for (i = 0; i < maxfd; i++)
+    {
+    readset[i].fd = -1;
+    readset[i].events = 0;
+    readset[i].revents = 0;
     }
 
   readset[im_mom_stdout].fd = im_mom_stdout;

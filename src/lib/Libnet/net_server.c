@@ -338,10 +338,18 @@ int init_network(
     /* initialize global "read" socket array */
     MaxNumDescriptors = get_max_num_descriptors();
 
-    GlobalSocketReadArray = (struct pollfd *)calloc(MaxNumDescriptors, sizeof(struct pollfd));
+    GlobalSocketReadArray = (struct pollfd *)malloc(MaxNumDescriptors * sizeof(struct pollfd));
     if (GlobalSocketReadArray == NULL)
       {
       return(-1); // no memory
+      }
+
+    // set initial values
+    for (i = 0; i < MaxNumDescriptors; i++)
+      {
+      GlobalSocketReadArray[i].fd = -1;
+      GlobalSocketReadArray[i].events = 0;
+      GlobalSocketReadArray[i].revents = 0;
       }
 
     GlobalSocketAddrSet = (u_long *)calloc(MaxNumDescriptors, sizeof(ulong));
@@ -1011,6 +1019,7 @@ void globalset_add_sock(
   pthread_mutex_lock(global_sock_read_mutex);
   GlobalSocketReadArray[sock].fd = sock;
   GlobalSocketReadArray[sock].events = POLLIN;
+  GlobalSocketReadArray[sock].revents = 0;
   GlobalSocketAddrSet[sock] = addr;
   GlobalSocketPortSet[sock] = port;
   pthread_mutex_unlock(global_sock_read_mutex);
@@ -1025,6 +1034,7 @@ void globalset_del_sock(
 
   {
   pthread_mutex_lock(global_sock_read_mutex);
+  GlobalSocketReadArray[sock].fd = -1;
   GlobalSocketReadArray[sock].events = 0;
   GlobalSocketReadArray[sock].revents = 0;
   GlobalSocketAddrSet[sock] = 0;
