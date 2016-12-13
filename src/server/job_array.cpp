@@ -570,3 +570,47 @@ bool job_array::is_deleted() const
 
 
 
+/*
+ * mark_end_of_subjob()
+ * Takes care of noting that this subjob is being purged from the array
+ *
+ * @param pjob - the subjob that is being removed
+ * @return true if the array has no more subjobs, false otherwise
+ */
+
+bool job_array::mark_end_of_subjob(
+    
+  job *pjob)
+
+  {
+  bool no_more_subjobs = false;
+  int  index;
+
+  if (pjob != NULL)
+    {
+    if (this->job_ids != NULL)
+      {
+      index = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+
+      if ((index >= 0) &&
+          (index < this->ai_qs.num_jobs))
+        {
+        if (this->job_ids[index] != NULL)
+          {
+          free(this->job_ids[index]);
+          this->job_ids[index] = NULL;
+          
+          this->ai_qs.num_purged++;
+          
+          if ((this->ai_qs.num_purged == this->ai_qs.num_jobs) ||
+              ((this->is_deleted() == true) &&
+               (this->ai_qs.num_idle == 0)))
+            no_more_subjobs = true;
+          }
+        }
+      }
+    }
+  
+  return(no_more_subjobs);
+  } // mark_end_of_subjob()
+
