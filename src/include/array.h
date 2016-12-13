@@ -175,6 +175,7 @@ class job_array
   bool need_to_update_slot_limits() const;
   void mark_deleted();
   bool is_deleted() const;
+  bool mark_end_of_subjob(job *pjob);
   };
 
 

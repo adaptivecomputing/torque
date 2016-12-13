@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "pbs_job.h"
 #include "pbs_error.h"
 #include "array.h"
 #include <check.h>
@@ -139,6 +139,42 @@ START_TEST(test_parse_array_request)
 END_TEST
 
 
+START_TEST(test_mark_end_of_subjob)
+  {
+  job_array pa;
+  array_size = 1000;
+
+  pa.parse_array_request("0-9");
+  for (int i = 0; i < 10; i++)
+    pa.create_job_if_needed();
+
+  fail_unless(pa.ai_qs.highest_id_created == 9);
+
+  fail_unless(pa.mark_end_of_subjob(NULL) == false);
+
+  job pjob;
+
+  // Make sure a bad index doesn't crash
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = -1;
+  fail_unless(pa.mark_end_of_subjob(&pjob) == false);
+
+  for (int i = 0; i < 10; i++)
+    {
+    pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = i;
+    
+    if (i == 9)
+      fail_unless(pa.mark_end_of_subjob(&pjob) == true);
+    else
+      fail_unless(pa.mark_end_of_subjob(&pjob) == false);
+    }
+
+  // Make sure a repeated index doesn't crash
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 1;
+  fail_unless(pa.mark_end_of_subjob(&pjob) == false);
+  }
+END_TEST
+
+
 START_TEST(test_initialize_uncreated_ids)
   {
   job_array pa;
@@ -203,6 +239,7 @@ Suite *job_array_suite(void)
   tcase_add_test(tc_core, update_array_values_test);
   tcase_add_test(tc_core, test_set_slot_limit);
   tcase_add_test(tc_core, test_initialize_uncreated_ids);
+  tcase_add_test(tc_core, test_mark_end_of_subjob);
   suite_add_tcase(s, tc_core);
 
   return s;
