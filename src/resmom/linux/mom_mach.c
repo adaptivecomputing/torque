@@ -4729,10 +4729,10 @@ char *size_fs(
     return(NULL);
     }
 
-#ifdef RPT_BAVAIL
-#define RPT_STATFS_MEMBER f_bavail
-#else
+#ifdef RPT_BFREE
 #define RPT_STATFS_MEMBER f_bfree
+#else
+#define RPT_STATFS_MEMBER f_bavail
 #endif
 
   sprintf(ret_string, "%lukb:%lukb",
