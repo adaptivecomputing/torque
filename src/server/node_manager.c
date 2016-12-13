@@ -1871,12 +1871,21 @@ static int hasppn(
 
 
 /*
-** Count how many gpus are available for use on this node
-*/
+ * gpu_count()
+ *
+ * Get a gpu count for this node
+ * if freeonly is true, then count the free gpus; if false, then return the number
+ * of gpus.
+ *
+ * @param pnode - the node whose gpus we're counting
+ * @param freeonly - specifies if we want a total or just the available gpus
+ * @return the total gpus if freeonly is false, else the number of free gpus
+ */
+
 int gpu_count(
 
-  struct pbsnode *pnode,    /* I */
-  int             freeonly) /* I */
+  pbsnode *pnode,    /* I */
+  bool     freeonly) /* I */
 
   {
   int  count = 0;
@@ -1900,42 +1909,10 @@ int gpu_count(
     return (count);
     }
 
-  if (pnode->nd_gpus_real)
-    {
-    int j;
-
-    for (j = 0; j < pnode->nd_ngpus; j++)
-      {
-      struct gpusubn &gn = pnode->nd_gpusn[j];
-
-      /* always ignore unavailable gpus */
-      if (gn.state == gpu_unavailable)
-        continue;
-
-      if (!freeonly)
-        {
-        count++;
-        }
-      else if ((gn.state == gpu_unallocated) ||
-               ((gn.state == gpu_shared) &&
-                (gpu_mode_rqstd == gpu_normal)))
-        {
-        count++;;
-        }
-      }
-    }
+  if (freeonly == false)
+    count = pnode->nd_ngpus;
   else
-    {
-    /* virtual gpus */
-    if (freeonly)
-      {
-      count = pnode->nd_ngpus_free;
-      }
-    else
-      {
-      count = pnode->nd_ngpus;
-      }
-    }
+    count = pnode->nd_ngpus_free;
 
   if (LOGLEVEL >= 7)
     {
@@ -2397,7 +2374,7 @@ bool node_is_spec_acceptable(
     return(false);
 
   if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
-      (gpu_count(pnode, FALSE) < gpu_req) ||
+      (gpu_count(pnode, false) < gpu_req) ||
       (pnode->nd_nmics < mic_req))
     return(false);
 
@@ -2406,7 +2383,7 @@ bool node_is_spec_acceptable(
   if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_NOT_READY | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(false);
 
-  gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
+  gpu_free = gpu_count(pnode, true) - pnode->nd_ngpus_to_be_used;
   np_free  = pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used;
   mic_free = pnode->nd_nmics_free - pnode->nd_nmics_to_be_used;
   
@@ -3704,21 +3681,14 @@ int reserve_node(
 
 int add_job_to_gpu_subnode(
     
-  struct pbsnode *pnode,
-  gpusubn        &gn,
-  job            *pjob)
+  pbsnode *pnode,
+  gpusubn &gn,
+  job     *pjob)
 
   {
-  if (!pnode->nd_gpus_real)
-    {
-    /* update the gpu subnode */
-    gn.job_internal_id = pjob->ji_internal_id;
-    gn.inuse = TRUE;
-
-    /* update the main node */
-    pnode->nd_ngpus_free--;
-    }
-
+  gn.job_internal_id = pjob->ji_internal_id;
+  pnode->nd_ngpus_free--;
+  gn.inuse = true;
   gn.job_count++;
   pnode->nd_ngpus_to_be_used--;
 
@@ -3843,30 +3813,8 @@ int place_gpus_in_hostlist(
     
     gpusubn &gn = pnode->nd_gpusn[j];
 
-    if (pnode->nd_gpus_real)
-      {
-      if ((gn.state == gpu_unavailable) ||
-          (gn.state == gpu_shared) ||
-          (gn.state == gpu_exclusive) ||
-          ((((int)gn.mode == gpu_normal)) &&
-           (gpu_mode_rqstd != gpu_normal) &&
-           (gn.state != gpu_unallocated)))
-        continue;
-      }
-    else
-      {
-      if ((gn.state == gpu_unavailable) ||
-          (gn.inuse == TRUE))
-        continue;
-      }
-
-    if ((gn.state == gpu_unavailable) ||
-        ((gn.state == gpu_exclusive) && pnode->nd_gpus_real) ||
-        ((pnode->nd_gpus_real) &&
-         ((int)gn.mode == gpu_normal) &&
-         ((gpu_mode_rqstd != gpu_normal) && (gn.state != gpu_unallocated))) ||
-        ((!pnode->nd_gpus_real) && 
-         (gn.inuse == TRUE)))
+    if ((gn.inuse == true) ||
+        (gn.state == gpu_unavailable))
       continue;
     
     add_job_to_gpu_subnode(pnode,gn,pjob);
@@ -5543,17 +5491,23 @@ char *get_next_exec_host(
 
 
 
+/*
+ * remove_job_from_nodes_gpus()
+ *
+ * @param pnode - the node whose job is being removed
+ * @param pjob - the job that should be removed from the gpus
+ * @return PBSE_NONE
+ */
+
 int remove_job_from_nodes_gpus(
 
-  struct pbsnode *pnode,
-  job            *pjob)
+  pbsnode *pnode,
+  job     *pjob)
 
   {
   char        *gpu_str = NULL;
   int          i;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string  tmp_str;
-  char         num_str[6];
  
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
     gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
@@ -5565,56 +5519,27 @@ int remove_job_from_nodes_gpus(
       {
       gpusubn &gn = pnode->nd_gpusn[i];
       
-      if (pnode->nd_gpus_real)
+      if (gn.job_internal_id == pjob->ji_internal_id)
         {
-        /* reset real gpu nodes */
-        tmp_str = pnode->get_name();
-        tmp_str += "-gpu/";
-        sprintf (num_str, "%d", i);
-        tmp_str += num_str;
-        
-        /* look thru the string and see if it has this host and gpuid.
-         * exec_gpus string should be in format of 
-         * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
-         *
-         * if we are using the gpu node exclusively or if shared mode and
-         * this is last job assigned to this gpu then set it's state
-         * unallocated so its available for a new job. Takes time to get the
-         * gpu status report from the moms.
-         */
-        
-        if (strstr(gpu_str, tmp_str.c_str()) != NULL)
-          {
-          gn.job_count--;
+        gn.job_internal_id = -1;
+        gn.inuse = false;
+        pnode->nd_ngpus_free++;
+        gn.job_count--;
           
-          if ((gn.mode == gpu_exclusive_thread) ||
-              (gn.mode == gpu_exclusive_process) ||
-              ((gn.mode == gpu_normal) && 
-               (gn.job_count == 0)))
-            {
-            gn.state = gpu_unallocated;
-            
-            if (LOGLEVEL >= 7)
-              {
-              sprintf(log_buf, "freeing node %s gpu %d for job %s",
-                pnode->get_name(),
-                i,
-                pjob->ji_qs.ji_jobid);
-              
-              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-              }
-            
-            }
-          }
-        }
-      else
-        {
-        if (gn.job_internal_id == pjob->ji_internal_id)
-          {
-          gn.inuse = FALSE;
-          gn.job_internal_id = -1;
+        if ((gn.mode == gpu_exclusive_thread) ||
+            (gn.mode == gpu_exclusive_process) ||
+            ((gn.mode == gpu_normal) && 
+             (gn.job_count == 0)))
+          gn.state = gpu_unallocated;
           
-          pnode->nd_ngpus_free++;
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "freeing node %s gpu %d for job %s",
+            pnode->get_name(),
+            i,
+            pjob->ji_qs.ji_jobid);
+          
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         }
       }
@@ -5625,11 +5550,18 @@ int remove_job_from_nodes_gpus(
 
 
 
+/*
+ * remove_job_from_node()
+ *
+ * @param pnode - the node removeing the job
+ * @param internal_job_id - the internal job id from the job to be removed
+ * @return PBSE_NONE
+ */
 
 int remove_job_from_node(
 
-  struct pbsnode *pnode,
-  int             internal_job_id)
+  pbsnode *pnode,
+  int      internal_job_id)
 
   {
   FUNCTION_TIMER
