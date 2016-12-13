@@ -41,6 +41,7 @@ int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
+int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn *gn, job *pjob);
 
 
 
@@ -51,6 +52,23 @@ extern int str_to_attr_count;
 extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
+
+
+START_TEST(add_job_to_gpu_subnode_test)
+  {
+  gpusubn gn;
+  job     pjob;
+  pbsnode pnode;
+
+  pnode.nd_ngpus_to_be_used = 1;
+  pjob.ji_internal_id = 10;
+
+  fail_unless(add_job_to_gpu_subnode(&pnode, &gn, &pjob) == PBSE_NONE);
+  fail_unless(gn.inuse == true);
+  fail_unless(pnode.nd_ngpus_to_be_used == 0);
+  fail_unless(gn.job_internal_id == pjob.ji_internal_id);
+  }
+END_TEST
 
 
 START_TEST(check_node_jobs_exitence_test)
@@ -949,6 +967,7 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
   tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
+  tcase_add_test(tc_core, add_job_to_gpu_subnode_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");
