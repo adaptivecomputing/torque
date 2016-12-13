@@ -715,5 +715,10 @@ bool job_array::is_deleted() const
   return(this->being_deleted);
   }
 
+bool job_array::mark_end_of_subjob(job *pjob)
+  {
+  return(false);
+  }
+
 batch_request::~batch_request() {}
 

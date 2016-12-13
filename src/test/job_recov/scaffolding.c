@@ -533,6 +533,11 @@ bool job_array::is_deleted() const
   return(this->being_deleted);
   }
 
+bool job_array::mark_end_of_subjob(job *pjob)
+  {
+  return(false);
+  }
+
 int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
   {
   return(PBSE_NONE);

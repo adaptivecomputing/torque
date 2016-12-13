@@ -1937,24 +1937,7 @@ int svr_job_purge(
       {
       if (pa != NULL)
         {
-        if (pa->job_ids != NULL)
-          {
-          free(pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long]);
-          pa->job_ids[pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = NULL;
-          }
-        
-        /* if there are no more jobs in the array,
-         * then we can clean that up too */
-        pa->ai_qs.num_purged++;
-        if ((pa->ai_qs.num_purged == pa->ai_qs.num_jobs) ||
-            ((pa->is_deleted() == true) &&
-             (pa->ai_qs.num_idle == 0)))
-          {
-          /* array_delete will unlock pa->ai_mutex */
-          strcpy(array_id, pjob->ji_arraystructid);
-          do_delete_array = true;
-          }
-        else
+        if ((do_delete_array = pa->mark_end_of_subjob(pjob)) == false)
           array_save(pa);
         
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
@@ -1966,7 +1949,6 @@ int svr_job_purge(
       return(PBSE_JOBNOTFOUND);
       }
     }
-
 
   if ((job_substate != JOB_SUBSTATE_TRANSIN) &&
       (job_substate != JOB_SUBSTATE_TRANSICM))
