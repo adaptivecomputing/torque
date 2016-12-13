@@ -794,7 +794,6 @@ void validate_pbs_o_workdir(
   {
   job_data     *tmp_job_info = NULL;
   const char *the_val = NULL;
-  char        null_val[] = "\0";
   char        tmp_dir[MAXPATHLEN] = {""};
 
   if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
@@ -807,11 +806,25 @@ void validate_pbs_o_workdir(
       if ((the_dir = getcwd(tmp_dir, MAXPATHLEN)) != NULL)
         the_val = the_dir;
       else
-        the_val = null_val;
+        {
+        // Current working directory is deleted. Fail
+        fprintf(stderr, "qsub: Cannot obtain the current directory.\nPlease submit from a valid directory.\n");
+        exit(3);
+        }
       }
     }
   else
+    {
+    struct stat sb;
+
     the_val = tmp_job_info->value.c_str();
+    if ((stat(the_val, &sb) != 0) ||
+        (!(S_ISDIR(sb.st_mode))))
+      {
+      fprintf(stderr, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
+      exit(3);
+      }
+    }
 
   hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
   hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
