@@ -34,7 +34,7 @@ END_TEST
 START_TEST(test_displayAsString)
   {
   Core c;
-  c.add_processing_unit(CORE, 0);
+  c.add_processing_unit(CORE_INT, 0);
   std::stringstream out;
 
   c.displayAsString(out);
@@ -105,19 +105,19 @@ START_TEST(test_add_processing_unit)
   fail_unless(c.getNumberOfProcessingUnits() == 0, "%d processing units", c.getNumberOfProcessingUnits());
   fail_unless(c.get_id() == -1);
 
-  c.add_processing_unit(CORE, 0);
-  c.add_processing_unit(THREAD, 1);
+  c.add_processing_unit(CORE_INT, 0);
+  c.add_processing_unit(THREAD_INT, 1);
   fail_unless(c.getNumberOfProcessingUnits() == 2);
   fail_unless(c.get_id() == 0);
-  fail_unless(c.add_processing_unit(CORE, 2) != 0);
+  fail_unless(c.add_processing_unit(CORE_INT, 2) != 0);
   fail_unless(c.getNumberOfProcessingUnits() == 2);
   fail_unless(c.get_id() == 0);
 
   Core c2;
-  c2.add_processing_unit(CORE, 4);
-  c2.add_processing_unit(THREAD, 5);
-  c2.add_processing_unit(THREAD, 6);
-  c2.add_processing_unit(THREAD, 7);
+  c2.add_processing_unit(CORE_INT, 4);
+  c2.add_processing_unit(THREAD_INT, 5);
+  c2.add_processing_unit(THREAD_INT, 6);
+  c2.add_processing_unit(THREAD_INT, 7);
   fail_unless(c2.getNumberOfProcessingUnits() == 4, "%d", c2.getNumberOfProcessingUnits());
   fail_unless(c2.get_id() == 4);
   }
