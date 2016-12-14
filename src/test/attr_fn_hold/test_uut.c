@@ -39,6 +39,13 @@ START_TEST(test_one)
   memset(&attr,0,sizeof(attr));
   fail_unless(decode_hold(&attr,NULL,NULL,"banana",0) == PBSE_BADATVAL);
 
+  memset(&attr,0,sizeof(attr));
+  fail_unless(decode_hold(&attr,NULL,NULL,"a",0) == 0);
+  fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY));
+
+  memset(&attr,0,sizeof(attr));
+  fail_unless(decode_hold(&attr,NULL,NULL,"l",0) == 0);
+  fail_unless(attr.at_flags == (ATR_VFLAG_SET|ATR_VFLAG_MODIFY));
   }
 END_TEST
 
@@ -47,14 +54,22 @@ START_TEST(test_two)
   svrattrl *attrl = attrlist_create("Fred","Wilma",20);
   pbs_attribute f;
   pbs_attribute t;
+  pbs_attribute t2;
+  pbs_attribute t3;
 
-  memset(&f,0,sizeof(f));
-  decode_hold(&f,NULL,NULL,"so",0);
-  memset(&t,0,sizeof(t));
-  decode_hold(&t,NULL,NULL,"nu",0);
+  memset(&f, 0, sizeof(f));
+  decode_hold(&f, NULL, NULL, "so", 0);
+  memset(&t, 0, sizeof(t));
+  decode_hold(&t, NULL, NULL, "nu", 0);
+  memset(&t2, 0, sizeof(t2));
+  decode_hold(&t2, NULL, NULL, "a", 0);
+  memset(&t3, 0, sizeof(t3));
+  decode_hold(&t3, NULL, NULL, "l", 0);
 
-  fail_unless(encode_hold(&f,(tlist_head *)attrl,"FALSE",NULL,0,0) == 1);
-  fail_unless(encode_hold(&t,(tlist_head *)attrl,"TRUE",NULL,0,0) == 1);
+  fail_unless(encode_hold(&f, (tlist_head *)attrl, "FALSE", NULL, 0, 0) == 1);
+  fail_unless(encode_hold(&t, (tlist_head *)attrl, "TRUE", NULL, 0, 0) == 1);
+  fail_unless(encode_hold(&t2, (tlist_head *)attrl, "TRUE", NULL, 0, 0) == 1);
+  fail_unless(encode_hold(&t3, (tlist_head *)attrl, "TRUE", NULL, 0, 0) == 1);
   }
 END_TEST
 
