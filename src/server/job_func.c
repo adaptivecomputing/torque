@@ -1939,6 +1939,10 @@ int svr_job_purge(
         {
         if ((do_delete_array = pa->mark_end_of_subjob(pjob)) == false)
           array_save(pa);
+        else
+          {
+          snprintf(array_id, sizeof(array_id), "%s", pa->ai_qs.parent_id);
+          }
         
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         }
