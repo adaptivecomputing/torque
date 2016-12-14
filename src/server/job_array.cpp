@@ -130,18 +130,22 @@ void job_array::set_submit_host(
 
 int job_array::set_slot_limit(
 
-  char *request)
+  const char *request)
 
   {
   char *pcnt;
+  char *request_copy;
   long  max_limit;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((request_copy = strdup(request)) == NULL)
+    return(-1);
 
   /* check for a max slot limit */
   if (get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
     max_limit = NO_SLOT_LIMIT;
 
-  if ((pcnt = strchr(request,'%')) != NULL)
+  if ((pcnt = strchr(request_copy, '%')) != NULL)
     {
     /* remove '%' from the request, or else it can't be parsed */
     while (*pcnt == '%')
@@ -164,6 +168,7 @@ int job_array::set_slot_limit(
           max_limit);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, this->ai_qs.parent_id, log_buf);
 
+        free(request_copy);
         return(INVALID_SLOT_LIMIT);
         }
       }
@@ -177,6 +182,7 @@ int job_array::set_slot_limit(
     this->ai_qs.slot_limit = max_limit;
     }
 
+  free(request_copy);
   return(PBSE_NONE);
   } /* END set_slot_limit() */
 
@@ -239,11 +245,17 @@ int job_array::parse_array_request(
   long max_array_size;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   this->uncreated_ids.clear();
+  std::string request_copy(request);
+  int loc;
 
-  if ((rc = translate_range_string_to_vector(request, this->uncreated_ids)) != PBSE_NONE)
+  // remove slot limit (begins with %) if present
+  if ((loc = request_copy.find_first_of("%")) >= 0)
+    request_copy.erase(loc);
+
+  if ((rc = translate_range_string_to_vector(request_copy.c_str(), this->uncreated_ids)) != PBSE_NONE)
     return(rc);
 
-  this->ai_qs.range_str = request;
+  this->ai_qs.range_str = request_copy.c_str();
   this->ai_qs.num_jobs = this->uncreated_ids.size();
 
   // size of array is the biggest index + 1

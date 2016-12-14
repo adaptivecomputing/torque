@@ -1,5 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "pbs_job.h"
@@ -72,6 +73,9 @@ START_TEST(test_set_slot_limit)
   request = strdup("0-99%2");
   fail_unless(pa.set_slot_limit(request) == PBSE_NONE);
   fail_unless(pa.ai_qs.slot_limit == 2);
+
+  // make sure request not modified
+  fail_unless(strcmp(request, "0-99%2") == 0);
  
   max_slot = 1;
   request = strdup("0-99%2");
@@ -113,7 +117,7 @@ START_TEST(test_parse_array_request)
 
   // submit a valid array
   array_size = 10000;
-  fail_unless(pa.parse_array_request("0-9") == PBSE_NONE);
+  fail_unless(pa.parse_array_request("0-9%1") == PBSE_NONE);
   fail_unless(pa.ai_qs.array_size == 10);
   fail_unless(pa.ai_qs.num_jobs == 10);
   fail_unless(pa.ai_qs.range_str == "0-9");
