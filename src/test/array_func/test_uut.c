@@ -3,7 +3,9 @@
 #include "test_uut.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "pbs_error.h"
+#include "list_link.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
@@ -173,16 +175,21 @@ END_TEST
 START_TEST(set_slot_limit_test)
   {
   job_array pa;
+  char *p;
 
   memset(&pa, 0, sizeof(job_array));
 
   fail_unless(set_slot_limit(strdup("tom"), &pa) == 0, "failed with no slot limit");
   fail_unless(pa.ai_qs.slot_limit == NO_SLOT_LIMIT, "set no slot limit incorrectly");
-  
+ 
   fail_unless(set_slot_limit(strdup("tom%10"), &pa) == INVALID_SLOT_LIMIT, "set slot limit higher than allowed");
   
-  fail_unless(set_slot_limit(strdup("tom%3"), &pa) == 0, "didn't allow legal slot limit");
+  p = strdup("tom%3"); 
+  fail_unless(set_slot_limit(p, &pa) == 0, "didn't allow legal slot limit");
   fail_unless(pa.ai_qs.slot_limit == 3, "set slot limit incorrectly");
+
+  // confirm set_slot_limit() non-descructive to string with %
+  fail_unless(strcmp(p, "tom%3") == 0);
   
   fail_unless(set_slot_limit(strdup("tom%"), &pa) == 0, "failing because of stray '%'");
   /* 5 comes from the scaffolding */
@@ -344,6 +351,20 @@ START_TEST(array_recov_binary_test)
 END_TEST
 
 
+START_TEST(parse_array_request_test)
+  {
+  char *request;
+  tlist_head h;
+
+  CLEAR_HEAD(h);
+
+#define TSTRING "0-1,10%1"
+
+  request = strdup(TSTRING);
+  fail_unless(parse_array_request(request, &h) == 0);
+  fail_unless(strcmp(request, TSTRING) == 0);
+  }
+END_TEST
 
 
 Suite *array_func_suite(void)
@@ -385,6 +406,10 @@ Suite *array_func_suite(void)
   tcase_add_test(tc_core, array_recov_binary_test);
   tcase_add_test(tc_core, update_array_values_test);
   tcase_add_test(tc_core, update_slot_values_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("parse_array_request_test");
+  tcase_add_test(tc_core, parse_array_request_test);
   suite_add_tcase(s, tc_core);
 
   return s;

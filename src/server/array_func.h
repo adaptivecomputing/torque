@@ -16,7 +16,7 @@ void array_get_parent_id(char *job_id, char *parent_id);
 
 int array_delete(job_array *pa);
 
-int set_slot_limit(char *request, job_array *pa);
+int set_slot_limit(const char *request, job_array *pa);
 
 int setup_array_struct(job *pjob);
 
@@ -47,5 +47,7 @@ int insert_array(job_array *pa);
 int remove_array(job_array *pa);
 
 job_array *next_array(int *iter);
+
+int parse_array_request(const char *request, tlist_head *tl);
 
 #endif /* _ARRAY_FUNC_H */

@@ -103,8 +103,6 @@ int attempt_delete(void *j)
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
-  fprintf(stderr, "The call to append_link needs to be mocked!!\n");
-  exit(1);
   }
 
 bool set_array_depend_holds(job_array *pa)
@@ -138,19 +136,20 @@ const char *get_correct_jobname(const char *jobid, std::string &correct)
 
 void *get_prior(list_link pl, char *file, int line)
   {
-  fprintf(stderr, "The call to get_prior needs to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }
 
 void insert_link(struct list_link *old, struct list_link *new_link, void *pobj, int position)
   {
-  fprintf(stderr, "The call to insert_link needs to be mocked!!\n");
-  exit(1);
+  return;
   }
 
 void *get_next(list_link pl, char *file, int line)
   {
-  return(pl.ll_next);
+  if (pl.ll_next == NULL)
+    return(NULL);
+
+  return(pl.ll_next->ll_struct);
   }
 
 char *threadsafe_tokenizer(char **str, const char *delims)

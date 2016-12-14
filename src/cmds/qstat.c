@@ -1352,7 +1352,7 @@ bool is_the_user(
 /*
  * get_summary_attributes()
  *
- * Iteratres over the attributes and stores the ones we're interested in for the summary
+ * Iterates over the attributes and stores the ones we're interested in for the summary
  * @param attribute - a linked list of the job's attributes
  * @param name - O to store the name
  * @param owner - O to store the owner
@@ -1699,7 +1699,7 @@ void print_req_information(
 /*
  * create_full_job_xml()
  *
- * Builds the xml for the job's full ouput
+ * Builds the xml for the job's full output
  * @param p - the source for the job's information
  * @param DE - the document element we're adding to
  */

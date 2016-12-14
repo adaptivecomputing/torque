@@ -144,6 +144,14 @@ int decode_hold(
           patr->at_val.at_long |= HOLD_s;
           break;
 
+        case 'a':
+          patr->at_val.at_long |= HOLD_a;
+          break;
+
+        case 'l':
+          patr->at_val.at_long |= HOLD_l;
+          break;
+
         default:
           return (PBSE_BADATVAL);
         }
@@ -208,6 +216,12 @@ int encode_hold(
 
     if (attr->at_val.at_long & HOLD_u)
       *(pal->al_value + i++) = 'u';
+
+    if (attr->at_val.at_long & HOLD_a)
+      *(pal->al_value + i++) = 'a';
+
+    if (attr->at_val.at_long & HOLD_l)
+      *(pal->al_value + i++) = 'l';
     }
 
   pal->al_flags = attr->at_flags;

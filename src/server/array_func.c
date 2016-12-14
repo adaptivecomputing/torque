@@ -50,6 +50,7 @@
 #include "work_task.h"
 #include "utils.h"
 #include "array.h"
+#include "array_func.h"
 #include "svr_func.h"
 #include "job_func.h" /* svr_job_purge */
 #include "ji_mutex.h"
@@ -86,7 +87,6 @@ extern int array_259_upgrade;
 int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
-int         parse_array_request(char *request, tlist_head *tl);
 job_array  *next_array_check(int *, job_array *);
 
 #define     BUFSIZE 256
@@ -1150,18 +1150,24 @@ int array_delete(
 
 int set_slot_limit(
 
-  char      *request, /* I */
-  job_array *pa)      /* O */
+  const char *request, /* I */
+  job_array  *pa)      /* O */
 
   {
   char *pcnt;
   long  max_limit;
+  char *request_copy;
+
+  if ((request_copy = strdup(request)) == NULL)
+    {
+    return(-1);
+    }
 
   /* check for a max slot limit */
   if (get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
     max_limit = NO_SLOT_LIMIT;
 
-  if ((pcnt = strchr(request,'%')) != NULL)
+  if ((pcnt = strchr(request_copy, '%')) != NULL)
     {
     /* remove '%' from the request, or else it can't be parsed */
     while (*pcnt == '%')
@@ -1177,6 +1183,7 @@ int set_slot_limit(
       if ((max_limit != NO_SLOT_LIMIT) &&
           (max_limit < pa->ai_qs.slot_limit))
         {
+        free(request_copy);
         return(INVALID_SLOT_LIMIT);
         }
       }
@@ -1190,6 +1197,7 @@ int set_slot_limit(
     pa->ai_qs.slot_limit = max_limit;
     }
 
+  free(request_copy);
   return(PBSE_NONE);
   } /* END set_slot_limit() */
 
@@ -1494,7 +1502,7 @@ int array_request_parse_token(
 
 int parse_array_request(
     
-  char       *request, 
+  const char *request, 
   tlist_head *tl)
 
   {
@@ -1527,7 +1535,12 @@ int parse_array_request(
 
   for (i = strlen(temp_str) - 1; i >= 0; i--)
     {
-    if (temp_str[i] == ',')
+    if (temp_str[i] == '%')
+      {
+      // skip the slot limit part if present
+      temp_str[i] = '\0';
+      }
+    else if (temp_str[i] == ',')
       {
       tokens[j--] = &temp_str[i+1];
       temp_str[i] = '\0';
