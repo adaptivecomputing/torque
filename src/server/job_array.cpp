@@ -593,7 +593,7 @@ bool job_array::mark_end_of_subjob(
       index = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
 
       if ((index >= 0) &&
-          (index < this->ai_qs.num_jobs))
+          (index < this->ai_qs.array_size))
         {
         if (this->job_ids[index] != NULL)
           {
