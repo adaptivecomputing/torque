@@ -160,7 +160,7 @@ class job_array
   ~job_array();
 
   int  parse_array_request(const char *request);
-  int  set_slot_limit(char *request);
+  int  set_slot_limit(const char *request);
   int  set_idle_slot_limit(long requested_limit);
   void set_submit_host(const char *submit_host);
   void set_owner(const char *owner);
