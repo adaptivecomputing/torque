@@ -1318,6 +1318,19 @@ attribute_def job_attr_def[] =
    READ_WRITE,
    ATR_TYPE_LONG,
    PARENT_TYPE_JOB},
+  
+  // JOB_ATR_LRequest
+  {(char *)ATTR_L_request, // "L_Request"
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_WRITE,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",
