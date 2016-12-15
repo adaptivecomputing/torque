@@ -63,9 +63,12 @@
   unset CONFFLAGS \
   CONFFLAGS_FILE=`mktemp %{_tmppath}/confflags.XXXX` \
   ./configure --help 2>&1 > ${CONFFLAGS_FILE} \
-  if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+  if test %{_hwlocpath} != none \
   then \
-      CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+    if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+    then \
+        CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+    fi \
   fi \
   if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \
   then \
