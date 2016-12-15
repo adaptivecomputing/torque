@@ -1435,6 +1435,43 @@ int svr_strtjob2(
 
 
 
+/*
+ * get_message_from_mom_err()
+ * 
+ * @param mom_err (I) - the error code sent back from the mom
+ * @param msg (O) - the message string to populate
+ */
+
+void get_message_from_mom_err(
+
+  int          mom_err,
+  std::string &msg)
+
+  {
+  switch (mom_err)
+    {
+    case JOB_EXEC_CMDFAIL:
+
+      msg = "Failed to exec the job, please retry.";
+      break;
+
+    case JOB_EXEC_STDOUTFAIL:
+
+      msg = "Failed to open the output and error files for the job.";
+      break;
+
+    case JOB_EXEC_RETRY_CGROUP:
+
+      msg = "Failed to create the cgroups for this job.";
+      break;
+
+    default:
+      
+      msg = "Mom rejected the job.";
+      break;
+    }
+  } // get_message_from_mom_err()
+
 
 
 void finish_sendmom(
@@ -1547,7 +1584,11 @@ void finish_sendmom(
         if (preq != NULL)
           {
           if (mom_err != PBSE_NONE)
-            req_reject(mom_err, 0, preq, node_name, "connection to mom timed out");
+            {
+            std::string mom_err_msg;
+            get_message_from_mom_err(mom_err, mom_err_msg);
+            req_reject(mom_err, 0, preq, node_name, mom_err_msg.c_str());
+            }
           else
             req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
           }

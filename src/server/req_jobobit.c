@@ -1564,11 +1564,11 @@ int handle_exited(
       }
 
     free_br(preq);
+
+    preq = NULL;
     }
   else
     job_mutex.unlock();
-
-  preq = NULL;
   
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     return(PBSE_JOBNOTFOUND);
