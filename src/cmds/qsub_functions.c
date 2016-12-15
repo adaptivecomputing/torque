@@ -93,6 +93,7 @@ const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interva
 char       *alternate_dependency;
 int         alternate_data_type;
 complete_req  cr;
+std::string   L_request;
 
 /* adapted from openssh */
 /* The parameter was EMsg, but was never used.
@@ -1121,6 +1122,7 @@ void add_new_request_if_present(
     std::string req_str;
     cr.toString(req_str);
     hash_add_or_exit(ji->job_attr, ATTR_req_information, req_str.c_str(), CMDLINE_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_L_request, L_request.c_str(), CMDLINE_DATA);
     }
   } // END add_new_request_if_present() 
 
@@ -2575,6 +2577,12 @@ void process_opt_L(
 
   {
   char        err_buf[MAXLINE*2];
+
+  if (L_request.size() > 0)
+    L_request += " ";
+
+  L_request += "-L ";
+  L_request += cmd_arg;
 
   if (strncmp(cmd_arg, "tasks=", 6))
     {
