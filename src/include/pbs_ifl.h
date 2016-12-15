@@ -380,6 +380,7 @@
 
 #define ATTR_cpustr                    "cpuset_string"
 #define ATTR_memstr                    "memset_string"
+#define ATTR_L_request                 "L_Request"
 #define ATTR_user_kill_delay           "user_kill_delay"
 #define ATTR_default_gpu_mode          "default_gpu_mode"
 #define ATTR_copy_on_rerun             "copy_on_rerun"

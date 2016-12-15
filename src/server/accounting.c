@@ -275,6 +275,14 @@ int acct_job(
     free(pal);
     }  /* END while (pal != NULL) */
 
+  if ((pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str != NULL) &&
+      ((pjob->ji_wattr[JOB_ATR_LRequest].at_flags & ATR_VFLAG_SET) != 0))
+    {
+    ds += "Resource_Request_2.0=";
+    ds += pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str;
+    ds += " ";
+    }
+
 #ifdef ATTR_X_ACCT
 
   /* x attributes */
