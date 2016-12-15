@@ -789,14 +789,7 @@ ignored by pbs_server.
 [internal type: string]
 .Ig
 .Al scheduler_iteration
-The time, in seconds, between iterations of attempts by the batch server
-to schedule jobs.  On each iteration, the server examines the available
-resources and runnable jobs to see if a job can be initiated.  This
-examination also occurs whenever a running batch job terminates or a
-new job is placed in the queued state in an execution queue.
-Format: integer seconds; default value: 10 minutes, set by 
-.Sc PBS_SCHEDULE_CYCLE
-in server_limits.h.
+Has no effect.
 .if !\n(Pb .ig Ig
 [internal type: integer, displays as name defined below]
 .Ig
