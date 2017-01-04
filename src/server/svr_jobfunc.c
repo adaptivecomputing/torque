@@ -3137,7 +3137,6 @@ int job_set_wait(
 
 
 
-
 /*
  * default_std - make the default name for standard output or error
  * "job_name".[e|o]job_sequence_number
@@ -3188,8 +3187,6 @@ static void default_std(
 
   return;
   }  /* END default_std() */
-
-
 
 
 
@@ -3271,7 +3268,6 @@ const char *prefix_std_file(
 
 
 
-
 /*
  * add_std_filename - add the default file name for the job's
  * standard output or error:
@@ -3344,17 +3340,66 @@ void get_jobowner(
   *(to + i) = '\0';
 
   return;
-  }
+  } // END get_jobowner()
 
 
+
+/*
+ * is_execution_slot_resource()
+ *
+ * @param r - the resource we're checking
+ * @return true if this resource is an execution slot related request
+ */
+
+inline bool is_execution_slot_resource(
+
+  const resource &r)
+
+  {
+  return((!strcmp(r.rs_defin->rs_name, "nodes")) ||
+        (!strcmp(r.rs_defin->rs_name, "procs")) ||
+        (!strcmp(r.rs_defin->rs_name, "size")) ||
+        (!strcmp(r.rs_defin->rs_name, "ncpus")));
+  } // is_execution_slot_resource()
+
+
+
+/*
+ * contains_execution_slot_request()
+ *
+ * @param jb - the resources requested by the job
+ */
+
+bool contains_execution_slot_request(
+
+  pbs_attribute *jb)
+
+  {
+  bool execution_slot_request = false;
+      
+  std::vector<resource> *job_resc = (std::vector<resource> *)jb->at_val.at_ptr;
+
+  for (size_t i = 0; i < job_resc->size(); i++)
+    {
+    resource &r = job_resc->at(i);
+
+    if (is_execution_slot_resource(r))
+      {
+      execution_slot_request = true;
+      break;
+      }
+    }
+
+  return(execution_slot_request);
+  } // END contains_execution_slot_request()
 
 
 
 /**
  * @see set_resc_deflt() - parent
  *
- * @param jb
- * @param *dflt
+ * @param jb - the job's resources
+ * @param dflt - the specified default resources
  */
 
 void set_deflt_resc(
@@ -3376,9 +3421,15 @@ void set_deflt_resc(
 
       if (resc_deflt != NULL)
         {
+        bool es_spec = contains_execution_slot_request(jb);
+
         for (size_t i = 0; i < resc_deflt->size(); i++)
           {
           resource &r = resc_deflt->at(i);
+
+          if ((es_spec == true) &&
+              (is_execution_slot_resource(r)))
+            continue;
 
           prescjb = find_resc_entry(jb, r.rs_defin);
 
