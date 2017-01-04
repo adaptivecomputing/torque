@@ -1743,7 +1743,7 @@ void purge_completed_jobs(
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
         ((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
-        (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
+        (pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool == false))
       {
       if (LOGLEVEL >= 4)
         {
@@ -1753,7 +1753,7 @@ void purge_completed_jobs(
         log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
         }
       
-      pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+      pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool = true;
       pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
           
       job_save(pjob, SAVEJOB_FULL, 0); 

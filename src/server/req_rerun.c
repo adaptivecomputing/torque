@@ -472,7 +472,7 @@ int req_rerunjob(
 
   /* the job must be rerunnable */
 
-  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long == 0)
+  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool == false)
     {
     /* NOTE:  should force override this constraint? maybe (???) */
     /*          no, the user is saying that the job will break, and

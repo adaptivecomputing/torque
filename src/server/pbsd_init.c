@@ -2782,13 +2782,13 @@ void check_jobs_queue(
     pque->qu_attr[QA_ATR_QType].at_flags |= ATR_VFLAG_SET;
     pque->qu_qs.qu_type = QTYPE_Execution;
 
-    pque->qu_attr[QA_ATR_Started].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Started].at_val.at_bool = true;
     pque->qu_attr[QA_ATR_Started].at_flags |= ATR_VFLAG_SET;
 
-    pque->qu_attr[QA_ATR_Enabled].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_Enabled].at_val.at_bool = true;
     pque->qu_attr[QA_ATR_Enabled].at_flags |= ATR_VFLAG_SET;
 
-    pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long = 1;
+    pque->qu_attr[QA_ATR_GhostQueue].at_val.at_bool = true;
     pque->qu_attr[QA_ATR_GhostQueue].at_flags |= ATR_VFLAG_SET;
     }
 

@@ -680,12 +680,12 @@ void encode_attributes(
 
   if (cpy_stdout_err_on_rerun)
     {
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 1;
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool = true;
     pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = ATR_VFLAG_SET;
     }  
   else
     {
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long = 0;
+    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool = false;
     pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = 0;
     }
 

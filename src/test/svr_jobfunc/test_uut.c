@@ -522,11 +522,11 @@ START_TEST(svr_chkque_test)
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_QUNOENB, "svr_chkque fail");
 
-  test_queue.qu_attr[QA_ATR_Enabled].at_val.at_long = 1;
+  test_queue.qu_attr[QA_ATR_Enabled].at_val.at_bool = true;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_BAD_PARAMETER, "svr_chkque fail");
 
-  test_queue.qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long = 1;
+  test_queue.qu_attr[QA_ATR_AclGroupEnabled].at_val.at_bool = true;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result != PBSE_NONE, "svr_chkque fail");
 
@@ -552,12 +552,12 @@ START_TEST(svr_chkque_test)
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_rerunable;
   test_job.ji_wattr[JOB_ATR_rerunable].at_flags = ATR_VFLAG_SET;
-  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_NORERUNABLE, "svr_chkque PBSE_NORERUNABLE fail");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_nonrerunable;
-  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 0;
+  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = false;
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail");
 

@@ -1522,7 +1522,7 @@ int trq_cg_get_cpuset_and_mem(
     // If a job is using resource request syntax 1.0 and has specified that it is node 
     // exclusive, then just give all of the cpus and memory to the job
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false) &&
         (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
          (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
       {

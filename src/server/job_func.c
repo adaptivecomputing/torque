@@ -1321,7 +1321,7 @@ int perform_array_postprocessing(
        {
        mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
        if ((pque->qu_qs.qu_type == QTYPE_RoutePush) &&
-           (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
+           (pque->qu_attr[QA_ATR_Started].at_val.at_bool != false))
          { 
          /* job_route expects the queue to be unlocked */
          pque_mutex.unlock();

@@ -503,7 +503,7 @@ attribute_def job_attr_def[] =
     free_null,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_ALTRUN | ATR_DFLAG_SELEQ,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_JOB
   },
   /* JOB_ATR_resource */
@@ -927,7 +927,7 @@ attribute_def job_attr_def[] =
     free_null,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_ALTRUN | ATR_DFLAG_SELEQ | ATR_DFLAG_MOM,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_JOB
   },
 
@@ -953,7 +953,7 @@ attribute_def job_attr_def[] =
   	free_null,
   	NULL_FUNC,
   	READ_ONLY | ATR_DFLAG_SSET,
-  	ATR_TYPE_LONG,
+  	ATR_TYPE_BOOL,
   	PARENT_TYPE_JOB
   },
 
@@ -1044,7 +1044,7 @@ attribute_def job_attr_def[] =
     free_null,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_JOB
   },
 
@@ -1259,14 +1259,14 @@ attribute_def job_attr_def[] =
 
   /* JOB_ATR_copystd_on_rerun */
   {(char *)ATTR_copy_on_rerun,   /* "copy_on_rerun" */
-    decode_l,
-    encode_l,
-    set_l,
-    comp_l,
+    decode_b,
+    encode_b,
+    set_b,
+    comp_b,
     free_null,
     NULL_FUNC,
     READ_WRITE | ATR_DFLAG_MOM,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_JOB},
 
   // JOB_ATR_cpuset_string

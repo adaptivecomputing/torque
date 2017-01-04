@@ -264,7 +264,7 @@ START_TEST(setrerun_test)
   job pjob;
 
   fail_unless(setrerun(&pjob,NULL) != PBSE_NONE);
-  pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
   fail_unless(setrerun(&pjob,"rerunner") == PBSE_NONE);
   fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
   }
@@ -591,7 +591,7 @@ START_TEST(update_substate_from_exit_status_test)
   job  *pjob = new job();
   int   alreadymailed = 0;
 
-  pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long = 1;
+  pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
 
   pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;

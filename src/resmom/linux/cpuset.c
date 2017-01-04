@@ -1360,7 +1360,7 @@ int create_job_cpuset(
       }
 
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0))
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false))
       {
       /* If job's node_usage is singlejob, simply add all cpus/mems of this vnode */
       hwloc_bitmap_or(cpus, cpus, node_boards[numa_idx].cpuset);
@@ -1447,7 +1447,7 @@ int create_job_cpuset(
 
     // If job's node_usage is singlejob, simply add all cpus. Also, for logins, add all cpus
     if (((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0)) ||
+         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false)) ||
         (is_login_node == TRUE))
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);

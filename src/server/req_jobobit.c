@@ -1834,7 +1834,7 @@ int handle_complete_first_time(
   if ((get_svr_attr_b(SRV_ATR_JobMustReport, &must_report) == PBSE_NONE) &&
       (must_report == true))
     {
-    pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 0;
+    pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool = false;
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     
     job_save(pjob,SAVEJOB_FULL, 0);
@@ -1947,7 +1947,7 @@ void handle_complete_second_time(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   if (((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
-      (pjob->ji_wattr[JOB_ATR_reported].at_val.at_long == 0))
+      (pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool == false))
     {
     /* the job must report pbs_attribute but hasn't:
      * skip the job if it has not yet reported to the scheduler. */
@@ -2419,7 +2419,7 @@ void on_job_rerun(
         /* this is the very first call, have mom copy files */
         /* are there any stage-out files to process?  */
         if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET)
-          && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
+          && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool == true))
           {
           preq = cpy_stdfile(preq, pjob, JOB_ATR_outpath);
           preq = cpy_stdfile(preq, pjob, JOB_ATR_errpath);
@@ -2711,7 +2711,7 @@ int setrerun(
   const char *text)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long)
+  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool)
     {
     /* job is rerunnable */
 

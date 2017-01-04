@@ -1694,9 +1694,9 @@ job *chk_job_torun(
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type != QTYPE_Execution ||
-         pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
+         pque->qu_attr[QA_ATR_Started].at_val.at_bool == false)
       {
-      if (pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
+      if (pque->qu_attr[QA_ATR_Started].at_val.at_bool == false)
         snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-started queue");
       else
         /* FAILURE - job must be in execution queue */

@@ -1552,7 +1552,7 @@ void node_bailout(
 
         /* if job pbs_attribute fault_tolerant is not set or set to false then kill the job */
         if ((pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) &&
-            pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long)
+            pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_bool)
           {
           sprintf(log_buffer, "%s POLL failed from node %s %d - job is fault tolerant - job will not be killed)",
             pjob->ji_qs.ji_jobid,

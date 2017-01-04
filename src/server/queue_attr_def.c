@@ -186,7 +186,7 @@ attribute_def que_attr_def[] =
       free_null,
       NULL_FUNC,
       NO_USER_SET,
-      ATR_TYPE_LONG,
+      ATR_TYPE_BOOL,
       PARENT_TYPE_QUE_ALL
   },
 
@@ -271,7 +271,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_AclHost */  /* Host Access Control List */
@@ -295,7 +295,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_AclUsers */  /* User Acess Control List */
@@ -319,7 +319,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_ResourceMax */
@@ -368,7 +368,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_AclGroup */  /* Group Access Control List */
@@ -392,7 +392,7 @@ attribute_def que_attr_def[] =
      free_null,
      NULL_FUNC,
      NO_USER_SET,
-     ATR_TYPE_LONG,
+     ATR_TYPE_BOOL,
      PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_AclGroupSloppy */
@@ -404,7 +404,7 @@ attribute_def que_attr_def[] =
      free_null,
      NULL_FUNC,
      NO_USER_SET,
-     ATR_TYPE_LONG,
+     ATR_TYPE_BOOL,
      PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_MTime */
@@ -593,7 +593,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_EXC
   },
   /* for routing queues */
@@ -619,7 +619,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_RTE
   },
   /* QR_ATR_RouteHeld */
@@ -631,7 +631,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_RTE
   },
   /* QR_ATR_RouteWaiting */
@@ -643,7 +643,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_RTE
   },
   /* QR_ATR_RouteRetryTime */
@@ -682,7 +682,7 @@ attribute_def que_attr_def[] =
     free_null,
     check_que_enable,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_Started */  /* Queue enabled - jobs can be started */
@@ -694,7 +694,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   /* QA_ATR_FeaturesRequired */
@@ -766,7 +766,7 @@ attribute_def que_attr_def[] =
     free_null,
     NULL_FUNC,
     NO_USER_SET,
-    ATR_TYPE_LONG,
+    ATR_TYPE_BOOL,
     PARENT_TYPE_QUE_ALL
   },
   };

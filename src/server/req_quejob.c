@@ -1011,7 +1011,7 @@ int check_attribute_settings(
     if ((pj->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
         pj->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       {
-      pj->ji_wattr[JOB_ATR_rerunable].at_val.at_long = 0;
+      pj->ji_wattr[JOB_ATR_rerunable].at_val.at_bool = false;
       pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
       }
 
@@ -1548,7 +1548,7 @@ int perform_commit_work(
 
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
-        (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
+        (pque->qu_attr[QA_ATR_Started].at_val.at_bool != false))
       {
       /* job_route expects the queue to be unlocked */
       pque_mutex.unlock();

@@ -439,7 +439,7 @@ int svr_enquejob(
 
   mutex_mgr que_mgr(pque->qu_mutex, true);
 
-  if ((pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long == TRUE) &&
+  if ((pque->qu_attr[QA_ATR_GhostQueue].at_val.at_bool == true) &&
       (being_recovered == false))
     {
     return(PBSE_GHOSTQUEUE);
@@ -2152,7 +2152,7 @@ static int check_queue_disallowed_types(
       if (strcmp(Q_DT_rerunable,
                  pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
           && (pjob->ji_wattr[JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET &&
-              pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long > 0))
+              pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool != false))
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -2166,7 +2166,7 @@ static int check_queue_disallowed_types(
       if (strcmp(Q_DT_nonrerunable,
                  pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
           && (!(pjob->ji_wattr[JOB_ATR_rerunable].at_flags & ATR_VFLAG_SET) ||
-              pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_long == 0))
+              pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool == false))
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -2179,7 +2179,7 @@ static int check_queue_disallowed_types(
       if (strcmp(Q_DT_fault_tolerant,
                  pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
           && ((pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) &&
-              pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long != 0))
+              pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_bool != false))
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -2193,7 +2193,7 @@ static int check_queue_disallowed_types(
       if (strcmp(Q_DT_fault_intolerant,
                  pque->qu_attr[QA_ATR_DisallowedTypes].at_val.at_arst->as_string[i]) == 0
           && (!(pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) ||
-              pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_long == 0))
+              pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_bool == false))
         {
         if (EMsg)
           snprintf(EMsg, 1024,
@@ -2231,7 +2231,7 @@ static int check_queue_group_ACL(
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
-  if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
+  if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_bool)
     {
     int rc;
     int slpygrp;
@@ -2313,7 +2313,7 @@ static int check_queue_group_ACL(
                                     false);
         pthread_mutex_unlock(server.sv_attr_mutex);
 
-        if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
+        if (logic_or && pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_bool)
           {
           /* only fail if neither user nor group acls can be met */
 
@@ -2331,7 +2331,7 @@ static int check_queue_group_ACL(
           }
         }
       }
-    }    /* END if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long) */
+    }    /* END if (pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_bool) */
 
   return(return_code);
   }
@@ -2345,7 +2345,7 @@ static int check_queue_host_ACL(
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
-  if (pque->qu_attr[QA_ATR_AclHostEnabled].at_val.at_long)
+  if (pque->qu_attr[QA_ATR_AclHostEnabled].at_val.at_bool)
     {
     if (acl_check(&pque->qu_attr[QA_ATR_AclHost], hostname, ACL_Host) == 0)
       {
@@ -2373,7 +2373,7 @@ static int check_queue_user_ACL(
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
-  if (pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_long)
+  if (pque->qu_attr[QA_ATR_AclUserEnabled].at_val.at_bool)
     {
     if (acl_check(
           &pque->qu_attr[QA_ATR_AclUsers],
@@ -2388,7 +2388,7 @@ static int check_queue_user_ACL(
                                   false);
       pthread_mutex_unlock(server.sv_attr_mutex);
 
-      if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_long)
+      if (logic_or && pque->qu_attr[QA_ATR_AclGroupEnabled].at_val.at_bool)
         {
         /* only fail if neither user nor group acls can be met */
 
@@ -2574,7 +2574,7 @@ static int check_queue_enabled(
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
-  if (pque->qu_attr[QA_ATR_Enabled].at_val.at_long == 0)
+  if (pque->qu_attr[QA_ATR_Enabled].at_val.at_bool == false)
     {
     if (EMsg)
       {
@@ -2602,7 +2602,7 @@ static int check_local_route(
 
   /* if "from_route_only" is true, only local route allowed */
   if ((pque->qu_attr[QA_ATR_FromRouteOnly].at_flags & ATR_VFLAG_SET) &&
-      (pque->qu_attr[QA_ATR_FromRouteOnly].at_val.at_long == 1))
+      (pque->qu_attr[QA_ATR_FromRouteOnly].at_val.at_bool == true))
     {
     if (mtype == MOVE_TYPE_Move)  /* ok if not plain user */
       {

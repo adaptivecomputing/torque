@@ -4201,7 +4201,7 @@ int place_subnodes_in_hostlist(
       job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long == TRUE) ||
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool == true) ||
         (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
 
@@ -4224,7 +4224,7 @@ int place_subnodes_in_hostlist(
       return(rc);
 
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
+        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false) &&
         (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
          (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
       {
@@ -4897,7 +4897,7 @@ int set_nodes(
 
   bool job_is_exclusive = false;
   if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
-    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0);
+    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false);
 
 #ifdef PENABLE_LINUX_CGROUPS
   if (!strcmp(spec, RESOURCE_20_FIND))

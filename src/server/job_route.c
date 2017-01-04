@@ -369,7 +369,7 @@ int job_route(
 
       /* change for trq-2788, reroute even if -h */
       if (qp->qu_qs.qu_type != QTYPE_RoutePush)
-        bad_state = !qp->qu_attr[QR_ATR_RouteHeld].at_val.at_long;
+        bad_state = !qp->qu_attr[QR_ATR_RouteHeld].at_val.at_bool;
 
       break;
 
@@ -377,7 +377,7 @@ int job_route(
 
       /* job may be acceptable */
 
-      bad_state = !qp->qu_attr[QR_ATR_RouteWaiting].at_val.at_long;
+      bad_state = !qp->qu_attr[QR_ATR_RouteWaiting].at_val.at_bool;
 
       break;
 
@@ -396,7 +396,7 @@ int job_route(
     }
 
   /* check the queue limits, can we route any (more) */
-  if (qp->qu_attr[QA_ATR_Started].at_val.at_long == 0)
+  if (qp->qu_attr[QA_ATR_Started].at_val.at_bool == false)
     {
     /* queue not started - no routing */
 
@@ -452,7 +452,7 @@ int job_route(
 
   /* default_router and site_alt_router expect the queue to 
      be unlocked. */
-  if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
+  if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == false)
     {
     qp_mutex.unlock();
     return(default_router(jobp, qp, retry_time));

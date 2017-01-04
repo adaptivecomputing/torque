@@ -205,7 +205,7 @@ job *svr_find_job(const char *jobid, int get_subjob)
     pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET;
   
     if (reported)
-      pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
+      pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool = true;
 
     if (exited == true)
       pjob->ji_qs.ji_state = JOB_STATE_EXITING;

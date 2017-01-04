@@ -3028,7 +3028,7 @@ void req_rerunjob(
    * copy files request.
   */
   if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET) 
-    && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_long == 1))
+    && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool == true))
       remove_file = 0;
 
   rc = return_file(pjob, StdOut, sock, remove_file);
@@ -4386,7 +4386,7 @@ batch_request *get_std_file_info(
   // where it should be
   if ((spoolasfinalname == TRUE) ||
       ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long != 0)))
+       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long != false)))
     return(NULL);
 
   if (pjob->ji_wattr[JOB_ATR_join].at_val.at_str != NULL)
