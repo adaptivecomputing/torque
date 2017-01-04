@@ -44,6 +44,7 @@ bool       use_log = true;
 bool       daemonize_server = true;
 static int changed_msg_daem = 0;
 static char *active_pbs_server;
+std::string log_file_path = "";
 
 /* Get the name of the active pbs_server */
 int load_trqauthd_config(
@@ -129,7 +130,14 @@ int init_trqauth_log(const char *server_port)
   log_get_set_eventclass(&eventclass, SETV);
 
   initialize_globals_for_log(server_port);
-  sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
+  if(log_file_path == "")
+    {
+    sprintf(path_log, "%s/%s", path_home, TRQ_LOGFILES);
+    }
+  else
+    {
+    sprintf(path_log, "%s", log_file_path.c_str());
+    }
   if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
     {
        openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
@@ -264,6 +272,7 @@ void parse_command_line(int argc, char **argv)
             {"about",   no_argument,      0,  0 },
             {"help",    no_argument,      0,  0 },
             {"version", no_argument,      0,  0 },
+            {"logfile_dir", required_argument,0,  0 },
             {0,         0,                0,  0 }
   };
 
@@ -294,6 +303,9 @@ void parse_command_line(int argc, char **argv)
           case 2:   /* version */
             fprintf(stderr, "Version: %s \nCommit: %s\n", VERSION, GIT_HASH);
             exit(0);
+            break;
+           case 3: /* logfile */
+            log_file_path = optarg;
             break;
           }
         break;
