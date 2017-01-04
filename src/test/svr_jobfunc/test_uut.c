@@ -23,6 +23,7 @@ int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_widt
 void job_wait_over(struct work_task *);
 bool is_valid_state_transition(job &pjob, int newstate, int newsubstate);
 bool has_conflicting_resource_requests(job *pjob, pbs_queue *pque);
+bool contains_execution_slot_request(pbs_attribute *jb);
 
 extern int decrement_count;
 extern job napali_job;
@@ -33,7 +34,7 @@ extern bool possible;
 extern bool get_jobs_queue_force_null;
 extern std::string global_log_buf;
 
-void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value)
+void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *value, long v)
   {
   if (pattr->at_val.at_ptr == NULL)
     {
@@ -44,11 +45,57 @@ void add_resc_attribute(pbs_attribute *pattr, resource_def *prdef, const char *v
   resource rsc;
   rsc.rs_defin = prdef;
   rsc.rs_value.at_type = prdef->rs_type;
-  rsc.rs_value.at_val.at_str = strdup(value);
+
+  if (value != NULL)
+    rsc.rs_value.at_val.at_str = strdup(value);
+  else
+    rsc.rs_value.at_val.at_long = v;
+
   resources->push_back(rsc);
   pattr->at_flags = ATR_VFLAG_SET;
   pattr->at_val.at_ptr = resources;
   }
+
+
+START_TEST(contains_execution_slot_request_test)
+  {
+  pbs_attribute pattr;
+  
+  resource_def rdef[5];
+  rdef[0].rs_name = strdup("nodes");
+  rdef[1].rs_name = strdup("walltime");
+  rdef[2].rs_name = strdup("ncpus");
+  rdef[3].rs_name = strdup("procs");
+  rdef[4].rs_name = strdup("size");
+  memset(&pattr, 0, sizeof(pattr));
+
+  // Add walltime to the job request
+  add_resc_attribute(&pattr, rdef + 1, NULL, 60);
+  fail_unless(contains_execution_slot_request(&pattr) == false);
+
+  // Now add nodes
+  add_resc_attribute(&pattr, rdef, "2:ppn=10", 60);
+  fail_unless(contains_execution_slot_request(&pattr) == true);
+
+  // Make a new request with ncpus
+  pbs_attribute ncpus_attr;
+  memset(&ncpus_attr, 0, sizeof(ncpus_attr));
+  add_resc_attribute(&ncpus_attr, rdef + 2,  NULL, 6);
+  fail_unless(contains_execution_slot_request(&ncpus_attr) == true);
+
+  // Make a new request with procs
+  pbs_attribute procs_attr;
+  memset(&procs_attr, 0, sizeof(procs_attr));
+  add_resc_attribute(&procs_attr, rdef + 3, NULL, 4);
+  fail_unless(contains_execution_slot_request(&procs_attr) == true);
+
+  // Finally, make one with size
+  pbs_attribute size_attr;
+  memset(&size_attr, 0, sizeof(size_attr));
+  add_resc_attribute(&size_attr, rdef + 4, NULL, 64);
+  fail_unless(contains_execution_slot_request(&size_attr) == true);
+  }
+END_TEST
 
 
 START_TEST(test_numa_task_exceeds_resources)
@@ -431,13 +478,14 @@ START_TEST(chk_resc_min_limits_test)
   memset(&test_attribute, 0, sizeof(test_attribute));
   memset(&test_queue, 0, sizeof(test_queue));
 
-  add_resc_attribute(&test_queue.qu_attr[QA_ATR_ResourceMin], &nodes_resource_def, "3");
-  add_resc_attribute(&test_attribute, &nodes_resource_def, "2:ppn=1+1:ppn=4");
+  add_resc_attribute(&test_queue.qu_attr[QA_ATR_ResourceMin], &nodes_resource_def, "3", 1);
+  add_resc_attribute(&test_attribute, &nodes_resource_def, "2:ppn=1+1:ppn=4", 1);
 
   result = chk_resc_limits(&test_attribute, &test_queue, message);
   fail_unless(result == PBSE_NONE, "Fail to approve queue minimum resource");
   }
 END_TEST
+
 
 START_TEST(svr_chkque_test)
   {
@@ -735,6 +783,7 @@ Suite *svr_jobfunc_suite(void)
 
   tc_core = tcase_create("set_chkpt_deflt_test");
   tcase_add_test(tc_core, set_chkpt_deflt_test);
+  tcase_add_test(tc_core, contains_execution_slot_request_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("set_statechar_test");
