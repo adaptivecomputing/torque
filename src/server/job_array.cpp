@@ -599,14 +599,14 @@ bool job_array::mark_end_of_subjob(
           {
           free(this->job_ids[index]);
           this->job_ids[index] = NULL;
-          
-          this->ai_qs.num_purged++;
-          
-          if ((this->ai_qs.num_purged == this->ai_qs.num_jobs) ||
-              ((this->is_deleted() == true) &&
-               (this->ai_qs.num_idle == 0)))
-            no_more_subjobs = true;
           }
+          
+        this->ai_qs.num_purged++;
+        
+        if ((this->ai_qs.num_purged == this->ai_qs.num_jobs) ||
+            ((this->is_deleted() == true) &&
+             (this->ai_qs.num_idle == 0)))
+          no_more_subjobs = true;
         }
       }
     }
