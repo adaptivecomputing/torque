@@ -3139,7 +3139,6 @@ int job_set_wait(
 
 
 
-
 /*
  * default_std - make the default name for standard output or error
  * "job_name".[e|o]job_sequence_number
@@ -3190,8 +3189,6 @@ static void default_std(
 
   return;
   }  /* END default_std() */
-
-
 
 
 
@@ -3273,7 +3270,6 @@ const char *prefix_std_file(
 
 
 
-
 /*
  * add_std_filename - add the default file name for the job's
  * standard output or error:
@@ -3346,17 +3342,66 @@ void get_jobowner(
   *(to + i) = '\0';
 
   return;
-  }
+  } // END get_jobowner()
 
 
+
+/*
+ * is_execution_slot_resource()
+ *
+ * @param r - the resource we're checking
+ * @return true if this resource is an execution slot related request
+ */
+
+inline bool is_execution_slot_resource(
+
+  const resource &r)
+
+  {
+  return((!strcmp(r.rs_defin->rs_name, "nodes")) ||
+        (!strcmp(r.rs_defin->rs_name, "procs")) ||
+        (!strcmp(r.rs_defin->rs_name, "size")) ||
+        (!strcmp(r.rs_defin->rs_name, "ncpus")));
+  } // is_execution_slot_resource()
+
+
+
+/*
+ * contains_execution_slot_request()
+ *
+ * @param jb - the resources requested by the job
+ */
+
+bool contains_execution_slot_request(
+
+  pbs_attribute *jb)
+
+  {
+  bool execution_slot_request = false;
+      
+  resource *r = (resource *)GET_NEXT(jb->at_val.at_list);
+
+  while (r != NULL)
+    {
+    if (is_execution_slot_resource(*r))
+      {
+      execution_slot_request = true;
+      break;
+      }
+
+    r = (resource *)GET_NEXT(r->rs_link);
+    }
+
+  return(execution_slot_request);
+  } // END contains_execution_slot_request()
 
 
 
 /**
  * @see set_resc_deflt() - parent
  *
- * @param jb
- * @param *dflt
+ * @param jb - the job's resources
+ * @param dflt - the specified default resources
  */
 
 void set_deflt_resc(
@@ -3376,12 +3421,20 @@ void set_deflt_resc(
       /* for each resource in the default value list */
 
       prescdt = (resource *)GET_NEXT(dflt->at_val.at_list);
+        
+      bool es_spec = contains_execution_slot_request(jb);
 
       while (prescdt != NULL)
         {
         if (prescdt->rs_value.at_flags & ATR_VFLAG_SET)
+
           {
           /* see if the job already has that resource */
+          prescjb = find_resc_entry(jb, prescdt->rs_defin);
+          
+          if ((es_spec == true) &&
+              (is_execution_slot_resource(*prescdt)))
+            continue;
 
           prescjb = find_resc_entry(jb, prescdt->rs_defin);
 
