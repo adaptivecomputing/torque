@@ -898,6 +898,11 @@ void validate_qsub_host_pbs_o_server(
   } /* END validate_qsub_host_pbs_o_server() */
 
 
+
+/*
+ * are_mpp_present()
+ */
+
 int are_mpp_present(
 
   job_data_container  *resources,
