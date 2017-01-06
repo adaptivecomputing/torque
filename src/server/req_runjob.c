@@ -1978,6 +1978,35 @@ int set_job_exec_info(
 
 
 
+void set_mode_from_string(
+
+  const char  *mode_string,
+  std::string &mode)
+
+  {
+  if (strstr(mode_string, "exclusive_thread"))
+    {
+    mode = ":exclusive_thread";
+    }
+  else if (strstr(mode_string, "exclusive_process"))
+    {
+    mode = ":exclusive_process";
+    }
+  else if (strstr(mode_string, "exclusive"))
+    {
+    mode = ":exclusive";
+    }
+  else if (strstr(mode_string, "default"))
+    {
+    mode = ":default";
+    }
+  else if (strstr(mode_string, "shared"))
+    {
+    mode = ":shared";
+    }
+  } // END set_mode_from_string()
+
+
 
 char *get_correct_spec_string(
 
@@ -1985,18 +2014,18 @@ char *get_correct_spec_string(
   job  *pjob)
 
   {
-  char      mode[20];
-  char     *mode_string;
-  char     *request;
-  char     *correct_spec = NULL;
-  char     *outer_plus;
-  char     *plus;
-  char     *one_req;
-  int       num_gpu_reqs;
-  char     *gpu_req;
-  int       len;
-  resource *pres = NULL;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string  mode;
+  char        *mode_string = NULL;
+  char        *request;
+  char        *correct_spec = NULL;
+  char        *outer_plus = NULL;
+  char        *plus;
+  char        *one_req;
+  int          num_gpu_reqs;
+  char        *gpu_req;
+  int          len;
+  resource    *pres = NULL;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check to see if there is a gpus request. If so moab
    * sripted the mode request if it existed. We need to
@@ -2007,8 +2036,15 @@ char *get_correct_spec_string(
     {
     /* Build our host list from what is in the job attrs */
     pres = find_resc_entry(
-      &pjob->ji_wattr[(int)JOB_ATR_resource],
+      &pjob->ji_wattr[JOB_ATR_resource],
       find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
+
+    if (pres == NULL)
+      {
+      pres = find_resc_entry(
+        &pjob->ji_wattr[JOB_ATR_resource],
+        find_resc_def(svr_resc_def, "gres", svr_resc_size));
+      }
     
     if (pres != NULL)
       {
@@ -2027,11 +2063,17 @@ char *get_correct_spec_string(
 
         if (!(gpu_req = strstr(request, ":gpus=")))
           {
-          correct_spec = strdup(given);
-          return(correct_spec);
+          if (!(gpu_req = strstr(request, "gpus:")))
+            {
+            correct_spec = strdup(given);
+            return(correct_spec);
+            }
+          else
+            mode_string = gpu_req + 5; // strlen(gpus:)
           }
+        else
+          mode_string = gpu_req + 6; // strlen(:gpus=)
 
-        mode_string = gpu_req + strlen(":gpus=");
         while (isdigit(*mode_string))
           mode_string++;
 
@@ -2049,43 +2091,19 @@ char *get_correct_spec_string(
 
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
             *outer_plus = '\0';
-
+        
           /* 
            * The neednodes original value may have non gpu things in it, so we
            * can not rely on the requested gpu mode being the first item in the
            * the string after the gpus=x:.
            */
-
-          if (strstr(mode_string, "exclusive_thread"))
-            {
-            strcpy(mode, ":exclusive_thread");
-            }
-          else if (strstr(mode_string, "exclusive_process"))
-            {
-            strcpy(mode, ":exclusive_process");
-            }
-          else if (strstr(mode_string, "exclusive"))
-            {
-            strcpy(mode, ":exclusive");
-            }
-          else if (strstr(mode_string, "default"))
-            {
-            strcpy(mode, ":default");
-            }
-          else if (strstr(mode_string, "shared"))
-            {
-            strcpy(mode, ":shared");
-            }
-          else
-            {
-            strcpy(mode, "");
-            }
+          set_mode_from_string(mode_string, mode);
 
           if (outer_plus != NULL)
             *outer_plus = '+';
 
           /* now using the actual length of requested gpu mode */
-          len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
+          len = strlen(given) + 1 + (num_gpu_reqs * mode.size());
           if ((correct_spec = (char *)calloc(1, len)) != NULL)
             {
             one_req = given;
@@ -2099,7 +2117,7 @@ char *get_correct_spec_string(
               
               strcat(correct_spec, one_req);
               if (strstr(one_req, ":gpus") != NULL)
-                strcat(correct_spec, mode);
+                strcat(correct_spec, mode.c_str());
               
               if (plus != NULL)
                 {
@@ -2110,6 +2128,7 @@ char *get_correct_spec_string(
                 one_req = NULL;
               }
             }
+
           if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
             {
             sprintf(log_buf, "%s: job gets adjusted gpu node spec of '%s'",
