@@ -2100,7 +2100,7 @@ int proplist(
   char         name_storage[80];
   char        *pname;
   char        *pequal;
-  int          have_gpus = FALSE;
+  bool         have_gpus = false;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   *node_req = 1; /* default to 1 processor per node */
@@ -2155,7 +2155,7 @@ int proplist(
           return(1);
           }
 
-        have_gpus = TRUE;
+        have_gpus = true;
         gpu_err_reset = FALSE; /* default to no */
 
         // default value if no other gets specified
