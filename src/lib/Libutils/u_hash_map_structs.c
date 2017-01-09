@@ -107,28 +107,42 @@ int hash_add_item(
 
   {
   job_data *item = new job_data(name,value,var_type,op_type);
-  bool      replace = false;
 
   head->lock();
-  job_data *old_item = head->find(name);
-  int ret = 1;
-
-  if (old_item != NULL)
-    {
-    // Only call insert if we are replacing the old item
-    if (var_type < old_item->var_type)
-      ret = head->insert(item, name, true);
-    else
-      delete item;
-    }
-  else
-    ret = head->insert(item, name, replace);
-
+  int ret =  head->insert(item,name,true);
   head->unlock();
-
   return ret;
   } /* END hash_add_item() */
 
+
+
+void hash_priority_add_or_exit(
+
+  job_data_container *head,
+  const char         *name,
+  const char         *value,
+  int                 var_type)
+
+  {
+  bool      should_add = true;
+  job_data *old_item = head->find(name);
+
+  if (old_item != NULL)
+    {
+    // Only call insert if we have priority over the old item
+    if (var_type >= old_item->var_type)
+      should_add = false;
+    }
+
+  if (should_add)
+    {
+    if (hash_add_item(head, name, value, var_type, SET) == FALSE)
+      {
+      fprintf(stderr, "Error allocating memory for hash (%s)-(%s)\n", name, value);
+      exit(1);
+      }
+    }
+  } // END hash_priority_add_or_exit()
 
 
 
