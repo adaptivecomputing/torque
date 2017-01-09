@@ -94,12 +94,12 @@ of nodes required of the type declared in the node_spec and a
 .I name
 or one or more
 .I property
-or properities desired for the nodes.
+or properties desired for the nodes.
 The number, the name, and each property in the node_spec are separated by
 a colon ':'.  If no number is specified, one (1) is assumed.
 Units: string.
 .IP
-The name of a node is its hostname.  The properities of nodes are:
+The name of a node is its hostname.  The properties of nodes are:
 .RS
 .IP . 2
 ppn=#
@@ -107,7 +107,7 @@ specifying the number of processors per node requested.  Defaults to 1.
 .IP . 2
 arbitrary string assigned by the system
 administrator, please check with your administrator as to the node names
-and properities available to you.
+and properties available to you.
 .RE
 .IP
 Examples:
