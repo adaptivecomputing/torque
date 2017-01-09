@@ -290,7 +290,7 @@ int add_verify_resources(
       else
         snprintf(value, vlen, "%s", v);
 
-      hash_add_or_exit(res_attr, name, value, p_type);
+      hash_priority_add_or_exit(res_attr, name, value, p_type);
       }
     else
       {
