@@ -81,8 +81,10 @@
 .SH NAME
 pbs_mom \- start a pbs batch execution mini-server
 .SH SYNOPSIS
-pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-D\^] [\^\-d\ directory] [\^\-F\^] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-x]
-.SH DESCRIPTION
+pbs_mom [\^\-a\ alarm\^] [\^\-C\ chkdirectory\^] [\^\-c\ config\^] [\^\-D\^] [\^\-d\ directory] [\^\-F\^] [\^\-h\ help] [\^\-H\ hostname] [\^\-L\ logfile] [\^\-M\ MOMport\^] [\^\-R\ RPPport\^] [\^\-p\^|\^\-q\^|\^\-r] [\^\-w]
+[\^\-x] 
+.LP
+SH DESCRIPTION
 The
 .B pbs_mom
 command starts the operation of a batch \fBM\fPachine \fBO\fPriented
@@ -218,6 +220,8 @@ MOM may kill a process that is not a batch session.
 Specifies the port number on which the pbs_server is listening for requests.
 If pbs_server is started with a \-p option, pbs_mom will need to use the \-S
 option and match the port value which was used to start pbs_server.
+.IP "\-w" 16
+When started with -w, pbs_moms wait until they get their MOM hierarchy file from pbs_server to send their first update, or until 10 minutes pass. This reduces network traffic on startup and can bring up clusters faster.
 .IP "\-x" 16
 Disables the check for privileged port resource monitor connections.  This is
 used mainly for testing since the privileged port is the only
