@@ -123,6 +123,8 @@ typedef job_data_container::item_iterator     job_data_iterator;
 
 int hash_add_item(job_data_container *head, const char *name, const char *value, int var_type, int op_type);
 
+void hash_priority_add_or_exit(job_data_container *head, const char *name, const char *value, int var_type);
+
 void hash_add_or_exit(job_data_container *head, const char *name, const char *value, int var_type);
 
 int hash_del_item(job_data_container *head, const char *name);
