@@ -93,9 +93,9 @@ Each node_spec is an
 of nodes required of the type declared in the node_spec and a
 .I name
 or one or more
-.I properity
+.I property
 or properities desired for the nodes.
-The number, the name, and each properity in the node_spec are separated by
+The number, the name, and each property in the node_spec are separated by
 a colon ':'.  If no number is specified, one (1) is assumed.
 Units: string.
 .IP
