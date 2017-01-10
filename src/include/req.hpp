@@ -224,4 +224,7 @@ class req
     void          set_task_usage_stats(int task_index, unsigned long cput_used, unsigned long long mem_used);
   };
 
+
+int read_mem_value(const char *value, unsigned long &parsed);
+
 #endif /* _REQ_HPP */
