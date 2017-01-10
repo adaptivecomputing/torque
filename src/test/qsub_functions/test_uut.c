@@ -20,8 +20,10 @@ int  process_opt_k(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_K(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
+bool is_memory_request_valid(job_info *ji, std::string &err_msg);
 
 extern complete_req cr;
+extern bool         mem_fail;
 extern bool         submission_string_fail;
 extern bool         added_req;
 extern bool         find_nodes;
@@ -42,6 +44,22 @@ bool are_we_forking()
   
   return(true);
   }
+
+
+START_TEST(test_is_memory_request_valid)
+  {
+#ifdef PENABLE_LINUX_CGROUPS
+  job_info    ji;
+  std::string err;
+
+  mem_fail = false;
+  fail_unless(is_memory_request_valid(&ji, err) == true);
+  mem_fail = true;
+  fail_unless(is_memory_request_valid(&ji, err) == false);
+#endif
+
+  }
+END_TEST
 
 
 START_TEST(test_process_opt_K)
@@ -410,6 +428,10 @@ Suite *qsub_functions_suite(void)
   tc_core = tcase_create("test_make_argv");
   tcase_add_test(tc_core, test_make_argv);
   tcase_add_test(tc_core, test_is_resource_request_valid);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_is_memory_request_valid");
+  tcase_add_test(tc_core, test_is_memory_request_valid);
   suite_add_tcase(s, tc_core);
 
   return s;

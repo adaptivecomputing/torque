@@ -983,6 +983,86 @@ bool is_resource_request_valid(
 
 
 
+/*
+ * is_memory_request_valid()
+ * For cgroups, swap cannot be less than phsyical memory, so reject such jobs.
+ *
+ * @param ji (I) - the job information
+ * @param err_msg (O) - the error message
+ * @return true if the request is valid or cgroups aren't enabled, false otherwise.
+ */
+
+bool is_memory_request_valid(
+
+  job_info    *ji,
+  std::string &err_msg)
+
+  {
+  bool valid = true;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  job_data_container *resources = ji->res_attr;
+  job_data           *jd;
+  std::string         mem_str;
+  std::string         vmem_str;
+  unsigned long       mem = 0;
+  unsigned long       vmem = 0;
+
+  if (hash_find(resources, "vmem", &jd) == 0)
+    {
+    if (hash_find(resources, "pvmem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), vmem);
+      vmem_str = jd->value;
+      err_msg = "qsub: requested pvmem='";
+      err_msg += vmem_str;
+      }
+    }
+  else
+    {
+    read_mem_value(jd->value.c_str(), vmem);
+    vmem_str = jd->value;
+    err_msg = "qsub: requested vmem='";
+    err_msg += vmem_str;
+    }
+
+  if (vmem != 0)
+    {
+    if (hash_find(resources, "mem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), mem);
+      mem_str = jd->value;
+      
+      if (vmem < mem)
+        {
+        err_msg += "' which is less than mem='";
+        err_msg += mem_str;
+        err_msg += "'. If p/vmem is set, it must be greater than or equal to mem.\n";
+        valid = false;
+        }
+      }
+    else if (hash_find(resources, "pmem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), mem);
+      mem_str = jd->value;
+      
+      if (vmem < mem)
+        {
+        err_msg += "' which is less than pmem='";
+        err_msg += mem_str;
+        err_msg += "'. If p/vmem is set, it must be greater than or equal to pmem.\n";
+        valid = false;
+        }
+      }
+    }
+
+#endif
+
+  return(valid);
+  } // END is_memory_request_valid()
+
+
+
 void validate_basic_resourcing(
 
   job_info *ji)
@@ -991,6 +1071,12 @@ void validate_basic_resourcing(
   std::string err_msg;
 
   if (is_resource_request_valid(ji, err_msg) == false)
+    {
+    fprintf(stderr, "%s", err_msg.c_str());
+    exit(4);
+    }
+
+  if (is_memory_request_valid(ji, err_msg) == false)
     {
     fprintf(stderr, "%s", err_msg.c_str());
     exit(4);
