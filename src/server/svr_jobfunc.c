@@ -3434,7 +3434,10 @@ void set_deflt_resc(
           
           if ((es_spec == true) &&
               (is_execution_slot_resource(*prescdt)))
+            {
+            prescdt = (resource *)GET_NEXT(prescdt->rs_link);
             continue;
+            }
 
           prescjb = find_resc_entry(jb, prescdt->rs_defin);
 
