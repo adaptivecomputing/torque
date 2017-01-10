@@ -29,6 +29,7 @@ bool  find_mpp = false;
 bool  find_nodes = false;
 bool  find_size = false;
 bool  validate_path = false;
+bool  mem_fail = false;
 int   req_val = 0;
 
 int   global_poll_rc = 0;
@@ -49,6 +50,7 @@ char *pbs_geterrmsg(int connect)
 
 int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
+  static job_data ev("a", "b", 0, 0);
   if ((find_mpp == true) &&
       (!strcmp(name, "mppwidth")))
     return(1);
@@ -61,6 +63,12 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
   else if ((validate_path == true) &&
            (!strcmp(name, "validate_path")))
     return(1);
+  else if (mem_fail == true)
+    {
+    ev.value = "1";
+    *env_var = &ev;
+    return(1);
+    }
   
   for (unsigned int i = 0; i < in_hash.size(); i++)
     {
@@ -491,4 +499,21 @@ int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const
   errno = global_poll_errno;
 
   return(global_poll_rc);
+  }
+
+int read_mem_value(const char *value, unsigned long &parsed)
+  {
+  static int count = 0;
+
+  if (mem_fail)
+    {
+    if (count++ % 2 == 0)
+      parsed = 1;
+    else
+      parsed = 2;
+    }
+  else
+    parsed = 0;
+
+  return(0);
   }
