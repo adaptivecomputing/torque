@@ -3,6 +3,23 @@ include $(top_srcdir)/buildutils/config.mk
 ACLOCAL_AMFLAGS = -I buildutils
 SUBDIRS = src doc contrib/blcr contrib/init.d contrib/systemd
 
+noinst_SCRIPTS = torque.setup
+
+edit_scripts = sed \
+    -e "s|@exec_prefix[@]|$(exec_prefix)|g" \
+    -e "s|@PBS_HOME[@]|$(PBS_SERVER_HOME)|g"
+
+torque.setup: Makefile
+	rm -f $@ $@.tmp
+	my_srcdir=''; \
+	  test -f ./$@.in || my_srcdir=$(srcdir)/; \
+	  $(edit_scripts) $${my_srcdir}$@.in >$@.tmp
+	chmod +x $@.tmp
+	chmod a-w $@.tmp
+	mv $@.tmp $@
+
+torque.setup: torque.setup.in
+
 EXTRA_DIST = acinclude.m4 \
   CHANGELOG \
   configure.ac \
@@ -25,7 +42,7 @@ EXTRA_DIST = acinclude.m4 \
 	README.new_in_51 \
 	Release_Notes \
   run_report.py \
-	torque.setup \
+        torque.setup.in \
 	torque.spec \
 	buildutils/config.mk \
 	buildutils/modulefiles.in \
@@ -64,6 +81,7 @@ EXTRA_DIST = acinclude.m4 \
 
 bin_SCRIPTS = pbs-config
 
+CLEANFILES = torque.setup
 DISTCLEANFILES = pbs-config current_hash
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 
