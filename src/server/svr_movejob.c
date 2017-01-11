@@ -759,7 +759,8 @@ int queue_job_on_mom(
 
   if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
-    if (*my_err == PBSE_EXPIRED)
+    if ((*my_err == PBSE_EXPIRED) ||
+        (*my_err == PBSE_TIMEOUT))
       {
       /* queue job timeout based on pbs_tcp_timeout */
       timeout = true;
@@ -1225,7 +1226,8 @@ int send_job_over_network_with_retries(
                                my_err,
                                mom_err);
 
-    if (rc == LOCUTION_SUCCESS)
+    if ((rc == LOCUTION_SUCCESS) ||
+        (timeout == true))
       break;
     }  /* END for (NumRetries) */
   
@@ -1419,9 +1421,12 @@ int send_job_work(
     // get a reply from the mom, in which case mom_err will still be set to PBSE_NONE. Otherwise,
     // it was not a network error and the node is responding.
     int fail_count_rc = PBSE_NONE;
-    if ((rc != PBSE_NONE) &&
+
+    if (Timeout == true)
+      fail_count_rc = PBSE_TIMEOUT;
+    else if ((rc != PBSE_NONE) &&
         (mom_err == PBSE_NONE))
-      fail_count_rc = mom_err;
+      fail_count_rc = rc;
 
     if (node_name != NULL)
       update_failure_counts(node_name, fail_count_rc);
