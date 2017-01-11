@@ -1,0 +1,248 @@
+#!/bin/sh
+#
+# torque.setup - create pbs_server database and default queue
+# 
+
+# print out basic usage info
+
+function usage
+  {
+  echo "USAGE:  torque.setup [-h|--help] [-d config_path|--config-path=config_path]
+                [--bin_path=bin_path] [--sbin_path=sbin_path] [--syslog]
+                <USERNAME> [<HOSTNAME.DOMAIN>]
+
+       -h|--help                                Show command help.
+
+       -d config_path|--config-path=CONFIG_PATH Specifies the path of the directory
+                                                which is home to the server\'s configuration
+                                                files. Default is [$PBS_HOME]
+
+       --prefix=PATH                            Specifies the path to executables in PATH/bin
+                                                and PATH/sbin. Default is [$PREFIX]
+
+       --syslog=true|false                      Log errors to syslog. Default is false.
+" >&2
+  }
+
+#
+# logit - write a message to a file descriptor and syslog if desired
+#
+# usage: logit msg [fd [pri]]
+#  msg - Message.
+#  fd  - File descriptor to write msg to. Default: 2.
+#  pri - Syslog priority. Default: user.error. See -p argument listed in logger man page.
+#
+# Note: message is written to syslog only if WANTSYSLOG is true.
+#
+
+function logit
+  {
+  # need a message
+  [ $# -eq 0 ] && return 1
+
+  # get the message
+  msg=$1
+  shift
+
+  # get the fd for non-syslog output
+  if [ $# -gt 0 ]; then
+    fd=$1
+    shift
+  else
+    # default
+    fd=2
+  fi
+
+  # write to syslog?
+  if [ $WANTSYSLOG = true ]; then
+    if [ $# -gt 0 ]; then
+      pri=$1
+      shift
+    else
+      # default
+      pri=user.error
+    fi
+
+    # write to syslog
+    logger -t $PROG -p $pri $msg
+    rc=$?
+
+    if [ $rc -ne 0 ]; then
+      echo "$PROG: logger failed with $rc" >&2
+      exit $rc 
+    fi
+  fi
+
+  # write to fd
+  echo "$msg" >&$fd
+
+  return 0
+  }
+
+PROG=`basename $0`
+
+PREFIX=@exec_prefix@
+BIN_PATH=$PREFIX/bin
+SBIN_PATH=$PREFIX/sbin
+PBS_HOME=@PBS_HOME@
+WANTSYSLOG=false
+
+#export POSIXLY_CORRECT=1
+OPTS=`getopt -o hd: -l config-path: -l prefix: -l syslog: -l help -- "$@"`
+
+if [ $? != 0 ]; then
+  logit "getop failed"
+  usage
+  exit 1
+fi
+
+eval set -- "$OPTS"
+
+while true; do
+  case "$1" in
+    -d|--config-path)
+
+      PBS_HOME="$2"
+      shift 2
+      ;;
+
+    --prefix)
+
+      PREFIX="$2"
+      BIN_PATH=$PREFIX/bin
+      SBIN_PATH=$PREFIX/sbin
+      shift 2
+      ;;
+
+    --syslog)
+
+      WANTSYSLOG=`echo "$2" | tr '[:upper:]' '[:lower:]'`
+      shift 2
+      ;;
+
+    -h|--help)
+
+      usage
+      exit 0
+      ;;
+
+    --)
+      shift
+      break
+      ;;
+
+    *)
+      break
+      ;;
+
+  esac
+done
+
+# now check options
+
+if [ $# -lt 1 -o $# -gt 2 ]; then
+  usage
+  exit 1
+fi
+
+if [ ! -d "$BIN_PATH" ]; then
+  logit "$BIN_PATH does not exist."
+  exit 1
+fi
+
+if [ ! -d "$SBIN_PATH" ]; then
+  logit "$SBIN_PATH does not exist."
+  exit 1
+fi
+
+if [ "$WANTSYSLOG" != true -a "$WANTSYSLOG" != false ]; then
+  usage
+  exit 1
+fi
+
+# make sure logger command present if syslog desired
+if [ $WANTSYSLOG = true ]; then
+  logger -V &>/dev/null
+  if [ $? -ne 0 ]; then
+    WANTSYSLOG=false
+    logit "cannot find logger command."
+    exit 1
+  fi
+fi
+
+export PATH=$SBIN_PATH:$BIN_PATH:$PATH
+
+unset PBSDEBUG
+pgrep trqauthd >/dev/null
+
+if [ $? -ne 0 ]; then
+  trqauthd
+  if [ $? -ne 0 ]; then
+    logit "trqauthd failed to start!!! exiting setup"
+    exit 1
+  else
+    logit "trqauthd successfully started" 1 user.info
+  fi
+fi
+
+if [ "$2" = "" ] ; then
+  # obtain name obtained from reverse lookup of ip address
+  HOSTNAME=`hostname`
+else
+  HOSTNAME=$2
+fi
+  
+# enable operator privileges
+
+USER=$1@$HOSTNAME
+
+logit "initializing TORQUE (admin: $USER)" 1 user.info
+
+pgrep pbs_server >/dev/null
+
+if [ $? -eq 0 ]; then
+  logit "pbs_server already running... run 'qterm' to stop pbs_server and rerun"
+  exit 1
+fi
+
+pbs_server -t create -d $PBS_HOME
+# Starting in TORQUE 3.1 the server is multi-threaded.
+# We need to pause a second to allow the server to finish coming
+# up. If we go to qmgr right away it will fail.
+sleep 2
+
+pgrep pbs_server >/dev/null
+
+if [ $? -ne 0 ]; then
+  logit "ERROR: pbs_server failed to start, check syslog and server logs for more information"
+  exit 1
+fi
+
+# setup admins
+
+qmgr -c "set server operators += $USER"
+
+if [ $? -ne 0 ] ; then
+  logit "ERROR: cannot set TORQUE admins"
+  qterm
+  exit 1
+fi
+
+qmgr -c "set server managers += $USER"
+
+# setup basic parameters
+
+qmgr -c 'set server scheduling = true'
+qmgr -c 'set server keep_completed = 300'
+qmgr -c 'set server mom_job_sync = true'
+
+# create default queue
+
+qmgr -c 'create queue batch'
+qmgr -c 'set queue batch queue_type = execution'
+qmgr -c 'set queue batch started = true'
+qmgr -c 'set queue batch enabled = true'
+qmgr -c 'set queue batch resources_default.walltime = 1:00:00'
+qmgr -c 'set queue batch resources_default.nodes = 1'
+
+qmgr -c 'set server default_queue = batch'
