@@ -3384,14 +3384,17 @@ bool contains_execution_slot_request(
       
   std::vector<resource> *job_resc = (std::vector<resource> *)jb->at_val.at_ptr;
 
-  for (size_t i = 0; i < job_resc->size(); i++)
+  if (job_resc != NULL)
     {
-    resource &r = job_resc->at(i);
-
-    if (is_execution_slot_resource(r))
+    for (size_t i = 0; i < job_resc->size(); i++)
       {
-      execution_slot_request = true;
-      break;
+      resource &r = job_resc->at(i);
+
+      if (is_execution_slot_resource(r))
+        {
+        execution_slot_request = true;
+        break;
+        }
       }
     }
 
