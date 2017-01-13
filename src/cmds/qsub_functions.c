@@ -1037,7 +1037,7 @@ bool is_memory_request_valid(
         {
         err_msg += "' which is less than mem='";
         err_msg += mem_str;
-        err_msg += "'. If p/vmem is set, it must be greater than or equal to mem.\n";
+        err_msg += "'. If p/vmem is set to a non-zero value, it must be greater than or equal to mem.\n";
         valid = false;
         }
       }
@@ -1050,7 +1050,7 @@ bool is_memory_request_valid(
         {
         err_msg += "' which is less than pmem='";
         err_msg += mem_str;
-        err_msg += "'. If p/vmem is set, it must be greater than or equal to pmem.\n";
+        err_msg += "'. If p/vmem is set to a non-zero value, it must be greater than or equal to pmem.\n";
         valid = false;
         }
       }
