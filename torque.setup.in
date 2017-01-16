@@ -79,6 +79,54 @@ function logit
   return 0
   }
 
+ 
+# return list of ip addresses (one from each interface on this host)
+function get_ip_addrs
+  {
+  ip addr show | awk '/inet [0-9]+/ {split($2, f, "/"); print f[1]}'
+  }
+ 
+# return hostname of given ip addr
+function ip2hostname
+  {
+  if [ ! -z "$1" ]; then
+    getent hosts $1 | awk '{print $2}'
+  fi
+  }
+ 
+# return list containing the hostname of each interface on this machine
+function get_hostnames
+  {
+  for ip in `get_ip_addrs`; do
+    hostname=`ip2hostname $ip`
+    if [ ! -z "$hostname" ]; then
+      # add hostname to the list
+      echo "$hostname"
+    fi
+  done
+  }
+
+# remove localhost from hostname list if it is not the hostname of this host
+function remove_localhost
+  {
+  hostname_list="$1"
+  this_hostname=`hostname`
+
+  for hostname in $hostname_list; do
+    echo "$hostname" | egrep \^localhost &>/dev/null
+    if [ $? -eq 0 ]; then
+      # do not add localhost if it is not the name of this host
+      if [ "$hostname" != "$this_hostname" ]; then
+        continue
+      fi
+    fi
+
+    # add hostname to the list
+    echo "$hostname"
+  done
+  }
+
+
 PROG=`basename $0`
 
 PREFIX=@exec_prefix@
@@ -184,17 +232,10 @@ if [ $? -ne 0 ]; then
     logit "trqauthd successfully started" 1 user.info
   fi
 fi
-
-if [ "$2" = "" ] ; then
-  # obtain name obtained from reverse lookup of ip address
-  HOSTNAME=`hostname`
-else
-  HOSTNAME=$2
-fi
   
-# enable operator privileges
-
-USER=$1@$HOSTNAME
+# user and optional hostname
+USER=$1
+HOSTNAME=$2
 
 logit "initializing TORQUE (admin: $USER)" 1 user.info
 
@@ -220,15 +261,28 @@ fi
 
 # setup admins
 
-qmgr -c "set server operators += $USER"
+if [ ! -z "$HOSTNAME" ]; then
+  # supplied to script by caller
+  hostname_list=$HOSTNAME
+else
+  # look up hostnames for all interfaces on this host
+  hostname_list_all=`get_hostnames`
 
-if [ $? -ne 0 ] ; then
-  logit "ERROR: cannot set TORQUE admins"
-  qterm
-  exit 1
+  # remove localhost if necessary
+  hostname_list=`remove_localhost "$hostname_list_all"`
 fi
+ 
+for hostname in $hostname_list; do
+  for admin_type in operators managers; do 
+    qmgr -c "s s $admin_type += $USER@$hostname"
 
-qmgr -c "set server managers += $USER"
+    if [ $? -ne 0 ] ; then
+      logit "ERROR: cannot set $USER@$hostname in $admin_type list"
+      qterm
+      exit 1
+    fi
+  done
+done
 
 # setup basic parameters
 
