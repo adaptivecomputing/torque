@@ -3163,7 +3163,7 @@ static int sys_copy(
         rc = (40000 + WTERMSIG(rc)); /* 400xx is signaled */
         }
       }
-    else if (rc < 0)
+    else if (pid_fork < 0)
       {
       rc = errno + 10000; /* error on fork (100xx), retry */
       }
