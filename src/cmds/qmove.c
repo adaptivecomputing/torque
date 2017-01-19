@@ -66,7 +66,7 @@ int main(int argc, char **argv) /* qmove */
 
 cnt:
 
-    connect = cnt2server(server_name.c_str());
+    connect = cnt2server(server_name.c_str(), false);
 
     if (connect <= 0)
       {

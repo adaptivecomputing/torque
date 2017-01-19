@@ -135,7 +135,7 @@ int main(
   if (pn != NULL)
     *pn = ':'; /* restore : if it was present */
 
-  connect = cnt2server(svrtmp);
+  connect = cnt2server(svrtmp, false);
 
   if (connect <= 0)
     {

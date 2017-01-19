@@ -37,7 +37,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
 
 extern "C"
 {
-int cnt2server(const char *SpecServer)
+int cnt2server(const char *SpecServer, bool silence)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);

@@ -157,7 +157,7 @@ int MXMLToXString(mxml_t *E, char **Buf, int *BufSize, int MaxBufSize, char **Ta
 
 extern "C"
 {
-int cnt2server(const char *SpecServer)
+int cnt2server(const char *SpecServer, bool silence)
   { 
   if (connect_success == false)
     return(-1);
