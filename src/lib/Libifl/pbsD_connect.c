@@ -887,6 +887,13 @@ int trq_set_preferred_network_interface(
 
 
 
+int pbs_original_connect(
+
+  char *server)  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
+
+  {
+  return(pbs_original_connect_ext(server, false));
+  }
 
 /* returns socket descriptor or negative value (-1) on failure */
 
@@ -896,9 +903,10 @@ int trq_set_preferred_network_interface(
 
 /* NOTE:  0 is not a valid return value */
 
-int pbs_original_connect(
+int pbs_original_connect_ext(
 
-  char *server)  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
+  char *server,  /* I (FORMAT:  NULL | '\0' | HOSTNAME | HOSTNAME:PORT )*/
+  bool silence)  /* I */
 
   {
   struct sockaddr_in   server_addr;
@@ -1405,9 +1413,12 @@ int pbs_original_connect(
             if (rc > 0)
               tmp_err_msg = pbs_strerror(rc);
 
-            fprintf(stderr, 
-              "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
-              server, rc, tmp_err_msg);
+            if (!silence)
+              {
+              fprintf(stderr, 
+                "ERROR:  cannot authenticate connection to server \"%s\", errno=%d (%s)\n",
+                server, rc, tmp_err_msg);
+              }
             }
 
           local_errno = PBSE_SOCKET_FAULT;
@@ -1429,7 +1440,8 @@ int pbs_original_connect(
 
     if (rc != PBSE_NONE)
       {
-      fprintf(stderr, "%s\n", err_msg.c_str());
+      if (!silence)
+        fprintf(stderr, "%s\n", err_msg.c_str());
       goto cleanup_conn;
       }
     } /* END if !use_unixsock */
@@ -1566,18 +1578,35 @@ void print_server_port_to_stderr(
   }
 
 /**
- * This is a new version of this function that allows
- * connecting to a list of servers.  It is backwards
- * compatible with the previous version in that it
- * will accept a single server name.
+ * Wrapper function for pbs_connect_ext().
  *
  * @param server_name_ptr A pointer to a server name or server name list.
+ * @param silence Boolean - print error output?
  * @returns A file descriptor number.
  */
 
 int pbs_connect(
     
   char *server_name_ptr)    /* I (optional) */
+
+  {
+  return(pbs_connect_ext(server_name_ptr, false));
+  }
+
+/**
+ * Function connects to a list of servers.  It is backwards
+ * compatible with the previous version in that it
+ * will accept a single server name.
+ *
+ * @param server_name_ptr A pointer to a server name or server name list.
+ * @param silence Boolean - print error output?
+ * @returns A file descriptor number.
+ */
+
+int pbs_connect_ext(
+    
+  char *server_name_ptr,    /* I (optional) */
+  bool silence)             /* I */
 
   {
   int connect = -1;
@@ -1620,7 +1649,7 @@ int pbs_connect(
                 current_name);
         }
 
-      if ((connect = pbs_original_connect(current_name)) >= 0)
+      if ((connect = pbs_original_connect_ext(current_name, silence)) >= 0)
         {
         if (getenv("PBSDEBUG"))
           {
@@ -1629,7 +1658,7 @@ int pbs_connect(
 
         return(connect);  /* Success, we have a connection, return it. */
         }
-      else
+      else if (!silence)
         print_server_port_to_stderr(current_name);
       }
     }

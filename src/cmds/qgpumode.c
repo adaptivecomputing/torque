@@ -132,7 +132,7 @@ static void execute(
 
   /* The request to change mode */
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     merr = pbs_gpumode_err(ct, node, gpuid, mode, &local_errno);
 

@@ -34,7 +34,7 @@ char *pbs_strerror(int err)
   exit(1);
   }
 
-int cnt2server(const char *SpecServer)
+int cnt2server(const char *SpecServer, bool silence)
   { 
   return 10;
   }

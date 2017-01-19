@@ -195,7 +195,7 @@ int main(
       }  /* END switch (c) */
     }
 
-  con = cnt2server(def_server);
+  con = cnt2server(def_server, false);
 
   if (con <= 0)
     {
