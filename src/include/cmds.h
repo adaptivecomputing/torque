@@ -130,7 +130,7 @@ void prt_error(char *, char *, int);
 extern "C"
 {
 void set_attr(struct attrl **, const char *, const char *);
-int cnt2server(const char *server);
+int cnt2server(const char *server, bool silence);
 }
 int set_resources(struct attrl **, char *, int);
 void prt_job_err(const char *, int, const char *);

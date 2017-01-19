@@ -155,7 +155,7 @@ static void execute(
 
 cnt:
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     char job_id[PBS_MAXSVRJOBID];
 

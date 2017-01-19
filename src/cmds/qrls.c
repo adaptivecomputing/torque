@@ -151,7 +151,7 @@ int main(
 
 cnt:
 
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     if (connect <= 0)
       {

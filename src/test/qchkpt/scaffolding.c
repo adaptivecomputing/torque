@@ -15,7 +15,7 @@ int pbs_disconnect(int connect)
   exit(1);
   }
 
-int cnt2server(const char *SpecServer)
+int cnt2server(const char *SpecServer, bool silence)
   { 
   fprintf(stderr, "The call to cnt2server needs to be mocked!!\n");
   exit(1);

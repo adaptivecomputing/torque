@@ -677,7 +677,7 @@ struct server *make_connection(
 
   struct server *svr = NULL;
 
-  if ((connection = cnt2server(name)) > 0)
+  if ((connection = cnt2server(name, false)) > 0)
     {
     svr = new_server();
 

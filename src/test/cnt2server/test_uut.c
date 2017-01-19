@@ -1,5 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "test_cnt2server.h"
+#include "cmds.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -7,6 +8,7 @@
 #include "pbs_error.h"
 #include "pbs_ifl.h"
 
+bool global_silence = false;
 
 START_TEST(test_cnt2server_conf)
   {
@@ -19,10 +21,17 @@ START_TEST(test_cnt2server_conf)
   }
 END_TEST
 
-START_TEST(test_two)
+START_TEST(test_cnt2server)
   {
+  int rc;
 
+  rc = cnt2server("foo", false);
+  fail_unless(rc == 0);
+  fail_unless(global_silence == false);
 
+  rc = cnt2server("foo", true);
+  fail_unless(rc == 0);
+  fail_unless(global_silence == true);
   }
 END_TEST
 
@@ -33,8 +42,8 @@ Suite *cnt2server_suite(void)
   tcase_add_test(tc_core, test_cnt2server_conf);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_cnt2server");
+  tcase_add_test(tc_core, test_cnt2server);
   suite_add_tcase(s, tc_core);
 
   return s;

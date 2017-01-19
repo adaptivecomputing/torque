@@ -294,6 +294,7 @@ int parse_daemon_response(long long code, long long len, char *buf);
 ssize_t send_unix_creds(int sd);
 #endif 
 int pbs_original_connect(char *server); 
+int pbs_original_connect_ext(char *server, bool silence); 
 int pbs_disconnect_socket(int socket);
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 void initialize_connections_table();
