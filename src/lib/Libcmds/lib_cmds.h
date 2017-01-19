@@ -13,7 +13,7 @@ int check_job_name(char *name, int chk_alpha);
 
 /* from file cnt2server.c */
 int cnt2server_conf(long retry);
-int cnt2server(const char *SpecServer);
+int cnt2server(const char *SpecServer, bool silence);
 
 /* from file cvtdate.c */
 time_t cvtdate(char *datestr);

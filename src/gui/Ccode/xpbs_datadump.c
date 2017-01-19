@@ -1622,7 +1622,7 @@ int main(  /* qstat */
     if (sigsetjmp(env_alrm, 1) == 0)
       {
       alarm(timeout_secs);
-      myconnection = cnt2server(server_out);
+      myconnection = cnt2server(server_out, false);
       }
 
     alarm(0);
