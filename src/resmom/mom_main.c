@@ -5163,11 +5163,6 @@ int setup_program_environment(void)
 
 #endif /* PENABLE_LINUX_CGROUPS */
 
-#ifdef ENABLE_PMIX
-  if (initialize_pmix_server() != PBSE_NONE)
-    return(1);
-#endif
-
 #ifdef NUMA_SUPPORT
   if ((rc = setup_nodeboards()) != 0)
     return(rc);
@@ -5281,6 +5276,11 @@ int setup_program_environment(void)
     }
 
 #endif /* PLOCK_DAEMONS */
+
+#ifdef ENABLE_PMIX
+  if (initialize_pmix_server() != PBSE_NONE)
+    return(1);
+#endif
 
   sigemptyset(&allsigs);
 

@@ -29,6 +29,9 @@ pmix_status_t pmix_client_connect(
 
   const pmix_proc_t *proc,
   void              *svr_obj)
+/* I think version 2 has a callback function and data
+ * pmix_op_cbfunc_t   cbfunc,
+  void              *cbdata)*/
 
   {
   pmix_status_t  rc = PMIX_SUCCESS;
@@ -47,6 +50,10 @@ pmix_status_t pmix_client_connect(
     }
   else
     rc = PMIX_ERR_NOT_FOUND;
+
+/*  I think this is for version 2
+ *  if (cbfunc != NULL)
+    cbfunc(rc, cbdata);*/
 
   return(rc);
   } // END pmi_client_connect()
@@ -708,7 +715,8 @@ pmix_server_module_t psm =
   pmix_server_connect,
   pmix_server_disconnect,
   pmix_server_register_events,
-  pmix_server_deregister_events
+  pmix_server_deregister_events,
+  NULL
   };
 
 

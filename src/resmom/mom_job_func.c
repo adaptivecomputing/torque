@@ -156,9 +156,8 @@
 #endif
 
 #ifdef ENABLE_PMIX
-extern "C"{
+#include "pmix/pmix_common.h"
 #include "pmix_server.h"
-}
 #include "utils.h"
 
 extern std::string topology_xml;
@@ -1157,40 +1156,169 @@ bool am_i_mother_superior(
 
 
 #ifdef ENABLE_PMIX
-const int pmix_info_count = 17;
 
-void free_info_array(
+bool active = true;
+const int base_pmix_info_count = 17;
+
+void record_register_callback(
 
   pmix_status_t  pst,
   void          *cbdata)
 
   {
-  pmix_info_t *pmi_array = (pmix_info_t *)cbdata;
+  // Verify that we called the callback function
+  bool *active = (bool *)cbdata;
+  *active = false;
+  } // END record_register_callback()
 
-  PMIX_INFO_FREE(pmi_array, pmix_info_count);
-  } // END free_info_array()
 
+
+/*
+ * get_proc_data()
+ *
+ * Gets the process data for this rank. Will provide the:
+ * rank, global rank, local rank, hostname, and node id
+ *
+ * @param pjob (I) - the job whose process information we're populating
+ * @param ranks (I) - the list of all the ranks for this job.
+ * @param index (I) - the index of the process whose information we're populating
+ * @return a PMIX_INFO_ARRAY with the information inside. The rank always comes first
+ */
+
+void get_proc_data(
+
+  job               *pjob,
+  std::vector<int>  &ranks,
+  int                index,
+  pmix_info_array_t &peer_array)
+
+  {
+  static const int PEER_INFO_COUNT = 5; // Update if we change the information we're providing
+
+  // This will have to be a pmix_data_array_t for version 2.0
+  peer_array.size = PEER_INFO_COUNT;
+  PMIX_INFO_CREATE(peer_array.array, PEER_INFO_COUNT);
+  int  peer_index = 0;
+  int  local_rank = 0;
+  int  node_id = pjob->ji_vnods[index].vn_host->hn_node;
+ 
+  strcpy(peer_array.array[peer_index].key, PMIX_RANK);
+  peer_array.array[peer_index].value.type = PMIX_UINT32;
+  peer_array.array[peer_index++].value.data.uint32 = index;
+  
+  strcpy(peer_array.array[peer_index].key, PMIX_GLOBAL_RANK);
+  peer_array.array[peer_index].value.type = PMIX_UINT32;
+  peer_array.array[peer_index++].value.data.uint32 = index;
+  
+  for (int i = 0; i < pjob->ji_numvnod; i++)
+    {
+    if (i == index)
+      break;
+
+    if (pjob->ji_vnods[i].vn_host->hn_node == node_id)
+      local_rank++;
+    }
+  
+  strcpy(peer_array.array[peer_index].key, PMIX_LOCAL_RANK);
+  peer_array.array[peer_index].value.type = PMIX_UINT32;
+  peer_array.array[peer_index++].value.data.uint32 = local_rank;
+  
+  strcpy(peer_array.array[peer_index].key, PMIX_HOSTNAME);
+  peer_array.array[peer_index].value.type = PMIX_STRING;
+  peer_array.array[peer_index++].value.data.string = strdup(pjob->ji_vnods[index].vn_host->hn_host);
+    
+  strcpy(peer_array.array[peer_index].key, PMIX_NODEID);
+  peer_array.array[peer_index].value.type = PMIX_UINT32;
+  peer_array.array[peer_index++].value.data.uint32 = node_id;
+  } // END get_proc_data()
+
+
+
+/*
+ * populate_peer_level_info()
+ *
+ * @param pjob (O) - the job whose peer level info we're providing.
+ * @param ranks (I) - the list of the ranks in this job.
+ * @param pmi_array (O) - the array to which we're adding the peer level info.
+ * @param attr_index (M) - the index after the base information has been added.
+ * @param pmix_info_count (I) - the total count of attributes
+ */
+
+void populate_peer_level_info(
+    
+  job              *pjob,
+  std::vector<int> &ranks, 
+  pmix_info_t      *pmi_array,
+  int               attr_index,
+  int               pmix_info_count)
+
+  {
+  for (size_t i = 0; i < ranks.size(); i++)
+    {
+    strcpy(pmi_array[attr_index].key, PMIX_PROC_DATA);
+    pmi_array[attr_index].value.type = PMIX_INFO_ARRAY;
+    get_proc_data(pjob, ranks, i, pmi_array[attr_index++].value.data.array);
+    }
+
+  } // END populate_peer_level_info()
+
+
+
+/*
+ */
+
+void get_register_nspace_info(
+    
+  job              *pjob,
+  std::string      &node_list,
+  std::string      &ppn_list,
+  int              &es,
+  std::vector<int> &ranks)
+
+  {
+  char              ppn_buf[20];
+  int               prev_index = -1;
+
+  // Get some needed info about ranks / local execution slots
+  for (int i = 0; i < pjob->ji_numvnod; i++)
+    {
+    if (prev_index != pjob->ji_vnods[i].vn_host->hn_node)
+      {
+      if (node_list.size() != 0)
+        node_list += ",";
+
+      if (ppn_list.size() != 0)
+        ppn_list += ";";
+
+      sprintf(ppn_buf, "%d", pjob->ji_vnods[i].vn_index);
+      ppn_list += ppn_buf;
+
+      node_list += pjob->ji_vnods[i].vn_host->hn_host;
+      }
+
+    if (pjob->ji_vnods[i].vn_host->hn_node == pjob->ji_nodeid)
+      {
+      es++;
+
+      ranks.push_back(i);
+
+      sprintf(ppn_buf, ",%d", pjob->ji_vnods[i].vn_index);
+      ppn_list += ppn_buf;
+      }
+    }
+  }
 
 
 uint32_t local_arch = 0xFFFFFFFF;
 
-/* RHC: The register_nspace function is non-blocking and
- * you have to wait for it to complete before moving on.
- * The register_client function is also non-blocking and
- * also must complete before you start to launch local
- * procs, but it can run in parallel with the register_nspace
- * function as the two are separate. So you may need a struct
- * that contains whatever info you need to free in addition
- * to a volatile flag to tell you when the function is complete */
-static void fincb(
 
-  pmix_status_t status,
-  void          *cbdata)
 
-  {
-  volatile bool *active = (volatile bool*)cbdata;
-  *active = false;
-  }
+/*
+ * register_jobs_nspace()
+ *
+ * @param pjob - the job that is starting
+ * @param TJE - the job's execution information
+ */
 
 void register_jobs_nspace(
 
@@ -1201,32 +1329,18 @@ void register_jobs_nspace(
   pmix_info_t      *pmi_array;
   int               es = 0;
   int               lowest_rank = 0;
-  int               prev_index = -1;
   int               attr_index;
+  int               pmix_info_count = base_pmix_info_count;
   std::vector<int>  ranks;
   std::string       node_list;
+  std::string       ppn_list;
   pmix_status_t     rc;
   std::string       pmix_jobid(pjob->ji_qs.ji_jobid);
-  volatile bool     active;
+  active = true;
 
-  // Get some needed info about ranks / local execution slots
-  for (int i = 0; i < pjob->ji_numvnod; i++)
-    {
-    if (prev_index != pjob->ji_vnods[i].vn_host->hn_node)
-      {
-      if (node_list.size() != 0)
-        node_list += ",";
+  get_register_nspace_info(pjob, node_list, ppn_list, es, ranks);
 
-      node_list += pjob->ji_vnods[i].vn_host->hn_host;
-      }
-
-    if (pjob->ji_vnods[i].vn_host->hn_node == pjob->ji_nodeid)
-      {
-      es++;
-
-      ranks.push_back(i);
-      }
-    }
+  pmix_info_count += ranks.size();
 
   if (ranks.size() != 0)
     lowest_rank = ranks[0];
@@ -1286,9 +1400,6 @@ void register_jobs_nspace(
   pmi_array[attr_index].value.data.string = node_regex;
 
   // map of process ranks to nodes
-  std::string ppn_list(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  std::replace(ppn_list.begin(), ppn_list.end(), '+', ';');
-  std::replace(ppn_list.begin(), ppn_list.end(), '/', ',');
   char *ppn_regex;
   PMIx_generate_ppn(ppn_list.c_str(), &ppn_regex);
   attr_index++;
@@ -1341,13 +1452,13 @@ void register_jobs_nspace(
   // local leader
   attr_index++;
   strcpy(pmi_array[attr_index].key, PMIX_LOCALLDR);
-  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.type = PMIX_UINT32;
   pmi_array[attr_index].value.data.uint64 = lowest_rank;
 
   // architecture
   attr_index++;
   strcpy(pmi_array[attr_index].key, PMIX_ARCH);
-  pmi_array[attr_index].value.type = PMIX_UINT64;
+  pmi_array[attr_index].value.type = PMIX_UINT32;
   pmi_array[attr_index].value.data.uint64 = local_arch;
 
   // top level directory for job
@@ -1374,6 +1485,8 @@ void register_jobs_nspace(
   else
     pmi_array[attr_index].value.data.string = strdup(init_dir);
 
+  populate_peer_level_info(pjob, ranks, pmi_array, attr_index, pmix_info_count);
+
   size_t pos = pmix_jobid.find(".");
   if (pos != std::string::npos)
     pmix_jobid.erase(pos);
@@ -1385,8 +1498,8 @@ void register_jobs_nspace(
                               es,
                               pmi_array,
                               pmix_info_count,
-                              free_info_array,
-                              pmi_array)) != PMIX_SUCCESS)
+                              record_register_callback,
+                              &active)) != PMIX_SUCCESS)
     {
     /* Uncomment this once the bug in PMIx is fixed
      * snprintf(log_buffer, sizeof(log_buffer),
@@ -1438,25 +1551,6 @@ void register_jobs_nspace(
       }
     }
 
-  // Peer-level information - do we provide this at this time?
-
-  /* RHC: Yes, you need to provide this info for every process in the
-   * job or we will hang */
-
-  // rank
-  // appnum
-  // application leader
-  // global rank
-  // application rank
-  // local rank
-  // node rank
-  // node id
-  // uri
-  // cpuset for process
-  // spawned - true if launched via a dynamic spawn
-  // temporary dir for this process
-
-  active = true;
   while (active) {
     usleep(10);
   }
