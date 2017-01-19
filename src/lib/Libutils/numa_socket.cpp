@@ -323,7 +323,7 @@ int Socket::get_total_gpus() const
 
 int Socket::get_available_gpus() const
   {
-  int available_gpus;
+  int available_gpus = 0;
 
   for (size_t i = 0; i < this->chips.size(); i++)
     available_gpus += this->chips[i].get_available_gpus();
