@@ -3130,7 +3130,7 @@ int run_job_mode(
 
   while (retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     any_failed = -1 * connect;
     if (connect <= 0 )
@@ -3328,7 +3328,7 @@ int run_queue_mode(
 
   while(retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     if (connect <= 0)
       {
@@ -3422,7 +3422,7 @@ int run_server_mode(
 
   while (retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     if (connect <= 0)
       {

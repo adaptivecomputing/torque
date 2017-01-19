@@ -132,7 +132,7 @@
 
 enum note_flags {unused, set, list, append};
 
-int quiet = 0;
+bool quiet = false;
 char *progname;
 
 
@@ -229,7 +229,7 @@ static int set_all_nodeattrs(
            NULL,
            &local_errno);
 
-      if (rc && !quiet)
+      if (rc && (!quiet))
         {
         fprintf(stderr, "Error setting note attribute for %s - ",
           nodename);
@@ -253,7 +253,7 @@ static int set_all_nodeattrs(
            NULL,
            &local_errno);
 
-      if (rc && !quiet)
+      if (rc && (!quiet))
         {
         fprintf(stderr, "Error setting node power state for %s - ",
           nodename);
@@ -816,7 +816,7 @@ int main(
 
       case 'q':
 
-        quiet = 1;
+        quiet = true;
 
         break;
 
@@ -954,7 +954,7 @@ int main(
     exit(1);
     }
 
-  con = cnt2server(specified_server);
+  con = cnt2server(specified_server, quiet);
 
   if (con <= 0)
     {

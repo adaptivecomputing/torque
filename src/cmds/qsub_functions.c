@@ -2142,7 +2142,7 @@ void bailout(void)
   printf("Job %s is being deleted\n",
          new_jobname);
 
-  c = cnt2server(server_out);
+  c = cnt2server(server_out, false);
 
   if (c <= 0)
     {
@@ -4752,7 +4752,7 @@ void main_func(
       }
     }
 
-  sock_num = cnt2server(server_out);
+  sock_num = cnt2server(server_out, false);
 
   if (sock_num <= 0)
     {

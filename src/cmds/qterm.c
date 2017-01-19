@@ -155,7 +155,7 @@ static void execute(
   char *errmsg;   /* Error message from pbs_terminate */
   int   local_errno = 0;
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     err = pbs_terminate_err(ct, manner, NULL, &local_errno);
 
