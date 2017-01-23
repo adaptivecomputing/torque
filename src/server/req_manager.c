@@ -1477,19 +1477,25 @@ void mgr_queue_set(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
-  svr_queues.lock();
-  iter = svr_queues.get_iterator();
-  svr_queues.unlock();
-
+  // see if all queues or just a single queue should be set
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
+    // all queues
+
     qname   = all_quename;
     allques = TRUE;
+
+    svr_queues.lock();
+    iter = svr_queues.get_iterator();
+    svr_queues.unlock();
+
     pque = next_queue(&svr_queues,iter);
     }
   else
     {
+    // single queue
+
     qname   = preq->rq_ind.rq_manager.rq_objname;
     allques = FALSE;
 
@@ -1500,7 +1506,8 @@ void mgr_queue_set(
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
 
-    delete iter;
+    if (iter != NULL)
+      delete iter;
 
     return;
     }
@@ -1531,7 +1538,8 @@ void mgr_queue_set(
         que_mutex.unlock();
         reply_badattr(rc, bad, plist, preq);
 
-        delete iter;
+        if (iter != NULL)
+          delete iter;
 
         return;
         }
@@ -1551,16 +1559,20 @@ void mgr_queue_set(
     pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
 
-  /* check the appropriateness of the attributes based on queue type */
-  svr_queues.lock();
-
-  delete iter;
-
-  iter = svr_queues.get_iterator();
-  svr_queues.unlock();
-
+  // if operating on all queues, get new iterator
   if (allques == TRUE)
+    {
+    svr_queues.lock();
+
+    delete iter;
+
+    iter = svr_queues.get_iterator();
+    svr_queues.unlock();
+
     pque = next_queue(&svr_queues,iter);
+    }
+
+  /* check the appropriateness of the attributes based on queue type */
 
   while (pque != NULL)
     {
