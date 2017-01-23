@@ -1165,7 +1165,6 @@ int svr_setjobstate(
       changed = true;
 
     /* if the state is changing, also update the state counts */
-
     oldstate = pjob->ji_qs.ji_state;
 
     if (oldstate != newstate)
@@ -1186,12 +1185,17 @@ int svr_setjobstate(
 
       if (has_queue_mutex == FALSE)
         {
-        pque = get_jobs_queue(&pjob);
-        if (pque == NULL)
+        // On start-up, we call this function even though we don't know the job's queue yet. In
+        // that case, we don't want this function to fail.
+        if (pjob->ji_qhdr != NULL)
           {
-          sprintf(log_buf, "queue not found for jobid %s", jid.c_str());
-          log_err(PBSE_UNKQUE, __func__, log_buf);
-          return(PBSE_UNKQUE);
+          pque = get_jobs_queue(&pjob);
+          if (pque == NULL)
+            {
+            sprintf(log_buf, "queue not found for jobid %s", jid.c_str());
+            log_err(PBSE_UNKQUE, __func__, log_buf);
+            return(PBSE_UNKQUE);
+            }
           }
         }
       else
@@ -1277,7 +1281,8 @@ int svr_setjobstate(
         }
       else
         {
-        if (has_queue_mutex == FALSE)
+        if ((pque != NULL) && 
+            (has_queue_mutex == FALSE))
           unlock_queue(pque, __func__, NULL, LOGLEVEL);
         }
       }

@@ -1499,8 +1499,8 @@ int set_array_job_ids(
         }
       else
         {
-        job_abt(&pj, "Array job missing array struct, aborting job");
         snprintf(log_buf, buflen, "array struct missing for array job %s", pj->ji_qs.ji_jobid);
+        job_abt(&pj, "Array job missing array struct, aborting job");
         return(-1);
         }
       }
