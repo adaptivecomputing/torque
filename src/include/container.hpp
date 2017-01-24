@@ -664,6 +664,7 @@ class item_container
     /* update the last index */
     slots[last].next = rc;
     last = rc;
+    slots[ALWAYS_EMPTY_INDEX].prev = last;
 
     /* update the new item's next index */
     slots[rc].next = ALWAYS_EMPTY_INDEX;
