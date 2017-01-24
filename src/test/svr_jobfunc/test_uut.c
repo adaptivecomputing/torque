@@ -316,6 +316,8 @@ START_TEST(svr_setjobstate_test)
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
   fail_unless(test_job.get_str_attr(JOB_ATR_exec_host) != NULL, "exec_host list got removed when it shouldn't have...");
 
+  // We don't use this, but we need a dummy due to protections
+  test_job.ji_qhdr = (pbs_queue *)0x1;
   decrement_count = 0;
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
   fail_unless(decrement_count == 2);
