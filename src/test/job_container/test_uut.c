@@ -11,6 +11,45 @@ void log_err(int,const char *,const char *)
 {}
 
 
+START_TEST(iterator_test)
+  {
+  all_jobs alljobs;
+  struct job *jobs[5];
+
+  for (int i = 0; i < 5; i++)
+    {
+    jobs[i] = job_alloc();
+    sprintf(jobs[i]->ji_qs.ji_jobid, "%d.threnody", i);
+    insert_job(&alljobs, jobs[i]);
+    }
+
+  // get a reverse iterator
+  all_jobs_iterator *iter = alljobs.get_iterator(true);
+  for (int i = 4; i >= 0; i--)
+    {
+    char buf[1024];
+    job *ptr = iter->get_next_item();
+    sprintf(buf, "%d.threnody", i);
+    fail_unless(ptr != NULL);
+    fail_unless(!strcmp(ptr->ji_qs.ji_jobid, buf), 
+      "Expected %s, but got %s", buf, ptr->ji_qs.ji_jobid);
+    }
+
+  // get a forwards iterator
+  iter = alljobs.get_iterator();
+  for (int i = 0; i < 5; i++)
+    {
+    char buf[1024];
+    job *ptr = iter->get_next_item();
+    sprintf(buf, "%d.threnody", i);
+    fail_unless(ptr != NULL);
+    fail_unless(!strcmp(ptr->ji_qs.ji_jobid, buf), 
+      "Expected %s, but got %s", buf, ptr->ji_qs.ji_jobid);
+    }
+  }
+END_TEST
+
+
 START_TEST(get_correct_jobname_test)
   {
   // with nothing set, get_correct_jobname should just return the jobid passed in.
@@ -295,6 +334,7 @@ Suite *job_container_suite(void)
 
   tc_core = tcase_create("find_job_by_array_with_removed_record");
   tcase_add_test(tc_core, find_job_by_array_with_removed_record_test);
+  tcase_add_test(tc_core, iterator_test);
   suite_add_tcase(s, tc_core);
 
   return(s);
