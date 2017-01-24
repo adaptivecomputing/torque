@@ -370,6 +370,7 @@ int local_move(
 
   pjob->set_queue(destination);
 
+  if (pjob->is_attr_set(JOB_ATR_qrank) == false)
   pjob->set_long_attr(JOB_ATR_qrank, ++queue_rank);
     
   if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)

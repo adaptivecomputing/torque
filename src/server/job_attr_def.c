@@ -654,7 +654,7 @@ attribute_def job_attr_def[] =
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB
   },
-  /* JOB_ATR_queuerank */
+  /* JOB_ATR_qrank */
   { (char *)ATTR_qrank,  /* "queue_rank" */
     decode_l,
     encode_l,
