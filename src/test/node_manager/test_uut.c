@@ -10,8 +10,9 @@
 #include "node_manager.h"
 #include "test_uut.h"
 #include "pbs_error.h"
-#include "server.h" /* server */
+#include "server.h"
 #include "json/json.h"
+#include "complete_req.hpp"
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -19,6 +20,7 @@ const char *napali = "napali";
 const char *l11 =    "l11";
 struct server server;
 
+void  free_nodes(job *pjob, const char *spec);
 int   kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 bool  node_in_exechostlist(const char *, char *, const char *);
@@ -53,6 +55,43 @@ extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
 extern bool cray_enabled;
+
+
+START_TEST(free_nodes_test)
+  {
+  job     pjob;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  complete_req cr;
+  req          r;
+  allocation   a;
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+  pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str = NULL;
+  pjob.ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob.ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup("roshar:0-31");
+  pjob.ji_wattr[JOB_ATR_cpuset_string].at_flags = ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup("roshar:0-1");
+  pjob.ji_wattr[JOB_ATR_memset_string].at_flags = ATR_VFLAG_SET;
+  r.record_allocation(a);
+  cr.add_req(r);
+
+  // We shouldn't free allocations for completed jobs
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  free_nodes(&pjob, "roshar:ppn=32");
+  req &ref1 = cr.get_req(0);
+  fail_unless(ref1.get_req_allocation_count() == 1);
+  fail_unless(pjob.ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL);
+  fail_unless(pjob.ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL);
+
+  // We should free allocations for jobs that failed to start
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
+  free_nodes(&pjob, "roshar:ppn=32");
+  req &ref2 = cr.get_req(0);
+  fail_unless(ref2.get_req_allocation_count() == 0);
+#endif
+  }
+END_TEST
 
 
 START_TEST(add_job_to_gpu_subnode_test)
@@ -960,6 +999,7 @@ Suite *node_manager_suite(void)
   tc_core = tcase_create("more tests");
   tcase_add_test(tc_core, translate_job_reservation_info_to_string_test);
   tcase_add_test(tc_core, test_initialize_alps_req_data);
+  tcase_add_test(tc_core, free_nodes_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("even more tests");
