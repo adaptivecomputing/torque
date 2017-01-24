@@ -371,7 +371,8 @@ int local_move(
 
   snprintf(pjob->ji_qs.ji_queue, sizeof(pjob->ji_qs.ji_queue), "%s", destination);
 
-  pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  if (!(pjob->ji_wattr[JOB_ATR_qrank].at_flags & ATR_VFLAG_SET))
+    pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
   if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
     return(-1);
