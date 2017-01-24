@@ -166,8 +166,8 @@ class item_container
 #endif
       pContainer = pCtner;
       iter = -1;
-      pContainer->initialize_ra_iterator(&iter);
       reversed = reverse;
+      pContainer->initialize_ra_iterator(&iter, this->reversed);
       endHit = false;
       }
     void reset(void) //Reset the iterator;
@@ -183,7 +183,7 @@ class item_container
       }
 #endif
       iter = -1;
-      pContainer->initialize_ra_iterator(&iter);
+      pContainer->initialize_ra_iterator(&iter, this->reversed);
       endHit = false;
       }
   private:
@@ -299,7 +299,7 @@ class item_container
       return false;
 
     int iter = -1;
-    initialize_ra_iterator(&iter);
+    initialize_ra_iterator(&iter, false);
     while(index--)
       {
       item<T> *pItem = next_thing(&iter);
@@ -710,11 +710,7 @@ class item_container
     next = slots[index].next;
     slots[rc].next = next;
     slots[index].next = rc;
-
-    if (next != 0)
-      {
-      slots[next].prev = rc;
-      }
+    slots[next].prev = rc;
 
     /* update the last index if needed */
     if (last == index)
@@ -1050,10 +1046,14 @@ class item_container
    */
   void initialize_ra_iterator(
 
-    int *iter)
+    int  *iter,
+    bool  reversed)
 
     {
-    *iter = slots[ALWAYS_EMPTY_INDEX].next;
+    if (reversed == false)
+      *iter = slots[ALWAYS_EMPTY_INDEX].next;
+    else
+      *iter = slots[ALWAYS_EMPTY_INDEX].prev;
     } /* END initialize_ra_iterator() */
 
 
