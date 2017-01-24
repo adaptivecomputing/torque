@@ -5647,7 +5647,8 @@ void free_nodes(
         (pjob->get_substate() == JOB_SUBSTATE_RERUN1) ||
         (pjob->get_substate() == JOB_SUBSTATE_RERUN2) ||
         (pjob->get_substate() == JOB_SUBSTATE_RERUN3) ||
-        (pjob->get_substate() == JOB_SUBSTATE_QUEUED))
+        (pjob->get_substate() == JOB_SUBSTATE_QUEUED) ||
+        (pjob->get_substate() == JOB_SUBSTATE_TRNOUT))
       {
       cr->clear_allocations();
       }
@@ -5659,7 +5660,6 @@ void free_nodes(
 
   return;
   }  /* END free_nodes() */
-
 
 
 

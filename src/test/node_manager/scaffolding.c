@@ -1161,6 +1161,7 @@ const char *job::get_destination() const
 
 void job::free_attr(int index)
   {
+  memset(this->ji_wattr + index, 0, sizeof(this->ji_wattr[index]));
   }
 
 void job::set_substate(int substate)
