@@ -516,3 +516,4 @@ int read_mem_value(const char *value, unsigned long &parsed)
     parsed = 0;
 
   return(0);
+  }
