@@ -34,7 +34,7 @@ void req_shutdown(struct batch_request *preq)
   exit(1);
   }
 
-void mom_job_purge(job *pjob)
+void mom_job_purge(mom_job *pjob)
   {
   fprintf(stderr, "The call to mom_job_purge needs to be mocked!!\n");
   exit(1);
@@ -289,3 +289,12 @@ bool authorized_hosts::is_authorized(unsigned long addr)
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
 
+int job::get_fromsock() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromsock);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }

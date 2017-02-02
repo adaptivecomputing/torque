@@ -345,6 +345,7 @@ int comp_tv(
   return(0);
   }
 
+/*
 int job_radix_action (
 
   pbs_attribute *new_attr,
@@ -352,10 +353,10 @@ int job_radix_action (
   int            actmode)
 
   {
-  job *pjob;
+  mom_job *pjob;
   int rc = PBSE_NONE;
   
-  pjob = (job *)pobj;
+  pjob = (mom_job *)pobj;
   
   switch (actmode)
     {
@@ -379,7 +380,7 @@ int job_radix_action (
   
   return rc;
   
-  }
+  }*/
 
 /* timeval_subtract - subtract timeval y from timeval x and
  * store the difference in result.

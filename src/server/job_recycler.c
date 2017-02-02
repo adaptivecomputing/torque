@@ -85,7 +85,7 @@
 #include "threadpool.h"
 #include "ji_mutex.h"
 
-void free_all_of_job(job *pjob);
+void free_all_of_job(svr_job *pjob);
 
 extern job_recycler recycler;
 extern int          LOGLEVEL;
@@ -103,12 +103,12 @@ void initialize_recycler()
 
 
 
-job *pop_job_from_recycler(
+svr_job *pop_job_from_recycler(
 
   all_jobs *aj)
 
   {
-  job *pjob;
+  svr_job *pjob;
 
   aj->lock();
   pjob = aj->pop();
@@ -128,7 +128,7 @@ void *remove_some_recycle_jobs(
   void *vp)
 
   {
-  job    *pjob = NULL;
+  svr_job    *pjob = NULL;
   time_t  time_now = time(NULL);
 
   pthread_mutex_lock(recycler.rc_mutex);
@@ -148,7 +148,7 @@ void *remove_some_recycle_jobs(
       }
 
     if (LOGLEVEL >= 10)
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     free_all_of_job(pjob);
@@ -163,7 +163,7 @@ void *remove_some_recycle_jobs(
 
 int insert_into_recycler(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   int              rc;
@@ -181,11 +181,12 @@ int insert_into_recycler(
   if (LOGLEVEL >= 7)
     {
     snprintf(log_buf, sizeof(log_buf),
-      "Adding job %s to the recycler", pjob->ji_qs.ji_jobid);
+      "Adding job %s to the recycler", pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
+  sprintf(log_buf, "%016lx", (long)pjob);
+  pjob->set_jobid(log_buf);
   pjob->ji_being_recycled = true;
     
   rc = insert_job(&recycler.rc_jobs, pjob);

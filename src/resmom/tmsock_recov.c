@@ -76,8 +76,8 @@ int save_tmsock(
 
 int recov_tmsock(
 
-  int fds,
-  job *pjob) /* I */   /* pathname to job save file */
+  int      fds,
+  mom_job *pjob) /* I */   /* pathname to job save file */
 
   {
   const char *id = "recov_tmsock";

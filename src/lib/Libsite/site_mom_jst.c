@@ -28,7 +28,9 @@
  * Return non-zero to abort the job.
  */
 int site_job_setup(
-    job *pjob)
+
+  mom_job *pjob)
+
   {
   return (0);
   }

@@ -263,7 +263,7 @@ const char *get_correct_jobname(
  * @parent svr_find_job()
  */
 
-job *find_job_by_array(
+svr_job *find_job_by_array(
     
   all_jobs   *aj,
   const char *job_id,
@@ -271,7 +271,7 @@ job *find_job_by_array(
   bool        locked)
 
   {
-  job *pj = NULL;
+  svr_job *pj = NULL;
 
   if (aj == NULL)
     {
@@ -329,7 +329,7 @@ job *find_job_by_array(
  * job (for heterogeneous jobs) if there is one
  */
 
-job *svr_find_job(
+svr_job *svr_find_job(
 
   const char *jobid,      /* I */
   int         get_subjob) /* I */
@@ -342,7 +342,7 @@ job *svr_find_job(
   char  work_jobid[PBS_MAXSVRJOBID + 1];
   char *jid_ptr = NULL;
 
-  job  *pj = NULL;
+  svr_job  *pj = NULL;
 
   std::string comp;
 
@@ -446,7 +446,7 @@ job *svr_find_job(
   return(pj);  /* may be NULL */
   }   /* END svr_find_job() */
 
-job *svr_find_job_by_id(
+svr_job *svr_find_job_by_id(
 
   int internal_job_id)
 
@@ -475,7 +475,7 @@ job *svr_find_job_by_id(
 int insert_job(
     
   all_jobs *aj,
-  job      *pjob)
+  svr_job      *pjob)
 
   {
   int rc = -1;
@@ -495,7 +495,7 @@ int insert_job(
 
   aj->lock();
 
-  if (!aj->insert(pjob,pjob->ji_qs.ji_jobid))
+  if (!aj->insert(pjob, pjob->get_jobid()))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE\n");
@@ -522,8 +522,8 @@ int insert_job(
 int insert_job_after(
 
   all_jobs *aj,
-  job      *already_in,
-  job      *pjob)
+  svr_job  *already_in,
+  svr_job  *pjob)
 
   {
   int rc = -1;
@@ -550,16 +550,16 @@ int insert_job_after(
 
   aj->lock();
 
-  if (aj->find(already_in->ji_qs.ji_jobid) == NULL)
+  if (aj->find(already_in->get_jobid()) == NULL)
     rc = THING_NOT_FOUND;
   else
     {
-    if (!strcmp(already_in->ji_qs.ji_jobid,pjob->ji_qs.ji_jobid))
+    if (!strcmp(already_in->get_jobid(), pjob->get_jobid()))
       {
       aj->unlock();
       return PBSE_NONE;
       }
-    if (!aj->insert_after(already_in->ji_qs.ji_jobid,pjob,pjob->ji_qs.ji_jobid))
+    if (!aj->insert_after(already_in->get_jobid(), pjob, pjob->get_jobid()))
       {
       rc = ENOMEM;
       log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -580,7 +580,7 @@ int insert_job_after(
 
   all_jobs  *aj,
   char     *after_id,
-  job      *pjob)
+  svr_job      *pjob)
 
   {
   int rc = -1;
@@ -611,11 +611,11 @@ int insert_job_after(
   bool inserted = false;
   if (jobExists)
     {
-    inserted = aj->insert_after(after_id,pjob,pjob->ji_qs.ji_jobid);
+    inserted = aj->insert_after(after_id, pjob, pjob->get_jobid());
     }
   else
     {
-    inserted = aj->insert(pjob,pjob->ji_qs.ji_jobid);
+    inserted = aj->insert(pjob, pjob->get_jobid());
     }
 
   if (!inserted)
@@ -638,7 +638,7 @@ int insert_job_after(
 int insert_job_first(
 
   all_jobs *aj,
-  job      *pjob)
+  svr_job  *pjob)
 
   {
   int rc = -1;
@@ -658,7 +658,7 @@ int insert_job_first(
 
   aj->lock();
 
-  if (!aj->insert_first(pjob,pjob->ji_qs.ji_jobid))
+  if (!aj->insert_first(pjob, pjob->get_jobid()))
     {
     rc = ENOMEM;
     log_err(rc, __func__, "No memory to resize the array...SYSTEM FAILURE");
@@ -678,7 +678,7 @@ int insert_job_first(
 int has_job(
 
   all_jobs *aj,
-  job      *pjob)
+  svr_job  *pjob)
 
   {
   int  rc = -1;
@@ -697,7 +697,7 @@ int has_job(
     return(rc);
     }
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  strcpy(jobid, pjob->get_jobid());
 
   if (aj->trylock())
     {
@@ -714,7 +714,7 @@ int has_job(
       }
     }
 
-  if (aj->find(pjob->ji_qs.ji_jobid) == NULL)
+  if (aj->find(pjob->get_jobid()) == NULL)
     rc = FALSE;
   else
     rc = TRUE;
@@ -740,7 +740,7 @@ int has_job(
 int  remove_job(
    
   all_jobs *aj,
-  job      *pjob,
+  svr_job  *pjob,
   bool      force_lock)
 
   {
@@ -760,14 +760,14 @@ int  remove_job(
     }
 
   if (LOGLEVEL >= 10)
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
 
   if (aj->trylock())
     {
     char jobid[PBS_MAXSVRJOBID+1];
 
     if (force_lock == false)
-      snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
+      snprintf(jobid, sizeof(jobid), "%s", pjob->get_jobid());
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
@@ -786,7 +786,7 @@ int  remove_job(
 
   if (rc == PBSE_NONE)
     {
-    if (!aj->remove(pjob->ji_qs.ji_jobid))
+    if (!aj->remove(pjob->get_jobid()))
       rc = THING_NOT_FOUND;
     }
 
@@ -797,13 +797,13 @@ int  remove_job(
 
 
 
-job *next_job(
+svr_job *next_job(
 
   all_jobs          *aj,
   all_jobs_iterator *iter)
 
   {
-  job *pjob;
+  svr_job *pjob;
 
   if (aj == NULL)
     {
@@ -841,8 +841,8 @@ job *next_job(
 int swap_jobs(
 
   all_jobs *aj,
-  job      *job1,
-  job      *job2)
+  svr_job  *job1,
+  svr_job  *job2)
 
   {
   int rc = -1;
@@ -866,7 +866,7 @@ int swap_jobs(
     }
 
   aj->lock();
-  if (!aj->swap(job1->ji_qs.ji_jobid,job2->ji_qs.ji_jobid))
+  if (!aj->swap(job1->get_jobid(),job2->get_jobid()))
     {
     rc = THING_NOT_FOUND;
     }

@@ -132,12 +132,12 @@ int PBSD_jobfile(int c, int req_type, char *path, char *jobid, enum job_file whi
     return(PBSE_NONE);
   }
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int svr_job_save(svr_job *pjob)
   {
   return(0);
   }
 
-int svr_job_purge(job *pjob, int leaveSpoolFiles)
+int svr_job_purge(svr_job *pjob, int leaveSpoolFiles)
   {
   fprintf(stderr, "The call to job_purge to be mocked!!\n");
   exit(1);
@@ -157,13 +157,13 @@ pbs_net_t get_hostaddr(int *local_errno, const char *hostname)
   exit(1);
   }
 
-void remove_stagein(job **pjob_ptr)
+void remove_stagein(svr_job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_stagein to be mocked!!\n");
   exit(1);
   }
 
-pbs_queue *get_jobs_queue(job **pjob)
+pbs_queue *get_jobs_queue(svr_job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue to be mocked!!\n");
   exit(1);
@@ -175,7 +175,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-char *get_variable(job *pjob, const char *variable)
+char *get_variable(svr_job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable to be mocked!!\n");
   exit(1);
@@ -187,13 +187,13 @@ int enqueue_threadpool_request(void *(*func)(void *),void *arg, threadpool_t *tp
   exit(1);
   }
 
-void remove_checkpoint(job **pjob_ptr)
+void remove_checkpoint(svr_job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_checkpoint to be mocked!!\n");
   exit(1);
   }
 
-int svr_dequejob(job *pjob, int val)
+int svr_dequejob(svr_job *pjob, int val)
   {
   fprintf(stderr, "The call to svr_dequejob to be mocked!!\n");
   exit(1);
@@ -209,7 +209,7 @@ void svr_disconnect(int handle) {}
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct svr_job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
@@ -220,13 +220,13 @@ void *get_next(list_link pl, char *file, int line)
   return(NULL);
   }
 
-int job_route(job *jobp)
+int job_route(svr_job *jobp)
   {
   fprintf(stderr, "The call to job_route to be mocked!!\n");
   exit(1);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool have_reservation, bool recov)
+int svr_enquejob(svr_job *pjob, int has_sv_qs_mutex, const char *prev_id, bool have_reservation, bool recov)
   {
   fprintf(stderr, "The call to svr_enquejob to be mocked!!\n");
   exit(1);
@@ -268,26 +268,26 @@ int PBSD_rdytocmt(int connect, char *jobid)
   return(0);
   }
 
-void add_dest(job *jobp)
+void add_dest(svr_job *jobp)
   {
   fprintf(stderr, "The call to add_dest to be mocked!!\n");
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
-  pjob->ji_qs.ji_state = newstate;
-  pjob->ji_qs.ji_substate = newsubstate;
+  pjob->set_state(newstate);
+  pjob->set_substate(newsubstate);
   return(0);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
-  static job pjob;
+  static svr_job pjob;
 
   if (!strcmp(jobid, "1.napali"))
     {
-    strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+    pjob.set_jobid("1.napali");
     return(&pjob);
     }
 
@@ -300,7 +300,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
+void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);
@@ -334,7 +334,7 @@ char *pbse_to_txt(int err)
   return(strdup("err"));
   }
 
-int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg)
+int svr_chkque(svr_job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg)
   {
   fprintf(stderr, "The call to svr_chkque to be mocked!!\n");
   exit(1);
@@ -346,7 +346,7 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char 
   exit(1);
   }
 
-int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr)
+int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, svr_job **pjob_ptr)
   {
   fprintf(stderr, "The call to get_parent_dest_queues to be mocked!!\n");
   exit(1);
@@ -363,15 +363,15 @@ void close_conn(
 struct pbs_queue *lock_queue_with_job_held(
 
   struct pbs_queue  *pque,
-  job              **pjob_ptr)
+  svr_job              **pjob_ptr)
 
   {
   return(NULL);
   }
 
-void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
+void svr_mailowner(svr_job *pjob, int mailpoint, int force, const char *text) {}
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -381,7 +381,7 @@ bool get_jobs_array_fail = false;
 
 job_array *get_jobs_array(
 
-  job **pjob_ptr)
+  svr_job **pjob_ptr)
 
   {
   static job_array pa;
@@ -507,6 +507,8 @@ std::string get_path_jobdata(const char *a, const char *b)
 
 job::job() {}
 job::~job() {}
+svr_job::svr_job() {}
+svr_job::~svr_job() {}
 
 void update_failure_counts(const char *node_name, int rc) {}
 
@@ -660,5 +662,317 @@ int node_status_list(
 
   {
   return(0);
+  }
+
+struct timeval *job::get_tv_attr(int index)
+  {
+  return(&this->ji_wattr[index].at_val.at_timeval);
+  }
+
+int job::set_tv_attr(int index, struct timeval *tv)
+  {
+  memcpy(&(this->ji_wattr[index].at_val.at_timeval), tv, sizeof(struct timeval));
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_resc_attr(int index, std::vector<resource> *resources)
+  {
+  this->ji_wattr[index].at_val.at_ptr = resources;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_exec_exitstat(int ev)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_exitstat = ev;
+  }
+
+unsigned short job::get_ji_mom_rmport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_mom_rmport);
+  }
+
+int job::set_creq_attr(int index, complete_req *cr)
+  {
+  this->ji_wattr[index].at_val.at_ptr = cr;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_qs_version(int version)
+  {
+  this->ji_qs.qs_version = version;
+  }
+
+void job::set_queue(const char *queue)
+  {
+  snprintf(this->ji_qs.ji_queue, sizeof(this->ji_qs.ji_queue), "%s", queue);
+  }
+
+int job::get_un_type() const
+  {
+  return(this->ji_qs.ji_un_type);
+  }
+
+void job::set_ji_momaddr(unsigned long momaddr)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
+  }
+
+void job::set_ji_mom_rmport(unsigned short mom_rmport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_mom_rmport = mom_rmport;
+  }
+
+void job::set_ji_momport(unsigned short momport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momport = momport;
+  }
+
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+void job::set_scriptsz(size_t scriptsz)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_scriptsz = scriptsz;
+  }
+
+size_t job::get_scriptsz() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_scriptsz);
+  }
+
+pbs_net_t job::get_fromaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromaddr);
+  }
+
+int job::get_fromsock() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromsock);
+  }
+
+void job::set_fromaddr(pbs_net_t fromaddr)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromaddr = fromaddr;
+  }
+
+void job::set_fromsock(int sock)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+  }
+
+int job::get_qs_version() const
+  {
+  return(this->ji_qs.qs_version);
+  }
+
+void job::set_un_type(int type)
+  {
+  this->ji_qs.ji_un_type = type;
+  }
+
+int job::get_exec_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_exitstat);
+  }
+
+int job::get_svrflags() const
+  {
+  return(this->ji_qs.ji_svrflags);
+  }
+
+void job::set_modified(bool m)
+  {
+  this->ji_modified = m;
+  }
+
+void job::set_attr(int index)
+  {
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  }
+
+void job::set_fileprefix(const char *prefix)
+  {
+  strcpy(this->ji_qs.ji_fileprefix, prefix);
+  }
+
+int job::set_char_attr(int index, char c)
+  {
+  this->ji_wattr[index].at_val.at_char = c;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_svrflags(int flags)
+  {
+  this->ji_qs.ji_svrflags = flags;
+  }
+
+const char *job::get_destination() const
+  {
+  return(this->ji_qs.ji_destin);
+  }
+
+void job::free_attr(int index)
+  {
+  }
+
+void job::set_substate(int substate)
+  {
+  this->ji_qs.ji_substate = substate;
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+void job::set_destination(const char *destination)
+  {
+  snprintf(this->ji_qs.ji_destin, sizeof(this->ji_qs.ji_destin), "%s", destination);
+  }
+
+pbs_net_t job::get_ji_momaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momaddr);
+  }
+
+bool job::has_been_modified() const
+  {
+  return(this->ji_modified);
+  }
+
+tlist_head job::get_list_attr(int index)
+  {
+  return(this->ji_wattr[index].at_val.at_list);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  complete_req *cr = NULL;
+  if (this->ji_wattr[index].at_flags & ATR_VFLAG_SET)
+    cr = (complete_req *)this->ji_wattr[index].at_val.at_ptr;
+
+  return(cr);
+  }
+
+void job::set_exgid(unsigned int gid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exgid = gid;
+  }
+
+void job::set_exuid(unsigned int uid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exuid = uid;
+  }
+
+unsigned short job::get_ji_momport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momport);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+struct jobfix &job::get_jobfix()
+  {
+  return(this->ji_qs);
+  }
+
+int job::set_bool_attr(int index, bool b)
+  {
+  this->ji_wattr[index].at_val.at_bool = b;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_bool);
+  }
+
+std::vector<resource> *job::get_resc_attr(int index)
+  {
+  return((std::vector<resource> *)this->ji_wattr[index].at_val.at_ptr);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+void job::set_start_time(time_t t)
+  {
+  this->ji_qs.ji_stime = t;
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
   }
 

@@ -121,14 +121,14 @@
 /* External functions */
 
 extern int que_to_local_svr(struct batch_request *preq);
-extern long calc_job_cost(job *);
+extern long calc_job_cost(svr_job *);
 const char *get_correct_jobname(const char *jobid, std::string &corrected);
 
 
 /* Local Private Functions */
 
-void set_depend_hold(job *, pbs_attribute *, job_array *);
-int register_sync(struct depend *,  char *child, char *host, long);
+void set_depend_hold(svr_job *, pbs_attribute *, job_array *);
+int register_sync(struct depend *,  const char *child, long);
 int register_dep(pbs_attribute *, struct batch_request *, int, int *);
 int unregister_dep(pbs_attribute *, struct batch_request *);
 int unregister_sync(pbs_attribute *, struct batch_request *);
@@ -143,8 +143,8 @@ depend_job *make_dependjob(struct depend *, const char *jobid);
 void   del_depend_job(struct depend *pdep, depend_job *pdj);
 int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
-int    release_cheapest(job *, struct depend *);
-int    send_depend_req(job *, depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
+int    release_cheapest(svr_job *, struct depend *);
+int    send_depend_req(svr_job *, depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
 depend_job *alloc_dependjob(const char *jobid);
 
 /* External Global Data Items */
@@ -160,7 +160,7 @@ extern int   LOGLEVEL;
 extern char *PJobState[];
 
 
-extern int   svr_chk_owner(struct batch_request *, job *);
+extern int   svr_chk_owner(struct batch_request *, svr_job *);
 
 
  /*
@@ -177,10 +177,10 @@ int check_dependency_job(
  
   char           *jobid,   /* I */
   batch_request  *preq,    /* M */
-  job           **job_ptr) /* O */
+  svr_job       **job_ptr) /* O */
 
   {
-  job   *pjob;
+  svr_job   *pjob;
   char   log_buf[LOCAL_LOG_BUF_SIZE + 1];
   int    type;
   int    rc = PBSE_NONE;
@@ -237,14 +237,14 @@ int check_dependency_job(
 
   type = preq->rq_ind.rq_register.rq_dependtype;
 
-  if (((pjob->ji_qs.ji_state == JOB_STATE_COMPLETE) ||
-        (pjob->ji_qs.ji_state == JOB_STATE_EXITING)) &&
+  if (((pjob->get_state() == JOB_STATE_COMPLETE) ||
+        (pjob->get_state() == JOB_STATE_EXITING)) &&
       ((type == JOB_DEPEND_TYPE_AFTERSTART) ||
        (type == JOB_DEPEND_TYPE_AFTERANY) ||
        ((type == JOB_DEPEND_TYPE_AFTEROK) &&
-        (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == 0)) ||
+        (pjob->get_exec_exitstat() == 0)) ||
        ((type == JOB_DEPEND_TYPE_AFTERNOTOK) &&
-        (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != 0))))
+        (pjob->get_exec_exitstat() != 0))))
     {
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, jobid, pbse_to_txt(PBSE_BADSTATE));
     
@@ -272,10 +272,10 @@ int check_dependency_job(
 int register_syncwith(
 
   batch_request *preq,
-  job           *pjob)
+  svr_job           *pjob)
 
   {
-  pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = pjob->get_attr(JOB_ATR_depend);
   int            rc = PBSE_NONE;
   struct depend *pdep = find_depend(JOB_DEPEND_TYPE_SYNCCT, pattr);
   
@@ -284,7 +284,6 @@ int register_syncwith(
     rc = register_sync(
         pdep,
         preq->rq_ind.rq_register.rq_child,
-        preq->rq_ind.rq_register.rq_svr,
         preq->rq_ind.rq_register.rq_cost);
     
     if (pdep->dp_numreg > pdep->dp_numexp)
@@ -308,13 +307,13 @@ int register_syncwith(
 int register_before_dep(
     
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            type)
 
   {
   int            rc = PBSE_NONE;
   depend        *pdep = NULL;
-  pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = pjob->get_attr(JOB_ATR_depend);
   int            revtype;
   int            made = FALSE;
 
@@ -399,7 +398,7 @@ bool job_ids_match(
 int register_dependency(
  
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            type)
 
   {
@@ -426,7 +425,7 @@ int register_dependency(
       
     case JOB_DEPEND_TYPE_AFTERNOTOK:
       
-      rc = register_dep(&pjob->ji_wattr[JOB_ATR_depend], preq, type, &made);
+      rc = register_dep(pjob->get_attr(JOB_ATR_depend), preq, type, &made);
       
       break;
 
@@ -459,12 +458,12 @@ int register_dependency(
 int release_before_dependency(
 
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            type)
  
   {
   int                rc = PBSE_NONE;
-  pbs_attribute     *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute     *pattr = pjob->get_attr(JOB_ATR_depend);
   struct depend     *pdep = NULL;
   depend_job        *pdj = NULL;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
@@ -482,7 +481,7 @@ int release_before_dependency(
       del_depend_job(pdep, pdj);
       
       sprintf(log_buf, msg_registerrel, preq->rq_ind.rq_register.rq_child);
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       
       if (pdep->dp_jobs.size() == 0)
         {
@@ -507,10 +506,10 @@ int release_before_dependency(
 int release_syncwith_dependency(
  
   batch_request *preq,
-  job           *pjob)
+  svr_job       *pjob)
  
   {
-  pbs_attribute     *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute     *pattr = pjob->get_attr(JOB_ATR_depend);
   struct depend     *pdep = NULL;
   int                rc = PBSE_NONE;
   char               tmpcoststr[64];
@@ -529,11 +528,7 @@ int release_syncwith_dependency(
     
     sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
 
-    if (pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str != NULL)
-      free(pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str);
-
-    pjob->ji_wattr[JOB_ATR_sched_hint].at_val.at_str = strdup(tmpcoststr);
-    pjob->ji_wattr[JOB_ATR_sched_hint].at_flags |= ATR_VFLAG_SET;
+    pjob->set_str_attr(JOB_ATR_sched_hint, strdup(tmpcoststr));
     }
   else
     {
@@ -549,7 +544,7 @@ int release_syncwith_dependency(
 int release_dependency(
 
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            type)
 
   {
@@ -585,11 +580,11 @@ int release_dependency(
 int ready_dependency(
 
   batch_request *preq,
-  job           *pjob)
+  svr_job       *pjob)
 
   {
   int                rc = PBSE_NONE;
-  pbs_attribute     *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute     *pattr = pjob->get_attr(JOB_ATR_depend);
   struct depend     *pdep = NULL;
   depend_job        *pdj = NULL;
 
@@ -634,11 +629,11 @@ int ready_dependency(
 
 int delete_dependency_job(
  
-  batch_request *preq,
-  job           **pjob_ptr)
+  batch_request  *preq,
+  svr_job       **pjob_ptr)
  
   {
-  job *pjob = *pjob_ptr;
+  svr_job *pjob = *pjob_ptr;
   int  rc = PBSE_NONE;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   
@@ -650,11 +645,11 @@ int delete_dependency_job(
     }
   // Only abort if the job isn't already exiting, and never abort
   // running jobs for any job dependency reasons.
-  else if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
-           (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
+  else if ((pjob->get_state() < JOB_STATE_EXITING) &&
+           (pjob->get_state() != JOB_STATE_RUNNING))
     {
     sprintf(log_buf, msg_registerdel, preq->rq_ind.rq_register.rq_child);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
     
     /* pjob freed and set to NULL */
     job_abt(pjob_ptr, log_buf, true);
@@ -678,16 +673,16 @@ int delete_dependency_job(
 int unregister_dependency(
  
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            type)
 
   {
-  pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = pjob->get_attr(JOB_ATR_depend);
   int            rc = PBSE_NONE;
  
   if (type == JOB_DEPEND_TYPE_SYNCWITH)
     {
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    if (pjob->get_state() == JOB_STATE_RUNNING)
       {
       rc = PBSE_IVALREQ;
       }
@@ -726,7 +721,7 @@ int req_register(
   batch_request *preq)  /* I */
  
   {
-  job  *pjob = NULL;
+  svr_job  *pjob = NULL;
   char *ps;
   int   rc = PBSE_NONE;
   int   type = preq->rq_ind.rq_register.rq_dependtype;
@@ -739,13 +734,13 @@ int req_register(
     {
     sprintf(log_buf,"Dependency requested parent job %s state (%s), child job %s",
       preq->rq_ind.rq_register.rq_parent,
-      PJobState[pjob->ji_qs.ji_state],
+      PJobState[pjob->get_state()],
       preq->rq_ind.rq_register.rq_child);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
     }
  
-  pjob->ji_modified = 1;
+  pjob->set_modified(true);
  
   /* more of the server:port fix kludge */
   if ((ps = strchr(preq->rq_ind.rq_register.rq_child, (int)'@')))
@@ -824,15 +819,15 @@ int req_register(
   if (rc)
     {
     if (pjob != NULL)
-      pjob->ji_modified = 0;
+      pjob->set_modified(false);
 
     req_reject(rc, 0, preq, NULL, NULL);
     }
   else
     {
     if ((pjob != NULL) &&
-        (pjob->ji_modified != 0))
-      job_save(pjob, SAVEJOB_FULL, 0);
+        (pjob->has_been_modified() != false))
+      svr_job_save(pjob);
 
     reply_ack(preq);
     }
@@ -1079,7 +1074,7 @@ int register_array_depend(
 bool remove_array_dependency_job_from_job(
 
   struct array_depend *pdep,
-  job                 *pjob,
+  svr_job             *pjob,
   char                *job_array_id)
 
   {
@@ -1088,7 +1083,7 @@ bool remove_array_dependency_job_from_job(
   bool               removed = false;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((job_pdep = find_depend(pdep->dp_type, &pjob->ji_wattr[JOB_ATR_depend])) != NULL)
+  if ((job_pdep = find_depend(pdep->dp_type, pjob->get_attr(JOB_ATR_depend))) != NULL)
     {
     if ((job_pdj = find_dependjob(job_pdep, job_array_id)) != NULL)
       {
@@ -1096,7 +1091,7 @@ bool remove_array_dependency_job_from_job(
       del_depend_job(job_pdep, job_pdj);
       
       snprintf(log_buf, sizeof(log_buf), msg_registerrel, job_array_id);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
       
       if (job_pdep->dp_jobs.size() == 0)
         {
@@ -1134,7 +1129,7 @@ bool set_array_depend_holds(
   int                      could_fulfill_dependency;
   bool                     dependency_satisfied = false;
 
-  job                     *pjob;
+  svr_job                 *pjob;
   array_depend_job        *pdj;
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1205,13 +1200,13 @@ bool set_array_depend_holds(
                (could_fulfill_dependency < pdj->dc_num)))
             {
             // These are dependencies that can never be fulfilled
-            if ((pjob->ji_qs.ji_state < JOB_STATE_EXITING) &&
-                (pjob->ji_qs.ji_state != JOB_STATE_RUNNING))
+            if ((pjob->get_state() < JOB_STATE_EXITING) &&
+                (pjob->get_state() != JOB_STATE_RUNNING))
               {
               sprintf(log_buf, 
                 "Job %s deleted because its dependency of array %s can never be satisfied",
-                pjob->ji_qs.ji_jobid, pa->ai_qs.parent_id);
-              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+                pjob->get_jobid(), pa->ai_qs.parent_id);
+              log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
               
               /* pjob freed and set to NULL */
               job_abt(&pjob, log_buf, true);
@@ -1222,15 +1217,14 @@ bool set_array_depend_holds(
           else
             {
             // hold
-            pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
-            pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+            pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_s);
 
             if (LOGLEVEL >= 8)
               {
               log_event(
                 PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 "Setting HOLD_s due to dependencies\n");
               }
 
@@ -1251,7 +1245,7 @@ bool set_array_depend_holds(
            * logged in set_depend_hold */
           try 
             {
-            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend], pa);
+            set_depend_hold(pjob, pjob->get_attr(JOB_ATR_depend), pa);
             }
           catch (int err)
             {
@@ -1279,7 +1273,7 @@ void post_doq(
   {
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   char                 *msg;
-  job                  *pjob;
+  svr_job              *pjob;
   pbs_attribute        *pattr;
 
   struct depend        *pdp;
@@ -1318,7 +1312,7 @@ void post_doq(
         svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf);
         }
 
-      pattr = &pjob->ji_wattr[JOB_ATR_depend];
+      pattr = pjob->get_attr(JOB_ATR_depend);
 
       if (((pdp = find_depend(preq->rq_ind.rq_register.rq_dependtype, pattr)) != 0) &&
           ((pdjb = find_dependjob(pdp, preq->rq_ind.rq_register.rq_parent)) != 0))
@@ -1327,9 +1321,8 @@ void post_doq(
 
         if (preq->rq_reply.brp_code != PBSE_BADSTATE)
           {
-          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_u;
-          pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_modified = 1;
+          pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_u);
+          pjob->set_modified(true);
           }
 
         try
@@ -1359,7 +1352,7 @@ void post_doq(
 
 int alter_unreg(
 
-  job           *pjob,
+  svr_job       *pjob,
   pbs_attribute *old,  /* current job dependency attribure */
   pbs_attribute *new_attr)  /* job dependency pbs_attribute after alter */
 
@@ -1424,11 +1417,11 @@ int depend_on_que(
 
   int                rc = PBSE_NONE;
   int                type;
-  job               *pjob = (job *)pj;
+  svr_job           *pjob = (svr_job *)pj;
   pbs_queue         *pque;
   char               job_id[PBS_MAXSVRJOBID+1];
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_id, pjob->get_jobid());
   pque = get_jobs_queue(&pjob);
 
   if (pque == NULL)
@@ -1455,7 +1448,7 @@ int depend_on_que(
     {
     /* if there are dependencies being removed, unregister them */
 
-    if (alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr) == PBSE_JOBNOTFOUND)
+    if (alter_unreg(pjob, (pjob)->get_attr(JOB_ATR_depend), pattr) == PBSE_JOBNOTFOUND)
       return(PBSE_JOBNOTFOUND);
     }
 
@@ -1478,7 +1471,7 @@ int depend_on_que(
 
       cost = calc_job_cost(pjob);
 
-      register_sync(pdep, (pjob)->ji_qs.ji_jobid, server_name, cost);
+      register_sync(pdep, pjob->get_jobid(), cost);
 
       if (pdep->dp_numreg > pdep->dp_numexp)
         release_cheapest(pjob, pdep);
@@ -1540,7 +1533,7 @@ void post_doe(
   struct depend        *pdep;
 
   depend_job           *pdj;
-  job                  *pjob;
+  svr_job              *pjob;
   char                 *jobid;
  
   if (preq == NULL)
@@ -1554,7 +1547,7 @@ void post_doe(
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
     
-    pattr = &pjob->ji_wattr[JOB_ATR_depend];
+    pattr = pjob->get_attr(JOB_ATR_depend);
     pdep  = find_depend(JOB_DEPEND_TYPE_BEFORESTART, pattr);
 
     if (pdep != NULL)
@@ -1586,18 +1579,18 @@ void post_doe(
 
 int depend_on_exec(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   depend     *pdep;
   depend_job *pdj;
   char        jobid[PBS_MAXSVRJOBID+1];
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  strcpy(jobid, pjob->get_jobid());
   /* If any jobs come after my start, release them */
   pdep = find_depend(
            JOB_DEPEND_TYPE_BEFORESTART,
-           &pjob->ji_wattr[JOB_ATR_depend]);
+           pjob->get_attr(JOB_ATR_depend));
 
   if (pdep != NULL)
     {
@@ -1625,7 +1618,7 @@ int depend_on_exec(
 
   pdep = find_depend(
            JOB_DEPEND_TYPE_SYNCWITH,
-           &pjob->ji_wattr[JOB_ATR_depend]);
+           pjob->get_attr(JOB_ATR_depend));
 
   if (pdep != NULL)
     {
@@ -1649,7 +1642,7 @@ int depend_on_exec(
   /* If I am the master of a sync set, skip the sending (to myself) */
   /* a ready, just cut direct to releasing the next cheapest        */
 
-  pdep = find_depend(JOB_DEPEND_TYPE_SYNCCT, &pjob->ji_wattr[JOB_ATR_depend]);
+  pdep = find_depend(JOB_DEPEND_TYPE_SYNCCT, pjob->get_attr(JOB_ATR_depend));
 
   if (pdep != NULL)
     {
@@ -1679,7 +1672,7 @@ int depend_on_exec(
 
 int depend_on_term(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   int                exitstat;
@@ -1696,8 +1689,8 @@ int depend_on_term(
   if (pjob == NULL)
     return(PBSE_BAD_PARAMETER);
  
-  exitstat = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-  pattr = &pjob->ji_wattr[JOB_ATR_depend];
+  exitstat = pjob->get_exec_exitstat();
+  pattr = pjob->get_attr(JOB_ATR_depend);
 
   pdep = (struct depend *)GET_NEXT(pattr->at_val.at_list);
 
@@ -1721,7 +1714,7 @@ int depend_on_term(
 
       case JOB_DEPEND_TYPE_BEFOREOK:
 
-        if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
+        if (pjob->get_substate() == JOB_SUBSTATE_ABORT)
           {
           op = JOB_DEPEND_OP_DELETE;
           }
@@ -1790,7 +1783,7 @@ int depend_on_term(
         {
         pparent = pdep->dp_jobs[i];
 
-        /* "release" the job to execute */
+        /* "release" the svr_job to execute */
         if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, NULL, true)) != PBSE_NONE)
           {
           return(rc);
@@ -1815,7 +1808,7 @@ int depend_on_term(
 
 int release_cheapest(
 
-  job           *pjob,
+  svr_job       *pjob,
   struct depend *pdep)
 
   {
@@ -1881,7 +1874,7 @@ int release_cheapest(
 
 void set_depend_hold(
 
-  job           *pjob,
+  svr_job       *pjob,
   pbs_attribute *pattr, 
   job_array     *pa)
 
@@ -1893,7 +1886,7 @@ void set_depend_hold(
   struct depend     *pdp = NULL;
   depend_job        *djob = NULL;
 
-  struct job        *djp = NULL;
+  svr_job           *djp = NULL;
   int                substate = -1;
 
   std::vector<std::string>  array_names;
@@ -1935,7 +1928,7 @@ void set_depend_hold(
           {
           djob = pdp->dp_jobs[0];
 
-          bool jobids_match = job_ids_match(pjob->ji_qs.ji_jobid, djob->dc_child.c_str());
+          bool jobids_match = job_ids_match(pjob->get_jobid(), djob->dc_child.c_str());
           
           /* if dc_child is the same job id as pjob don't
              lock the job. It is already locked */
@@ -1944,19 +1937,19 @@ void set_depend_hold(
 
           if (!djp ||
               ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERSTART) &&
-               (djp->ji_qs.ji_state < JOB_STATE_RUNNING)))
+               (djp->get_state() < JOB_STATE_RUNNING)))
             {
             substate = JOB_SUBSTATE_DEPNHOLD;
             }
           else if ((pdp->dp_type != JOB_DEPEND_TYPE_AFTERSTART) &&
-                   (djp->ji_qs.ji_state != JOB_STATE_COMPLETE))
+                   (djp->get_state() != JOB_STATE_COMPLETE))
             {
             substate = JOB_SUBSTATE_DEPNHOLD;
             }
           else if (((pdp->dp_type == JOB_DEPEND_TYPE_AFTEROK) &&
-                    (djp->ji_qs.ji_un.ji_exect.ji_exitstat != 0)) ||
+                    (djp->get_exec_exitstat() != 0)) ||
                    ((pdp->dp_type == JOB_DEPEND_TYPE_AFTERNOTOK) &&
-                    (djp->ji_qs.ji_un.ji_exect.ji_exitstat == 0)))
+                    (djp->get_exec_exitstat() == 0)))
             {
             substate = JOB_SUBSTATE_DEPNHOLD;
             }
@@ -1990,7 +1983,7 @@ void set_depend_hold(
               log_event(
                 PBSEVENT_JOB,
                 PBS_EVENTCLASS_JOB,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 "Array dependency already satisfied. Skipping array dependency handling for job.");
               }
             }
@@ -2004,10 +1997,12 @@ void set_depend_hold(
     {
     /* No (more) dependencies, clear system hold and set state */
 
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_SYNCHOLD) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_DEPNHOLD))
+    if ((pjob->get_substate() == JOB_SUBSTATE_SYNCHOLD) ||
+        (pjob->get_substate() == JOB_SUBSTATE_DEPNHOLD))
       {
-      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_s;
+      pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) & ~HOLD_s);
+      if (pjob->get_long_attr(JOB_ATR_hold) == 0)
+        pjob->unset_attr(JOB_ATR_hold);
 
       /* newstate is job's 'natural state - ie, what it would be if dependency did not exist */
 
@@ -2016,7 +2011,7 @@ void set_depend_hold(
         log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "Clearing HOLD_s due to dependencies\n");
         }
 
@@ -2027,7 +2022,7 @@ void set_depend_hold(
     // If we have array dependencies, we need to update them
     if (array_names.size() != 0)
       {
-      std::string jobid(pjob->ji_qs.ji_jobid);
+      std::string jobid(pjob->get_jobid());
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
       for (size_t i = 0; i < array_names.size(); i++)
@@ -2064,15 +2059,14 @@ void set_depend_hold(
     {
     /* there are dependencies, set system hold accordingly */
 
-    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
-    pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+    pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_s);
 
     if (LOGLEVEL >= 8)
       {
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "Setting HOLD_s due to dependencies\n");
       }
 
@@ -2090,12 +2084,12 @@ void set_depend_hold(
 
 void depend_clrrdy(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   struct depend     *pdp;
-
-  pdp = (struct depend *)GET_NEXT(pjob->ji_wattr[JOB_ATR_depend].at_val.at_list);
+  
+  pdp = (struct depend *)GET_NEXT(pjob->get_list_attr(JOB_ATR_depend));
 
   while ((pdp != NULL) &&
          (pdp->dp_type == JOB_DEPEND_TYPE_SYNCCT))
@@ -2180,8 +2174,7 @@ struct depend *make_depend(
 int register_sync(
 
   struct depend *pdep,
-  char          *child,
-  char          *host,
+  const char    *child,
   long           cost)
 
   {
@@ -2423,7 +2416,7 @@ depend_job *make_dependjob(
 
 int send_depend_req(
 
-  job         *pjob,
+  svr_job     *pjob,
   depend_job  *pparent,
   int          type,
   int          op,
@@ -2438,19 +2431,21 @@ int send_depend_req(
 
   batch_request *preq = new batch_request(PBS_BATCH_RegistDep);
   char           log_buf[LOCAL_LOG_BUF_SIZE];
+  const char    *owner = pjob->get_str_attr(JOB_ATR_job_owner);
+
+  if (owner == NULL)
+    {
+    delete preq;
+    return(PBSE_BADATVAL);
+    }
 
   for (i = 0;i < PBS_MAXUSER;++i)
     {
-    if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str == NULL)
-      {
-      delete preq;
-      return(PBSE_BADATVAL);
-      }
-
-    preq->rq_ind.rq_register.rq_owner[i] =
-      pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str[i];
+    preq->rq_ind.rq_register.rq_owner[i] = owner[i];
 
     if (preq->rq_ind.rq_register.rq_owner[i] == '@')
+      break;
+    else if (owner[i] == '\0')
       break;
     }
 
@@ -2459,7 +2454,7 @@ int send_depend_req(
   snprintf(preq->rq_ind.rq_register.rq_parent,
     sizeof(preq->rq_ind.rq_register.rq_parent), "%s", pparent->dc_child.c_str());
   snprintf(preq->rq_ind.rq_register.rq_child, sizeof(preq->rq_ind.rq_register.rq_child),
-    "%s", pjob->ji_qs.ji_jobid);
+    "%s", pjob->get_jobid());
 
   /* kludge for server:port follows */
 
@@ -2494,7 +2489,7 @@ int send_depend_req(
     }
 
   /* save jobid and unlock mutex */
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_id, pjob->get_jobid());
   unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   if (bAsyncOk)
@@ -3347,13 +3342,13 @@ void removeAfterAnyDependency(
   if (!strcmp((char *)pJId,pTargetJobID))
     return;
 
-  job *pLockedJob = svr_find_job((char *)pJId,FALSE);
+  svr_job *pLockedJob = svr_find_job((char *)pJId,FALSE);
   
   if (pLockedJob == NULL)
     return;
   
   mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = pLockedJob->get_attr(JOB_ATR_depend);
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
   
   if (pDep != NULL)
@@ -3384,14 +3379,14 @@ void removeAfterAnyDependency(
 
 void removeBeforeAnyDependencies(
     
-  job **pjob_ptr)
+  svr_job **pjob_ptr)
 
   {
-  job        *pLockedJob = *pjob_ptr;
-  std::string jobid(pLockedJob->ji_qs.ji_jobid);
+  svr_job        *pLockedJob = *pjob_ptr;
+  std::string jobid(pLockedJob->get_jobid());
 
   mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
-  pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
+  pbs_attribute *pattr = pLockedJob->get_attr(JOB_ATR_depend);
 
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
   if (pDep != NULL)

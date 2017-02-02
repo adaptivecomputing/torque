@@ -8,6 +8,4 @@
 
 int req_signaljob(struct batch_request *preq);
 
-/* static void post_signal_req(struct work_task *pwt); */
-
 #endif /* _REQ_SIGNAL_H */

@@ -1,5 +1,5 @@
 #include "license_pbs.h" /* See here for the software license */
-#include "lib_utils.h"
+#include "utils.h"
 #include "test_u_users.h"
 #include <stdlib.h>
 #include <stdio.h>

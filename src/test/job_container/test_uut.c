@@ -23,18 +23,18 @@ END_TEST
 START_TEST(swap_jobs_test)
   {
   all_jobs alljobs;
-  struct job *test_job;
-  struct job *second_test_job;
+  struct svr_job *test_job;
+  struct svr_job *second_test_job;
 
   int result;
 
   test_job = job_alloc();
   second_test_job = job_alloc();
-  strcpy(test_job->ji_qs.ji_jobid,"test");
-  strcpy(second_test_job->ji_qs.ji_jobid,"second_test");
+  test_job->set_jobid("test");
+  second_test_job->set_jobid("second_test");
 
   result = swap_jobs(&alljobs,NULL,test_job);
-  fail_unless(result != PBSE_NONE, "NULL first input job fail");
+  fail_unless(result != PBSE_NONE, "NULL first input svr_job fail");
 
   result = insert_job_after(&alljobs,test_job,NULL);
   fail_unless(result != PBSE_NONE, "NULL second input job fail");
@@ -49,7 +49,7 @@ END_TEST
 START_TEST(insert_job_test)
   {
   all_jobs alljobs;
-  struct job *test_job;
+  struct svr_job *test_job;
 
   int result;
 
@@ -69,12 +69,12 @@ END_TEST
 START_TEST(insert_job_after_test)
   {
   all_jobs alljobs;
-  struct job *test_job;
+  struct svr_job *test_job;
 
   int result;
 
   test_job = job_alloc();
-  strcpy(test_job->ji_qs.ji_jobid,"mylittlejob");
+  test_job->set_jobid("mylittlejob");
 
   result = insert_job_after(NULL,test_job,test_job);
   fail_unless(result != PBSE_NONE, "insert into null array fail");
@@ -94,7 +94,7 @@ END_TEST
 START_TEST(insert_job_first_test)
   {
   all_jobs alljobs;
-  struct job *test_job = job_alloc();
+  struct svr_job *test_job = job_alloc();
 
   int result;
 
@@ -112,7 +112,7 @@ END_TEST
 START_TEST(has_job_test)
   {
   all_jobs alljobs;
-  struct job *test_job = job_alloc();
+  struct svr_job *test_job = job_alloc();
   int result;
 
 
@@ -132,7 +132,7 @@ START_TEST(remove_job_test)
   {
   all_jobs alljobs;
   int result;
-  struct job *test_job = job_alloc();
+  struct svr_job *test_job = job_alloc();
 
   result = remove_job(NULL,test_job);
   fail_unless(result != PBSE_NONE, "remove from null array fail");
@@ -149,7 +149,7 @@ END_TEST
 START_TEST(next_job_test)
   {
   all_jobs alljobs;
-  struct job *result;
+  struct svr_job *result;
   result = next_job(NULL,NULL);
 
   fail_unless(result == NULL, "null input parameters fail");
@@ -157,28 +157,28 @@ START_TEST(next_job_test)
   result = next_job(&alljobs,NULL);
   fail_unless(result == NULL, "NULL input iterator fail");
 
-  struct job *test_job1 = job_alloc();
-  strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
+  struct svr_job *test_job1 = job_alloc();
+  test_job1->set_jobid("test_job1");
   int rc = insert_job(&alljobs,test_job1);
   fail_unless(rc == PBSE_NONE, "job insert fail1");
 
-  struct job *test_job2 = job_alloc();
-  strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
+  struct svr_job *test_job2 = job_alloc();
+  test_job2->set_jobid("test_job2");
   rc = insert_job(&alljobs,test_job2);
   fail_unless(rc == PBSE_NONE, "job insert fail2");
 
-  struct job *test_job3 = job_alloc();
-  strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
+  struct svr_job *test_job3 = job_alloc();
+  test_job3->set_jobid("test_job3");
   rc = insert_job(&alljobs,test_job3);
   fail_unless(rc == PBSE_NONE, "job insert fai3");
 
-  struct job *test_job4 = job_alloc();
-  strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
+  struct svr_job *test_job4 = job_alloc();
+  test_job4->set_jobid("test_job4");
   rc = insert_job(&alljobs,test_job4);
   fail_unless(rc == PBSE_NONE, "job insert fail4");
 
-  struct job *test_job5 = job_alloc();
-  strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
+  struct svr_job *test_job5 = job_alloc();
+  test_job5->set_jobid("test_job5");
   rc = insert_job(&alljobs,test_job5);
   fail_unless(rc == PBSE_NONE, "job insert fail5");
 
@@ -188,7 +188,7 @@ START_TEST(next_job_test)
   iter = alljobs.get_iterator();
   alljobs.unlock();
 
-  job *pjob = next_job(&alljobs,iter);
+  svr_job *pjob = next_job(&alljobs,iter);
   int jobcount = 0;
 
   while(pjob != NULL)
@@ -206,8 +206,8 @@ START_TEST(next_job_test)
   alljobs.unlock();
 
   /* simulate another thread had added more jobs to the alljobs */
-  struct job *test_job6 = job_alloc();
-  strcpy(test_job6->ji_qs.ji_jobid, "test_job6");
+  struct svr_job *test_job6 = job_alloc();
+  test_job6->set_jobid("test_job6");
   rc = insert_job(&alljobs,test_job6);
   fail_unless(rc == PBSE_NONE, "job insert fail6");
 
@@ -217,7 +217,7 @@ START_TEST(next_job_test)
   while(pjob != NULL)
     {
     jobcount++;
-    fail_unless(pjob->ji_qs.ji_jobid[0] != (char)254, 
+    fail_unless(pjob->get_jobid()[0] != (char)254, 
       "get_next returned a deleted job");
     pjob = next_job(&alljobs,iter2);
     }
@@ -232,28 +232,28 @@ START_TEST(find_job_by_array_with_removed_record_test)
   int result;
   all_jobs alljobs;
 
-  struct job *test_job1 = job_alloc();
-  strcpy(test_job1->ji_qs.ji_jobid, "test_job1");
+  struct svr_job *test_job1 = job_alloc();
+  test_job1->set_jobid("test_job1");
   result = insert_job(&alljobs,test_job1);
   fail_unless(result == PBSE_NONE, "job insert fail1");
 
-  struct job *test_job2 = job_alloc();
-  strcpy(test_job2->ji_qs.ji_jobid, "test_job2");
+  struct svr_job *test_job2 = job_alloc();
+  test_job2->set_jobid("test_job2");
   result = insert_job(&alljobs,test_job2);
   fail_unless(result == PBSE_NONE, "job insert fail2");
   
-  struct job *test_job3 = job_alloc();
-  strcpy(test_job3->ji_qs.ji_jobid, "test_job3");
+  struct svr_job *test_job3 = job_alloc();
+  test_job3->set_jobid("test_job3");
   result = insert_job(&alljobs,test_job3);
   fail_unless(result == PBSE_NONE, "job insert fai3");
 
-  struct job *test_job4 = job_alloc();
-  strcpy(test_job4->ji_qs.ji_jobid, "test_job4");
+  struct svr_job *test_job4 = job_alloc();
+  test_job4->set_jobid("test_job4");
   result = insert_job(&alljobs,test_job4);
   fail_unless(result == PBSE_NONE, "job insert fail4");
 
-  struct job *test_job5 = job_alloc();
-  strcpy(test_job5->ji_qs.ji_jobid, "test_job5");
+  struct svr_job *test_job5 = job_alloc();
+  test_job5->set_jobid("test_job5");
   result = insert_job(&alljobs,test_job5);
   fail_unless(result == PBSE_NONE, "job insert fail5");
   }

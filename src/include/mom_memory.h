@@ -17,7 +17,7 @@
   }proc_mem_t;
 
 proc_mem_t *get_proc_mem_from_path(const char *path);
-long long get_memory_requested_in_kb(job &pjob);
-int       get_cpu_count_requested_on_this_node(job &pjob);
+long long get_memory_requested_in_kb(mom_job &pjob);
+int       get_cpu_count_requested_on_this_node(mom_job &pjob);
 
 #endif /* __MOM_MEMORY_H__ */

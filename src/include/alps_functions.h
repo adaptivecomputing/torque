@@ -97,9 +97,9 @@ int process_alps_status(const char *nd_name, std::vector<std::string> &status);
 
 int get_alps_statuses(struct pbsnode *parent, struct batch_request *preq, int *bad, tlist_head *pstathd);
 
-int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries);
+int destroy_alps_reservation(const char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries);
 
-int create_alps_reservation(char *exec_hosts, char *username, char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, int use_nppn, int nppcu, int mppdepth, char **reservation_id,const char *mppnodes,std::string& cray_frequency);
+int create_alps_reservation(const char *exec_hosts, const char *username, const char *jobid, char *apbasil_path, char *apbasil_protocol, long long pagg_id, int use_nppn, int nppcu, int mppdepth, char **reservation_id,const char *mppnodes,std::string& cray_frequency);
 
 int find_error_type(xmlNode *node);
 

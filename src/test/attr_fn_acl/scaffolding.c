@@ -22,7 +22,7 @@ void log_event(int event, int class_type, const char *func_name, const char *buf
 struct group *getgrnam_ext(
 
   char **user_buf,
-  char *grp_name) /* I */
+  const char *grp_name) /* I */
 
   {
   struct group *grp;

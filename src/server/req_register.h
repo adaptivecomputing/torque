@@ -14,10 +14,6 @@ int req_registerarray(struct batch_request *preq);
 
 int register_array_depend(job_array *pa, struct batch_request *preq, int type, int num_jobs);
 
-int depend_on_exec(job *pjob);
-
-void depend_clrrdy(job *pjob);
-
 int encode_depend(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
 int set_depend(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch_op op);

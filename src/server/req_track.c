@@ -329,18 +329,18 @@ void track_save(
 
 void issue_track(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
-  char          *pc;
-  char          *sname;
+  const char    *pc;
+  const char    *sname;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if ((pc = strchr(pjob->ji_qs.ji_jobid, '.')) == NULL)
+  if ((pc = strchr(pjob->get_jobid(), '.')) == NULL)
     {
     snprintf(log_buf, sizeof(log_buf),
       "Remote job routing is not compatible with display_job_server_suffix set to false. Cannot track %s",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_err(-1, __func__, log_buf);
 
     return;
@@ -353,21 +353,21 @@ void issue_track(
     {
     snprintf(log_buf, sizeof(log_buf),
       "%s erroneously called for local job %s",
-      __func__, pjob->ji_qs.ji_jobid);
+      __func__, pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     return;
     }
 
   batch_request preq(PBS_BATCH_TrackJob);
 
-  preq.rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long;
+  preq.rq_ind.rq_track.rq_hopcount = pjob->get_long_attr(JOB_ATR_hopcount);
 
-  strcpy(preq.rq_ind.rq_track.rq_jid, pjob->ji_qs.ji_jobid);
+  strcpy(preq.rq_ind.rq_track.rq_jid, pjob->get_jobid());
   strcpy(preq.rq_ind.rq_track.rq_location, server_name);
 
-  preq.rq_ind.rq_track.rq_state[0] = pjob->ji_wattr[JOB_ATR_state].at_val.at_char;
+  preq.rq_ind.rq_track.rq_state[0] = pjob->get_char_attr(JOB_ATR_state);
 
-  pc = pjob->ji_qs.ji_jobid;
+  pc = pjob->get_jobid();
 
   while (*pc != '.')
     pc++;

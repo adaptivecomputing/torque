@@ -14,7 +14,7 @@
 #include "utils.h"
 #include "mutex_mgr.hpp"
 
-int create_and_queue_array_subjob(job_array *pa, mutex_mgr &array_mgr, job *template_job,
+int create_and_queue_array_subjob(job_array *pa, mutex_mgr &array_mgr, svr_job *template_job,
                                   mutex_mgr &template_job_mgr, int index, std::string &prev_job_id,
                                   bool place_hold);
 
@@ -346,7 +346,7 @@ void job_array::create_job_if_needed()
 
   if (next_index >= 0)
     {
-    job *template_job = svr_find_job(this->ai_qs.parent_id, FALSE);
+    svr_job *template_job = svr_find_job(this->ai_qs.parent_id, FALSE);
 
     if (template_job != NULL)
       {
@@ -358,7 +358,7 @@ void job_array::create_job_if_needed()
       char *hostname_extension;
       char *bracket;
 
-      strcpy(old_id, template_job->ji_qs.ji_jobid);
+      strcpy(old_id, template_job->get_jobid());
       hostname_extension = strchr(old_id, '.');
       bracket = strchr(old_id, '[');
 
@@ -477,7 +477,7 @@ void job_array::update_array_values(
           int  i;
           int  newstate;
           int  newsub;
-          job *pj;
+          svr_job *pj;
 
           /* find the first held job and release its hold */
           for (i = 0; i < this->ai_qs.array_size; i++)
@@ -496,18 +496,18 @@ void job_array::update_array_values(
             else
               {
               mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
-              if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+              if (pj->get_long_attr(JOB_ATR_hold) & HOLD_l)
                 {
-                pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
+                pj->set_long_attr(JOB_ATR_hold, pj->get_long_attr(JOB_ATR_hold) & ~HOLD_l);
                 
-                if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+                if (pj->get_long_attr(JOB_ATR_hold) == 0)
                   {
-                  pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+                  pj->unset_attr(JOB_ATR_hold);
                   }
                 
                 svr_evaljobstate(*pj, newstate, newsub, 1);
                 svr_setjobstate(pj, newstate, newsub, FALSE);
-                job_save(pj, SAVEJOB_FULL, 0);
+                svr_job_save(pj);
                 
                 break;
                 }
@@ -592,7 +592,7 @@ bool job_array::is_deleted() const
 
 bool job_array::mark_end_of_subjob(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   bool no_more_subjobs = false;
@@ -602,7 +602,7 @@ bool job_array::mark_end_of_subjob(
     {
     if (this->job_ids != NULL)
       {
-      index = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+      index = pjob->get_long_attr(JOB_ATR_job_array_id);
 
       if ((index >= 0) &&
           (index < this->ai_qs.array_size))

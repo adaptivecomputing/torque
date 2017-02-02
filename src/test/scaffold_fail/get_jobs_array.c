@@ -7,8 +7,7 @@
 
 #include "scaffold_fail.h"
 
-job_array *get_jobs_array(job **pjob)
+job_array *get_jobs_array(svr_job **pjob)
   {
-  fprintf(stderr, "The call to get_jobs_array to be mocked!!\n");
-  exit(1);
+  return(NULL);
   }

@@ -12,7 +12,7 @@ extern std::string get_path_to_rur_log(const char *configPath);
 START_TEST(test_get_energy_from_file)
   {
   job *pj = alloc_job();
-  strcpy(pj->ji_qs.ji_jobid,"860.opal-p1");
+  pj->set_jobid("860.opal-p1");
   u_long joules = get_energy_from_cray_file("./test_log_2up01",pj);
   fail_unless(joules == 5186);
 

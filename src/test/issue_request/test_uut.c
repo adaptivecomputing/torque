@@ -36,8 +36,8 @@ END_TEST
 
 START_TEST(test_one)
   {
-  job testJob;
-  job *pTestJob;
+  svr_job testJob;
+  svr_job *pTestJob;
   struct batch_request request;
 
   pTestJob = &testJob;
@@ -46,7 +46,8 @@ START_TEST(test_one)
   net_rc_retry = false; /* Keep this false for svr_connect except for one case with issue_to_svr */
   fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_BADSTATE);
 
-  testJob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("Sherrie");
+  testJob.set_str_attr(JOB_ATR_exec_host, strdup("Sherrie"));
+  pTestJob = &testJob;
 
   fail_unless(relay_to_mom(&pTestJob,&request,NULL) == PBSE_NONE);
 

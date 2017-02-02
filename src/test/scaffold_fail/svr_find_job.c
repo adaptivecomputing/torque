@@ -6,8 +6,8 @@
 
 #include "scaffold_fail.h"
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
-  return(new job());
+  return(new svr_job());
   }
 

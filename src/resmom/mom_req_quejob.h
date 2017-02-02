@@ -18,6 +18,4 @@ void reply_sid(struct batch_request *preq, long sid, int which);
 
 void req_commit(struct batch_request *preq);
 
-/* static job *locate_new_job(int sock, char *jobid); */
-
 #endif /* _REQ_QUEJOB_H */

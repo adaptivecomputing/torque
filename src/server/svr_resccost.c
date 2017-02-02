@@ -395,7 +395,7 @@ void free_rcost(
 
 long calc_job_cost(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   long      amt;
@@ -407,40 +407,44 @@ long calc_job_cost(
 
   pthread_mutex_lock(server.sv_attr_mutex);
   pcost = (struct resource_cost *)GET_NEXT(server.sv_attr[SRV_ATR_resource_cost].at_val.at_list);
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
 
-  while (pcost)
+  if (resources != NULL)
     {
-    pjobr = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],
-                            pcost->rc_def);
-
-    if (pjobr)
+    while (pcost)
       {
-      switch (pcost->rc_def->rs_type)
+
+      pjobr = find_resc_from_vector(resources, pcost->rc_def);
+
+      if (pjobr)
         {
+        switch (pcost->rc_def->rs_type)
+          {
 
-        case ATR_TYPE_LONG:
-          cost += pjobr->rs_value.at_val.at_long * pcost->rc_cost;
-          break;
+          case ATR_TYPE_LONG:
+            cost += pjobr->rs_value.at_val.at_long * pcost->rc_cost;
+            break;
 
-        case ATR_TYPE_SIZE:
-          amt = pjobr->rs_value.at_val.at_size.atsv_num;
-          shiftct = pjobr->rs_value.at_val.at_size.atsv_shift - 20;
+          case ATR_TYPE_SIZE:
+            amt = pjobr->rs_value.at_val.at_size.atsv_num;
+            shiftct = pjobr->rs_value.at_val.at_size.atsv_shift - 20;
 
-          if (shiftct < 0)
-            amt = amt >> -shiftct;
-          else
-            amt = amt << shiftct;
+            if (shiftct < 0)
+              amt = amt >> -shiftct;
+            else
+              amt = amt << shiftct;
 
-          if (pjobr->rs_value.at_val.at_size.atsv_units)
-            amt *= sizeof(int);
+            if (pjobr->rs_value.at_val.at_size.atsv_units)
+              amt *= sizeof(int);
 
-          cost += amt * pcost->rc_cost;
+            cost += amt * pcost->rc_cost;
 
-          break;
+            break;
+          }
         }
+    
+      pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
       }
-
-    pcost = (struct resource_cost *)GET_NEXT(pcost->rc_link);
     }
 
   cost += server.sv_attr[SRV_ATR_sys_cost].at_val.at_long;

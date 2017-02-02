@@ -11,7 +11,7 @@
 #include "mom_func.h"
 #include "pbs_error.h"
 
-int kill_job(job *pjob, int sig, const char *killer_id, const char *kill_reason);
+int kill_job(mom_job *pjob, int sig, const char *killer_id, const char *kill_reason);
 
 extern char mom_alias[];
 
@@ -21,7 +21,7 @@ std::list<pmix_tracker *> tracker_list;
 
 void pmix_tracker::check_and_add_task(
 
-  job *pjob,
+  mom_job *pjob,
   int  rank)
 
   {
@@ -46,7 +46,7 @@ void pmix_tracker::check_and_add_task(
 
 pmix_tracker::pmix_tracker(
 
-  job *pjob,
+  mom_job *pjob,
   int  rank) : jid(pjob->ji_qs.ji_jobid), tasks()
 
   {
@@ -83,7 +83,7 @@ int pmix_tracker::finalize_process(
 
 int find_and_kill_task(
 
-  job *pjob,
+  mom_job *pjob,
   int  rank)
 
   {
@@ -107,7 +107,7 @@ int pmix_tracker::abort(
 
   {
   int  rc = PBSE_JOBNOTFOUND;
-  job *pjob = mom_find_job(this->jid.c_str());
+  mom_job *pjob = mom_find_job(this->jid.c_str());
 
   if (pjob != NULL)
     {

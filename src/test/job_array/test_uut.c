@@ -156,15 +156,15 @@ START_TEST(test_mark_end_of_subjob)
 
   fail_unless(pa.mark_end_of_subjob(NULL) == false);
 
-  job pjob;
+  svr_job pjob;
 
   // Make sure a bad index doesn't crash
-  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = -1;
+  pjob.set_long_attr(JOB_ATR_job_array_id, -1);
   fail_unless(pa.mark_end_of_subjob(&pjob) == false);
 
   for (int i = 0; i < 10; i++)
     {
-    pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = i;
+    pjob.set_long_attr(JOB_ATR_job_array_id, i);
     
     if (i == 9)
       fail_unless(pa.mark_end_of_subjob(&pjob) == true);
@@ -173,7 +173,7 @@ START_TEST(test_mark_end_of_subjob)
     }
 
   // Make sure a repeated index doesn't crash
-  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 1;
+  pjob.set_long_attr(JOB_ATR_job_array_id, 1);
   fail_unless(pa.mark_end_of_subjob(&pjob) == false);
   }
 END_TEST

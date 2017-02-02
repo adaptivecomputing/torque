@@ -169,7 +169,7 @@ extern int que_purge(pbs_queue *);
 extern void save_characteristic(struct pbsnode *, node_check_info *);
 extern int chk_characteristic(struct pbsnode *, node_check_info *, int *);
 extern int PNodeStateToString(int, char *, int);
-extern job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
+extern svr_job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 
 //extern void add_all_nodes_to_hello_container();
@@ -2003,9 +2003,9 @@ static bool wait_for_job_state(int jobid,int newState,int timeout)
   time_t end = time(NULL) + timeout;
   while(end > time(NULL))
     {
-    job *pjob = svr_find_job_by_id(jobid);
+    svr_job *pjob = svr_find_job_by_id(jobid);
     if(pjob == NULL) return true; //the job is gone.
-    int jobState = pjob->ji_qs.ji_state;
+    int jobState = pjob->get_state();
     unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
     if(jobState == newState) return true; //The job has been deleted from the MOM
     sleep(2);
@@ -2033,17 +2033,17 @@ static bool requeue_or_delete_jobs(
   for(std::vector<int>::iterator jid = jids.begin();jid != jids.end();jid++)
     {
     pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-    job *pjob = svr_find_job_by_id(*jid);
+    svr_job *pjob = svr_find_job_by_id(*jid);
     pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
 
     if(pjob != NULL)
       {
-      char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+      char *dup_jobid = strdup(pjob->get_jobid());
       batch_request brRerun(PBS_BATCH_Rerun);
       batch_request brDelete(PBS_BATCH_DeleteJob);
       
-      strcpy(brRerun.rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
-      strcpy(brDelete.rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
+      strcpy(brRerun.rq_ind.rq_rerun,pjob->get_jobid());
+      strcpy(brDelete.rq_ind.rq_delete.rq_objname,pjob->get_jobid());
 
       brRerun.rq_conn = PBS_LOCAL_CONNECTION;
       brDelete.rq_conn = PBS_LOCAL_CONNECTION;

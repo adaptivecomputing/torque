@@ -14,10 +14,10 @@ int num_array_jobs(const char *str);
 int array_recov_binary(const char *path, job_array **new_pa, char *log_buf, size_t buflen);
 int parse_array_dom(job_array **pa, xmlNodePtr root_element, char *log_buf, size_t buflen);
 void update_array_values(job_array *pa, int old_state, enum ArrayEventsEnum event, const char *job_id, long job_atr_hold, int job_exit_status);
-void release_slot_hold(job *pjob, int &difference);
-int update_slot_values(job_array *pa, int actually_running, int number_queued, job *held, std::vector<std::string> &candidates);
+void release_slot_hold(svr_job *pjob, int &difference);
+int update_slot_values(job_array *pa, int actually_running, int number_queued, svr_job *held, std::vector<std::string> &candidates);
 bool need_to_update_slot_limits(job_array *pa);
-void set_slot_hold(job *pjob, int &difference);
+void set_slot_hold(svr_job *pjob, int &difference);
 
 extern std::string get_path_jobdata(const char *, const char *);
 const char *array_sample = "<array>\n</array>";
@@ -50,22 +50,20 @@ job_array *get_job_array(
 
 START_TEST(set_slot_hold_test)
   {
-  job pjob;
+  svr_job pjob;
   int difference = -2;
-  memset(&pjob, 0, sizeof(pjob));
-  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+  pjob.set_long_attr(JOB_ATR_hold, HOLD_l);
 
   // slot hold is already set, so we shouldn't change
   set_slot_hold(&pjob, difference);
   fail_unless(difference == -2);
-  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == 0);
   
   // unset the slot hold to see a change
-  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = 0;
+  pjob.set_long_attr(JOB_ATR_hold, 0);
   set_slot_hold(&pjob, difference);
   fail_unless(difference == -1);
-  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_flags == ATR_VFLAG_SET);
-  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_l);
+  fail_unless(pjob.is_attr_set(JOB_ATR_hold) == true);
+  fail_unless(pjob.get_long_attr(JOB_ATR_hold) == HOLD_l);
   }
 END_TEST
 
@@ -73,20 +71,20 @@ END_TEST
 START_TEST(release_slot_hold_test)
   {
   int difference = 2;
-  job pjob;
+  svr_job pjob;
 
-  pjob.ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+  pjob.set_long_attr(JOB_ATR_hold, HOLD_l);
 
   // Make sure that we release the hold and decrement difference
   release_slot_hold(&pjob, difference);
   fail_unless(difference == 1);
-  fail_unless((pjob.ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == 0);
+  fail_unless((pjob.get_long_attr(JOB_ATR_hold) & HOLD_l) == 0);
 
   // Make sure calling this with a job that isn't set does nothing
-  long current_hold = pjob.ji_wattr[JOB_ATR_hold].at_val.at_long;
+  long current_hold = pjob.get_long_attr(JOB_ATR_hold);
   release_slot_hold(&pjob, difference);
   fail_unless(difference == 1);
-  fail_unless(pjob.ji_wattr[JOB_ATR_hold].at_val.at_long == current_hold);
+  fail_unless(pjob.get_long_attr(JOB_ATR_hold) == current_hold);
   }
 END_TEST
 
@@ -95,10 +93,10 @@ START_TEST(update_slot_values_test)
   {
   std::vector<std::string>  candidates;
   char                      buf[1024];
-  job                      *pjob = new job();
+  svr_job                  *pjob = new svr_job();
   job_array                *pa = get_job_array(10);
 
-  sprintf(pjob->ji_qs.ji_jobid, "0[0].napali");
+  pjob->set_jobid("0[0].napali");
   pa->ai_qs.slot_limit = 2;
   pa->ai_qs.jobs_running = 2;
 

@@ -123,13 +123,13 @@ struct startjob_rtn
   int   sj_rsvid;
   };
 
-extern int mom_set_limits(job *, int); /* Set job's limits */
-extern int mom_do_poll(job *);  /* Should limits be polled? */
+extern int mom_set_limits(mom_job *, int); /* Set job's limits */
+extern int mom_do_poll(mom_job *);  /* Should limits be polled? */
 extern int mom_does_checkpoint();                   /* see if mom does checkpoint */
 extern int mom_open_poll();  /* Initialize poll ability */
 extern int mom_get_sample();  /* Sample kernel poll data */
-extern int mom_over_limit(job *);  /* Is polled job over limit? */
-extern int mom_set_use(job *);  /* Set resource_used list */
+extern int mom_over_limit(mom_job *);  /* Is polled job over limit? */
+extern int mom_set_use(mom_job *);  /* Set resource_used list */
 extern int mom_kill(int, int); /* Kill a session */
 extern int mom_close_poll();  /* Terminate poll ability */
 #ifdef PBS_MOM

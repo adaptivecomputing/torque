@@ -58,13 +58,13 @@ char * csv_find_string(const char *csv_str, const char *search_str)
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate to be mocked!!\n");
   exit(1);
   }
 
-void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
+void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate to be mocked!!\n");
   exit(1);
@@ -76,12 +76,12 @@ void get_jobowner(char *from, char *to)
   exit(1);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

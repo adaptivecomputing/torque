@@ -107,7 +107,7 @@
 #include "log.h"
 #include "job_route.h" /* remove_procct */
 
-extern int     svr_authorize_jobreq(struct batch_request *, job *);
+extern int     svr_authorize_jobreq(struct batch_request *, svr_job *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 
 /* Global Data Items: */
@@ -129,7 +129,7 @@ extern struct server server;
 
 int status_job(
 
-  job           *pjob, /* ptr to job to status */
+  svr_job       *pjob, /* ptr to job to status */
   batch_request *preq,
   svrattrl      *pal, /* specific attributes to status */
   tlist_head    *pstathd, /* RETURN: head of list to append status to */
@@ -176,7 +176,7 @@ int status_job(
 
   pstat->brp_objtype = MGR_OBJ_JOB;
 
-  strcpy(pstat->brp_objname, pjob->ji_qs.ji_jobid);
+  strcpy(pstat->brp_objname, pjob->get_jobid());
 
   CLEAR_HEAD(pstat->brp_attr);
 
@@ -188,7 +188,7 @@ int status_job(
   if (status_attrib(
         pal,
         job_attr_def,
-        pjob->ji_wattr,
+        pjob->get_attr(0),
         JOB_ATR_LAST,
         preq->rq_perm,
         &pstat->brp_attr,

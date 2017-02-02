@@ -431,7 +431,7 @@ void free_grname(
 struct group *getgrnam_ext(
 
   char **user_buf,
-  char *grp_name) /* I */
+  const char *grp_name) /* I */
 
   {
   struct group *grp;

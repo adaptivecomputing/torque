@@ -111,9 +111,9 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern char *pbs_o_host;
 
-int   svr_movejob(job *, char *, int *, struct batch_request *);
-int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-job  *chk_job_request(char *, struct batch_request *);
+int   svr_movejob(svr_job *, char *, int *, struct batch_request *);
+int   svr_chkque(svr_job *, pbs_queue *, char *, int, char *);
+svr_job  *chk_job_request(char *, struct batch_request *);
 
 /*
  * req_movejob = move a job to a new destination (local or remote)
@@ -124,7 +124,7 @@ int req_movejob(
   batch_request *req) /* I */
 
   {
-  job       *jobp;
+  svr_job   *jobp;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   int        local_errno = 0;
 
@@ -139,18 +139,18 @@ int req_movejob(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", jobp->get_jobid());
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
   
-  if ((jobp->ji_qs.ji_state != JOB_STATE_QUEUED) &&
-      (jobp->ji_qs.ji_state != JOB_STATE_HELD) &&
-      (jobp->ji_qs.ji_state != JOB_STATE_WAITING))
+  if ((jobp->get_state() != JOB_STATE_QUEUED) &&
+      (jobp->get_state() != JOB_STATE_HELD) &&
+      (jobp->get_state() != JOB_STATE_WAITING))
     {
 #ifndef NDEBUG
-    sprintf(log_buf, "%s %d %s", pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, __func__);
+    sprintf(log_buf, "%s %d %s", pbse_to_txt(PBSE_BADSTATE), jobp->get_state(), __func__);
 
-    log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->get_jobid(),log_buf);
 #endif /* NDEBUG */
 
     req_reject(PBSE_BADSTATE, 0, req, NULL, NULL);
@@ -166,9 +166,9 @@ int req_movejob(
   /* We have found that sometimes the destination queue and the 
      parent queue are the same. If so we do not need to do
      anything else */
-  if (strcmp(jobp->ji_qs.ji_queue, req->rq_ind.rq_move.rq_destin) == 0)
+  if (strcmp(jobp->get_queue(), req->rq_ind.rq_move.rq_destin) == 0)
     {
-    sprintf(log_buf, "Job %s already in queue %s", jobp->ji_qs.ji_jobid, jobp->ji_qs.ji_queue);
+    sprintf(log_buf, "Job %s already in queue %s", jobp->get_jobid(), jobp->get_queue());
     if (LOGLEVEL >= 7)
       {
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -188,7 +188,7 @@ int req_movejob(
       snprintf(log_buf + strlen(log_buf), sizeof(log_buf) - strlen(log_buf), msg_manager,
         req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->get_jobid(),log_buf);
 
       reply_ack(req);
 
@@ -230,12 +230,12 @@ int req_movejob(
 
 int req_orderjob(
 
-  struct batch_request *vp) /* I */
+  batch_request *vp) /* I */
 
   {
-  job                  *pjob;
-  job                  *pjob1;
-  job                  *pjob2;
+  svr_job              *pjob;
+  svr_job              *pjob1;
+  svr_job              *pjob2;
   int                   rank;
   int                   rc = 0;
   char                  tmpqn[PBS_MAXQUEUENAME+1];
@@ -260,20 +260,20 @@ int req_orderjob(
 
   mutex_mgr job2_mutex(pjob2->ji_mutex, true);
 
-  if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
-      ((pjob = pjob2)->ji_qs.ji_state == JOB_STATE_RUNNING))
+  if (((pjob = pjob1)->get_state() == JOB_STATE_RUNNING) ||
+      ((pjob = pjob2)->get_state() == JOB_STATE_RUNNING))
     {
 #ifndef NDEBUG
     sprintf(log_buf, "%s %d",
             pbse_to_txt(PBSE_BADSTATE),
-            pjob->ji_qs.ji_state);
+            pjob->get_state());
 
     strcat(log_buf, __func__);
 
     log_event(
       PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buf);
 #endif /* NDEBUG */
 
@@ -332,18 +332,16 @@ int req_orderjob(
     }
 
   /* now swap the order of the two jobs in the queue lists */
-  rank = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  rank = pjob1->get_long_attr(JOB_ATR_qrank);
 
-  pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long =
-    pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-
-  pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long = rank;
+  pjob1->set_long_attr(JOB_ATR_qrank, pjob2->get_long_attr(JOB_ATR_qrank));
+  pjob2->set_long_attr(JOB_ATR_qrank, rank);
 
   if (pjob1->ji_qhdr != pjob2->ji_qhdr)
     {
-    strcpy(tmpqn, pjob1->ji_qs.ji_queue);
-    strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
-    strcpy(pjob2->ji_qs.ji_queue, tmpqn);
+    strcpy(tmpqn, pjob1->get_queue());
+    pjob1->set_queue(pjob2->get_queue());
+    pjob2->set_queue(tmpqn);
 
     svr_dequejob(pjob1, FALSE);
     svr_dequejob(pjob2, FALSE);
@@ -373,12 +371,12 @@ int req_orderjob(
   /* need to update disk copy of both jobs to save new order */
   if (pjob1 != NULL)
     {
-    job_save(pjob1, SAVEJOB_FULL, 0);
+    svr_job_save(pjob1);
     }
 
   if (pjob2 != NULL)
     {
-    job_save(pjob2, SAVEJOB_FULL, 0);
+    svr_job_save(pjob2);
     }
 
   /* SUCCESS */

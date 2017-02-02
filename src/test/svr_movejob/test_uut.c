@@ -10,12 +10,12 @@
 #include "pbs_error.h"
 #include "list_link.h"
 
-int get_job_script_path(job *pjob, std::string &script_path);
+int get_job_script_path(svr_job *pjob, std::string &script_path);
 int save_jobs_sid(char *jobid, long sid);
 void log_commit_error(int con, int mom_err, char *job_id, bool &timeout);
 int update_substate_if_needed(char *job_id, bool &change_substate_on_attempt_to_queue);
 int queue_job_on_mom(int con, int *my_err, char *job_id, char *job_destin, tlist_head &attrl, bool &timeout, int type);
-void encode_attributes(tlist_head &attrl, job *pjob, int resc_access_perm, int encode_type);
+void encode_attributes(tlist_head &attrl, svr_job *pjob, int resc_access_perm, int encode_type);
 int encode_exec_host(pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 int send_job_script_if_needed(int con, bool need_to_send_job_script, const char *script_name, char *job_id);
 int send_files_if_needed(int con, char *job_id, int type, bool job_has_run, unsigned long job_momaddr, char *stdout_path, char *stderr_path, char *chkpt_path);
@@ -158,15 +158,14 @@ void init_job_attr_def()
 START_TEST(encode_attributes_test)
   {
   tlist_head attrl;
-  job        pjob;
+  svr_job        pjob;
 
   memset(&pjob, 0, sizeof(pjob));
 
   CLEAR_HEAD(attrl);
   init_job_attr_def();
 
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("1.napali");
-  pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
+  pjob.set_str_attr(JOB_ATR_exec_host, strdup("1.napali"));
 
   encode_attributes(attrl, &pjob, ATR_DFLAG_MOM, ATR_ENCODE_MOM);
 
@@ -228,10 +227,10 @@ END_TEST
 
 START_TEST(get_job_script_path_test)
   {
-  job         *pjob = (job *)calloc(1, sizeof(job));
+  svr_job     *pjob = new svr_job();
   std::string  script;
 
-  strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
+  pjob->set_fileprefix("1.napali");
 
   fail_unless(get_job_script_path(pjob, script) == PBSE_NONE);
   fail_unless(script == "/var/spool/torque/server_priv/jobs/1.napali.SC");

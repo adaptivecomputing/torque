@@ -107,9 +107,11 @@
 
 extern int  acct_open (char *filename, bool acct_mutex_locked);
 void        acct_close (bool acct_mutex_locked);
-extern void account_record (int acctype, job *pjob, const char *text);
-extern void account_jobstr (job *pjob);
-extern void account_jobend (job *pjob, std::string &acct_data);
+#ifndef PBS_MOM
+extern void account_record (int acctype, svr_job *pjob, const char *text);
+extern void account_jobstr (svr_job *pjob);
+extern void account_jobend (svr_job *pjob, std::string &acct_data);
+#endif
 
 #endif
 

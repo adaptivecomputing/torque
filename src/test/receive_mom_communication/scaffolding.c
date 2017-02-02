@@ -207,7 +207,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 void log_err(int errnum, const char *routine, const char *text) {}
 void close_conn(int sd, int has_mutex) {}
 
-job *get_job_from_jobinfo(
+svr_job *get_job_from_jobinfo(
     
   struct jobinfo *jp,
   struct pbsnode *pnode)
@@ -235,7 +235,7 @@ void mutex_mgr::mark_as_locked() {}
 
 int unlock_ji_mutex(
 
-  job        *pjob,
+  svr_job        *pjob,
   const char *id,
   const char *msg,
   int        logging)
@@ -244,7 +244,7 @@ int unlock_ji_mutex(
   return(0);
   }
 
-job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
+svr_job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
   {
   return(NULL);
   }
@@ -926,6 +926,8 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t, hwloc_topology_t) {return(0);}
 #endif
 
 job::job() {}
+svr_job::svr_job() {}
+svr_job::~svr_job() {}
 
 pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned short port)
   {

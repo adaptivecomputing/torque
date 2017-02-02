@@ -27,12 +27,12 @@ extern char *path_jobs;
 extern char *path_arrays;
 
 
-int upgrade_2_1_X(job *pj, int fds);
-int upgrade_2_2_X(job *pj, int fds);
-int upgrade_2_3_X(job *pj, int fds);
+int upgrade_2_1_X(jobfix &ji_qs, int fds);
+int upgrade_2_2_X(jobfix &ji_qs, int fds);
+int upgrade_2_3_X(jobfix &ji_qs, int fds);
 
 /* switched to new naming scheme */
-int upgrade_v1(job *pj, int fds);
+int upgrade_v1(jobfix &ji_qs, int fds);
 
 
 
@@ -226,10 +226,10 @@ typedef struct
 
 int job_qs_upgrade(
 
-  job *pj,     /* I */
-  int fds,    /* I */
-  char *path, /* I */
-  int version) /* I */
+  jobfix &ji_qs,     /* I */
+  int     fds,    /* I */
+  char   *path, /* I */
+  int     version) /* I */
 
   {
   char  namebuf[MAXPATHLEN];
@@ -309,21 +309,21 @@ int job_qs_upgrade(
     }
   else if (version - PBS_QS_VERSION_BASE == 1)
     {
-    return upgrade_v1(pj, fds);
+    return upgrade_v1(ji_qs, fds);
     }
   /* old style version numbers... */
   else if (version == 0x00020300)
     {
-    return  upgrade_2_3_X(pj, fds);
+    return upgrade_2_3_X(ji_qs, fds);
     }
   else if (version == 0x00020200)
     {
-    return  upgrade_2_2_X(pj, fds);
+    return  upgrade_2_2_X(ji_qs, fds);
     }
   /* predates versioning of ji_qs. assume 2.1.x format */
   else
     {
-    return upgrade_2_1_X(pj, fds);
+    return upgrade_2_1_X(ji_qs, fds);
     }
 
 
@@ -337,8 +337,8 @@ int job_qs_upgrade(
 
 int upgrade_v1(
 
-  job *pj,   /* I */
-  int  fds)  /* I */
+  jobfix &ji_qs,   /* I */
+  int     fds)  /* I */
 
   {
   ji_qs_v1 qs_old;
@@ -349,26 +349,26 @@ int upgrade_v1(
     return (-1);
     }
 
-  pj->ji_qs.qs_version  = PBS_QS_VERSION;
+  ji_qs.qs_version  = PBS_QS_VERSION;
 
-  pj->ji_qs.ji_state    = qs_old.ji_state;
-  pj->ji_qs.ji_substate = qs_old.ji_substate;
-  pj->ji_qs.ji_svrflags = qs_old.ji_svrflags;
-  pj->ji_qs.ji_numattr  = qs_old.ji_numattr;
-  pj->ji_qs.ji_ordering = qs_old.ji_ordering;
-  pj->ji_qs.ji_priority = qs_old.ji_priority;
-  pj->ji_qs.ji_stime    = qs_old.ji_stime;
+  ji_qs.ji_state    = qs_old.ji_state;
+  ji_qs.ji_substate = qs_old.ji_substate;
+  ji_qs.ji_svrflags = qs_old.ji_svrflags;
+  ji_qs.ji_numattr  = qs_old.ji_numattr;
+  ji_qs.ji_ordering = qs_old.ji_ordering;
+  ji_qs.ji_priority = qs_old.ji_priority;
+  ji_qs.ji_stime    = qs_old.ji_stime;
 
-  strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
-  strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
-  strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
-  strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
+  strcpy(ji_qs.ji_jobid, qs_old.ji_jobid);
+  strcpy(ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
+  strcpy(ji_qs.ji_queue, qs_old.ji_queue);
+  strcpy(ji_qs.ji_destin, qs_old.ji_destin);
 
 
 
-  pj->ji_qs.ji_un_type  = qs_old.ji_un_type;
+  ji_qs.ji_un_type  = qs_old.ji_un_type;
 
-  memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
+  memcpy(&ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
 
   return 0;
   }
@@ -377,8 +377,8 @@ int upgrade_v1(
    
 int upgrade_2_3_X(
 
-  job *pj,   /* I */
-  int  fds)  /* I */
+  jobfix &ji_qs,   /* I */
+  int     fds)  /* I */
 
   {
   ji_qs_2_3_X qs_old;
@@ -389,26 +389,26 @@ int upgrade_2_3_X(
     return (-1);
     }
 
-  pj->ji_qs.qs_version  = PBS_QS_VERSION;
+  ji_qs.qs_version  = PBS_QS_VERSION;
 
-  pj->ji_qs.ji_state    = qs_old.ji_state;
-  pj->ji_qs.ji_substate = qs_old.ji_substate;
-  pj->ji_qs.ji_svrflags = qs_old.ji_svrflags;
-  pj->ji_qs.ji_numattr  = qs_old.ji_numattr;
-  pj->ji_qs.ji_ordering = qs_old.ji_ordering;
-  pj->ji_qs.ji_priority = qs_old.ji_priority;
-  pj->ji_qs.ji_stime    = qs_old.ji_stime;
+  ji_qs.ji_state    = qs_old.ji_state;
+  ji_qs.ji_substate = qs_old.ji_substate;
+  ji_qs.ji_svrflags = qs_old.ji_svrflags;
+  ji_qs.ji_numattr  = qs_old.ji_numattr;
+  ji_qs.ji_ordering = qs_old.ji_ordering;
+  ji_qs.ji_priority = qs_old.ji_priority;
+  ji_qs.ji_stime    = qs_old.ji_stime;
 
-  strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
-  strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
-  strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
-  strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
+  strcpy(ji_qs.ji_jobid, qs_old.ji_jobid);
+  strcpy(ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
+  strcpy(ji_qs.ji_queue, qs_old.ji_queue);
+  strcpy(ji_qs.ji_destin, qs_old.ji_destin);
 
 
 
-  pj->ji_qs.ji_un_type  = qs_old.ji_un_type;
+  ji_qs.ji_un_type  = qs_old.ji_un_type;
 
-  memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
+  memcpy(&ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
 
   return 0;
   }
@@ -421,77 +421,70 @@ int upgrade_2_3_X(
    
 int upgrade_2_2_X(
 
-  job *pj,   /* I */
-  int  fds)  /* I */
+  jobfix &ji_qs,   /* I */
+  int     fds)  /* I */
 
   {
   ji_qs_2_2_X qs_old;
-
-
 
   if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
 
-  pj->ji_qs.qs_version  = PBS_QS_VERSION;
+  ji_qs.qs_version  = PBS_QS_VERSION;
 
-  pj->ji_qs.ji_state    = qs_old.ji_state;
-  pj->ji_qs.ji_substate = qs_old.ji_substate;
-  pj->ji_qs.ji_svrflags = qs_old.ji_svrflags;
-  pj->ji_qs.ji_numattr  = qs_old.ji_numattr;
-  pj->ji_qs.ji_ordering = qs_old.ji_ordering;
-  pj->ji_qs.ji_priority = qs_old.ji_priority;
-  pj->ji_qs.ji_stime    = qs_old.ji_stime;
+  ji_qs.ji_state    = qs_old.ji_state;
+  ji_qs.ji_substate = qs_old.ji_substate;
+  ji_qs.ji_svrflags = qs_old.ji_svrflags;
+  ji_qs.ji_numattr  = qs_old.ji_numattr;
+  ji_qs.ji_ordering = qs_old.ji_ordering;
+  ji_qs.ji_priority = qs_old.ji_priority;
+  ji_qs.ji_stime    = qs_old.ji_stime;
 
-  strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
-  strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
-  strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
-  strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
+  strcpy(ji_qs.ji_jobid, qs_old.ji_jobid);
+  strcpy(ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
+  strcpy(ji_qs.ji_queue, qs_old.ji_queue);
+  strcpy(ji_qs.ji_destin, qs_old.ji_destin);
 
+  ji_qs.ji_un_type  = qs_old.ji_un_type;
 
-
-  pj->ji_qs.ji_un_type  = qs_old.ji_un_type;
-
-  memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
-
-
+  memcpy(&ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
 
   return (0);
   }
 
 int upgrade_2_1_X(
 
-  job *pj,  /* I */
-  int  fds) /* I */
+  jobfix &ji_qs,  /* I */
+  int     fds) /* I */
 
   {
   ji_qs_2_1_X qs_old;
-
 
   if (read_ac_socket(fds, (char*)&qs_old, sizeof(qs_old)) != sizeof(qs_old))
     {
     return (-1);
     }
 
-  pj->ji_qs.qs_version  = PBS_QS_VERSION;
+  ji_qs.qs_version  = PBS_QS_VERSION;
 
-  pj->ji_qs.ji_state    = qs_old.ji_state;
-  pj->ji_qs.ji_substate = qs_old.ji_substate;
-  pj->ji_qs.ji_svrflags = qs_old.ji_svrflags;
-  pj->ji_qs.ji_numattr  = qs_old.ji_numattr;
-  pj->ji_qs.ji_ordering = qs_old.ji_ordering;
-  pj->ji_qs.ji_priority = qs_old.ji_priority;
-  pj->ji_qs.ji_stime    = qs_old.ji_stime;
+  ji_qs.ji_state    = qs_old.ji_state;
+  ji_qs.ji_substate = qs_old.ji_substate;
+  ji_qs.ji_svrflags = qs_old.ji_svrflags;
+  ji_qs.ji_numattr  = qs_old.ji_numattr;
+  ji_qs.ji_ordering = qs_old.ji_ordering;
+  ji_qs.ji_priority = qs_old.ji_priority;
+  ji_qs.ji_stime    = qs_old.ji_stime;
 
-  strcpy(pj->ji_qs.ji_jobid, qs_old.ji_jobid);
-  strcpy(pj->ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
-  strcpy(pj->ji_qs.ji_queue, qs_old.ji_queue);
-  strcpy(pj->ji_qs.ji_destin, qs_old.ji_destin);
+  strcpy(ji_qs.ji_jobid, qs_old.ji_jobid);
+  strcpy(ji_qs.ji_fileprefix, qs_old.ji_fileprefix);
+  strcpy(ji_qs.ji_queue, qs_old.ji_queue);
+  strcpy(ji_qs.ji_destin, qs_old.ji_destin);
 
-  pj->ji_qs.ji_un_type  = qs_old.ji_un_type;
+  ji_qs.ji_un_type  = qs_old.ji_un_type;
 
-  memcpy(&pj->ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
+  memcpy(&ji_qs.ji_un, &qs_old.ji_un, sizeof(qs_old.ji_un));
 
   return (0);
   }

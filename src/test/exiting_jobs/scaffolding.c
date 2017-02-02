@@ -12,38 +12,38 @@ int LOGLEVEL;
 
 pthread_mutex_t *exiting_jobs_info_mutex;
 
-job *svr_find_job(const char *jobid, int a)
+svr_job *svr_find_job(const char *jobid, int a)
   {
-  static job pjob;
+  static svr_job pjob;
 
   if (!strcmp(jobid, "1.napali"))
     {
-    strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+    pjob.set_jobid("1.napali");
     return(&pjob);
     }
   else if (!strcmp(jobid, "5.napali"))
     {
-    strcpy(pjob.ji_qs.ji_jobid, "5.napali");
-    pjob.ji_qs.ji_state = JOB_STATE_COMPLETE;
+    pjob.set_jobid("5.napali");
+    pjob.set_state(JOB_STATE_COMPLETE);
     return(&pjob);
     }
   else
     return(NULL);
   }
 
-job *svr_find_job_by_id(int id)
+svr_job *svr_find_job_by_id(int id)
   {
-  static job pjob;
+  static svr_job pjob;
 
   if (id == 1)
     {
-    strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+    pjob.set_jobid("1.napali");
     return(&pjob);
     }
   else if (id == 5)
     {
-    strcpy(pjob.ji_qs.ji_jobid, "5.napali");
-    pjob.ji_qs.ji_state = JOB_STATE_COMPLETE;
+    pjob.set_jobid("5.napali");
+    pjob.set_state(JOB_STATE_COMPLETE);
     return(&pjob);
     }
 
@@ -51,14 +51,14 @@ job *svr_find_job_by_id(int id)
   }
 
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
 
 void on_job_exit(batch_request *preq, char *jobid) {}
 
-void force_purge_work(job *pjob) {}
+void force_purge_work(svr_job *pjob) {}
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
@@ -88,5 +88,26 @@ const char *id_map::get_name(int id)
 
 id_map job_mapper;
 
-job::job() {}
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
 job::~job() {}
+svr_job::svr_job() {}
+svr_job::~svr_job() {}

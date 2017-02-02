@@ -26,13 +26,13 @@ class pmix_tracker
   std::map<int, pmix_task> tasks; // the key is the MPI rank
 
   public:
-  pmix_tracker(job *pjob, int rank);
+  pmix_tracker(mom_job *pjob, int rank);
   int  finalize_process(int rank);
   int  end_job(int rank);
   int  abort(int status, pmix_proc_t proc_list[], size_t nprocs, const char abort_msg[]);
-  void add_a_new_task(job *pjob, int pid);
+  void add_a_new_task(mom_job *pjob, int pid);
   bool id_matches(const char *jobint_string);
-  void check_and_add_task(job *pjob, int rank);
+  void check_and_add_task(mom_job *pjob, int rank);
   };
 
 
@@ -42,7 +42,7 @@ pmix_tracker *get_pmix_tracker(const char *jobint_string);
 void          register_pmix_tracker(pmix_tracker *pt);
 int           remove_pmix_tracker(pmix_tracker *pt);
 
-void          register_jobs_nspace(job *pjob, pjobexec_t *TJE);
+void          register_jobs_nspace(mom_job *pjob, pjobexec_t *TJE);
 
 #endif // ENABLE_PMIX
 #endif // Header double include protection

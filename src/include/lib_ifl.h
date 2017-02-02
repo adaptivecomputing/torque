@@ -3,7 +3,6 @@
 #include <netinet/in.h> /* in_addr_t */
 #include "attribute.h" /* attropl, attrl */
 #include "libpbs.h" /* job_file */
-#include "batch_request.h" /* batch_request */
 #include "tm_.h" /* tm_task_id, tm_node_id, tm_event_t */
 #include "tm.h" /* tm_roots */
 #include "tcp.h" /* tcp_chan */

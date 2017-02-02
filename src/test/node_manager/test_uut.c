@@ -21,11 +21,11 @@ struct server server;
 
 int   kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
-bool  node_in_exechostlist(const char *, char *, const char *);
+bool  node_in_exechostlist(const char *, const char *, const char *);
 char *get_next_exec_host(char **);
 int   job_should_be_killed(std::string &, int, struct pbsnode *);
 int   check_for_node_type(complete_spec_data &, enum node_types);
-int   record_external_node(job *, struct pbsnode *);
+int   record_external_node(svr_job *, struct pbsnode *);
 int save_node_for_adding(std::list<node_job_add_info> *naji_list, struct pbsnode *pnode, single_spec_data &req, int first_node_id, int is_external_node, int req_rank);
 void remove_job_from_already_killed_list(struct work_task *pwt);
 bool job_already_being_killed(int internal_job_id);
@@ -34,14 +34,14 @@ bool process_as_node_list(const char *spec, std::list<node_job_add_info> *naji_l
 bool node_is_spec_acceptable(struct pbsnode *pnode, single_spec_data &spec, char *ProcBMStr, int *eligible_nodes, bool job_is_exclusive);
 void populate_range_string_from_slot_tracker(const execution_slot_tracker &est, std::string &range_str);
 int  translate_job_reservation_info_to_string(std::vector<job_reservation_info> &host_info, int *NCount, std::string &exec_host_output, std::stringstream *exec_port_output);
-int place_subnodes_in_hostlist(job *pjob, struct pbsnode *pnode, node_job_add_info &naji, job_reservation_info &jri, char *ProcBMStr);
+int place_subnodes_in_hostlist(svr_job *pjob, struct pbsnode *pnode, node_job_add_info &naji, job_reservation_info &jri, char *ProcBMStr);
 void record_fitting_node(int &num, struct pbsnode *pnode, std::list<node_job_add_info> *naji_list, single_spec_data &req, int first_node_id, int i, int num_alps_reqs, enum job_types jt, complete_spec_data &all_reqs, alps_req_data **ard_array);
-int add_multi_reqs_to_job(job *pjob, int num_reqs, alps_req_data *ard_array);
-int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
-int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
+int add_multi_reqs_to_job(svr_job *pjob, int num_reqs, alps_req_data *ard_array);
+int add_job_to_mic(struct pbsnode *pnode, int index, svr_job *pjob);
+int remove_job_from_nodes_mics(struct pbsnode *pnode, svr_job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
-int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, job *pjob);
+int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, svr_job *pjob);
 
 
 
@@ -58,7 +58,7 @@ extern bool cray_enabled;
 START_TEST(add_job_to_gpu_subnode_test)
   {
   gpusubn gn;
-  job     pjob;
+  svr_job     pjob;
   pbsnode pnode;
 
   pnode.nd_ngpus_to_be_used = 1;
@@ -101,24 +101,24 @@ START_TEST(check_node_jobs_exitence_test)
 END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
-void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
+void save_cpus_and_memory_cpusets(svr_job *pjob, const char *host, std::string &cpus, std::string &mems);
 START_TEST(test_save_cpus_and_memory_cpusets)
   {
-  job         *pjob = new job();
+  svr_job         *pjob = new svr_job();
   std::string  cpus("0-3");
   std::string  mems("0");
 
   save_cpus_and_memory_cpusets(pjob, "napali", cpus, mems);
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3"));
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_cpuset_string), "napali:0-3"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_memset_string), "napali:0"));
   
   save_cpus_and_memory_cpusets(pjob, "wailua", cpus, mems);
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3"));
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_cpuset_string), "napali:0-3+wailua:0-3"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_memset_string), "napali:0+wailua:0"));
   
   save_cpus_and_memory_cpusets(pjob, "waimea", cpus, mems);
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3+waimea:0-3"));
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0+waimea:0"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_cpuset_string), "napali:0-3+wailua:0-3+waimea:0-3"));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_memset_string), "napali:0+wailua:0+waimea:0"));
 
   }
 END_TEST
@@ -182,7 +182,7 @@ END_TEST
 START_TEST(test_add_remove_mic_jobs)
   {
   struct pbsnode      pnode;
-  job                *pjobs = new job();
+  svr_job                *pjobs = new svr_job();
   
   pnode.nd_nmics = 5;
   pnode.nd_nmics_free = 5;
@@ -297,13 +297,13 @@ START_TEST(test_initialize_alps_req_data)
   fail_unless(!strcmp(ard[2].node_list.c_str(), "lihue"));
   fail_unless(ard[2].ppn == 12);
 
-  job *pjob = new job();
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup("bob");
+  svr_job *pjob = new svr_job();
+  pjob->set_str_attr(JOB_ATR_multi_req_alps, strdup("bob"));
   fail_unless(add_multi_reqs_to_job(pjob, 3, NULL) == PBSE_NONE);
   fail_unless(add_multi_reqs_to_job(pjob, 3, ard) == PBSE_NONE);
  
-  fail_unless(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags == ATR_VFLAG_SET);
-  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str, "napali*32|waimea,wailua*2|lihue*12"));
+  fail_unless(pjob->is_attr_set(JOB_ATR_multi_req_alps));
+  fail_unless(!strcmp(pjob->get_str_attr(JOB_ATR_multi_req_alps), "napali*32|waimea,wailua*2|lihue*12"));
 
   }
 END_TEST
@@ -818,7 +818,7 @@ END_TEST
 
 START_TEST(record_external_node_test)
   {
-  job            pjob;
+  svr_job            pjob;
   struct pbsnode pnode1;
   struct pbsnode pnode2;
   struct pbsnode pnode3;
@@ -830,26 +830,26 @@ START_TEST(record_external_node_test)
 
   record_external_node(&pjob, &pnode1);
   snprintf(buf, sizeof(buf), "attr should be tom but is %s",
-    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
-  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom"), buf);
+    pjob.get_str_attr(JOB_ATR_external_nodes));
+  fail_unless(!strcmp(pjob.get_str_attr(JOB_ATR_external_nodes), "tom"), buf);
 
   record_external_node(&pjob, &pnode2);
   snprintf(buf, sizeof(buf), "attr should be tom+bob but is %s",
-    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
-  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom+bob"), buf);
+    pjob.get_str_attr(JOB_ATR_external_nodes));
+  fail_unless(!strcmp(pjob.get_str_attr(JOB_ATR_external_nodes), "tom+bob"), buf);
 
   record_external_node(&pjob, &pnode3);
   snprintf(buf, sizeof(buf), "attr should be tom+bob+jim but is %s",
-    pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
-  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_external_nodes].at_val.at_str, "tom+bob+jim"), buf);
+    pjob.get_str_attr(JOB_ATR_external_nodes));
+  fail_unless(!strcmp(pjob.get_str_attr(JOB_ATR_external_nodes), "tom+bob+jim"), buf);
   }
 END_TEST
 
 
 START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   {
-  job pjob;
-  strcpy(pjob.ji_qs.ji_jobid, "1.lei");
+  svr_job pjob;
+  pjob.set_jobid("1.lei");
 
   struct pbsnode *pnode = new pbsnode();
   pnode->change_name("napali");

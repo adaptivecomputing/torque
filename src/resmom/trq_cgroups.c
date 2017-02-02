@@ -972,38 +972,24 @@ int trq_cg_add_process_to_all_cgroups(
 int trq_cg_create_task_cgroups(
 
   string  cgroup_path, 
-  job    *pjob)
+  mom_job    *pjob)
 
   {
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_attribute *pattr; /* for -L req_information request */
-  pbs_attribute *pattrL; /* for -L req_information request */
 
   if (is_login_node == TRUE)
     return(PBSE_NONE);
 
   // For -l requests we want to make only one cgroup per host
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if ((have_incompatible_dash_l_resource(pattr) == true) ||
-      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
-      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+      (pjob->get_long_attr(JOB_ATR_request_version) < 2) ||
+      (pjob->is_attr_set(JOB_ATR_request_version) == false))
     return(PBSE_NONE);
 
-  pattrL = &pjob->ji_wattr[JOB_ATR_req_information];
-
-  if (pattrL == NULL)
-    {
-    return(PBSE_NONE);
-    }
-
-  if ((pattrL->at_flags & ATR_VFLAG_SET) == 0)
-    {
-    /* This is not a -L request. Just return */
-    return(PBSE_NONE);
-    }
-
-  complete_req *cr = (complete_req *)pattrL->at_val.at_ptr;
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
     
   if ((cr->get_num_reqs() == 0) ||
       (cr->get_req(0).is_per_task() == false))
@@ -1083,11 +1069,11 @@ int trq_cg_create_task_cgroups(
 int trq_cg_create_cgroup(
     
   string     &cgroup_path,
-  job        *pjob)
+  mom_job        *pjob)
 
   {
   int           rc = PBSE_NONE;
-  const char   *job_id = pjob->ji_qs.ji_jobid;
+  const char   *job_id = pjob->get_jobid();
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   string        full_cgroup_path(cgroup_path);
 
@@ -1278,41 +1264,26 @@ int trq_cg_write_task_cpuset_string(
 int trq_cg_populate_task_cgroups(
 
   string cpuset_path,
-  job   *pjob)
+  mom_job   *pjob)
 
   {
   int            rc;
-  char          *job_id = pjob->ji_qs.ji_jobid;
+  const char    *job_id = pjob->get_jobid();
   pbs_attribute *pattr;
 
   // For -l requests we want to make only one cgroup per host
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if ((have_incompatible_dash_l_resource(pattr) == true) ||
-      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
-      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+      (pjob->get_long_attr(JOB_ATR_request_version) < 2) ||
+      (pjob->is_attr_set(JOB_ATR_request_version) == false))
     {
     /* this is not a -L request or there are incompatible
        -l resources requested */
     return(PBSE_NONE);
     }
 
-  /* See if the JOB_ATR_req_information is set. If not
-     This was not a -L request */
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-
-  if (pattr == NULL)
-    {
-    return(PBSE_NONE);
-    }
-
-
-  if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
-    {
-    /* This is not a -L request. Just return */
-    return(PBSE_NONE);
-    }
-
-  complete_req *cr = (complete_req *)pattr->at_val.at_ptr;
+  // See if the JOB_ATR_req_information is set. If not this was not a -L request
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
     
   if ((cr->get_num_reqs() == 0) ||
       (cr->get_req(0).is_per_task() == false))
@@ -1374,14 +1345,14 @@ int trq_cg_populate_task_cgroups(
 int trq_cg_populate_cgroup(
 
   int         which,
-  job        *pjob,
+  mom_job        *pjob,
   string     &used)
 
   {
   string  path(cg_cpuset_path);
   string  err_msg;
   int     rc = PBSE_NONE;
-  const char *job_id = pjob->ji_qs.ji_jobid;
+  const char *job_id = pjob->get_jobid();
 
   path += job_id;
   if (which == CPUS)
@@ -1492,7 +1463,7 @@ void add_all_cpus_and_memory(
 
 int trq_cg_get_cpuset_and_mem(
 
-  job         *pjob, 
+  mom_job         *pjob, 
   std::string &cpuset_string, 
   std::string &mem_string)
 
@@ -1507,24 +1478,23 @@ int trq_cg_get_cpuset_and_mem(
     }
   else
     {
-    if ((pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL) ||
-        (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL))
+    if ((pjob->get_str_attr(JOB_ATR_cpuset_string) == NULL) ||
+        (pjob->get_str_attr(JOB_ATR_memset_string) == NULL))
       {
-      sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->ji_qs.ji_jobid);
+      sprintf(log_buffer, "Job %s has an empty cpuset or memset string", pjob->get_jobid());
       log_err(-1, __func__, log_buffer);
 
       return(-1);
       }
 
-    std::string cpus(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-    std::string mems(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
+    std::string cpus(pjob->get_str_attr(JOB_ATR_cpuset_string));
+    std::string mems(pjob->get_str_attr(JOB_ATR_memset_string));
 
     // If a job is using resource request syntax 1.0 and has specified that it is node 
     // exclusive, then just give all of the cpus and memory to the job
-    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false) &&
-        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
-         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+    if ((pjob->get_bool_attr(JOB_ATR_node_exclusive) == true) &&
+        ((pjob->is_attr_set(JOB_ATR_request_version) == false) ||
+         (pjob->get_long_attr(JOB_ATR_request_version) < 2)))
       {
       add_all_cpus_and_memory(cpuset_string, mem_string);
       }
@@ -1553,7 +1523,7 @@ int trq_cg_get_cpuset_and_mem(
 
 int trq_cg_create_all_cgroups(
 
-  job    *pjob)
+  mom_job    *pjob)
 
   {
   int rc = trq_cg_create_cgroup(cg_cpuacct_path, pjob);
@@ -1976,7 +1946,7 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
 
 int trq_cg_add_devices_to_cgroup(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
   std::vector<unsigned int> device_indices;
@@ -1984,7 +1954,7 @@ int trq_cg_add_devices_to_cgroup(
   std::string job_devices_path;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  char *device_str;
+  const char *device_str;
   char  suffix[20];
   unsigned int device_count = 0;
   int   index = 0;
@@ -2005,12 +1975,10 @@ int trq_cg_add_devices_to_cgroup(
   if (device_count == 0)
     return(PBSE_NONE);
 
-  job_devices_path = cg_devices_path + pjob->ji_qs.ji_jobid;
-
+  job_devices_path = cg_devices_path + pjob->get_jobid();
 
   /* if there are no gpus given, deny all gpus to the job */
-  if (((pjob->ji_wattr[index].at_flags & ATR_VFLAG_SET) == 0) ||
-      (pjob->ji_wattr[index].at_val.at_str == NULL))
+  if (pjob->get_str_attr(index) == NULL)
     {
     for (unsigned int i = 0; i < device_count; i++)
       forbidden_devices.push_back(i);
@@ -2018,7 +1986,7 @@ int trq_cg_add_devices_to_cgroup(
     rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
     if (rc != PBSE_NONE)
       {
-      sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
+      sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->get_jobid());
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       return(rc);
       }
@@ -2026,8 +1994,7 @@ int trq_cg_add_devices_to_cgroup(
     return(rc);
     }
 
-
-  device_str = pjob->ji_wattr[index].at_val.at_str;
+  device_str = pjob->get_str_attr(index);
 
   device_indices.clear();
   get_device_indices(device_str, device_indices, suffix);
@@ -2060,7 +2027,7 @@ int trq_cg_add_devices_to_cgroup(
   rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buf, " 2 Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, " 2 Failed to write devices.deny list for job %s", pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     return(rc);
     }

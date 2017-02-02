@@ -29,9 +29,9 @@ void read_mom_hierarchy();
 int  parse_integer_range(const char *range_str, int &start, int &end);
 time_t calculate_poll_timeout();
 int process_layout_request(tcp_chan *chan);
-bool should_resend_obit(job *pjob, int diff);
-void check_job_in_mom_wait(job *pjob);
-void evaluate_job_in_prerun(job *pjob);
+bool should_resend_obit(mom_job *pjob, int diff);
+void check_job_in_mom_wait(mom_job *pjob);
+void evaluate_job_in_prerun(mom_job *pjob);
 
 extern attribute_def job_attr_def[];
 extern int  exiting_tasks;
@@ -80,7 +80,7 @@ int encode_fake(
 
 START_TEST(test_evaluate_job_in_prerun)
   {
-  job    pjob;
+  mom_job    pjob;
 
   time_now = time(NULL);
 
@@ -89,8 +89,8 @@ START_TEST(test_evaluate_job_in_prerun)
 
   // Set this so we don't actually try to re-connect to the sisters
   pjob.ji_numnodes = 1;
-  pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
+  pjob.set_state(JOB_STATE_RUNNING);
+  pjob.set_substate(JOB_SUBSTATE_PRERUN);
   pjob.ji_joins_sent = time_now - max_join_job_wait_time - 1;
   pjob.ji_joins_resent = FALSE;
   am_i_ms = false;
@@ -107,7 +107,7 @@ START_TEST(test_evaluate_job_in_prerun)
   fail_unless(job_bailed == 1);
   
   // If my state isn't running, we shouldn't do anything
-  pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
+  pjob.set_state(JOB_STATE_QUEUED);
   pjob.ji_joins_resent = FALSE;
   evaluate_job_in_prerun(&pjob);
   fail_unless(job_bailed == 1); // shouldn't change
@@ -117,7 +117,7 @@ START_TEST(test_evaluate_job_in_prerun)
     job_attr_def[i].at_encode = encode_fake;
   
   // Now make me re-send the joins
-  pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  pjob.set_state(JOB_STATE_RUNNING);
   pjob.ji_joins_sent = time_now - resend_join_job_wait_time - 1;
   pjob.ji_joins_resent = FALSE;
   evaluate_job_in_prerun(&pjob);
@@ -130,55 +130,53 @@ END_TEST
 
 START_TEST(test_check_job_in_mom_wait)
   {
-  job    pjob;
+  mom_job    pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_MOM_WAIT;
+  pjob.set_substate(JOB_SUBSTATE_MOM_WAIT);
 
   time_now = time(NULL);
 
   // Make sure we don't transition if ji_kill_started == 0
   check_job_in_mom_wait(&pjob);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT);
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_MOM_WAIT);
   
   // Make sure we have to wait the specified timeout
   pjob.ji_kill_started = time_now - job_exit_wait_time;
   check_job_in_mom_wait(&pjob);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_MOM_WAIT);
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_MOM_WAIT);
 
   // Make sure we transition once we pass it
   pjob.ji_kill_started = time_now - job_exit_wait_time - 1;
   check_job_in_mom_wait(&pjob);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING);
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_EXITING);
   }
 END_TEST
 
 
 START_TEST(test_should_resend_obit)
   {
-  job    pjob;
+  mom_job    pjob;
   int    diff = 10;
   time_now = time(NULL);
 
-  memset(&pjob, 0, sizeof(pjob));
   pjob.ji_obit_sent = time_now;
 
   // Running jobs shouldn't re-send their obits
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob.set_substate(JOB_SUBSTATE_RUNNING);
   fail_unless(should_resend_obit(&pjob, diff) == false);
   pjob.ji_obit_busy_time = time_now - (2 * diff);
   fail_unless(should_resend_obit(&pjob, diff) == false);
 
   // Being past the busy wait time should trigger re-sending for any of the states
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
+  pjob.set_substate(JOB_SUBSTATE_OBIT);
   fail_unless(should_resend_obit(&pjob, diff) == true);
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+  pjob.set_substate(JOB_SUBSTATE_EXITED);
   fail_unless(should_resend_obit(&pjob, diff) == true);
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  pjob.set_substate(JOB_SUBSTATE_EXITING);
   fail_unless(should_resend_obit(&pjob, diff) == true);
   
   pjob.ji_obit_busy_time = 0;
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
+  pjob.set_substate(JOB_SUBSTATE_OBIT);
   pjob.ji_obit_sent = time_now - 1;
   // This shouldn't put us past waiting
   fail_unless(should_resend_obit(&pjob, diff) == false);
@@ -188,7 +186,7 @@ START_TEST(test_should_resend_obit)
 
   // Exiting jobs should retry if they received a minus one and are past waiting
   // This shouldn't put us past waiting
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  pjob.set_substate(JOB_SUBSTATE_EXITING);
   pjob.ji_obit_minus_one_time = time_now - 1;
   fail_unless(should_resend_obit(&pjob, diff) == false);
   pjob.ji_obit_minus_one_time -= 15; // the wait time
@@ -196,7 +194,7 @@ START_TEST(test_should_resend_obit)
   pjob.ji_obit_minus_one_time = 0;
 
   // Exited jobs should receive a response within 30 seconds even when the server is slammed
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+  pjob.set_substate(JOB_SUBSTATE_EXITED);
   pjob.ji_exited_time = time_now - 1;
   fail_unless(should_resend_obit(&pjob, diff) == false);
   pjob.ji_exited_time -= 30; // the wait time
@@ -250,9 +248,9 @@ START_TEST(test_check_job_substates)
 
   exiting_tasks = false;
 
-  job *job1 = (job *)calloc(1, sizeof(job));
-  job *job2 = (job *)calloc(1, sizeof(job));
-  job *job3 = (job *)calloc(1, sizeof(job));
+  mom_job *job1 = new mom_job();
+  mom_job *job2 = new mom_job();
+  mom_job *job3 = new mom_job();
 
   alljobs_list.push_back(job1);
   alljobs_list.push_back(job2);
@@ -261,7 +259,7 @@ START_TEST(test_check_job_substates)
   check_job_substates(check_exiting);
   fail_unless(check_exiting == false);
 
-  job2->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  job2->set_substate(JOB_SUBSTATE_EXITING);
 
   check_job_substates(check_exiting);
   fail_unless(check_exiting == true);

@@ -6,7 +6,7 @@
 #include "batch_request.h" /* batch_request */
 
 
-void sum_select_mem_request(job * pj);
+void sum_select_mem_request(svr_job * pj);
 
 int req_jobcredential(struct batch_request *preq);
 
@@ -18,8 +18,6 @@ int req_rdytocommit(struct batch_request *preq);
 
 int req_commit(struct batch_request *preq);
 int req_commit2(struct batch_request *preq);
-
-/* static job *locate_new_job(int sock, char *jobid); */
 
 #ifdef PNOT
 int user_account_verify(char *arguser, char *argaccount);

@@ -113,14 +113,14 @@ public:
     this->rsv_id = new_rsvid;
     }
 
-  alps_reservation(job *pjob) : rsv_id(), ar_node_names(), internal_job_id(pjob->ji_internal_id)
+  alps_reservation(svr_job *pjob) : rsv_id(), ar_node_names(), internal_job_id(pjob->ji_internal_id)
     {
-    if (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL)
+    if (pjob->get_str_attr(JOB_ATR_reservation_id) != NULL)
       {
-      this->rsv_id = pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str;
+      this->rsv_id = pjob->get_str_attr(JOB_ATR_reservation_id);
       }
     
-    char *exec_str = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    char *exec_str = strdup(pjob->get_str_attr(JOB_ATR_exec_host));
     char *host_tok;
     char *str_ptr = exec_str;
     char *slash;
@@ -169,7 +169,7 @@ class reservation_holder
   public:
   reservation_holder();
 
-  int  track_alps_reservation(job *pjob);
+  int  track_alps_reservation(svr_job *pjob);
   int  remove_alps_reservation(const char *rsv_id);
   bool is_orphaned(const char *rsv_id, std::string &job_id);
   bool already_recorded(const char *rsv_id);

@@ -45,8 +45,8 @@ void free_pwnam(
 
 struct passwd *getpwnam_ext( 
 
-  char **user_buffer,
-  char *user_name) /* I */
+  char       **user_buffer,
+  const char  *user_name) /* I */
 
   {
   struct passwd *pwent = NULL;

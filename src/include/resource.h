@@ -109,6 +109,7 @@
  */
 
 #include <string.h>
+#include <vector>
 
 class resource
   {
@@ -151,6 +152,9 @@ extern int         svr_resc_size;
 extern resource     *add_resource_entry(pbs_attribute *, resource_def *);
 extern resource_def *find_resc_def(resource_def *, const char *, int);
 extern resource     *find_resc_entry(pbs_attribute *, resource_def *);
+resource            *find_resc_from_vector(std::vector<resource> *resources, resource_def *rscdf);
+int                  encode_resc_from_vector(std::vector<resource> &resources, tlist_head *phead,
+                       const char *atname, int mode, int ac_perm);
 
 /* END resource.h */
 #endif

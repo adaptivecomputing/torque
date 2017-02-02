@@ -5,20 +5,16 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 
-int svr_movejob(job *jobp, char *destination, int *, struct batch_request *req);
+int svr_movejob(svr_job *jobp, char *destination, int *, struct batch_request *req);
 
-void finish_routing_processing(job *pjob, int status);
+void finish_routing_processing(svr_job *pjob, int status);
 
-void finish_moving_processing(job *pjob, struct batch_request *req, int status);
+void finish_moving_processing(svr_job *pjob, struct batch_request *req, int status);
 
 void finish_move_process(char *jobid, struct batch_request *preq, long time, char *node_name, int status, int type, int mom_err);
 
 void *send_job(void *vp);
 
-int net_move(job *jobp, struct batch_request *req);
-
-/* static int should_retry_route(int err); */
-
-/* static int move_job_file(int conn, job *pjob, enum job_file which); */
+int net_move(svr_job *jobp, struct batch_request *req);
 
 #endif /* _SVR_MOVEJOB_H */

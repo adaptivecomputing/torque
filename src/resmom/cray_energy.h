@@ -11,7 +11,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "pbs_job.h"
 
-void get_energy_used(job *pjob);
+void get_energy_used(mom_job *pjob);
 
 
 

@@ -173,14 +173,14 @@ bool is_permitted_by_node_submit(
 
 static bool geteusernam(
 
-  job           *pjob,
+  svr_job           *pjob,
   pbs_attribute *pattr,
   std::string&   ret_user) /* pointer to User_List pbs_attribute */
 
   {
-  bool  rule3 = false;
-  char *hit = 0;
-  int  i;
+  bool        rule3 = false;
+  const char *hit = 0;
+  int         i;
 
   struct array_strings *parst;
   char *pn;
@@ -219,8 +219,7 @@ static bool geteusernam(
   if (!hit)
     {
     /* default to the job owner ( 3.) */
-
-    hit = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
+    hit = pjob->get_str_attr(JOB_ATR_job_owner);
 
     rule3 = true;
     }
@@ -256,7 +255,7 @@ static bool geteusernam(
 
 bool getegroup(
 
-  job           *pjob,  /* I */
+  svr_job           *pjob,  /* I */
   pbs_attribute *pattr,
   std::string&   ret_group) /* I group_list pbs_attribute */
 
@@ -355,7 +354,7 @@ void get_user_host_from_user(
 
 bool is_user_allowed_to_submit_jobs(
 
-  job        *pjob,    /* I */
+  svr_job        *pjob,    /* I */
   const char *luser,   /* I */
   char       *EMsg,    /* O optional */
   int         logging) /* I */
@@ -363,7 +362,7 @@ bool is_user_allowed_to_submit_jobs(
   {
   char           *orighost;
   std::string     user_host;  /* this is a back up to orighost in case we need FQDN */
-  std::string     user(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  std::string     user(pjob->get_str_attr(JOB_ATR_job_owner));
   std::size_t     at_pos = user.find('@');
   int             rc = PBSE_NONE;
   bool            ProxyAllowed = false;
@@ -379,7 +378,7 @@ bool is_user_allowed_to_submit_jobs(
     
   if (LOGLEVEL >= 10)
     {
-    sprintf(log_buf, "job id: %s - luser: %s", pjob->ji_qs.ji_jobid, luser);
+    sprintf(log_buf, "job id: %s - luser: %s", pjob->get_jobid(), luser);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
     
@@ -397,7 +396,7 @@ bool is_user_allowed_to_submit_jobs(
     {
     /* access denied */
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, msg_orighost);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), msg_orighost);
 
     if (EMsg != NULL)
       strcpy(EMsg, "source host not specified");
@@ -584,7 +583,7 @@ bool is_user_allowed_to_submit_jobs(
 
 int set_jobexid(
 
-  job           *pjob,    /* I */
+  svr_job       *pjob,    /* I */
   pbs_attribute *attrry,  /* I */
   char          *EMsg)    /* O (optional,minsize=1024) */
 
@@ -596,7 +595,7 @@ int set_jobexid(
   char           *grp_buf = NULL;
   struct group   *gpent;
   std::string    puser = "";
-  char           *at;
+  const char     *at;
   char           *usr_at_host = NULL;
   int             len;
 
@@ -629,22 +628,22 @@ int set_jobexid(
     /* NOTE: use owner, not userlist - should this be changed? */
     /* Yes, changed 10/17/2007 */
 
-    if (pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str != NULL)
+    if (pjob->get_str_attr(JOB_ATR_job_owner) != NULL)
       {
       /* start of change to use userlist instead of owner 10/17/2007 */
 
       if ((attrry + JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
         pattr = attrry + JOB_ATR_userlst;
       else
-        pattr = &pjob->ji_wattr[JOB_ATR_userlst];
+        pattr = pjob->get_attr(JOB_ATR_userlst);
 
-      if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
+      if (pjob->is_attr_set(JOB_ATR_proxy_user))
         {
-        puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
+        puser = pjob->get_str_attr(JOB_ATR_proxy_user);
 
         /* set the job's owner as the new user, appending @host if
          * the job's owner has that */
-        at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
+        at = strchr(pjob->get_str_attr(JOB_ATR_job_owner), '@');
         len = strlen(puser.c_str()) + 1;
         if (at != NULL)
           {
@@ -662,8 +661,7 @@ int set_jobexid(
             puser.c_str());
           }
 
-        free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
+        pjob->set_str_attr(JOB_ATR_job_owner, usr_at_host);
         }
       else if (geteusernam(pjob, pattr,puser) == false)
         {
@@ -689,7 +687,7 @@ int set_jobexid(
     if ((attrry + JOB_ATR_userlst)->at_flags & ATR_VFLAG_SET)
       pattr = attrry + JOB_ATR_userlst;
     else
-      pattr = &pjob->ji_wattr[JOB_ATR_userlst];
+      pattr = pjob->get_attr(JOB_ATR_userlst);
 
     if (geteusernam(pjob, pattr,puser) == false)
       {
@@ -724,9 +722,9 @@ int set_jobexid(
       get_svr_attr_arst(SRV_ATR_AclRoot, &pas);
 
       /* add check here for virtual user */
-      if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
+      if (pjob->is_attr_set(JOB_ATR_proxy_user))
         {
-        puser = pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str;
+        puser = pjob->get_str_attr(JOB_ATR_proxy_user);
 
         free_pwnam(pwent, buf);
         pwent = getpwnam_ext(&buf, (char *)puser.c_str());
@@ -746,7 +744,7 @@ int set_jobexid(
           }
 
         /* set the job's owner as the new user */
-        at = strchr(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,'@');
+        at = strchr(pjob->get_str_attr(JOB_ATR_job_owner), '@');
         len = puser.length() + 1;
         if (at != NULL)
           {
@@ -764,12 +762,11 @@ int set_jobexid(
             puser.c_str());
           }
 
-        free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
-        pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
+        pjob->set_str_attr(JOB_ATR_job_owner, usr_at_host);
         }
       else if (get_svr_attr_arst(SRV_ATR_AclRoot, &pas) == PBSE_NONE)
         {
-        if (acl_check_my_array_string(pas, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, ACL_User) == 0)
+        if (acl_check_my_array_string(pas, pjob->get_str_attr(JOB_ATR_job_owner), ACL_User) == 0)
           {
           if (EMsg != NULL)
             snprintf(EMsg, 1024, "root user %s fails ACL check",
@@ -789,7 +786,7 @@ int set_jobexid(
         return(PBSE_BADUSER); /* root not allowed */
         }
       }    /* END if (pwent->pw_uid == 0) */
-    else if (pjob->ji_wattr[JOB_ATR_proxy_user].at_flags & ATR_VFLAG_SET)
+    else if (pjob->is_attr_set(JOB_ATR_proxy_user))
       {
       /* cannot submit a proxy job if not root or a manager */
       if (EMsg != NULL)
@@ -797,13 +794,13 @@ int set_jobexid(
         snprintf(EMsg, 1024,
           "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
           puser.c_str(),
-          pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
+          pjob->get_str_attr(JOB_ATR_proxy_user));
         }
 
       snprintf(log_buf, 1024,
         "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
         puser.c_str(),
-        pjob->ji_wattr[JOB_ATR_proxy_user].at_val.at_str);
+        pjob->get_str_attr(JOB_ATR_proxy_user));
       log_err(PBSE_BADUSER, __func__, log_buf);
 
       free_pwnam(pwent, buf);
@@ -879,7 +876,7 @@ int set_jobexid(
   if ((attrry + JOB_ATR_grouplst)->at_flags & ATR_VFLAG_SET)
     pattr = attrry + JOB_ATR_grouplst;
   else
-    pattr = &pjob->ji_wattr[JOB_ATR_grouplst];
+    pattr = pjob->get_attr(JOB_ATR_grouplst);
 
   /* extract user-specified egroup if it exists */
 

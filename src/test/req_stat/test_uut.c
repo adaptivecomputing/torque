@@ -6,8 +6,8 @@
 #include "pbs_error.h"
 #include "array.h"
 
-bool in_execution_queue(job *pjob, job_array *pa);
-job *get_next_status_job(struct stat_cntl *cntl, int &job_array_index, job_array *pa, all_jobs_iterator *iter);
+bool in_execution_queue(svr_job *pjob, job_array *pa);
+svr_job *get_next_status_job(struct stat_cntl *cntl, int &job_array_index, job_array *pa, all_jobs_iterator *iter);
 extern int abort_called;
 
 enum TJobStatTypeEnum
@@ -26,7 +26,7 @@ enum TJobStatTypeEnum
 
 START_TEST(test_in_execution_queue)
   {
-  job       *pjob = (job *)calloc(1, sizeof(job));
+  svr_job       *pjob = (svr_job *)calloc(1, sizeof(svr_job));
   job_array *pa = (job_array *)calloc(1, sizeof(job_array));
   pbs_queue *pque = (pbs_queue *)calloc(1, sizeof(pbs_queue));
   pque->qu_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -88,15 +88,15 @@ START_TEST(test_get_next_status_job)
 
   // these should grab the jobs from the array
   cntl.sc_type = tjstArray;
-  job *pjob = get_next_status_job(&cntl, array_index, pa, NULL);
+  svr_job *pjob = get_next_status_job(&cntl, array_index, pa, NULL);
   fail_unless(pjob != NULL);
   fail_unless(array_index == 0);
-  fail_unless(!strcmp(pjob->ji_qs.ji_jobid, "1[0].napali"));
+  fail_unless(!strcmp(pjob->get_jobid(), "1[0].napali"));
   
   pjob = get_next_status_job(&cntl, array_index, pa, NULL);
   fail_unless(pjob != NULL);
   fail_unless(array_index == 1);
-  fail_unless(!strcmp(pjob->ji_qs.ji_jobid, "1[1].napali"));
+  fail_unless(!strcmp(pjob->get_jobid(), "1[1].napali"));
   
   // we are now past the number of jobs in the array, this should return NULL
   pjob = get_next_status_job(&cntl, array_index, pa, NULL);

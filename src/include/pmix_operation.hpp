@@ -37,13 +37,13 @@ class pmix_operation
 
   public:
 
-  pmix_operation(job *pjob, const pmix_proc_t procs[], size_t nprocs, const std::string &data,
+  pmix_operation(mom_job *pjob, const pmix_proc_t procs[], size_t nprocs, const std::string &data,
     pmix_modex_cbfunc_t cbfunc, void *cbdata); // used for fence
   pmix_operation();
-  pmix_operation(job *pjob, const pmix_proc_t procs[], size_t nprocs, pmix_op_cbfunc_t to_call,
+  pmix_operation(mom_job *pjob, const pmix_proc_t procs[], size_t nprocs, pmix_op_cbfunc_t to_call,
                  void *cbdata); // used for connect
-  pmix_operation(char *data, job *pjob); // used for connect
-  pmix_operation(job *pjob, const pmix_proc_t procs[], size_t nprocs, pmix_op_cbfunc_t to_call,
+  pmix_operation(char *data, mom_job *pjob); // used for connect
+  pmix_operation(mom_job *pjob, const pmix_proc_t procs[], size_t nprocs, pmix_op_cbfunc_t to_call,
                  void *cbdata, int operation_type);
   pmix_operation(const pmix_operation &other);
 
@@ -51,19 +51,19 @@ class pmix_operation
   bool                         operator ==(const pmix_operation &other) const;
   bool                         mark_reported(const std::string &hostname);
   const std::set<std::string> &get_hosts_reported() const;
-  bool                         safe_insert_rank(job *pjob, int rank);
+  bool                         safe_insert_rank(mom_job *pjob, int rank);
   void                         add_data(const std::string &additional);
   void                         execute_callback();
   void                         notify_of_disconnect();
   void                         notify_of_termination();
-  pmix_status_t                complete_operation(job *pjob, long timeout);
+  pmix_status_t                complete_operation(mom_job *pjob, long timeout);
   unsigned int                 get_operation_id() const;
   int                          get_type() const;
   bool                         ranks_match(const pmix_proc_t procs[], size_t nprocs);
   bool                         has_local_rank(int rank) const;
   void                         populate_rank_string(std::string &ranks) const;
   void                         set_id(unsigned int id);
-  int                          connection_process_terminated(job *pjob, 
+  int                          connection_process_terminated(mom_job *pjob, 
                                                              struct sockaddr_in *source_addr,
                                                              bool am_i_ms);
   };
@@ -75,8 +75,8 @@ extern std::map<std::string, pmix_operation> pending_fences;
 extern std::map<unsigned int, pmix_operation> existing_connections;
 
 int  matches_existing_connection(const pmix_proc_t procs[], size_t nprocs);
-int  clean_up_connection(job *pjob, struct sockaddr_in *source_addr, unsigned int op_id, bool ms);
-void check_and_act_on_obit(job *pjob, int rank);
+int  clean_up_connection(mom_job *pjob, struct sockaddr_in *source_addr, unsigned int op_id, bool ms);
+void check_and_act_on_obit(mom_job *pjob, int rank);
 
 #endif
 #endif

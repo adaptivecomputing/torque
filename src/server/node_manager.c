@@ -199,10 +199,10 @@ int                     default_gpu_mode = -1;
 #define MAX_BM          64
 #endif
 
-int handle_complete_first_time(job *pjob);
+int handle_complete_first_time(svr_job *pjob);
 int is_compute_node(char *node_id);
 int node_satisfies_request(struct pbsnode *,char *);
-int reserve_node(struct pbsnode *, job *, char *, job_reservation_info &);
+int reserve_node(struct pbsnode *, svr_job *, char *, job_reservation_info &);
 int procs_available(int proc_ct);
 void check_nodes(struct work_task *);
 int gpu_entry_by_id(struct pbsnode *,char *, int);
@@ -516,14 +516,14 @@ int is_job_on_node(
 bool node_in_exechostlist(
     
   const char *node_name,
-  char       *node_ehl,
+  const char *node_ehl,
   const char *login_node_name)
 
   {
-  bool  found = false;
-  char *cur_pos = node_ehl;
-  char *new_pos = cur_pos;
-  int   name_len = strlen(node_name);
+  bool        found = false;
+  const char *cur_pos = node_ehl;
+  const char *new_pos = cur_pos;
+  int         name_len = strlen(node_name);
 
   if (cray_enabled == true)
     {
@@ -692,7 +692,7 @@ bool job_should_be_killed(
   {
   bool  should_be_on_node = true;
   bool  should_kill_job = false;
-  job  *pjob;
+  svr_job  *pjob;
   
   if ((is_job_on_node(pnode, internal_job_id)) == FALSE)
     {
@@ -710,13 +710,13 @@ bool job_should_be_killed(
        * could be in the middle of moving the job around because
        * of data staging, suspend, or rerun */            
       mutex_mgr job_mgr(pjob->ji_mutex,true);
-      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+      if (pjob->get_str_attr(JOB_ATR_exec_host) == NULL)
         {
         should_be_on_node = false;
         }
       else if (node_in_exechostlist(pnode->get_name(),
-                                    pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
-                                    pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str) == false)
+                                    pjob->get_str_attr(JOB_ATR_exec_host),
+                                    pjob->get_str_attr(JOB_ATR_login_node_id)) == false)
         {
         should_be_on_node = false;
         }
@@ -741,7 +741,7 @@ void *finish_job(
 
   {
   char *jobid = (char *)vp;
-  job  *pjob;
+  svr_job  *pjob;
 
   if (jobid == NULL)
     return(NULL);
@@ -838,13 +838,13 @@ void process_job_attribute_information(
   pbs_net_t    node_addr)
 
   {
-  job  *pjob;
+  svr_job  *pjob;
 
   if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    if (pjob->get_state() == JOB_STATE_RUNNING)
       {
       std::vector<std::string> keys = job_info.getMemberNames();
 
@@ -864,10 +864,10 @@ void process_job_attribute_information(
           if ((attr_name != NULL) &&
               (*val != '\0'))
             {
-            if (str_to_attr(attr_name, val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+            if (str_to_attr(attr_name, val, pjob->get_attr(0), job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
               {
               // should be resources used if not found as attribute
-              decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
+              decode_resc(pjob->get_attr(JOB_ATR_resc_used), ATTR_used, attr_name, val, ATR_DFLAG_ACCESS);
               }
             }
 
@@ -876,7 +876,7 @@ void process_job_attribute_information(
         }
 
       // Only update the last reported time if the mother superior is reporting it.
-      if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+      if (node_addr == pjob->get_ji_momaddr())
         pjob->ji_last_reported_time = time(NULL);
       }
     }
@@ -904,7 +904,7 @@ void process_legacy_job_attribute_information(
   char *attr_dup = strdup(attributes.c_str());
   // move past '(' at front
   char *attr_work = attr_dup + 1;
-  job  *pjob;
+  svr_job  *pjob;
 
   // remove the ')' at the end
   char *paren = strrchr(attr_work, ')');
@@ -924,10 +924,10 @@ void process_legacy_job_attribute_information(
       if ((attr_name != NULL) &&
           (attr_val != '\0'))
         {
-        if (str_to_attr(attr_name, attr_val, pjob->ji_wattr, job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
+        if (str_to_attr(attr_name, attr_val, pjob->get_attr(0), job_attr_def, JOB_ATR_LAST) == ATTR_NOT_FOUND)
           {
           // should be resources used if not found as attribute
-          decode_resc(&(pjob->ji_wattr[JOB_ATR_resc_used]), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
+          decode_resc(pjob->get_attr(JOB_ATR_resc_used), ATTR_used, attr_name, attr_val, ATR_DFLAG_ACCESS);
           }
         }
 
@@ -935,7 +935,7 @@ void process_legacy_job_attribute_information(
       }
 
     // Only update the last reported time if the mother superior is reporting it.
-    if (node_addr == pjob->ji_qs.ji_un.ji_exect.ji_momaddr)
+    if (node_addr == pjob->get_ji_momaddr())
       pjob->ji_last_reported_time = time(NULL);
     }
 
@@ -3514,7 +3514,7 @@ int node_spec(
  */
 int get_bitmap(
 
-  job  *pjob,        /* I */
+  svr_job  *pjob,        /* I */
   int   ProcBMSize,  /* I */
   char *ProcBMPtr)   /* O */
 
@@ -3534,7 +3534,7 @@ int get_bitmap(
 
   /* read the bitmap from the resource list */
   prd = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
-  presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
+  presc = find_resc_entry(pjob->get_attr(JOB_ATR_resource), prd);
   
   if ((presc != NULL) && 
       (presc->rs_value.at_flags & ATR_VFLAG_SET))
@@ -3633,7 +3633,7 @@ int node_satisfies_request(
 int reserve_node(
 
   struct pbsnode       *pnode,     /* I/O */
-  job                  *pjob,      /* I */
+  svr_job              *pjob,      /* I */
   char                 *ProcBMStr, /* I */
   job_reservation_info &node_info) /* O */
 
@@ -3683,7 +3683,7 @@ int add_job_to_gpu_subnode(
     
   pbsnode *pnode,
   gpusubn &gn,
-  job     *pjob)
+  svr_job *pjob)
 
   {
   gn.job_internal_id = pjob->ji_internal_id;
@@ -3702,7 +3702,7 @@ int add_job_to_mic(
 
   struct pbsnode *pnode,
   int             index,
-  job            *pjob)
+  svr_job        *pjob)
 
   {
   int rc = -1;
@@ -3723,8 +3723,8 @@ int add_job_to_mic(
 
 int remove_job_from_nodes_mics(
 
-  struct pbsnode *pnode,
-  job            *pjob)
+  pbsnode *pnode,
+  svr_job *pjob)
 
   {
   short i;
@@ -3785,10 +3785,10 @@ int add_gpu_to_hostlist(
 
 int place_gpus_in_hostlist(
 
-  struct pbsnode     *pnode,
-  job                *pjob,
-  node_job_add_info  &naji,
-  std::list<howl>    &gpu_list)
+  pbsnode           *pnode,
+  svr_job           *pjob,
+  node_job_add_info &naji,
+  std::list<howl>   &gpu_list)
 
   {
   int             j;
@@ -3853,7 +3853,7 @@ int place_gpus_in_hostlist(
         "Setting gpu %s/%d to state EXCLUSIVE for job %s",
         pnode->get_name(),
         j,
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       
       if (LOGLEVEL >= 7)
         {
@@ -3876,7 +3876,7 @@ int place_gpus_in_hostlist(
         "Setting gpu %s/%d to state SHARED for job %s",
         pnode->get_name(),
         j,
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       
       if (LOGLEVEL >= 7)
         {
@@ -3929,8 +3929,8 @@ int add_mic_to_list(
 
 int place_mics_in_hostlist(
 
-  struct pbsnode    *pnode,
-  job               *pjob,
+  pbsnode           *pnode,
+  svr_job           *pjob,
   node_job_add_info &naji,
   std::list<howl>   &mic_list)
 
@@ -3960,48 +3960,44 @@ int place_mics_in_hostlist(
 
 void save_cpus_and_memory_cpusets(
 
-  job         *pjob,
+  svr_job     *pjob,
   const char  *node_name,
   std::string &cpus,
   std::string &mems)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
+  if (pjob->get_str_attr(JOB_ATR_cpuset_string) == NULL)
     {
     std::string formatted(node_name);
     if (cpus.size() != 0)
       formatted += ":" + cpus;
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
+    pjob->set_str_attr(JOB_ATR_cpuset_string, strdup(formatted.c_str()));
     }
   else
     {
-    std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
+    std::string all_cpus = pjob->get_str_attr(JOB_ATR_cpuset_string);
     all_cpus += "+";
     all_cpus += node_name;
     if (cpus.size() != 0)
       all_cpus += ":" + cpus;
-    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
+    pjob->set_str_attr(JOB_ATR_cpuset_string, strdup(all_cpus.c_str()));
     }
   
-  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
+  if (pjob->get_str_attr(JOB_ATR_memset_string) == NULL)
     {
     std::string formatted(node_name);
     if (mems.size() != 0)
       formatted += ":" + mems;
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
+    pjob->set_str_attr(JOB_ATR_memset_string, strdup(formatted.c_str()));
     }
   else
     {
-    std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
+    std::string all_mems = pjob->get_str_attr(JOB_ATR_memset_string);
     all_mems += "+";
     all_mems += node_name;
     if (mems.size() != 0)
       all_mems += ":" + mems;
-    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
+    pjob->set_str_attr(JOB_ATR_memset_string, strdup(all_mems.c_str()));
     }
 
   } // END save_cpus_and_memory_cpusets()
@@ -4066,7 +4062,7 @@ void save_node_usage(
 
 void update_req_hostlist(
     
-  job        *pjob,
+  svr_job    *pjob,
   const char *host_name,
   int         req_index,
   int         ppn_needed)
@@ -4078,17 +4074,14 @@ void update_req_hostlist(
  
   snprintf(host_spec, sizeof(host_spec), "%s:ppn=%d", host_name, ppn_needed);
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr == NULL)
+  if (pjob->get_creq_attr(JOB_ATR_req_information) == NULL)
     {
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
-    cr = new complete_req(pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr, ppn_needed, (bool)legacy_vmem);
-    pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = cr; 
-    pjob->ji_wattr[JOB_ATR_req_information].at_flags |= ATR_VFLAG_SET;
+    cr = new complete_req(pjob->get_resc_attr(JOB_ATR_resource), ppn_needed, (bool)legacy_vmem);
+    pjob->set_creq_attr(JOB_ATR_req_information, cr); 
     }
   else
-    {
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    }
+    cr = pjob->get_creq_attr(JOB_ATR_req_information);
 
   if (cray_enabled == true)
     {
@@ -4118,14 +4111,14 @@ void update_req_hostlist(
 
 void set_gpu_mode_if_needed(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   char *default_gpu_mode = NULL;
 
-  if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long > 1)
+  if (pjob->get_long_attr(JOB_ATR_request_version) > 1)
     {
-    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    complete_req *cr =pjob->get_creq_attr(JOB_ATR_req_information);
 
     if (cr != NULL)
       {
@@ -4159,8 +4152,8 @@ void set_gpu_mode_if_needed(
 
 int place_subnodes_in_hostlist(
 
-  job                  *pjob,
-  struct pbsnode       *pnode,
+  svr_job              *pjob,
+  pbsnode              *pnode,
   node_job_add_info    &naji,
   job_reservation_info &node_info,
   char                 *ProcBMStr)
@@ -4201,7 +4194,7 @@ int place_subnodes_in_hostlist(
       job_exclusive_on_use = true;
     
     if ((pnode->nd_slots.get_number_free() <= 0) ||
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool == true) ||
+        (pjob->get_bool_attr(JOB_ATR_node_exclusive) == true) ||
         (job_exclusive_on_use))
       pnode->nd_state |= INUSE_JOB;
 
@@ -4223,10 +4216,9 @@ int place_subnodes_in_hostlist(
     if (rc != PBSE_NONE)
       return(rc);
 
-    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false) &&
-        (((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0) ||
-         (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2)))
+    if ((pjob->get_bool_attr(JOB_ATR_node_exclusive) != false) &&
+        ((pjob->is_attr_set(JOB_ATR_request_version) == false) ||
+         (pjob->get_long_attr(JOB_ATR_request_version) < 2)))
       {
       char buf[MAXLINE];
 
@@ -4452,29 +4444,25 @@ int translate_job_reservation_info_to_string(
 
 int record_external_node(
 
-  job            *pjob,
+  svr_job        *pjob,
   struct pbsnode *pnode)
 
   {
   char         *external_nodes;
   unsigned int  len;
 
-  if (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str == NULL)
+  if (pjob->get_str_attr(JOB_ATR_external_nodes) == NULL)
     {
-    pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str = strdup(pnode->get_name());
-    pjob->ji_wattr[JOB_ATR_external_nodes].at_flags |= ATR_VFLAG_SET;
+    pjob->set_str_attr(JOB_ATR_external_nodes, strdup(pnode->get_name()));
     }
   else
     {
-    len = strlen(pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str) + strlen(pnode->get_name()) + 2;
+    len = strlen(pjob->get_str_attr(JOB_ATR_external_nodes)) + strlen(pnode->get_name()) + 2;
     external_nodes = (char *)calloc(1, len);
 
     snprintf(external_nodes, len, "%s+%s",
-      pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str, pnode->get_name());
-
-    free(pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str);
-
-    pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str = external_nodes;
+      pjob->get_str_attr(JOB_ATR_external_nodes), pnode->get_name());
+    pjob->set_str_attr(JOB_ATR_external_nodes, external_nodes);
     }
 
   return(PBSE_NONE);
@@ -4488,7 +4476,7 @@ int record_external_node(
 
 int build_hostlist_nodes_req(
 
-  job                                *pjob,      /* M */
+  svr_job                            *pjob,      /* M */
   char                               *EMsg,      /* O */
   const char                         *spec,      /* I */
   short                               newstate,  /* I */
@@ -4574,7 +4562,7 @@ int build_hostlist_nodes_req(
         spec,
         EMsg);
       
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
 
     return(PBSE_RESCUNAV);
@@ -4588,7 +4576,7 @@ int build_hostlist_nodes_req(
 
 int build_hostlist_procs_req(
 
-  job                               *pjob,     /* M */
+  svr_job                           *pjob,     /* M */
   int                                procs,    /* I */
   short                              newstate, /* I */
   std::vector<job_reservation_info> &host_info) /* O */
@@ -4658,7 +4646,7 @@ int build_hostlist_procs_req(
 
 int add_multi_reqs_to_job(
     
-  job           *pjob,
+  svr_job       *pjob,
   int            num_reqs,
   alps_req_data *ard_array)
 
@@ -4683,11 +4671,7 @@ int add_multi_reqs_to_job(
     attr_str += buf;
     }
 
-  if (pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str != NULL)
-    free(pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str);
-
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_val.at_str = strdup(attr_str.c_str());
-  pjob->ji_wattr[JOB_ATR_multi_req_alps].at_flags |= ATR_VFLAG_SET;
+  pjob->set_str_attr(JOB_ATR_multi_req_alps, strdup(attr_str.c_str()));
 
   return(PBSE_NONE);
   } /* END add_multi_reqs_to_job() */
@@ -4757,7 +4741,7 @@ void add_entry_to_naji_list(
 
 int locate_resource_request_20_nodes(
 
-  job                           *pjob,
+  svr_job                       *pjob,
   std::list<node_job_add_info>  &naji_list,
   alps_req_data                **ard_array,
   int                           &num_reqs,
@@ -4765,7 +4749,7 @@ int locate_resource_request_20_nodes(
 
   {
   int rc = 1; // positive numbers mean success - this needs to return like node_spec()
-  complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
   std::set<int> used_nodes;
 
   // It shouldn't be possible for this to be NULL but don't segfault
@@ -4840,7 +4824,7 @@ int locate_resource_request_20_nodes(
 
 int set_nodes(
 
-  job         *pjob,        /* I */
+  svr_job     *pjob,        /* I */
   const char  *spec,        /* I */
   int          procs,       /* I */
   std::string &node_list,   /* O */
@@ -4881,7 +4865,7 @@ int set_nodes(
   if (LOGLEVEL >= 3)
     {
     sprintf(log_buf, "allocating nodes for job %s with node expression '%.4000s'",
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       spec);
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
@@ -4892,12 +4876,12 @@ int set_nodes(
   get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-  if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
-    login_prop = pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str;
+  if (pjob->is_attr_set(JOB_ATR_login_prop))
+    login_prop = strdup(pjob->get_str_attr(JOB_ATR_login_prop));
 
   bool job_is_exclusive = false;
-  if (pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET)
-    job_is_exclusive = (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false);
+  if (pjob->is_attr_set(JOB_ATR_node_exclusive))
+    job_is_exclusive = (pjob->get_bool_attr(JOB_ATR_node_exclusive) != false);
 
 #ifdef PENABLE_LINUX_CGROUPS
   if (!strcmp(spec, RESOURCE_20_FIND))
@@ -4913,6 +4897,9 @@ int set_nodes(
     }
 #endif
 
+  if (login_prop != NULL)
+    free(login_prop);
+
   /* allocate nodes */
   if (i == 0)
     {
@@ -4924,7 +4911,7 @@ int set_nodes(
         spec,
         EMsg);
 
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
 
     delete [] ard_array;
@@ -4950,10 +4937,8 @@ int set_nodes(
     if ((job_type != JOB_TYPE_normal) && 
         (naji_list.size() > 1))
       {
-      pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = strdup(node_mapper.get_name(naji_list.begin()->node_id));
-      pjob->ji_wattr[JOB_ATR_login_node_id].at_flags = ATR_VFLAG_SET;
-      pjob->ji_wattr[JOB_ATR_login_node_key].at_val.at_long = naji_list.begin()->node_id;
-      pjob->ji_wattr[JOB_ATR_login_node_key].at_flags = ATR_VFLAG_SET;
+      pjob->set_str_attr(JOB_ATR_login_node_id, strdup(node_mapper.get_name(naji_list.begin()->node_id)));
+      pjob->set_long_attr(JOB_ATR_login_node_key, naji_list.begin()->node_id);
       }
     }
 
@@ -4986,7 +4971,7 @@ int set_nodes(
     if (LOGLEVEL >= 1)
       {
       sprintf(log_buf, "no nodes can be allocated to job %s",
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
 
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
@@ -5000,7 +4985,7 @@ int set_nodes(
     return(PBSE_RESCUNAV);
     }  /* END if (host_info.size() == 0) */
 
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HasNodes;  /* indicate has nodes */
+  pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_HasNodes);  /* indicate has nodes */
 
   /* build list of allocated nodes, gpus, and ports */
   rc = translate_job_reservation_info_to_string(host_info, &NCount, node_list, &exec_ports);
@@ -5035,15 +5020,7 @@ int set_nodes(
       return(rc);
       }
 
-    job_attr_def[JOB_ATR_exec_mics].at_free(
-      &pjob->ji_wattr[JOB_ATR_exec_mics]);
-
-    job_attr_def[JOB_ATR_exec_mics].at_decode(
-      &pjob->ji_wattr[JOB_ATR_exec_mics],
-      NULL,
-      NULL,
-      mic_str.c_str(),
-      0);
+    pjob->set_str_attr(JOB_ATR_exec_mics, strdup(mic_str.c_str()));
     }
 
   if (gpu_list.size() != 0)
@@ -5055,15 +5032,7 @@ int set_nodes(
       return(rc);
       }
 
-    job_attr_def[JOB_ATR_exec_gpus].at_free(
-      &pjob->ji_wattr[JOB_ATR_exec_gpus]);
-    
-    job_attr_def[JOB_ATR_exec_gpus].at_decode(
-      &pjob->ji_wattr[JOB_ATR_exec_gpus],
-      NULL,
-      NULL,
-      gpu_str.c_str(),
-      0);  /* O */
+    pjob->set_str_attr(JOB_ATR_exec_gpus, strdup(gpu_str.c_str()));
     
     if (gpu_mode_rqstd != -1)
       gpu_flags = gpu_mode_rqstd;
@@ -5072,15 +5041,14 @@ int set_nodes(
 
     if (gpu_flags >= 0)
       {
-      pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long = gpu_flags;
-      pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
+      pjob->set_long_attr(JOB_ATR_gpu_flags, gpu_flags);
       
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "setting gpu_flags for job %s to %d %ld",
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           gpu_flags,
-          pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long);
+          pjob->get_long_attr(JOB_ATR_gpu_flags));
 
         log_ext(-1, __func__, log_buf, LOG_DEBUG);
         }
@@ -5090,7 +5058,7 @@ int set_nodes(
   if (LOGLEVEL >= 3)
     {
     snprintf(log_buf, sizeof(log_buf), "job %s allocated %d nodes (nodelist=%.4000s)",
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       NCount,
       node_list.c_str());
 
@@ -5502,15 +5470,12 @@ char *get_next_exec_host(
 int remove_job_from_nodes_gpus(
 
   pbsnode *pnode,
-  job     *pjob)
+  svr_job *pjob)
 
   {
-  char        *gpu_str = NULL;
-  int          i;
-  char         log_buf[LOCAL_LOG_BUF_SIZE];
- 
-  if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
-    gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+  const char *gpu_str = pjob->get_str_attr(JOB_ATR_exec_gpus);
+  int         i;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (gpu_str != NULL)
     {
@@ -5537,7 +5502,7 @@ int remove_job_from_nodes_gpus(
           sprintf(log_buf, "freeing node %s gpu %d for job %s",
             pnode->get_name(),
             i,
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
           
           log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
@@ -5614,7 +5579,7 @@ int remove_job_from_node(
 
 void free_nodes(
 
-  job        *pjob, // M
+  svr_job    *pjob, // M
   const char *spec) // I
 
   {
@@ -5625,21 +5590,19 @@ void free_nodes(
   char           *exec_hosts = NULL;
   char           *host_ptr = NULL;
   char           *hostname;
+  const char     *tmp;
 
   if (LOGLEVEL >= 3)
     {
-    sprintf(log_buf, "freeing nodes for job %s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "freeing nodes for job %s", pjob->get_jobid());
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+  if ((tmp = pjob->get_str_attr(JOB_ATR_exec_host)) != NULL)
     {
-    if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-      {
-      exec_hosts = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-      host_ptr = exec_hosts;
-      }
+    exec_hosts = strdup(tmp);
+    host_ptr = exec_hosts;
     }
 
   // Attempt to use spec if the exec host list isn't populated and spec is
@@ -5665,44 +5628,33 @@ void free_nodes(
 
   free(exec_hosts);
 
-  if (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
+  if ((tmp = pjob->get_str_attr(JOB_ATR_login_node_id)) != NULL)
     {
-    if ((pnode = find_nodebyname(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str)) != NULL)
+    if ((pnode = find_nodebyname(tmp)) != NULL)
       {
       remove_job_from_node(pnode, pjob->ji_internal_id);
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
       }
     }
 
-  pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_HasNodes;
+  pjob->job::set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_HasNodes);
 
 #ifdef PENABLE_LINUX_CGROUPS
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
+  if (cr != NULL)
     {
-    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED))
+    if ((pjob->get_substate() == JOB_SUBSTATE_RERUN) ||
+        (pjob->get_substate() == JOB_SUBSTATE_RERUN1) ||
+        (pjob->get_substate() == JOB_SUBSTATE_RERUN2) ||
+        (pjob->get_substate() == JOB_SUBSTATE_RERUN3) ||
+        (pjob->get_substate() == JOB_SUBSTATE_QUEUED))
       {
       cr->clear_allocations();
       }
     }
 
-  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str != NULL)
-    {
-    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = NULL;
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags &= ~ATR_VFLAG_SET;
-    }
-
-  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str != NULL)
-    {
-    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = NULL;
-    pjob->ji_wattr[JOB_ATR_memset_string].at_flags &= ~ATR_VFLAG_SET;
-    }
+  pjob->free_attr(JOB_ATR_cpuset_string);
+  pjob->free_attr(JOB_ATR_memset_string);
 #endif
 
   return;
@@ -5746,8 +5698,8 @@ struct pbsnode *get_compute_node(
 
 int set_one_old(
 
-  char *name,
-  job  *pjob)
+  const char *name,
+  svr_job    *pjob)
 
   {
   int             first;
@@ -5756,9 +5708,10 @@ int set_one_old(
 
   struct pbsnode *pnode;
   char           *pc;
+  char           *name_dup = strdup(name);
   char           *dash;
 
-  if ((pc = strchr(name, (int)'/')))
+  if ((pc = strchr(name_dup, (int)'/')))
     {
     first = strtol(pc + 1, &dash, 10);
 
@@ -5775,12 +5728,12 @@ int set_one_old(
     last = first;
     }
 
-  pnode = find_nodebyname(name);
+  pnode = find_nodebyname(name_dup);
 
   if (cray_enabled == true)
     {
     if (pnode == NULL)
-      pnode = get_compute_node(name);
+      pnode = get_compute_node(name_dup);
 
     if (pnode != NULL)
       {
@@ -5843,6 +5796,8 @@ int set_one_old(
   else
     rc = PBSE_UNKNODE;
 
+  free(name_dup);
+
   return(rc);
   }  /* END set_one_old() */
 
@@ -5855,16 +5810,16 @@ int set_one_old(
 
 int set_old_nodes(
 
-  job *pjob)  /* I (modified) */
+  svr_job *pjob)  /* I (modified) */
 
   {
   char     *old;
   char     *po;
   int       rc = PBSE_NONE;
 
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_exec_host))
     {
-    old = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    old = strdup(pjob->get_str_attr(JOB_ATR_exec_host));
 
     if (old == NULL)
       {
@@ -5893,9 +5848,9 @@ int set_old_nodes(
 
   /* record the job on the alps_login if cray_enabled */
   if ((cray_enabled == true) &&
-      (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
+      (pjob->is_attr_set(JOB_ATR_login_node_id)))
     {
-    rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
+    rc = set_one_old(pjob->get_str_attr(JOB_ATR_login_node_id), pjob);
     }
 
   return(rc);
@@ -5903,13 +5858,13 @@ int set_old_nodes(
 
     
 
-job *get_job_from_job_usage_info(
+svr_job *get_job_from_job_usage_info(
     
   job_usage_info *jui,
   struct pbsnode *pnode)
 
   {
-  job *pjob;
+  svr_job *pjob;
 
   pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
   pjob = svr_find_job_by_id(jui->internal_job_id);

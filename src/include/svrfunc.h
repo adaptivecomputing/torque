@@ -17,7 +17,7 @@ int get_svr_attr_str(int index, char **str);
 int get_svr_attr_arst(int index, struct array_strings **arst);
 
 extern int   chk_hold_priv(long hold, int priv);
-extern void  get_jobowner(char *from, char *to); 
+extern void  get_jobowner(const char *from, char *to); 
 extern char *parse_servername(const char *, unsigned int *);
 extern void  process_Areply(int);
 extern void  *mom_process_request(void *);
@@ -42,10 +42,12 @@ extern int   init_resc_defs(void);
 int is_svr_attr_set(int);
 int set_svr_attr(int, void *);
 
+#ifndef PBS_MOM
 #ifdef PBS_JOB_H
-extern int   set_nodes(job *, const char *, int, std::string &, std::string &, char *, char *);
-extern void  free_nodes(job *, const char *spec = NULL);
+extern int   set_nodes(svr_job *, const char *, int, std::string &, std::string &, char *, char *);
+extern void  free_nodes(svr_job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
+#endif
 
 #ifdef ATTRIBUTE_H
 extern int   check_que_enable(pbs_attribute *, void *, int);

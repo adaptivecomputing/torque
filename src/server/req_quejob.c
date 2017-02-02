@@ -138,11 +138,11 @@
 /* External Functions Called: */
 
 extern int   reply_jid(char *);
-extern int   svr_authorize_jobreq(struct batch_request *, job *);
-extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-extern int   job_route(job *);
+extern int   svr_authorize_jobreq(struct batch_request *, svr_job *);
+extern int   svr_chkque(svr_job *, pbs_queue *, char *, int, char *);
+extern int   job_route(svr_job *);
 extern int   node_avail_complex(char *, int *, int *, int *, int*);
-extern void  set_chkpt_deflt(job *, pbs_queue *);
+extern void  set_chkpt_deflt(svr_job *, pbs_queue *);
 void        *job_clone_wt(void *);
 
 /* Global Data Items: */
@@ -181,11 +181,11 @@ extern int    LOGLEVEL;
 extern  char *msg_daemonname;
 
 
-int set_interactive_job_roaming_policy(job *pjob);
+int set_interactive_job_roaming_policy(svr_job *pjob);
 
 /* Private Functions in this file */
 
-static job *locate_new_job(char *);
+static svr_job *locate_new_job(char *);
 
 #ifdef PNOT
 static int user_account_verify(char *, char *);
@@ -208,18 +208,17 @@ static const char *pbs_o_que = "PBS_O_QUEUE=";
 
 int set_nodes_attr(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
 	bool      nodect_set = false;
   int       rc = 0;
   const char  *pname;
+    
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
 
-  if ((pjob->ji_wattr[JOB_ATR_resource].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL))
+  if (resources != NULL)
     {
-    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
-
     for (size_t i = 0; i < resources->size(); i++)
       {
       resource &r = resources->at(i);
@@ -245,7 +244,7 @@ int set_nodes_attr(
     {
     int resc_access_perm = ATR_DFLAG_WRACC | ATR_DFLAG_MGWR | ATR_DFLAG_RMOMIG;
     /* neither procs nor nodes were requested. set procct to 1 */
-    rc = decode_resc(&pjob->ji_wattr[JOB_ATR_resource], "Resource_List", "procct", "1", resc_access_perm);
+    rc = decode_resc(pjob->get_attr(JOB_ATR_resource), "Resource_List", "procct", "1", resc_access_perm);
     }
 
   return(rc);
@@ -262,15 +261,15 @@ int set_nodes_attr(
 
 void sum_select_mem_request(
 
-  job * pj)
+  svr_job *pj)
 
   {
   char  select[] = "select";
   char  mem_str[] = "mem=";
   char  memval_str[MAXPATHLEN];
-  char *end;
-  char *current;
-  char *clause_end;
+  const char *end;
+  const char *current;
+  const char *clause_end;
 
   int   mem_str_len = strlen(mem_str);
   int   multiplier = 1;
@@ -278,11 +277,10 @@ void sum_select_mem_request(
 
   unsigned long mem_total = 0;
 
-  if ((!(pj->ji_wattr[JOB_ATR_submit_args].at_flags & ATR_VFLAG_SET)) ||
-      (pj->ji_wattr[JOB_ATR_submit_args].at_val.at_str == NULL))
+  if ((current = pj->get_str_attr(JOB_ATR_submit_args)) == NULL)
     return;
 
-  current = strstr(pj->ji_wattr[JOB_ATR_submit_args].at_val.at_str,select);
+  current = strstr(current, select);
   
   if (current != NULL)
     {
@@ -389,7 +387,7 @@ void sum_select_mem_request(
   if (mem_total != 0)
     {
     resource *mem_rc = find_resc_entry(
-        &pj->ji_wattr[JOB_ATR_resource],
+        pj->get_attr(JOB_ATR_resource),
         find_resc_def(svr_resc_def,"mem",svr_resc_size));
 
     if (mem_rc != NULL)
@@ -403,7 +401,7 @@ void sum_select_mem_request(
         "%lukb",
         mem_total);
 
-      decode_resc(&pj->ji_wattr[JOB_ATR_resource],
+      decode_resc(pj->get_attr(JOB_ATR_resource),
         ATTR_l,
         "mem",
         memval_str,
@@ -540,7 +538,7 @@ bool job_exists(
 
   {
   bool  exists = false;
-  job  *pj;
+  svr_job  *pj;
 
   if ((pj = svr_find_job(job_id, FALSE)) == NULL)
     pj = find_job_by_array(&newjobs, job_id, FALSE, false);
@@ -668,13 +666,13 @@ int determine_job_file_name(
 
 
 
-job *create_and_initialize_job_structure(
+svr_job *create_and_initialize_job_structure(
 
   int          created_here,
   std::string &jobid)
 
   {
-  job *pj;
+  svr_job *pj;
   if ((pj = job_alloc()) == NULL)
     {
     /* FAILURE */
@@ -682,12 +680,11 @@ job *create_and_initialize_job_structure(
     return(NULL);
     }
 
-  snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s", jobid.c_str());
+  pj->set_jobid(jobid.c_str());
 
-  pj->ji_modified       = 1;
-  pj->ji_qs.ji_svrflags = created_here;
-  pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
-  pj->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = NULL;
+  pj->set_modified(true);
+  pj->set_svrflags(created_here);
+  pj->set_un_type(JOB_UNION_TYPE_NEW);
   // flag this new job as recently modified
   pj->ji_mod_time = time(NULL);
 
@@ -698,7 +695,7 @@ job *create_and_initialize_job_structure(
 
 int decode_attributes_into_job(
     
-  job           *pj,
+  svr_job       *pj,
   int            resc_access_perm,
   batch_request *preq,
   mutex_mgr     &job_mutex,
@@ -782,7 +779,7 @@ int decode_attributes_into_job(
       if (gpuval != NULL)
         {
         rc = pdef->at_decode(
-               &pj->ji_wattr[attr_index],
+               pj->get_attr(attr_index),
                psatl->al_name,
                "gpus",
                gpuval,
@@ -806,7 +803,7 @@ int decode_attributes_into_job(
     /* decode pbs_attribute */
 
     rc = pdef->at_decode(
-           &pj->ji_wattr[attr_index],
+           pj->get_attr(attr_index),
            psatl->al_name,
            psatl->al_resc,
            psatl->al_value,
@@ -856,7 +853,7 @@ int decode_attributes_into_job(
 
 int perform_attribute_post_actions(
 
-  job *pj,
+  svr_job *pj,
   batch_request *preq,
   mutex_mgr     &job_mutex)
 
@@ -868,10 +865,10 @@ int perform_attribute_post_actions(
     {
     pdef = &job_attr_def[i];
 
-    if ((pj->ji_wattr[i].at_flags & ATR_VFLAG_SET) && 
+    if ((pj->is_attr_set(i)) && 
         (pdef->at_action))
       {
-      rc = pdef->at_action(&pj->ji_wattr[i], pj, ATR_ACTION_NEW);
+      rc = pdef->at_action(pj->get_attr(i), pj, ATR_ACTION_NEW);
 
       if (rc)
         {
@@ -890,7 +887,7 @@ int perform_attribute_post_actions(
 
 int use_proxy_name_if_needed(
 
-  job           *pj,
+  svr_job       *pj,
   batch_request *preq)
 
   {
@@ -898,20 +895,19 @@ int use_proxy_name_if_needed(
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if a job id was supplied, and if so overwrite the job id */
-  if (pj->ji_wattr[JOB_ATR_job_id].at_flags & ATR_VFLAG_SET)
+  if (pj->is_attr_set(JOB_ATR_job_id))
     {
-    char *dot = strchr(pj->ji_qs.ji_jobid,'.');
-    char  tmp_job_id[PBS_MAXSVRJOBID + 1];
+    const char *dot = strchr(pj->get_jobid(),'.');
+    char        tmp_job_id[PBS_MAXSVRJOBID + 1];
 
     if (dot != NULL)
       {
       snprintf(tmp_job_id, sizeof(tmp_job_id),
-        "%s%s", pj->ji_wattr[JOB_ATR_job_id].at_val.at_str, dot);
+        "%s%s", pj->get_str_attr(JOB_ATR_job_id), dot);
       }
     else
       {
-      snprintf(tmp_job_id, sizeof(tmp_job_id), "%s",
-        pj->ji_wattr[JOB_ATR_job_id].at_val.at_str);
+      snprintf(tmp_job_id, sizeof(tmp_job_id), "%s", pj->get_str_attr(JOB_ATR_job_id));
       }
 
     if (job_exists(tmp_job_id) == true)
@@ -928,7 +924,7 @@ int use_proxy_name_if_needed(
     else
       {
       /* now change the job id */
-      strcpy(pj->ji_qs.ji_jobid, tmp_job_id);
+      pj->set_jobid(tmp_job_id);
       }
     }
 
@@ -939,7 +935,7 @@ int use_proxy_name_if_needed(
 
 int check_attribute_settings(
 
-  job           *pj,
+  svr_job       *pj,
   batch_request *preq,
   int            resc_access_perm,
   pbs_queue     *pque,
@@ -953,13 +949,13 @@ int check_attribute_settings(
   pbs_attribute  tempattr;
   struct stat    stat_buf;
 
-  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+  if (pj->get_svrflags() & JOB_SVFLG_HERE)
     {
     /* check that job has a jobname */
-    if ((pj->ji_wattr[JOB_ATR_jobname].at_flags & ATR_VFLAG_SET) == 0)
+    if (pj->is_attr_set(JOB_ATR_jobname) == false)
       {
       job_attr_def[JOB_ATR_jobname].at_decode(
-        &pj->ji_wattr[JOB_ATR_jobname],
+        pj->get_attr(JOB_ATR_jobname),
         NULL,
         NULL,
         "none",
@@ -967,10 +963,10 @@ int check_attribute_settings(
       }
 
     /* check value of priority */
-    if (pj->ji_wattr[JOB_ATR_priority].at_flags & ATR_VFLAG_SET)
+    if (pj->is_attr_set(JOB_ATR_priority))
       {
-      if ((pj->ji_wattr[JOB_ATR_priority].at_val.at_long < -1024) ||
-          (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
+      if ((pj->get_long_attr(JOB_ATR_priority) < -1024) ||
+          (pj->get_long_attr(JOB_ATR_priority) > 1024))
         {
         rc = PBSE_BADATVAL;
         svr_job_purge(pj);
@@ -985,34 +981,23 @@ int check_attribute_settings(
       }
 
     /* set job owner attribute to user@host */
-    job_attr_def[JOB_ATR_job_owner].at_free(
-      &pj->ji_wattr[JOB_ATR_job_owner]);
-
     buf = preq->rq_user;
     buf += "@";
     buf += preq->rq_host;
 
-    job_attr_def[JOB_ATR_job_owner].at_decode(
-      &pj->ji_wattr[JOB_ATR_job_owner],
-      NULL,
-      NULL,
-      buf.c_str(),
-      resc_access_perm);
+    pj->set_str_attr(JOB_ATR_job_owner, strdup(buf.c_str()));
 
     /* set create time */
-    pj->ji_wattr[JOB_ATR_ctime].at_val.at_long = time(NULL);
-    pj->ji_wattr[JOB_ATR_ctime].at_flags |= ATR_VFLAG_SET;
+    pj->set_long_attr(JOB_ATR_ctime, time(NULL));
 
     /* set hop count = 1 */
-    pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long = 1;
-    pj->ji_wattr[JOB_ATR_hopcount].at_flags |= ATR_VFLAG_SET;
+    pj->set_long_attr(JOB_ATR_hopcount, 1);
 
     /* Interactive jobs are necessarily not rerunable */
-    if ((pj->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-        pj->ji_wattr[JOB_ATR_interactive].at_val.at_long)
+    if ((pj->is_attr_set(JOB_ATR_interactive)) &&
+        (pj->get_long_attr(JOB_ATR_interactive)))
       {
-      pj->ji_wattr[JOB_ATR_rerunable].at_val.at_bool = false;
-      pj->ji_wattr[JOB_ATR_rerunable].at_flags |= ATR_VFLAG_SET;
+      pj->set_bool_attr(JOB_ATR_rerunable, false);
       }
 
     buf = pbs_o_que;
@@ -1044,7 +1029,7 @@ int check_attribute_settings(
       if (!rc)
         {
         rc = job_attr_def[JOB_ATR_submit_host].at_set(
-                 &pj->ji_wattr[JOB_ATR_submit_host],
+                 pj->get_attr(JOB_ATR_submit_host),
                  &tempattr,
                  SET);
         }
@@ -1073,7 +1058,7 @@ int check_attribute_settings(
         resc_access_perm);
 
     job_attr_def[JOB_ATR_variables].at_set(
-      &pj->ji_wattr[JOB_ATR_variables],
+      pj->get_attr(JOB_ATR_variables),
       &tempattr,
       INCR);
 
@@ -1081,38 +1066,35 @@ int check_attribute_settings(
 
     /* if JOB_ATR_outpath/JOB_ATR_errpath not set, set default */
 
-    if (!(pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) ||
-        (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == ':'))))
+    if (!(pj->is_attr_set(JOB_ATR_outpath)) ||
+        (((pj->get_str_attr(JOB_ATR_outpath)[strlen(pj->get_str_attr(JOB_ATR_outpath)) - 1] == ':'))))
       {
       std::string ds = "";
 
-      if (pj->ji_wattr[JOB_ATR_outpath].at_val.at_str != NULL)
-        free(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str);
-
-      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'o'));
-      pj->ji_wattr[JOB_ATR_outpath].at_flags |= ATR_VFLAG_SET;
+      pj->set_str_attr(JOB_ATR_outpath, strdup(prefix_std_file(pj, ds, (int)'o')));
       }
     /*
      * if the output path was specified and ends with a '/'
      * then append the standard file name
      */
-    else if ((pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET) &&
-        (((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] == '/'))))
+    else if ((pj->is_attr_set(JOB_ATR_outpath)) &&
+        (((pj->get_str_attr(JOB_ATR_outpath)[strlen(pj->get_str_attr(JOB_ATR_outpath)) - 1] == '/'))))
       {
       std::string ds = "";
-      pj->ji_wattr[JOB_ATR_outpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
+      std::string old_outpath(pj->get_str_attr(JOB_ATR_outpath));
+      old_outpath[old_outpath.size() - 1] = '\0';
       
       replace_attr_string(
-        &pj->ji_wattr[JOB_ATR_outpath],
-        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
+        pj->get_attr(JOB_ATR_outpath),
+        (strdup(add_std_filename(pj, old_outpath.c_str(), (int)'o', ds))));
       }
-    else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
+    else if (pj->is_attr_set(JOB_ATR_outpath))
       {
       /* check to see if the path pointed to is a directory. If so apendd the default output file name.
          Otherwise we treat the string as a path to a file */
-      char *ptr;
+      const char *ptr;
 
-      ptr = strchr(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, ':');
+      ptr = strchr(pj->get_str_attr(JOB_ATR_outpath), ':');
       if (ptr)
         {
         ptr++;
@@ -1120,52 +1102,46 @@ int check_attribute_settings(
         }
       else 
         {
-        rc = stat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, &stat_buf);
+        rc = stat(pj->get_str_attr(JOB_ATR_outpath), &stat_buf);
         }
       if (rc == 0)
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
           std::string ds = "";
-/*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(
-            &pj->ji_wattr[JOB_ATR_outpath],
-            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
+            pj->get_attr(JOB_ATR_outpath),
+            (strdup(add_std_filename(pj, pj->get_str_attr(JOB_ATR_outpath), (int)'o', ds))));
           }
         }
       }
 
-    if (!(pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) ||
-        (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == ':'))))
+    if (!(pj->is_attr_set(JOB_ATR_errpath)) ||
+        (((pj->get_str_attr(JOB_ATR_errpath)[strlen(pj->get_str_attr(JOB_ATR_errpath)) - 1] == ':'))))
       {
       std::string ds = "";
 
-      if (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str != NULL)
-        free(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str);
-
-      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str = strdup(prefix_std_file(pj, ds, (int)'e'));
-      pj->ji_wattr[JOB_ATR_errpath].at_flags |= ATR_VFLAG_SET;
+      pj->set_str_attr(JOB_ATR_errpath, strdup(prefix_std_file(pj, ds, (int)'e')));
       }
     /*
      * if the error path was specified and ends with a '/'
      * then append the standard file name
      */
-    else if ((pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET) &&
-        (((pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] == '/'))))
+    else if ((pj->is_attr_set(JOB_ATR_errpath)) &&
+        (((pj->get_str_attr(JOB_ATR_errpath)[strlen(pj->get_str_attr(JOB_ATR_errpath)) - 1] == '/'))))
       {
       std::string ds = "";
-      pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
+      std::string old_errpath(pj->get_str_attr(JOB_ATR_errpath));
+      old_errpath[old_errpath.size()] = '\0';
       
-      replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
+      replace_attr_string(pj->get_attr(JOB_ATR_errpath),
+        (strdup(add_std_filename(pj, old_errpath.c_str(), (int)'e', ds))));
       }
-    else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
+    else if (pj->is_attr_set(JOB_ATR_errpath))
       {
       /* check to see if the path pointed to is a directory. If so apendd the default output file name.
          Otherwise we treat the string as a path to a file */
-      char *ptr;
-
-      ptr = strchr(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, ':');
+      const char *ptr = strchr(pj->get_str_attr(JOB_ATR_errpath), ':');
       if (ptr)
         {
         ptr++;
@@ -1173,22 +1149,21 @@ int check_attribute_settings(
         }
       else 
         {
-        rc = stat(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, &stat_buf);
+        rc = stat(pj->get_str_attr(JOB_ATR_errpath), &stat_buf);
         }
       if (rc == 0)
         {
         if (S_ISDIR(stat_buf.st_mode))
           {
           std::string ds = "";
-/*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
-          replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
+          replace_attr_string(pj->get_attr(JOB_ATR_errpath),
+            (strdup(add_std_filename(pj, pj->get_str_attr(JOB_ATR_errpath), (int)'e', ds))));
           }
         }
       }
 
-    if ((pj->ji_wattr[JOB_ATR_outpath].at_val.at_str == NULL) ||
-        (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
+    if ((pj->get_str_attr(JOB_ATR_outpath) == NULL) ||
+        (pj->get_str_attr(JOB_ATR_errpath) == NULL))
       {
       rc = PBSE_NOATTR;
       svr_job_purge(pj);
@@ -1206,22 +1181,22 @@ int check_attribute_settings(
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
-    if (!(pj->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET))
+    if (pj->is_attr_set(JOB_ATR_checkpoint_dir) == false)
       {
       pbs_attribute *pattr;
       char          *vp;
 
-      pattr = &pj->ji_wattr[JOB_ATR_checkpoint];
+      pattr = pj->get_attr(JOB_ATR_checkpoint);
 
       if ((pattr->at_flags & ATR_VFLAG_SET) &&
           (vp = csv_find_value(pattr->at_val.at_str, "dir")))
         {
         clear_attr(
-          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          pj->get_attr(JOB_ATR_checkpoint_dir),
           &job_attr_def[JOB_ATR_checkpoint_dir]);
 
         job_attr_def[JOB_ATR_checkpoint_dir].at_decode(
-          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          pj->get_attr(JOB_ATR_checkpoint_dir),
           NULL,
           NULL,
           vp,
@@ -1231,7 +1206,7 @@ int check_attribute_settings(
                (pque->qu_attr[QE_ATR_checkpoint_dir].at_val.at_str))
         {
         job_attr_def[JOB_ATR_checkpoint_dir].at_set(
-          &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+          pj->get_attr(JOB_ATR_checkpoint_dir),
           &pque->qu_attr[QE_ATR_checkpoint_dir],
           SET);
         }
@@ -1242,7 +1217,7 @@ int check_attribute_settings(
             (server.sv_attr[SRV_ATR_checkpoint_dir].at_val.at_str))
           {
           job_attr_def[JOB_ATR_checkpoint_dir].at_set(
-            &pj->ji_wattr[JOB_ATR_checkpoint_dir],
+            pj->get_attr(JOB_ATR_checkpoint_dir),
             &server.sv_attr[SRV_ATR_checkpoint_dir],
             SET);
           }
@@ -1259,13 +1234,13 @@ int check_attribute_settings(
      * Else return error: valid user account is required
      *************************************************************/
 
-    if (pj->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+    if (pj->is_attr_set(JOB_ATR_account))
       {
       /* account specified, reject if it's not valid for user */
 
       if (user_account_verify(
             preq->rq_user,
-            pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
+            pj->get_str_attr(JOB_ATR_account)) == 0)
         {
         rc = PBSE_BADACCT;
         svr_job_purge(pj);
@@ -1276,15 +1251,11 @@ int check_attribute_settings(
     else
       {
       /* account not specified, get default value */
+      const char *tmp = user_account_default(preq->rq_user);
 
-      job_attr_def[JOB_ATR_account].at_decode(
-        &pj->ji_wattr[JOB_ATR_account],
-        NULL,
-        NULL,
-        (char *)user_account_default(preq->rq_user),
-        resc_access_perm);
-
-      if (pj->ji_wattr[JOB_ATR_account].at_val.at_str == 0)
+      if (tmp != NULL)
+        pj->set_str_atr(JOB_ATR_account, strdup(tmp));
+      else
         {
         /* no default found */
         rc = PBSE_BADACCT;
@@ -1302,7 +1273,7 @@ int check_attribute_settings(
 
     /* make sure job_owner is set, error if not */
 
-    if (!(pj->ji_wattr[JOB_ATR_job_owner].at_flags & ATR_VFLAG_SET))
+    if (pj->is_attr_set(JOB_ATR_job_owner) == false)
       {
       rc = PBSE_IVALREQ;
       snprintf(log_buf, sizeof(log_buf), "no job owner specified");
@@ -1313,8 +1284,9 @@ int check_attribute_settings(
       }
 
     /* increment hop count */
+    pj->set_long_attr(JOB_ATR_hopcount, pj->get_long_attr(JOB_ATR_hopcount) + 1);
 
-    if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
+    if (pj->get_long_attr(JOB_ATR_hopcount) > PBS_MAX_HOPCOUNT)
       {
       rc = PBSE_HOPCOUNT;
       svr_job_purge(pj);
@@ -1324,19 +1296,13 @@ int check_attribute_settings(
     }
 
   /* set up at_server pbs_attribute for status */
-  job_attr_def[JOB_ATR_at_server].at_decode(
-    &pj->ji_wattr[JOB_ATR_at_server],
-    NULL,
-    NULL,
-    server_name,
-    resc_access_perm);
+  pj->set_str_attr(JOB_ATR_at_server, strdup(server_name));
 
   // Set the request version 
-  pj->ji_wattr[JOB_ATR_request_version].at_flags |= ATR_VFLAG_SET;
-  if (pj->ji_wattr[JOB_ATR_req_information].at_val.at_ptr != NULL)
-    pj->ji_wattr[JOB_ATR_request_version].at_val.at_long = REQ_VERSION_2;
+  if (pj->get_creq_attr(JOB_ATR_req_information) != NULL)
+    pj->set_long_attr(JOB_ATR_request_version, REQ_VERSION_2);
   else
-    pj->ji_wattr[JOB_ATR_request_version].at_val.at_long = REQ_VERSION_1;
+    pj->set_long_attr(JOB_ATR_request_version, REQ_VERSION_1);
 
   return(PBSE_NONE);
   } /* END check_attribute_settings() */
@@ -1345,10 +1311,10 @@ int check_attribute_settings(
 
 void adjust_array_file_path(
     
-  job *pj)
+  svr_job *pj)
 
   {
-  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->is_attr_set(JOB_ATR_job_array_request))
     {
     std::string adjusted_path_jobs;
     char        namebuf[MAXPATHLEN+1];
@@ -1356,9 +1322,9 @@ void adjust_array_file_path(
     pj->ji_is_array_template = true;
     
     // get adjusted path_jobs path
-    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    adjusted_path_jobs = get_path_jobdata(pj->get_jobid(), path_jobs);
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+      pj->get_fileprefix(), JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
   } // END adjust_array_file_path()
@@ -1379,7 +1345,7 @@ void adjust_array_file_path(
 int perform_commit_work(
 
   batch_request *preq,
-  job           *pj,
+  svr_job       *pj,
   int            version)
 
   {
@@ -1407,11 +1373,11 @@ int perform_commit_work(
 
   if (LOGLEVEL >= 6)
     {
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, "committing job");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(), "committing job");
     }
 
 #ifdef QUICKCOMMIT
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSIN)
     {
     rc = PBSE_IVALREQ;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -1427,15 +1393,14 @@ int perform_commit_work(
   if (version > 1)
 #endif
     {
-    pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
-    pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-    pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
-    pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+    pj->set_state(JOB_STATE_TRANSIT);
+    pj->set_substate(JOB_SUBSTATE_TRANSICM);
+    pj->set_char_attr(JOB_ATR_state, 'T');
 
     adjust_array_file_path(pj);
     }
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSICM)
     {
     rc = PBSE_IVALREQ;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -1450,10 +1415,10 @@ int perform_commit_work(
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
-        pj->ji_qs.ji_jobid);
+        pj->get_jobid());
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(), log_buf);
     return(rc);
     }
 
@@ -1465,7 +1430,7 @@ int perform_commit_work(
       char  log_buf[LOCAL_LOG_BUF_SIZE];
       snprintf(log_buf,sizeof(log_buf),
             "WARNING:  could not remove job %s from newjobs container\n",
-            pj->ji_qs.ji_jobid);
+            pj->get_jobid());
       log_ext(-1, __func__, log_buf, LOG_WARNING);
       }
     }
@@ -1512,8 +1477,7 @@ int perform_commit_work(
   set_interactive_job_roaming_policy(pj);
 
   /* set the queue rank attribute */
-  pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
-  pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+  pj->set_long_attr(JOB_ATR_qrank, ++queue_rank);
 
   if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
@@ -1522,9 +1486,9 @@ int perform_commit_work(
       if (LOGLEVEL >= 6)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
-          pj->ji_qs.ji_jobid);
+          pj->get_jobid());
         
-        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
+        log_err(rc, pj->get_jobid(), log_buf);
         }
 
       svr_job_purge(pj);
@@ -1557,16 +1521,16 @@ int perform_commit_work(
         if (LOGLEVEL >= 6)
           {
           snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot route job %s",
-              pj->ji_qs.ji_jobid);
+              pj->get_jobid());
 
-          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid,
+          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(),
             log_buf);
           }
 
         if (!pj->ji_is_array_template)
           {
-          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          decrement_queued_jobs(pque->qu_uih, pj->get_str_attr(JOB_ATR_job_owner), pj);
+          decrement_queued_jobs(&users, pj->get_str_attr(JOB_ATR_job_owner), pj);
           }
 
         svr_job_purge(pj);
@@ -1575,7 +1539,7 @@ int perform_commit_work(
         }
       }
 
-    if (job_save(pj, SAVEJOB_FULL, 0) != 0)
+    if (svr_job_save(pj) != 0)
       {
       // unlock the queue so it can be purged
       pque_mutex.unlock();
@@ -1590,15 +1554,15 @@ int perform_commit_work(
       if (LOGLEVEL >= 6)
         {
         snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot save job %s",
-          pj->ji_qs.ji_jobid);
+          pj->get_jobid());
         
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(), log_buf);
         }
       
        if (!pj->ji_is_array_template)
          {
-         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         decrement_queued_jobs(pque->qu_uih, pj->get_str_attr(JOB_ATR_job_owner), pj);
+         decrement_queued_jobs(&users, pj->get_str_attr(JOB_ATR_job_owner), pj);
          }
 
       svr_job_purge(pj);
@@ -1615,8 +1579,8 @@ int perform_commit_work(
     snprintf(log_buf, sizeof(log_buf),
       msg_jobnew,
       preq->rq_user, preq->rq_host,
-      pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-      pj->ji_wattr[JOB_ATR_jobname].at_val.at_str,
+      pj->get_str_attr(JOB_ATR_job_owner),
+      pj->get_str_attr(JOB_ATR_jobname),
       queue_name.c_str());
     }
 
@@ -1627,7 +1591,7 @@ int perform_commit_work(
      * branch_request needs re creation since reply_jobid will free
      * the passed in one
     */
-    pattr = &pj->ji_wattr[JOB_ATR_start_count];
+    pattr = pj->get_attr(JOB_ATR_start_count);
 
     snprintf(spec, sizeof(spec), PBS_DEFAULT_NODE);
 
@@ -1650,21 +1614,21 @@ int perform_commit_work(
 
     /* acknowledge the request with the job id */
 
-    reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
+    reply_jobid(preq, pj->get_jobid(), BATCH_REPLY_CHOICE_Commit);
     }
     
   /* if job array, setup the cloning work task */
   if (pj->ji_is_array_template)
     {
-    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->get_jobid()), task_pool);
     }
     
-  sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
+  sprintf(log_buf, "job_id: %s", pj->get_jobid());
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
-  if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if ((pj->get_svrflags() & JOB_SVFLG_HERE) == 0)
     {
     /* notify creator where job is */
 
@@ -1685,12 +1649,12 @@ int perform_commit_work(
         {
         snprintf(log_buf, sizeof(log_buf),
           "Trying to AUTORUN job %s",
-          pj->ji_qs.ji_jobid);
+          pj->get_jobid());
 
         log_record(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pj->ji_qs.ji_jobid,
+          pj->get_jobid(),
           log_buf);
         }
 
@@ -1731,7 +1695,7 @@ int req_quejob(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   time_t                time_now = time(NULL);
 
-  job                  *pj;
+  svr_job              *pj;
   pbs_queue            *pque;
   std::string           jobid;
   std::string           filename;
@@ -1805,7 +1769,7 @@ int req_quejob(
     return(rc);
     }
 
-  jobid = pj->ji_qs.ji_jobid;
+  jobid = pj->get_jobid();
 
   if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
     {
@@ -1813,17 +1777,17 @@ int req_quejob(
     job_mutex.set_unlock_on_exit(false);
     return(rc);
     }
-  snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
+  pj->set_fileprefix(filename.c_str());
 
   /* make sure its okay to submit this job */
-  if (can_queue_new_job(pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj) == FALSE)
+  if (can_queue_new_job(pj->get_str_attr(JOB_ATR_job_owner), pj) == FALSE)
     {
     long max_queuable;
 
     get_svr_attr_l(SRV_ATR_MaxUserQueuable, &max_queuable);
     snprintf(log_buf, sizeof(log_buf),
       "Job %s violates the global server limit of %ld jobs queued per user",
-      pj->ji_qs.ji_jobid,
+      pj->get_jobid(),
       max_queuable);
 
     svr_job_purge(pj);
@@ -1842,17 +1806,18 @@ int req_quejob(
    * job structure and attributes already set up.
    */
   /* set ji_is_array_template before calling */
-  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->is_attr_set(JOB_ATR_job_array_request))
     {
     char  *oldid;
     char  *hostname;
+    char   buf[PBS_MAXSVRJOBID + 1];
     
     pj->ji_is_array_template = true;
     
     /* rewrite jobid to include empty brackets
        this causes arrays to show up as id[].host in qstat output, and 
        actions applied to id[] are applied to the entire array */
-    oldid = strdup(pj->ji_qs.ji_jobid);
+    oldid = strdup(pj->get_jobid());
 
     hostname = index(oldid, '.');
 
@@ -1860,12 +1825,12 @@ int req_quejob(
       {
       *(hostname++) = '\0';
       
-      snprintf(pj->ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%s[].%s",
-        oldid,
-        hostname);
+      snprintf(buf, sizeof(buf), "%s[].%s", oldid, hostname);
       }
     else
-      snprintf(pj->ji_qs.ji_jobid, sizeof(pj->ji_qs.ji_jobid), "%s[]", oldid);
+      snprintf(buf, sizeof(buf), "%s[]", oldid);
+
+    pj->set_jobid(buf);
 
     free(oldid);    
     }
@@ -1891,35 +1856,30 @@ int req_quejob(
 
   /* FIXME: if EMsg[0] != '\0', send a warning email to the user */
 
-  strcpy(pj->ji_qs.ji_queue, pque->qu_qs.qu_name);
+  pj->set_queue(pque->qu_qs.qu_name);
 
-  pj->ji_wattr[JOB_ATR_substate].at_val.at_long = JOB_SUBSTATE_TRANSIN;
-  pj->ji_wattr[JOB_ATR_substate].at_flags |= ATR_VFLAG_SET;
+  pj->set_long_attr(JOB_ATR_substate, JOB_SUBSTATE_TRANSIN);
 
   /* set remaining job structure elements */
 
-  pj->ji_qs.ji_state =    JOB_STATE_TRANSIT;
+  pj->set_state(JOB_STATE_TRANSIT);
 
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
+  pj->set_substate(JOB_SUBSTATE_TRANSIN);
 
-  pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
-  pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+  pj->set_long_attr(JOB_ATR_mtime, (long)time_now);
 
-  pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
+  pj->set_un_type(JOB_UNION_TYPE_NEW);
+  pj->set_fromsock(sock);
+  pj->set_fromaddr(get_connectaddr(sock,TRUE));
+  pj->set_scriptsz(0);
 
-  pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-
-  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,TRUE);
-
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
-
-  pj->ji_internal_id = job_mapper.get_new_id(pj->ji_qs.ji_jobid);
+  pj->ji_internal_id = job_mapper.get_new_id(pj->get_jobid());
 
   /* link job into server's new jobs list request  */
   insert_job(&newjobs,pj);
 
   if ((version > 1) &&
-      (pj->ji_wattr[JOB_ATR_interactive].at_val.at_long))
+      (pj->get_long_attr(JOB_ATR_interactive)))
     {
     // On failure, perform commit work will reply to and free the request
     if ((rc = perform_commit_work(preq, pj, version)) != PBSE_NONE)
@@ -1927,7 +1887,7 @@ int req_quejob(
     }
 
   /* acknowledge the request with the job id */
-  if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
+  if (reply_jobid(preq, pj->get_jobid(), BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
@@ -1938,7 +1898,7 @@ int req_quejob(
         char  log_buf[LOCAL_LOG_BUF_SIZE];
         snprintf(log_buf,sizeof(log_buf),
             "Could not remove job %s from newjobs\n",
-            pj->ji_qs.ji_jobid);
+            pj->get_jobid());
         log_ext(-1, __func__, log_buf, LOG_WARNING);
         }
       }
@@ -1966,7 +1926,7 @@ int req_jobcredential(
 
   {
   int rc = PBSE_NONE;
-  job *pj;
+  svr_job *pj;
 
   pj = locate_new_job(NULL);
 
@@ -2006,7 +1966,7 @@ int req_jobscript(
   {
   int   fds;
   char  namebuf[MAXPATHLEN];
-  job  *pj;
+  svr_job  *pj;
   int   filemode = 0600;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
@@ -2029,22 +1989,22 @@ int req_jobscript(
   mutex_mgr job_mutex(pj->ji_mutex, true);
 
   /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSIN)
     {
     rc = PBSE_IVALREQ;
     if (errno == 0)
       {
       snprintf(log_buf, sizeof(log_buf),
         "job %s in unexpected state '%s'",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate]);
+        pj->get_jobid(),
+        PJobSubState[pj->get_substate()]);
       }
     else
       {
       snprintf(log_buf, sizeof(log_buf),
         "job %s in unexpected state '%s' (errno=%d - %s)",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate],
+        pj->get_jobid(),
+        PJobSubState[pj->get_substate()],
         errno,
         strerror(errno));
       }
@@ -2066,11 +2026,11 @@ int req_jobscript(
     }
 
   // get adjusted path_jobs path
-  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  adjusted_path_jobs = get_path_jobdata(pj->get_jobid(), path_jobs);
   snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+    pj->get_fileprefix(), JOB_SCRIPT_SUFFIX);
 
-  if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
+  if (pj->get_scriptsz() == 0)
     {
     /* NOTE:  fail is job script already exists */
 
@@ -2113,12 +2073,11 @@ int req_jobscript(
 
   close(fds);
 
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
+  pj->set_scriptsz(pj->get_scriptsz() + preq->rq_ind.rq_jobfile.rq_size);
 
   /* job has a script file */
 
-  pj->ji_qs.ji_svrflags =
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
+  pj->set_svrflags((pj->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT);
 
   /* SUCCESS */
   if (perform_commit == true)
@@ -2153,7 +2112,7 @@ int req_mvjobfile(
   {
   int   fds;
   char  namebuf[MAXPATHLEN];
-  job  *pj;
+  svr_job  *pj;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
 
@@ -2177,7 +2136,7 @@ int req_mvjobfile(
 
   mutex_mgr job_mutex(pj->ji_mutex, true);
 
-  snprintf(namebuf, sizeof(namebuf), "%s%s", path_spool, pj->ji_qs.ji_fileprefix);
+  snprintf(namebuf, sizeof(namebuf), "%s%s", path_spool, pj->get_fileprefix());
 
   switch ((enum job_file)preq->rq_ind.rq_jobfile.rq_type)
     {
@@ -2204,7 +2163,7 @@ int req_mvjobfile(
 
       rc = PBSE_IVALREQ;
       snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "unexpected move type %s - (%d-%s)",
-          pj->ji_qs.ji_jobid, errno, strerror(errno));
+          pj->get_jobid(), errno, strerror(errno));
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
@@ -2224,7 +2183,7 @@ int req_mvjobfile(
     rc = PBSE_CAN_NOT_OPEN_FILE;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "cannot open file %s for %s - (%d-%s) - %s",
-        namebuf, pj->ji_qs.ji_jobid, errno, strerror(errno), msg_script_open);
+        namebuf, pj->get_jobid(), errno, strerror(errno), msg_script_open);
     log_err(errno, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
@@ -2238,7 +2197,7 @@ int req_mvjobfile(
     rc = PBSE_CAN_NOT_WRITE_FILE;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
         "cannot write to file %s for %s - (%d-%s) - %s",
-        namebuf, pj->ji_qs.ji_jobid, errno, strerror(errno), msg_script_write);
+        namebuf, pj->get_jobid(), errno, strerror(errno), msg_script_write);
     log_err(rc, "req_jobfile", log_buf);
     req_reject(PBSE_SYSTEM, 0, preq, NULL, log_buf);
     close(fds);
@@ -2282,7 +2241,7 @@ int req_rdytocommit(
   batch_request *preq)  /* I */
 
   {
-  job  *pj;
+  svr_job  *pj;
 
   char  namebuf[MAXPATHLEN+1];
   char  jobid[PBS_MAXSVRJOBID + 1];
@@ -2297,7 +2256,7 @@ int req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      (pj != NULL) ? pj->get_jobid() : "NULL",
       "ready to commit job");
     }
 
@@ -2313,7 +2272,7 @@ int req_rdytocommit(
 
   mutex_mgr job_mutex(pj->ji_mutex, true);
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSIN)
     {
     rc = PBSE_IVALREQ;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -2333,10 +2292,9 @@ int req_rdytocommit(
     return(rc);
     }
 
-  pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  pj->set_state(JOB_STATE_TRANSIT);
+  pj->set_substate(JOB_SUBSTATE_TRANSICM);
+  pj->set_char_attr(JOB_ATR_state, 'T');
 
   /* if this is a job array template then we'll delete the .JB file that 
      was created for this job since we are going to save it with a different 
@@ -2344,19 +2302,19 @@ int req_rdytocommit(
      XXX: not sure why the .JB file already exists before we do the SAVEJOB_NEW
      save below
    */
-  if (pj->ji_wattr[JOB_ATR_job_array_request].at_flags & ATR_VFLAG_SET)
+  if (pj->is_attr_set(JOB_ATR_job_array_request))
     {
     pj->ji_is_array_template = true;
 
     // get adjusted path_jobs path
-    adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+    adjusted_path_jobs = get_path_jobdata(pj->get_jobid(), path_jobs);
     snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-      pj->ji_qs.ji_fileprefix, JOB_FILE_SUFFIX);
+      pj->get_fileprefix(), JOB_FILE_SUFFIX);
     unlink(namebuf);
     }
 
   /* acknowledge the request with the job id */
-  strcpy(jobid, pj->ji_qs.ji_jobid);
+  strcpy(jobid, pj->get_jobid());
 
   /* unlock now to prevent a potential deadlock */
   job_mutex.unlock();
@@ -2395,7 +2353,7 @@ int req_rdytocommit(
 
 int set_interactive_job_roaming_policy(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   bool            interactive_roaming = false;
@@ -2408,11 +2366,11 @@ int set_interactive_job_roaming_policy(
 
   if (cray_enabled == true)
     {
-    if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
+    if (pjob->get_long_attr(JOB_ATR_interactive))
       {
       if (interactive_roaming == false)
         {
-        char *submit_node_id = strdup(pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+        char *submit_node_id = strdup(pjob->get_str_attr(JOB_ATR_submit_host));
         if ((pnode = find_nodebyname(submit_node_id)) == NULL)
           {
           if ((dot = strchr(submit_node_id, '.')) != NULL)
@@ -2424,8 +2382,7 @@ int set_interactive_job_roaming_policy(
         
         if (pnode != NULL)
           {
-          pjob->ji_wattr[JOB_ATR_login_prop].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = strdup(pnode->get_name());
+          pjob->set_str_attr(JOB_ATR_login_prop, strdup(pnode->get_name()));
           
           pnode->unlock_node(__func__, NULL, LOGLEVEL);
           }
@@ -2433,7 +2390,7 @@ int set_interactive_job_roaming_policy(
           {
           snprintf(log_buf, sizeof(log_buf),
             "Couldn't determine which login node is %s",
-            pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str);
+            pjob->get_str_attr(JOB_ATR_submit_host));
           log_err(PBSE_UNKNODE, __func__, log_buf);
           rc = -1;
           }
@@ -2460,7 +2417,7 @@ int req_commit2(
 
   {
   int rc = PBSE_NONE;
-  job       *pj;
+  svr_job       *pj;
 
   char       log_buf[LOCAL_LOG_BUF_SIZE] = {0};
 
@@ -2479,7 +2436,7 @@ int req_commit2(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      (pj != NULL) ? pj->get_jobid() : "NULL",
       "committing job");
     }
 
@@ -2491,11 +2448,11 @@ int req_commit2(
     }
 
   if (LOGLEVEL >= 10)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->get_jobid());
 
   mutex_mgr job_mutex = mutex_mgr(pj->ji_mutex, true); 
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_QUEUED)
+  if (pj->get_substate() != JOB_SUBSTATE_QUEUED)
     {
     rc = PBSE_IVALREQ;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -2511,10 +2468,10 @@ int req_commit2(
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
-        pj->ji_qs.ji_jobid);
+        pj->get_jobid());
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(), log_buf);
     job_mutex.unlock();
     return(rc);
     }
@@ -2523,7 +2480,7 @@ int req_commit2(
    * branch_request needs re creation since reply_jobid will free
    * the passed in one
   */
-  pattr = &pj->ji_wattr[JOB_ATR_start_count];
+  pattr = pj->get_attr(JOB_ATR_start_count);
 
   snprintf(spec, sizeof(spec), PBS_DEFAULT_NODE);
 
@@ -2543,23 +2500,21 @@ int req_commit2(
     strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);
     }
 
-
   /* acknowledge the request with the job id */
-
-  reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Commit);
+  reply_jobid(preq, pj->get_jobid(), BATCH_REPLY_CHOICE_Commit);
   
   /* if job array, setup the cloning work task */
   if (pj->ji_is_array_template)
     {
-    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->ji_qs.ji_jobid);
+    sprintf(log_buf, "threading job_clone_wt: job id %s", pj->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    enqueue_threadpool_request(job_clone_wt, strdup(pj->ji_qs.ji_jobid), task_pool);
+    enqueue_threadpool_request(job_clone_wt, strdup(pj->get_jobid()), task_pool);
     }
     
-  sprintf(log_buf, "job_id: %s", pj->ji_qs.ji_jobid);
+  sprintf(log_buf, "job_id: %s", pj->get_jobid());
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
-  if ((pj->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+  if ((pj->get_svrflags() & JOB_SVFLG_HERE) == 0)
     {
     /* notify creator where job is */
 
@@ -2579,12 +2534,12 @@ int req_commit2(
       {
       snprintf(log_buf, sizeof(log_buf),
         "Trying to AUTORUN job %s",
-        pj->ji_qs.ji_jobid);
+        pj->get_jobid());
 
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pj->ji_qs.ji_jobid,
+        pj->get_jobid(),
         log_buf);
       }
 
@@ -2609,7 +2564,7 @@ int req_commit(
   struct batch_request *preq)  /* I */
 
   {
-  job *pj = locate_new_job(preq->rq_ind.rq_commit);
+  svr_job *pj = locate_new_job(preq->rq_ind.rq_commit);
   int  rc = PBSE_NONE;
 
   if (pj == NULL)
@@ -2643,12 +2598,12 @@ int req_commit(
  * with the socket unless ji_fromsock == -1, then its a recovery situation.
  */
 
-static job *locate_new_job(
+static svr_job *locate_new_job(
 
   char *jobid)  /* I (optional) */
 
   {
-  job   *pJob;
+  svr_job   *pJob;
   //If the ID is NULL just return the first job in the list.
   if ((jobid == NULL) ||
       (*jobid == '\0'))

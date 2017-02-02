@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "server_limits.h"
 #include "pbs_error.h"
 
 int PBSD_select_put(int c, int type, struct attropl *attrib, char *extend);

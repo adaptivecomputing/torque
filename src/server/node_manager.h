@@ -13,7 +13,7 @@ void update_node_state(struct pbsnode *np, int newstate);
 
 int check_node_for_job(struct pbsnode *pnode, char *jobid);
 
-job *find_job_by_node(struct pbsnode *pnode, char *jobid);
+svr_job *find_job_by_node(struct pbsnode *pnode, char *jobid);
 
 void update_job_data(struct pbsnode *np, char *jobstring_in);
 
@@ -50,14 +50,14 @@ int can_reshuffle(struct pbsnode *pnode, struct prop *glorf, int skip, int vpreq
 int procs_available(int proc_ct);
 
 #ifdef GEOMETRY_REQUESTS
-int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
+int get_bitmap(svr_job *pjob, int ProcBMSize, char *ProcBMPtr);
 
 int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
+int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, svr_job *pjob);
 
-int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg);
+int set_nodes(svr_job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg);
 
 int procs_requested(char *spec);
 

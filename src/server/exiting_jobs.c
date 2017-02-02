@@ -97,7 +97,7 @@
 
 
 void on_job_exit(batch_request *preq, char *jobid);
-void force_purge_work(job *pjob);
+void force_purge_work(svr_job *pjob);
 
 
 std::vector<job_exiting_retry_info>  exiting_jobs_info;
@@ -107,7 +107,7 @@ extern bool                          exit_called;
 
 int record_job_as_exiting(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
 
@@ -165,7 +165,7 @@ int remove_from_exiting_list_by_jobid(
 
 int remove_job_from_exiting_list(
 
-  job **pjob)
+  svr_job **pjob)
 
   {
   int internal_job_id = (*pjob)->ji_internal_id;
@@ -202,7 +202,7 @@ int get_next_retryable_jobid(
   unsigned int &index)
 
   {
-  job                    *pjob;
+  svr_job                    *pjob;
   time_t                  time_now = time(NULL);
   char                    log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -268,7 +268,7 @@ int check_exiting_jobs()
   {
   unsigned int  index = 0;
   int           internal_job_id;
-  job          *pjob;
+  svr_job          *pjob;
   
   while ((internal_job_id = get_next_retryable_jobid(index)) != -1)
     {
@@ -280,7 +280,7 @@ int check_exiting_jobs()
       {
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
 
-      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+      if (pjob->get_state() == JOB_STATE_COMPLETE)
         {
         remove_from_exiting_list_by_jobid(internal_job_id);
         }

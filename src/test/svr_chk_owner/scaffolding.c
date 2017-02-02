@@ -22,7 +22,7 @@ char *site_map_user(char *uname, char *host)
   exit(1);
   }
 
-char *get_variable(job *pjob, const char *variable)
+char *get_variable(svr_job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable to be mocked!!\n");
   exit(1);
@@ -40,7 +40,7 @@ char *pbse_to_txt(int err)
   exit(1);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -110,7 +110,7 @@ struct sockaddr_in *get_cached_addrinfo(
   return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

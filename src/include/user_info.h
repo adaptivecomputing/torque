@@ -100,10 +100,11 @@ typedef container::item_container<user_info *>::item_iterator     user_info_hold
 
 extern user_info_holder users;
 
-
-int          can_queue_new_job(char *user_name, job *pjob);
-int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
-int          decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
+#ifndef PBS_MOM
+int          can_queue_new_job(const char *user_name, svr_job *pjob);
+int          increment_queued_jobs(user_info_holder *uih, const char *user_name, svr_job *pjob);
+int          decrement_queued_jobs(user_info_holder *uih, const char *user_name, svr_job *pjob);
+#endif
 unsigned int get_num_queued(user_info_holder *uih, const char *user_name);
 void         free_user_info_holder(user_info_holder *uih);
 void         remove_server_suffix(std::string &user_name);

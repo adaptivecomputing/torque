@@ -443,30 +443,30 @@ void *send_the_mail(
 
 void set_output_files(
 
-  job       *pjob,
+  svr_job   *pjob,
   mail_info *mi)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
+  const char *join_val = pjob->get_str_attr(JOB_ATR_join);
+  if (join_val != NULL)
     {
-    char *join_val = pjob->ji_wattr[JOB_ATR_join].at_val.at_str;
     if (!strcmp(join_val, "oe"))
       {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+      mi->errFile = pjob->get_str_attr(JOB_ATR_outpath);
+      mi->outFile = pjob->get_str_attr(JOB_ATR_outpath);
       }
     else if (!strcmp(join_val, "eo"))
       {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+      mi->errFile = pjob->get_str_attr(JOB_ATR_errpath);
+      mi->outFile = pjob->get_str_attr(JOB_ATR_errpath);
       }
     }
 
   if (mi->outFile.size() == 0)
-    mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+    mi->outFile = pjob->get_str_attr(JOB_ATR_outpath);
 
   if (mi->errFile.size() == 0)
-    mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+    mi->errFile = pjob->get_str_attr(JOB_ATR_errpath);
   } // END set_output_files()
              
 
@@ -554,7 +554,7 @@ void send_email_batch(
 
 void svr_mailowner_with_message(
 
-  job        *pjob,      /* I */
+  svr_job    *pjob,      /* I */
   int         mailpoint, /* note, single character  */
   int         force,     /* if set to MAIL_FORCE, force mail delivery */
   const char *text, /* text to mail. */
@@ -581,7 +581,7 @@ void svr_mailowner_with_message(
 
 void svr_mailowner(
 
-  job   *pjob,      /* I */
+  svr_job   *pjob,      /* I */
   int    mailpoint, /* note, single character  */
   int    force,     /* if set to MAIL_FORCE, force mail delivery */
   const char  *text)      /* (optional) additional message text */
@@ -605,22 +605,23 @@ void svr_mailowner(
       {
       log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "Not sending email: Mail domain set to 'never'\n");
       }
 
     return;
     }
     
-    //check to see if the user does not want any mail sent, not even on job failures
-	if ((pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str != NULL) && 
-	    (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NOJOBMAIL))
+  //check to see if the user does not want any mail sent, not even on job failures
+  const char *mailpnts = pjob->get_str_attr(JOB_ATR_mailpnts);
+	if ((mailpnts != NULL) && 
+	    (*(mailpnts) ==  MAIL_NOJOBMAIL))
     {
     if (LOGLEVEL >= 3)
       {
       log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "Not sending email: mail option disabled by user for this job \n");			
       }
     
@@ -633,14 +634,14 @@ void svr_mailowner(
 
     snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
              (char)mailpoint,
-             pjob->ji_qs.ji_jobid,
-             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+             pjob->get_jobid(),
+             pjob->get_str_attr(JOB_ATR_job_owner),
              (text != NULL) ? text : "---");
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       tmpBuf);
     }
 
@@ -654,46 +655,44 @@ void svr_mailowner(
       (no_force == true))
     {
 
-    if (pjob->ji_wattr[JOB_ATR_mailpnts].at_flags & ATR_VFLAG_SET)
+    if (pjob->is_attr_set(JOB_ATR_mailpnts))
       {
-      if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
-          (pjob->ji_qs.ji_un.ji_exect.ji_exitstat == JOB_EXEC_OK))
+      if ((strchr(mailpnts, MAIL_NONZERO) != NULL) &&
+          (pjob->get_exec_exitstat() == JOB_EXEC_OK))
         {
         log_event(PBSEVENT_JOB,
                   PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
+                  pjob->get_jobid(),
                   "Not sending email: User does not want mail of a zero exit code for a job.\n");
         return;
         }
-      else if ((strchr(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str, MAIL_NONZERO) != NULL) &&
-               (pjob->ji_qs.ji_un.ji_exect.ji_exitstat != JOB_EXEC_OK))
+      else if ((strchr(mailpnts, MAIL_NONZERO) != NULL) &&
+               (pjob->get_exec_exitstat() != JOB_EXEC_OK))
         {
         if (LOGLEVEL >= 3)
           {
           log_event(PBSEVENT_JOB,
                     PBS_EVENTCLASS_JOB,
-                    pjob->ji_qs.ji_jobid,
+                    pjob->get_jobid(),
                     "sending email: job requested e-mail on all non-zero exit codes");
           }
         }
-      else if (*(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str) ==  MAIL_NONE)
+      else if (*(mailpnts) ==  MAIL_NONE)
         {
         /* do not send mail. No mail requested on job */
         log_event(PBSEVENT_JOB,
                   PBS_EVENTCLASS_JOB,
-                  pjob->ji_qs.ji_jobid,
+                  pjob->get_jobid(),
                   "Not sending email: job requested no e-mail");
         return;
         }
       /* see if user specified mail of this type */
-      else if (strchr(
-            pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str,
-            mailpoint) == NULL)
+      else if (strchr(mailpnts, mailpoint) == NULL)
         {
         /* do not send mail */
         log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "Not sending email: User does not want mail of this type.\n");
 
         return;
@@ -703,7 +702,7 @@ void svr_mailowner(
       {
       log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "Not sending email: Default mailpoint does not include this type.\n");
 
       return;
@@ -713,11 +712,11 @@ void svr_mailowner(
   /* Who does the mail go to?  If mail-list, them; else owner */
   mailto[0] = '\0';
 
-  if (pjob->ji_wattr[JOB_ATR_mailuser].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_mailuser))
     {
     /* has mail user list, send to them rather than owner */
 
-    pas = pjob->ji_wattr[JOB_ATR_mailuser].at_val.at_arst;
+    pas = pjob->get_arst_attr(JOB_ATR_mailuser);
 
     if (pas != NULL)
       {
@@ -741,7 +740,7 @@ void svr_mailowner(
     if (domain != NULL)
       {
       snprintf(mailto, sizeof(mailto), "%s@%s",
-        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, domain);
+        pjob->get_str_attr(JOB_ATR_euser), domain);
 
       if (LOGLEVEL >= 5) 
         {
@@ -752,7 +751,7 @@ void svr_mailowner(
           mailto);
         log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           tmpBuf);
         }
       }
@@ -760,9 +759,9 @@ void svr_mailowner(
       {
 #ifdef TMAILDOMAIN
       snprintf(mailto, sizeof(mailto), "%s@%s",
-        pjob->ji_wattr[JOB_ATR_euser].at_val.at_str, TMAILDOMAIN);
+        pjob->get_str_attr(JOB_ATR_euser), TMAILDOMAIN);
 #else /* TMAILDOMAIN */
-      snprintf(mailto, sizeof(mailto), "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+      snprintf(mailto, sizeof(mailto), "%s", pjob->get_str_attr(JOB_ATR_job_owner));
 #endif /* TMAILDOMAIN */
 
       if (LOGLEVEL >= 5)
@@ -774,7 +773,7 @@ void svr_mailowner(
           mailto);
         log_event(PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           tmpBuf);
         }
       }
@@ -784,13 +783,13 @@ void svr_mailowner(
   mi.mailto = mailto;
   mi.mail_point = mailpoint;
 
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    mi.exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  if (pjob->get_str_attr(JOB_ATR_exec_host) != NULL)
+    mi.exec_host = pjob->get_str_attr(JOB_ATR_exec_host);
 
-  mi.jobid = pjob->ji_qs.ji_jobid;
+  mi.jobid = pjob->get_jobid();
 
-  if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
-    mi.jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
+  if (pjob->get_str_attr(JOB_ATR_jobname) != NULL)
+    mi.jobname = pjob->get_str_attr(JOB_ATR_jobname);
 
   if (mailpoint == (int) MAIL_END)
     set_output_files(pjob, &mi);

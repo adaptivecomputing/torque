@@ -531,21 +531,21 @@ static void close_quejob(
   int sfds)
 
   {
-  job *pjob;
+  mom_job *pjob;
 
-  job *npjob;
+  mom_job *npjob;
 
-  pjob = (job *)GET_NEXT(svr_newjobs);
+  pjob = (mom_job *)GET_NEXT(svr_newjobs);
 
   while (pjob != NULL)
     {
-    npjob = (job *)GET_NEXT(pjob->ji_alljobs);
+    npjob = (mom_job *)GET_NEXT(pjob->ji_alljobs);
 
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
+    if (pjob->get_fromsock() == sfds)
       {
-      if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
+      if (pjob->get_substate() != JOB_SUBSTATE_TRANSICM)
         {
-        /* delete the job */
+        /* delete the mom_job */
         delete_link(&pjob->ji_alljobs);
 
         mom_job_purge(pjob);

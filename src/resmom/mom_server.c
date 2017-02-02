@@ -2805,7 +2805,7 @@ void check_busy(
   {
   int sindex;
   int numvnodes = 0;
-  job *pjob;
+  mom_job *pjob;
   float myideal_load;
   float mymax_load;
 
@@ -2813,7 +2813,7 @@ void check_busy(
 
   if ((auto_max_load != NULL) || (auto_ideal_load != NULL))
     {
-    std::list<job *>::iterator iter;
+    std::list<mom_job *>::iterator iter;
 
     for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
@@ -3230,13 +3230,13 @@ void mom_server_all_send_state(void)
 
 int mom_open_socket_to_jobs_server(
 
-  job        *pjob,
+  mom_job        *pjob,
   const char *caller_id,
   void       *(*message_handler)(void *))
 
   {
-  char       *svrport = NULL;
-  char       *serverAddr = NULL;
+  const char *svrport = NULL;
+  const char *serverAddr = NULL;
   char        error_buffer[1024];
   int         sock;
   int         sock3;
@@ -3246,7 +3246,7 @@ int mom_open_socket_to_jobs_server(
 
   /* See if the server address string has a ':' implying a port number. */
 
-  serverAddr = pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str;
+  serverAddr = pjob->get_str_attr(JOB_ATR_at_server);
   if (serverAddr != NULL)
     {
     svrport = strchr(serverAddr, (int)':');
@@ -3258,7 +3258,7 @@ int mom_open_socket_to_jobs_server(
     port = default_server_port;  /* No, use the global default server port. */
 
   sock = client_to_svr(
-           pjob->ji_qs.ji_un.ji_momt.ji_svraddr, /* This is set in req_queuejob. */
+           pjob->get_svraddr(), /* This is set in req_queuejob. */
            port,
            1,  /* use local socket */
            error_buffer);  /* O */
@@ -3285,7 +3285,7 @@ int mom_open_socket_to_jobs_server(
         {
         ipaddr = ntohl(pms->sock_addr.sin_addr.s_addr);
 
-        if (ipaddr != pjob->ji_qs.ji_un.ji_momt.ji_svraddr)
+        if (ipaddr != pjob->get_svraddr())
           {
           sock = client_to_svr(
                    ipaddr,
@@ -3316,7 +3316,7 @@ int mom_open_socket_to_jobs_server(
       add_conn(
         sock,
         ToServerDIS,
-        pjob->ji_qs.ji_un.ji_momt.ji_svraddr,
+        pjob->get_svraddr(),
         port,
         PBS_SOCK_INET,
         message_handler);
@@ -3335,7 +3335,7 @@ int mom_open_socket_to_jobs_server(
 
 int mom_open_socket_to_jobs_server_with_retries(
 
-  job        *pjob,
+  mom_job        *pjob,
   const char *caller_id,
   void       *(*message_handler)(void *),
   int         retry_limit)

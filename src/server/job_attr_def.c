@@ -990,7 +990,7 @@ attribute_def job_attr_def[] =
     set_l,
     comp_l,
     free_null,
-    job_radix_action,
+    NULL_FUNC,
     READ_WRITE | ATR_DFLAG_SSET | ATR_DFLAG_MOM,
     ATR_TYPE_LONG,
     PARENT_TYPE_JOB

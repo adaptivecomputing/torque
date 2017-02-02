@@ -86,7 +86,7 @@ extern char            *path_nodenote;
 extern int              LOGLEVEL;
 extern attribute_def    node_attr_def[];   /* node attributes defs */
 
-job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
+svr_job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 /* Functions in this file
  * find_nodebyname()   -     given a node host name, search allnodes
@@ -483,7 +483,7 @@ int login_encode_jobs(
   tlist_head     *phead)
 
   {
-  job            *pjob;
+  svr_job            *pjob;
   std::string     job_str = "";
   char            str_buf[MAXLINE*2];
   svrattrl       *pal;
@@ -513,7 +513,7 @@ int login_encode_jobs(
     
     if (pjob != NULL)
       {
-      login_id = pjob->ji_wattr[JOB_ATR_login_node_key].at_val.at_long;
+      login_id = pjob->get_long_attr(JOB_ATR_login_node_key);
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
       }
 

@@ -312,12 +312,12 @@ int get_batch_request_id(
   return(0);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   return(NULL);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -499,12 +499,100 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
-job::job()
+pbs_net_t job::get_ji_momaddr() const
   {
-  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  return(this->ji_qs.ji_un.ji_exect.ji_momaddr);
   }
 
+unsigned short job::get_ji_momport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momport);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
 job::~job() {}
+
+svr_job::svr_job() 
+  {
+  }
+svr_job::~svr_job() {}
 
 void update_failure_counts(
 

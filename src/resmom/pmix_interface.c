@@ -9,10 +9,10 @@
 #include "pbs_job.h"
 #include "mom_func.h"
 
-job *mom_find_job_by_int_string(const char *);
-void report_fence_to_ms(job *pjob, char *data);
+mom_job *mom_find_job_by_int_string(const char *);
+void report_fence_to_ms(mom_job *pjob, char *data);
 int start_process(task *ptask, char **argv, char **envp);
-int send_tm_spawn_request(job *pjob, hnodent *remote_host, char **argv, char **env, int event, int fromtask, int *reply_ptr);
+int send_tm_spawn_request(mom_job *pjob, hnodent *remote_host, char **argv, char **env, int event, int fromtask, int *reply_ptr);
 
 extern char   mom_alias[];
 extern time_t pbs_tcp_timeout;
@@ -32,7 +32,7 @@ pmix_status_t pmix_client_connect(
 
   {
   pmix_status_t  rc = PMIX_SUCCESS;
-  job           *pjob = mom_find_job_by_int_string(proc->nspace);
+  mom_job           *pjob = mom_find_job_by_int_string(proc->nspace);
   pmix_tracker  *pt = get_pmix_tracker(proc->nspace);
 
   if (pjob != NULL)
@@ -135,7 +135,7 @@ std::map<std::string, pmix_operation> pending_fences;
 
 bool check_and_record_fence(
 
-  job                 *pjob,
+  mom_job                 *pjob,
   const std::string   &jobid,
   const pmix_proc_t    procs[],
   size_t               nprocs,
@@ -163,12 +163,12 @@ bool check_and_record_fence(
 
 void notify_fence_complete(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
-  if (pending_fences.find(pjob->ji_qs.ji_jobid) != pending_fences.end())
+  if (pending_fences.find(pjob->get_jobid()) != pending_fences.end())
     {
-    pending_fences[pjob->ji_qs.ji_jobid].complete_operation(pjob, 0);
+    pending_fences[pjob->get_jobid()].complete_operation(pjob, 0);
     }
   } // END notify_fence_complete()
 
@@ -195,7 +195,7 @@ pmix_status_t pmix_server_fencenb(
   {
   pmix_status_t rc = PMIX_SUCCESS;
 
-  job *pjob = mom_find_job_by_int_string(procs[0].nspace);
+  mom_job *pjob = mom_find_job_by_int_string(procs[0].nspace);
 
   if (pjob != NULL)
     {
@@ -277,7 +277,7 @@ pmix_status_t pmix_server_unpublish(
 
 bool host_is_part_of_job(
 
-  job        *pjob,
+  mom_job        *pjob,
   const char *hostname)
 
   {
@@ -300,7 +300,7 @@ pmix_status_t sanity_check_apps(
 
   const pmix_app_t  apps[],
   size_t            napps,
-  job              *pjob)
+  mom_job              *pjob)
 
   {
   pmix_status_t  rc = PMIX_SUCCESS;
@@ -337,7 +337,7 @@ pmix_status_t sanity_check_apps(
 
 int launch_pmix_requested_application_locally(
 
-  job              *pjob,
+  mom_job              *pjob,
   const pmix_app_t &application)
 
   {
@@ -361,7 +361,7 @@ int launch_pmix_requested_application_locally(
 
 int launch_pmix_requested_application_remotely(
 
-  job               *pjob,
+  mom_job               *pjob,
   const pmix_app_t  &application,
   const std::string &remote_host,
   int                requestor_rank)
@@ -398,7 +398,7 @@ int launch_pmix_requested_application_remotely(
 
 int launch_pmix_requested_application(
 
-  job              *pjob,
+  mom_job              *pjob,
   const pmix_app_t &application,
   int               requestor_rank)
 
@@ -481,7 +481,7 @@ pmix_status_t pmix_server_spawn(
 
   {
   pmix_status_t     rc = PMIX_SUCCESS;
-  job              *pjob = mom_find_job_by_int_string(proc->nspace);
+  mom_job              *pjob = mom_find_job_by_int_string(proc->nspace);
   struct timeval    timeout;
   time_t            start_time;
   time_t            global_tcp_timeout = 0;
@@ -574,7 +574,7 @@ pmix_status_t pmix_server_connect(
 
   {
   pmix_status_t     rc = PMIX_SUCCESS;
-  job              *pjob = mom_find_job_by_int_string(procs[0].nspace);
+  mom_job              *pjob = mom_find_job_by_int_string(procs[0].nspace);
   struct timeval    timeout;
   bool              called_back = false;
 
@@ -622,7 +622,7 @@ pmix_status_t pmix_server_disconnect(
 
   {
   pmix_status_t     rc = PMIX_SUCCESS;
-  job              *pjob = mom_find_job_by_int_string(procs[0].nspace);
+  mom_job          *pjob = mom_find_job_by_int_string(procs[0].nspace);
   struct timeval    timeout;
   bool              called_back = false;
 

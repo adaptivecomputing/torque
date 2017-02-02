@@ -4,23 +4,21 @@
 
 #include "pbs_job.h" /* job */
 
-void tasks_free(job *pj);
+void tasks_free(mom_job *pj);
 
 int remtree(char *dirname);
 
 int conn_qsub(char *hostname, long port, char *EMsg);
 
-job *job_alloc(void);
+mom_job *job_alloc(void);
 
-void mom_job_free(job *pj);
+void mom_job_free(mom_job *pj);
 
-int job_unlink_file(job *pjob, const char *name);
-
-/* static void job_init_wattr(job *pj); */
+int job_unlink_file(mom_job *pjob, const char *name);
 
 void *delete_job_files(void *vp);
 void remove_tmpdir_files(void);
 
-void mom_job_purge(job *pjob);
+void mom_job_purge(mom_job *pjob);
 
 #endif /* _JOB_FUNC_H */

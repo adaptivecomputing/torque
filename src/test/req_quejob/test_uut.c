@@ -19,7 +19,7 @@ int get_job_id(batch_request *preq, int &resc_access_perm, int &created_here, st
 bool job_exists(const char *job_id);
 pbs_queue *get_queue_for_job(char *queue_name, int &rc);
 int determine_job_file_name(batch_request *preq, std::string &jobid, std::string &filename);
-job *create_and_initialize_job_structure(int created_here, std::string &jobid);
+svr_job *create_and_initialize_job_structure(int created_here, std::string &jobid);
 
 extern struct server server;
 extern char *path_jobs;
@@ -38,17 +38,17 @@ START_TEST(test_create_and_initialize_job_structure)
   std::string jobid("1.napali");
  
   mem_fail = true;
-  job *pjob = create_and_initialize_job_structure(1, jobid);
+  svr_job *pjob = create_and_initialize_job_structure(1, jobid);
   fail_unless(pjob == NULL);
 
   mem_fail = false;
   pjob = create_and_initialize_job_structure(1, jobid);
   fail_unless(pjob != NULL);
-  fail_unless(jobid == pjob->ji_qs.ji_jobid);
-  fail_unless(pjob->ji_modified == 1);
-  fail_unless(pjob->ji_qs.ji_svrflags == 1);
-  fail_unless(pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_NEW);
-  fail_unless(pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str == NULL);
+  fail_unless(jobid == pjob->get_jobid());
+  fail_unless(pjob->has_been_modified() == true);
+  fail_unless(pjob->get_svrflags() == 1);
+  fail_unless(pjob->get_un_type() == JOB_UNION_TYPE_NEW);
+  fail_unless(pjob->get_str_attr(JOB_ATR_mailpnts) == NULL);
   fail_unless(pjob->ji_mod_time > 0);
   }
 END_TEST
@@ -104,17 +104,17 @@ END_TEST
 START_TEST(test_one)
   {
   batch_request req;
-  job j;
+  svr_job j;
   char cmd[500];
 
   memset(&j,0,sizeof(j));
 
   fail_unless(req_jobcredential(&req) == PBSE_IVALREQ);
 
-  strcpy(j.ji_qs.ji_jobid,"SomeJob");
-  strcpy(j.ji_qs.ji_fileprefix,"prefix");
+  j.set_jobid("SomeJob");
+  j.set_fileprefix("prefix");
   newjobs.lock();
-  newjobs.insert(&j,j.ji_qs.ji_jobid);
+  newjobs.insert(&j,j.get_jobid());
   newjobs.unlock();
 
   fail_unless(req_jobcredential(&req) == PBSE_NONE);

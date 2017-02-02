@@ -114,8 +114,8 @@
 
 /* Extenal functions called */
 
-extern int   status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
-extern int   svr_authorize_jobreq(struct batch_request *, job *);
+extern int   status_job(svr_job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
+extern int   svr_authorize_jobreq(struct batch_request *, svr_job *);
 
 
 /* Global Data Items  */
@@ -131,7 +131,7 @@ static int  build_selist(svrattrl *, int perm, struct  select_list **,
                              pbs_queue **, int *bad);
 static void free_sellist(struct select_list *pslist);
 static int  sel_attr(pbs_attribute *, struct select_list *);
-static int  select_job(job *, struct select_list *);
+static int  select_job(svr_job *, struct select_list *);
 static void sel_step3(struct stat_cntl *);
 
 
@@ -358,8 +358,8 @@ static void sel_step3(
   {
   int        bad = 0;
   int        summarize_arrays = 0;
-  job       *pjob;
-  job       *next;
+  svr_job       *pjob;
+  svr_job       *next;
 
   struct batch_request *preq;
   struct batch_reply   *preply;
@@ -471,7 +471,7 @@ static void sel_step3(
           }
         else
           {
-          pque = find_queuebyname(pjob->ji_qs.ji_queue);
+          pque = find_queuebyname(pjob->get_queue());
           mutex_mgr que_mgr(pque->qu_mutex, true);
           
           if (pque->qu_qs.qu_type != QTYPE_Execution)
@@ -502,7 +502,7 @@ static void sel_step3(
 
           pselect->brp_next = NULL;
 
-          strcpy(pselect->brp_jobid, pjob->ji_qs.ji_jobid);
+          strcpy(pselect->brp_jobid, pjob->get_jobid());
           *pselx = pselect;
           pselx = &pselect->brp_next;
           preq->rq_reply.brp_auxcode++;
@@ -569,7 +569,7 @@ nextjob:
 
 static int select_job(
 
-  job                *pjob,
+  svr_job                *pjob,
   struct select_list *psel)
 
   {
@@ -579,7 +579,7 @@ static int select_job(
       {
       if (!acl_check(
             &psel->sl_attr,
-            pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+            pjob->get_str_attr(JOB_ATR_job_owner),
             ACL_User))
         {
         /* no match */
@@ -589,7 +589,7 @@ static int select_job(
       }
     else
       {
-      if (!sel_attr(&pjob->ji_wattr[psel->sl_atindx], psel))
+      if (!sel_attr(pjob->get_attr(psel->sl_atindx), psel))
         {
         /* no match */
 

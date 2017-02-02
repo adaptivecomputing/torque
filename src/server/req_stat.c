@@ -142,10 +142,10 @@ extern pthread_mutex_t *netrates_mutex;
 
 /* Extern Functions */
 
-int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
+int status_job(svr_job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
-extern void rel_resc(job*);
+extern void rel_resc(svr_job*);
 
 /* The following private support functions are included */
 
@@ -192,7 +192,7 @@ int req_stat_job(
   {
   struct stat_cntl      cntl; /* see svrfunc.h  */
   char                 *name;
-  job                  *pjob = NULL;
+  svr_job              *pjob = NULL;
   pbs_queue            *pque = NULL;
   int                   rc = PBSE_NONE;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -352,7 +352,7 @@ void handle_truncated_qstat(
   all_queues_iterator *queue_iter = NULL;
   pbs_queue           *pque;
   char                 log_buf[LOCAL_LOG_BUF_SIZE];
-  job                 *pjob;
+  svr_job             *pjob;
   svrattrl            *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
   batch_reply         *preply = &preq->rq_reply;
   int                  bad = 0;
@@ -404,7 +404,7 @@ void handle_truncated_qstat(
       mutex_mgr job_mgr(pjob->ji_mutex, true);
 
       if ((qjcounter >= qmaxreport) &&
-          (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
+          (pjob->get_state() == JOB_STATE_QUEUED))
         {
         /* max_report of queued jobs reached for queue */
         continue;
@@ -424,7 +424,7 @@ void handle_truncated_qstat(
 
       sentJobCounter++;
 
-      if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+      if (pjob->get_state() == JOB_STATE_QUEUED)
         qjcounter++;
       } /* END foreach (pjob from pque) */
 
@@ -490,7 +490,7 @@ all_jobs_iterator *get_correct_status_iterator(
  * @return the next job in our sequence, or NULL if we're done
  */
 
-job *get_next_status_job(
+svr_job *get_next_status_job(
 
   struct stat_cntl  *cntl,
   int               &job_array_index,
@@ -498,7 +498,7 @@ job *get_next_status_job(
   all_jobs_iterator *iter)
 
   {
-  job *pjob = NULL;
+  svr_job *pjob = NULL;
 
   if (cntl->sc_type == tjstQueue)
     pjob = next_job(cntl->sc_pque->qu_jobs,iter);
@@ -538,7 +538,7 @@ job *get_next_status_job(
 
 bool in_execution_queue(
 
-  job       *pjob,
+  svr_job   *pjob,
   job_array *pa)
 
   {
@@ -590,7 +590,7 @@ void req_stat_job_step2(
   {
   batch_request         *preq = cntl->sc_origrq;
   svrattrl              *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_status.rq_attr);
-  job                   *pjob = NULL;
+  svr_job               *pjob = NULL;
 
   struct batch_reply    *preply = &preq->rq_reply;
   int                    rc = 0;
@@ -740,26 +740,26 @@ int stat_to_mom(
   unsigned long   job_momaddr = -1;
   unsigned short  job_momport = -1;
   char           *job_momname = NULL;
-  job            *pjob = NULL;
+  svr_job        *pjob = NULL;
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) || 
-      (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
+  if ((pjob->get_ji_momaddr() == 0) || 
+      (!pjob->get_str_attr(JOB_ATR_exec_host)))
     {
     job_mutex.unlock();
     snprintf(log_buf, sizeof(log_buf),
-      "Job %s missing MOM's information. Skipping statting on this job", pjob->ji_qs.ji_jobid);
+      "Job %s missing MOM's information. Skipping statting on this job", pjob->get_jobid());
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     return PBSE_BAD_PARAMETER;
     }
 
-  job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  job_momaddr = pjob->get_ji_momaddr();
+  job_momport = pjob->get_ji_momport();
+  job_momname = strdup(pjob->get_str_attr(JOB_ATR_exec_host));
   job_mutex.unlock();
 
   if (job_momname == NULL)
@@ -833,7 +833,7 @@ void stat_update(
   struct stat_cntl *cntl)
 
   {
-  job                  *pjob;
+  svr_job              *pjob;
   struct batch_reply   *preply;
   struct brp_status    *pstatus;
   svrattrl             *sattrl;
@@ -866,7 +866,7 @@ void stat_update(
 
         sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
 
-        oldsid = pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
+        oldsid = pjob->get_long_attr(JOB_ATR_session_id);
 
         modify_job_attr(
           pjob,
@@ -874,19 +874,19 @@ void stat_update(
           ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
           &bad);
 
-        if (oldsid != pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long)
+        if (oldsid != pjob->get_long_attr(JOB_ATR_session_id))
           {
           /* first save since running job (or the sid has changed), */
           /* must save session id    */
 
-          job_save(pjob, SAVEJOB_FULL, 0);
+          svr_job_save(pjob);
           }
 
 #ifdef USESAVEDRESOURCES
         else
           {
           /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL, 0);
+          svr_job_save(pjob);
           }
 #endif    /* USESAVEDRESOURCES */
 
@@ -1000,7 +1000,7 @@ void poll_job_task(
 
   {
   char      *job_id = (char *)ptask->wt_parm1;
-  job       *pjob;
+  svr_job   *pjob;
   time_t     time_now = time(NULL);
   long       job_stat_rate;
 
@@ -1016,7 +1016,7 @@ void poll_job_task(
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       int       job_state = -1;
 
-      job_state = pjob->ji_qs.ji_state;
+      job_state = pjob->get_state();
 
       // only do things for running jobs
       if (job_state == JOB_STATE_RUNNING)

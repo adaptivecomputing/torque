@@ -50,19 +50,19 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(all_jobs *aj, all_jobs_iterator *iter)
+svr_job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct svr_job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
   }
 
-int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
+int issue_signal(svr_job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
   {
   fprintf(stderr, "The call to issue_signal to be mocked!!\n");
   exit(1);
@@ -80,7 +80,7 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -97,7 +97,7 @@ int get_svr_attr_l(int index, long *l)
   return(0);
   }
 
-pbs_queue *get_jobs_queue(job **pjob)
+pbs_queue *get_jobs_queue(svr_job **pjob)
   {
   return((*pjob)->ji_qhdr);
   }
@@ -130,7 +130,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -148,7 +148,7 @@ pbs_queue *next_queue(all_queues *aq, all_queues_iterator        *iter)
 
 void log_event(int type, int otype, const char *func_name, const char *msg) {}
 
-int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+int relay_to_mom(svr_job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
   return(0);
   }

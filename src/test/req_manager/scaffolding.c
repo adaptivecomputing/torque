@@ -355,13 +355,13 @@ void add_all_nodes_to_hello_container()
   exit(1);
   }
 
-job *svr_find_job_by_id(int id)
+svr_job *svr_find_job_by_id(int id)
   {
   fprintf(stderr, "The call to %s needs to be mocked!!\n",__func__);
   exit(1);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -517,3 +517,18 @@ batch_request::batch_request(int type) : rq_type(type)
   }
 
 batch_request::~batch_request() {}
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }

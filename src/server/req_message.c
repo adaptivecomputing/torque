@@ -113,7 +113,7 @@ extern int   pbs_mom_port;
 extern char *msg_messagejob;
 extern int   LOGLEVEL;
 
-extern job  *chk_job_request(char *, struct batch_request *);
+extern svr_job  *chk_job_request(char *, struct batch_request *);
 
 /*
  * req_messagejob - service the Message Job Request
@@ -126,7 +126,7 @@ void *req_messagejob(
   batch_request *preq) /* I */
 
   {
-  job           *pjob;
+  svr_job       *pjob;
   int            rc;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == NULL)
@@ -136,7 +136,7 @@ void *req_messagejob(
 
   /* the job must be running */
 
-  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+  if (pjob->get_state() != JOB_STATE_RUNNING)
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
     

@@ -132,18 +132,18 @@
 
 /* External functions called */
 
-extern void remove_stagein(job **);
-extern void remove_checkpoint(job **);
-extern int  job_route(job *);
+extern void remove_stagein(svr_job **);
+extern void remove_checkpoint(svr_job **);
+extern int  job_route(svr_job *);
 int PBSD_commit_get_sid(int ,long *,char *);
-int get_job_file_path(job *,enum job_file, char *, int);
-void add_dest(job *jobp);
+int get_job_file_path(svr_job *,enum job_file, char *, int);
+void add_dest(svr_job *jobp);
 
 
 
 /* Private Functions local to this file */
 
-int  local_move(job *, int *, struct batch_request *);
+int  local_move(svr_job *, int *, struct batch_request *);
 int should_retry_route(int err);
 
 /* Global Data */
@@ -170,7 +170,7 @@ extern time_t            pbs_tcp_timeout;
 extern int               LOGLEVEL;
 extern bool              cpy_stdout_err_on_rerun;
 
-int net_move(job *, struct batch_request *);
+int net_move(svr_job *, struct batch_request *);
 
 /* have_reservation - See if we have queue restrictions on max_queuable or 
    max_user_queuable. 
@@ -179,7 +179,7 @@ int net_move(job *, struct batch_request *);
    */
 bool have_reservation(
     
-  job              *pjob, 
+  svr_job          *pjob, 
   struct pbs_queue *pque)
 
   {
@@ -214,7 +214,7 @@ bool have_reservation(
 
 int svr_movejob(
 
-  job                  *jobp,
+  svr_job              *jobp,
   char                 *destination,
   int                  *my_err,
   struct batch_request *req)
@@ -228,7 +228,7 @@ int svr_movejob(
 
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", jobp->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -245,9 +245,8 @@ int svr_movejob(
     return(-1);
     }
 
-  snprintf(jobp->ji_qs.ji_destin, sizeof(jobp->ji_qs.ji_destin), "%s", destination);
-
-  jobp->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
+  jobp->set_destination(destination);
+  jobp->set_un_type(JOB_UNION_TYPE_ROUTE);
 
   local = 1;
 
@@ -290,28 +289,28 @@ int svr_movejob(
 
 int local_move(
 
-  job                  *pjob,
-  int                  *my_err,
-  struct batch_request *req)
+  svr_job       *pjob,
+  int           *my_err,
+  batch_request *req)
 
   {
-  pbs_queue *dest_que = NULL;
-  char      *destination = pjob->ji_qs.ji_destin;
-  int        mtype;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  char       job_id[PBS_MAXSVRJOBID+1];
-  int        rc;
-  bool       reservation = false;
+  pbs_queue  *dest_que = NULL;
+  const char *destination = pjob->get_destination();
+  int         mtype;
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  char        job_id[PBS_MAXSVRJOBID+1];
+  int         rc;
+  bool        reservation = false;
 
   /* Sometimes multiple threads are trying to route the same job. Protect against this
    * by making sure that the destionation queue and the current queue are different. 
    * If they are the same then consider it done correctly */
-  if (!strcmp(pjob->ji_qs.ji_queue, pjob->ji_qs.ji_destin))
+  if (!strcmp(pjob->get_queue(), pjob->get_destination()))
     return(PBSE_NONE);
 
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -333,14 +332,14 @@ int local_move(
     mtype = MOVE_TYPE_Move; /* non-privileged move */
     }
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_id, pjob->get_jobid());
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
   dest_que = find_queuebyname(destination);
   if (dest_que == NULL)
     {
     /* this should never happen */
-    sprintf(log_buf, "queue %s does not exist\n", pjob->ji_qs.ji_queue);
+    sprintf(log_buf, "queue %s does not exist\n", pjob->get_queue());
     log_err(-1, __func__, log_buf);
 
     *my_err = PBSE_UNKQUE;
@@ -369,9 +368,9 @@ int local_move(
   if (rc)
     return(rc);
 
-  snprintf(pjob->ji_qs.ji_queue, sizeof(pjob->ji_qs.ji_queue), "%s", destination);
+  pjob->set_queue(destination);
 
-  pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  pjob->set_long_attr(JOB_ATR_qrank, ++queue_rank);
     
   if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
     return(-1);
@@ -385,7 +384,7 @@ int local_move(
     {
     pjob->ji_lastdest = 0; /* reset in case of another route */
     
-    job_save(pjob, SAVEJOB_FULL, 0);
+    svr_job_save(pjob);
     }
 
   return(PBSE_NONE);
@@ -393,10 +392,9 @@ int local_move(
 
 
 
-
 void finish_routing_processing(
 
-  job *pjob,
+  svr_job *pjob,
   int  status)
 
   {
@@ -407,18 +405,18 @@ void finish_routing_processing(
     return;
 
   if (LOGLEVEL >= 10)
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
 
   switch (status)
     {
     case LOCUTION_SUCCESS:  /* normal return, job was routed */
 
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
+      if (pjob->get_svrflags() & JOB_SVFLG_StagedIn)
         remove_stagein(&pjob);
 
       if (pjob != NULL)
         {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+        if (pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_COPIED)
           remove_checkpoint(&pjob);
 
         if (pjob != NULL)
@@ -429,7 +427,7 @@ void finish_routing_processing(
 
     case LOCUTION_FAIL:  /* permanent rejection (or signal) */
 
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
+      if (pjob->get_substate() == JOB_SUBSTATE_ABORT)
         {
         /* job delete in progress, just set to queued status */
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
@@ -474,9 +472,9 @@ void finish_routing_processing(
 
 void finish_moving_processing(
 
-  job                  *pjob,
-  struct batch_request *req,
-  int                   status)
+  svr_job       *pjob,
+  batch_request *req,
+  int            status)
 
   {
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -501,12 +499,12 @@ void finish_moving_processing(
     case LOCUTION_SUCCESS:
 
       /* purge server's job structure */
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
+      if (pjob->get_svrflags() & JOB_SVFLG_StagedIn)
         remove_stagein(&pjob);
 
       if (pjob != NULL)
         {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
+        if (pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_COPIED)
           remove_checkpoint(&pjob);
         }
 
@@ -557,7 +555,7 @@ void finish_move_process(
 
   {
   char  log_buf[LOCAL_LOG_BUF_SIZE+1];
-  job  *pjob = svr_find_job(job_id, TRUE);
+  svr_job  *pjob = svr_find_job(job_id, TRUE);
 
   if (pjob == NULL)
     {
@@ -636,12 +634,12 @@ void free_server_attrs(
  */
 int get_job_script_path(
 
-  job         *pjob,
+  svr_job     *pjob,
   std::string &script_path)
 
   {
   // get the adjusted path to the script
-  script_path = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+  script_path = get_path_jobdata(pjob->get_jobid(), path_jobs);
 
   if (pjob->ji_arraystructid[0] != '\0')
     {
@@ -659,7 +657,7 @@ int get_job_script_path(
     }
   else
     {
-    script_path += pjob->ji_qs.ji_fileprefix;
+    script_path += pjob->get_fileprefix();
     }
     
   script_path += JOB_SCRIPT_SUFFIX;
@@ -671,22 +669,18 @@ int get_job_script_path(
 void encode_attributes(
 
   tlist_head &attrl,
-  job        *pjob,
+  svr_job    *pjob,
   int         resc_access_perm,
   int         encode_type)
 
   {
-  pbs_attribute *pattr = pjob->ji_wattr;
-
   if (cpy_stdout_err_on_rerun)
     {
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool = true;
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = ATR_VFLAG_SET;
+    pjob->set_bool_attr(JOB_ATR_copystd_on_rerun, true);
     }  
   else
     {
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool = false;
-    pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags = 0;
+    pjob->set_bool_attr(JOB_ATR_copystd_on_rerun, false);
     }
 
   for (int i = 0; i < JOB_ATR_LAST; i++)
@@ -698,10 +692,10 @@ void encode_attributes(
 
     if (((job_attr_def + i)->at_flags & resc_access_perm) ||
         ((strncmp((job_attr_def + i)->at_name,"session_id",10) == 0) &&
-         (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)))
+         (pjob->is_attr_set(JOB_ATR_checkpoint_name))))
       {
       (job_attr_def + i)->at_encode(
-        pattr + i,
+        pjob->get_attr(i),
         &attrl,
         (job_attr_def + i)->at_name,
         NULL,
@@ -714,6 +708,7 @@ void encode_attributes(
   } /* END encode_attributes() */
 
 
+
 int update_substate_if_needed(
 
   char *job_id,
@@ -722,13 +717,13 @@ int update_substate_if_needed(
   {
   if (change_substate_on_attempt_to_queue == true)
     {
-    job *pjob = svr_find_job(job_id, TRUE);
+    svr_job *pjob = svr_find_job(job_id, TRUE);
 
     if (pjob != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
-      job_save(pjob, SAVEJOB_QUICK, 0);
+      pjob->set_substate(JOB_SUBSTATE_TRNOUT);
+      svr_job_save(pjob);
       }
     else
       {
@@ -861,7 +856,7 @@ int attempt_to_queue_job_on_mom(
   int           *my_err)
 
   {
-  job  *pjob = NULL;
+  svr_job  *pjob = NULL;
   int   rc;
 
   if (update_substate_if_needed(job_id, change_substate_on_attempt_to_queue) != PBSE_NONE)
@@ -878,8 +873,8 @@ int attempt_to_queue_job_on_mom(
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;      
-    job_save(pjob, SAVEJOB_QUICK, 0);
+    pjob->set_substate(JOB_SUBSTATE_TRNOUTCM);
+    svr_job_save(pjob);
     unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
     }
   else
@@ -896,12 +891,11 @@ int save_jobs_sid(
   long  sid)
 
   {
-  job *pjob;
+  svr_job *pjob;
   /* save the sid */
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
-    pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long = sid;
-    pjob->ji_wattr[JOB_ATR_session_id].at_flags |= ATR_VFLAG_SET;
+    pjob->set_long_attr(JOB_ATR_session_id, sid);
     unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
     }
   else
@@ -910,7 +904,8 @@ int save_jobs_sid(
     }
 
   return(PBSE_NONE);
-  }
+  } // END save_jobs_sid()
+
 
 
 /*
@@ -1021,7 +1016,7 @@ int get_mom_node_version(
   int        &version)
 
   {
-  job *pjob;
+  svr_job *pjob;
   pbsnode *pnode;
 
   pjob = svr_find_job(job_id, TRUE);
@@ -1030,7 +1025,7 @@ int get_mom_node_version(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  pnode = find_nodebyname(pjob->ji_qs.ji_destin);
+  pnode = find_nodebyname(pjob->get_destination());
   if (pnode == NULL)
     return(PBSE_UNKNODE);
 
@@ -1266,7 +1261,7 @@ int send_job_work(
   bool                  change_substate_on_attempt_to_queue = false;
   bool                  need_to_send_job_script = false;
   bool                  job_has_run = false;
-  job                  *pjob = NULL;
+  svr_job              *pjob = NULL;
   char                  job_destin[PBS_MAXROUTEDEST+1];
 
   bool                  Timeout = false;
@@ -1283,18 +1278,18 @@ int send_job_work(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  if (strlen(pjob->ji_qs.ji_destin) != 0)
-    strcpy(job_destin, pjob->ji_qs.ji_destin);
+  if (strlen(pjob->get_destination()) != 0)
+    strcpy(job_destin, pjob->get_destination());
   else
     job_destin[0] = '\0';
 
-  job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
+  job_momaddr = pjob->get_ji_momaddr();
+  job_momport = pjob->get_ji_momport();
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT)
+  if (pjob->get_svrflags() & JOB_SVFLG_SCRIPT)
     need_to_send_job_script = TRUE;
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN)
+  if (pjob->get_svrflags() & JOB_SVFLG_HASRUN)
     job_has_run = TRUE;
 
   if ((job_destin[0] != '\0') && 
@@ -1366,11 +1361,11 @@ int send_job_work(
   /* if the job is substate JOB_SUBSTATE_TRNOUTCM it means we are 
    * recovering after being down or a late failure so we just want 
    * to send the "ready-to-commit/commit" */
-  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUTCM)
+  if (pjob->get_substate() != JOB_SUBSTATE_TRNOUTCM)
     {
     attempt_to_queue_job = true;
 
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRNOUT)
+    if (pjob->get_substate() != JOB_SUBSTATE_TRNOUT)
       change_substate_on_attempt_to_queue = true;
     }
   
@@ -1454,21 +1449,26 @@ send_job_work_end:
 
 char *get_ms_name(
 
-  job &pjob)
+  svr_job &pjob)
 
   {
   char         *ms_name = NULL;
   unsigned int  dummy;
+  const char   *tmp;
 
   if (cray_enabled == true)
     {
-    if (pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
-      ms_name = strdup(pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
+    tmp = pjob.get_str_attr(JOB_ATR_login_node_id);
+    if (tmp != NULL)
+      ms_name = strdup(tmp);
     }
 
-  if ((ms_name == NULL) &&
-      (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
-  ms_name = parse_servername(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+  if (ms_name == NULL)
+    {
+    tmp = pjob.get_str_attr(JOB_ATR_exec_host);
+    if (tmp != NULL)
+      ms_name = parse_servername(tmp, &dummy);
+    }
 
   return(ms_name);
   } /* END get_ms_name() */
@@ -1496,7 +1496,7 @@ void *send_job(
   {
   send_job_request     *args = (send_job_request *)vp;
   char                 *job_id = strdup(args->jobid.c_str());
-  job                  *pjob;
+  svr_job              *pjob;
   int                   type = args->move_type; /* move, route, or execute */
   int                   local_errno = 0;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1544,14 +1544,14 @@ void *send_job(
 
 int net_move(
 
-  job                  *jobp,
-  struct batch_request *req)
+  svr_job       *jobp,
+  batch_request *req)
 
   {
   void             *data;
-  char             *destination = jobp->ji_qs.ji_destin;
+  const char       *destination = jobp->get_destination();
   int               move_type;
-  char             *toserver;
+  const char       *toserver;
   send_job_request *args;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1589,7 +1589,7 @@ int net_move(
 
   if (args != NULL)
     {
-    args->jobid = jobp->ji_qs.ji_jobid;
+    args->jobid = jobp->get_jobid();
     args->move_type = move_type;
     args->data = data;
     }
@@ -1667,13 +1667,13 @@ int should_retry_route(
 
 int get_job_file_path(
 
-  job           *pjob,
+  svr_job       *pjob,
   enum job_file  which,
   char          *path,
   int            path_size)
 
   {
-  snprintf(path, path_size, "%s%s", path_spool, pjob->ji_qs.ji_fileprefix);
+  snprintf(path, path_size, "%s%s", path_spool, pjob->get_fileprefix());
 
   if (path_size - strlen(path) < 4)
     return(-1);

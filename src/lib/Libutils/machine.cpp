@@ -997,7 +997,7 @@ int Machine::fit_tasks_within_sockets(
 
 int Machine::place_job(
 
-  job        *pjob,
+  svr_job    *pjob,
   string     &cpu_string,
   string     &mem_string,
   const char *hostname,
@@ -1006,10 +1006,10 @@ int Machine::place_job(
   {
   int rc = PBSE_NONE;
 
-  complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
   int           num_reqs = cr->req_count();
   vector<int>   partially_place;
-  allocation    job_alloc(pjob->ji_qs.ji_jobid);
+  allocation    job_alloc(pjob->get_jobid());
   vector<req>   to_split;
 
   // See if the tasks fit completely on a socket, and if they do then place them there

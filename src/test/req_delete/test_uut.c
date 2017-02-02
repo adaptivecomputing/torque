@@ -19,18 +19,18 @@
 
 #define PURGE_SUCCESS 1
 
-int delete_inactive_job(job **, const char *);
-void force_purge_work(job *pjob);
+int delete_inactive_job(svr_job **, const char *);
+void force_purge_work(svr_job *pjob);
 int delete_all_work(batch_request *);
 void ensure_deleted(struct work_task *ptask);
-int  apply_job_delete_nanny(job *pjob, int delay);
+int  apply_job_delete_nanny(svr_job *pjob, int delay);
 void job_delete_nanny(struct work_task *ptask);
 void post_job_delete_nanny(batch_request *preq_sig);
-int forced_jobpurge(job *pjob, batch_request *preq);
+int forced_jobpurge(svr_job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
 int handle_delete_all(batch_request *preq, char *Msg);
 int handle_single_delete(batch_request *preq, char *Msg);
-int perform_job_delete_array_bookkeeping(job *pjob, int cancel_exit_code);
+int perform_job_delete_array_bookkeeping(svr_job *pjob, int cancel_exit_code);
 bool exit_called;
 extern int  depend_term_called;
 extern long keep_seconds;
@@ -80,9 +80,9 @@ int set_pbs_server_name()
 
 START_TEST(test_perform_job_delete_array_bookkeeping)
   {
-  job           *pjob = (job *)calloc(1, sizeof(job));
+  svr_job           *pjob = (svr_job *)calloc(1, sizeof(svr_job));
   sprintf(pjob->ji_arraystructid, "1[].roshar");
-  sprintf(pjob->ji_qs.ji_jobid, "1[0].roshar");
+  pjob->set_jobid("1[0].roshar");
 
   find_job_fail = false;
   updated_array_values = 0;
@@ -141,12 +141,12 @@ END_TEST
 
 START_TEST(test_forced_jobpurge)
   {
-  job           *pjob;
+  svr_job           *pjob;
   batch_request *preq;
 
-  pjob = new job();
+  pjob = new svr_job();
   preq = new batch_request();
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->set_jobid("1.napali");
   memset(pjob->ji_arraystructid, 0, sizeof(pjob->ji_arraystructid));
 
   preq->rq_extend = strdup(delpurgestr);
@@ -166,14 +166,14 @@ END_TEST
 START_TEST(test_delete_all_work)
   {
   //struct all_jobs  alljobs;
-  job           *pjob = new job();
+  svr_job           *pjob = new svr_job();
   batch_request *preq = new batch_request();
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
 
   insert_job(&alljobs, pjob);
 
-  // no lock should remain on job after delete_all_work() 
+  // no lock should remain on svr_job after delete_all_work() 
   //  so test by making sure we can set lock 
   fail_unless(delete_all_work(preq) == PBSE_NONE);
   fail_unless(pthread_mutex_trylock(pjob->ji_mutex) == 0);
@@ -227,7 +227,7 @@ END_TEST
 
 START_TEST(test_apply_job_delete_nanny)
   {
-  job *pjob = new job();
+  svr_job *pjob = new svr_job();
 
   fail_unless(apply_job_delete_nanny(pjob, -1) == -1);
   fail_unless(pjob->ji_has_delete_nanny == FALSE);
@@ -253,35 +253,35 @@ END_TEST
 
 START_TEST(test_delete_inactive_job)
   {
-  job *pjob = new job();
+  svr_job *pjob = new svr_job();
 
-  fail_unless(delete_inactive_job((job **)NULL, NULL) == PBSE_BAD_PARAMETER);
+  fail_unless(delete_inactive_job((svr_job **)NULL, NULL) == PBSE_BAD_PARAMETER);
   
   keep_seconds = 10;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(pjob->get_state() == JOB_STATE_COMPLETE);
 
-  pjob = new job();
-  pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
+  pjob = new svr_job();
+  pjob->set_state(JOB_STATE_QUEUED);
   bad_queue = 1;
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(pjob->get_state() == JOB_STATE_COMPLETE);
   bad_queue = 0;
 
-  pjob = new job();
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+  pjob = new svr_job();
+  pjob->set_svrflags(JOB_SVFLG_CHECKPOINT_FILE);
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_EXITING);
+  fail_unless(pjob->get_state() == JOB_STATE_EXITING);
   fail_unless(pjob->ji_momhandle = -1);
 
-  pjob = new job();
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
+  pjob = new svr_job();
+  pjob->set_svrflags(JOB_SVFLG_StagedIn);
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob == NULL);
 
-  pjob = new job();
+  pjob = new svr_job();
   bad_relay = 1;
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_StagedIn;
+  pjob->set_svrflags(JOB_SVFLG_StagedIn);
   fail_unless(delete_inactive_job(&pjob, NULL) == PBSE_NONE);
   fail_unless(pjob == NULL);
   bad_relay = 0;
@@ -290,15 +290,15 @@ END_TEST
 
 START_TEST(test_force_purge_work)
   {
-  job *pjob = new job();
+  svr_job *pjob = new svr_job();
 
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
+  pjob->set_str_attr(JOB_ATR_exec_host, strdup("bob"));
   depend_term_called = 0;
   force_purge_work(pjob);
   // normally pjob wouldn't be valid at this point, but I've made the functions 
   // that free set these values in the scaffolding so we can test what happened 
-  fail_unless(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
-  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(pjob->get_str_attr(JOB_ATR_exec_host) == NULL);
+  fail_unless(pjob->get_state() == JOB_STATE_COMPLETE);
   fail_unless(depend_term_called > 0);
   }
 END_TEST 
@@ -311,25 +311,25 @@ START_TEST(test_is_ms_on_server)
     return;
   }
 
-  job myjob;
+  svr_job myjob;
 
-  myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(server_host);
+  myjob.set_str_attr(JOB_ATR_exec_host, strdup(server_host));
   rc = is_ms_on_server(&myjob);
   fail_unless(rc != 0, "failed to detect mother superior is the same as the pbs_server");
-  free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
-  myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(server_host);
-  char *p = strchr(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str, '.');
+  myjob.set_str_attr(JOB_ATR_exec_host, strdup(server_host));
+  char *exec = strdup(myjob.get_str_attr(JOB_ATR_exec_host));
+  char *p = strchr(exec, '.');
   if (p)
 	 *p = '\0';
+  
+  myjob.set_str_attr(JOB_ATR_exec_host, exec);
   rc = is_ms_on_server(&myjob);
   fail_unless(rc != 0, "failed to detect mother superior is the same as the pbs_server");
-  free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
 
-  myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
+  myjob.set_str_attr(JOB_ATR_exec_host, strdup("bob"));
   rc = is_ms_on_server(&myjob);
   fail_unless(rc == 0, "failed to detect mother superior is not the same as the pbs_server");
-  free(myjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
   }
 END_TEST 
 
@@ -345,7 +345,7 @@ START_TEST(test_setup_apply_job_delete_nanny)
   server.sv_attr[SRV_ATR_JobNanny].at_flags = ATR_VFLAG_SET;
   server.sv_attr[SRV_ATR_JobNanny].at_val.at_bool = 1;
 
-  job myjob;
+  svr_job myjob;
 
   nanny = 0; // don't use this hook as the other unit tests do
   setup_apply_job_delete_nanny(&myjob, time_now);

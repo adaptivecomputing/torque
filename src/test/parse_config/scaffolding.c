@@ -29,14 +29,14 @@ tlist_head svr_alljobs; /* all jobs under MOM's control */
 char log_buffer[LOG_BUF_SIZE];
 int MOMJobDirStickySet = FALSE;
 char PBSNodeMsgBuf[MAXLINE];
-std::list<job *>    alljobs_list;
+std::list<mom_job *>    alljobs_list;
 
 void free_pwnam(struct passwd *pwdp, char *buf)
   {}
 
 void encode_used(
 
-  job               *pjob,   /* I */
+  mom_job               *pjob,   /* I */
   int                perm,   /* I */
   Json::Value       *list,   /* O */
   tlist_head        *phead)  /* O */
@@ -46,7 +46,7 @@ void encode_used(
 
 void encode_flagged_attrs(
 
-  job               *pjob,   /* I */
+  mom_job               *pjob,   /* I */
   int                perm,   /* I */
   Json::Value       *list,   /* O */
   tlist_head        *phead)  /* O */
@@ -165,7 +165,7 @@ const char *getuname(void)
   return(NULL);
   }
 
-bool am_i_mother_superior(job const &pjob)
+bool am_i_mother_superior(mom_job const &pjob)
   {
   return(true);
   }
@@ -175,7 +175,7 @@ void DIS_tcp_settimeout(long timeout) {}
 struct passwd *getpwnam_ext( 
 
   char **user_buf,
-  char *user_name) /* I */
+  const char *user_name) /* I */
   
   {
   return(NULL);
@@ -226,3 +226,7 @@ void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
 
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }

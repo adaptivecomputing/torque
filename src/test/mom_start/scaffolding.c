@@ -22,13 +22,12 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char *AllocParCmd = NULL;
 
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int mom_job_save(mom_job *pjob, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
-char *get_job_envvar(job *pjob, char *variable)
+char *get_job_envvar(mom_job *pjob, char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);
@@ -58,7 +57,7 @@ void *get_next(list_link pl, char *file, int line)
   exit(1);
   }
 
-int mom_set_use(job *pjob)
+int mom_set_use(mom_job *pjob)
   {
   fprintf(stderr, "The call to mom_set_use needs to be mocked!!\n");
   exit(1);
@@ -87,9 +86,9 @@ int openpty (int *__amaster, int *__aslave, char *__name, const struct termios *
 }
 #endif
 
-int kill_task(job *pjob, struct task *task, int sig, int pg)
+int kill_task(mom_job *pjob, struct task *task, int sig, int pg)
   {
   return(0);
   }
 
-void check_and_act_on_obit(job *pjob, int rank) {}
+void check_and_act_on_obit(mom_job *pjob, int rank) {}

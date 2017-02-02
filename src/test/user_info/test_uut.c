@@ -7,7 +7,7 @@
 #include <check.h>
 
 unsigned int get_num_queued(user_info_holder *, const char *);
-unsigned int count_jobs_submitted(job *);
+unsigned int count_jobs_submitted(svr_job *);
 
 
 START_TEST(remove_server_suffix_test)
@@ -57,7 +57,7 @@ END_TEST
 START_TEST(count_jobs_submitted_test)
   {
   unsigned int submitted;
-  job          pjob;
+  svr_job          pjob;
 
   memset(&pjob, 0, sizeof(pjob));
   users.lock();
@@ -65,9 +65,9 @@ START_TEST(count_jobs_submitted_test)
   users.unlock();
 
   submitted = count_jobs_submitted(&pjob);
-  fail_unless(submitted == 1, "incorrect count for non-array job");
+  fail_unless(submitted == 1, "incorrect count for non-array svr_job");
 
-  pjob.ji_wattr[JOB_ATR_job_array_request].at_val.at_str = (char *)"0-10";
+  pjob.set_str_attr(JOB_ATR_job_array_request, strdup("0-10"));
   submitted = count_jobs_submitted(&pjob);
   fail_unless(submitted == 11, "incorrect count for 0-10");
   }
@@ -77,7 +77,7 @@ END_TEST
 
 START_TEST(can_queue_new_job_test)
   {
-  job pjob;
+  svr_job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
   users.lock();
@@ -101,7 +101,7 @@ START_TEST(can_queue_new_job_test)
 
   fail_unless(can_queue_new_job((char *)"bob", &pjob) == TRUE, "user without a job can't queue one?");
   fail_unless(can_queue_new_job((char *)"tom", &pjob) == FALSE, (char *)"tom allowed over limit");
-  pjob.ji_wattr[JOB_ATR_job_array_request].at_val.at_str = (char *)"0-10";
+  pjob.set_str_attr(JOB_ATR_job_array_request, strdup("0-10"));
 
   fail_unless(can_queue_new_job((char *)"bob", &pjob) == FALSE, "array job allowed over limit");
   fail_unless(can_queue_new_job((char *)"tom", &pjob) == FALSE, "array job allowed over limit");
@@ -112,7 +112,7 @@ END_TEST
 
 START_TEST(increment_queued_jobs_test)
   {
-  job pjob;
+  svr_job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
   users.lock();
@@ -160,7 +160,7 @@ START_TEST(decrement_queued_jobs_test)
 
   ui->user_name = strdup("tom"); 
   ui->num_jobs_queued = 1;
-  job pjob;
+  svr_job pjob;
   memset(&pjob, 0, sizeof(pjob));
 
   users.insert(ui,ui->user_name);

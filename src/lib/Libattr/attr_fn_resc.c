@@ -216,9 +216,50 @@ int decode_resc(
   /* SUCCESS */
 
   return(rv);
-  }
+  } // END decode_resc()
 
 
+
+int encode_resc_from_vector(
+
+  std::vector<resource> &resources,
+  tlist_head            *phead,
+  const char            *atname,
+  int                    mode,
+  int                    ac_perm)
+
+  {
+  int total = 0;
+  int rc;
+  
+  for (size_t i = 0; i < resources.size(); i++)
+    {
+    /*
+     * encode if sending to client or MOM with permission
+     * encode if saving and not default value
+     * encode if sending to server and not default and have permission
+     */
+    int perm = resources[i].rs_defin->rs_flags & ac_perm ;
+    int dflt = resources[i].rs_value.at_flags & ATR_VFLAG_DEFLT;
+
+    if (((mode == ATR_ENCODE_CLIENT) && perm)  ||
+        ((mode == ATR_ENCODE_MOM) && perm)     ||
+        ((mode == ATR_ENCODE_SAVE) && (dflt == 0))  ||
+        ((mode == ATR_ENCODE_SVR)  && (dflt == 0) && perm))
+      {
+      const char *rsname = resources[i].rs_defin->rs_name;
+      rc = resources[i].rs_defin->rs_encode(&resources[i].rs_value, phead, atname, rsname, mode,
+                                            ac_perm);
+
+      if (rc < 0)
+        return (rc);
+
+      total += rc;
+      }
+    }
+  
+  return(total);
+  } // END encode_resc_from_vector()
 
 
 
@@ -255,11 +296,6 @@ int encode_resc(
   int             ac_perm) /* access permissions */
 
   {
-  int     dflt;
-  int     rc;
-  int     grandtotal = 0;
-  int     perm;
-
   if (attr == NULL)
     {
     return(-1);
@@ -272,38 +308,9 @@ int encode_resc(
     }
 
   /* ok now do each separate resource */
-
   std::vector<resource> &resources = *((std::vector<resource> *)attr->at_val.at_ptr);
 
-  for (size_t i = 0; i < resources.size(); i++)
-    {
-    /*
-     * encode if sending to client or MOM with permission
-     * encode if saving and not default value
-     * encode if sending to server and not default and have permission
-     */
-
-    perm = resources[i].rs_defin->rs_flags & ac_perm ;
-    dflt = resources[i].rs_value.at_flags & ATR_VFLAG_DEFLT;
-
-    if (((mode == ATR_ENCODE_CLIENT) && perm)  ||
-        ((mode == ATR_ENCODE_MOM) && perm)     ||
-        ((mode == ATR_ENCODE_SAVE) && (dflt == 0))  ||
-        ((mode == ATR_ENCODE_SVR)  && (dflt == 0) && perm))
-      {
-
-      rsname = resources[i].rs_defin->rs_name;
-      rc = resources[i].rs_defin->rs_encode(&resources[i].rs_value, phead, atname, rsname, mode,
-                                            ac_perm);
-
-      if (rc < 0)
-        return (rc);
-
-      grandtotal += rc;
-      }
-    }
-
-  return(grandtotal);
+  return(encode_resc_from_vector(resources, phead, atname, mode, ac_perm));
   } // END encode_resc()
 
 
@@ -661,6 +668,27 @@ resource_def *find_resc_def(
 
 
 
+resource *find_resc_from_vector(
+
+  std::vector<resource> *resources,
+  resource_def          *rscdf)
+
+  {
+  resource *pr = NULL;
+
+  for (size_t i = 0; i < resources->size(); i++)
+    {
+    resource &r = resources->at(i);
+    if (!strcmp(r.rs_defin->rs_name, rscdf->rs_name))
+      {
+      pr = &r;
+      break;
+      }
+    }
+
+  return(pr);
+  } // find_resc_from_vector()
+
 
 
 /*
@@ -676,25 +704,13 @@ resource *find_resc_entry(
   resource_def  *rscdf)  /* I */
 
   {
-  resource *pr = NULL;
-
   if ((pattr == NULL) ||
       (pattr->at_val.at_ptr == NULL))
     return(NULL);
 
   std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
 
-  for (size_t i = 0; i < resources->size(); i++)
-    {
-    resource &r = resources->at(i);
-    if (!strcmp(r.rs_defin->rs_name, rscdf->rs_name))
-      {
-      pr = &r;
-      break;
-      }
-    }
-
-  return(pr);
+  return(find_resc_from_vector(resources, rscdf));
   }  /* END find_resc_entry() */
 
 

@@ -112,7 +112,7 @@ extern unsigned short pbs_rm_port;
 /* Private variables */
 
 #define TMAX_TJCACHESIZE 128
-job *TJCache[TMAX_TJCACHESIZE];
+mom_job *TJCache[TMAX_TJCACHESIZE];
 
 
 
@@ -123,7 +123,7 @@ job *TJCache[TMAX_TJCACHESIZE];
 
 void set_globid(
 
-  job                 *pjob,  /* I (modified) */
+  mom_job                 *pjob,  /* I (modified) */
   struct startjob_rtn *sjr)   /* I (not used) */
 
   {
@@ -144,7 +144,7 @@ void set_globid(
 
 int set_mach_vars(
 
-  job              *pjob,    /* pointer to the job */
+  mom_job              *pjob,    /* pointer to the job */
   struct var_table *vtab)    /* pointer to variable table */
 
   {
@@ -157,7 +157,7 @@ int set_mach_vars(
 
 char *set_shell(
 
-  job *pjob,
+  mom_job *pjob,
   struct passwd *pwdp)
 
   {
@@ -165,7 +165,7 @@ char *set_shell(
   int   i;
   char *shell;
 
-  struct array_strings *vstrs;
+  struct array_strings *vstrs = pjob->get_arst_attr(JOB_ATR_shell);
 
   /*
    * find which shell to use, one specified or the login shell
@@ -173,8 +173,7 @@ char *set_shell(
 
   shell = pwdp->pw_shell;
 
-  if ((pjob->ji_wattr[JOB_ATR_shell].at_flags & ATR_VFLAG_SET) &&
-      (vstrs = pjob->ji_wattr[JOB_ATR_shell].at_val.at_arst))
+  if (vstrs != NULL)
     {
     for (i = 0; i < vstrs->as_usedptr; ++i)
       {
@@ -221,7 +220,7 @@ void scan_for_terminated(void) /* linux */
   {
   int           exiteval = 0;
   pid_t         pid;
-  job          *pjob = NULL;
+  mom_job          *pjob = NULL;
   int           statloc;
   unsigned int  momport = 0;
 
@@ -241,7 +240,7 @@ void scan_for_terminated(void) /* linux */
 
   if (mom_get_sample() == PBSE_NONE)
     {
-    std::list<job *>::reverse_iterator iter;
+    std::list<mom_job *>::reverse_iterator iter;
 
     // get a list of jobs in start time order, first to last
     for (iter = alljobs_list.rbegin(); iter != alljobs_list.rend(); iter++)
@@ -249,7 +248,7 @@ void scan_for_terminated(void) /* linux */
       pjob = *iter;
 
       if ((pjob->ji_stats_done == true) || 
-          (pjob->ji_qs.ji_state < JOB_STATE_RUNNING))
+          (pjob->get_state() < JOB_STATE_RUNNING))
         continue;
 
 #ifdef USESAVEDRESOURCES
@@ -258,9 +257,9 @@ void scan_for_terminated(void) /* linux */
        ** after a mom restart where process completed while we were gone
         */
       
-      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+      for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
         {
-        task *ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks.at(i);
 
         if (ptask->ti_flags & TI_FLAGS_RECOVERY)
           {
@@ -269,7 +268,7 @@ void scan_for_terminated(void) /* linux */
             snprintf(log_buffer, sizeof(log_buffer), "Found match for recovering job task for sid=%d",
               ptask->ti_qs.ti_sid);
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
             }
           
           update_stats = FALSE;
@@ -296,7 +295,7 @@ void scan_for_terminated(void) /* linux */
 
   while ((pid = waitpid(-1, &statloc, WNOHANG)) > 0)
     {
-    std::list<job *>::reverse_iterator iter;
+    std::list<mom_job *>::reverse_iterator iter;
     task *matching_task = NULL;
 
     if (LOGLEVEL >= 8)
@@ -323,7 +322,7 @@ void scan_for_terminated(void) /* linux */
             "Checking to see if exiting child pid '%d' is a match for special mom task with pid=%d",
             pid, pjob->ji_momsubt);
 
-          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
           }
 
         if (pid == pjob->ji_momsubt)
@@ -332,9 +331,9 @@ void scan_for_terminated(void) /* linux */
             {
             snprintf(log_buffer, sizeof(log_buffer),
               "The exiting child is a match of special subtask with pid=%d for job %s",
-              pid, pjob->ji_qs.ji_jobid);
+              pid, pjob->get_jobid());
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
             }
 
           break;
@@ -342,9 +341,9 @@ void scan_for_terminated(void) /* linux */
         }
 
       /* locate task with associated process id */
-      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+      for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
         {
-        task *ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks.at(i);
 
         if ((ptask->ti_qs.ti_sid == pid) &&
             (ptask->ti_qs.ti_status != TI_STATE_EXITED))
@@ -358,7 +357,7 @@ void scan_for_terminated(void) /* linux */
               i,
               pid);
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
             }
 
           // If this is the top level task then mark the job done.
@@ -398,7 +397,7 @@ void scan_for_terminated(void) /* linux */
 
     if (pid == pjob->ji_momsubt)
       {
-      int (*old_postfunc)(struct job *pjob, int exitcode) = pjob->ji_mompost;
+      int (*old_postfunc)(struct mom_job *pjob, int exitcode) = pjob->ji_mompost;
       /* PID matches job mom subtask */
 
       /* NOTE:  both ji_momsubt and ji_mompost normally set in routine
@@ -419,7 +418,7 @@ void scan_for_terminated(void) /* linux */
         log_record(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "Job has no postprocessing routine registered");
         }
 
@@ -432,7 +431,7 @@ void scan_for_terminated(void) /* linux */
         momport = pbs_rm_port;
         }
 
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      mom_job_save(pjob, momport);
 
       continue;
       }  /* END if (pid == pjob->ji_momsubt) */
@@ -446,7 +445,7 @@ void scan_for_terminated(void) /* linux */
       {
       sprintf(log_buffer, "pid %d harvested for job %s, task %d, exitcode=%d",
               pid,
-              pjob->ji_qs.ji_jobid,
+              pjob->get_jobid(),
               matching_task->ti_qs.ti_task,
               exiteval);
 
@@ -470,11 +469,11 @@ void scan_for_terminated(void) /* linux */
 
     sprintf(log_buffer, "%s: job %s task %d terminated, sid=%d",
       __func__,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       matching_task->ti_qs.ti_task,
       matching_task->ti_qs.ti_sid);
 
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
     exiting_tasks = 1;
     }  /* END while ((pid = waitpid(-1,&statloc,WNOHANG)) > 0) */

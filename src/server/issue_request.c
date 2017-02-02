@@ -145,7 +145,7 @@ int issue_Drequest(int conn, struct batch_request  *request);
 
 int relay_to_mom(
 
-  job            **pjob_ptr,
+  svr_job        **pjob_ptr,
   batch_request   *request, /* the request to send */
   void           (*func)(struct work_task *))
 
@@ -155,7 +155,7 @@ int relay_to_mom(
   int             local_errno = 0;
   pbs_net_t       addr;
   unsigned short  port;
-  job            *pjob = *pjob_ptr;
+  svr_job        *pjob = *pjob_ptr;
   char            jobid[PBS_MAXSVRJOBID + 1];
   char           *job_momname = NULL;
 
@@ -163,20 +163,20 @@ int relay_to_mom(
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   std::string     node_name;
  
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+  if (pjob->get_str_attr(JOB_ATR_exec_host) == NULL)
     {
     snprintf(log_buf, sizeof(log_buf),
       "attempting to send a request to %s's mom but no exec_host list?",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_err(PBSE_BADSTATE, __func__, log_buf);
 
     return(PBSE_BADSTATE);
     }
 
   /* if MOM is down don't try to connect */
-  addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-  port = pjob->ji_qs.ji_un.ji_exect.ji_momport;
-  job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+  addr = pjob->get_ji_momaddr();
+  port = pjob->get_ji_momport();
+  job_momname = strdup(pjob->get_str_attr(JOB_ATR_exec_host));
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
 
@@ -197,7 +197,7 @@ int relay_to_mom(
 
   if (LOGLEVEL >= 7)
     {
-    char *tmp = netaddr_pbs_net_t(pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+    char *tmp = netaddr_pbs_net_t(pjob->get_ji_momaddr());
     sprintf(log_buf, "momaddr=%s",tmp);
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
@@ -209,7 +209,7 @@ int relay_to_mom(
 
   node->unlock_node(__func__, "after svr_connect", LOGLEVEL);
   
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  strcpy(jobid, pjob->get_jobid());
   unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
   *pjob_ptr = NULL;
 

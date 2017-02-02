@@ -1083,7 +1083,7 @@ int set_gpu_req_modes(
     
     std::vector<unsigned int>& gpu_indices, 
     int gpu_flags,
-    job *pjob)
+    mom_job *pjob)
 
   {
   pbs_attribute *pattr;
@@ -1092,7 +1092,7 @@ int set_gpu_req_modes(
   std::vector<unsigned int>::iterator it = gpu_indices.begin();
 
   /* Is the a -l resource request or a -L resource request */
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if (have_incompatible_dash_l_resource(pattr) == true)
     {
     rc = set_gpu_modes(gpu_indices, gpu_flags);
@@ -1101,12 +1101,11 @@ int set_gpu_req_modes(
   else
     {
     /* This is a -L resource request */
-    complete_req *cr;
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+    complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
     if (cr == NULL)
       {
       /* something isn't right. return an error */
-      sprintf(log_buffer, "failed to get -L information: %s", pjob->ji_qs.ji_jobid);
+      sprintf(log_buffer, "failed to get -L information: %s", pjob->get_jobid());
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       rc = PBSE_IVALREQ;
       }
@@ -1141,7 +1140,7 @@ int set_gpu_req_modes(
 
           if (mode == gpu_unknown)
             {
-            sprintf(log_buffer, "gpu mode unknown: %s", pjob->ji_qs.ji_jobid);
+            sprintf(log_buffer, "gpu mode unknown: %s", pjob->get_jobid());
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
             return(PBSE_IVALREQ);
             }
@@ -1176,7 +1175,7 @@ int set_gpu_req_modes(
  */
 int setup_gpus_for_job(
 
-  job  *pjob) /* I */
+  mom_job  *pjob) /* I */
 
   {
   char *gpu_str;
@@ -1189,24 +1188,24 @@ int setup_gpus_for_job(
     return(PBSE_NONE);
 
   /* if there are no gpus, do nothing */
-  if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0)
+  if (pjob->is_attr_set(JOB_ATR_exec_gpus) == false)
     return(PBSE_NONE);
 
   /* if there are no gpu flags, do nothing */
-  if ((pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags & ATR_VFLAG_SET) == 0)
+  if (pjob->is_attr_set(JOB_ATR_gpu_flags) == false)
     return(PBSE_NONE);
 
-  gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+  gpu_str = pjob->get_str_attr(JOB_ATR_exec_gpus);
 
   if (gpu_str == NULL)
     return(PBSE_NONE);
 
-  gpu_flags = pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long;
+  gpu_flags = pjob->get_long_attr(JOB_ATR_gpu_flags);
 
   if (LOGLEVEL >= 7)
     {
 		sprintf(log_buffer, "job %s has exec_gpus %s gpu_flags %d",
-						pjob->ji_qs.ji_jobid,
+						pjob->get_jobid(),
 						gpu_str,
 						gpu_flags);
 
@@ -1227,7 +1226,7 @@ int setup_gpus_for_job(
   rc = set_gpu_req_modes(gpu_indices, gpu_flags, pjob);
   if (rc != PBSE_NONE)
     {
-    sprintf(log_buffer, "Failed to set gpu modes for job %s. error %d", pjob->ji_qs.ji_jobid, rc);
+    sprintf(log_buffer, "Failed to set gpu modes for job %s. error %d", pjob->get_jobid(), rc);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 

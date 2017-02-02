@@ -512,10 +512,9 @@ u_long get_energy_from_cray_file(const char *path,job *pjob)
   while(fgets(buff,sizeof(buff),pLog) != NULL)
     {
     rur_log_entry entry;
-    if(entry.parse_line(buff))
+    if (entry.parse_line(buff))
       {
-      //if(entry.jobid_matches(pjob->ji_globid))
-      if(entry.jobid_matches(pjob->ji_qs.ji_jobid))
+      if (entry.jobid_matches(pjob->get_jobid()))
         {
         joules += entry.get_joules();
         }
@@ -587,10 +586,10 @@ std::string get_path_to_rur_log(
 
 void get_energy_used(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
-  pbs_attribute *resc_used = &pjob->ji_wattr[JOB_ATR_resc_used];
+  pbs_attribute *resc_used = pjob->get_attr(JOB_ATR_resc_used);
   resource_def  *resc_def = NULL;
   resource      *pres = NULL;
 

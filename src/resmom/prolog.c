@@ -137,8 +137,8 @@ extern unsigned int pbs_rm_port;
 
 /* external prototypes */
 
-extern int pe_input(char *);
-extern void encode_used(job *, int, Json::Value *, tlist_head *);
+extern int pe_input(const char *);
+extern void encode_used(mom_job *, int, Json::Value *, tlist_head *);
 #ifdef ENABLE_CSA
 extern void add_wkm_end(uint64_t, int64_t, char *);
 
@@ -168,7 +168,7 @@ const char *PPEType[] =
 
 static char *resc_to_string(
 
-  job       *pjob,      /* I (optional - if specified, report total job resources) */
+  mom_job   *pjob,      /* I (optional - if specified, report total job resources) */
   int        aindex,    /* I which pbs_attribute to convert */
   char      *buf,       /* O the buffer into which to convert */
   int        buflen)    /* I the length of the above buffer */
@@ -185,7 +185,7 @@ static char *resc_to_string(
 
   *buf = '\0';
 
-  pattr = &pjob->ji_wattr[aindex];
+  pattr = pjob->get_attr(aindex);
 
   /* pack the list of resources into svlist */
 
@@ -266,7 +266,7 @@ static char *resc_to_string(
 
 static int pelog_err(
 
-  job        *pjob,  /* I */
+  mom_job    *pjob,  /* I */
   const char *file,  /* I */
   int         n,     /* I - exit code */
   const char *text)  /* I */
@@ -404,7 +404,7 @@ int check_if_pelog_exists(
   int          pelog_size,
   struct stat &sbuf,
   const char  *specpelog,
-  job         &pjob,
+  mom_job     &pjob,
   bool         jobtypespecified)
 
   {
@@ -433,7 +433,7 @@ int check_if_pelog_exists(
         sprintf(log_buffer, "%s script '%s' for job %s does not exist (cwd: %s,pid: %d)",
           PPEType[which],
           (pelog[0] != '\0') ? pelog : "NULL",
-          pjob.ji_qs.ji_jobid,
+          pjob.get_jobid(),
           getcwd(tmpBuf, sizeof(tmpBuf)),
           getpid());
 
@@ -450,13 +450,12 @@ int check_if_pelog_exists(
         if (LOGLEVEL >= 8)
           {
           sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - no user epilog",
-            pjob.ji_qs.ji_jobid);
+            pjob.get_jobid());
 
           log_err(-1, __func__, log_buffer);
           }
 
-        add_wkm_end(pjob.ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
-            pjob.ji_qs.ji_un.ji_momt.ji_exitstat, pjob.ji_qs.ji_jobid);
+        add_wkm_end(pjob.get_ll_attr(JOB_ATR_pagg_id), pjob.get_mom_exitstat(), pjob.get_jobid());
         }
 
 #endif /* ENABLE_CSA */
@@ -489,7 +488,7 @@ int check_pelog_permissions(
     
   struct stat &sbuf,
   int          reduceprologchecks,
-  job         *pjob,
+  mom_job     *pjob,
   const char  *pelog,
   int          which)
 
@@ -507,7 +506,7 @@ int check_pelog_permissions(
     if ((which == PE_PROLOGUSERJOB) ||
         (which == PE_EPILOGUSERJOB))
       {
-      if ((sbuf.st_uid != pjob->ji_qs.ji_un.ji_momt.ji_exuid) || 
+      if ((sbuf.st_uid != pjob->get_exuid()) || 
           (!S_ISREG(sbuf.st_mode)) ||
           ((sbuf.st_mode & (S_IRUSR | S_IXUSR)) != (S_IRUSR | S_IXUSR)) ||
           (sbuf.st_mode & (S_IWGRP | S_IWOTH)))
@@ -547,7 +546,7 @@ int check_pelog_permissions(
 
 char *get_complete_hostlist(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   std::string complete_hostlist;
@@ -580,7 +579,7 @@ char *get_complete_hostlist(
 void setup_pelog_arguments(
 
   char   *pelog,
-  job    *pjob,
+  mom_job    *pjob,
   int     which,
   char  **arg)
 
@@ -593,21 +592,21 @@ void setup_pelog_arguments(
   if (multi_mom)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
-      path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_SCRIPT_SUFFIX);
+      path_jobs, pjob->get_fileprefix(), pbs_rm_port, JOB_SCRIPT_SUFFIX);
     }
   else
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+      path_jobs, pjob->get_fileprefix(), JOB_SCRIPT_SUFFIX);
     }
 
 
   arg[0] = pelog;
 
-  arg[1] = pjob->ji_qs.ji_jobid;
-  arg[2] = pjob->ji_wattr[JOB_ATR_euser].at_val.at_str;
-  arg[3] = pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str;
-  arg[4] = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
+  arg[1] = strdup(pjob->get_jobid());
+  arg[2] = strdup(pjob->get_str_attr(JOB_ATR_euser));
+  arg[3] = strdup(pjob->get_str_attr(JOB_ATR_egroup));
+  arg[4] = strdup(pjob->get_str_attr(JOB_ATR_jobname));
 
   /* NOTE:  inside child */
 
@@ -620,15 +619,15 @@ void setup_pelog_arguments(
     char *exit_stat = (char *)calloc(1, 12);
 
     sprintf(sid, "%ld",
-            pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
+            pjob->get_long_attr(JOB_ATR_session_id));
     sprintf(exit_stat,"%d",
-            pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
+            pjob->get_mom_exitstat());
 
     arg[5] = sid;
     arg[6] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[7] = strdup(resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used)));
-    arg[8] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
-    arg[9] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
+    arg[8] = strdup(pjob->get_str_attr(JOB_ATR_in_queue));
+    arg[9] = strdup(pjob->get_str_attr(JOB_ATR_account));
     arg[10] = exit_stat;
     arg[11] = strdup(namebuf);
     arg[12] = NULL;
@@ -640,8 +639,8 @@ void setup_pelog_arguments(
     /* prologue */
     int last_arg = 9;
     arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
-    arg[6] = pjob->ji_wattr[JOB_ATR_in_queue].at_val.at_str;
-    arg[7] = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
+    arg[6] = strdup(pjob->get_str_attr(JOB_ATR_in_queue));
+    arg[7] = strdup(pjob->get_str_attr(JOB_ATR_account));
     arg[8] = strdup(namebuf);
 
     if (which == PE_PRESETUPPROLOG)
@@ -675,7 +674,7 @@ void setup_pelog_arguments(
 
 void setup_pelog_environment(
     
-  job *pjob,
+  mom_job *pjob,
   int  which)
 
   {
@@ -691,7 +690,7 @@ void setup_pelog_environment(
    */
 
   r = find_resc_entry(
-        &pjob->ji_wattr[JOB_ATR_resource],
+        pjob->get_attr(JOB_ATR_resource),
         find_resc_def(svr_resc_def, (char *)"nodes", svr_resc_size));
 
   if (r != NULL)
@@ -744,7 +743,7 @@ void setup_pelog_environment(
     }  /* END if (r != NULL) */
 
   r = find_resc_entry(
-        &pjob->ji_wattr[JOB_ATR_resource],
+        pjob->get_attr(JOB_ATR_resource),
         find_resc_def(svr_resc_def, (char *)"gres", svr_resc_size));
 
   if (r != NULL)
@@ -753,7 +752,7 @@ void setup_pelog_environment(
     put_env_var("PBS_RESOURCE_GRES", r->rs_value.at_val.at_str);
     }
 
-  char *cpu_clock = arst_string("PBS_CPUCLOCK",&pjob->ji_wattr[JOB_ATR_variables]);
+  char *cpu_clock = arst_string("PBS_CPUCLOCK", pjob->get_attr(JOB_ATR_variables));
   if (cpu_clock != NULL)
     {
     cpu_clock = strchr(cpu_clock,'=');
@@ -791,7 +790,7 @@ void setup_pelog_environment(
     {
     sprintf(buf, "%s/%s",
       path_aux,
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     put_env_var("PBS_NODEFILE", buf);
     }
 
@@ -808,7 +807,7 @@ void setup_pelog_environment(
   int VarIsSet = 0;
   int j;
 
-  vstrs = pjob->ji_wattr[JOB_ATR_variables].at_val.at_arst;
+  vstrs = pjob->get_arst_attr(JOB_ATR_variables);
 
   for (j = 0;j < vstrs->as_usedptr;++j)
     {
@@ -881,7 +880,7 @@ void setup_pelog_environment(
 
 void setup_pelog_outputs(
     
-  job  *pjob,
+  mom_job  *pjob,
   int   pe_io_type,
   int   delete_job,
   char *specpelog)
@@ -912,29 +911,23 @@ void setup_pelog_outputs(
       {
       case -1:
 
-        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
-                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
+        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND, pjob->get_exgid());
         fds1 = (fds2 < 0)?-1:dup(fds2);
 
         break;
 
       case 1:
 
-        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
-                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
-
+        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND, pjob->get_exgid());
         fds2 = (fds1 < 0)?-1:dup(fds1);
 
         break;
 
       default:
 
-        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND,
-                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+        fds1 = open_std_file(pjob, StdOut, O_WRONLY | O_APPEND, pjob->get_exgid());
+        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND, pjob->get_exgid());
 
-        fds2 = open_std_file(pjob, StdErr, O_WRONLY | O_APPEND,
-                             pjob->ji_qs.ji_un.ji_momt.ji_exgid);
         break;
       }
     }
@@ -1068,7 +1061,7 @@ void close_handles_as_child()
 void change_directory_as_needed(
 
   int  which,
-  job *pjob)
+  mom_job *pjob)
 
   {
   if ((which == PE_PROLOGUSER) || 
@@ -1119,7 +1112,7 @@ void change_directory_as_needed(
 
 void prepare_and_run_pelog_as_child(
 
-  job  *pjob,
+  mom_job  *pjob,
   int   pe_io_type,
   int   delete_job,
   char *specpelog,
@@ -1158,11 +1151,11 @@ void prepare_and_run_pelog_as_child(
     char resc_list[2048];
     fprintf(stderr, "PELOGINFO:  script:'%s'  jobid:'%s'  euser:'%s'  egroup:'%s'  jobname:'%s' SSID:'%ld'  RESC:'%s'\n",
             pelog,
-            pjob->ji_qs.ji_jobid,
-            pjob->ji_wattr[JOB_ATR_euser].at_val.at_str,
-            pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str,
-            pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str,
-            pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long,
+            pjob->get_jobid(),
+            pjob->get_str_attr(JOB_ATR_euser),
+            pjob->get_str_attr(JOB_ATR_egroup),
+            pjob->get_str_attr(JOB_ATR_jobname),
+            pjob->get_long_attr(JOB_ATR_session_id),
             resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     }
 
@@ -1225,7 +1218,7 @@ void prepare_and_run_pelog_as_child(
 
 int get_child_exit_status(
 
-  job  *pjob,
+  mom_job  *pjob,
   char *pelog,
   int   which)
 
@@ -1297,13 +1290,12 @@ int get_child_exit_status(
     if (LOGLEVEL >= 8)
       {
       sprintf(log_buffer, "%s calling add_wkm_end from run_pelog() - after user epilog",
-              pjob->ji_qs.ji_jobid);
+              pjob->get_jobid());
 
       log_err(-1, __func__, log_buffer);
       }
 
-    add_wkm_end(pjob->ji_wattr[JOB_ATR_pagg_id].at_val.at_ll,
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat, pjob->ji_qs.ji_jobid);
+    add_wkm_end(pjob->get_ll_attr(JOB_ATR_pagg_id), pjob->get_mom_exitstat(), pjob->get_jobid());
     }
 
 #endif /* ENABLE_CSA */
@@ -1402,7 +1394,7 @@ int run_pelog(
 
   int   which,      /* I (one of PE_*) */
   char *specpelog,  /* I - script path */
-  job  *pjob,       /* I - associated job */
+  mom_job  *pjob,       /* I - associated job */
   int   pe_io_type, /* I - io type */
   int   delete_job)  /* I - called before a job being deleted (purge -p) */
 
@@ -1421,7 +1413,7 @@ int run_pelog(
 
   int               rc;
 
-  char             *ptr;
+  const char       *ptr;
 
   int               pipes[2];
   int               kid_read;
@@ -1436,7 +1428,7 @@ int run_pelog(
     return(0);
     }
 
-  ptr = pjob->ji_wattr[JOB_ATR_jobtype].at_val.at_str;
+  ptr = pjob->get_str_attr(JOB_ATR_jobtype);
 
   if (ptr != NULL)
     {
@@ -1495,7 +1487,7 @@ int run_pelog(
         {
         snprintf(log_buffer,sizeof(log_buffer),
           "setgroups() for UID = %lu failed: %s\n",
-          (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+          (unsigned long)pjob->get_exuid(),
           strerror(errno));
       
         log_err(errno, __func__, log_buffer);
@@ -1515,12 +1507,12 @@ int run_pelog(
       return(-1);
       }
     
-    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != 0)
+    if (setegid(pjob->get_exgid()) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "setegid(%lu) for UID = %lu failed: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        (unsigned long)pjob->get_exgid(),
+        (unsigned long)pjob->get_exuid(),
         strerror(errno));
       
       log_err(errno, __func__, log_buffer);
@@ -1531,11 +1523,11 @@ int run_pelog(
       return(-1);
       }
     
-    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != 0)
+    if (setuid_ext(pjob->get_exuid(), TRUE) != 0)
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "seteuid(%lu) failed: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        (unsigned long)pjob->get_exuid(),
         strerror(errno));
       
       log_err(errno, __func__, log_buffer);
@@ -1577,7 +1569,7 @@ int run_pelog(
     sprintf(log_buffer,"running %s script '%s' for job %s",
       PPEType[which],
       (pelog[0] != '\0') ? pelog : "NULL",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
 
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
@@ -1592,7 +1584,7 @@ int run_pelog(
     return(rc);
     }
 
-  fd_input = pe_input(pjob->ji_qs.ji_jobid);
+  fd_input = pe_input(pjob->get_jobid());
 
   if (fd_input < 0)
     {

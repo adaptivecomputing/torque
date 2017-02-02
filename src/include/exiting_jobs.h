@@ -114,8 +114,8 @@ typedef struct job_exiting_retry_info
 
 
 
-int   remove_job_from_exiting_list(job **pjob);
-int   record_job_as_exiting(job *pjob);
+int   remove_job_from_exiting_list(svr_job **pjob);
+int   record_job_as_exiting(svr_job *pjob);
 void *inspect_exiting_jobs(void *vp);
 
 

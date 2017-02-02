@@ -22,7 +22,7 @@ extern int log_event_counter;
 extern bool ms_val;
 extern mom_server mom_servers[PBS_MAXSERVER];
 extern int ServerStatUpdateInterval;
-int get_reply_stream(job *pjob);
+int get_reply_stream(mom_job *pjob);
 extern time_t LastServerUpdateTime;
 extern time_t time_now;
 extern bool ForceServerUpdate;
@@ -35,34 +35,34 @@ extern bool ForceServerUpdate;
 #define IM_FAILURE                 -1
 
 
-int process_end_job_error_reply(job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
-void create_contact_list(job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
-int handle_im_poll_job_response(struct tcp_chan *chan, job &pjob, int nodeidx, hnodent *np);
+int process_end_job_error_reply(mom_job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
+void create_contact_list(mom_job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
+int handle_im_poll_job_response(struct tcp_chan *chan, mom_job &pjob, int nodeidx, hnodent *np);
 received_node *get_received_node_entry(char *str);
-bool is_nodeid_on_this_host(job *pjob, tm_node_id nodeid);
-task *find_task_by_pid(job *pjob, int pid);
+bool is_nodeid_on_this_host(mom_job *pjob, tm_node_id nodeid);
+task *find_task_by_pid(mom_job *pjob, int pid);
+int im_join_job_as_sister(struct tcp_chan *chan, char *jobid, struct sockaddr_in *addr, const char *cookie, tm_event_t event, int fromtask, int command, int job_radix);
 int readit(int, int);
 
 #ifdef PENABLE_LINUX_CGROUPS
-int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
+int get_req_and_task_index_from_local_rank(mom_job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
 
 extern bool per_task;
 
 
 START_TEST(test_get_req_and_task_index_from_local_rank)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob = new mom_job();
   complete_req cr;
   unsigned int req_index = 0;
   unsigned int task_index = 0;
 
   // If this attribute isn't set, we should do nothing
-  pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long = 2;
+  pjob->set_long_attr(JOB_ATR_request_version, 2);
   fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
 
-  pjob->ji_wattr[JOB_ATR_request_version].at_flags = ATR_VFLAG_SET;
-  pjob->ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
-  pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob->set_attr(JOB_ATR_request_version);
+  pjob->set_creq_attr(JOB_ATR_req_information, &cr);
   per_task = false; // Setting this means I should get PBSE_NO_PROCESS_RANK
   fail_unless(get_req_and_task_index_from_local_rank(pjob, 1, req_index, task_index) == PBSE_NO_PROCESS_RANK);
 
@@ -76,7 +76,7 @@ END_TEST
 
 START_TEST(test_get_reply_stream)
   {
-  job pjob;
+  mom_job pjob;
   pjob.ji_hosts = NULL;
 
   // Make sure we don't segfault
@@ -88,10 +88,8 @@ END_TEST
 
 START_TEST(test_find_task_by_pid)
   {
-  job   pjob;
+  mom_job   pjob;
   task *tasks[10];
-
-  pjob.ji_tasks = new std::vector<task *>();
 
   for (int i = 0; i < 10; i++)
     {
@@ -115,7 +113,7 @@ END_TEST
 
 START_TEST(is_nodeid_on_this_host_test)
   {
-  job pjob;
+  mom_job pjob;
 
   pjob.ji_vnods = (vnodent *)calloc(2, sizeof(vnodent));
   pjob.ji_vnods[0].vn_host = (hnodent *)0x0011;
@@ -134,7 +132,7 @@ END_TEST
 
 START_TEST(test_process_end_job_error_reply)
   {
-  job                *pjob = (job *)calloc(1, sizeof(job));
+  mom_job                *pjob = new mom_job();
   hnodent             np;
   struct sockaddr_in  psock;
 
@@ -147,7 +145,7 @@ START_TEST(test_process_end_job_error_reply)
   fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == -1);
 
   pjob->ji_numnodes = 4;
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
+  pjob->set_svrflags(JOB_SVFLG_HERE);
   log_event_counter = 0;
   fail_unless(process_end_job_error_reply(pjob, &np, &psock, PBSE_UNKJOBID) == 0);
   fail_unless(log_event_counter == 1);
@@ -158,7 +156,7 @@ END_TEST
 
 START_TEST(handle_im_poll_job_response_test)
   {
-  job             *pjob = (job *)calloc(1, sizeof(job));
+  mom_job             *pjob = new mom_job();
   struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
   hnodent         *np   = (hnodent *)calloc(1, sizeof(hnodent));
   pjob->ji_resources = (noderes *)calloc(10, sizeof(noderes));
@@ -167,7 +165,7 @@ START_TEST(handle_im_poll_job_response_test)
   np->hn_node = 4;
 
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == -1);
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+  pjob->set_svrflags(JOB_SVFLG_HERE);
 
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);
   fail_unless(pjob->ji_resources[3].nr_mem < pjob->ji_resources[3].nr_vmem);
@@ -176,13 +174,12 @@ END_TEST
 
 START_TEST(handle_im_obit_task_response_test)
   {
-  job             *pjob = (job *)calloc(1, sizeof(job));
+  mom_job             *pjob = new mom_job();
   struct tcp_chan *chan = (struct tcp_chan *)calloc(1, sizeof(struct tcp_chan));
   task             *ptask = new task();
   ptask->ti_qs.ti_task = TM_INIT;
   ptask->ti_chan = chan;
-  pjob->ji_tasks = new std::vector<task *>();
-  pjob->ji_tasks->push_back(ptask);
+  pjob->ji_tasks.push_back(ptask);
 
   disrsi_return_index = 500;
   fail_unless(handle_im_obit_task_response(chan,pjob,TM_NULL_TASK,42) == IM_FAILURE);
@@ -204,14 +201,13 @@ END_TEST
 
 START_TEST(create_contact_list_test)
   {
-  job pjob;
+  mom_job pjob;
   std::set<int> contact_list;
   struct sockaddr_in addr;
 
-  memset(&pjob, 0, sizeof(pjob));
   memset(&addr, 0, sizeof(addr));
 
-  pjob.ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
+  pjob.set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
   addr.sin_addr.s_addr = htonl(100);
   pjob.ji_numnodes = 3;
   pjob.ji_sisters = (hnodent *)calloc(3, sizeof(hnodent));
@@ -226,7 +222,7 @@ START_TEST(create_contact_list_test)
   fail_unless(contact_list.size() == 2);
   contact_list.clear();
 
-  pjob.ji_qs.ji_svrflags &= ~JOB_SVFLG_INTERMEDIATE_MOM;
+  pjob.set_svrflags(pjob.get_svrflags() & ~JOB_SVFLG_INTERMEDIATE_MOM);
   pjob.ji_hosts = pjob.ji_sisters;
   pjob.ji_sisters = NULL;
 
@@ -270,11 +266,10 @@ START_TEST(task_save_test)
   {
   int result = 0;
   struct task test_task;
-  struct job test_job;
+  mom_job test_job;
   const char *file_prefix = "prefix";
 
   memset(&test_task, 0, sizeof(test_task));
-  memset(&test_job, 0, sizeof(test_job));
 
   result = task_save(NULL);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL input fail");
@@ -282,13 +277,11 @@ START_TEST(task_save_test)
   result = task_save(&test_task);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL pointer to owning job fail");
 
-  strncpy(test_job.ji_qs.ji_fileprefix,
-          file_prefix,
-          sizeof(test_job.ji_qs.ji_fileprefix) - 1);
+  test_job.set_fileprefix(file_prefix);
 
   strcpy(test_task.ti_qs.ti_parentjobid, "jobid");
   
-  extern job *mock_mom_find_job_return;
+  extern mom_job *mock_mom_find_job_return;
   mock_mom_find_job_return = NULL;
   result = task_save(&test_task);
   fail_unless(result == -1, "task_save fail");
@@ -481,7 +474,7 @@ END_TEST
 START_TEST(tm_spawn_request_test)
   {
   struct tcp_chan test_chan;
-  struct job test_job;
+  struct mom_job test_job;
   struct hnodent test_hnodent;
   char *test_cookie = strdup("cookie");
   int reply = 0;
@@ -492,7 +485,6 @@ START_TEST(tm_spawn_request_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_hnodent, 0, sizeof(test_hnodent));
 
-  test_job.ji_tasks = new std::vector<task *>();
   test_job.ji_vnods = (vnodent *)calloc(3, sizeof(vnodent));
 
   result = tm_spawn_request(&test_chan,
@@ -512,8 +504,7 @@ END_TEST
 
 START_TEST(pbs_task_create_test)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
-  pjob->ji_tasks = new std::vector<task *>();
+  mom_job *pjob = new mom_job();
 
   /* Check ranning into reserved task IDs */
   pjob->ji_taskid = TM_ADOPTED_TASKID_BASE + 1;

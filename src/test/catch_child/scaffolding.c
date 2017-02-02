@@ -29,7 +29,7 @@ bool check_rur = true;
 
 char         mom_alias[PBS_MAXHOSTNAME + 1];
 
-std::list<job *>              alljobs_list;
+std::list<mom_job *>              alljobs_list;
 std::vector<exiting_job_info> exiting_job_list;
 
 const char *PMOMCommand[] =
@@ -83,7 +83,7 @@ int func_num = 0;
 int test_exit_called = 0;
 int ran_one = 0;
 int the_sock = 0;
-job *lastpjob = NULL;
+mom_job *lastpjob = NULL;
 int is_login_node;
 
 
@@ -102,7 +102,7 @@ void clear_down_mom_servers(void)
 
 void *get_next(list_link  pl, char     *file, int      line)
   {
-  job *pjob = NULL;
+  mom_job *pjob = NULL;
   struct brp_status *stats = NULL;
   svrattrl *sattr = NULL;
   task *ptask = NULL;
@@ -114,20 +114,19 @@ void *get_next(list_link  pl, char     *file, int      line)
       switch (ran_one)
         {
       case 0:
-        pjob = (job *)calloc(1, sizeof(job));
+        pjob = (mom_job *)calloc(1, sizeof(mom_job));
         break;
       case 1:
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_OBIT;
+        pjob = (mom_job *)calloc(1, sizeof(mom_job));
+        pjob->set_substate(JOB_SUBSTATE_OBIT);
         pjob->ji_momhandle = the_sock;
         if (tc == 4)
           {
-          pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long = 0;
+          pjob->set_long_attr(JOB_ATR_interactive, 0);
           }
         else if (tc == 9)
           {
-          pjob->ji_wattr[JOB_ATR_interactive].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long = 0;
+          pjob->set_long_attr(JOB_ATR_interactive, 0);
           }
         else if (tc == 10)
           {
@@ -145,19 +144,19 @@ void *get_next(list_link  pl, char     *file, int      line)
         {
       case 1:
         if (((tc >= 4) && (tc <= 11)) || (tc == 12) || (tc == 13) || (tc == 14))
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
         break;
       case 2:
         if (tc != 2)
           {
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
           }
         break;
       case 3:
-        pjob = (job *)calloc(1, sizeof(job));
+        pjob = (mom_job *)calloc(1, sizeof(mom_job));
         if (tc != 1)
           {
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+          pjob->set_substate(JOB_SUBSTATE_PREOBIT);
           if ((tc == 10) || (tc == 11) || (tc == 12) || (tc == 13) || (tc == 14))
             {
             pjob->ji_hosts = (hnodent *)calloc(2, sizeof(hnodent));
@@ -165,19 +164,17 @@ void *get_next(list_link  pl, char     *file, int      line)
             strcpy(pjob->ji_hosts[0].hn_host, "myserver");
             if (tc == 11)
               {
-              pjob->ji_wattr[JOB_ATR_interactive].at_flags |= ATR_VFLAG_SET;
-              pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long = 1;
+              pjob->set_long_attr(JOB_ATR_interactive, 1);
               }
             else if (tc == 13)
               {
-              pjob->ji_wattr[JOB_ATR_interactive].at_flags |= ATR_VFLAG_SET;
-              pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long = 1;
+              pjob->set_long_attr(JOB_ATR_interactive, 1);
               }
             }
           }
         else
           {
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+          pjob->set_substate(JOB_SUBSTATE_EXITING);
           }
         pjob->ji_momhandle = the_sock;
         break;
@@ -196,8 +193,8 @@ void *get_next(list_link  pl, char     *file, int      line)
           }
         else
           {
-          pjob = (job *)calloc(1, sizeof(job));
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_PREOBIT;
+          pjob = new mom_job();
+          pjob->set_substate(JOB_SUBSTATE_PREOBIT);
           pjob->ji_momhandle = the_sock;
           }
         break;
@@ -251,19 +248,19 @@ void *get_next(list_link  pl, char     *file, int      line)
           /*
            * Case 0 - 370 to 392
            */
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
           }
         else if (tc == 2)
           {
           /* setenv
            * expected exit 826
            */
-          pjob = (job *)calloc(1, sizeof(job));
-          pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
-          pjob->ji_wattr[1].at_val.at_long = 3;
+          pjob = new mom_job();
+          pjob->set_attr(JOB_ATR_Cookie);
+          pjob->set_mom_exitstat(TM_NULL_TASK);
+          pjob->set_svrflags(JOB_SVFLG_HERE);
+          pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
+          pjob->set_long_attr(1, 3);
           pjob->ji_sampletim = 1;
           break;
           }
@@ -278,7 +275,7 @@ void *get_next(list_link  pl, char     *file, int      line)
           /* Line 372
            * expected return at 403
            */
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
           pjob->ji_flags |= MOM_CHECKPOINT_ACTIVE;
           }
         else if (tc == 2)
@@ -296,7 +293,7 @@ void *get_next(list_link  pl, char     *file, int      line)
           /* Line 372
            * expected return at 415
            */
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
           pjob->ji_flags |= MOM_CHECKPOINT_POST;
           }
         else if (tc == 2)
@@ -310,7 +307,7 @@ void *get_next(list_link  pl, char     *file, int      line)
          */
         if (tc == 1)
           {
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = (mom_job *)calloc(1, sizeof(mom_job));
           }
         else if (tc == 2)
           {
@@ -323,13 +320,12 @@ void *get_next(list_link  pl, char     *file, int      line)
           /* Line 372
            * return at 687->705 (After completing coverage both loops)
            */
-          pjob = (job *)calloc(1, sizeof(job));
+          pjob = new mom_job();
           pjob->ji_nodeid = 123;
-          pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_wattr[0].at_val.at_long = 0;
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+          pjob->set_attr(JOB_ATR_Cookie);
+          pjob->set_long_attr(0, 0);
+          pjob->set_svrflags(JOB_SVFLG_HERE | JOB_SVFLG_INTERMEDIATE_MOM);
+          pjob->set_substate(JOB_SUBSTATE_SUSPEND);
           pjob->ji_vnods = (vnodent *)calloc(1, sizeof(vnodent));
           pjob->ji_numvnod = 2;
           pjob->ji_vnods = (vnodent *)calloc(2, sizeof(vnodent));
@@ -358,11 +354,11 @@ void *get_next(list_link  pl, char     *file, int      line)
           }
         else if (tc == 2)
           {
-          pjob = (job *)calloc(1, sizeof(job));
-          pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+          pjob = new mom_job();
+          pjob->set_attr(JOB_ATR_Cookie);
+          pjob->set_mom_exitstat(TM_NULL_TASK);
+          pjob->set_svrflags(JOB_SVFLG_HERE);
+          pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
           }
         break;
       case 6:
@@ -420,11 +416,11 @@ void *get_next(list_link  pl, char     *file, int      line)
         else if (tc == 2)
           {
           /* exit at 826 */
-          pjob = (job *)calloc(1, sizeof(job));
-          pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+          pjob = new mom_job();
+          pjob->set_attr(JOB_ATR_Cookie);
+          pjob->set_mom_exitstat(TM_NULL_TASK);
+          pjob->set_svrflags(JOB_SVFLG_HERE);
+          pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
           }
         break;
       case 9:
@@ -457,13 +453,13 @@ void *get_next(list_link  pl, char     *file, int      line)
         /* Line 372
          * return at 660
          */
-        pjob = (job *)calloc(1, sizeof(job));
+        pjob = new mom_job();
         pjob->ji_nodeid = 123;
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_wattr[1].at_val.at_long = 3;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_STAGEOUT;
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_long_attr(1, 3);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_svrflags(JOB_SVFLG_HERE);
+        pjob->set_substate(JOB_SUBSTATE_STAGEOUT);
         break;
       case 12:
         /* Line 443
@@ -499,12 +495,11 @@ void *get_next(list_link  pl, char     *file, int      line)
         /* Line 372
          * return at 637
          */
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-/*        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE; */
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_STAGEOUT;
+        pjob = new mom_job();
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
+        pjob->set_substate(JOB_SUBSTATE_STAGEOUT);
         break;
       case 16: /* ptask == NULL */
         break;
@@ -512,10 +507,10 @@ void *get_next(list_link  pl, char     *file, int      line)
         /* Line 372
          * return at 676
          */
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+        pjob = new mom_job();
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_substate(JOB_SUBSTATE_EXITING);
         break;
       case 18: /* ptask == NULL */
         break;
@@ -523,11 +518,11 @@ void *get_next(list_link  pl, char     *file, int      line)
         /* Line 372
          * return at 702->705
          */
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+        pjob = new mom_job();
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
+        pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
         break;
       case 20:
         break;
@@ -538,11 +533,11 @@ void *get_next(list_link  pl, char     *file, int      line)
          * pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM
          * pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING
          */
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+        pjob = new mom_job();
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_svrflags(JOB_SVFLG_HERE);
+        pjob->set_substate(JOB_SUBSTATE_EXITING);
         break;
       case 22: /* ptask == NULL */
         break;
@@ -553,11 +548,11 @@ void *get_next(list_link  pl, char     *file, int      line)
          * pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM
          * pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING
          */
-        pjob = (job *)calloc(1, sizeof(job));
-        pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_un.ji_momt.ji_exitstat = TM_NULL_TASK;
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+        pjob = new mom_job();
+        pjob->set_attr(JOB_ATR_Cookie);
+        pjob->set_mom_exitstat(TM_NULL_TASK);
+        pjob->set_svrflags(JOB_SVFLG_HERE);
+        pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
         break;
       case 24: /* ptask == NULL */
         break;
@@ -633,7 +628,7 @@ int is_mom_server_down(pbs_net_t server_address)
   return rc;
   }
 
-void checkpoint_partial(job *pjob)
+void checkpoint_partial(mom_job *pjob)
   {
   }
 
@@ -641,7 +636,7 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
-int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_contacted)
+int send_sisters(mom_job *pjob, int com, int using_radix, std::set<int> *sisters_contacted)
   {
   int rc = 1;
   if (func_num == SCAN_FOR_EXITING)
@@ -661,17 +656,17 @@ int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_con
   return rc;
   }
 
-int send_sisters_radix(job *pjob, int com)
+int send_sisters_radix(mom_job *pjob, int com)
   {
   return 1;
   }
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int mom_job_save(mom_job *pjob, int mom_port)
   {
   return 1;
   }
 
-task *task_find(job *pjob, tm_task_id taskid)
+task *task_find(mom_job *pjob, tm_task_id taskid)
   {
   task *tp = (task *)calloc(1, sizeof(task));
   if (ran_one == 9)
@@ -706,7 +701,7 @@ int DIS_tcp_wflush(struct tcp_chan *chan)
   return 0;
   }
 
-int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(struct tcp_chan *chan, const char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   return 0;
   }
@@ -797,20 +792,19 @@ const char *PJobSubState[] =
   NULL
   };
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
+int kill_job(mom_job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason)
   {
   if (func_num == INIT_ABORT_JOBS)
     {
     if ((tc == 12) || (tc == 13))
       {
-      pjob->ji_qs.ji_svrflags = 0;
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_MIGRATEABLE | JOB_SVFLG_HERE;
+      pjob->set_svrflags(JOB_SVFLG_CHECKPOINT_MIGRATEABLE | JOB_SVFLG_HERE);
       }
     }
   return 0;
   }
 
-int mom_open_socket_to_jobs_server_with_retries(job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
+int mom_open_socket_to_jobs_server_with_retries(mom_job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
   {
   called_open_socket++;
   int sock = 1;
@@ -937,7 +931,7 @@ int no_mom_servers_down(void)
   return rc;
   }
 
-int mark_for_resend(job *pjob)
+int mark_for_resend(mom_job *pjob)
   {
   return 1;
   }
@@ -959,11 +953,11 @@ struct batch_request *alloc_br(int type)
   return br;
   }
 
-void encode_used(job *pjob, int i, Json::Value *output, list_link *l)
+void encode_used(mom_job *pjob, int i, Json::Value *output, list_link *l)
   {
   }
 
-void encode_flagged_attrs(job *pjob, int i, Json::Value *output, list_link *l)
+void encode_flagged_attrs(mom_job *pjob, int i, Json::Value *output, list_link *l)
   {
   }
 
@@ -1109,13 +1103,13 @@ void clear_conn(int sd, int has_mutex)
   {
   }
 
-char *std_file_name(job *pjob, enum job_file which, int *keeping)
+char *std_file_name(mom_job *pjob, enum job_file which, int *keeping)
   {
   char *stuff = NULL;
   return stuff;
   }
 
-int job_unlink_file(job *pjob, const char *name)
+int job_unlink_file(mom_job *pjob, const char *name)
   {
   return 0;
   }
@@ -1153,14 +1147,14 @@ resource_def *find_resc_def(resource_def *rscdf, const char *name, int limit)
   return NULL;
   }
 
-char *get_local_script_path(job *pjob, char *base)
+char *get_local_script_path(mom_job *pjob, char *base)
   {
   char *val = (char *)calloc(2, 1);
   val[0] = 'v';
   return val;
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
+int run_pelog(int which, char *specpelog, mom_job *pjog, int pe_io_type, int deletejob)
   {
   return 1;
   }
@@ -1177,17 +1171,17 @@ void mom_server_all_update_stat(void)
   {
   }
 
-job *job_recov(const char *filename)
+mom_job *job_recov(const char *filename)
   {
-  job *pjob = NULL;
+  mom_job *pjob = NULL;
   if (!((func_num == INIT_ABORT_JOBS) && (tc == 1)))
     {
-    pjob = (job *)calloc(1,sizeof(job));
+    pjob = (mom_job *)calloc(1,sizeof(mom_job));
     }
   return pjob;
   }
 
-void set_globid(job *pjob, struct startjob_rtn *sjr)
+void set_globid(mom_job *pjob, struct startjob_rtn *sjr)
   {
   }
 
@@ -1195,17 +1189,17 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
   }
 
-void job_nodes(job &pjob)
+void job_nodes(mom_job &pjob)
   {
   }
 
-int task_recov(job *pjob)
+int task_recov(mom_job *pjob)
   {
   int rc = 0; /* SUCCESS */
   return rc;
   }
 
-void mom_checkpoint_recover(job *pjob)
+void mom_checkpoint_recover(mom_job *pjob)
   {
 #undef DBPRT
 #define DBPRT(x)
@@ -1218,11 +1212,10 @@ void mom_checkpoint_recover(job *pjob)
   strcpy(pjob->ji_hosts[1].hn_host, "dick");
   pjob->ji_hosts[2].hn_host = (char *)calloc(1, 20);
   strcpy(pjob->ji_hosts[2].hn_host, "harry");
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
-  pjob->ji_wattr[0].at_val.at_long = 0;
-  pjob->ji_wattr[1].at_val.at_long = 1;
-/*  pjob->ji_wattr */
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_svrflags(JOB_SVFLG_HERE);
+  pjob->set_long_attr(0, 0);
+  pjob->set_long_attr(1, 1);
   if (func_num == INIT_ABORT_JOBS)
     {
     if (tc == 3)
@@ -1231,36 +1224,36 @@ void mom_checkpoint_recover(job *pjob)
       }
     else if (tc == 4)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
+      pjob->set_substate(JOB_SUBSTATE_PRERUN);
       }
     else if (tc == 5)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
+      pjob->set_substate(JOB_SUBSTATE_SUSPEND);
       }
     else if (tc == 6)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITED;
+      pjob->set_substate(JOB_SUBSTATE_EXITED);
       }
     else if (tc == 7)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+      pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
       }
     else if (tc == 8)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+      pjob->set_substate(JOB_SUBSTATE_EXITING);
       }
     else if (tc == 9)
       {
-      pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
+      pjob->set_svrflags(JOB_SVFLG_HERE);
       }
     else if (tc == 11)
       {
-      pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE+1;
+      pjob->set_svrflags(JOB_SVFLG_HERE+1);
       pjob->ji_numnodes = 1;
       }
     else if (tc == 12)
       {
-      pjob->ji_qs.ji_svrflags = JOB_SVFLG_HERE;
+      pjob->set_svrflags(JOB_SVFLG_HERE);
       pjob->ji_numnodes = 1;
       }
     }
@@ -1295,7 +1288,7 @@ int find_attr(struct attribute_def *attr_def, const char *name, int limit)
   return rc;
   }
 
-int mom_do_poll(job *pjob)
+int mom_do_poll(mom_job *pjob)
   {
   int retval = 0;
   if ((func_num == INIT_ABORT_JOBS) && (tc == 2))
@@ -1305,12 +1298,12 @@ int mom_do_poll(job *pjob)
   return retval;
   }
 
-void mom_job_purge(job *pjob)
+void mom_job_purge(mom_job *pjob)
   {
   return;
   }
 
-bool check_pwd(job *pjob)
+bool check_pwd(mom_job *pjob)
   {
   return false;
   }
@@ -1326,7 +1319,7 @@ int diswul(struct tcp_chan *chan, unsigned long value)
   return 0;
   }
 
-u_long resc_used(job *pjob, const char *name, u_long(*f) (resource *))
+u_long resc_used(mom_job *pjob, const char *name, u_long(*f) (resource *))
   {
   return 1;
   }
@@ -1357,18 +1350,18 @@ im_compose_info *create_compose_reply_info(const char *jobid, const char *cookie
   return(NULL);
   }
 
-int release_job_reservation(job *pjob)
+int release_job_reservation(mom_job *pjob)
   {
   fprintf(stderr, "The call to getsize needs to be mocked!!\n");
   exit(1);
   }
 
-bool am_i_mother_superior(const job &pjob)
+bool am_i_mother_superior(const mom_job &pjob)
   {
   return(false);
   }
 
-void get_energy_used(job *pjob)
+void get_energy_used(mom_job *pjob)
   {}
 
 int init_nvidia_nvml(unsigned int device_count) 
@@ -1406,12 +1399,12 @@ int complete_req::get_task_stats(unsigned int &req_index, std::vector<int> &task
   return(0);
   }
 
-void set_jobs_substate(job *pjob, int substate)
+void set_jobs_substate(mom_job *pjob, int substate)
   {
-  pjob->ji_qs.ji_substate = substate;
+  pjob->set_substate(substate);
   }
 
-int send_back_std_and_staged_files(job *pjob, int exit_value)
+int send_back_std_and_staged_files(mom_job *pjob, int exit_value)
   {
   return(PBSE_NONE);
   }
@@ -1421,4 +1414,347 @@ task::~task() {}
 
 batch_request::batch_request(int type) : rq_type(type)
   {
+  }
+
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+job::~job() {}
+mom_job::mom_job() {}
+mom_job::~mom_job() {}
+
+int job::get_mom_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_exitstat);
+  }
+
+void job::set_mom_exitstat(int ev)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exitstat = ev;
+  }
+
+pbs_net_t job::get_svraddr() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_svraddr);
+  }
+
+void job::set_attr_flag_bm(int index, int bm)
+  {
+  if ((index >= 0) &&
+      (index < JOB_ATR_LAST))
+    this->ji_wattr[index].at_flags |= bm;
+  }
+
+struct timeval *job::get_tv_attr(int index)
+  {
+  return(&this->ji_wattr[index].at_val.at_timeval);
+  }
+
+int job::set_tv_attr(int index, struct timeval *tv)
+  {
+  memcpy(&(this->ji_wattr[index].at_val.at_timeval), tv, sizeof(struct timeval));
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_resc_attr(int index, std::vector<resource> *resources)
+  {
+  this->ji_wattr[index].at_val.at_ptr = resources;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_exec_exitstat(int ev)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_exitstat = ev;
+  }
+
+unsigned short job::get_ji_mom_rmport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_mom_rmport);
+  }
+
+int job::set_creq_attr(int index, complete_req *cr)
+  {
+  this->ji_wattr[index].at_val.at_ptr = cr;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_qs_version(int version)
+  {
+  this->ji_qs.qs_version = version;
+  }
+
+void job::set_queue(const char *queue)
+  {
+  snprintf(this->ji_qs.ji_queue, sizeof(this->ji_qs.ji_queue), "%s", queue);
+  }
+
+int job::get_un_type() const
+  {
+  return(this->ji_qs.ji_un_type);
+  }
+
+void job::set_ji_momaddr(unsigned long momaddr)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
+  }
+
+void job::set_ji_mom_rmport(unsigned short mom_rmport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_mom_rmport = mom_rmport;
+  }
+
+void job::set_ji_momport(unsigned short momport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momport = momport;
+  }
+
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+void job::set_scriptsz(size_t scriptsz)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_scriptsz = scriptsz;
+  }
+
+size_t job::get_scriptsz() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_scriptsz);
+  }
+
+pbs_net_t job::get_fromaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromaddr);
+  }
+
+int job::get_fromsock() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromsock);
+  }
+
+void job::set_fromaddr(pbs_net_t fromaddr)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromaddr = fromaddr;
+  }
+
+void job::set_fromsock(int sock)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+  }
+
+int job::get_qs_version() const
+  {
+  return(this->ji_qs.qs_version);
+  }
+
+void job::set_un_type(int type)
+  {
+  this->ji_qs.ji_un_type = type;
+  }
+
+int job::get_exec_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_exitstat);
+  }
+
+int job::get_svrflags() const
+  {
+  return(this->ji_qs.ji_svrflags);
+  }
+
+void job::set_modified(bool m)
+  {
+  this->ji_modified = m;
+  }
+
+void job::set_attr(int index)
+  {
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  }
+
+void job::set_fileprefix(const char *prefix)
+  {
+  strcpy(this->ji_qs.ji_fileprefix, prefix);
+  }
+
+int job::set_char_attr(int index, char c)
+  {
+  this->ji_wattr[index].at_val.at_char = c;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_svrflags(int flags)
+  {
+  this->ji_qs.ji_svrflags = flags;
+  }
+
+const char *job::get_destination() const
+  {
+  return(this->ji_qs.ji_destin);
+  }
+
+void job::free_attr(int index)
+  {
+  }
+
+void job::set_substate(int substate)
+  {
+  this->ji_qs.ji_substate = substate;
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+void job::set_destination(const char *destination)
+  {
+  snprintf(this->ji_qs.ji_destin, sizeof(this->ji_qs.ji_destin), "%s", destination);
+  }
+
+pbs_net_t job::get_ji_momaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momaddr);
+  }
+
+bool job::has_been_modified() const
+  {
+  return(this->ji_modified);
+  }
+
+tlist_head job::get_list_attr(int index)
+  {
+  return(this->ji_wattr[index].at_val.at_list);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  complete_req *cr = NULL;
+  if (this->ji_wattr[index].at_flags & ATR_VFLAG_SET)
+    cr = (complete_req *)this->ji_wattr[index].at_val.at_ptr;
+
+  return(cr);
+  }
+
+void job::set_exgid(unsigned int gid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exgid = gid;
+  }
+
+void job::set_exuid(unsigned int uid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exuid = uid;
+  }
+
+unsigned short job::get_ji_momport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momport);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+struct jobfix &job::get_jobfix()
+  {
+  return(this->ji_qs);
+  }
+
+int job::set_bool_attr(int index, bool b)
+  {
+  this->ji_wattr[index].at_val.at_bool = b;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_bool);
+  }
+
+std::vector<resource> *job::get_resc_attr(int index)
+  {
+  return((std::vector<resource> *)this->ji_wattr[index].at_val.at_ptr);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+void job::set_start_time(time_t t)
+  {
+  this->ji_qs.ji_stime = t;
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
   }

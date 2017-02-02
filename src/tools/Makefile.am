@@ -34,7 +34,7 @@ printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 chk_tree_SOURCES = chk_tree.c
 hostn_SOURCES = hostn.c
-printjob_SOURCES = printjob.c
+printjob_SOURCES = printjob.c ../lib/Libutils/job.cpp
 printtracking_SOURCES = printtracking.c
 printserverdb_SOURCES = printserverdb.c
 tracejob_SOURCES = tracejob.c

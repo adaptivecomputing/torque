@@ -243,21 +243,21 @@ extern struct server server;
 /* External Functions Called */
 
 void          save_node_usage(pbsnode *pnode);
-void          rel_resc(job *pjob);
+void          rel_resc(svr_job *pjob);
 void          poll_job_task(work_task *);
 extern void   on_job_rerun_task(struct work_task *);
-extern void   set_resc_assigned(job *, enum batch_op);
-extern int    set_old_nodes(job *);
+extern void   set_resc_assigned(svr_job *, enum batch_op);
+extern int    set_old_nodes(svr_job *);
 
-extern struct work_task *apply_job_delete_nanny(struct job *, int);
-extern int     net_move(job *, struct batch_request *);
+extern struct work_task *apply_job_delete_nanny(struct svr_job *, int);
+extern int     net_move(svr_job *, struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 int           update_user_acls(pbs_attribute *pattr, enum batch_op  op);
 int           update_group_acls(pbs_attribute *pattr, enum batch_op  op);
 
 /* Private functions in this file */
 
-void  init_abt_job(job *);
+void  init_abt_job(svr_job *);
 char *build_path(char *, const char *, const char *);
 void  catch_abort(int);
 void  change_logs();
@@ -265,8 +265,8 @@ void  change_logs_handler(int);
 void  change_log_level(int);
 void  unpause_server(int);
 int   chk_save_file(const char *);
-int   pbsd_init_job(job *, int);
-int   pbsd_init_reque(job *, int);
+int   pbsd_init_job(svr_job *, int);
+int   pbsd_init_reque(svr_job *, int);
 void  resume_net_move(struct work_task *);
 void  rm_files(char *);
 void  stop_me(int);
@@ -293,7 +293,7 @@ struct sort_string_by_number
     value_a = jobid_to_long(a);
     value_b = jobid_to_long(b);
 
-    /* See if this is an array job */
+    /* See if this is an array svr_job */
     if (is_array_job(a) == true)
       {
       /* is b from the same array */
@@ -317,7 +317,7 @@ struct sort_string_by_number
     }
   };
 
-std::map<std::string, job *, sort_string_by_number> JobArray;
+std::map<std::string, svr_job *, sort_string_by_number> JobArray;
 int recovered_job_count; /* Count of recovered jobs */
 
 #define CHANGE_STATE 1
@@ -430,10 +430,10 @@ int SortPrioAscend(
   const void *B) /* I */
 
   {
-  job *pjob1 = *((job **)A);
-  job *pjob2 = *((job **)B);
-  int prio1 = pjob1->ji_wattr[JOB_ATR_qrank].at_val.at_long;
-  int prio2 = pjob2->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  svr_job *pjob1 = *((svr_job **)A);
+  svr_job *pjob2 = *((svr_job **)B);
+  int prio1 = pjob1->get_long_attr(JOB_ATR_qrank);
+  int prio2 = pjob2->get_long_attr(JOB_ATR_qrank);
 
   return(prio1 - prio2);
   } /*END SortPrioAscend */
@@ -1167,13 +1167,13 @@ void remove_invalid_allocations(
 
     for (unsigned int i = 0; i < job_ids.size(); i++)
       {
-      job *pjob = svr_find_job(job_ids[i].c_str(), TRUE);
+      svr_job *pjob = svr_find_job(job_ids[i].c_str(), TRUE);
 
       if (pjob == NULL)
         bad_allocation.push_back(job_ids[i]);
       else
         {
-        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+        if (pjob->get_state() != JOB_STATE_RUNNING)
           bad_allocation.push_back(job_ids[i]);
 
         unlock_ji_mutex(pjob, __func__, "", 10);
@@ -1662,7 +1662,7 @@ int handle_job_recovery(
   DIR              *dir;
   DIR              *dir_sub;
   int               had;
-  job              *pjob;
+  svr_job          *pjob;
   time_t            time_now = time(NULL);
   char              basen[MAXPATHLEN+1];
   bool              use_jobs_subdirs = false;
@@ -1785,11 +1785,11 @@ int handle_job_recovery(
     closedir(dir);
 
     int Index = 0;
-    std::map<std::string, job *>::iterator JobArray_iter;
+    std::map<std::string, svr_job *>::iterator JobArray_iter;
     /*for (Index = 0; Index < JobArray.AppendIndex; Index++)*/
     for (JobArray_iter = JobArray.begin(); JobArray_iter != JobArray.end(); JobArray_iter++)
       {
-      job *pjob = JobArray_iter->second;
+      svr_job *pjob = JobArray_iter->second;
 
       lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
@@ -1802,7 +1802,7 @@ int handle_job_recovery(
           log_event(
             PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             msg_script_open);
 
           unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
@@ -1814,21 +1814,21 @@ int handle_job_recovery(
 
       if ((type != RECOV_CREATE) &&
           (pjob->ji_arraystructid[0] == '\0') &&
-          (pjob->ji_qs.ji_svrflags & JOB_SVFLG_SCRIPT))
+          (pjob->get_svrflags() & JOB_SVFLG_SCRIPT))
         {
         // get adjusted path_jobs
-        std::string adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+        std::string adjusted_path_jobs = get_path_jobdata(pjob->get_jobid(), path_jobs);
 
         // construct the full path to the job script
         snprintf(basen, sizeof(basen), "%s%s%s", adjusted_path_jobs.c_str(), 
-          pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+          pjob->get_fileprefix(), JOB_SCRIPT_SUFFIX);
 
         if (chk_save_file(basen) != 0)
           {
           log_event(
             PBSEVENT_ERROR | PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_JOB | PBSEVENT_FORCE,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             msg_script_open);
 
           init_abt_job(pjob);
@@ -1837,10 +1837,10 @@ int handle_job_recovery(
           {
           /* set up the poll_task for this recovered job  - 
            * only do up to 10 per second to not overwhelm pbs_server*/
-          if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-              (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+          if ((pjob->get_state() == JOB_STATE_RUNNING) &&
+              (pjob->get_str_attr(JOB_ATR_exec_host) != NULL))
             {
-            set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+            set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->get_jobid()), FALSE);
             }
           unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
           }
@@ -1849,10 +1849,10 @@ int handle_job_recovery(
         {
         /* set up the poll_task for this recovered job  - 
          * only do up to 10 per second to not overwhelm pbs_server*/
-        if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-            (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
+        if ((pjob->get_state() == JOB_STATE_RUNNING) &&
+            (pjob->get_str_attr(JOB_ATR_exec_host) != NULL))
           {
-          set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+          set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->get_jobid()), FALSE);
           }
         unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
         }
@@ -1888,9 +1888,9 @@ int handle_job_recovery(
 
     while ((pjob = next_job(&alljobs, iter)) != NULL)
       {
-      pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+      pjob->set_long_attr(JOB_ATR_qrank, ++queue_rank);
       
-      job_save(pjob, SAVEJOB_FULL, 0);
+      svr_job_save(pjob);
       
       unlock_ji_mutex(pjob, __func__, "7", LOGLEVEL);
       }
@@ -1912,7 +1912,7 @@ int process_jobs_dirent(
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   int               rc = PBSE_NONE;
   int               baselen = 0;
-  job              *pjob;
+  svr_job          *pjob;
   char             *psuffix;
   const char       *job_suffix = JOB_FILE_SUFFIX;
   int               job_suf_len = strlen(job_suffix);
@@ -1938,7 +1938,7 @@ int process_jobs_dirent(
         pjob->ji_is_array_template = true;
 
 
-        JobArray[pjob->ji_qs.ji_jobid] = pjob;
+        JobArray[pjob->get_jobid()] = pjob;
 
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         }
@@ -1951,7 +1951,7 @@ int process_jobs_dirent(
 
     if ((pjob = job_recov(dirent_name)) != NULL)
       {
-      JobArray[pjob->ji_qs.ji_jobid] = pjob;
+      JobArray[pjob->get_jobid()] = pjob;
 
       unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
       }
@@ -1983,7 +1983,7 @@ int cleanup_recovered_arrays()
 
   {
   job_array *pa;
-  job       *pjob;
+  svr_job   *pjob;
   char       arrayid[PBS_MAXSVRJOBID+1];
   all_arrays_iterator   *iter = NULL;
   int        rc = PBSE_NONE;
@@ -2423,14 +2423,14 @@ char *build_path(
 
 
 /*
- * pbsd_init_job - decide what to do with the recovered job structure
+ * pbsd_init_job - decide what to do with the recovered svr_job structure
  *
  * The action depends on the type of initialization.
  */
 
 int pbsd_init_job(
 
-  job *pjob,  /* I */
+  svr_job *pjob,  /* I */
   int  type)  /* I */
 
   {
@@ -2445,21 +2445,12 @@ int pbsd_init_job(
   pjob->ji_momhandle = -1;
 
   /* update at_server pbs_attribute in case name changed */
-
-  job_attr_def[JOB_ATR_at_server].at_free(
-    &pjob->ji_wattr[JOB_ATR_at_server]);
-
-  job_attr_def[JOB_ATR_at_server].at_decode(
-    &pjob->ji_wattr[JOB_ATR_at_server],
-    NULL,
-    NULL,
-    server_name,
-    0);
+  pjob->set_str_attr(JOB_ATR_at_server, server_name);
 
   /* update queue_rank if this job is higher than current */
 
-  if ((unsigned long)pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long > (unsigned long)queue_rank)
-    queue_rank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
+  if ((unsigned long)pjob->get_long_attr(JOB_ATR_qrank) > (unsigned long)queue_rank)
+    queue_rank = pjob->get_long_attr(JOB_ATR_qrank);
 
   /* now based on the initialization type */
 
@@ -2470,12 +2461,12 @@ int pbsd_init_job(
     return(PBSE_BAD_PARAMETER);
     }
 
-  switch (pjob->ji_qs.ji_substate)
+  switch (pjob->get_substate())
     {
 
     case JOB_SUBSTATE_TRANSICM:
 
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+      if (pjob->get_svrflags() & JOB_SVFLG_HERE)
         {
         /*
          * This server created the job, so client
@@ -2483,8 +2474,8 @@ int pbsd_init_job(
          * around to recommit, so auto-commit now
          */
 
-        pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+        pjob->set_state(JOB_STATE_QUEUED);
+        pjob->set_substate(JOB_SUBSTATE_QUEUED);
 
         rc = pbsd_init_reque(pjob, CHANGE_STATE);
         }
@@ -2496,7 +2487,7 @@ int pbsd_init_job(
          * receiving socket number though
          */
 
-        pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
+        pjob->set_fromsock(-1);
 
         insert_job(&newjobs,pjob);
         }
@@ -2505,8 +2496,8 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_TRNOUT:
 
-      pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+      pjob->set_state(JOB_STATE_QUEUED);
+      pjob->set_substate(JOB_SUBSTATE_QUEUED);
 
       /* requeue as queued */
 
@@ -2522,7 +2513,7 @@ int pbsd_init_job(
 
       /* resend rtc */
 
-      set_task(WORK_Immed, 0, resume_net_move, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, resume_net_move, strdup(pjob->get_jobid()), FALSE);
 
       break;
 
@@ -2560,25 +2551,19 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_RUNNING:
 
-      if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
+      if (pjob->get_str_attr(JOB_ATR_exec_host) == NULL)
         {
         /* corrupt job file. job is in running state without exec_host list */
-        pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_s;
-        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-        pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+        pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_s);
+        pjob->set_state(JOB_STATE_QUEUED);
+        pjob->set_substate(JOB_SUBSTATE_QUEUED);
 
         snprintf(log_buf, sizeof(log_buf), 
           "Job %s file says it is in a running state but has no exec host list, adding system hold",
-          pjob->ji_qs.ji_jobid);
-        log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+          pjob->get_jobid());
+        log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
         
-        if (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL)
-          {
-          free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
-          pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(log_buf);
-          pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
-          }
+        pjob->set_str_attr(JOB_ATR_Comment, strdup(log_buf));
 
         rc = pbsd_init_reque(pjob, CHANGE_STATE);
         }
@@ -2586,20 +2571,20 @@ int pbsd_init_job(
         {
         rc = pbsd_init_reque(pjob, KEEP_STATE);
         
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
+        pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_RescAssn);
         
         set_resc_assigned(pjob, INCR);
         
         /* suspended jobs don't get reassigned to nodes */
         
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
+        if ((pjob->get_svrflags() & JOB_SVFLG_Suspend) == 0)
           {
           rc = set_old_nodes(pjob);
           if (rc != PBSE_NONE)
             {
             snprintf(log_buf, sizeof(log_buf), "Job %s has an invalid exec host list: '%s'",
-              pjob->ji_qs.ji_jobid,
-              pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+              pjob->get_jobid(),
+              pjob->get_str_attr(JOB_ATR_exec_host));
             log_err(rc, __func__, log_buf);
 
             rel_resc(pjob);
@@ -2635,17 +2620,17 @@ int pbsd_init_job(
 
       apply_job_delete_nanny(pjob, time_now + 60);
 
-      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
       break;
 
     case JOB_SUBSTATE_ABORT:
-      if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
+      if (pjob->get_state() != JOB_STATE_COMPLETE)
         {
         apply_job_delete_nanny(pjob, time_now + 60);
-        set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+        set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
         rc = pbsd_init_reque(pjob, KEEP_STATE);
         break;
         }
@@ -2656,7 +2641,7 @@ int pbsd_init_job(
     case JOB_SUBSTATE_COMPLETE:
 
       /* Completed jobs are no longer purged on startup */
-      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2668,8 +2653,8 @@ int pbsd_init_job(
 
         if (pjob != NULL)
           {
-          strcpy(job_id, pjob->ji_qs.ji_jobid);
-          job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+          strcpy(job_id, pjob->get_jobid());
+          job_exit_status = pjob->get_exec_exitstat();
           unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
           if (pa)
             {
@@ -2686,8 +2671,8 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_RERUN:
 
-      if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
-        set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      if (pjob->get_state() == JOB_STATE_EXITING)
+        set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->get_jobid()), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2697,7 +2682,7 @@ int pbsd_init_job(
 
     case JOB_SUBSTATE_RERUN2:
 
-      set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+      set_task(WORK_Immed, 0, on_job_rerun_task, strdup(pjob->get_jobid()), FALSE);
 
       rc = pbsd_init_reque(pjob, KEEP_STATE);
 
@@ -2705,9 +2690,9 @@ int pbsd_init_job(
 
     default:
 
-      sprintf(log_buf, msg_init_unkstate, pjob->ji_qs.ji_substate);
+      sprintf(log_buf, msg_init_unkstate, pjob->get_substate());
 
-      log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
       job_abt(&pjob, log_buf); /* pjob is not freed */
 
@@ -2717,7 +2702,7 @@ int pbsd_init_job(
         }
 
       break;
-    }    /* END switch (pjob->ji_qs.ji_substate) */
+    }    /* END switch (pjob->get_substate()) */
 
 
   /* if job has IP address of Mom, it may have changed */
@@ -2725,27 +2710,27 @@ int pbsd_init_job(
 
   if (pjob != NULL)
     {
-    if ((pjob->ji_qs.ji_un_type == JOB_UNION_TYPE_EXEC) &&
-        (pjob->ji_qs.ji_un.ji_exect.ji_momaddr != 0))
+    if ((pjob->get_un_type() == JOB_UNION_TYPE_EXEC) &&
+        (pjob->get_ji_momaddr() != 0))
       {
-      if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
+      if (pjob->is_attr_set(JOB_ATR_exec_host))
         {
         char *tmp;
 
         if ((cray_enabled == true) &&
-            (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
+            (pjob->get_str_attr(JOB_ATR_login_node_id) != NULL))
           {
-          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &d);
+          tmp = parse_servername(pjob->get_str_attr(JOB_ATR_login_node_id), &d);
           }
         else
-          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &d);
+          tmp = parse_servername(pjob->get_str_attr(JOB_ATR_exec_host), &d);
 
-        pjob->ji_qs.ji_un.ji_exect.ji_momaddr = get_hostaddr(&local_errno, tmp);
+        pjob->set_ji_momaddr(get_hostaddr(&local_errno, tmp));
         free(tmp);
         }
       else
         {
-        pjob->ji_qs.ji_un.ji_exect.ji_momaddr = 0;
+        pjob->set_ji_momaddr(0);
         }
       }
     }
@@ -2765,10 +2750,10 @@ int pbsd_init_job(
 
 void check_jobs_queue(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
-  std::string queue_name(pjob->ji_qs.ji_queue);
+  std::string queue_name(pjob->get_queue());
 
   unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
 
@@ -2802,7 +2787,7 @@ void check_jobs_queue(
 
 int pbsd_init_reque(
 
-  job *pjob,         /* I (modified/possibly freed) */
+  svr_job *pjob,         /* I (modified/possibly freed) */
   int  change_state) /* I */
 
   {
@@ -2827,18 +2812,18 @@ int pbsd_init_reque(
     {
     int len;
     snprintf(log_buf, sizeof(log_buf), msg_init_substate,
-      pjob->ji_qs.ji_substate);
+      pjob->get_substate());
     len = strlen(log_buf);
     snprintf(log_buf + len, sizeof(log_buf) - len, "%s%s",
-      msg_init_queued, pjob->ji_qs.ji_queue);
+      msg_init_queued, pjob->get_queue());
 
     log_event(
       PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buf);
 
-    pjob->ji_internal_id = job_mapper.get_new_id(pjob->ji_qs.ji_jobid);
+    pjob->ji_internal_id = job_mapper.get_new_id(pjob->get_jobid());
 
     // svr_setjobstate() doesn't work for jobs that aren't queued
     if (change_state)
@@ -2861,8 +2846,8 @@ int pbsd_init_reque(
       {
       snprintf(log_buf, sizeof(log_buf), "%s; job %s queue %s",
         msg_err_noqueue,
-        pjob->ji_qs.ji_jobid,
-        pjob->ji_qs.ji_queue);
+        pjob->get_jobid(),
+        pjob->get_queue());
     
       log_err(rc, __func__, log_buf);
       }
@@ -3095,7 +3080,7 @@ void resume_net_move(
 
   {
   char *jobid = (char *)ptask->wt_parm1;
-  job  *pjob;
+  svr_job  *pjob;
 
   if (jobid != NULL)
     {
@@ -3191,13 +3176,13 @@ void rm_files(
 
 void init_abt_job(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   log_event(
     PBSEVENT_SYSTEM | PBSEVENT_ADMIN | PBSEVENT_DEBUG,
     PBS_EVENTCLASS_JOB,
-    pjob->ji_qs.ji_jobid,
+    pjob->get_jobid(),
     msg_init_abt);
 
   svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, msg_init_abt);

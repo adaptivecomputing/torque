@@ -135,14 +135,15 @@ unsigned int get_num_queued(
 
 unsigned int count_jobs_submitted(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
-  unsigned int num_to_add = 1;
+  unsigned int  num_to_add = 1;
+  const char   *array_request = pjob->job::get_str_attr(JOB_ATR_job_array_request);
 
-  if (pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str != NULL)
+  if (array_request != NULL)
     {
-    num_to_add = num_array_jobs(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str);
+    num_to_add = num_array_jobs(array_request);
     }
 
   return(num_to_add);
@@ -153,8 +154,8 @@ unsigned int count_jobs_submitted(
 
 int  can_queue_new_job(
 
-  char *user_name,
-  job  *pjob)
+  const char *user_name,
+  svr_job    *pjob)
 
   {
   long         max_queuable = -1;
@@ -185,8 +186,8 @@ int  can_queue_new_job(
 int  increment_queued_jobs(
    
   user_info_holder *uih,
-  char             *user_name,
-  job              *pjob)
+  const char       *user_name,
+  svr_job          *pjob)
 
   {
   int           rc = PBSE_NONE;
@@ -196,7 +197,7 @@ int  increment_queued_jobs(
 
   /* If pbs_server is restarting we may get jobs in a completed state.
      we do not want to count these jobs as queued */
-  if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+  if (pjob->get_state() == JOB_STATE_COMPLETE)
     return(rc);
 
   if (uih != &users)
@@ -246,8 +247,8 @@ int  increment_queued_jobs(
 int  decrement_queued_jobs(
 
   user_info_holder *uih,    
-  char             *user_name,
-  job              *pjob)
+  const char       *user_name,
+  svr_job          *pjob)
 
   {
   user_info *ui;

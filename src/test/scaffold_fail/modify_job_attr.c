@@ -6,7 +6,7 @@
 
 #include "scaffold_fail.h"
 
-int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad)
+int modify_job_attr(svr_job *pjob, svrattrl *plist, int perm, int *bad)
   {
   fprintf(stderr, "The call to modify_job_attr to be mocked!!\n");
   exit(1);

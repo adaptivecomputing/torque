@@ -35,7 +35,7 @@
 
 int site_mom_chkuser(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   return(0);

@@ -267,17 +267,17 @@ void garbage_collect_recycling();
 pbs_queue *find_queuebyname(const char *quename);
 pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held);
 int   count_user_queued_jobs(pbs_queue *,char *);
-int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-int   default_router(job *, pbs_queue *, long);
-int   site_alt_router(job *, pbs_queue *, long);
+#ifndef PBS_MOM
+int   svr_chkque(svr_job *, pbs_queue *, char *, int, char *);
+int   default_router(svr_job *, pbs_queue *, long);
+int   site_alt_router(svr_job *, pbs_queue *, long);
 int   site_acl_check(job *, pbs_queue *);
-void  set_chkpt_deflt(job *, pbs_queue *);
+void  set_chkpt_deflt(svr_job *, pbs_queue *);
 
 extern all_queues svr_queues;
 
-struct job;
-
-pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr);
+pbs_queue *lock_queue_with_job_held(pbs_queue *pque, svr_job **pjob_ptr);
+#endif
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
 pbs_queue *next_queue(all_queues *,all_queues_iterator *);

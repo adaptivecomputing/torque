@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "server_limits.h"
 #include "pbs_error.h"
 
 int PBS_resc(int c, int reqtype, char **rescl, int ct, resource_t rh);

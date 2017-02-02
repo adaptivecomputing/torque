@@ -11,7 +11,7 @@
 
 extern char mom_alias[];
 
-void remote_notify_pmix_operation(job *pjob, const char *remote_host, const std::string &data,
+void remote_notify_pmix_operation(mom_job *pjob, const char *remote_host, const std::string &data,
                                   int op, struct sockaddr_in *dont_contact);
 
 const int FENCE_OPERATION = 0;
@@ -27,7 +27,7 @@ std::map<unsigned int, pmix_operation> existing_connections;
 
 bool pmix_operation::safe_insert_rank(
 
-  job *pjob,
+  mom_job *pjob,
   int  rank)
 
   {
@@ -60,7 +60,7 @@ bool pmix_operation::safe_insert_rank(
 // Constructor used for fence operations
 pmix_operation::pmix_operation(
 
-  job                 *pjob,
+  mom_job                 *pjob,
   const pmix_proc_t    procs[],
   size_t               nprocs,
   const std::string   &info,
@@ -110,7 +110,7 @@ int get_pmix_connection_id()
 pmix_operation::pmix_operation(
 
   char *connect_data,
-  job  *pjob) : data(), hosts_reported(), hosts_to_report(), local_ranks(), all_ranks(),
+  mom_job  *pjob) : data(), hosts_reported(), hosts_to_report(), local_ranks(), all_ranks(),
                 to_call_fence(NULL), to_call_connect(NULL), op_id(0), complete(false),
                 type(CONNECT_OPERATION), cbdata(NULL)
 
@@ -143,7 +143,7 @@ pmix_operation::pmix_operation(
 // Constructor used for connect operations
 pmix_operation::pmix_operation(
     
-  job               *pjob,
+  mom_job           *pjob,
   const pmix_proc_t  procs[],
   size_t             nprocs,
   pmix_op_cbfunc_t   cbfunc,
@@ -172,7 +172,7 @@ pmix_operation::pmix_operation(
 // More generic connect/disconnect constructor
 pmix_operation::pmix_operation(
     
-  job               *pjob,
+  mom_job           *pjob,
   const pmix_proc_t  procs[],
   size_t             nprocs,
   pmix_op_cbfunc_t   cbfunc,
@@ -315,7 +315,7 @@ void pmix_operation::populate_rank_string(
 
 pmix_status_t pmix_operation::complete_operation(
     
-  job  *pjob,
+  mom_job  *pjob,
   long  timeout)
 
   {
@@ -471,7 +471,7 @@ bool pmix_operation::has_local_rank(
 
 int pmix_operation::connection_process_terminated(
 
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *source_addr,
   bool                am_i_ms)
 
@@ -528,7 +528,7 @@ int pmix_operation::connection_process_terminated(
 
 int clean_up_connection(
 
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *source_addr,
   unsigned int        op_id,
   bool                am_i_ms)
@@ -552,7 +552,7 @@ int clean_up_connection(
 
 void check_and_act_on_obit(
 
-  job *pjob,
+  mom_job *pjob,
   int  rank)
 
   {

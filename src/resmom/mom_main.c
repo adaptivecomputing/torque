@@ -212,7 +212,7 @@ unsigned int pbs_mom_port = 0;
 unsigned int pbs_rm_port = 0;
 tlist_head mom_polljobs; /* jobs that must have resource limits polled */
 tlist_head svr_newjobs; /* jobs being sent to MOM */
-std::list<job *> alljobs_list; // all jobs under MOM's control
+std::list<mom_job *> alljobs_list; // all jobs under MOM's control
 tlist_head mom_varattrs; /* variable attributes */
 int  termin_child = 0;  /* boolean - one or more children need to be terminated this iteration */
 time_t  time_now = 0;
@@ -291,9 +291,9 @@ extern void     mom_server_all_init(void);
 extern void     mom_server_all_update_stat(void);
 extern void     mom_server_all_update_gpustat(void);
 void            empty_received_nodes();
-extern int      send_job_obit(job *, int);
+extern int      send_job_obit(mom_job *, int);
 extern int      mom_checkpoint_init(void);
-extern void     mom_checkpoint_check_periodic_timer(job *pjob);
+extern void     mom_checkpoint_check_periodic_timer(mom_job *pjob);
 extern void     mom_checkpoint_set_directory_path(const char *str);
 extern int      check_for_mics(uint32_t& mic_count);
 
@@ -305,7 +305,7 @@ extern int      shut_nvidia_nvml();
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
-int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
+int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
 
@@ -313,7 +313,7 @@ static void mom_lock(int fds, int op);
 int setup_nodeboards();
 #else
 #ifdef PENABLE_LINUX26_CPUSETS
-void recover_cpuset_reservation(job &pjob);
+void recover_cpuset_reservation(mom_job &pjob);
 #endif
 #endif /* NUMA_SUPPORT */
 
@@ -1536,7 +1536,7 @@ void cleanup_aux()
 
 
 
-/* clear_jobs - clear all jobs from the job job link list */
+/* clear_jobs - clear all jobs from the job link list */
 void clear_jobs(
 
   tlist_head job_queue,
@@ -1544,19 +1544,19 @@ void clear_jobs(
  
   {
   std::string tmpLine;
-  job  *pjobnext = NULL;
-  job  *pjob = NULL;
+  mom_job  *pjobnext = NULL;
+  mom_job  *pjob = NULL;
 
-  if ((pjob = (job *)GET_NEXT(job_queue)) != NULL)
+  if ((pjob = (mom_job *)GET_NEXT(job_queue)) != NULL)
     {
     while (pjob != NULL)
       {
       tmpLine.append("clearing job ");
-      tmpLine.append(pjob->ji_qs.ji_jobid);
+      tmpLine.append(pjob->get_jobid());
 
       log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
 
-      pjobnext = (job *)GET_NEXT(pjob->ji_alljobs);
+      pjobnext = (mom_job *)GET_NEXT(pjob->ji_alljobs);
 
       mom_job_purge(pjob);
 
@@ -1568,19 +1568,19 @@ void clear_jobs(
 
 
 
-job *mom_find_newjobs(
+mom_job *mom_find_newjobs(
 
   char *jobid)
 
   {
-  job *pj = NULL;
+  mom_job *pj = NULL;
  
-  pj = (job *)GET_NEXT(svr_newjobs);
+  pj = (mom_job *)GET_NEXT(svr_newjobs);
   while (pj != NULL)
     {
-    if (!strcmp(pj->ji_qs.ji_jobid, jobid))
+    if (!strcmp(pj->get_jobid(), jobid))
       break;
-    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    pj = (mom_job *)GET_NEXT(pj->ji_alljobs);
     }
   return pj;
   }   /* END mom_find_newjobs() */
@@ -1597,7 +1597,7 @@ int process_clear_job_request(
   {
   char *ptr = NULL;
 
-  job  *pjob = NULL;
+  mom_job  *pjob = NULL;
 
   if ((*curr == '=') && ((*curr) + 1 != '\0'))
     {
@@ -1626,7 +1626,7 @@ int process_clear_job_request(
       if (pjob)
         {
         output << "clearing job ";
-        output << pjob->ji_qs.ji_jobid;
+        output << pjob->get_jobid();
 
         log_record(PBSEVENT_SYSTEM, 0, __func__, tmpLine.c_str());
 
@@ -1969,16 +1969,16 @@ void add_diag_copy_command(
 void add_diag_jobs_session_ids(
 
   std::stringstream &output,
-  job               *pjob)
+  mom_job           *pjob)
 
   {
   bool  first = true;
 
   output << " sidlist=";
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks[i];
     /* only check on tasks that we think should still be around */
     if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
@@ -1998,7 +1998,7 @@ void add_diag_jobs_session_ids(
 void add_diag_jobs_memory_info(
 
   std::stringstream &output,
-  job               *pjob)
+  mom_job           *pjob)
 
   {
   const char    *resname;
@@ -2007,13 +2007,7 @@ void add_diag_jobs_memory_info(
   /* Selected resources used by job (on this node) */
   if (verbositylevel >= 2)
     {
-    if (pjob->ji_wattr[JOB_ATR_resc_used].at_type != ATR_TYPE_RESC)
-      {
-      output << "\n";
-      return;
-      }
-
-    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_ptr;
+    std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resc_used);
 
     if (resources != NULL)
       {
@@ -2056,7 +2050,7 @@ void add_diag_jobs_memory_info(
 void add_diag_jobs_batch_env_vars(
 
   std::stringstream &output,
-  job               *pjob)
+  mom_job           *pjob)
 
   {
   if (verbositylevel >= 4)
@@ -2077,7 +2071,7 @@ void add_diag_jobs_batch_env_vars(
 
 int diag_jobs_count_vnodes(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   int vnindex;
@@ -2099,10 +2093,10 @@ int diag_jobs_count_vnodes(
 void add_diag_jobid_and_state(
 
   std::stringstream &output,
-  job               *pjob)
+  mom_job           *pjob)
 
   {
-  output << "job[" << pjob->ji_qs.ji_jobid << "]  state=" << PJobSubState[pjob->ji_qs.ji_substate];
+  output << "job[" << pjob->get_jobid() << "]  state=" << PJobSubState[pjob->get_substate()];
   }
 
 
@@ -2111,7 +2105,7 @@ void add_diag_job_entry(
 
   std::stringstream &output,
   int               *numvnodes,
-  job               *pjob)
+  mom_job           *pjob)
 
   {
   *numvnodes += diag_jobs_count_vnodes(pjob);
@@ -2133,15 +2127,15 @@ void add_diag_new_jobs(
   std::stringstream &output)
 
   {
-  job *pjob;
+  mom_job *pjob;
 
-  if ((pjob = (job *)GET_NEXT(svr_newjobs)) != NULL)
+  if ((pjob = (mom_job *)GET_NEXT(svr_newjobs)) != NULL)
     {
     while (pjob != NULL)
       {
-      output << "job[" <<  pjob->ji_qs.ji_jobid << "]  state=NEW\n";
+      output << "job[" <<  pjob->get_jobid() << "]  state=NEW\n";
 
-      pjob = (job *)GET_NEXT(pjob->ji_alljobs);
+      pjob = (mom_job *)GET_NEXT(pjob->ji_alljobs);
       }
     }
   }
@@ -2153,7 +2147,7 @@ void add_diag_job_list(
   std::stringstream &output)
 
   {
-  job  *pjob;
+  mom_job  *pjob;
 
   if (alljobs_list.size() == 0)
     {
@@ -2162,7 +2156,7 @@ void add_diag_job_list(
   else
     {
     int                        numvnodes = 0;
-    std::list<job *>::iterator iter;
+    std::list<mom_job *>::iterator iter;
 
     for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
@@ -3519,7 +3513,7 @@ const char *find_signal_name(
 
 int kill_job(
 
-  job        *pjob,              /* I */
+  mom_job    *pjob,              /* I */
   int         sig,               /* I */
   const char *killer_id_name,    /* I - process name of calling routine */
   const char *why_killed_reason) /* I - reason for killing */
@@ -3530,7 +3524,7 @@ int kill_job(
   sprintf(log_buffer, "%s: sending signal %d, \"%s\" to job %s, reason: %s",
           killer_id_name,
           sig, find_signal_name(sig),
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           why_killed_reason);
 
   if (LOGLEVEL >= 2)
@@ -3539,7 +3533,7 @@ int kill_job(
     }
 
   DBPRT(("%s\n", log_buffer));
-  DBPRT(("Job - %s Current State %s\n", pjob->ji_qs.ji_jobid, PJobSubState[MAX(0,pjob->ji_qs.ji_substate)]));
+  DBPRT(("Job - %s Current State %s\n", pjob->get_jobid(), PJobSubState[MAX(0,pjob->get_substate())]));
 
   /* NOTE:  should change be made to only execute precancel epilog if
    * job is active? (NYI) */
@@ -3566,9 +3560,9 @@ int kill_job(
       }
     }
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
 
     if (ptask->ti_qs.ti_status == TI_STATE_RUNNING)
       {
@@ -3577,7 +3571,7 @@ int kill_job(
         log_record(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "kill_job found a task to kill");
         }
 
@@ -3594,7 +3588,7 @@ int kill_job(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buffer);
     }
 
@@ -3690,7 +3684,7 @@ unsigned long gettime(
 
 int job_over_limit(
 
-  job *pjob)  /* I */
+  mom_job *pjob)  /* I */
 
   {
   pbs_attribute       *attr;
@@ -3711,7 +3705,7 @@ int job_over_limit(
     /* no more POLL's */
 
     pjob->ji_nodekill = pjob->ji_nodeid;
-    pjob->ji_qs.ji_un.ji_momt.ji_exitstat = rc;
+    pjob->set_exec_exitstat(rc);
 
     return(1);
     }
@@ -3788,9 +3782,9 @@ int job_over_limit(
       }  /* END if (pnode->hn_sister != 0) */
     }    /* END if (pjob->ji_nodekill != TM_ERROR_NODE) */
 
-  attr = &pjob->ji_wattr[JOB_ATR_resource];
+  attr = pjob->get_attr(JOB_ATR_resource);
 
-  used = &pjob->ji_wattr[JOB_ATR_resc_used];
+  used = pjob->get_attr(JOB_ATR_resc_used);
 
   bool over_limit = false;
 
@@ -4643,24 +4637,24 @@ void recover_internal_layout()
 
   {
 #ifndef NUMA_SUPPORT
-  std::list<job *>           job_list;
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>           job_list;
+  std::list<mom_job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
-    job *pjob = *iter;
+    mom_job *pjob = *iter;
 
     if (job_list.empty() == true)
       job_list.push_back(pjob);
     else
       {
-      std::list<job *>::iterator it;
-      bool                       added = false;
+      std::list<mom_job *>::iterator it;
+      bool                           added = false;
 
       for (it = job_list.begin(); it != job_list.end(); it++)
         {
-        if ((*it)->ji_qs.ji_stime >= pjob->ji_qs.ji_stime)
+        if ((*it)->get_start_time() >= pjob->get_start_time())
           {
           job_list.insert(it, pjob);
           added = true;
@@ -4674,7 +4668,7 @@ void recover_internal_layout()
     }
 
   // now, re-create the reservation for each job.
-  for (std::list<job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
+  for (std::list<mom_job *>::iterator it = job_list.begin(); it != job_list.end(); it++)
     {
     recover_cpuset_reservation(*(*it));
     }
@@ -5604,7 +5598,7 @@ int setup_program_environment(void)
 
 int TMOMJobGetStartInfo(
 
-  job         *pjob, /* I */
+  mom_job     *pjob, /* I */
   pjobexec_t **TJEP) /* O */
 
   {
@@ -5620,7 +5614,7 @@ int TMOMJobGetStartInfo(
       return(SUCCESS);
       }
     else if ((pjob != NULL) &&
-             (!strcmp(TMOMStartInfo[index].jobid, pjob->ji_qs.ji_jobid)))
+             (!strcmp(TMOMStartInfo[index].jobid, pjob->get_jobid())))
       {
       *TJEP = &TMOMStartInfo[index];
 
@@ -5638,7 +5632,7 @@ int TMOMJobGetStartInfo(
 int TMOMScanForStarting(void)
 
   {
-  job *pjob;
+  mom_job *pjob;
 
   int  Count;
   int  RC;
@@ -5655,16 +5649,16 @@ int TMOMScanForStarting(void)
 
   tmpL = svr_alljobs.ll_next->ll_struct;
 
-  pjob = (job *)tmpL; */
+  pjob = (mom_job *)tmpL; */
 #endif /* MSIC */
 
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING)
+    if (pjob->get_substate() == JOB_SUBSTATE_STARTING)
       {
       pjobexec_t *TJE = NULL;
 
@@ -5677,14 +5671,14 @@ int TMOMScanForStarting(void)
         log_record(
           PBSEVENT_JOB | PBSEVENT_FORCE,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           log_buffer);
         }
 
       if (TMOMJobGetStartInfo(pjob, &TJE) == FAILURE)
         {
         sprintf(log_buffer, "job %s start data lost, server will retry",
-                pjob->ji_qs.ji_jobid);
+                pjob->get_jobid());
 
         log_record(
           PBSEVENT_ERROR,
@@ -5706,23 +5700,23 @@ int TMOMScanForStarting(void)
         if (LOGLEVEL >= 3)
           {
           sprintf(log_buffer, "job %s child not started, will check later",
-                  pjob->ji_qs.ji_jobid);
+                  pjob->get_jobid());
 
           log_record(
             PBSEVENT_ERROR,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             log_buffer);
           }
 
         /* if job has been in prerun > TJobStartTimeout, purge job */
 
-        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
+        STime = pjob->get_long_attr(JOB_ATR_mtime);
 
         if ((STime > 0) && ((time_now - STime) > pe_alarm_time))
           {
           sprintf(log_buffer, "job %s child not started after %ld seconds, server will retry",
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             pe_alarm_time);
 
           log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -5739,7 +5733,7 @@ int TMOMScanForStarting(void)
         if (TMomFinalizeJob3(TJE, Count, RC, &SC) == FAILURE)
           {
           /* no need to log this, TMomFinalizeJob3() already did */
-          sprintf(log_buffer, "job %s failed after TMomFinalizeJob3", pjob->ji_qs.ji_jobid);
+          sprintf(log_buffer, "job %s failed after TMomFinalizeJob3", pjob->get_jobid());
           log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
           memset(TJE, 0, sizeof(pjobexec_t));
@@ -5756,13 +5750,13 @@ int TMOMScanForStarting(void)
             {
             sprintf(log_buffer, "%s:job %s reported successful start",
               __func__,
-              pjob->ji_qs.ji_jobid);
+              pjob->get_jobid());
 
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
             }
           }
         }    /* END else (TMomCheckJobChild() == FAILURE) */
-      }      /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STARTING) */
+      }      /* END if (pjob->get_substate() == JOB_SUBSTATE_STARTING) */
     }        /* END while (pjob != NULL) */
 
   return(SUCCESS);
@@ -5781,13 +5775,13 @@ int TMOMScanForStarting(void)
 void examine_all_polled_jobs(void)
 
   {
-  job         *pjob;
+  mom_job    *pjob;
   int         c;
 
-  for (pjob = (job *)GET_NEXT(mom_polljobs);pjob;
-       pjob = (job *)GET_NEXT(pjob->ji_jobque))
+  for (pjob = (mom_job *)GET_NEXT(mom_polljobs);pjob;
+       pjob = (mom_job *)GET_NEXT(pjob->ji_jobque))
     {
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+    if (pjob->get_substate() != JOB_SUBSTATE_RUNNING)
       continue;
 
     /*
@@ -5810,12 +5804,12 @@ void examine_all_polled_jobs(void)
 
         log_record(PBSEVENT_JOB | PBSEVENT_FORCE,
                    PBS_EVENTCLASS_JOB,
-                   pjob->ji_qs.ji_jobid,
+                   pjob->get_jobid(),
                    log_buffer);
         }
       }
 
-    c = pjob->ji_qs.ji_svrflags;
+    c = pjob->get_svrflags();
 
     if (c & JOB_SVFLG_OVERLMT2)
       {
@@ -5838,7 +5832,7 @@ void examine_all_polled_jobs(void)
       log_record(
         PBSEVENT_JOB | PBSEVENT_FORCE,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         log_buffer);
 
       if (am_i_mother_superior(*pjob) == true)
@@ -5860,7 +5854,7 @@ void examine_all_polled_jobs(void)
 
       kill_job(pjob, SIGTERM, __func__, "job is over-limit-0");
 
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_OVERLMT2;
+      pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_OVERLMT2);
       }
     }    /* END for (pjob) */
 
@@ -5877,20 +5871,20 @@ void examine_all_polled_jobs(void)
 void examine_all_running_jobs(void)
 
   {
-  job         *pjob;
+  mom_job         *pjob;
 #ifdef _CRAY
   int         c;
 #endif
   
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+    if (pjob->get_substate() != JOB_SUBSTATE_RUNNING)
       {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+      if (pjob->get_substate() == JOB_SUBSTATE_PRERUN)
         {
         long STime;
         long real_alarm_time;
@@ -5903,12 +5897,12 @@ void examine_all_running_jobs(void)
           real_alarm_time = pe_alarm_time;
         else
           real_alarm_time = TJobStartTimeout;
-        STime = pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long;
+        STime = pjob->get_long_attr(JOB_ATR_mtime);
         time_now = time((time_t *)0);
         if ((STime > 0) && ((time_now - STime) > real_alarm_time))
           {
           sprintf(log_buffer, "job %s already examined. substate=%d",
-                  pjob->ji_qs.ji_jobid, pjob->ji_qs.ji_substate);
+                  pjob->get_jobid(), pjob->get_substate());
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
           /* This is the second time through examine_all_running_jobs for
              this job while in a PRERUN state. Something is wrong. 
@@ -5934,9 +5928,9 @@ void examine_all_running_jobs(void)
       {
       pjob->ji_flags &= ~MOM_NO_PROC;
 
-      for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+      for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
         {
-        task *ptask = pjob->ji_tasks->at(i);
+        task *ptask = pjob->ji_tasks.at(i);
 #ifdef _CRAY
 
         if (pjob->ji_globid[0] == '\0')
@@ -5954,21 +5948,21 @@ void examine_all_running_jobs(void)
             log_event(
               PBSEVENT_JOB,
               PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
+              pjob->get_jobid(),
               "no active process found");
             }
 
           ptask->ti_qs.ti_exitstat = 0;
 
           ptask->ti_qs.ti_status = TI_STATE_EXITED;
-          pjob->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+          pjob->set_mom_exitstat(0);
 
           if (LOGLEVEL >= 6)
             {
             log_record(
               PBSEVENT_ERROR,
               PBS_EVENTCLASS_JOB,
-              pjob->ji_qs.ji_jobid,
+              pjob->get_jobid(),
               "saving task (main loop)");
             }
 
@@ -5990,7 +5984,7 @@ void examine_all_running_jobs(void)
 
 void resend_waiting_joins(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   hnodent    *np;
@@ -6004,7 +5998,7 @@ void resend_waiting_joins(
 
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-    (job_attr_def + i)->at_encode(pjob->ji_wattr + i,
+    (job_attr_def + i)->at_encode(pjob->get_attr(i),
        &phead,
        (job_attr_def + i)->at_name,
        NULL,
@@ -6045,21 +6039,21 @@ void resend_waiting_joins(
 
 bool should_resend_obit(
 
-  job *pjob,
-  int  diff)
+  mom_job *pjob,
+  int      diff)
 
   {
   bool resend = false;
 
   // Only check jobs in substates that have to do with exiting.
-  if (pjob->ji_qs.ji_substate < JOB_SUBSTATE_MOM_WAIT)
+  if (pjob->get_substate() < JOB_SUBSTATE_MOM_WAIT)
     return(resend);
       
   if ((pjob->ji_obit_busy_time != 0) &&
       (time_now - pjob->ji_obit_busy_time >= diff))
     resend = true;
   
-  switch (pjob->ji_qs.ji_substate)
+  switch (pjob->get_substate())
     {
     case JOB_SUBSTATE_PREOBIT:
 
@@ -6080,7 +6074,7 @@ bool should_resend_obit(
 
         for (unsigned int i = 0; i < exiting_job_list.size(); i++)
           {
-          if (exiting_job_list[i].jobid == pjob->ji_qs.ji_jobid)
+          if (exiting_job_list[i].jobid == pjob->get_jobid())
             {
             found = true;
             break;
@@ -6089,7 +6083,7 @@ bool should_resend_obit(
 
         if (found == false)
           {
-          exiting_job_info e(pjob->ji_qs.ji_jobid);
+          exiting_job_info e(pjob->get_jobid());
           exiting_job_list.push_back(e);
           }
         }
@@ -6132,7 +6126,7 @@ bool should_resend_obit(
 
 bool resend_obit_if_needed(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
   // Add a random element for retries so that all moms aren't retrying at the same time
@@ -6168,7 +6162,7 @@ bool resend_obit_if_needed(
 
 void check_job_in_mom_wait(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
   unsigned int momport = 0;
@@ -6184,12 +6178,12 @@ void check_job_in_mom_wait(
      * it anyway */
     snprintf(log_buffer, sizeof(log_buffer),
       "Job %s has exceeded %d seconds, the time to wait for sisters to confirm it is finished. Cleaning up.",
-      pjob->ji_qs.ji_jobid, job_exit_wait_time);
+      pjob->get_jobid(), job_exit_wait_time);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    pjob->set_substate(JOB_SUBSTATE_EXITING);
 
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
 
     exiting_tasks = 1;
     }
@@ -6200,10 +6194,10 @@ void check_job_in_mom_wait(
 
 void evaluate_job_in_prerun(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
-  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+  if ((pjob->get_state() == JOB_STATE_RUNNING) &&
       (am_i_mother_superior(*pjob) == true))
     {
     /* these jobs have sent out join requests but haven't received all replies */
@@ -6237,9 +6231,9 @@ void check_job_substates(
   bool &should_scan_for_exiting)
 
   {
-  job                        *pjob;
-  int                         retried = 0;
-  std::list<job *>::iterator  iter;
+  mom_job                        *pjob;
+  int                             retried = 0;
+  std::list<mom_job *>::iterator  iter;
 
   time_now = time(NULL);
 
@@ -6252,7 +6246,7 @@ void check_job_substates(
     {
     pjob = *iter;
 
-    switch (pjob->ji_qs.ji_substate)
+    switch (pjob->get_substate())
       {
       case JOB_SUBSTATE_EXITING:
 
@@ -6328,7 +6322,7 @@ void check_job_substates(
 void check_exiting_jobs()
 
   {
-  job                           *pjob;
+  mom_job                       *pjob;
   std::vector<std::string>       to_remove;
   std::vector<exiting_job_info>  to_reinsert;
   time_now = time(NULL);
@@ -6350,7 +6344,7 @@ void check_exiting_jobs()
     if ((pjob != NULL) &&
         (pjob->ji_job_is_being_rerun == FALSE))
       {
-      if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRECLEAN) &&
+      if ((pjob->get_substate() == JOB_SUBSTATE_PRECLEAN) &&
           (pjob->ji_momsubt != 0) &&
           (kill(pjob->ji_momsubt, 0)))
         {
@@ -6391,25 +6385,25 @@ void check_exiting_jobs()
 void kill_all_running_jobs(void)
 
   {
-  job *pjob;
-  unsigned int momport = 0;
-  std::list<job *>::iterator iter;
+  mom_job                        *pjob;
+  unsigned int                    momport = 0;
+  std::list<mom_job *>::iterator  iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
+    if (pjob->get_substate() == JOB_SUBSTATE_RUNNING)
       {
       kill_job(pjob, SIGKILL, __func__, "mom is terminating with kill jobs flag");
 
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+      pjob->set_substate(JOB_SUBSTATE_EXITING);
 
       if (multi_mom)
         {
         momport = pbs_rm_port;
         }
-      job_save(pjob, SAVEJOB_QUICK, momport);
+      mom_job_save(pjob, momport);
       }
     else
       {
@@ -6438,17 +6432,17 @@ void kill_all_running_jobs(void)
 void prepare_child_tasks_for_delete()
 
   {
-  job *pJob;
+  mom_job *pJob;
 
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
 
-    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pJob->ji_tasks.size(); i++)
       {
-      task *pTask = pJob->ji_tasks->at(i);
+      task *pTask = pJob->ji_tasks.at(i);
 
       char buf[128];
 
@@ -6457,7 +6451,7 @@ void prepare_child_tasks_for_delete()
       sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
               pTask->ti_qs.ti_sid,
               pTask->ti_qs.ti_task,
-              pJob->ji_qs.ji_jobid);
+              pJob->get_jobid());
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 

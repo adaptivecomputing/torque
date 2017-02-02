@@ -397,7 +397,7 @@ void update_job_data(
   char  *attr_value;
   char   log_buf[LOCAL_LOG_BUF_SIZE];
 
-  job   *pjob = NULL;
+  svr_job   *pjob = NULL;
   int    on_node = FALSE;
 
   if ((jobstring_in == NULL) || (!isdigit(*jobstring_in)))
@@ -439,9 +439,9 @@ void update_job_data(
             sprintf(log_buf, "Mom sent changed attribute %s value %s for job %s",
               attr_name,
               attr_value,
-              pjob->ji_qs.ji_jobid);
+              pjob->get_jobid());
               
-            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);  
+            log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);  
             }
 
           memset(&tA, 0, sizeof(tA));

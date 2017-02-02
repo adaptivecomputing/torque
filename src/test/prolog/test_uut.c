@@ -13,9 +13,9 @@
 #include "mom_func.h"
 #include "test_prolog.h"
 
-int check_pelog_permissions(struct stat &sbuf, int reduce_checks, job *pjob, const char *pelog, int which);
-void setup_pelog_arguments(char *pelog, job *pjob, int which, char **arg);
-void setup_pelog_environment(job *pjob, int which);
+int check_pelog_permissions(struct stat &sbuf, int reduce_checks, mom_job *pjob, const char *pelog, int which);
+void setup_pelog_arguments(char *pelog, mom_job *pjob, int which, char **arg);
+void setup_pelog_environment(mom_job *pjob, int which);
 
 
 extern std::map<std::string, std::string> env_map;
@@ -24,10 +24,9 @@ extern std::map<std::string, std::string> env_map;
 START_TEST(test_check_pelog_permissions)
   {
   struct stat sbuf;
-  job         pjob;
+  mom_job         pjob;
 
   memset(&sbuf, 0, sizeof(sbuf));
-  memset(&pjob, 0, sizeof(pjob));
 
   fail_unless(check_pelog_permissions(sbuf, TRUE, &pjob, "bob", PE_PROLOGUSERJOB) != PBSE_NONE);
   sbuf.st_mode = S_IXUSR | S_IFREG;
@@ -48,37 +47,35 @@ START_TEST(test_setup_pelog_arguments)
   {
   char *argv[12];
   char *pelog = strdup("bob");
-  job   pjob; 
+  mom_job   pjob; 
 
-  memset(&pjob, 0, sizeof(pjob));
-
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
-  pjob.ji_wattr[JOB_ATR_euser].at_val.at_str = strdup("dbeer");
-  pjob.ji_wattr[JOB_ATR_egroup].at_val.at_str = strdup("dbeer");
-  pjob.ji_wattr[JOB_ATR_jobname].at_val.at_str = strdup("pare_data");
-  pjob.ji_wattr[JOB_ATR_in_queue].at_val.at_str = strdup("batch");
-  pjob.ji_wattr[JOB_ATR_account].at_val.at_str = strdup("dbeer");
+  pjob.set_jobid("1.napali");
+  pjob.set_str_attr(JOB_ATR_euser, strdup("dbeer"));
+  pjob.set_str_attr(JOB_ATR_egroup, strdup("dbeer"));
+  pjob.set_str_attr(JOB_ATR_jobname, strdup("pare_data"));
+  pjob.set_str_attr(JOB_ATR_in_queue, strdup("batch"));
+  pjob.set_str_attr(JOB_ATR_account, strdup("dbeer"));
 
   setup_pelog_arguments(pelog, &pjob, PE_PROLOG, argv);
 
   fail_unless(!strcmp(argv[0], pelog));
-  fail_unless(!strcmp(argv[1], pjob.ji_qs.ji_jobid));
-  fail_unless(!strcmp(argv[2], pjob.ji_wattr[JOB_ATR_euser].at_val.at_str));
-  fail_unless(!strcmp(argv[3], pjob.ji_wattr[JOB_ATR_egroup].at_val.at_str));
-  fail_unless(!strcmp(argv[4], pjob.ji_wattr[JOB_ATR_jobname].at_val.at_str));
+  fail_unless(!strcmp(argv[1], pjob.get_jobid()));
+  fail_unless(!strcmp(argv[2], pjob.get_str_attr(JOB_ATR_euser)));
+  fail_unless(!strcmp(argv[3], pjob.get_str_attr(JOB_ATR_egroup)));
+  fail_unless(!strcmp(argv[4], pjob.get_str_attr(JOB_ATR_jobname)));
   // nothing to check for 5 fail_unless(!strcmp(argv[5], pjob.ji_qs.ji_jobid);
-  fail_unless(!strcmp(argv[6], pjob.ji_wattr[JOB_ATR_in_queue].at_val.at_str));
-  fail_unless(!strcmp(argv[7], pjob.ji_wattr[JOB_ATR_account].at_val.at_str));
+  fail_unless(!strcmp(argv[6], pjob.get_str_attr(JOB_ATR_in_queue)));
+  fail_unless(!strcmp(argv[7], pjob.get_str_attr(JOB_ATR_account)));
  
   // check for epilogues
-  pjob.ji_wattr[JOB_ATR_session_id].at_val.at_long = 204;
-  pjob.ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+  pjob.set_long_attr(JOB_ATR_session_id, 204);
+  pjob.set_mom_exitstat(0);
 
   setup_pelog_arguments(pelog, &pjob, PE_EPILOG, argv);
   fail_unless(!strcmp(argv[5], "204"));
   // nothing to check for 6 or 7
-  fail_unless(!strcmp(argv[8], pjob.ji_wattr[JOB_ATR_in_queue].at_val.at_str));
-  fail_unless(!strcmp(argv[9], pjob.ji_wattr[JOB_ATR_account].at_val.at_str));
+  fail_unless(!strcmp(argv[8], pjob.get_str_attr(JOB_ATR_in_queue)));
+  fail_unless(!strcmp(argv[9], pjob.get_str_attr(JOB_ATR_account)));
   fail_unless(!strcmp(argv[10], "0"));
   }
 END_TEST
@@ -86,9 +83,7 @@ END_TEST
 
 START_TEST(test_setup_pelog_environment)
   {
-  job pjob;
-
-  memset(&pjob, 0, sizeof(pjob));
+  mom_job pjob;
 
   // initialize job so env variables can be added
   pjob.ji_numvnod = 20;
@@ -97,10 +92,8 @@ START_TEST(test_setup_pelog_environment)
   pjob.ji_vnods[0].vn_host = (hnodent *)calloc(1, sizeof(hnodent));
   pjob.ji_vnods[0].vn_host->hn_host = strdup("napali");
   pjob.ji_flags |= MOM_HAS_NODEFILE;
-  strcpy(pjob.ji_qs.ji_jobid, "10.napali");
-  pjob.ji_wattr[JOB_ATR_variables].at_val.at_arst = (struct array_strings *)calloc(1, 
-      sizeof(struct array_strings));
-  pjob.ji_wattr[JOB_ATR_variables].at_val.at_arst->as_usedptr = 0;
+  pjob.set_jobid("10.napali");
+  pjob.set_arst_attr(JOB_ATR_variables, (struct array_strings *)calloc(1, sizeof(struct array_strings)));
 
   setup_pelog_environment(&pjob, PE_PROLOG);
 

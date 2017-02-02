@@ -115,7 +115,7 @@
 /* External Functions Called: */
 
 extern int  reply_jid(char *);
-extern int  svr_authorize_jobreq(struct batch_request *, job *);
+extern int  svr_authorize_jobreq(struct batch_request *, mom_job *);
 int         reply_send_mom(struct batch_request *request);
 extern void check_state(int);
 extern void mom_server_all_update_stat();
@@ -162,7 +162,7 @@ extern int decode_arst_merge(struct pbs_attribute *,const char *,const char *,co
 
 /* Private Functions in this file */
 
-static job *locate_new_job(int, char *);
+static mom_job *locate_new_job(int, char *);
 
 #ifdef PNOT
 static int user_account_verify(char *, char *);
@@ -188,7 +188,7 @@ void mom_req_quejob(
   int            index;
   char          *jid;
   attribute_def *pdef;
-  job           *pj;
+  mom_job           *pj;
   svrattrl      *psatl;
   int            rc;
   int            sock = preq->rq_conn;
@@ -240,14 +240,14 @@ void mom_req_quejob(
 
   if ((pj = mom_find_job(jid)) == NULL)
     {
-    pj = (job *)GET_NEXT(svr_newjobs);
+    pj = (mom_job *)GET_NEXT(svr_newjobs);
 
     while (pj != NULL)
       {
-      if (!strcmp(pj->ji_qs.ji_jobid, jid))
+      if (!strcmp(pj->get_jobid(), jid))
         break;
 
-      pj = (job *)GET_NEXT(pj->ji_alljobs);
+      pj = (mom_job *)GET_NEXT(pj->ji_alljobs);
       }
     }
 
@@ -279,7 +279,7 @@ void mom_req_quejob(
     {
     /* newly queued job already exists */
 
-    if (pj->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)
+    if (pj->get_substate() == JOB_SUBSTATE_RUNNING)
       {
       /* FAILURE - job exists and is running */
 
@@ -292,16 +292,17 @@ void mom_req_quejob(
 
     /* if checkpointed, then keep old and skip rest of process */
 
-    if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
+    if (pj->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE)
       {
       IsCheckpoint = 1;
-      }  /* END if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) */
+      }  /* END if (pj->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) */
     else
       {
       /* reject the job. It is already working here. */
-      sprintf(log_buffer, "Job already exists. State: %d substate: %d", pj->ji_qs.ji_state, pj->ji_qs.ji_substate);
+      sprintf(log_buffer, "Job already exists. State: %d substate: %d",
+        pj->get_state(), pj->get_substate());
       log_err(-1, __func__, log_buffer);
-      sprintf(log_buffer, "Job %s already on mom", pj->ji_qs.ji_jobid);
+      sprintf(log_buffer, "Job %s already on mom", pj->get_jobid());
       req_reject(PBSE_JOBEXIST, 0, preq, NULL, log_buffer);
       return;
       }
@@ -322,15 +323,14 @@ void mom_req_quejob(
 
   if (IsCheckpoint == 0)
     {
-    strcpy(pj->ji_qs.ji_jobid,jid);
+    pj->set_jobid(jid);
 
-    strcpy(pj->ji_qs.ji_fileprefix,basename);
+    pj->set_fileprefix(basename);
 
-    pj->ji_modified       = 1;
+    pj->set_modified(true);
 
-    pj->ji_qs.ji_svrflags = created_here;
-
-    pj->ji_qs.ji_un_type  = JOB_UNION_TYPE_NEW;
+    pj->set_svrflags(created_here);
+    pj->set_un_type(JOB_UNION_TYPE_NEW);
 
     /* changing the union type overwrites the euid for the job, and if
      * ji_grpcache is set this potentially allows jobs to run as root. Unsetting
@@ -396,7 +396,7 @@ void mom_req_quejob(
     if (!strcmp(psatl->al_name,ATTR_v))
       {
       rc = decode_arst_merge(
-             &pj->ji_wattr[index],
+             pj->get_attr(index),
              psatl->al_name,
              psatl->al_resc,
              psatl->al_value);
@@ -404,7 +404,7 @@ void mom_req_quejob(
     else
       {
       rc = pdef->at_decode(
-             &pj->ji_wattr[index],
+             pj->get_attr(index),
              psatl->al_name,
              psatl->al_resc,
              psatl->al_value,
@@ -442,14 +442,14 @@ void mom_req_quejob(
           return;
           }
 
-        presc = find_resc_entry(&pj->ji_wattr[index],prdef);
+        presc = find_resc_entry(pj->get_attr(index), prdef);
 
         if (presc != NULL)
           presc->rs_value.at_flags |= ATR_VFLAG_DEFLT;
         }
       else
         {
-        pj->ji_wattr[index].at_flags |= ATR_VFLAG_DEFLT;
+        pj->set_attr_flag_bm(index, ATR_VFLAG_DEFLT);
         }
       }    /* END if (psatl->al_op == DFLT) */
 
@@ -458,9 +458,9 @@ void mom_req_quejob(
 
   if (IsCheckpoint == 1)
     {
-    pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
+    pj->set_substate(JOB_SUBSTATE_TRANSIN);
 
-    if (reply_jobid(preq,pj->ji_qs.ji_jobid,BATCH_REPLY_CHOICE_Queue) == 0)
+    if (reply_jobid(preq,pj->get_jobid(),BATCH_REPLY_CHOICE_Queue) == 0)
       {
       remove_from_job_list(pj);
 
@@ -472,10 +472,10 @@ void mom_req_quejob(
         pj->ji_grpcache = NULL;
         }
 
-      pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-      pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-      pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
-      pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+      pj->set_un_type(JOB_UNION_TYPE_NEW);
+      pj->set_fromsock(sock);
+      pj->set_fromaddr(get_connectaddr(sock,FALSE));
+      pj->set_scriptsz(0);
 
       /* Per Eric R., req_mvjobfile was giving error in open_std_file,
          showed up as fishy error message */
@@ -497,11 +497,10 @@ void mom_req_quejob(
     }
 
   /* set remaining job structure elements */
-  pj->ji_qs.ji_state =    JOB_STATE_TRANSIT;
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSIN;
+  pj->set_state(JOB_STATE_TRANSIT);
+  pj->set_substate(JOB_SUBSTATE_TRANSIN);
 
-  pj->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
-  pj->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
+  pj->set_long_attr(JOB_ATR_mtime, (long)time_now);
 
   if (pj->ji_grpcache != NULL)
     {
@@ -509,13 +508,13 @@ void mom_req_quejob(
     pj->ji_grpcache = NULL;
     }
 
-  pj->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-  pj->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
-  pj->ji_qs.ji_un.ji_newt.ji_fromaddr = get_connectaddr(sock,FALSE);
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
+  pj->set_un_type(JOB_UNION_TYPE_NEW);
+  pj->set_fromsock(sock);
+  pj->set_fromaddr(get_connectaddr(sock,FALSE));
+  pj->set_scriptsz(0);
 
   /* acknowledge the request with the job id */
-  if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_Queue) != 0)
+  if (reply_jobid(preq, pj->get_jobid(), BATCH_REPLY_CHOICE_Queue) != 0)
     {
     /* reply failed, purge the job and close the connection */
     // call mom_job_purge first so that double-frees don't happen 
@@ -549,7 +548,7 @@ void req_jobcredential(
   struct batch_request *preq)  /* ptr to the decoded request   */
 
   {
-  job *pj;
+  mom_job *pj;
 
   pj = locate_new_job(preq->rq_conn, NULL);
 
@@ -581,7 +580,7 @@ void req_jobscript(
   {
   int          fds;
   char         namebuf[MAXPATHLEN];
-  job         *pj;
+  mom_job         *pj;
   int          filemode = 0700;
 
   errno = 0;
@@ -599,19 +598,19 @@ void req_jobscript(
 
   /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSIN)
     {
     if (errno == 0)
       {
       sprintf(log_buffer, "job %s in unexpected state '%s'",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate]);
+        pj->get_jobid(),
+        PJobSubState[pj->get_substate()]);
       }
     else
       {
       sprintf(log_buffer, "job %s in unexpected state '%s' (errno=%d - %s)",
-        pj->ji_qs.ji_jobid,
-        PJobSubState[pj->ji_qs.ji_substate],
+        pj->get_jobid(),
+        PJobSubState[pj->get_substate()],
         errno,
         strerror(errno));
       }
@@ -625,7 +624,7 @@ void req_jobscript(
 
   /* mom - if job has been checkpointed, discard script,already have it */
 
-  if (pj->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
+  if (pj->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE)
     {
     /* SUCCESS - do nothing, ignore script */
 
@@ -637,15 +636,15 @@ void req_jobscript(
   if (multi_mom)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
-      path_jobs, pj->ji_qs.ji_fileprefix, pbs_rm_port, JOB_SCRIPT_SUFFIX);
+      path_jobs, pj->get_fileprefix(), pbs_rm_port, JOB_SCRIPT_SUFFIX);
     }
   else
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      path_jobs, pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+      path_jobs, pj->get_fileprefix(), JOB_SCRIPT_SUFFIX);
     }
 
-  if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
+  if (pj->get_scriptsz() == 0)
     {
     /* NOTE:  fail is job script already exists */
 
@@ -692,12 +691,11 @@ void req_jobscript(
 
   close(fds);
 
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
+  pj->set_scriptsz(pj->get_scriptsz() + preq->rq_ind.rq_jobfile.rq_size);
 
   /* job has a script file */
 
-  pj->ji_qs.ji_svrflags =
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
+  pj->set_svrflags((pj->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT);
 
   /* SUCCESS */
 
@@ -724,7 +722,7 @@ void req_mvjobfile(
   int          fds;
   enum job_file  jft;
   int          oflag;
-  job         *pj;
+  mom_job         *pj;
 
   struct passwd *pwd;
   char          *buf = NULL;
@@ -766,7 +764,7 @@ void req_mvjobfile(
 
   /* check_pwd allocated pwd and getpwnam_ext is going to allocate
      another one. Free pwd first */
-  if ((pwd = getpwnam_ext(&buf, pj->ji_wattr[JOB_ATR_euser].at_val.at_str)) == NULL)
+  if ((pwd = getpwnam_ext(&buf, pj->get_str_attr(JOB_ATR_euser))) == NULL)
     {
     /* FAILURE */
     req_reject(PBSE_MOMREJECT, 0, preq, NULL, "password lookup failed");
@@ -814,7 +812,7 @@ void req_mvjobfile(
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pj->ji_qs.ji_jobid,
+        pj->get_jobid(),
         log_buffer);
       }
 
@@ -843,13 +841,12 @@ void req_rdytocommit(
   struct batch_request *preq)  /* I */
 
   {
-  job *pj;
+  mom_job *pj;
   int  sock = preq->rq_conn;
 
   int  OrigState;
   int  OrigSState;
   char OrigSChar;
-  long OrigFlags;
   uint16_t momport = 0;
 
   pj = locate_new_job(sock, preq->rq_ind.rq_rdytocommit);
@@ -859,7 +856,7 @@ void req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      (pj != NULL) ? pj->get_jobid() : "NULL",
       "ready to commit job");
     }
 
@@ -873,7 +870,7 @@ void req_rdytocommit(
     return;
     }
 
-  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
+  if (pj->get_substate() != JOB_SUBSTATE_TRANSIN)
     {
     /* FAILURE */
     log_err(errno, "req_rdytocommit", (char *)"cannot commit job in unexpected state");
@@ -883,23 +880,21 @@ void req_rdytocommit(
     return;
     }
 
-  OrigState  = pj->ji_qs.ji_state;
+  OrigState  = pj->get_state();
 
-  OrigSState = pj->ji_qs.ji_substate;
-  OrigSChar  = pj->ji_wattr[JOB_ATR_state].at_val.at_char;
-  OrigFlags  = pj->ji_wattr[JOB_ATR_state].at_flags;
+  OrigSState = pj->get_substate();
+  OrigSChar  = pj->get_char_attr(JOB_ATR_state);
 
-  pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
+  pj->set_state(JOB_STATE_TRANSIT);
+  pj->set_substate(JOB_SUBSTATE_TRANSICM);
+  pj->set_char_attr(JOB_ATR_state, 'T');
 
   if (multi_mom)
     {
     momport = pbs_rm_port;
     }
 
-  if (job_save(pj, SAVEJOB_NEW, momport) == -1)
+  if (mom_job_save(pj, momport) == -1)
     {
     /* FAILURE */
     char tmpLine[MAXLINE];
@@ -911,10 +906,9 @@ void req_rdytocommit(
 
     /* commit failed, backoff state changes */
 
-    pj->ji_qs.ji_state    = OrigState;
-    pj->ji_qs.ji_substate = OrigSState;
-    pj->ji_wattr[JOB_ATR_state].at_val.at_char = OrigSChar;
-    pj->ji_wattr[JOB_ATR_state].at_flags = OrigFlags;
+    pj->set_state(OrigState);
+    pj->set_substate(OrigSState);
+    pj->set_char_attr(JOB_ATR_state, OrigSChar);
 
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
 
@@ -923,7 +917,7 @@ void req_rdytocommit(
 
   /* acknowledge the request with the job id */
 
-  if (reply_jobid(preq, pj->ji_qs.ji_jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
+  if (reply_jobid(preq, pj->get_jobid(), BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
     /* FAILURE */
     /* reply failed, purge the job and close the connection */
@@ -947,7 +941,7 @@ void req_rdytocommit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pj->ji_qs.ji_jobid,
+      pj->get_jobid(),
       "ready to commit job completed");
     }
 
@@ -1003,14 +997,14 @@ void req_commit(
   {
   unsigned int  momport = 0;
   int           rc;
-  job          *pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
+  mom_job          *pj = locate_new_job(preq->rq_conn, preq->rq_ind.rq_commit);
 
   if (LOGLEVEL >= 6)
     {
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pj != NULL) ? pj->ji_qs.ji_jobid : "NULL",
+      (pj != NULL) ? pj->get_jobid() : "NULL",
       "committing job");
     }
 
@@ -1021,19 +1015,7 @@ void req_commit(
     return;
     }
 
-  pj->ji_qs.ji_state    = JOB_STATE_TRANSIT;
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_TRANSICM;
-  pj->ji_wattr[JOB_ATR_state].at_val.at_char = 'T';
-  pj->ji_wattr[JOB_ATR_state].at_flags |= ATR_VFLAG_SET;
-
-/*  if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM)
-    {
-    log_err(errno, "req_commit", (char *)"cannot commit job in unexpected state");
-
-    req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
-
-    return;
-    }*/
+  pj->set_char_attr(JOB_ATR_state, 'T');
 
   /* move job from new job list to "all" job list, set to running state */
 
@@ -1045,22 +1027,20 @@ void req_commit(
   ** Set JOB_SVFLG_HERE to indicate that this is Mother Superior.
   */
 
-  pj->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+  pj->set_svrflags(pj->get_svrflags() | JOB_SVFLG_HERE);
+  pj->set_state(JOB_STATE_RUNNING);
+  pj->set_substate(JOB_SUBSTATE_PRERUN);
 
-  pj->ji_qs.ji_state = JOB_STATE_RUNNING;
+  pj->set_un_type(JOB_UNION_TYPE_MOM);
+  pj->set_svraddr(get_connectaddr(preq->rq_conn,FALSE));
 
-  pj->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
-
-  pj->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
-
-  pj->ji_qs.ji_un.ji_momt.ji_svraddr = get_connectaddr(preq->rq_conn,FALSE);
-
-  pj->ji_qs.ji_un.ji_momt.ji_exitstat = 0;
+  pj->set_mom_exitstat(0);
 
   /* For MOM - start up the job (blocks) */
 
   if (LOGLEVEL >= 6)
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, "req_commit:starting job execution");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(),
+      "req_commit:starting job execution");
 
   rc = start_exec(pj);
 
@@ -1069,13 +1049,13 @@ void req_commit(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pj->ji_qs.ji_jobid,
+      pj->get_jobid(),
       "req_commit:job execution started");
     }
 
   /* if start request fails, reply with failure string */
 
-  if (pj->ji_qs.ji_substate == JOB_SUBSTATE_EXITING)
+  if (pj->get_substate() == JOB_SUBSTATE_EXITING)
     {
     char tmpLine[1024];
 
@@ -1093,14 +1073,14 @@ void req_commit(
 
     if (LOGLEVEL >= 6)
       {
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, tmpLine);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->get_jobid(), tmpLine);
       }
 
     reply_text(preq, rc, tmpLine);
     }
   else
     {
-    reply_sid(preq, pj->ji_wattr[JOB_ATR_session_id].at_val.at_long,BATCH_REPLY_CHOICE_Text);
+    reply_sid(preq, pj->get_long_attr(JOB_ATR_session_id), BATCH_REPLY_CHOICE_Text);
     }
 
   if (multi_mom)
@@ -1108,7 +1088,7 @@ void req_commit(
     momport = pbs_rm_port;
     }
 
-  job_save(pj, SAVEJOB_FULL, momport);
+  mom_job_save(pj, momport);
 
 #ifdef NVIDIA_GPUS
   /*
@@ -1116,8 +1096,7 @@ void req_commit(
    * if so, then update gpu status
    */
   if ((use_nvidia_gpu) && 
-      ((pj->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0) &&
-      (pj->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str != NULL))
+      (pj->get_str_attr(JOB_ATR_exec_gpus) != NULL))
     {
     send_update_soon();
     }
@@ -1153,32 +1132,32 @@ void req_commit(
  * to me that a reconnect immediately invalidates fromsock.
  */
 
-static job *locate_new_job(
+static mom_job *locate_new_job(
 
   int   sock,   /* I */
   char *jobid)  /* I (optional) */
 
   {
-  job *pj;
+  mom_job *pj;
 
-  pj = (job *)GET_NEXT(svr_newjobs);
+  pj = (mom_job *)GET_NEXT(svr_newjobs);
 
   while (pj != NULL)
     {
-    if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) ||
-        ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == sock) &&
-         (pj->ji_qs.ji_un.ji_newt.ji_fromaddr == get_connectaddr(sock,FALSE))))
+    if ((pj->get_fromsock() == -1) ||
+        ((pj->get_fromsock() == sock) &&
+         (pj->get_fromaddr() == get_connectaddr(sock,FALSE))))
       {
       if ((jobid != NULL) && (*jobid != '\0'))
         {
-        if (!strncmp(pj->ji_qs.ji_jobid, jobid, PBS_MAXSVRJOBID))
+        if (!strncmp(pj->get_jobid(), jobid, PBS_MAXSVRJOBID))
           {
           /* requested job located */
 
           break;
           }
         }
-      else if (pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1)
+      else if (pj->get_fromsock() == -1)
         {
         /* empty job slot located */
 
@@ -1190,9 +1169,9 @@ static job *locate_new_job(
 
         break;
         }
-      }    /* END if ((pj->ji_qs.ji_un.ji_newt.ji_fromsock == -1) || ...) */
+      }    /* END if ((pj->get_fromsock() == -1) || ...) */
 
-    pj = (job *)GET_NEXT(pj->ji_alljobs);
+    pj = (mom_job *)GET_NEXT(pj->ji_alljobs);
     }  /* END while(pj != NULL) */
 
   /* return job slot located (NULL on FAILURE) */

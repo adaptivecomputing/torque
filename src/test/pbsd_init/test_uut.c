@@ -11,8 +11,8 @@
 #include "queue.h"
 
 int mk_subdirs(char **);
-int pbsd_init_reque(job *, int);
-void check_jobs_queue(job *pjob);
+int pbsd_init_reque(svr_job *, int);
+void check_jobs_queue(svr_job *pjob);
 void remove_invalid_allocations(pbsnode *pnode);
 
 extern char global_log_ext_msg[LOCAL_LOG_BUF_SIZE];
@@ -59,17 +59,17 @@ END_TEST
 
 START_TEST(test_check_jobs_queue)
   {
-  job pjob;
+  svr_job pjob;
 
-  sprintf(pjob.ji_qs.ji_jobid, "1.napali");
-  sprintf(pjob.ji_qs.ji_queue, "lost");
+  pjob.set_jobid("1.napali");
+  pjob.set_queue("lost");
 
   unlocked_job = 0;
   locked_job = 0;
 
   check_jobs_queue(&pjob);
   fail_unless(allocd_queue != NULL);
-  fail_unless(!strcmp(allocd_queue->qu_qs.qu_name, pjob.ji_qs.ji_queue));
+  fail_unless(!strcmp(allocd_queue->qu_qs.qu_name, pjob.get_queue()));
   fail_unless(allocd_queue->qu_qs.qu_type == QTYPE_Execution);
   fail_unless(allocd_queue->qu_attr[QA_ATR_GhostQueue].at_val.at_bool == true);
   fail_unless(!strcmp(allocd_queue->qu_attr[QA_ATR_QType].at_val.at_str, "Execution"));
@@ -111,7 +111,7 @@ END_TEST
 
 START_TEST(test_pbsd_init_reque)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  svr_job *pjob = (svr_job *)calloc(1, sizeof(svr_job));
 
   evaluated = 0;
   aborted = 0;

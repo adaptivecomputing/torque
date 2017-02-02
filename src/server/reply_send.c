@@ -474,9 +474,9 @@ void reply_text(
 
 int reply_jobid(
 
-  struct batch_request *preq,
-  char   *jobid,
-  int    which)
+  batch_request *preq,
+  const char    *jobid,
+  int            which)
 
   {
   set_reply_type(&preq->rq_reply, which);

@@ -84,7 +84,7 @@ int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 job_array  *next_array_check(int *, job_array *);
-void        force_purge_work(job *pjob);
+void        force_purge_work(svr_job *pjob);
 
 #define     BUFSIZE 256
 
@@ -403,13 +403,13 @@ int array_save(
  */
 void array_get_parent_id(
     
-  char *job_id,
-  char *parent_id)
+  const char *job_id,
+  char       *parent_id)
 
   {
-  char *c;
-  char *pid;
-  int bracket = 0;
+  const char *c;
+  char       *pid;
+  int         bracket = 0;
 
   c = job_id;
   *parent_id = '\0';
@@ -1065,7 +1065,7 @@ int array_delete(
      this also deletes the shared script file for the array*/
   if (pa->ai_qs.parent_id[0] != '\0')
     {
-    job *pjob;
+    svr_job *pjob;
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       svr_job_purge(pjob);
     }
@@ -1137,7 +1137,7 @@ int set_slot_limit(
 
 int setup_array_struct(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   job_array          *pa;
@@ -1148,21 +1148,21 @@ int setup_array_struct(
 
   pa = new job_array();
 
-  pa->set_array_id(pjob->ji_qs.ji_jobid);
-  pa->set_arrays_fileprefix(pjob->ji_qs.ji_fileprefix);
-  pa->set_owner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+  pa->set_array_id(pjob->get_jobid());
+  pa->set_arrays_fileprefix(pjob->get_fileprefix());
+  pa->set_owner(pjob->get_str_attr(JOB_ATR_job_owner));
   pa->set_submit_host(get_variable(pjob, pbs_o_host));
 
   mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex);
 
-  if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
+  if (svr_job_save(pjob) != 0)
     {
     /* the array is deleted in svr_job_purge */
     pa_mutex.unlock();
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "cannot save job");
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), "cannot save job");
 
     svr_job_purge(pjob);
     delete pa;
@@ -1170,31 +1170,31 @@ int setup_array_struct(
     return(1);
     }
 
-  if ((rc = pa->set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
+  if ((rc = pa->set_slot_limit(pjob->get_str_attr(JOB_ATR_job_array_request))))
     {
     pa_mutex.unlock();
-    array_delete(pjob->ji_qs.ji_jobid);
+    array_delete(pjob->get_jobid());
 
     return(rc);
     }
 
   long requested_limit = -1;
 
-  if (pjob->ji_wattr[JOB_ATR_idle_slot_limit].at_flags & ATR_VFLAG_SET)
-    requested_limit = pjob->ji_wattr[JOB_ATR_idle_slot_limit].at_val.at_long;
+  if (pjob->is_attr_set(JOB_ATR_idle_slot_limit))
+    requested_limit = pjob->get_long_attr(JOB_ATR_idle_slot_limit);
 
   if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
     pa_mutex.unlock();
-    array_delete(pjob->ji_qs.ji_jobid);
+    array_delete(pjob->get_jobid());
 
     return(rc);
     }
 
-  if ((rc = pa->parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
+  if ((rc = pa->parse_array_request(pjob->get_str_attr(JOB_ATR_job_array_request))))
     {
     pa_mutex.unlock();
-    array_delete(pjob->ji_qs.ji_jobid);
+    array_delete(pjob->get_jobid());
     return(rc);
     }
 
@@ -1384,7 +1384,7 @@ int delete_array_range(
   bool       purge)
 
   {
-  job                *pjob;
+  svr_job            *pjob;
   char               *range;
   std::vector<int>    range_vec;
 
@@ -1428,15 +1428,15 @@ int delete_array_range(
     else
       {
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-      if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+      if (pjob->get_state() >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
         continue;
         }
 
-      int old_state = pjob->ji_qs.ji_state;
+      int old_state = pjob->get_state();
 
-      running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
+      running = (pjob->get_state() == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
       if (purge == true)
@@ -1542,7 +1542,7 @@ int delete_whole_array(
 
   get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
-  job *pjob;
+  svr_job *pjob;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
@@ -1559,16 +1559,16 @@ int delete_whole_array(
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       num_jobs++;
 
-      if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) &&
+      if ((pjob->get_state() >= JOB_STATE_EXITING) &&
           (purge == false))
         {
         /* invalid state for request,  skip */
         continue;
         }
 
-      int old_state = pjob->ji_qs.ji_state;
+      int old_state = pjob->get_state();
         
-      running = (pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
+      running = (pjob->get_state() == JOB_STATE_RUNNING);
 
       pthread_mutex_unlock(pa->ai_mutex);
 
@@ -1646,7 +1646,7 @@ int hold_array_range(
   pbs_attribute *temphold)   /* I */
 
   {
-  job                *pjob;
+  svr_job            *pjob;
   std::vector<int>    range_vec;
   
   char *range = strchr(range_str,'=');
@@ -1701,7 +1701,7 @@ int release_array_range(
 
   {
   int                 rc;
-  job                *pjob;
+  svr_job            *pjob;
   std::vector<int>    range_vec;
   
   char *range = strchr(range_str,'=');
@@ -1759,7 +1759,7 @@ int modify_array_range(
 
   {
   int                 rc = PBSE_NONE;
-  job                *pjob;
+  svr_job            *pjob;
   std::vector<int>    range_vec;
 
   if (translate_range_string_to_vector(range, range_vec))
@@ -1827,16 +1827,15 @@ int modify_array_range(
 
 void set_slot_hold(
     
-  job *pjob,
+  svr_job *pjob,
   int &difference)
 
   {
   if (pjob != NULL)
     {
-    if ((pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l) == 0)
+    if ((pjob->get_long_attr(JOB_ATR_hold) & HOLD_l) == 0)
       {
-      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
-      pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+      pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_l);
 
       difference++;
       }
@@ -1854,17 +1853,17 @@ void set_slot_hold(
 
 void release_slot_hold(
 
-  job *pjob,
+  svr_job *pjob,
   int &difference)
 
   {
   if (pjob != NULL)
     {
-    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+    if (pjob->get_long_attr(JOB_ATR_hold) & HOLD_l)
       {
-      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;
-      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
-        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+      pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) & ~HOLD_l);
+      if (pjob->get_long_attr(JOB_ATR_hold) == 0)
+        pjob->unset_attr(JOB_ATR_hold);
 
       difference--;
       }
@@ -1891,7 +1890,7 @@ int update_slot_values(
   job_array                *pa,
   int                       actually_running,
   int                       number_queued,
-  job                      *held,
+  svr_job                  *held,
   std::vector<std::string> &candidates)
 
   {
@@ -1911,11 +1910,11 @@ int update_slot_values(
         {
         if (held != NULL)
           {
-          if (held->ji_qs.ji_jobid == candidates[i])
+          if (held->get_jobid() == candidates[i])
             continue;
           }
         
-        job *pj = svr_find_job(pa->job_ids[i], TRUE);
+        svr_job *pj = svr_find_job(pa->job_ids[i], TRUE);
         
         if (pj != NULL)
           {
@@ -1943,7 +1942,7 @@ int update_slot_values(
 
 int check_array_slot_limits(
 
-  job       *pjob,
+  svr_job   *pjob,
   job_array *pa_held)
 
   {
@@ -1976,12 +1975,12 @@ int check_array_slot_limits(
     int  jobs_currently_running = 0;
     int  number_queued = 0;
 
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    if (pjob->get_state() == JOB_STATE_RUNNING)
       jobs_currently_running++;
-    else if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+    else if (pjob->get_state() == JOB_STATE_QUEUED)
       number_queued++;
     
-    job *pj;
+    svr_job *pj;
     int  i = 0;
 
     // Only loop until we verify that we have the correct running count
@@ -1993,7 +1992,7 @@ int check_array_slot_limits(
         if (pa->job_ids[i] == NULL)
           continue;
 
-        if (!strcmp(pjob->ji_qs.ji_jobid, pa->job_ids[i]))
+        if (!strcmp(pjob->get_jobid(), pa->job_ids[i]))
           continue;
 
         if ((pj = svr_find_job(pa->job_ids[i], TRUE)) == NULL)
@@ -2005,19 +2004,19 @@ int check_array_slot_limits(
           {
           mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
 
-          if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
+          if (pj->get_state() == JOB_STATE_RUNNING)
             {
             jobs_currently_running++;
             break;
             }
-          else if (pj->ji_qs.ji_state == JOB_STATE_QUEUED)
+          else if (pj->get_state() == JOB_STATE_QUEUED)
             {
             number_queued++;
             }
-          else if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
+          else if (pj->get_long_attr(JOB_ATR_hold) & HOLD_l)
             {
             if ((int)candidates.size() < pa->ai_qs.jobs_running)
-              candidates.push_back(pj->ji_qs.ji_jobid);
+              candidates.push_back(pj->get_jobid());
             }
           }
         }
@@ -2050,7 +2049,7 @@ void update_slot_held_jobs(
   {
   for (int i = 0; i < pa->ai_qs.num_jobs && num_to_release > 0; i++)
     {
-    job *pjob = svr_find_job(pa->job_ids[i], TRUE);
+    svr_job *pjob = svr_find_job(pa->job_ids[i], TRUE);
 
     if (pjob != NULL)
       {
@@ -2061,7 +2060,7 @@ void update_slot_held_jobs(
   
   for (int i = 0; i < pa->ai_qs.num_jobs && num_to_release < 0; i++)
     {
-    job *pjob = svr_find_job(pa->job_ids[i], TRUE);
+    svr_job *pjob = svr_find_job(pa->job_ids[i], TRUE);
 
     if (pjob != NULL)
       {
@@ -2082,7 +2081,7 @@ void update_array_statuses()
 
   {
   job_array      *pa;
-  job            *pjob;
+  svr_job            *pjob;
   all_arrays_iterator *iter = NULL;
   unsigned int    running;
   int             queued;
@@ -2122,17 +2121,17 @@ void update_array_statuses()
       mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
       if (running > 0)
         {
-        svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->get_substate(), FALSE);
         }
       else if ((complete > 0) && 
                (queued == 0))
         {
-        svr_setjobstate(pjob, JOB_STATE_COMPLETE, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_COMPLETE, pjob->get_substate(), FALSE);
         }
       else 
         {
         /* default to just calling the array queued */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->get_substate(), FALSE);
         }
       }
     } /* END for each array */

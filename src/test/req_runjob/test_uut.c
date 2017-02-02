@@ -8,26 +8,24 @@
 extern char scaff_buffer[];
 
 
-int requeue_job(job *pjob);
-extern int send_job_to_mom(job **, batch_request *, job *);
+int requeue_job(svr_job *pjob);
+extern int send_job_to_mom(svr_job **, batch_request *, svr_job *);
 char      *get_mail_text(batch_request *preq, const char *job_id);
 
 
 START_TEST(requeue_job_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-
-  strcpy(pjob.ji_qs.ji_destin, "tom");
+  pjob.set_destination("tom");
 
   fail_unless(requeue_job(&pjob) == -1, "didn't fail with non-existent node");
 
-  strcpy(pjob.ji_qs.ji_destin, "bob");
+  pjob.set_destination("bob");
   fail_unless(requeue_job(&pjob) == 0, "call failed");
-  fail_unless(pjob.ji_qs.ji_destin[0] == '\0', "destination is still set");
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_QUEUED, "job not set to queued");
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_QUEUED, "job not set to queued");
+  fail_unless(pjob.get_destination()[0] == '\0', "destination is still set");
+  fail_unless(pjob.get_state() == JOB_STATE_QUEUED, "job not set to queued");
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_QUEUED, "job not set to queued");
   }
 END_TEST
 
@@ -52,15 +50,16 @@ END_TEST
 START_TEST(test_two)
   {
   struct batch_request request;
-  job myjob;
-  memset(&myjob, 0, sizeof(job));
-  myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
-  myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;
+  svr_job myjob;
+  char    buf[1024];
+  myjob.set_state(JOB_STATE_RUNNING);
+  myjob.set_ji_momaddr(167838724);
   //setting up so that my mock svr_find_job would return this job..
-  snprintf(myjob.ji_qs.ji_jobid, PBS_MAXSVRJOBID, "%lu", (unsigned long)&myjob);
+  sprintf(buf, "%lu", (unsigned long)&myjob);
+  myjob.set_jobid(buf);
   memset(scaff_buffer, 0, 1024);
 
-  job *pjob = &myjob;
+  svr_job *pjob = &myjob;
   send_job_to_mom(&pjob, &request, NULL);
   fail_unless(strcmp("unable to run job, send to MOM '10.1.4.4' failed",
     scaff_buffer) == 0, "Error message was not constructed as expected");

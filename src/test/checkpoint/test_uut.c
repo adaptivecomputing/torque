@@ -9,19 +9,19 @@
 
 #include "pbs_error.h"
 
-int establish_server_connection(job *pjob);
+int establish_server_connection(mom_job *pjob);
 
 extern bool connect_fail;
 
 START_TEST(establish_server_connection_test)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob = new mom_job();
 
-  snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "1.napali");
+  pjob->set_jobid("1.napali");
 
   fail_unless(establish_server_connection(pjob) == -1);
   connect_fail = true;
-  pjob->ji_wattr[JOB_ATR_at_server].at_val.at_str = strdup("bob");
+  pjob->set_str_attr(JOB_ATR_at_server, strdup("bob"));
   fail_unless(establish_server_connection(pjob) == -1);
   connect_fail = false;
   fail_unless(establish_server_connection(pjob) >= 0);

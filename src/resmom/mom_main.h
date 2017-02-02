@@ -79,13 +79,13 @@ void *tcp_request(void *sock_num);
 
 const char *find_signal_name(int sig);
 
-int kill_job(job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason);
+int kill_job(mom_job *pjob, int sig, const char *killer_id_name, const char *why_killed_reason);
 
 unsigned long getsize(resource *pres);
 
 unsigned long gettime(resource *pres);
 
-int job_over_limit(job *pjob);
+int job_over_limit(mom_job *pjob);
 
 void usage(char *prog);
 
@@ -103,7 +103,7 @@ void parse_command_line(int argc, char *argv[]);
 
 int setup_program_environment(void);
 
-int TMOMJobGetStartInfo(job *pjob, pjobexec_t **TJEP);
+int TMOMJobGetStartInfo(mom_job *pjob, pjobexec_t **TJEP);
 
 int TMOMScanForStarting(void);
 

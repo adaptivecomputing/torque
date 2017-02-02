@@ -35,8 +35,8 @@ void free_grname(
 
 struct group *getgrnam_ext( 
 
-  char **user_buf,
-  char *grp_name) /* I */
+  char       **user_buf,
+  const char  *grp_name) /* I */
 
   {
   struct group *grp;

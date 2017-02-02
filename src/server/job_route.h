@@ -5,15 +5,15 @@
 #include "pbs_job.h" /* job */
 #include "queue.h" /* pbs_queue */
 
-void add_dest(job *jobp);
+void add_dest(svr_job *jobp);
 
-int default_router(job *jobp, struct pbs_queue *qp, long retry_time);
+int default_router(svr_job *jobp, struct pbs_queue *qp, long retry_time);
 
-int job_route(job *jobp);
+int job_route(svr_job *jobp);
 
-int remove_procct(job *pjob);
+int remove_procct(svr_job *pjob);
 
-int initialize_procct(job *pjob);
+int initialize_procct(svr_job *pjob);
 
 void *queue_route(void *pque);
 

@@ -7,27 +7,24 @@
 #include "pbs_job.h"
 #include "batch_request.h"
 
-void requeue_job_without_contacting_mom(job &pjob);
+void requeue_job_without_contacting_mom(svr_job &pjob);
 int  handle_requeue_all(batch_request *preq);
 
 START_TEST(test_requeue_job_without_contacting_mom)
   {
-  job pjob;
+  svr_job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-5");
-  pjob.ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
+  pjob.set_str_attr(JOB_ATR_exec_host, strdup("napali/0-5"));
 
   // job isn't running so nothing should happen
   requeue_job_without_contacting_mom(pjob);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL);
-  fail_unless(pjob.ji_qs.ji_state == 0);
+  fail_unless(pjob.get_str_attr(JOB_ATR_exec_host) != NULL);
+  fail_unless(pjob.get_state() == 0);
 
-  pjob.ji_qs.ji_state = JOB_STATE_RUNNING;
+  pjob.set_state(JOB_STATE_RUNNING);
   requeue_job_without_contacting_mom(pjob);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
-  fail_unless(pjob.ji_wattr[JOB_ATR_exec_host].at_flags == 0);
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_QUEUED);
+  fail_unless(pjob.get_state() == JOB_STATE_QUEUED);
   }
 END_TEST
 

@@ -122,12 +122,12 @@
 #define ROUTE_RETRY_TIME 10
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *);
+int svr_movejob(svr_job *, char *, int *, struct batch_request *);
 long count_proc(const char *spec);
 
 /* Local Functions */
 
-int  job_route(job *);
+int  job_route(svr_job *);
 
 /* Global Data */
 extern char *msg_routexceed;
@@ -144,7 +144,7 @@ extern int route_retry_interval;
 
 void add_dest(
 
-  job *jobp)
+  svr_job *jobp)
 
   {
   if (jobp == NULL)
@@ -153,7 +153,7 @@ void add_dest(
     return;
     }
 
-  jobp->ji_rejectdest.push_back(jobp->ji_qs.ji_destin);
+  jobp->ji_rejectdest.push_back(jobp->get_destination());
   }  /* END add_dest() */
 
 
@@ -167,7 +167,7 @@ void add_dest(
 
 bool is_bad_dest(
 
-  job  *jobp,
+  svr_job  *jobp,
   char *dest)
 
   {
@@ -195,7 +195,7 @@ bool is_bad_dest(
 
 int default_router(
 
-  job              *jobp,
+  svr_job          *jobp,
   struct pbs_queue *qp,
   long              retry_time)
 
@@ -208,7 +208,7 @@ int default_router(
 
     if (LOGLEVEL >= 8)
       {
-      sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+      sprintf(log_buf, "%s", jobp->get_jobid());
       LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
@@ -238,16 +238,14 @@ int default_router(
         log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          jobp->ji_qs.ji_jobid,
+          jobp->get_jobid(),
           pbse_to_txt(PBSE_ROUTEREJ));
 
         return(PBSE_ROUTEREJ);
         }
       else
         {
-        /* set time to retry job */
-
-        jobp->ji_qs.ji_un.ji_routet.ji_rteretry = retry_time;
+        jobp->set_route_retry_time(retry_time);
 
         return(0);
         }
@@ -314,7 +312,7 @@ int default_router(
 
 int job_route(
 
-  job *jobp)      /* job to route */
+  svr_job *jobp)      /* job to route */
 
   {
   int               bad_state = 0;
@@ -327,7 +325,7 @@ int job_route(
   
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", jobp->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
   
@@ -346,7 +344,7 @@ int job_route(
   mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex, true);
 
   /* see if the job is able to be routed */
-  switch (jobp->ji_qs.ji_state)
+  switch (jobp->get_state())
     {
 
     case JOB_STATE_TRANSIT:
@@ -384,9 +382,9 @@ int job_route(
     default:
 
       snprintf(log_buf, sizeof(log_buf), "%s %d %s", 
-        pbse_to_txt(PBSE_BADSTATE), jobp->ji_qs.ji_state, __func__);
+        pbse_to_txt(PBSE_BADSTATE), jobp->get_state(), __func__);
 
-      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,jobp->get_jobid(),log_buf);
       
       return(PBSE_NONE);
 
@@ -426,9 +424,7 @@ int job_route(
 
   if (qp->qu_attr[QR_ATR_RouteLifeTime].at_flags & ATR_VFLAG_SET)
     {
-    life =
-      jobp->ji_qs.ji_un.ji_routet.ji_quetime +
-      qp->qu_attr[QR_ATR_RouteLifeTime].at_val.at_long;
+    life = jobp->get_route_queue_time() + qp->qu_attr[QR_ATR_RouteLifeTime].at_val.at_long;
     }
   else
     {
@@ -437,7 +433,7 @@ int job_route(
 
   if (life && (life < time_now))
     {
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->ji_qs.ji_jobid,msg_routexceed);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobp->get_jobid(),msg_routexceed);
 
     /* job too long in queue */
     return(PBSE_ROUTEEXPD);
@@ -467,7 +463,7 @@ int job_route(
 
 int reroute_job(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   int        rc = PBSE_NONE;
@@ -475,7 +471,7 @@ int reroute_job(
 
   if (LOGLEVEL >= 8)
     {
-    sprintf(log_buf, "%s", pjob->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", pjob->get_jobid());
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
     
@@ -514,7 +510,7 @@ void *queue_route(
 
   {
   pbs_queue *pque;
-  job       *pjob = NULL;
+  svr_job   *pjob = NULL;
   char      *queue_name;
   char       log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -602,20 +598,20 @@ void *queue_route(
 
 int remove_procct(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   pbs_attribute    *pattr;
   resource_def *pctdef;
   resource     *pctresc;
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if(pattr == NULL)
     {
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
     sprintf(log_buffer, "%s: Resource_List is NULL. Cannot proceed", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     pbs_errno = PBSE_INTERNAL;
     return(ROUTE_PERM_FAILURE);
     }
@@ -643,7 +639,7 @@ int remove_procct(
 
 int initialize_procct(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   resource     *pnodesp = NULL;
@@ -654,13 +650,13 @@ int initialize_procct(
   resource_def *procct_def = NULL;
   pbs_attribute    *pattr = NULL;
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if(pattr == NULL)
     {
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
     sprintf(log_buffer, "%s: Resource_List is NULL. Cannot proceed", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     pbs_errno = PBSE_INTERNAL;
     return(ROUTE_PERM_FAILURE);
     }
@@ -673,7 +669,7 @@ int initialize_procct(
     if(pnodes_def == NULL)
       {
       sprintf(log_buffer, "%s: Could not get nodes resource definition. Cannot proceed", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       pbs_errno = PBSE_INTERNAL;
       return(ROUTE_PERM_FAILURE);
       }
@@ -696,7 +692,7 @@ int initialize_procct(
       if(procct_def == NULL)
         {
         sprintf(log_buffer, "%s: Could not get procct resource definition. Cannot proceed", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
         pbs_errno = PBSE_INTERNAL;
         return(ROUTE_PERM_FAILURE);
         }
@@ -705,7 +701,7 @@ int initialize_procct(
         {
         sprintf(log_buffer,
           "%s: Could not get nodes nor procs entry from Resource_List. Cannot proceed", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
         pbs_errno = PBSE_INTERNAL;
         return(ROUTE_PERM_FAILURE);
         }
@@ -716,7 +712,7 @@ int initialize_procct(
     if(procct_def == NULL)
       {
       sprintf(log_buffer, "%s: Could not get procct resource definition. Cannot proceed", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       pbs_errno = PBSE_INTERNAL;
       return(ROUTE_PERM_FAILURE);
       }
@@ -727,7 +723,7 @@ int initialize_procct(
       if(procctp == NULL)
         {
         sprintf(log_buffer, "%s: Could not add procct resource. Cannot proceed", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
         pbs_errno = PBSE_INTERNAL;
         return(ROUTE_PERM_FAILURE);
         }
@@ -757,7 +753,7 @@ int initialize_procct(
     /* Something is really wrong. ji_wattr[JOB_ATR_resource] should always be set
        by the time this function is called */
     sprintf(log_buffer, "%s: Resource_List not set. Cannot proceed", __func__);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     pbs_errno = PBSE_INTERNAL;
     return(ROUTE_PERM_FAILURE);
     }

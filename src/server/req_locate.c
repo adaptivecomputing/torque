@@ -128,7 +128,7 @@ int req_locatejob(
   int     rc = PBSE_NONE;
   char   *at;
   int     i;
-  job    *pjob;
+  svr_job    *pjob;
   char   *location = (char *)0;
 
   if ((at = strchr(preq->rq_ind.rq_locate, (int)'@')))

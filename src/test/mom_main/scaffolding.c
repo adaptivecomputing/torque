@@ -40,7 +40,7 @@ extern mom_hierarchy_t *mh;
 
 bool   thread_unlink_calls;
 extern mom_hierarchy_t *mh;
-std::list<job *> alljobs_list;
+std::list<mom_job *> alljobs_list;
 int              job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
 mom_server     mom_servers[PBS_MAXSERVER];
 int mom_server_count = 0;
@@ -166,7 +166,7 @@ void free_attrlist(list_link *l) {}
 
 void attrl_fixlink(list_link *l) {}
 
-int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
+int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
   {
   return(0);
   }
@@ -192,12 +192,12 @@ int mom_server_add(const char *value)
   exit(1);
   }
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int mom_job_save(mom_job *pjob, int mom_port)
   {
   return(PBSE_NONE);
   }
 
-void mom_job_purge(job *pjob)
+void mom_job_purge(mom_job *pjob)
   {
   }
 
@@ -250,7 +250,7 @@ void mom_checkpoint_set_directory_path(const char *str)
   exit(1);
   }
 
-void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted)
+void exec_bail(mom_job *pjob, int code, std::set<int> *sisters_contacted)
   {
   job_bailed++;
   }
@@ -273,7 +273,7 @@ int TMomCheckJobChild(pjobexec_t *TJE, int Timeout, int *Count, int *RC)
   exit(1);
   }
 
-int message_job(job *pjob, enum job_file jft, char *text)
+int message_job(mom_job *pjob, enum job_file jft, char *text)
   {
   fprintf(stderr, "The call to message_job needs to be mocked!!\n");
   exit(1);
@@ -297,12 +297,12 @@ int log_init(const char *suffix, const char *hostname)
   exit(1);
   }
 
-int send_job_obit(job *pjob, int ev)
+int send_job_obit(mom_job *pjob, int ev)
   {
   return(PBSE_NONE);
   }
 
-char *get_job_envvar(job *pjob, const char *variable)
+char *get_job_envvar(mom_job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_job_envvar needs to be mocked!!\n");
   exit(1);
@@ -332,7 +332,7 @@ void set_rpp_throttle_sleep_time(long sleep_time)
   exit(1);
   }
 
-int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
+int run_pelog(int which, char *specpelog, mom_job *pjog, int pe_io_type, int deletejob)
   {
   fprintf(stderr, "The call to run_pelog needs to be mocked!!\n");
   exit(1);
@@ -386,7 +386,7 @@ int MUSNPrintF(char **BPtr, int *BSpace, const char *Format, ...)
   exit(1);
   }
 
-int mom_over_limit(job *pjob)
+int mom_over_limit(mom_job *pjob)
   {
   fprintf(stderr, "The call to mom_over_limit needs to be mocked!!\n");
   exit(1);
@@ -404,7 +404,7 @@ void net_close(int but)
   exit(1);
   }
 
-int kill_task(job *pjob, task *ptask, int sig, int pg)
+int kill_task(mom_job *pjob, task *ptask, int sig, int pg)
   {
   fprintf(stderr, "The call to kill_task needs to be mocked!!\n");
   exit(1);
@@ -432,7 +432,7 @@ int diswcs(tcp_chan *chan, const char *value, size_t nchars)
   return(wcs_ret);
   }
 
-void mom_checkpoint_check_periodic_timer(job *pjob)
+void mom_checkpoint_check_periodic_timer(mom_job *pjob)
   {
   fprintf(stderr, "The call to mom_checkpoint_check_periodic_timer needs to be mocked!!\n");
   exit(1);
@@ -514,13 +514,13 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int send_sisters(job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
+int send_sisters(mom_job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact)
   {
   fprintf(stderr, "The call to send_sisters needs to be mocked!!\n");
   exit(1);
   }
 
-int mom_set_use(job *pjob)
+int mom_set_use(mom_job *pjob)
   {
   fprintf(stderr, "The call to mom_set_use needs to be mocked!!\n");
   exit(1);
@@ -532,7 +532,7 @@ int initialize_threadpool(threadpool_t **pool, int min_threads, int max_threads,
   exit(1);
   }
 
-void term_job(job *pjob)
+void term_job(mom_job *pjob)
   {
   fprintf(stderr, "The call to term_job needs to be mocked!!\n");
   exit(1);
@@ -652,7 +652,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *mom_find_job(const char *jobid)
+mom_job *mom_find_job(const char *jobid)
   {
   fprintf(stderr, "The call to find_job needs to be mocked!!\n");
   exit(1);
@@ -728,7 +728,7 @@ int diswul(tcp_chan *chan, unsigned long value)
   exit(1);
   }
 
-int im_compose(tcp_chan *chan, char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
+int im_compose(tcp_chan *chan, const char *jobid, const char *cookie, int command, tm_event_t event, tm_task_id taskid)
   {
   fprintf(stderr, "The call to im_compose needs to be mocked!!\n");
   exit(1);
@@ -795,7 +795,7 @@ int pbs_getaddrinfo(
 
 void free_mom_hierarchy(mom_hierarchy_t *nh) {}
 
-bool am_i_mother_superior(const job &pjob)
+bool am_i_mother_superior(const mom_job &pjob)
   {
   return(am_i_ms);
   }
@@ -836,7 +836,7 @@ unsigned hwloc_get_nbobjs_by_depth (hwloc_topology_t topology, unsigned depth)
 
 void cleanup_torque_cpuset(void){}
 
-void create_cpuset_reservation_if_needed(job &pjob){}
+void create_cpuset_reservation_if_needed(mom_job &pjob){}
 
 int init_torque_cpuset(void)
   {
@@ -878,7 +878,7 @@ PCI_Device::~PCI_Device(){}
 
 
 
-void recover_cpuset_reservation(job &pjob)
+void recover_cpuset_reservation(mom_job &pjob)
   {
   return;
   }
@@ -886,9 +886,9 @@ void recover_cpuset_reservation(job &pjob)
 
 #endif
 
-void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
+void encode_used(mom_job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
 
-void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
+void encode_flagged_attrs(mom_job *pjob, int perm, std::stringstream *list, tlist_head *phead) {}
 
 char *threadsafe_tokenizer(
 
@@ -1081,7 +1081,7 @@ int shut_nvidia_nvml()
 
 int post_stagedel(
 
-  job *pjob,  
+  mom_job *pjob,  
   int  exit_code)
 
   {
@@ -1090,7 +1090,7 @@ int post_stagedel(
 
 int post_stageout(
 
-  job *pjob,
+  mom_job *pjob,
   int  exit_code)
 
   {
@@ -1099,7 +1099,7 @@ int post_stageout(
 
 void delete_staged_in_files(
 
-  job   *pjob,
+  mom_job   *pjob,
   char  *home_dir,
   char **bad_list)
 
@@ -1108,7 +1108,7 @@ void delete_staged_in_files(
 
 int send_back_std_and_staged_files(
 
-  job *pjob,
+  mom_job *pjob,
   int  exit_status)
 
   {
@@ -1136,3 +1136,360 @@ void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+job::job() {}
+job::~job() {}
+mom_job::mom_job() {}
+mom_job::~mom_job() {}
+
+void job::set_attr_flag(int index, int flag_val)
+
+  {
+  if ((index >= 0) &&
+      (index < JOB_ATR_LAST))
+    this->ji_wattr[index].at_flags = flag_val; 
+  }
+
+int job::get_mom_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_exitstat);
+  }
+
+void job::set_mom_exitstat(int ev)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exitstat = ev;
+  }
+
+pbs_net_t job::get_svraddr() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_svraddr);
+  }
+
+void job::set_attr_flag_bm(int index, int bm)
+  {
+  if ((index >= 0) &&
+      (index < JOB_ATR_LAST))
+    this->ji_wattr[index].at_flags |= bm;
+  }
+
+struct timeval *job::get_tv_attr(int index)
+  {
+  return(&this->ji_wattr[index].at_val.at_timeval);
+  }
+
+int job::set_tv_attr(int index, struct timeval *tv)
+  {
+  memcpy(&(this->ji_wattr[index].at_val.at_timeval), tv, sizeof(struct timeval));
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_resc_attr(int index, std::vector<resource> *resources)
+  {
+  this->ji_wattr[index].at_val.at_ptr = resources;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_exec_exitstat(int ev)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_exitstat = ev;
+  }
+
+unsigned short job::get_ji_mom_rmport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_mom_rmport);
+  }
+
+int job::set_creq_attr(int index, complete_req *cr)
+  {
+  this->ji_wattr[index].at_val.at_ptr = cr;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_qs_version(int version)
+  {
+  this->ji_qs.qs_version = version;
+  }
+
+void job::set_queue(const char *queue)
+  {
+  snprintf(this->ji_qs.ji_queue, sizeof(this->ji_qs.ji_queue), "%s", queue);
+  }
+
+int job::get_un_type() const
+  {
+  return(this->ji_qs.ji_un_type);
+  }
+
+void job::set_ji_momaddr(unsigned long momaddr)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momaddr = momaddr;
+  }
+
+void job::set_ji_mom_rmport(unsigned short mom_rmport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_mom_rmport = mom_rmport;
+  }
+
+void job::set_ji_momport(unsigned short momport)
+  {
+  this->ji_qs.ji_un.ji_exect.ji_momport = momport;
+  }
+
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+void job::set_scriptsz(size_t scriptsz)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_scriptsz = scriptsz;
+  }
+
+size_t job::get_scriptsz() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_scriptsz);
+  }
+
+pbs_net_t job::get_fromaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromaddr);
+  }
+
+int job::get_fromsock() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromsock);
+  }
+
+void job::set_fromaddr(pbs_net_t fromaddr)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromaddr = fromaddr;
+  }
+
+void job::set_fromsock(int sock)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+  }
+
+int job::get_qs_version() const
+  {
+  return(this->ji_qs.qs_version);
+  }
+
+void job::set_un_type(int type)
+  {
+  this->ji_qs.ji_un_type = type;
+  }
+
+int job::get_exec_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_exitstat);
+  }
+
+int job::get_svrflags() const
+  {
+  return(this->ji_qs.ji_svrflags);
+  }
+
+void job::set_modified(bool m)
+  {
+  this->ji_modified = m;
+  }
+
+void job::set_attr(int index)
+  {
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  }
+
+void job::set_fileprefix(const char *prefix)
+  {
+  strcpy(this->ji_qs.ji_fileprefix, prefix);
+  }
+
+int job::set_char_attr(int index, char c)
+  {
+  this->ji_wattr[index].at_val.at_char = c;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_svrflags(int flags)
+  {
+  this->ji_qs.ji_svrflags = flags;
+  }
+
+const char *job::get_destination() const
+  {
+  return(this->ji_qs.ji_destin);
+  }
+
+void job::free_attr(int index)
+  {
+  }
+
+void job::set_substate(int substate)
+  {
+  this->ji_qs.ji_substate = substate;
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+void job::set_destination(const char *destination)
+  {
+  snprintf(this->ji_qs.ji_destin, sizeof(this->ji_qs.ji_destin), "%s", destination);
+  }
+
+pbs_net_t job::get_ji_momaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momaddr);
+  }
+
+bool job::has_been_modified() const
+  {
+  return(this->ji_modified);
+  }
+
+tlist_head job::get_list_attr(int index)
+  {
+  return(this->ji_wattr[index].at_val.at_list);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  complete_req *cr = NULL;
+  if (this->ji_wattr[index].at_flags & ATR_VFLAG_SET)
+    cr = (complete_req *)this->ji_wattr[index].at_val.at_ptr;
+
+  return(cr);
+  }
+
+void job::set_exgid(unsigned int gid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exgid = gid;
+  }
+
+void job::set_exuid(unsigned int uid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exuid = uid;
+  }
+
+unsigned short job::get_ji_momport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momport);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+struct jobfix &job::get_jobfix()
+  {
+  return(this->ji_qs);
+  }
+
+int job::set_bool_attr(int index, bool b)
+  {
+  this->ji_wattr[index].at_val.at_bool = b;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_bool);
+  }
+
+std::vector<resource> *job::get_resc_attr(int index)
+  {
+  return((std::vector<resource> *)this->ji_wattr[index].at_val.at_ptr);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+void job::set_start_time(time_t t)
+  {
+  this->ji_qs.ji_stime = t;
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+
+unsigned int job::get_exgid() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_exgid);
+  }
+
+unsigned int job::get_exuid() const
+  {
+  return(this->ji_qs.ji_un.ji_momt.ji_exuid);
+  }

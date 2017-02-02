@@ -6,6 +6,7 @@
 
 
 #include "pbs_error.h"
+#include "server_limits.h"
 
 START_TEST(test_PBSD_mgr_put)
   {

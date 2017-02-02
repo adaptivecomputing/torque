@@ -16,28 +16,28 @@
 #include "resource.h"
 
 
-char *setup_from(job *pjob, const char *suffix);
-int   is_joined(job *pjob, enum job_atr ati);
-batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
-void rel_resc(job *pjob);
-int handle_exiting_or_abort_substate(job *pjob);
-int setrerun(job *pjob,const char *text);
-batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
-int handle_returnstd(job *pjob, batch_request *preq, int type);
-int mom_comm(job *pjob, void *(*func)(struct work_task *vp));
-int handle_complete_first_time(job *pjob);
+char *setup_from(svr_job *pjob, const char *suffix);
+int   is_joined(svr_job *pjob, enum job_atr ati);
+batch_request *return_stdfile(batch_request *preq, svr_job *pjob, enum job_atr ati);
+void rel_resc(svr_job *pjob);
+int handle_exiting_or_abort_substate(svr_job *pjob);
+int setrerun(svr_job *pjob,const char *text);
+batch_request *setup_cpyfiles(batch_request *preq, svr_job *pjob, char *from, char *to, int direction, int tflag);
+int handle_returnstd(svr_job *pjob, batch_request *preq, int type);
+int mom_comm(svr_job *pjob, void *(*func)(struct work_task *vp));
+int handle_complete_first_time(svr_job *pjob);
 int handle_complete_second_time(struct work_task *ptask);
-int handle_complete_subjob(job *pjob);
-int handle_exited(job *pjob);
-int add_comment_to_parent(job *parent_job, int cray_subjob_exited_nonzero, int exit_status);
-int end_of_job_accounting(job *pjob, std::string &acct_info, size_t accttail);
-int handle_terminating_array_subjob(job *pjob);
-int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
-int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
-int handle_stageout(job *pjob, int type, batch_request *preq);
-int handle_stagedel(job *pjob,int type,batch_request *preq);
-int get_used(job *pjob, std::string &data);
-void set_job_comment(job *pjob, const char *cmt);
+int handle_complete_subjob(svr_job *pjob);
+int handle_exited(svr_job *pjob);
+int add_comment_to_parent(svr_job *parent_job, int cray_subjob_exited_nonzero, int exit_status);
+int end_of_job_accounting(svr_job *pjob, std::string &acct_info, size_t accttail);
+int handle_terminating_array_subjob(svr_job *pjob);
+int handle_terminating_job(svr_job *pjob, int alreadymailed, const char *mailbuf);
+int update_substate_from_exit_status(svr_job *pjob, int *alreadymailed, const char *text);
+int handle_stageout(svr_job *pjob, int type, batch_request *preq);
+int handle_stagedel(svr_job *pjob,int type,batch_request *preq);
+int get_used(svr_job *pjob, std::string &data);
+void set_job_comment(svr_job *pjob, const char *cmt);
 
 
 extern pthread_mutex_t *svr_do_schedule_mutex;
@@ -72,17 +72,17 @@ void init_server()
 
 START_TEST(set_job_comment_test)
   {
-  job pjob;
+  svr_job pjob;
   memset(&pjob, 0, sizeof(pjob));
 
   set_job_comment(&pjob, "bob");
-  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "bob"));
-  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  fail_unless(!strcmp(pjob.get_str_attr(JOB_ATR_Comment), "bob"));
+  fail_unless(pjob.is_attr_set(JOB_ATR_Comment));
  
   // Overwrite, do not append
   set_job_comment(&pjob, "tim");
-  fail_unless(!strcmp(pjob.ji_wattr[JOB_ATR_Comment].at_val.at_str, "tim"));
-  fail_unless(pjob.ji_wattr[JOB_ATR_Comment].at_flags == ATR_VFLAG_SET);
+  fail_unless(!strcmp(pjob.get_str_attr(JOB_ATR_Comment), "tim"));
+  fail_unless(pjob.is_attr_set(JOB_ATR_Comment));
   }
 END_TEST
 
@@ -121,17 +121,16 @@ void add_resource(
 START_TEST(get_used_test)
   {
   std::string data;
-  job         pjob;
+  svr_job     pjob;
 
   attr_count = 0;
   next_count = 0;
 
-  std::vector<resource> resources;
-  add_resource(resources, "cput", NULL, 100, -1);
-  add_resource(resources, "mem", NULL, 4096, 20);
-  add_resource(resources, "vmem", NULL, 8192, 20);
-  pjob.ji_wattr[JOB_ATR_resc_used].at_flags |= ATR_VFLAG_SET;
-  pjob.ji_wattr[JOB_ATR_resc_used].at_val.at_ptr = &resources;
+  std::vector<resource> *resources = new std::vector<resource>();
+  add_resource(*resources, "cput", NULL, 100, -1);
+  add_resource(*resources, "mem", NULL, 4096, 20);
+  add_resource(*resources, "vmem", NULL, 8192, 20);
+  pjob.set_resc_attr(JOB_ATR_resc_used, resources);
 
   fail_unless(get_used(&pjob, data) == PBSE_NONE);
   fail_unless(data == " resources_used.cput=100 resources_used.mem=4096mb resources_used.vmem=8192mb", "'%s'", data.c_str());
@@ -141,10 +140,9 @@ END_TEST
 
 START_TEST(handle_stagedel_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("SherrieJWD");
-  pjob.ji_wattr[JOB_ATR_exec_host].at_flags |= ATR_VFLAG_SET;
+  pjob.set_str_attr(JOB_ATR_exec_host, strdup("SherrieJWD"));
 
   // test to be sure that NULL exec hosts doesn't cause a segfault
   fail_unless(handle_stagedel(&pjob, WORK_Immed, NULL) == PBSE_NONE);
@@ -155,7 +153,7 @@ END_TEST
 
 START_TEST(handle_stageout_test)
   {
-  job pjob;
+  svr_job pjob;
 
   // test to be sure that NULL exec hosts doesn't cause a segfault
   fail_unless(handle_stageout(&pjob, WORK_Immed, NULL) != PBSE_NONE);
@@ -165,10 +163,10 @@ END_TEST
 
 START_TEST(setup_from_test)
   {
-  job   pjob;
+  svr_job   pjob;
   char *str;
 
-  strcpy(pjob.ji_qs.ji_fileprefix, "bob");
+  pjob.set_fileprefix("bob");
   str = setup_from(&pjob, "by");
   fail_unless(!strcmp(str, "bobby"));
   }
@@ -179,19 +177,17 @@ END_TEST
 
 START_TEST(is_joined_test)
   {
-  job   pjob;
+  svr_job   pjob;
 
-  pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
-
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup("oe");
+  pjob.set_str_attr(JOB_ATR_join, strdup("oe"));
   fail_unless(is_joined(&pjob, JOB_ATR_exec_host) == 0);
   fail_unless(is_joined(&pjob, JOB_ATR_outpath) == 0);
   fail_unless(is_joined(&pjob, JOB_ATR_errpath) == 1);
 
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup("e");
+  pjob.set_str_attr(JOB_ATR_join, strdup("e"));
   fail_unless(is_joined(&pjob, JOB_ATR_outpath) == 0);
 
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup("o");
+  pjob.set_str_attr(JOB_ATR_join, strdup("o"));
   fail_unless(is_joined(&pjob, JOB_ATR_errpath) == 0);
   }
 END_TEST
@@ -201,28 +197,26 @@ END_TEST
 
 START_TEST(return_stdfile_test)
   {
-  job            pjob;
+  svr_job        pjob;
   batch_request  preq;
   batch_request *p1 = &preq;
   batch_request *p2;
 
-  pjob.ji_wattr[JOB_ATR_checkpoint_name].at_flags = ATR_VFLAG_SET;
+  pjob.set_attr(JOB_ATR_checkpoint_name);
 
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_outpath) != NULL);
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_errpath) != NULL);
 
-  pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup("oe");
+  pjob.set_str_attr(JOB_ATR_join, strdup("oe"));
 
   fail_unless((p2 = return_stdfile(&preq, &pjob, JOB_ATR_errpath)) == p1);
   fail_unless((p2 = return_stdfile(NULL, &pjob, JOB_ATR_outpath)) != NULL);
   fail_unless(p2->rq_type == PBS_BATCH_ReturnFiles);
 
-  pjob.ji_wattr[JOB_ATR_checkpoint_name].at_flags = 0;
+  pjob.unset_attr(JOB_ATR_checkpoint_name);
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_outpath) == NULL);
 
-  pjob.ji_wattr[JOB_ATR_interactive].at_flags |= ATR_VFLAG_SET;
-  pjob.ji_wattr[JOB_ATR_interactive].at_val.at_long = 1;
+  pjob.set_long_attr(JOB_ATR_interactive, 1);
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_outpath) == NULL);
   }
 END_TEST
@@ -232,7 +226,7 @@ END_TEST
 
 START_TEST(rel_resc_test)
   {
-  job pjob;
+  svr_job pjob;
 
   rel_resc(&pjob);
   fail_unless(svr_do_schedule == SCH_SCHEDULE_TERM);
@@ -245,13 +239,13 @@ END_TEST
 
 START_TEST(handle_exiting_or_abort_substate_test)
   {
-  job            pjob;
+  svr_job            pjob;
 
   fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE);
-  fail_unless(pjob.ji_qs.ji_state == JOB_STATE_EXITING);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RETURNSTD);
+  fail_unless(pjob.get_state() == JOB_STATE_EXITING);
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_RETURNSTD);
 
-  pjob.ji_wattr[JOB_ATR_depend].at_flags |= ATR_VFLAG_SET;
+  pjob.set_attr(JOB_ATR_depend);
   fail_unless(handle_exiting_or_abort_substate(&pjob) == PBSE_NONE);
   }
 END_TEST
@@ -261,12 +255,12 @@ END_TEST
 
 START_TEST(setrerun_test)
   {
-  job pjob;
+  svr_job pjob;
 
   fail_unless(setrerun(&pjob,NULL) != PBSE_NONE);
-  pjob.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
+  pjob.set_bool_attr(JOB_ATR_rerunable, true);
   fail_unless(setrerun(&pjob,"rerunner") == PBSE_NONE);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_RERUN);
   }
 END_TEST
 
@@ -275,15 +269,15 @@ END_TEST
 
 START_TEST(setup_cpyfiles_test)
   {
-  job           *pjob = new job();
+  svr_job           *pjob = new svr_job();
   batch_request *preq;
   alloc_br_null = 0;
 
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->set_jobid("1.napali");
   preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
   fail_unless(preq != NULL);
 
-  pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str = strdup("dbeer");
+  pjob->set_str_attr(JOB_ATR_egroup, strdup("dbeer"));
   preq = setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1);
 
   preq = setup_cpyfiles(preq, pjob, strdup("from"), strdup("to"), 1, 1);
@@ -297,19 +291,21 @@ END_TEST
 START_TEST(handle_returnstd_test)
   {
   batch_request *preq;
-  job           *pjob;
+  svr_job       *pjob;
 
-  pjob = new job();
+  pjob = new svr_job();
   preq = new batch_request();
 
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-  strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
+  pjob->set_jobid("1.napali");
+  pjob->set_fileprefix("1.napali");
   
   fail_unless(handle_returnstd(pjob, preq, WORK_Immed) == PBSE_JOB_FILE_CORRUPT);
   
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
+  pjob->set_str_attr(JOB_ATR_exec_host, strdup("napali/0"));
   fail_unless(handle_returnstd(pjob, preq, WORK_Deferred_Reply) == PBSE_NONE);
   
+  // preq may have been deleted on the last run
+  preq = new batch_request();
   fail_unless(handle_returnstd(pjob, preq, WORK_Immed) == PBSE_NONE);
   }
 END_TEST
@@ -319,10 +315,10 @@ END_TEST
 
 START_TEST(mom_comm_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
-  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
+  pjob.set_jobid("1.napali");
+  pjob.set_str_attr(JOB_ATR_exec_host, strdup("napali/0+napali/1"));
 
   fail_unless(mom_comm(&pjob, NULL) >= 0);
   
@@ -344,9 +340,9 @@ END_TEST
 
 START_TEST(handle_complete_first_time_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  pjob.set_jobid("1.napali");
 
   fail_unless(handle_complete_first_time(&pjob) == 0);
   cray_enabled = true;
@@ -357,8 +353,8 @@ START_TEST(handle_complete_first_time_test)
   double_bad = 0;
   fail_unless(handle_complete_first_time(&pjob) == 0);
 
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
-  pjob.ji_wattr[JOB_ATR_comp_time].at_flags = ATR_VFLAG_SET;
+  pjob.set_substate(JOB_SUBSTATE_COMPLETE);
+  pjob.set_attr(JOB_ATR_comp_time);
   fail_unless(handle_complete_first_time(&pjob) == 0);
   }
 END_TEST
@@ -422,11 +418,11 @@ END_TEST
 
 START_TEST(handle_complete_subjob_test)
   {
-  job *parent   = new job();
-  job *cray     = new job();
-  job *external = new job();
+  svr_job *parent   = new svr_job();
+  svr_job *cray     = new svr_job();
+  svr_job *external = new svr_job();
 
-  strcpy(parent->ji_qs.ji_jobid, "1.napali");
+  parent->set_jobid("1.napali");
   svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   listener_command_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
@@ -438,14 +434,14 @@ START_TEST(handle_complete_subjob_test)
   parent->ji_external_clone = external;
 
   fail_unless(handle_complete_subjob(cray) == PBSE_NONE);
-  fail_unless(parent->ji_qs.ji_state != JOB_STATE_COMPLETE);
+  fail_unless(parent->get_state() != JOB_STATE_COMPLETE);
 
   printf("final\n");
 
   double_bad = 1;
-  cray->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  cray->set_state(JOB_STATE_COMPLETE);
   fail_unless(handle_complete_subjob(external) == PBSE_NONE);
-  fail_unless(parent->ji_qs.ji_state == JOB_STATE_COMPLETE);
+  fail_unless(parent->get_state() == JOB_STATE_COMPLETE);
   fail_unless(handle_complete_subjob(external) == PBSE_NONE);
   }
 END_TEST
@@ -455,10 +451,10 @@ END_TEST
 
 START_TEST(handle_exited_test)
   {
-  job *pjob = new job();
+  svr_job *pjob = new svr_job();
 
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0+napali/1");
+  pjob->set_jobid("1.napali");
+  pjob->set_str_attr(JOB_ATR_exec_host, strdup("napali/0+napali/1"));
   svr_do_schedule_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   listener_command_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(svr_do_schedule_mutex, NULL);
@@ -484,10 +480,10 @@ END_TEST
 
 START_TEST(add_comment_to_parent_test)
   {
-  job *pjob = new job();
+  svr_job *pjob = new svr_job();
 
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-  pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup("napali/0+napali/1");
+  pjob->set_jobid("1.napali");
+  pjob->set_str_attr(JOB_ATR_Comment, strdup("napali/0+napali/1"));
   fail_unless(add_comment_to_parent(pjob, TRUE, 12) == PBSE_NONE);
   fail_unless(add_comment_to_parent(pjob, FALSE, 12) == PBSE_NONE);
   }
@@ -500,8 +496,8 @@ START_TEST(end_of_job_accounting_test)
   {
   char *str = strdup("bob tom");
   std::string acct_data(str);
-  job  *pjob = new job();
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  svr_job  *pjob = new svr_job();
+  pjob->set_jobid("1.napali");
   size_t accttail = acct_data.length();
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   usage = 1;
@@ -509,11 +505,11 @@ START_TEST(end_of_job_accounting_test)
   fail_unless(called_account_jobend == false);
 
   // We need to also set a start time to call this.
-  pjob->ji_qs.ji_stime = 1;
+  pjob->set_start_time(1);
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
   // Make sure this is set - should cause the next call to not execute
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_ACCOUNTED_FOR) != 0);
+  fail_unless((pjob->get_svrflags() & JOB_ACCOUNTED_FOR) != 0);
   
   // Make sure that we'll do end of job accounting for jobs that are deleted while running
   // First call doesn't do account_jobend due to svrflags
@@ -522,7 +518,7 @@ START_TEST(end_of_job_accounting_test)
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == false);
 
-  pjob->ji_qs.ji_svrflags = 0;
+  pjob->set_svrflags(0);
   fail_unless(end_of_job_accounting(pjob, acct_data, accttail) == PBSE_NONE);
   fail_unless(called_account_jobend == true);
   
@@ -535,8 +531,8 @@ END_TEST
 
 START_TEST(handle_terminating_array_subjob_test)
   {
-  job  *pjob = new job();
-  strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
+  svr_job  *pjob = new svr_job();
+  pjob->set_jobid("1[1].napali");
   strcpy(pjob->ji_arraystructid, "1[].napali");
 
   double_bad = 1;
@@ -555,8 +551,8 @@ END_TEST
 
 START_TEST(handle_rerunning_array_subjob_test)
   {
-  job  *pjob = new job();
-  strcpy(pjob->ji_qs.ji_jobid, "1[1].napali");
+  svr_job  *pjob = new svr_job();
+  pjob->set_jobid("1[1].napali");
   strcpy(pjob->ji_arraystructid, "1[].napali");
   
   double_bad = 1;
@@ -574,11 +570,11 @@ END_TEST
 
 START_TEST(handle_terminating_job_test)
   {
-  job  *pjob = new job();
+  svr_job  *pjob = new svr_job();
 
   bad_job = 0;
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
-  pjob->ji_wattr[JOB_ATR_restart_name].at_flags |= ATR_VFLAG_SET;
+  pjob->set_jobid("1.napali");
+  pjob->set_attr(JOB_ATR_restart_name);
   fail_unless(handle_terminating_job(pjob, 0, "bob") == PBSE_NONE);
   }
 END_TEST
@@ -588,87 +584,87 @@ END_TEST
 
 START_TEST(update_substate_from_exit_status_test)
   {
-  job  *pjob = new job();
+  svr_job  *pjob = new svr_job();
   int   alreadymailed = 0;
 
-  pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
-  strcpy(pjob->ji_qs.ji_jobid, "1.napali");
+  pjob->set_bool_attr(JOB_ATR_rerunable, true);
+  pjob->set_jobid("1.napali");
 
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = -1000;
+  pjob->set_exec_exitstat(-1000);
   cray_enabled = false;
   usage = 0;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN1);
   fail_unless(alreadymailed == 0);
 
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_OVERLIMIT_MEM;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_OVERLIMIT_MEM);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING);
   fail_unless(alreadymailed == 1);
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_FAIL1;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_FAIL1);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING);
   fail_unless(alreadymailed == 1);
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITABT;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_INITABT);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_HASRUN) != 0);
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_RETRY);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"\n\n\n\n\n\n\n\n\n") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
-  pjob->ji_qs.ji_svrflags = 0;
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN);
+  pjob->set_svrflags(0);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN1);
   
   // make sure disabling auto requeuing works
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_RETRY);
   disable_requeue = 1;
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,NULL) == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING);
   disable_requeue = 0;
 
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_BADRESRT;
-  pjob->ji_qs.ji_svrflags = JOB_SVFLG_CHECKPOINT_FILE;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_BADRESRT);
+  pjob->set_svrflags(JOB_SVFLG_CHECKPOINT_FILE);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) == 0);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) == 0);
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRST;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_INITRST);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_SYSTEM);
   fail_unless(pjob->ji_momhandle == -1);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_HASRUN) != 0);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) != 0);
 
   alreadymailed = 0;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_INITRMG;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_INITRMG);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HASRUN) != 0);
-  fail_unless((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_HASRUN) != 0);
+  fail_unless((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_MIGRATEABLE) != 0);
   
   alreadymailed = 0;
   // The substate should stay the same when the job is being deleted
   pjob->ji_being_deleted = true;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_RETRY);
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING,
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING,
               "Shouldn't update substate when job is being deleted");
 
   }

@@ -93,6 +93,6 @@ void scan_for_terminated(void);
 
 /* pe_input.c */
 
-int pe_input(char *jobid);
+int pe_input(const char *jobid);
 
 #endif /* _LIB_MOM_H */

@@ -8,7 +8,7 @@
 #include "pbs_error.h"
 #include "pbs_job.h"
 
-std::list<job *> alljobs_list;
+std::list<mom_job *> alljobs_list;
 
 START_TEST(test_one)
   {

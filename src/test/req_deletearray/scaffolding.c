@@ -21,7 +21,7 @@ int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host
   exit(1);
   }
 
-int has_job_delete_nanny(struct job *pjob)
+int has_job_delete_nanny(svr_job *pjob)
   {
   fprintf(stderr, "The call to has_job_delete_nanny needs to be mocked!!\n");
   exit(1);
@@ -39,13 +39,13 @@ void on_job_exit(struct work_task *ptask)
   exit(1);
   }
 
-void remove_stagein(job **pjob_ptr)
+void remove_stagein(svr_job **pjob_ptr)
   {
   fprintf(stderr, "The call to remove_stagein needs to be mocked!!\n");
   exit(1);
   }
 
-pbs_queue *get_jobs_queue(job **pjob)
+pbs_queue *get_jobs_queue(svr_job **pjob)
   {
   fprintf(stderr, "The call to get_jobs_queue needs to be mocked!!\n");
   exit(1);
@@ -57,7 +57,7 @@ void reply_ack(struct batch_request *preq)
   exit(1);
   }
 
-struct work_task *apply_job_delete_nanny(struct job *pjob, int delay)
+struct work_task *apply_job_delete_nanny(struct svr_job *pjob, int delay)
   {
   fprintf(stderr, "The call to apply_job_delete_nanny needs to be mocked!!\n");
   exit(1);
@@ -85,13 +85,13 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct svr_job **pjobp, const char *text, bool b=false)
   {
   fprintf(stderr, "The call to job_abt needs to be mocked!!\n");
   exit(1);
   }
 
-int issue_signal(job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
+int issue_signal(svr_job **pjob_ptr, const char *signame, void (*func)(batch_request *), void *extra, char *extend)
   {
   fprintf(stderr, "The call to issue_signal needs to be mocked!!\n");
   exit(1);
@@ -103,13 +103,13 @@ work_task *next_task(all_tasks *at, int *iter)
   exit(1);
   }
 
-void change_restart_comment_if_needed(struct job *pjob)
+void change_restart_comment_if_needed(struct svr_job *pjob)
   {
   fprintf(stderr, "The call to change_restart_comment_if_needed needs to be mocked!!\n");
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
   exit(1);
@@ -138,7 +138,7 @@ int delete_whole_array(job_array *pa, bool purge)
   return(PBSE_NONE);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   return(NULL);
   }
@@ -167,7 +167,7 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -190,14 +190,14 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int delete_inactive_job(job **, const char *)
+int delete_inactive_job(svr_job **, const char *)
   {
   return(0);
   }
 
 void setup_apply_job_delete_nanny(
 
-  job    *pjob,           /* I */
+  svr_job    *pjob,           /* I */
   time_t  time_now)       /* I */
 
   {

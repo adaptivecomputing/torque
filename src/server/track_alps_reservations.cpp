@@ -107,11 +107,11 @@ reservation_holder::reservation_holder() : reservations(), orphaned_reservations
 
 int reservation_holder::track_alps_reservation(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   /* job has no alps reservation, nothing to record */
-  if (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str == NULL)
+  if (pjob->get_str_attr(JOB_ATR_reservation_id) == NULL)
     return(PBSE_NONE);
   
   int              rc = PBSE_NONE;
@@ -185,7 +185,7 @@ bool reservation_holder::is_orphaned(
 
   {
   bool              orphaned = false;
-  job              *pjob;
+  svr_job              *pjob;
   std::map<std::string, alps_reservation>::iterator it;
 
   pthread_mutex_lock(&this->rh_mutex);
@@ -197,7 +197,7 @@ bool reservation_holder::is_orphaned(
 
     if ((pjob = svr_find_job_by_id(it->second.internal_job_id)) != NULL)
       {
-      if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
+      if (pjob->get_state() == JOB_STATE_COMPLETE)
         orphaned = true;
 
       unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);

@@ -144,15 +144,15 @@ extern all_jobs alljobs;
 void post_delete_route(struct work_task *);
 void post_delete_mom1(batch_request *);
 void post_delete_mom2(struct work_task *);
-int forced_jobpurge(job *,struct batch_request *);
+int forced_jobpurge(svr_job *,struct batch_request *);
 void job_delete_nanny(struct work_task *);
-int apply_job_delete_nanny(job *pjob, int  delay);
+int apply_job_delete_nanny(svr_job *pjob, int  delay);
 void post_job_delete_nanny(batch_request *);
 void purge_completed_jobs(struct batch_request *);
 
 /* Public Functions in this file */
 
-void change_restart_comment_if_needed(struct job *);
+void change_restart_comment_if_needed(struct svr_job *);
 
 /* Private Data Items */
 
@@ -162,14 +162,14 @@ const char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
-extern void set_resc_assigned(job *, enum batch_op);
-extern job  *chk_job_request(char *, struct batch_request *);
-extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
-extern int   svr_chk_owner(struct batch_request *, job *);
-void chk_job_req_permissions(job **,struct batch_request *);
+extern void set_resc_assigned(svr_job *, enum batch_op);
+extern svr_job  *chk_job_request(char *, struct batch_request *);
+extern struct batch_request *cpy_stage(struct batch_request *, svr_job *, enum job_atr, int);
+extern int   svr_chk_owner(struct batch_request *, svr_job *);
+void chk_job_req_permissions(svr_job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
-void           remove_stagein(job **pjob_ptr);
-extern void removeBeforeAnyDependencies(job **pjob_ptr);
+void           remove_stagein(svr_job **pjob_ptr);
+extern void removeBeforeAnyDependencies(svr_job **pjob_ptr);
 
 
 
@@ -185,11 +185,11 @@ extern void removeBeforeAnyDependencies(job **pjob_ptr);
 
 int delete_inactive_job(
 
-  job        **pjob_ptr,
+  svr_job    **pjob_ptr,
   const char  *Msg)
 
   {
-  job  *pjob;
+  svr_job  *pjob;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (pjob_ptr == NULL)
@@ -197,7 +197,7 @@ int delete_inactive_job(
 
   pjob = *pjob_ptr;
   
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+  if ((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
@@ -208,12 +208,12 @@ int delete_inactive_job(
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
     }
-  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
+  else if ((pjob->get_svrflags() & JOB_SVFLG_StagedIn) != 0)
     {
     /* job has staged-in file, should remove them */
     remove_stagein(&pjob);
@@ -239,7 +239,7 @@ int delete_inactive_job(
       if (LOGLEVEL >= 7)
         {
         sprintf(log_buf, "calling on_job_exit from %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         }
     
       pthread_mutex_lock(server.sv_attr_mutex);
@@ -253,8 +253,8 @@ int delete_inactive_job(
       KeepSeconds = 0;
 
     if (pjob != NULL)
-      set_task(WORK_Timed, time(NULL) + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
-    }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
+      set_task(WORK_Timed, time(NULL) + KeepSeconds, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
+    }  /* END else if ((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (pjob == NULL)
     *pjob_ptr = NULL;
@@ -269,13 +269,13 @@ int delete_inactive_job(
 
 void remove_stagein(
 
-  job **pjob_ptr)  /* I */
+  svr_job **pjob_ptr)  /* I */
 
   {
 
-  struct batch_request *preq = 0;
-  job                  *pjob = *pjob_ptr;
-  u_long                addr;
+  batch_request *preq = NULL;
+  svr_job       *pjob = *pjob_ptr;
+  u_long         addr;
 
   preq = cpy_stage(preq, pjob, JOB_ATR_stagein, 0);
 
@@ -289,16 +289,16 @@ void remove_stagein(
 
     preq->rq_extra = NULL;
 
-    addr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
-    addr += pjob->ji_qs.ji_un.ji_exect.ji_mom_rmport;
-    addr += pjob->ji_qs.ji_un.ji_exect.ji_momport;
+    addr = pjob->get_ji_momaddr();
+    addr += pjob->get_ji_mom_rmport();
+    addr += pjob->get_ji_momport();
 
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
     if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
       {
       if (pjob != NULL)
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+        pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_StagedIn);
       }
     else
       {
@@ -307,7 +307,7 @@ void remove_stagein(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_FILE,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "unable to remove staged in files for job");
       }
 
@@ -330,7 +330,7 @@ void remove_stagein(
 
 int perform_job_delete_array_bookkeeping(
 
-  job *pjob,
+  svr_job *pjob,
   int  cancel_exit_code)
 
   {
@@ -346,8 +346,8 @@ int perform_job_delete_array_bookkeeping(
 
     if (pa != NULL)
       {
-      int old_state = pjob->ji_qs.ji_state;
-      std::string jobid(pjob->ji_qs.ji_jobid);
+      int old_state = pjob->get_state();
+      std::string jobid(pjob->get_jobid());
 
       unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
         
@@ -378,7 +378,7 @@ int perform_job_delete_array_bookkeeping(
 
 void force_purge_work(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -387,8 +387,8 @@ void force_purge_work(
 
   get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &cancel_exit_code);
 
-  snprintf(log_buf, sizeof(log_buf), "purging job %s without checking MOM", pjob->ji_qs.ji_jobid);
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  snprintf(log_buf, sizeof(log_buf), "purging job %s without checking MOM", pjob->get_jobid());
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
   
   free_nodes(pjob);
 
@@ -416,7 +416,7 @@ void force_purge_work(
       if (LOGLEVEL >= 7)
         {
         snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         }
       svr_job_purge(pjob, 1);
       }
@@ -435,7 +435,7 @@ void ensure_deleted(
   struct work_task *ptask)  /* I */
 
   {
-  job                  *pjob;
+  svr_job              *pjob;
   char                 *jobid;
 
   jobid = (char *)ptask->wt_parm1;
@@ -470,7 +470,7 @@ void ensure_deleted(
 
 void setup_apply_job_delete_nanny(
 
-  job    *pjob,           /* I */
+  svr_job    *pjob,           /* I */
   time_t  time_now)       /* I */
 
   {
@@ -496,7 +496,7 @@ void setup_apply_job_delete_nanny(
 
 int execute_job_delete(
 
-  job           *pjob,            /* M */
+  svr_job           *pjob,            /* M */
   char          *Msg,             /* I */
   batch_request *preq)            /* I */
 
@@ -533,9 +533,9 @@ int execute_job_delete(
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
   if (LOGLEVEL >= 10)
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->get_jobid());
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
+  if (pjob->get_state() == JOB_STATE_TRANSIT)
     {
     /* see note in req_delete - not sure this is possible still,
      * but the deleted code is irrelevant now. I will leave this
@@ -543,11 +543,12 @@ int execute_job_delete(
     return(-1);
     }
 
-  if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN ||
-      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN ||
-      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1 ||
-      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2 ||
-      pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3 )
+  int substate = pjob->get_substate();
+  if (substate == JOB_SUBSTATE_PRERUN ||
+      substate == JOB_SUBSTATE_RERUN ||
+      substate == JOB_SUBSTATE_RERUN1 ||
+      substate == JOB_SUBSTATE_RERUN2 ||
+      substate == JOB_SUBSTATE_RERUN3 )
     {
     /* If JOB_SUBSTATE_PRERUN being sent to MOM, wait till she gets it going */
     /* retry in one second                            */
@@ -559,7 +560,7 @@ int execute_job_delete(
 
     if (cycle_check_when != 0)
       {
-      if (!strcmp(pjob->ji_qs.ji_jobid, cycle_check_jid) &&
+      if (!strcmp(pjob->get_jobid(), cycle_check_jid) &&
           (time_now - cycle_check_when > 10))
         {
         /* state not updated after 10 seconds */
@@ -586,12 +587,12 @@ int execute_job_delete(
       /* new PRERUN job located */
 
       cycle_check_when = time_now;
-      strcpy(cycle_check_jid, pjob->ji_qs.ji_jobid);
+      strcpy(cycle_check_jid, pjob->get_jobid());
       }
 
     sprintf(log_buf, "job cannot be deleted, state=PRERUN, requeuing delete request");
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
 
     pwtnew = set_task(WORK_Timed,time_now + 1, post_delete_route, new batch_request(*preq),FALSE);
 
@@ -605,7 +606,7 @@ int execute_job_delete(
       {
       return(ROUTE_DELETE);
       }
-    }  /* END if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) */
+    }  /* END if (substate == JOB_SUBSTATE_PRERUN) */
 
 jump:
 
@@ -621,7 +622,7 @@ jump:
 
   sprintf(log_buf, msg_manager, msg_deletejob, preq->rq_user, preq->rq_host);
 
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
 
   /* NOTE:  should incorporate job delete message */
 
@@ -651,7 +652,7 @@ jump:
       }
     }
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+  if ((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, change restart comment if failed */
 
@@ -663,12 +664,12 @@ jump:
   get_svr_attr_l(SRV_ATR_ExitCodeCanceledJob, &status_cancel_queue);
   if (force_cancel > 0)
     {
-    char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
+    char *dup_jobid = strdup(pjob->get_jobid());
  
     set_task(WORK_Timed, time_now + force_cancel, ensure_deleted, dup_jobid, FALSE);    
     }
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  if (pjob->get_state() == JOB_STATE_RUNNING)
     {
     /*
      * setup a nanny task to make sure the job is actually deleted (see the
@@ -704,14 +705,14 @@ jump:
     if (pjob != NULL)
       {
       sprintf(log_buf, msg_delrunjobsig, sigt);
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
       }
     else
       job_mutex.set_unlock_on_exit(false);
 
     return(-1);
-    }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-  else if ((pjob->ji_qs.ji_state < JOB_STATE_RUNNING) &&
+    }  /* END if (pjob->get_state() == JOB_STATE_RUNNING) */
+  else if ((pjob->get_state() < JOB_STATE_RUNNING) &&
            (status_cancel_queue != 0))
     {
     /*
@@ -719,10 +720,9 @@ jump:
      * need to set an exit status
      */
 
-    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+    pjob->set_exec_exitstat(status_cancel_queue);
 
-    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
-    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
+    pjob->set_long_attr(JOB_ATR_exitstat, status_cancel_queue);
     }
 
   if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
@@ -734,7 +734,7 @@ jump:
 
   depend_on_term(pjob);
 
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
+  if ((pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
@@ -745,12 +745,12 @@ jump:
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "calling on_job_exit from %s", __func__);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
       }
 
-    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->get_jobid()), FALSE);
     }
-  else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
+  else if ((pjob->get_svrflags() & JOB_SVFLG_StagedIn) != 0)
     {
     /* job has staged-in file, should remove them */
     remove_stagein(&pjob);
@@ -797,7 +797,7 @@ int delete_all_work(
     }
 
   batch_request          preq_dup(*preq);
-  job                   *pjob;
+  svr_job               *pjob;
   all_jobs_iterator     *iter = NULL;
   int                    failed_deletes = 0;
   int                    total_jobs = 0;
@@ -844,7 +844,7 @@ int delete_all_work(
       continue;
       }
 
-    if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+    if (pjob->get_state() >= JOB_STATE_EXITING)
       {
       job_mutex.unlock();
       
@@ -956,7 +956,7 @@ int handle_delete_all(
 /*
  * single_delete_work()
  *
- * Performs the work of deleting a single job
+ * Performs the work of deleting a single svr_job
  * @param preq - the batch_request instructing us what to delete and how
  * @return PBSE_* to indicate status
  */
@@ -968,7 +968,7 @@ int single_delete_work(
   {
   int              rc = -1;
   char            *jobid = preq->rq_ind.rq_delete.rq_objname;
-  job             *pjob;
+  svr_job         *pjob;
   char            *Msg = preq->rq_extend;
 
   // TRUE is the same for non-heterogeneous jobs as FALSE. For heterogeneous
@@ -1043,7 +1043,7 @@ int handle_single_delete(
 
   {
   char *jobid = preq->rq_ind.rq_delete.rq_objname;
-  job  *pjob = svr_find_job(jobid, FALSE);
+  svr_job  *pjob = svr_find_job(jobid, FALSE);
 
   if (pjob == NULL)
     {
@@ -1184,12 +1184,12 @@ int req_deletejob(
 
 void change_restart_comment_if_needed(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
 
-  if ((pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long > 1) &&
-      (pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags & ATR_VFLAG_SET))
+  if ((pjob->get_long_attr(JOB_ATR_start_count) > 1) &&
+      (pjob->is_attr_set(JOB_ATR_checkpoint_restart_status)))
     {
     char *token1 = NULL;
     char *token2 = NULL;
@@ -1197,7 +1197,8 @@ void change_restart_comment_if_needed(
     char  commentMsg[25];
     char *ptr;
 
-    snprintf(commentMsg, sizeof(commentMsg), "%s", pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str);
+    snprintf(commentMsg, sizeof(commentMsg), "%s",
+      pjob->get_str_attr(JOB_ATR_checkpoint_restart_status));
    
     comment_ptr = commentMsg;
     token1 = threadsafe_tokenizer(&comment_ptr, " ");
@@ -1208,12 +1209,12 @@ void change_restart_comment_if_needed(
         ((memcmp(token2,"failure",7) == 0) || 
          (memcmp(token2,"restarted",9) == 0)))
       {
-      ptr = pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_val.at_str;
+      ptr = strdup(pjob->get_str_attr(JOB_ATR_checkpoint_restart_status));
       if (isupper(*ptr))
         {
         *ptr = tolower(*ptr);
-        pjob->ji_wattr[JOB_ATR_checkpoint_restart_status].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_modified = 1;
+        pjob->set_str_attr(JOB_ATR_checkpoint_restart_status, ptr);
+        pjob->set_modified(true);
         }
       }
     }
@@ -1267,7 +1268,7 @@ void post_delete_mom1(
   {
   int                   delay = 0;
   int                   dellen = strlen(deldelaystr);
-  job                  *pjob;
+  svr_job              *pjob;
 
   pbs_queue            *pque;
 
@@ -1312,7 +1313,7 @@ void post_delete_mom1(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "MOM rejected signal during delete");
 
       /* removed the resources assigned to job */
@@ -1344,8 +1345,8 @@ void post_delete_mom1(
   reply_ack(preq_clt);  /* dont need it, reply now */
 
   // Apply the user delay first so it takes precedence.
-  if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
-    delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
+  if (pjob->is_attr_set(JOB_ATR_user_kill_delay))
+    delay = pjob->get_long_attr(JOB_ATR_user_kill_delay);
 
   /*
    * if no delay specified in original request, see if kill_delay
@@ -1369,7 +1370,7 @@ void post_delete_mom1(
       }
     }
 
-  set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->ji_qs.ji_jobid), FALSE);
+  set_task(WORK_Timed, delay + time_now, post_delete_mom2, strdup(pjob->get_jobid()), FALSE);
 
   /*
    * Since the first signal has succeeded, let's reschedule the
@@ -1388,7 +1389,7 @@ void post_delete_mom2(
   char        *jobid;
   const char *sigk = "SIGKILL";
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  job         *pjob;
+  svr_job     *pjob;
 
   jobid = (char *)pwt->wt_parm1;
   free(pwt->wt_mutex);
@@ -1407,14 +1408,14 @@ void post_delete_mom2(
     {
     mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-    if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+    if (pjob->get_state() == JOB_STATE_RUNNING)
       {
       issue_signal(&pjob, sigk, NULL, NULL, NULL);
       
       if (pjob != NULL)
         {
         sprintf(log_buf, msg_delrunjobsig, sigk);
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         }
       }
     
@@ -1436,7 +1437,7 @@ void post_delete_mom2(
 
 int forced_jobpurge(
 
-  job           *pjob,
+  svr_job       *pjob,
   batch_request *preq)
 
   {
@@ -1452,7 +1453,7 @@ int forced_jobpurge(
       if (((preq->rq_perm & (ATR_DFLAG_OPRD | ATR_DFLAG_OPWR | ATR_DFLAG_MGRD | ATR_DFLAG_MGWR)) != 0) ||
           ((svr_chk_owner(preq, pjob) == 0) && (owner_purge)))
         {
-        std::string jobid(pjob->ji_qs.ji_jobid);
+        std::string jobid(pjob->get_jobid());
         int rc = PURGE_SUCCESS;
 
         try
@@ -1490,7 +1491,7 @@ int forced_jobpurge(
 
 
 
-/* apply_job_delete_nanny - setup the job delete nanny on a job
+/* apply_job_delete_nanny - setup the svr_job delete nanny on a job
  *
  * Only 1 nanny will be allowed at a time. Don't add a new nanny
  * if one already exists
@@ -1498,7 +1499,7 @@ int forced_jobpurge(
 
 int apply_job_delete_nanny(
 
-  job *pjob,
+  svr_job *pjob,
   int  delay)  /* I */
 
   {
@@ -1531,7 +1532,7 @@ int apply_job_delete_nanny(
   pjob->ji_has_delete_nanny = true;
 
   /* add a nanny task at the requested time */
-  set_task(tasktype, delay, job_delete_nanny, strdup(pjob->ji_qs.ji_jobid), FALSE);
+  set_task(tasktype, delay, job_delete_nanny, strdup(pjob->get_jobid()), FALSE);
 
   return(PBSE_NONE);
   } /* END apply_job_delete_nanny() */
@@ -1565,7 +1566,7 @@ void job_delete_nanny(
   struct work_task *pwt)
 
   {
-  job           *pjob;
+  svr_job       *pjob;
   const char    *sigk = "SIGKILL";
   char          *jobid;
 
@@ -1588,13 +1589,13 @@ void job_delete_nanny(
         {
         mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-        sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
+        sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->get_jobid());
         log_err(-1, "job nanny", log_buf);
         
         /* build up a Signal Job batch request */
         if ((newreq = new batch_request(PBS_BATCH_SignalJob)) != NULL)
           {
-          strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
+          strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->get_jobid());
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
           }
         
@@ -1636,7 +1637,7 @@ void post_job_delete_nanny(
 
   {
   int                   rc;
-  job                  *pjob;
+  svr_job              *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
   bool                  nanny = false;
 
@@ -1700,7 +1701,7 @@ void purge_completed_jobs(
   struct batch_request *preq)  /* I */
 
   {
-  job          *pjob;
+  svr_job      *pjob;
   char         *time_str;
   time_t        purge_time = 0;
   all_jobs_iterator   *iter = NULL;
@@ -1740,23 +1741,21 @@ void purge_completed_jobs(
 
   while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
-    if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
-        (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
-        ((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
-        (pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool == false))
+    if ((pjob->get_substate() == JOB_SUBSTATE_COMPLETE) &&
+        (pjob->get_long_attr(JOB_ATR_comp_time) <= purge_time) &&
+        (pjob->is_attr_set(JOB_ATR_reported) == true) &&
+        (pjob->get_bool_attr(JOB_ATR_reported) == false))
       {
       if (LOGLEVEL >= 4)
         {
         sprintf(log_buf,"Reported job is COMPLETED (%ld), setting reported to TRUE",
-          pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
+          pjob->get_long_attr(JOB_ATR_comp_time));
         
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         }
       
-      pjob->ji_wattr[JOB_ATR_reported].at_val.at_bool = true;
-      pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-          
-      job_save(pjob, SAVEJOB_FULL, 0); 
+      pjob->set_bool_attr(JOB_ATR_reported, true);
+      svr_job_save(pjob); 
       }
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
@@ -1774,16 +1773,18 @@ void purge_completed_jobs(
 
 int is_ms_on_server(
     
-  const job *pjob)
+  const svr_job *pjob)
 
   {
-  char  mom_fullhostname[PBS_MAXHOSTNAME + 1];
-  int   ms_on_server = 0;
-  char *exec_hosts = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+  char        mom_fullhostname[PBS_MAXHOSTNAME + 1];
+  int         ms_on_server = 0;
+  const char *exec_hosts = pjob->get_str_attr(JOB_ATR_exec_host);
 
   if (exec_hosts)
     {
-    char *host_tok = threadsafe_tokenizer(&exec_hosts, "+");
+    char *work_exec = strdup(exec_hosts);
+    char *ptr = work_exec;
+    char *host_tok = threadsafe_tokenizer(&ptr, "+");
     if (host_tok)
       {
       char *slash;
@@ -1798,6 +1799,8 @@ int is_ms_on_server(
 
       ms_on_server = (strcmp(server_host, mom_fullhostname) == 0);
       }
+
+    free(work_exec);
     }
 
   return(ms_on_server);

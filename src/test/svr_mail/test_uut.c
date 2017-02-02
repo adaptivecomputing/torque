@@ -36,17 +36,14 @@ void init_server()
   pthread_mutex_init(server.sv_attr_mutex, NULL);
   }
 
-void setup_job(job *pjob)
+void setup_job(svr_job *pjob)
   {
-  memset(pjob, 0, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, jobid);
-  pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = (char *)owner;
-  pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str = (char *)jobname;
-  pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str = (char *)errpath;
-  pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str = (char *)outpath;
-  pjob->ji_wattr[JOB_ATR_mailpnts].at_flags |= ATR_VFLAG_SET;
-  pjob->ji_wattr[JOB_ATR_mailpnts].at_val.at_str = (char *)complete;
-  
+  pjob->set_jobid(jobid);
+  pjob->set_str_attr(JOB_ATR_job_owner, strdup(owner));
+  pjob->set_str_attr(JOB_ATR_jobname, strdup(jobname));
+  pjob->set_str_attr(JOB_ATR_errpath, strdup(errpath));
+  pjob->set_str_attr(JOB_ATR_outpath, strdup(outpath));
+  pjob->set_str_attr(JOB_ATR_mailpnts, strdup(complete));
   }
 
 int remove_old_mail(const char *filename)
@@ -129,7 +126,7 @@ END_TEST
 
 START_TEST(test_with_default_files_when_complete)
   {
-  job pjob;
+  svr_job pjob;
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
@@ -192,7 +189,7 @@ END_TEST
 
 START_TEST(test_with_oe_when_complete)
   {
-  job pjob;
+  svr_job pjob;
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
@@ -204,8 +201,7 @@ START_TEST(test_with_oe_when_complete)
   const char attr_join_oe[] = "oe";
 
   setup_job(&pjob);
-  pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = (char *)attr_join_oe;
+  pjob.set_str_attr(JOB_ATR_join, strdup(attr_join_oe));
 
   rc = remove_old_mail("./output.xowner");
   fail_unless((rc == 0), "unable to remove old mail output file");
@@ -260,7 +256,7 @@ END_TEST
 
 START_TEST(test_with_eo_when_complete)
   {
-  job pjob;
+  svr_job pjob;
   FILE *fp = NULL;
   bool errFile_found = false;
   bool outFile_found = false;
@@ -272,8 +268,7 @@ START_TEST(test_with_eo_when_complete)
   const char attr_join_oe[] = "eo";
 
   setup_job(&pjob);
-  pjob.ji_wattr[JOB_ATR_join].at_flags |= ATR_VFLAG_SET;
-  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = (char *)attr_join_oe;
+  pjob.set_str_attr(JOB_ATR_join, strdup(attr_join_oe));
 
   rc = remove_old_mail("./output.xowner");
   fail_unless((rc == 0), "unable to remove old mail output file");
@@ -329,17 +324,17 @@ END_TEST
 START_TEST(mail_point_p)
   {	
   called = 0;
-  job pjob;	
+  svr_job pjob;	
    
   char p[]= "p";
-  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;	  
+  pjob.set_str_attr(JOB_ATR_mailpnts, strdup(p));	  
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 0),"one");
 
   
   char a[]= "a";
   setup_job(&pjob);
-  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = a;	  
+  pjob.set_str_attr(JOB_ATR_mailpnts, strdup(a));	  
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 1),"two");
   }

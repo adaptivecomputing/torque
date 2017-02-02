@@ -28,24 +28,24 @@ char *site_map_user(char *uname,  char *host)
   exit(1);
   }
 
-char *get_variable(job *pjob, const char *variable)
+char *get_variable(svr_job *pjob, const char *variable)
   {
   return(NULL);
   }
 
-struct passwd * getpwnam_ext(char **user_buf, char * user_name)
+struct passwd * getpwnam_ext(char **user_buf, const char * user_name)
   {
   fprintf(stderr, "The call to getpwnam_ext needs to be mocked!!\n");
   exit(1);
   }
 
-int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging)
+int site_check_user_map(svr_job *pjob, char *luser, char *EMsg, int logging)
   {
   fprintf(stderr, "The call to site_check_user_map needs to be mocked!!\n");
   exit(1);
   }
 
-struct group * getgrnam_ext(char **grp_buf, char * grp_name)
+struct group * getgrnam_ext(char **grp_buf, const char * grp_name)
   {
   fprintf(stderr, "The call to getgrnam_ext needs to be mocked!!\n");
   exit(1);
@@ -56,13 +56,13 @@ int acl_check(pbs_attribute *pattr, char   *name, int   type)
   return(0);
   }
 
-void get_jobowner(char *from, char *to)
+void get_jobowner(const char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner needs to be mocked!!\n");
   exit(1);
   }
 
-int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+int acl_check_my_array_string(struct array_strings *pas, const char *name, int type)
   {
   return(0);
   }
@@ -189,5 +189,78 @@ int get_svr_attr_arst(
 bool node_exists(const char *node_name)
   {
   return(exists);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
   }
 

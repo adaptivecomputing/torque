@@ -14,12 +14,12 @@ int LOGLEVEL = 10;
 
 threadpool_t *task_pool;
 
-int svr_job_purge(struct job *pjob, int keepSpoolFiles)
+int svr_job_purge(struct svr_job *pjob, int keepSpoolFiles)
   {
   return(0);
   }
 
-job *svr_find_job(char const* p, int i)
+svr_job *svr_find_job(char const* p, int i)
   {
   return(NULL);
   }

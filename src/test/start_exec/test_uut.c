@@ -18,9 +18,9 @@
 #include "pbs_nodes.h"
 #include "test_uut.h"
 
-int job_nodes(job &pjob);
+int job_nodes(mom_job &pjob);
 int get_indices_from_exec_str(const char *exec_str, char *buf, int buf_size);
-int  remove_leading_hostname(char **jobpath);
+int  remove_leading_hostname(const char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
 int setup_process_launch_pipes(int &kid_read, int &kid_write, int &parent_read, int &parent_write);
 
@@ -50,12 +50,12 @@ extern int global_poll_timeout_sec;
 
 void create_command(std::string &cmd, char **argv);
 void no_hang(int sig);
-void exec_bail(job *pjob, int code, std::set<int> *sisters_contacted);
+void exec_bail(mom_job *pjob, int code, std::set<int> *sisters_contacted);
 int read_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, int parent_read, int parent_write);
 int process_launcher_child_status(struct startjob_rtn *sjr, const char *job_id, const char *application_name);
-void update_task_and_job_states_after_launch(task *ptask, job *pjob, const char *application_name);
+void update_task_and_job_states_after_launch(task *ptask, mom_job *pjob, const char *application_name);
 void escape_spaces(const char *str, std::string &escaped);
-int become_the_user(job*, bool);
+int become_the_user(mom_job*, bool);
 int TMomCheckJobChild(pjobexec_t*, int, int*, int*);
 
 #if NO_SPOOL_OUTPUT == 1
@@ -64,7 +64,7 @@ int restore_supplementary_group_list(int, gid_t*);
 #endif
 
 #ifdef PENABLE_LINUX_CGROUPS
-unsigned long long get_memory_limit_from_resource_list(job *pjob);
+unsigned long long get_memory_limit_from_resource_list(mom_job *pjob);
 #endif
 
 int jobstarter_privileged = 0;
@@ -76,15 +76,16 @@ extern int task_saved;
 
 START_TEST(update_task_and_job_states_after_launch_test)
   {
-  job  *pjob = (job *)calloc(1, sizeof(job));
+  mom_job  *pjob;
+  pjob = new mom_job();
   task *ptask = (task *)calloc(1, sizeof(task));
 
   job_saved = 0;
   task_saved = 0;
 
   update_task_and_job_states_after_launch(ptask, pjob, "matlab");
-  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_RUNNING);
-  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING);
+  fail_unless(pjob->get_state() == JOB_STATE_RUNNING);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING);
   fail_unless(ptask->ti_qs.ti_status == TI_STATE_RUNNING);
   fail_unless(job_saved == 1);
   fail_unless(task_saved == 1);
@@ -187,7 +188,7 @@ END_TEST
 #ifdef PENABLE_LINUX_CGROUPS
 START_TEST(get_memory_limit_from_resource_list_test)
   {
-  job pjob;
+  mom_job pjob;
 
   memset(&pjob, 0, sizeof(pjob));
   pjob.ji_vnods = (vnodent *)calloc(4, sizeof(vnodent));
@@ -213,8 +214,8 @@ END_TEST
 
 START_TEST(remove_leading_hostname_test)
   {
-  char *p1 = strdup("napali:/home/dbeer");
-  char *p2 = NULL;
+  const char *p1 = strdup("napali:/home/dbeer");
+  const char *p2 = NULL;
 
   fail_unless(remove_leading_hostname(NULL) == FAILURE);
   fail_unless(remove_leading_hostname(&p2) == FAILURE);
@@ -230,7 +231,7 @@ END_TEST
 
 START_TEST(exec_bail_test)
   {
-  job pjob;
+  mom_job pjob;
   memset(&pjob, 0, sizeof(pjob));
   
   am_ms = false;
@@ -245,8 +246,8 @@ START_TEST(exec_bail_test)
   pjob.ji_stdout = 11;
   pjob.ji_stderr = 12;
   exec_bail(&pjob, 2, NULL);
-  fail_unless(pjob.ji_qs.ji_substate == JOB_SUBSTATE_EXITING);
-  fail_unless(pjob.ji_qs.ji_un.ji_momt.ji_exitstat == 2); // must match the code passed in
+  fail_unless(pjob.get_substate() == JOB_SUBSTATE_EXITING);
+  fail_unless(pjob.get_mom_exitstat() == 2); // must match the code passed in
   fail_unless(send_sisters_called > 0);
 
   }
@@ -276,17 +277,15 @@ END_TEST
 
 START_TEST(job_nodes_test)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
-  pjob->ji_usages = new std::map<std::string, job_host_data>();
+  mom_job *pjob = new mom_job();
 
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0-9+waimea/0-9");
-  pjob->ji_wattr[JOB_ATR_exec_port].at_val.at_str = strdup("15002+15002");
+  pjob->set_str_attr(JOB_ATR_exec_port, strdup("15002+15002"));
 
   fail_unless(job_nodes(*pjob) != PBSE_NONE);
   // nothing should've happened since the flag isn't set
   fail_unless(pjob->ji_numnodes == 0);
   
-  pjob->ji_wattr[JOB_ATR_exec_host].at_flags = ATR_VFLAG_SET;
+  pjob->set_str_attr(JOB_ATR_exec_host, strdup("napali/0-9+waimea/0-9"));
 
   // Force it to not resolve the hostname
   addr_fail = true;
@@ -528,33 +527,34 @@ END_TEST
 
 START_TEST(test_check_pwd_euser)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob;
+  pjob = new mom_job();
   bool pwd = false;
 
   pwd = check_pwd(pjob);
   fail_unless(pwd == false, "check_pwd succeeded with an empty job");
 
   bad_pwd = true;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "rightsaidfred", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("rightsaidfred"));
   pwd = check_pwd(pjob);
   fail_unless(pwd == false, "bad pwd fail");
 
   bad_pwd = false;
   fail_init_groups = true;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
   fail_unless(pwd == false, "bad grp fail");
 
   pjob->ji_grpcache = NULL;
   fail_init_groups = false;
   fail_site_grp_check = true;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
   fail_unless(pwd == false, "bad site fail");
   
   pjob->ji_grpcache = NULL;
   fail_site_grp_check = false;
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "dbeer", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
   fail_unless(pwd == true);
   }
@@ -562,20 +562,22 @@ END_TEST
 
 START_TEST(test_check_pwd_no_user)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob;
+  pjob = new mom_job();
   struct passwd *pwd = NULL;
 
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "bogus", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("bogus"));
   fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
   }
 END_TEST
 
 START_TEST(test_check_pwd_adaptive_user)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob;
+  pjob = new mom_job();
   struct passwd *pwd = NULL;
 
-  decode_str(&pjob->ji_wattr[JOB_ATR_euser], "euser", NULL, "adaptive", 0);
+  pjob->set_str_attr(JOB_ATR_euser, strdup("adaptive"));
   fail_unless(pwd == NULL, "check_pwd still succeeded with bogus user");
   }
 END_TEST
@@ -708,7 +710,7 @@ END_TEST
 START_TEST(test_become_the_user)
   {
   int rc;
-  job *pjob;
+  mom_job *pjob;
   int uid;
   int gid;
 
@@ -716,14 +718,14 @@ START_TEST(test_become_the_user)
   if (getuid() != 0)
     return;
 
-  pjob = (job *)calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
 
   pjob->ji_grpcache = (struct grpcache *)calloc(1, sizeof(struct grpcache));
   fail_unless(pjob->ji_grpcache != NULL);
 
-  pjob->ji_qs.ji_un.ji_momt.ji_exuid = 500;
-  pjob->ji_qs.ji_un.ji_momt.ji_exgid = 500;
+  pjob->set_exuid(500);
+  pjob->set_exgid(500);
 
   pjob->ji_grpcache->gc_ngroup = 1;
   pjob->ji_grpcache->gc_groups[0] = 500;

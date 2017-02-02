@@ -130,13 +130,13 @@ int svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host
 
 int svr_chk_owner(
 
-  struct batch_request *preq,  /* I */
-  job                  *pjob)  /* I */
+  batch_request *preq,  /* I */
+  svr_job       *pjob)  /* I */
 
   {
   char  owner[PBS_MAXUSER + 1];
 
-  get_jobowner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, owner);
+  get_jobowner(pjob->get_str_attr(JOB_ATR_job_owner), owner);
 
 
   return svr_chk_owner_generic(preq, owner, get_variable(pjob, pbs_o_host));
@@ -184,13 +184,13 @@ int svr_chk_owner_generic(
 
 int svr_authorize_jobreq(
 
-  struct batch_request *preq,  /* I */
-  job                  *pjob)  /* I */
+  batch_request *preq,  /* I */
+  svr_job       *pjob)  /* I */
 
   {
   char  owner[PBS_MAXUSER + 1];
 
-  get_jobowner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, owner);
+  get_jobowner(pjob->get_str_attr(JOB_ATR_job_owner), owner);
 
   return svr_authorize_req(preq, owner, get_variable(pjob, pbs_o_host));
   }  /* END svr_authorize_jobreq() */
@@ -566,11 +566,11 @@ int authenticate_user(
 
 void chk_job_req_permissions(
 
-  job                  **pjob_ptr, /* M */
-  struct batch_request  *preq) /* I */
+  svr_job       **pjob_ptr, /* M */
+  batch_request  *preq) /* I */
 
   {
-  job  *pjob = *pjob_ptr;
+  svr_job  *pjob = *pjob_ptr;
   char  tmpLine[MAXLINE];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -579,11 +579,11 @@ void chk_job_req_permissions(
     sprintf(log_buf, msg_permlog,
       preq->rq_type,
       "Job",
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       preq->rq_user,
       preq->rq_host);
 
-    log_event(PBSEVENT_SECURITY,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
 
@@ -591,7 +591,7 @@ void chk_job_req_permissions(
 
     *pjob_ptr = NULL;
     }
-  else if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+  else if (pjob->get_state() >= JOB_STATE_EXITING)
     {
     /* job has completed */
 
@@ -610,13 +610,13 @@ void chk_job_req_permissions(
 
         sprintf(log_buf, "%s %s",
           pbse_to_txt(PBSE_BADSTATE),
-          PJobState[pjob->ji_qs.ji_state]);
+          PJobState[pjob->get_state()]);
 
-        log_event(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
 
         snprintf(tmpLine, sizeof(tmpLine), 
           "invalid state for job - %s",
-          PJobState[pjob->ji_qs.ji_state]);
+          PJobState[pjob->get_state()]);
 
         req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
 
@@ -626,7 +626,7 @@ void chk_job_req_permissions(
 
         break;
       }  /* END switch (preq->rq_type) */
-    }    /* END if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING) */
+    }    /* END if (pjob->get_state() >= JOB_STATE_EXITING) */
 
   /* SUCCESS - request is valid */
   } /* END chk_job_req_permissions() */
@@ -643,13 +643,13 @@ void chk_job_req_permissions(
  */
 
 
-job *chk_job_request(
+svr_job *chk_job_request(
 
   char                 *jobid,  /* I */
   struct batch_request *preq)   /* I */
 
   {
-  job *pjob = NULL;
+  svr_job *pjob = NULL;
 
   if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {

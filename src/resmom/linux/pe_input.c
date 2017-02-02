@@ -89,7 +89,7 @@
 
 int pe_input(
 
-  char *jobid)
+  const char *obid)
 
   {
   return(open("/dev/null", O_RDONLY, 0));

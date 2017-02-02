@@ -107,8 +107,8 @@ extern int              allow_any_mom;
 extern AvlTree          ipaddrs;
 
 
-job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
-int  unlock_ji_mutex(job *, const char *, const char *, int);
+svr_job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
+int  unlock_ji_mutex(svr_job *, const char *, const char *, int);
 
 
 /* 
@@ -213,9 +213,9 @@ int gpu_has_job(
   int  gpuid)
 
   {
-  job            *pjob;
-  char           *gpu_str;
-  char           *found_str;
+  svr_job        *pjob;
+  const char     *gpu_str;
+  const char     *found_str;
   /* increased so that really high gpu indexes don't bother us */
   char            tmp_str[PBS_MAXHOSTNAME + 10];
 
@@ -230,10 +230,10 @@ int gpu_has_job(
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 
       /* Does this job have this gpuid assigned? */
-      if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
-          (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) != 0)
+      if ((pjob->get_state() == JOB_STATE_RUNNING) &&
+          (pjob->is_attr_set(JOB_ATR_exec_gpus)))
         {
-        gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
+        gpu_str = pjob->get_str_attr(JOB_ATR_exec_gpus);
         
         if (gpu_str != NULL)
           {

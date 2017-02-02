@@ -131,6 +131,7 @@ class array_info
   };
 
 
+#ifndef PBS_MOM
 /* pbs_server will keep a list of these structs, with one struct per job array*/
 
 class job_array
@@ -175,7 +176,7 @@ class job_array
   bool need_to_update_slot_limits() const;
   void mark_deleted();
   bool is_deleted() const;
-  bool mark_end_of_subjob(job *pjob);
+  bool mark_end_of_subjob(svr_job *pjob);
   };
 
 
@@ -213,7 +214,7 @@ int  is_array(char *id);
 int  array_delete(const char *array_id);
 int  array_save(job_array *pa);
 int  array_save(job_array *pa);
-void array_get_parent_id(char *job_id, char *parent_id);
+void array_get_parent_id(const char *job_id, char *parent_id);
 
 job_array *get_array(const char *id);
 int array_recov(const char *path, job_array **pa);
@@ -244,9 +245,10 @@ int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);
-int        check_array_slot_limits(job *pjob, job_array *pa);
+int        check_array_slot_limits(svr_job *pjob, job_array *pa);
 job_array *next_array(all_arrays_iterator **);
 
-job_array *get_jobs_array(job **);
+job_array *get_jobs_array(svr_job **);
+#endif
 
 #endif

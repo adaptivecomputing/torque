@@ -11,9 +11,9 @@ int check_exiting_jobs();
 
 START_TEST(record_job_as_exiting_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  strcpy(pjob.ji_qs.ji_jobid, "1.tom");
+  pjob.set_jobid("1.tom");
 
   fail_unless(record_job_as_exiting(&pjob) == 0, "Couldn't record job as exiting");
   }
@@ -24,15 +24,15 @@ END_TEST
 
 START_TEST(remove_job_from_exiting_list_test)
   {
-  job pjob;
-  job *pJob = &pjob;
+  svr_job pjob;
+  svr_job *pJob = &pjob;
 
-  strcpy(pjob.ji_qs.ji_jobid, "2.napali");
+  pjob.set_jobid("2.napali");
   fail_unless(remove_job_from_exiting_list(&pJob) == 0, "Couldn't remove job from exiting list");
  
   pJob = &pjob;
 
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  pjob.set_jobid("1.napali");
   fail_unless(remove_job_from_exiting_list(&pJob) == 0, "Couldn't remove job from exiting list");
   }
 END_TEST

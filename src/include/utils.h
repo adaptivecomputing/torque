@@ -145,11 +145,11 @@ extern char *OriginalPath;
 /* group functions in u_groups.c */
 extern void free_grname(struct group *, char *);
 extern void free_pwnam(struct passwd *pwdp, char *buf);
-extern struct group *getgrnam_ext (char **, char *);
+extern struct group *getgrnam_ext (char **, const char *);
 extern struct group *getgrgid_ext (char **, gid_t);
 
 /* user functions in u_users.c */
-extern struct passwd *getpwnam_ext (char **, char *);
+extern struct passwd *getpwnam_ext (char **, const char *);
 struct passwd *get_password_entry_by_uid(char ** user_buf, uid_t uid);
 int                   setuid_ext(uid_t uid, int set_euid);
 int                   initgroups_ext(const char *username, gid_t gr_id);

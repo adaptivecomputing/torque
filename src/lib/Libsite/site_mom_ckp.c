@@ -38,8 +38,10 @@
  */
 
 int site_mom_postchk(
-    job *pjob,
-    int hold_type)
+
+  mom_job *pjob,
+  int      hold_type)
+
   {
   return 0;
   }
@@ -54,7 +56,9 @@ int site_mom_postchk(
  */
 
 int site_mom_prerst(
-    job *pjob)
+
+  mom_job *pjob)
+
   {
   return 0;
   }

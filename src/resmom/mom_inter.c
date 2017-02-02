@@ -510,12 +510,12 @@ int mom_writer(
 
 int x11_create_display(
 
-  int   x11_use_localhost, /* non-zero to use localhost only */
-  char *display,           /* O */
-  char *phost,             /* hostname where qsub is waiting */
-  int   pport,             /* port where qsub is waiting */
-  char *homedir,           /* need to set $HOME for xauth */
-  char *x11authstr)        /* proto:data:screen */
+  int         x11_use_localhost, /* non-zero to use localhost only */
+  char       *display,           /* O */
+  char       *phost,             /* hostname where qsub is waiting */
+  int         pport,             /* port where qsub is waiting */
+  char       *homedir,           /* need to set $HOME for xauth */
+  const char *x11authstr)        /* proto:data:screen */
 
   {
 #ifdef HAVE_GETADDRINFO

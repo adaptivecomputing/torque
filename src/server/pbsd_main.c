@@ -166,7 +166,7 @@ extern void tcp_settimeout(long);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
-extern int  svr_startjob(job *, struct batch_request **, char *, char *);
+extern int  svr_startjob(svr_job *, struct batch_request **, char *, char *);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
@@ -1279,7 +1279,7 @@ void main_loop(void)
   {
   long          state = SV_STATE_DOWN;
   time_t        waittime = 5;
-  job          *pjob;
+  svr_job      *pjob;
   all_jobs_iterator  *iter = NULL;
   long          when = 0;
   long          log = 0;
@@ -1490,8 +1490,8 @@ void main_loop(void)
   /* save any jobs that need saving */
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
-    if (pjob->ji_modified)
-      job_save(pjob, SAVEJOB_FULL, 0);
+    if (pjob->has_been_modified())
+      svr_job_save(pjob);
 
     unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }

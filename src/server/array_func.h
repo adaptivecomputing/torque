@@ -16,7 +16,7 @@ void array_get_parent_id(char *job_id, char *parent_id);
 
 int set_slot_limit(char *request, job_array *pa);
 
-int setup_array_struct(job *pjob);
+int setup_array_struct(svr_job *pjob);
 
 /* static int is_num(char *str); */
 

@@ -5,6 +5,6 @@
 #include "server.h" /* mail_info */
 #include "pbs_job.h" /* job */
 
-void svr_mailowner(job *pjob, int mailpoint, int force, const char *text);
+void svr_mailowner(svr_job *pjob, int mailpoint, int force, const char *text);
 
 #endif /* _SVR_MAIL_H */

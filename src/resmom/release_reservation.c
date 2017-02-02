@@ -195,10 +195,10 @@ int execute_alps_release(
 
 int destroy_alps_reservation(
 
-  char *reservation_id,
-  char *apbasil_path,
-  char *apbasil_protocol,
-  int   retries)
+  const char *reservation_id,
+  char       *apbasil_path,
+  char       *apbasil_protocol,
+  int         retries)
 
   {
   int       rc = 1;

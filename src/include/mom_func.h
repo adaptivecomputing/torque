@@ -198,11 +198,11 @@ typedef struct obit_task_info
 
 int add_to_resend_things(resend_momcomm *mc);
 im_compose_info *create_compose_reply_info(const char *, const char *, hnodent *, int command, tm_event_t, tm_task_id, const char *);
-int open_tcp_stream_to_sisters(job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
+int open_tcp_stream_to_sisters(mom_job *pjob, int com, tm_event_t parent_event, int mom_radix, hnodent *hosts, struct radix_buf **sister_list, tlist_head *phead, int flag);
 
-void exec_bail(job *pjob, int code, std::set<int> *nodes_contacted = NULL);
-int send_sisters(struct job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact = NULL);
-int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie,
+void exec_bail(mom_job *pjob, int code, std::set<int> *nodes_contacted = NULL);
+int send_sisters(mom_job *pjob, int com, int using_radix, std::set<int> *sisters_to_contact = NULL);
+int im_compose(struct tcp_chan *chan, const char *jobid, const char *cookie,
                int command, tm_event_t event, tm_task_id taskid);
 
 /* public funtions within MOM */
@@ -210,28 +210,28 @@ int im_compose(struct tcp_chan *chan, char *jobid, const char *cookie,
 #ifdef _CRAY
 #define WJSIGNAL 46
 
-extern void  post_suspend(job *, int);
-extern void  post_resume(job *, int);
+extern void  post_suspend(mom_job *, int);
+extern void  post_resume(mom_job *, int);
 
 #endif /* _CRAY */
 
 extern int   bld_env_variables(struct var_table *, const char *, const char *);
-extern int   expand_path(job *,char *,int,char *);
+extern int   expand_path(mom_job *,char *,int,char *);
 extern pid_t fork_me(int sock);
 extern int   get_la(double *);
 extern void  init_abort_jobs(int);
 extern int   init_groups(char *, int, int, int *);
-int   kill_job(job *, int sig, const char *killer_id_name, const char *why_killed_reason);
-extern void  mom_deljob(job *);
-extern void  mom_freenodes(job *);
+int   kill_job(mom_job *, int sig, const char *killer_id_name, const char *why_killed_reason);
+extern void  mom_deljob(mom_job *);
+extern void  mom_freenodes(mom_job *);
 extern void  scan_for_exiting();
 extern void  scan_for_terminated();
 extern void  scan_non_child_tasks(void);
-extern int   set_job(job *, struct startjob_rtn *);
-extern void  set_globid(job *, struct startjob_rtn *);
-extern int   set_mach_vars(job *, struct var_table *);
-extern char *set_shell(job *, struct passwd *);
-extern int   start_exec(job *);
+extern int   set_job(mom_job *, struct startjob_rtn *);
+extern void  set_globid(mom_job *, struct startjob_rtn *);
+extern int   set_mach_vars(mom_job *, struct var_table *);
+extern char *set_shell(mom_job *, struct passwd *);
+extern int   start_exec(mom_job *);
 extern int   open_master(char **);
 extern int   open_slave();
 extern char *rcvttype(int);
@@ -239,41 +239,41 @@ extern int   rcvwinsize(int);
 extern int   remtree(char *);
 extern int   setwinsize(int);
 extern void  set_termcc(int);
-extern int   site_job_setup(job *);
-extern int   site_mom_chkuser(job *);
-extern int   site_mom_postchk(job *, int);
-extern int   site_mom_prerst(job *);
+extern int   site_job_setup(mom_job *);
+extern int   site_mom_chkuser(mom_job *);
+extern int   site_mom_postchk(mom_job *, int);
+extern int   site_mom_prerst(mom_job *);
 extern int   reader(int, int);
 extern int   writer(int, int);
 extern int   conn_qsub(char *, long, char *);  /* NOTE:  should be moved out of here to job_func proto header */
-extern int   run_pelog(int, char *, job *, int, int);
-extern int   is_joined(job *);
+extern int   run_pelog(int, char *, mom_job *, int, int);
+extern int   is_joined(mom_job *);
 extern void  check_busy(double);
 extern void  state_to_server(int, int);
 extern void  dep_main_loop_cycle(void);
-extern int   message_job(job *, enum job_file, char *);
+extern int   message_job(mom_job *, enum job_file, char *);
 extern proc_stat_t *get_proc_stat(int pid);
 
-extern void  term_job(job *);
-int          TTmpDirName(job *, char *, int);
+extern void  term_job(mom_job *);
+int          TTmpDirName(mom_job *, char *, int);
 
-extern bool  check_pwd(job *);
+extern bool  check_pwd(mom_job *);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
-extern char *get_job_envvar(job *, const char *);
-int          mom_open_socket_to_jobs_server(job* pjob, const char *id, void *(*message_hander)(void *));
-int          mom_open_socket_to_jobs_server_with_retries(job* pjob, const char *id, void *(*message_hander)(void *), int retry_limit);
+extern char *get_job_envvar(mom_job *, const char *);
+int          mom_open_socket_to_jobs_server(mom_job* pjob, const char *id, void *(*message_hander)(void *));
+int          mom_open_socket_to_jobs_server_with_retries(mom_job* pjob, const char *id, void *(*message_hander)(void *), int retry_limit);
 void         clear_servers();
 
-void         set_jobs_substate(job *pjob, int new_substate);
+void         set_jobs_substate(mom_job *pjob, int new_substate);
 
-int          become_the_user(job *pjob, bool want_effective);
+int          become_the_user(mom_job *pjob, bool want_effective);
 
-bool         am_i_mother_superior(const job &pjob);
+bool         am_i_mother_superior(const mom_job &pjob);
 
 /* defined in mach-dependant mom_mach.c */
-extern int kill_task(job *,struct task *, int, int);
+extern int kill_task(mom_job *,struct task *, int, int);
 
 /* Defines for pe_io_type, see run_pelog() */
 
@@ -290,15 +290,15 @@ extern int kill_task(job *,struct task *, int, int);
 #define PE_PRESETUPPROLOG 7 /* prior to becoming the user */
 
 #ifdef LIBPBS_H
-extern int   open_std_file(job *, enum job_file, int, gid_t);
-extern char *std_file_name(job *, enum job_file, int *);
+extern int   open_std_file(mom_job *, enum job_file, int, gid_t);
+extern char *std_file_name(mom_job *, enum job_file, int *);
 #endif /* LIBPBS_H */
 
 #ifdef BATCH_REQUEST_H
-extern int   start_checkpoint(job *, int, struct batch_request *);
+extern int   start_checkpoint(mom_job *, int, struct batch_request *);
 #endif /* BATCH_REQUEST_H */
 
-extern std::list<job *> alljobs_list;
-void remove_from_job_list(job *pjob);
+extern std::list<mom_job *> alljobs_list;
+void remove_from_job_list(mom_job *pjob);
 
 #endif /* _MOM_FUNC_H */

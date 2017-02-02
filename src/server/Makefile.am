@@ -4,7 +4,7 @@ CLEANFILES = *.gcda *.gcno *.gcov
 
 DIST_SUBDIRS=
 
-noinst_HEADERS = accounting.h job_recov.h queue_recov.h req_manager.h req_select.h svr_connect.h \
+noinst_HEADERS = queue_recov.h req_manager.h req_select.h svr_connect.h \
                  array_func.h job_recycler.h queue_recycler.h req_message.h req_shutdown.h svr_format_job.h \
                  array_upgrade.h job_route.h reply_send.h req_modify.h req_signal.h svr_func.h \
                  attr_recov.h mom_hierarchy_handler.h req_deletearray.h req_modify_node.h req_stat.h svr_jobfunc.h \
@@ -46,7 +46,7 @@ pbs_server_SOURCES = accounting.c array_func.c array_upgrade.c attr_recov.c dis_
 										 execution_slot_tracker.cpp job_usage_info.cpp incoming_request.c \
 										 delete_all_tracker.cpp id_map.cpp node_power_state.c req_modify_node.c \
 										 mom_hierarchy_handler.cpp completed_jobs_map.cpp pbsnode.cpp \
-										 restricted_host.cpp acl_special.cpp job.cpp mail_throttler.cpp job_array.cpp
+										 restricted_host.cpp acl_special.cpp svr_job.cpp mail_throttler.cpp job_array.cpp
 
 install-exec-hook:
 	$(PBS_MKDIRS) aux || :

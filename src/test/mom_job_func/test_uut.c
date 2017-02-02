@@ -16,15 +16,15 @@
 
 std::set<pid_t> global_job_sid_set;
 
-bool am_i_mother_superior(const job &pjob);
-void remove_from_exiting_list(job *pjob);
-job *mom_find_job_by_int_string(const char *jobint_string);
-job *mom_find_job(const char *jobid);
-void remove_from_job_list(job *pjob);
-void set_jobs_substate(job *pjob, int new_substate);
+bool am_i_mother_superior(const mom_job &pjob);
+void remove_from_exiting_list(mom_job *pjob);
+mom_job *mom_find_job_by_int_string(const char *jobint_string);
+mom_job *mom_find_job(const char *jobid);
+void remove_from_job_list(mom_job *pjob);
+void set_jobs_substate(mom_job *pjob, int new_substate);
 
 std::vector<exiting_job_info> exiting_job_list;
-extern std::list<job *> alljobs_list;
+extern std::list<mom_job *> alljobs_list;
 
 sem_t *delete_job_files_sem;
 
@@ -33,7 +33,7 @@ extern int saved_job;
 
 START_TEST(test_set_jobs_substate)
   {
-  job *pjob = mom_job_alloc();
+  mom_job *pjob = mom_job_alloc();
   saved_job = 0;
 
   // Make sure we don't segfault
@@ -43,7 +43,7 @@ START_TEST(test_set_jobs_substate)
   time_t transition = pjob->ji_state_set;
   fail_unless(transition != 0);
   set_jobs_substate(pjob, JOB_SUBSTATE_STAGEOUT);
-  // A new state should save the job
+  // A new state should save the mom_job
   fail_unless(saved_job == 1);
 
   // Make sure we didn't save the job for the same state
@@ -58,20 +58,20 @@ END_TEST
 
 START_TEST(test_mom_finding_jobs)
   {
-  job *pjob1 = mom_job_alloc();
-  job *pjob2 = mom_job_alloc();
-  job *pjob3 = mom_job_alloc();
-  job *pjob4 = mom_job_alloc();
+  mom_job *pjob1 = mom_job_alloc();
+  mom_job *pjob2 = mom_job_alloc();
+  mom_job *pjob3 = mom_job_alloc();
+  mom_job *pjob4 = mom_job_alloc();
 
   const char *jobid1 = "1.napali";
   const char *jobid2 = "2.napali";
   const char *jobid3 = "3.napali";
   const char *jobid4 = "40.napali";
 
-  strcpy(pjob1->ji_qs.ji_jobid, jobid1);
-  strcpy(pjob2->ji_qs.ji_jobid, jobid2);
-  strcpy(pjob3->ji_qs.ji_jobid, jobid3);
-  strcpy(pjob4->ji_qs.ji_jobid, jobid4);
+  pjob1->set_jobid(jobid1);
+  pjob2->set_jobid(jobid2);
+  pjob3->set_jobid(jobid3);
+  pjob4->set_jobid(jobid4);
 
   alljobs_list.push_back(pjob1);
   alljobs_list.push_back(pjob2);
@@ -106,11 +106,11 @@ START_TEST(test_mom_finding_jobs)
   // Make sure we'll find jobs that don't have a server suffix
   const char *jobid5 = "5";
   const char *jobid6 = "6";
-  job *pjob5 = mom_job_alloc();
-  job *pjob6 = mom_job_alloc();
+  mom_job *pjob5 = mom_job_alloc();
+  mom_job *pjob6 = mom_job_alloc();
 
-  strcpy(pjob5->ji_qs.ji_jobid, jobid5);
-  strcpy(pjob6->ji_qs.ji_jobid, jobid6);
+  pjob5->set_jobid(jobid5);
+  pjob6->set_jobid(jobid6);
   alljobs_list.push_back(pjob5);
   alljobs_list.push_back(pjob6);
   fail_unless(mom_find_job("5.roshar") == pjob5);
@@ -123,32 +123,30 @@ END_TEST
 
 START_TEST(test_am_i_mother_superior)
   {
-  job pjob;
+  mom_job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
   fail_unless(am_i_mother_superior(pjob) == false);
-  pjob.ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+  pjob.set_svrflags(JOB_SVFLG_HERE);
   fail_unless(am_i_mother_superior(pjob) == true);
-
   }
 END_TEST
 
 START_TEST(test_remove_from_exiting_list)
   {
-  job pjob;
+  mom_job pjob;
 
   exiting_job_list.push_back(exiting_job_info("0.napali"));
   exiting_job_list.push_back(exiting_job_info("1.napali"));
 
   // make sure there's no infinite loop if a job isn't in the list
-  strcpy(pjob.ji_qs.ji_jobid, "2.napali");
+  pjob.set_jobid("2.napali");
   remove_from_exiting_list(&pjob);
   
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  pjob.set_jobid("1.napali");
   remove_from_exiting_list(&pjob);
   fail_unless(exiting_job_list.size() == 1);
   
-  strcpy(pjob.ji_qs.ji_jobid, "0.napali");
+  pjob.set_jobid("0.napali");
   remove_from_exiting_list(&pjob);
   fail_unless(exiting_job_list.size() == 0);
   }

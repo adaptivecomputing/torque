@@ -70,13 +70,13 @@ job_array *get_array(const char *id)
   return(NULL);
   }
 
-int job_qs_upgrade(job *pj, int fds, char *path, int version)
+int job_qs_upgrade(jobfix &ji_qs, int fds, char *path, int version)
   {
   return(PBSE_NONE);
   }
 
 
-void array_get_parent_id(char *job_id, char *parent_id)
+void array_get_parent_id(const char *job_id, char *parent_id)
   {
   strcpy(parent_id, "4[].napali");
   }
@@ -101,7 +101,7 @@ int add_to_ms_list(char *node_id, job *pjob)
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
@@ -139,17 +139,17 @@ void mutex_mgr::mark_as_locked() {}
 
 mutex_mgr::~mutex_mgr() {}
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   return(PBSE_NONE);
   }
 
-int svr_enquejob(job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recov)
+int svr_enquejob(svr_job *pjob, int has_sv_qs_mutex, const char *prev_id, bool reservation, bool recov)
   {
   return(PBSE_NONE);
   }
 
-char *get_variable(job *pjob, const char *variable)
+char *get_variable(svr_job *pjob, const char *variable)
   {
   return(strdup("napali"));
   }
@@ -173,10 +173,10 @@ int safe_strncat(
   } /* END safe_strncat() */
 
 void free_server_attrs(tlist_head *attrl_ptr) {}
-struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag) {return NULL;}
+struct batch_request *setup_cpyfiles(struct batch_request *preq, svr_job *pjob, char *from, char *to, int direction, int tflag) {return NULL;}
 char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
-void set_chkpt_deflt(job *pjob, pbs_queue *pque) {}
+void set_chkpt_deflt(svr_job *pjob, pbs_queue *pque) {}
 
 int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
   {
@@ -189,24 +189,24 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int errnum, const char *routine, const char *text, int severity){}
-void account_record(int acctype, job *pjob, const char *text){}
-const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "";}
-job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
-const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return ""; }
+void account_record(int acctype, svr_job *pjob, const char *text){}
+const char *prefix_std_file(svr_job *pjob, std::string& ds, int key) {return "";}
+svr_job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
+const char *add_std_filename(svr_job *pjob, const char *path, int key, std::string& ds) { return ""; }
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
-struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, job       **pjob_ptr){return(NULL);}
+struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, svr_job       **pjob_ptr){return(NULL);}
 pbs_net_t get_hostaddr(int *local_errno, const char *hostname) {return 0;}
-void svr_mailowner(job *pjob, int mailpoint, int force, const char *text) {}
+void svr_mailowner(svr_job *pjob, int mailpoint, int force, const char *text) {}
 pbs_queue *get_dfltque(void) {return NULL;}
 int log_job_record(const char *buf){return 0;}
 int comp_size(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int comp_l(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
-void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval) {}
+void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval) {}
 int encode_unkn(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
 int decode_time(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
 int comp_b(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
-void issue_track(job *pjob) {}
+void issue_track(svr_job *pjob) {}
 int unlock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 int decode_size(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return 0;}
 int set_size(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op){return 0;}
@@ -214,12 +214,16 @@ pbs_queue *find_queuebyname(const char *quename) {return NULL;}
 void check_job_log(struct work_task *ptask) {}
 int comp_unkn(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging){return 0;}
-int svr_chkque(job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg) {return 0;}
-int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging) {return 0;}
-int setup_array_struct(job *pjob) {return 0;}
-int remove_job(all_jobs *aj, job *pjob, bool b) {return 0;}
-job *next_job(all_jobs *aj, all_jobs_iterator *iter) {return NULL;}
-int  can_queue_new_job(char *user_name, job *pjob) {return 0;}
+int svr_chkque(svr_job *pjob, pbs_queue *pque, char *hostname, int mtype, char *EMsg) {return 0;}
+int lock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging) {return 0;}
+int setup_array_struct(svr_job *pjob) {return 0;}
+int remove_job(all_jobs *aj, svr_job *pjob, bool b) {return 0;}
+svr_job *next_job(all_jobs *aj, all_jobs_iterator *iter) {return NULL;}
+
+int  can_queue_new_job(const char *user_name, svr_job *pjob) 
+  {
+  return 0;
+  }
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(work_task *), void *parm, int get_lock) {return NULL;}
 void reply_ack(struct batch_request *preq) {}
 int job_log_open(char *filename, char *directory) {return 0;}
@@ -233,29 +237,29 @@ int array_delete(const char *array_id)
   }
 
 int array_save(job_array *pa) {return 0;}
-int reply_jobid(struct batch_request *preq, char *jobid, int which) {return 0;}
+int reply_jobid(struct batch_request *preq, const char *jobid, int which) {return 0;}
 void mutex_mgr::set_unlock_on_exit(bool val) {}
 int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *EMsg) {return 0;}
-int issue_signal(job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend) {return 0;}
-int get_jobs_index(all_jobs *aj, job *pjob) {return(0);}
-int insert_job(all_jobs *aj, job *pjob) {return 0;}
+int issue_signal(svr_job **pjob_ptr, const char *signame, void (*func)(struct batch_request *), void *extra, char *extend) {return 0;}
+int get_jobs_index(all_jobs *aj, svr_job *pjob) {return(0);}
+int insert_job(all_jobs *aj, svr_job *pjob) {return 0;}
 int encode_time(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
-int svr_authorize_jobreq(struct batch_request *preq, job *pjob) {return 0;}
+int svr_authorize_jobreq(struct batch_request *preq, svr_job *pjob) {return 0;}
 int decode_ll(pbs_attribute *patr, const char *name, const char *rescn, const char *val, int perm) {return(0);}
 struct pbsnode *find_nodebyname(const char *nodename) {return(NULL);}
 void free_br(struct batch_request *preq) {}
-int job_route(job *jobp) {return 0;}
-int svr_dequejob(job *pjob, int val) {return 0;}
+int job_route(svr_job *jobp) {return 0;}
+int svr_dequejob(svr_job *pjob, int val) {return 0;}
 int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_b(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
-int insert_into_recycler(job *pjob) {return 0;}
+int insert_into_recycler(svr_job *pjob) {return 0;}
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg) {return 0;}
 int svr_save(struct server *ps, int mode) {return 0;}
 int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int mutex_mgr::lock(){return 0;}
-int  increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
-int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *)) {return 0;}
-int  decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob) {return 0;}
+int  increment_queued_jobs(user_info_holder *uih, const char *user_name, svr_job *pjob) {return 0;}
+int relay_to_mom(svr_job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *)) {return 0;}
+int  decrement_queued_jobs(user_info_holder *uih, const char *user_name, svr_job *pjob) {return 0;}
 int req_runjob(batch_request *preq) {return(0);}
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq) {}
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
@@ -283,9 +287,9 @@ int set_tokens(pbs_attribute *attr, pbs_attribute *newAttr, enum batch_op op){re
 int comp_ll(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int) {return 0;}
 int nextjobnum_chk(pbs_attribute *pattr, void *pobject, int actmode) {return 0;}
-int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
+int svr_chk_owner(struct batch_request *preq, svr_job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
-long calc_job_cost(job *pjob) {return(0);}
+long calc_job_cost(svr_job *pjob) {return(0);}
 
 int issue_to_svr(const char *servern, batch_request *preq, void (*replyfunc)(struct work_task *))
   {
@@ -298,7 +302,7 @@ int get_batch_request_id(batch_request *preq) {return 0;}
 int encode_inter(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 
 
-job *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked)
+svr_job *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked)
   {
   return(NULL);
   }
@@ -428,12 +432,262 @@ int node_exception_check(
   return(0);
   }
 
-job::job() 
+void job::set_queue(const char *queue)
   {
-  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  snprintf(this->ji_qs.ji_queue, sizeof(this->ji_qs.ji_queue), "%s", queue);
   }
 
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+void job::set_scriptsz(size_t scriptsz)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_scriptsz = scriptsz;
+  }
+
+size_t job::get_scriptsz() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_scriptsz);
+  }
+
+pbs_net_t job::get_fromaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromaddr);
+  }
+
+int job::get_fromsock() const
+  {
+  return(this->ji_qs.ji_un.ji_newt.ji_fromsock);
+  }
+
+void job::set_fromaddr(pbs_net_t fromaddr)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromaddr = fromaddr;
+  }
+
+void job::set_fromsock(int sock)
+  {
+  this->ji_qs.ji_un.ji_newt.ji_fromsock = sock;
+  }
+
+int job::get_qs_version() const
+  {
+  return(this->ji_qs.qs_version);
+  }
+
+void job::set_un_type(int type)
+  {
+  this->ji_qs.ji_un_type = type;
+  }
+
+int job::get_exec_exitstat() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_exitstat);
+  }
+
+int job::get_svrflags() const
+  {
+  return(this->ji_qs.ji_svrflags);
+  }
+
+void job::set_modified(bool m)
+  {
+  this->ji_modified = m;
+  }
+
+void job::set_attr(int index)
+  {
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  }
+
+void job::set_fileprefix(const char *prefix)
+  {
+  strcpy(this->ji_qs.ji_fileprefix, prefix);
+  }
+
+int job::set_char_attr(int index, char c)
+  {
+  this->ji_wattr[index].at_val.at_char = c;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+void job::set_svrflags(int flags)
+  {
+  this->ji_qs.ji_svrflags = flags;
+  }
+
+const char *job::get_destination() const
+  {
+  return(this->ji_qs.ji_destin);
+  }
+
+void job::free_attr(int index)
+  {
+  }
+
+void job::set_substate(int substate)
+  {
+  this->ji_qs.ji_substate = substate;
+  }
+
+void job::set_state(int state)
+  {
+  this->ji_qs.ji_state = state;
+  }
+
+void job::set_destination(const char *destination)
+  {
+  snprintf(this->ji_qs.ji_destin, sizeof(this->ji_qs.ji_destin), "%s", destination);
+  }
+
+pbs_net_t job::get_ji_momaddr() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momaddr);
+  }
+
+bool job::has_been_modified() const
+  {
+  return(this->ji_modified);
+  }
+
+tlist_head job::get_list_attr(int index)
+  {
+  return(this->ji_wattr[index].at_val.at_list);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  return((complete_req *)this->ji_wattr[index].at_val.at_ptr);
+  }
+
+void job::set_exgid(unsigned int gid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exgid = gid;
+  }
+
+void job::set_exuid(unsigned int uid)
+  {
+  this->ji_qs.ji_un.ji_momt.ji_exuid = uid;
+  }
+
+unsigned short job::get_ji_momport() const
+  {
+  return(this->ji_qs.ji_un.ji_exect.ji_momport);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+struct jobfix &job::get_jobfix()
+  {
+  return(this->ji_qs);
+  }
+
+int job::set_bool_attr(int index, bool b)
+  {
+  this->ji_wattr[index].at_val.at_bool = b;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_bool);
+  }
+
+std::vector<resource> *job::get_resc_attr(int index)
+  {
+  return((std::vector<resource> *)this->ji_wattr[index].at_val.at_ptr);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
 job::~job() {}
+
+svr_job *svr_job::copy_job()
+  {
+  return(new svr_job());
+  }
+
+svr_job::svr_job() {}
+svr_job::~svr_job() {}
 
 int node_avail_complex(
 
@@ -534,7 +788,7 @@ bool job_array::is_deleted() const
   return(this->being_deleted);
   }
 
-bool job_array::mark_end_of_subjob(job *pjob)
+bool job_array::mark_end_of_subjob(svr_job *pjob)
   {
   return(false);
   }

@@ -232,7 +232,7 @@ fptr_int get_my_match_func(
 int acl_check_my_array_string(
 
   struct array_strings *pas,
-  char                 *name,
+  const char           *name,
   int                   type)
 
   {
@@ -307,7 +307,7 @@ int acl_check_my_array_string(
 int acl_check(
 
   pbs_attribute *pattr,
-  char          *name,  /* I (optional) */
+  const char    *name,  /* I (optional) */
   int            type)
 
   {

@@ -4,11 +4,13 @@
 #include "pbs_job.h"
 #include "array.h"
 
+#ifndef PBS_MOM
 int lock_ji_mutex(job *, const char *, const char *, int);
 int unlock_ji_mutex(job *, const char *, const char *, int);
 
 int lock_ai_mutex(job_array *, const char *, const char *, int);
 int unlock_ai_mutex(job_array *, const char *, const char *, int);
+#endif
 
 #endif
 

@@ -15,6 +15,7 @@
 #include "lib_ifl.h" /* process_svr_conn */
 #include "../Libnet/lib_net.h"
 #include "threadpool.h"
+#include "server_limits.h"
 #include "../Liblog/pbs_log.h"
 
 #define NUM_ACCEPT_RETRIES 5

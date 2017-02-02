@@ -22,7 +22,7 @@ int req_modifyarray(struct batch_request *preq);
 
 int req_modifyjob(struct batch_request *preq);
 
-int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad);
+int modify_job_attr(svr_job *pjob, svrattrl *plist, int perm, int *bad);
 
 void post_modify_arrayreq(struct work_task *pwt);
 

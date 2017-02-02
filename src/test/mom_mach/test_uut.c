@@ -14,12 +14,12 @@
 std::string cg_memory_path;
 
 int get_job_sid_from_pid(int);
-int injob(job*, int);
-unsigned long cput_sum(job*);
-int overmem_proc(job*, unsigned long long);
-int overcpu_proc(job*, unsigned long);
-unsigned long long resi_sum(job*);
-unsigned long long mem_sum(job*);
+int injob(mom_job*, int);
+unsigned long cput_sum(mom_job*);
+int overmem_proc(mom_job*, unsigned long long);
+int overcpu_proc(mom_job*, unsigned long);
+unsigned long long resi_sum(mom_job*);
+unsigned long long mem_sum(mom_job*);
 
 double cputfactor;
 
@@ -91,7 +91,7 @@ END_TEST
 
 START_TEST(test_injob)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -99,19 +99,14 @@ START_TEST(test_injob)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* expect failure since 10 is not in the pid2jobsid_map */
   fail_unless(injob(pjob, 10) == FALSE);
 
   /* set job to have 1000 as a session id */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
 
   /* create a mapping from pid 10 to session id 1000 */
   pid2jobsid_map[10] = 1000;
@@ -120,8 +115,8 @@ START_TEST(test_injob)
   fail_unless(injob(pjob, 10) == TRUE);
 
   /* set job to have 5000 as a session id */
-  pjob->ji_job_pid_set->clear();
-  pjob->ji_job_pid_set->insert(5000);
+  pjob->ji_job_pid_set.clear();
+  pjob->ji_job_pid_set.insert(5000);
 
   /* expect failure since job session id of pid not in job's pid set */
   fail_unless(injob(pjob, 10) == FALSE);
@@ -138,7 +133,7 @@ START_TEST(test_injob)
 
   /* populate it */
   tp->ti_qs.ti_sid = 2000;
-  pjob->ji_tasks->push_back(tp);
+  pjob->ji_tasks.push_back(tp);
 
   /* expect success since job session id of pid matches the first task sid */
   fail_unless(injob(pjob, 10) == TRUE);
@@ -148,7 +143,7 @@ END_TEST
 #ifndef PENABLE_LINUX_CGROUPS
 START_TEST(test_cput_sum)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -156,13 +151,8 @@ START_TEST(test_cput_sum)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* empty pid2jobsid_map so 0 expected */
   fail_unless(cput_sum(pjob) == 0);
@@ -193,7 +183,7 @@ START_TEST(test_cput_sum)
   pid2procarrayindex_map[proc_array[0].pid] = 0;
 
   /* set job to have 1000 as a session id */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
 
   cputfactor = 1.0;
 
@@ -209,7 +199,7 @@ END_TEST
 
 START_TEST(test_overmem_proc)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -217,13 +207,8 @@ START_TEST(test_overmem_proc)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* pid2jobsid_map is empty so expect FALSE */
   fail_unless(overmem_proc(pjob, 0) == FALSE);
@@ -242,7 +227,7 @@ START_TEST(test_overmem_proc)
   pid2procarrayindex_map[proc_array[0].pid] = 0;
 
   /* setup values so that injob() will return false */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
   pid2jobsid_map[10] = 2000;
 
   /* pid 10 is not in job so expect FALSE */
@@ -268,7 +253,7 @@ END_TEST
 
 START_TEST(test_overcpu_proc)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -276,13 +261,8 @@ START_TEST(test_overcpu_proc)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* pid2jobsid_map is empty so expect FALSE */
   fail_unless(overcpu_proc(pjob, 0) == FALSE);
@@ -302,10 +282,10 @@ START_TEST(test_overcpu_proc)
   pid2procarrayindex_map[proc_array[0].pid] = 0;
 
   /* setup values so that injob() will return false */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
   pid2jobsid_map[10] = 2000;
 
-  /* pid 10 is not in job so expect FALSE */
+  /* pid 10 is not in mom_job so expect FALSE */
   fail_unless(overcpu_proc(pjob, 0) == FALSE);
 
   /* add new sid for pid 10 */
@@ -331,7 +311,7 @@ END_TEST
 #ifndef PENABLE_LINUX_CGROUPS
 START_TEST(test_resi_sum)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -339,13 +319,8 @@ START_TEST(test_resi_sum)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* pid2jobsid_map is empty so expect 0 */
   fail_unless(resi_sum(pjob) == 0);
@@ -364,7 +339,7 @@ START_TEST(test_resi_sum)
   pid2procarrayindex_map[proc_array[0].pid] = 0;
 
   /* setup values so that injob() will return false */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
   pid2jobsid_map[10] = 2000;
 
   /* pid 10 is not in job so expect 0 */
@@ -392,7 +367,7 @@ END_TEST
 
 START_TEST(test_mem_sum)
   {
-  job *pjob;
+  mom_job *pjob;
 
   /* all the maps/sets should be empty */
   pid2jobsid_map.clear();
@@ -400,13 +375,8 @@ START_TEST(test_mem_sum)
   global_job_sid_set.clear();
 
   /* create space for job structure */
-  pjob = (job *) calloc(1, sizeof(job));
+  pjob = new mom_job();
   fail_unless(pjob != NULL);
-  pjob->ji_tasks = new std::vector<task *>();
-
-  /* create job pid set */
-  pjob->ji_job_pid_set = new job_pid_set_t;
-  fail_unless(pjob->ji_job_pid_set != NULL);
 
   /* pid2jobsid_map is empty so expect 0 */
   fail_unless(mem_sum(pjob) == 0);
@@ -425,7 +395,7 @@ START_TEST(test_mem_sum)
   pid2procarrayindex_map[proc_array[0].pid] = 0;
 
   /* setup values so that injob() will return false */
-  pjob->ji_job_pid_set->insert(1000);
+  pjob->ji_job_pid_set.insert(1000);
   pid2jobsid_map[10] = 2000;
 
   /* pid 10 is not in job so expect 0 */

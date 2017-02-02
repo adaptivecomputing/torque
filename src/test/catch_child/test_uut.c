@@ -7,12 +7,12 @@
 
 
 void catch_child(int sig);
-bool eligible_for_exiting_check(job *pjob);
-void check_jobs_main_process(job *pjob, task *ptask);
-bool non_mother_superior_cleanup(job *pjob);
-bool mother_superior_cleanup(job *pjob, int limit, int *found);
+bool eligible_for_exiting_check(mom_job *pjob);
+void check_jobs_main_process(mom_job *pjob, task *ptask);
+bool non_mother_superior_cleanup(mom_job *pjob);
+bool mother_superior_cleanup(mom_job *pjob, int limit, int *found);
 void *obit_reply(void *new_sock);
-hnodent *get_node(job *pjob, tm_node_id nodeid);
+hnodent *get_node(mom_job *pjob, tm_node_id nodeid);
 
 extern int termin_child;
 extern int server_down;
@@ -32,9 +32,9 @@ extern std::vector<exiting_job_info> exiting_job_list;
  * Found (multiple jobs)
  */
 
-void init_job(job *pjob)
+void init_job(mom_job *pjob)
   {
-  memset(pjob, 0, sizeof(job));
+  memset(pjob, 0, sizeof(mom_job));
   pjob->ji_numvnod = 2;
   pjob->ji_vnods = (vnodent *)calloc(pjob->ji_numvnod, sizeof(vnodent));
   pjob->ji_vnods[0].vn_node = 1;
@@ -45,7 +45,7 @@ void init_job(job *pjob)
   pjob->ji_vnods[1].vn_host->hn_node = 2;
   }
 
-void cleanup_job(job *pjob)
+void cleanup_job(mom_job *pjob)
   {
   free(pjob->ji_vnods[0].vn_host);
   free(pjob->ji_vnods[1].vn_host);
@@ -55,7 +55,7 @@ void cleanup_job(job *pjob)
 
 START_TEST(test_get_node_1)
   {
-  job pjob;
+  mom_job pjob;
   tm_node_id nodeid = 1;
   hnodent *res;
   init_job(&pjob);
@@ -69,7 +69,7 @@ END_TEST
 START_TEST(test_get_node_2)
   {
   hnodent *res;
-  job pjob;
+  mom_job pjob;
   tm_node_id nodeid = 3;
   init_job(&pjob);
   res = get_node(&pjob, nodeid);
@@ -80,7 +80,7 @@ END_TEST
 
 START_TEST(test_get_node_3)
   {
-  job pjob;
+  mom_job pjob;
   tm_node_id nodeid = 2;
   hnodent *res;
   init_job(&pjob);
@@ -114,13 +114,13 @@ END_TEST
 
 START_TEST(test_eligible_for_exiting_check)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob = (mom_job *)calloc(1, sizeof(mom_job));
   server_down = TRUE;
 
   fail_unless(eligible_for_exiting_check(pjob) == false);
   server_down = FALSE;
   fail_unless(eligible_for_exiting_check(pjob) == false);
-  pjob->ji_wattr[JOB_ATR_Cookie].at_flags |= ATR_VFLAG_SET;
+  pjob->set_attr(JOB_ATR_Cookie);
   fail_unless(eligible_for_exiting_check(pjob) == true);
 
   pjob->ji_flags |= MOM_CHECKPOINT_POST;
@@ -136,52 +136,51 @@ END_TEST
 
 START_TEST(test_jobs_main_process)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob = new mom_job();
   task ptask;
 
-  pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long = 2;
+  pjob->set_long_attr(JOB_ATR_job_radix, 2);
   check_jobs_main_process(pjob, &ptask);
-  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  fail_unless(pjob->get_substate() != JOB_SUBSTATE_EXITING);
   
   pjob->ji_sampletim -= 500;
   check_jobs_main_process(pjob, &ptask);
-  fail_unless(pjob->ji_qs.ji_substate != JOB_SUBSTATE_EXITING);
+  fail_unless(pjob->get_substate() != JOB_SUBSTATE_EXITING);
   }
 END_TEST
 
 START_TEST(test_non_mother_superior_cleanup)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
+  mom_job *pjob = new mom_job();
 
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HERE;
+  pjob->set_svrflags(JOB_SVFLG_HERE);
 
   fail_unless(non_mother_superior_cleanup(pjob) == true);
 
-  pjob->ji_qs.ji_svrflags = 0;
-  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
+  pjob->set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
   fail_unless(non_mother_superior_cleanup(pjob) == true);
 
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_NOTERM_REQUE;
+  pjob->set_substate(JOB_SUBSTATE_NOTERM_REQUE);
   fail_unless(non_mother_superior_cleanup(pjob) == true);
   fail_unless(exiting_tasks == 1);
   
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  pjob->set_substate(JOB_SUBSTATE_EXITING);
   fail_unless(non_mother_superior_cleanup(pjob) == true);
   
-  pjob->ji_qs.ji_svrflags = 0;
+  pjob->set_svrflags(0);
   fail_unless(non_mother_superior_cleanup(pjob) == true);
   }
 END_TEST
 
 START_TEST(test_mother_superior_cleanup)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
-  sprintf(pjob->ji_qs.ji_jobid, "1.napali");
+  mom_job *pjob = new mom_job();
+  pjob->set_jobid("1.napali");
   int  found_one = 1;
 
   fail_unless(mother_superior_cleanup(pjob, 10, &found_one) == false);
 
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXIT_WAIT;
+  pjob->set_substate(JOB_SUBSTATE_EXIT_WAIT);
   fail_unless(mother_superior_cleanup(pjob, 1, &found_one) == true);
 
   exiting_job_list.clear();

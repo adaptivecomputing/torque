@@ -164,8 +164,8 @@ int conn_qsub(const char *, long, char *);
 
 /* External functions */
 
-extern void cleanup_restart_file(job *);
-extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
+extern void cleanup_restart_file(svr_job *);
+extern struct batch_request *setup_cpyfiles(struct batch_request *,svr_job *,char*,char *,int,int);
 extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
@@ -173,7 +173,7 @@ void handle_complete_second_time(struct work_task *ptask);
 
 /* Local Private Functions */
 
-void free_all_of_job(job *pjob);
+void free_all_of_job(svr_job *pjob);
 
 /* Global Data items */
 all_jobs        alljobs;
@@ -200,7 +200,7 @@ extern sem_t *job_clone_semaphore;
 
 static void send_qsub_delmsg(
 
-  job  *pjob,  /* I */
+  svr_job  *pjob,  /* I */
   const char *text)  /* I */
 
   {
@@ -208,14 +208,14 @@ static void send_qsub_delmsg(
   pbs_attribute *pattri;
   int            qsub_sock;
 
-  phost = arst_string((char *)"PBS_O_HOST", &pjob->ji_wattr[JOB_ATR_variables]);
+  phost = arst_string((char *)"PBS_O_HOST", pjob->get_attr(JOB_ATR_variables));
 
   if ((phost == NULL) || ((phost = strchr(phost, '=')) == NULL))
     {
     return;
     }
 
-  pattri = &pjob->ji_wattr[JOB_ATR_interactive];
+  pattri = pjob->get_attr(JOB_ATR_interactive);
 
   qsub_sock = conn_qsub(phost + 1, pattri->at_val.at_long, NULL);
 
@@ -395,13 +395,13 @@ static int remtree(
 
 void handle_aborted_job(
 
-  job        **job_ptr, /* M */
+  svr_job    **job_ptr, /* M */
   bool         dependentjob, /* I */
   long         KeepSeconds, /* I */
   const char  *text) /* I */
 
   {
-  job *pjob = *job_ptr;
+  svr_job *pjob = *job_ptr;
   int  rc = svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
     
   if (rc == PBSE_UNKQUE)
@@ -427,26 +427,22 @@ void handle_aborted_job(
     /* Add a comment to say the reason it was aborted */
     if (text != NULL)
       {
-      if ((pjob->ji_wattr[JOB_ATR_Comment].at_flags & ATR_VFLAG_SET) &&
-          (pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str != NULL))
+      if (pjob->get_str_attr(JOB_ATR_Comment) != NULL)
         {
-        std::string new_comment(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
+        std::string new_comment(pjob->get_str_attr(JOB_ATR_Comment));
         new_comment += ". ";
         new_comment += text;
-        
-        free(pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str);
-        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(new_comment.c_str());
+       
+        pjob->set_str_attr(JOB_ATR_Comment, strdup(new_comment.c_str()));
         }
       else
         {
-        pjob->ji_wattr[JOB_ATR_Comment].at_flags |= ATR_VFLAG_SET;
-        pjob->ji_wattr[JOB_ATR_Comment].at_val.at_str = strdup(text);
+        pjob->set_str_attr(JOB_ATR_Comment, strdup(text));
         }
       }
 
-    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = 271;
-    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
-    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
+    pjob->set_long_attr(JOB_ATR_exitstat, 271);
+    set_task(WORK_Immed, KeepSeconds, add_to_completed_jobs, strdup(pjob->get_jobid()), FALSE);
     }
   } /* handle_aborted_job */
 
@@ -478,7 +474,7 @@ void handle_aborted_job(
 
 int job_abt(
 
-  struct job **pjobp, /* I (modified/freed) */
+  struct svr_job **pjobp, /* I (modified/freed) */
   const char  *text,  /* I (optional) */
   bool         dependentjob) /* I */
 
@@ -489,7 +485,7 @@ int job_abt(
   int   rc = 0;
   char  job_id[PBS_MAXSVRJOBID+1];
   int   job_exit_status;
-  job  *pjob;
+  svr_job  *pjob;
 
   if (pjobp == NULL)
     {
@@ -514,14 +510,14 @@ int job_abt(
   if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
     KeepSeconds = KEEP_COMPLETED_DEFAULT;
 
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
+  strcpy(job_id, pjob->get_jobid());
 
   /* save old state and update state to Exiting */
-  old_state = pjob->ji_qs.ji_state;
-  old_substate = pjob->ji_qs.ji_substate;
+  old_state = pjob->get_state();
+  old_substate = pjob->get_substate();
 
   if (LOGLEVEL >= 6)
-    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
   /* notify user of abort if notification was requested */
 
   if (text != NULL)
@@ -531,9 +527,8 @@ int job_abt(
     account_record(PBS_ACCT_ABT, pjob, "");
     svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text);
 
-    if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
-        ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-         pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long))
+    if ((pjob->get_state() == JOB_STATE_QUEUED) &&
+        (pjob->get_long_attr(JOB_ATR_interactive)))
       {
       /* interactive and not yet running... send a note to qsub */
 
@@ -549,20 +544,20 @@ int job_abt(
       {
       if (pjob != NULL)
         {
-        sprintf(log_buf, msg_abt_err, pjob->ji_qs.ji_jobid, old_substate);
+        sprintf(log_buf, msg_abt_err, pjob->get_jobid(), old_substate);
         
         log_err(-1, __func__, log_buf);
         
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+        if ((pjob->get_svrflags() & JOB_SVFLG_HERE) == 0)
           {
           /* notify creator that job is exited */
           
-          pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'E';
+          pjob->set_char_attr(JOB_ATR_state, 'E');
           
           issue_track(pjob);
           }
         
-        if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+        if (pjob->is_attr_set(JOB_ATR_depend))
           {
           if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
             {
@@ -580,7 +575,7 @@ int job_abt(
           
           if (pjob != NULL)
             {
-            job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+            job_exit_status = pjob->get_exec_exitstat();
             pjob_mutex.unlock();
              
             if (pa)
@@ -606,7 +601,7 @@ int job_abt(
     /* I don't know of a case where this could happen */
 
     sprintf(log_buf, msg_abt_err,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       old_substate);
     log_err(-1, __func__, log_buf);
     }
@@ -614,16 +609,16 @@ int job_abt(
     {
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_ABORT, FALSE);
 
-    if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
+    if ((pjob->get_svrflags() & JOB_SVFLG_HERE) == 0)
       {
       /* notify creator that job is exited */
 
       issue_track(pjob);
       }
 
-    if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
+    if (pjob->is_attr_set(JOB_ATR_depend))
       {
-      strcpy(job_id, pjob->ji_qs.ji_jobid);
+      strcpy(job_id, pjob->get_jobid());
       if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
         {
         pjob = NULL;
@@ -641,7 +636,7 @@ int job_abt(
 
       if (pjob != NULL)
         {
-        job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
+        job_exit_status = pjob->get_exec_exitstat();
         pjob_mutex.unlock();
         if (pa)
           {
@@ -751,17 +746,17 @@ int conn_qsub(
  * @see job_init_wattr() - child
  */
 
-job *job_alloc(void)
+svr_job *job_alloc(void)
 
   {
-  return(new job());
+  return(new svr_job());
   }  /* END job_alloc() */
 
 
 
 void free_all_of_job(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   delete pjob;
@@ -775,7 +770,7 @@ void free_all_of_job(
 
 void job_free(
 
-  job *pj,
+  svr_job *pj,
   int  use_recycle)  /* I (modified) */
 
   {
@@ -790,7 +785,7 @@ void job_free(
     {
     sprintf(log_buf, "freeing job");
 
-    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
+    log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->get_jobid(),log_buf);
     }
 
   remove_job(&alljobs, pj, true);
@@ -816,50 +811,22 @@ void job_free(
 
 
 
-job *copy_job(
+void update_array_subjob_named_attr(
 
-  job       *parent)
+  svr_job *subjob,
+  svr_job *templatejob,
+  int      index,
+  int      subjob_id)
 
   {
-  job           *pnewjob;
+  const char *tmp = templatejob->get_str_attr(index);
+  int         slen = strlen(tmp);
+  char       *tmpstr = (char*)calloc(sizeof(char), (slen + PBS_MAXJOBARRAYLEN + 1));
 
-  int            i;
+  sprintf(tmpstr, "%s-%d", tmp, subjob_id);
 
-  if (parent == NULL)
-    {
-    log_err(errno, __func__, "null parent to copy");
-
-    return(NULL);
-    }
-
-  if ((pnewjob = new job()) == NULL)
-    {
-    log_err(errno, __func__, "no memory");
-
-    return(NULL);
-    }
-
-  /* new job structure is allocated,
-     now we need to copy the old job, but modify based on taskid */
-  pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
-
-  /* copy the fixed size quick save information */
-  memcpy(&pnewjob->ji_qs, &parent->ji_qs, sizeof(struct jobfix));
-
-  /* copy job attributes. some of these are going to have to be modified */
-  for (i = 0; i < JOB_ATR_LAST; i++)
-    {
-    if (parent->ji_wattr[i].at_flags & ATR_VFLAG_SET)
-      {
-      job_attr_def[i].at_set(
-        &(pnewjob->ji_wattr[i]),
-        &(parent->ji_wattr[i]),
-        SET);
-      }
-    }
-
-  return(pnewjob);
-  } /* END copy_job() */
+  templatejob->set_str_attr(index, tmpstr);
+  } // END update_array_subjob_named_attr()
 
 
 
@@ -867,9 +834,9 @@ job *copy_job(
  * job_clone - create a clone of a job for use with job arrays
  */
 
-job *job_clone(
+svr_job *job_clone(
 
-  job       *template_job, /* I */  /* job to clone */
+  svr_job   *template_job, /* I */  /* job to clone */
   job_array *pa,           /* I */  /* array which the job is a part of */
   int        taskid,       /* I */
   bool       place_hold)   // I
@@ -877,26 +844,23 @@ job *job_clone(
   {
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
-  job           *pnewjob;
+  svr_job       *pnewjob;
   pbs_attribute  tempattr;
 
   char          *oldid;
   char          *hostname;
   char          *bracket;
-  char          *tmpstr;
   char           basename[PBS_JOBBASE+1];
   char           namebuf[MAXPATHLEN + 1];
   char           buf[256];
   int            fds;
 
-  int            i;
-  int            slen;
   int            release_mutex = FALSE;
   std::string	 adjusted_path_jobs;
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "taskid %d jobid %s ", taskid, template_job->ji_qs.ji_jobid);
+    sprintf(log_buf, "taskid %d jobid %s ", taskid, template_job->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -913,22 +877,15 @@ job *job_clone(
     return(NULL);
     }
 
-  if ((pnewjob = new job()) == NULL)
+  if ((pnewjob = template_job->copy_job()) == NULL)
     {
     log_err(errno, __func__, "no memory");
 
     return(NULL);
     }
 
-  /* new job structure is allocated,
-     now we need to copy the old job, but modify based on taskid */
-  pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
-
-  /* copy the fixed size quick save information */
-  memcpy(&pnewjob->ji_qs, &template_job->ji_qs, sizeof(struct jobfix));
-
   /* find the job id for the cloned job */
-  if ((oldid = strdup(template_job->ji_qs.ji_jobid)) == NULL)
+  if ((oldid = strdup(template_job->get_jobid())) == NULL)
     {
     log_err(ENOMEM, __func__, "no memory");
     job_free(pnewjob, FALSE);
@@ -946,16 +903,16 @@ job *job_clone(
 
   if (hostname != NULL)
     {
+    char buf[PBS_MAXSVRJOBID+1];
     hostname++;
-    snprintf(pnewjob->ji_qs.ji_jobid, sizeof(pnewjob->ji_qs.ji_jobid), 
-      "%s[%d].%s",
-      oldid, taskid, hostname);
+    snprintf(buf, sizeof(buf), "%s[%d].%s", oldid, taskid, hostname);
+    pnewjob->set_jobid(buf);
     }
   else
     {
-    snprintf(pnewjob->ji_qs.ji_jobid, sizeof(pnewjob->ji_qs.ji_jobid),
-      "%s[%d]",
-      oldid, taskid);
+    char buf[PBS_MAXSVRJOBID+1];
+    snprintf(buf, sizeof(buf), "%s[%d]", oldid, taskid);
+    pnewjob->set_jobid(buf);
     }
 
   /* update the job filename
@@ -976,7 +933,7 @@ job *job_clone(
   free(oldid);
 
   // get the adjusted path_jobs
-  adjusted_path_jobs = get_path_jobdata(pnewjob->ji_qs.ji_jobid, path_jobs);
+  adjusted_path_jobs = get_path_jobdata(pnewjob->get_jobid(), path_jobs);
 
   do
     {
@@ -990,7 +947,7 @@ job *job_clone(
       if (errno == EEXIST)
         {
         job_free(pnewjob, FALSE);
-        return((job *)1); /* TODO: what is this magic for */
+        return((svr_job *)1); /* TODO: what is this magic for */
         }
       else
         {
@@ -1007,54 +964,12 @@ job *job_clone(
 
   close(fds);
 
-  strcpy(pnewjob->ji_qs.ji_fileprefix, basename);
+  pnewjob->set_fileprefix(basename);
 
-  /* copy job attributes. some of these are going to have to be modified */
-
-  for (i = 0; i < JOB_ATR_LAST; i++)
-    {
-    if ((template_job->ji_wattr[i].at_flags & ATR_VFLAG_SET) &&
-        (i != JOB_ATR_job_array_request))
-      {
-      if ((i == JOB_ATR_errpath) || (i == JOB_ATR_outpath) || (i == JOB_ATR_jobname))
-        {
-        /* modify the errpath and outpath */
-
-        slen = strlen(template_job->ji_wattr[i].at_val.at_str);
-
-        tmpstr = (char*)calloc(sizeof(char), (slen + PBS_MAXJOBARRAYLEN + 1));
-
-        sprintf(tmpstr, "%s-%d",
-                template_job->ji_wattr[i].at_val.at_str,
-                taskid);
-
-        clear_attr(&tempattr, &job_attr_def[i]);
-
-        job_attr_def[i].at_decode(
-          &tempattr,
-          NULL,
-          NULL,
-          tmpstr,
-          ATR_DFLAG_ACCESS);
-
-        job_attr_def[i].at_set(
-          &pnewjob->ji_wattr[i],
-          &tempattr,
-          SET);
-
-        job_attr_def[i].at_free(&tempattr);
-
-        free(tmpstr);
-        }
-      else
-        {
-        job_attr_def[i].at_set(
-          &(pnewjob->ji_wattr[i]),
-          &(template_job->ji_wattr[i]),
-          SET);
-        }
-      }
-    }
+  // Update errpath, outpath, and jobname 
+  update_array_subjob_named_attr(pnewjob, template_job, JOB_ATR_errpath, taskid);
+  update_array_subjob_named_attr(pnewjob, template_job, JOB_ATR_outpath, taskid);
+  update_array_subjob_named_attr(pnewjob, template_job, JOB_ATR_jobname, taskid);
 
   if (place_hold)
     {
@@ -1063,13 +978,11 @@ job *job_clone(
      * complete before the whole thing is cloned. This is in case we run into
      * a problem during setting up the array and want to abort before any of
      * the jobs run */
-    pnewjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_a;
-    pnewjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+    pnewjob->set_long_attr(JOB_ATR_hold, pnewjob->get_long_attr(JOB_ATR_hold) | HOLD_a);
     }
 
   /* set JOB_ATR_job_array_id */
-  pnewjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = taskid;
-  pnewjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
+  pnewjob->set_long_attr(JOB_ATR_job_array_id, taskid);
 
   /* set PBS_ARRAYID enironment variable */
   clear_attr(&tempattr, &job_attr_def[JOB_ATR_variables]);
@@ -1083,7 +996,7 @@ job *job_clone(
       0);
 
   job_attr_def[JOB_ATR_variables].at_set(
-    &pnewjob->ji_wattr[JOB_ATR_variables],
+    pnewjob->get_attr(JOB_ATR_variables),
     &tempattr,
     INCR);
 
@@ -1094,7 +1007,7 @@ job *job_clone(
     {
     release_mutex = TRUE;
     
-    pa = get_array(template_job->ji_qs.ji_jobid);
+    pa = get_array(template_job->get_jobid());
     if (pa == NULL)
       {
       job_free(pnewjob, FALSE);
@@ -1102,10 +1015,10 @@ job *job_clone(
       }
     }
 
-  pa->job_ids[taskid] = strdup(pnewjob->ji_qs.ji_jobid);
+  pa->job_ids[taskid] = strdup(pnewjob->get_jobid());
   strcpy(pnewjob->ji_arraystructid, pa->ai_qs.parent_id);
 
-  pnewjob->ji_internal_id = job_mapper.get_new_id(pnewjob->ji_qs.ji_jobid);
+  pnewjob->ji_internal_id = job_mapper.get_new_id(pnewjob->get_jobid());
 
   if (release_mutex == TRUE)
     {
@@ -1135,14 +1048,14 @@ int create_and_queue_array_subjob(
     
   job_array   *pa,
   mutex_mgr   &array_mgr,
-  job         *template_job,
+  svr_job     *template_job,
   mutex_mgr   &template_job_mgr,
   int          index,
   std::string &prev_job_id,
   bool         place_hold)
 
   {
-  job         *pjobclone;
+  svr_job     *pjobclone;
   int          newstate;
   int          newsub;
   int          rc = PBSE_NONE;
@@ -1157,7 +1070,7 @@ int create_and_queue_array_subjob(
     log_err(-1, __func__, "unable to clone job in job_clone_wt");
     return(NONFATAL_ERROR);
     }
-  else if (pjobclone == (job *)1)
+  else if (pjobclone == (svr_job *)1)
     {
     /* this happens if we attempted to clone an existing job */
     return(PBSE_NONE);
@@ -1169,16 +1082,15 @@ int create_and_queue_array_subjob(
 
   /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
    * these are set later in svr_enquejob() */
-  pjobclone->ji_qs.ji_state = newstate;
-  pjobclone->ji_qs.ji_substate = newsub;
+  pjobclone->set_state(newstate);
+  pjobclone->set_substate(newsub);
 
   svr_setjobstate(pjobclone, newstate, newsub, FALSE);
 
-  pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
-  pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
+  pjobclone->set_long_attr(JOB_ATR_qrank, ++queue_rank);
 
   // Clear this so that the jobs get a queued entry in the accounting file
-  pjobclone->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
+  pjobclone->unset_attr(JOB_ATR_qtime);
 
   array_mgr.unlock();
 
@@ -1217,7 +1129,7 @@ int create_and_queue_array_subjob(
     
   array_mgr.mark_as_locked();
 
-  if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
+  if (svr_job_save(pjobclone) != 0)
     {
     /* XXX need more robust error handling */
     array_mgr.unlock();
@@ -1234,7 +1146,7 @@ int create_and_queue_array_subjob(
     return(NONFATAL_ERROR);
     }
     
-  prev_job_id = pjobclone->ji_qs.ji_jobid;
+  prev_job_id = pjobclone->get_jobid();
   
   pa->ai_qs.num_idle++;
   pa->ai_qs.num_cloned++;
@@ -1270,7 +1182,7 @@ int perform_array_postprocessing(
     if (pa->job_ids[i] == NULL)
       continue;
     
-    job *pjob = svr_find_job(pa->job_ids[i], TRUE);
+    svr_job *pjob = svr_find_job(pa->job_ids[i], TRUE);
 
     if (pjob == NULL)
       {
@@ -1285,7 +1197,7 @@ int perform_array_postprocessing(
       actual_job_count++;
 
       get_svr_attr_b(SRV_ATR_MoabArrayCompatible, &moab_compatible);
-      pjob->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_a;
+      pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) & ~HOLD_a);
       
       if (moab_compatible == true)
         {
@@ -1294,20 +1206,20 @@ int perform_array_postprocessing(
         if ((pa->ai_qs.slot_limit != NO_SLOT_LIMIT) &&
             (actual_job_count > pa->ai_qs.slot_limit))
           {
-          pjob->ji_wattr[JOB_ATR_hold].at_val.at_long |= HOLD_l;
+          pjob->set_long_attr(JOB_ATR_hold, pjob->get_long_attr(JOB_ATR_hold) | HOLD_l);
           }
         }
       
-      if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 0)
+      if (pjob->get_long_attr(JOB_ATR_hold) == 0)
         {
-        pjob->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
+        pjob->unset_attr(JOB_ATR_hold);
         }
       else
         {
-        pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+        pjob->set_attr(JOB_ATR_hold);
         }
       
-      pjob->ji_modified = TRUE;
+      pjob->set_modified(true);
       svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
 
@@ -1330,8 +1242,8 @@ int perform_array_postprocessing(
            if (LOGLEVEL >= 6)
              {
              char log_buf[LOCAL_LOG_BUF_SIZE];
-             snprintf(log_buf, sizeof(log_buf), "cannot route job %s", pjob->ji_qs.ji_jobid);
-             log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+             snprintf(log_buf, sizeof(log_buf), "cannot route job %s", pjob->get_jobid());
+             log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
              }
            svr_job_purge(pjob);
            pque_mutex.unlock();
@@ -1367,7 +1279,7 @@ void *job_clone_wt(
   void *cloned_id)
 
   {
-  job         *template_job;
+  svr_job     *template_job;
   char        *jobid;
   int          rc;
   std::string  prev_job_id;
@@ -1411,10 +1323,10 @@ void *job_clone_wt(
   free(jobid);
 
   // get the adjusted path_jobs path
-  adjusted_path_jobs = get_path_jobdata(template_job->ji_qs.ji_jobid, path_jobs);
+  adjusted_path_jobs = get_path_jobdata(template_job->get_jobid(), path_jobs);
 
   snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-    adjusted_path_jobs.c_str(), template_job->ji_qs.ji_fileprefix, ARRAY_FILE_SUFFIX);
+    adjusted_path_jobs.c_str(), template_job->get_fileprefix(), ARRAY_FILE_SUFFIX);
 
   template_job_mgr.unlock();
 
@@ -1461,12 +1373,12 @@ void *job_clone_wt(
  * cpy_checkpoint - set up a Copy Files request to transfer checkpoint files
  */
 
-struct batch_request *cpy_checkpoint(
+batch_request *cpy_checkpoint(
 
-  struct batch_request *preq,
-  job                  *pjob,
-  enum job_atr          ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
-  int                   direction)
+  batch_request *preq,
+  svr_job       *pjob,
+  enum job_atr   ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
+  int            direction)
 
   {
   char            momfile[MAXPATHLEN+1];
@@ -1483,7 +1395,7 @@ struct batch_request *cpy_checkpoint(
   return(NULL);
   }
 
-  pattr = &pjob->ji_wattr[ati];
+  pattr = pjob->get_attr(ati);
 
   if ((pattr->at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -1494,7 +1406,7 @@ struct batch_request *cpy_checkpoint(
     
   /* build up the name used for SERVER file */
   snprintf(serverfile, sizeof(serverfile), "%s%s%s",
-    path_checkpoint, pjob->ji_qs.ji_fileprefix, JOB_CHECKPOINT_SUFFIX);
+    path_checkpoint, pjob->get_fileprefix(), JOB_CHECKPOINT_SUFFIX);
   
   /*
    * We need to make sure the jobs checkpoint directory exists.  If it does
@@ -1510,19 +1422,19 @@ struct batch_request *cpy_checkpoint(
   umask(saveumask);
 
   if (sizeof(serverfile) - strlen(serverfile) > 
-        strlen(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str) + 1)
+        strlen(pjob->get_str_attr(JOB_ATR_checkpoint_name)) + 1)
     {
     strcat(serverfile, "/");
-    strcat(serverfile, pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+    strcat(serverfile, pjob->get_str_attr(JOB_ATR_checkpoint_name));
     }
 
   /* build up the name used for MOM file */
 
-  if (pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_checkpoint_dir))
     {
     snprintf(momfile, sizeof(momfile), "%s/%s%s/%s",
-      pjob->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
-      pjob->ji_qs.ji_fileprefix,
+      pjob->get_str_attr(JOB_ATR_checkpoint_dir),
+      pjob->get_fileprefix(),
       JOB_CHECKPOINT_SUFFIX,
       pattr->at_val.at_str);
     }
@@ -1531,14 +1443,14 @@ struct batch_request *cpy_checkpoint(
     /* if not specified, moms path may not be the same */
     snprintf(momfile, sizeof(momfile), "%s/%s%s/%s",
       MOM_DEFAULT_CHECKPOINT_DIR,
-      pjob->ji_qs.ji_fileprefix,
+      pjob->get_fileprefix(),
       JOB_CHECKPOINT_SUFFIX,
-      pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+      pjob->get_str_attr(JOB_ATR_checkpoint_name));
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buf, "Job has NO checkpoint dir specified, using file %s", momfile);
 
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
     }
 
@@ -1550,7 +1462,7 @@ struct batch_request *cpy_checkpoint(
         momfile,
         serverfile);
 
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
     }
   else
@@ -1561,7 +1473,7 @@ struct batch_request *cpy_checkpoint(
         serverfile,
         momfile);
 
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
     }
 
@@ -1576,7 +1488,7 @@ struct batch_request *cpy_checkpoint(
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       (char *)"ERROR:  cannot allocate 'to' memory in cpy_checkpoint");
 
     return(preq);
@@ -1595,7 +1507,7 @@ struct batch_request *cpy_checkpoint(
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       (char *)"ERROR:  cannot allocate 'from' memory for from in cpy_checkpoint");
 
     free(to);
@@ -1609,7 +1521,7 @@ struct batch_request *cpy_checkpoint(
     {
     sprintf(log_buf,"Checkpoint copy from (%s) to (%s)", from, to);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
     }
 
   preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE);
@@ -1627,12 +1539,12 @@ struct batch_request *cpy_checkpoint(
 
 void remove_checkpoint(
 
-  job **pjob_ptr)  /* I */
+  svr_job **pjob_ptr)  /* I */
 
   {
   batch_request *preq = NULL;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  job           *pjob = NULL;
+  svr_job       *pjob = NULL;
 
   if (pjob_ptr == NULL)
     {
@@ -1654,8 +1566,8 @@ void remove_checkpoint(
     {
     /* have files to delete  */
     sprintf(log_buf,"Removing checkpoint file (%s/%s)",
-      (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_dir].at_val.at_str,
-      (*pjob_ptr)->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
+      (*pjob_ptr)->get_str_attr(JOB_ATR_checkpoint_dir),
+      (*pjob_ptr)->get_str_attr(JOB_ATR_checkpoint_name));
 
     log_ext(-1, __func__, log_buf, LOG_DEBUG);
 
@@ -1669,7 +1581,7 @@ void remove_checkpoint(
     if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
       {
       if (pjob != NULL)
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
+        pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_COPIED);
       }
     else
       {
@@ -1678,7 +1590,7 @@ void remove_checkpoint(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_FILE,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         (char *)"unable to remove checkpoint file for job");
       }
 
@@ -1698,7 +1610,7 @@ void remove_checkpoint(
 
 void cleanup_restart_file(
 
-  job *pjob)  /* I */
+  svr_job *pjob)  /* I */
 
   {
   if (pjob == NULL)
@@ -1709,14 +1621,12 @@ void cleanup_restart_file(
   
   /* checkpoint restart file cleanup was successful */
 
-/*    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_COPIED; */
-
   /* clear restart_name pbs_attribute since purging job will clean it up */
 
-  pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
-  pjob->ji_modified = 1;
+  pjob->unset_attr(JOB_ATR_restart_name);
+  pjob->set_modified(true);
   
-  job_save(pjob, SAVEJOB_FULL, 0);
+  svr_job_save(pjob);
 
   return;
   }  /* END cleanup_restart_file() */
@@ -1727,7 +1637,7 @@ void cleanup_restart_file(
 
 int record_jobinfo(
     
-  job *pjob)
+  svr_job *pjob)
 
   {
   pbs_attribute          *pattr;
@@ -1760,12 +1670,12 @@ int record_jobinfo(
 
   bf += "<Jobinfo>\n";
   bf += "\t<Job_Id>";
-  bf += pjob->ji_qs.ji_jobid;
+  bf += pjob->get_jobid();
   bf += "</Job_Id>\n";
 
   for (i = 0; i < JOB_ATR_LAST; i++)
     {
-    pattr = &(pjob->ji_wattr[i]);
+    pattr = pjob->get_attr(i);
 
     if (pattr->at_flags & ATR_VFLAG_SET)
       {
@@ -1783,7 +1693,7 @@ int record_jobinfo(
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\n";
 
-      attr_to_str(bf, job_attr_def+i, pjob->ji_wattr[i], true);
+      attr_to_str(bf, job_attr_def+i, *pjob->get_attr(i), true);
       
       if (pattr->at_type == ATR_TYPE_RESC)
         bf += "\t";
@@ -1803,10 +1713,10 @@ int record_jobinfo(
     bf += "\t<job_script>";
 
     // get the adjusted path_jobs path  
-    adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+    adjusted_path_jobs = get_path_jobdata(pjob->get_jobid(), path_jobs);
 
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+      adjusted_path_jobs.c_str(), pjob->get_fileprefix(), JOB_SCRIPT_SUFFIX);
     
     if ((fd = open(namebuf, O_RDONLY)) >= 0)
       {
@@ -1850,7 +1760,7 @@ int record_jobinfo(
 
 int svr_job_purge(
 
-  job *pjob,  /* I (modified) */
+  svr_job *pjob,  /* I (modified) */
   int leaveSpoolFiles) /* I */
 
   {
@@ -1880,15 +1790,15 @@ int svr_job_purge(
 
   mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
  
-  strcpy(job_id, pjob->ji_qs.ji_jobid);
-  strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
-  job_substate = pjob->ji_qs.ji_substate;
+  strcpy(job_id, pjob->get_jobid());
+  strcpy(job_fileprefix, pjob->get_fileprefix());
+  job_substate = pjob->get_substate();
   job_is_array_template = pjob->ji_is_array_template;
   job_has_arraystruct = (pjob->ji_arraystructid[0] != '\0');
-  job_has_checkpoint_file = pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags;
+  job_has_checkpoint_file = pjob->get_attr_flags(JOB_ATR_checkpoint_name);
 
   if (LOGLEVEL >= 10)
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
 
   /* check to see if we are keeping a log of all jobs completed */
   get_svr_attr_b(SRV_ATR_RecordJobInfo, &record_job_info);
@@ -1920,7 +1830,7 @@ int svr_job_purge(
       {
       snprintf(log_buf,sizeof(log_buf),
           "Could not remove job %s from array_summary\n",
-          pjob->ji_qs.ji_jobid);
+          pjob->get_jobid());
       log_ext(-1, __func__, log_buf, LOG_WARNING);
       }
     }
@@ -1958,7 +1868,7 @@ int svr_job_purge(
       (job_substate != JOB_SUBSTATE_TRANSICM))
     {
     /* set the state to complete so that svr_dequejob() will function properly */
-    pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+    pjob->set_state(JOB_STATE_COMPLETE);
     rc = svr_dequejob(pjob, FALSE);
 
     if (rc != PBSE_JOBNOTFOUND)
@@ -2100,13 +2010,13 @@ int svr_job_purge(
 
 job_array *get_jobs_array(
 
-  job **pjob_ptr)
+  svr_job **pjob_ptr)
 
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
   char       jobid[PBS_MAXSVRJOBID + 1];
   char       arrayid[PBS_MAXSVRJOBID + 1];
-  job       *pjob = NULL;
+  svr_job   *pjob = NULL;
   job_array *pa = NULL;
 
   if (pjob_ptr == NULL)
@@ -2126,7 +2036,7 @@ job_array *get_jobs_array(
   mutex_mgr job_mutex(pjob->ji_mutex,true);
   job_mutex.set_unlock_on_exit(false);
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
+  strcpy(jobid, pjob->get_jobid());
 
   if (pjob->ji_arraystructid[0] != '\0')
     {
@@ -2135,7 +2045,7 @@ job_array *get_jobs_array(
   
     if (LOGLEVEL >= 7)
       {
-      sprintf(log_buf, "Locking ai_mutex, %s", pjob->ji_qs.ji_jobid);
+      sprintf(log_buf, "Locking ai_mutex, %s", pjob->get_jobid());
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
@@ -2161,10 +2071,10 @@ job_array *get_jobs_array(
 
 struct pbs_queue *get_jobs_queue(
 
-  job **pjob_ptr)
+  svr_job **pjob_ptr)
 
   {
-  job       *pjob = NULL;
+  svr_job   *pjob = NULL;
   pbs_queue *pque;
 
   if (LOGLEVEL >= 10)
@@ -2233,22 +2143,24 @@ bool hostname_in_externals(
 
 int fix_external_exec_hosts(
 
-  job *pjob) /* the external sub-job */
+  svr_job *pjob) /* the external sub-job */
 
   {
   std::string     external_execs = "";
-  char           *exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-  char           *externals = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
+  const char     *exec_const = pjob->get_str_attr(JOB_ATR_exec_host);
+  const char     *externals = pjob->get_str_attr(JOB_ATR_external_nodes);
   char           *exec_ptr;
   char           *plus;
   char           *slash;
 
-  if ((exec_host == NULL) ||
+  if ((exec_const == NULL) ||
       (externals == NULL))
     return(PBSE_BAD_PARAMETER);
+  
+  char           *exec_host = strdup(exec_const);
 
   /* wipe out the current destination */
-  pjob->ji_qs.ji_destin[0] = '\0';
+  pjob->set_destination("");
 
   exec_ptr = exec_host;
 
@@ -2269,8 +2181,8 @@ int fix_external_exec_hosts(
     if (hostname_in_externals(exec_ptr, externals) == true)
       {
       /* capture the first external as my mother superior */
-      if (pjob->ji_qs.ji_destin[0] == '\0')
-        snprintf(pjob->ji_qs.ji_destin, sizeof(pjob->ji_qs.ji_destin), "%s", exec_ptr);
+      if (pjob->get_destination()[0] == '\0')
+        pjob->set_destination(exec_ptr);
 
       if (slash != NULL)
         *slash = '/';
@@ -2286,22 +2198,11 @@ int fix_external_exec_hosts(
     }
 
   /* also remove the login attributes */
-  if (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL)
-    {
-    free(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str = NULL;
-    pjob->ji_wattr[JOB_ATR_login_node_id].at_flags &= ~ATR_VFLAG_SET;
-    }
-
-  if (pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str != NULL)
-    {
-    free(pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_login_prop].at_val.at_str = NULL;
-    pjob->ji_wattr[JOB_ATR_login_prop].at_flags &= ~ATR_VFLAG_SET;
-    }
+  pjob->free_attr(JOB_ATR_login_node_id);
+  pjob->free_attr(JOB_ATR_login_prop);
 
   free(exec_host);
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(external_execs.c_str());
+  pjob->set_str_attr(JOB_ATR_exec_host, strdup(external_execs.c_str()));
 
   return(PBSE_NONE);
   } /* END fix_external_exec_hosts() */
@@ -2311,15 +2212,25 @@ int fix_external_exec_hosts(
 
 int fix_cray_exec_hosts(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
-  char *external = pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str;
-  char *exec = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-  char *new_exec = (char *)calloc(1, strlen(exec) + 1);
-  char *exec_ptr = exec;
-  char *plus;
-  char *slash;
+  const char *external = pjob->get_str_attr(JOB_ATR_external_nodes);
+  const char *exec_const = pjob->get_str_attr(JOB_ATR_exec_host);
+  char       *exec = NULL;
+  char       *new_exec = NULL;
+  char       *exec_ptr = NULL;
+  char       *plus;
+  char       *slash;
+
+  if (exec_const != NULL)
+    {
+    exec = strdup(exec_const);
+    exec_ptr = exec;
+    new_exec = (char *)calloc(1, strlen(exec) + 1);
+    }
+  else
+    return(-1);
 
   while (exec_ptr != NULL)
     {
@@ -2348,7 +2259,7 @@ int fix_cray_exec_hosts(
     }
 
   free(exec);
-  pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = new_exec;
+  pjob->set_str_attr(JOB_ATR_exec_host, new_exec);
 
   return(PBSE_NONE);
   } /* END fix_cray_exec_hosts() */
@@ -2358,19 +2269,18 @@ int fix_cray_exec_hosts(
 
 int change_external_job_name(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
-  char  tmp_jobid[PBS_MAXSVRJOBID + 1];
-  char *dot = strchr(pjob->ji_qs.ji_jobid, '.');
-
-  if (dot != NULL)
-    *dot = '\0';
+  char        tmp_jobid[PBS_MAXSVRJOBID + 1];
+  std::string oldjobid(pjob->get_jobid());
+  std::string end = oldjobid.substr(oldjobid.find('.') + 1);
+  oldjobid.erase(oldjobid.find('.'));
 
   snprintf(tmp_jobid, sizeof(tmp_jobid), "%s-0.%s",
-    pjob->ji_qs.ji_jobid, dot + 1);
+    oldjobid.c_str(), end.c_str());
 
-  strcpy(pjob->ji_qs.ji_jobid, tmp_jobid);
+  pjob->set_jobid(tmp_jobid);
 
   return(PBSE_NONE);
   } /* END change_external_job_name() */
@@ -2380,18 +2290,18 @@ int change_external_job_name(
 
 int split_job(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
-  job            *external;
-  job            *cray;
+  svr_job *external;
+  svr_job *cray;
 
   if (pjob->ji_external_clone == NULL)
     {
-    external = copy_job(pjob);
+    external = pjob->copy_job();
     fix_external_exec_hosts(external);
     change_external_job_name(external);
-    external->ji_internal_id = job_mapper.get_new_id(external->ji_qs.ji_jobid);
+    external->ji_internal_id = job_mapper.get_new_id(external->get_jobid());
     external->ji_parent_job = pjob;
     pjob->ji_external_clone = external;
     unlock_ji_mutex(external, __func__, NULL, LOGLEVEL);
@@ -2399,7 +2309,7 @@ int split_job(
 
   if (pjob->ji_cray_clone == NULL)
     {
-    cray = copy_job(pjob);
+    cray = pjob->copy_job();
     fix_cray_exec_hosts(cray);
     cray->ji_internal_id    = pjob->ji_internal_id;
     cray->ji_parent_job     = pjob;

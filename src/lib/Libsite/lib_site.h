@@ -15,13 +15,3 @@ int site_acl_check(job *pjob, pbs_queue *pque);
 /* from file site_map_usr.c */
 char *site_map_user(char *uname, char *host); 
 
-/* from file site_mom_chu.c */
-int site_mom_chkuser(job *pjob);
-
-/* from file site_mom_ckp.c */
-int site_mom_postchk(job *pjob, int hold_type);
-int site_mom_prerst(job *pjob);
-
-/* from file site_mom_jst.c */
-int site_job_setup(job *pjob);
-

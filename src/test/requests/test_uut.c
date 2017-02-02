@@ -8,7 +8,7 @@
 #include "test_requests.h"
 
 void string_replchar(const char*, char, char);
-void determine_spooldir(std::string &spooldir, job *pjob);
+void determine_spooldir(std::string &spooldir, mom_job *pjob);
 
 extern char *TNoSpoolDirList[];
 extern char *path_spool;
@@ -17,11 +17,10 @@ extern const char *wdir_ret;
 
 START_TEST(test_determine_spooldir)
   {
-  job          pjob;
+  mom_job          pjob;
   std::string  spooldir;
   const char  *val_ptr;
 
-  memset(&pjob, 0, sizeof(job));
   pjob.ji_grpcache = (struct grpcache *)calloc(1, sizeof(struct grpcache));
 
   // If the spool directories don't match, we should get the default

@@ -170,7 +170,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/incoming_request/Makefile
     src/test/issue_request/Makefile
     src/test/job_attr_def/Makefile
-    src/test/job/Makefile
+    src/test/svr_job/Makefile
     src/test/job_array/Makefile
     src/test/job_container/Makefile
     src/test/job_func/Makefile
@@ -430,6 +430,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/site_mom_ckp/Makefile
     src/test/site_mom_jst/Makefile
     src/test/authorized_hosts/Makefile
+    src/test/job/Makefile
     src/test/u_MXML/Makefile
     src/test/u_groups/Makefile
     src/test/u_hash_map_structs/Makefile
@@ -486,6 +487,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/cray_cpa/Makefile
     src/test/cray_energy/Makefile
     src/test/generate_alps_status/Makefile
+    src/test/mom_job/Makefile
     src/test/mom_job_func/Makefile
     src/test/mom_comm/Makefile
     src/test/mom_inter/Makefile

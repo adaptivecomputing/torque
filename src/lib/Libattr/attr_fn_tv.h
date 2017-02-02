@@ -15,5 +15,4 @@ int set_tv(struct pbs_attribute *attr, struct pbs_attribute *newAttr, enum batch
 
 int comp_tv(struct pbs_attribute *attr, struct pbs_attribute *with);
 
-int job_radix_action (pbs_attribute *newAttr, void *pobj, int actmode);
 

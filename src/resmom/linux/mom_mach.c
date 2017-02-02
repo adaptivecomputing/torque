@@ -1072,7 +1072,7 @@ static int mm_gettime(
 
 bool injob(
 
-  job   *pjob,
+  mom_job   *pjob,
   pid_t  pid)
 
   {
@@ -1092,17 +1092,17 @@ bool injob(
   job_sid_of_pid = iter->second;
 
   /* find the pid in ji_job_pid_set */
-  job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set->find(job_sid_of_pid);
-  if (job_pid_set_iter != pjob->ji_job_pid_set->end())
+  job_pid_set_t::const_iterator job_pid_set_iter = pjob->ji_job_pid_set.find(job_sid_of_pid);
+  if (job_pid_set_iter != pjob->ji_job_pid_set.end())
     {
     /* found it */
     return(true);
     }
 
   /* Next, check the job's tasks to see if they match the session id */
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
 
     if (job_sid_of_pid == ptask->ti_qs.ti_sid)
       return(true);
@@ -1124,7 +1124,7 @@ bool injob(
 
 unsigned long cput_sum(
 
-  job *pjob)  /* I */
+  mom_job *pjob)  /* I */
 
   {
   ulong          cputime;
@@ -1136,7 +1136,7 @@ unsigned long cput_sum(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
 
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
@@ -1206,28 +1206,26 @@ unsigned long cput_sum(
 
 unsigned long cput_sum(
 
-    job *pjob)
+    mom_job *pjob)
 
   {
-  ulong        cputime = 0; 
-  std::string  full_cgroup_path;
-  int          fd;
-  int          rc;
-  char         buf[LOCAL_BUF_SIZE];
+  ulong         cputime = 0; 
+  std::string   full_cgroup_path;
+  int           fd;
+  int           rc;
+  char          buf[LOCAL_BUF_SIZE];
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
 
-  pbs_attribute *pattr;
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) == 1)
+  if (cr != NULL)
     {
     unsigned int    req_index;
     int    rc;
-    const char  *job_id = pjob->ji_qs.ji_jobid;
+    const char  *job_id = pjob->get_jobid();
 
-    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
     rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
+      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->get_jobid());
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
       return(cputime);
       }
@@ -1258,7 +1256,7 @@ unsigned long cput_sum(
 
     /* This is not a -L request */
 
-    full_cgroup_path = cg_cpuacct_path + pjob->ji_qs.ji_jobid + "/cpuacct.usage";
+    full_cgroup_path = cg_cpuacct_path + pjob->get_jobid() + "/cpuacct.usage";
 
     fd = open(full_cgroup_path.c_str(), O_RDONLY);
     if (fd <= 0)
@@ -1309,7 +1307,7 @@ unsigned long cput_sum(
 
 int overcpu_proc(
 
-  job  *pjob,
+  mom_job  *pjob,
   unsigned long  limit)  /* I */
 
   {
@@ -1368,12 +1366,12 @@ int overcpu_proc(
  * Internal session virtual memory usage function.
  *
  * Returns the total number of bytes of address
- * space consumed by all current processes within the job.
+ * space consumed by all current processes within the mom_job.
  */
 
 unsigned long long mem_sum(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   unsigned long long  segadd;
@@ -1384,7 +1382,7 @@ unsigned long long mem_sum(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
@@ -1450,7 +1448,7 @@ unsigned long long mem_sum(
 
 unsigned long long resi_sum(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   unsigned long long  resisize;
@@ -1464,7 +1462,7 @@ unsigned long long resi_sum(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "proc_array loop start - jobid = %s",
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
 
@@ -1552,27 +1550,25 @@ unsigned long long resi_sum(
 
 unsigned long long resi_sum(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
-  unsigned long long resisize = 0;
-  std::string  full_cgroup_path;
-  char         buf[LOCAL_BUF_SIZE];
-  int          fd;
-  int          rc;
+  unsigned long long  resisize = 0;
+  std::string         full_cgroup_path;
+  char                buf[LOCAL_BUF_SIZE];
+  int                 fd;
+  int                 rc;
 
-  pbs_attribute *pattr;
-  pattr = &pjob->ji_wattr[JOB_ATR_req_information];
-  if ((pattr != NULL) && (pattr->at_flags & ATR_VFLAG_SET) != 0)
+  complete_req       *cr = pjob->get_creq_attr(JOB_ATR_req_information);
+  if (cr != NULL)
     {
     int          rc;
     unsigned int req_index;
 
-    complete_req  *cr = (complete_req *)pattr->at_val.at_ptr;
     rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
+      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->get_jobid());
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
       return(resisize);
       }
@@ -1591,7 +1587,7 @@ unsigned long long resi_sum(
         }
 
       mem_used = 0;
-      rc = trq_cg_get_task_memory_stats(pjob->ji_qs.ji_jobid, req_index, task_index, mem_used);
+      rc = trq_cg_get_task_memory_stats(pjob->get_jobid(), req_index, task_index, mem_used);
       if (rc != PBSE_NONE)
         continue;
 
@@ -1600,7 +1596,7 @@ unsigned long long resi_sum(
       }
     }
 
-  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.max_usage_in_bytes";
+  full_cgroup_path = cg_memory_path + pjob->get_jobid() + "/memory.max_usage_in_bytes";
 
   fd = open(full_cgroup_path.c_str(), O_RDONLY);
   if (fd <= 0)
@@ -1651,7 +1647,7 @@ unsigned long long resi_sum(
 
 int overmem_proc(
 
-  job       *pjob,  /* I */
+  mom_job       *pjob,  /* I */
   unsigned long long  limit) /* I */
 
   {
@@ -1660,7 +1656,7 @@ int overmem_proc(
   if (LOGLEVEL >= 6)
     {
     sprintf(log_buffer, "pid2jobsid_map loop start - jobid = %s",
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
 
     log_record(PBSEVENT_DEBUG, 0, __func__, log_buffer);
     }
@@ -1763,7 +1759,7 @@ int error(
 
 int mom_set_limits(
 
-  job *pjob,     /* I */
+  mom_job *pjob,     /* I */
   int  set_mode) /* SET_LIMIT_SET or SET_LIMIT_ALTER */
 
   {
@@ -1781,7 +1777,7 @@ int mom_set_limits(
     {
     sprintf(log_buffer, "%s(%s,%s) entered",
             __func__,
-            (pjob != NULL) ? pjob->ji_qs.ji_jobid : "NULL",
+            (pjob != NULL) ? pjob->get_jobid() : "NULL",
             (set_mode == SET_LIMIT_SET) ? "set" : "alter");
 
     log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
@@ -1790,8 +1786,6 @@ int mom_set_limits(
     }
 
   assert(pjob != NULL);
-
-  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
   /*
    * cycle through all the resource specifications,
@@ -1815,10 +1809,9 @@ int mom_set_limits(
 
     }
 
-  if (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL)
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
+  if (resources != NULL)
     {
-    std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
-
     for (size_t i = 0; i < resources->size(); i++)
       {
       resource &r = resources->at(i);
@@ -1884,7 +1877,7 @@ int mom_set_limits(
               {
               sprintf(log_buffer, "setting cpu time limit to %ld for job %s",
                 (long int)reslim.rlim_cur,
-                pjob->ji_qs.ji_jobid);
+                pjob->get_jobid());
 
               log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
 
@@ -1927,7 +1920,7 @@ int mom_set_limits(
             {
             sprintf(log_buffer, "cannot set file limit to %ld for job %s (setrlimit failed - check default user limits)",
                     (long int)reslim.rlim_max,
-                    pjob->ji_qs.ji_jobid);
+                    pjob->get_jobid());
 
             log_err(errno, __func__, log_buffer);
 
@@ -2010,7 +2003,7 @@ int mom_set_limits(
               {
               sprintf(log_buffer, "cannot set data limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
                 (long int)reslim.rlim_max,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 errno,
                 strerror(errno));
 
@@ -2021,7 +2014,7 @@ int mom_set_limits(
               {
               sprintf(log_buffer, "cannot set RSS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
                 (long int)reslim.rlim_max,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 errno,
                 strerror(errno));
 
@@ -2035,7 +2028,7 @@ int mom_set_limits(
               {
               sprintf(log_buffer, "cannot set stack limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
                 (long int)reslim.rlim_max,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 errno,
                 strerror(errno));
 
@@ -2048,7 +2041,7 @@ int mom_set_limits(
               {
               sprintf(log_buffer, "cannot set AS limit to %ld for job %s (setrlimit failed w/errno=%d (%s) - check default user limits)",
                 (long int)reslim.rlim_max,
-                pjob->ji_qs.ji_jobid,
+                pjob->get_jobid(),
                 errno,
                 strerror(errno));
 
@@ -2212,7 +2205,7 @@ int mom_set_limits(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s(%s,%s) completed", __func__, pjob->ji_qs.ji_jobid,
+    sprintf(log_buffer, "%s(%s,%s) completed", __func__, pjob->get_jobid(),
       (set_mode == SET_LIMIT_SET) ? "set" : "alter");
 
     log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
@@ -2237,7 +2230,7 @@ int mom_set_limits(
 
 int mom_do_poll(
 
-  job *pjob) /* I */
+  mom_job *pjob) /* I */
 
   {
   const char  *pname;
@@ -2249,15 +2242,13 @@ int mom_do_poll(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       "evaluating limits for job");
     }
 
   assert(pjob != NULL);
 
-  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
-
-  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
 
   if (resources != NULL)
     {
@@ -2565,7 +2556,7 @@ int mom_get_sample(void)
 
 int mom_over_limit(
 
-  job *pjob)  /* I */
+  mom_job *pjob)  /* I */
 
   {
   const char       *pname;
@@ -2575,9 +2566,8 @@ int mom_over_limit(
   unsigned long long numll;
 
   assert(pjob != NULL);
-  assert(pjob->ji_wattr[JOB_ATR_resource].at_type == ATR_TYPE_RESC);
 
-  std::vector<resource> *resources = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
 
   if (resources != NULL)
     {
@@ -2670,7 +2660,7 @@ int mom_over_limit(
         if (retval != PBSE_NONE)
           continue;
 
-        num = (unsigned long)((double)(time_now - pjob->ji_qs.ji_stime) *
+        num = (unsigned long)((double)(time_now - pjob->get_start_time()) *
                               wallfactor);
 
         if (num > value)
@@ -2704,7 +2694,7 @@ int mom_over_limit(
         pjob->ji_mempressure_cnt++;   /* count */
 
         sprintf(log_buffer, "job %s memory_pressure is over %d for %d (%d) cycles",
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           memory_pressure_threshold,
           pjob->ji_mempressure_cnt,
           memory_pressure_duration);
@@ -2760,12 +2750,12 @@ int job_expected_resc_found(
 
 void add_plugin_job_resource_usage(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
   static const int job_resource_alarm_seconds = 3;
-  std::string jid(pjob->ji_qs.ji_jobid);
-  std::set<pid_t> job_pids(*pjob->ji_job_pid_set);
+  std::string jid(pjob->get_jobid());
+  std::set<pid_t> job_pids(pjob->ji_job_pid_set);
   
   if (LOGLEVEL >= 3)
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Executing the job usage plugin");
@@ -2802,7 +2792,7 @@ void add_plugin_job_resource_usage(
 
 int mom_set_use(
 
-  job *pjob)  /* I (modified) */
+  mom_job *pjob)  /* I (modified) */
 
   {
   resource      *pres;
@@ -2815,7 +2805,7 @@ int mom_set_use(
 #endif
 
   assert(pjob != NULL);
-  at = &pjob->ji_wattr[JOB_ATR_resc_used];
+  at = pjob->get_attr(JOB_ATR_resc_used);
   assert(at->at_type == ATR_TYPE_RESC);
 
 #ifdef USESAVEDRESOURCES
@@ -2892,7 +2882,7 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+  if (job_expected_resc_found(pres, rd, pjob->get_jobid()))
     return -1;
 
   lp = (unsigned long *) &pres->rs_value.at_val.at_long;
@@ -2921,7 +2911,7 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+  if (job_expected_resc_found(pres, rd, pjob->get_jobid()))
     return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
@@ -2938,15 +2928,15 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+  if (job_expected_resc_found(pres, rd, pjob->get_jobid()))
     return -1;
 
   /* NOTE: starting jobs can come through here before stime is recorded */
-  if (pjob->ji_qs.ji_stime == 0)
+  if (pjob->get_start_time() == 0)
     pres->rs_value.at_val.at_long = 0;
   else
     pres->rs_value.at_val.at_long =
-      (long)((double)(time_now - pjob->ji_qs.ji_stime) * wallfactor);
+      (long)((double)(time_now - pjob->get_start_time()) * wallfactor);
 
   /* get memory */
 
@@ -2956,7 +2946,7 @@ int mom_set_use(
 
   pres = find_resc_entry(at, rd);
 
-  if (job_expected_resc_found(pres, rd, pjob->ji_qs.ji_jobid))
+  if (job_expected_resc_found(pres, rd, pjob->get_jobid()))
     return -1;
 
   lp = &pres->rs_value.at_val.at_size.atsv_num;
@@ -2970,7 +2960,7 @@ int mom_set_use(
 
   if (memory_pressure_threshold > 0)
     {
-    inum = get_cpuset_mempressure(pjob->ji_qs.ji_jobid);
+    inum = get_cpuset_mempressure(pjob->get_jobid());
 
     /* Store if success */
     if (inum != -1)
@@ -2979,7 +2969,7 @@ int mom_set_use(
     /* Alert if there is pressure */
     if (inum > 0)
       {
-      sprintf(log_buffer, "job %s causes memory_pressure %d", pjob->ji_qs.ji_jobid, inum);
+      sprintf(log_buffer, "job %s causes memory_pressure %d", pjob->get_jobid(), inum);
       log_ext(-1, __func__, log_buffer, LOG_ALERT);
       }
     }
@@ -3014,7 +3004,7 @@ int mom_set_use(
 
 int kill_task(
 
-  job  *pjob,   /* I */
+  mom_job  *pjob,   /* I */
   task *ptask,  /* I */
   int   sig,    /* I */
   int   pg)     /* I (1=signal process group, 0=signal master process only) */
@@ -3173,7 +3163,7 @@ int kill_task(
               {
               /* make sure we only send a SIGTERM one time per process */
               if ((ps->state != 'Z') &&
-                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
+                  (pjob->ji_sigtermed_processes.find(pid) == pjob->ji_sigtermed_processes.end()))
                 {
                 sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
@@ -3182,13 +3172,13 @@ int kill_task(
                     ptask->ti_qs.ti_parentjobid, log_buffer);
             
                 kill(ps->pid, SIGTERM);
-                pjob->ji_sigtermed_processes->insert(ps->pid);
+                pjob->ji_sigtermed_processes.insert(ps->pid);
                 }
               }
             else
               {
               if ((ps->state != 'Z') &&
-                  (pjob->ji_sigtermed_processes->find(pid) == pjob->ji_sigtermed_processes->end()))
+                  (pjob->ji_sigtermed_processes.find(pid) == pjob->ji_sigtermed_processes.end()))
                 {
                 sprintf(log_buffer, "%s: killing pid %d task %d gracefully with sig %d",
                   __func__, ps->pid, ptask->ti_qs.ti_task, SIGTERM);
@@ -3197,7 +3187,7 @@ int kill_task(
                     ptask->ti_qs.ti_parentjobid, log_buffer);
             
                 killpg(ps->pid, SIGTERM);
-                pjob->ji_sigtermed_processes->insert(ps->pid);
+                pjob->ji_sigtermed_processes.insert(ps->pid);
                 }
               }
 
@@ -3267,11 +3257,11 @@ int kill_task(
                     kill(ps->pid, sig);
                     }
                   /* make sure we only send a SIGTERM one time */
-                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
+                  else if (pjob->ji_sigtermed_processes.find(ps->pid) == pjob->ji_sigtermed_processes.end())
                     {
                     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, SIGTERM);
-                    pjob->ji_sigtermed_processes->insert(ps->pid);
+                    pjob->ji_sigtermed_processes.insert(ps->pid);
                     }
                   }
                 else
@@ -3281,11 +3271,11 @@ int kill_task(
                     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, sig);
                     }
-                  else if (pjob->ji_sigtermed_processes->find(ps->pid) == pjob->ji_sigtermed_processes->end())
+                  else if (pjob->ji_sigtermed_processes.find(ps->pid) == pjob->ji_sigtermed_processes.end())
                     {
                     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, ptask->ti_qs.ti_parentjobid, log_buffer);
                     killpg(ps->pid, SIGTERM);
-                    pjob->ji_sigtermed_processes->insert(ps->pid);
+                    pjob->ji_sigtermed_processes.insert(ps->pid);
                     }
                   }
                 }
@@ -3946,7 +3936,7 @@ const char *sessions(
   char              *s;
 #ifdef NUMA_SUPPORT
   char               mom_check_name[PBS_MAXSERVERNAME];
-  job               *pjob;
+  mom_job               *pjob;
 #else
   proc_stat_t       *ps;
   struct pidl       *sids  = NULL, *sl = NULL, *sp;
@@ -3978,21 +3968,21 @@ const char *sessions(
   s = ret_string;
 
   /* Walk through job list, look for jobs running on this NUMA node */
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
+    if (strstr(pjob->get_str_attr(JOB_ATR_exec_host), mom_check_name) == NULL)
       continue;
 
     /* Show all tasks registered for this job */
 
-    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
       {
-      task *ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks.at(i);
 
       if (ptask->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
@@ -4004,7 +3994,7 @@ const char *sessions(
         sprintf(log_buffer, "%s[%d]: job %s on %s? sid %d",
           __func__,
           nsids,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           mom_check_name,
           sid);
         log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
@@ -4248,7 +4238,7 @@ const char *nusers(
   register uid_t     uid;
 #ifdef NUMA_SUPPORT
   char               mom_check_name[PBS_MAXSERVERNAME], *s;
-  job               *pjob;
+  mom_job               *pjob;
 #else
   int                i;
   proc_stat_t       *ps;
@@ -4282,26 +4272,26 @@ const char *nusers(
   sprintf(mom_check_name + strlen(mom_check_name), "-%d/", numa_index);
 
   /* Walk through job list, look for jobs running on this NUMA node */
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, mom_check_name) == NULL)
+    if (strstr(pjob->get_str_attr(JOB_ATR_exec_host), mom_check_name) == NULL)
       continue;
 
     /* Store uid of job owner */
 
-    uid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+    uid = pjob->get_exuid();
 
     if (LOGLEVEL >= 9)
       {
       sprintf(log_buffer, "%s[%d]: job %s on %s? uid %d",
         __func__,
         nuids,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         mom_check_name,
         uid);
 
@@ -4854,42 +4844,33 @@ const char *cpuclock(
 void scan_non_child_tasks(void)
 
   {
-  job *pJob;
+  mom_job *pJob;
   static int first_time = TRUE;
   int log_drift_event = 0;
 
   DIR *pdir;  /* use local pdir to prevent race conditions associated w/global pdir (VPAC) */
 
   pdir = opendir(procfs);
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   // get a list of jobs in start time order, first to last
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pJob = *iter;
 
-    long job_start_time = 0;
-    long job_session_id = 0;
+    long job_start_time = pJob->get_long_attr(JOB_ATR_system_start_time);
+    long job_session_id = pJob->get_long_attr(JOB_ATR_session_id);
     long session_start_time = 0;
     proc_stat_t *ps = NULL;
-    if (pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
-      {
-      job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
-      }
-
-    if (pJob->ji_wattr[JOB_ATR_session_id].at_flags&ATR_VFLAG_SET)
-      {
-      job_session_id = pJob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
-      }
 
     if ((ps = get_proc_stat(job_session_id)) != NULL)
       {
       session_start_time = (long)ps->start_time;
       }
 
-    for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pJob->ji_tasks.size(); i++)
       {
-      task *pTask = pJob->ji_tasks->at(i);
+      task *pTask = pJob->ji_tasks.at(i);
 
 #ifdef PENABLE_LINUX26_CPUSETS
       struct pidl   *pids = NULL;
@@ -4916,7 +4897,7 @@ void scan_non_child_tasks(void)
               pTask->ti_qs.ti_task,
               pTask->ti_qs.ti_status);
 
-          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
+          log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->get_jobid(), log_buffer);
           }
 
         pTask->ti_qs.ti_status = TI_STATE_RUNNING;
@@ -4960,7 +4941,7 @@ void scan_non_child_tasks(void)
         {
         /* session master cannot be found, look for other pid in session */
 #ifdef PENABLE_LINUX26_CPUSETS
-        pids = get_cpuset_pidlist(pJob->ji_qs.ji_jobid, pids);
+        pids = get_cpuset_pidlist(pJob->get_jobid(), pids);
         pp   = pids;
         while (pp != NULL)
           {
@@ -4987,10 +4968,10 @@ void scan_non_child_tasks(void)
 
           if (ps->session == pTask->ti_qs.ti_sid)
             {
-            if(pJob->ji_wattr[JOB_ATR_system_start_time].at_flags&ATR_VFLAG_SET)
+            if (pJob->is_attr_set(JOB_ATR_system_start_time))
               {
               proc_stat_t *ts = get_proc_stat(ps->session);
-              long         job_start_time = pJob->ji_wattr[JOB_ATR_system_start_time].at_val.at_long;
+              long         job_start_time = pJob->get_long_attr(JOB_ATR_system_start_time);
               if (ts == NULL)
                 continue;
 
@@ -5021,7 +5002,7 @@ void scan_non_child_tasks(void)
         sprintf(buf, "found exited session %d for task %d in job %s",
             pTask->ti_qs.ti_sid,
             pTask->ti_qs.ti_task,
-            pJob->ji_qs.ji_jobid);
+            pJob->get_jobid());
 
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
 
@@ -5040,7 +5021,7 @@ void scan_non_child_tasks(void)
             sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
                 pTask->ti_qs.ti_task);
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->get_jobid(), buf);
             }
           }
 #endif    /* USESAVEDRESOURCES */
@@ -5058,7 +5039,7 @@ void scan_non_child_tasks(void)
           job_session_id,
           session_start_time,
           (int)abs(job_start_time - session_start_time));
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->get_jobid(), log_buffer);
         }
     } /* END for each job */
 

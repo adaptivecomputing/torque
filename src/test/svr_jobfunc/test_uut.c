@@ -18,15 +18,16 @@
 #include "complete_req.hpp"
 #include "attr_req_info.hpp"
 
-int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int lock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
 void job_wait_over(struct work_task *);
-bool is_valid_state_transition(job &pjob, int newstate, int newsubstate);
-bool has_conflicting_resource_requests(job *pjob, pbs_queue *pque);
+bool is_valid_state_transition(svr_job &pjob, int newstate, int newsubstate);
+bool has_conflicting_resource_requests(svr_job *pjob, pbs_queue *pque);
 bool contains_execution_slot_request(pbs_attribute *jb);
+void get_jobowner(const char *from, char *to);
 
 extern int decrement_count;
-extern job napali_job;
+extern svr_job napali_job;
 extern attribute_def job_attr_def[];
 extern std::string set_resource;
 
@@ -100,22 +101,22 @@ END_TEST
 
 START_TEST(test_numa_task_exceeds_resources)
   {
-  job          *pjob = (job *)calloc(1, sizeof(job));
+  svr_job          *pjob = new svr_job();
   req           r;
 
   possible = true;
   complete_req  cr;
-  pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob->set_creq_attr(JOB_ATR_req_information, &cr);
   }
 END_TEST
 
 
 START_TEST(has_conflicting_resource_requeusts_test)
   {
-  job       *pjob = (job *)calloc(1, sizeof(job));
+  svr_job          *pjob = new svr_job();
   pbs_queue *pque = (pbs_queue *)calloc(1, sizeof(pbs_queue));
 
-  pjob->ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
+  pjob->set_attr(JOB_ATR_req_information);
   pque->qu_attr[QA_ATR_ResourceDefault].at_flags = ATR_VFLAG_SET;
 
   set_resource = "nodes";
@@ -194,15 +195,14 @@ END_TEST
 
 START_TEST(is_valid_state_transition_test)
   {
-  job pjob;
+  svr_job pjob;
 
-  memset(&pjob, 0, sizeof(pjob));
-  pjob.ji_qs.ji_state = JOB_STATE_QUEUED;
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+  pjob.set_state(JOB_STATE_QUEUED);
+  pjob.set_substate(JOB_SUBSTATE_QUEUED);
 
   fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
-  pjob.ji_qs.ji_state = JOB_STATE_COMPLETE;
-  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  pjob.set_state(JOB_STATE_COMPLETE);
+  pjob.set_substate(JOB_SUBSTATE_COMPLETE);
   
   fail_unless(is_valid_state_transition(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE) == true);
 
@@ -215,8 +215,8 @@ END_TEST
 
 START_TEST(job_wait_over_test)
   {
-  napali_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
-  napali_job.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  napali_job.set_state(JOB_STATE_COMPLETE);
+  napali_job.set_substate(JOB_SUBSTATE_COMPLETE);
   job_attr_def[JOB_ATR_exectime].at_free = free_null;
 
   struct work_task *pwt = (struct work_task *)calloc(1, sizeof(struct work_task));
@@ -225,8 +225,8 @@ START_TEST(job_wait_over_test)
 
   job_wait_over(pwt);
 
-  fail_unless(napali_job.ji_qs.ji_state == JOB_STATE_COMPLETE);
-  fail_unless(napali_job.ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE);
+  fail_unless(napali_job.get_state() == JOB_STATE_COMPLETE);
+  fail_unless(napali_job.get_substate() == JOB_SUBSTATE_COMPLETE);
   }
 END_TEST
 
@@ -237,7 +237,7 @@ END_TEST
 
 START_TEST(svr_enquejob_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   int result = PBSE_NONE;
 
   /*initialize_globals*/
@@ -249,24 +249,17 @@ START_TEST(svr_enquejob_test)
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
 
-  memset(&test_job, 0, sizeof(test_job));
-
   result = svr_enquejob(NULL, 0, NULL, false, false);
   fail_unless(result != PBSE_NONE, "NULL input pointer fail");
 
-  result = svr_enquejob(&test_job, 0, NULL, false, false);
-  /*Need more complicated mocking in order to have other result than PBSE_JOBNOTFOUND*/
-  fail_unless(result == PBSE_JOBNOTFOUND, "svr_enquejob fail: %d", result);
-
+  fail_unless(svr_enquejob(&test_job, 0, NULL, false, false) != PBSE_NONE);
   }
 END_TEST
 
 START_TEST(svr_dequejob_test)
   {
   int result = PBSE_NONE;
-  job j;
-
-  memset(&j, 0, sizeof(job));
+  svr_job j;
 
   result = svr_dequejob(NULL, 0);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail");
@@ -274,12 +267,12 @@ START_TEST(svr_dequejob_test)
   result = svr_dequejob(&j, 0);
   fail_unless(result == PBSE_JOBNOTFOUND, "svr_dequejob fail");
 
-  j.ji_qs.ji_state = JOB_STATE_RUNNING;
+  j.set_state(JOB_STATE_RUNNING);
   fail_unless(svr_dequejob(&j, 0) == PBSE_BADSTATE);
 
   // confirm expected error message
   j.ji_is_array_template = TRUE;
-  strcpy(j.ji_qs.ji_jobid, "999.foo");
+  j.set_jobid("999.foo");
   get_jobs_queue_force_null = true;
   fail_unless(svr_dequejob(&j, 0) == PBSE_JOB_NOT_IN_QUEUE);
   fail_unless(strcmp(global_log_buf.c_str(), "Job 999.foo has no queue") == 0);
@@ -288,10 +281,8 @@ END_TEST
 
 START_TEST(svr_setjobstate_test)
   {
-  struct job test_job;
+  svr_job test_job;
   int result = PBSE_NONE;
-
-  memset(&test_job, 0, sizeof(test_job));
 
   /*initialize_globals*/
   server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -304,25 +295,26 @@ START_TEST(svr_setjobstate_test)
 
   result = svr_setjobstate(NULL, 0, 0, 0);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL input pointer fail");
+  
+  get_jobs_queue_force_null = false;
 
   result = svr_setjobstate(&test_job, 0, 0, 0);
   fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
 
-  result = svr_setjobstate(&test_job, 1, 2, 3);
+  result = svr_setjobstate(&test_job, 1, 2, 0);
   fail_unless(result == PBSE_NONE, "svr_setjobstate fail");
 
-  get_jobs_queue_force_null = false;
-  test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
-  test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("napali/0");
+  test_job.set_state(JOB_STATE_RUNNING);
+  test_job.set_str_attr(JOB_ATR_exec_host, strdup("napali/0"));
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
-  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL);
+  fail_unless(test_job.get_str_attr(JOB_ATR_exec_host) == NULL);
 
-  test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
-  test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("lei/0");
-  test_job.ji_wattr[JOB_ATR_checkpoint].at_val.at_str = strdup("enabled");
-  test_job.ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+  test_job.set_state(JOB_STATE_RUNNING);
+  test_job.set_str_attr(JOB_ATR_exec_host, strdup("lei/0"));
+  test_job.set_str_attr(JOB_ATR_checkpoint, strdup("enabled"));
+  test_job.set_svrflags(test_job.get_svrflags() | JOB_SVFLG_CHECKPOINT_FILE);
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE) == PBSE_NONE);
-  fail_unless(test_job.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL, "exec_host list got removed when it shouldn't have...");
+  fail_unless(test_job.get_str_attr(JOB_ATR_exec_host) != NULL, "exec_host list got removed when it shouldn't have...");
 
   decrement_count = 0;
   fail_unless(svr_setjobstate(&test_job, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE) == PBSE_NONE);
@@ -336,63 +328,61 @@ END_TEST
 
 START_TEST(svr_evaljobstate_test)
   {
-  struct job test_job;
+  svr_job test_job;
   int state = 0;
   int substate = 0;
 
-  memset(&test_job, 0, sizeof(test_job));
-
-  test_job.ji_qs.ji_state = JOB_STATE_RUNNING;
+  test_job.set_state(JOB_STATE_RUNNING);
   svr_evaljobstate(test_job, state, substate, 0);
-  fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 1");
-  fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 1");
-  memset(&test_job, 0, sizeof(test_job));
+  fail_unless(test_job.get_state() == state, "svr_setjobstate state fail case 1");
+  fail_unless(test_job.get_substate() == substate, "svr_setjobstate substate fail case 1");
 
-  test_job.ji_wattr[JOB_ATR_hold].at_val.at_long = 1;
-  svr_evaljobstate(test_job, state, substate, 0);
-  fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 2");
-  fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 2");
-  memset(&test_job, 0, sizeof(test_job));
+  svr_job test_job2;
+  test_job2.set_long_attr(JOB_ATR_hold, 1);
+  svr_evaljobstate(test_job2, state, substate, 0);
+  fail_unless(test_job2.get_state() == state, "svr_setjobstate state fail case 2");
+  fail_unless(test_job2.get_substate() == substate, "svr_setjobstate substate fail case 2");
 
-  test_job.ji_wattr[JOB_ATR_stagein].at_flags = 1;
-  svr_evaljobstate(test_job, state, substate, 0);
-  fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 3");
-  fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 3");
-  memset(&test_job, 0, sizeof(test_job));
+  svr_job test_job3;
+  test_job3.set_attr(JOB_ATR_stagein);
+  svr_evaljobstate(test_job3, state, substate, 0);
+  fail_unless(test_job3.get_state() == state, "svr_setjobstate state fail case 3");
+  fail_unless(test_job3.get_substate() == substate, "svr_setjobstate substate fail case 3");
 
-  svr_evaljobstate(test_job, state, substate, 0);
-  fail_unless(test_job.ji_qs.ji_state == state, "svr_setjobstate state fail case 4");
-  fail_unless(test_job.ji_qs.ji_substate == substate, "svr_setjobstate substate fail case 4");
-  memset(&test_job, 0, sizeof(test_job));
+  svr_job test_job4;
+  svr_evaljobstate(test_job4, state, substate, 0);
+  fail_unless(test_job4.get_state() == state, "svr_setjobstate state fail case 4");
+  fail_unless(test_job4.get_substate() == substate, "svr_setjobstate substate fail case 4");
 
-  svr_evaljobstate(test_job, state, substate, 1);
+  svr_job test_job5;
+  svr_evaljobstate(test_job5, state, substate, 1);
   fail_unless(JOB_STATE_QUEUED == state, "svr_setjobstate state fail case 5");
   fail_unless(JOB_SUBSTATE_QUEUED == substate, "svr_setjobstate substate fail case 5");
 
   int old_state;
   int old_substate;
-  test_job.ji_qs.ji_state = JOB_STATE_EXITING;
-  test_job.ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
-  old_state = test_job.ji_qs.ji_state;
-  old_substate = test_job.ji_qs.ji_substate;
-  svr_evaljobstate(test_job, state, substate, 1);
+  test_job5.set_state(JOB_STATE_EXITING);
+  test_job5.set_substate(JOB_SUBSTATE_EXITING);
+  old_state = test_job5.get_state();
+  old_substate = test_job5.get_substate();
+  svr_evaljobstate(test_job5, state, substate, 1);
   fail_unless(old_state == state);
   fail_unless(old_substate == substate);
 
-  test_job.ji_qs.ji_state = JOB_STATE_EXITING;
-  test_job.ji_qs.ji_substate = JOB_SUBSTATE_RERUN3;
-  old_state = test_job.ji_qs.ji_state;
-  old_substate = test_job.ji_qs.ji_substate;
-  svr_evaljobstate(test_job, state, substate, 1);
+  test_job5.set_state(JOB_STATE_EXITING);
+  test_job5.set_substate(JOB_SUBSTATE_RERUN3);
+  old_state = test_job5.get_state();
+  old_substate = test_job5.get_substate();
+  svr_evaljobstate(test_job5, state, substate, 1);
   fail_unless(state == JOB_STATE_QUEUED);
   fail_unless(substate == JOB_SUBSTATE_QUEUED);
 
 
-  test_job.ji_qs.ji_state = JOB_STATE_COMPLETE;
-  test_job.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
-  old_state = test_job.ji_qs.ji_state;
-  old_substate = test_job.ji_qs.ji_substate;
-  svr_evaljobstate(test_job, state, substate, 1);
+  test_job5.set_state(JOB_STATE_COMPLETE);
+  test_job5.set_substate(JOB_SUBSTATE_COMPLETE);
+  old_state = test_job5.get_state();
+  old_substate = test_job5.get_substate();
+  svr_evaljobstate(test_job5, state, substate, 1);
   fail_unless(old_state == state);
   fail_unless(old_substate == substate);
   }
@@ -400,11 +390,9 @@ END_TEST
 
 START_TEST(get_variable_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   char* variable = (char *)"variable";
   char* result = NULL;
-
-  memset(&test_job, 0, sizeof(test_job));
 
   result = get_variable(NULL, variable);
   fail_unless(result == NULL, "NULL input job pointer fail");
@@ -487,7 +475,7 @@ END_TEST
 
 START_TEST(svr_chkque_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   struct pbs_queue test_queue;
   struct array_strings disallowed_types_array_strings;
   char* hostname = (char *)"hostname";
@@ -503,12 +491,10 @@ START_TEST(svr_chkque_test)
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
 
-  memset(&test_job, 0, sizeof(test_job));
   memset(&test_queue, 0, sizeof(test_queue));
 
   result = svr_chkque(NULL, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_BAD_PARAMETER, "NULL input job pointer fail");
-
 
   memset(&test_queue, 0, sizeof(test_queue));
   result = svr_chkque(&test_job, NULL, hostname, 0, NULL);
@@ -532,7 +518,6 @@ START_TEST(svr_chkque_test)
 
 
   /* several test cases for check_queue_disallowed_types (not all)*/
-  memset(&test_job, 0, sizeof(test_job));
   memset(&test_queue, 0, sizeof(test_queue));
   memset(&disallowed_types_array_strings,
          0,
@@ -551,13 +536,12 @@ START_TEST(svr_chkque_test)
   fail_unless(result == PBSE_NOBATCH, "svr_chkque PBSE_NOBATCH fail");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_rerunable;
-  test_job.ji_wattr[JOB_ATR_rerunable].at_flags = ATR_VFLAG_SET;
-  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = true;
+  test_job.set_bool_attr(JOB_ATR_rerunable, true);
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_NORERUNABLE, "svr_chkque PBSE_NORERUNABLE fail");
 
   disallowed_types_array_strings.as_string[0] = (char *)Q_DT_nonrerunable;
-  test_job.ji_wattr[JOB_ATR_rerunable].at_val.at_bool = false;
+  test_job.set_bool_attr(JOB_ATR_rerunable, false);
   result = svr_chkque(&test_job, &test_queue, hostname, 0, NULL);
   fail_unless(result == PBSE_NONONRERUNABLE, "svr_chkque PBSE_NONONRERUNABLE fail");
 
@@ -578,11 +562,10 @@ END_TEST
 
 START_TEST(job_set_wait_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   struct pbs_attribute test_attribute;
   int result = -1;
 
-  memset(&test_job, 0, sizeof(test_job));
   memset(&test_attribute, 0, sizeof(test_attribute));
 
   result = job_set_wait(NULL, &test_job, 0);
@@ -598,11 +581,9 @@ END_TEST
 
 START_TEST(prefix_std_file_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   std::string test_string = "";
   const char *result = NULL;
-
-  memset(&test_job, 0, sizeof(test_job));
 
   result = prefix_std_file(NULL, test_string, 0);
   fail_unless(result != NULL, "NULL input job pointer fail");
@@ -617,14 +598,13 @@ END_TEST
 
 START_TEST(add_std_filename_test)
   {
-  struct job test_job;
+  struct svr_job test_job;
   char* path = (char *)"path";
   std::string test_string = "";
   const char* result = NULL;
-  char* at_str = (char *)"string";
+  char* at_str = strdup("string");
 
-  memset(&test_job, 0, sizeof(test_job));
-  test_job.ji_wattr[JOB_ATR_jobname].at_val.at_str = at_str;
+  test_job.set_str_attr(JOB_ATR_jobname, at_str);
 
   result = add_std_filename(NULL, path, 0, test_string);
   fail_unless(result == NULL, "NULL input job pointer fail");
@@ -656,10 +636,10 @@ END_TEST
 
 START_TEST(set_resc_deflt_test)
   {
-  struct job test_job;
+  /* Commented out because this doesn't test anything at all
+  struct svr_job test_job;
   struct pbs_attribute test_attribute;
 
-  /*initialize_globals*/
   server.sv_qs_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_attr_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   server.sv_jobstates_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
@@ -668,22 +648,21 @@ START_TEST(set_resc_deflt_test)
   pthread_mutex_init(server.sv_attr_mutex,NULL);
   pthread_mutex_init(server.sv_jobstates_mutex,NULL);
 
-  memset(&test_job, 0, sizeof(test_job));
   memset(&test_attribute, 0, sizeof(test_attribute));
 
   set_resc_deflt(NULL, &test_attribute, 0);
   set_resc_deflt(&test_job, NULL, 0);
   set_resc_deflt(&test_job, &test_attribute, 0);
   set_resc_deflt(&test_job, &test_attribute, 1);
+  */
   }
 END_TEST
 
 START_TEST(set_chkpt_deflt_test)
   {
-  struct job test_job;
+  svr_job test_job;
   struct pbs_queue test_queue;
 
-  memset(&test_job, 0, sizeof(test_job));
   memset(&test_queue, 0, sizeof(test_queue));
 
   set_chkpt_deflt(NULL, &test_queue);
@@ -694,9 +673,7 @@ END_TEST
 
 START_TEST(set_statechar_test)
   {
-  struct job test_job;
-
-  memset(&test_job, 0, sizeof(test_job));
+  struct svr_job test_job;
 
   set_statechar(NULL);
   set_statechar(&test_job);
@@ -706,7 +683,7 @@ END_TEST
 START_TEST(lock_ji_mutex_test)
   {
   int        rc;
-  job        pjob;
+  svr_job        pjob;
   const char *id;
   const char *msg;
   int        logging;

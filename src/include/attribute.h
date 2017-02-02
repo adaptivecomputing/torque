@@ -515,8 +515,8 @@ void create_size_string(char *buf, struct size_value values);
 
 /* other associated funtions */
 
-int   acl_check(pbs_attribute *, char *canidate, int type);
-int   acl_check_my_array_string(struct array_strings *, char *, int);
+int   acl_check(pbs_attribute *, const char *canidate, int type);
+int   acl_check_my_array_string(struct array_strings *, const char *, int);
 char *arst_string(const char *str, pbs_attribute *pattr);
 void  attrl_fixlink(tlist_head *svrattrl);
 void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
@@ -567,7 +567,7 @@ int      node_alt_name(pbs_attribute*, void*, int);
 int      set_note_str(pbs_attribute *attr, pbs_attribute *, enum batch_op);
 int      set_alt_name_str(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op);
 void     replace_attr_string(pbs_attribute*, char*);
-int      job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
+//int      job_radix_action (pbs_attribute *new_attr, void *pobj, int actmode);
 int      node_total_socket_action(pbs_attribute *new_attr, void *pobj, int actmode);
 int      node_total_chip_action(pbs_attribute *new_attr, void *pobj, int actmode);
 int      node_total_core_action(pbs_attribute *new_attr, void *pobj, int actmode);

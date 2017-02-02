@@ -8,7 +8,7 @@ char *apbasil_protocol = (char *)"1.0";
 char *release_path = (char *)"../test_scripts/release_reservation.sh test_input.txt";
 char *input_file = (char *)"test_input.txt";
 
-int destroy_alps_reservation(char *, char *, char *, int);
+int destroy_alps_reservation(const char *, char *, char *, int);
 void create_input(char *, char *);
 int parse_release_output(char *output);
 

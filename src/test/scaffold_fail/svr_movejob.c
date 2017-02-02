@@ -6,7 +6,7 @@
 
 #include "scaffold_fail.h"
 
-int svr_movejob(job *jobp, char *destination, int *i, struct batch_request *req)
+int svr_movejob(svr_job *jobp, char *destination, int *i, struct batch_request *req)
   {
   fprintf(stderr, "The call to svr_movejob needs to be mocked!!\n");
   exit(1);

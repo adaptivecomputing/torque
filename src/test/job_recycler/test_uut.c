@@ -10,25 +10,25 @@ bool exit_called = false;
 extern pthread_t     open_threads[];
 extern int           open_thread_count;
 
-job *pop_job_from_recycler(all_jobs *aj);
+svr_job *pop_job_from_recycler(all_jobs *aj);
 void *remove_some_recycle_jobs(void *vp);
 
 
 START_TEST(test_insert_into_recycler)
   {
-  job *pj = job_alloc();
+  svr_job *pj = job_alloc();
   initialize_recycler();
 
   fail_unless(insert_into_recycler(pj) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 1);
 
-  job *pj2 = job_alloc();
+  svr_job *pj2 = job_alloc();
   fail_unless(insert_into_recycler(pj2) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 2);
 
-  // make sure we can't insert the job again with or without the flag set
+  // make sure we can't insert the svr_job again with or without the flag set
   pj->ji_being_recycled = 0;
   fail_unless(insert_into_recycler(pj) != PBSE_NONE);
   fail_unless(recycler.rc_jobs.count() == 2);
@@ -42,7 +42,7 @@ END_TEST
 
 START_TEST(test_remove_some_recycle_jobs)
   {
-  job *pjobs[1000];
+  svr_job *pjobs[1000];
   initialize_recycler();
 
   for (int i = 0; i < 1000; i++)
@@ -75,7 +75,7 @@ END_TEST
 
 START_TEST(test_pop_job_from_recycler)
   {
-  job *pjobs[10];
+  svr_job *pjobs[10];
   initialize_recycler();
 
   while (recycler.rc_jobs.count() > 0)
@@ -89,7 +89,7 @@ START_TEST(test_pop_job_from_recycler)
 
   for (unsigned int i = 0; i < 10; i++)
     {
-    job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
+    svr_job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
     fail_unless(pjob == pjobs[i]);
     fail_unless(recycler.rc_jobs.count() == 9 - i);
     }
@@ -104,14 +104,14 @@ START_TEST(test_pop_job_from_recycler)
     fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
     }
 
-  job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
+  svr_job *pjob = pop_job_from_recycler(&recycler.rc_jobs);
   int count = 0;
   char buf[80];
   while(pjob)
     {
     count++;
     snprintf(buf,sizeof(buf),"%016lx",(long)pjob);
-    fail_unless(strcmp(pjob->ji_qs.ji_jobid, buf)==0, pjob->ji_qs.ji_jobid);
+    fail_unless(strcmp(pjob->get_jobid(), buf)==0, pjob->get_jobid());
     pjob = pop_job_from_recycler(&recycler.rc_jobs);
     }
 

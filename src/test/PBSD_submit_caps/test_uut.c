@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
+#include "server_limits.h"
 #include "pbs_error.h"
 
 extern int flush_rc;

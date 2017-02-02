@@ -126,8 +126,8 @@ int chk_hold_priv(long val, int perm);
 int get_hold(tlist_head *, const char **, pbs_attribute *);
 
 /* external functions */
-extern int svr_authorize_jobreq(struct batch_request *,job *);
-extern job *chk_job_request(char *,struct batch_request *);
+extern int svr_authorize_jobreq(struct batch_request *,svr_job *);
+extern svr_job *chk_job_request(char *,struct batch_request *);
 
 /*
  * chk_hold_priv - check that client has privilege to set/clear hold
@@ -166,11 +166,10 @@ int req_holdjob(
   batch_request *vp) /* I */
 
   {
-  long          *hold_val;
   int            newstate;
   int            newsub;
   long           old_hold;
-  job           *pjob;
+  svr_job       *pjob;
   char          *pset;
   int            rc;
   pbs_attribute  temphold;
@@ -205,16 +204,13 @@ int req_holdjob(
     return(PBSE_NONE);
     }
 
-  hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-
-  old_hold = *hold_val;
-  *hold_val |= temphold.at_val.at_long;
-  pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  old_hold = pjob->get_long_attr(JOB_ATR_hold);
+  pjob->set_long_attr(JOB_ATR_hold, old_hold | temphold.at_val.at_long);
   sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
 
-  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
+  pattr = pjob->get_attr(JOB_ATR_checkpoint);
 
-  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+  if ((pjob->get_state() == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&
        ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
         (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
@@ -230,17 +226,16 @@ int req_holdjob(
     ** Therefore, it must be passed as the server to the MOM so she can
     ** find it to hold.
     */
-    if (strncmp(pjob->ji_qs.ji_jobid, 
+    if (strncmp(pjob->get_jobid(), 
           preq->rq_ind.rq_hold.rq_orig.rq_objname, PBS_MAXSVRJOBID))
        snprintf(preq->rq_ind.rq_hold.rq_orig.rq_objname, 
           sizeof(preq->rq_ind.rq_hold.rq_orig.rq_objname), "%s", 
-          pjob->ji_qs.ji_jobid);
+          pjob->get_jobid());
 
     batch_request dup_req(*preq);
     
     if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
       {
-      *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
       if (pjob == NULL)
@@ -250,14 +245,14 @@ int req_holdjob(
       {
       if (pjob != NULL)
         {
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
+        pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE);
         
-        job_save(pjob, SAVEJOB_QUICK, 0);
+        svr_job_save(pjob);
         
         /* fill in log_buf again, since relay_to_mom changed it */
         sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
         
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
         pjob = NULL;
         reply_ack(preq);
@@ -269,7 +264,7 @@ int req_holdjob(
       }
     }
 #ifdef ENABLE_BLCR
-  else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  else if (pjob->get_state() == JOB_STATE_RUNNING)
     {
     /*
      * This system is configured with BLCR checkpointing to be used,
@@ -277,7 +272,7 @@ int req_holdjob(
      * so we reject the request
      */
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL,
       "job not held since checkpointing is expected but not enabled for job");
@@ -286,12 +281,12 @@ int req_holdjob(
   else
     {
     /* everything went well, may need to update the job state */
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
-    if (old_hold != *hold_val)
+    if (old_hold != pjob->get_long_attr(JOB_ATR_hold))
       {
       /* indicate attributes changed     */
-      pjob->ji_modified = 1;
+      pjob->set_modified(true);
 
       svr_evaljobstate(*pjob, newstate, newsub, 0);
 
@@ -317,7 +312,7 @@ void *req_checkpointjob(
   batch_request *preq) /* I */
 
   {
-  job           *pjob;
+  svr_job       *pjob;
   int            rc;
   pbs_attribute *pattr;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
@@ -329,9 +324,9 @@ void *req_checkpointjob(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
+  pattr = pjob->get_attr(JOB_ATR_checkpoint);
 
-  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+  if ((pjob->get_state() == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&
        ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
         (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
@@ -352,10 +347,10 @@ void *req_checkpointjob(
       {
       if (pjob != NULL)
         {
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+        pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_CHECKPOINT_FILE);
         
-        job_save(pjob, SAVEJOB_QUICK, 0);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        svr_job_save(pjob);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
         }
@@ -368,7 +363,7 @@ void *req_checkpointjob(
   else
     {
     // Job does not have checkpointing enabled, so reject the request
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
     }
@@ -396,13 +391,13 @@ int release_job(
   int            newstate;
   int            newsub;
   char          *pset;
-  job           *pjob = (job *)j;
+  svr_job       *pjob = (svr_job *)j;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   pbs_attribute  temphold;
 
   // this function is meaningless for jobs in exiting or completed
-  if (pjob->ji_qs.ji_state > JOB_STATE_RUNNING)
+  if (pjob->get_state() > JOB_STATE_RUNNING)
     return(PBSE_NONE);
 
   /* cannot do anything until we decode the holds to be set */
@@ -421,9 +416,9 @@ int release_job(
 
   /* unset the hold */
 
-  old_hold = pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
+  old_hold = pjob->get_long_attr(JOB_ATR_hold);
 
-  if ((rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold], &temphold, DECR)))
+  if ((rc = job_attr_def[JOB_ATR_hold].at_set(pjob->get_attr(JOB_ATR_hold), &temphold, DECR)))
     {
     return(rc);
     }
@@ -436,9 +431,9 @@ int release_job(
 
   /* everything went well, if holds changed, update the job state */
 
-  if (old_hold != pjob->ji_wattr[JOB_ATR_hold].at_val.at_long)
+  if (old_hold != pjob->get_long_attr(JOB_ATR_hold))
     {
-    pjob->ji_modified = 1; /* indicates attributes changed */
+    pjob->set_modified(true); /* indicates attributes changed */
 
     svr_evaljobstate(*pjob, newstate, newsub, 0);
 
@@ -448,7 +443,7 @@ int release_job(
         preq->rq_user,
         preq->rq_host);
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
 
    }
   else
@@ -458,7 +453,7 @@ int release_job(
         preq->rq_user,
         preq->rq_host);
 
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
       rc = PBSE_BAD_JOB_STATE_TRANSITION;
     }
 
@@ -480,7 +475,7 @@ int req_releasejob(
   batch_request *vp) /* I */
 
   {
-  job           *pjob;
+  svr_job       *pjob;
   int            rc;
   batch_request *preq = (batch_request *)vp;
 
@@ -515,7 +510,7 @@ int release_whole_array(
   {
   int  i;
   int  rc;
-  job *pjob;
+  svr_job *pjob;
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
@@ -547,7 +542,7 @@ int req_releasearray(
   batch_request *preq) /* I */
 
   {
-  job       *pjob;
+  svr_job   *pjob;
   job_array *pa;
   char      *range;
   int        rc;
@@ -695,7 +690,7 @@ void process_hold_reply(
   batch_request *preq)
 
   {
-  job                  *pjob;
+  svr_job              *pjob;
   pbs_attribute         temphold;
 
   int                   newstate;
@@ -727,20 +722,19 @@ void process_hold_reply(
       
       if (rc == 0)
         {
-        rc = job_attr_def[JOB_ATR_hold].at_set(&pjob->ji_wattr[JOB_ATR_hold],
-            &temphold, DECR);
+        rc = job_attr_def[JOB_ATR_hold].at_set(pjob->get_attr(JOB_ATR_hold), &temphold, DECR);
         }
       
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
+      pjob->set_substate(JOB_SUBSTATE_RUNNING);  /* reset it */
       
-      pjob->ji_modified = 1;    /* indicate attributes changed */
+      pjob->set_modified(true);    /* indicate attributes changed */
       svr_evaljobstate(*pjob, newstate, newsub, 0);
       svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
       
       if (preq->rq_reply.brp_code != PBSE_NOSUP)
         {
         sprintf(log_buf, msg_mombadhold, preq->rq_reply.brp_code);
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
         req_reject(preq->rq_reply.brp_code, 0, preq, NULL, log_buf);
         }
       else
@@ -756,15 +750,15 @@ void process_hold_reply(
        * And if these flags are not set, start_exec will not try to run the job from
        * the checkpoint image file.
        */
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
+      pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_CHECKPOINT_FILE);
       
       if (preq->rq_reply.brp_auxcode)  /* checkpoint can be moved */
         {
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_FILE;
-        pjob->ji_qs.ji_svrflags |=  JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_MIGRATEABLE;
+        pjob->set_svrflags((pjob->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_FILE) |  JOB_SVFLG_HASRUN |
+          JOB_SVFLG_CHECKPOINT_MIGRATEABLE);
         }
 
-      pjob->ji_modified = 1;    /* indicate attributes changed     */
+      pjob->set_modified(true);    /* indicate attributes changed     */
       
       svr_evaljobstate(*pjob, newstate, newsub, 0);
       svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
@@ -790,7 +784,7 @@ void process_checkpoint_reply(
   batch_request *preq)
 
   {
-  job *pjob;
+  svr_job *pjob;
 
   /* preq handled previously */
   if (preq == NULL)

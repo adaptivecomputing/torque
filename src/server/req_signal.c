@@ -114,9 +114,9 @@ static void post_signal_req (batch_request *preq);
 
 extern int   LOGLEVEL;
 
-extern int   set_old_nodes (job *);
+extern int   set_old_nodes (svr_job *);
 
-extern job  *chk_job_request(char *, struct batch_request *);
+extern svr_job  *chk_job_request(char *, struct batch_request *);
 
 /*
  * req_signaljob - service the Signal Job Request
@@ -133,7 +133,7 @@ int req_signaljob(
   batch_request *preq) /* I */
 
   {
-  job           *pjob;
+  svr_job       *pjob;
   int            rc;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -146,7 +146,7 @@ int req_signaljob(
 
   /* the job must be running */
 
-  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+  if (pjob->get_state() != JOB_STATE_RUNNING)
     {
     req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
 
@@ -169,7 +169,7 @@ int req_signaljob(
     }
 
   /* save job ptr for post_signal_req() */
-  preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
+  preq->rq_extra = strdup(pjob->get_jobid());
 
   /* FIXME: need a race-free check for available free subnodes before
    * resuming a suspended job */
@@ -178,8 +178,7 @@ int req_signaljob(
   /* interactive jobs don't resume correctly so don't allow a suspend */
 
   if (!strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) &&
-      (pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-      (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long > 0))
+      (pjob->get_long_attr(JOB_ATR_interactive) > 0))
     {
     req_reject(PBSE_JOBTYPE, 0, preq, NULL, NULL);
 
@@ -192,7 +191,7 @@ int req_signaljob(
     {
     char ipstr[128];
 
-    sprintf(log_buf, "relaying signal request to mom %s", netaddr_long(pjob->ji_qs.ji_un.ji_exect.ji_momaddr,ipstr));
+    sprintf(log_buf, "relaying signal request to mom %s", netaddr_long(pjob->get_ji_momaddr(), ipstr));
 
     log_record(PBSEVENT_SCHED,PBS_EVENTCLASS_REQUEST,"req_signaljob",log_buf);
     }
@@ -242,7 +241,7 @@ int req_signaljob(
 
 int issue_signal(
 
-  job        **pjob_ptr,
+  svr_job    **pjob_ptr,
   const char  *signame,
   void       (*func)(struct batch_request *),
   void        *extra,
@@ -250,7 +249,7 @@ int issue_signal(
 
   {
   int            rc;
-  job           *pjob = *pjob_ptr;
+  svr_job       *pjob = *pjob_ptr;
   batch_request  newreq(PBS_BATCH_SignalJob);
   char           jobid[PBS_MAXSVRJOBID + 1];
 
@@ -261,8 +260,8 @@ int issue_signal(
     newreq.rq_extsz = strlen(extend);
     }
 
-  strcpy(jobid, pjob->ji_qs.ji_jobid);
-  strcpy(newreq.rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
+  strcpy(jobid, pjob->get_jobid());
+  strcpy(newreq.rq_ind.rq_signal.rq_jid, pjob->get_jobid());
 
   snprintf(newreq.rq_ind.rq_signal.rq_signame, sizeof(newreq.rq_ind.rq_signal.rq_signame),
     "%s", signame);
@@ -276,7 +275,7 @@ int issue_signal(
     {
     if (func != NULL)
       {
-      strcpy(jobid, pjob->ji_qs.ji_jobid);
+      strcpy(jobid, pjob->get_jobid());
 
       unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
 
@@ -299,18 +298,18 @@ int issue_signal(
     if (pjob != NULL)
       {
       /* Rerunning job, if not checkpointed, clear "resources_used and requeue job */
-      if ((pjob->ji_qs.ji_svrflags & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
+      if ((pjob->get_svrflags() & (JOB_SVFLG_CHECKPOINT_FILE | JOB_SVFLG_CHECKPOINT_MIGRATEABLE)) == 0)
         {
-        job_attr_def[JOB_ATR_resc_used].at_free(&pjob->ji_wattr[JOB_ATR_resc_used]);
+        pjob->free_attr(JOB_ATR_resc_used);
         }
-      else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
+      else if (pjob->get_svrflags() & JOB_SVFLG_CHECKPOINT_FILE)
         {
         /* non-migratable checkpoint (cray), leave there */
         /* and just requeue the job         */
 
         rel_resc(pjob);
 
-        pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
+        pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_HASRUN);
 
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
 
@@ -325,10 +324,10 @@ int issue_signal(
       rel_resc(pjob); /* free resc assigned to job */
 
       /* Now re-queue the job */
-      pjob->ji_modified = 1; /* force full job save */
+      pjob->set_modified(true); /* force full job save */
 
       pjob->ji_momhandle = -1;
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+      pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_StagedIn);
 
       svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
       unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
@@ -365,7 +364,7 @@ void post_signal_req(
 
   {
   char                 *jobid;
-  job                  *pjob;
+  svr_job              *pjob;
 
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -401,13 +400,13 @@ void post_signal_req(
 
       if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
         {
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend) == 0)
+        if ((pjob->get_svrflags() & JOB_SVFLG_Suspend) == 0)
           {
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+          pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_Suspend);
           
           set_statechar(pjob);
           
-          job_save(pjob, SAVEJOB_QUICK, 0);
+          svr_job_save(pjob);
           
           /* release resources allocated to suspended job - NORWAY */
           
@@ -416,17 +415,17 @@ void post_signal_req(
         }
       else if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_RESUME) == 0)
         {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend)
+        if (pjob->get_svrflags() & JOB_SVFLG_Suspend)
           {
           /* re-allocate assigned node to resumed job - NORWAY */
           
           set_old_nodes(pjob);
           
-          pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+          pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_Suspend);
           
           set_statechar(pjob);
           
-          job_save(pjob, SAVEJOB_QUICK, 0);
+          svr_job_save(pjob);
           }
         }
       }

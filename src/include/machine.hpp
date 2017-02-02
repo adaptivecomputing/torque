@@ -353,7 +353,9 @@ class Machine
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
-    int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname, bool legacy_vmem);
+#ifndef PBS_MOM
+    int  place_job(svr_job *pjob, string &cpu_string, string &mem_string, const char *hostname, bool legacy_vmem);
+#endif
     void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests

@@ -17,6 +17,6 @@ int set_rcost(pbs_attribute *attr_old, pbs_attribute *attr_new, enum batch_op op
 
 void free_rcost(pbs_attribute *pattr);
 
-long calc_job_cost(job *pjob);
+long calc_job_cost(svr_job *pjob);
 
 #endif /* _RESCCOST_H */

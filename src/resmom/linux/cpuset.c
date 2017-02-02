@@ -1256,11 +1256,11 @@ int add_obj_from_cpuset(
 
 long long get_memory_requested_in_kb(
 
-  job &pjob)
+  mom_job &pjob)
 
   {
   long long  mem_requested = 0;
-  resource  *mem = find_resc_entry(&pjob.ji_wattr[JOB_ATR_resource],
+  resource  *mem = find_resc_entry(pjob.get_attr(JOB_ATR_resource),
                                   find_resc_def(svr_resc_def, "mem", svr_resc_size));
 
   if ((mem != NULL) &&
@@ -1304,7 +1304,7 @@ long long get_memory_requested_in_kb(
 
 int create_job_cpuset(
 
-  job *pjob) /* I */
+  mom_job *pjob) /* I */
 
   {
   hwloc_bitmap_t  cpus = NULL;
@@ -1328,7 +1328,7 @@ int create_job_cpuset(
 #endif
 
   /* Delete cpuset, if it exists */
-  delete_cpuset(pjob->ji_qs.ji_jobid, false);
+  delete_cpuset(pjob->get_jobid(), false);
 
   /* Allocate bitmaps for cpus and mems */
   if (((cpus = hwloc_bitmap_alloc()) == NULL) ||
@@ -1359,8 +1359,7 @@ int create_job_cpuset(
       continue;
       }
 
-    if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false))
+    if (pjob->get_bool_attr(JOB_ATR_node_exclusive) == true)
       {
       /* If job's node_usage is singlejob, simply add all cpus/mems of this vnode */
       hwloc_bitmap_or(cpus, cpus, node_boards[numa_idx].cpuset);
@@ -1407,7 +1406,7 @@ int create_job_cpuset(
 
   /* Check if job requested procs_bitmap */
   prd   = find_resc_def(svr_resc_def,"procs_bitmap",svr_resc_size);
-  presc = find_resc_entry(&pjob->ji_wattr[JOB_ATR_resource],prd);
+  presc = find_resc_entry(pjob->get_attr(JOB_ATR_resource), prd);
 
   /* If so, walk through job's vnodes, add corresponding cpus */
   if ((presc != NULL) && (presc->rs_value.at_flags & ATR_VFLAG_SET) == TRUE)
@@ -1446,8 +1445,7 @@ int create_job_cpuset(
     remove_logical_processor_if_requested(&tcpus);
 
     // If job's node_usage is singlejob, simply add all cpus. Also, for logins, add all cpus
-    if (((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
-         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_bool != false)) ||
+    if ((pjob->get_bool_attr(JOB_ATR_node_exclusive)) ||
         (is_login_node == TRUE))
       {
       hwloc_bitmap_or(cpus, cpus, tcpus);
@@ -1455,8 +1453,8 @@ int create_job_cpuset(
       }
     else
       {
-      std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->ji_qs.ji_jobid);
-      std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->ji_qs.ji_jobid);
+      std::vector<int> *cpu_indices = internal_layout.get_cpu_indices(pjob->get_jobid());
+      std::vector<int> *mem_indices = internal_layout.get_memory_indices(pjob->get_jobid());
 
       for (unsigned int i = 0; i < cpu_indices->size(); i++)
         hwloc_bitmap_set(cpus, cpu_indices->at(i));
@@ -1476,7 +1474,7 @@ int create_job_cpuset(
     { 
     snprintf(log_buffer, sizeof(log_buffer),
       "creating cpuset for job %s: %d cpus (",
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       hwloc_bitmap_weight(cpus));
     
     hwloc_bitmap_list_snprintf(log_buffer + strlen(log_buffer),
@@ -1495,7 +1493,7 @@ int create_job_cpuset(
     log_ext(-1, __func__, log_buffer, LOG_INFO);
     }
 
-  if (create_cpuset(pjob->ji_qs.ji_jobid, cpus, mems, O_CREAT) == 0)
+  if (create_cpuset(pjob->get_jobid(), cpus, mems, O_CREAT) == 0)
     {
     /* Success */
     if (LOGLEVEL >= 6)
@@ -1552,8 +1550,8 @@ finish:
 
 int move_to_job_cpuset(
 
-  pid_t  pid,   /* I */
-  job   *pjob)  /* I */
+  pid_t    pid,   /* I */
+  mom_job *pjob)  /* I */
 
   {
   char          cpuset_path[MAXPATHLEN + 1];
@@ -1567,7 +1565,7 @@ int move_to_job_cpuset(
 
   /* Construct the name of the cpuset.
    * libcpuset does not want the root-cpuset path in it */
-  sprintf(cpuset_path, "%s/%s", TTORQUECPUSET_BASE, pjob->ji_qs.ji_jobid);
+  sprintf(cpuset_path, "%s/%s", TTORQUECPUSET_BASE, pjob->get_jobid());
 
   if (cpuset_migrate(pid, cpuset_path) == 0)
     {
@@ -1588,7 +1586,7 @@ int move_to_job_cpuset(
 #else
 
   /* Construct the name of the cpuset */
-  sprintf(cpuset_path, "%s/%s", TTORQUECPUSET_PATH, pjob->ji_qs.ji_jobid);
+  sprintf(cpuset_path, "%s/%s", TTORQUECPUSET_PATH, pjob->get_jobid());
 
   /* If pid is 0, set it to current pid */
   if (pid == 0)

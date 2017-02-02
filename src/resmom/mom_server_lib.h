@@ -59,7 +59,7 @@ int setgpumode(char *gpuid, int gpumode);
 
 int resetgpuecc(char *gpuid, int reset_perm, int reset_vol);
 
-int setup_gpus_for_job(job *pjob);
+int setup_gpus_for_job(mom_job *pjob);
 
 void generate_server_gpustatus_smi(std::vector<std::string>& gpu_status);
 
@@ -115,7 +115,7 @@ void shutdown_to_server(int ServerIndex);
 
 void mom_server_all_send_state(void);
 
-int mom_open_socket_to_jobs_server(job *pjob, const char *caller_id, void *(*message_handler)(void *));
+int mom_open_socket_to_jobs_server(mom_job *pjob, const char *caller_id, void *(*message_handler)(void *));
 
 void clear_down_mom_servers(void);
 

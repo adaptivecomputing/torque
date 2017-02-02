@@ -342,10 +342,10 @@ int terminate_trqauthd()
   {
   int rc = PBSE_NONE;
   int sock = -1;
-  char write_buf[MAX_LINE];
+  char write_buf[MAXLINE];
   char *read_buf = NULL;
   char log_buf[MAX_BUF];
-  long long read_buf_len = MAX_LINE;
+  long long read_buf_len = MAXLINE;
   long long ret_code;
   uid_t     myrealuid;
   pid_t     mypid;

@@ -524,7 +524,7 @@ int ping_trqauthd(
   int   local_socket;
   int   write_buf_len;
   char  *err_msg = NULL;
-  char  write_buf[MAX_LINE];
+  char  write_buf[MAXLINE];
   char  *read_buf = NULL;
   long long   ccode;
   long long   read_buf_len = 0;

@@ -3,10 +3,10 @@
 #include <stdio.h> /* fprintf */
 
 #include "batch_request.h" /* batch_request */
-#include "pbs_job.h" /* job */
+#include "pbs_job.h" /* svr_job */
 #include "work_task.h" /* work_task */
 
-const char *msg_messagejob = "Message request to job status %d";
+const char *msg_messagejob = "Message request to svr_job status %d";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 void reply_ack(struct batch_request *preq)
@@ -27,7 +27,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *chk_job_request(char *jobid, struct batch_request *preq)
+svr_job *chk_job_request(char *jobid, struct batch_request *preq)
   {
   fprintf(stderr, "The call to chk_job_request to be mocked!!\n");
   exit(1);
@@ -56,14 +56,14 @@ int get_batch_request_id(
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+int relay_to_mom(svr_job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
   return(0);
   }

@@ -9,7 +9,7 @@
 
 
 
-int status_job(job *pjob, struct batch_request *preq, svrattrl *pal, tlist_head *pstathd, int *bad);
+int status_job(svr_job *pjob, struct batch_request *preq, svrattrl *pal, tlist_head *pstathd, int *bad);
 
 int status_attrib(svrattrl *pal, attribute_def *padef, pbs_attribute *pattr, int limit, int priv, tlist_head *phead, int *bad, int IsOwner);
 

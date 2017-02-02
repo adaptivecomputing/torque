@@ -16,7 +16,7 @@ extern int LOGLEVEL;
 
 int site_alt_router(
     
-  job *jobp,
+  svr_job *jobp,
   pbs_queue *qp,
   long retry_time)
   {
@@ -25,7 +25,7 @@ int site_alt_router(
 
   if (LOGLEVEL >= 7)
     {
-    sprintf(log_buf, "%s", jobp->ji_qs.ji_jobid);
+    sprintf(log_buf, "%s", jobp->get_jobid());
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 

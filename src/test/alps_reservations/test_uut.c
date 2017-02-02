@@ -34,11 +34,11 @@ char *alps_rsv_outputs[] = {
     (char *)"<?xml version='1.0'?><BasilResponse protocol='1.0'> <ResponseData status='FAILURE' method='RESERVE'/></BasilResponse>",
     (char *)"tom"};
 
-host_req_list *parse_exec_hosts(char *exec_hosts,const char *mppnodes);
-void             get_reservation_command(host_req_list *, char *, char *, char *, char *, char *, int, int,int, std::string&, std::string&);
-int              parse_reservation_output(char *, char **);
+host_req_list *parse_exec_hosts(const char *exec_hosts,const char *mppnodes);
+void             get_reservation_command(host_req_list *, char *, const char *, char *, char *, const char *, int, int,int, std::string&, std::string&);
+int              parse_reservation_output(const char *, char **);
 int              execute_reservation(const char *, char **);
-int              confirm_reservation(char *, char *, long long, char *, char *,char *,int);
+int              confirm_reservation(const char *, char *, long long, char *, char *,char *,int);
 int              parse_confirmation_output(char *);
 void             adjust_for_depth(unsigned int &width, unsigned int &nppn, int depth);
 

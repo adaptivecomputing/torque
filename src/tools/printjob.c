@@ -100,46 +100,46 @@ void prt_job_struct(
   {
   printf("---------------------------------------------------\n");
   printf("jobid:\t%s\n",
-         pjob->ji_qs.ji_jobid);
+         pjob->get_jobid());
 
   printf("---------------------------------------------------\n");
-  printf("ji_qs version:\t%#010x\n", pjob->ji_qs.qs_version);
+  printf("ji_qs version:\t%#010x\n", pjob->get_qs_version());
   printf("state:\t\t0x%x\n",
-         pjob->ji_qs.ji_state);
+         pjob->get_state());
 
   printf("substate:\t0x%x (%d)\n",
-         pjob->ji_qs.ji_substate,
-         pjob->ji_qs.ji_substate);
+         pjob->get_substate(),
+         pjob->get_substate());
 
   printf("svrflgs:\t0x%x (%d)\n",
-         pjob->ji_qs.ji_svrflags,
-         pjob->ji_qs.ji_svrflags);
+         pjob->get_svrflags(),
+         pjob->get_svrflags());
 
   printf("ordering:\t%d\n",
-         pjob->ji_qs.ji_ordering);
+         pjob->get_ordering());
   printf("inter prior:\t%d\n",
-         pjob->ji_qs.ji_priority);
+         pjob->get_priority());
   printf("stime:\t\t%d\n",
-         (int)pjob->ji_qs.ji_stime);
+         (int)pjob->get_start_time());
   printf("file base:\t%s\n",
-         pjob->ji_qs.ji_fileprefix);
+         pjob->get_fileprefix());
   printf("queue:\t\t%s\n",
-         pjob->ji_qs.ji_queue);
+         pjob->get_queue());
   printf("destin:\t\t%s\n",
-         pjob->ji_qs.ji_destin);
+         pjob->get_destination());
 
-  switch (pjob->ji_qs.ji_un_type)
+  switch (pjob->get_un_type())
     {
 
     case JOB_UNION_TYPE_NEW:
 
       printf("union type new:\n");
       printf("\tsocket\t%d\n",
-             pjob->ji_qs.ji_un.ji_newt.ji_fromsock);
+             pjob->get_fromsock());
       printf("\taddr\t%lu\n",
-             pjob->ji_qs.ji_un.ji_newt.ji_fromaddr);
+             pjob->get_fromaddr());
       printf("\tscript\t%d\n",
-             pjob->ji_qs.ji_un.ji_newt.ji_scriptsz);
+             (int)pjob->get_scriptsz());
 
       break;
 
@@ -147,9 +147,9 @@ void prt_job_struct(
 
       printf("union type exec:\n");
       printf("\tmomaddr\t%lu\n",
-             pjob->ji_qs.ji_un.ji_exect.ji_momaddr);
+             pjob->get_ji_momaddr());
       printf("\texits\t%d\n",
-             pjob->ji_qs.ji_un.ji_exect.ji_exitstat);
+             pjob->get_mom_exitstat());
 
       break;
 
@@ -157,9 +157,9 @@ void prt_job_struct(
 
       printf("union type route:\n");
       printf("\tquetime\t%d\n",
-             (int)pjob->ji_qs.ji_un.ji_routet.ji_quetime);
+             (int)pjob->get_route_queue_time());
       printf("\tretry\t%d\n",
-             (int)pjob->ji_qs.ji_un.ji_routet.ji_rteretry);
+             (int)pjob->get_route_retry_time());
 
       break;
 
@@ -167,23 +167,23 @@ void prt_job_struct(
 
       printf("union type mom:\n");
       printf("\tsvraddr\t%lu\n",
-             pjob->ji_qs.ji_un.ji_momt.ji_svraddr);
+             pjob->get_svraddr());
       printf("\texitst\t%d\n",
-             pjob->ji_qs.ji_un.ji_momt.ji_exitstat);
+             pjob->get_mom_exitstat());
       printf("\tuid\t%ld\n",
-             (long)pjob->ji_qs.ji_un.ji_momt.ji_exuid);
+             (long)pjob->get_exuid());
       printf("\tgid\t%ld\n",
-             (long)pjob->ji_qs.ji_un.ji_momt.ji_exgid);
+             (long)pjob->get_exgid());
 
       break;
 
     default:
 
       printf("--bad union type %d\n",
-             pjob->ji_qs.ji_un_type);
+             pjob->get_un_type());
 
       break;
-    }  /* END switch (pjob->ji_qs.ji_un_type) */
+    }  /* END switch (pjob->get_un_type()) */
 
   return;
   }  /* END prt_job_struct() */
@@ -332,7 +332,7 @@ int read_tm_info(
 
 int main(
 
-  int argc,
+  int   argc,
   char *argv[])
 
   {
@@ -386,22 +386,22 @@ int main(
       exit(1);
       }
 
-    amt = read_ac_socket(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+    amt = read_ac_socket(fp, &xjob.get_jobfix(), sizeof(xjob.get_jobfix()));
 
-    if (amt != sizeof(xjob.ji_qs))
+    if (amt != sizeof(xjob.get_jobfix()))
       {
       fprintf(stderr, "Short read of %d bytes, file %s\n",
               amt,
               argv[f]);
       }
 
-    if (xjob.ji_qs.qs_version != PBS_QS_VERSION)
+    if (xjob.get_qs_version() != PBS_QS_VERSION)
       {
       printf("%s contains an old version of the ji_qs structure.\n"
              "  expecting version %#010x, read %#010x\n"
              "  Skipping prt_job_struct()\n"
              "  pbs_server may be able to upgrade job automatically\n",
-             argv[f], PBS_QS_VERSION, xjob.ji_qs.qs_version);
+             argv[f], PBS_QS_VERSION, xjob.get_qs_version());
       close(fp);
       continue;
       }
@@ -420,7 +420,7 @@ int main(
         /* NO-OP, reading */;
       }
 
-    if (xjob.ji_qs.ji_un_type == JOB_UNION_TYPE_MOM)
+    if (xjob.get_un_type() == JOB_UNION_TYPE_MOM)
       {
       printf("--TM info--\n");
 
@@ -435,28 +435,12 @@ int main(
   return(0);
   }    /* END main() */
 
+// Dummy stubs for the job class
+attribute_def job_attr_def[20];
+void free_arst(pbs_attribute *attr) {}
+void free_str(pbs_attribute *attr) {}
+void clear_attr(pbs_attribute *pattr, attribute_def *pdef) {}
 
-
-job::job() : ji_momstat(0), ji_modified(0), ji_momhandle(-1), ji_radix(0),
-             ji_has_delete_nanny(false), ji_qhdr(NULL), ji_lastdest(0),
-             ji_retryok(0), ji_rejectdest(), ji_is_array_template(false),
-             ji_have_nodes_request(false), ji_external_clone(NULL),
-             ji_cray_clone(NULL), ji_parent_job(NULL), ji_internal_id(-1),
-             ji_being_recycled(false), ji_last_reported_time(0), ji_mod_time(0),
-             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false)
-
-  {
-  memset(this->ji_arraystructid, 0, sizeof(ji_arraystructid));
-  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
-
-  this->ji_qs.qs_version = PBS_QS_VERSION;
-  } // END constructor()
-
-
-
-job::~job()
-  {
-  } // END destructor()
 
 /* END printjob.c */
 

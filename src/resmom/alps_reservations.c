@@ -212,7 +212,7 @@ host_req_list *sort_exec_hosts(
 
 host_req_list *parse_exec_hosts(
 
-  char *exec_hosts_param,
+  const char *exec_hosts_param,
   const char *mppnodes)
 
   {
@@ -414,7 +414,7 @@ int create_reserve_params_from_host_req_list(
 
 int create_reserve_params_from_multi_req_list(
 
-  char           *multi_req_list, /* I */
+  const char     *multi_req_list, /* I */
   char           *apbasil_protocol, /* I */
   int             nppcu,          /* I */
   int             mppdepth,       /* I */
@@ -424,7 +424,8 @@ int create_reserve_params_from_multi_req_list(
   {
   std::string     node_list = "";
   char           *tok;
-  char           *str = multi_req_list;
+  char           *mrq_work = strdup(multi_req_list);
+  char           *str = mrq_work;
   int             node_count;
   char           *comma;
   unsigned int    width;
@@ -451,6 +452,8 @@ int create_reserve_params_from_multi_req_list(
     save_current_reserve_param(command, apbasil_protocol, node_list, width, nppn, nppcu, mppdepth, cray_frequency);
     }
 
+  free(mrq_work);
+
   return(PBSE_NONE);
   } /* END create_reserve_params_from_multi_req_list() */
 
@@ -461,10 +464,10 @@ void get_reservation_command(
 
   host_req_list   *list,
   char            *username,
-  char            *jobid,
+  const char      *jobid,
   char            *apbasil_path,
   char            *apbasil_protocol,
-  char            *multi_req_list,
+  const char      *multi_req_list,
   int              use_nppn,
   int              nppcu,
   int              mppdepth,
@@ -755,7 +758,7 @@ int get_confirm_command(
 
 int confirm_reservation(
 
-  char       *jobid,
+  const char *jobid,
   char       *reservation_id,
   long long   pagg_id_value,
   char       *apbasil_path,
@@ -816,7 +819,6 @@ int confirm_reservation(
 
 
 
-
 /*
  * create_alps_reservation
  * 
@@ -830,9 +832,9 @@ int confirm_reservation(
 
 int create_alps_reservation(
 
-  char       *exec_hosts,
-  char       *username,
-  char       *jobid,
+  const char *exec_hosts,
+  const char *username,
+  const char *jobid,
   char       *apbasil_path,
   char       *apbasil_protocol,
   long long   pagg_id_value,

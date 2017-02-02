@@ -23,7 +23,7 @@ int array_259_upgrade = 0;
 bool place_hold;
 int  unlocked;
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int svr_job_save(svr_job *pjob)
   {
   fprintf(stderr, "The call to job_save needs to be mocked!!\n");
   exit(1);
@@ -66,7 +66,7 @@ void delete_link(struct list_link *old)
   old->ll_next->ll_prior = old->ll_prior;
   }
 
-char *get_variable(job *pjob, const char *variable)
+char *get_variable(svr_job *pjob, const char *variable)
   {
   fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
   exit(1);
@@ -90,7 +90,7 @@ int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkp
   exit(1);
   }
 
-job *next_job(all_jobs *aj, all_jobs_iterator *iter)
+svr_job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);
@@ -102,7 +102,7 @@ bool attempt_delete(void *j)
   exit(1);
   }
 
-void force_purge_work(job *pjob) {}
+void force_purge_work(svr_job *pjob) {}
 
 void append_link(tlist_head *head, list_link *new_link, void *pobj)
   {
@@ -121,13 +121,13 @@ int array_upgrade(job_array *pa, int fds, int version, int *old_version)
   exit(1);
   }
 
-int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
+int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue_mute)
   {
   fprintf(stderr, "The call to svr_setjobstate needs to be mocked!!\n");
   exit(1);
   }
 
-void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
+void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval)
   {
   fprintf(stderr, "The call to svr_evaljobstate needs to be mocked!!\n");
   exit(1);
@@ -223,23 +223,23 @@ int is_svr_attr_set(int attr_index)
   return(0);
   }
 
-job *svr_find_job(const char *name, int get_subjob)
+svr_job *svr_find_job(const char *name, int get_subjob)
   {
-  job *pjob = (job *)calloc(1, sizeof(job));
-  strcpy(pjob->ji_qs.ji_jobid, name);
+  svr_job *pjob = new svr_job();
+  pjob->set_jobid(name);
 
   if (place_hold)
-    pjob->ji_wattr[JOB_ATR_hold].at_val.at_long = HOLD_l;
+    pjob->set_long_attr(JOB_ATR_hold, HOLD_l);
 
   return(pjob);
   }
 
-int svr_job_purge(job *pjob, int leaveSpoolFiles)
+int svr_job_purge(svr_job *pjob, int leaveSpoolFiles)
   {
   return(0);
   }
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   unlocked++;
   return(0);
@@ -258,7 +258,7 @@ int unlock_ai_mutex(
 
 job_array *get_jobs_array(
 
-  job **pjob_ptr)
+  svr_job **pjob_ptr)
 
   {
   return(NULL);
@@ -289,7 +289,7 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
+int relay_to_mom(svr_job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
   return(0);
   }
@@ -311,8 +311,82 @@ int unlock_ss()
 
 std::string get_path_jobdata(const char *a, const char *b) {return ""; }
 
-job::job() {}
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+int job::get_attr_flags(int index) const
+  {
+  return(this->ji_wattr[index].at_flags);
+  }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+void job::unset_attr(int index)
+  {
+  this->ji_wattr[index].at_flags = 0;
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+const char *job::get_fileprefix() const
+  {
+  return(this->ji_qs.ji_fileprefix);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+int job::set_str_attr(int index, char *str)
+  {
+  this->ji_wattr[index].at_val.at_str = str;
+  return(PBSE_NONE);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+time_t job::get_start_time() const
+  {
+  return(this->ji_qs.ji_stime);
+  }
+
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
 job::~job() {}
+svr_job::svr_job() {}
+svr_job::~svr_job() {}
 
 int translate_range_string_to_vector(
 
@@ -371,7 +445,7 @@ int create_and_queue_array_subjob(
     
   job_array   *pa,
   mutex_mgr   &array_mgr,
-  job         *template_job,
+  svr_job         *template_job,
   mutex_mgr   &template_job_mgr,
   int          index,
   std::string &prev_job_id,

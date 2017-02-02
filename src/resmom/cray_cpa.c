@@ -27,13 +27,13 @@ unsigned int MaxListSize = CPA_MAX_PART;
 unsigned int MaxNID = CPA_MAX_NID;
 
 /* CPACreatePartition - Cray's cpalib support
- * gets the "size" resource from the job, converts that to a CPA Node Request,
+ * gets the "size" resource from the mom_job, converts that to a CPA Node Request,
  * creates a partition, assigns it to JobID string, stores the partid and
- * cookies in the job, and sets some env vars in vtable */
+ * cookies in the mom_job, and sets some env vars in vtable */
 
 int CPACreatePartition(
 
-  job              *pjob,   /* I */
+  mom_job          *pjob,   /* I */
   struct var_table *vtab)   /* I */
 
   {
@@ -68,9 +68,9 @@ int CPACreatePartition(
 
   cpa_nid_list_t       Wanted = NULL;
 
-  /* first, get the size, uid, jobid, and subnodelist from the job */
+  /* first, get the size, uid, jobid, and subnodelist from the mom_job */
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   prd = find_resc_def(svr_resc_def, "size", svr_resc_size);
   presc = find_resc_entry(pattr, prd);
 
@@ -79,7 +79,7 @@ int CPACreatePartition(
     Size = presc->rs_value.at_val.at_long;
     }
 
-  UID = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
+  UID = pjob->get_exuid();
 
   if ((Size <= 0) || (UID < 0))
     {
@@ -94,7 +94,7 @@ int CPACreatePartition(
     return(1);
     }
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
 
   prd = find_resc_def(svr_resc_def, "subnode_list", svr_resc_size);
   presc = find_resc_entry(pattr, prd);
@@ -104,12 +104,12 @@ int CPACreatePartition(
     HostList = presc->rs_value.at_val.at_string;
     }
 
-  if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_account))
     {
-    AcctID = pjob->ji_wattr[JOB_ATR_account].at_val.at_str;
+    AcctID = pjob->get_str_attr(JOB_ATR_account);
     }
 
-  JobID = pjob->ji_qs.ji_jobid;
+  JobID = pjob->get_jobid();
 
   PPN = 1;       /* NOTE: not really supported w/in CPA, always use 1 */
   Flags = 0;     /* NOTE: only allocate compute hosts, always use 0 */
@@ -185,7 +185,7 @@ int CPACreatePartition(
 
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         log_buffer);
 
       free(buf);
@@ -198,7 +198,7 @@ int CPACreatePartition(
 
   NodeReq = cpa_new_node_req(
 
-              Size, /* number of procs/nodes required by job */
+              Size, /* number of procs/nodes required by mom_job */
               PPN,
               Flags,
               Spec,
@@ -267,7 +267,7 @@ int CPACreatePartition(
     return(1);
     }
 
-  /* save the partition and cookies in the job and vtab */
+  /* save the partition and cookies in the mom_job and vtab */
 
   prd = find_resc_def(svr_resc_def, "cpapartition", svr_resc_size);
 
@@ -317,7 +317,7 @@ int CPACreatePartition(
 
   prd->rs_decode(&presc->rs_value, NULL, NULL, longbuf);
   presc->rs_value.at_flags |= ATR_VFLAG_SET;
-  /* admincookie doesn't go into job env */
+  /* admincookie doesn't go into mom_job env */
 
   prd = find_resc_def(svr_resc_def, "cpaalloccookie", svr_resc_size);
 
@@ -357,7 +357,7 @@ int CPACreatePartition(
 
 int CPADestroyPartition(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   char id[] = "CPADestroyPartition";
@@ -371,7 +371,7 @@ int CPADestroyPartition(
   resource_def          *prd;
   attribute             *pattr;
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
 
   prd = find_resc_def(svr_resc_def, "cpapartition", svr_resc_size);
 
@@ -410,7 +410,7 @@ int CPADestroyPartition(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buffer);
     }
 

@@ -7,7 +7,7 @@
 #include "batch_request.h"
 #include "attribute.h"
 
-int issue_signal(job **, const char *, void (*func)(batch_request *), void *extra, char *extend);
+int issue_signal(svr_job **, const char *, void (*func)(batch_request *), void *extra, char *extend);
 
 extern char scaff_buffer[];
 extern int  unlocked_job;
@@ -19,10 +19,9 @@ extern bool find_job;
 START_TEST(test_req_signaljob_relaying_msg)
   {
   struct batch_request request;
-  job myjob;
-  memset(&myjob, 0, sizeof(job));
-  myjob.ji_qs.ji_state = JOB_STATE_RUNNING;
-  myjob.ji_qs.ji_un.ji_exect.ji_momaddr = 167838724;
+  svr_job myjob;
+  myjob.set_state(JOB_STATE_RUNNING);
+  myjob.set_ji_momaddr(167838724);
   snprintf(request.rq_ind.rq_signal.rq_jid, PBS_MAXSVRJOBID, "%lu", (unsigned long)&myjob);
   memset(scaff_buffer, 0, 1024);
   req_signaljob(&request);
@@ -46,10 +45,9 @@ void init_attr_def()
 
 START_TEST(test_issue_signal)
   {
-  job pjob;
-  memset(&pjob, 0, sizeof(job));
-  strcpy(pjob.ji_qs.ji_jobid, "1.nalthis");
-  job *ptr = &pjob;
+  svr_job pjob;
+  pjob.set_jobid("1.nalthis");
+  svr_job *ptr = &pjob;
 
   found_job = 0;
   unlocked_job = 0;

@@ -417,7 +417,7 @@ extern void    reply_ack (struct batch_request *);
 extern void    req_reject (int code, int aux, struct batch_request *, const char *, const char *);
 extern void    reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
 extern void    reply_text (struct batch_request *, int code, const char *text);
-extern int     reply_jobid (struct batch_request *, char *, int);
+extern int     reply_jobid (batch_request *, const char *, int);
 extern void    reply_free (struct batch_reply *);
 extern int     authenticate_user (struct batch_request *, struct credential *, char **);
 extern void    free_br (struct batch_request *);
@@ -448,9 +448,11 @@ extern void  req_delete_reservation(struct batch_request *preq);
 extern void  req_change_power_state(struct batch_request *request);
 #endif
 
+#ifndef PBS_MOM
 #ifdef SERVER_LIMITS_H
-int relay_to_mom (job **, struct batch_request *, void (*func)(struct work_task *));
+int relay_to_mom (svr_job **, struct batch_request *, void (*func)(struct work_task *));
 #endif  /* SERVER_LIMITS_H */
+#endif 
 
 /* PBS Batch Request Decode/Encode routines */
 

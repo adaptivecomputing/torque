@@ -115,11 +115,11 @@ extern int   LOGLEVEL;
 extern char *msg_manager;
 extern char *msg_jobrerun;
 
-extern void rel_resc(job *);
+extern void rel_resc(svr_job *);
 
-extern job  *chk_job_request(char *, struct batch_request *);
+extern svr_job  *chk_job_request(char *, struct batch_request *);
 
-int finalize_rerunjob(struct batch_request *preq,job *pjob,int rc);
+int finalize_rerunjob(struct batch_request *preq,svr_job *pjob,int rc);
 
 void delay_and_send_sig_kill(batch_request *preq_sig);
 
@@ -141,7 +141,7 @@ void delay_and_send_sig_kill(
 
   {
   int                   delay = 0;
-  job                  *pjob;
+  svr_job              *pjob;
 
   pbs_queue            *pque;
 
@@ -182,7 +182,7 @@ void delay_and_send_sig_kill(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "MOM rejected signal during rerun");
 
       /* removed the resources assigned to job */
@@ -207,8 +207,8 @@ void delay_and_send_sig_kill(
     }
 
   // Apply the user delay first so it takes precedence.
-  if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
-    delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
+  if (pjob->is_attr_set(JOB_ATR_user_kill_delay))
+    delay = pjob->get_long_attr(JOB_ATR_user_kill_delay);
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
@@ -225,14 +225,14 @@ void delay_and_send_sig_kill(
   else
     {
     /* why is the pque null. Something went wrong */
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->ji_qs.ji_jobid);
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->get_jobid());
     req_reject(PBSE_UNKQUE, 0, preq_clt, NULL, log_buf);
     return;
     }
 
   pjob_mutex.unlock();
   reply_ack(preq_clt);
-  set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
+  set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->get_jobid()), FALSE);
   } // END delay_and_send_sig_kill()
 
 /*
@@ -248,7 +248,7 @@ void send_sig_kill(
   struct work_task *pwt)
 
   {
-  job                  *pjob;
+  svr_job              *pjob;
   char                 *job_id = (char *)pwt->wt_parm1;
   static const char    *rerun = "rerun";
 
@@ -270,10 +270,10 @@ void send_sig_kill(
 
   if (issue_signal(&pjob, "SIGKILL", post_rerun, extra, NULL) == 0)
     {
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
-    pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
+    pjob->set_substate(JOB_SUBSTATE_RERUN);
+    pjob->set_svrflags((pjob->get_svrflags() &
         ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
-          JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
+          JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN);
     }
 
   unlock_ji_mutex(pjob, __func__, "6", LOGLEVEL);
@@ -293,7 +293,7 @@ void post_rerun(
   {
   int   newstate;
   int   newsub;
-  job  *pjob;
+  svr_job  *pjob;
 
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -325,20 +325,14 @@ void post_rerun(
  */
 void requeue_job_without_contacting_mom(
 
-  job &pjob)
+  svr_job &pjob)
 
   {
-  if (pjob.ji_qs.ji_state == JOB_STATE_RUNNING)
+  if (pjob.get_state() == JOB_STATE_RUNNING)
     {
     rel_resc(&pjob);
     svr_setjobstate(&pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
-    pjob.ji_wattr[JOB_ATR_exec_host].at_flags &= ~ATR_VFLAG_SET;
-
-    if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-      {
-      free(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-      pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
-      }
+    pjob.free_attr(JOB_ATR_exec_host);
     }
   } /* END requeue_job_without_contacting_mom() */
 
@@ -356,7 +350,7 @@ int handle_requeue_all(
 
   {
   int                rc;
-  job               *pjob;
+  svr_job           *pjob;
   all_jobs_iterator *iter;
 
   if ((preq->rq_perm & (ATR_DFLAG_MGWR)) == 0)
@@ -401,7 +395,7 @@ int req_rerunjob(
 
   {
   int     rc = PBSE_NONE;
-  job    *pjob;
+  svr_job    *pjob;
 
   int     MgrRequired = TRUE;
   char    log_buf[LOCAL_LOG_BUF_SIZE];
@@ -426,22 +420,22 @@ int req_rerunjob(
 
   /* the job must be running or completed */
 
-  if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
+  if (pjob->get_state() >= JOB_STATE_EXITING)
     {
-    if (pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags & ATR_VFLAG_SET)
+    if (pjob->is_attr_set(JOB_ATR_checkpoint_name))
       {
       /* allow end-users to rerun checkpointed jobs */
 
       MgrRequired = FALSE;
       }
     }
-  else if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  else if (pjob->get_state() == JOB_STATE_RUNNING)
     {
     /* job is running */
 
     /* NO-OP */
     }
-  else if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+  else if (pjob->get_state() == JOB_STATE_QUEUED)
     {
     // If we are already queued, then there is nothing to do.
     rc = PBSE_NONE;
@@ -472,7 +466,7 @@ int req_rerunjob(
 
   /* the job must be rerunnable */
 
-  if (pjob->ji_wattr[JOB_ATR_rerunable].at_val.at_bool == false)
+  if (pjob->get_bool_attr(JOB_ATR_rerunable) == false)
     {
     /* NOTE:  should force override this constraint? maybe (???) */
     /*          no, the user is saying that the job will break, and
@@ -486,15 +480,15 @@ int req_rerunjob(
     return rc;
     }
 
-  if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+  if (pjob->get_state() == JOB_STATE_RUNNING)
     {
     /* ask MOM to kill off the job if it is running */
     int                 delay = 0;
     pbs_queue          *pque;
   
     // Apply the user delay first so it takes precedence.
-    if (pjob->ji_wattr[JOB_ATR_user_kill_delay].at_flags & ATR_VFLAG_SET)
-      delay = pjob->ji_wattr[JOB_ATR_user_kill_delay].at_val.at_long;
+    if (pjob->is_attr_set(JOB_ATR_user_kill_delay))
+      delay = pjob->get_long_attr(JOB_ATR_user_kill_delay);
 
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
@@ -511,12 +505,12 @@ int req_rerunjob(
     else
       {
       /* why is the pque null. Something went wrong */
-      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->ji_qs.ji_jobid);
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "jobid %s returned a null queue", pjob->get_jobid());
       req_reject(PBSE_UNKQUE, 0, preq, NULL, log_buf);
       return(PBSE_UNKQUE);
       }
     
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+    pjob->set_substate(JOB_SUBSTATE_RERUN);
 
     if (delay != 0)
       {
@@ -583,7 +577,7 @@ int req_rerunjob(
     }
   else
     { 
-    if (pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == HOLD_n)
+    if (pjob->get_long_attr(JOB_ATR_hold) == HOLD_n)
       {
       svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
       }
@@ -593,9 +587,8 @@ int req_rerunjob(
       }
 
     /* reset some job attributes */
-    
-    pjob->ji_wattr[JOB_ATR_comp_time].at_flags &= ~ATR_VFLAG_SET;
-    pjob->ji_wattr[JOB_ATR_reported].at_flags &= ~ATR_VFLAG_SET;
+    pjob->unset_attr(JOB_ATR_comp_time);
+    pjob->unset_attr(JOB_ATR_reported);
 
     set_statechar(pjob);
 
@@ -618,7 +611,7 @@ int req_rerunjob(
 int finalize_rerunjob(
     
   batch_request *preq,
-  job           *pjob,
+  svr_job       *pjob,
   int            rc)
 
   {
@@ -649,7 +642,7 @@ int finalize_rerunjob(
 
       /* requeue request successful */
 
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
+      pjob->set_substate(JOB_SUBSTATE_RERUN);
 
       break;
 
@@ -677,10 +670,10 @@ int finalize_rerunjob(
         char         *tmp;
 
         if ((cray_enabled == true) &&
-            (pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str != NULL))
-          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, &dummy);
+            (pjob->get_str_attr(JOB_ATR_login_node_id) != NULL))
+          tmp = parse_servername(pjob->get_str_attr(JOB_ATR_login_node_id), &dummy);
         else
-          tmp = parse_servername(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, &dummy);
+          tmp = parse_servername(pjob->get_str_attr(JOB_ATR_exec_host), &dummy);
 
         /* Cannot communicate with MOM, forcibly requeue job.
            This is a relatively disgusting thing to do */
@@ -693,7 +686,7 @@ int finalize_rerunjob(
         log_event(
           PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           log_buf);
 
         log_err(-1, __func__, log_buf);
@@ -706,10 +699,10 @@ int finalize_rerunjob(
 
         rel_resc(pjob); /* free resc assigned to job */
 
-        pjob->ji_modified = 1;    /* force full job save */
+        pjob->set_modified(true);    /* force full job save */
 
         pjob->ji_momhandle = -1;
-        pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
+        pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_StagedIn);
 
         svr_evaljobstate(*pjob, newstate, newsubst, 0);
         svr_setjobstate(pjob, newstate, newsubst, FALSE);
@@ -718,12 +711,12 @@ int finalize_rerunjob(
       break;
     }  /* END switch (rc) */
 
-  pjob->ji_qs.ji_svrflags = (pjob->ji_qs.ji_svrflags &
+  pjob->set_svrflags((pjob->get_svrflags() &
       ~(JOB_SVFLG_CHECKPOINT_FILE |JOB_SVFLG_CHECKPOINT_MIGRATEABLE |
-        JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN;
+        JOB_SVFLG_CHECKPOINT_COPIED)) | JOB_SVFLG_HASRUN);
 
   sprintf(log_buf, msg_manager, msg_jobrerun, preq->rq_user, preq->rq_host);
-  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+  log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
   reply_ack(preq);
 

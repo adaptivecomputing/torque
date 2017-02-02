@@ -6,7 +6,7 @@
 
 #include "scaffold_fail.h"
 
-job *next_job(all_jobs *aj, int *iter)
+svr_job *next_job(all_jobs *aj, int *iter)
   {
   fprintf(stderr, "The call to next_job needs to be mocked!!\n");
   exit(1);

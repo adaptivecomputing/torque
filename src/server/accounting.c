@@ -129,6 +129,8 @@ extern char     *path_acct;
 extern char     *acct_file;
 extern int       LOGLEVEL;
 
+int encode_resc_from_vector(std::vector<resource> &rescources, tlist_head *phead, const char *atname, int mode, int perm);
+
 
 
 #define EXTRA_PAD 1000 /* Used to bad the account buffer string */
@@ -142,12 +144,13 @@ extern int       LOGLEVEL;
 
 int acct_job(
 
-  job            *pjob, /* I */
+  svr_job            *pjob, /* I */
   std::string&    ds)   /* O */
 
   {
   int         resc_access_perm = READ_ONLY;
   char        local_buf[MAXLINE*4];
+  const char *tmp;
   pbs_queue  *pque;
 
   tlist_head  attrlist;
@@ -161,32 +164,32 @@ int acct_job(
   CLEAR_HEAD(attrlist);
 
   if (LOGLEVEL >= 10)
-    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, pjob->get_jobid());
 
   /* user */
 
 	/* acct_job is only called from account_jobstr and account_jobend. BufSize should be
 	 	 PBS_ACCT_MAX_RCD + 1 in size. */
   sprintf(local_buf, "user=%s ",
-    pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+    pjob->get_str_attr(JOB_ATR_euser));
   ds += local_buf;
 
   /* group */
   sprintf(local_buf, "group=%s ",
-    pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+    pjob->get_str_attr(JOB_ATR_egroup));
   ds += local_buf;
 
   /* account */
-  if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+  tmp = pjob->get_str_attr(JOB_ATR_account);
+  if (tmp != NULL)
     {
-    sprintf(local_buf, "account=%s ",
-      pjob->ji_wattr[JOB_ATR_account].at_val.at_str);
+    sprintf(local_buf, "account=%s ", tmp);
     ds += local_buf;
     }
 
   /* job name */
   sprintf(local_buf, "jobname=%s ",
-    pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
+    pjob->get_str_attr(JOB_ATR_jobname));
   ds += local_buf;
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
@@ -205,90 +208,91 @@ int acct_job(
 
   /* create time */
   sprintf(local_buf, "ctime=%ld ",
-    pjob->ji_wattr[JOB_ATR_ctime].at_val.at_long);
+    pjob->get_long_attr(JOB_ATR_ctime));
   ds += local_buf;
 
   /* queued time */
   sprintf(local_buf, "qtime=%ld ",
-    pjob->ji_wattr[JOB_ATR_qtime].at_val.at_long);
+    pjob->get_long_attr(JOB_ATR_qtime));
   ds += local_buf;
 
   /* eligible time, how long ready to run */
   sprintf(local_buf, "etime=%ld ",
-    pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
+    pjob->get_long_attr(JOB_ATR_etime));
   ds += local_buf;
 
   /* execution start time */
   sprintf(local_buf, "start=%ld ",
-    (long)pjob->ji_qs.ji_stime);
+    (long)pjob->get_start_time());
   ds += local_buf;
 
   /* user */
   sprintf(local_buf, "owner=%s ",
-    pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+    pjob->get_str_attr(JOB_ATR_job_owner));
   ds += local_buf;
  
   /* For large clusters strings can get pretty long. We need to see if there
      is a need to allocate a bigger buffer */
   /* execution host name */
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+  tmp = pjob->get_str_attr(JOB_ATR_exec_host);
+  if (tmp != NULL)
     {
     ds += "exec_host=";
-    ds += pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+    ds += tmp;
     ds += " ";
     }
 
   if ((cray_enabled == true) &&
-      (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
+      ((tmp = pjob->get_str_attr(JOB_ATR_login_node_id)) != NULL))
     {
     ds += "login_node=";
-    ds += pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str;
+    ds += tmp;
     ds += " ";
     }
 
   /* now encode the job's resource_list pbs_attribute */
-  job_attr_def[JOB_ATR_resource].at_encode(
-    &pjob->ji_wattr[JOB_ATR_resource],
-    &attrlist,
-    job_attr_def[JOB_ATR_resource].at_name,
-    NULL,
-    ATR_ENCODE_CLIENT,
-    resc_access_perm);
-
-  while ((pal = (svrattrl *)GET_NEXT(attrlist)) != NULL)
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resource);
+  if (resources != NULL)
     {
-		/* exec_host can use a lot of buffer space. Use a dynamic string */
-    ds += pal->al_name;
+    encode_resc_from_vector(*resources, &attrlist, job_attr_def[JOB_ATR_resource].at_name,
+                              ATR_ENCODE_CLIENT, resc_access_perm);
 
-    if (pal->al_resc != NULL)
+    while ((pal = (svrattrl *)GET_NEXT(attrlist)) != NULL)
       {
-      ds += ".";
-      ds += pal->al_resc;
-      }
+      /* exec_host can use a lot of buffer space. Use a dynamic string */
+      ds += pal->al_name;
 
-    ds += "=";
-    ds += pal->al_value;
-    ds += " ";
+      if (pal->al_resc != NULL)
+        {
+        ds += ".";
+        ds += pal->al_resc;
+        }
 
-    delete_link(&pal->al_link);
-    free(pal);
-    }  /* END while (pal != NULL) */
+      ds += "=";
+      ds += pal->al_value;
+      ds += " ";
 
-  if ((pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str != NULL) &&
-      ((pjob->ji_wattr[JOB_ATR_LRequest].at_flags & ATR_VFLAG_SET) != 0))
+      delete_link(&pal->al_link);
+      free(pal);
+      }  /* END while (pal != NULL) */
+    }
+
+  tmp = pjob->get_str_attr(JOB_ATR_LRequest);
+  if (tmp != NULL) 
     {
     ds += "Resource_Request_2.0=";
-    ds += pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str;
+    ds += tmp;
     ds += " ";
     }
 
 #ifdef ATTR_X_ACCT
 
   /* x attributes */
-  if (pjob->ji_wattr[JOB_SITE_ATR_x].at_flags & ATR_VFLAG_SET)
+  tmp = pjob->get_str_attr(JOB_SITE_ATR_x);
+  if (tmp != NULL)
     {
     sprintf(local_buf, "x=%s ",
-            pjob->ji_wattr[JOB_SITE_ATR_x].at_val.at_str);
+            tmp);
     ds += local_buf;
     }
 
@@ -298,9 +302,6 @@ int acct_job(
 
   return(PBSE_NONE);
   }  /* END acct_job() */
-
-
-
 
 
 
@@ -428,7 +429,7 @@ void acct_close(
 void account_record(
 
   int         acctype, /* accounting record type */
-  job        *pjob,
+  svr_job    *pjob,
   const char *text)  /* text to log, may be null */
 
   {
@@ -465,7 +466,7 @@ void account_record(
           ptm->tm_min,
           ptm->tm_sec,
           (char)acctype,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           text);
   pthread_mutex_unlock(acctfile_mutex);
 
@@ -483,7 +484,7 @@ void account_record(
 
 void account_jobstr(
 
-  job *pjob)
+  svr_job *pjob)
 
   {
   std::string ds = "";
@@ -510,14 +511,15 @@ void account_jobstr(
 
 void add_procs_and_nodes_used(
 
-  job         &pjob,
+  svr_job         &pjob,
   std::string &acct_data)
 
   {
-  if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+  const char *tmp = pjob.get_str_attr(JOB_ATR_exec_host);
+  if (tmp != NULL)
     {
     char        resc_buf[1024];
-    std::string nodelist(pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str);
+    std::string nodelist(tmp);
     std::size_t pos = 0;
     std::string last_host;
     int         hosts = 0;
@@ -571,7 +573,7 @@ void add_procs_and_nodes_used(
 
 void account_jobend(
 
-  job         *pjob,
+  svr_job         *pjob,
   std::string &used) /* job usage information, see req_jobobit() */
 
   {
@@ -589,15 +591,15 @@ void account_jobend(
 
   /* session */
   sprintf(local_buf, "session=%ld ",
-    pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long);
+    pjob->get_long_attr(JOB_ATR_session_id));
 
   ds += local_buf;
 
   /* Alternate id if present */
-  if (pjob->ji_wattr[JOB_ATR_altid].at_flags & ATR_VFLAG_SET)
+  const char *tmp = pjob->get_str_attr(JOB_ATR_altid);
+  if (tmp != NULL)
     {
-    sprintf(local_buf, "alt_id=%s ",
-      pjob->ji_wattr[JOB_ATR_altid].at_val.at_str);
+    sprintf(local_buf, "alt_id=%s ", tmp);
 
     ds += local_buf;
     }
@@ -606,14 +608,11 @@ void account_jobend(
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES
-  pattr = &pjob->ji_wattr[JOB_ATR_resc_used];
+  std::vector<resource> *resources = pjob->get_resc_attr(JOB_ATR_resc_used);
 
-  if ((pattr->at_flags & ATR_VFLAG_SET) &&
-      (pattr->at_val.at_ptr != NULL))
+  if (resources != NULL)
     {
     const char *pname;
-
-    std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
 
     /* find the walltime resource */
     for (size_t i = 0; i < resources->size(); i++)
@@ -628,9 +627,9 @@ void account_jobend(
         }
       }
     }
-  sprintf(local_buf, "end=%ld ", (long)pjob->ji_qs.ji_stime + walltime_val);
+  sprintf(local_buf, "end=%ld ", (long)pjob->get_start_time() + walltime_val);
 #else
-  sprintf(local_buf, "end=%ld ", (long)pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long);
+  sprintf(local_buf, "end=%ld ", pjob->get_long_attr(JOB_ATR_comp_time));
 #endif /* USESAVEDRESOURCES */
 
   ds += local_buf;

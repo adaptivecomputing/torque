@@ -620,7 +620,7 @@ int process_request(
         (request.rq_type == PBS_BATCH_ReleaseJob)) &&
         (strcmp(request.rq_user, PBS_DEFAULT_ADMIN) == 0))
       {
-      job *pjob;
+      svr_job *pjob;
       char *dptr;
       int skip = FALSE;
       char short_host[PBS_MAXHOSTNAME+1];
@@ -636,14 +636,14 @@ int process_request(
       if ((pjob = svr_find_job(request.rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
         {
         mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-        if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
+        if (pjob->get_state() == JOB_STATE_RUNNING)
           {
 
-          if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
-              ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
-               (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
-               (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "enabled") != NULL)) &&
-              (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, short_host) != NULL))
+          if ((pjob->is_attr_set(JOB_ATR_checkpoint)) &&
+              ((csv_find_string(pjob->get_str_attr(JOB_ATR_checkpoint), "s") != NULL) ||
+               (csv_find_string(pjob->get_str_attr(JOB_ATR_checkpoint), "c") != NULL) ||
+               (csv_find_string(pjob->get_str_attr(JOB_ATR_checkpoint), "enabled") != NULL)) &&
+              (strstr(pjob->get_str_attr(JOB_ATR_exec_host), short_host) != NULL))
             {
             request.rq_perm = svr_get_privilege(request.rq_user, server_host);
             skip = TRUE;
@@ -1039,7 +1039,7 @@ void close_quejob(
   int sfds)
 
   {
-  job *pjob;
+  svr_job *pjob;
 
   all_jobs_iterator *iter;
 
@@ -1051,19 +1051,19 @@ void close_quejob(
     {
     mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
 
-    if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
+    if (pjob->get_fromsock() == sfds)
       {
       // This job needs to be cleaned up, ignore remove job errors because it is the newjobs container
       remove_job(&newjobs, pjob);
 
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRANSICM)
+      if (pjob->get_substate() == JOB_SUBSTATE_TRANSICM)
         {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+        if (pjob->get_svrflags() & JOB_SVFLG_HERE)
           {
           // If the job was created here, attempt to queue it. If not, just
           // leave it hanging until the sending server contacts us again
-          pjob->ji_qs.ji_state = JOB_STATE_QUEUED;
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
+          pjob->set_state(JOB_STATE_QUEUED);
+          pjob->set_substate(JOB_SUBSTATE_QUEUED);
 
           int rc = svr_enquejob(pjob, FALSE, NULL, false, false);
           

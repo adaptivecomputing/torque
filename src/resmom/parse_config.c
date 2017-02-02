@@ -98,11 +98,12 @@
 #include "dis.h"
 #include "mom_func.h"
 #include "authorized_hosts.hpp"
+#include "utils.h"
 #include "csv.h"
 #include "json/json.h"
 
-void encode_used(job *pjob, int perm, Json::Value *, tlist_head *phead);
-void encode_flagged_attrs(job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
+void encode_used(mom_job *pjob, int perm, Json::Value *, tlist_head *phead);
+void encode_flagged_attrs(mom_job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
 
 /* these are the global variables we set or don't set as a result of the config file.
  * They should be externed in mom_config.h */
@@ -220,7 +221,6 @@ extern int            numa_index;
 int      mom_server_add(const char *name);
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count);
 extern void free_pwnam(struct passwd *pwdp, char *buf);
-struct passwd *getpwnam_ext(char **user_buffer, char *user_name);
 
 /* NOTE:  must adjust RM_NPARM in resmom.h to be larger than number of parameters
           specified below */
@@ -2874,7 +2874,7 @@ const char *reqmsg(
 
 void add_job_status_information(
 
-  job         &pjob,
+  mom_job         &pjob,
   Json::Value &job_info)
 
   {
@@ -2891,7 +2891,7 @@ const char *getjoblist(
 
   {
   Json::Value        job_list;
-  job               *pjob;
+  mom_job               *pjob;
 
 #ifdef NUMA_SUPPORT
   char  mom_check_name[PBS_MAXSERVERNAME];
@@ -2915,7 +2915,7 @@ const char *getjoblist(
   sprintf(mom_check_name + strlen(mom_check_name),"-%d/",numa_index);
 #endif
 
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
@@ -2923,7 +2923,7 @@ const char *getjoblist(
 
 #ifdef NUMA_SUPPORT
     /* skip over jobs that aren't on this node */
-    if (strstr(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,mom_check_name) == NULL)
+    if (strstr(pjob->get_str_attr(JOB_ATR_exec_host), mom_check_name) == NULL)
       continue;
 #endif
 
@@ -2934,7 +2934,7 @@ const char *getjoblist(
       add_job_status_information(*pjob, job_info);
       }
 
-    job_list[pjob->ji_qs.ji_jobid] = job_info;
+    job_list[pjob->get_jobid()] = job_info;
     }  /* END for (pjob) */
 
   return(strdup(job_list.toStyledString().c_str()));

@@ -35,26 +35,23 @@ void hold_job(
   void          *j)        /* I */
 
   {
-  long *hold_val;
   long old_hold;
 
   int newstate;
   int newsub;
 
   pbs_attribute *pattr;
-  job *pjob = (job *)j;
+  svr_job *pjob = (svr_job *)j;
 
   if (pjob == NULL)
     return;
 
-  hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
-  old_hold = *hold_val;
-  *hold_val |= temphold->at_val.at_long;
-  pjob->ji_wattr[JOB_ATR_hold].at_flags |= ATR_VFLAG_SET;
+  old_hold = pjob->get_long_attr(JOB_ATR_hold);
+  pjob->set_long_attr(JOB_ATR_hold, old_hold | temphold->at_val.at_long);
   
-  pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
+  pattr = pjob->get_attr(JOB_ATR_checkpoint);
   
-  if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
+  if ((pjob->get_state() == JOB_STATE_RUNNING) &&
       ((pattr->at_flags & ATR_VFLAG_SET) &&
        ((csv_find_string(pattr->at_val.at_str, "s") != NULL) ||
         (csv_find_string(pattr->at_val.at_str, "c") != NULL) ||
@@ -63,11 +60,11 @@ void hold_job(
     /* TODO */
     
     }
-  else if (old_hold != *hold_val)
+  else if (old_hold != pjob->get_long_attr(JOB_ATR_hold))
     {
     /* indicate attributes changed  */
     
-    pjob->ji_modified = 1;
+    pjob->set_modified(true);
 
     svr_evaljobstate(*pjob, newstate, newsub, 0);
 
@@ -90,7 +87,7 @@ int req_holdarray(
   pbs_attribute         temphold;
   char                  owner[PBS_MAXUSER + 1];
   job_array            *pa;
-  job                  *pjob;
+  svr_job              *pjob;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   pa = get_array(preq->rq_ind.rq_hold.rq_orig.rq_objname);

@@ -69,11 +69,11 @@ END_TEST
 START_TEST(test_place_all_execution_slots)
   {
   Machine m;
-  job     pjob;
+  svr_job     pjob;
   std::string cpu;
   std::string mem;
   complete_req cr;
-  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob.set_creq_attr(JOB_ATR_req_information, &cr);
 
   m.addSocket(2);
   sockets = 0;
@@ -89,11 +89,11 @@ END_TEST
 START_TEST(test_spread_place)
   {
   Machine m;
-  job     pjob;
+  svr_job     pjob;
   std::string cpu;
   std::string mem;
   complete_req cr;
-  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob.set_creq_attr(JOB_ATR_req_information, &cr);
 
   m.addSocket(2);
 
@@ -310,10 +310,10 @@ START_TEST(test_place_and_free_job)
   std::string mem;
   Machine m;
   m.addSocket(2);
-  job pjob;
+  svr_job pjob;
   complete_req cr;
-  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
-  strcpy(pjob.ji_qs.ji_jobid, "1.napali");
+  pjob.set_creq_attr(JOB_ATR_req_information, &cr);
+  pjob.set_jobid("1.napali");
 
   // Check how many tasks fit
   req r;

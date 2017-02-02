@@ -223,21 +223,21 @@ extern int open_demux(u_long addr, int    port);
 extern int timeval_subtract( struct timeval *result, struct timeval *x, struct timeval *y);
 int start_process(task *, char **, char **);
 #ifdef PENABLE_LINUX_CGROUPS
-int set_job_cgroup_memory_limits(job *pjob);
+int set_job_cgroup_memory_limits(mom_job *pjob);
 #endif
  
-int allocate_demux_sockets(job *pjob, int flag);
+int allocate_demux_sockets(mom_job *pjob, int flag);
 
-extern int TMomFinalizeJob1(job *, pjobexec_t *, int *);
+extern int TMomFinalizeJob1(mom_job *, pjobexec_t *, int *);
 extern int TMomFinalizeJob2(pjobexec_t *, int *);
 extern int TMomFinalizeJob3(pjobexec_t *, int, int, int *);
-extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
+extern int TMOMJobGetStartInfo(mom_job *, pjobexec_t **) ;
 extern int TMomCheckJobChild(pjobexec_t *, int, int *, int *);
-extern int job_nodes(job &);
-extern void sister_job_nodes( job *pjob, char *radix_hosts, char *radix_ports );
+extern int job_nodes(mom_job &);
+extern void sister_job_nodes( mom_job *pjob, char *radix_hosts, char *radix_ports );
 extern int tlist(tree *, char *, int);
-extern int TMakeTmpDir(job *, char *);
-extern int exec_job_on_ms(job *pjob);
+extern int TMakeTmpDir(mom_job *, char *);
+extern int exec_job_on_ms(mom_job *pjob);
 
 u_long gettime(resource *);
 u_long getsize(resource *);
@@ -245,32 +245,32 @@ u_long getsize(resource *);
 int is_ptask_corrupt( struct tcp_chan *chan); 
 
 #ifdef NVIDIA_GPUS
-int  setup_gpus_for_job(job *pjob);
+int  setup_gpus_for_job(mom_job *pjob);
 #endif  /* NVIDIA_GPUS */
 
 #ifdef PENABLE_LINUX26_CPUSETS
-int  use_cpusets(job *);
+int  use_cpusets(mom_job *);
 #ifndef NUMA_SUPPORT
-void create_cpuset_reservation_if_needed(job &pjob);
+void create_cpuset_reservation_if_needed(mom_job &pjob);
 #endif
 #endif /* PENABLE_LINUX26_CPUSETS */
 
 
 /* END external functions */
 
-int get_reply_stream(job *);
-int get_radix_reply_stream(job *);
-int run_prologue_scripts(job *pjob);
+int get_reply_stream(mom_job *);
+int get_radix_reply_stream(mom_job *);
+int run_prologue_scripts(mom_job *pjob);
 char *cat_dirs(char *root, char *base);
-char *get_local_script_path(job *pjob, char *base);
+char *get_local_script_path(mom_job *pjob, char *base);
 void *im_demux_thread(void *threadArg);
-void fork_demux(job *pjob);
+void fork_demux(mom_job *pjob);
 
 
 
 bool is_nodeid_on_this_host(
 
-  job        *pjob,
+  mom_job        *pjob,
   tm_node_id  nodeid)
 
   {
@@ -289,7 +289,7 @@ int task_save(
   task *ptask)  /* I */
 
   {
-  job  *pjob = NULL;
+  mom_job  *pjob = NULL;
   int   fds;
   int   i;
   int   TaskID = 0;
@@ -310,10 +310,10 @@ int task_save(
 
   if (multi_mom)
     snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
-     path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_TASKDIR_SUFFIX);
+     path_jobs, pjob->get_fileprefix(), pbs_rm_port, JOB_TASKDIR_SUFFIX);
   else
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-     path_jobs, pjob->ji_qs.ji_fileprefix, JOB_TASKDIR_SUFFIX);
+     path_jobs, pjob->get_fileprefix(), JOB_TASKDIR_SUFFIX);
 
   openflags = O_WRONLY | O_CREAT | O_Sync;
 
@@ -460,14 +460,14 @@ static int adoptSession(pid_t sid, pid_t pid, char *id, int command, char *cooki
 
 task *pbs_task_create(
 
-  job        *pjob,
+  mom_job    *pjob,
   tm_task_id  taskid)
 
   {
   pbs_attribute *at;
   resource_def  *rd;
   resource      *pres;
-  int            tasks = pjob->ji_tasks->size();
+  int            tasks = pjob->ji_tasks.size();
 
   /* DJH 27 feb 2002. Check that we aren't about to run into the */
   /* task IDs that we use to label adopted tasks. */
@@ -476,12 +476,12 @@ task *pbs_task_create(
       (pjob->ji_taskid >= TM_ADOPTED_TASKID_BASE))
     {
     sprintf(log_buffer, "Ran into reserved task IDs on job %s",
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
     log_err(-1, __func__, log_buffer);
     return(NULL);
     }
 
-  at = &pjob->ji_wattr[JOB_ATR_resource];
+  at = pjob->get_attr(JOB_ATR_resource);
 
   rd = find_resc_def(svr_resc_def, "taskspn", svr_resc_size);
 
@@ -508,7 +508,7 @@ task *pbs_task_create(
   /* initialize task */
   ptask->ti_register = TM_NULL_EVENT;
 
-  strcpy(ptask->ti_qs.ti_parentjobid, pjob->ji_qs.ji_jobid);
+  strcpy(ptask->ti_qs.ti_parentjobid, pjob->get_jobid());
 
   ptask->ti_qs.ti_parentnode = TM_ERROR_NODE;
   ptask->ti_qs.ti_parenttask = TM_NULL_TASK;
@@ -519,7 +519,7 @@ task *pbs_task_create(
   ptask->ti_qs.ti_status = TI_STATE_EMBRYO;
 
   memset(ptask->ti_qs.ti_u.ti_hold, 0, sizeof(ptask->ti_qs.ti_u.ti_hold));
-  pjob->ji_tasks->push_back(ptask);
+  pjob->ji_tasks.push_back(ptask);
 
   /* SUCCESS */
 
@@ -537,15 +537,15 @@ task *pbs_task_create(
 
 task *task_find(
 
-  job        *pjob,
+  mom_job    *pjob,
   tm_task_id  taskid)
 
   {
   task *ptask_ptr = NULL;
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
     if (ptask->ti_qs.ti_task == taskid)
       {
       ptask_ptr = ptask;
@@ -570,15 +570,15 @@ task *task_find(
 
 task *find_task_by_pid(
 
-  job *pjob,
+  mom_job *pjob,
   int  pid)
 
   {
   task *ptask_ptr = NULL;
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
     if (ptask->ti_qs.ti_sid == pid)
       {
       ptask_ptr = ptask;
@@ -593,7 +593,7 @@ task *find_task_by_pid(
 
 task *task_check(
 
-  job        *pjob,
+  mom_job        *pjob,
   tm_task_id  taskid)
 
   {
@@ -610,7 +610,7 @@ task *task_check(
   if (ptask == NULL)
     {
     sprintf(log_buffer, "%s requesting task %ld not found",
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             (long)taskid);
 
     log_err(-1, __func__, log_buffer);
@@ -624,7 +624,7 @@ task *task_check(
     sprintf(log_buffer, "cannot tm_reply to task %ld",
             (long)taskid);
 
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
     return(NULL);
     }
@@ -638,14 +638,14 @@ task *task_check(
 
 /*
 ** task_recov()
-** Recover (read in) the tasks from their save files for a job.
+** Recover (read in) the tasks from their save files for a mom_job.
 **
 ** This function is only needed upon MOM start up.
 */
 
 int task_recov(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   int   fds;
@@ -658,12 +658,12 @@ int task_recov(
   if (multi_mom)
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%d%s",
-      path_jobs, pjob->ji_qs.ji_fileprefix, pbs_rm_port, JOB_TASKDIR_SUFFIX);
+      path_jobs, pjob->get_fileprefix(), pbs_rm_port, JOB_TASKDIR_SUFFIX);
     }
   else
     {
     snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      path_jobs, pjob->ji_qs.ji_fileprefix, JOB_TASKDIR_SUFFIX);
+      path_jobs, pjob->get_fileprefix(), JOB_TASKDIR_SUFFIX);
     }
 
 #if defined(HAVE_OPEN64) && defined(LARGEFILE_WORKS)
@@ -769,7 +769,7 @@ int tm_reply(
 int im_compose(
 
   struct tcp_chan *chan,
-  char            *jobid,
+  const char      *jobid,
   const char      *cookie,
   int              command,
   tm_event_t       event,
@@ -823,22 +823,22 @@ int im_compose(
 
 
 /**
- * Send a message (command = com) to all the other MOMs in the job -> pjob.
+ * Send a message (command = com) to all the other MOMs in the mom_job -> pjob.
  *
- * @see scan_for_exiting() - parent - report to sisters upon job completion
- * @see examine_all_polled_jobs() - parent - poll job status info
- * @see exec_bail() - parent - abort parallel job
+ * @see scan_for_exiting() - parent - report to sisters upon mom_job completion
+ * @see examine_all_polled_jobs() - parent - poll mom_job status info
+ * @see exec_bail() - parent - abort parallel mom_job
  *
- * @see start_exec() - peer - opens connections to sisters at parallel job start
+ * @see start_exec() - peer - opens connections to sisters at parallel mom_job start
  *
  * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
  */
 
 int send_sisters(
 
-  job           *pjob,         /* I */
+  mom_job       *pjob,         /* I */
   int            com,          /* I (command to send to all sisters) */
-  int            using_radix,  /* I (TRUE if this job has a job radix, false otherwise */
+  int            using_radix,  /* I (TRUE if this mom_job has a mom_job radix, false otherwise */
   std::set<int> *sisters_contacted)
 
   {
@@ -850,7 +850,7 @@ int send_sisters(
   int              job_radix;
   int              loop_limit;
   eventent        *ep;
-  char            *cookie;
+  const char      *cookie;
   resend_momcomm  *mc;
 
   // These moms have no sisters
@@ -864,23 +864,23 @@ int send_sisters(
     {
     sprintf(log_buffer, "sending command %s for job %s (%d)",
             PMOMCommand[com],
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             com);
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
-  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  if (pjob->is_attr_set(JOB_ATR_Cookie) == false)
     {
     /* cookie not set - return FAILURE */
     snprintf(log_buffer, sizeof(log_buffer),
       "cookie not set in send_sisters for job %s",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     return(0);
     }
 
-  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->get_str_attr(JOB_ATR_Cookie);
 
   num = 0;
 
@@ -888,7 +888,7 @@ int send_sisters(
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "sending ABORT to sisters for job %s",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
@@ -921,7 +921,7 @@ int send_sisters(
       }
 
     if ((using_radix == TRUE) &&
-        (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM))
+        (pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM))
       {
       np = &pjob->ji_sisters[i];
 
@@ -953,7 +953,7 @@ int send_sisters(
         (np->hn_host != NULL) ? np->hn_host : "NULL",
         np->hn_sister);
 
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
 
     ep = event_alloc(com, np, TM_NULL_EVENT, TM_NULL_TASK);
@@ -963,7 +963,7 @@ int send_sisters(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "cannot alloc event object in send_sisters");
 
       continue;
@@ -976,7 +976,7 @@ int send_sisters(
       if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+        mc->mc_struct = create_compose_reply_info(pjob->get_jobid(),
                                                   cookie,
                                                   np,
                                                   com,
@@ -995,7 +995,7 @@ int send_sisters(
         i,
         (np->hn_host != NULL) ? np->hn_host : "NULL");
       
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
       
       continue;
       }
@@ -1003,12 +1003,12 @@ int send_sisters(
     if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
       {
       }
-    else if ((ret = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,com,ep->ee_event,TM_NULL_TASK)) == DIS_SUCCESS)
+    else if ((ret = im_compose(local_chan,pjob->get_jobid(),cookie,com,ep->ee_event,TM_NULL_TASK)) == DIS_SUCCESS)
       {
       if ((ret = DIS_tcp_wflush(local_chan)) != DIS_SUCCESS)
         {
         sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
-        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+        log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(),log_buffer);
         }
       }
 
@@ -1022,7 +1022,7 @@ int send_sisters(
       if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+        mc->mc_struct = create_compose_reply_info(pjob->get_jobid(),
                                                   cookie,
                                                   np,
                                                   com,
@@ -1040,7 +1040,7 @@ int send_sisters(
         "%s:  cannot compose message to sister #%d (%s) - %d",
         __func__, i, (np->hn_host != NULL) ? np->hn_host : "NULL", ret);
 
-      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
       np->hn_sister = SISTER_EOF;
       }
@@ -1056,27 +1056,27 @@ int send_sisters(
 
 
 /**
- * Send a message (command = com) to Mother Superior in the job -> pjob.
+ * Send a message (command = com) to Mother Superior in the mom_job -> pjob.
  *
- * @see examine_all_polled_jobs() - parent - poll job status info
- * @see exec_bail() - parent - abort parallel job
+ * @see examine_all_polled_jobs() - parent - poll mom_job status info
+ * @see exec_bail() - parent - abort parallel mom_job
  *
- * @see start_exec() - peer - opens connections to sisters at parallel job start
+ * @see start_exec() - peer - opens connections to sisters at parallel mom_job start
  *
  * @return 0 on FAILURE or number of sister mom's successfully contacted on SUCCESS
  */
 
 int send_ms(
 
-  job *pjob,         /* I */
-  int  com)          /* I (command to send to all sisters) */
+  mom_job *pjob,         /* I */
+  int      com)          /* I (command to send to all sisters) */
 
   {
   int              num;
   int              ret = PBSE_NONE;
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char            *cookie;
+  const char      *cookie;
   resend_momcomm  *mc;
   hnodent        *np;
 
@@ -1084,23 +1084,23 @@ int send_ms(
     {
     sprintf(log_buffer, "sending command %s for job %s (%d)",
             PMOMCommand[com],
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             com);
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
 
-  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  cookie = pjob->get_str_attr(JOB_ATR_Cookie);
+
+  if (cookie == NULL)
     {
     /* cookie not set - return FAILURE */
     snprintf(log_buffer, sizeof(log_buffer),
       "cookie not set in send_ms for job %s",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     return(0);
     }
-
-  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
 
   num = 0;
 
@@ -1108,7 +1108,7 @@ int send_ms(
     {
     snprintf(log_buffer, sizeof(log_buffer),
       "sending ABORT to mother superior for job %s",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_REQUEST, __func__, log_buffer);
     }
@@ -1126,7 +1126,7 @@ int send_ms(
       (np->hn_host != NULL) ? np->hn_host : "NULL",
       np->hn_sister);
 
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
     return(0);
     }
@@ -1138,7 +1138,7 @@ int send_ms(
     if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
       {
       mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+      mc->mc_struct = create_compose_reply_info(pjob->get_jobid(),
                                                 cookie,
                                                 np,
                                                 com,
@@ -1156,7 +1156,7 @@ int send_ms(
       __func__,
       (np->hn_host != NULL) ? np->hn_host : "NULL");
 
-    log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
 
     return(0);
     }
@@ -1164,12 +1164,12 @@ int send_ms(
   if ((local_chan = DIS_tcp_setup(local_socket)) == NULL)
     {
     }
-  else if ((ret = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,com,0,TM_NULL_TASK)) == DIS_SUCCESS)
+  else if ((ret = im_compose(local_chan,pjob->get_jobid(),cookie,com,0,TM_NULL_TASK)) == DIS_SUCCESS)
     {
     if ((ret = DIS_tcp_wflush(local_chan)) != DIS_SUCCESS)
       {
       sprintf(log_buffer, "%s:DIS_tcp_wflush failed", __func__);
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(),log_buffer);
       }
     }
   close(local_socket);
@@ -1181,7 +1181,7 @@ int send_ms(
     if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
       {
       mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+      mc->mc_struct = create_compose_reply_info(pjob->get_jobid(),
                                                 cookie,
                                                 np,
                                                 com,
@@ -1199,7 +1199,7 @@ int send_ms(
       "%s:  cannot compose message to sister (%s) - %d",
       __func__,(np->hn_host != NULL) ? np->hn_host : "NULL", ret);
 
-    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
     np->hn_sister = SISTER_EOF;
     }
@@ -1214,12 +1214,12 @@ int send_ms(
 
 /**
  * Check to see which node a stream is coming from.  Return a NULL
- * if it is not assigned to this job.  Return a nodeent pointer if
+ * if it is not assigned to this mom_job.  Return a nodeent pointer if
  * it is.
  */
 hnodent *find_node(
 
-  job         *pjob,
+  mom_job     *pjob,
   int          stream,
   tm_node_id   nodeid)
 
@@ -1283,23 +1283,21 @@ hnodent *find_node(
 
 
 /**
- * An error has been encountered starting a job.
+ * An error has been encountered starting a mom_job.
  *
  * Format a message to all the sisterhood to get rid of their copy
- * of the job.  There should be no processes running at this point.
+ * of the mom_job.  There should be no processes running at this point.
 */
 
 void job_start_error(
 
-  job   *pjob,     /* I */
-  int    code,     /* I */
-  char  *nodename) /* I */
+  mom_job *pjob,     /* I */
+  int      code,     /* I */
+  char    *nodename) /* I */
 
   {
   static char    abortjobid[PBS_MAXSVRJOBID + 1];
   static int     abortcount = -1;
-
-  pbs_attribute *pattr;
 
   char           tmpLine[1024];
 
@@ -1312,9 +1310,9 @@ void job_start_error(
     nodename,
     __func__);
 
-  log_err(code, pjob->ji_qs.ji_jobid, log_buffer);
+  log_err(code, pjob->get_jobid(), log_buffer);
 
-  if (!strcmp(abortjobid, pjob->ji_qs.ji_jobid))
+  if (!strcmp(abortjobid, pjob->get_jobid()))
     {
     if (abortcount >= 16)
       {
@@ -1324,8 +1322,8 @@ void job_start_error(
         __func__,
         nodename);
 
-      log_err(code, pjob->ji_qs.ji_jobid, log_buffer);
-      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_err(code, pjob->get_jobid(), log_buffer);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
       exec_bail(pjob, JOB_EXEC_RETRY);
 
@@ -1336,39 +1334,29 @@ void job_start_error(
     }
   else
     {
-    snprintf(abortjobid, sizeof(abortjobid), "%s", pjob->ji_qs.ji_jobid);
+    snprintf(abortjobid, sizeof(abortjobid), "%s", pjob->get_jobid());
 
     abortcount = 1;
     }
 
-  /* annotate job with failed node info */
+  /* annotate mom_job with failed node info */
 
   snprintf(tmpLine, sizeof(tmpLine), "REJHOST=%s",
     nodename);
 
-  pattr = &pjob->ji_wattr[JOB_ATR_sched_hint];
+  pjob->set_str_attr(JOB_ATR_sched_hint, tmpLine);
 
-  job_attr_def[JOB_ATR_sched_hint].at_free(pattr);
-
-  job_attr_def[JOB_ATR_sched_hint].at_decode(
-    pattr,
-    NULL,
-    NULL,
-    tmpLine,
-    0);
-
-  pjob->ji_wattr[JOB_ATR_errpath].at_flags =
-    (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+  pjob->set_attr_flag(JOB_ATR_errpath, ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
 
   /* NOTE:  is there a way to force the updated 'sched_hint' info to pbs_server
             before the obit to avoid a race condition? */
 
-  /*        Perhaps, pbs_mom could register job and perform 'exec_bail' after
-            next job status query from pbs_server? */
+  /*        Perhaps, pbs_mom could register mom_job and perform 'exec_bail' after
+            next mom_job status query from pbs_server? */
 
   /* NOTE:  exec_bail() will issue 'send_sisters(pjob,IM_ABORT_JOB);' */
 
-  snprintf(log_buffer, sizeof(log_buffer), "job %s failing on startup", pjob->ji_qs.ji_jobid);
+  snprintf(log_buffer, sizeof(log_buffer), "job %s failing on startup", pjob->get_jobid());
   log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
   exec_bail(pjob, JOB_EXEC_RETRY);
@@ -1404,13 +1392,13 @@ void arrayfree(
  * Deal with events hooked to a node where a stream has gone
  * south or we are going away.
  *
- * @see term_job() - parent - terminate job
+ * @see term_job() - parent - terminate mom_job
  * @see im_eof() - parent - inter-MOM end of file detected
  */
 
 void node_bailout(
 
-  job     *pjob,  /* I */
+  mom_job *pjob,  /* I */
   hnodent *np)    /* I */
 
   {
@@ -1431,13 +1419,13 @@ void node_bailout(
         /*
          * I'm MS and a node has failed to respond to the
   		   * call.  Maybe in the future the user can specify
-	  	   * the job can start with a range of nodes so
+	  	   * the mom_job can start with a range of nodes so
 		     * one (or more) missing can be tolerated.  Not
 		     * for now.
   		   */
 
         sprintf(log_buffer, "%s join_job failed from node %s %d - recovery attempted)",
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           np->hn_host,
           np->hn_node);
 
@@ -1453,7 +1441,7 @@ void node_bailout(
       case IM_KILL_JOB:
 
         /*
-        ** The job is already in the process of being killed
+        ** The mom_job is already in the process of being killed
         ** but somebody has dropped off the face of the
         ** earth.  Just check to see if everybody has
         ** been heard from in some form or another and
@@ -1462,7 +1450,7 @@ void node_bailout(
 
         sprintf(log_buffer, "%s: received KILL/ABORT request for job %s from node %s",
           __func__,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           np->hn_host);
 
         log_err(-1, __func__, log_buffer);
@@ -1477,13 +1465,13 @@ void node_bailout(
           {
           /* all dead */
 
-          pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+          pjob->set_substate(JOB_SUBSTATE_EXITING);
 
           if (multi_mom)
             {
             momport = pbs_rm_port;
             }
-          job_save(pjob, SAVEJOB_QUICK, momport);
+          mom_job_save(pjob, momport);
 
           exiting_tasks = 1;
           }
@@ -1512,9 +1500,9 @@ void node_bailout(
             "%s: REQUEST %d %s\n",
             __func__,
             ep->ee_command,
-            pjob->ji_qs.ji_jobid);
+            pjob->get_jobid());
 
-          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+          log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
           }
 
         ptask = task_check(pjob, ep->ee_taskid);
@@ -1533,14 +1521,14 @@ void node_bailout(
       case IM_POLL_JOB:
 
         /*
-        ** I must be Mother Superior for the job and
+        ** I must be Mother Superior for the mom_job and
         ** this is an error reply to a poll request.
         */
 
 #ifdef __TRR  /* roadrunner */
 
         sprintf(log_buffer, "%s POLL failed from node %s %d - recovery attempted - job will not be killed)",
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           np->hn_host,
           np->hn_node);
 
@@ -1550,19 +1538,18 @@ void node_bailout(
 
         /* we should be more patient - how do we recover this connection? (NYI) */
 
-        /* if job pbs_attribute fault_tolerant is not set or set to false then kill the job */
-        if ((pjob->ji_wattr[JOB_ATR_fault_tolerant].at_flags & ATR_VFLAG_SET) &&
-            pjob->ji_wattr[JOB_ATR_fault_tolerant].at_val.at_bool)
+        /* if job pbs_attribute fault_tolerant is not set or set to false then kill the mom_job */
+        if (pjob->get_bool_attr(JOB_ATR_fault_tolerant))
           {
           sprintf(log_buffer, "%s POLL failed from node %s %d - job is fault tolerant - job will not be killed)",
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             np->hn_host,
             np->hn_node);
           }
         else
           {
           sprintf(log_buffer, "%s POLL failed from node %s %d - recovery not attempted - job will be killed)",
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             np->hn_host,
             np->hn_node);
 
@@ -1623,12 +1610,12 @@ void node_bailout(
 
 
 
-/** terminate job - terminate all node events of all types contained by nodes
-   in job nodelist */
+/** terminate mom_job - terminate all node events of all types contained by nodes
+   in mom_job nodelist */
 
 void term_job(
 
-  job *pjob) /* I */
+  mom_job *pjob) /* I */
 
   {
   hnodent *np;
@@ -1658,7 +1645,7 @@ void term_job(
 bool connection_from_ms(
 
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *source_addr)
 
   {
@@ -1674,7 +1661,7 @@ bool connection_from_ms(
       (ntohs(addr->sin_port) >= IPPORT_RESERVED))
     {
     sprintf(log_buffer, "non-privileged connection from %s, job id %s",
-            netaddr(addr), pjob->ji_qs.ji_jobid);
+            netaddr(addr), pjob->get_jobid());
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     close(chan->sock);
@@ -1715,7 +1702,7 @@ bool connection_from_ms(
 
 u_long resc_used(
 
-  job    *pjob,
+  mom_job    *pjob,
   const char  *name,
   u_long(*func)(resource *))
 
@@ -1725,7 +1712,7 @@ u_long resc_used(
   resource      *pres;
   u_long         val = 0L;
 
-  at = &pjob->ji_wattr[JOB_ATR_resc_used];
+  at = pjob->get_attr(JOB_ATR_resc_used);
 
   if (at == NULL)
     {
@@ -1820,12 +1807,12 @@ void task_saveinfo(
 
 
 /*
-** Generate a resource string for a job.
+** Generate a resource string for a mom_job.
 */
 
 char *resc_string(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   pbs_attribute  *at;
@@ -1863,7 +1850,7 @@ char *resc_string(
 
   res_str[used++] = ':';
 
-  at = &pjob->ji_wattr[JOB_ATR_resource];
+  at = pjob->get_attr(JOB_ATR_resource);
 
   if (at->at_type != ATR_TYPE_RESC)
     {
@@ -1932,11 +1919,11 @@ char *resc_string(
 
 
 /* create the list of sisters to contact for this radix group
- * and send the job along
+ * and send the mom_job along
  */
 int contact_sisters(
 
-  job        *pjob,
+  mom_job    *pjob,
   tm_event_t  event,
   int         sister_count,
   char       *radix_hosts,
@@ -1969,7 +1956,7 @@ int contact_sisters(
 
   CLEAR_HEAD(phead);
 
-  pattr = pjob->ji_wattr;
+  pattr = pjob->get_attr(0);
 
   /* prepare the attributes to go out on the wire. at_encode does this */
   for (i = 0;i < JOB_ATR_LAST;i++)
@@ -1987,11 +1974,11 @@ int contact_sisters(
 
   /* NYI: this code performs unnecessary steps. Fix later */
 
-  /* We have to put this job into the proper queues. These queues are filled
+  /* We have to put this mom_job into the proper queues. These queues are filled
 	 in req_quejob and req_commit on Mother Superior for non-job_radix jobs */
   alljobs_list.push_back(pjob);
 
-  /* initialize the nodes for every sister in this job
+  /* initialize the nodes for every sister in this mom_job
      only the first mom_radix+1 entries will be used
      for communication */
   sister_job_nodes(pjob, radix_hosts, radix_ports);
@@ -2081,8 +2068,8 @@ void send_im_error(
 
   int         err,
   int         reply,
-  job        *pjob,
-  char       *cookie,
+  mom_job    *pjob,
+  const char *cookie,
   tm_event_t  event,
   tm_task_id  fromtask)
 
@@ -2107,7 +2094,7 @@ void send_im_error(
       else if ((local_chan = DIS_tcp_setup(socket)) == NULL)
         {
         }
-      else if ((rc = im_compose(local_chan,pjob->ji_qs.ji_jobid,cookie,IM_ERROR,event,fromtask)) != DIS_SUCCESS)
+      else if ((rc = im_compose(local_chan,pjob->get_jobid(),cookie,IM_ERROR,event,fromtask)) != DIS_SUCCESS)
         {
         }
       else if ((rc = diswsi(local_chan,err)) != DIS_SUCCESS)
@@ -2136,7 +2123,7 @@ void send_im_error(
       if ((mc = (resend_momcomm *)calloc(1, sizeof(resend_momcomm))) != NULL)
         {
         mc->mc_type = COMPOSE_REPLY;
-        mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
+        mc->mc_struct = create_compose_reply_info(pjob->get_jobid(), 
             cookie,
             pjob->ji_hosts,
             IM_ERROR,
@@ -2153,7 +2140,7 @@ void send_im_error(
       snprintf(log_buffer, sizeof(log_buffer),
         "Could not send error on event %d for job %s",
         event,
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       
       log_err(-1, __func__, log_buffer);
       }
@@ -2162,7 +2149,7 @@ void send_im_error(
     {
     sprintf(log_buffer,
       "Cannot send error reply on event %d for job %s because the hosts weren't correctly decoded.",
-      event, pjob->ji_qs.ji_jobid);
+      event, pjob->get_jobid());
     log_err(-1, __func__, log_buffer);
     }
 
@@ -2170,12 +2157,11 @@ void send_im_error(
 
 
 
-
 int reply_to_join_job_as_sister(
 
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *addr,
-  char               *cookie, 
+  const char         *cookie, 
   tm_event_t          event, 
   int                 fromtask,
   int                 job_radix)
@@ -2209,7 +2195,7 @@ int reply_to_join_job_as_sister(
     else if ((local_chan = DIS_tcp_setup(socket)) == NULL)
       {
       }
-    else if ((ret = im_compose(local_chan, pjob->ji_qs.ji_jobid, cookie, command, event, fromtask)) != DIS_SUCCESS)
+    else if ((ret = im_compose(local_chan, pjob->get_jobid(), cookie, command, event, fromtask)) != DIS_SUCCESS)
       {
       }
     else
@@ -2228,7 +2214,7 @@ int reply_to_join_job_as_sister(
       {
       /* SUCCESS */
       if (LOGLEVEL >= 8)
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "Successfully sent join job reply");
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), "Successfully sent join job reply");
 
       break;
       }
@@ -2243,7 +2229,7 @@ int reply_to_join_job_as_sister(
 
     if (mc != NULL)
       {
-      ici = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+      ici = create_compose_reply_info(pjob->get_jobid(),
                                       cookie,
                                       pjob->ji_hosts,
                                       command,
@@ -2267,7 +2253,7 @@ int reply_to_join_job_as_sister(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "Couldn't send join job reply for job %s to %s - %s will try later",
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         netaddr(addr),
         dis_emsg[ret]);
       }
@@ -2275,7 +2261,7 @@ int reply_to_join_job_as_sister(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "Couldn't send join job reply for job %s to %s will try later",
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         netaddr(addr));
       }
     
@@ -2289,8 +2275,8 @@ int reply_to_join_job_as_sister(
 
 
 /*
- ** Sender is mother superior sending a job structure to me.
- ** I am going to become a member of a job.
+ ** Sender is mother superior sending a mom_job structure to me.
+ ** I am going to become a member of a mom_job.
  **
  ** auxiliary info (
  ** localnode id int;
@@ -2309,7 +2295,7 @@ int im_join_job_as_sister(
   struct tcp_chan    *chan,
   char               *jobid,  /* I */
   struct sockaddr_in *addr,
-  char               *cookie,  /* I */
+  const char         *cookie,  /* I */
   tm_event_t          event,
   int                 fromtask,
   int                 command,   /* I */
@@ -2318,7 +2304,7 @@ int im_join_job_as_sister(
   {
   hnodent             *np = NULL;
   attribute_def       *pdef;
-  job                 *pjob;
+  mom_job             *pjob;
   tlist_head           lhead;
   svrattrl            *psatl;
 
@@ -2374,7 +2360,7 @@ int im_join_job_as_sister(
     log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
     }
   
-  /* does job already exist? */
+  /* does mom_job already exist? */
   ret = get_job_struct(&pjob, jobid, command, chan, addr, nodeid);
   
   if (ret != PBSE_NONE)
@@ -2487,22 +2473,22 @@ int im_join_job_as_sister(
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
     }
 
-  snprintf(pjob->ji_qs.ji_jobid, sizeof(pjob->ji_qs.ji_jobid), "%s", jobid);
-  snprintf(pjob->ji_qs.ji_fileprefix, sizeof(pjob->ji_qs.ji_fileprefix), "%s", basename);
+  pjob->set_jobid(jobid);
+  pjob->set_fileprefix(basename);
   
-  pjob->ji_modified       = 1;
-  pjob->ji_nodeid         = nodeid;
+  pjob->set_modified(true);
+  pjob->ji_nodeid = nodeid;
   
-  pjob->ji_qs.ji_svrflags = 0;
+  pjob->set_svrflags(0);
   if ((job_radix == TRUE) &&
       (sister_count > 2))
     {
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_INTERMEDIATE_MOM;
+    pjob->set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
     }
 
-  pjob->ji_qs.ji_un_type  = JOB_UNION_TYPE_MOM;
+  pjob->set_un_type(JOB_UNION_TYPE_MOM);
   
-  /* decode attributes from request into job structure */
+  /* decode attributes from request into mom_job structure */
   
   rc = 0;
   resc_access_perm = READ_WRITE;
@@ -2528,7 +2514,7 @@ int im_join_job_as_sister(
     
     /* decode pbs_attribute */
     
-    if ((rc = pdef->at_decode(&pjob->ji_wattr[index],
+    if ((rc = pdef->at_decode(pjob->get_attr(index),
           psatl->al_name, psatl->al_resc, psatl->al_value,resc_access_perm)) != PBSE_NONE)
       break;
     }  /* END for (psatl) */
@@ -2538,7 +2524,7 @@ int im_join_job_as_sister(
     {
     sprintf(log_buffer, "%s: Could not set gpus mode for the job",
       __func__);
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     rc = -1;
     }
 #endif  /* NVIDIA_GPUS */
@@ -2553,7 +2539,7 @@ int im_join_job_as_sister(
         __func__, 
         rc);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
       }
     
     send_im_error(rc,1,pjob,cookie,event,fromtask);
@@ -2572,7 +2558,7 @@ int im_join_job_as_sister(
   if ((rc = job_nodes(*pjob)) != PBSE_NONE)
     {
     snprintf(log_buffer, sizeof(log_buffer), "Could not parse the exec_host list for %s; aborting.",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_err(rc, __func__, log_buffer);
 
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
@@ -2588,21 +2574,14 @@ int im_join_job_as_sister(
     return(IM_DONE);
     }
   
-  /* set remaining job structure elements */
+  /* set remaining mom_job structure elements */
   
-  pjob->ji_qs.ji_state    = JOB_STATE_TRANSIT;
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_PRERUN;
-  pjob->ji_qs.ji_stime    = time_now;
-  pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long = (long)time_now;
+  pjob->set_state(JOB_STATE_TRANSIT);
+  pjob->set_substate(JOB_SUBSTATE_PRERUN);
+  pjob->set_start_time(time_now);
+  pjob->set_long_attr(JOB_ATR_mtime, (long)time_now);
   
-  pjob->ji_wattr[JOB_ATR_mtime].at_flags |= ATR_VFLAG_SET;
-  
-  /* check_pwd is setting up ji_un as type MOM
-   * pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_NEW;
-   * pjob->ji_qs.ji_un.ji_newt.ji_fromsock = -1;
-   * pjob->ji_qs.ji_un.ji_newt.ji_fromaddr = addr->sin_addr.s_addr;
-   * pjob->ji_qs.ji_un.ji_newt.ji_scriptsz = 0;
-   **/
+  // check_pwd is setting up ji_un as type MOM
 
   // Run a health check if a jobstart health check script is defined
   if (PBSNodeCheckProlog)
@@ -2612,7 +2591,7 @@ int im_join_job_as_sister(
     if (internal_state & INUSE_DOWN)
       {
       sprintf(log_buffer, "Not starting job %s because my health check script reported an error",
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       log_err(-1, __func__, log_buffer);
 
       send_im_error(PBSE_BADMOMSTATE, 1, pjob, cookie, event, fromtask);
@@ -2636,7 +2615,7 @@ int im_join_job_as_sister(
     {
     /* log_buffer populated in check_pwd() */
     
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     
     send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
     
@@ -2659,7 +2638,7 @@ int im_join_job_as_sister(
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "cannot create tmp dir");
       
       send_im_error(PBSE_BADUSER,1,pjob,cookie,event,fromtask);
@@ -2682,7 +2661,7 @@ int im_join_job_as_sister(
   if (use_cpusets(pjob) == TRUE)
     {
     sprintf(log_buffer, "about to create cpuset for job %s.\n",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     
     log_ext(-1, __func__, log_buffer, LOG_INFO);
 
@@ -2691,7 +2670,7 @@ int im_join_job_as_sister(
     if (create_job_cpuset(pjob) == FAILURE)
       {
       sprintf(log_buffer, "Could not create cpuset for job %s.\n",
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
 
       log_err(-1, __func__, log_buffer);
       }
@@ -2704,7 +2683,7 @@ int im_join_job_as_sister(
   ret = trq_cg_create_all_cgroups(pjob);
   if (ret != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, "Could not create cgroups for job %s.", pjob->get_jobid());
     log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
@@ -2724,7 +2703,7 @@ int im_join_job_as_sister(
   ret = set_job_cgroup_memory_limits(pjob);
   if (ret != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, "Could not create memory limit cgroups for job %s.", pjob->get_jobid());
     log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
@@ -2742,7 +2721,7 @@ int im_join_job_as_sister(
   ret = trq_cg_add_devices_to_cgroup(pjob);
   if (ret != PBSE_NONE)
     {
-    sprintf(log_buffer, "Could not create device limits cgroups for job %s.", pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, "Could not create device limits cgroups for job %s.", pjob->get_jobid());
     log_err(errno, __func__, log_buffer);
     send_im_error(ret, 1, pjob, cookie, event, fromtask);
     
@@ -2801,7 +2780,7 @@ int im_join_job_as_sister(
     momport = pbs_rm_port;
     }
   
-  job_save(pjob, SAVEJOB_FULL, momport);
+  mom_job_save(pjob, momport);
 
   sprintf(log_buffer, "JOIN JOB as node %d",
     nodeid);
@@ -2812,11 +2791,8 @@ int im_join_job_as_sister(
       (sister_count > 2))
     {
     /* handle the case where we're contacting multiple nodes */
-    if ((pjob->ji_wattr[JOB_ATR_job_radix].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long != 0))
-      {
-      pjob->ji_radix = pjob->ji_wattr[JOB_ATR_job_radix].at_val.at_long;
-      }
+    if (pjob->get_long_attr(JOB_ATR_job_radix) != 0)
+      pjob->ji_radix = pjob->get_long_attr(JOB_ATR_job_radix);
 
     pjob->ji_im_nodeid = 1; /* this will identify us as an intermediate node later */
 
@@ -2829,7 +2805,7 @@ int im_join_job_as_sister(
 
     contact_sisters(pjob,event,sister_count,radix_hosts,radix_ports);
     pjob->ji_intermediate_join_event = event;
-    job_save(pjob,SAVEJOB_FULL,momport);
+    mom_job_save(pjob, momport);
 
     free(radix_ports);
     free(radix_hosts);
@@ -2860,17 +2836,17 @@ int im_join_job_as_sister(
         np->sock_addr.sin_family = af_family;
         }
 
-      /* This is a leaf node in the job radix hierarchy. pjob->ji_radix needs to be set to non-zero
+      /* This is a leaf node in the mom_job radix hierarchy. pjob->ji_radix needs to be set to non-zero
          for later in tm_spawn calls. */
       pjob->ji_radix = 2;
       }
     }
     
   /*
-   ** if certain resource limits require that the job usage be
-   ** polled, we link the job to mom_polljobs.
+   ** if certain resource limits require that the mom_job usage be
+   ** polled, we link the mom_job to mom_polljobs.
    **
-   ** NOTE: we overload the job field ji_jobque for this as it
+   ** NOTE: we overload the mom_job field ji_jobque for this as it
    ** is not used otherwise by MOM
    */
   if (mom_do_poll(pjob))
@@ -2895,30 +2871,30 @@ int im_join_job_as_sister(
 
 
 /* 
- * takes care of killing of a job for which I'm not the mother superior
+ * takes care of killing of a mom_job for which I'm not the mother superior
  *
  * Sender is (must be) mom superior
- * commanding me to kill a job which I should be a
+ * commanding me to kill a mom_job which I should be a
  * part of. Send a signal and set the jobstate to begin
  * the kill.  We wait for all tasks to exit before sending
  * an obit to mother superior. If I have spawned not tasks
  * no obit will be sent.
  *
  * @param id - the id of the caller
- * @param pjob - the job we're killing
- * @param radix - true if this is a job radix, false otherwise
+ * @param pjob - the mom_job we're killing
+ * @param radix - true if this is a mom_job radix, false otherwise
  */
 
 void im_kill_job_as_sister(
 
-  job          *pjob,    /* M */
+  mom_job          *pjob,    /* M */
   tm_event_t    event,   /* I */
   unsigned int  momport, /* I */
   int           radix)   /* I */
 
   {
-  /* If we are an intermediate mom we need to tell our radix the job has been killed */
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) &&
+  /* If we are an intermediate mom we need to tell our radix the mom_job has been killed */
+  if ((pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM) &&
       (radix == TRUE))
     {
     pjob->ji_outstanding = send_sisters(pjob, IM_KILL_JOB_RADIX, TRUE);
@@ -2932,7 +2908,7 @@ void im_kill_job_as_sister(
 
   kill_job(pjob, SIGKILL, __func__, "kill_job message received");
   
-  pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+  pjob->set_substate(JOB_SUBSTATE_EXITING);
   
   pjob->ji_obit = event;
 
@@ -2943,9 +2919,9 @@ void im_kill_job_as_sister(
     momport = pbs_rm_port;
     }
   
-  job_save(pjob, SAVEJOB_QUICK, momport);
+  mom_job_save(pjob, momport);
   
-  if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) &&
+  if ((pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM) &&
       (radix == TRUE))
     {
     exiting_tasks = 0;
@@ -2960,7 +2936,7 @@ void im_kill_job_as_sister(
 /* 
  * im_spawn_task
  *
- * Sender is a MOM in a job that wants to start a task.
+ * Sender is a MOM in a mom_job that wants to start a task.
  * I am MOM on the node that is to run the task.
  *
  * auxiliary info (
@@ -2984,7 +2960,7 @@ int im_spawn_task(
   tm_event_t          event,    /* I */
   struct sockaddr_in *addr,     /* I */
   tm_task_id          fromtask, /* I */
-  job                *pjob)     /* M */
+  mom_job            *pjob)     /* M */
   
   {
   int                  ret;
@@ -2996,7 +2972,7 @@ int im_spawn_task(
   tm_node_id           nodeid;
   char                *globid = NULL;
   char                *cp = NULL;
-  char                *jobid = pjob->ji_qs.ji_jobid;
+  const char          *jobid = pjob->get_jobid();
   char               **argv;
   char               **envp;
 
@@ -3273,7 +3249,7 @@ int im_spawn_task(
             
             if (st != NULL)
               {
-              st->ici = create_compose_reply_info(pjob->ji_qs.ji_jobid, 
+              st->ici = create_compose_reply_info(pjob->get_jobid(), 
                                                   cookie,
                                                   pjob->ji_hosts,
                                                   IM_SPAWN_TASK,
@@ -3332,8 +3308,8 @@ int im_spawn_task(
 
 int im_signal_task(
 
-  struct tcp_chan *chan,
-  job        *pjob,
+  tcp_chan   *chan,
+  mom_job    *pjob,
   char       *cookie,
   tm_event_t  event,
   tm_task_id  fromtask)
@@ -3345,7 +3321,7 @@ int im_signal_task(
   int              sig;
   int              socket;
   struct tcp_chan *local_chan = NULL;
-  char            *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
   task            *ptask = NULL;
 
   /* first read all of the data */
@@ -3382,22 +3358,22 @@ int im_signal_task(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
-    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
       {
-      task *ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks.at(i);
       kill_task(pjob, ptask, sig, 0);
       }
    
-    /* if STOPing all tasks, we're obviously suspending the job */
+    /* if STOPing all tasks, we're obviously suspending the mom_job */
     if (sig == SIGSTOP)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_SUSPEND;
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+      pjob->set_substate(JOB_SUBSTATE_SUSPEND);
+      pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_Suspend);
       }
     else if (sig == SIGCONT)
       {
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+      pjob->set_substate(JOB_SUBSTATE_RUNNING);
+      pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_Suspend);
       }
     }
   else
@@ -3475,8 +3451,8 @@ int im_signal_task(
 
 int im_obit_task(
 
-  struct tcp_chan *chan,
-  job        *pjob,
+  tcp_chan   *chan,
+  mom_job    *pjob,
   char       *cookie,
   tm_event_t  event,
   tm_task_id  fromtask)
@@ -3487,7 +3463,7 @@ int im_obit_task(
   int              ret;
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char            *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
   task            *ptask = NULL;
 
   nodeid = disrsi(chan, &ret);
@@ -3614,9 +3590,9 @@ int im_obit_task(
  */
 int im_get_info(
 
-  struct tcp_chan *chan,
-  job        *pjob,
-  char       *cookie,
+  tcp_chan   *chan,
+  mom_job    *pjob,
+  const char *cookie,
   tm_event_t  event,
   tm_task_id  fromtask)
 
@@ -3626,7 +3602,7 @@ int im_get_info(
   int              ret;
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char            *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
   char            *name = NULL;
   task            *ptask = NULL;
   infoent         *ip;
@@ -3728,8 +3704,8 @@ int im_get_info(
 int im_get_resc_as_sister(
 
   struct tcp_chan *chan,
-  job        *pjob,
-  char       *cookie,
+  mom_job        *pjob,
+  const char *cookie,
   tm_event_t  event,
   tm_task_id  fromtask)
 
@@ -3739,7 +3715,7 @@ int im_get_resc_as_sister(
   int              i;
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char            *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
   char            *info = NULL;
   vnodent         *vp;
 
@@ -3816,7 +3792,7 @@ int im_get_resc_as_sister(
  */
 int get_reply_stream(
 
-  job *pjob) /* I */
+  mom_job *pjob) /* I */
 
   {
   if ((pjob == NULL) ||
@@ -3836,11 +3812,11 @@ int get_reply_stream(
  * NOTE: this stream needs to be closed 
  *
  * @return the open stream to mother superior or intermmediate mom
- * on a job radix, or -1 on error
+ * on a mom_job radix, or -1 on error
  */
 int get_radix_reply_stream(
 
-  job *pjob) /* I */
+  mom_job *pjob) /* I */
 
   {
   hnodent *np = pjob->ji_sisters;
@@ -3858,8 +3834,8 @@ int get_radix_reply_stream(
  */
 int im_poll_job_as_sister(
 
-  job        *pjob,     /* I */
-  char       *cookie,   /* I */
+  mom_job    *pjob,     /* I */
+  const char *cookie,   /* I */
   tm_event_t  event,    /* I */
   tm_task_id  fromtask) /* I */
 
@@ -3869,8 +3845,7 @@ int im_poll_job_as_sister(
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
   unsigned int     momport = 0;
-  char            *jobid = pjob->ji_qs.ji_jobid;
-
+  const char      *jobid = pjob->get_jobid();
   
   if (LOGLEVEL >= 3)
     {
@@ -3900,22 +3875,22 @@ int im_poll_job_as_sister(
     return(IM_DONE);
   
   
-  if (pjob->ji_qs.ji_state == JOB_STATE_TRANSIT)
+  if (pjob->get_state() == JOB_STATE_TRANSIT)
     {
-    /* first poll, set job to running */
-    pjob->ji_qs.ji_state    = JOB_STATE_RUNNING;
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+    /* first poll, set mom_job to running */
+    pjob->set_state(JOB_STATE_RUNNING);
+    pjob->set_substate(JOB_SUBSTATE_RUNNING);
     
     if (multi_mom)
       {
       momport = pbs_rm_port;
       }
     
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
     }
   
-  /* recommend to mother superior that the job be killed */
-  if (pjob->ji_qs.ji_svrflags & (JOB_SVFLG_OVERLMT1 | JOB_SVFLG_OVERLMT2))
+  /* recommend to mother superior that the mom_job be killed */
+  if (pjob->get_svrflags() & (JOB_SVFLG_OVERLMT1 | JOB_SVFLG_OVERLMT2))
     {
     should_kill_job = TRUE;
     }
@@ -3925,7 +3900,7 @@ int im_poll_job_as_sister(
     /* get fresh resource usage */
     mom_set_use(pjob);
     
-    /* ** Send the information tallied for the job.  */
+    /* ** Send the information tallied for the mom_job.  */
     if ((ret = diswul(local_chan, resc_used(pjob, "cput", gettime))) != DIS_SUCCESS)
       {
       }
@@ -3960,14 +3935,13 @@ int im_poll_job_as_sister(
  */
 int im_abort_job(
 
-  job                *pjob,      /* I */
+  mom_job            *pjob,      /* I */
   struct sockaddr_in *addr,      /* I */
-  char               *cookie,    /* I */
   tm_event_t          event,     /* I */
   tm_task_id          fromtask)  /* I */
 
   {
-  char *jobid = pjob->ji_qs.ji_jobid;
+  const char *jobid = pjob->get_jobid();
 
   if (LOGLEVEL >= 2)
     {
@@ -3996,13 +3970,13 @@ int im_abort_job(
 
 int im_get_tid(
   
-  job        *pjob,      /* I */
-  char       *cookie,    /* I */
+  mom_job    *pjob,      /* I */
+  const char *cookie,    /* I */
   tm_event_t  event,     /* I */
   tm_task_id  fromtask)  /* I */
 
   {
-  char            *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
   int              ret;
   int              local_socket;
   struct tcp_chan *local_chan = NULL;
@@ -4060,7 +4034,7 @@ int im_get_tid(
 
 /*
  * Sender is one of the sisterhood saying she
- * got the job structure sent and she accepts it.
+ * got the mom_job structure sent and she accepts it.
  * I'm mother superior.
  *
  * auxiliary info (
@@ -4071,7 +4045,7 @@ int im_get_tid(
 int handle_im_join_job_response(
    
   struct tcp_chan    *chan,
-  job                *pjob,   /* M */
+  mom_job            *pjob,   /* M */
   struct sockaddr_in *addr)
 
   {
@@ -4107,24 +4081,24 @@ int handle_im_join_job_response(
       
       if (gettimeofday(&tv, &tz) == 0)
         {
-        tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
+        tv_attr = pjob->get_tv_attr(JOB_ATR_total_runtime);
         timeval_subtract(&result, &tv, tv_attr);
         sprintf(log_buffer, "%s: total wire-up time for job %ld.%ld", 
           __func__,
           result.tv_sec, 
           result.tv_usec);
 
-        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+        log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
         } 
       }
     
-    /* no events remaining, all moms have reported in, launch job locally */
+    /* no events remaining, all moms have reported in, launch mom_job locally */
     if (LOGLEVEL >= 2)
       {
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "im_request: all sisters have reported in, launching job locally");
       }
     
@@ -4132,7 +4106,7 @@ int handle_im_join_job_response(
     } /* END if (ep == NULL) */
   else
     {
-    /* received a join job response, but not ready to launch */
+    /* received a join mom_job response, but not ready to launch */
     if (LOGLEVEL >= 4)
       {
       sprintf(log_buffer, "%s:joinjob response received from node %s, (still waiting for %s)",
@@ -4140,7 +4114,7 @@ int handle_im_join_job_response(
         netaddr(addr),
         np->hn_host);
       
-      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+      log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
       }
     }
 
@@ -4152,7 +4126,7 @@ int handle_im_join_job_response(
 
          
 /*
- * Sender is sending a response that a job
+ * Sender is sending a response that a mom_job
  * which needs to die has been given the ax.
  * I'm mother superior.
  *
@@ -4166,7 +4140,7 @@ int handle_im_join_job_response(
 int handle_im_kill_job_response(
   
   struct tcp_chan *chan,
-  job     *pjob,
+  mom_job     *pjob,
   hnodent *np,
   int      event_com,
   int      nodeidx)
@@ -4176,7 +4150,7 @@ int handle_im_kill_job_response(
   int           i;
   unsigned int  momport = 0;
 
-  char         *jobid = pjob->ji_qs.ji_jobid;
+  const char   *jobid = pjob->get_jobid();
 
   if (am_i_mother_superior(*pjob) == false)
     {
@@ -4188,7 +4162,7 @@ int handle_im_kill_job_response(
     {
     sprintf(log_buffer, "%s:KILL_JOB acknowledgement received", __func__);
     
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     }
   
   if (pjob->ji_resources != NULL)
@@ -4221,7 +4195,7 @@ int handle_im_kill_job_response(
 #ifdef PENABLE_LINUX_CGROUPS
   int task_count;
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_req_information))
     {
     task_count = disrsi(chan, &ret);
     if (ret == DIS_SUCCESS)
@@ -4229,7 +4203,7 @@ int handle_im_kill_job_response(
 
       if (task_count > 0)
         {
-        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+        complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
 
         for (int task_i = 0; task_i < task_count; task_i++)
           {
@@ -4247,7 +4221,7 @@ int handle_im_kill_job_response(
             mem_used = disrul(chan, &ret);
           if (ret != DIS_SUCCESS)
             {
-            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->get_jobid());
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
             break;
             }
@@ -4285,14 +4259,14 @@ int handle_im_kill_job_response(
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
       }
     
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    pjob->set_substate(JOB_SUBSTATE_EXITING);
     
     if (multi_mom)
       {
       momport = pbs_rm_port;
       }
 
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
     
     exiting_tasks = 1;
     }
@@ -4316,7 +4290,7 @@ int handle_im_kill_job_response(
 int handle_im_spawn_task_response(
     
   struct tcp_chan *chan,
-  job        *pjob,
+  mom_job        *pjob,
   tm_task_id  event_task,
   tm_event_t  event)
 
@@ -4332,9 +4306,9 @@ int handle_im_spawn_task_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", __func__, pjob->ji_qs.ji_jobid, taskid);
+    sprintf(log_buffer, "%s: SPAWN_TASK %s OKAY task %d\n", __func__, pjob->get_jobid(), taskid);
     
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     }
   
   ptask = task_check(pjob, event_task);
@@ -4364,7 +4338,7 @@ int handle_im_spawn_task_response(
 
 int handle_im_signal_task_response(
     
-  job        *pjob,       /* M */
+  mom_job    *pjob,       /* M */
   tm_task_id  event_task, /* I */
   tm_event_t  event)      /* I */
 
@@ -4373,9 +4347,9 @@ int handle_im_signal_task_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", __func__, pjob->ji_qs.ji_jobid, event_task);
+    sprintf(log_buffer, "%s: SIGNAL_TASK %s OKAY %d\n", __func__, pjob->get_jobid(), event_task);
     
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     }
   
   ptask = task_check(pjob, event_task);
@@ -4396,7 +4370,7 @@ int handle_im_signal_task_response(
 
 /*
  * Sender is MOM giving a list of tasks which she
- * has started for this job.
+ * has started for this mom_job.
  *
  * auxiliary info (
  * task id  tm_task_id;
@@ -4408,7 +4382,7 @@ int handle_im_signal_task_response(
 int handle_im_get_tasks_response(
     
   struct tcp_chan *chan,
-  job        *pjob,       /* M */
+  mom_job        *pjob,       /* M */
   tm_task_id  event_task, /* I */
   tm_event_t  event)      /* I */
 
@@ -4419,9 +4393,9 @@ int handle_im_get_tasks_response(
 
   if (LOGLEVEL >= 5)
     {
-    sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", __func__, pjob->ji_qs.ji_jobid);
+    sprintf(log_buffer, "%s: GET_TASKS %s OKAY \n", __func__, pjob->get_jobid());
     
-    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     }
   
   ptask = task_check(pjob, event_task);
@@ -4470,16 +4444,16 @@ int handle_im_get_tasks_response(
 
 int handle_im_obit_task_response(
     
-  struct tcp_chan *chan,
-  job        *pjob,       /* I */
+  tcp_chan   *chan,
+  mom_job    *pjob,       /* I */
   tm_task_id  event_task, /* I */
   tm_event_t  event)      /* I */
 
   {
-  int   exitval;
-  int   ret;
-  char *jobid = pjob->ji_qs.ji_jobid;
-  task *ptask;
+  int         exitval;
+  int         ret;
+  const char *jobid = pjob->get_jobid();
+  task       *ptask;
 
   exitval = disrsi(chan, &ret);
 
@@ -4525,16 +4499,16 @@ int handle_im_obit_task_response(
 int handle_im_get_info_response(
     
   struct tcp_chan *chan,
-  job             *pjob,       /* I */
+  mom_job             *pjob,       /* I */
   tm_task_id       event_task, /* I */
   tm_event_t       event)      /* I */
 
   {
-  char   *info = NULL;
-  char   *jobid = pjob->ji_qs.ji_jobid;
-  int     ret;
-  size_t  len;
-  task   *ptask;
+  char       *info = NULL;
+  const char *jobid = pjob->get_jobid();
+  int         ret;
+  size_t      len;
+  task       *ptask;
   
   info = disrcs(chan, &len, &ret);
   
@@ -4587,7 +4561,7 @@ int handle_im_get_info_response(
 int handle_im_get_resc_response(
     
   struct tcp_chan *chan,
-  job             *pjob,       /* I */
+  mom_job         *pjob,       /* I */
   tm_task_id       event_task, /* I */
   tm_event_t       event)      /* I */
 
@@ -4609,10 +4583,10 @@ int handle_im_get_resc_response(
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: GET_RESC %s OKAY %d\n",
       __func__,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       event_task);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     }
   
   ptask = task_check(pjob, event_task);
@@ -4637,8 +4611,8 @@ int handle_im_get_resc_response(
 
 
 /*
- * I must be Mother Superior for the job and
- * this is a reply with job resources to
+ * I must be Mother Superior for the mom_job and
+ * this is a reply with mom_job resources to
  * tally up.
  *
  * @pre-cond: chan must be a valid tcp_chan pointer
@@ -4659,7 +4633,7 @@ int handle_im_get_resc_response(
 int handle_im_poll_job_response(
     
   struct tcp_chan *chan,
-  job             &pjob,     /* I */
+  mom_job         &pjob,     /* I */
   int              nodeidx,  /* I */
   hnodent         *np)       /* I */
 
@@ -4694,13 +4668,13 @@ int handle_im_poll_job_response(
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POLL_JOB %s OKAY kill %d  cpu=%lu  mem=%lu  vmem=%lu\n",
       __func__,
-      pjob.ji_qs.ji_jobid,
+      pjob.get_jobid(),
       exitval,
       pjob.ji_resources[nodeidx - 1].nr_cput,
       pjob.ji_resources[nodeidx - 1].nr_mem,
       pjob.ji_resources[nodeidx - 1].nr_vmem);
     
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob.ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob.get_jobid(),log_buffer);
     }
   
   if (exitval != 0)
@@ -4710,7 +4684,7 @@ int handle_im_poll_job_response(
       sprintf(log_buffer, "non-zero exit status reported from node %s, aborting job",
         np->hn_host);
       
-      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob.ji_qs.ji_jobid,log_buffer);
+      log_record(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,pjob.get_jobid(),log_buffer);
       }
     
     pjob.ji_nodekill = np->hn_node;
@@ -4736,19 +4710,19 @@ int handle_im_poll_job_response(
 int handle_im_get_tid_response(
     
   struct tcp_chan  *chan,
-  job              *pjob,   /* I */
-  char             *cookie, /* I */
+  mom_job          *pjob,   /* I */
+  const char       *cookie, /* I */
   char            **argv,   /* M */
   char            **envp,   /* M */
   fwdevent         *efwd)   /* I */
 
   {
-  int       taskid;
-  int       ret;
-  int       i;
-  int       local_socket;
+  int              taskid;
+  int              ret;
+  int              i;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
-  char     *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
 
   hnodent  *np;
   task     *ptask;
@@ -4851,7 +4825,7 @@ int handle_im_get_tid_response(
       
     if (LOGLEVEL >= 6)
       {
-      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,"saving task (IM_GET_TID)");
+      log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),"saving task (IM_GET_TID)");
       }
     
     if (task_save(ptask) != -1)
@@ -4957,7 +4931,7 @@ int send_im_error_addr(
  */
 void create_contact_list(
 
-  job                &pjob,
+  mom_job            &pjob,
   std::set<int>      &sister_list,
   struct sockaddr_in *contacting_address)
 
@@ -4970,7 +4944,7 @@ void create_contact_list(
   for (int i = 1; i < pjob.ji_numnodes; i++)
     {
     hnodent *np;
-    if (pjob.ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+    if (pjob.get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM)
       np = &pjob.ji_sisters[i];
     else
       np = &pjob.ji_hosts[i];
@@ -4987,14 +4961,14 @@ void create_contact_list(
 /* 
  * process_end_job_error_reply
  *
- * job cleanup failed on a sister. Mark it as cleaned up
+ * mom_job cleanup failed on a sister. Mark it as cleaned up
  * and see if we're done or not. 
  *
  */
 
 int process_end_job_error_reply(
 
-  job                *pjob,
+  mom_job            *pjob,
   hnodent            *np,
   struct sockaddr_in *pSockAddr, /* I */
   int                 errcode)
@@ -5012,7 +4986,7 @@ int process_end_job_error_reply(
   
   snprintf(log_buffer, sizeof(log_buffer),
     "KILL/ABORT (job %s) request returned error %d from %s (%d total nodes)\n",
-    pjob->ji_qs.ji_jobid, errcode, netaddr(pSockAddr), pjob->ji_numnodes);
+    pjob->get_jobid(), errcode, netaddr(pSockAddr), pjob->ji_numnodes);
   log_err(errcode, __func__, log_buffer);
   
   np->hn_sister = errcode ? errcode : SISTER_KILLDONE;
@@ -5023,7 +4997,7 @@ int process_end_job_error_reply(
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "KILL (job %s) still awaiting response from at least %s(%s)",
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         pjob->ji_hosts[i].hn_host,
         netaddr(&pjob->ji_hosts[i].sock_addr));
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -5037,18 +5011,18 @@ int process_end_job_error_reply(
     {
     snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
       "Job %s has received replies from all moms, setting substate to exiting",
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     
     /* all dead */            
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    pjob->set_substate(JOB_SUBSTATE_EXITING);
     
     if (multi_mom)
       {
       momport = pbs_rm_port;
       }
     
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
     exiting_tasks = 1;
     }
 
@@ -5066,7 +5040,7 @@ int process_end_job_error_reply(
 int tm_error_reply(
     
   struct tcp_chan  *chan,
-  job              *pjob,
+  mom_job          *pjob,
   int               event_task,
   int               event_com,
   int               errcode,
@@ -5085,16 +5059,16 @@ int tm_error_reply(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: REQUEST %d %s returned ERROR %d\n",
-        __func__, event_com, pjob->ji_qs.ji_jobid, errcode);
+        __func__, event_com, pjob->get_jobid(), errcode);
       }
     else
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: GET_TID %s returned ERROR %d\n",
-        __func__, pjob->ji_qs.ji_jobid, errcode);
+        __func__, pjob->get_jobid(), errcode);
       }
     
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     }
 
   if (get_tid == true)
@@ -5130,12 +5104,12 @@ int tm_error_reply(
 
 int im_poll_error(
 
-  job     *pjob,
+  mom_job *pjob,
   hnodent *np,
   int      errcode)
 
   {
-  /* I must be Mother Superior for the job */
+  /* I must be Mother Superior for the mom_job */
   if (am_i_mother_superior(*pjob) == false)
     {
     log_err(-1, __func__, "POLL_JOB ERROR and I'm not MS");
@@ -5146,9 +5120,9 @@ int im_poll_error(
     {
     snprintf(log_buffer,sizeof(log_buffer),
       "%s: POLL_JOB %s returned ERROR %d\n",
-      __func__, pjob->ji_qs.ji_jobid, errcode);
+      __func__, pjob->get_jobid(), errcode);
     
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     }
   
   np->hn_sister = errcode ? errcode : SISTER_BADPOLL;
@@ -5168,7 +5142,7 @@ int im_poll_error(
 int process_error_reply(
 
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   int                 event_com,
   struct sockaddr_in *pSockAddr, /* I */
   hnodent            *np,
@@ -5189,8 +5163,8 @@ int process_error_reply(
 
   snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
     "Error response received from client %s (%d) jobid %s",
-    netaddr(pSockAddr), sender_port, pjob->ji_qs.ji_jobid);
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    netaddr(pSockAddr), sender_port, pjob->get_jobid());
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
  
   if ((errcode == PBSE_UNKJOBID) &&
       (event_com == TM_NULL_EVENT))
@@ -5228,9 +5202,9 @@ int process_error_reply(
     {
     case IM_JOIN_JOB:
       /*
-       ** A MOM has rejected a request to join a job.
+       ** A MOM has rejected a request to join a mom_job.
        ** We need to send a ABORT_JOB to all the sisterhood
-       ** and fail the job start to server.
+       ** and fail the mom_job start to server.
        ** I'm mother superior.
        */
       if (am_i_mother_superior(*pjob) == false)
@@ -5278,8 +5252,8 @@ int process_error_reply(
       
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: job %s received event_com %d event %d. (IM_ERROR) No handler!!!\n",
-        __func__, pjob->ji_qs.ji_jobid, command, event_com);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        __func__, pjob->get_jobid(), command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
       return(IM_FAILURE);
     }  /* END switch(event_com) */
@@ -5293,7 +5267,7 @@ int process_error_reply(
 int process_valid_response(
     
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   hnodent            *np,
   struct sockaddr_in *pSockAddr, /* I */
   int                 event_com,
@@ -5423,7 +5397,7 @@ int process_valid_response(
     case IM_GET_TID:
 
       if (connection_from_ms(chan, NULL, pSockAddr) == true)
-        ret = handle_im_get_tid_response(chan,pjob,pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,argv,envp,&efwd);
+        ret = handle_im_get_tid_response(chan, pjob, pjob->get_str_attr(JOB_ATR_Cookie), argv, envp, &efwd);
       else
         ret = IM_FAILURE;
 
@@ -5438,9 +5412,9 @@ int process_valid_response(
     default:
 
       snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
-        "%s: job %s received event_com %d event %d. (IM_ALL_OKAY) No handler!!!\n",
-        __func__, pjob->ji_qs.ji_jobid, command, event_com);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        "%s: mom_job %s received event_com %d event %d. (IM_ALL_OKAY) No handler!!!\n",
+        __func__, pjob->get_jobid(), command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
       break;
     } /* END switch (event_com) */
@@ -5452,7 +5426,7 @@ int process_valid_response(
 
 int pass_joined_successfully_up_the_chain(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   /* 0 is always the intermediate mom that called us */
@@ -5471,7 +5445,7 @@ int pass_joined_successfully_up_the_chain(
     
     if (log_buffer[0] != '\0')
       {
-      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - job id %s", np->hn_host, pjob->ji_qs.ji_jobid);
+      sprintf(log_buffer, "tcp_connect_sockaddr failed on %s - job id %s", np->hn_host, pjob->get_jobid());
       }
     
     log_err(errno, __func__, log_buffer);
@@ -5484,8 +5458,8 @@ int pass_joined_successfully_up_the_chain(
     {
     }
   else if ((ret = im_compose(local_chan,
-                             pjob->ji_qs.ji_jobid,
-                             pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+                             pjob->get_jobid(),
+                             pjob->get_str_attr(JOB_ATR_Cookie),
                              IM_RADIX_ALL_OK,
                              pjob->ji_intermediate_join_event,
                              TM_NULL_TASK)) != DIS_SUCCESS)
@@ -5511,7 +5485,7 @@ int pass_joined_successfully_up_the_chain(
 int handle_im_join_job_radix_response(
 
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *pSockAddr) /* I */
 
   {
@@ -5533,19 +5507,19 @@ int handle_im_join_job_radix_response(
       
       if (gettimeofday(&tv, &tz) == 0)
         {
-        tv_attr = &pjob->ji_wattr[JOB_ATR_total_runtime].at_val.at_timeval;
+        tv_attr = pjob->get_tv_attr(JOB_ATR_total_runtime);
         timeval_subtract(&result, &tv, tv_attr);
         sprintf(log_buffer, "%s: job_radix total wire-up time for job %ld.%ld",
           __func__,
           result.tv_sec,
           result.tv_usec);
  
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
         }
       
       }
 
-    /* All sisters in our job radix have reported in */
+    /* All sisters in our mom_job radix have reported in */
     if (pjob->ji_im_nodeid == 1)
       {
       sprintf(log_buffer, "%s: all sisters for intermediate mom %s reported in",
@@ -5561,25 +5535,25 @@ int handle_im_join_job_radix_response(
     
     if (LOGLEVEL >= 2)
       {
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
     
     /* no events remaining, all moms have reported in,
-     * launch job report back to parent MOM unless I am
-     * Mother superior and then execute job */
+     * launch mom_job report back to parent MOM unless I am
+     * Mother superior and then execute mom_job */
     if (pjob->ji_im_nodeid == 1)
       {
       pass_joined_successfully_up_the_chain(pjob);
       }
     else
       {
-      /* I am Mother Superior. Start job execution */
+      /* I am Mother Superior. Start mom_job execution */
       if (LOGLEVEL >= 2)
         {
         log_event(
           PBSEVENT_JOB,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "im_request:all sisters have reported in, launching job locally");
         }
       
@@ -5596,7 +5570,7 @@ int handle_im_join_job_radix_response(
         __func__,
         netaddr(pSockAddr));
       
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
     }
 
@@ -5607,7 +5581,7 @@ int handle_im_join_job_radix_response(
 int handle_im_kill_job_radix_response(
 
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *pSockAddr)
 
   {
@@ -5625,7 +5599,7 @@ int handle_im_kill_job_radix_response(
     {
     sprintf(log_buffer, "KILL_JOB_RADIX acknowledgement received");
 
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     }
 
   cput = disrul(chan, &ret);
@@ -5650,7 +5624,7 @@ int handle_im_kill_job_radix_response(
 #ifdef PENABLE_LINUX_CGROUPS
   int task_count;
 
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
+  if (pjob->is_attr_set(JOB_ATR_req_information))
     {
     task_count = disrsi(chan, &ret);
     if (ret == DIS_SUCCESS)
@@ -5658,7 +5632,7 @@ int handle_im_kill_job_radix_response(
 
       if (task_count > 0)
         {
-        complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+        complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
 
         for (int task_i = 0; task_i < task_count; task_i++)
           {
@@ -5676,7 +5650,7 @@ int handle_im_kill_job_radix_response(
             mem_used = disrul(chan, &ret);
           if (ret != DIS_SUCCESS)
             {
-            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->ji_qs.ji_jobid);
+            sprintf(log_buffer, "Failed to read task usage information: %d. job_id %s", ret, pjob->get_jobid());
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
             break;
             }
@@ -5699,7 +5673,7 @@ int handle_im_kill_job_radix_response(
     return(IM_FAILURE);
     }
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+  if (pjob->get_svrflags() & JOB_SVFLG_HERE)
     np = &pjob->ji_hosts[nodeid];
   else 
     np = &pjob->ji_sisters[nodeid+1]; /* yes this is klugey but the sisters are off by one on the index */
@@ -5715,23 +5689,23 @@ int handle_im_kill_job_radix_response(
       snprintf(log_buffer,sizeof(log_buffer),
         "%s: %s FINAL from %d  cpu %lu sec  mem %lu kb  vmem %ld kb\n",
         __func__,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         nodeid,
         pjob->ji_resources[nodeid - 1].nr_cput,
         pjob->ji_resources[nodeid - 1].nr_mem,
         pjob->ji_resources[nodeid - 1].nr_vmem);
       
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
     }  /* END if (pjob_ji_resources != NULL) */
     
   np->hn_sister = SISTER_KILLDONE;
 
-  if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE)
+  if (pjob->get_svrflags() & JOB_SVFLG_HERE)
     {
     for (i = 1; i < pjob->ji_radix + 1;i++)
       {
-      /* SISTER_OKAY means the job hasn't been killed yet */
+      /* SISTER_OKAY means the mom_job hasn't been killed yet */
       if (pjob->ji_hosts[i].hn_sister == SISTER_OKAY)
         break;
       }
@@ -5739,7 +5713,7 @@ int handle_im_kill_job_radix_response(
     if (i == pjob->ji_radix + 1 )
       all_done = true;
     }
-  else if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+  else if (pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM)
     {
     if (pjob->ji_outstanding > 0)
       pjob->ji_outstanding--;
@@ -5755,19 +5729,19 @@ int handle_im_kill_job_radix_response(
       snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
         "%s: ALL DONE, set EXITING job %s\n", 
         __func__,
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
     
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_EXITING;
+    pjob->set_substate(JOB_SUBSTATE_EXITING);
     
     if (multi_mom)
       {
       momport = pbs_rm_port;
       }
 
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
     
     exiting_tasks = 1;
     }
@@ -5790,7 +5764,7 @@ int handle_im_kill_job_radix_response(
 int process_valid_intermediate_response(
   
   struct tcp_chan    *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *pSockAddr, /* I */
   int                 event_com,
   int                 command)
@@ -5798,7 +5772,7 @@ int process_valid_intermediate_response(
   {
   int ret = PBSE_NONE;
 
-  if (((pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
+  if (((pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM) == 0) &&
       (am_i_mother_superior(*pjob) == false))
     {
     log_err(-1, __func__, "got IM_RADIX_ALL_OKAY message and I'm not an intermediate MOM or Mother Superior");
@@ -5824,8 +5798,8 @@ int process_valid_intermediate_response(
     default:
       snprintf(log_buffer,LOCAL_LOG_BUF_SIZE,
         "%s: job %s received event_com %d event %d. (IM_RADIX_ALL_OK) No handler!!!\n",
-        __func__, pjob->ji_qs.ji_jobid, command, event_com);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        __func__, pjob->get_jobid(), command, event_com);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       break;
     }
   
@@ -5838,7 +5812,7 @@ int process_valid_intermediate_response(
 int process_pmix_fence(
     
   tcp_chan *chan,
-  job      *pjob)
+  mom_job  *pjob)
 
   {
   int   rc = IM_DONE;
@@ -5847,21 +5821,21 @@ int process_pmix_fence(
 #ifdef ENABLE_PMIX
   if (rc == PBSE_NONE)
     {
-    if (pending_fences.find(pjob->ji_qs.ji_jobid) != pending_fences.end())
+    if (pending_fences.find(pjob->get_jobid()) != pending_fences.end())
       {
-      pending_fences[pjob->ji_qs.ji_jobid].add_data(data);
+      pending_fences[pjob->get_jobid()].add_data(data);
 
       if (am_i_mother_superior(*pjob))
         {
         // A sister has replied. Mark this host from the list
         
-        if (pending_fences[pjob->ji_qs.ji_jobid].mark_reported(mom_alias) == true)
-          pending_fences[pjob->ji_qs.ji_jobid].complete_operation(pjob, 0);
+        if (pending_fences[pjob->get_jobid()].mark_reported(mom_alias) == true)
+          pending_fences[pjob->get_jobid()].complete_operation(pjob, 0);
         }
       else
         {
         // Mother superior is telling me the fence is complete
-        pending_fences[pjob->ji_qs.ji_jobid].execute_callback();
+        pending_fences[pjob->get_jobid()].execute_callback();
         }
       }
     }
@@ -5884,7 +5858,7 @@ int process_pmix_fence(
 int process_pmix_connect(
 
   tcp_chan           *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *source_addr)
 
   {
@@ -5907,7 +5881,7 @@ int process_pmix_connect(
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "Received word that unknown pmix connection %u related to job %s needs to be cleaned up. Ignoring.",
-            op_id, pjob->ji_qs.ji_jobid);
+            op_id, pjob->get_jobid());
           log_err(-1, __func__, log_buffer);
           }
         }
@@ -5922,7 +5896,7 @@ int process_pmix_connect(
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "Request to clean up pmix connection %u related to job %s is not from mother superior. Ignoring.",
-            op_id, pjob->ji_qs.ji_jobid);
+            op_id, pjob->get_jobid());
           log_err(-1, __func__, log_buffer);
           }
         }
@@ -5951,7 +5925,7 @@ int process_pmix_connect(
 int process_pmix_disconnect(
 
   tcp_chan           *chan,
-  job                *pjob,
+  mom_job            *pjob,
   struct sockaddr_in *source_addr)
 
   {
@@ -6007,8 +5981,8 @@ void im_request(
   int                  ret = PBSE_NONE;
   char                *jobid = NULL;
   char                *cookie = NULL;
-  char                *oreo;
-  job                 *pjob;
+  const char          *oreo;
+  mom_job             *pjob;
   hnodent             *np = NULL;
   eventent            *ep = NULL;
 
@@ -6167,7 +6141,7 @@ void im_request(
       break;
     }  /* END switch (command) */
  
-  /* Check if job already exists. */
+  /* Check if mom_job already exists. */
   pjob = mom_find_job(jobid);
  
   if (pjob == NULL)
@@ -6196,7 +6170,8 @@ void im_request(
     }
  
   /* check cookie */
-  if (!(pjob->ji_wattr[JOB_ATR_Cookie].at_flags & ATR_VFLAG_SET))
+  oreo = pjob->get_str_attr(JOB_ATR_Cookie);
+  if (oreo != NULL)
     {
     sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
      PMOMCommand[MIN(command,IM_MAX)],
@@ -6213,11 +6188,9 @@ void im_request(
     goto err;
     }
  
-  oreo = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
- 
   if (strcmp(oreo, cookie) != 0)
     {
-    snprintf(log_buffer, sizeof(log_buffer), "Bad cookie: job id %s", pjob->ji_qs.ji_jobid);
+    snprintf(log_buffer, sizeof(log_buffer), "Bad cookie: job id %s", pjob->get_jobid());
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     /* multiple versions of the same job are out there, kill it */
     exec_bail(pjob, JOB_EXEC_FAIL1);
@@ -6253,7 +6226,7 @@ void im_request(
       {
       for (nodeidx = 0;nodeidx < pjob->ji_numnodes;nodeidx++)
         {
-        if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_INTERMEDIATE_MOM)
+        if (pjob->get_svrflags() & JOB_SVFLG_INTERMEDIATE_MOM)
           np = &pjob->ji_sisters[nodeidx];
         else
           np = &pjob->ji_hosts[nodeidx];
@@ -6430,7 +6403,7 @@ void im_request(
       /* im_poll_job_as_sister will create a new connection and send
          an IM_ALL_OKAY message which will then be processed by the 
          sending MOM (Mother superior for regular jobs or intermediate
-         MOM/Mother Superior for Job Radix */
+         MOM/Mother Superior for mom_job Radix */
 
       im_poll_job_as_sister(pjob,cookie,event,fromtask);
       break;
@@ -6441,18 +6414,18 @@ void im_request(
       /* check if the abort came from mother superior or a sister */
       if ((ret = connection_from_ms(chan, pjob, pSockAddr)) == false)
         {
-        if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_JOB_ABORTED) == 0)
+        if ((pjob->get_svrflags() & JOB_SVFLG_JOB_ABORTED) == 0)
           {
           std::set<int> sisters;
           create_contact_list(*pjob, sisters, pSockAddr);
-          pjob->ji_qs.ji_svrflags |= JOB_SVFLG_JOB_ABORTED;
+          pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_JOB_ABORTED);
           exec_bail(pjob, JOB_EXEC_RETRY, &sisters);
-          sprintf(log_buffer, "%s sent an abort. Killing job %s", netaddr(pSockAddr), pjob->ji_qs.ji_jobid);
+          sprintf(log_buffer, "%s sent an abort. Killing job %s", netaddr(pSockAddr), pjob->get_jobid());
           log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buffer);
           }
         }
       else
-        im_abort_job(pjob,pSockAddr,cookie,event,fromtask);
+        im_abort_job(pjob, pSockAddr, event, fromtask);
 
       close_conn(chan->sock, FALSE);
       svr_conn[chan->sock].cn_stay_open = FALSE;
@@ -6566,20 +6539,20 @@ void tm_eof(
   int fd)
 
   {
-  job  *pjob;
+  mom_job  *pjob;
 
   /*
   ** Search though all the jobs looking for this fd.
   */
-  std::list<job *>::iterator iter;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
       {
-      task *ptask = pjob->ji_tasks->at(i);
+      task *ptask = pjob->ji_tasks.at(i);
 
       if (ptask->ti_chan == NULL)
         continue;
@@ -6591,7 +6564,7 @@ void tm_eof(
           log_record(
             PBSEVENT_JOB,
             PBS_EVENTCLASS_JOB,
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             "matching task located, marking interface closed");
           }
 
@@ -6619,7 +6592,7 @@ void tm_eof(
  */
 void tm_request_init(
 
-  job  *pjob,
+  mom_job  *pjob,
   task *ptask,
   int  *ret,
   int   event,
@@ -6739,7 +6712,7 @@ int tm_postinfo(
 
 int send_tm_spawn_request(
 
-  job      *pjob,
+  mom_job  *pjob,
   hnodent  *remote_host,
   char    **argv,
   char    **env,
@@ -6761,7 +6734,7 @@ int send_tm_spawn_request(
     momport = pbs_rm_port;
     }
   
-  job_save(pjob, SAVEJOB_FULL, momport);
+  mom_job_save(pjob, momport);
   
   int local_socket = tcp_connect_sockaddr((struct sockaddr *)&remote_host->sock_addr,
                                       sizeof(remote_host->sock_addr), true);
@@ -6775,8 +6748,8 @@ int send_tm_spawn_request(
     {
     }
   else if ((rc = im_compose(local_chan,
-                            pjob->ji_qs.ji_jobid,
-                            pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str,
+                            pjob->get_jobid(),
+                            pjob->get_str_attr(JOB_ATR_Cookie),
                             IM_SPAWN_TASK,
                             event,
                             fromtask)) != DIS_SUCCESS)
@@ -6829,11 +6802,11 @@ int send_tm_spawn_request(
     snprintf(log_buffer,sizeof(log_buffer),
       "Unable to send IM_SPAWN_TASK request to node %s for job %s",
       remote_host->hn_host,
-      pjob->ji_qs.ji_jobid);
+      pjob->get_jobid());
 
     log_err(-1, __func__, log_buffer);
 
-    /* NYI: shouldn't we kill the job here instead of letting it run forever?? */
+    /* NYI: shouldn't we kill the mom_job here instead of letting it run forever?? */
     }
   
   close(local_socket);
@@ -6865,7 +6838,7 @@ int send_tm_spawn_request(
 int tm_spawn_request(
     
   struct tcp_chan *chan,
-  job       *pjob,        /* I */
+  mom_job       *pjob,        /* I */
   int        prev_error,  /* I */
   int        event,       /* I */
   char       *cookie,     /* I */
@@ -6878,7 +6851,7 @@ int tm_spawn_request(
   {
   char         **argv = NULL;
   char         **envp = NULL;
-  char          *jobid = pjob->ji_qs.ji_jobid;
+  const char    *jobid = pjob->get_jobid();
  
   int            local_socket;
   struct tcp_chan *local_chan = NULL;
@@ -6995,7 +6968,7 @@ int tm_spawn_request(
     log_record(
       PBSEVENT_ERROR,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       "cannot alloc env memory)");
  
     arrayfree(argv);
@@ -7047,7 +7020,7 @@ int tm_spawn_request(
         log_record(
           PBSEVENT_ERROR,
           PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
+          pjob->get_jobid(),
           "saving task (TM_SPAWN)");
          }
       
@@ -7139,7 +7112,7 @@ int tm_spawn_request(
 int tm_tasks_request(
 
   struct tcp_chan *chan,
-  job             *pjob,       /* I */
+  mom_job         *pjob,       /* I */
   int              prev_error, /* I */
   int              event,      /* I */
   char            *cookie,     /* I */
@@ -7150,9 +7123,9 @@ int tm_tasks_request(
   int              nodeid)     /* I */
 
   {
-  char     *jobid = pjob->ji_qs.ji_jobid;
+  const char      *jobid = pjob->get_jobid();
 #ifndef NUMA_SUPPORT
-  int local_socket;
+  int              local_socket;
   struct tcp_chan *local_chan = NULL;
 #endif
  
@@ -7207,9 +7180,9 @@ int tm_tasks_request(
   if (*ret != DIS_SUCCESS)
     return(TM_DONE);
   
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
 
     *ret = diswui(chan, ptask->ti_qs.ti_task);
     
@@ -7241,7 +7214,7 @@ int tm_tasks_request(
 int tm_signal_request(
   
   struct tcp_chan *chan,
-  job             *pjob,       /* I */
+  mom_job         *pjob,       /* I */
   int              prev_error, /* I */
   int              event,      /* I */
   char            *cookie,     /* I */
@@ -7252,10 +7225,10 @@ int tm_signal_request(
   int              nodeid)     /* I */
  
   {
-  int       taskid;
-  int       signum;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  task     *ptask;
+  int         taskid;
+  int         signum;
+  const char *jobid = pjob->get_jobid();
+  task       *ptask;
 
 #ifndef NUMA_SUPPORT 
   int local_socket;
@@ -7366,7 +7339,7 @@ int tm_signal_request(
 int tm_obit_request(
   
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
+  mom_job        *pjob,       /* I */
   int         prev_error, /* I */
   int         event,      /* I */
   char       *cookie,     /* I */
@@ -7377,9 +7350,9 @@ int tm_obit_request(
   int         nodeid)     /* I */
  
   {
-  int       taskid;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  task     *ptask;
+  int         taskid;
+  const char *jobid = pjob->get_jobid();
+  task       *ptask;
 
 #ifndef NUMA_SUPPORT 
   int local_socket;
@@ -7436,7 +7409,7 @@ int tm_obit_request(
       {
       snprintf(log_buffer,sizeof(log_buffer),
         "Could not pass along obit for job %s to host %s",
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         phost->hn_host);
       log_err(-1, __func__, log_buffer);
       }
@@ -7504,7 +7477,7 @@ int tm_obit_request(
 int tm_getinfo_request(
  
   struct tcp_chan *chan,
-  job        *pjob,       /* I */
+  mom_job        *pjob,       /* I */
   int         prev_error, /* I */
   int         event,      /* I */
   char       *cookie,     /* I */
@@ -7515,11 +7488,11 @@ int tm_getinfo_request(
   int         nodeid)     /* I */
  
   {
-  int       taskid;
-  char     *jobid = pjob->ji_qs.ji_jobid;
-  char     *name;
-  task     *ptask;
-  infoent  *ip;
+  int         taskid;
+  const char *jobid = pjob->get_jobid();
+  char       *name;
+  task       *ptask;
+  infoent    *ip;
 
 #ifndef NUMA_SUPPORT 
   int local_socket;
@@ -7634,7 +7607,7 @@ int tm_getinfo_request(
 int tm_resources_request(
 
   struct tcp_chan *chan,
-  job             *pjob,       /* I */
+  mom_job             *pjob,       /* I */
   int              prev_error, /* I */
   int              event,      /* I */
   char            *cookie,     /* I */
@@ -7645,8 +7618,8 @@ int tm_resources_request(
   int              nodeid)     /* I */
 
   {
-  char    *jobid = pjob->ji_qs.ji_jobid;
-  char    *info = NULL;
+  const char *jobid = pjob->get_jobid();
+  char       *info = NULL;
 
 #ifndef NUMA_SUPPORT 
   int local_socket;
@@ -7748,8 +7721,8 @@ int tm_request(
   int            rc = DIS_SUCCESS;
   char          *jobid = NULL;
   char          *cookie = NULL;
-  char          *oreo;
-  job           *pjob;
+  const char    *oreo;
+  mom_job       *pjob;
   task          *ptask = NULL;
   vnodent       *pnode;
   hnodent       *phost;
@@ -7762,7 +7735,6 @@ int tm_request(
   int            prev_error = 0;
   tm_node_id     nodeid;
   tm_task_id     fromtask;
-  pbs_attribute *at;
  
   pid_t pid;
  
@@ -7838,7 +7810,7 @@ int tm_request(
  
     reply = TRUE;
  
-    /* Read the session id and alt/job id from tm_adopt() */
+    /* Read the session id and alt/mom_job id from tm_adopt() */
     sid = disrsi(chan, &ret);
  
     if (ret == DIS_SUCCESS)
@@ -7893,24 +7865,21 @@ int tm_request(
     goto err;
     }
  
-  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+  if (pjob->get_substate() != JOB_SUBSTATE_RUNNING)
     {
     sprintf(log_buffer, "job %s not running",
             jobid);
  
     goto err;
     }
- 
-  at = &pjob->ji_wattr[JOB_ATR_Cookie];
- 
-  if (!(at->at_flags & ATR_VFLAG_SET))
+
+  oreo = pjob->get_str_attr(JOB_ATR_Cookie);
+  if (oreo == NULL)
     {
     sprintf(log_buffer, "job %s has no cookie", jobid);
  
     goto err;
     }
- 
-  oreo = at->at_val.at_str;
  
   if (strcmp(oreo, cookie) != 0)
     {
@@ -7980,7 +7949,7 @@ int tm_request(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         "saving task (additional connection)");
       }
  
@@ -8243,7 +8212,7 @@ err:
 #ifdef PENABLE_LINUX_CGROUPS
 int get_req_and_task_index_from_local_rank(
 
-  job          *pjob,
+  mom_job          *pjob,
   int           local_rank,
   unsigned int &req_index,
   unsigned int &task_index)
@@ -8252,18 +8221,14 @@ int get_req_and_task_index_from_local_rank(
   int rc = PBSE_NO_PROCESS_RANK;
   pbs_attribute *pattr;
 
-  pattr = &pjob->ji_wattr[JOB_ATR_resource];
+  pattr = pjob->get_attr(JOB_ATR_resource);
   if ((have_incompatible_dash_l_resource(pattr) == true) ||
-      (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long < 2) ||
-      ((pjob->ji_wattr[JOB_ATR_request_version].at_flags & ATR_VFLAG_SET) == 0))
+      (pjob->get_long_attr(JOB_ATR_request_version) < 2))
     {
     return(rc);
     }
   
-  complete_req *cr = NULL;
-
-  if (pjob->ji_wattr[JOB_ATR_req_information].at_flags & ATR_VFLAG_SET)
-    cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+  complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
 
   if (cr != NULL)
     {
@@ -8285,13 +8250,13 @@ int get_req_and_task_index_from_local_rank(
 /*
  * adoptSession --
  *
- *    Find a job that corresponds to a given alternative task management
- *      id or job id and create a new task in it to monitor the usage of a
+ *    Find a mom_job that corresponds to a given alternative task management
+ *      id or mom_job id and create a new task in it to monitor the usage of a
  *      given session id.
  *
  * Result:
  *    Returns TM_OK if the session id was adopted, and TM_ERROR if
- *    it wasn't. The job identified by jobid or altid (eg rmsResourceId)
+ *    it wasn't. The mom_job identified by jobid or altid (eg rmsResourceId)
  *      gets a new task, and that task has its session id set to monitor
  *    sid. Various special values are set in the task to ensure that
  *    PBS only monitors the new task, and doesn't attempt to control it.
@@ -8312,7 +8277,7 @@ static int adoptSession(
   char  *cookie)
 
   {
-  job *pjob = NULL;
+  mom_job *pjob = NULL;
   task *ptask = NULL;
   unsigned short  momport = 0;
   bool            multi = false;
@@ -8340,8 +8305,8 @@ static int adoptSession(
   /* extern  int next_sample_time; */
   /* extern  time_t time_resc_updated; */
 
-  /* Find the job that has this job/alt id */
-  std::list<job *>::iterator iter;
+  /* Find the mom_job that has this mom_job/alt id */
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
@@ -8349,16 +8314,16 @@ static int adoptSession(
 
     if (command == TM_ADOPT_JOBID)
       {
-      if (strcmp(jobid, pjob->ji_qs.ji_jobid) == 0)
+      if (strcmp(jobid, pjob->get_jobid()) == 0)
         break;
-      else if (strchr(pjob->ji_qs.ji_jobid, '.') == NULL)
+      else if (strchr(pjob->get_jobid(), '.') == NULL)
         {
         char *dot = strchr(jobid, '.');
 
         if (dot != NULL)
           {
           *dot = '\0';
-          if (strcmp(jobid, pjob->ji_qs.ji_jobid) == 0)
+          if (strcmp(jobid, pjob->get_jobid()) == 0)
             {
             *dot = '.';
             break;
@@ -8370,7 +8335,7 @@ static int adoptSession(
       // Correct for long versus short names
       else if (multi)
         {
-        if (!strncmp(jobid_copy, pjob->ji_qs.ji_jobid, other_id_len))
+        if (!strncmp(jobid_copy, pjob->get_jobid(), other_id_len))
           break;
         }
       }
@@ -8383,7 +8348,7 @@ static int adoptSession(
 
   if (pjob == NULL)
     {
-    /* Didn't find a job with this resource id. Complain. */
+    /* Didn't find a mom_job with this resource id. Complain. */
     (void)sprintf(log_buffer,
       "Adoption rejected: no job with id %1.30s",
       jobid);
@@ -8398,36 +8363,33 @@ static int adoptSession(
    */
   if (strcmp(cookie, "ADOPT COOKIE"))
     {
-    char *oreo;
-    pbs_attribute *at = &pjob->ji_wattr[JOB_ATR_Cookie];
+    const char *oreo = pjob->get_str_attr(JOB_ATR_Cookie);
 
-    if (!(at->at_flags & ATR_VFLAG_SET))
+    if (oreo == NULL)
       {
       sprintf(log_buffer, "Adoption rejected: job %s has no cookie",
-              pjob->ji_qs.ji_jobid);
+              pjob->get_jobid());
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-                 pjob->ji_qs.ji_jobid, log_buffer);
+                 pjob->get_jobid(), log_buffer);
       return TM_ERROR;
       }
-
-    oreo = at->at_val.at_str;
 
     if (strcmp(oreo, cookie) != 0)
       {
       sprintf(log_buffer, "Adoption rejected: job %s cookie %s message %s",
-              pjob->ji_qs.ji_jobid, oreo, cookie);
+              pjob->get_jobid(), oreo, cookie);
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-                 pjob->ji_qs.ji_jobid, log_buffer);
+                 pjob->get_jobid(), log_buffer);
       return TM_ERROR;
       }
     }
   else
     {
     /*
-    sprintf(log_buffer, "job %s cookie %s message %s",
+    sprintf(log_buffer, "mom_job %s cookie %s message %s",
         jobid, oreo, cookie);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-           pjob->ji_qs.ji_jobid, log_buffer);
+           pjob->get_jobid(), log_buffer);
     */
     }
 
@@ -8467,19 +8429,20 @@ static int adoptSession(
 
   (void)task_save(ptask);
 
-  // Add the sid to our global job set
+  // Add the sid to our global mom_job set
   global_job_sid_set.insert(sid);
 
-  /* Mark the job as running if we need to. This is copied from start_process() */
-  if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+  /* Mark the mom_job as running if we need to. This is copied from start_process() */
+  if (pjob->get_substate() != JOB_SUBSTATE_RUNNING)
     {
-    pjob->ji_qs.ji_state = JOB_STATE_RUNNING;
-    pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+    pjob->set_state(JOB_STATE_RUNNING);
+    pjob->set_substate(JOB_SUBSTATE_RUNNING);
+
     if (multi_mom)
       {
       momport = pbs_rm_port;
       }
-    job_save(pjob, SAVEJOB_QUICK, momport);
+    mom_job_save(pjob, momport);
     }
 
   if (mom_get_sample() == PBSE_NONE)
@@ -8502,18 +8465,18 @@ static int adoptSession(
   if (rc == PBSE_NONE)
     {
     rc = trq_cg_add_process_to_task_cgroup(cg_cpuacct_path, 
-                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+                        pjob->get_jobid(), req_index, task_index, pid);
     if (rc == PBSE_NONE)
       {
       rc = trq_cg_add_process_to_task_cgroup(cg_cpuset_path, 
-                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+                        pjob->get_jobid(), req_index, task_index, pid);
       if (rc == PBSE_NONE)
         {
         rc = trq_cg_add_process_to_task_cgroup(cg_memory_path, 
-                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+                        pjob->get_jobid(), req_index, task_index, pid);
         if (rc == PBSE_NONE)
           rc = trq_cg_add_process_to_task_cgroup(cg_devices_path, 
-                        pjob->ji_qs.ji_jobid, req_index, task_index, pid);
+                        pjob->get_jobid(), req_index, task_index, pid);
         }
       }
 
@@ -8521,29 +8484,29 @@ static int adoptSession(
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "Couldn't add adopted pid %d to cgroup R%u.t%u for job %s. Attempting to add it to the host-level cgroup.",
-        pid, req_index, task_index, pjob->ji_qs.ji_jobid);
+        pid, req_index, task_index, pjob->get_jobid());
       log_err(errno, __func__, log_buffer);
 
-      rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, pid);
+      rc = trq_cg_add_process_to_all_cgroups(pjob->get_jobid(), pid);
       
       if (rc != PBSE_NONE)
         {
         snprintf(log_buffer, sizeof(log_buffer),
           "Couldn't add adopted pid %d to the host-level cgroup for job %s. This process will not be restricted by cgroups.",
-          pid, pjob->ji_qs.ji_jobid);
+          pid, pjob->get_jobid());
         log_err(errno, __func__, log_buffer);
         }
       }
     }
   else
     {
-    rc = trq_cg_add_process_to_all_cgroups(pjob->ji_qs.ji_jobid, pid);
+    rc = trq_cg_add_process_to_all_cgroups(pjob->get_jobid(), pid);
       
     if (rc != PBSE_NONE)
       {
       snprintf(log_buffer, sizeof(log_buffer),
         "Couldn't add adopted pid %d to the host-level cgroup for job %s. This process will not be restricted by cgroups.",
-        pid, pjob->ji_qs.ji_jobid);
+        pid, pjob->get_jobid());
       log_err(errno, __func__, log_buffer);
       }
     }
@@ -8552,7 +8515,7 @@ static int adoptSession(
   /* add to the cpuset */
   snprintf(cpuset_path,sizeof(cpuset_path),
     "/dev/cpuset/torque/%s/tasks",
-    pjob->ji_qs.ji_jobid);
+    pjob->get_jobid());
 
   snprintf(pid_str,sizeof(pid_str),"%d",pid);
 
@@ -8591,7 +8554,7 @@ static int adoptSession(
   DBPRT(("%s\n", log_buffer));
 
   log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB,
-             pjob->ji_qs.ji_jobid, log_buffer);
+             pjob->get_jobid(), log_buffer);
 
   return TM_OKAY;
   }
@@ -8660,7 +8623,7 @@ char *cat_dirs(
 
 char *get_local_script_path(
     
-  job *pjob,
+  mom_job *pjob,
   char *base)
 
   {
@@ -8687,10 +8650,10 @@ char *get_local_script_path(
   }
 
 
-/* Get the job info. If the job exists get it. If not make a new one */
+/* Get the mom_job info. If the mom_job exists get it. If not make a new one */
 int get_job_struct(
 
-  job                **pjob, 
+  mom_job                **pjob, 
   char                *jobid, 
   int                  command, 
   struct tcp_chan     *chan,
@@ -8699,19 +8662,19 @@ int get_job_struct(
 
   {
   int  ret;
-  job *new_job;
+  mom_job *new_job;
 
   new_job = mom_find_job(jobid);
 
   if (new_job != NULL)
     {
-    /* job already exists locally */
+    /* mom_job already exists locally */
 
-    if (new_job->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
+    if (new_job->get_substate() == JOB_SUBSTATE_PRERUN)
       {
       if (LOGLEVEL >= 3)
         {
-        /* if peer mom times out, MS will send new join request for same job */
+        /* if peer mom times out, MS will send new join request for same mom_job */
 
         sprintf(log_buffer, "WARNING:    duplicate JOIN request %s from %s (purging previous pjob)",
                 PMOMCommand[MIN(command,IM_MAX)],
@@ -8799,7 +8762,7 @@ done:
 
 int run_prologue_scripts(
     
-  job *pjob)
+  mom_job *pjob)
   
   {
   int j;
@@ -8814,7 +8777,7 @@ int run_prologue_scripts(
       log_buffer,
       j);
 
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
     ret = PBSE_SYSTEM;
     goto done;
@@ -8830,7 +8793,7 @@ int run_prologue_scripts(
       log_buffer,
       j);
 
-    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buffer);
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
 
     ret = PBSE_SYSTEM;
     goto done;
@@ -8903,7 +8866,7 @@ void demux_wait(
 
 void fork_demux(
     
-  job *pjob)
+  mom_job *pjob)
 
   {
   pid_t             cpid;
@@ -9503,7 +9466,7 @@ void send_pmix_operation_via_stream(
 
   int                stream,
   const char        *cookie,
-  job               *pjob,
+  mom_job               *pjob,
   const std::string &data,
   int                pmix_op)
 
@@ -9517,7 +9480,7 @@ void send_pmix_operation_via_stream(
       {
       }
     else if ((rc = im_compose(local_chan,
-                              pjob->ji_qs.ji_jobid,
+                              pjob->get_jobid(),
                               cookie,
                               pmix_op,
                               TM_NULL_EVENT,
@@ -9543,7 +9506,7 @@ void send_pmix_operation_via_stream(
     if (mc != NULL)
       {
       mc->mc_type = COMPOSE_REPLY;
-      mc->mc_struct = create_compose_reply_info(pjob->ji_qs.ji_jobid,
+      mc->mc_struct = create_compose_reply_info(pjob->get_jobid(),
                                                 cookie,
                                                 pjob->ji_hosts,
                                                 pmix_op,
@@ -9563,7 +9526,7 @@ void send_pmix_operation_via_stream(
 
 void report_fence_to_ms(
 
-  job  *pjob,
+  mom_job  *pjob,
   char *data)
 
   {
@@ -9573,14 +9536,14 @@ void report_fence_to_ms(
   if (data != NULL)
     local_data = data;
 
-  send_pmix_operation_via_stream(stream, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str, pjob, local_data, IM_FENCE);
+  send_pmix_operation_via_stream(stream, pjob->get_str_attr(JOB_ATR_Cookie), pjob, local_data, IM_FENCE);
   } // END report_fence_to_ms()
         
 
 
 void remote_notify_pmix_operation(
     
-  job                *pjob, 
+  mom_job                *pjob, 
   const char         *remote_host,
   const std::string  &data,
   int                 pmix_op,
@@ -9610,8 +9573,7 @@ void remote_notify_pmix_operation(
       int      stream = tcp_connect_sockaddr((struct sockaddr *)&np->sock_addr,
                                              sizeof(np->sock_addr), true);
 
-      send_pmix_operation_via_stream(stream, pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str, pjob,
-                                     data, pmix_op);
+      send_pmix_operation_via_stream(stream, pjob->get_str_attr(JOB_ATR_Cookie), pjob, data, pmix_op);
       break;
       }
     }

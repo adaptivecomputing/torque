@@ -10,38 +10,30 @@
 
 
 
-/* static char *setup_from(job *pjob, char *suffix); */
+struct batch_request *setup_cpyfiles(struct batch_request *preq, svr_job *pjob, char *from, char *to, int direction, int tflag);
 
-struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
+struct batch_request *cpy_stage(struct batch_request *preq, svr_job *pjob, enum job_atr ati, int direction);
 
-/* static int is_joined(job *pjob, enum job_atr ati); */
+void rel_resc(svr_job *pjob);
 
-/* static struct batch_request *return_stdfile(struct batch_request *preq, job *pjob, enum job_atr ati); */
+int check_if_checkpoint_restart_failed(svr_job *pjob);
 
-/* static struct batch_request *cpy_stdfile(struct batch_request *preq, job *pjob, enum job_atr ati); */
+int handle_exiting_or_abort_substate(svr_job *pjob);
 
-struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_atr ati, int direction);
+int handle_returnstd(svr_job *pjob, struct batch_request *preq, int type);
 
-void rel_resc(job *pjob);
+int handle_stageout(svr_job *pjob, int type, struct batch_request *preq);
 
-int check_if_checkpoint_restart_failed(job *pjob);
+int handle_stagedel(svr_job *pjob, int type, struct batch_request *preq);
 
-int handle_exiting_or_abort_substate(job *pjob);
+int handle_exited(svr_job *pjob);
 
-int handle_returnstd(job *pjob, struct batch_request *preq, int type);
-
-int handle_stageout(job *pjob, int type, struct batch_request *preq);
-
-int handle_stagedel(job *pjob, int type, struct batch_request *preq);
-
-int handle_exited(job *pjob);
-
-int handle_complete_first_time(job *pjob);
+int handle_complete_first_time(svr_job *pjob);
 
 void on_job_rerun(batch_request *preq, char *jobid);
 
 #ifdef USESAVEDRESOURCES
-void encode_job_used(job *pjob, tlist_head *phead);
+void encode_job_used(svr_job *pjob, tlist_head *phead);
 #endif /* USESAVEDRESOURCES */
 
 int req_jobobit(struct batch_request *preq);

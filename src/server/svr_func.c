@@ -217,7 +217,7 @@ int encode_svrstate(
 
 void set_resc_assigned(
 
-  job *pjob,         /* I */
+  svr_job *pjob,         /* I */
   enum batch_op op)  /* INCR or DECR */
 
   {
@@ -246,7 +246,7 @@ void set_resc_assigned(
       {
       snprintf(log_buf,sizeof(log_buf),
         "job %s isn't in an execution queue, can't modify resources\njob is in queue %s",
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         pque->qu_qs.qu_name);
       log_err(-1, __func__, log_buf);
       return;
@@ -254,21 +254,21 @@ void set_resc_assigned(
   
     if (op == INCR)
       {
-      if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn)
+      if (pjob->get_svrflags() & JOB_SVFLG_RescAssn)
         {
         return;  /* already added in */
         }
       
-      pjob->ji_qs.ji_svrflags |= JOB_SVFLG_RescAssn;
+      pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_RescAssn);
       }
     else if (op == DECR)
       {
-      if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_RescAssn) == 0)
+      if ((pjob->get_svrflags() & JOB_SVFLG_RescAssn) == 0)
         {
         return;  /* not currently included */
         }
       
-      pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_RescAssn;
+      pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_RescAssn);
       }
     else
       {
@@ -278,7 +278,7 @@ void set_resc_assigned(
     sysru = &server.sv_attr[SRV_ATR_resource_assn];
 
     queru = &pque->qu_attr[QE_ATR_ResourceAssn];
-    std::vector<resource> *job_resc = (std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr;
+    std::vector<resource> *job_resc = pjob->get_resc_attr(JOB_ATR_resource);
 
     if (job_resc != NULL)
       {

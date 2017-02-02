@@ -514,7 +514,7 @@ int record_reservation(
   const char     *rsv_id)
 
   {
-  job            *pjob;
+  svr_job        *pjob;
   bool            found_job = false;
 
   for (unsigned int i = 0; i < pnode->nd_job_usages.size(); i++)
@@ -529,8 +529,7 @@ int record_reservation(
     if ((pjob = svr_find_job_by_id(internal_job_id)) != NULL)
       {
       mutex_mgr job_mutex(pjob->ji_mutex, true);
-      pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
-      pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
+      pjob->set_str_attr(JOB_ATR_reservation_id, strdup(rsv_id));
 
       /* add environment variable BATCH_PARTITION_ID */
       char buf[1024];
@@ -541,7 +540,7 @@ int record_reservation(
         NULL, NULL, buf, 0);
 
       job_attr_def[JOB_ATR_variables].at_set(
-        &pjob->ji_wattr[JOB_ATR_variables], &tempattr, INCR);
+        pjob->get_attr(JOB_ATR_variables), &tempattr, INCR);
 
       job_attr_def[JOB_ATR_variables].at_free(&tempattr);
 

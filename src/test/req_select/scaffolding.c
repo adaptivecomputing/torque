@@ -45,7 +45,7 @@ int encode_str(pbs_attribute *attr, tlist_head *phead, const char *atname, const
   exit(1);
   }
 
-int svr_authorize_jobreq(struct batch_request *preq, job *pjob)
+int svr_authorize_jobreq(struct batch_request *preq, svr_job *pjob)
   {
   fprintf(stderr, "The call to svr_authorize_jobreq to be mocked!!\n");
   exit(1);
@@ -75,7 +75,7 @@ void req_reject(int code, int aux, struct batch_request *preq, const char *HostN
   exit(1);
   }
 
-job *next_job(all_jobs *aj, all_jobs_iterator *iter)
+svr_job *next_job(all_jobs *aj, all_jobs_iterator *iter)
   {
   fprintf(stderr, "The call to next_job to be mocked!!\n");
   exit(1);
@@ -89,7 +89,7 @@ void free_str(struct pbs_attribute *attr)
 
 int status_job(
 
-  job           *pjob, /* ptr to job to status */
+  svr_job           *pjob, /* ptr to job to status */
   batch_request *preq,
   svrattrl      *pal, /* specific attributes to status */
   tlist_head    *pstathd, /* RETURN: head of list to append status to */
@@ -125,7 +125,7 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   exit(1);
   }
 
-job *svr_find_job(const char *jobid, int get_subjob)
+svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   fprintf(stderr, "The call to find_job to be mocked!!\n");
   exit(1);
@@ -160,7 +160,7 @@ int get_svr_attr_b(int index, bool *b)
   }
 
 
-int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
+int unlock_ji_mutex(svr_job *pjob, const char *id, const char *msg, int logging)
   {
   return(0);
   }

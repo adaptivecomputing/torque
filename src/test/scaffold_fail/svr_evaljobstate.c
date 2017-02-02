@@ -6,7 +6,7 @@
 
 #include "scaffold_fail.h"
 
-void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
+void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval)
   {
   }
 

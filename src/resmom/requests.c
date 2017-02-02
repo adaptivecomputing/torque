@@ -132,7 +132,7 @@
 #ifdef HAVE_WORDEXP
 #include <wordexp.h>
 
-extern int terminate_sisters(job *, int);
+extern int terminate_sisters(mom_job *, int);
 
 extern struct var_table vtable;      /* see start_exec.c */
 extern char           **environ;
@@ -141,7 +141,7 @@ int reply_send_mom(struct batch_request *request);
 
 extern int InitUserEnv(
 
-    job            *pjob,   /* I */
+    mom_job            *pjob,   /* I */
     task           *ptask,  /* I (optional) */
     char          **envp,   /* I (optional) */
     struct passwd  *pwdp,   /* I (optional) */
@@ -152,7 +152,7 @@ extern int mkdirtree(
     char *dirpath, /* I */
     mode_t mode);
 
-extern int TMOMJobGetStartInfo(job *, pjobexec_t **) ;
+extern int TMOMJobGetStartInfo(mom_job *, pjobexec_t **) ;
 
 #endif /* HAVE_WORDEXP */
 
@@ -201,11 +201,11 @@ extern char checkpoint_run_exe_name[];
 
 /* prototypes */
 
-char *get_job_envvar(job *, const char *);
+char *get_job_envvar(mom_job *, const char *);
 int replace_checkpoint_path(char *);
 int in_remote_checkpoint_dir(char *);
-int post_stageout(job *pjob, int exit_code);
-int send_job_obit(job *pjob, int exit_code);
+int post_stageout(mom_job *pjob, int exit_code);
+int send_job_obit(mom_job *pjob, int exit_code);
 
 /* loaded in mom_mach.h */
 
@@ -214,7 +214,7 @@ int send_job_obit(job *pjob, int exit_code);
 
 char *get_job_envvar(
 
-  job  *pjob,     /* I */
+  mom_job  *pjob,     /* I */
   const char *variable) /* I */
 
   {
@@ -225,10 +225,7 @@ char *get_job_envvar(
     return(NULL);
     }
 
-  pc = arst_string(
-
-         variable,
-         &pjob->ji_wattr[JOB_ATR_variables]);
+  pc = arst_string(variable, pjob->get_attr(JOB_ATR_variables));
 
   if (pc != NULL)
     {
@@ -259,7 +256,7 @@ static pid_t fork_to_user(
   {
   struct group   *grpp;
   pid_t           pid;
-  job            *pjob;
+  mom_job            *pjob;
   struct passwd  *pwdp = NULL;
   static int      fgrp[NGROUPS_MAX];
   char           *idir;
@@ -281,8 +278,8 @@ static pid_t fork_to_user(
     {
     /* use information cached in the job structure */
 
-    useruid = pjob->ji_qs.ji_un.ji_momt.ji_exuid;
-    usergid = pjob->ji_qs.ji_un.ji_momt.ji_exgid;
+    useruid = pjob->get_exuid();
+    usergid = pjob->get_exgid();
     ngroup  = pjob->ji_grpcache->gc_ngroup;
     groups  = pjob->ji_grpcache->gc_groups;
 
@@ -389,7 +386,7 @@ static pid_t fork_to_user(
 
     if (LOGLEVEL >= 2)
       {
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
 
     if (EMsg != NULL)
@@ -422,7 +419,7 @@ static pid_t fork_to_user(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      (pjob != NULL) ? pjob->ji_qs.ji_jobid : "N/A",
+      (pjob != NULL) ? pjob->get_jobid() : "N/A",
       log_buffer);
     }
 
@@ -461,9 +458,9 @@ static pid_t fork_to_user(
     {
     /* set account id */
 
-    if (pjob->ji_wattr[JOB_ATR_account].at_flags & ATR_VFLAG_SET)
+    if (pjob->is_attr_set(JOB_ATR_account))
       {
-      acctid(0, nam2acid(pjob->ji_wattr[JOB_ATR_account].at_val.at_str));
+      acctid(0, nam2acid(pjob->get_str_attr(JOB_ATR_account)));
       }
     }
 
@@ -592,7 +589,7 @@ static void add_bad_list(
 
 int return_file(
 
-  job           *pjob,
+  mom_job       *pjob,
   enum job_file  which,
   int            sock,
   int            remove_file)
@@ -640,7 +637,7 @@ int return_file(
 
   strcpy(prq->rq_host, mom_host);
 
-  strcpy(prq->rq_ind.rq_jobfile.rq_jobid, pjob->ji_qs.ji_jobid);
+  strcpy(prq->rq_ind.rq_jobfile.rq_jobid, pjob->get_jobid());
 
   while ((amt = read_ac_socket(fds, buf, RT_BLK_SZ)) > 0)
     {
@@ -654,7 +651,7 @@ int return_file(
       break;
       }
     else if ((rc = encode_DIS_ReqHdr(chan, PBS_BATCH_MvJobFile, pbs_current_user)) ||
-             (rc = encode_DIS_JobFile(chan, seq++, buf, amt, pjob->ji_qs.ji_jobid, which)) ||
+             (rc = encode_DIS_JobFile(chan, seq++, buf, amt, pjob->get_jobid(), which)) ||
              (rc = encode_DIS_ReqExtend(chan, NULL)))
       {
       DIS_tcp_cleanup(chan);
@@ -1097,7 +1094,7 @@ void req_deletejob(
   struct batch_request *preq)  /* I */
 
   {
-  job        *pjob;
+  mom_job        *pjob;
   pjobexec_t *TJE = NULL;
   char        log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -1105,7 +1102,7 @@ void req_deletejob(
 
   if (pjob != NULL)
     {
-    snprintf(log_buf, sizeof(log_buf), "%s", pjob->ji_qs.ji_jobid);
+    snprintf(log_buf, sizeof(log_buf), "%s", pjob->get_jobid());
     if (LOGLEVEL >= 3)
       {
       log_record(
@@ -1156,7 +1153,7 @@ void mom_req_holdjob(
 
   {
   int  rc;
-  job *pjob;
+  mom_job *pjob;
   svrattrl *pal;
   pbs_attribute tmph;
 
@@ -1204,7 +1201,7 @@ void req_checkpointjob(
 
   {
   int  rc;
-  job *pjob;
+  mom_job *pjob;
 
   /* If checkpoint supported, do it and terminate the job */
   /* otherwise, return PBSE_NOSUP    */
@@ -1233,7 +1230,7 @@ void req_checkpointjob(
 
 int message_job(
 
-  job            *pjob,
+  mom_job        *pjob,
   enum job_file   jft,  /* I */
   char           *text)
 
@@ -1289,11 +1286,11 @@ int message_job(
                pjob,
                jft,
                O_WRONLY | O_APPEND,
-               pjob->ji_qs.ji_un.ji_momt.ji_exgid)) < 0)
+               pjob->get_exgid())) < 0)
     {
     sprintf(log_buffer, "cannot open %s file for job '%s' (msg: '%.64s')",
             (jft == StdErr) ? "stderr" : "stdout",
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             text);
 
     log_err(errno, __func__, log_buffer);
@@ -1358,7 +1355,7 @@ void req_messagejob(
 
   {
   int   ret = 0;
-  job  *pjob;
+  mom_job  *pjob;
 
   pjob = mom_find_job(preq->rq_ind.rq_message.rq_jid);
 
@@ -1484,7 +1481,7 @@ void req_modifyjob(
   int            i;
   pbs_attribute  newattr[JOB_ATR_LAST];
   pbs_attribute *pattr;
-  job           *pjob;
+  mom_job       *pjob;
   svrattrl      *plist;
   int            rc;
   unsigned int   momport = 0;
@@ -1508,7 +1505,7 @@ void req_modifyjob(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       (char *)"modifying job");
     }
 
@@ -1529,7 +1526,7 @@ void req_modifyjob(
 
   bad = 0;
 
-  pattr = pjob->ji_wattr;
+  pattr = pjob->get_attr(0);
 
   /* call attr_atomic_set to decode and set a copy of the attributes */
 
@@ -1625,7 +1622,7 @@ void req_modifyjob(
               (i <= JOB_ATR_checkpoint_name) ? TJobAttr[i] : "Unkn",
               tmpLine);
 
-      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }  /* END if (LOGLEVEL >= 5) */
 
     if (job_attr_def[i].at_action != NULL)
@@ -1678,14 +1675,14 @@ void req_modifyjob(
     momport = pbs_rm_port;
     }
   
-  job_save(pjob, SAVEJOB_FULL, momport);
+  mom_job_save(pjob, momport);
 
   sprintf(log_buffer, msg_manager,
           msg_jobmod,
           preq->rq_user,
           preq->rq_host);
 
-  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
   /* SUCCESS */
 
@@ -1719,9 +1716,9 @@ void req_shutdown(
 
 static void cray_susp_resum(
 
-  job                  *pjob,
-  int                   which,
-  struct batch_request *preq)
+  mom_job       *pjob,
+  int            which,
+  batch_request *preq)
 
   {
   int   i;
@@ -1770,9 +1767,9 @@ static void cray_susp_resum(
 
   /* child of MOM, cannot update job struct */
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *ptask = pjob->ji_tasks->at(i);
+    task *ptask = pjob->ji_tasks.at(i);
     sess = ptask->ti_qs.ti_sid;
 
     for (ct = 0;ct < 3;ct++)
@@ -1811,17 +1808,17 @@ static void cray_susp_resum(
 
 int sigalltasks_sisters(
 
-  job *pjob,
+  mom_job *pjob,
   int  signum)
 
   {
-  char            *cookie;
+  const char      *cookie;
   eventent        *ep;
   int              i;
   int              stream;
   struct tcp_chan *chan = NULL;
 
-  cookie = pjob->ji_wattr[JOB_ATR_Cookie].at_val.at_str;
+  cookie = pjob->get_str_attr(JOB_ATR_Cookie);
 
   for (i = 0;i < pjob->ji_numnodes;i++)
     {
@@ -1843,7 +1840,7 @@ int sigalltasks_sisters(
       ret = ENOMEM;
       }
     else if ((ret = im_compose(chan, 
-            pjob->ji_qs.ji_jobid,
+            pjob->get_jobid(),
             cookie,
             IM_SIGNAL_TASK,
             ep->ee_event,
@@ -1880,7 +1877,7 @@ int sigalltasks_sisters(
 
 static void resume_suspend(
 
-  job                  *pjob,
+  mom_job              *pjob,
   int                   susp,  /* I (0=FALSE, 1=TRUE) */
   struct batch_request *preq)
 
@@ -1903,7 +1900,7 @@ static void resume_suspend(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buffer);
     }
 
@@ -1931,18 +1928,18 @@ static void resume_suspend(
 
   if (susp == 1)
     {
-    if (pjob->ji_tasks->size() != 0)
+    if (pjob->ji_tasks.size() != 0)
       {
-      task *tmpTask = pjob->ji_tasks->at(0);
+      task *tmpTask = pjob->ji_tasks.at(0);
       kill_task(pjob, tmpTask, SIGTSTP, 0);
       }
 
     sleep(5);
     }
 
-  for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+  for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
     {
-    task *tp = pjob->ji_tasks->at(i);
+    task *tp = pjob->ji_tasks.at(i);
 
     if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
       continue;
@@ -1993,15 +1990,15 @@ static void resume_suspend(
       log_record(
         PBSEVENT_ERROR,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         log_buffer);
       }
 
     signum = (susp == 1) ? SIGCONT : SIGSTOP;
 
-    for (unsigned int i = 0; i < pjob->ji_tasks->size(); i++)
+    for (unsigned int i = 0; i < pjob->ji_tasks.size(); i++)
       {
-      task *tp = pjob->ji_tasks->at(i);
+      task *tp = pjob->ji_tasks.at(i);
 
       if (tp->ti_qs.ti_status != TI_STATE_RUNNING)
         continue;
@@ -2032,14 +2029,14 @@ static void resume_suspend(
     pjob->ji_momstat = time_now;
 
     set_jobs_substate(pjob, JOB_SUBSTATE_SUSPEND);
-    pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
+    pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_Suspend);
 
     if (LOGLEVEL >= 1)
       {
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         (char *)"job suspended - adjusted job state");
       }
     }
@@ -2051,23 +2048,23 @@ static void resume_suspend(
        job.  We use this to compute a new start-time for the job, so that
        walltime is computed correctly elsewhere */
 
-    if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_Suspend)
+    if (pjob->get_svrflags() & JOB_SVFLG_Suspend)
       {
       /* If it's suspended, update the start time */
 
-      pjob->ji_qs.ji_stime = pjob->ji_qs.ji_stime - pjob->ji_momstat + time_now;
+      pjob->set_start_time(pjob->get_start_time() - pjob->ji_momstat + time_now);
       }
 
     /* clear the Suspend bit */
 
-    pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
+    pjob->set_svrflags(pjob->get_svrflags() & ~JOB_SVFLG_Suspend);
 
     if (LOGLEVEL >= 1)
       {
       log_record(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         (char *)"job resumed - adjusted job state");
       }
     }    /* END else (susp != 0) */
@@ -2102,7 +2099,7 @@ void mom_req_signal_job(
   batch_request *preq) /* I */
 
   {
-  job            *pjob;
+  mom_job        *pjob;
   int             sig;
   int             sync_kill = FALSE;
   int             numprocs=0;
@@ -2132,7 +2129,7 @@ void mom_req_signal_job(
     log_record(
       PBSEVENT_JOB,
       PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
+      pjob->get_jobid(),
       log_buffer);
     }
 
@@ -2148,7 +2145,7 @@ void mom_req_signal_job(
 
   if (!strcasecmp(sname, SIG_SUSPEND))
     {
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_RUNNING)
+    if (pjob->get_substate() != JOB_SUBSTATE_RUNNING)
       {
       req_reject(PBSE_BADSTATE, 0, preq, NULL, NULL);
       }
@@ -2166,12 +2163,12 @@ void mom_req_signal_job(
 
   if (!strcasecmp(sname, SIG_RESUME))
     {
-    if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_SUSPEND)
+    if (pjob->get_substate() != JOB_SUBSTATE_SUSPEND)
       {
       log_event(
         PBSEVENT_JOB,
         PBS_EVENTCLASS_JOB,
-        pjob->ji_qs.ji_jobid,
+        pjob->get_jobid(),
         (char *)"resume request on job that is not suspended");
       }
 
@@ -2217,7 +2214,7 @@ void mom_req_signal_job(
     return;
     }
 
-  if ((sig == SIGTERM) && (pjob->ji_qs.ji_substate == JOB_SUBSTATE_SUSPEND))
+  if ((sig == SIGTERM) && (pjob->get_substate() == JOB_SUBSTATE_SUSPEND))
     {
     /* if job is suspended, resume, and then kill - allow job to clean up on sigterm */
 
@@ -2227,12 +2224,12 @@ void mom_req_signal_job(
     }
 
   if ((sync_kill == TRUE) &&
-      ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITING) ||
-       (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)))
+      ((pjob->get_substate() == JOB_SUBSTATE_EXITING) ||
+       (pjob->get_substate() == JOB_SUBSTATE_PRERUN)))
     {
     snprintf(log_buffer, sizeof(log_buffer),
-      "Job %s is being killed from pbs_server.", pjob->ji_qs.ji_jobid);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      "Job %s is being killed from pbs_server.", pjob->get_jobid());
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
     mom_deljob(pjob);
     }
   else
@@ -2247,7 +2244,7 @@ void mom_req_signal_job(
     if (rc != PBSE_NONE)
       {
       sprintf(log_buffer, "%s - Could not terminate all sisters: %d", __func__, rc);
-      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+      log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
 
     /*
@@ -2259,16 +2256,16 @@ void mom_req_signal_job(
     numprocs = kill_job(pjob, sig, __func__, "killing job");
 
     if ((numprocs == 0) && ((sig == 0)||(sig == SIGKILL)) &&
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_OBIT))
+        (pjob->get_substate() != JOB_SUBSTATE_OBIT))
       {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_EXITED)
+      if (pjob->get_substate() == JOB_SUBSTATE_EXITED)
         {
-        if (pjob->ji_tasks->size() == 0)
+        if (pjob->ji_tasks.size() == 0)
           {
           snprintf(log_buffer, sizeof(log_buffer),
             "job recycled into exiting on SIGNULL/KILL from substate %d again. Terminating job now.",
-            pjob->ji_qs.ji_substate);
-          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+            pjob->get_substate());
+          log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
           mom_deljob(pjob);
           }
         }
@@ -2278,9 +2275,9 @@ void mom_req_signal_job(
         /* force issue of (another) job obit */
 
         sprintf(log_buffer, "job recycled into exiting on SIGNULL/KILL from substate %d",
-          pjob->ji_qs.ji_substate);
+          pjob->get_substate());
 
-        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
 
         set_jobs_substate(pjob, JOB_SUBSTATE_EXITING);
 
@@ -2289,7 +2286,7 @@ void mom_req_signal_job(
           momport = pbs_rm_port;
           }
       
-        job_save(pjob, SAVEJOB_QUICK, momport);
+        mom_job_save(pjob, momport);
 
         exiting_tasks = 1;
         }
@@ -2312,7 +2309,7 @@ void mom_req_signal_job(
 
 void encode_used(
 
-  job               *pjob,     /* I */
+  mom_job           *pjob,     /* I */
   int                perm,     /* I */
   Json::Value       *job_used, /* O */
   tlist_head        *phead)    /* O */
@@ -2323,7 +2320,7 @@ void encode_used(
   attribute_def *ad;
   char           valbuf[MAXLINE];
 
-  at = &pjob->ji_wattr[JOB_ATR_resc_used];
+  at = pjob->get_attr(JOB_ATR_resc_used);
   ad = &job_attr_def[JOB_ATR_resc_used];
 
   if (((at->at_flags & ATR_VFLAG_SET) == 0) ||
@@ -2457,7 +2454,7 @@ void encode_used(
 
 void encode_flagged_attrs(
 
-  job               *pjob,     /* I */
+  mom_job           *pjob,     /* I */
   int                perm,     /* I */
   Json::Value       *job_info, /* O */
   tlist_head        *phead)    /* O */
@@ -2469,7 +2466,7 @@ void encode_flagged_attrs(
 
   for (index = 0;(int)index < JOB_ATR_LAST;++index)
     {
-    at  = &pjob->ji_wattr[index];
+    at  = pjob->get_attr(index);
     ad  = &job_attr_def[index];
 
     if (at->at_flags & ATR_VFLAG_SEND)
@@ -2483,7 +2480,7 @@ void encode_flagged_attrs(
         sprintf(log_buffer, "encoding \"send flagged\" attr: %s",
                 ad->at_name);
 
-        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
         }
 
       if (phead != NULL)
@@ -2503,7 +2500,7 @@ void encode_flagged_attrs(
 
 void stat_single_job(
 
-  job           *pjob,
+  mom_job       *pjob,
   batch_request *preq,
   batch_reply   *preply)
 
@@ -2513,7 +2510,7 @@ void stat_single_job(
   struct brp_status *pstat;
 
   if ((am_i_mother_superior(*pjob) == true) &&
-      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING))
+      (pjob->get_substate() == JOB_SUBSTATE_RUNNING))
     {
     /* allocate reply structure and fill in header portion */
     pstat = (struct brp_status *)calloc(1, sizeof(struct brp_status));
@@ -2524,7 +2521,7 @@ void stat_single_job(
 
     pstat->brp_objtype = MGR_OBJ_JOB;
 
-    strcpy(pstat->brp_objname, pjob->ji_qs.ji_jobid);
+    strcpy(pstat->brp_objname, pjob->get_jobid());
 
     CLEAR_HEAD(pstat->brp_attr);
 
@@ -2559,7 +2556,7 @@ int req_stat_job(
 
   {
   char    name[(PBS_MAXSVRJOBID > PBS_MAXDEST ? PBS_MAXSVRJOBID:PBS_MAXDEST)+1];
-  job    *pjob;
+  mom_job    *pjob;
 
   struct batch_reply *preply = &preq->rq_reply;
 
@@ -2578,7 +2575,7 @@ int req_stat_job(
 
   if ((name[0] == '\0') || (name[0] == '@'))
     {
-    std::list<job *>::iterator iter;
+    std::list<mom_job *>::iterator iter;
 
     for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
       {
@@ -2646,7 +2643,7 @@ int del_files(
 #endif
 
 #ifdef HAVE_WORDEXP
-  job *pjob;
+  mom_job *pjob;
   wordexp_t pathexp;
 #endif
 
@@ -2957,7 +2954,7 @@ void req_rerunjob(
   struct batch_request *preq)  /* I */
 
   {
-  job           *pjob;
+  mom_job       *pjob;
   int            sock;
   int            rc;
 
@@ -2972,7 +2969,7 @@ void req_rerunjob(
 
   if (LOGLEVEL >= 3)
     {
-    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, (char *)"rerunning job");
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), (char *)"rerunning job");
     }
 
   /* fork to send files back */
@@ -3027,8 +3024,7 @@ void req_rerunjob(
    * If so, do not remove files as the pbs_server will be sending a
    * copy files request.
   */
-  if ((pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_flags & ATR_VFLAG_SET) 
-    && (pjob->ji_wattr[JOB_ATR_copystd_on_rerun].at_val.at_bool == true))
+  if (pjob->get_bool_attr(JOB_ATR_copystd_on_rerun) == true)
       remove_file = 0;
 
   rc = return_file(pjob, StdOut, sock, remove_file);
@@ -3072,8 +3068,8 @@ void req_returnfiles(
   struct batch_request *preq)
 
   {
-  struct job  *pjob;
-  int          sock;
+  mom_job *pjob;
+  int      sock;
 
   pjob = mom_find_job(preq->rq_ind.rq_returnfiles.rq_jobid);
 
@@ -3085,7 +3081,7 @@ void req_returnfiles(
       {
       sprintf(log_buffer, "mom_open_socket_to_jobs_server FAILED to get socket: %d for job %s",
         sock,
-        pjob->ji_qs.ji_jobid);
+        pjob->get_jobid());
       
       log_err(errno, __func__, log_buffer);
     
@@ -3603,7 +3599,7 @@ int copy_and_process(
 void determine_spooldir(
 
   std::string &spooldir,
-  job         *pjob)
+  mom_job         *pjob)
 
   {
 #if NO_SPOOL_OUTPUT == 1
@@ -3735,7 +3731,7 @@ void req_cpyfile(
   char            EMsg[1024];
   char            HDir[1024];
 
-  job            *pjob = NULL;
+  mom_job            *pjob = NULL;
 
 #ifdef HAVE_WORDEXP
   std::vector<std::string> sources;
@@ -3809,7 +3805,7 @@ void req_cpyfile(
     // In single transaction mode, mark this as a special subtask
     if (pjob != NULL)
       {
-      if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT)
+      if (pjob->get_substate() == JOB_SUBSTATE_STAGEOUT)
         {
         pjob->ji_momsubt = rc;
         pjob->ji_mompost = send_job_obit;
@@ -3852,7 +3848,7 @@ void req_cpyfile(
       goto error;
       }
 
-    strcpy(pjob->ji_qs.ji_jobid, preq->rq_ind.rq_cpyfile.rq_jobid);
+    pjob->set_jobid(preq->rq_ind.rq_cpyfile.rq_jobid);
 
     if (TTmpDirName(pjob, faketmpdir, sizeof(faketmpdir)))
       {
@@ -4130,7 +4126,7 @@ error:
 
   // In single transaction mode, delete the staged in files next
   if ((pjob != NULL) && 
-      (pjob->ji_qs.ji_substate == JOB_SUBSTATE_STAGEOUT))
+      (pjob->get_substate() == JOB_SUBSTATE_STAGEOUT))
     {
     if (bad_files)
       log_err(-1, __func__, bad_list);
@@ -4223,22 +4219,21 @@ void req_delfile(
 
 
 
-job *job_with_reservation_id(
+mom_job *job_with_reservation_id(
 
   const char *rsv_id)
 
   {
-  job *pjob;
-  std::list<job *>::iterator iter;
+  mom_job *pjob;
+  std::list<mom_job *>::iterator iter;
 
   for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
     {
     pjob = *iter;
 
-    if ((pjob->ji_wattr[JOB_ATR_reservation_id].at_flags & ATR_VFLAG_SET) &&
-        (pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str != NULL))
+    if (pjob->get_str_attr(JOB_ATR_reservation_id) != NULL)
       {
-      if (!strcmp(rsv_id, pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str))
+      if (!strcmp(rsv_id, pjob->get_str_attr(JOB_ATR_reservation_id)))
         return(pjob);
       }
     }
@@ -4255,7 +4250,7 @@ void req_delete_reservation(
   {
   char *rsv_id = request->rq_extend;
   int   rc = PBSE_NONE;
-  job *pjob = NULL;
+  mom_job *pjob = NULL;
 
   if (rsv_id != NULL)
     {
@@ -4271,7 +4266,7 @@ void req_delete_reservation(
     else
       {
       snprintf(log_buffer, sizeof(log_buffer), "Ignored release reservation request from server for reservation id %s because of job %s", 
-        rsv_id, pjob->ji_qs.ji_jobid);
+        rsv_id, pjob->get_jobid());
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
       }
     }
@@ -4330,7 +4325,7 @@ void req_change_power_state(
 
 batch_request *initialize_stageout_request(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   batch_request     *preq = new batch_request(PBS_BATCH_CopyFiles);
@@ -4338,18 +4333,18 @@ batch_request *initialize_stageout_request(
 
   pcf->rq_dir = STAGE_DIR_OUT;
   CLEAR_HEAD(pcf->rq_pair);
-  strcpy(pcf->rq_jobid, pjob->ji_qs.ji_jobid);
+  strcpy(pcf->rq_jobid, pjob->get_jobid());
   snprintf(pcf->rq_owner, sizeof(pcf->rq_owner),
-           "%s", pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
+           "%s", pjob->get_str_attr(JOB_ATR_job_owner));
   snprintf(pcf->rq_user, sizeof(pcf->rq_user),
-           "%s", pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+           "%s", pjob->get_str_attr(JOB_ATR_euser));
 
   char *at;
 
-  if (pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str != NULL)
+  if (pjob->get_str_attr(JOB_ATR_egroup) != NULL)
     {
     snprintf(pcf->rq_group, sizeof(pcf->rq_group),
-             "%s", pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+             "%s", pjob->get_str_attr(JOB_ATR_egroup));
 
     if ((at = strchr(pcf->rq_group, '@')) != NULL)
       *at = '\0';
@@ -4375,7 +4370,7 @@ batch_request *initialize_stageout_request(
 
 batch_request *get_std_file_info(
 
-  job *pjob)
+  mom_job *pjob)
 
   {
   batch_request *preq;
@@ -4385,15 +4380,14 @@ batch_request *get_std_file_info(
   // Interactive jobs have no std files, and if spoolasfinalname is set the output is already
   // where it should be
   if ((spoolasfinalname == TRUE) ||
-      ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
-       (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long != false)))
+      (pjob->get_long_attr(JOB_ATR_interactive) != false))
     return(NULL);
 
-  if (pjob->ji_wattr[JOB_ATR_join].at_val.at_str != NULL)
+  if (pjob->get_str_attr(JOB_ATR_join) != NULL)
     {
-    if (!strcmp(pjob->ji_wattr[JOB_ATR_join].at_val.at_str, "oe"))
+    if (!strcmp(pjob->get_str_attr(JOB_ATR_join), "oe"))
       copy_stderr = false;
-    else if (!strcmp(pjob->ji_wattr[JOB_ATR_join].at_val.at_str, "eo"))
+    else if (!strcmp(pjob->get_str_attr(JOB_ATR_join), "eo"))
       copy_stdout = false;
     }
 
@@ -4403,11 +4397,11 @@ batch_request *get_std_file_info(
   if (copy_stdout)
     {
     struct rqfpair *pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
-    std::string local(pjob->ji_qs.ji_fileprefix);
+    std::string local(pjob->get_fileprefix());
     local += JOB_STDOUT_SUFFIX;
 
     pair->fp_local = strdup(local.c_str());
-    pair->fp_rmt = strdup(pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str);
+    pair->fp_rmt = strdup(pjob->get_str_attr(JOB_ATR_outpath));
     pair->fp_flag = STAGE_DIR_OUT;
     
     CLEAR_LINK(pair->fp_link);
@@ -4417,11 +4411,11 @@ batch_request *get_std_file_info(
   if (copy_stderr)
     {
     struct rqfpair *pair = (struct rqfpair *)calloc(1, sizeof(struct rqfpair));
-    std::string local(pjob->ji_qs.ji_fileprefix);
+    std::string local(pjob->get_fileprefix());
     local += JOB_STDERR_SUFFIX;
 
     pair->fp_local = strdup(local.c_str());
-    pair->fp_rmt = strdup(pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str);
+    pair->fp_rmt = strdup(pjob->get_str_attr(JOB_ATR_errpath));
     pair->fp_flag = STAGE_DIR_OUT;
     
     CLEAR_LINK(pair->fp_link);
@@ -4485,10 +4479,10 @@ void place_files_in_preq(
 batch_request *get_stageout_info(
 
   batch_request *preq,
-  job           *pjob)
+  mom_job           *pjob)
 
   {
-  struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stageout].at_val.at_arst;
+  struct array_strings *arst = pjob->get_arst_attr(JOB_ATR_stageout);
 
   // If this isn't set we have nothing to add
   if (arst == NULL)
@@ -4514,7 +4508,7 @@ batch_request *get_stageout_info(
 
 int send_back_std_and_staged_files(
 
-  job *pjob,
+  mom_job *pjob,
   int  exit_status)
 
   {
@@ -4522,8 +4516,8 @@ int send_back_std_and_staged_files(
   // An exit status of JOB_EXEC_FAIL1 (-1), JOB_EXEC_FAIL2 (-2), or JOB_EXEC_RETRY (-3) 
   // indicate that the job didn't actually run
   if ((pjob->ji_job_is_being_rerun == FALSE) &&
-      ((pjob->ji_qs.ji_un.ji_momt.ji_exitstat > JOB_EXEC_FAIL1) ||
-       (pjob->ji_qs.ji_un.ji_momt.ji_exitstat < JOB_EXEC_RETRY)))
+      ((pjob->get_mom_exitstat() > JOB_EXEC_FAIL1) ||
+       (pjob->get_mom_exitstat() < JOB_EXEC_RETRY)))
     {
     batch_request *preq = get_std_file_info(pjob);
 
@@ -4552,14 +4546,14 @@ int send_back_std_and_staged_files(
 
 void delete_staged_in_files(
 
-  job   *pjob,
+  mom_job   *pjob,
   char  *home_dir,
   char **bad_list)
 
   {
   if (pjob->ji_job_is_being_rerun == FALSE)
     {
-    struct array_strings *arst = pjob->ji_wattr[JOB_ATR_stagein].at_val.at_arst;
+    struct array_strings *arst = pjob->get_arst_attr(JOB_ATR_stagein);
 
     set_jobs_substate(pjob, JOB_SUBSTATE_STAGEDEL);
 
@@ -4606,7 +4600,7 @@ void delete_staged_in_files(
 
 int post_stageout(
 
-  job *pjob,  
+  mom_job *pjob,  
   int  exit_code)
 
   {

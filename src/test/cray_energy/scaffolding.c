@@ -15,6 +15,23 @@ resource_def *find_resc_def(resource_def *svr_resc, char const * name, int max_i
   return(NULL);
   }
 
+resource *find_resc_entry(
+
+  pbs_attribute *pattr,  /* I */
+  resource_def  *rscdf)  /* I */
+  
+  {
+  return(NULL);
+  }
+
+resource *add_resource_entry(
+
+  pbs_attribute    *pattr,
+  resource_def     *prdef)
+  
+  {
+  return(NULL);
+  }
 
 
 #if 0
@@ -164,3 +181,18 @@ char *pbse_to_txt(int err)
   }
 
 #endif
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  strcpy(this->ji_qs.ji_jobid, jobid);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
