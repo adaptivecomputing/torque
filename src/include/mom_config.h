@@ -140,11 +140,11 @@ extern char             jobstarter_exe_name[];
 extern int              jobstarter_set;
 extern int              jobstarter_privileged;
 extern char            *server_alias;
-extern char            *TRemChkptDirList[TMAX_RCDCOUNT];
-extern char             tmpdir_basename[MAXPATHLEN];  /* for $TMPDIR */
-extern char             rcp_path[MAXPATHLEN];
-extern char             rcp_args[MAXPATHLEN];
-extern char             xauth_path[MAXPATHLEN];
+extern char            *TRemChkptDirList[];
+extern char             tmpdir_basename[];  /* for $TMPDIR */
+extern char             rcp_path[];
+extern char             rcp_args[];
+extern char             xauth_path[];
 extern int              mask_num;
 extern int              mask_max;
 extern char           **maskclient; /* wildcard connections */
