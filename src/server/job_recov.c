@@ -128,7 +128,6 @@
 #endif
 #include "array.h"
 #include "ji_mutex.h"
-#include "job_recov.h"
 #include "job_recovery.h"
 #include "policy_values.h"
 

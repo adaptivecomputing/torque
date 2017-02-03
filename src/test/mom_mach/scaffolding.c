@@ -11,7 +11,7 @@
 #include "pbs_config.h"
 #include <list>
 
-#include "mom_main.h" /* MAX_LINE */
+#include "mom_main.h" 
 #include "resource.h" /* resource_def, resource */
 #include "list_link.h" /* tlist_head, list_link, pidl */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -31,7 +31,7 @@ std::string cg_cpuacct_path;
 std::list<mom_job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 int svr_resc_size = 0;
-char path_meminfo[MAX_LINE];
+char path_meminfo[MAXLINE];
 const char *no_parm = "required parameter not found";
 long system_ncpus = 0;
 time_t time_now = 0;
