@@ -125,6 +125,7 @@
 #include "lib_ifl.h" /* AUTH_TYPE_IFF, DIS_* */
 #include "pbs_constants.h" /* LOCAL_IP */
 #include "net_cache.h"
+#include "server_limits.h"
 
 #define LOCAL_LOG_BUF 1024
 #define CNTRETRYDELAY 5
