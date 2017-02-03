@@ -8045,7 +8045,6 @@ char *std_file_name(
             {
             std::string tmp(jobpath);
             tmp += "/";
-            strcat(jobpath, "/");
 
             update_path(pjob, &jobpath, which, tmp);
             }
