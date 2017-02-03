@@ -7834,6 +7834,37 @@ int restore_supplementary_group_list(
 #endif // NO_SPOOL_OUTPUT
 
 
+
+void update_path(
+
+  mom_job        *pjob,
+  const char    **jobpath,
+  enum job_file   which,
+  std::string    &newval)
+
+  {
+  switch (which)
+    {
+    case StdOut:
+      
+      pjob->set_str_attr(JOB_ATR_outpath, strdup(newval.c_str()));
+      *jobpath = pjob->get_str_attr(JOB_ATR_outpath);
+      break;
+      
+    case StdErr:
+      
+      pjob->set_str_attr(JOB_ATR_errpath, strdup(newval.c_str()));
+      *jobpath = pjob->get_str_attr(JOB_ATR_errpath);
+      break;
+
+    default:
+      // This is only for output and error path
+      break;
+    }
+  }
+
+
+
 /*
  * std_file_name - generate the fully qualified path/name for a
  *     job standard stream
@@ -8005,25 +8036,18 @@ char *std_file_name(
           work += pjob->ji_grpcache->gc_homedir;
           work += endpath;
 
-          switch (which)
-            {
-            case StdOut:
-
-              pjob->set_str_attr(JOB_ATR_outpath, strdup(work.c_str()));
-              break;
-
-            case StdErr:
-
-              pjob->set_str_attr(JOB_ATR_errpath, strdup(work.c_str()));
-              break;
-            }
+          update_path(pjob, &jobpath, which, work);
           }
 
         if ((strstr(jobpath, pd) == NULL) && (strchr(jobpath, '$') == NULL))
           {
           if (jobpath[strlen(jobpath) - 1] != '/')
             {
+            std::string tmp(jobpath);
+            tmp += "/";
             strcat(jobpath, "/");
+
+            update_path(pjob, &jobpath, which, tmp);
             }
 
           pt = strchr(jobpath, ':');
