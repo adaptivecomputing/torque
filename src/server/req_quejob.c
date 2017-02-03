@@ -1953,6 +1953,97 @@ int req_jobcredential(
 
 
 /*
+ * write_job_file()
+ *
+ * @param pj - the job whose file we're writing
+ * @param append_only - we should be only appending the job file at this time
+ * @return PBSE_NONE on SUCCESS, false otherwise
+ */
+
+int write_job_file(
+
+  batch_request *preq,
+  svr_job       *pj,
+  std::string   &errbuf,
+  bool           append_only)
+
+  {
+  int          fds = -1;
+  char         namebuf[MAXPATHLEN];
+  int          filemode = 0600;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int          rc = PBSE_NONE;
+  std::string  adjusted_path_jobs;
+
+  if (svr_authorize_jobreq(preq, pj) == -1)
+    {
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "cannot authorize request %s (%d-%s)",
+        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+    errbuf = log_buf;
+    return(rc);
+    }
+
+  // get adjusted path_jobs path
+  adjusted_path_jobs = get_path_jobdata(pj->get_jobid(), path_jobs);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+    pj->get_fileprefix(), JOB_SCRIPT_SUFFIX);
+
+  if ((append_only == true) ||
+      (pj->get_scriptsz() != 0))
+    {
+    // Open existing file
+    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
+    }
+  else
+    {
+    // Open a new file
+    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
+    }
+
+  if (fds < 0)
+    {
+    rc = PBSE_CAN_NOT_OPEN_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
+             namebuf,
+             errno,
+             strerror(errno),
+             msg_script_open);
+    errbuf = log_buf;
+    return rc;
+    }
+
+  if (write_ac_socket(
+        fds,
+        preq->rq_ind.rq_jobfile.rq_data,
+        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
+    {
+    rc = PBSE_CAN_NOT_WRITE_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
+        namebuf,
+        errno,
+        strerror(errno),
+        msg_script_write);
+    errbuf = log_buf;
+    close(fds);
+    return rc;
+    }
+
+  close(fds);
+
+  if (append_only == false)
+    pj->set_scriptsz(pj->get_scriptsz() + preq->rq_ind.rq_jobfile.rq_size);
+
+  /* job has a script file */
+  pj->set_svrflags((pj->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT);
+
+  return(PBSE_NONE);
+  } // END write_job_file()
+
+
+
+/*
  * req_jobscript - receive job script section
  *
  * Each section is appended to the file
@@ -1964,13 +2055,10 @@ int req_jobscript(
   bool           perform_commit)
 
   {
-  int   fds;
-  char  namebuf[MAXPATHLEN];
-  svr_job  *pj;
-  int   filemode = 0600;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
-  int   rc = PBSE_NONE;
-  std::string adjusted_path_jobs;
+  svr_job     *pj;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
+  int          rc = PBSE_NONE;
+  std::string  errbuf;
 
   errno = 0;
 
@@ -1978,10 +2066,32 @@ int req_jobscript(
 
   if (pj == NULL)
     {
-    rc = PBSE_IVALREQ;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
-    log_err(rc, __func__, log_buf);
+    rc = -1;
+
+    // Due to the condensed queuing process, sometimes jobs can be already committed by the time we 
+    // send the next step of the job file. Check if it's in the job list and append the file if
+    // so.
+    if ((pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, TRUE)) != NULL)
+      {
+      mutex_mgr job_mutex(pj->ji_mutex, true);
+      rc = write_job_file(preq, pj, errbuf, true);
+
+      // Appended the job script
+      if (rc == PBSE_NONE)
+        {
+        reply_ack(preq);
+        return(rc);
+        }
+      }
+
+    if (rc == -1)
+      {
+      rc = PBSE_IVALREQ;
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
+          preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+      log_err(rc, __func__, log_buf);
+      }
+
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
     }
@@ -2014,70 +2124,12 @@ int req_jobscript(
     return(rc);
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if ((rc = write_job_file(preq, pj, errbuf, false)) != PBSE_NONE)
     {
-    rc = PBSE_PERM;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "cannot authorize request %s (%d-%s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    return rc;
+    return(rc);
     }
-
-  // get adjusted path_jobs path
-  adjusted_path_jobs = get_path_jobdata(pj->get_jobid(), path_jobs);
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-    pj->get_fileprefix(), JOB_SCRIPT_SUFFIX);
-
-  if (pj->get_scriptsz() == 0)
-    {
-    /* NOTE:  fail is job script already exists */
-
-    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
-    }
-  else
-    {
-    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
-    }
-
-  if (fds < 0)
-    {
-    rc = PBSE_CAN_NOT_OPEN_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
-             namebuf,
-             errno,
-             strerror(errno),
-             msg_script_open);
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    return rc;
-    }
-
-  if (write_ac_socket(
-        fds,
-        preq->rq_ind.rq_jobfile.rq_data,
-        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
-    {
-    rc = PBSE_CAN_NOT_WRITE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
-        namebuf,
-        errno,
-        strerror(errno),
-        msg_script_write);
-    log_err(rc, __func__, log_buf);
-    req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
-    close(fds);
-    return rc;
-    }
-
-  close(fds);
-
-  pj->set_scriptsz(pj->get_scriptsz() + preq->rq_ind.rq_jobfile.rq_size);
-
-  /* job has a script file */
-
-  pj->set_svrflags((pj->get_svrflags() & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT);
 
   /* SUCCESS */
   if (perform_commit == true)
