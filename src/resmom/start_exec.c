@@ -7860,10 +7860,6 @@ char *std_file_name(
   const char  *pd;
   const char  *suffix;
   const char  *jobpath = NULL;
-#ifdef QSUB_KEEP_NO_OVERRIDE
-  char        *pt;
-  char         endpath[MAXPATHLEN + 1];
-#endif
 
 #if NO_SPOOL_OUTPUT == 0
   int          havehomespool = 0;
@@ -7998,13 +7994,29 @@ char *std_file_name(
       /* don't do for checkpoint file names, only StdErr and StdOut */
       if (strcmp(suffix, JOB_CHECKPOINT_SUFFIX) != 0)
         {
-        pt = strstr(jobpath, "$HOME");
+        const char  *pt = strstr(jobpath, "$HOME");
+        char         endpath[MAXPATHLEN + 1];
+        std::string  work(jobpath);
 
         if (pt != NULL)
           {
           strcpy(endpath, pt + 5);
-          strcpy(pt, pjob->ji_grpcache->gc_homedir);
-          strcat(jobpath, endpath);
+          work.erase(work.find("$HOME"));
+          work += pjob->ji_grpcache->gc_homedir;
+          work += endpath;
+
+          switch (which)
+            {
+            case StdOut:
+
+              pjob->set_str_attr(JOB_ATR_outpath, strdup(work.c_str()));
+              break;
+
+            case StdErr:
+
+              pjob->set_str_attr(JOB_ATR_errpath, strdup(work.c_str()));
+              break;
+            }
           }
 
         if ((strstr(jobpath, pd) == NULL) && (strchr(jobpath, '$') == NULL))
