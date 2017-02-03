@@ -103,9 +103,6 @@
 **  netload   number of bytes transferred for all interfaces
 */
 
-#ifndef MAX_LINE
-#define MAX_LINE 1024
-#endif
 
 #ifndef TRUE
 #define FALSE 0
@@ -150,7 +147,7 @@ extern int       num_node_boards;
 extern nodeboard node_boards[];
 extern int       numa_index;
 #else
-extern char  path_meminfo[MAX_LINE];
+extern char  path_meminfo[MAXLINE];
 #endif /* NUMA_SUPPORT */
 
 /*

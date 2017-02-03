@@ -1402,7 +1402,7 @@ static int setup_node_boards(
   int             i;
   int             j;
   struct pbsnode *pn;
-  char            pname[MAX_LINE];
+  char            pname[MAXLINE];
   const char     *np_ptr = NULL;
   const char     *gp_ptr = NULL;
   int             np = 0;
@@ -2159,7 +2159,7 @@ int create_node_range(
 
   char *dash = strchr(open_bracket,'-');
   char *close_bracket = strchr(open_bracket,']');
-  char  tmp_node_name[MAX_LINE];
+  char  tmp_node_name[MAXLINE];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((dash == NULL) ||

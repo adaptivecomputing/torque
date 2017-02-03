@@ -276,7 +276,7 @@ int                     route_retry_interval = 10; /* time in seconds to check r
 char                    Torque_Info_Version[] = PACKAGE_VERSION;
 char                    Torque_Info_Version_Revision[] = GIT_HASH;
 char                    Torque_Info_Component[] = "pbs_server";
-char                    Torque_Info_SysVersion[MAX_LINE];
+char                    Torque_Info_SysVersion[MAXLINE];
 
 /* HA global data items */
 long                    HALockCheckTime = 0;
@@ -1613,8 +1613,8 @@ int main(
   int          rc;
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
-  char         EMsg[MAX_LINE];
-  char         tmpLine[MAX_LINE];
+  char         EMsg[MAXLINE];
+  char         tmpLine[MAXLINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned int server_name_file_port = 0;
 
@@ -2491,7 +2491,7 @@ void *update_ha_lock_thread(
   void *Arg) /* I */
 
   {
-  char           EMsg[MAX_LINE];
+  char           EMsg[MAXLINE];
 
   int            LocalErrno = 0;
   int            rc = 0;
@@ -2605,7 +2605,7 @@ int start_update_ha_lock_thread()
   int rc;
   int fds;
 
-  char smallBuf[MAX_LINE];
+  char smallBuf[MAXLINE];
 
   /* write the pid to the lockfile for correctness */
   fds = open(HALockFile,O_TRUNC|O_WRONLY,0600);

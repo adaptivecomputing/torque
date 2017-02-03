@@ -142,7 +142,7 @@ int    internal_state = 0;
 char           Torque_Info_Version[] = PACKAGE_VERSION;
 char           Torque_Info_Version_Revision[] = GIT_HASH;
 char           Torque_Info_Component[] = "pbs_mom";
-char           Torque_Info_SysVersion[MAX_LINE];
+char           Torque_Info_SysVersion[MAXLINE];
 int            MOMJobDirStickySet = FALSE;
 const int      OBIT_BUSY_RETRY = 6;
 const int      OBIT_RETRY_LIMIT = 5;
@@ -158,7 +158,7 @@ int            num_node_boards;
 nodeboard      node_boards[MAX_NODE_BOARDS]; 
 int            numa_index;
 #else
-char           path_meminfo[MAX_LINE];
+char           path_meminfo[MAXLINE];
 #endif
 
 extern pthread_mutex_t log_mutex;
@@ -6753,7 +6753,7 @@ int read_layout_file()
 
   {
   FILE          *layout;
-  char           line[MAX_LINE];
+  char           line[MAXLINE];
   const char    *delims = " \t\n\r=";
   char          *tok = NULL;
   const char    *val = NULL;

@@ -110,10 +110,10 @@ int validate_active_pbs_server(
   {
   char     *err_msg = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
-  char      write_buf[MAX_LINE];
+  char      write_buf[MAXLINE];
   int       write_buf_len;
   char     *read_buf = NULL;
-  long long read_buf_len = MAX_LINE;
+  long long read_buf_len = MAXLINE;
   int       local_socket;
   int       rc;
   long long ret_code;
@@ -200,10 +200,10 @@ int get_active_pbs_server(
   char     *err_msg = NULL;
   char      *current_server = NULL;
   char      unix_sockname[MAXPATHLEN + 1];
-  char      write_buf[MAX_LINE];
+  char      write_buf[MAXLINE];
   int       write_buf_len;
   char     *read_buf = NULL;
-  long long read_buf_len = MAX_LINE;
+  long long read_buf_len = MAXLINE;
   int       local_socket;
   int       rc = PBSE_NONE;
   long long ret_code = PBSE_NONE;

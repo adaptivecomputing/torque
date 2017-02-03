@@ -111,10 +111,6 @@
 
 #define SAVEJOB_BUF_SIZE 8192
 
-#ifndef MAX_LINE
-#define MAX_LINE 1024
-#endif
-
 /* anything including job.h also needs array.h so lets just include it this way*/
 #ifndef SUCCESS
 #define SUCCESS 1

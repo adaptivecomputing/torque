@@ -14,12 +14,14 @@ void log_err(int,const char *,const char *)
 START_TEST(iterator_test)
   {
   all_jobs alljobs;
-  struct job *jobs[5];
+  svr_job *jobs[5];
+  char        buf[1024];
 
   for (int i = 0; i < 5; i++)
     {
     jobs[i] = job_alloc();
-    sprintf(jobs[i]->ji_qs.ji_jobid, "%d.threnody", i);
+    sprintf(buf, "%d.threnody", i);
+    jobs[i]->set_jobid(buf);
     insert_job(&alljobs, jobs[i]);
     }
 
@@ -27,12 +29,11 @@ START_TEST(iterator_test)
   all_jobs_iterator *iter = alljobs.get_iterator(true);
   for (int i = 4; i >= 0; i--)
     {
-    char buf[1024];
     job *ptr = iter->get_next_item();
     sprintf(buf, "%d.threnody", i);
     fail_unless(ptr != NULL);
-    fail_unless(!strcmp(ptr->ji_qs.ji_jobid, buf), 
-      "Expected %s, but got %s", buf, ptr->ji_qs.ji_jobid);
+    fail_unless(!strcmp(ptr->get_jobid(), buf), 
+      "Expected %s, but got %s", buf, ptr->get_jobid());
     }
 
   // get a forwards iterator
@@ -43,8 +44,8 @@ START_TEST(iterator_test)
     job *ptr = iter->get_next_item();
     sprintf(buf, "%d.threnody", i);
     fail_unless(ptr != NULL);
-    fail_unless(!strcmp(ptr->ji_qs.ji_jobid, buf), 
-      "Expected %s, but got %s", buf, ptr->ji_qs.ji_jobid);
+    fail_unless(!strcmp(ptr->get_jobid(), buf), 
+      "Expected %s, but got %s", buf, ptr->get_jobid());
     }
   }
 END_TEST

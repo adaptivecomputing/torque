@@ -19,10 +19,6 @@
 #define MOM_THREADS               10
 #define THREAD_INFINITE          -1
 
-#ifndef MAX_LINE
-#define MAX_LINE 1024
-#endif
-
 const char *nullproc(struct rm_attribute *attrib);
 
 const char * getuname(void);
