@@ -936,3 +936,19 @@ pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned shor
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
