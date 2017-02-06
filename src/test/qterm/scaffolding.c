@@ -1,6 +1,8 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */ 
+#include "pbs_error.h"
+#include "net_connect.h"
 
 int pbs_errno = 0;
 
@@ -44,3 +46,24 @@ int pbs_terminate_err(int c, int manner, char *extend, int *local_errno)
   }
 
 void initialize_network_info() {}
+
+int get_fullhostname(
+
+  char *shortname,  /* I */
+  char *namebuf,    /* O */
+  int   bufsize,    /* I */
+  char *EMsg)       /* O (optional,minsize=MAXLINE - 1024) */
+
+  {
+  return(PBSE_NONE);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int        *local_errno, /* O */    
+  const char *hostname)    /* I */
+
+  {
+  return(0);
+  }
+
