@@ -1173,7 +1173,7 @@ int setup_array_struct(
   if ((rc = pa->set_slot_limit(pjob->get_str_attr(JOB_ATR_job_array_request))))
     {
     pa_mutex.unlock();
-    array_delete(pjob->get_jobid());
+    delete pa;
 
     return(rc);
     }
@@ -1186,7 +1186,7 @@ int setup_array_struct(
   if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
     pa_mutex.unlock();
-    array_delete(pjob->get_jobid());
+    delete pa;
 
     return(rc);
     }
@@ -1194,7 +1194,7 @@ int setup_array_struct(
   if ((rc = pa->parse_array_request(pjob->get_str_attr(JOB_ATR_job_array_request))))
     {
     pa_mutex.unlock();
-    array_delete(pjob->get_jobid());
+    delete pa;
     return(rc);
     }
 

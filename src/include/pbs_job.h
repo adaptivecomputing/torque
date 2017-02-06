@@ -718,7 +718,7 @@ class job
   struct timeval        *get_tv_attr(int index);
   struct array_strings  *get_arst_attr(int index);
   std::vector<resource> *get_resc_attr(int index);
-  tlist_head             get_list_attr(int index);
+  tlist_head            *get_list_attr(int index);
   pbs_attribute         *get_attr(int index);
   struct jobfix         &get_jobfix();
 

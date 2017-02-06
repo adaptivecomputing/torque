@@ -2569,6 +2569,14 @@ int TMomFinalizeJob2(
 
   pjob  = mom_find_job(TJE->jobid);
 
+  if (pjob == NULL)
+    {
+    sprintf(log_buffer, "Job '%s' has disappeared mid-launch", TJE->jobid);
+    log_err(-1, __func__, log_buffer);
+    *SC = -1;
+    return(*SC);
+    }
+
   if (LOGLEVEL >= 4)
     {
     log_record(

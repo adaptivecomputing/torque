@@ -2304,7 +2304,7 @@ int im_join_job_as_sister(
   {
   hnodent             *np = NULL;
   attribute_def       *pdef;
-  mom_job             *pjob;
+  mom_job             *pjob = NULL;
   tlist_head           lhead;
   svrattrl            *psatl;
 
@@ -2377,7 +2377,6 @@ int im_join_job_as_sister(
   
   pjob->ji_numnodes = nodenum;  /* XXX */
 
-
   /* insert block based on radix */
   if (job_radix == TRUE)
     {
@@ -2395,6 +2394,7 @@ int im_join_job_as_sister(
 
       if (radix_hosts != NULL)
         free(radix_hosts);
+      mom_job_purge(pjob);
       
       return(IM_FAILURE);
       }
@@ -2415,6 +2415,7 @@ int im_join_job_as_sister(
         free(radix_ports);
 
       free(radix_hosts);
+      mom_job_purge(pjob);
       
       return(IM_FAILURE);
       }
@@ -2432,6 +2433,7 @@ int im_join_job_as_sister(
 
       free(radix_hosts);
       free(radix_ports);
+      mom_job_purge(pjob);
       
       return(IM_FAILURE);
       }
@@ -2453,6 +2455,8 @@ int im_join_job_as_sister(
       free(radix_hosts);
     if (radix_ports != NULL)
       free(radix_ports);
+     
+    mom_job_purge(pjob);
     
     return(IM_FAILURE);
     }
@@ -5471,7 +5475,8 @@ int pass_joined_successfully_up_the_chain(
   if (local_chan != NULL)
     DIS_tcp_cleanup(local_chan);
 
-  close(local_socket);
+  if (local_socket != -1)
+    close(local_socket);
   
   /* We need to open our intermediate demux here */
   fork_demux(pjob);
@@ -8653,7 +8658,7 @@ char *get_local_script_path(
 /* Get the mom_job info. If the mom_job exists get it. If not make a new one */
 int get_job_struct(
 
-  mom_job                **pjob, 
+  mom_job            **pjob, 
   char                *jobid, 
   int                  command, 
   struct tcp_chan     *chan,
@@ -8731,6 +8736,7 @@ int get_job_struct(
     log_err(-1, __func__, log_buffer);
 
     ret = PBSE_DISPROTO;
+    mom_job_free(new_job);
     goto done;
     }
 
@@ -8747,6 +8753,7 @@ int get_job_struct(
     log_err(-1, __func__, log_buffer);
 
     ret = PBSE_DISPROTO;
+    mom_job_free(new_job);
     goto done;
     }
 

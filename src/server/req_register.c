@@ -2087,9 +2087,11 @@ void depend_clrrdy(
   svr_job *pjob)
 
   {
+  tlist_head        *head_ptr = pjob->get_list_attr(JOB_ATR_depend);
   struct depend     *pdp;
   
-  pdp = (struct depend *)GET_NEXT(pjob->get_list_attr(JOB_ATR_depend));
+  if (head_ptr != NULL)
+    pdp = (struct depend *)GET_NEXT(*head_ptr);
 
   while ((pdp != NULL) &&
          (pdp->dp_type == JOB_DEPEND_TYPE_SYNCCT))

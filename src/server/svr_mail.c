@@ -655,7 +655,7 @@ void svr_mailowner(
       (no_force == true))
     {
 
-    if (pjob->is_attr_set(JOB_ATR_mailpnts))
+    if (mailpnts != NULL)
       {
       if ((strchr(mailpnts, MAIL_NONZERO) != NULL) &&
           (pjob->get_exec_exitstat() == JOB_EXEC_OK))

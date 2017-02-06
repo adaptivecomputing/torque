@@ -730,7 +730,8 @@ int initialize_procct(
       
       // We have to refresh our pointers after adding a resource entry because resources are in a vector
       // now and it may have been re-allocated.
-      pprocsp = find_resc_entry(pattr, pprocs_def);
+      if (pprocs_def != NULL)
+        pprocsp = find_resc_entry(pattr, pprocs_def);
       pnodesp = find_resc_entry(pattr, pnodes_def);
       }
 

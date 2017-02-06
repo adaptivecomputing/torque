@@ -390,7 +390,7 @@ int insert_into_alljobs_by_rank(
 
 int svr_enquejob(
 
-  svr_job        *pjob,             /* I */
+  svr_job    *pjob,             /* I */
   int         has_sv_qs_mutex,  /* I */
   const char *prev_job_id,      /* I */
   bool        have_reservation, /* I */
@@ -2678,7 +2678,6 @@ int numa_task_exceeds_resources(
         }
       }
     }
-#endif
 
   if (rc != PBSE_NONE)
     {
@@ -2686,6 +2685,7 @@ int numa_task_exceeds_resources(
         (EMsg[0] == '\0'))
       strcpy(EMsg, "Cannot locate feasible nodes (nodes file is empty, or no nodes have the requested numa configuration - check sockets, numa nodes, cores, and threads.)");
     }
+#endif
 
   return(rc);
   } // END numa_task_exceeds_resources()

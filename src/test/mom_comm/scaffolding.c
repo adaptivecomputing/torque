@@ -900,9 +900,9 @@ bool job::has_been_modified() const
   return(this->ji_modified);
   }
 
-tlist_head job::get_list_attr(int index)
+tlist_head *job::get_list_attr(int index)
   {
-  return(this->ji_wattr[index].at_val.at_list);
+  return(&this->ji_wattr[index].at_val.at_list);
   }
 
 complete_req *job::get_creq_attr(int index) const
@@ -1029,3 +1029,5 @@ pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
   }
+
+void mom_job_free(mom_job *pjob) {}

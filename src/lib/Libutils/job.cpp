@@ -216,15 +216,15 @@ struct array_strings *job::get_arst_attr(
   return(arst);
   }
 
-tlist_head job::get_list_attr(
+tlist_head *job::get_list_attr(
 
   int index)
 
   {
-  tlist_head th;
+  tlist_head *th = NULL;
 
   if (is_valid_attr_index_set(index, ATR_TYPE_LIST))
-    th = this->ji_wattr[index].at_val.at_list;
+    th = &this->ji_wattr[index].at_val.at_list;
 
   return(th);
   }

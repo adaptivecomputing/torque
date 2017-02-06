@@ -1216,6 +1216,8 @@ void change_restart_comment_if_needed(
         pjob->set_str_attr(JOB_ATR_checkpoint_restart_status, ptr);
         pjob->set_modified(true);
         }
+      else
+        free(ptr);
       }
     }
   

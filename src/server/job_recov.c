@@ -1946,11 +1946,7 @@ svr_job *job_recov(
       {
       log_err(errno, __func__, log_buf);
 
-#ifndef PBS_MOM
       delete pj;
-#else
-      free(pj);
-#endif
       } /* sometime pjob is freed by abt_job() */
     return(NULL);
     }

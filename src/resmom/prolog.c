@@ -1678,6 +1678,11 @@ int run_pelog(
     {
     // ERROR
     log_err(errno, __func__, "Fork failed");
+    close(fd_input);
+    close(kid_read);
+    close(kid_write);
+    close(parent_read);
+    close(parent_write);
     rc = -1;
     }
     
