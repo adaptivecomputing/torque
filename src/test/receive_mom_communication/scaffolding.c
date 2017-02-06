@@ -952,3 +952,10 @@ bool job::is_attr_set(int index) const
   return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
   }
 
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+job::~job() {}
+
