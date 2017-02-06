@@ -46,10 +46,9 @@ svr_job *svr_find_job(const char *jobid, int get_subjob)
   exit(1);
   }
 
-int acl_check(pbs_attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, const char *name, int type)
   {
-  fprintf(stderr, "The call to acl_check to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int site_allow_u(char *user, char *host)
@@ -58,10 +57,8 @@ int site_allow_u(char *user, char *host)
   exit(1);
   }
 
-void get_jobowner(char *from, char *to)
+void get_jobowner(const char *from, char *to)
   {
-  fprintf(stderr, "The call to get_jobowner to be mocked!!\n");
-  exit(1);
   }
 
 int get_svr_attr_l(int index, long *l)
@@ -79,7 +76,7 @@ int get_svr_attr_arst(int index, struct array_strings **arst)
   return(0);
   }
 
-int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+int acl_check_my_array_string(struct array_strings *pas, const char *name, int type)
   {
   return(0);
   }
@@ -147,3 +144,19 @@ char *get_cached_fullhostname(const char *hostname,const struct sockaddr_in *sai
   {
   return(NULL);
   }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+

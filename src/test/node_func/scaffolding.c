@@ -21,7 +21,9 @@
 #include "id_map.hpp"
 #include "threadpool.h"
 #include "mom_hierarchy_handler.h"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 #include "authorized_hosts.hpp"
 
 std::string attrname;

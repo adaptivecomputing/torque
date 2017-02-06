@@ -546,6 +546,7 @@ void svr_job::set_plugin_resource_usage_from_json(const char *) {}
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
 
+#ifdef PENABLE_LINUX_CGROUPS
 #ifdef NVML_API
 int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
   {
@@ -563,6 +564,7 @@ int Chip::initializeMICDevices(hwloc_obj_t chip_obj, hwloc_topology_t topology)
   {
   return(0);
   }
+#endif
 #endif
 
 const int exclusive_none   = 0;

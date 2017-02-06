@@ -92,3 +92,19 @@ int kill_task(mom_job *pjob, struct task *task, int sig, int pg)
   }
 
 void check_and_act_on_obit(mom_job *pjob, int rank) {}
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+struct array_strings *job::get_arst_attr(int index)
+  {
+  return(this->ji_wattr[index].at_val.at_arst);
+  }
+

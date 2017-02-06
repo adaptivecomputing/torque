@@ -80,3 +80,8 @@ batch_request::~batch_request()
 
   {
   }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }

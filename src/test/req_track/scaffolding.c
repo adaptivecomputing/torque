@@ -104,3 +104,18 @@ batch_request::batch_request(int type) : rq_type(type)
   {
   }
 
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+char job::get_char_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_char);
+  }
+

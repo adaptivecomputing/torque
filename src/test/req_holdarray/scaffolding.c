@@ -70,7 +70,7 @@ void svr_evaljobstate(svr_job &pjob, int &newstate, int &newsub, int forceeval)
   exit(1);
   }
 
-void get_jobowner(char *from, char *to)
+void get_jobowner(const char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner to be mocked!!\n");
   exit(1);
@@ -92,3 +92,31 @@ int unlock_ai_mutex(job_array *pa, const char *id, const char *msg, int logging)
   }
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
+
+void job::set_modified(bool m)
+  {
+  this->ji_modified = m;
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(PBSE_NONE);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+

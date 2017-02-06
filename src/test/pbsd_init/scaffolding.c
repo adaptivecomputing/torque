@@ -21,7 +21,9 @@
 #include "user_info.h"
 #include "id_map.hpp"
 #include "mom_hierarchy_handler.h"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 #include "queue.h"
 #include "track_alps_reservations.hpp"
 

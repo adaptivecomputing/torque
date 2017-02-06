@@ -5,7 +5,9 @@
 
 #include <pbs_config.h>
 #include "pbs_nodes.h"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 #include <check.h>
 
 int set_note_error(struct pbsnode *np, const char *str);

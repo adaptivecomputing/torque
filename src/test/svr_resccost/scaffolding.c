@@ -6,6 +6,7 @@
 #include "server.h" /* server */
 #include "list_link.h" /* list_link, tlist_head */
 #include "attribute.h" /* pbs_attribute, svrattrl */
+#include "pbs_job.h"
 
 int svr_resc_size = 0;
 resource_def *svr_resc_def;
@@ -47,3 +48,14 @@ resource *find_resc_entry(pbs_attribute *pattr, resource_def *rscdf)
   fprintf(stderr, "The call to find_resc_entry to be mocked!!\n");
   exit(1);
   }
+
+resource *find_resc_from_vector(std::vector<resource> *resources, resource_def *rscdf)
+  {
+  return(NULL);
+  }
+
+std::vector<resource> *job::get_resc_attr(int index)
+  {
+  return((std::vector<resource> *)this->ji_wattr[index].at_val.at_ptr);
+  }
+

@@ -137,10 +137,9 @@ int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const cha
   exit(1);
   }
 
-int acl_check(pbs_attribute *pattr, char *name, int type)
+int acl_check(pbs_attribute *pattr, const char *name, int type)
   {
-  fprintf(stderr, "The call to acl_check to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void reply_badattr(int code, int aux, svrattrl *pal, struct batch_request *preq)
@@ -173,3 +172,24 @@ void set_reply_type(struct batch_reply *preply, int type)
   {
   preply->brp_choice = type;
   }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+

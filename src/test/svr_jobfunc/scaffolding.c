@@ -17,7 +17,9 @@
 #include "pbs_nodes.h"
 #include "complete_req.hpp"
 #include "attr_req_info.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 #include "log.h"
 #include "utils.h"
 
@@ -582,14 +584,6 @@ int to_size(
   return(0);
   }
 
-PCI_Device::PCI_Device() {}
-PCI_Device::~PCI_Device() {}
-Socket::Socket() {}
-Socket::~Socket() {}
-Chip::Chip() {}
-Chip::~Chip() {}
-Core::Core() {}
-Core::~Core() {}
 
 void reinitialize_node_iterator(
 
@@ -604,12 +598,23 @@ void reinitialize_node_iterator(
     }
   } /* END reinitialize_node_iterator() */
 
+#ifdef PENABLE_LINUX_CGROUPS
+PCI_Device::PCI_Device() {}
+PCI_Device::~PCI_Device() {}
+Socket::Socket() {}
+Socket::~Socket() {}
+Chip::Chip() {}
+Chip::~Chip() {}
+Core::Core() {}
+Core::~Core() {}
+
+Machine::Machine() {}
+
 bool Machine::check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const
   {
   return(possible);
   }
 
-#ifdef PENABLE_LINUX_CGROUPS
 pbsnode::pbsnode() : nd_layout()
 #else
 pbsnode::pbsnode()
@@ -721,7 +726,6 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
-Machine::Machine() {}
 
 
 int pbsnode::lock_node(const char *id, const char *msg, int level)
@@ -748,6 +752,7 @@ svr_job::svr_job() : ji_is_array_template(false)
   {
   this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
   pthread_mutex_init(this->ji_mutex, NULL);
+  this->ji_parent_job = NULL;
   }
 svr_job::~svr_job() {}
 

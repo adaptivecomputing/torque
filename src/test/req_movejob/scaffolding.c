@@ -11,10 +11,9 @@ const char *msg_movejob = "Job moved to ";
 const char *msg_manager = "%s at request of %s@%s";
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
-int job_save(job *pjob, int updatetype, int mom_port)
+int svr_job_save(svr_job *pjob)
   {
-  fprintf(stderr, "The call to job_save to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int svr_movejob(svr_job *jobp, char *destination, int *err, struct batch_request *req)
@@ -108,4 +107,35 @@ bool have_reservation(svr_job *pjob, struct pbs_queue *pque)
   return(true);
   }
 
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }
+
+const char *job::get_queue() const
+  {
+  return(this->ji_qs.ji_queue);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::set_long_attr(int index, long l)
+  {
+  this->ji_wattr[index].at_val.at_long = l;
+  this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+  return(0);
+  }
+
+void job::set_queue(const char *queue)
+  {
+  strcpy(this->ji_qs.ji_queue, queue);
+  }
 

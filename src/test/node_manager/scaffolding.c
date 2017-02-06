@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h> /* fprintf */
 #include <netinet/in.h> /* sockaddr_in */
+#include <pbs_config.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "pbs_ifl.h" /* PBS_MAXSERVERNAME */
@@ -19,7 +20,9 @@
 #include "work_task.h" /* work_task, work_type */
 #include "threadpool.h"
 #include "id_map.hpp"
+#ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
+#endif
 #include "complete_req.hpp"
 #include "json/json.h"
 #include "authorized_hosts.hpp"
@@ -970,6 +973,7 @@ void pbsnode::remove_node_state_flag(
 
 void pbsnode::add_job_list_to_status(const std::string &job_list) {}
 
+#ifdef PENABLE_LINUX_CGROUPS
 Machine::Machine() {}
 Machine::~Machine() {}
 
@@ -1020,6 +1024,7 @@ Core::Core() {}
 Core::~Core() {}
 PCI_Device::PCI_Device() {}
 PCI_Device::~PCI_Device() {}
+#endif
 
 bool task_hosts_match(
         
