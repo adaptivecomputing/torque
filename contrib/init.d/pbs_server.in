@@ -51,9 +51,13 @@ kill_pbs_server() {
 		return 0;
 	fi
 
-        # Note that qterm shouldn't be used since it will
-        # kill the master pbs_server which may be on another node (in HA mode)
-        kill -TERM $pid 
+  # Use a qterm that only acts locally
+  qterm -l
+
+  # If our local qterm couldn't do anything, then send the signal as a last resort
+  if [ $? -ne 0]; then
+    kill -TERM $pid 
+  fi
 
 	# wait for process to end
 	for i in {1..5}; do
@@ -62,7 +66,10 @@ kill_pbs_server() {
 	done
 
 	# waited too long, try again
-	killproc pbs_server -TERM
+  qterm -l
+  if [ $? -ne 0]; then
+    killproc pbs_server -TERM
+  fi
 	return $?
 }
 
