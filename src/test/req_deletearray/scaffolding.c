@@ -127,7 +127,7 @@ int insert_task(all_tasks *at, work_task *wt)
   exit(1);
   }
 
-void get_jobowner(char *from, char *to)
+void get_jobowner(const char *from, char *to)
   {
   fprintf(stderr, "The call to get_jobowner needs to be mocked!!\n");
   exit(1);
@@ -201,4 +201,24 @@ void setup_apply_job_delete_nanny(
   time_t  time_now)       /* I */
 
   {
+  }
+
+int job::get_svrflags() const
+  {
+  return(this->ji_qs.ji_svrflags);
+  }
+
+int job::get_state() const
+  {
+  return(this->ji_qs.ji_state);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+int job::get_substate() const
+  {
+  return(this->ji_qs.ji_substate);
   }
