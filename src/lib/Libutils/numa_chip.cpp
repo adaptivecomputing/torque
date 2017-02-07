@@ -978,7 +978,7 @@ double Chip::how_many_tasks_fit(
     else
       mem_tasks = cpu_tasks;
 
-    double gpus = r.getGpus();
+    double gpus = r.get_gpus();
     if (gpus > 0)
       {
       gpu_tasks = this->available_gpus / gpus;
