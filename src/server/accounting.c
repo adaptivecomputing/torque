@@ -220,6 +220,11 @@ int acct_job(
   sprintf(local_buf, "etime=%ld ",
     pjob->get_long_attr(JOB_ATR_etime));
   ds += local_buf;
+  
+  /* how many times the job has started */
+  sprintf(local_buf, "start_count=%ld ",
+    pjob->get_long_attr(JOB_ATR_start_count));
+  ds += local_buf;
 
   /* execution start time */
   sprintf(local_buf, "start=%ld ",
