@@ -134,6 +134,8 @@
 #define APOS_ESCAPED     "&apos;"
 #define APOS_ESCAPED_LEN 6
 
+#define NEVER_NULL_STR(x) ((x) == NULL) ? "":(x)
+
 const unsigned long NANO_SECONDS = 1000000000;
 
 extern char **ArgV;

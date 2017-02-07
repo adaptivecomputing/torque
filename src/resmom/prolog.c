@@ -578,10 +578,10 @@ char *get_complete_hostlist(
 
 void setup_pelog_arguments(
 
-  char   *pelog,
-  mom_job    *pjob,
-  int     which,
-  char  **arg)
+  char     *pelog,
+  mom_job  *pjob,
+  int       which,
+  char    **arg)
 
   {
   int  LastArg;
@@ -626,8 +626,8 @@ void setup_pelog_arguments(
     arg[5] = sid;
     arg[6] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
     arg[7] = strdup(resc_to_string(pjob, JOB_ATR_resc_used, resc_used, sizeof(resc_used)));
-    arg[8] = strdup(pjob->get_str_attr(JOB_ATR_in_queue));
-    arg[9] = strdup(pjob->get_str_attr(JOB_ATR_account));
+    arg[8] = strdup(NEVER_NULL_STR(pjob->get_str_attr(JOB_ATR_in_queue)));
+    arg[9] = strdup(NEVER_NULL_STR(pjob->get_str_attr(JOB_ATR_account)));
     arg[10] = exit_stat;
     arg[11] = strdup(namebuf);
     arg[12] = NULL;
@@ -639,8 +639,8 @@ void setup_pelog_arguments(
     /* prologue */
     int last_arg = 9;
     arg[5] = strdup(resc_to_string(pjob, JOB_ATR_resource, resc_list, sizeof(resc_list)));
-    arg[6] = strdup(pjob->get_str_attr(JOB_ATR_in_queue));
-    arg[7] = strdup(pjob->get_str_attr(JOB_ATR_account));
+    arg[6] = strdup(NEVER_NULL_STR(pjob->get_str_attr(JOB_ATR_in_queue)));
+    arg[7] = strdup(NEVER_NULL_STR(pjob->get_str_attr(JOB_ATR_account)));
     arg[8] = strdup(namebuf);
 
     if (which == PE_PRESETUPPROLOG)
