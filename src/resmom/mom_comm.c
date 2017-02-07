@@ -1344,7 +1344,7 @@ void job_start_error(
   snprintf(tmpLine, sizeof(tmpLine), "REJHOST=%s",
     nodename);
 
-  pjob->set_str_attr(JOB_ATR_sched_hint, tmpLine);
+  pjob->set_str_attr(JOB_ATR_sched_hint, strdup(tmpLine));
 
   pjob->set_attr_flag(JOB_ATR_errpath, ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
 

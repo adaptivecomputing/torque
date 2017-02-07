@@ -2441,10 +2441,10 @@ int TMomFinalizeJob1(
     FDMOVE(TJE->ptc)
 
     /* save pty name in job output/error file name */
-    pjob->set_str_attr(JOB_ATR_outpath, TJE->ptc_name);
+    pjob->set_str_attr(JOB_ATR_outpath, strdup(TJE->ptc_name));
     pjob->set_attr_flag(JOB_ATR_outpath, ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
 
-    pjob->set_str_attr(JOB_ATR_errpath, TJE->ptc_name);
+    pjob->set_str_attr(JOB_ATR_errpath, strdup(TJE->ptc_name));
     pjob->set_attr_flag(JOB_ATR_errpath, ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
     }   /* END if (TJE->is_interactive == TRUE) */
 

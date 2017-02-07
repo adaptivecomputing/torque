@@ -1553,7 +1553,7 @@ int start_checkpoint(
         pjob->get_jobid(),
         (int)time_now);
 
-      pjob->set_str_attr(JOB_ATR_checkpoint_name, name_buffer);
+      pjob->set_str_attr(JOB_ATR_checkpoint_name, strdup(name_buffer));
 
       /* Set the checkpoint time so can determine if the checkpoint is recent */
       pjob->set_long_attr(JOB_ATR_checkpoint_time, (long)time_now);
@@ -1566,7 +1566,7 @@ int start_checkpoint(
            e.g.  /var/spool/torque/checkpoint/42.host.domain.CK */
 
         get_jobs_default_checkpoint_dir(pjob->get_fileprefix(), name_buffer, sizeof(name_buffer));
-        pjob->set_str_attr(JOB_ATR_checkpoint_dir, name_buffer);
+        pjob->set_str_attr(JOB_ATR_checkpoint_dir, strdup(name_buffer));
         }
 
       break;

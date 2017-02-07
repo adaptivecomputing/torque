@@ -2445,7 +2445,7 @@ int pbsd_init_job(
   pjob->ji_momhandle = -1;
 
   /* update at_server pbs_attribute in case name changed */
-  pjob->set_str_attr(JOB_ATR_at_server, server_name);
+  pjob->set_str_attr(JOB_ATR_at_server, strdup(server_name));
 
   /* update queue_rank if this job is higher than current */
 

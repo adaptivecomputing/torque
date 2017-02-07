@@ -593,7 +593,7 @@ int svr_enquejob(
     }
 
   /* update the current location and type pbs_attribute */
-  pjob->set_str_attr(JOB_ATR_in_queue, pque->qu_qs.qu_name);
+  pjob->set_str_attr(JOB_ATR_in_queue, strdup(pque->qu_qs.qu_name));
   pjob->set_char_attr(JOB_ATR_queuetype, *pque->qu_attr[QA_ATR_QType].at_val.at_str);
 
   // The array template isn't a real job so it shouldn't have a queued accounting record.
@@ -3750,7 +3750,7 @@ void set_chkpt_deflt(
     if ((!(pjob->is_attr_set(JOB_ATR_checkpoint))) ||
         (csv_find_string(pjob->get_str_attr(JOB_ATR_checkpoint), "u") != NULL))
       {
-      pjob->set_str_attr(JOB_ATR_checkpoint, pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str);
+      pjob->set_str_attr(JOB_ATR_checkpoint, strdup(pque->qu_attr[QE_ATR_checkpoint_defaults].at_val.at_str));
       
       if (LOGLEVEL >= 7)
         {
