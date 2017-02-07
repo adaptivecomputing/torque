@@ -220,7 +220,7 @@ int acct_job(
   
   /* how many times the job has started */
   sprintf(local_buf, "start_count=%ld ",
-    pjob->get_long_attr(JOB_ATR_start_count));
+    pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long);
   ds += local_buf;
 
   /* execution start time */
