@@ -49,7 +49,7 @@ END_TEST
 
 START_TEST(test_two)
   {
-  struct batch_request request;
+  batch_request request;
   svr_job myjob;
   char    buf[1024];
   myjob.set_state(JOB_STATE_RUNNING);

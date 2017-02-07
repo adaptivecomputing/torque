@@ -426,6 +426,7 @@ batch_request::batch_request(const batch_request &other)
 
 batch_request::batch_request()
   {
+  memset(&this->rq_reply, 0, sizeof(this->rq_reply));
   }
 
 struct timeval *job::get_tv_attr(int index)
