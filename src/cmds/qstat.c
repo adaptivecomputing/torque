@@ -1602,21 +1602,6 @@ bool job_is_complete(
   } // END job_is_complete()
 
 
-void add_xml_resource(
-
-  mxml_t     *RE,
-  const char *resc_name,
-  const char *value)
-
-  {
-  mxml_t      *AE;
-    
-  MXMLCreateE(&AE, resc_name);
-  MXMLSetVal(AE, (void *)value, mdfString);
-  MXMLAddE(RE, AE);
-  } // END add_xml_resource()
-
-
 
 void print_req_information(
 
@@ -1692,6 +1677,8 @@ void print_req_information(
  * Adds the req_information attribute to the xml structure for printing
  * @param req_information_attr - the req_information attrl sent from the server
  * @param node - the xml structure to which we're adding
+ *
+ * NOTE: This function appears to be dead and deleteable.
  */
 
 void print_req_information_xml(
@@ -1765,24 +1752,16 @@ void print_req_information_xml(
 void add_xml_resource(
     
   xmlNodePtr &node,
+  xmlNodePtr &res,
   attrl      *attribute)
 
   {
-  std::string content;
-  xmlNodePtr current = NULL;
-  for (current = node->xmlChildrenNode; current != NULL;current = current->next)
-     {
-     if (!xmlStrcmp(current->name, BAD_CAST ATTR_l))
-       {
-       content = *(attribute->resource) +"="+*(attribute->value);
-       xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
-       return;
-       }
-     } 
+  if (res == NULL)
+    {
+    res = xmlNewChild(node, NULL, BAD_CAST attribute->name, NULL);
+    }
 
-  xmlNewChild(node, NULL, BAD_CAST ATTR_l, NULL);
-  content = *(attribute->resource) +"="+*(attribute->value);
-  xmlNewChild(current, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
+  xmlNewChild(res, NULL, BAD_CAST attribute->resource, BAD_CAST attribute->value);
   } // END add_xml_resource()
 
 
@@ -1803,6 +1782,7 @@ void create_full_job_xml(
   struct attrl *attribute;
   
   xmlNodePtr node = xmlNewChild(root_node, NULL, BAD_CAST "Job", NULL);
+  xmlNodePtr res  = NULL;
   xmlNewChild(node, NULL, BAD_CAST "Job_Id", BAD_CAST p->name);
 
   for (attribute = p->attribs; attribute != NULL; attribute = attribute->next)
@@ -1816,17 +1796,18 @@ void create_full_job_xml(
       if ((attribute->resource != NULL) &&
           (!strncmp("task_usage", attribute->resource, strlen("task_usage"))))
         {
-        print_req_information_xml(attribute, node);
+        print_req_information_xml(attribute, res);
         }
       else
         {
         if (attribute->resource != NULL)
           {
-          add_xml_resource(node,attribute); 
+          add_xml_resource(node, res, attribute); 
           }
         else
           {
 		      xmlNewChild(node, NULL, BAD_CAST attribute->name, BAD_CAST attribute->value);
+          res = NULL;
           }
         }
       }
