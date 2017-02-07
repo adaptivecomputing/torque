@@ -67,3 +67,12 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
+int get_active_pbs_server(
+    
+  char **active_server,
+  int   *port)
+
+  {
+  return(0);
+  }
+
