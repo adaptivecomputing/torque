@@ -4247,6 +4247,7 @@ void parse_command_line(
           printf("installdir:  %s\n", PBS_INSTALL_DIR);
           printf("serverhome:  %s\n", PBS_SERVER_HOME);
           printf("version:     %s\n", PACKAGE_VERSION);
+          printf("Commit:    %s\n", GIT_HASH);
 
           exit(0);
           }
