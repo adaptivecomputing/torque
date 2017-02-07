@@ -90,6 +90,8 @@ int main(
 
         local = true;
 
+        break;
+
       case 't':
 
         type = optarg;
