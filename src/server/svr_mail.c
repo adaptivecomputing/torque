@@ -627,23 +627,6 @@ void svr_mailowner(
     return;        
     }
 
-  if (LOGLEVEL >= 3)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
-             (char)mailpoint,
-             pjob->ji_qs.ji_jobid,
-             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-             (text != NULL) ? text : "---");
-
-    log_event(
-      PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      tmpBuf);
-    }
-
   /*
    * if force is true, force the mail out regardless of mailpoint
    * unless server no_mail_force attribute is set to true
@@ -708,6 +691,23 @@ void svr_mailowner(
 
       return;
       }
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
+             (char)mailpoint,
+             pjob->ji_qs.ji_jobid,
+             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+             (text != NULL) ? text : "---");
+
+    log_event(
+      PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
     }
 
   /* Who does the mail go to?  If mail-list, them; else owner */
