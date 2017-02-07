@@ -6,6 +6,7 @@
 #include "pbs_job.h"
 
 #include "pbs_error.h"
+#include <check.h>
 
 
 
