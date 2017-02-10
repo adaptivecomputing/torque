@@ -58,9 +58,9 @@ extern bool alloc_br_success;
 
 START_TEST(free_nodes_test)
   {
+#ifdef PENABLE_LINUX_CGROUPS
   job     pjob;
 
-#ifdef PENABLE_LINUX_CGROUPS
   complete_req cr;
   req          r;
   allocation   a;
