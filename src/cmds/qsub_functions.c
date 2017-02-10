@@ -790,16 +790,16 @@ int validate_submit_filter(
 
 void validate_pbs_o_workdir(
 
-  job_data_container *job_attr)
+  const job_info   *ji)
 
   {
-  job_data     *tmp_job_info = NULL;
+  job_data   *tmp_job_info = NULL;
   const char *the_val = NULL;
   char        tmp_dir[MAXPATHLEN] = {""};
 
-  if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
+  if (hash_find(ji->job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
-    if (hash_find(job_attr, "PWD",  &tmp_job_info))
+    if (hash_find(ji->job_attr, "PWD",  &tmp_job_info))
       the_val = tmp_job_info->value.c_str();
     else
       {
@@ -816,19 +816,26 @@ void validate_pbs_o_workdir(
     }
   else
     {
-    struct stat sb;
-
+    // save the value of the work dir job attribute
     the_val = tmp_job_info->value.c_str();
-    if ((stat(the_val, &sb) != 0) ||
-        (!(S_ISDIR(sb.st_mode))))
+
+    if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
       {
-      fprintf(stderr, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
-      exit(3);
+      // validate local existence of '-w' working directory
+
+      struct stat sb;
+
+      if ((stat(the_val, &sb) != 0) ||
+          (!(S_ISDIR(sb.st_mode))))
+        {
+        fprintf(stderr, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
+        exit(3);
+        }
       }
     }
 
-  hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
-  hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
@@ -1163,7 +1170,7 @@ void validate_join_options (
 
 void post_check_attributes(job_info *ji, char *script_tmp)
   {
-  validate_pbs_o_workdir(ji->job_attr);
+  validate_pbs_o_workdir(ji);
   validate_qsub_host_pbs_o_server(ji->job_attr);
   validate_basic_resourcing(ji);
 
