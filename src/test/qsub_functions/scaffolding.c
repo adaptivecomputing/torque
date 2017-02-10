@@ -31,6 +31,7 @@ bool  find_size = false;
 bool  validate_path = false;
 bool  mem_fail = false;
 int   req_val = 0;
+bool  init_work_dir = false;
 
 int   global_poll_rc = 0;
 short global_poll_revents = 0;
@@ -63,6 +64,13 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
   else if ((validate_path == true) &&
            (!strcmp(name, "validate_path")))
     return(1);
+  else if ((init_work_dir == true) &&
+           (!strcmp(name, "init_work_dir")))
+    {
+    // set env_var to point to a legit directory, ".."
+    *env_var = new job_data(strdup("foo"), strdup(".."), 0, 0);
+    return(1);
+    }
   else if (mem_fail == true)
     {
     ev.value = "1";
