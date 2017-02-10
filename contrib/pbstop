@@ -459,7 +459,13 @@ sub get_info_modPBS {
             $name eq $PBS::ATTR_NODE_jobs and do {
                 $State_count->{"_anodes"}++;
                 foreach my $job ( split ( /, /, $value ) ) {
-                    if ( $job =~ m{(\d+)/(\d+)} ) {
+                    if ( $job =~ m{(\d+)-(\d+)/(\d+)} ) {
+                        for ( my $i = $1; $i <= $2; $i++ ) {
+                            $Nodes->{$server}{$node}{job}{$i} = $3;
+                            $State_count->{"_aprocs"}++;
+                        }
+                    }
+                    elsif ( $job =~ m{(\d+)/(\d+)} ) {
                         $Nodes->{$server}{$node}{job}{$1} = $2;
                         $State_count->{"_aprocs"}++;
                     }
@@ -555,7 +561,13 @@ sub get_info_cmdline {
             $jobs = $1;
             $State_count->{"_anodes"}++;
             foreach my $job ( split ( /, /, $jobs ) ) {
-                if ( $job =~ m{(\d+)/(\d+)} ) {
+                if ( $job =~ m{(\d+)-(\d+)/(\d+)} ) {
+                    for ( my $i = $1; $i <= $2; $i++ ) {
+                        $Nodes->{$server}{$node}{job}{$i} = $3;
+                        $State_count->{"_aprocs"}++;
+                    }
+                }
+                elsif ( $job =~ m{(\d+)/(\d+)} ) {
                     $Nodes->{$server}{$node}{job}{$1} = $2;
                     $State_count->{"_aprocs"}++;
                 }
@@ -577,7 +589,13 @@ sub get_info_cmdline {
               /^\s+(.*)$/;
               $jobs = $1;
               foreach my $job ( split ( /, /, $jobs ) ) {
-                if ( $job =~ m{(\d+)/(\d+)} ) {
+                if ( $job =~ m{(\d+)-(\d+)/(\d+)} ) {
+                    for ( my $i = $1; $i <= $2; $i++ ) {
+                        $Nodes->{$server}{$node}{job}{$i} = $3;
+                        $State_count->{"_aprocs"}++;
+                    }
+                }
+                elsif ( $job =~ m{(\d+)/(\d+)} ) {
                     $Nodes->{$server}{$node}{job}{$1} = $2;
                     $State_count->{"_aprocs"}++;
                 }
