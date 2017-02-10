@@ -2324,6 +2324,83 @@ int wait_for_read_ready(
   }
 
 
+
+/*
+ * get_interactive_job_id()
+ *
+ */
+
+int get_interactive_job_id(
+    
+  int  &news,
+  char *momjobid,
+  int   momjobid_size)
+
+  {
+  int                rc = PBSE_NONE;
+  torque_socklen_t   fromlen;
+  char               cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+
+  struct sockaddr_in from;
+
+  // Accept connection on socket set up earlier
+  while (true)
+    {
+    int rc;
+
+    if ((rc = wait_for_read_ready(inter_sock, 30)) < 0)
+      print_qsub_usage_exit("qsub: poll failed");
+
+    if (rc > 0)
+      break;
+
+    /* connect to server, status job to see if still there */
+
+    if (!locate_job(new_jobname, server_out, cur_server))
+      {
+      fprintf(stderr, "qsub: job %s apparently deleted\n",
+              new_jobname);
+
+      exit(1);
+      }
+    }
+
+  // apparently someone is attempting to connect to us
+  fromlen = sizeof(from);
+
+  if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
+    print_qsub_usage_exit("qsub: accept error");
+
+  // When MOM connects, she will send the job id for us to verify
+  int   amt = momjobid_size;
+  char *pc = momjobid;
+
+  while (amt > 0)
+    {
+    int amt_read = read_ac_socket(news, pc, amt);
+
+    if (amt_read <= 0)
+      break;
+
+    pc += amt_read;
+    amt -= amt_read;
+
+    if (*(pc - 1) == '\0')
+      break;
+    }
+
+  // Return -1 if we didn't read anything
+  if (amt == momjobid_size)
+    {
+    shutdown(news, 2);
+    rc = -1;
+    }
+
+  return(rc);
+  } // END get_interactive_job_id()
+
+
+
 /*
  * interactive - set up for interactive communication with job
  */
@@ -2332,20 +2409,14 @@ void interactive(
   job_data_container  *client_attr)
 
   {
-  int  amt;
-  char cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
-
   char momjobid[LOG_BUF_SIZE+1];
   int  news;
-  char *pc;
 
   struct sigaction act;
 
-  struct sockaddr_in from;
-  torque_socklen_t fromlen;
-
   struct winsize wsz;
   job_data *tmp_job_info;
+  bool      read_jobid = false;
 
   /* Catch SIGINT and SIGTERM, and */
   /* setup to catch Death of child */
@@ -2379,59 +2450,21 @@ void interactive(
     }
 
 
-  printf("qsub: waiting for job %s to start\n",
+  printf("qsub: waiting for job %s to start\n", new_jobname);
 
-         new_jobname);
-
-  /* Accept connection on socket set up earlier */
-
-  while (true)
+  for (int retry = 0; retry < 3; retry++)
     {
-    int rc;
-
-    if ((rc = wait_for_read_ready(inter_sock, 30)) < 0)
-      print_qsub_usage_exit("qsub: poll failed");
-
-    if (rc > 0)
-      break;
-
-    /* connect to server, status job to see if still there */
-
-    if (!locate_job(new_jobname, server_out, cur_server))
+    if (get_interactive_job_id(news, momjobid, sizeof(momjobid)) == PBSE_NONE)
       {
-      fprintf(stderr, "qsub: job %s apparently deleted\n",
-              new_jobname);
-
-      exit(1);
+      read_jobid = true;
+      break;
       }
     }
 
-  /* apparently someone is attempting to connect to us */
-
-  fromlen = sizeof(from);
-
-  if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
-    print_qsub_usage_exit("qsub: accept error");
-
-  /* When MOM connects, she will send the job id for us to verify */
-
-  amt = LOG_BUF_SIZE + 1;
-
-  pc = momjobid;
-
-  while (amt > 0)
+  if (read_jobid == false)
     {
-    fromlen = read_ac_socket(news, pc, amt);
-
-    if (fromlen <= 0)
-      break;
-
-    pc += fromlen;
-
-    if (*(pc - 1) == '\0')
-      break;
-
-    amt -= fromlen;
+    fprintf(stderr, "qsub: received 3 connections, but couldn't read a valid job id\n");
+    exit(1);
     }
 
   if (strncmp(momjobid, "PBS:", 4) == 0)
