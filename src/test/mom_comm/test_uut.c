@@ -46,6 +46,7 @@ task *find_task_by_pid(job *pjob, int pid);
 int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
 
 extern bool per_task;
+#endif
 
 
 START_TEST(test_get_reply_stream)
@@ -60,6 +61,7 @@ START_TEST(test_get_reply_stream)
 END_TEST
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 START_TEST(test_get_req_and_task_index_from_local_rank)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
