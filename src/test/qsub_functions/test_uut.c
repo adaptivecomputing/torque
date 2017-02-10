@@ -23,6 +23,7 @@ int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
 int  wait_for_read_ready(int, int);
 bool is_memory_request_valid(job_info *ji, std::string &err_msg);
+int  validate_pbs_o_workdir(const job_info *);
 
 extern complete_req cr;
 extern bool         mem_fail;
@@ -32,6 +33,7 @@ extern bool         find_nodes;
 extern bool         find_mpp;
 extern bool         find_size;
 extern bool         validate_path;
+extern bool         init_work_dir;
 extern std::string  added_value;
 extern std::string  added_name;
 
@@ -438,8 +440,22 @@ START_TEST(test_wait_for_read_ready)
   rc = wait_for_read_ready(some_fd, some_timeout_sec);
   fail_unless(rc == 0);
   }
-
 END_TEST
+
+
+START_TEST(test_validate_pbs_o_workdir)
+  {
+  job_info    ji;
+
+  validate_path = true;
+
+  init_work_dir = true;
+  validate_pbs_o_workdir(&ji);
+  fail_unless(strcmp(added_name.c_str(), "..") != 0);
+  }
+END_TEST
+
+
 Suite *qsub_functions_suite(void)
   {
   Suite *s = suite_create("qsub_functions methods");
@@ -452,6 +468,7 @@ Suite *qsub_functions_suite(void)
   tcase_add_test(tc_core, test_process_opt_m);
   tcase_add_test(tc_core, test_process_opt_p);
   tcase_add_test(tc_core, test_retry_submit_error);
+  tcase_add_test(tc_core, test_validate_pbs_o_workdir);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test isWindowsFormat");
