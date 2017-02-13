@@ -747,6 +747,20 @@ int stat_to_mom(
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
 
+  // don't continue if job no longer running
+  if (pjob->get_state() != JOB_STATE_RUNNING)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+          "stat_to_mom(): job is no longer in running state. Not contacting mom.");
+
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      }
+
+    return(PBSE_BADSTATE);
+    }
+
   if ((pjob->get_ji_momaddr() == 0) || 
       (!pjob->get_str_attr(JOB_ATR_exec_host)))
     {

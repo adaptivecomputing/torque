@@ -29,6 +29,7 @@ int svr_totnodes = 0;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 bool exit_called = false;
 int abort_called;
+bool svr_find_job_returns_null = false;
 
 struct batch_request *alloc_br(int type)
   {
@@ -246,6 +247,9 @@ int svr_setjobstate(svr_job *pjob, int newstate, int newsubstate, int  has_queue
 svr_job *svr_find_job(const char *jobid, int get_subjob)
   {
   svr_job *pjob = (svr_job *)calloc(1, sizeof(svr_job));
+  if (svr_find_job_returns_null)
+    return(NULL);
+
   pjob->set_jobid(jobid);
   return(pjob);
   }
