@@ -7,8 +7,11 @@
 #include "array.h"
 
 bool in_execution_queue(job *pjob, job_array *pa);
+//int stat_to_mom(const char*, struct stat_cntl*);
+
 job *get_next_status_job(struct stat_cntl *cntl, int &job_array_index, job_array *pa, all_jobs_iterator *iter);
 extern int abort_called;
+extern bool svr_find_job_returns_null;
 
 enum TJobStatTypeEnum
   {
@@ -106,6 +109,21 @@ START_TEST(test_get_next_status_job)
 END_TEST
 
 
+START_TEST(test_stat_to_mom)
+  {
+  struct stat_cntl *scp;
+
+  scp = (struct stat_cntl *)calloc(1, sizeof(struct stat_cntl));
+
+  svr_find_job_returns_null = true;
+  fail_unless(stat_to_mom(strdup("12345"), scp) == PBSE_JOBNOTFOUND);
+
+  svr_find_job_returns_null = false;
+  fail_unless(stat_to_mom(strdup("12345"), scp) == PBSE_BADSTATE);
+  }
+END_TEST
+
+
 Suite *req_stat_suite(void)
   {
   Suite *s = suite_create("req_stat_suite methods");
@@ -116,6 +134,10 @@ Suite *req_stat_suite(void)
 
   tc_core = tcase_create("test_get_next_status_job");
   tcase_add_test(tc_core, test_get_next_status_job);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_stat_to_mom");
+  tcase_add_test(tc_core, test_stat_to_mom);
   suite_add_tcase(s, tc_core);
 
   return s;
