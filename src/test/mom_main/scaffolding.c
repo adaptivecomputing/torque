@@ -1139,7 +1139,10 @@ authorized_hosts auth_hosts;
 
 job::job() {}
 job::~job() {}
-mom_job::mom_job() {}
+mom_job::mom_job() : ji_kill_started(0)
+  {
+  }
+
 mom_job::~mom_job() {}
 
 void job::set_attr_flag(int index, int flag_val)
