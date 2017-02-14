@@ -299,7 +299,6 @@ extern int      check_for_mics(uint32_t& mic_count);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
-extern int      init_nvidia_nvml(unsigned int &device_count);
 extern int      shut_nvidia_nvml();
 #endif  /* NVML_API */
 extern int      check_nvidia_setup();
@@ -710,10 +709,6 @@ void die(
     }
 
   cleanup();
-
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-  shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
 
   log_close(1);
 
@@ -3077,10 +3072,6 @@ int rm_request(
         }
 
       cleanup();
-
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-      shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
 
       /* We use delete_job_files_sem to make sure
          there are no outstanding job cleanup routines
@@ -7122,6 +7113,8 @@ int main(
     {
     use_nvidia_gpu = FALSE;
     }
+  else
+    shut_nvidia_nvml();
 #endif  /* NVML_API */
   if (!check_nvidia_setup())
     {
@@ -7144,10 +7137,6 @@ int main(
     }
 
   /* shutdown mom */
-
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-  shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
 
   mom_close_poll();
 

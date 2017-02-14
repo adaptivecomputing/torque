@@ -263,7 +263,10 @@ void log_nvml_error(
  * Function to initialize the Nvidia nvml api
  */
 
-int init_nvidia_nvml(unsigned int &device_count)
+bool init_nvidia_nvml(
+    
+  unsigned int &device_count)
+
   {
   nvmlReturn_t rc;
 
@@ -275,7 +278,7 @@ int init_nvidia_nvml(unsigned int &device_count)
     if (rc == NVML_SUCCESS)
       {
       if ((int)device_count > 0)
-        return (TRUE);
+        return(true);
 
       sprintf(log_buffer,"No Nvidia gpus detected\n");
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
@@ -284,14 +287,16 @@ int init_nvidia_nvml(unsigned int &device_count)
 
       shut_nvidia_nvml();
 
-      return (FALSE);
+      return(false);
       }
     }
 
   log_nvml_error (rc, NULL, __func__);
 
-  return (FALSE);
-  }
+  return(false);
+  } // END init_nvidia_nvml()
+
+
 
 /*
  * Function to shutdown the Nvidia nvml api
@@ -658,8 +663,12 @@ int setgpumode(
   nvmlDevice_t      device_hndl;
   char              gpu_id[20];
 
+  if (!init_nvidia_nvml(global_gpu_count))
+    return(PBSE_GPU_NOT_INITIALIZED);
+
   if (!check_nvidia_setup())
     {
+    shut_nvidia_nvml();
     return(PBSE_GPU_NOT_INITIALIZED);
     }
 
@@ -672,6 +681,7 @@ int setgpumode(
       compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
       break;
     case gpu_prohibited:
+      shut_nvidia_nvml();
       return (PBSE_IVALREQ);
       break;
     case gpu_exclusive_process:
@@ -684,6 +694,8 @@ int setgpumode(
           rc);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
         }
+    
+      shut_nvidia_nvml();
       return (PBSE_IVALREQ);
     }
 
@@ -705,7 +717,10 @@ int setgpumode(
     rc = nvmlDeviceSetComputeMode(device_hndl, compute_mode);
 
     if (rc == NVML_SUCCESS)
+      {
+      shut_nvidia_nvml();
       return (PBSE_NONE);
+      }
 
     sprintf(gpu_id, "%d", gpuid);
     log_nvml_error (rc, gpu_id, __func__);
@@ -713,6 +728,7 @@ int setgpumode(
 
   sprintf(log_buffer, "Failed to get device handle for gpu id %d, nvml error %d", gpuid, rc);
   log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+  shut_nvidia_nvml();
   return(PBSE_SYSTEM);
 
 #else
@@ -812,9 +828,13 @@ int resetgpuecc(
   nvmlEccCounterType_enum counter_type;
   nvmlDevice_t            device_hndl;
   char                    gpu_id[20];
+  
+  if (!init_nvidia_nvml(global_gpu_count))
+    return(PBSE_GPU_NOT_INITIALIZED);
 
   if (!check_nvidia_setup())
     {
+    shut_nvidia_nvml();
     return(PBSE_GPU_NOT_INITIALIZED);
     }
 
@@ -848,7 +868,10 @@ int resetgpuecc(
     rc = nvmlDeviceClearEccErrorCounts(device_hndl, counter_type);
 
     if (rc == NVML_SUCCESS)
+      {
+      shut_nvidia_nvml();
       return (PBSE_NONE);
+      }
 
     sprintf(gpu_id, "%d", gpuid);
     log_nvml_error (rc, gpu_id, __func__);
@@ -856,6 +879,7 @@ int resetgpuecc(
 
   sprintf(log_buffer, "Failed to get device handle for gpu id %d - nvml error %d", gpuid, rc);
   log_err(-1, __func__, log_buffer);
+  shut_nvidia_nvml();
   return(PBSE_SYSTEM);
 
 #else
@@ -1261,8 +1285,12 @@ void generate_server_gpustatus_nvml(
   unsigned long long  ecc_counts;
   char                tmpbuf[1024+1];
 
+  if (!init_nvidia_nvml(global_gpu_count))
+    return;
+
   if (!check_nvidia_setup())
     {
+    shut_nvidia_nvml();
     return;
     }
 
@@ -1271,7 +1299,10 @@ void generate_server_gpustatus_nvml(
 #ifdef NUMA_SUPPORT
   // does this node have gpus configured?
   if (node_boards[numa_index].gpu_end_index < 0)
+    {
+    shut_nvidia_nvml();
     return;
+    }
 #endif
 
   /* get timestamp to report */
@@ -1300,6 +1331,7 @@ void generate_server_gpustatus_nvml(
   if (rc != NVML_SUCCESS)
     {
     log_nvml_error (rc, NULL, __func__);
+    shut_nvidia_nvml();
     return;
     }
 #endif
@@ -1563,10 +1595,11 @@ void generate_server_gpustatus_nvml(
       }
 
     }
+    
+  shut_nvidia_nvml();
 
   return;
-
-  }
+  } // END generate_server_gpustatus_nvml()
 #endif  /* NVML_API */
 
 
