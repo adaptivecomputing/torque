@@ -1220,8 +1220,8 @@ void get_proc_data(
     }
   
   strcpy(peer_array.array[peer_index].key, PMIX_LOCAL_RANK);
-  peer_array.array[peer_index].value.type = PMIX_UINT32;
-  peer_array.array[peer_index++].value.data.uint32 = local_rank;
+  peer_array.array[peer_index].value.type = PMIX_UINT16;
+  peer_array.array[peer_index++].value.data.uint16 = local_rank;
   
   strcpy(peer_array.array[peer_index].key, PMIX_HOSTNAME);
   peer_array.array[peer_index].value.type = PMIX_STRING;
