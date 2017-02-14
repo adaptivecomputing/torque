@@ -454,7 +454,7 @@ int release_job(
         preq->rq_host);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buf);
-      rc = PBSE_BAD_JOB_STATE_TRANSITION;
+      rc = PBSE_STATE_SLOT_LIMIT;
     }
 
   return(rc);
