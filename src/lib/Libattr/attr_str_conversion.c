@@ -549,51 +549,8 @@ int str_to_attr(
       break;
 
     case ATR_TYPE_RESC:
-
-      {
-      char *resc_parent;
-      char *resc_child;
-      char *resc_ptr = strdup(val);
-      char *to_free = resc_ptr;
-
-      int   len = strlen(resc_ptr);
-      int   rc;
-      int   errFlg = 0;
-
-      while (resc_ptr - to_free < len)
-        {
-        if (get_parent_and_child(resc_ptr,&resc_parent,&resc_child,
-              &resc_ptr))
-          {
-          errFlg = TRUE;
-
-          break;
-          }
-        
-        if ((rc = decode_resc(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS)))
-          {
-          snprintf(log_buf,sizeof(log_buf),
-            "Error decoding resource %s, %s = %s\n",
-            name,
-            resc_parent,
-            resc_child);
-          
-          errFlg = TRUE;
-
-          log_err(rc, __func__, log_buf);
-          }
-        }
-
-      free(to_free);
-
-      if (errFlg == TRUE)
-        return(-1);
-
-      }
-
-      break;
-
     case ATR_TYPE_ATTR_REQ_INFO:
+
       {
       char *resc_parent;
       char *resc_child;
@@ -613,8 +570,13 @@ int str_to_attr(
 
           break;
           }
+
+        if (padef[index].at_type == ATR_TYPE_RESC)
+          rc = decode_resc(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS);
+        else
+          rc = decode_attr_req_info(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS);
         
-        if ((rc = decode_attr_req_info(&(attr[index]),name,resc_parent,resc_child,ATR_DFLAG_ACCESS)))
+        if (rc != PBSE_NONE)
           {
           snprintf(log_buf,sizeof(log_buf),
             "Error decoding resource %s, %s = %s\n",
@@ -634,6 +596,7 @@ int str_to_attr(
         return(-1);
 
       }
+
       break;
 
     /* NYI */
