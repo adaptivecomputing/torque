@@ -791,7 +791,7 @@ void svr_mailowner(
   if (pjob->get_str_attr(JOB_ATR_jobname) != NULL)
     mi.jobname = pjob->get_str_attr(JOB_ATR_jobname);
 
-  if (mailpoint == (int) MAIL_END)
+  if (mailpoint == (int) MAIL_END || mailpoint == MAIL_ABORT)
     set_output_files(pjob, &mi);
 
   if (text)
