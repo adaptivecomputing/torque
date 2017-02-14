@@ -220,9 +220,9 @@ int get_parent_and_child(
  */
 int escape_xml(
 
-  char *in,    /* I */
-  char *out,   /* O */
-  int   size)  /* I */
+  const char *in,    /* I */
+  char       *out,   /* O */
+  int         size)  /* I */
 
   {
   int i;
@@ -368,9 +368,9 @@ char *find_next_tag(
 
 int unescape_xml(
 
-  char *in,   /* I */ 
-  char *out,  /* O */
-  int   size) /* I */
+  const char *in,   /* I */ 
+  char       *out,  /* O */
+  int         size) /* I */
 
   {
   int i = 0;

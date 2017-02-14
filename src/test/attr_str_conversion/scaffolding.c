@@ -24,7 +24,7 @@ int get_parent_and_child(
 
 int unescape_xml(
 
-  char *in,   /* I */ 
+  const char *in,   /* I */ 
   char *out,  /* O */
   int   size) /* I */
 

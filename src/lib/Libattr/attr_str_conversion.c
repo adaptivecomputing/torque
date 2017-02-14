@@ -421,7 +421,7 @@ int attr_to_str(
 int str_to_attr(
 
   const char           *name,   /* I */
-  char                 *val,    /* I */
+  const char           *val,    /* I */
   pbs_attribute        *attr,   /* O */
   struct attribute_def *padef,  /* I */
   int                   limit)  /* I */
@@ -495,7 +495,7 @@ int str_to_attr(
       {
       unsigned long number;
 
-      char *unit;
+      const char *unit;
 
       number = strtol(val, NULL, 10);
 
@@ -553,13 +553,14 @@ int str_to_attr(
       {
       char *resc_parent;
       char *resc_child;
-      char *resc_ptr = val;
+      char *resc_ptr = strdup(val);
+      char *to_free = resc_ptr;
 
       int   len = strlen(resc_ptr);
       int   rc;
       int   errFlg = 0;
 
-      while (resc_ptr - val < len)
+      while (resc_ptr - to_free < len)
         {
         if (get_parent_and_child(resc_ptr,&resc_parent,&resc_child,
               &resc_ptr))
@@ -583,6 +584,8 @@ int str_to_attr(
           }
         }
 
+      free(to_free);
+
       if (errFlg == TRUE)
         return(-1);
 
@@ -594,13 +597,14 @@ int str_to_attr(
       {
       char *resc_parent;
       char *resc_child;
-      char *resc_ptr = val;
+      char *resc_ptr = strdup(val);
+      char *to_free = resc_ptr;
 
       int   len = strlen(resc_ptr);
       int   rc;
       int   errFlg = 0;
 
-      while (resc_ptr - val < len)
+      while (resc_ptr - to_free < len)
         {
         if (get_parent_and_child(resc_ptr,&resc_parent,&resc_child,
               &resc_ptr))
@@ -624,9 +628,10 @@ int str_to_attr(
           }
         }
 
+      free(to_free);
+
       if (errFlg == TRUE)
         return(-1);
-
 
       }
       break;

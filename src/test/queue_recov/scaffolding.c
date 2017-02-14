@@ -64,7 +64,18 @@ int recov_attr(int fd, void *parent, struct attribute_def *padef, struct pbs_att
   exit(1);
   }
 
-int str_to_attr(const char *name, char *val, struct pbs_attribute *attr, struct attribute_def *padef, int limit)
+int str_to_attr(const char *name, const char *val, struct pbs_attribute *attr, struct attribute_def *padef, int limit)
+  {
+  return(0);
+  }
+
+int attr_to_str(
+
+  std::string&      ds,     /* O */
+  attribute_def    *at_def, /* I */
+  pbs_attribute     attr,   /* I */
+  bool              XML)    /* I */
+  
   {
   return(0);
   }

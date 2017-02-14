@@ -513,7 +513,7 @@ attribute_def que_attr_def[] =
     PARENT_TYPE_QUE_EXC
   },
   /* QE_ATR_ResourceAvail */
-  { (char *)"resources_available",
+  { (char *)ATTR_rescavail, // "resources_available"
     decode_resc,
     encode_resc,
     set_resc,

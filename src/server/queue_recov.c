@@ -110,10 +110,127 @@
 #include "utils.h"
 #include <pthread.h>
 #include "queue_func.h" /* que_alloc, que_free */
+#include <libxml/tree.h>
 
 /* data global to this file */
 
 extern char   *path_queues;
+
+/* parseResourcesValue
+ * 
+ * takes a xmlNodePtr to store the resource values in
+ * and a string which is the values of the resource_default attribute
+ *
+ * content should look similar to this
+ * "\t\t<walltime>300</walltime>\n\t\t<nodes>1</nodes>\n"
+ * for any number of resource_defaults 
+ *
+ * called by que_save_attr_xml
+*/
+void parseResourcesValue(
+    
+  xmlNodePtr  &res_defaults,
+  std::string  content)
+
+  {
+  
+  while(content != "")
+    {
+          
+    int find_less = content.find("<");
+    content = content.substr(find_less+1);
+    
+    int find_greater = content.find(">");
+    std::string name = content.substr(0,find_greater);
+    
+    content = content.substr(name.size()+1);
+    
+    find_less = content.find("<");
+    std::string value = content.substr(0,find_less);
+    
+    int find_close = content.find(name);
+    content = content.substr(find_close+name.size());
+    if (content.find("<") == std::string::npos)
+      {
+      content = "";
+      }
+   
+    xmlNewChild(res_defaults, NULL, BAD_CAST name.c_str(),BAD_CAST value.c_str());
+
+     }
+  }
+
+
+
+/* que_save_attr_xml
+ * 
+ * stores the que attributes into a libxml2 NodePtr
+ * which is used in que_save() to write out to disk
+ *
+*/
+int que_save_attr_xml(
+ 
+  struct attribute_def *padef,   /* pbs_attribute definition array */
+  pbs_attribute        *pattr,   /* ptr to pbs_attribute value array */
+  int                   numattr, /* number of attributes in array */
+  xmlNodePtr            node_tree)    /* xml node attributes to fill*/  
+  {
+  int             i;
+  int             rc;
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string     attr_string = "";
+
+
+  xmlNodePtr node = NULL;
+  for (node = node_tree->xmlChildrenNode; node != NULL;node = node->next)
+    {
+    if(!xmlStrcmp(node->name, BAD_CAST "attributes"))
+      {
+      break;
+      }
+    }
+
+  for (i = 0; i < numattr; i++)
+    {
+    if (pattr[i].at_flags & ATR_VFLAG_SET)
+      {
+      attr_string.clear();
+
+      if ((rc = attr_to_str(attr_string, padef+i, pattr[i], true)) != 0)
+        {
+        if (rc != NO_ATTR_DATA)
+          {
+          /* ERROR */
+          snprintf(log_buf,sizeof(log_buf),
+              "Not enough space to print pbs_attribute %s",
+              padef[i].at_name);
+
+          return(rc);
+          }
+        }
+      else
+        {
+        if (padef[i].at_type == ATR_TYPE_RESC)
+          {
+          xmlNewChild(node,NULL,BAD_CAST padef[i].at_name,NULL);
+          xmlNodePtr res_defaults = node->last;
+          parseResourcesValue(res_defaults,attr_string);
+          }
+        else if (attr_string == "" )
+          {
+          xmlNewChild(node, NULL, BAD_CAST padef[i].at_name, BAD_CAST "0");
+          }
+        else
+          {
+          xmlNewChild(node, NULL, BAD_CAST padef[i].at_name, BAD_CAST attr_string.c_str());
+          }
+        }
+      }
+    } /* END for each pbs_attribute */
+
+  /* we can just return this since its the last write */
+  return(rc);
+  } /* END que_save_attr_xml() */
 
 
 
@@ -138,7 +255,11 @@ int que_save(
   int rc;
   char namebuf1[MAXPATHLEN];
   char namebuf2[MAXPATHLEN];
-  char buf[MAXLINE<<8];
+  char node_value[MAXLINE];
+
+  xmlDocPtr doc = NULL;
+  doc = xmlNewDoc(BAD_CAST "1.0");
+  
 
   pque->qu_attr[QA_ATR_MTime].at_val.at_long = time(NULL);
   pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
@@ -158,34 +279,40 @@ int que_save(
     return(-1);
     }
 
-  /* save basic queue structure (fixed length stuff) */
-  snprintf(buf,sizeof(buf),
-    "<queue>\n<modified>%d</modified>\n<type>%d</type>\n<create_time>%llu</create_time>\n<modify_time>%llu</modify_time>\n<name>%s</name>\n",
-    pque->qu_qs.qu_modified,
-    pque->qu_qs.qu_type,
-    (long long)pque->qu_qs.qu_ctime,
-    (long long)pque->qu_qs.qu_mtime,
-    pque->qu_qs.qu_name);
+  xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST "queue");
+  xmlDocSetRootElement(doc, root_node);
+  xmlNodePtr node = root_node;
+  
+  snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_modified);
+  xmlNewChild(node, NULL, BAD_CAST "modified", BAD_CAST node_value);
+  
+  snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_type);
+  xmlNewChild(node, NULL, BAD_CAST "type", BAD_CAST node_value);
 
-  if ((rc = write_buffer(buf,strlen(buf),fds)))
+  snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_ctime);
+  xmlNewChild(node, NULL, BAD_CAST "create_time", BAD_CAST node_value);
+
+  snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_mtime);
+  xmlNewChild(node, NULL, BAD_CAST "modify_time", BAD_CAST node_value);
+  xmlNewChild(node, NULL, BAD_CAST "name", BAD_CAST pque->qu_qs.qu_name);
+  xmlNewChild(node, NULL, BAD_CAST "attributes", NULL);
+
+  if (que_save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,root_node) != 0)
     {
-    log_err(rc, __func__, (char *)"unable to write to the file");
+    log_err(-1, __func__, (char *)"que_save_attr failed");
     close(fds);
     return(-1);
     }
 
-  /* save queue attributes  */
+  xmlBuffer *xml_buffer = xmlBufferCreate();
+  xmlOutputBuffer *outputBuffer = xmlOutputBufferCreateBuffer( xml_buffer, NULL );
+  xmlSaveFormatFileTo( outputBuffer, doc, "utf-8", 1 );
+  std::string xml_out_str( (char*) xml_buffer->content, xml_buffer->use );
+  
+  char *cstr = new char[xml_out_str.length() + 1];
+  strcpy(cstr, xml_out_str.c_str());
 
-  if (save_attr_xml(que_attr_def, pque->qu_attr, QA_ATR_LAST,fds) != 0)
-    {
-    log_err(-1, __func__, (char *)"save_attr failed");
-    close(fds);
-    return(-1);
-    }
-
-  /* close the queue tag */
-  snprintf(buf,sizeof(buf),"</queue>");
-  if ((rc = write_buffer(buf,strlen(buf),fds)))
+  if ((rc = write_buffer(cstr,strlen(cstr),fds)))
     {
     log_err(rc, __func__, (char *)"unable to write to the queue's file");
     close(fds);
@@ -217,17 +344,10 @@ pbs_queue *que_recov_xml(
   char *filename)
 
   {
-  int          fds;
   int          rc;
   pbs_queue   *pq;
   char         namebuf[MAXPATHLEN];
   char         buf[MAXLINE<<10];
-  char        *parent;
-  char        *child;
-
-  char        *current;
-  char        *begin;
-  char        *end;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   time_t       time_now = time(NULL);
 
@@ -244,129 +364,138 @@ pbs_queue *que_recov_xml(
 
   snprintf(namebuf, sizeof(namebuf), "%s%s", path_queues, filename);
 
-  fds = open(namebuf, O_RDONLY, 0);
 
-  if (fds < 0)
-    {
-    log_err(errno, __func__, "open error");
-
-    que_free(pq, TRUE);
-
-    return(NULL);
-    }
-
+  xmlDocPtr doc = NULL;
+  doc = xmlReadFile(namebuf,NULL,0);
   /* read in queue save sub-structure */
-  if (read_ac_socket(fds,buf,sizeof(buf)) < 0)
+  if(doc == NULL)
     {
     snprintf(log_buf,sizeof(log_buf),
       "Unable to read from queue file %s",
       filename);
     log_err(errno, __func__, log_buf);
-    
-    close(fds);
-    
+       
     que_free(pq, TRUE);
 
     return(NULL);
     }
 
-  current = begin = buf;
-
-  /* advance past the queue tag */
-  current = strstr(current,"<queue>");
-  if (current == NULL)
+  xmlNodePtr root_node = xmlDocGetRootElement(doc);
+  std::string que_node((char*)root_node->name);
+  if (que_node != "queue")
     {
     log_event(PBSEVENT_SYSTEM,
       PBS_EVENTCLASS_SERVER,
       __func__,
       "Cannot find a queue tag, attempting to load legacy format");
     que_free(pq, TRUE);
-    
-    close(fds);
 
     return(que_recov(filename));
     }
-
-  end = strstr(current,"</queue>");
-
-  if (end == NULL)
+  
+  for (xmlNodePtr current_node = root_node->xmlChildrenNode;
+       current_node != NULL;
+       current_node = current_node->next)
     {
-    log_err(-1, __func__, "No queue tag found in the queue file???");
-    que_free(pq, TRUE);
-    close(fds);
-    return(NULL);
-    }
-
-  /* move past the queue tag */
-  current += strlen("<queue>");
-  /* adjust the end for the newline preceeding the close queue tag */
-  end--;
-
-  while (current < end)
-    {
-    if (get_parent_and_child(current,&parent,&child,&current))
+    std::string parent(((char*)current_node->name));
+    if (parent != "text")//check for filler nodes
       {
-      /* ERROR */
-      snprintf(log_buf,sizeof(log_buf),
-        "Bad XML in the queue file at: %s",
-        current);
-      log_err(-1, __func__, log_buf);
-
-      que_free(pq, TRUE);
-      close(fds);
-      return(NULL);
-      }
-
-    if (!strcmp(parent,"modified"))
-      pq->qu_qs.qu_modified = atoi(child);
-    else if (!strcmp(parent,"type"))
-      pq->qu_qs.qu_type = atoi(child);
-    else if (!strcmp(parent,"create_time"))
-      pq->qu_qs.qu_ctime = atoi(child);
-    else if (!strcmp(parent,"modify_time"))
-      pq->qu_qs.qu_mtime = atoi(child);
-    else if (!strcmp(parent,"name"))
-      snprintf(pq->qu_qs.qu_name,sizeof(pq->qu_qs.qu_name),"%s",child);
-    else if (!strcmp(parent,"attributes"))
-      {
-      char *attr_ptr = child;
-      char *child_parent;
-      char *child_attr;
-
-      while (*attr_ptr != '\0')
+      xmlChar *content = xmlNodeGetContent(current_node);
+      std::string child(((char*)content));
+        
+      if (parent == "modified")
+        pq->qu_qs.qu_modified = atoi(child.c_str());
+      else if (parent =="type")
+        pq->qu_qs.qu_type = atoi(child.c_str());
+      else if (parent == "create_time")
+        pq->qu_qs.qu_ctime = atoi(child.c_str());
+      else if (parent == "modify_time")
+        pq->qu_qs.qu_mtime = atoi(child.c_str());
+      else if (parent == "name")
+        snprintf(pq->qu_qs.qu_name,sizeof(pq->qu_qs.qu_name),"%s",child.c_str());
+      else if (parent == "attributes")
         {
-        if (get_parent_and_child(attr_ptr,&child_parent,&child_attr,&attr_ptr))
+        for (xmlNodePtr attr_children = current_node->xmlChildrenNode;
+             attr_children != NULL;
+             attr_children = attr_children->next)
           {
-          /* ERROR */
-          snprintf(log_buf,sizeof(log_buf),
-            "Bad XML in the queue file at: %s",
-            current);
-          log_err(-1, __func__, log_buf);
-          
-          que_free(pq, TRUE);
-          close(fds);
-          return(NULL);
-          }
+          std::string attr_parent((char *)attr_children->name);
+          if (attr_parent != "text")//skipe node if it is a filler node
+            {
+            xmlChar *attr_content = xmlNodeGetContent(attr_children);
+            char *attr_child = (char *)attr_content;
 
-        if ((rc = str_to_attr(child_parent,child_attr,pq->qu_attr,que_attr_def,QA_ATR_LAST)))
-          {
-          /* ERROR */
-          snprintf(log_buf,sizeof(log_buf),
-            "Error creating attribute %s",
-            child_parent);
-          log_err(rc, __func__, log_buf);
+            if ((attr_parent == ATTR_rescdflt) ||
+                (attr_parent == ATTR_rescassn) || 
+                (attr_parent == ATTR_rescmax) || 
+                (attr_parent == ATTR_rescavail) || 
+                (attr_parent == ATTR_rescmin)) //see if the child is a rescource
+              {
+              for (xmlNodePtr res_child_node = attr_children->xmlChildrenNode;
+                   res_child_node != NULL;
+                   res_child_node = res_child_node->next)
+                {
+                std::string res_parent = ((char*)res_child_node->name);
+                if (res_parent != "text")
+                  {
+                  xmlChar *res_child_content = xmlNodeGetContent(res_child_node);
+                  std::string res_child((char*)res_child_content);
+                  xmlFree(res_child_content);
 
-          que_free(pq, TRUE);
-          close(fds);
-          return(NULL);
+                  // Format the resource child look like this <walltime>100</walltime>
+                  // for str_to_attr()
+                  res_parent.insert(0,"<");
+                  res_parent.insert(res_parent.end(),'>');
+                  res_child.insert(0,res_parent);
+                  res_parent.insert(1,"/");
+                  res_child.insert(res_child.end(),res_parent.begin(),res_parent.end());
+
+                  if ((rc = str_to_attr(attr_parent.c_str(), res_child.c_str(),
+                          pq->qu_attr,que_attr_def,QA_ATR_LAST)))
+                    {
+                    /* ERROR */
+                    snprintf(log_buf,sizeof(log_buf),
+                        "Error creating resource attribute %s",
+                        attr_parent.c_str());
+                    log_err(rc, __func__, log_buf);
+                    
+                    que_free(pq, TRUE);
+
+                    xmlFree(attr_content);
+                    xmlFree(content);
+                    return(NULL);
+                    }
+                  }
+
+                }    
+              }    
+                       
+            else if ((rc = str_to_attr(attr_parent.c_str(),attr_child,pq->qu_attr,que_attr_def,QA_ATR_LAST)))
+              {
+              /* ERROR */
+              snprintf(log_buf,sizeof(log_buf),
+                "Error creating attribute %s",
+                attr_parent.c_str());
+              log_err(rc, __func__, log_buf);
+
+              que_free(pq, TRUE);
+
+              xmlFree(attr_content);
+              xmlFree(content);
+              return(NULL);
+              }
+
+            xmlFree(attr_content);
+            }
           }
         }
+
+      xmlFree(content);
       }
     } 
 
   /* all done recovering the queue */
-
-  close(fds);
+  xmlFreeDoc(doc);
 
   if ((pq->qu_attr[QA_ATR_MTime].at_flags & ATR_VFLAG_SET) == 0)
     {

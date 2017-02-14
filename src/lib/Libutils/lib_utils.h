@@ -104,11 +104,7 @@ extern void free_pwnam(struct passwd *pwdp, char *buf);
 /* u_xml.c */
 int get_parent_and_child(char *start, char **parent, char **child, char **end);
 
-int escape_xml(char *in, char *out, int size);
-
 char *find_next_tag(char *buffer, char **tag);
-
-int unescape_xml(char *in, char *out, int size);
 
 /* u_putenv.c */
 int put_env_var(const char *, const char *);

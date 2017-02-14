@@ -585,7 +585,7 @@ int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *
 
 int size_to_str(struct size_value szv, char *out, int space);
 int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML);
-int str_to_attr(const char *name, char *val, pbs_attribute *attr, struct attribute_def *padef, int limit);
+int str_to_attr(const char *name, const char *val, pbs_attribute *attr, struct attribute_def *padef, int limit);
 
 /* "type" to pass to acl_check() */
 #define ACL_Host      1

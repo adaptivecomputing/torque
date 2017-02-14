@@ -551,7 +551,7 @@ int node_gpustatus_list(pbs_attribute *attr, void *a, int b)
 int str_to_attr(
 
   const char           *name,   /* I */
-  char                 *val,    /* I */
+  const char           *val,    /* I */
   pbs_attribute        *attr,   /* O */
   struct attribute_def *padef,  /* I */
   int                   limit)  /* I */
