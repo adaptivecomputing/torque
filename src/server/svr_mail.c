@@ -792,7 +792,7 @@ void svr_mailowner(
   if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
     mi.jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
 
-  if (mailpoint == (int) MAIL_END)
+  if (mailpoint == (int) MAIL_END || mailpoint == MAIL_ABORT)
     set_output_files(pjob, &mi);
 
   if (text)
