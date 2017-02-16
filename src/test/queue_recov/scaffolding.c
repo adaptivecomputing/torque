@@ -41,7 +41,7 @@ int is_whitespace(
   } /* END is_whitespace */
 
 
-int write_buffer(char *buf, int len, int fds)
+int write_buffer(const char *buf, int len, int fds)
   {
   int l = write(fds,buf,len);
   if(l == len) return 0;

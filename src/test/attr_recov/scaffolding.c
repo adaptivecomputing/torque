@@ -16,7 +16,7 @@ ssize_t read_nonblocking_socket(int fd, void *buf, ssize_t count)
   exit(1);
   }
 
-int write_buffer(char *buf, int len, int fds)
+int write_buffer(const char *buf, int len, int fds)
   {
   fprintf(stderr, "The call to write_buffer needs to be mocked!!\n");
   exit(1);

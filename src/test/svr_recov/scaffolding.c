@@ -28,7 +28,7 @@ int get_parent_and_child(char *start, char **parent, char **child, char **end)
  exit(1);
  }
 
-int write_buffer(char *buf, int len, int fds)
+int write_buffer(const char *buf, int len, int fds)
  {
  fprintf(stderr, "The call to write_buffer to be mocked!!\n");
  exit(1);

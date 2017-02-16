@@ -176,7 +176,7 @@ int que_save_attr_xml(
   xmlNodePtr            node_tree)    /* xml node attributes to fill*/  
   {
   int             i;
-  int             rc;
+  int             rc = PBSE_NONE;
   char            log_buf[LOCAL_LOG_BUF_SIZE];
   std::string     attr_string = "";
 
@@ -189,6 +189,9 @@ int que_save_attr_xml(
       break;
       }
     }
+
+  if (node == NULL)
+    return(-1);
 
   for (i = 0; i < numattr; i++)
     {
@@ -309,10 +312,7 @@ int que_save(
   xmlSaveFormatFileTo( outputBuffer, doc, "utf-8", 1 );
   std::string xml_out_str( (char*) xml_buffer->content, xml_buffer->use );
   
-  char *cstr = new char[xml_out_str.length() + 1];
-  strcpy(cstr, xml_out_str.c_str());
-
-  if ((rc = write_buffer(cstr,strlen(cstr),fds)))
+  if ((rc = write_buffer(xml_out_str.c_str(), xml_out_str.size(), fds)))
     {
     log_err(rc, __func__, (char *)"unable to write to the queue's file");
     close(fds);

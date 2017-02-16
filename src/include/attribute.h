@@ -523,7 +523,6 @@ void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);
 int   save_acl(pbs_attribute *, attribute_def *,  const char *, const char *);
 int   save_attr(attribute_def *, pbs_attribute *, int, int, char *, size_t *, size_t);
 int   save_attr_xml(attribute_def *, pbs_attribute *, int, int);
-int   write_buffer(char *,int,int);
 
 int      encode_attr_req_info( pbs_attribute *, tlist_head *, const char *, const char *, int, int);
 int      encode_state(pbs_attribute *, tlist_head *, const char *, const char *, int, int);

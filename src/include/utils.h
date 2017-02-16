@@ -164,7 +164,7 @@ extern int tlist (tree *, char *, int);
 extern void tfree (tree **);
 extern int is_whitespace (char);
 void       move_past_whitespace(char **);
-extern int write_buffer (char *,int,int);
+extern int write_buffer (const char *,int,int);
 
 /* misc functions */
 extern void save_args(int, char **);

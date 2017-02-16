@@ -71,8 +71,6 @@ int MUSleep(long SleepDuration);
 
 int MUReadPipe(char *Command, char *Buffer, int BufSize);
 
-int write_buffer(char *buf, int len, int fds);
-
 /* u_threadpool.c */
 int create_work_thread(void);
  

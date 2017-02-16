@@ -91,7 +91,7 @@ int unlock_ss()
   return(0);
   }
 
-int write_buffer(char *buf, int len, int fds)
+int write_buffer(const char *buf, int len, int fds)
   {
   return(0);
   }

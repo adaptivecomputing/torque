@@ -352,9 +352,9 @@ int MUReadPipe(
 
 int write_buffer(
 
-  char *buf,
-  int   len,
-  int   fds)
+  const char *buf,
+  int         len,
+  int         fds)
 
   {
   int   written;
