@@ -146,9 +146,21 @@ START_TEST(increment_queued_jobs_test)
   // Enqueue the job without resetting to make sure the count doesn't change
   fail_unless(increment_queued_jobs(&users, strdup("tom@napali"), &pjob) == 0);
   fail_unless(get_num_queued(&users, "tom") == 3, "Shouldn't have incremented with the bit set");
+
+  // Make sure array subjobs are a no-op
+  pjob.ji_queue_counted = 0;
+  pjob.ji_is_array_template = FALSE;
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_flags = ATR_VFLAG_SET;
+  fail_unless(increment_queued_jobs(&users, strdup("tom"), &pjob) == 0);
+  fail_unless(get_num_queued(&users, "tom") == 3, "Shouldn't have incremented for an array sub-job");
+  fail_unless(pjob.ji_queue_counted != 0);
+  
+  pjob.ji_queue_counted = 0;
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_flags = 0;
+  fail_unless(increment_queued_jobs(&users, strdup("tom"), &pjob) == 0);
+  fail_unless(get_num_queued(&users, "tom") == 4, "Should have incremented for non array sub-job");
   }
 END_TEST
-
 
 
 

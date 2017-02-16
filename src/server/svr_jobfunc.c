@@ -565,17 +565,17 @@ int svr_enquejob(
     /* update counts: queue and queue by state */
     pque->qu_numjobs++;
     pque->qu_njstate[pjob->ji_qs.ji_state]++;
-    
-    /* increment this user's job count for this queue */
-    if (LOGLEVEL >= 6)
-      {
-      snprintf(log_buf, sizeof(log_buf), "jobs queued job id %s for %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      }
-
-    increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
-    increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
     }
+    
+  /* increment this user's job count for this queue */
+  if (LOGLEVEL >= 6)
+    {
+    snprintf(log_buf, sizeof(log_buf), "jobs queued job id %s for %s", pjob->ji_qs.ji_jobid, pque->qu_qs.qu_name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
+
+  increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+  increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
 
   if ((pjob->ji_is_array_template) ||
       (pjob->ji_arraystructid[0] == '\0'))
@@ -1997,8 +1997,8 @@ int chk_svr_resc_limit(
 
 static int count_queued_jobs(
 
-  pbs_queue *pque, /* I */
-  const char      *user) /* I */
+  pbs_queue  *pque, /* I */
+  const char *user) /* I */
 
   {
   int num_jobs = 0;
