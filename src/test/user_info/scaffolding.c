@@ -34,7 +34,7 @@ void log_err(int error, const char *func_id, const char *msg) {}
 
 job::job() {}
 job::~job() {}
-svr_job::svr_job() {}
+svr_job::svr_job() : ji_is_array_template(false) {}
 svr_job::~svr_job() {}
 
 struct timeval *job::get_tv_attr(int index)
@@ -347,4 +347,9 @@ void job::set_start_time(time_t t)
 pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
+  }
+
+void job::set_attr_flag(int index, int flag)
+  {
+  this->ji_wattr[index].at_flags = flag;
   }
