@@ -64,6 +64,4 @@ script:
     - make -j2 V=0
     - set -o pipefail
     - make check -k V=0 | tee checks.txt
-    - make distcheck V=0
-    - python parse_cov_results.py checks.txt
     - python cov_file_results.py
