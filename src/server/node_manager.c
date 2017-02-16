@@ -138,6 +138,9 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
+#ifdef NVML_API
+#include <nvml.h>
+#endif
 
 #define IS_VALID_STR(STR)  (((STR) != NULL) && ((STR)[0] != '\0'))
 
@@ -2118,7 +2121,15 @@ int proplist(
         if (deflt_gpu_mode != NULL)
           gpu_mode_rqstd = default_gpu_mode;
         else
+          {
+#if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
+          // exclusive thread mode deprecated starting in version 8
+          //  so use exlusive process instead
+          gpu_mode_rqstd = gpu_exclusive_process;
+#else
           gpu_mode_rqstd = gpu_exclusive_thread;
+#endif
+          }
         }
       else
         {
