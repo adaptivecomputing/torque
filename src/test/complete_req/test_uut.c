@@ -164,6 +164,7 @@ START_TEST(test_constructor)
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
+  // pmem should get multiplied because nodes=1:ppn=2 
   fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
 
   resources.clear();
@@ -174,6 +175,7 @@ START_TEST(test_constructor)
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
   fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
+  // pvmem should get multiplied because nodes=1:ppn=2 is one task
   fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
   resources.clear();
@@ -183,8 +185,8 @@ START_TEST(test_constructor)
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
-  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
-  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
+  fail_unless(rl4.getMemory() == 0, "vmem is %lu", rl4.getMemory());
+  fail_unless(rl4.getSwap() == 80, "vmem is %lu", rl4.getSwap());
 
   resources.clear();
   add_resource(resources, "procs", NULL, 2, -1);
@@ -193,7 +195,8 @@ START_TEST(test_constructor)
   fail_unless(list7.req_count() == 1);
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
-  fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+  // 1024 * 2 = 2048, multiply by 2 because procs=2
+  fail_unless(rl7.getMemory() == 2048, "mem = %lu", rl7.getMemory());
 
   // Make sure that we'll set memory to the higher of pmem and mem, and set swap
   // as well for the same job

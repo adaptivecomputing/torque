@@ -577,6 +577,7 @@ END_TEST
 START_TEST(test_get_memory_for_host)
   {
   req r;
+  req r2;
   std::string host = "napali";
   unsigned long mem;
 
@@ -587,9 +588,20 @@ START_TEST(test_get_memory_for_host)
   r.set_value("task_count", "5", false);
   r.set_value("thread_usage_policy", "use threads", false);
   r.set_value("hostlist", "napali:ppn=32", false);
+  
+  r2.set_value("index", "0", false);
+  r2.set_value("lprocs", "all", false);
+  r2.set_value("memory", "1024kb", false);
+  r2.set_value("swap", "1024kb", false);
+  r2.set_value("task_count", "1", false);
+  r2.set_value("thread_usage_policy", "use threads", false);
+  r2.set_value("hostlist", "napali:ppn=32", false);
 
   mem = r.get_memory_for_host(host);
-  fail_unless(mem != 0);
+  fail_unless(mem == 204); // 1024kb / 5 tasks = 204kb for this node
+
+  mem = r2.get_memory_for_host(host);
+  fail_unless(mem == 1024); // 1024kb / 1 task = 1024kb for this node
 
   host = "right said fred";
   mem = r.get_memory_for_host(host);
