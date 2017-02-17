@@ -2413,7 +2413,6 @@ int req::get_num_tasks_for_host(
           }
           
         task_count = num_ppn / this->execution_slots;
- 
         }
       }
     }
@@ -2529,8 +2528,8 @@ unsigned long long req::get_memory_for_host(
   const std::string &host) const
 
   {
-  int           num_tasks = this->get_num_tasks_for_host(host);
-  unsigned long long mem = this->mem * num_tasks;
+  int                num_tasks = this->get_num_tasks_for_host(host);
+  unsigned long long mem = (this->mem * num_tasks) / this->task_count;
 
   return(mem);
   } // END get_memory_for_host()
