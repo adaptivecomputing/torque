@@ -170,40 +170,44 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         fp = open(jobpath, O_RDONLY, 0);
   
         if (fp < 0)
-  	  {
-  	  syslog(LOG_ERR, "error opening job file");
-  	  continue;
-  	  }
+          {
+          syslog(LOG_ERR, "error opening job file");
+          continue;
+          }
+
+        struct jobfix &ji_qs = xjob.get_jobfix();
   
-        amt = read(fp, &xjob.ji_qs, sizeof(xjob.ji_qs));
+        amt = read(fp, &ji_qs, sizeof(ji_qs));
   
-        if (amt != sizeof(xjob.ji_qs))
-  	  {
-  	  close(fp);
-  	  syslog(LOG_ERR, "short read of job file");
-  	  continue;
-  	  }
+        if (amt != sizeof(ji_qs))
+          {
+          close(fp);
+          syslog(LOG_ERR, "short read of job file");
+          continue;
+          }
   
-        if (xjob.ji_qs.ji_un_type != JOB_UNION_TYPE_MOM)
-  	  {
-  	  /* odd, this really should be JOB_UNION_TYPE_MOM */
-  	  close(fp);
-  	  syslog(LOG_ERR, "job file corrupt");
-  	  continue;
-  	  }
+        if (xjob.get_un_type() != JOB_UNION_TYPE_MOM)
+          {
+          /* odd, this really should be JOB_UNION_TYPE_MOM */
+          close(fp);
+          syslog(LOG_ERR, "job file corrupt");
+          continue;
+          }
         close(fp);
         }
   
-      if (debug) syslog(LOG_INFO, "state=%d, substate=%d", xjob.ji_qs.ji_state, xjob.ji_qs.ji_substate);
+      if (debug)
+        syslog(LOG_INFO, "state=%d, substate=%d", xjob.get_state(), xjob.get_substate());
 
-      if ((xjob.ji_qs.ji_un.ji_momt.ji_exuid == user_pwd->pw_uid) &&
-          ((xjob.ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
-           (xjob.ji_qs.ji_substate == JOB_SUBSTATE_STARTING) ||
-           (xjob.ji_qs.ji_substate == JOB_SUBSTATE_RUNNING)))
+      if ((xjob.get_exuid() == user_pwd->pw_uid) &&
+          ((xjob.get_substate() == JOB_SUBSTATE_PRERUN) ||
+           (xjob.get_substate() == JOB_SUBSTATE_STARTING) ||
+           (xjob.get_substate() == JOB_SUBSTATE_RUNNING)))
         {
         /* success! */
 
-        if (debug) syslog(LOG_INFO, "allowed by %s", jdent->d_name);
+        if (debug)
+          syslog(LOG_INFO, "allowed by %s", jdent->d_name);
 
         retval = PAM_SUCCESS;
 
@@ -303,7 +307,7 @@ int job_read_xml(
       {
       content = xmlNodeGetContent(cur_node);
       errno = 0;
-      pjob->ji_qs.ji_un.ji_momt.ji_exuid = (uid_t) strtoul((const char *) content, NULL, 10);
+      pjob->set_exuid((uid_t) strtoul((const char *) content, NULL, 10));
 
       if (errno != 0)
         {
@@ -319,7 +323,7 @@ int job_read_xml(
       {
       content = xmlNodeGetContent(cur_node);
       errno = 0;
-      pjob->ji_qs.ji_state = (int) strtol((const char *) content, NULL, 10);
+      pjob->set_state((int) strtol((const char *) content, NULL, 10));
 
       if (errno != 0)
         {
@@ -335,7 +339,7 @@ int job_read_xml(
       {
       content = xmlNodeGetContent(cur_node);
       errno = 0;
-      pjob->ji_qs.ji_substate = (int) strtol((const char *) content, NULL, 10);
+      pjob->set_substate((int) strtol((const char *) content, NULL, 10));
 
       if (errno != 0)
         {

@@ -2296,8 +2296,6 @@ AM_CONDITIONAL(INCLUDE_PAM, [test "x$pammoddir" != "xdisabled"])
 
 
 
-
-
 dnl find default xauth run-time path
 AC_ARG_WITH(xauth,
         [  --with-xauth=PATH       Specify path to xauth program ],
