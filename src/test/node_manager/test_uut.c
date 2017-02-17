@@ -13,6 +13,10 @@
 #include "server.h"
 #include "json/json.h"
 #include "complete_req.hpp"
+#include "pbs_nodes.h"
+#ifdef NVML_API
+#include <nvml.h>
+#endif
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -44,6 +48,7 @@ int remove_job_from_nodes_mics(struct pbsnode *pnode, svr_job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, svr_job *pjob);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
 
 
 
@@ -55,6 +60,7 @@ extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
 extern bool cray_enabled;
+extern int gpu_mode_rqstd;
 
 
 START_TEST(free_nodes_test)
@@ -943,6 +949,25 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 END_TEST
 
 
+#ifdef NVML_API
+START_TEST(test_proplist)
+  {
+  const char *str[] = {"gpus=1"};
+  std::vector<prop> plist;
+  int node_req;
+  int gpu_req;
+  int mic_req;
+
+  fail_unless(proplist((char **)str, plist, &node_req, &gpu_req, &mic_req) == PBSE_NONE);
+#if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
+  fail_unless(gpu_mode_rqstd == gpu_exclusive_process);
+#else
+  fail_unless(gpu_mode_rqstd == gpu_exclusive_thread);
+#endif
+  }
+END_TEST
+#endif
+
 Suite *node_manager_suite(void)
   {
   Suite *s = suite_create("node_manager_suite methods");
@@ -1004,6 +1029,12 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, check_node_jobs_exitence_test);
   suite_add_tcase(s, tc_core);
+
+#ifdef NVML_API
+  tc_core = tcase_create("test_proplist");
+  tcase_add_test(tc_core, test_proplist);
+  suite_add_tcase(s, tc_core);
+#endif
 
   return(s);
   }
