@@ -15,12 +15,58 @@ job::job() : ji_modified(false)
 
 
 
-void job::to_json(
+void job::attrs_to_json(
 
-  Json::Value &jv)
+  Json::Value &attrs)
 
   {
-  }
+#ifndef __TOOLS__
+  for (unsigned int i = 0; i < JOB_ATR_LAST; i++)
+    {
+    if (this->ji_wattr[i].at_flags & ATR_VFLAG_SET)
+      {
+      std::string val;
+      if (attr_to_str(val, job_attr_def + i, this->ji_wattr[i], false) == PBSE_NONE)
+        {
+        attrs[job_attr_def[i].at_name] = val;
+        }
+      }
+    }
+#endif
+  } // END attrs_to_json()
+
+
+
+int job::set_attrs_from_json(
+    
+  Json::Value &attrs)
+
+  {
+  int rc = PBSE_NONE;
+#ifndef __TOOLS__
+
+  std::vector<std::string> keys = attrs.getMemberNames();
+
+  for (size_t i = 0; i < keys.size(); i++)
+    {
+    int index = find_attr(job_attr_def, keys[i].c_str(), JOB_ATR_LAST);
+
+    if (index >= 0)
+      {
+      int tmp_rc = str_to_attr(keys[i].c_str(), attrs[keys[i]].asString().c_str(), this->ji_wattr,
+                     job_attr_def, JOB_ATR_LAST, index);
+
+      if ((tmp_rc != PBSE_NONE) &&
+          (rc == PBSE_NONE))
+        rc = tmp_rc;
+      }
+    else if (rc == PBSE_NONE)
+      rc = -1;
+    }
+
+#endif
+  return(rc);
+  } // END set_attrs_from_json()
 
 
 

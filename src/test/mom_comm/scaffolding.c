@@ -688,6 +688,11 @@ mom_job::mom_job() : ji_tasks()
   }
 mom_job::~mom_job() {}
 
+int mom_job::initialize_joined_job_from_json(Json::Value &js)
+  {
+  return(PBSE_NONE);
+  }
+
 void job::set_attr_flag(int index, int flag_val)
 
   {

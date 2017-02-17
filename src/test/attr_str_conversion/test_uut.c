@@ -10,7 +10,7 @@
 
 void appendEscapedXML(const char *xml, std::string &str);
 int  size_to_str(struct size_value *szv, char *out, int space);
-int  attr_to_str(std::string &output, attribute_def *at_def, pbs_attribute attr, bool xml);
+int  attr_to_str(std::string &output, attribute_def *at_def, pbs_attribute &attr, bool xml);
 
 
 START_TEST(test_attr_to_str)

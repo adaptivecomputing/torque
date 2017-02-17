@@ -45,3 +45,27 @@ int ctnodes(
   return(0);
   }
 
+int str_to_attr(
+
+  const char           *name,   /* I */
+  const char           *val,    /* I */
+  pbs_attribute        *attr,   /* O */
+  struct attribute_def *padef,  /* I */
+  int                   limit,  /* I */
+  int                   index)
+
+  {
+  return(0);
+  }
+
+int attr_to_str(
+
+  std::string      &ds,     /* O */
+  attribute_def    *at_def, /* I */
+  pbs_attribute    &attr,   /* I */
+  bool              XML)    /* I */
+
+  {
+  return(0);
+  }
+

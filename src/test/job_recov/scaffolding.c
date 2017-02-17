@@ -178,7 +178,7 @@ char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
 void set_chkpt_deflt(svr_job *pjob, pbs_queue *pque) {}
 
-int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
+int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute &attr, bool XML)
   {
   if (attr_def->at_type == ATR_TYPE_STR)
     ds = attr.at_val.at_str;

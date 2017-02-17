@@ -448,29 +448,6 @@ START_TEST(im_request_test)
   }
 END_TEST
 
-START_TEST(im_join_job_as_sister_test)
-  {
-  int result = 0;
-  char *test_job_id = strdup("not_jobid");
-  char *test_cookie = strdup("cookie");
-  struct tcp_chan test_chan;
-  struct sockaddr_in test_sock_addr;
-
-  memset(&test_chan, 0, sizeof(test_chan));
-  memset(&test_sock_addr, 0, sizeof(test_sock_addr));
-
-  result = im_join_job_as_sister(&test_chan,
-                                 test_job_id,
-                                 &test_sock_addr,
-                                 test_cookie,
-                                 0,
-                                 0,
-                                 0,
-                                 0);
-  fail_unless(result==0, "im_join_job_as_sister_failed", result);
-  }
-END_TEST
-
 START_TEST(tm_spawn_request_test)
   {
   struct tcp_chan test_chan;
@@ -609,7 +586,6 @@ Suite *mom_comm_suite(void)
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("im_join_job_as_sister_test");
-  tcase_add_test(tc_core, im_join_job_as_sister_test);
   tcase_add_test(tc_core, handle_im_poll_job_response_test);
   suite_add_tcase(s, tc_core);
 

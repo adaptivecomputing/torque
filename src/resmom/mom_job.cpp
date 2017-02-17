@@ -2,6 +2,11 @@
 #include "pbs_job.h"
 #include "start_exec.h"
 
+const std::string NUMNODES("numnodes");
+const std::string PORTOUT("portout");
+const std::string PORTERR("porterr");
+const std::string ATTRIBUTES("attributes");
+
 /*
  * CONSTRUCTOR
  */
@@ -57,4 +62,45 @@ mom_job::~mom_job()
   if (this->ji_resources)
     free(this->ji_resources);
   }
+
+
+
+/*
+ * join_job_info_to_json()
+ * Places this job's 
+ */
+
+void mom_job::join_job_info_to_json(
+    
+  Json::Value &job_json)
+
+  {
+  job_json[NUMNODES] = this->ji_numnodes;
+  job_json[PORTOUT] = this->ji_portout;
+  job_json[PORTERR] = this->ji_porterr;
+  this->attrs_to_json(job_json[ATTRIBUTES]);
+  } // END to_json()
+
+
+
+/*
+ * initialize_joined_job_from_json()
+ * Reads the json struct and sets this job's information accordingly
+ */
+
+int mom_job::initialize_joined_job_from_json(
+
+  Json::Value &job_json)
+
+  {
+  int rc = PBSE_NONE;
+
+  this->ji_numnodes = job_json[NUMNODES].asInt();
+  this->ji_portout = job_json[PORTOUT].asInt();
+  this->ji_porterr = job_json[PORTERR].asInt();
+
+  this->set_attrs_from_json(job_json[ATTRIBUTES]);
+
+  return(rc);
+  } // END initialize_joined_job_from_json()
 

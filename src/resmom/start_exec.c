@@ -6871,13 +6871,22 @@ void sister_job_nodes(
 
 
 
+/*
+ * send_join_job_to_a_sister()
+ *
+ * @param pjob - the job we're inviting the sister to join
+ * @param stream - the file descriptor to which we are writing the info
+ * @param ep - the event information
+ * @param phead 
+ */
+
 int send_join_job_to_a_sister(
 
-  mom_job    *pjob,
-  int         stream,
-  eventent   *ep,
-  tlist_head  phead,
-  int         node_id)
+  mom_job           *pjob,
+  int                stream,
+  eventent          *ep,
+  int                node_id,
+  const std::string &join_info)
 
   {
   tcp_chan *chan = DIS_tcp_setup(stream);
@@ -6893,23 +6902,9 @@ int send_join_job_to_a_sister(
     else if ((ret = diswsi(chan, node_id)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = diswsi(chan, pjob->ji_numnodes)) != DIS_SUCCESS)
+    else if ((ret = diswst(chan, join_info.c_str())) == DIS_SUCCESS)
       {
-      }
-    else if ((ret = diswsi(chan, pjob->ji_portout)) != DIS_SUCCESS)
-      {
-      }
-    else if ((ret = diswsi(chan, pjob->ji_porterr)) != DIS_SUCCESS)
-      {
-      }
-    else
-      {
-      svrattrl *psatl = (svrattrl *)GET_NEXT(phead);
-
-      if ((ret = encode_DIS_svrattrl(chan, psatl)) == DIS_SUCCESS)
-        {
-        ret = DIS_tcp_wflush(chan);
-        }
+      ret = DIS_tcp_wflush(chan);
       }
 
     DIS_tcp_cleanup(chan);
@@ -6923,8 +6918,7 @@ int send_join_job_to_a_sister(
 int send_join_job_to_sisters(
 
   mom_job    *pjob,
-  int         nodenum,
-  tlist_head  phead)
+  int         nodenum)
 
   {
   int            i;
@@ -6938,6 +6932,8 @@ int send_join_job_to_sisters(
   int            unsent_count = nodenum - 1;
   bool           permanent_fail = false;
   std::set<int>  sisters_contacted;
+  Json::Value    join_info;
+  std::string    join_str;
 
   errno = 0;
 
@@ -6950,6 +6946,9 @@ int send_join_job_to_sisters(
   memset(send_failed, -1, send_failed_size);
   for (i = 1; i < nodenum; i++)
     send_failed[i] = i;
+
+  pjob->join_job_info_to_json(join_info);
+  join_str = join_info.toStyledString();
 
   for (retry_count = 0; retry_count < 5 && permanent_fail == false; retry_count++)
     {
@@ -6978,7 +6977,7 @@ int send_join_job_to_sisters(
         {
         ep = event_alloc(IM_JOIN_JOB, np, TM_NULL_EVENT, TM_NULL_TASK);
 
-        ret = send_join_job_to_a_sister(pjob, stream, ep, phead, i);
+        ret = send_join_job_to_a_sister(pjob, stream, ep, i, join_str);
 
         close(stream);
         }
@@ -7455,23 +7454,6 @@ int start_exec(
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
 
-    CLEAR_HEAD(phead);
-
-    pattr = pjob->get_attr(0);
-
-    for (i = 0;i < JOB_ATR_LAST;i++)
-      {
-      (job_attr_def + i)->at_encode(
-        pattr + i,
-        &phead,
-        (job_attr_def + i)->at_name,
-        NULL,
-        ATR_ENCODE_MOM,
-        ATR_DFLAG_ACCESS);
-      }   /* END for (i) */
-
-    attrl_fixlink(&phead);
-
     if (LOGLEVEL >= 7)
       {
       sprintf(log_buffer, "Sending join job to sisters succeeded at line %d\n",
@@ -7479,10 +7461,9 @@ int start_exec(
 
       log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
-    if ((ret = send_join_job_to_sisters(pjob, nodenum, phead)) != DIS_SUCCESS)
+    if ((ret = send_join_job_to_sisters(pjob, nodenum)) != DIS_SUCCESS)
       {
       /* couldn't contact all of the sisters, we've already bailed */
-      free_attrlist(&phead);
       return(ret);
       }
 
@@ -7505,9 +7486,7 @@ int start_exec(
         }
       }
 
-    free_attrlist(&phead);
-    /* The job will execute on mother superior when all sister nodes have replied */
-
+    // NOTE: The job will execute on mother superior when all sister nodes have replied
     }   /* END if (nodenum > 1) */
   else
 #endif /* ndef NUMA_SUPPORT */

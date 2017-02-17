@@ -304,7 +304,7 @@ extern int      shut_nvidia_nvml();
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
-int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
+int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, int node_id, const std::string &join_info);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
 
@@ -5979,26 +5979,15 @@ void resend_waiting_joins(
   mom_job *pjob)
 
   {
-  hnodent    *np;
-  int         i;
-  int         stream;
-  eventent   *ep;
-  tlist_head  phead;
+  hnodent     *np;
+  int          i;
+  int          stream;
+  eventent    *ep;
+  Json::Value  join_json;
+  std::string  join_info;
 
-  /* first we have to encode the job attributes */
-  CLEAR_HEAD(phead);
-
-  for (i = 0; i < JOB_ATR_LAST; i++)
-    {
-    (job_attr_def + i)->at_encode(pjob->get_attr(i),
-       &phead,
-       (job_attr_def + i)->at_name,
-       NULL,
-       ATR_ENCODE_MOM,
-       ATR_DFLAG_ACCESS);
-    }
-
-  attrl_fixlink(&phead);
+  pjob->join_job_info_to_json(join_json);
+  join_info = join_json.toStyledString();
 
   for (i = 1; i < pjob->ji_numnodes; i++)
     {
@@ -6011,7 +6000,7 @@ void resend_waiting_joins(
 
       if (IS_VALID_STREAM(stream))
         {
-        if (send_join_job_to_a_sister(pjob, stream, ep, phead, i) == DIS_SUCCESS)
+        if (send_join_job_to_a_sister(pjob, stream, ep, i, join_info) == DIS_SUCCESS)
           {
           /* SUCCESS */
           snprintf(log_buffer, sizeof(log_buffer), "Successfully re-sent join job request to %s",
@@ -6023,8 +6012,6 @@ void resend_waiting_joins(
         }
       }
     }
-
-  free_attrlist(&phead);
   } /* END resend_waiting_joins() */
 
 

@@ -364,6 +364,7 @@ struct array_strings
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef);
 int  find_attr(attribute_def *attrdef, const char *name, int limit);
+int  find_attr(attribute_def *attrdef, const char *name, int limit, int start_position);
 int  recov_attr(int fd, void *parent, attribute_def *padef,
                 pbs_attribute *pattr, int limit, int unknown, int do_actions);
 long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
@@ -583,8 +584,9 @@ int  decode_tokens(pbs_attribute *, const char *, const char *, const char *, in
 int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
 int size_to_str(struct size_value szv, char *out, int space);
-int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML);
+int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute &attr, bool XML);
 int str_to_attr(const char *name, const char *val, pbs_attribute *attr, struct attribute_def *padef, int limit);
+int str_to_attr(const char *name, const char *val, pbs_attribute *attr, struct attribute_def *padef, int limit, int index);
 
 /* "type" to pass to acl_check() */
 #define ACL_Host      1

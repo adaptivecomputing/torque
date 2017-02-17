@@ -2303,18 +2303,12 @@ int im_join_job_as_sister(
 
   {
   hnodent             *np = NULL;
-  attribute_def       *pdef;
   mom_job             *pjob = NULL;
-  tlist_head           lhead;
-  svrattrl            *psatl;
 
   int                  ret;
   int                  nodeid;
-  int                  index;
-  int                  nodenum;
-  int                  rc;
+  int                  rc = PBSE_NONE;
   int                  sister_count = 0;
-  int                  resc_access_perm;
 
   char                 basename[50];
   char                 namebuf[MAXPATHLEN];
@@ -2328,20 +2322,6 @@ int im_join_job_as_sister(
   if (ret != DIS_SUCCESS)
     {
     sprintf(log_buffer,"join_job request for job %s failed - %s (nodeid)",
-      jobid,
-      dis_emsg[ret]);
-    
-    log_err(-1, __func__, log_buffer);
-    
-    return(IM_FAILURE);
-    }
-  
-  nodenum = disrsi(chan, &ret);
-  
-  if (ret != DIS_SUCCESS)
-    {
-    sprintf(log_buffer, "join_job request from node %d for job %s failed - %s (nodenum)",
-      nodeid,
       jobid,
       dis_emsg[ret]);
     
@@ -2374,8 +2354,6 @@ int im_join_job_as_sister(
       return(IM_DONE);
       }
     }
-  
-  pjob->ji_numnodes = nodenum;  /* XXX */
 
   /* insert block based on radix */
   if (job_radix == TRUE)
@@ -2439,44 +2417,6 @@ int im_join_job_as_sister(
       }
     } /* END if job_radix == TRUE */
 
-  CLEAR_HEAD(lhead);
-  
-  if (decode_DIS_svrattrl(chan, &lhead) != DIS_SUCCESS)
-    {
-    sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (decode)",
-      __func__,
-      nodeid,
-      jobid,
-      dis_emsg[ret]);
-    
-    log_err(-1, __func__, log_buffer);
-   
-    if (radix_hosts != NULL)
-      free(radix_hosts);
-    if (radix_ports != NULL)
-      free(radix_ports);
-     
-    mom_job_purge(pjob);
-    
-    return(IM_FAILURE);
-    }
-  
-  /* Get the hashname from the pbs_attribute. */
-  
-  psatl = (svrattrl *)GET_NEXT(lhead);
-  
-  while (psatl)
-    {
-    if (!strcmp(psatl->al_name, ATTR_hashname))
-      {
-      snprintf(basename, sizeof(basename), "%s", psatl->al_value);
-      
-      break;
-      }
-    
-    psatl = (svrattrl *)GET_NEXT(psatl->al_link);
-    }
-
   pjob->set_jobid(jobid);
   pjob->set_fileprefix(basename);
   
@@ -2492,37 +2432,6 @@ int im_join_job_as_sister(
 
   pjob->set_un_type(JOB_UNION_TYPE_MOM);
   
-  /* decode attributes from request into mom_job structure */
-  
-  rc = 0;
-  resc_access_perm = READ_WRITE;
-  
-  for (psatl = (svrattrl *)GET_NEXT(lhead);
-      psatl;
-      psatl = (svrattrl *)GET_NEXT(psatl->al_link))
-    {
-    /* identify the pbs_attribute by name */
-    
-    index = find_attr(job_attr_def, psatl->al_name, JOB_ATR_LAST);
-    
-    if (index < 0)
-      {
-      /* didn`t recognize the name */
-      
-      rc = PBSE_NOATTR;
-      
-      break;
-      }
-
-    pdef = &job_attr_def[index];
-    
-    /* decode pbs_attribute */
-    
-    if ((rc = pdef->at_decode(pjob->get_attr(index),
-          psatl->al_name, psatl->al_resc, psatl->al_value,resc_access_perm)) != PBSE_NONE)
-      break;
-    }  /* END for (psatl) */
-  
 #ifdef NVIDIA_GPUS
   if ((use_nvidia_gpu) && (setup_gpus_for_job(pjob) != PBSE_NONE))
     {
@@ -2533,9 +2442,7 @@ int im_join_job_as_sister(
     }
 #endif  /* NVIDIA_GPUS */
 
-  free_attrlist(&lhead);
-  
-  if (rc != 0)
+  if (rc != PBSE_NONE)
     {
     if (LOGLEVEL >= 6)
       {
@@ -6176,7 +6083,7 @@ void im_request(
  
   /* check cookie */
   oreo = pjob->get_str_attr(JOB_ATR_Cookie);
-  if (oreo != NULL)
+  if (oreo == NULL)
     {
     sprintf(log_buffer, "ERROR:    received request '%s' from %s for job '%s' (job has no cookie)",
      PMOMCommand[MIN(command,IM_MAX)],
@@ -8666,8 +8573,10 @@ int get_job_struct(
   tm_node_id           nodeid)
 
   {
-  int  ret;
-  mom_job *new_job;
+  int           ret;
+  mom_job      *new_job;
+  Json::Value   join_info;
+  Json::Reader  reader;
 
   new_job = mom_find_job(jobid);
 
@@ -8707,9 +8616,7 @@ int get_job_struct(
 
       /* should local job be purged, ie 'mom_job_purge(pjob);' ? */
 
-      ret = PBSE_JOBEXIST;
-
-      goto done;
+      return(PBSE_JOBEXIST);
       }
     }  /* END if (pjob != NULL) */
 
@@ -8718,12 +8625,10 @@ int get_job_struct(
     /* out of memory */
     log_err(-1, __func__, "insufficient memory to create job");
 
-    ret = PBSE_SYSTEM;
-
-    goto done;
+    return(PBSE_SYSTEM);
     }
 
-  new_job->ji_portout = disrsi(chan, &ret);
+  char *join_raw_str = disrst(chan, &ret);
 
   if (ret != DIS_SUCCESS)
     {
@@ -8735,32 +8640,29 @@ int get_job_struct(
 
     log_err(-1, __func__, log_buffer);
 
-    ret = PBSE_DISPROTO;
+    if (join_raw_str != NULL)
+      free(join_raw_str);
+
     mom_job_free(new_job);
-    goto done;
+    return(PBSE_DISPROTO);
     }
 
-  new_job->ji_porterr = disrsi(chan, &ret);
-
-  if (ret != DIS_SUCCESS)
+  if (reader.parse(join_raw_str, join_info) == false)
     {
-    sprintf(log_buffer, "%s: join_job request to node %d for job %s failed - %s (stderr)",
-      __func__,
-      nodeid,
-      jobid,
-      dis_emsg[ret]);
-
+    sprintf(log_buffer, "Couldn't process join job json '%s' for job '%s'",
+      join_raw_str, jobid);
     log_err(-1, __func__, log_buffer);
 
-    ret = PBSE_DISPROTO;
+    free(join_raw_str);
     mom_job_free(new_job);
-    goto done;
+    return(PBSE_DISPROTO);
     }
 
-  ret = PBSE_NONE;
+  free(join_raw_str);
+
+  new_job->initialize_joined_job_from_json(join_info);
   *pjob = new_job;
 
-done:
   return(ret);
   } /* END get_job_struct() */
 

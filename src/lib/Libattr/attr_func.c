@@ -163,7 +163,6 @@ static int str_nc_cmp(
 
 
 
-
 /*
  * find_attr - find pbs_attribute definition by name
  *
@@ -181,23 +180,33 @@ int find_attr(
   int                   limit)    /* limit on size of def array */
 
   {
-  int index;
+  return(find_attr(attr_def, name, limit, 0));
+  }
 
+
+
+int find_attr(
+
+  struct attribute_def *attr_def,
+  const char           *name,
+  int                   limit,
+  int                   start_position)
+
+  {
   if (attr_def != NULL)
     {
-    for (index = 0;index < limit;index++)
+    for (int index = start_position; index < limit; index++)
       {
-      if (!str_nc_cmp(attr_def->at_name, name))
+      if (!str_nc_cmp(attr_def[index].at_name, name))
         {
         return(index);
         }
-
-      attr_def++;
       }  /* END for (index) */
     }
 
   return(-1);
-  }
+  } // END find_attr()
+
 
 
 /*

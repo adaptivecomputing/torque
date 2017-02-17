@@ -73,7 +73,7 @@ int attr_to_str(
 
   std::string&      ds,     /* O */
   attribute_def    *at_def, /* I */
-  pbs_attribute     attr,   /* I */
+  pbs_attribute    &attr,   /* I */
   bool              XML)    /* I */
   
   {

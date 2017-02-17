@@ -673,7 +673,9 @@ class job
 
   job();
   ~job();
-  void to_json(Json::Value &jv);
+  
+  int  set_attrs_from_json(Json::Value &jv);
+  void attrs_to_json(Json::Value &jv);
   void init_wattr();
 
   int                   get_state() const;
@@ -856,6 +858,8 @@ class mom_job : public job
 
   mom_job();
   ~mom_job();
+  void join_job_info_to_json(Json::Value &job_json);
+  int  initialize_joined_job_from_json(Json::Value &job_json);
   };
 
 #else

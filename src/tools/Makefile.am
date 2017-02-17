@@ -14,6 +14,9 @@ EXTRA_DIST = tracejob.h init.d/pbs
 
 PBS_LIBS = ../lib/Libpbs/libtorque.la
 
+AM_CFLAGS = -D__TOOLS__
+AM_CXXFLAGS = -D__TOOLS__
+
 if USING_TCL
 PROGRAMS_TCL = pbs_tclsh
 endif
@@ -34,7 +37,7 @@ printserverdb_CFLAGS = -DPBS_SERVER_HOME=\"$(PBS_SERVER_HOME)\"
 
 chk_tree_SOURCES = chk_tree.c
 hostn_SOURCES = hostn.c
-printjob_SOURCES = printjob.c ../lib/Libutils/job.cpp
+printjob_SOURCES = printjob.c ../lib/Libutils/job.cpp ../lib/Libutils/jsoncpp.cpp
 printtracking_SOURCES = printtracking.c
 printserverdb_SOURCES = printserverdb.c
 tracejob_SOURCES = tracejob.c

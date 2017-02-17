@@ -1130,6 +1130,8 @@ mom_job::mom_job() : ji_tasks(), ji_usages()
   }
 mom_job::~mom_job() {}
 
+void mom_job::join_job_info_to_json(Json::Value &join_json) {}
+
 void job::set_attr_flag(int index, int flag_val)
 
   {

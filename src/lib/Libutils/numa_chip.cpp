@@ -698,7 +698,7 @@ void Chip::displayAllocationsAsJson(
 void Chip::displayAsJson(
 
   Json::Value &out,
-  bool          include_jobs) const
+  bool         include_jobs) const
 
   {
   std::vector<int> core_indices;

@@ -8,6 +8,40 @@
 #include <check.h>
 
 
+START_TEST(test_json)
+  {
+  job pjob;
+
+  fail_unless(pjob.set_str_attr(JOB_ATR_exec_host, strdup("roshar/0-31")) == PBSE_NONE);
+  fail_unless(pjob.set_str_attr(JOB_ATR_jobname, strdup("calc")) == PBSE_NONE);
+  fail_unless(pjob.set_str_attr(JOB_ATR_job_owner, strdup("dbeer@nalthis")) == PBSE_NONE);
+  fail_unless(pjob.set_str_attr(JOB_ATR_account, strdup("awakeners")) == PBSE_NONE);
+  fail_unless(pjob.set_bool_attr(JOB_ATR_rerunable, true) == PBSE_NONE);
+  fail_unless(pjob.set_long_attr(JOB_ATR_qrank, 215) == PBSE_NONE);
+  fail_unless(pjob.set_ll_attr(JOB_ATR_pagg_id, 5423) == PBSE_NONE);
+
+  Json::Value attrs;
+  pjob.attrs_to_json(attrs);
+  fail_unless(attrs[ATTR_exechost].asString() == "roshar/0-31", attrs[ATTR_exechost].asString().c_str());
+  fail_unless(attrs[ATTR_N].asString() == "calc");
+  fail_unless(attrs[ATTR_owner].asString() == "dbeer@nalthis");
+  fail_unless(attrs[ATTR_r].asString() == "true");
+  fail_unless(attrs[ATTR_qrank].asString() == "215");
+  fail_unless(attrs[ATTR_pagg].asString() == "5423", attrs[ATTR_pagg].asString().c_str());
+
+  job pjob2;
+  pjob2.set_attrs_from_json(attrs);
+  fail_unless(!strcmp(pjob2.get_str_attr(JOB_ATR_exec_host), "roshar/0-31"), pjob2.get_str_attr(JOB_ATR_exec_host));
+  fail_unless(!strcmp(pjob2.get_str_attr(JOB_ATR_jobname), "calc"));
+  fail_unless(!strcmp(pjob2.get_str_attr(JOB_ATR_job_owner), "dbeer@nalthis"));
+  fail_unless(!strcmp(pjob2.get_str_attr(JOB_ATR_account), "awakeners"));
+  fail_unless(pjob2.get_bool_attr(JOB_ATR_rerunable) == true);
+  fail_unless(pjob2.get_long_attr(JOB_ATR_qrank) == 215);
+  fail_unless(pjob2.get_ll_attr(JOB_ATR_pagg_id) == 5423);
+  }
+END_TEST
+
+
 START_TEST(test_basic)
   {
   job pjob;
@@ -107,6 +141,7 @@ Suite *job_suite(void)
   Suite *s = suite_create("job_suite methods");
   TCase *tc_core = tcase_create("test_basic");
   tcase_add_test(tc_core, test_basic);
+  tcase_add_test(tc_core, test_json);
   suite_add_tcase(s, tc_core);
 
   return s;

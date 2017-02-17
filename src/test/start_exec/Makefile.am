@@ -1,3 +1,3 @@
 include ../Makefile_Mom.ut
 
-libuut_la_SOURCES = ${PROG_ROOT}/start_exec.c
+libuut_la_SOURCES = ${PROG_ROOT}/start_exec.c ${PROG_ROOT}/../lib/Libutils/jsoncpp.cpp 

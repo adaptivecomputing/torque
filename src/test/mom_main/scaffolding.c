@@ -166,7 +166,7 @@ void free_attrlist(list_link *l) {}
 
 void attrl_fixlink(list_link *l) {}
 
-int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, tlist_head phead, int node_id)
+int send_join_job_to_a_sister(mom_job *pjob, int stream, eventent *ep, int node_id, const std::string &info)
   {
   return(0);
   }
@@ -1144,6 +1144,8 @@ mom_job::mom_job() : ji_kill_started(0)
   }
 
 mom_job::~mom_job() {}
+
+void mom_job::join_job_info_to_json(Json::Value &join_json) {}
 
 void job::set_attr_flag(int index, int flag_val)
 

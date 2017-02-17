@@ -189,9 +189,9 @@ int size_to_str(
  */
 int attr_to_str(
 
-  std::string&      ds,     /* O */
+  std::string      &ds,     /* O */
   attribute_def    *at_def, /* I */
-  pbs_attribute     attr,   /* I */
+  pbs_attribute    &attr,   /* I */
   bool              XML)    /* I */
 
   {
@@ -398,10 +398,16 @@ int attr_to_str(
       sprintf(local_buf, "%ld.%ld", attr.at_val.at_timeval.tv_sec, attr.at_val.at_timeval.tv_usec);
       ds += local_buf;
       break;
+    
+    case ATR_TYPE_LL:
+
+      snprintf(local_buf, sizeof(local_buf), "%lld", attr.at_val.at_ll);
+      ds += local_buf;
+
+      break;
 
     /* NYI */
     case ATR_TYPE_LIST:
-    case ATR_TYPE_LL:
     case ATR_TYPE_SHORT:
     case ATR_TYPE_JINFOP:
 
@@ -413,8 +419,16 @@ int attr_to_str(
 
 
 
-
-/* converts a string to an pbs_attribute 
+/*
+ * str_to_attr()
+ * Converts a name and value to a pbs_attribute
+ *
+ * @param name - the name of the attribute
+ * @param val - a string representation of the value
+ * @param attr - (O) the attribute array being set
+ * @param padef - the attribute definition array
+ * @param limit - the size of the arrays
+ * @param index - the index of the attribute, or -1 if this function should find it.
  * @return PBSE_NONE on success
  */
 
@@ -424,10 +438,10 @@ int str_to_attr(
   const char           *val,    /* I */
   pbs_attribute        *attr,   /* O */
   struct attribute_def *padef,  /* I */
-  int                   limit)  /* I */
+  int                   limit,  /* I */
+  int                   index)
 
   {
-  int   index;
   char  buf[MAXLINE<<5];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
@@ -438,7 +452,8 @@ int str_to_attr(
     return(-10);
     }
 
-  index = find_attr(padef,name,limit);
+  if (index < 0)
+    index = find_attr(padef, name, limit);
 
   if (index < 0)
     return(ATTR_NOT_FOUND);
@@ -598,10 +613,15 @@ int str_to_attr(
       }
 
       break;
+    
+    case ATR_TYPE_LL:
+      
+      attr[index].at_val.at_ll = strtoll(val, NULL, 10);
+
+      break;
 
     /* NYI */
     case ATR_TYPE_LIST:
-    case ATR_TYPE_LL:
     case ATR_TYPE_SHORT:
     case ATR_TYPE_JINFOP:
 
@@ -621,4 +641,24 @@ int str_to_attr(
   attr[index].at_flags |= ATR_VFLAG_SET;
 
   return(PBSE_NONE);
+  } // END str_to_attr()
+
+
+
+/*
+ * str_to_attr()
+ * Converts a name and value to a pbs_attribute
+ * @return PBSE_NONE on success
+ */
+
+int str_to_attr(
+
+  const char           *name,   /* I */
+  const char           *val,    /* I */
+  pbs_attribute        *attr,   /* O */
+  struct attribute_def *padef,  /* I */
+  int                   limit)  /* I */
+
+  {
+  return(str_to_attr(name, val, attr, padef, limit, -1));
   } /* END str_to_attr */

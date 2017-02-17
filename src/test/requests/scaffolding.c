@@ -397,7 +397,7 @@ int put_env_var(const char *name, const char *value)
   return(0);
   }
 
-int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute attr, bool XML)
+int attr_to_str(std::string &ds, attribute_def *at_def, pbs_attribute &attr, bool XML)
   {
   return(0);
   }

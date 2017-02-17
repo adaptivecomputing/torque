@@ -10,8 +10,6 @@ int svr_recov(char *svrfile, int read_only);
 
 int size_to_str(struct size_value szv, char *out, int space);
 
-int attr_to_str(std::string& ds, attribute_def *at_def, struct pbs_attribute attr, int XML);
-
 int svr_recov_xml(char *svrfile, int read_only);
 
 int svr_save_xml(struct server *ps, int mode);
