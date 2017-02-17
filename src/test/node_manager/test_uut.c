@@ -48,7 +48,7 @@ int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, job *pjob);
-int proplist(char**, struct prop**, int*, int*, int*);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
 
 
 
@@ -956,12 +956,12 @@ END_TEST
 START_TEST(test_proplist)
   {
   const char *str[] = {"gpus=1"};
-  struct prop *plist= NULL;
+  std::vector<prop> plist;
   int node_req;
   int gpu_req;
   int mic_req;
 
-  fail_unless(proplist((char **)str, &plist, &node_req, &gpu_req, &mic_req) == PBSE_NONE);
+  fail_unless(proplist((char **)str, plist, &node_req, &gpu_req, &mic_req) == PBSE_NONE);
 #if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
   fail_unless(gpu_mode_rqstd == gpu_exclusive_process);
 #else
