@@ -198,6 +198,9 @@ int                     default_gpu_mode = -1;
 #ifndef MAX_BM
 #define MAX_BM          64
 #endif
+#ifdef NVML_API
+#include <nvml.h>
+#endif
 
 int handle_complete_first_time(job *pjob);
 int is_compute_node(char *node_id);
@@ -2166,7 +2169,15 @@ int proplist(
         if (deflt_gpu_mode != NULL)
           gpu_mode_rqstd = default_gpu_mode;
         else
+          {
+#if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
+          // exclusive thread mode deprecated starting in version 8
+          //  so use exlusive process instead
+          gpu_mode_rqstd = gpu_exclusive_process;
+#else
           gpu_mode_rqstd = gpu_exclusive_thread;
+#endif
+          }
         }
       else
         {
