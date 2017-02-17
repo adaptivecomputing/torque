@@ -2164,7 +2164,7 @@ int reply_to_join_job_as_sister(
   const char         *cookie, 
   tm_event_t          event, 
   int                 fromtask,
-  int                 job_radix)
+  bool                job_radix)
 
   {
   int              socket;
@@ -2299,7 +2299,7 @@ int im_join_job_as_sister(
   tm_event_t          event,
   int                 fromtask,
   int                 command,   /* I */
-  int                 job_radix)
+  bool                job_radix)
 
   {
   hnodent             *np = NULL;
@@ -2356,7 +2356,7 @@ int im_join_job_as_sister(
     }
 
   /* insert block based on radix */
-  if (job_radix == TRUE)
+  if (job_radix == true)
     {
     /* Get the nodes for this radix */
     radix_hosts = disrst(chan, &ret);
@@ -2415,7 +2415,7 @@ int im_join_job_as_sister(
       
       return(IM_FAILURE);
       }
-    } /* END if job_radix == TRUE */
+    } /* END if job_radix == true */
 
   pjob->set_jobid(jobid);
   pjob->set_fileprefix(basename);
@@ -2424,7 +2424,7 @@ int im_join_job_as_sister(
   pjob->ji_nodeid = nodeid;
   
   pjob->set_svrflags(0);
-  if ((job_radix == TRUE) &&
+  if ((job_radix == true) &&
       (sister_count > 2))
     {
     pjob->set_svrflags(JOB_SVFLG_INTERMEDIATE_MOM);
@@ -2440,7 +2440,6 @@ int im_join_job_as_sister(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);
     rc = -1;
     }
-#endif  /* NVIDIA_GPUS */
 
   if (rc != PBSE_NONE)
     {
@@ -2465,6 +2464,7 @@ int im_join_job_as_sister(
       
     return(IM_DONE);
     }
+#endif  /* NVIDIA_GPUS */
   
   if ((rc = job_nodes(*pjob)) != PBSE_NONE)
     {
@@ -2698,7 +2698,7 @@ int im_join_job_as_sister(
   
   log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,jobid,log_buffer);
 
-  if ((job_radix == TRUE) &&
+  if ((job_radix == true) &&
       (sister_count > 2))
     {
     /* handle the case where we're contacting multiple nodes */
@@ -2731,7 +2731,7 @@ int im_join_job_as_sister(
     int             local_errno;
 
     /* handle the single contact case */
-    if (job_radix == TRUE)
+    if (job_radix == true)
       {
       sister_job_nodes(pjob, radix_hosts, radix_ports);
       free(radix_ports);
@@ -2768,9 +2768,6 @@ int im_join_job_as_sister(
   /* establish a connection and write the reply back */
   if ((reply_to_join_job_as_sister(pjob, addr, cookie, event, fromtask, job_radix)) == DIS_SUCCESS)
     ret = IM_DONE;
-
-  if (radix_ports != NULL)
-    free(radix_ports);
 
   if (radix_hosts != NULL)
     free(radix_hosts);
@@ -6011,7 +6008,7 @@ void im_request(
       {
       if (connection_from_ms(chan, NULL, pSockAddr) == true)
         {
-        ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,FALSE);
+        ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,false);
         }
       else
         ret = IM_FAILURE;
@@ -6032,7 +6029,7 @@ void im_request(
       {
       if (connection_from_ms(chan, NULL, pSockAddr) == true)
         {
-        ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,TRUE);
+        ret = im_join_job_as_sister(chan,jobid,pSockAddr,cookie,event,fromtask,command,true);
         }
       else
         ret = IM_FAILURE;
