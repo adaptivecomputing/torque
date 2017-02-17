@@ -96,20 +96,23 @@ START_TEST(test_constructor)
 
   fail_unless(equals_out == c_out);
 
+  // Lists are in scaffolding's get_next() implementation, but I'll write them here
+  // list1 = nodes=1:ppn=2+2:gpus=1,mem=40mb
   tlist_head h;
   complete_req list1(h, false);
-
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
   fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
 
+  // list2 = size=20,mem=40kb
   complete_req list2(h, true);
   fail_unless(list2.req_count() == 1);
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
   fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
- 
+
+  // list3 = ncpus=16,mem=40kb
   complete_req list3(h, false);
   fail_unless(list3.req_count() == 1);
   const req &rl = list3.get_req(0);
@@ -117,36 +120,44 @@ START_TEST(test_constructor)
   fail_unless(rl.getExecutionSlots() == 16);
   fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
 
+  // list4 = nodes=1:ppn=2,pmem=80kb
   complete_req list4(h, true);
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
+  // pmem should get multiplied because nodes=1:ppn=2 
   fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
 
+  // list5 = nodes=1:ppn=2,pvmem=80kb
   complete_req list5(h, true);
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
   fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
+  // pvmem should get multiplied because nodes=1:ppn=2 is one task
   fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
 
+  // list6 = nodes=1:ppn=2,vmem=80kb
   complete_req list6(h, true);
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
-  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
-  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
+  fail_unless(rl4.getMemory() == 0, "vmem is %lu", rl4.getMemory());
+  fail_unless(rl4.getSwap() == 80, "vmem is %lu", rl4.getSwap());
 
+  // list7 = procs=2,vmem=2048b,pvmem=1024kb
   int old_gn_count = gn_count;
   gn_count = 20;
   complete_req list7(h, false);
   fail_unless(list7.req_count() == 1);
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
-  fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+  // 1024 * 2 = 2048, multiply by 2 because procs=2
+  fail_unless(rl7.getMemory() == 2048, "mem = %lu", rl7.getMemory());
 
   // Make sure that we'll set memory to the higher of pmem and mem, and set swap
   // as well for the same job
+  // list8 = 
   complete_req list8(h, false);
   fail_unless(list8.req_count() == 1);
   const req &rl8 = list8.get_req(0);
