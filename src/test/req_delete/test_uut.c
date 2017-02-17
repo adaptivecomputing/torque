@@ -292,6 +292,7 @@ START_TEST(test_force_purge_work)
   {
   job *pjob = new job();
 
+  sprintf(pjob->ji_qs.ji_jobid, "17.roshar");
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
   depend_term_called = 0;
   force_purge_work(pjob);
