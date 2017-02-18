@@ -55,10 +55,9 @@ void mom_job_purge(mom_job *pjob)
   exit(1);
   }
 
-bool check_pwd(mom_job *pjob)
+int check_pwd(mom_job *pjob)
   {
-  fprintf(stderr, "The call to check_pwd needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int reply_send_mom(struct batch_request *request_mom)

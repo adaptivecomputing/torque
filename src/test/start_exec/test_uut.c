@@ -529,34 +529,34 @@ START_TEST(test_check_pwd_euser)
   {
   mom_job *pjob;
   pjob = new mom_job();
-  bool pwd = false;
+  int pwd = -1;
 
   pwd = check_pwd(pjob);
-  fail_unless(pwd == false, "check_pwd succeeded with an empty job");
+  fail_unless(pwd != PBSE_NONE, "check_pwd succeeded with an empty job");
 
   bad_pwd = true;
   pjob->set_str_attr(JOB_ATR_euser, strdup("rightsaidfred"));
   pwd = check_pwd(pjob);
-  fail_unless(pwd == false, "bad pwd fail");
+  fail_unless(pwd != PBSE_NONE, "bad pwd fail");
 
   bad_pwd = false;
   fail_init_groups = true;
   pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
-  fail_unless(pwd == false, "bad grp fail");
+  fail_unless(pwd != PBSE_NONE, "bad grp fail");
 
   pjob->ji_grpcache = NULL;
   fail_init_groups = false;
   fail_site_grp_check = true;
   pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
-  fail_unless(pwd == false, "bad site fail");
+  fail_unless(pwd != PBSE_NONE, "bad site fail");
   
   pjob->ji_grpcache = NULL;
   fail_site_grp_check = false;
   pjob->set_str_attr(JOB_ATR_euser, strdup("dbeer"));
   pwd = check_pwd(pjob);
-  fail_unless(pwd == true);
+  fail_unless(pwd == PBSE_NONE);
   }
 END_TEST
 

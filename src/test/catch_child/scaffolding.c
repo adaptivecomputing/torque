@@ -1303,9 +1303,9 @@ void mom_job_purge(mom_job *pjob)
   return;
   }
 
-bool check_pwd(mom_job *pjob)
+int check_pwd(mom_job *pjob)
   {
-  return false;
+  return(-1);
   }
 
 unsigned long gettime(resource *pres)

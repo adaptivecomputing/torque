@@ -1740,10 +1740,9 @@ void init_abort_jobs(
       DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
         pj->get_jobid()));
       
-      bool good;
+      
 
-      good = check_pwd(pj);
-      if (good == false)
+      if (check_pwd(pj) != PBSE_NONE)
         {
         /* somehow a job that was legally executing (had a password entry)
          * no longer has a password entry?? */
