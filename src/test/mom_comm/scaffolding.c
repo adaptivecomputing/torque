@@ -113,14 +113,15 @@ int exec_job_on_ms(job *pjob)
   }
 
 struct passwd *check_pwd_return;
-bool check_pwd(job *pjob)
+
+int check_pwd(job *pjob)
   {
-  bool good = false;
-  if(check_pwd_return == NULL)
+  int rc = -1;
+  if (check_pwd_return == NULL)
     {
-    good = true;
+    rc = PBSE_NONE;
     }
-  return(good);
+  return(rc);
   }
 
 int mom_do_poll(job *pjob)

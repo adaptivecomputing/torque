@@ -754,10 +754,8 @@ void req_mvjobfile(
     return;
     }
 
-  bool good;
-  good = check_pwd(pj);
   if ((pj->ji_grpcache == NULL) && 
-      (good == false))
+      (check_pwd(pj) != PBSE_NONE))
     {
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 

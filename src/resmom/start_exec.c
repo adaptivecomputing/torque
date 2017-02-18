@@ -442,8 +442,8 @@ void no_hang(
   }   /* END no_hang() */
 
 
-
-bool check_pwd(
+/* TODO: change -1 to actual PBSE error codes */
+int check_pwd(
 
   job  *pjob) /* I (modified) */
 
@@ -465,7 +465,7 @@ bool check_pwd(
     sprintf(log_buffer, "no user specified for job");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(false);
+    return(-1);
     }
 
   /* we will retry if needed just to cover temporary problems */
@@ -489,14 +489,14 @@ bool check_pwd(
             ptr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(false);
+    return(-1);
     }
 
 #ifdef __CYGWIN__
   if (IamUserByName(ptr) == 0)
     {
       free_pwnam(pwdp, pwd_buf);
-      return(false);
+      return(-1);
 #endif  /* __CYGWIN__ */
 
   if (pjob->ji_grpcache != NULL)
@@ -505,7 +505,7 @@ bool check_pwd(
 
     /* group cache previously loaded and cached */
     free_pwnam(pwdp, pwd_buf);
-    return(true);
+    return(PBSE_NONE);
     }
 
   pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
@@ -521,7 +521,7 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
 
   strcpy(pjob->ji_grpcache->gc_homedir, pwdp->pw_dir);
@@ -571,7 +571,7 @@ bool check_pwd(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
         free_pwnam(pwdp, pwd_buf);
-        return(false);
+        return(PBSE_BAD_GROUP);
         }
       }   /* END if (grpp != NULL) */
     }
@@ -593,7 +593,7 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
   /* perform site specific check on validatity of account */
 
@@ -605,14 +605,15 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
 
   /* SUCCESS */
 
   free_pwnam(pwdp, pwd_buf);
-  return(true);
+  return(PBSE_NONE);
   }   /* END check_pwd() */
+
 
 
 /**
@@ -2278,7 +2279,7 @@ int TMomFinalizeJob1(
     * we do this now to save a few things in the job structure
    */
 
-  if (check_pwd(pjob) == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -5506,11 +5507,7 @@ int start_process(
   /* A restarted mom will not have called this yet, but it is needed
    * to spawn tasks (ji_grpcache).
    */
-
-  bool good;
-
-  good= check_pwd(pjob);
-  if (good == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     log_err(-1, __func__, log_buffer);
 
@@ -7110,10 +7107,7 @@ int start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-  bool good;
-  
-  good = check_pwd(pjob);
-  if (good == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);

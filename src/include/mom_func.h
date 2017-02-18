@@ -257,7 +257,7 @@ extern proc_stat_t *get_proc_stat(int pid);
 extern void  term_job(job *);
 int          TTmpDirName(job *, char *, int);
 
-extern bool  check_pwd(job *);
+extern int   check_pwd(job *);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
