@@ -113,6 +113,9 @@ START_TEST(test_translate_range_string_to_vector)
   fail_unless(indices.size() == 2);
   fail_unless(indices[0] == 6142);
   fail_unless(indices[1] == 6143);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("0--1", indices) != PBSE_NONE);
   }
 END_TEST
 

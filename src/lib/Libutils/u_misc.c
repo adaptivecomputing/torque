@@ -360,6 +360,14 @@ int translate_range_string_to_vector(
     if (*ptr == '-')
       {
       ptr++;
+
+      if (!isdigit(*ptr))
+        {
+        // Must be a digit at this point in time
+        rc = -1;
+        break;
+        }
+
       curr = strtol(ptr, &ptr, 10);
 
       while (prev <= curr)
