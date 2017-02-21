@@ -75,11 +75,13 @@ START_TEST(test_place_all_execution_slots)
   complete_req cr;
   pjob.set_creq_attr(JOB_ATR_req_information, &cr);
 
+  my_req_count = 1;
   m.addSocket(2);
   sockets = 0;
   numa_node_count = 0;
   placed_all = 0;
   exec_slots = -1;
+  num_for_host = 1;
   m.place_job(&pjob, cpu, mem, "napali", false);
   fail_unless(placed_all == 2, "placed all: %d", placed_all);
   }
@@ -97,6 +99,7 @@ START_TEST(test_spread_place)
 
   m.addSocket(2);
 
+  my_req_count = 1;
   sockets = 1;
   my_placement_type = 2;
   numa_node_count = 0;
