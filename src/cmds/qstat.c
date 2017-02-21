@@ -21,6 +21,7 @@
 #include <string.h>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #if TCL_QSTAT
 #include <sys/stat.h>
