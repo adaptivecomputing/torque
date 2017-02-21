@@ -142,7 +142,13 @@ void svr_job::set_plugin_resource_usage_from_json(
   std::vector<std::string>keys = resources.getMemberNames();
 
   for (size_t i = 0; i < keys.size(); i++)
-    this->ji_plugin_usage_info[keys[i]] = resources[keys[i]].asString();
+    {
+    if (keys[i] != "")
+      {
+      if (resources[keys[i]].empty() == false)
+        this->ji_plugin_usage_info[keys[i]] = resources[keys[i]].asString();
+      }
+    }
   }
 
 
