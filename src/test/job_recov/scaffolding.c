@@ -686,7 +686,16 @@ svr_job *svr_job::copy_job()
   return(new svr_job());
   }
 
-svr_job::svr_job() {}
+svr_job::svr_job() : ji_plugin_usage_info(), ji_momstat(0), ji_momhandle(-1), ji_radix(0),
+                     ji_has_delete_nanny(false), ji_qhdr(NULL), ji_lastdest(0),
+                     ji_retryok(0), ji_rejectdest(), ji_is_array_template(false),
+                     ji_have_nodes_request(false), ji_external_clone(NULL),
+                     ji_cray_clone(NULL), ji_parent_job(NULL), ji_internal_id(-1),
+                     ji_being_recycled(false), ji_last_reported_time(0), ji_mod_time(0),
+                     ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false)
+  {
+  }
+
 svr_job::~svr_job() {}
 
 int node_avail_complex(

@@ -41,6 +41,7 @@ mail_info &mail_info::operator =(
 
 mail_throttler::mail_throttler() : pending()
   {
+  pthread_mutex_init(&this->mt_mutex, NULL);
   }
 
 
