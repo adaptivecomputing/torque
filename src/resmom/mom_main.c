@@ -3820,9 +3820,9 @@ int job_over_limit(
       total = (index == 0) ? gettime(useresc) : getsize(useresc);
 
 #ifndef NUMA_SUPPORT 
-      for (i = 0;i < pjob->ji_numnodes - 1;i++)
+      for (int j = 0; j < pjob->ji_numnodes - 1; j++)
         {
-        noderes *nr = &pjob->ji_resources[i];
+        noderes *nr = &pjob->ji_resources[j];
 
         total += ((index == 0) ? nr->nr_cput : nr->nr_mem);
         }
