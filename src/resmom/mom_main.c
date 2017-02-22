@@ -3328,13 +3328,14 @@ int do_tcp(
     default:
 
       {
-      struct sockaddr_in *addr = NULL;
       struct sockaddr     s_addr;
       unsigned int        len = sizeof(s_addr);
       
       if (getpeername(chan->sock, &s_addr, &len) == 0)
         {
-        addr = (struct sockaddr_in *)&s_addr;
+#if DEBUG > 0
+        struct sockaddr_in *addr = (struct sockaddr_in *)&s_addr;
+#endif
         DBPRT(("%s: unknown request %d from %s",
           __func__, proto, netaddr(addr)))
         }
