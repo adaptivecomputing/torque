@@ -18,9 +18,9 @@ EnvironmentFile=-/etc/sysconfig/pbs_mom
 
 ExecStart=@sbindir@/pbs_mom -F -d $PBS_HOME $PBS_ARGS
 
+KillMode=process
+
 # attempt graceful shutdown
-#  systemd will kill remaining processes if any
-#  exist after the following is executed
 ExecStop=/bin/bash -c " \
   for i in {1..5}; do \
     kill -0 $MAINPID &>/dev/null || exit 0; \

@@ -94,7 +94,7 @@
 /*
 ** Set up a debug print macro.
 */
-#ifdef NDEBUG
+#if defined(NDEBUG) || (DEBUG == 0)
 #define DBPRT(x)
 #else
 #define DBPRT(x) printf x;
