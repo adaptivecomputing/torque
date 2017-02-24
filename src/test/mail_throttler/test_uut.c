@@ -1,10 +1,51 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 
 #include "mail_throttler.hpp"
 #include "pbs_error.h"
+#include "resource.h"
 
+#include <check.h>
+
+
+START_TEST(test_job_constructor)
+  {
+  job pjob;
+  const char *jname = "highstorm_predictor";
+  const char *owner = "dbeer@roshar";
+  const char *queue = "batch";
+  const char *jid = "1.nalthis";
+  const char *hlist = "scadrial:ppn=16";
+  const char *join = "oe";
+  const char *outpath = "/home/dbeer/highstorms/";
+
+  std::vector<resource> resources;
+
+  pjob.ji_wattr[JOB_ATR_jobname].at_val.at_str = strdup(jname);
+  pjob.ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup(owner);
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup(hlist);
+  pjob.ji_wattr[JOB_ATR_join].at_flags = ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup(join);
+  pjob.ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup(outpath);
+  pjob.ji_wattr[JOB_ATR_init_work_dir].at_val.at_str = strdup(outpath);
+  pjob.ji_wattr[JOB_ATR_resource].at_val.at_ptr = &resources;
+  pjob.ji_wattr[JOB_ATR_resc_used].at_val.at_ptr = &resources;
+
+  strcpy(pjob.ji_qs.ji_queue, queue);
+  strcpy(pjob.ji_qs.ji_jobid, jid);
+
+  mail_info mi(&pjob);
+
+  fail_unless(mi.errFile == outpath);
+  fail_unless(mi.outFile == outpath);
+  fail_unless(mi.jobid == jid);
+  fail_unless(mi.exec_host == hlist);
+  fail_unless(mi.jobname == jname);
+  fail_unless(mi.queue_name == queue);
+  fail_unless(mi.owner == owner);
+  fail_unless(mi.working_directory == outpath);
+  }
+END_TEST
 
 
 START_TEST(test_adding)
@@ -52,12 +93,6 @@ START_TEST(test_adding)
 END_TEST
 
 
-START_TEST(test_two)
-  {
-  }
-END_TEST
-
-
 Suite *mail_throttler_suite(void)
   {
   Suite *s = suite_create("mail_throttler test suite methods");
@@ -65,8 +100,8 @@ Suite *mail_throttler_suite(void)
   tcase_add_test(tc_core, test_adding);
   suite_add_tcase(s, tc_core);
   
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_job_constructor");
+  tcase_add_test(tc_core, test_job_constructor);
   suite_add_tcase(s, tc_core);
   
   return(s);

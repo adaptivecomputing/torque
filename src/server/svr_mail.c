@@ -438,36 +438,6 @@ void *send_the_mail(
 
   return(NULL);
   } /* END send_the_mail() */
-
-
-
-void set_output_files(
-
-  job       *pjob,
-  mail_info *mi)
-
-  {
-  if (pjob->ji_wattr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
-    {
-    char *join_val = pjob->ji_wattr[JOB_ATR_join].at_val.at_str;
-    if (!strcmp(join_val, "oe"))
-      {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-      }
-    else if (!strcmp(join_val, "eo"))
-      {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-      }
-    }
-
-  if (mi->outFile.size() == 0)
-    mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-
-  if (mi->errFile.size() == 0)
-    mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-  } // END set_output_files()
              
 
 
@@ -590,7 +560,7 @@ void svr_mailowner(
   char                  mailto[1024];
   char                 *domain = NULL;
   int                   i;
-  mail_info             mi;
+  mail_info             mi(pjob);
   bool                  no_force = false;
 
   struct array_strings *pas;
@@ -783,17 +753,6 @@ void svr_mailowner(
   /* initialize the mail information */
   mi.mailto = mailto;
   mi.mail_point = mailpoint;
-
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    mi.exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-
-  mi.jobid = pjob->ji_qs.ji_jobid;
-
-  if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
-    mi.jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
-
-  if (mailpoint == (int) MAIL_END || mailpoint == MAIL_ABORT)
-    set_output_files(pjob, &mi);
 
   if (text)
     {
