@@ -328,6 +328,7 @@ START_TEST(mail_point_p)
    
   char p[]= "p";
   pjob.set_str_attr(JOB_ATR_mailpnts, strdup(p));	  
+  pjob.set_str_attr(JOB_ATR_job_owner, strdup("dbeer@sel"));
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 0),"one");
 

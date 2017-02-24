@@ -438,36 +438,6 @@ void *send_the_mail(
 
   return(NULL);
   } /* END send_the_mail() */
-
-
-
-void set_output_files(
-
-  svr_job   *pjob,
-  mail_info *mi)
-
-  {
-  const char *join_val = pjob->get_str_attr(JOB_ATR_join);
-  if (join_val != NULL)
-    {
-    if (!strcmp(join_val, "oe"))
-      {
-      mi->errFile = pjob->get_str_attr(JOB_ATR_outpath);
-      mi->outFile = pjob->get_str_attr(JOB_ATR_outpath);
-      }
-    else if (!strcmp(join_val, "eo"))
-      {
-      mi->errFile = pjob->get_str_attr(JOB_ATR_errpath);
-      mi->outFile = pjob->get_str_attr(JOB_ATR_errpath);
-      }
-    }
-
-  if (mi->outFile.size() == 0)
-    mi->outFile = pjob->get_str_attr(JOB_ATR_outpath);
-
-  if (mi->errFile.size() == 0)
-    mi->errFile = pjob->get_str_attr(JOB_ATR_errpath);
-  } // END set_output_files()
              
 
 
@@ -590,7 +560,7 @@ void svr_mailowner(
   char                  mailto[1024];
   char                 *domain = NULL;
   int                   i;
-  mail_info             mi;
+  mail_info             mi(pjob);
   bool                  no_force = false;
 
   struct array_strings *pas;
@@ -782,17 +752,6 @@ void svr_mailowner(
   /* initialize the mail information */
   mi.mailto = mailto;
   mi.mail_point = mailpoint;
-
-  if (pjob->get_str_attr(JOB_ATR_exec_host) != NULL)
-    mi.exec_host = pjob->get_str_attr(JOB_ATR_exec_host);
-
-  mi.jobid = pjob->get_jobid();
-
-  if (pjob->get_str_attr(JOB_ATR_jobname) != NULL)
-    mi.jobname = pjob->get_str_attr(JOB_ATR_jobname);
-
-  if (mailpoint == (int) MAIL_END || mailpoint == MAIL_ABORT)
-    set_output_files(pjob, &mi);
 
   if (text)
     {

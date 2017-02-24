@@ -482,3 +482,7 @@ struct array_strings *job::get_arst_attr(int index)
   return(this->ji_wattr[index].at_val.at_arst);
   }
 
+int resource_index_to_string(std::string &output, std::vector<resource> &resources, size_t index)
+  {
+  return(PBSE_NONE);
+  }

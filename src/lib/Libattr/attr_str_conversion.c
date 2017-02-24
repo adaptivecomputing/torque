@@ -177,6 +177,65 @@ int size_to_str(
 
 
 
+/*
+ * resource_index_to_string()
+ *
+ * Writes the resource at index as a string: name=value
+ *
+ * @param output - the string output
+ * @param resources - the resource vector
+ * @param index - the index of the resource to print
+ * @return PBSE_NONE on success or -1 if index if bad
+ */
+
+int resource_index_to_string(
+
+  std::string           &output,
+  std::vector<resource> &resources,
+  size_t                 index)
+
+  {
+  if (index >= resources.size())
+    return(-1);
+
+  char buf[MAXLINE];
+  int  rc = PBSE_NONE;
+
+  output = resources[index].rs_defin->rs_name;
+  output += "=";
+        
+  switch (resources[index].rs_value.at_type)
+    {
+    case ATR_TYPE_LONG:
+
+      sprintf(buf, "%ld", resources[index].rs_value.at_val.at_long);
+      output += buf;
+
+      break;
+
+    case ATR_TYPE_STR:
+
+      output += resources[index].rs_value.at_val.at_str;
+
+      break;
+
+    case ATR_TYPE_SIZE:
+
+      size_to_str(resources[index].rs_value.at_val.at_size, buf, sizeof(buf));
+      output += buf;
+
+      break;
+
+    default:
+
+      rc = -1;
+      break;
+
+    }
+
+  return(rc);
+  } // END resource_index_to_string()
+
 
 
 /*
