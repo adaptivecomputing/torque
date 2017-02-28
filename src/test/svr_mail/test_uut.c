@@ -332,7 +332,10 @@ START_TEST(mail_point_p)
   job pjob;	
    
   char p[]= "p";
-  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;	  
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;
+  pjob.ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup("/home/dbeer/forgery");
+  pjob.ji_wattr[JOB_ATR_errpath].at_val.at_str = strdup("/home/dbeer/forgery");
+  pjob.ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@sel");
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 0),"one");
 
