@@ -101,6 +101,7 @@
 #include "utils.h"
 #include "csv.h"
 #include "json/json.h"
+#include "req.hpp"
 
 void encode_used(mom_job *pjob, int perm, Json::Value *, tlist_head *phead);
 void encode_flagged_attrs(mom_job *pjob, int perm, Json::Value *job_info, tlist_head *phead);

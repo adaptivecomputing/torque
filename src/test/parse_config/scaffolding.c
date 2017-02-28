@@ -230,3 +230,14 @@ const char *job::get_jobid() const
   {
   return(this->ji_qs.ji_jobid);
   }
+
+int read_mem_value(
+
+  const char    *value,
+  unsigned long &parsed)
+
+  {
+  parsed = 10;
+  return(0);
+  }
+
