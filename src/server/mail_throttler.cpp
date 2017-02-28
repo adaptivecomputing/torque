@@ -49,7 +49,9 @@ mail_info::mail_info(
 
     this->queue_name = pjob->ji_qs.ji_queue;
     this->owner = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
-    this->working_directory = pjob->ji_wattr[JOB_ATR_init_work_dir].at_val.at_str;
+
+    if (pjob->ji_wattr[JOB_ATR_init_work_dir].at_flags & ATR_VFLAG_SET)
+      this->working_directory = pjob->ji_wattr[JOB_ATR_init_work_dir].at_val.at_str;
 
     if (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL)
       this->resources_requested = *((std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr);
