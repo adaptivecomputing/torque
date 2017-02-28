@@ -154,9 +154,9 @@ extern char  path_meminfo[MAXLINE];
 ** local functions and data
 */
 static const char *resi     (struct rm_attribute *);
-static const char *totmem   (struct rm_attribute *);
+const char *totmem   (struct rm_attribute *);
 static const char *availmem (struct rm_attribute *);
-static const char *physmem  (struct rm_attribute *);
+const char *physmem  (struct rm_attribute *);
 static const char *ncpus    (struct rm_attribute *);
 static const char *walltime (struct rm_attribute *);
 static const char *quota    (struct rm_attribute *);
@@ -4380,13 +4380,19 @@ const char *nusers(
 
 
 
-
+/*
+ * totmem - Determine the total amount of memory (RAM + Swap) on this host
+ *
+ * @return the total memory in kb as a string in the format: <amount>kb, or NULL on error
+ */
 const char *totmem(
 
   struct rm_attribute *attrib)
 
   {
-  proc_mem_t *mm;
+  proc_mem_t    *mm;
+  unsigned long  total = 0;
+  unsigned long  swap;
 
   if (attrib)
     {
@@ -4415,16 +4421,32 @@ const char *totmem(
     log_record(PBSEVENT_SYSTEM, 0, __func__, log_buffer);
     }
 
-  sprintf(ret_string, "%lukb",
+  total = mm->mem_total >> 10; // Convert from bytes to kb
 
-          (ulong)((mm->mem_total >> 10) + (mm->swap_total >> 10))); /* KB */
+  if ((max_memory > 0) &&
+      (max_memory < total))
+    total = max_memory;
+
+  swap = mm->swap_total >> 10; // Convert from bytes to kb
+
+  if ((max_swap > 0) &&
+      (max_swap < swap))
+    total += max_swap;
+  else
+    total += swap;
+
+  sprintf(ret_string, "%lukb", total);
 
   return(ret_string);
   }  /* END totmem() */
 
 
 
-
+/*
+ * availmem() - Get the amount of available RAM + Swap for this host
+ *
+ * @return the available memory in kb as a string in the format: <amount>kb, or NULL on error
+ */
 
 const char *availmem(
 
@@ -4449,7 +4471,7 @@ const char *availmem(
     rm_errno = RM_ERR_SYSTEM;
 
     return(NULL);
-    }  /* END availmem() */
+    }
 
   if (LOGLEVEL >= 6)
     {
@@ -4466,7 +4488,6 @@ const char *availmem(
 
   return(ret_string);
   }  /* END availmem() */
-
 
 
 
@@ -4575,9 +4596,13 @@ int find_file(
 
 
 
+/*
+ * physmem() - Determines the amount of RAM on this machine
+ *
+ * @return - the amount of RAM in kb as a string in the format: amount<kb>, or NULL on error
+ */
 
-
-static const char *physmem(
+const char *physmem(
 
   struct rm_attribute *attrib)
 
@@ -4677,13 +4702,14 @@ static const char *physmem(
     mem_total += mem;
     }
 
+  if ((max_memory > 0) &&
+      (max_memory < mem_total))
+    mem_total = max_memory;
+
   sprintf(ret_string, "%llukb", mem_total);
 
   return(ret_string);
   }  /* END physmem() */
-
-
-
 
 
 

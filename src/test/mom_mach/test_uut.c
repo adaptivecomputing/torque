@@ -10,6 +10,8 @@
 #include "test_mom_mach.h"
 #include "pbs_job.h"
 #include "pbs_error.h"
+#include "mom_memory.h"
+#include "resmon.h"
 
 std::string cg_memory_path;
 
@@ -20,6 +22,10 @@ int overmem_proc(mom_job*, unsigned long long);
 int overcpu_proc(mom_job*, unsigned long);
 unsigned long long resi_sum(mom_job*);
 unsigned long long mem_sum(mom_job*);
+proc_mem_t *get_proc_mem();
+const char *physmem  (struct rm_attribute *);
+const char *totmem  (struct rm_attribute *);
+
 
 double cputfactor;
 
@@ -32,6 +38,50 @@ extern pid2procarrayindex_map_t pid2procarrayindex_map;
 extern proc_stat_t   *proc_array;
 
 extern void *get_next_return_value;
+
+extern unsigned long max_memory;
+extern unsigned long max_swap;
+
+
+START_TEST(memory_tests)
+  {
+  proc_mem_t   *pm = get_proc_mem();
+  const char   *mem_str;
+  char          buf[1024];
+  rm_attribute  ra;
+
+  if (pm != NULL)
+    {
+    // Unset these parameters
+    max_memory = 0;
+    max_swap = 0;
+
+    mem_str = physmem(&ra);
+    fail_unless(mem_str != NULL);
+    sprintf(buf, "%llukb", pm->mem_total >> 10);
+    fail_unless(!strcmp(buf, mem_str));
+
+    mem_str = totmem(&ra);
+    fail_unless(mem_str != NULL);
+    sprintf(buf, "%llukb", (pm->mem_total >> 10) + (pm->swap_total >> 10));
+    fail_unless(!strcmp(buf, mem_str));
+
+    // Make max_memory and max_swap half of the machine's memory and swap
+    max_memory = pm->mem_total >> 11;
+    max_swap = pm->swap_total >> 11;
+    mem_str = physmem(&ra);
+    fail_unless(mem_str != NULL);
+    sprintf(buf, "%lukb", max_memory);
+    fail_unless(!strcmp(buf, mem_str));
+
+    mem_str = totmem(&ra);
+    fail_unless(mem_str != NULL);
+    sprintf(buf, "%lukb", max_memory + max_swap);
+    fail_unless(!strcmp(buf, mem_str));
+    }
+  }
+END_TEST
+
 
 START_TEST(test_get_job_sid_from_pid)
   { 
@@ -452,6 +502,7 @@ Suite *mom_mach_suite(void)
 
   tc_core = tcase_create("test_mem_sum");
   tcase_add_test(tc_core, test_mem_sum);
+  tcase_add_test(tc_core, memory_tests);
   suite_add_tcase(s, tc_core);
 
   return s;
