@@ -1850,6 +1850,69 @@ void trq_cg_delete_cgroup_path(
   } // END trq_cg_delete_cgroup_path()
 
 
+/*
+ * trq_cg_signal_tasks()
+ *
+ * cgroup_path - the path to the cgroup whose tasks should be signaled
+ * signal      - signal to send to each task in the cgroup
+ */
+
+void trq_cg_signal_tasks(
+
+  const string &cgroup_path,
+  int           signal)
+
+  {
+  std::string tasks_path(cgroup_path);
+  int         npids;
+  int         slept = 0;
+  FILE        *fp;
+  char        tid_str[1024];
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  struct stat statbuf;
+
+  // build path to tasks file
+  tasks_path += "/tasks";
+
+  // do not continue if tasks file doesn't exist
+  if ((lstat(tasks_path.c_str(), &statbuf) != 0) || (!S_ISREG(statbuf.st_mode)))
+    return;
+
+  do
+    {
+    npids = 0;
+
+    // Signal each pid. If it takes more than 5 seconds to kill, give up.
+
+    if ((fp = fopen(tasks_path.c_str(), "r")) != NULL)
+      {
+      while ((fgets(tid_str, sizeof(tid_str), fp)) != NULL)
+        {
+        int tid = atoi(tid_str);
+
+        if (LOGLEVEL >= 9)
+          {
+          snprintf(log_buf, sizeof(log_buf), "sending signal %d to pid %d in cpuset %s",
+                   signal, tid, cgroup_path.c_str());
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
+
+        kill(tid, signal);
+        npids++;
+        }
+
+      fclose(fp);
+      }
+
+    if ((signal == SIGKILL) && (npids))
+      {
+      sleep(1);
+      slept++;
+      }
+    } while((signal == SIGKILL) && (npids > 0) && (slept <= 5));
+
+  } // END trq_cg_signal_tasks()
+
 
 /*
  * trq_cg_delete_job_cgroups()
@@ -1868,7 +1931,11 @@ void trq_cg_delete_job_cgroups(
   trq_cg_delete_cgroup_path(cg_cpu_path + job_id, successfully_created);
 
   trq_cg_delete_cgroup_path(cg_cpuacct_path + job_id, successfully_created);
-  
+ 
+  // kill any procs in cpuset 
+  trq_cg_signal_tasks(cg_cpuset_path + job_id, SIGKILL);
+
+  // remove directory
   trq_cg_delete_cgroup_path(cg_cpuset_path + job_id, successfully_created);
 
   trq_cg_delete_cgroup_path(cg_memory_path + job_id, successfully_created);
