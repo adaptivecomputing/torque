@@ -27,6 +27,7 @@ START_TEST(test_job_constructor)
   pjob.ji_wattr[JOB_ATR_join].at_flags = ATR_VFLAG_SET;
   pjob.ji_wattr[JOB_ATR_join].at_val.at_str = strdup(join);
   pjob.ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup(outpath);
+  pjob.ji_wattr[JOB_ATR_init_work_dir].at_flags = ATR_VFLAG_SET;
   pjob.ji_wattr[JOB_ATR_init_work_dir].at_val.at_str = strdup(outpath);
   pjob.ji_wattr[JOB_ATR_resource].at_val.at_ptr = &resources;
   pjob.ji_wattr[JOB_ATR_resc_used].at_val.at_ptr = &resources;
@@ -43,7 +44,7 @@ START_TEST(test_job_constructor)
   fail_unless(mi.jobname == jname);
   fail_unless(mi.queue_name == queue);
   fail_unless(mi.owner == owner);
-  fail_unless(mi.working_directory == outpath);
+  fail_unless(mi.working_directory == outpath, "Got '%s', expected '%s'", mi.working_directory.c_str(), outpath);
   }
 END_TEST
 
