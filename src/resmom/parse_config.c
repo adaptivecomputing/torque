@@ -99,6 +99,7 @@
 #include "mom_func.h"
 #include "u_tree.h"
 #include "csv.h"
+#include "req.hpp"
 
 void encode_used(job *pjob, int perm, std::stringstream *list, tlist_head *phead);
 void encode_flagged_attrs(job *pjob, int perm, std::stringstream *list, tlist_head *phead);

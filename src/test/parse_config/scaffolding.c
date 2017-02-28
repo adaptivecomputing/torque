@@ -218,3 +218,13 @@ char *conf_res(char *resline, struct rm_attribute *attr)
 
   return(resline);
   }
+
+int read_mem_value(
+
+  const char    *value,
+  unsigned long &parsed)
+
+  {
+  parsed = 10;
+  return(0);
+  }
