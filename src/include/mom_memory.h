@@ -14,6 +14,7 @@
   unsigned long long swap_total;
   unsigned long long swap_used;
   unsigned long long swap_free;
+  time_t             timestamp;
   }proc_mem_t;
 
 proc_mem_t *get_proc_mem_from_path(const char *path);

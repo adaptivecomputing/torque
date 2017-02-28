@@ -1765,7 +1765,7 @@ int send_status_through_hierarchy()
 void mom_server_all_update_stat(void)
  
   {
-  int rc;
+  int          rc = -1;
 
   time_now = time(NULL);
 
@@ -1815,35 +1815,10 @@ void mom_server_all_update_stat(void)
 
   if (rc == PBSE_NONE)
     {
-    // On success, clear all of the variables 
-    received_node                                             *rn;
-    container::item_container<received_node *>::item_iterator *iter;
-    
-    ForceServerUpdate = false;
-    force_layout_update = false;
     updates_waiting_to_send = 0;
-    LastServerUpdateTime = time_now;
-  
-    received_statuses.lock();
-    iter = received_statuses.get_iterator();
-    
-    // clear cached statuses from hierarchy
-    while ((rn = iter->get_next_item()) != NULL)
-      rn->statuses.clear();
-    
-    delete iter;
-    received_statuses.unlock();
-      
-    for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
-      {
-      if (mom_servers[sindex].pbs_servername[0] == '\0')
-        continue;
-      mom_servers[sindex].MOMLastSendToServerTime = time_now;
-      }
+    force_layout_update = false;
     }
- 
   }  /* END mom_server_all_update_stat() */
-
 
 
 

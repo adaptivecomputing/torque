@@ -766,6 +766,11 @@ proc_mem_t *get_proc_mem(void)
 #else
   proc_mem_t         *mem;
 #endif
+  
+  time_now = time(NULL);
+
+  if (time_now - ret_mm.timestamp < ServerStatUpdateInterval)
+    return(&ret_mm);
 
 #ifdef NUMA_SUPPORT
   ret_mm.mem_total  = 0;
@@ -806,6 +811,8 @@ proc_mem_t *get_proc_mem(void)
 
   free(mem);
 #endif
+
+  ret_mm.timestamp = time_now;
 
   return(&ret_mm);
   }  /* END get_proc_mem() */
@@ -4607,18 +4614,8 @@ const char *physmem(
   struct rm_attribute *attrib)
 
   {
-  char tmpBuf[PMEMBUF_SIZE];
-
-  char *tmp_ptr;
-  char *BPtr;
-  int   BSpace;
-
-  unsigned long long mem;
-  unsigned long long mem_total;
-  FILE *fp;
-#ifdef NUMA_SUPPORT
-  int i;
-#endif
+  proc_mem_t         *mm;
+  unsigned long long  mem_total;
 
   if (attrib != NULL)
     {
@@ -4629,78 +4626,15 @@ const char *physmem(
     return(NULL);
     }
 
-  mem_total = 0;
-
-#ifdef NUMA_SUPPORT
-
-  for (i = 0; i < node_boards[numa_index].num_nodes; i++)
-#endif /* NUMA_SUPPORT */
+  if ((mm = get_proc_mem()) == NULL)
     {
-#ifdef NUMA_SUPPORT
-    if (!(fp = fopen(node_boards[numa_index].path_meminfo[i],"r")))
-#else
-    if (!(fp = fopen(path_meminfo, "r")))
-#endif
-      {
-      rm_errno = RM_ERR_SYSTEM;
+    log_err(errno, __func__, "get_proc_mem");
 
-      return(NULL);
-      }
-
-    BPtr = tmpBuf;
-
-    BSpace = sizeof(tmpBuf);
-
-    BPtr[0] = '\0';
-
-    while (!feof(fp))
-      {
-      if (fgets(BPtr, BSpace, fp) == NULL)
-        {
-        break;
-        }
-
-      BSpace -= strlen(BPtr);
-
-      BPtr   += strlen(BPtr);
-      }
-
-    fclose(fp);
-
-    /* FORMAT:  '...\nMemTotal:   XXX kB\n' */
-
-    if ((tmp_ptr = strstr(tmpBuf, "MemTotal:")) != NULL)
-      {
-      BPtr = tmp_ptr + strlen("MemTotal:");
-
-      if (sscanf(BPtr, "%llu",
-                 &mem) != 1)
-        {
-        rm_errno = RM_ERR_SYSTEM;
-
-        return(NULL);
-        }
-
-      /* value specified in kb */
-      }
-    else
-      {
-      /* attempt to load first numeric value */
-
-      if (sscanf(BPtr, "%*s %llu",
-                 &mem) != 1)
-        {
-        rm_errno = RM_ERR_SYSTEM;
-
-        return(NULL);
-        }
-
-      /* value specified in bytes */
-
-      mem >>= 10;
-      }
-    mem_total += mem;
+    rm_errno = RM_ERR_SYSTEM;
+    return(NULL);
     }
+
+  mem_total = mm->mem_total >> 10; // Convert from bytes to kb
 
   if ((max_memory > 0) &&
       (max_memory < mem_total))
