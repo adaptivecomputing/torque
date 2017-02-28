@@ -925,7 +925,7 @@ void stat_update(
          think it is still running */
       mutex_mgr job_mutex(pjob->ji_mutex, true);
 
-      if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+      if (pjob->get_state() != JOB_STATE_RUNNING)
         {
         // don't abort if job no longer in running state
         if (LOGLEVEL >= 6)
