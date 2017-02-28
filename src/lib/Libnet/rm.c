@@ -1044,10 +1044,6 @@ extern "C"
 int activereq(void)
 
   {
-#ifndef NDEBUG
-  static char id[] = "activereq";
-#endif
-
   int            i;
   int            num;
   int            PollArraySize;
@@ -1063,7 +1059,7 @@ int activereq(void)
   if (PollArray == NULL)
     {
     // no memory
-    DBPRT(("%s: malloc %d %s\n", id, errno, pbs_strerror(errno)))
+    DBPRT(("%s: malloc %d %s\n", __func__, errno, pbs_strerror(errno)))
     return(-1);
     }
 
@@ -1092,7 +1088,7 @@ int activereq(void)
 
   if (num == -1)
     {
-    DBPRT(("%s: poll %d %s\n", id, errno, pbs_strerror(errno)))
+    DBPRT(("%s: poll %d %s\n", __func__, errno, pbs_strerror(errno)))
     free(PollArray);
     return -1;
     }

@@ -30,6 +30,7 @@ extern char *msg_job_stageinfail;
 extern char *msg_job_copychkptfail;
 extern char *msg_job_otherfail;
 
+int resource_index_to_string(std::string &output, std::vector<resource> &resources, size_t index);
 
 
 void svr_format_job(
@@ -143,7 +144,7 @@ void svr_format_job(
       }
     else if (*p == '%') /* format statement */
       {
-      switch(p[1])
+      switch (p[1])
         {
         case 'd':  /* details */
 
@@ -210,12 +211,72 @@ void svr_format_job(
 
           break;
 
+        case 'o': // owner
+
+          fprintf(fh, "%s", mi->owner.c_str());
+          p += 2;
+
+          break;
+
+        case 'q': // queue
+
+          fprintf(fh, "%s", mi->queue_name.c_str());
+
+          p += 2;
+
+          break;
+
+        case 'R': // Resources requested
+
+          {
+          std::string resource_str;
+
+          if (mi->resources_requested.size() > 0)
+            fprintf(fh, "Resources Requested Summary\n");
+
+          for (size_t i = 0; i < mi->resources_requested.size(); i++)
+            {
+            resource_index_to_string(resource_str, mi->resources_requested, i);
+            fprintf(fh, "\t%s\n", resource_str.c_str());
+            }
+          p += 2;
+
+          break;
+          }
+
         case 'r':  /* reason */
 
           if (reason != NULL)
             {
             fprintf(fh, "%s", reason);
             }
+
+          p += 2;
+
+          break;
+
+        case 'u': // resources used summary
+
+          {
+          std::string resource_str;
+
+          if (mi->resources_used.size() > 0)
+            fprintf(fh, "Resources Used Summary\n");
+
+          for (size_t i = 0; i < mi->resources_used.size(); i++)
+            {
+            resource_index_to_string(resource_str, mi->resources_used, i);
+            fprintf(fh, "\t%s\n", resource_str.c_str());
+            }
+          
+          p += 2;
+
+          break;
+          }
+
+        case 'w': // working directory
+
+          fprintf(fh, "%s", mi->working_directory.c_str());
           p += 2;
 
           break;
