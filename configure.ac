@@ -502,6 +502,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/tmsock_recov/Makefile
     src/test/mom_mach/Makefile
     src/test/mom_start/Makefile
+    src/test/trq_cgroups/Makefile
     src/resmom/linux/test/Makefile
     src/resmom/linux/test/cpuset/Makefile
     src/resmom/linux/test/sys_file/Makefile

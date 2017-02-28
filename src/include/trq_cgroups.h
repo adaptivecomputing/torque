@@ -40,4 +40,5 @@ void trq_cg_delete_job_cgroups(const char *job_id, bool successfully_created);
 bool have_incompatible_dash_l_resource(pbs_attribute *pattr);
 int  trq_cg_add_devices_to_cgroup(job *pjob);
 int init_torque_cgroups();
+void trq_cg_signal_tasks(const std::string& cgroup_path, int signal);
 #endif /* _TRQ_CGROUPS_H_ */
