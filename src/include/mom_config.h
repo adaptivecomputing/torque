@@ -172,6 +172,8 @@ extern int              max_join_job_wait_time;
 extern int              resend_join_job_wait_time;
 extern int              mom_hierarchy_retry_time;
 extern int              MOMJobDirStickySet;
+extern unsigned long    max_memory;
+extern unsigned long    max_swap;
 
 struct specials
   {

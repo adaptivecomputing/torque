@@ -193,7 +193,8 @@ short            memory_pressure_duration  = 0; /* 0: off, >0: check and kill */
 int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int              resend_join_job_wait_time = RESEND_WAIT_TIME;
 int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
-
+unsigned long    max_memory = 0;
+unsigned long    max_swap = 0;
 
 
 
@@ -304,6 +305,8 @@ unsigned long setresendjoinjobwaittime(const char *);
 unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
 unsigned long setcudavisibledevices(const char *);
+unsigned long set_max_physical_memory(const char *);
+unsigned long set_max_swap_memory(const char *);
 
 struct specials special[] = {
   { "force_overwrite",     setforceoverwrite}, 
@@ -388,6 +391,8 @@ struct specials special[] = {
   { "jobdirectory_sticky", setjobdirectorysticky},
   { "cuda_visible_devices", setcudavisibledevices},
   { "cray_check_rur",       setrur },
+  { "max_physical_memory",  set_max_physical_memory},
+  { "max_swap_memory",      set_max_swap_memory},
   { NULL,                  NULL }
   };
 
@@ -505,6 +510,7 @@ unsigned long setforceoverwrite(
 
   return(0); /* error */
   }
+
 unsigned long setrur(
 
   const char *value)
@@ -520,6 +526,46 @@ unsigned long setrur(
     
   return(0); /* error */
   }/* end setrur() */
+
+
+
+/*
+ * set_max_physical_memory()
+ *
+ * @param value - the maximum memory value in the format <number><memory units>
+ */
+
+unsigned long set_max_physical_memory(
+
+  const char *value)
+
+  {
+  if (read_mem_value(value, max_memory) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Couldn't parse a memory value from '%s'", value);
+    log_err(-1, __func__, log_buffer);
+    return(0);
+    }
+
+  return(1);
+  }
+
+
+
+unsigned long set_max_swap_memory(
+
+  const char *value)
+
+  {
+  if (read_mem_value(value, max_swap) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Couldn't parse a memory value from '%s'", value);
+    log_err(-1, __func__, log_buffer);
+    return(0);
+    }
+
+  return(1);
+  }
 
 
 unsigned long setidealload(
@@ -629,8 +675,6 @@ unsigned long setautoidealload(
 
 
 
-
-
 unsigned long setallocparcmd(
 
   const char *value)  /* I */
@@ -642,8 +686,6 @@ unsigned long setallocparcmd(
 
   return(1);
   }  /* END setallocparcmd() */
-
-
 
 
 
@@ -793,8 +835,6 @@ unsigned long setmaxload(
 
 
 
-
-
 unsigned long setlogfilemaxsize(
 
   const char *value)  /* I */
@@ -811,7 +851,6 @@ unsigned long setlogfilemaxsize(
 
   return(1);
   }
-
 
 
 
@@ -843,7 +882,6 @@ unsigned long setlogdirectory(
 
   return(1);
   }
-
 
 
 
