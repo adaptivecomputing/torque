@@ -924,18 +924,33 @@ void stat_update(
          directory is cleared, set its state to queued so job_abt doesn't
          think it is still running */
       mutex_mgr job_mutex(pjob->ji_mutex, true);
-      
-      snprintf(log_buf, sizeof(log_buf),
-        "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
-        preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      
-      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-      rel_resc(pjob);
-      job_mutex.set_unlock_on_exit(false);
-      job_abt(&pjob, "Job does not exist on node");
 
-      /* TODO, if the job is rerunnable we should set its state back to queued */
+      if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+        {
+        // don't abort if job no longer in running state
+        if (LOGLEVEL >= 6)
+          {
+          snprintf(log_buf, sizeof(log_buf),
+              "stat_update(): job %s is no longer in running state. Ignoring unknown job id reply from mom.",
+              preq->rq_ind.rq_status.rq_id);
+
+          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
+        }
+      else
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
+          preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+        rel_resc(pjob);
+        job_mutex.set_unlock_on_exit(false);
+        job_abt(&pjob, "Job does not exist on node");
+
+        /* TODO, if the job is rerunnable we should set its state back to queued */
+        }
       }
     }
   else
