@@ -100,6 +100,7 @@
 #include "authorized_hosts.hpp"
 #include "csv.h"
 #include "json/json.h"
+#include "req.hpp"
 
 void encode_used(job *pjob, int perm, Json::Value *, tlist_head *phead);
 void encode_flagged_attrs(job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
