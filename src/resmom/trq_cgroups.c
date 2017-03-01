@@ -777,6 +777,70 @@ int trq_cg_add_process_to_task_cgroup(
 
 
 
+/*
+ * trq_cg_read_numeric_rss()
+ *
+ * Reads and returns the rss value from a memory cgroup stat file.
+ * @param path - the path to the memory cgroup stat file.
+ * @param error (O) - set to true if there was an error reading the file.
+ * @return the RSS memory size recorded in this file, or 0 if none could be read.
+ */
+
+unsigned long long trq_cg_read_numeric_rss(
+
+  string &path,
+  bool   &error)
+
+  {
+  int                fd;
+  unsigned long long val = 0;
+  char               buf[LOCAL_LOG_BUF_SIZE];
+  char               *buf2;
+
+  error = false;
+
+  fd = open(path.c_str(), O_RDONLY);
+  if (fd <= 0)
+    {
+    // If we don't have a file to open, just return 0
+    if (errno == ENOENT)
+      return(0);
+
+    sprintf(log_buffer, "failed to open %s: %s", path.c_str(), strerror(errno));
+    log_err(errno, __func__, log_buffer);
+    error = true;
+    }
+  else
+    {
+    int rc = read(fd, buf, LOCAL_LOG_BUF_SIZE);
+
+    close(fd);
+
+    if (rc == -1)
+      {
+      sprintf(buf, "read failed getting value from %s - %s", path.c_str(), strerror(errno));
+      log_err(errno, __func__, buf);
+      error = true;
+      }
+    else if (rc != 0)
+      {
+      buf2=strstr(buf, "\nrss ");
+      if (buf2 == NULL)
+        {
+        sprintf(buf, "read failed finding rss %s", path.c_str());
+        log_err(errno, __func__, buf);
+        error = true;
+        }
+      else
+        val = strtoull(buf2+5, NULL, 10);
+      }
+    }
+
+  return(val);
+  } // END trq_cg_read_numeric_rss()
+
+
+
 unsigned long long trq_cg_read_numeric_value(
 
   string &path,
@@ -849,21 +913,17 @@ int trq_cg_get_task_memory_stats(
   char               req_and_task[256];
   int                rc = PBSE_NONE;
 
-  /* get memory first */
-  sprintf(req_and_task, "/%s/R%u.t%u/memory.max_usage_in_bytes", job_id, req_index, task_index);
+  // get memory first
+  // We read memory.stat instead of memory.max_usage_in_bytes because the latter counts way more than just
+  // rss memory. trq_cg_read_numeric_rss() gets us just the resident memory size, which is what we really 
+  // want to limit.
+  sprintf(req_and_task, "/%s/R%u.t%u/memory.stat", job_id, req_index, task_index);
 
   string  cgroup_path = cg_memory_path + req_and_task;
   bool    error;
 
-  mem_used = trq_cg_read_numeric_value(cgroup_path, error);
+  mem_used = trq_cg_read_numeric_rss(cgroup_path, error);
   
-/*  if (mem_used == 0)
-    {
-    sprintf(log_buffer, "peak memory usage read from '%s' is 0, something appears to be incorrect.",
-      cgroup_path.c_str());
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    }*/
-
   if (error)
     rc = PBSE_SYSTEM;
 
