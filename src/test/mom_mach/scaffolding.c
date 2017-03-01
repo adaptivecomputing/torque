@@ -26,7 +26,7 @@
 extern std::string cg_memory_path;
 char         mom_alias[PBS_MAXHOSTNAME + 1];
 
-int              ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int              ServerStatUpdateInterval = 45;
 Machine this_node;
 std::string cg_cpuacct_path;
 std::list<job *> alljobs_list;
