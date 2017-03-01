@@ -1607,7 +1607,7 @@ unsigned long long resi_sum(
       }
     }
 
-  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.max_usage_in_bytes";
+  full_cgroup_path = cg_memory_path + pjob->ji_qs.ji_jobid + "/memory.stat";
 
   fd = open(full_cgroup_path.c_str(), O_RDONLY);
   if (fd <= 0)
@@ -1631,10 +1631,19 @@ unsigned long long resi_sum(
     }
   else if (rc != 0) 
     {
-    int hardwareStyle;
-    unsigned long long mem_read;
+    int                 hardwareStyle;
+    unsigned long long  mem_read;
+    char               *buf2;
+    buf2 = strstr(buf, "\nrss ");
+    if (buf2 == NULL)
+      {
+      sprintf(buf, "read failed finding rss %s", full_cgroup_path.c_str());
+      log_err(errno, __func__, buf);
+      close(fd);
+      return(0);
+      }
 
-    mem_read = strtoull(buf, NULL, 10);
+    mem_read = strtoull(buf2 + 5, NULL, 10);
 
     hardwareStyle = this_node.getHardwareStyle();
 
