@@ -173,15 +173,9 @@ int decode_resc(
 
   if (prdef == NULL)
     {
-    /*
-     * didn't find resource with matching name, use unknown;
-     * but return PBSE_UNKRESC in case caller doesn`t wish to
-     * accept unknown resources
-     */
-
+    // Don't accept unknown resources as this strands jobs.
     rc = PBSE_UNKRESC;
-
-    prdef = svr_resc_def + (svr_resc_size - 1);
+    return(rc);
     }
 
   prsc = find_resc_entry(patr, prdef);
