@@ -814,32 +814,12 @@ int decode_attributes_into_job(
 
     if (rc != 0)
       {
-      if (rc == PBSE_UNKRESC)
-        {
-        /* check for RM extension */
-
-        /* NYI */
-
-        /* unknown resources not allowed in Exec queue */
-
-        if (pque->qu_qs.qu_type == QTYPE_Execution)
-          {
-          /* FAILURE */
-          svr_job_purge(pj);
-          job_mutex.set_unlock_on_exit(false);
-          reply_badattr(rc, 1, psatl, preq);
-          return(rc);
-          }
-        }
-      else
-        {
-        /* FAILURE */
-        /* any other error is fatal */
-        svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
-        reply_badattr(rc, 1, psatl, preq);
-        return(rc);
-        }
+      /* FAILURE */
+      /* any other error is fatal */
+      svr_job_purge(pj);
+      job_mutex.set_unlock_on_exit(false);
+      reply_badattr(rc, 1, psatl, preq);
+      return(rc);
       }    /* END if (rc != 0) */
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
