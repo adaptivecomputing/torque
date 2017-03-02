@@ -15,7 +15,7 @@ START_TEST(test_one)
   fail_unless(decode_resc(NULL,NULL,NULL,NULL,0) == PBSE_INTERNAL);
   fail_unless(decode_resc(&attr,NULL,NULL,NULL,0) == PBSE_UNKRESC);
   fail_unless(decode_resc(&attr,"attrName",NULL,NULL,0) == PBSE_UNKRESC);
-  fail_unless(decode_resc(&attr,"attrName","arch",NULL,0) == PBSE_ATTRRO);
+  fail_unless(decode_resc(&attr,"attrName","arch",NULL,0) == PBSE_UNKRESC);
   fail_unless(decode_resc(&attr,"notherAttrName","string","Pie",0) == PBSE_ATTRRO);
   fail_unless(decode_resc(&attr,"notherAttrName","string","Pie",ATR_DFLAG_ACCESS) == 0);
   fail_unless(decode_resc(&attr,"someLong","long","314179",ATR_DFLAG_ACCESS) == 0);
