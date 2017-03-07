@@ -89,9 +89,12 @@ char *host_name_suffix = NULL;
 int    J_opt = FALSE;
 int    P_opt = FALSE;
 
+const int   MAX_BIND_RETRIES = 20;
 const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 char       *alternate_dependency;
 int         alternate_data_type;
+int         interactive_port_min;
+int         interactive_port_max;
 complete_req  cr;
 std::string   L_request;
 
@@ -1665,15 +1668,27 @@ void do_dir(
   }  /* END do_dir() */
 
 
+
+unsigned int get_port_in_range()
+
+  {
+  int span = interactive_port_max - interactive_port_min;
+  return(rand() % span + interactive_port_min);
+  } // END get_port_in_range()
+
+
+
 /*
  * The following bunch of functions support the "Interactive Job"
  * capability of PBS.
  */
+
 /*
  * interactive_port - get a socket to listen to for "interactive" job
  * When the "interactive" job is run, its standard in, out, and error
  * will be connected to this socket.
  */
+
 char *interactive_port(
     
   int *sock)
@@ -1684,6 +1699,7 @@ char *interactive_port(
 
   struct sockaddr_in myaddr;
   unsigned short port;
+  int            bind_rc = -1;
 
   *sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -1696,11 +1712,20 @@ char *interactive_port(
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
 
-  if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
+  // Since the requested port range could be in use, retry throughout the port range.
+  for (int bind_retry = 0; bind_retry < MAX_BIND_RETRIES; bind_retry++)
+    {
+    if (interactive_port_min != 0)
+      myaddr.sin_port = htons(get_port_in_range());
+
+    if ((bind_rc = bind(*sock, (struct sockaddr *)&myaddr, namelen)) >= 0)
+      break;
+    }
+  
+  if (bind_rc < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");
 
   /* get port number assigned */
-
   if (getsockname(*sock, (struct sockaddr *)&myaddr, &namelen) < 0)
     print_qsub_usage_exit("qsub: unable to get port number");
 
@@ -4234,6 +4259,29 @@ void process_config_file(
         strcpy(host_name_suffix, param_val);
         }
       }
+
+    if ((param_val = get_trq_param("INTERACTIVE_PORT_RANGE", torque_cfg_buf)) != NULL)
+      {
+      // Must be <int>-<int>
+      char *ptr = param_val;
+      bool  valid = false;
+      interactive_port_min = strtol(ptr, &ptr, 10);
+      if (*ptr == '-')
+        {
+        ptr++;
+        interactive_port_max = strtol(ptr, &ptr, 10);
+
+        if ((interactive_port_max > interactive_port_min) &&
+            (interactive_port_min > 1024))
+          valid = true;
+        }
+
+      if (valid == false)
+        {
+        interactive_port_min = 0;
+        interactive_port_max = 0;
+        }
+      }
     }    /* END if (load_config(torque_cfg_buf,sizeof(torque_cfg_buf)) == 0) */
   }
 
@@ -4515,6 +4563,8 @@ void main_func(
   /* Allocate Memmgr */
   int               debug = FALSE;
   job_info          ji;
+
+  srand(time(NULL));
 
   /**
    * Before we go to the trouble of allocating memory, initializing structures,
