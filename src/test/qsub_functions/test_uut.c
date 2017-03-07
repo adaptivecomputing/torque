@@ -24,6 +24,7 @@ int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
 int  wait_for_read_ready(int, int);
 bool is_memory_request_valid(job_info *ji, std::string &err_msg);
 int  validate_pbs_o_workdir(const job_info *);
+unsigned int get_port_in_range();
 
 extern complete_req cr;
 extern bool         mem_fail;
@@ -41,6 +42,9 @@ extern int global_poll_rc;
 extern short global_poll_revents;
 extern int global_poll_errno;
 
+extern int interactive_port_min;
+extern int interactive_port_max;
+
 bool are_we_forking()
 
   {
@@ -52,6 +56,21 @@ bool are_we_forking()
   
   return(true);
   }
+
+
+START_TEST(test_get_port_in_range)
+  {
+  interactive_port_min = 30000;
+  interactive_port_max = 30100;
+
+  for (int i = 0; i < 100; i++)
+    {
+    unsigned int port = get_port_in_range();
+    fail_unless(port >= interactive_port_min);
+    fail_unless(port <= interactive_port_max);
+    }
+  }
+END_TEST
 
 
 START_TEST(test_is_memory_request_valid)
@@ -489,6 +508,7 @@ Suite *qsub_functions_suite(void)
   tc_core = tcase_create("test_make_argv");
   tcase_add_test(tc_core, test_make_argv);
   tcase_add_test(tc_core, test_is_resource_request_valid);
+  tcase_add_test(tc_core, test_get_port_in_range);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_wait_for_read_ready");
