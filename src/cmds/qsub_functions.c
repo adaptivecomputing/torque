@@ -2377,6 +2377,10 @@ int get_interactive_job_id(
       break;
     }
 
+  if ((pc - momjobid == 1) &&
+      (momjobid[0] == 'C'))
+    return(-2);
+
   // Return -1 if we didn't read anything
   if (amt == momjobid_size)
     {
@@ -2442,10 +2446,17 @@ void interactive(
 
   for (int retry = 0; retry < 3; retry++)
     {
-    if (get_interactive_job_id(news, momjobid, sizeof(momjobid)) == PBSE_NONE)
+    int rc = get_interactive_job_id(news, momjobid, sizeof(momjobid));
+    if (rc == PBSE_NONE)
       {
       read_jobid = true;
       break;
+      }
+    else if (rc == -2)
+      {
+      // The job was canceled while waiting to start
+      fprintf(stderr, "qsub: Job %s was canceled while waiting to start\n", new_jobname);
+      exit(1);
       }
     }
 
