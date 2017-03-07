@@ -89,6 +89,7 @@
 
 #include <pthread.h>
 
+#include <string>
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
@@ -117,8 +118,8 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "req_delete.h"
+#include "lib_ifl.h"
 #include "delete_all_tracker.hpp"
-#include <string>
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -486,7 +487,63 @@ void setup_apply_job_delete_nanny(
 
 
 /*
- * execut_job_delete()
+ * notify_waiting_terminal()
+ *
+ * @param pjob - the interactive job whose terminal we need to notify
+ */
+
+void notify_waiting_terminal(
+
+  job *pjob)
+
+  {
+  unsigned int  pport = pjob->get_long_attr(JOB_ATR_interactive);
+  const char   *hostname = pjob->get_str_attr(JOB_ATR_submit_host);
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_net_t     hostaddr;
+  int           local_errno;
+
+  if (hostname != NULL)
+    {
+    hostaddr = get_hostaddr(&local_errno, hostname);
+
+    if (hostaddr != (pbs_net_t)0)
+      {
+      char err_msg[MAXLINE];
+      int s = client_to_svr(hostaddr, pport, 0, err_msg);
+
+      if (s >= 0)
+        {
+        // Write the letter 'C' to cancel the job
+        write_ac_socket(s, "C", 1);
+        close(s);
+        }
+      else
+        {
+        sprintf(log_buf, "Couldn't open a socket to cancel interactive job '%s' : %s",
+          pjob->get_jobid(), err_msg);
+        log_err(errno, __func__, log_buf);
+        }
+      }
+    else
+      {
+      sprintf(log_buf, "Couldn't get the address for host '%s' to cancel interactive job '%s'",
+        hostname, pjob->get_jobid());
+      log_err(errno, __func__, log_buf);
+      }
+    }
+  else
+    {
+    sprintf(log_buf, "Couldn't find a submission host for interactive job '%s'", pjob->get_jobid());
+    log_err(-1, __func__, log_buf);
+    }
+
+  } // END notify_waiting_terminal()
+
+
+
+/*
+ * execute_job_delete()
  *
  * Deletes an individual job, contacting the mom if necessary
  * @param pjob - the job being deleted
@@ -711,18 +768,24 @@ jump:
       job_mutex.set_unlock_on_exit(false);
 
     return(-1);
-    }  /* END if (pjob->get_state() == JOB_STATE_RUNNING) */
-  else if ((pjob->get_state() < JOB_STATE_RUNNING) &&
-           (status_cancel_queue != 0))
+    }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
+  else if (pjob->get_state() < JOB_STATE_RUNNING)
     {
-    /*
-     * If a task is not running yet and is still on the queue, we
-     * need to set an exit status
-     */
+    if (status_cancel_queue != 0)
+      {
+      /*
+       * If a task is not running yet and is still on the queue, we
+       * need to set an exit status
+       */
 
-    pjob->set_exec_exitstat(status_cancel_queue);
+      pjob->set_exec_exitstat(status_cancel_queue);
 
-    pjob->set_long_attr(JOB_ATR_exitstat, status_cancel_queue);
+      pjob->set_long_attr(JOB_ATR_exitstat, status_cancel_queue);
+      }
+
+    // Send cancel to the waiting terminal 
+    if (pjob->get_long_attr(JOB_ATR_interactive))
+      notify_waiting_terminal(pjob);
     }
 
   if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
