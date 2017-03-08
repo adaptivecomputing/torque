@@ -2771,6 +2771,42 @@ int extra_resc_chk(
 
 
 
+int set_default_gpu_mode_int(
+
+  const char *gpu_mode_str)
+
+  {
+  int rc = PBSE_NONE;
+
+  // Make sure it's one of the acceptable gpu modes
+  if (!strcmp(gpu_mode_str, "exclusive_thread"))
+    {
+    default_gpu_mode = gpu_exclusive_thread;
+    }
+  else if (!strcmp(gpu_mode_str, "exclusive"))
+    {
+    default_gpu_mode = gpu_exclusive;
+    }
+  else if (!strcmp(gpu_mode_str, "exclusive_process"))
+    {
+    default_gpu_mode = gpu_exclusive_process;
+    }
+  else if (!strcmp(gpu_mode_str, "default"))
+    {
+    default_gpu_mode = gpu_normal;
+    }
+  else if (!strcmp(gpu_mode_str, "shared"))
+    {
+    default_gpu_mode = gpu_normal;
+    }
+  else
+    rc = PBSE_ATTRTYPE;
+
+  return(rc);
+  } // END set_default_gpu_mode_int()
+
+
+
 /*
  * check_default_gpu_mode_str()
  *
@@ -2794,33 +2830,9 @@ int check_default_gpu_mode_str(
 
       // this shouldn't happen
       if (gpu_mode == NULL)
-        {
-        return(PBSE_ATTRTYPE);
-        }
-
-      // Make sure it's one of the acceptable gpu modes
-      if (!strcmp(gpu_mode, "exclusive_thread"))
-        {
-        default_gpu_mode = gpu_exclusive_thread;
-        }
-      else if (!strcmp(gpu_mode, "exclusive"))
-        {
-        default_gpu_mode = gpu_exclusive;
-        }
-      else if (!strcmp(gpu_mode, "exclusive_process"))
-        {
-        default_gpu_mode = gpu_exclusive_process;
-        }
-      else if (!strcmp(gpu_mode, "default"))
-        {
-        default_gpu_mode = gpu_normal;
-        }
-      else if (!strcmp(gpu_mode, "shared"))
-        {
-        default_gpu_mode = gpu_normal;
-        }
-      else
         rc = PBSE_ATTRTYPE;
+      else
+        rc = set_default_gpu_mode_int(gpu_mode);
 
       break;
     }
