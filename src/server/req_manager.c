@@ -2714,10 +2714,6 @@ int set_default_gpu_mode_int(
     {
     default_gpu_mode = gpu_exclusive_thread;
     }
-  else if (!strcmp(gpu_mode_str, "exclusive"))
-    {
-    default_gpu_mode = gpu_exclusive;
-    }
   else if (!strcmp(gpu_mode_str, "exclusive_process"))
     {
     default_gpu_mode = gpu_exclusive_process;
