@@ -1275,9 +1275,9 @@ int setup_gpus_for_job(
   mom_job  *pjob) /* I */
 
   {
-  char *gpu_str;
-  int   gpu_flags = 0;
-  int   rc;
+  const char *gpu_str;
+  int         gpu_flags = 0;
+  int         rc;
 
   /* if node does not have Nvidia recognized driver version then forget it */
 
