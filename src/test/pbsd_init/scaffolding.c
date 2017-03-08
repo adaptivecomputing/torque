@@ -871,3 +871,18 @@ pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held)
   }
 
 reservation_holder::reservation_holder() {}
+
+int set_default_gpu_mode_int(const char *default_gpu_str)
+  {
+  return(0);
+  }
+
+int get_svr_attr_str(
+    
+  int    attr_index,
+  char **str)
+
+  {
+  return(0);
+  }
+
