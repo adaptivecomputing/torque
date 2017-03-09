@@ -2092,6 +2092,18 @@ int svr_job_purge(
 
 
 
+void *svr_job_purge_task(
+
+  void *vp)
+
+  {
+  job *pjob = (job *)vp;
+  svr_job_purge(pjob);
+  return(NULL);
+  } // END svr_job_purge_task()
+
+
+
 /* 
  * Always access the array in this way in order to avoid deadlock 
  *

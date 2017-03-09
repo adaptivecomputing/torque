@@ -697,7 +697,7 @@ START_TEST(set_depend_hold_test)
   struct depend *pdep;
  
   strcpy(pjob.ji_qs.ji_jobid, job1);
-  strcpy(pjob2.ji_qs.ji_jobid, job3);
+  strcpy(pjob2.ji_qs.ji_jobid, job2);
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
   initialize_depend_attr(pattr);
   // Job 2 will be complete with an exit status of 0
@@ -715,9 +715,17 @@ START_TEST(set_depend_hold_test)
   // Job 2 will be complete with an exit status of 0
   make_dependjob(pdep, job2);
 
-  set_depend_hold(&pjob2, pattr, NULL);
-  fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
-  fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD);
+  int saved_err = 0;
+  try
+    {
+    set_depend_hold(&pjob2, pattr, NULL);
+    }
+  catch (int err)
+    {
+    saved_err = err;
+    }
+
+  fail_unless(saved_err == PBSE_BADDEPEND);
 
   memset(&pjob, 0, sizeof(pjob));
   pattr = &pjob.ji_wattr[JOB_ATR_depend];
