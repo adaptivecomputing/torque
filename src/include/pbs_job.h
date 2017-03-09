@@ -929,6 +929,7 @@ class svr_job : public job
 
   void encode_plugin_resource_usage(tlist_head *phead) const;
   void add_plugin_resource_usage(std::string &acct_data) const;
+  size_t number_of_plugin_resources() const;
   };
 
 /* on the server this array will replace many of the doubly linked-lists */

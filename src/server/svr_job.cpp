@@ -166,7 +166,6 @@ void svr_job::set_plugin_resource_usage_from_json(
   }
 
 
-
 svr_job *svr_job::copy_job()
   {
   svr_job *pnewjob = new svr_job();
@@ -189,3 +188,9 @@ svr_job *svr_job::copy_job()
 
   return(pnewjob);
   }
+
+size_t svr_job::number_of_plugin_resources() const
+  {
+  return(this->ji_plugin_usage_info.size());
+  }
+
