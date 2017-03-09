@@ -1037,3 +1037,6 @@ pbs_attribute *job::get_attr(int index)
   }
 
 void mom_job_free(mom_job *pjob) {}
+
+void mom_deljob(mom_job *pjob) {}
+

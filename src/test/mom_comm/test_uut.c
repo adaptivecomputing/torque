@@ -43,6 +43,7 @@ bool is_nodeid_on_this_host(mom_job *pjob, tm_node_id nodeid);
 task *find_task_by_pid(mom_job *pjob, int pid);
 int im_join_job_as_sister(struct tcp_chan *chan, char *jobid, struct sockaddr_in *addr, const char *cookie, tm_event_t event, int fromtask, int command, int job_radix);
 int readit(int, int);
+bool is_mother_superior(hnodent *np);
 
 #ifdef PENABLE_LINUX_CGROUPS
 int get_req_and_task_index_from_local_rank(mom_job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
@@ -72,6 +73,18 @@ START_TEST(test_get_req_and_task_index_from_local_rank)
 END_TEST
 
 #endif
+
+
+START_TEST(test_is_mother_superior)
+  {
+  hnodent hn;
+
+  hn.hn_node = 1;
+  fail_unless(is_mother_superior(&hn) == false);
+  hn.hn_node = 0;
+  fail_unless(is_mother_superior(&hn) == true);
+  }
+END_TEST
 
 
 START_TEST(test_get_reply_stream)
@@ -613,6 +626,7 @@ Suite *mom_comm_suite(void)
 
   tc_core = tcase_create("test_readit");
   tcase_add_test(tc_core, test_readit);
+  tcase_add_test(tc_core, test_is_mother_superior);
   suite_add_tcase(s, tc_core);
 
   return(s);
