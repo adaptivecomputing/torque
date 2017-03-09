@@ -62,6 +62,13 @@ START_TEST(test_plugin_things)
   fail_unless(acct_data.find("resources_used.breaths=10000") != std::string::npos);
   fail_unless(acct_data.find("resources_used.aons_drawn=20") != std::string::npos);
 
+  job pjob2;
+  Json::Value p2;
+  p2["bob"];
+  p2["name"] = "tom";
+  pjob2.set_plugin_resource_usage_from_json(p2);
+  fail_unless(pjob2.number_of_plugin_resources() == 1);
+
   }
 END_TEST
 

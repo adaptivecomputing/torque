@@ -192,3 +192,9 @@ void job::set_plugin_resource_usage_from_json(
   if (reader.parse(json_str, resources) == true)
     this->set_plugin_resource_usage_from_json(resources);
   }
+
+
+size_t job::number_of_plugin_resources() const
+  {
+  return(this->ji_plugin_usage_info.size());
+  }
