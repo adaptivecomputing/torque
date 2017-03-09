@@ -11,6 +11,7 @@
 #include "array.h" /* job_array */
 #include "work_task.h" /* work_task */
 #include "queue.h"
+#include "threadpool.h"
 
 const int DEFAULT_IDLE_SLOT_LIMIT = 300;
 const char *msg_illregister = "Illegal op in register request received for job %s";
@@ -725,3 +726,22 @@ pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
   }
+
+int enqueue_threadpool_request(
+
+  void         *(*func)(void *),
+  void         *arg,
+  threadpool_t *tp)
+
+  {
+  return(0);
+  }
+
+threadpool_t *task_pool;
+
+void *svr_job_purge_task(void *vp)
+  {
+  return(NULL);
+  }
+
+

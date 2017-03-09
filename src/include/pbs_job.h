@@ -1382,6 +1382,7 @@ svr_job     *svr_find_job(const char *jobid, int get_subjob);
 svr_job     *svr_find_job_by_id(int internal_job_id);
 svr_job     *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
 bool         job_id_exists(const std::string &job_id_string);
+void        *svr_job_purge_task(void *vp);
 bool         internal_job_id_exists(int internal_id);
 int          svr_enquejob(svr_job *, int, const char *, bool, bool being_recovered);
 void         svr_evaljobstate(svr_job &, int &, int &, int);

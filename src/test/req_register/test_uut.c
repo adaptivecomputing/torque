@@ -689,7 +689,7 @@ START_TEST(set_depend_hold_test)
   struct depend *pdep;
  
   pjob.set_jobid(job1);
-  pjob2.set_jobid(job3);
+  pjob2.set_jobid(job2);
   pattr = pjob.get_attr(JOB_ATR_depend);
   initialize_depend_attr(pattr);
   // Job 2 will be complete with an exit status of 0
@@ -707,10 +707,17 @@ START_TEST(set_depend_hold_test)
   // Job 2 will be complete with an exit status of 0
   make_dependjob(pdep, job2);
 
-  set_depend_hold(&pjob2, pattr, NULL);
-  fail_unless(pjob2.is_attr_set(JOB_ATR_hold) == false);
-  fail_unless(pjob2.get_long_attr(JOB_ATR_hold) == 0);
-  fail_unless(pjob2.get_state() != JOB_STATE_HELD);
+  int saved_err = 0;
+  try
+    {
+    set_depend_hold(&pjob2, pattr, NULL);
+    }
+  catch (int err)
+    {
+    saved_err = err;
+    }
+
+  fail_unless(saved_err == PBSE_BADDEPEND);
 
   svr_job pjob3;
   pattr = pjob3.get_attr(JOB_ATR_depend);
