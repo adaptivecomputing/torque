@@ -19,15 +19,15 @@ START_TEST(test_check_default_gpu_mode_str)
   pattr.at_val.at_str = strdup("exclusive_process");
   fail_unless(check_default_gpu_mode_str(&pattr, NULL, ATR_ACTION_ALTER) == PBSE_NONE);
   fail_unless(default_gpu_mode == gpu_exclusive_process);
+
   pattr.at_val.at_str = strdup("exclusive_thread");
   fail_unless(check_default_gpu_mode_str(&pattr, NULL, ATR_ACTION_ALTER) == PBSE_NONE);
   fail_unless(default_gpu_mode == gpu_exclusive_thread);
-  pattr.at_val.at_str = strdup("exclusive");
-  fail_unless(check_default_gpu_mode_str(&pattr, NULL, ATR_ACTION_ALTER) == PBSE_NONE);
-  fail_unless(default_gpu_mode == gpu_exclusive);
+
   pattr.at_val.at_str = strdup("default");
   fail_unless(check_default_gpu_mode_str(&pattr, NULL, ATR_ACTION_ALTER) == PBSE_NONE);
   fail_unless(default_gpu_mode == gpu_normal);
+
   pattr.at_val.at_str = strdup("shared");
   fail_unless(check_default_gpu_mode_str(&pattr, NULL, ATR_ACTION_ALTER) == PBSE_NONE);
   fail_unless(default_gpu_mode == gpu_normal);
