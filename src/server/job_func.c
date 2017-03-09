@@ -2146,8 +2146,15 @@ int svr_job_purge(
 
 
 
+void *svr_job_purge_task(
 
+  void *vp)
 
+  {
+  job *pjob = (job *)vp;
+  svr_job_purge(pjob);
+  return(NULL);
+  } // END svr_job_purge_task()
 
 
 

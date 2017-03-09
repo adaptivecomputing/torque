@@ -719,9 +719,17 @@ START_TEST(set_depend_hold_test)
   pdep = make_depend(JOB_DEPEND_TYPE_AFTEROK, pattr);
   make_dependjob(pdep, job2);
 
-  set_depend_hold(&pjob2, pattr, NULL);
-  fail_unless((pjob2.ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) == 0);
-  fail_unless(pjob2.ji_qs.ji_state != JOB_STATE_HELD);
+  int saved_err = 0;
+  try
+    {
+    set_depend_hold(&pjob2, pattr, NULL);
+    }
+  catch (int err)
+    {
+    saved_err = err;
+    }
+
+  fail_unless(saved_err == PBSE_BADDEPEND);
 
   memset(&pjob, 0, sizeof(pjob));
   pattr = &pjob.ji_wattr[JOB_ATR_depend];

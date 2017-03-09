@@ -11,6 +11,7 @@
 #include "array.h" /* job_array */
 #include "work_task.h" /* work_task */
 #include "queue.h"
+#include "threadpool.h"
 
 const char *msg_illregister = "Illegal op in register request received for job %s";
 const char *msg_registerdel = "Job deleted as result of dependency on job %s";
@@ -385,4 +386,22 @@ int is_svr_attr_set(int index)
   {
   return(is_attr_set);
   }
+
+int enqueue_threadpool_request(
+
+  void         *(*func)(void *),
+  void         *arg,
+  threadpool_t *tp)
+
+  {
+  return(0);
+  }
+
+threadpool_t *task_pool;
+
+void *svr_job_purge_task(void *vp)
+  {
+  return(NULL);
+  }
+
 

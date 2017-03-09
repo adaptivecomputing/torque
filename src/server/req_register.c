@@ -107,6 +107,7 @@
 #include "mutex_mgr.hpp"
 #include "utils.h"
 #include "job_func.h"
+#include "threadpool.h"
 
 
 #define SYNC_SCHED_HINT_NULL 0
@@ -1890,6 +1891,7 @@ void set_depend_hold(
   int                loop = 1;
   int                newstate;
   int                newsubst;
+  char               log_buf[LOCAL_LOG_BUF_SIZE];
 
   struct depend     *pdp = NULL;
   depend_job        *djob = NULL;
@@ -1952,10 +1954,20 @@ void set_depend_hold(
              lock the job. It is already locked */
           if (!jobids_match)
             {
-            if (djob->dc_child == pjob->ji_qs.ji_jobid)
+            if (djob->dc_child != pjob->ji_qs.ji_jobid)
               djp = svr_find_job(djob->dc_child.c_str(), TRUE);
             else
               jobids_match = true;
+            }
+
+          if (jobids_match)
+            {
+            // This should never happen. A Job cannot depend on itself.
+            snprintf(log_buf, sizeof(log_buf),
+              "Job %s somehow has a dependency on itself. Purging.", pjob->ji_qs.ji_jobid);
+            log_err(-1, __func__, log_buf);
+            enqueue_threadpool_request(svr_job_purge_task, pjob, task_pool);
+            throw (int)PBSE_BADDEPEND;
             }
 
           if (!djp ||
@@ -2072,7 +2084,7 @@ void set_depend_hold(
 
       if (pjob == NULL)
         {
-        throw PBSE_JOBNOTFOUND;
+        throw (int)PBSE_JOBNOTFOUND;
         }
       }
     }
