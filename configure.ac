@@ -991,6 +991,7 @@ else
   AC_MSG_RESULT([no])
   RPM_AC_OPTS="$RPM_AC_OPTS --without cpuset"
 fi
+
 AM_CONDITIONAL([BUILD_L26_CPUSETS], test "$build_l26_cpuset" = yes)
 
 
@@ -1015,6 +1016,16 @@ dnl    AC_DEFINE(GEOMETRY_REQUESTS, 1, [Define to allow job specific geometry re
     AC_MSG_RESULT([no])
   fi
 fi
+
+
+dnl Don't allow the specification of --disable-cpuset and --enable-geometry-requests
+case "${ac_configure_args}" in
+  *disable-cpuset*)
+    case "${ac_configure_args}" in
+      *enable-geometry-requests*)
+        AC_MSG_ERROR([--enable-geometry-requests requires the use of cpusets. You may not specify both --disable-cpuset and --enable-geometry-requests])
+    esac
+esac
 
 dnl compile for NUMA systems - allows the site to configure:
 dnl 1. cpusets and multi-moms

@@ -208,11 +208,13 @@ START_TEST(test_mom_server_all_update_stat_clear_force)
 
   is_reporter_mom = false;
 
+  mom_servers[0].MOMLastSendToServerTime = 0;
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
   fail_unless(ForceServerUpdate == false);
 
+  mom_servers[0].MOMLastSendToServerTime = 0;
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();

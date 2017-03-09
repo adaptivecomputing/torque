@@ -990,3 +990,17 @@ void job_array::update_array_values(
 
   {
   }
+    
+int set_default_gpu_mode_int(const char *default_gpu_str)
+  {
+  return(0);
+  }
+
+int get_svr_attr_str(
+    
+  int    attr_index,
+  char **str)
+
+  {
+  return(0);
+  }

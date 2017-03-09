@@ -547,3 +547,23 @@ batch_request::~batch_request()
 batch_request::batch_request() {}
 batch_request::batch_request(int type) : rq_type(type) {}
 
+int client_to_svr(
+
+  pbs_net_t     hostaddr,	  /* I - internet addr of host */
+  unsigned int  port,		    /* I - port to which to connect */
+  int           local_port,	/* I - BOOLEAN:  not 0 to use local reserved port */
+  char         *EMsg)       /* O (optional,minsize=1024) */
+
+  {
+  return(1);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int        *local_errno, /* O */    
+  const char *hostname)    /* I */
+
+  {
+  return(0);
+  }
+

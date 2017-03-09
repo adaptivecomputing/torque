@@ -3120,6 +3120,15 @@ int rm_request(
 
       break;
 
+    case RM_CMD_UPDATE_LAYOUT:
+
+      // Force an over-write of the layout on the next successful send to pbs_server
+      force_layout_update = true;
+      diswsi(chan, RM_RSP_OK);
+      DIS_tcp_wflush(chan);
+
+      break;
+
     default:
 
       sprintf(log_buffer, "unknown command %d",
