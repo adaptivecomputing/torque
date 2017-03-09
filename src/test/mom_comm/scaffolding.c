@@ -677,3 +677,5 @@ void authorized_hosts::list_authorized_hosts(std::string &output) {}
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
 
+void mom_deljob(job *pjob) {}
+
