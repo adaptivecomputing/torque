@@ -666,3 +666,5 @@ bool req::is_per_task() const
 
 #endif
 
+void mom_deljob(job *pjob) {}
+

@@ -4995,7 +4995,31 @@ void create_contact_list(
     if (node_addr != ipaddr_connect)
       sister_list.insert(i);
     }
-  }
+  } // END create_contact_list()
+
+
+
+/*
+ * process_kill_or_abort_error_from_ms()
+ *
+ * I sent a kill or abort to mother superior and got an error back; mother superior
+ * must've already cleaned up the job, so I should too.
+ *
+ * @param pjob - the job we're about to delete
+ * @return PBSE_NONE
+ */
+
+int process_kill_or_abort_error_from_ms(
+    
+  job *pjob)
+
+  {
+  int rc = PBSE_NONE;
+
+  mom_deljob(pjob);
+
+  return(rc);
+  } // END process_kill_or_abort_error_from_ms()
 
 
 
@@ -5173,6 +5197,22 @@ int im_poll_error(
 
 
 
+/*
+ * is_mother_superior()
+ *
+ * @return true if np describes mother superior for its job, false otherwise
+ */
+
+bool is_mother_superior(
+    
+  hnodent *np)
+
+  {
+  return(np->hn_node == 0);
+  } // END is_mother_superior()
+
+
+
 
 /*
  * process_error_reply
@@ -5262,6 +5302,10 @@ int process_error_reply(
     case IM_KILL_JOB:
 
       rc = process_end_job_error_reply(pjob, np, pSockAddr, errcode);
+
+      if ((rc == IM_FAILURE) &&
+          (is_mother_superior(np) == true))
+        rc = process_kill_or_abort_error_from_ms(pjob);
      
      break;
      
