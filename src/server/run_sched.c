@@ -360,16 +360,18 @@ static int contact_listener(
   if (sock < 0)
     {
     /* FAILURE */
-
-    sprintf(tmpLine, "%s %d - port %d %s",
-            msg_listnr_nocall,
-            l_idx,
-            listener_conns[l_idx].port,
-            EMsg);
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(tmpLine, "%s %d - port %d %s",
+              msg_listnr_nocall,
+              l_idx,
+              listener_conns[l_idx].port,
+              EMsg);
+      log_err(errno, __func__, tmpLine);
+      }
 
     /* we lost contact with the scheduler. reset*/
     listener_conns[l_idx].first_time = 1;
-    log_err(errno, __func__, tmpLine);
 
     return(-1);
     }
