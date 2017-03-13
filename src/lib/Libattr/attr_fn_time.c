@@ -150,14 +150,17 @@ long time_str_to_seconds(
   for (int i = 0;i < 3;++i)
     msec[i] = '0';
 
-  msec[4] = '\0';
+  msec[3] = '\0';
 
   for (char *pc = workval; *pc; ++pc)
     {
     if (*pc == ':')
       {
       if (++ncolon > 3)
+        {
+        free(workvalsv);
         return(-1);
+        }
 
       /* are days specified? */
       if (ncolon > 2)
@@ -196,6 +199,7 @@ long time_str_to_seconds(
       }
     else if (!isdigit((int)*pc))
       {
+      free(workvalsv);
       return(-1); /* bad value */
       }
     }
@@ -206,7 +210,10 @@ long time_str_to_seconds(
    time_val = time_val + (days * 24 * 3600);
 
   if (time_val > PBS_MAX_TIME)
+    {
+    free(workvalsv);
     return(-1);
+    }
 
   if (strtol(msec, NULL, 10) >= 500)
     time_val++;
