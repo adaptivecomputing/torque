@@ -496,7 +496,8 @@ int svr_save_xml(
   node_value<<time_now;
   xmlNewChild(node,NULL,BAD_CAST "savetime",BAD_CAST (node_value.str().c_str()));
   node_value.str("");
-  
+
+  xmlNewChild(node,NULL,BAD_CAST "attributes",NULL);
 
   if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,node)) != 0)
     {
