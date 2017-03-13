@@ -856,6 +856,7 @@ int action_resc(
 
   {
   resource *pr;
+  int       rc = PBSE_NONE;
 
   pr = (resource *)GET_NEXT(pattr->at_val.at_list);
 
@@ -863,12 +864,19 @@ int action_resc(
     {
     if ((pr->rs_value.at_flags & ATR_VFLAG_MODIFY) &&
         (pr->rs_defin->rs_action))
-      pr->rs_defin->rs_action(pr, pattr, actmode);
+      {
+      int tmp_rc = pr->rs_defin->rs_action(pr, pattr, actmode);
+        
+      if ((tmp_rc != PBSE_NONE) &&
+          (rc == PBSE_NONE))
+        rc = tmp_rc;
+      }
 
     pr->rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
 
     pr = (resource *)GET_NEXT(pr->rs_link);
     }
 
-  return(0);
-  }
+  return(rc);
+  } // END action_resc()
+

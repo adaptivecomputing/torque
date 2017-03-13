@@ -123,7 +123,7 @@ int set_tokens_nodect(struct pbs_attribute *attr, struct pbs_attribute *new_attr
 int set_mppnodect(resource *, pbs_attribute *, int actmode);
 int decode_procct(pbs_attribute *, const char *, const char *, const char *, int);
 int encode_procct(pbs_attribute *, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
-
+int verify_as_time(resource *r, pbs_attribute *pattr, int mode);
 
 resource_def *svr_resc_def;
 
@@ -733,7 +733,7 @@ resource_def svr_resc_def_const[] =
   { "loglevel", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "minprocspeed", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "minpreempttime", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
-  { "minwclimit", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
+  { "minwclimit", decode_str, encode_str, set_str, comp_str, free_str, verify_as_time, READ_WRITE, ATR_TYPE_STR },
   { "naccesspolicy", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "nallocpolicy", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
   { "nodeset", decode_str, encode_str, set_str, comp_str, free_str, NULL_FUNC, READ_WRITE, ATR_TYPE_STR },
@@ -1444,5 +1444,35 @@ int encode_procct(
 
   return (1);
   }
+
+
+
+/*
+ * verify_as_time()
+ *
+ * Verifies that the string set for this resource is a valid time string and can be
+ * converted to seconds.
+ *
+ * @param r - the resource in question (ignored)
+ * @param pattr - the attribute value for the resource
+ * @param mode - the mode of the action taken for this resource (ignored)
+ * @return PBSE_NONE on success, or -1 for failure.
+ */
+
+int verify_as_time(
+    
+  resource      *r,
+  pbs_attribute *pattr,
+  int            mode)
+
+  {
+  if (pattr->at_val.at_str != NULL)
+    {
+    if (time_str_to_seconds(pattr->at_val.at_str) < 0)
+      return(-1);
+    }
+
+  return(PBSE_NONE);
+  } // END verify_as_time()
 
 

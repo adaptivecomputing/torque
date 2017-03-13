@@ -454,3 +454,8 @@ int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
   return(PBSE_NONE);
   }
 
+long time_str_to_seconds(const char *str)
+  {
+  return(0);
+  }
+

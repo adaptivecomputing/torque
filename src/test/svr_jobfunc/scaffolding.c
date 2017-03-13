@@ -717,3 +717,8 @@ Machine::Machine() {}
 #include "../../lib/Libattr/req.cpp"
 #include "../../lib/Libattr/complete_req.cpp"
 #include "../../lib/Libattr/attr_req_info.cpp"
+
+long time_str_to_seconds(const char *str)
+  {
+  return(0);
+  }
