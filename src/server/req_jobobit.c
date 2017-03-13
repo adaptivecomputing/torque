@@ -3294,7 +3294,7 @@ int update_substate_from_exit_status(
             {
             snprintf(log_buf, sizeof(log_buf),
               "Job %s is being retried due to a failed prologue. See the syslog on the mother superior for more details",
-              pjob->ji_qs.ji_jobid);
+              pjob->get_jobid());
             log_err(-1, __func__, log_buf);
             }
 
