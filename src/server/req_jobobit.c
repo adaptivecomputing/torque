@@ -3287,6 +3287,18 @@ int update_substate_from_exit_status(
           set_job_comment(pjob, pbse_to_txt(PBSE_CGROUP_CREATE_FAIL));
 
           // Fall through intentionally
+        
+        case JOB_EXEC_RETRY_PROLOGUE:
+
+          if (exitstatus == JOB_EXEC_RETRY_PROLOGUE)
+            {
+            snprintf(log_buf, sizeof(log_buf),
+              "Job %s is being retried due to a failed prologue. See the syslog on the mother superior for more details",
+              pjob->ji_qs.ji_jobid);
+            log_err(-1, __func__, log_buf);
+            }
+
+          // Fall through intentionally
 
         case JOB_EXEC_RETRY:
 

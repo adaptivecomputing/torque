@@ -63,6 +63,7 @@ bool purged = false;
 bool completed = false;
 bool exited = false;
 long disable_requeue = 0;
+std::string log_err_buf;
 completed_jobs_map_class completed_jobs_map;
 
 
@@ -325,7 +326,10 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
   {
   }
 
-void log_err(int error, const char *func_id, const char *msg) {}
+void log_err(int error, const char *func_id, const char *msg) 
+  {
+  log_err_buf = msg;
+  }
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
