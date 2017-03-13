@@ -111,6 +111,111 @@
  * value type "long"
  * --------------------------------------------------
  */
+#define PBS_MAX_TIME (LONG_MAX - 1)
+
+
+
+/*
+ * time_str_to_seconds()
+ *
+ * Determines a number of seconds from a time string in the format:
+ * [DD:]HH:MM:SS[.MS]
+ *
+ * @param str - the time string
+ * @return the number of seconds or -1 if the format is invalid
+ */
+
+long time_str_to_seconds(
+
+  const char *str)
+
+  {
+  long  time_val = 0;
+
+  char *workval = strdup(str);
+  char  msec[4];
+
+  char *workvalsv = workval;
+  bool  use_days = false;
+  int   ncolon = 0;
+  int   days = 0;
+
+  if (workvalsv == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    return(-1);
+    }
+
+  for (int i = 0;i < 3;++i)
+    msec[i] = '0';
+
+  msec[4] = '\0';
+
+  for (char *pc = workval; *pc; ++pc)
+    {
+    if (*pc == ':')
+      {
+      if (++ncolon > 3)
+        return(-1);
+
+      /* are days specified? */
+      if (ncolon > 2)
+        use_days = true;
+      }
+    }
+
+  for (char *pc = workval; *pc; ++pc)
+    {
+    if (*pc == ':')
+      {
+
+      *pc = '\0';
+
+      if (use_days)
+        {
+        days = strtol(workval, NULL, 10);
+        use_days = false;
+        }
+      else
+        {
+        time_val = (time_val * 60) + strtol(workval, NULL, 10);
+        }
+
+      workval = pc + 1;
+
+      }
+    else if (*pc == '.')
+      {
+      *pc++ = '\0';
+
+      for (int i = 0; (i < 3) && *pc; ++i)
+        msec[i] = *pc++;
+
+      break;
+      }
+    else if (!isdigit((int)*pc))
+      {
+      return(-1); /* bad value */
+      }
+    }
+
+  time_val = (time_val * 60) + strtol(workval, NULL, 10);
+  
+  if (days > 0)
+   time_val = time_val + (days * 24 * 3600);
+
+  if (time_val > PBS_MAX_TIME)
+    return(-1);
+
+  if (strtol(msec, NULL, 10) >= 500)
+    time_val++;
+
+  free(workvalsv);
+
+  return(time_val);
+  } // END time_string_to_seconds()
+
 
 
 /*
@@ -121,7 +226,6 @@
  *  *patr elements set
  */
 
-#define PBS_MAX_TIME (LONG_MAX - 1)
 
 int decode_time(
 
@@ -132,15 +236,8 @@ int decode_time(
   int          UNUSED(perm))  /* only used for resources */
 
   {
-  int   i;
-  char  msec[4];
-  int   ncolon = 0;
-  int   use_days = 0;
-  int   days = 0;
-  char *pc;
-  long  rv = 0;
-  char *workval;
-  char *workvalsv;
+  long rv = 0;
+  int  rc = PBSE_NONE;
 
   if ((val == NULL) || (strlen(val) == 0))
     {
@@ -150,101 +247,21 @@ int decode_time(
 
     /* SUCCESS */
 
-    return(0);
+    return(rc);
     }
 
-  /* FORMAT:  [DD]:HH:MM:SS[.MS] */
+  rv = time_str_to_seconds(val);
 
-  workval = strdup(val);
-
-  workvalsv = workval;
-
-  if (workvalsv == NULL)
+  if (rv >= 0)
     {
-    /* FAILURE - cannot alloc memory */
-
-    goto badval;
+    // SUCCESS
+    patr->at_val.at_long = rv;
+    patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
     }
+  else
+    rc = PBSE_BADATVAL;
 
-  for (i = 0;i < 3;++i)
-    msec[i] = '0';
-
-  msec[i] = '\0';
-
-  for (pc = workval;*pc;++pc)
-    {
-    if (*pc == ':')
-      {
-      if (++ncolon > 3)
-        goto badval;
-
-      /* are days specified? */
-      if (ncolon > 2)
-        use_days = 1;
-      }
-    }
-
-  for (pc = workval;*pc;++pc)
-    {
-    if (*pc == ':')
-      {
-
-      *pc = '\0';
-
-      if (use_days)
-        {
-        days = atoi(workval);
-        use_days = 0;
-        }
-      else
-        {
-        rv = (rv * 60) + atoi(workval);
-        }
-
-      workval = pc + 1;
-
-      }
-    else if (*pc == '.')
-      {
-      *pc++ = '\0';
-
-      for (i = 0; (i < 3) && *pc; ++i)
-        msec[i] = *pc++;
-
-      break;
-      }
-    else if (!isdigit((int)*pc))
-      {
-      goto badval; /* bad value */
-      }
-    }
-
-  rv = (rv * 60) + atoi(workval);
-  
-  if (days > 0)
-   rv = rv + (days * 24 * 3600);
-
-  if (rv > PBS_MAX_TIME)
-    goto badval;
-
-  if (atoi(msec) >= 500)
-    rv++;
-
-  patr->at_val.at_long = rv;
-
-  patr->at_flags |= ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
-
-  free(workvalsv);
-
-  /* SUCCESS */
-
-  return(0);
-
-badval:
-
-  free(workvalsv);
-
-  return(PBSE_BADATVAL);
+  return(rc);
   }  /* END decode_time() */
 
 

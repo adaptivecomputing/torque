@@ -773,6 +773,8 @@ int action_resc(
   int            actmode)
 
   {
+  int rc = PBSE_NONE;
+
   if (pattr->at_val.at_ptr != NULL)
     {
     std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
@@ -783,12 +785,17 @@ int action_resc(
       
       if ((r.rs_value.at_flags & ATR_VFLAG_MODIFY) &&
           (r.rs_defin->rs_action))
-        r.rs_defin->rs_action(&r, pattr, actmode);
+        {
+        int tmp_rc = r.rs_defin->rs_action(&r, pattr, actmode);
+        if ((tmp_rc != PBSE_NONE) &&
+            (rc == PBSE_NONE))
+          rc = tmp_rc;
+        }
 
       resources->at(i).rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
       }
     }
 
-  return(PBSE_NONE);
+  return(rc);
   } // END action_resc()
 

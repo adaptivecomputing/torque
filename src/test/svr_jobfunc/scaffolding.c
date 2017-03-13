@@ -1079,3 +1079,8 @@ void job::set_route_queue_time(time_t t)
   {
   this->ji_qs.ji_un.ji_routet.ji_quetime = t;
   }
+
+  long time_str_to_seconds(const char *str)
+  {
+  return(0);
+  }

@@ -282,3 +282,7 @@ char *threadsafe_tokenizer(
   return(start);
   } /* END threadsafe_tokenizer() */
 
+long time_str_to_seconds(const char *str)
+  {
+  return(0);
+  }

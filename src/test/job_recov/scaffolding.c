@@ -820,3 +820,8 @@ batch_request *get_remove_batch_request(
   {
   return(NULL);
   }
+
+long time_str_to_seconds(const char *str)
+  {
+  return(0);
+  }
