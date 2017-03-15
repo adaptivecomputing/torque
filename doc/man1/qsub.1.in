@@ -83,11 +83,11 @@ qsub \- submit pbs job
 .SH SYNOPSIS
 qsub [\-a date_time] [\-A account_string] [\-b secs] [\-c checkpoint_options]
 [\-C directive_prefix]
-[\-d path] [\-D path] [\-e path] [\-f] [\-h] [\-i idle_slot_limit] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
-[\-l resource_list] [\-m mail_options] [\-M user_list] [\-n node_exclusive] [\-N name] 
+[\-d path] [\-D path] [\-e path] [\-f] [\-F] [\-h] [\-i idle_slot_limit] [\-I] [\-j join] [\-k keep] [\-K kill_delay]
+[\-l resource_list] [\-L NUMA_resource_list] [\-m mail_options] [\-M user_list] [\-n node_exclusive] [\-N name] 
 [\-o path] [\-p priority] [\-P proxy_username[:group]]  [\-q destination] [\-r c]
 [\-S path_list] [\-t array_request] [\-T prologue/epilogue script_name] 
-[\-u user_list] [\-v variable_list] [\-V] [\-w] path 
+[\-u user_list] [\-v variable_list] [\-V] [\-w path]
 [\-W additional_attributes] [\-x] [\-X] [\-z] [script]
 .SH DESCRIPTION
 To create a job is to submit an executable script to a batch server.
@@ -392,6 +392,13 @@ attribute will be set to true, which indicates that the job can
 survive the loss of a mom other than the "mother superior" mom
 (the first node in the exec hosts )
 .Ig
+.IP "\-F" 8
+Specifies the arguments that will be passed to the job script when the script is launched.
+.br
+The accepted syntax is:
+.br
+qsub -F "myarg1 myarg2 myarg3=myarg3value" myscript2.sh
+.Ig
 .IP "\-h" 8
 Specifies that a user hold be applied to the job at submission time.
 .if !\n(Pb .ig Ig
@@ -533,6 +540,23 @@ attribute of the job.  The entry contains the resource name and its
 requested value. No white space is allowed in the value.
 Other than syntax, qsub performs no resource or value
 checking.  The checking is performed by the execution server.
+.Ig
+.RE
+.IP "\-L NUMA_resource_list" 8
+Defines the NUMA-aware resource requests for NUMA hardware. This option will work with non-NUMA hardware. 
+Syntax for
+.Ar NUMA_resource_list
+is:
+.br
+.Ty "\ \ \ \ tasks=#[:lprocs=#|all]
+.br
+.Ty "\ \ \ \ [:{usecores|usethreads|allowthreads}]
+.br
+.Ty "\ \ \ \ [:place={socket|numanode|core|thread}[=#]{node}][:memory=#][:swap=#][:maxtpn=#][:gpus=#[:<mode>]][:mics=#]
+.br
+.Ty "\ \ \ \ [:gres=<gres>][:feature=<feature>]
+.br
+.Ty "\ \ \ \ [[:{cpt|cgroup_per_task}]|[:{cph|cgroup_per_host}]]
 .Ig
 .RE
 .IP "\-m mail_options " 8

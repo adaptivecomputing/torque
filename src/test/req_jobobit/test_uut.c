@@ -61,6 +61,7 @@ extern long disable_requeue;
 extern int  attr_count;
 extern int  next_count;
 extern int  called_account_jobend;
+extern std::string log_err_buf;
 
 
 void init_server()
@@ -666,7 +667,13 @@ START_TEST(update_substate_from_exit_status_test)
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->get_substate() == JOB_SUBSTATE_RUNNING,
               "Shouldn't update substate when job is being deleted");
-
+  
+  pjob->ji_being_deleted = false;
+  pjob->set_substate(JOB_SUBSTATE_RUNNING);
+  pjob->set_exec_exitstat(JOB_EXEC_RETRY_PROLOGUE);
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
+  fail_unless(pjob->get_substate() == JOB_SUBSTATE_RERUN);
+  fail_unless(log_err_buf.find("prologue") != std::string::npos);
   }
 END_TEST
 

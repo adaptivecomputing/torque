@@ -767,8 +767,8 @@ int process_alps_status(
       set_ncpus(current, parent, ncpus);
 
 #ifdef PENABLE_LINUX_CGROUPS
-      if (numa_nodes == 0)
-        numa_nodes = 1;
+      if (numa_nodes < sockets)
+        numa_nodes = sockets;
 
       if ((current->nd_layout.is_initialized() == false) ||
           (current->nd_layout.getTotalThreads() != current->nd_slots.get_total_execution_slots()))

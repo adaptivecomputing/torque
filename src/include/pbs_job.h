@@ -1367,6 +1367,7 @@ dir so that job can be restarted */
 #define JOB_EXEC_OVERLIMIT_WT   -11  /* job exceeded a walltime limit */
 #define JOB_EXEC_OVERLIMIT_CPUT -12  /* job exceeded a cpu time limit */
 #define JOB_EXEC_RETRY_CGROUP   -13  /* couldn't create the job's cgroups */
+#define JOB_EXEC_RETRY_PROLOGUE -14  /* prologue failed */
 
 #ifndef PBS_MOM
 char *get_variable(svr_job *, const char *);

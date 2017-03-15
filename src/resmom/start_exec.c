@@ -3324,6 +3324,14 @@ void handle_reservation(
 
 
 
+/*
+ * handle_prologs()
+ *
+ * Run relevant prologue scripts and notify the mom of a job failure if one of the prologues
+ * fail.
+ *
+ */
+
 void handle_prologs(
 
   mom_job             *pjob,
@@ -3342,7 +3350,7 @@ void handle_prologs(
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
       {
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
       }
     else
       {
@@ -3361,7 +3369,7 @@ void handle_prologs(
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
       {
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
       }
     else
       {
@@ -3393,7 +3401,7 @@ void handle_prologs(
           if ((TJE->is_interactive == FALSE) &&
               (rc != 1))
             {
-            starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+            starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
             }
           else
             {
@@ -3413,7 +3421,11 @@ void handle_prologs(
 
 
 
-
+/*
+ * start_interactive_session()
+ *
+ * Opens the sockets to talk to the waiting qsub command
+ */
 
 int start_interactive_session(
 
