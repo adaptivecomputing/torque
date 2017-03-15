@@ -490,6 +490,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/mom_server/Makefile
     src/test/mom_process_request/Makefile
     src/test/mom_req_quejob/Makefile
+    src/test/nvidia/Makefile
     src/test/parse_config/Makefile
     src/test/pbs_demux/Makefile
     src/test/pmix_interface/Makefile

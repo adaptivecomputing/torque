@@ -648,6 +648,31 @@ static int gpumodes(
   return(TRUE);
   }
 
+/*
+ * Return the NVML API version
+ *
+ * Assumptions: Library has already been initialized (nvmlInit() has been called).
+ */
+
+int get_nvml_version()
+  {
+  static int version = -1;
+
+#ifdef NVML_API
+  if (version == -1)
+    {
+    char version_buf[NVML_SYSTEM_NVML_VERSION_BUFFER_SIZE];
+
+    // the nvml version is returned as a string in the form x.y.z
+    // only return major version (x)
+    if (nvmlSystemGetNVMLVersion(version_buf, sizeof(version_buf)) == NVML_SUCCESS)
+      version = atoi(version_buf);
+    }
+#endif
+
+  return(version);
+  }
+
 
 /*
  * Function to set gpu mode
@@ -687,7 +712,19 @@ int setgpumode(
 
     case gpu_exclusive_thread:
 
-      compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
+      if (get_nvml_version() >= 8)
+        {
+        sprintf(log_buffer, "exclusive thread compute mode is not allowed in NVML version %d. Setting exclusive process compute mode instead.",
+          get_nvml_version());
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
+        compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_PROCESS;
+        }
+      else
+        {
+        compute_mode = NVML_COMPUTEMODE_EXCLUSIVE_THREAD;
+        }
+
       break;
 
     case gpu_prohibited:
@@ -773,6 +810,16 @@ int setgpumode(
     }
   else /* 270 or greater driver */
     {
+    // exclusive thread mode no longer allowed starting with driver version 367
+    if ((MOMNvidiaDriverVersion >= 367) && (gpumode == gpu_exclusive_thread))
+      {
+      sprintf(log_buffer, "exclusive thread compute mode is not allowed with NVIDIA driver version %d. Setting exclusive process compute mode instead.",
+        MOMNvidiaDriverVersion);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+
+      gpumode = gpu_exclusive_process;
+      }
+
     sprintf(buf, "nvidia-smi -i %d -c %d 2>&1",
       gpuid,
       gpumode);
@@ -784,8 +831,8 @@ int setgpumode(
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
 
-	if ((fd = popen(buf, "r")) != NULL)
-		{
+  if ((fd = popen(buf, "r")) != NULL)
+    {
     while (!feof(fd))
       {
       if (fgets(buf, 300, fd))
@@ -818,7 +865,7 @@ int setgpumode(
         }
       }
     pclose(fd);
-		}
+    }
   else
     {
     if (LOGLEVEL >= 0)

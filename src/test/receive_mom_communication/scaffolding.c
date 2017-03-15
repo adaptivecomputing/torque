@@ -16,6 +16,7 @@
 #include "id_map.hpp"
 #include "node_manager.h"
 #include "pbs_ifl.h"
+#include "machine.hpp"
 
 
 id_map      job_mapper;
