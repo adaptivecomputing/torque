@@ -14,9 +14,6 @@
 #include "json/json.h"
 #include "complete_req.hpp"
 #include "pbs_nodes.h"
-#ifdef NVML_API
-#include <nvml.h>
-#endif
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -952,25 +949,6 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 END_TEST
 
 
-#ifdef NVML_API
-START_TEST(test_proplist)
-  {
-  const char *str[] = {"gpus=1"};
-  std::vector<prop> plist;
-  int node_req;
-  int gpu_req;
-  int mic_req;
-
-  fail_unless(proplist((char **)str, plist, &node_req, &gpu_req, &mic_req) == PBSE_NONE);
-#if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
-  fail_unless(gpu_mode_rqstd == gpu_exclusive_process);
-#else
-  fail_unless(gpu_mode_rqstd == gpu_exclusive_thread);
-#endif
-  }
-END_TEST
-#endif
-
 Suite *node_manager_suite(void)
   {
   Suite *s = suite_create("node_manager_suite methods");
@@ -1032,12 +1010,6 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, check_node_jobs_exitence_test);
   suite_add_tcase(s, tc_core);
-
-#ifdef NVML_API
-  tc_core = tcase_create("test_proplist");
-  tcase_add_test(tc_core, test_proplist);
-  suite_add_tcase(s, tc_core);
-#endif
 
   return(s);
   }
