@@ -4,6 +4,7 @@
 
 #include "server.h" /* server */
 #include "attribute.h" /* pbs_attribute, attribute_def */
+#include "xml_recov.h"
 
 char *path_priv = NULL;
 const char *msg_svdbopen = "Unable to open server data base";
@@ -82,11 +83,10 @@ int decode_arst(struct pbs_attribute *patr, const char *name, const char *rescn,
  exit(1);
  }
 
-int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
- {
- fprintf(stderr, "The call to save_attr_xml to be mocked!!\n");
- exit(1);
- }
+int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, xmlNodePtr node)
+  {
+  return(0);
+  }
 
 int escape_xml(char *in, char *out, int size)
  {

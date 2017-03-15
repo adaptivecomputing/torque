@@ -6,6 +6,7 @@
 
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "queue.h" /* pbs_queue */
+#include "xml_recov.h"
 
 int LOGLEVEL = 10;
 
@@ -86,12 +87,17 @@ void que_free(pbs_queue *pq, int sv_qs_mutex_held)
   exit(1);
   }
 
-int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
+int save_attr_xml(attribute_def *padef, pbs_attribute *pattr, int limit, xmlNodePtr node)
+  {
+  return(0);
+  }
+
+/*int save_attr_xml(struct attribute_def *padef, struct pbs_attribute *pattr, int numattr, int fds)
   {
   const char *p = "<attributes>\n</attributes>\n";
   write(fds,p,strlen(p));
   return 0;
-  }
+  }*/
 
 ssize_t read_ac_socket(int fd, void *buf, ssize_t count)
   {
@@ -131,5 +137,4 @@ char *trim(
 
   return(front_ptr);
   } /* END trim() */
-
 
