@@ -84,6 +84,10 @@ if BUILD_LINUX_CGROUPS
   MOM_UT_DIRS += trq_cgroups
 endif
 
+if NVIDIA
+  MOM_UT_DIRS += nvidia
+endif
+
 if INCLUDE_PAM
 PAM_DIRS = pam
 endif
