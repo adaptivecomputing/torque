@@ -112,11 +112,12 @@
 #include "resource.h"
 #include "utils.h"
 #include <string>
+#include <sstream> 
+#include "xml_recov.h"/* save_attr_xml & libxml/tree.h */
 
 #ifndef MAXLINE
 #define MAXLINE 1024
 #endif
-
 /* Global Data Items: */
 
 extern struct server server;
@@ -435,27 +436,21 @@ int svr_recov_xml(
   return(PBSE_NONE);
   } /* END svr_recov_xml() */
 
-
-
-
-
-
 int svr_save_xml(
 
   struct server *ps,
   int            mode)
 
   {
-  char    buf[MAXLINE<<8];
 
   int     fds;
   int     rc = PBSE_NONE;
-  int     len;
   time_t  time_now = time(NULL);
   char   *tmp_file = NULL;
   int     tmp_file_len = 0;
   char log_buf[LOCAL_LOG_BUF_SIZE + 1];
-
+  std::ostringstream node_value; 
+  
   tmp_file_len = strlen(path_svrdb) + 5;
   if ((tmp_file = (char *)calloc(sizeof(char), tmp_file_len)) == NULL)
     {
@@ -480,26 +475,31 @@ int svr_save_xml(
     return(-1);
     }
 
-  /* write the sv_qs info */
-  snprintf(buf,sizeof(buf),
-    "<server_db>\n<numjobs>%d</numjobs>\n<numque>%d</numque>\n<nextjobid>%d</nextjobid>\n<savetime>%ld</savetime>\n",
-    ps->sv_qs.sv_numjobs,
-    ps->sv_qs.sv_numque,
-    ps->sv_qs.sv_jobidnumber,
-    time_now);
+  xmlDocPtr doc = NULL;
+  doc = xmlNewDoc(BAD_CAST "1.0");
+  xmlNodePtr root_node = xmlNewNode(NULL, BAD_CAST "server_db");
+  xmlDocSetRootElement(doc,root_node);
+  xmlNodePtr node = root_node;
   
-  len = strlen(buf);
+  node_value<<ps->sv_qs.sv_numjobs;
+  xmlNewChild(node,NULL,BAD_CAST "numjobs",BAD_CAST (node_value.str().c_str())); 
+  node_value.str("");
 
-  if ((rc = write_buffer(buf,len,fds)))
-    {
-    sprintf(log_buf, "%s:2", __func__);
-    unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
-    free(tmp_file);
-    close(fds);
-    return(rc);
-    }
+  node_value<<ps->sv_qs.sv_numque;
+  xmlNewChild(node,NULL,BAD_CAST "numque",BAD_CAST (node_value.str().c_str()));
+  node_value.str("");
 
-  if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,fds)) != 0)
+  node_value<<ps->sv_qs.sv_jobidnumber;
+  xmlNewChild(node,NULL,BAD_CAST "nextjobid",BAD_CAST (node_value.str().c_str()));
+  node_value.str("");
+
+  node_value<<time_now;
+  xmlNewChild(node,NULL,BAD_CAST "savetime",BAD_CAST (node_value.str().c_str()));
+  node_value.str("");
+
+  xmlNewChild(node,NULL,BAD_CAST "attributes",NULL);
+
+  if ((rc = save_attr_xml(svr_attr_def,ps->sv_attr,SRV_ATR_LAST,node)) != 0)
     {
     sprintf(log_buf, "%s:3", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
@@ -508,9 +508,12 @@ int svr_save_xml(
     return(rc);
     }
  
-  /* close the server_db */
-  snprintf(buf,sizeof(buf),"</server_db>");
-  if ((rc = write_buffer(buf,strlen(buf),fds)))
+  xmlBuffer *xml_buffer = xmlBufferCreate();
+  xmlOutputBuffer *outputBuffer = xmlOutputBufferCreateBuffer(xml_buffer, NULL);
+  xmlSaveFormatFileTo(outputBuffer, doc, "utf-8",1);
+  std::string xml_out_str((char*)xml_buffer->content, xml_buffer->use);
+  
+  if ((rc = write_buffer(xml_out_str.c_str(),xml_out_str.size(),fds)))
     {
     sprintf(log_buf, "%s:4", __func__);
     unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
@@ -538,7 +541,7 @@ int svr_save_xml(
   unlock_sv_qs_mutex(server.sv_qs_mutex, log_buf);
 
   free(tmp_file);
-
+  xmlFreeDoc(doc);
   return(PBSE_NONE);
   } /* END svr_save_xml */
 
