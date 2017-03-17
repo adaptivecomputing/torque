@@ -96,6 +96,7 @@
 #include "lib_ifl.h" /* get_port_from_server_name_file */
 #include "pbsd_main.h" /* process_pbs_server_port */
 #include "process_request.h" /*process_request */
+#include "threadpool.h"
 
 /* Global Data */
 
@@ -249,7 +250,6 @@ int schedule_jobs(void)
 
   static int first_time = 1;
   int tmp_sched_sock = -1;
-  pthread_t tid;
   pthread_attr_t t_attr;
   int   *new_cmd = NULL;
 
@@ -297,7 +297,7 @@ int schedule_jobs(void)
         }
       *new_cmd = cmd;
 
-      if (pthread_create(&tid, &t_attr, contact_sched, (void *)new_cmd)
+      if (enqueue_threadpool_request(contact_sched, (void *)new_cmd,task_pool)
    != 0)
         {
         perror("could not start listener thread for scheduler");
