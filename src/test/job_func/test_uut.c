@@ -350,8 +350,9 @@ START_TEST(svr_job_purge_test)
   test_job = job_alloc();
   test_job->set_substate(JOB_SUBSTATE_QUEUED);
   test_job->set_state(JOB_STATE_QUEUED);
+  memset(test_job->ji_arraystructid, 0, sizeof(test_job->ji_arraystructid));
   result = svr_job_purge(test_job);
-  fail_unless(result == 0, "non-queued job fail", result);
+  fail_unless(result == 0, "non-queued job fail: %d", result);
   // called_remove_job once means we didn't call job_free
   fail_unless(called_remove_job == 1);
   

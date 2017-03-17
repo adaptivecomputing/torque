@@ -986,10 +986,9 @@ void Machine::displayAsJson(stringstream &out, bool include_jobs) const {}
 int Machine::place_job(
 
   svr_job    *pjob,
-  string     &cpu_string,
-  string     &mem_string,
-  const char *hostname,
-  bool        legacy_vmem)
+  cgroup_info &cgi,
+  const char  *hostname,
+  bool         legacy_vmem)
 
   {
   return(0);

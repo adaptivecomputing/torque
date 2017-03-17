@@ -2060,6 +2060,7 @@ int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::strin
   }
 
 
+
 /*
  * trq_cg_add_devices_to_cgroups
  *
@@ -2076,26 +2077,17 @@ int trq_cg_add_devices_to_cgroup(
   mom_job *pjob)
 
   {
-  std::vector<unsigned int> device_indices;
+  std::vector<int> device_indices;
   std::vector<int> forbidden_devices;
   std::string job_devices_path;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  const char *device_str;
-  char  suffix[20];
   unsigned int device_count = 0;
-  int   index = 0;
 
 #ifdef NVIDIA_GPUS
   device_count = global_gpu_count;
-  strcpy(suffix, "-gpu");
-  index = JOB_ATR_exec_gpus;
-#endif
-
-#ifdef MIC
+#elif defined(MIC)
   device_count = global_mic_count;
-  strcpy(suffix, "-mic");
-  index = JOB_ATR_exec_mics;
 #endif
 
   /* First make sure we have gpus */
@@ -2104,8 +2096,16 @@ int trq_cg_add_devices_to_cgroup(
 
   job_devices_path = cg_devices_path + pjob->get_jobid();
 
-  /* if there are no gpus given, deny all gpus to the job */
-  if (pjob->get_str_attr(index) == NULL)
+
+#ifdef NVIDIA_GPUS
+  if (pjob->get_str_attr(JOB_ATR_gpus_reserved) != NULL)
+    {
+    std::string gpus_reserved(pjob->get_str_attr(JOB_ATR_gpus_reserved));
+    std::string gpu_range;
+    find_range_in_cpuset_string(gpus_reserved, gpu_range);
+    translate_range_string_to_vector(gpu_range.c_str(), device_indices);
+    }
+  else
     {
     for (unsigned int i = 0; i < device_count; i++)
       forbidden_devices.push_back(i);
@@ -2117,15 +2117,29 @@ int trq_cg_add_devices_to_cgroup(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       return(rc);
       }
-
-    return(rc);
     }
+#elif defined(MIC)
+  if (pjob->get_str_attr(JOB_ATR_mics_reserved) != NULL)
+    {
+    std::string mics_reserved(pjob->get_str_attr(JOB_ATR_mics_reserved));
+    std::string mic_range;
+    find_range_in_cpuset_string(mics_reserved, mic_range);
+    translate_range_string_to_vector(mic_range.c_str(), device_indices);
+    }
+  else
+    {
+    for (unsigned int i = 0; i < device_count; i++)
+      forbidden_devices.push_back(i);
 
-  device_str = pjob->get_str_attr(index);
-
-  device_indices.clear();
-  get_device_indices(device_str, device_indices, suffix);
-
+    rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
+    if (rc != PBSE_NONE)
+      {
+      sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      return(rc);
+      }
+    }
+#endif
 
   /* device_indices has the list of gpus for this job. 
      make a list of gpus that are not for this job
@@ -2135,17 +2149,17 @@ int trq_cg_add_devices_to_cgroup(
     bool found;
 
     found = false;
-    for(std::vector<unsigned int>::iterator it = device_indices.begin(); it != device_indices.end(); it++)
+    for (size_t j = 0; j < device_indices.size(); j++)
       {
-      if (*it == i)
+      if (device_indices[j] == i)
         {
         found = true;
         break;
         }
       }
+
    if (found == false)
      forbidden_devices.push_back(i);
-
    }
 
   if (forbidden_devices.size() == 0)
@@ -2160,6 +2174,6 @@ int trq_cg_add_devices_to_cgroup(
     }
  
   return(rc);
-  }
+  } // END trq_cg_add_devices_to_cgroup()
 
 #endif
