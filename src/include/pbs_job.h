@@ -439,6 +439,8 @@ enum job_atr
   JOB_ATR_memset_string,
   JOB_ATR_user_kill_delay,
   JOB_ATR_LRequest,
+  JOB_ATR_gpus_reserved,
+  JOB_ATR_mics_reserved,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };

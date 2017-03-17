@@ -143,24 +143,29 @@ START_TEST(check_node_jobs_exitence_test)
 END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
-void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
+void save_cpus_and_memory_cpusets(job *pjob, const char *host, cgroup_info &cgi);
 START_TEST(test_save_cpus_and_memory_cpusets)
   {
   job         *pjob = (job *)calloc(1, sizeof(job));
-  std::string  cpus("0-3");
-  std::string  mems("0");
+  cgroup_info  cgi;
+  cgi.cpu_string = "0-3";
+  cgi.mem_string = "0";
 
-  save_cpus_and_memory_cpusets(pjob, "napali", cpus, mems);
+  save_cpus_and_memory_cpusets(pjob, "napali", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0"));
   
-  save_cpus_and_memory_cpusets(pjob, "wailua", cpus, mems);
+  save_cpus_and_memory_cpusets(pjob, "wailua", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0"));
-  
-  save_cpus_and_memory_cpusets(pjob, "waimea", cpus, mems);
+ 
+  cgi.gpu_string = "0-1";
+  cgi.mic_string = "4";
+  save_cpus_and_memory_cpusets(pjob, "waimea", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3+waimea:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0+waimea:0"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_gpus_reserved].at_val.at_str, "waimea:0-1"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_mics_reserved].at_val.at_str, "waimea:4"));
 
   }
 END_TEST

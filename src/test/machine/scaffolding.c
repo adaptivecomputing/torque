@@ -346,7 +346,7 @@ void allocation::set_place_type(const std::string &place)
   this->place_type = my_placement_type;
   }
 
-void allocation::place_indices_in_string(std::string &out, int which) {}
+void allocation::place_indices_in_string(cgroup_info &cgi) {}
 
 int allocation::add_allocation(allocation const &a) 
   {

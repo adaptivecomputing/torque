@@ -2,7 +2,9 @@
 #include <vector>
 #include <map>
 #include <errno.h>
+
 #include "pbs_config.h"
+#include "log.h"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include <hwloc.h>
@@ -28,7 +30,6 @@
 using namespace std;
 
 const int   ALL_TASKS = -1;
-
 
 /* 26 August 2014
  * Currently Intel and AMD NUMA hardware
@@ -810,6 +811,7 @@ int Machine::spread_place(
   bool chips = false;
   int  quantity = r.get_sockets();
   int  tasks_placed = 0;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (quantity == 0)
     {
@@ -853,6 +855,11 @@ int Machine::spread_place(
     // If we don't have enough memory, reject the job
     if (mem_needed > mem_count)
       {
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s requires at least %lukb memory from host %s, but only %lukb is available",
+        master.jobid.c_str(), mem_needed, hostname, mem_count);
+      log_err(-1, __func__, log_buf);
+
       return(PBSE_RESCUNAV);
       }
     }
@@ -900,7 +907,14 @@ int Machine::spread_place(
     }
 
   if (tasks_placed != tasks_for_node)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s needed to place %d tasks on node %s, but could only place %d",
+      master.jobid.c_str(), tasks_for_node, hostname, tasks_placed);
+    log_err(-1, __func__, log_buf);
+
     return(PBSE_IVALREQ);
+    }
 
   return(PBSE_NONE);
   } // END spread_place()
@@ -944,11 +958,10 @@ int Machine::fit_tasks_within_sockets(
 
 int Machine::place_job(
 
-  job        *pjob,
-  string     &cpu_string,
-  string     &mem_string,
-  const char *hostname,
-  bool        legacy_vmem)
+  job         *pjob,
+  cgroup_info &cgi,
+  const char  *hostname,
+  bool         legacy_vmem)
 
   {
   int rc = PBSE_NONE;
@@ -958,6 +971,7 @@ int Machine::place_job(
   vector<int>   partially_place;
   allocation    job_alloc(pjob->ji_qs.ji_jobid);
   vector<req>   to_split;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   // See if the tasks fit completely on a socket, and if they do then place them there
   for (int i = 0; i < num_reqs; i++)
@@ -996,7 +1010,14 @@ int Machine::place_job(
 
           // Placing 0 tasks is an error
           if (this->sockets[j].place_task(r, job_alloc, tasks_for_node, hostname) == 0)
+            {
+            snprintf(log_buf, sizeof(log_buf),
+              "Socket %u for node %s was thought to fit at least %d tasks, but couldn't fit any",
+              j, hostname, tasks_for_node);
+            log_err(-1, __func__, log_buf);
+
             return(-1);
+            }
 
           break;
           }
@@ -1034,52 +1055,22 @@ int Machine::place_job(
 
     if (remaining_tasks > 0)
       {
-       // this allocation so that the cleanup happens correctly
-        rc = -1;
+      // this allocation so that the cleanup happens correctly
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s could not place %d tasks from req %d on host %s",
+        pjob->ji_qs.ji_jobid, remaining_tasks, partially_place[i], hostname);
+      log_err(-1, __func__, log_buf);
+
+      rc = -1;
       }
     }
 
-  job_alloc.place_indices_in_string(mem_string, MEM_INDICES);
-  job_alloc.place_indices_in_string(cpu_string, CPU_INDICES);
+  job_alloc.place_indices_in_string(cgi);
 
   this->allocations.push_back(job_alloc);
   
   return(rc);
   } // END place_job()
-
-
-
-/*
- * get_jobs_cpusets()
- *
- * Gets the cpusets corresponding to this job_id so that the child can place them
- * @param job_id (I) - the id of the job
- * @param cpus (O) - put the string representing the cpus here
- * @param mems (O) - put the string representing the memory nodes here
- * @return PBSE_NONE if we found the job, -1 otherwise
- */
-
-int Machine::get_jobs_cpusets(
-
-  const char *job_id,
-  string     &cpus,
-  string     &mems)
-
-  {
-  int rc = -1;
-
-  for (unsigned int i = 0; i < this->allocations.size(); i++)
-    {
-    if (this->allocations[i].jobid == job_id)
-      {
-      this->allocations[i].place_indices_in_string(mems, MEM_INDICES);
-      this->allocations[i].place_indices_in_string(cpus, CPU_INDICES);
-      rc = PBSE_NONE;
-      }
-    }
-
-  return(rc);
-  } // END get_jobs_cpusets()
 
 
 

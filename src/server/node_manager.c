@@ -1852,7 +1852,7 @@ int gpu_count(
       sprintf(log_buf,
         "Counted %d gpus %s on node %s that was skipped",
         count,
-        (freeonly? "free":"available"),
+        (freeonly? "free" : "total"),
         pnode->nd_name);
     
       log_ext(-1, __func__, log_buf, LOG_DEBUG);
@@ -1870,7 +1870,7 @@ int gpu_count(
     sprintf(log_buf,
       "Counted %d gpus %s on node %s",
       count,
-      (freeonly? "free":"available"),
+      (freeonly? "free" : "total"),
       pnode->nd_name);
 
     log_ext(-1, __func__, log_buf, LOG_DEBUG);
@@ -2359,7 +2359,8 @@ bool node_is_spec_acceptable(
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
     return(false);
-  if(job_is_exclusive)
+
+  if (job_is_exclusive)
     {
     if(pnode->nd_slots.get_number_free() != pnode->nd_slots.get_total_execution_slots())
       {
@@ -2369,7 +2370,6 @@ bool node_is_spec_acceptable(
 
   return(true);
   } /* END node_is_spec_acceptable() */
-
 
 
 
@@ -2968,7 +2968,7 @@ int select_nodes_using_hostlist(
       return(-2);
       }
     
-    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == false)
+    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes, job_is_exclusive) == false)
       {
       snprintf(log_buf, sizeof(log_buf), "Requested node '%s' is not currently available", req->prop->name);
       log_err(-1, __func__, log_buf);
@@ -3981,6 +3981,41 @@ int place_mics_in_hostlist(
 
 
 #ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ */
+
+void save_cgroup_string_attr(
+
+  job         *pjob,
+  const char  *node_name,
+  std::string &value,
+  int          index)
+
+  {
+  if (pjob->ji_wattr[index].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+
+    if (value.size() != 0)
+      formatted += ":" + value;
+
+    pjob->ji_wattr[index].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string concat = pjob->ji_wattr[index].at_val.at_str;
+    concat += "+";
+    concat += node_name;
+    if (value.size() != 0)
+      concat += ":" + value;
+
+    free(pjob->ji_wattr[index].at_val.at_str);
+    pjob->ji_wattr[index].at_val.at_str = strdup(concat.c_str());
+    }
+  } // END save_cgroup_string_attr()
+
 /*
  * save_cpus_and_memory_cpusets()
  *
@@ -3991,47 +4026,17 @@ void save_cpus_and_memory_cpusets(
 
   job         *pjob,
   const char  *node_name,
-  std::string &cpus,
-  std::string &mems)
+  cgroup_info &cgi)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
-    {
-    std::string formatted(node_name);
-    if (cpus.size() != 0)
-      formatted += ":" + cpus;
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
-    }
-  else
-    {
-    std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
-    all_cpus += "+";
-    all_cpus += node_name;
-    if (cpus.size() != 0)
-      all_cpus += ":" + cpus;
-    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
-    }
-  
-  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
-    {
-    std::string formatted(node_name);
-    if (mems.size() != 0)
-      formatted += ":" + mems;
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
-    }
-  else
-    {
-    std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
-    all_mems += "+";
-    all_mems += node_name;
-    if (mems.size() != 0)
-      all_mems += ":" + mems;
-    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
-    }
+  save_cgroup_string_attr(pjob, node_name, cgi.cpu_string, JOB_ATR_cpuset_string);
+  save_cgroup_string_attr(pjob, node_name, cgi.mem_string, JOB_ATR_memset_string);
+
+  if (cgi.gpu_string.size() > 0)
+    save_cgroup_string_attr(pjob, node_name, cgi.gpu_string, JOB_ATR_gpus_reserved);
+
+  if (cgi.mic_string.size() > 0)
+    save_cgroup_string_attr(pjob, node_name, cgi.mic_string, JOB_ATR_mics_reserved);
 
   } // END save_cpus_and_memory_cpusets()
 
@@ -4202,7 +4207,8 @@ int place_subnodes_in_hostlist(
   char                 *ProcBMStr)
 
   {
-  int rc = PBSE_NONE;
+  int  rc = PBSE_NONE;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
@@ -4242,8 +4248,7 @@ int place_subnodes_in_hostlist(
       pnode->nd_state |= INUSE_JOB;
 
 #ifdef PENABLE_LINUX_CGROUPS
-    std::string       cpus;
-    std::string       mems;
+    cgroup_info       cgi;
     long              legacy_vmem = FALSE;
     get_svr_attr_l(SRV_ATR_LegacyVmem, &legacy_vmem);
 
@@ -4255,9 +4260,16 @@ int place_subnodes_in_hostlist(
 
     update_req_hostlist(pjob, pnode->nd_name, naji.req_index, naji.ppn_needed, total_ppn_in_job);
 
-    rc = pnode->nd_layout->place_job(pjob, cpus, mems, pnode->nd_name, (bool)legacy_vmem);
+    rc = pnode->nd_layout->place_job(pjob, cgi, pnode->nd_name, (bool)legacy_vmem);
     if (rc != PBSE_NONE)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Couldn't place job %s on node %s.",
+        pjob->ji_qs.ji_jobid, pnode->nd_name);
+      log_err(-1, __func__, log_buf);
+
       return(rc);
+      }
 
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
@@ -4269,21 +4281,21 @@ int place_subnodes_in_hostlist(
       if (pnode->nd_layout->getTotalThreads() > 1)
         {
         sprintf(buf, "0-%d", pnode->nd_layout->getTotalThreads() - 1);
-        cpus = buf;
+        cgi.cpu_string = buf;
         }
       else
-        cpus = "0";
+        cgi.cpu_string = "0";
 
       if (pnode->nd_layout->getTotalChips() > 1)
         {
         sprintf(buf, "0-%d", pnode->nd_layout->getTotalChips() - 1);
-        mems = buf;
+        cgi.mem_string = buf;
         }
       else
-        mems = "0";
+        cgi.mem_string = "0";
       }
 
-    save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cpus, mems);
+    save_cpus_and_memory_cpusets(pjob, pnode->nd_name, cgi);
     save_node_usage(pnode);
 #endif
 
@@ -4292,6 +4304,11 @@ int place_subnodes_in_hostlist(
     }
   else
     {
+    snprintf(log_buf, sizeof(log_buf),
+      "Node %s doesn't have enough execution slots remaining for job %s.",
+      pnode->nd_name, pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+
     rc = -1;
     }
 
