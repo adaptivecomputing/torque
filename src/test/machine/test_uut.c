@@ -70,8 +70,7 @@ START_TEST(test_place_all_execution_slots)
   {
   Machine m;
   job     pjob;
-  std::string cpu;
-  std::string mem;
+  cgroup_info cgi;
   complete_req cr;
   pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
 
@@ -80,7 +79,8 @@ START_TEST(test_place_all_execution_slots)
   numa_node_count = 0;
   placed_all = 0;
   exec_slots = -1;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  num_for_host = 1;
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(placed_all == 2, "placed all: %d", placed_all);
   }
 END_TEST
@@ -90,8 +90,7 @@ START_TEST(test_spread_place)
   {
   Machine m;
   job     pjob;
-  std::string cpu;
-  std::string mem;
+  cgroup_info cgi;
   complete_req cr;
   pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
 
@@ -105,12 +104,12 @@ START_TEST(test_spread_place)
   spreaded = true;
 
   // Make sure we call spread place once for each successfully placed task
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_spread_place == 1, "called %d", called_spread_place);
 
   num_for_host = 3;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_spread_place == 3);
 
   // Now we're multiple instead of one so it should multiply the calls
@@ -119,7 +118,7 @@ START_TEST(test_spread_place)
   numa_node_count = 2;
   num_for_host = 2;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_spread_place == 4, "called %d times", called_spread_place);
   
   sockets = 2;
@@ -127,7 +126,7 @@ START_TEST(test_spread_place)
   numa_node_count = 0;
   num_for_host = 3;
   called_spread_place = 0;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_spread_place == 6);
   
   called_spread_place = 0;
@@ -138,7 +137,7 @@ START_TEST(test_spread_place)
 
   // the req is set to need 10 memory and each socket is set to only have 5, so even
   // though we set the req to need one socket, we should get two
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_spread_place == 2, "called %d times", called_spread_place);
   
   req_mem = 0;
@@ -306,8 +305,7 @@ END_TEST
 
 START_TEST(test_place_and_free_job)
   {
-  std::string cpu;
-  std::string mem;
+  cgroup_info cgi;
   Machine m;
   m.addSocket(2);
   job pjob;
@@ -328,7 +326,7 @@ START_TEST(test_place_and_free_job)
   num_for_host = 4;
   num_tasks_fit = 4;
   num_placed = 4;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   std::vector<std::string> job_ids;
@@ -347,7 +345,7 @@ START_TEST(test_place_and_free_job)
   num_tasks_fit = 4;
   num_placed = 4;
   called_place_task = 0;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_place_task == 2, "Expected 2 calls but got %d", called_place_task);
 
   num_tasks_fit = 0;
@@ -358,7 +356,7 @@ START_TEST(test_place_and_free_job)
   partially_placed = true;
   called_partially_place = 0;
   called_fits_on_socket = 0;
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_partially_place == 1, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 1);
   
@@ -368,7 +366,7 @@ START_TEST(test_place_and_free_job)
   my_req_count = 1;
   num_for_host = 1;
 
-  m.place_job(&pjob, cpu, mem, "napali", false);
+  m.place_job(&pjob, cgi, "napali", false);
   fail_unless(called_partially_place == 2, "called %d", called_partially_place);
   fail_unless(called_fits_on_socket == 3, "called %d times", called_fits_on_socket);
   }
