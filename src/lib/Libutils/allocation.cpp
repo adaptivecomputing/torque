@@ -88,6 +88,8 @@
 
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
+const int GPU_INDICES = 2;
+const int MIC_INDICES = 3;
 
 const int exclusive_none   = 0;
 const int exclusive_node   = 1;
@@ -233,10 +235,41 @@ void allocation::place_indices_in_string(
   int          which)
 
   {
-  if (which == MEM_INDICES)
-    translate_vector_to_range_string(output, this->mem_indices);
-  else
-    translate_vector_to_range_string(output, this->cpu_indices);
+  switch (which)
+    {
+    case MEM_INDICES:
+    
+      translate_vector_to_range_string(output, this->mem_indices);
+      break;
+
+    case CPU_INDICES:
+    
+      translate_vector_to_range_string(output, this->cpu_indices);
+      break;
+
+    case GPU_INDICES:
+    
+      translate_vector_to_range_string(output, this->gpu_indices);
+      break;
+
+    case MIC_INDICES:
+    
+      translate_vector_to_range_string(output, this->mic_indices);
+      break;
+    }
+  } // END place_indices_in_string()
+
+
+
+void allocation::place_indices_in_string(
+
+  cgroup_info &cgi)
+
+  {
+  this->place_indices_in_string(cgi.mem_string, MEM_INDICES);
+  this->place_indices_in_string(cgi.cpu_string, CPU_INDICES);
+  this->place_indices_in_string(cgi.gpu_string, GPU_INDICES);
+  this->place_indices_in_string(cgi.mic_string, MIC_INDICES);
   } // END place_indices_in_string()
 
 
@@ -289,12 +322,27 @@ void allocation::write_task_information(
   {
   std::string cpus;
   std::string mems;
+  std::string gpus;
+  std::string mics;
   char        buf[256];
 
   translate_vector_to_range_string(cpus, this->cpu_indices);
   translate_vector_to_range_string(mems, this->mem_indices);
   task_info = "{\"task\":{\"cpu_list\":\"" + cpus;
   task_info += "\",\"mem_list\":\"" + mems;
+
+  if (this->gpu_indices.size() > 0)
+    {
+    translate_vector_to_range_string(gpus, this->gpu_indices);
+    task_info += "\",\"gpu_list\":\"" + gpus;
+    }
+
+  if (this->mic_indices.size() > 0)
+    {
+    translate_vector_to_range_string(mics, this->mic_indices);
+    task_info += "\",\"mic_list\":\"" + mics;
+    }
+
   if (this->task_cput_used != 0)
     {
     unsigned long cput_used = this->task_cput_used;

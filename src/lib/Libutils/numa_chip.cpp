@@ -1740,7 +1740,8 @@ bool Chip::spread_place_threads(
 
 
   return(placed);
-  }
+  } // END spread_place_threads()
+
 
 
 /* spread_place_cores
@@ -1863,7 +1864,7 @@ bool Chip::spread_place_cores(
 
 
   return(placed);
-  }
+  } // END spread_place_cores()
 
 
 
@@ -2048,7 +2049,7 @@ int Chip::place_task(
         else
           {
           int threads_to_rsv = execution_slots_per_task;
-          if(r.getPlaceThreads() > 0)
+          if (r.getPlaceThreads() > 0)
             threads_to_rsv = r.getPlaceThreads();
 
           place_tasks_execution_slots(execution_slots_per_task, threads_to_rsv, task_alloc, THREAD_INT);

@@ -353,13 +353,12 @@ class Machine
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
-    int  place_job(job *pjob, string &cpu_string, string &mem_string, const char *hostname, bool legacy_vmem);
+    int  place_job(job *pjob, cgroup_info &cgi, const char *hostname, bool legacy_vmem);
     void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests
     void save_allocations(const Machine &other);
     void free_job_allocation(const char *jobid);
-    int  get_jobs_cpusets(const char *jobid, string &cpus, string &mems);
     int  fit_tasks_within_sockets(req &r, allocation &job_alloc, const char *hostname, int &remaining_tasks);
     void place_remaining(req &to_split, allocation &master, int &remaining_tasks, const char *hostname);
     int  how_many_tasks_can_be_placed(req &r) const;
