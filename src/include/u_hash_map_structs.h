@@ -127,6 +127,8 @@ void hash_priority_add_or_exit(job_data_container *head, const char *name, const
 
 void hash_add_or_exit(job_data_container *head, const char *name, const char *value, int var_type);
 
+void hash_add_or_throw(job_data_container *head, const char *name, const char *value, int var_type);
+
 int hash_del_item(job_data_container *head, const char *name);
 
 int hash_clear(job_data_container *head);
