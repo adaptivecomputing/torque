@@ -20,7 +20,7 @@ int main(
   catch(std::exception& e)
     {
     //what goes here?
-    std::cout<<e.what()<<std::endl;
+    std::cout<<e.what();
     }
   return(0);
   } /* END main() */

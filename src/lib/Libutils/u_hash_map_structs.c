@@ -90,6 +90,7 @@
 #include <stdio.h>
 #include <pbs_ifl.h>
 #include <pbs_job.h>
+#include <stdexcept>
 
 /* Adds item to the hashmap indicated by **head
  * If *head is NULL, and new hashmap is created
@@ -144,6 +145,23 @@ void hash_priority_add_or_exit(
     }
   } // END hash_priority_add_or_exit()
 
+/* A wrapper for hash to accomodate for memory allocation errors
+ * throws an std::runtime_error instead of exiting
+ */
+void hash_add_or_throw(
+  job_data_container *head,          /* M - hashmap */
+  const char        *name,               /* I - The item being added to the hashmap */
+  const char        *val,                /* I - Sets the value of variable */
+  int                var_type)             /* I - Sets the type of the variable */
+
+  {
+  if (hash_add_item(head, name, val, var_type, SET) == FALSE)
+    {
+    char* error_str = NULL;
+    printf(error_str, "Error allocating memory for hash (%s)-(%s)\n", name, val);
+    throw std::runtime_error(error_str);
+    }
+  }
 
 
 /* A wrapper for hash to accomodate for memory allocation errors
