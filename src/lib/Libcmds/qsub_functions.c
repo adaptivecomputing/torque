@@ -38,6 +38,7 @@
 #include <grp.h>
 #include <csv.h>
 #include <pwd.h>
+#include <stdexcept>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -52,7 +53,7 @@
 #include <sys/tty.h>
 #endif
 
-#include "libcmds.h" /* TShowAbout_exit */
+#include "libcmds.h" /* TShowAbout */
 #include "cmds.h"
 #include "net_connect.h"
 #include "log.h"
@@ -4456,7 +4457,10 @@ void process_early_opts(
       {
       name += 2;
       if (strcmp(name, "about") == 0)
-        TShowAbout_exit();
+        {
+        TShowAbout();
+        throw std::runtime_error("");
+        }
       else if (strcmp(name, "version") == 0)
         {
         fprintf(stdout, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);

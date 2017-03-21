@@ -116,7 +116,7 @@
 #include "pbs_ifl.h"
 #include        "mcom.h"
 #include        "cmds.h"
-#include "libcmds.h" /* TShowAbout_exit */
+#include "libcmds.h" /* TShowAbout */
 #include "lib_ifl.h"
 #include "pbs_helper.h"
 
@@ -909,7 +909,8 @@ int main(
           }
         else if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
-          TShowAbout_exit();
+          TShowAbout();
+          exit(0);
           }
 
         errflg = 1;

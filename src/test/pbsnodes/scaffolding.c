@@ -15,9 +15,9 @@ char *pbs_geterrmsg(int connect)
   exit(1);
   }
 
-int TShowAbout_exit(void)
+void TShowAbout()
   { 
-  fprintf(stderr, "The call to TShowAbout_exit needs to be mocked!!\n");
+  fprintf(stderr, "The call to TShowAbout needs to be mocked!!\n");
   exit(1);
   }
 

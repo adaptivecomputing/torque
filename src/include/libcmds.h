@@ -82,5 +82,5 @@
 /* Header file for all definitions in lib/Libcmds */
 
 /* In get_server.c */
-int TShowAbout_exit(void);
+void TShowAbout();
 
