@@ -1136,3 +1136,8 @@ void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+int read_all_devices()
+  {
+  return(PBSE_NONE);
+  }
