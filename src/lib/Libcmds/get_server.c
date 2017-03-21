@@ -71,7 +71,7 @@ extern int parse_jobid(const char *, char **, char **, char **);
 
 
 
-int TShowAbout_exit(void)
+void TShowAbout()
 
   {
   char *dserver;
@@ -105,8 +105,7 @@ int TShowAbout_exit(void)
 
   fprintf(stderr, "Commit:  %s\n", GIT_HASH);
 
-  exit(0);
-  }  /* END TShowAbout_exit() */
+  }  /* END TShowAbout() */
 
 
 

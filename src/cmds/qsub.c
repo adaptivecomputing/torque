@@ -1,7 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include "qsub_functions.h"
 #include "net_cache.h"
-
+#include <iostream>
 /** 
  * qsub main - processing moved to another function to facilitate unit testing
  */
@@ -13,8 +13,15 @@ int main(
   char **envp)  /* I */
 
   {
-  main_func(argc, argv, envp);
-
+  try
+    {
+    main_func(argc, argv, envp);
+    }
+  catch(std::exception& e)
+    {
+    //what goes here?
+    std::cout<<e.what()<<std::endl;
+    }
   return(0);
   } /* END main() */
 

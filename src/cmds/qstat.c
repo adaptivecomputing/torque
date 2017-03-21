@@ -38,7 +38,7 @@
 #include "cmds.h"
 #include "mcom.h"
 #include "utils.h"
-#include "libcmds.h" /* TShowAbout_exit */
+#include "libcmds.h" /* TShowAbout */
 #include "net_cache.h"
 #include "utils.h"
 #include "allocation.hpp"
@@ -2839,7 +2839,8 @@ int process_commandline_opts(
 
         if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
-          TShowAbout_exit();
+          TShowAbout();
+          exit(0);
           }
 
         /* unexpected '--' option received */

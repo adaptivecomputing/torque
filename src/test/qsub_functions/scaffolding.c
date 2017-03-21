@@ -87,9 +87,9 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
   return(FALSE);
   }
 
-int TShowAbout_exit(void)
+void TShowAbout()
   {
-  fprintf(stderr, "The call to TShowAbout_exit to be mocked!!\n");
+  fprintf(stderr, "The call to TShowAbout to be mocked!!\n");
   exit(1);
   }
 
