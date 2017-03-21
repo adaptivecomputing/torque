@@ -2285,7 +2285,7 @@ void x11handler(
   int              n;
   char            *display;
 
-  calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
+  calloc_or_throw((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
 
   for (n = 0;n < NUM_SOCKS;n++)
     (socks + n)->active = 0;
@@ -3700,7 +3700,7 @@ void process_opts(
               if (validate_group_list(valuewd) == FALSE)
                 {
                 alloc_len = 80 + strlen(valuewd);
-                calloc_or_fail(&err_msg, alloc_len, "-W attribute");
+                calloc_or_throw(&err_msg, alloc_len, "-W attribute");
                 snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
                 print_qsub_usage_exit(err_msg);
                 }
@@ -3725,7 +3725,7 @@ void process_opts(
             if (len > 3)
               {
               alloc_len = 80 + strlen(valuewd);
-              calloc_or_fail(&err_msg, alloc_len, "-W attribute");
+              calloc_or_throw(&err_msg, alloc_len, "-W attribute");
               snprintf(err_msg, alloc_len, "qsub: Invalid umask value, too many digits: %s", valuewd);
               print_qsub_usage_exit(err_msg);
               }
@@ -3772,7 +3772,7 @@ void process_opts(
               
               default:
                 alloc_len = 80 + strlen(ATTR_f) + strlen(valuewd);
-                calloc_or_fail(&err_msg, alloc_len, "-W attribute");
+                calloc_or_throw(&err_msg, alloc_len, "-W attribute");
                 snprintf(err_msg, alloc_len, "qsub: invalid %s value: %s", ATTR_f, valuewd);
                 print_qsub_usage_exit(err_msg);
 
@@ -3856,7 +3856,7 @@ void process_opts(
         if (optarg != NULL)
           {
           alloc_len = 80 + strlen(optarg);
-          calloc_or_fail(&err_msg, alloc_len, "unknown attribute flag");
+          calloc_or_throw(&err_msg, alloc_len, "unknown attribute flag");
           snprintf(err_msg, alloc_len, "qsub: invalid attribute flag (%c) value: %s", c, optarg);
           print_qsub_usage_exit(err_msg);
           }
@@ -3896,7 +3896,7 @@ void process_opts(
     if (rc != 0)
       {
       alloc_len = 80 + strlen(tmp_name);
-      calloc_or_fail(&err_msg, alloc_len, "tmp file error");
+      calloc_or_throw(&err_msg, alloc_len, "tmp file error");
       snprintf(err_msg, alloc_len, "qsub: %s tmp job file %s",
           rc<=2?"could not create":"unable to write to", tmp_name);
       if (rc >= 2)
@@ -3913,7 +3913,7 @@ void process_opts(
       if ((tmpfd = mkstemp(tmp_name2)) < 1)
         {
         alloc_len = 80  + strlen(tmp_name2);
-        calloc_or_fail(&err_msg, alloc_len, "qsub: could not create tmp job file");
+        calloc_or_throw(&err_msg, alloc_len, "qsub: could not create tmp job file");
         snprintf(err_msg, alloc_len, "qsub: could not create tmp job file %s", tmp_name2);
         unlink(tmp_name);
         print_qsub_usage_exit(err_msg);
@@ -3946,19 +3946,19 @@ void process_opts(
       if (rc == -1)
         {
         alloc_len = 80  + strlen(tmp_name2);
-        calloc_or_fail(&err_msg, alloc_len, "qsub: error writing filter o/p");
+        calloc_or_throw(&err_msg, alloc_len, "qsub: error writing filter o/p");
         snprintf(err_msg, alloc_len, "qsub: error writing filter o/p, %s", tmp_name2);
        }
       else if (WEXITSTATUS(rc) == (unsigned char)SUBMIT_FILTER_ADMIN_REJECT_CODE)
         {
         alloc_len = 160;
-        calloc_or_fail(&err_msg, alloc_len, "qsub: administrative rejection");
+        calloc_or_throw(&err_msg, alloc_len, "qsub: administrative rejection");
         snprintf(err_msg, alloc_len, "qsub: Your job has been administratively rejected by the queueing system.\nqsub: There may be a more detailed explanation prior to this notice.");
         }
       else if (WEXITSTATUS(rc))
         {
         alloc_len = 80;
-        calloc_or_fail(&err_msg, alloc_len, "qsub: filter error code");
+        calloc_or_throw(&err_msg, alloc_len, "qsub: filter error code");
         snprintf(err_msg, alloc_len, "qsub: submit filter returned an error code, aborting job submission.");
         }
       else
@@ -4332,7 +4332,7 @@ void add_submit_args_to_job(
 
   if (alloc_len > 0)
     {
-    calloc_or_fail(&submit_args_str, alloc_len,
+    calloc_or_throw(&submit_args_str, alloc_len,
         "qsub:submit args out of memory");
 
     for (argi = 1;argi < argc;argi++)
@@ -4822,7 +4822,7 @@ void main_func(
     {
     /* Currently if the destination is null, it is replaced downstream
      * with the server_list */
-    calloc_or_fail(&destination, 2, "destination");
+    calloc_or_throw(&destination, 2, "destination");
     destination[0] = '\0';
     }
 
