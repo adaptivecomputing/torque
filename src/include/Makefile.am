@@ -28,7 +28,8 @@ noinst_HEADERS = acct.h array.h assertions.h attribute.h		\
 		 job_recovery.h allocation.hpp attr_req_info.hpp acl_special.hpp restricted_host.hpp \
 		 pbs_helper.h mail_throttler.hpp lib_ifl.h runjob_help.hpp pmix_tracker.hpp \
 		 pmix_operation.hpp job_host_data.hpp policy_values.h plugin_internal.h json/json.h \
-		 json/json-forwards.h authorized_hosts.hpp numa_constants.h
+		 json/json-forwards.h authorized_hosts.hpp numa_constants.h qsub_functions.h \
+		 common_cmds.h
 
 BUILT_SOURCES = site_job_attr_def.h site_job_attr_enum.h \
 		site_qmgr_node_print.h site_qmgr_que_print.h \

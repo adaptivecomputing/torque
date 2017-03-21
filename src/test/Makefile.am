@@ -31,7 +31,7 @@ LIBATTR_UT_DIRS = attr_atomic attr_fn_acl attr_fn_arst attr_fn_b attr_fn_c attr_
 
 LIBCMDS_UT_DIRS = add_verify_resources ck_job_name cnt2server cvtdate get_server locate_job \
                   parse_at parse_depend parse_destid parse_equal parse_jobid parse_stage \
-                  prepare_path prt_job_err set_attr set_resource
+                  prepare_path prt_job_err set_attr set_resource qsub_functions common_cmds 
 
 LIBCSV_UT_DIRS = csv
 
@@ -63,9 +63,9 @@ LIBNET_UT_DIRS = conn_table get_hostaddr get_hostname md5 net_client net_common 
 LIBSITE_UT_DIRS = site_allow_u site_alt_rte site_check_u site_map_usr site_mom_chu site_mom_ckp \
 		site_mom_jst
 
-CMDS_UT_DIRS = common_cmds pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qchkpt qdel qdisable \
+CMDS_UT_DIRS = pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qchkpt qdel qdisable \
                qenable qgpumode qgpureset qhold qmgr qmove qmsg qorder qrerun qrls qrun qselect \
-	       qsig qstart qstat qstop qsub_functions qterm
+							 qsig qstart qstat qstop qterm
 
 MISC_UT_DIRS = momctl
 

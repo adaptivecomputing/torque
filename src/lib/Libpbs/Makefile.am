@@ -8,6 +8,8 @@ lib_LTLIBRARIES = libtorque.la
 
 libtorque_la_LDFLAGS = -version-info 2:0:0
 
+libtorque_la_CFLAGS = -DSUBMIT_FILTER_PATH=\"$(SUBMIT_FILTER_PATH)\"
+
 libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libdis/discui_.c ../Libdis/discul_.c \
 		    ../Libdis/disi10d_.c ../Libdis/disi10l_.c \
@@ -80,6 +82,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
 		    ../Libcmds/cvtdate.c ../Libcmds/get_server.c \
         ../Libcmds/locate_job.c ../Libcmds/parse_at.c \
 		    ../Libcmds/parse_depend.c ../Libcmds/parse_destid.c \
+                    ../Libcmds/qsub_functions.c ../Libcmds/common_cmds.c \
         ../Libcmds/parse_equal.c ../Libcmds/parse_jobid.c \
 		    ../Libcmds/parse_stage.c \
         ../Libcmds/prepare_path.c ../Libcmds/prt_job_err.c \
@@ -96,7 +99,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libnet/net_cache.c ../Libutils/u_lock_ctl.c \
         ../Libutils/u_hash_map_structs.c \
         ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c \
-        ../Libattr/req.cpp ../Libattr/complete_req.cpp ../Libutils/u_mu.c \
+        ../Libutils/u_groups.c ../Libattr/req.cpp ../Libattr/complete_req.cpp ../Libutils/u_mu.c \
 				../Libutils/u_misc.c ../Libutils/allocation.cpp
 
 

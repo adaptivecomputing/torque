@@ -262,10 +262,18 @@ void print_qsub_usage_exit(
 
 void add_submit_args_to_job(job_data_container *job_attr, int argc, char **argv);
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void main_func(
     int    argc,                  /* I */
     char **argv,                  /* I */
     char **envp);                 /* I */
+#ifdef __cplusplus
+}
+#endif
 
 int isWindowsFormat(FILE   *fd);
 

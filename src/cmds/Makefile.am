@@ -5,9 +5,9 @@ DIST_SUBDIRS=
 PBS_LIBS = ../lib/Libpbs/libtorque.la \
            ../lib/Libutils/libutils.a
 
-noinst_HEADERS = common_cmds.h pbsnodes.h pbs_track.h qdisable.h qgpureset.h qmove.h qrerun.h qselect.h qstat.h qterm.h \
+noinst_HEADERS = pbsnodes.h pbs_track.h qdisable.h qgpureset.h qmove.h qrerun.h qselect.h qstat.h qterm.h \
                  pbspd.h qalter.h qenable.h qhold.h qmsg.h qrls.h qsig.h qstop.h pbsdsh.h pbspoe.h qchkpt.h \
-                 qgpumode.h qmgr_functions.h qorder.h qrun.h qstart.h qsub_functions.h
+                 qgpumode.h qmgr_functions.h qorder.h qrun.h qstart.h
 
 
 dist_bin_SCRIPTS = nqs2pbs
@@ -37,7 +37,7 @@ pbsnodes_SOURCES = pbsnodes.c
 pbspd_SOURCES = pbspd.c
 pbspoe_SOURCES = pbspoe.c
 qalter_SOURCES = qalter.c
-qdel_SOURCES = qdel.c common_cmds.c
+qdel_SOURCES = qdel.c
 qdisable_SOURCES = qdisable.c
 qenable_SOURCES = qenable.c
 qhold_SOURCES = qhold.c
@@ -53,7 +53,7 @@ qsig_SOURCES = qsig.c
 qstart_SOURCES = qstart.c
 qstat_SOURCES = qstat.c
 qstop_SOURCES = qstop.c
-qsub_SOURCES = qsub.c qsub_functions.c common_cmds.c
+qsub_SOURCES = qsub.c
 #qsub_LDFLAGS = -all-static
 qterm_SOURCES = qterm.c
 qchkpt_SOURCES = qchkpt.c
