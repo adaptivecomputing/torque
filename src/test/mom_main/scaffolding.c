@@ -1095,3 +1095,8 @@ int mkdir_wrapper(const char *path, mode_t mode)
   return(0);
   }
 
+int read_all_devices()
+  {
+  return(PBSE_NONE);
+  }
+

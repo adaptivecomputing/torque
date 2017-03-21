@@ -302,6 +302,7 @@ extern int      shut_nvidia_nvml();
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
+int read_all_devices();
 int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
@@ -4705,6 +4706,8 @@ int cg_initialize_hwloc_topology()
 
   hwloc_free_xmlbuffer(topology, xml_buf);
 #endif
+
+  read_all_devices();
 
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
