@@ -213,6 +213,24 @@ void set_env_opts(
 
 
 /* A wrapper for client side memory allocation to handle it all the same way
+ * return indicates success, failure will throw a runtime_error
+ */
+void calloc_or_throw(
+  char   **dest,
+  int      alloc_size,
+  const char    *err_msg)
+
+  {
+  *dest = (char *)calloc(1, alloc_size);
+  char* error_str = NULL;
+  if (*dest == NULL)
+    {
+    printf(error_str, "Allocation of %d bytes failed %s", alloc_size, err_msg);
+    throw std::runtime_error(error_str);
+    }
+  } /* END calloc_or_throw()*/
+
+/* A wrapper for client side memory allocation to handle it all the same way
  * return indicates success, failure will exit the run
  */
 void calloc_or_fail(

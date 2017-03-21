@@ -91,6 +91,8 @@ void set_env_opts(job_data_container *env_attr, char **envp);
 
 void calloc_or_fail(char **dest, int alloc_size, const char *err_msg);
 
+void calloc_or_throw(char **dest, int alloc_size, const char *err_msg);
+
 int parse_variable_list(job_data_container *dest_hash, job_data_container *user_env, int var_type, int op_type, char *the_list);
 
 #endif /* _COMMON_CMDS_H */

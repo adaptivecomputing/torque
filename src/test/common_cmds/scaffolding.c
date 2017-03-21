@@ -79,3 +79,12 @@ void hash_add_or_exit(job_data_container *head, const char *name, const char *va
     }
   }
 
+void hash_add_or_throw(job_data_container *head, const char *name, const char *value, int var_type)
+  {
+  if (tc_num == 2)
+    {
+    head->lock();
+    head->insert(new job_data(name,value,var_type,0),name);
+    head->unlock();
+    }
+  }
