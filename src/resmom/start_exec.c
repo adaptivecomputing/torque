@@ -3207,6 +3207,9 @@ void handle_cpuset_creation(
 
 
 
+/*
+ * handle_reservation()
+ */
 
 void handle_reservation(
 
@@ -3563,6 +3566,9 @@ int start_interactive_session(
 
 
 
+/*
+ * start_interactive_reader()
+ */
 
 void start_interactive_reader(
 
@@ -3593,6 +3599,9 @@ void start_interactive_reader(
 
 
 
+/*
+ * setup_interacteractive_job()
+ */
 
 void setup_interactive_job(
 
@@ -4713,15 +4722,16 @@ int TMomFinalizeChild(
 
   // Create the cgroups for this job
   rc = init_torque_cgroups();
-  if (rc == PBSE_NONE) {
-      rc = trq_cg_create_all_cgroups(pjob);
-  } else {
-      /*
-        Send/log an additional error, cleanup and return as before
-       */
+  if (rc == PBSE_NONE)
+    {
+    rc = trq_cg_create_all_cgroups(pjob);
+    }
+  else
+    {
+    // Log an additional error, cleanup and return as before
     sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->get_jobid());
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-  }
+    }
 
   if (rc != PBSE_NONE)
     {

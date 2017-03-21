@@ -1331,6 +1331,32 @@ attribute_def job_attr_def[] =
    ATR_TYPE_STR,
    PARENT_TYPE_JOB,
   },
+  
+  // JOB_ATR_gpus_reserved
+  {(char *)ATTR_gpus_reserved,   /* "gpus_reserved" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
+  
+  // JOB_ATR_mics_reserved
+  {(char *)ATTR_mics_reserved,   /* "mics_reserved" */
+   decode_str,
+   encode_str,
+   set_str,
+   comp_str,
+   free_str,
+   NULL_FUNC,
+   READ_ONLY | ATR_DFLAG_MOM | ATR_DFLAG_OPWR | ATR_DFLAG_SvWR,
+   ATR_TYPE_STR,
+   PARENT_TYPE_JOB,
+  },
 
   /* JOB_ATR_UNKN - THIS MUST BE THE LAST ENTRY */
   { (char *)"_other_",

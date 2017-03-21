@@ -2004,61 +2004,6 @@ void trq_cg_delete_job_cgroups(
   } // END trq_cg_delete_job_cgroups()
 
 
-/*
- * trq_cg_set_forbidden_devices
- *
- * Add the indices in the forbidden list to the devices.deny file
- *
- * @param - forbidden_devices - gpus that are not to be used 
- *                           by this job
- * @param - job_devices_path - path to devices directory for the job
- *
- */
-
-int trq_cg_set_forbidden_devices(std::vector<int> &forbidden_devices, std::string job_devices_path)
-  {
-  int         rc;
-  char        log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string devices_deny;
-  FILE       *f;
-
-  devices_deny = job_devices_path + '/' + "devices.deny";
-
-  rc = trq_cg_mkdir(job_devices_path.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-  if ((rc != 0) &&
-       (errno != EEXIST))
-    {
-    sprintf(log_buf, "failed to make directory %s for cgroup: %s", job_devices_path.c_str(), strerror(errno));
-    log_err(errno, __func__, log_buf);
-    return(PBSE_SYSTEM);
-    }
-
-  for (std::vector<int>::iterator it = forbidden_devices.begin(); it != forbidden_devices.end(); it++)
-    {
-    char   restricted_gpu[1024];
-
-#ifdef NVIDIA_GPUS
-    sprintf(restricted_gpu, "echo \"c 195:%d rwm\" > %s", *it, devices_deny.c_str());
-#endif
-
-#ifdef MIC
-    sprintf(restricted_gpu, "echo \"c 245:%d rwm\" > %s", *it, devices_deny.c_str());
-#endif
-
-    f = popen(restricted_gpu, "r");
-    if (f == NULL)
-      {
-      sprintf(log_buf, "Failed to add restricted gpu to devices.deny list: index %d in %s", *it, job_devices_path.c_str());
-      log_err(errno, __func__, log_buf);
-      return(PBSE_SYSTEM);
-      }
-
-    pclose(f);
-    }
-
-  return(PBSE_NONE);
-  }
-
 
 /*
  * trq_cg_add_devices_to_cgroups
@@ -2076,26 +2021,16 @@ int trq_cg_add_devices_to_cgroup(
   mom_job *pjob)
 
   {
-  std::vector<unsigned int> device_indices;
+  std::vector<int> device_indices;
   std::vector<int> forbidden_devices;
   std::string job_devices_path;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  const char *device_str;
-  char  suffix[20];
   unsigned int device_count = 0;
-  int   index = 0;
 
 #ifdef NVIDIA_GPUS
   device_count = global_gpu_count;
-  strcpy(suffix, "-gpu");
-  index = JOB_ATR_exec_gpus;
-#endif
-
-#ifdef MIC
+#elif defined(MIC)
   device_count = global_mic_count;
-  strcpy(suffix, "-mic");
-  index = JOB_ATR_exec_mics;
 #endif
 
   /* First make sure we have gpus */
@@ -2104,62 +2039,82 @@ int trq_cg_add_devices_to_cgroup(
 
   job_devices_path = cg_devices_path + pjob->get_jobid();
 
-  /* if there are no gpus given, deny all gpus to the job */
-  if (pjob->get_str_attr(index) == NULL)
+
+#ifdef NVIDIA_GPUS
+  if (pjob->get_str_attr(JOB_ATR_gpus_reserved) != NULL)
     {
-    for (unsigned int i = 0; i < device_count; i++)
-      forbidden_devices.push_back(i);
-
-    rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
-    if (rc != PBSE_NONE)
-      {
-      sprintf(log_buf, "Failed to write devices.deny list for job %s", pjob->get_jobid());
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      return(rc);
-      }
-
-    return(rc);
+    std::string gpus_reserved(pjob->get_str_attr(JOB_ATR_gpus_reserved));
+    std::string gpu_range;
+    find_range_in_cpuset_string(gpus_reserved, gpu_range);
+    translate_range_string_to_vector(gpu_range.c_str(), device_indices);
     }
-
-  device_str = pjob->get_str_attr(index);
-
-  device_indices.clear();
-  get_device_indices(device_str, device_indices, suffix);
-
-
-  /* device_indices has the list of gpus for this job. 
-     make a list of gpus that are not for this job
-     using that list */
-  for (unsigned int i = 0; i < device_count; i++)
+#else // We aren't here unless either NVIDIA or MICS are defined
+  if (pjob->get_str_attr(JOB_ATR_mics_reserved) != NULL)
     {
-    bool found;
+    std::string mics_reserved(pjob->get_str_attr(JOB_ATR_mics_reserved));
+    std::string mic_range;
+    find_range_in_cpuset_string(mics_reserved, mic_range);
+    translate_range_string_to_vector(mic_range.c_str(), device_indices);
+    }
+#endif
 
-    found = false;
-    for(std::vector<unsigned int>::iterator it = device_indices.begin(); it != device_indices.end(); it++)
+  // device_indices has the list of either gpus or mics for this job
+  std::string disallow_all("a *:* rwm");
+  const int   NUM_ALLOW_STATEMENTS = 3;
+  // These 3 statments allow use of all character devices except the GPUs (or except the MICs for
+  // that configuration).
+  const char *allow_statements[NUM_ALLOW_STATEMENTS]  = 
+    {
+    "b *:* rwm",  // allow all block devices
+#ifdef NVIDIA_GPUS
+    "c 1:194 rwm",
+    "c 196:* rwm",
+#else
+    "c 1:244 rwm",
+    "c 246:* rwm",
+#endif
+    };
+
+  std::string allowed = job_devices_path + "/devices.allow";
+  std::string denied = job_devices_path + "/devices.deny";
+  std::string error;
+
+  rc = write_to_file(denied.c_str(), disallow_all, error);
+
+  if (rc == PBSE_NONE)
+    {
+    for (int i = 0; i < NUM_ALLOW_STATEMENTS; i++)
       {
-      if (*it == i)
+      if ((rc = write_to_file(allowed.c_str(), allow_statements[i], error)) != PBSE_NONE)
         {
-        found = true;
+        log_err(errno, __func__, error.c_str());
         break;
         }
       }
-   if (found == false)
-     forbidden_devices.push_back(i);
+  
+    if (rc == PBSE_NONE)
+      {
+      char allow_device_buf[MAXLINE];
 
-   }
-
-  if (forbidden_devices.size() == 0)
-    return(PBSE_NONE);
-
-  rc = trq_cg_set_forbidden_devices(forbidden_devices, job_devices_path);
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buf, " 2 Failed to write devices.deny list for job %s", pjob->get_jobid());
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-    return(rc);
+      for (size_t i = 0; i < device_indices.size(); i++)
+        {
+        // Write the allow statement for this device
+#ifdef NVIDIA_GPUS
+        sprintf(allow_device_buf, "c 195:%d rwm", device_indices[i]);
+#else
+        sprintf(allow_device_buf, "c 245:%d rwm", device_indices[i]);
+#endif
+        rc = write_to_file(allowed.c_str(), allow_device_buf, error);
+        if (rc != PBSE_NONE)
+          {
+          log_err(errno, __func__, error.c_str());
+          break;
+          }
+        }
+      }
     }
  
   return(rc);
-  }
+  } // END trq_cg_add_devices_to_cgroup()
 
 #endif

@@ -381,6 +381,8 @@
 #define ATTR_cpustr                    "cpuset_string"
 #define ATTR_memstr                    "memset_string"
 #define ATTR_L_request                 "L_Request"
+#define ATTR_gpus_reserved             "gpus_reserved"
+#define ATTR_mics_reserved             "mics_reserved"
 #define ATTR_user_kill_delay           "user_kill_delay"
 #define ATTR_idle_slot_limit           "idle_slot_limit"
 #define ATTR_default_gpu_mode          "default_gpu_mode"
