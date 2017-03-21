@@ -64,6 +64,7 @@ const int MAX_WRITE_RETRIES = 5;
 
 #ifdef PENABLE_LINUX_CGROUPS
 extern Machine this_node;
+std::set<int> character_device_ids;
 
 /* This array tracks if all of the hierarchies are mounted we need 
    to run our control groups */
@@ -2089,20 +2090,7 @@ int trq_cg_add_devices_to_cgroup(
 
   // device_indices has the list of either gpus or mics for this job
   std::string disallow_all("a *:* rwm");
-  const int   NUM_ALLOW_STATEMENTS = 3;
-  // These 3 statments allow use of all character devices except the GPUs (or except the MICs for
-  // that configuration).
-  const char *allow_statements[NUM_ALLOW_STATEMENTS]  = 
-    {
-    "b *:* rwm",  // allow all block devices
-#ifdef NVIDIA_GPUS
-    "c 1:194 rwm",
-    "c 196:* rwm",
-#else
-    "c 1:244 rwm",
-    "c 246:* rwm",
-#endif
-    };
+  std::string allow_all_block("b *:* rwm");
 
   std::string allowed = job_devices_path + "/devices.allow";
   std::string denied = job_devices_path + "/devices.deny";
@@ -2112,27 +2100,17 @@ int trq_cg_add_devices_to_cgroup(
 
   if (rc == PBSE_NONE)
     {
-    for (int i = 0; i < NUM_ALLOW_STATEMENTS; i++)
-      {
-      if ((rc = write_to_file(allowed.c_str(), allow_statements[i], error)) != PBSE_NONE)
-        {
-        log_err(errno, __func__, error.c_str());
-        break;
-        }
-      }
-  
-    if (rc == PBSE_NONE)
+    if ((rc = write_to_file(allowed.c_str(), allow_all_block, error)) != PBSE_NONE)
+      log_err(errno, __func__, error.c_str());
+    else
       {
       char allow_device_buf[MAXLINE];
 
-      for (size_t i = 0; i < device_indices.size(); i++)
+      for (std::set<int>::iterator it = character_device_ids.begin();
+           it != character_device_ids.end();
+           it++)
         {
-        // Write the allow statement for this device
-#ifdef NVIDIA_GPUS
-        sprintf(allow_device_buf, "c 195:%d rwm", device_indices[i]);
-#else
-        sprintf(allow_device_buf, "c 245:%d rwm", device_indices[i]);
-#endif
+        sprintf(allow_device_buf, "c %d:* rwm", *it);
         rc = write_to_file(allowed.c_str(), allow_device_buf, error);
         if (rc != PBSE_NONE)
           {
@@ -2140,10 +2118,91 @@ int trq_cg_add_devices_to_cgroup(
           break;
           }
         }
+
+      if (rc == PBSE_NONE)
+        {
+        for (size_t i = 0; i < device_indices.size(); i++)
+          {
+          // Write the allow statement for this device
+#ifdef NVIDIA_GPUS
+          sprintf(allow_device_buf, "c 195:%d rwm", device_indices[i]);
+#else
+          sprintf(allow_device_buf, "c 245:%d rwm", device_indices[i]);
+#endif
+          rc = write_to_file(allowed.c_str(), allow_device_buf, error);
+          if (rc != PBSE_NONE)
+            {
+            log_err(errno, __func__, error.c_str());
+            break;
+            }
+          }
+
+        if (rc == PBSE_NONE)
+          {
+          // Allow any other non-gpu / mic devices to be used. Things like nvidiactl must be available 
+          // to all.
+          for (int i = device_count; i < 256; i++)
+            {
+#ifdef NVIDIA_GPUS
+            sprintf(allow_device_buf, "c 195:%d rwm", i);
+#else
+            sprintf(allow_device_buf, "c 245:%d rwm", i);
+#endif
+            rc = write_to_file(allowed.c_str(), allow_device_buf, error);
+            if (rc != PBSE_NONE)
+              {
+              log_err(errno, __func__, error.c_str());
+              break;
+              }
+            }
+          }
+        }
       }
     }
  
   return(rc);
   } // END trq_cg_add_devices_to_cgroup()
+
+
+
+int read_all_devices()
+
+  {
+  int           forbidden_device = 0;
+#ifdef NVIDIA_GPUS
+  forbidden_device = 195;
+#elif defined(MICS)
+  forbidden_device = 245;
+#endif
+
+  if (forbidden_device == 0)
+    return(PBSE_NONE);
+
+#ifdef NVIDIA_GPUS
+  // force the loading of nvidia-uvm
+  system("nvidia-modprobe -u -c=0");
+#endif
+
+  std::ifstream infile("/proc/devices");
+  std::string   line;
+
+  while (std::getline(infile, line))
+    {
+    if (line == "Character devices:")
+      continue;
+    else if (line == "Block devices:")
+      break;
+
+    int                device_index;
+    std::istringstream iss(line);
+
+    if ((iss >> device_index) &&
+        (device_index != forbidden_device))
+      character_device_ids.insert(device_index);
+    }
+
+  return(PBSE_NONE);
+  } // END read_all_devices()
+
 
 #endif
