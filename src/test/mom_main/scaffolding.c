@@ -1498,3 +1498,9 @@ unsigned int job::get_exuid() const
   {
   return(this->ji_qs.ji_un.ji_momt.ji_exuid);
   }
+
+int read_all_devices()
+  {
+  return(PBSE_NONE);
+  }
+
