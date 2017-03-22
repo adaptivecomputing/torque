@@ -509,5 +509,10 @@ void PCI_Device::initializeGpu(int idx, hwloc_topology_t topology)
       return;
         }
 
+int Machine::get_total_gpus() const
+  {
+  return(0);
+  }
+
 #endif
 
