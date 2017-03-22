@@ -56,6 +56,11 @@ START_TEST(test_update_layout_if_needed)
   update_layout_if_needed(&pnode, with_threads, false);
   update_layout_if_needed(&pnode, with_threads, false);
   fail_unless(event_logged == 1, "event logged: %d", event_logged);
+
+  // Make sure that changing the number of gpus on the node triggers an event
+  pnode.nd_ngpus = 1;
+  update_layout_if_needed(&pnode, with_threads, false);
+  fail_unless(event_logged == 2, "event logged: %d", event_logged);
   }
 END_TEST
 #endif
