@@ -815,8 +815,7 @@ void validate_pbs_o_workdir(
       else
         {
         // Current working directory is deleted. Fail
-        fprintf(stderr, "qsub: Cannot obtain the current directory.\nPlease submit from a valid directory.\n");
-        exit(3);
+        throw std::runtime_error("qsub: Cannot obtain the current directory.\nPlease submit from a valid directory.\n");
         }
       }
     }
@@ -834,8 +833,8 @@ void validate_pbs_o_workdir(
       if ((stat(the_val, &sb) != 0) ||
           (!(S_ISDIR(sb.st_mode))))
         {
-        fprintf(stderr, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
-        exit(3);
+        sprintf(error_str, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
+        throw std::runtime_error(error_str);
         }
       }
     }
@@ -886,8 +885,7 @@ void validate_qsub_host_pbs_o_server(
 
   if (!qsub_host)
     {
-    fprintf(stderr, "qsub: cannot get (full) local host name\n");
-    exit(3);
+    throw std::runtime_error("qsub: cannot get (full) local host name\n");
     }
   if (hash_find(job_attr, ATTR_pbs_o_server, &tmp_job_info))
     {
@@ -896,8 +894,7 @@ void validate_qsub_host_pbs_o_server(
       hash_add_or_throw(job_attr, ATTR_pbs_o_server, tmp_val, LOGIC_DATA);
     else
       {
-      fprintf(stderr,"qsub: cannot get full server host name\n");
-      exit(3);
+      throw std::runtime_error("qsub: cannot get full server host name\n");
       }
     }
   else
@@ -1105,14 +1102,14 @@ void validate_basic_resourcing(
 
   if (is_resource_request_valid(ji, err_msg) == false)
     {
-    fprintf(stderr, "%s", err_msg.c_str());
-    exit(4);
+    sprintf(error_str, "%s", err_msg.c_str());
+    throw std::runtime_error(error_str);
     }
 
   if (is_memory_request_valid(ji, err_msg) == false)
     {
-    fprintf(stderr, "%s", err_msg.c_str());
-    exit(4);
+    sprintf(error_str, "%s", err_msg.c_str());
+    throw std::runtime_error(error_str);
     }
 
   } /* END validate_basic_resourcing() */
@@ -1129,8 +1126,7 @@ void validate_array_options(
   if ((hash_find(ji->job_attr, ATTR_t, &dummy) == FALSE) &&
       (hash_find(ji->job_attr, ATTR_idle_slot_limit, &dummy)))
     {
-    fprintf(stderr, "qsub: the idle array slot limit (-i) can only be applied to array jobs (-t)\n");
-    exit(4);
+    throw std::runtime_error("qsub: the idle array slot limit (-i) can only be applied to array jobs (-t)\n");
     }
   } // END validate_basic_resourcing()
 
@@ -1541,9 +1537,7 @@ void make_argv(
 
   if (buffer == NULL)
     {
-    fprintf(stderr, "qsub: out of memory\n");
-
-    exit(2);
+    throw std::runtime_error("qsub: out of memory\n");
     }
 
   *argc = 0;
@@ -1571,10 +1565,10 @@ void make_argv(
 
       if (*c == '\0')
         {
-        fprintf(stderr, "qsub: unmatched %c\n",
+        sprintf(error_str, "qsub: unmatched %c\n",
                 *c);
 
-        exit(1);
+        throw std::runtime_error(error_str);
         }
 
       /* don't include the quotes */
@@ -1599,9 +1593,7 @@ void make_argv(
 
       if (argv[*argc] == NULL)
         {
-        fprintf(stderr, "qsub: out of memory\n");
-
-        exit(2);
+        throw std::runtime_error("qsub: out of memory\n");
         }
 
       *b = '\0';
@@ -1634,8 +1626,7 @@ void make_argv(
 
     if (argv[*argc] == NULL)
       {
-      fprintf(stderr, "qsub: out of memory\n");
-      exit(2);
+      std::runtime_error("qsub: out of memory\n");
       }
 
     *b = '\0';
@@ -2138,7 +2129,7 @@ void catchchild(
   if (have_terminal)
     tcsetattr(0, TCSANOW, &oldtio);
 
-  exit(0);
+  throw std::runtime_error("");
 
   /*NOTREACHED*/
 
@@ -2193,16 +2184,16 @@ void bailout(void)
             pbs_strerror(c * -1));
 
 
-    fprintf(stderr, "qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n", pbs_server);
+    sprintf(error_str, "qsub: pbs_server daemon may not be running on host %s or hostname in file '$TORQUEHOME/server_name' may be incorrect)\n", pbs_server);
 
-    exit(1);
+    throw std::runtime_error(error_str);
     }
 
   pbs_deljob_err(c, new_jobname, NULL, &local_errno);
 
   pbs_disconnect(c);
 
-  exit(0);
+  throw std::runtime_error("");
   }
 
 
@@ -2218,7 +2209,7 @@ void toolong(
 
   /*NOTREACHED*/
 
-  exit(0);
+  throw std::runtime_error("");
   }
 
 
@@ -2249,7 +2240,7 @@ void catchint(
 
       /*NOTREACHED*/
 
-      exit(0);
+      throw std::runtime_error("");
       }
 
     if (printf("yes or no please\n") < 0)
@@ -2258,8 +2249,7 @@ void catchint(
       bailout();
 
       /*NOTREACHED*/
-
-      exit(0);
+      throw std::runtime_error("");
       }
 
     while ((c != '\n') && (c != EOF))
@@ -2308,7 +2298,7 @@ void x11handler(
 
   port_forwarder(socks, x11_connect_display, display, 0, NULL);
 
-  exit(EXIT_FAILURE);
+  throw std::runtime_error("");
   }
 
 /*
@@ -2393,10 +2383,10 @@ int get_interactive_job_id(
 
     if (!locate_job(new_jobname, server_out, cur_server))
       {
-      fprintf(stderr, "qsub: job %s apparently deleted\n",
+      sprintf(error_str, "qsub: job %s apparently deleted\n",
               new_jobname);
 
-      exit(1);
+      throw std::runtime_error(error_str);
       }
     }
 
@@ -2502,33 +2492,31 @@ void interactive(
     else if (rc == -2)
       {
       // The job was canceled while waiting to start
-      fprintf(stderr, "qsub: Job %s was canceled while waiting to start\n", new_jobname);
-      exit(1);
+      sprintf(error_str, "qsub: Job %s was canceled while waiting to start\n", new_jobname);
+      throw std::runtime_error(error_str);
       }
     }
 
   if (read_jobid == false)
     {
-    fprintf(stderr, "qsub: received 3 connections, but couldn't read a valid job id\n");
-    exit(1);
+    throw std::runtime_error("qsub: received 3 connections, but couldn't read a valid job id\n");
     }
 
   if (strncmp(momjobid, "PBS:", 4) == 0)
     {
-    fprintf(stderr, "qsub: %s\n", momjobid);
+    sprintf(error_str, "qsub: %s\n", momjobid);
 
     shutdown(news, 2);
 
-    exit(1);
+    throw std::runtime_error(error_str);
     }
 
   if (strncmp(momjobid, new_jobname, PBS_MAXSVRJOBID) != 0)
     {
-    fprintf(stderr, "qsub: invalid job name from execution server\n");
 
     shutdown(news, 2);
 
-    exit(1);
+    throw std::runtime_error("qsub: invalid job name from execution server\n");
     }
 
   /*
@@ -2575,10 +2563,10 @@ void interactive(
     if (have_terminal)
       tcsetattr(0, TCSANOW, &oldtio);
 
-    printf("\nqsub: job %s completed\n",
+    sprintf(error_str,"\nqsub: job %s completed\n",
            new_jobname);
 
-    exit(0);
+    throw std::runtime_error(error_str);
     }
   else if (interactivechild > 0)
     {
@@ -2588,7 +2576,8 @@ void interactive(
 
     if (sigaction(SIGCHLD, &act, (struct sigaction *)0) < 0)
       {
-      exit(1);
+      sprintf(error_str,"in %s sigaction < 0",__func__);
+      throw std::runtime_error(error_str);
       }
 
     if (hash_find(client_attr, "DISPLAY", &tmp_job_info))
@@ -2620,7 +2609,7 @@ void interactive(
     if (have_terminal)
       tcsetattr(0, TCSANOW, &oldtio);
 
-    exit(0);
+    throw std::runtime_error("");
     }
   else
     print_qsub_usage_throw("qsub: unable to fork");
@@ -3513,8 +3502,10 @@ void process_opts(
         rc = parse_variable_list(ji->job_attr, ji->user_attr, CMDLINE_DATA, SET, optarg);
 
         if (rc != PBSE_NONE)
-          exit(rc);
-
+          {  
+          sprintf(error_str,"%i",rc);         
+          throw std::runtime_error(error_str);
+          }
         break;
 
       case 'V':
@@ -3641,8 +3632,8 @@ void process_opts(
 
               if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                fprintf(stderr, "Out of memory.\n");
-                exit(1);
+                sprintf(error_str, "Out of memory.\n");
+                throw std::runtime_error(error_str);
                 }
               strcpy(tmpBuf, tmp_job_info->value.c_str());
               strcat(tmpBuf, ",");
@@ -3671,8 +3662,8 @@ void process_opts(
               
               if ((tmpBuf = (char *)malloc(strlen(valuewd) + tmp_job_info->value.length() + 2)) == (char *)0)
                 {
-                fprintf(stderr, "Out of memory.\n");
-                exit(1);
+                sprintf(error_str, "Out of memory.\n");
+                throw std::runtime_error(error_str);
                 }
 
               strcpy(tmpBuf, tmp_job_info->value.c_str());
@@ -4719,7 +4710,7 @@ void main_func(
         fclose(script_fp);
         unlink(script_tmp);
 
-        exit(1);
+        throw std::runtime_error("failed to get script");
         }
       }    /* END if ((script_fp = fopen(script,"r")) != NULL) */
     else
@@ -4768,11 +4759,10 @@ void main_func(
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
       hash_find(ji.job_attr, ATTR_t, &tmp_job_info))
     {
-    fprintf(stderr, "qsub: interactive job can not be job array.\n");
 
     unlink(script_tmp);
 
-    exit(2);
+    throw std::runtime_error("qsub: interactive job can not be job array.\n");
     }
 
   if (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) &&
@@ -4784,13 +4774,13 @@ void main_func(
       }
     else
       {
-      fprintf(stderr, "qsub:\tstandard input and output must be a terminal for \n\tinteractive job submission\n");
       
       unlink(script_tmp);
       
       close(inter_sock);
+       
+      throw std::runtime_error("qsub:\tstandard input and output must be a terminal for \n\tinteractive job submission\n");
       
-      exit(1);
       }
     }
 
@@ -4803,12 +4793,12 @@ void main_func(
     char *q_n_out;                      /* queue part of destination */
     if (parse_destination_id((char *)tmp_job_info->value.c_str(), &q_n_out, &s_n_out))
       {
-      fprintf(stderr, "qsub: illegally formed destination: %s\n",
+      sprintf(error_str, "qsub: illegally formed destination: %s\n",
         tmp_job_info->value.c_str());
   
       unlink(script_tmp);
   
-      exit(2);
+      throw std::runtime_error(error_str);
       }
     destination = (char *)tmp_job_info->value.c_str();
     if (notNULL(s_n_out))
@@ -4842,9 +4832,8 @@ void main_func(
     }
   if (local_errno != PBSE_NONE)
     {
-    fprintf(stderr, "qsub can not be run as root\n");
     unlink(script_tmp);
-    exit(1);
+    throw std::runtime_error("qsub can not be run as root\n");
     }
 
   /* connect to the server */
@@ -4883,7 +4872,8 @@ void main_func(
       }
 
     unlink(script_tmp);
-    exit(local_errno);
+    sprintf(error_str,"%i",local_errno);
+    throw std::runtime_error(error_str);
     }
 
   /* Get required environment variables to be sent to the server.
@@ -4971,7 +4961,8 @@ void main_func(
     pbs_disconnect(sock_num);
     unlink(script_tmp);
 
-    exit(local_errno);
+    sprintf(error_str,"%i",local_errno);
+    throw std::runtime_error(error_str);
     }
   else
     {
