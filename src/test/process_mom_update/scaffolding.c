@@ -690,6 +690,11 @@ Machine::Machine(
   {
   }
 
+int Machine::get_total_gpus() const
+  {
+  return(0);
+  }
+
 #endif
 
 int job::set_creq_attr(int index, complete_req *cr)

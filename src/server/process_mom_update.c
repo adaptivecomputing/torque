@@ -774,7 +774,8 @@ void update_layout_if_needed(
 
     pnode->nd_layout = m;
     }
-  else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
+  else if (((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) ||
+            (pnode->nd_ngpus != pnode->nd_layout.get_total_gpus())) &&
            (pnode->nd_job_usages.size() == 0))
     {
     int old_count = pnode->nd_layout.getTotalThreads();
