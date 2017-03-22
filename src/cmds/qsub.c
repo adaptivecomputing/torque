@@ -21,6 +21,7 @@ int main(
     {
     //what goes here?
     std::cout<<e.what();
+    return (-1);
     }
   return(0);
   } /* END main() */

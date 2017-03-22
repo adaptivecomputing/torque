@@ -222,10 +222,10 @@ void calloc_or_throw(
 
   {
   *dest = (char *)calloc(1, alloc_size);
-  char* error_str = NULL;
+  char error_str[1024];
   if (*dest == NULL)
     {
-    printf(error_str, "Allocation of %d bytes failed %s", alloc_size, err_msg);
+    sprintf(error_str, "Allocation of %d bytes failed %s", alloc_size, err_msg);
     throw std::runtime_error(error_str);
     }
   } /* END calloc_or_throw()*/

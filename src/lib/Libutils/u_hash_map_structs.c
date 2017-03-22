@@ -157,8 +157,8 @@ void hash_add_or_throw(
   {
   if (hash_add_item(head, name, val, var_type, SET) == FALSE)
     {
-    char* error_str = NULL;
-    printf(error_str, "Error allocating memory for hash (%s)-(%s)\n", name, val);
+    char error_str[1024];
+    sprintf(error_str, "Error allocating memory for hash (%s)-(%s)\n", name, val);
     throw std::runtime_error(error_str);
     }
   }
