@@ -2142,7 +2142,7 @@ int read_all_devices()
   int           forbidden_device = 0;
 #ifdef NVIDIA_GPUS
   forbidden_device = 195;
-#elif defined(MICS)
+#elif defined(MIC)
   forbidden_device = 245;
 #endif
 
