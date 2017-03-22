@@ -19,9 +19,21 @@ int main(
     }
   catch(std::exception& e)
     {
-    //what goes here?
-    std::cout<<e.what();
-    return (-1);
+    std::string error = e.what();
+    if(error == "")
+      {
+      return(0);
+      }
+    else if(error.find_first_not_of( "0123456789" ) == std::string::npos)
+      {
+      int exit_code = atoi(error.c_str());
+      return(exit_code);
+      }
+    else
+      {
+      std::cout<<error;
+      return (-1);
+      }
     }
   return(0);
   } /* END main() */
