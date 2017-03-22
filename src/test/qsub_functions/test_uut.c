@@ -237,7 +237,14 @@ START_TEST(test_process_opt_L_fail1)
   {
   job_info    ji;
   // create a bad string failure
-  process_opt_L("bob");
+  try
+    {
+    process_opt_L("bob");
+    }
+  catch (...)
+    {
+    exit(2);
+    }
   }
 END_TEST
 
@@ -248,7 +255,14 @@ START_TEST(test_process_opt_L_fail2)
   const char *arg = "tasks=6";
 
   submission_string_fail = true;
-  process_opt_L(arg);
+  try
+    {
+    process_opt_L(arg);
+    }
+  catch (...)
+    {
+    exit(2);
+    }
   }
 END_TEST
 
