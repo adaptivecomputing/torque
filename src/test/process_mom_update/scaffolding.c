@@ -688,5 +688,10 @@ Machine::Machine(
   {
   }
 
+int Machine::get_total_gpus() const
+  {
+  return(0);
+  }
+
 #endif
 
