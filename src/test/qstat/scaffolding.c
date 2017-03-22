@@ -37,7 +37,6 @@ struct batch_status * pbs_selstat_err(int c, struct attropl *attrib, char *exten
 void TShowAbout()
   { 
   fprintf(stderr, "The call to TShowAbout needs to be mocked!!\n");
-  return(PBSE_NONE);
   }
 
 struct batch_status *pbs_statserver(int c, struct attrl *attrib, char *extend)

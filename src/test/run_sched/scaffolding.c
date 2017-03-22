@@ -9,6 +9,7 @@
 #include "sched_cmds.h" /* SCH_SCHEDULE_NULL */
 #include "pbs_nodes.h" /* pbsnode */
 #include "tcp.h"
+#include "threadpool.h"
 
 unsigned int pbs_scheduler_port;
 listener_connection listener_conns[MAXLISTENERS];
@@ -104,3 +105,16 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_ext(int l, const char *func_name, const char *msg, int o) {}
+
+int enqueue_threadpool_request(
+
+  void         *(*func)(void *),
+  void         *arg,
+  threadpool_t *tp)
+
+  {
+  return(0);
+  }
+
+threadpool_t *task_pool;
+

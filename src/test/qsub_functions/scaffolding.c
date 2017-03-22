@@ -213,10 +213,8 @@ int pbs_deljob_err( int c, char *jobid, char *extend, int *local_errno)
   exit(1);
   }
 
-void calloc_or_fail(char **dest, int alloc_size, const char *err_msg)
+void calloc_or_throw(char **dest, int alloc_size, const char *err_msg)
   {
-  fprintf(stderr, "The call to calloc_or_fail to be mocked!!\n");
-  exit(1);
   }
 
 int parse_depend_list(char *list, std::vector<std::string> &dep_list)
@@ -243,7 +241,7 @@ int cnt2server_conf(long retry)
   exit(1);
   }
 
-void hash_add_or_exit(
+void hash_add_or_throw(
 
   job_data_container *head,          /* M - hashmap */
   const char         *name,               /* I - The item being added to the hashmap */
