@@ -257,7 +257,7 @@ void update_job_env_names(job_info *ji);
 void process_config_file(
     job_info *ji);                /* M */
 
-void print_qsub_usage_exit(
+void print_qsub_usage_throw(
     const char *error_msg);             /* I */
 
 void add_submit_args_to_job(job_data_container *job_attr, int argc, char **argv);

@@ -85,7 +85,7 @@ struct termios oldtio;
 /* END: bailout globals */
 
 char *host_name_suffix = NULL;
-
+char error_str[MAXBUF];
 /* state booleans for protecting already-set options */
 int    J_opt = FALSE;
 int    P_opt = FALSE;
@@ -1707,7 +1707,7 @@ char *interactive_port(
   *sock = socket(AF_INET, SOCK_STREAM, 0);
 
   if (*sock < 0)
-    print_qsub_usage_exit("qsub: unable to obtain socket");
+    print_qsub_usage_throw("qsub: unable to obtain socket");
 
   namelen = sizeof(myaddr);
 
@@ -1726,11 +1726,11 @@ char *interactive_port(
     }
   
   if (bind_rc < 0)
-    print_qsub_usage_exit("qsub: unable to bind to socket");
+    print_qsub_usage_throw("qsub: unable to bind to socket");
 
   /* get port number assigned */
   if (getsockname(*sock, (struct sockaddr *)&myaddr, &namelen) < 0)
-    print_qsub_usage_exit("qsub: unable to get port number");
+    print_qsub_usage_throw("qsub: unable to get port number");
 
   port = ntohs(myaddr.sin_port);
 
@@ -1738,7 +1738,7 @@ char *interactive_port(
           (unsigned int)port);
 
   if (listen(*sock, 1) < 0)
-    print_qsub_usage_exit("qsub: listen on interactive socket");
+    print_qsub_usage_throw("qsub: listen on interactive socket");
 
   return(portstring);
   }  /* END interactive_port() */
@@ -2046,7 +2046,7 @@ void send_winsize(
           wsz->ws_ypixel);
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
-    print_qsub_usage_exit("qsub: sending winsize");
+    print_qsub_usage_throw("qsub: sending winsize");
 
   return;
   }
@@ -2076,7 +2076,7 @@ void send_term(
     safe_strncat(buf, term, PBS_TERM_BUF_SZ - 5);
 
   if (write_ac_socket(sock, buf, PBS_TERM_BUF_SZ) != PBS_TERM_BUF_SZ)
-    print_qsub_usage_exit("qsub: sending term type");
+    print_qsub_usage_throw("qsub: sending term type");
 
   cc_array[0] = oldtio.c_cc[VINTR];
 
@@ -2087,7 +2087,7 @@ void send_term(
   cc_array[5] = oldtio.c_cc[VSUSP];
 
   if (write_ac_socket(sock, cc_array, PBS_TERM_CCA) != PBS_TERM_CCA)
-    print_qsub_usage_exit("qsub: sending term options");
+    print_qsub_usage_throw("qsub: sending term options");
 
   return;
   }
@@ -2384,7 +2384,7 @@ int get_interactive_job_id(
     int rc;
 
     if ((rc = wait_for_read_ready(inter_sock, 30)) < 0)
-      print_qsub_usage_exit("qsub: poll failed");
+      print_qsub_usage_throw("qsub: poll failed");
 
     if (rc > 0)
       break;
@@ -2404,7 +2404,7 @@ int get_interactive_job_id(
   fromlen = sizeof(from);
 
   if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
-    print_qsub_usage_exit("qsub: accept error");
+    print_qsub_usage_throw("qsub: accept error");
 
   // When MOM connects, she will send the job id for us to verify
   int   amt = momjobid_size;
@@ -2466,17 +2466,17 @@ void interactive(
 
   if ((sigaction(SIGINT, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0))
-    print_qsub_usage_exit("qsub: unable to catch signals");
+    print_qsub_usage_throw("qsub: unable to catch signals");
 
   act.sa_handler = toolong;
 
   if ((sigaction(SIGALRM, &act, NULL) < 0))
-    print_qsub_usage_exit("qsub: cannot catch alarm");
+    print_qsub_usage_throw("qsub: cannot catch alarm");
 
   /* save the old terminal setting */
 
   if (have_terminal && tcgetattr(0, &oldtio) < 0)
-    print_qsub_usage_exit("qsub: unable to get terminal settings");
+    print_qsub_usage_throw("qsub: unable to get terminal settings");
 
   /* Get the current window size, to be sent to MOM later */
 
@@ -2552,7 +2552,7 @@ void interactive(
       (sigaction(SIGTERM, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGALRM, &act, (struct sigaction *)0) < 0) ||
       (sigaction(SIGTSTP, &act, (struct sigaction *)0) < 0))
-    print_qsub_usage_exit("unable to reset signals");
+    print_qsub_usage_throw("unable to reset signals");
 
   fflush(NULL);
 
@@ -2623,7 +2623,7 @@ void interactive(
     exit(0);
     }
   else
-    print_qsub_usage_exit("qsub: unable to fork");
+    print_qsub_usage_throw("qsub: unable to fork");
 
   return;
   }  /* END interactive() */
@@ -2757,7 +2757,7 @@ void process_opt_L(
   if (strncmp(cmd_arg, "tasks=", 6))
     {
     snprintf(err_buf, sizeof(err_buf), "qsub: illegal -L value: '%s'", cmd_arg);
-    print_qsub_usage_exit(err_buf);
+    print_qsub_usage_throw(err_buf);
     }
 
   // check for errors
@@ -2768,7 +2768,7 @@ void process_opt_L(
   if (r.set_from_submission_string(req_begin, err) != PBSE_NONE)
     {
     snprintf(err_buf, sizeof(err_buf), "qsub: malformed piece of -L value: '%s'", err.c_str());
-    print_qsub_usage_exit(err_buf);
+    print_qsub_usage_throw(err_buf);
     }
 
   if ((cr.req_count() > 0) &&
@@ -2776,7 +2776,7 @@ void process_opt_L(
     {
     snprintf(err_buf, sizeof(err_buf),
       "qsub: cgroup_per_task (cpt) and cgroup_per_host (cph) may only be specified for the first req");
-    print_qsub_usage_exit(err_buf);
+    print_qsub_usage_throw(err_buf);
     }
 
   cr.add_req(r);
@@ -2822,7 +2822,7 @@ int process_opt_d(
         char  err_buf[MAXLINE*2];
         snprintf(err_buf, sizeof(err_buf), "qsub: unable to get cwd: %d (%s)",
             errno, strerror(errno));
-        print_qsub_usage_exit(err_buf);
+        print_qsub_usage_throw(err_buf);
         }
       
       std::string idir(mypwd);
@@ -3183,14 +3183,14 @@ void process_opts(
          * We have already tested for --version and --about, in process_early_opts().
          * Any other opt that has - as the first char is invalid.
          */
-        print_qsub_usage_exit("a single - is not a valid option");
+        print_qsub_usage_throw("a single - is not a valid option");
 
         break;
 
       case 'a':
 
           if ((after = cvtdate(optarg)) < 0)
-            print_qsub_usage_exit("qsub: illegal -a value");
+            print_qsub_usage_throw("qsub: illegal -a value");
 
           sprintf(a_value, "%ld", (long)after);
           hash_add_or_throw(ji->job_attr, ATTR_a, a_value, data_type);
@@ -3215,7 +3215,7 @@ void process_opts(
             optarg++;
 
           if (strlen(optarg) == 0)
-            print_qsub_usage_exit("qsub: illegal -c value");
+            print_qsub_usage_throw("qsub: illegal -c value");
 
           /* OLD FORMAT:  -c { n | s | c | c=X }
            * New format: -c [ { <old format items> | <new items> } ',' ]
@@ -3239,7 +3239,7 @@ void process_opts(
                 *--ptr = 0;
 
               if (csv_find_string(checkpoint_strings, search_string) == NULL)
-                print_qsub_usage_exit("qsub: illegal -c value");
+                print_qsub_usage_throw("qsub: illegal -c value");
               }
             }
 
@@ -3256,7 +3256,7 @@ void process_opts(
       case 'd':
 
         if (process_opt_d(ji, optarg, data_type, tmp_job_info) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -d value");
+          print_qsub_usage_throw("qsub: illegal -d value");
 
         break;
 
@@ -3265,7 +3265,7 @@ void process_opts(
         if (optarg != NULL)
           hash_add_or_throw(ji->job_attr, ATTR_pbs_o_rootdir, optarg, data_type);
         else
-          print_qsub_usage_exit("qsub: illegal -D value");
+          print_qsub_usage_throw("qsub: illegal -D value");
 
         break;
 
@@ -3279,7 +3279,7 @@ void process_opts(
           if ((rc == 0) || (rc == 3))
             hash_add_or_throw(ji->job_attr, ATTR_e, path_out, data_type);
           else
-            print_qsub_usage_exit("qsub: illegal -e value");
+            print_qsub_usage_throw("qsub: illegal -e value");
 
         break;
 
@@ -3311,7 +3311,7 @@ void process_opts(
           {
           char buf[MAXLINE];
           snprintf(buf, sizeof(buf), "qsub: illegal -i value '%s'", optarg);
-          print_qsub_usage_exit(buf);
+          print_qsub_usage_throw(buf);
           }
 
         break;
@@ -3327,7 +3327,7 @@ void process_opts(
         /* FORMAT:  {oe|eo|n} */
 
         if (process_opt_j(ji, optarg, data_type) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -j value");
+          print_qsub_usage_throw("qsub: illegal -j value");
 
         break;
 
@@ -3342,14 +3342,14 @@ void process_opts(
 
         /* FORMAT:  {o|e} */
         if (process_opt_k(ji, optarg, data_type) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -k value");
+          print_qsub_usage_throw("qsub: illegal -k value");
 
         break;
 
       case 'K':
         
         if (process_opt_K(ji, optarg, data_type) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -K value");
+          print_qsub_usage_throw("qsub: illegal -K value");
 
         break;
 
@@ -3357,10 +3357,10 @@ void process_opts(
 
         if ((strstr(optarg, ",procs=") != NULL) &&
             (strstr(optarg, "nodes=") != NULL))
-          print_qsub_usage_exit("qsub: illegal -l value");
+          print_qsub_usage_throw("qsub: illegal -l value");
 
         if (add_verify_resources(ji->res_attr, optarg, data_type) != 0)
-          print_qsub_usage_exit("qsub: illegal -l value");
+          print_qsub_usage_throw("qsub: illegal -l value");
 
           //If cpuclock gets set we need to set the node exclusive flag
           {
@@ -3382,14 +3382,14 @@ void process_opts(
       case 'm':
 
         if (process_opt_m(ji, optarg, data_type) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -m value");
+          print_qsub_usage_throw("qsub: illegal -m value");
 
         break;
 
       case 'M':
 
           if (parse_at_list(optarg, FALSE, FALSE))
-            print_qsub_usage_exit("qsub: illegal -M value");
+            print_qsub_usage_throw("qsub: illegal -M value");
           hash_add_or_throw(ji->job_attr, ATTR_M, optarg, data_type);
         break;
 
@@ -3405,7 +3405,7 @@ void process_opts(
           if (check_job_name(optarg, 0) == 0)
             hash_add_or_throw(ji->job_attr, ATTR_N, optarg, data_type);
           else
-            print_qsub_usage_exit("qsub: illegal -N value");
+            print_qsub_usage_throw("qsub: illegal -N value");
         break;
 
       case 'o':
@@ -3417,13 +3417,13 @@ void process_opts(
           if ((rc == 0) || (rc == 3))
             hash_add_or_throw(ji->job_attr, ATTR_o, path_out, data_type);
           else
-            print_qsub_usage_exit("qsub: illegal -o value");
+            print_qsub_usage_throw("qsub: illegal -o value");
         break;
 
       case 'p':
         
         if (process_opt_p(ji, optarg, data_type) != PBSE_NONE)
-          print_qsub_usage_exit("qsub: illegal -p value");
+          print_qsub_usage_throw("qsub: illegal -p value");
         
         break;
 
@@ -3454,7 +3454,7 @@ void process_opts(
           P_opt = TRUE;
           }
         else
-          print_qsub_usage_exit("qsub: -P requires a user name");
+          print_qsub_usage_throw("qsub: -P requires a user name");
 
         break;
 
@@ -3467,10 +3467,10 @@ void process_opts(
       case 'r':
 
           if (strlen(optarg) != 1)
-            print_qsub_usage_exit("qsub: illegal -r value (y/n)");
+            print_qsub_usage_throw("qsub: illegal -r value (y/n)");
 
           if ((*optarg != 'y') && (*optarg != 'n'))
-            print_qsub_usage_exit("qsub: illegal -r value (y/n)");
+            print_qsub_usage_throw("qsub: illegal -r value (y/n)");
 
           hash_add_or_throw(ji->job_attr, ATTR_r, optarg, data_type);
 
@@ -3479,7 +3479,7 @@ void process_opts(
       case 'S':
 
           if (parse_at_list(optarg, TRUE, TRUE))
-            print_qsub_usage_exit("qsub: illegal -S value");
+            print_qsub_usage_throw("qsub: illegal -S value");
 
         hash_add_or_throw(ji->job_attr, ATTR_S, optarg, data_type);
 
@@ -3502,7 +3502,7 @@ void process_opts(
       case 'u':
 
           if (parse_at_list(optarg, TRUE, FALSE))
-            print_qsub_usage_exit("qsub: illegal -u value");
+            print_qsub_usage_throw("qsub: illegal -u value");
 
           hash_add_or_throw(ji->job_attr, ATTR_u, optarg, data_type);
 
@@ -3526,7 +3526,7 @@ void process_opts(
       case 'w':
 
         if (optarg == NULL)
-          print_qsub_usage_exit("qsub: illegal -w value");
+          print_qsub_usage_throw("qsub: illegal -w value");
         else
           hash_add_or_throw(ji->job_attr, ATTR_init_work_dir, optarg, data_type);
 
@@ -3578,14 +3578,14 @@ void process_opts(
                 {
                 snprintf(err_msg, sizeof(err_msg),
                   "qsub: -W value exceeded max length (%d)", PBS_DEPEND_LEN);
-                print_qsub_usage_exit(err_msg);
+                print_qsub_usage_throw(err_msg);
                 }
               else
                 {
                 snprintf(err_msg, sizeof(err_msg),
                   "qsub: illegal -W dependency value: '%s'", valuewd);
 
-                print_qsub_usage_exit(err_msg);
+                print_qsub_usage_throw(err_msg);
                 }
 
               break;
@@ -3608,7 +3608,7 @@ void process_opts(
               
               len = strlen(valuewd);
               if (len > MAX_RADIX_NUM_LEN)
-                print_qsub_usage_exit("qsub: illegal -W value for job_radix");
+                print_qsub_usage_throw("qsub: illegal -W value for job_radix");
               for (i = 0; i < len; i++)
                 {
                 if (!isdigit(valuewd[i])) /* verify the string is all digits */
@@ -3619,17 +3619,17 @@ void process_opts(
                 {
                 radix_value = atoi(valuewd);
                 if (radix_value < 2)
-                  print_qsub_usage_exit("qsub: illegal -W. job_radix must be >= 2");
+                  print_qsub_usage_throw("qsub: illegal -W. job_radix must be >= 2");
                 else
                   hash_add_or_throw(ji->job_attr, ATTR_job_radix, valuewd, ENV_DATA);
                 }
               else
-                print_qsub_usage_exit("qsub: illegal -W value for job_radix");
+                print_qsub_usage_throw("qsub: illegal -W value for job_radix");
             }
           else if (!strcmp(keyword, ATTR_stagein))
             {
             if (parse_stage_list(valuewd))
-              print_qsub_usage_exit("qsub: illegal -W value for stagein");
+              print_qsub_usage_throw("qsub: illegal -W value for stagein");
             
             if (hash_find(ji->job_attr, ATTR_stagein, &tmp_job_info))
               {
@@ -3659,7 +3659,7 @@ void process_opts(
           else if (!strcmp(keyword, ATTR_stageout))
             {            
             if (parse_stage_list(valuewd))
-              print_qsub_usage_exit("qsub: illegal -W value for stageout");
+              print_qsub_usage_throw("qsub: illegal -W value for stageout");
             
             if (hash_find(ji->job_attr, ATTR_stageout, &tmp_job_info))
               {
@@ -3693,7 +3693,7 @@ void process_opts(
           else if (!strcmp(keyword, ATTR_g))
             {
             if (parse_at_list(valuewd, TRUE, FALSE))
-              print_qsub_usage_exit("qsub: illegal -W value grouplist");
+              print_qsub_usage_throw("qsub: illegal -W value grouplist");
 
             if (hash_find(ji->client_attr, "validate_group", &tmp_job_info))
               {
@@ -3702,7 +3702,7 @@ void process_opts(
                 alloc_len = 80 + strlen(valuewd);
                 calloc_or_throw(&err_msg, alloc_len, "-W attribute");
                 snprintf(err_msg, alloc_len, "qsub: User isn't a member of one or more groups in %s", valuewd);
-                print_qsub_usage_exit(err_msg);
+                print_qsub_usage_throw(err_msg);
                 }
               }
             hash_add_or_throw(ji->job_attr, ATTR_g, valuewd, data_type);
@@ -3711,7 +3711,7 @@ void process_opts(
             {
             /* specify interactive job */
             if (strcmp(valuewd, "true") != 0)
-              print_qsub_usage_exit("qsub: illegal -W value");
+              print_qsub_usage_throw("qsub: illegal -W value");
 
             hash_add_or_throw(ji->job_attr, ATTR_inter, interactive_port(&inter_sock), data_type);
             }
@@ -3727,7 +3727,7 @@ void process_opts(
               alloc_len = 80 + strlen(valuewd);
               calloc_or_throw(&err_msg, alloc_len, "-W attribute");
               snprintf(err_msg, alloc_len, "qsub: Invalid umask value, too many digits: %s", valuewd);
-              print_qsub_usage_exit(err_msg);
+              print_qsub_usage_throw(err_msg);
               }
             
             if (valuewd[0] == '0')
@@ -3774,7 +3774,7 @@ void process_opts(
                 alloc_len = 80 + strlen(ATTR_f) + strlen(valuewd);
                 calloc_or_throw(&err_msg, alloc_len, "-W attribute");
                 snprintf(err_msg, alloc_len, "qsub: invalid %s value: %s", ATTR_f, valuewd);
-                print_qsub_usage_exit(err_msg);
+                print_qsub_usage_throw(err_msg);
 
               }
             }
@@ -3786,7 +3786,7 @@ void process_opts(
             if (add_verify_resources(ji->res_attr, to_process, data_type) != 0)
               {
               free(to_process);
-              print_qsub_usage_exit("qsub: illegal -l value (mppnodes is processed as a -l value)");
+              print_qsub_usage_throw("qsub: illegal -l value (mppnodes is processed as a -l value)");
               }
 
             free(to_process);
@@ -3809,7 +3809,7 @@ void process_opts(
           }  /* END while (i == 1) */
 
         if (i == -1)
-          print_qsub_usage_exit("qsub: illegal -W value");
+          print_qsub_usage_throw("qsub: illegal -W value");
 
         break;
 
@@ -3820,7 +3820,7 @@ void process_opts(
         if (hash_find(ji->user_attr, "DISPLAY", &tmp_job_info))
           hash_add_or_throw(ji->client_attr, "DISPLAY", tmp_job_info->value.c_str(), LOGIC_DATA);
         else
-          print_qsub_usage_exit("qsub: DISPLAY not set");
+          print_qsub_usage_throw("qsub: DISPLAY not set");
 
         break;
 
@@ -3828,7 +3828,7 @@ void process_opts(
       
         if (!(hash_find(ji->job_attr, ATTR_inter, &tmp_job_info)))
           {
-          print_qsub_usage_exit("qsub: '-x' invalid on non-interactive job");
+          print_qsub_usage_throw("qsub: '-x' invalid on non-interactive job");
           }
 
         if (hash_find(ji->client_attr, "cmdline_script", &tmp_job_info))
@@ -3837,7 +3837,7 @@ void process_opts(
           }
         else
           {
-          print_qsub_usage_exit("qsub: '-x' used without a script specified");
+          print_qsub_usage_throw("qsub: '-x' used without a script specified");
           }
 
         break;
@@ -3858,11 +3858,11 @@ void process_opts(
           alloc_len = 80 + strlen(optarg);
           calloc_or_throw(&err_msg, alloc_len, "unknown attribute flag");
           snprintf(err_msg, alloc_len, "qsub: invalid attribute flag (%c) value: %s", c, optarg);
-          print_qsub_usage_exit(err_msg);
+          print_qsub_usage_throw(err_msg);
           }
         else
           {
-          print_qsub_usage_exit("exiting");
+          print_qsub_usage_throw("exiting");
           }
 
         break;
@@ -3872,7 +3872,7 @@ void process_opts(
   if ((J_opt == TRUE) && 
       (P_opt != TRUE))
     {
-    print_qsub_usage_exit("The -J option can only be used in conjunction with -P");
+    print_qsub_usage_throw("The -J option can only be used in conjunction with -P");
     }
 
 
@@ -3901,7 +3901,7 @@ void process_opts(
           rc<=2?"could not create":"unable to write to", tmp_name);
       if (rc >= 2)
         unlink(tmp_name);
-      print_qsub_usage_exit(err_msg);
+      print_qsub_usage_throw(err_msg);
       }
     fclose(fP);
     fP = NULL;
@@ -3916,7 +3916,7 @@ void process_opts(
         calloc_or_throw(&err_msg, alloc_len, "qsub: could not create tmp job file");
         snprintf(err_msg, alloc_len, "qsub: could not create tmp job file %s", tmp_name2);
         unlink(tmp_name);
-        print_qsub_usage_exit(err_msg);
+        print_qsub_usage_throw(err_msg);
         }
 
       close(tmpfd);
@@ -3970,7 +3970,7 @@ void process_opts(
       unlink(tmp_name2);
       unlink(tmp_name);
       if (alloc_len != 0)
-        print_qsub_usage_exit(err_msg);
+        print_qsub_usage_throw(err_msg);
 
 
       }  /* END if (stat(PBS_Filter,&sfilter) != -1) */
@@ -4036,7 +4036,7 @@ void process_opts(
           case 'l':
 
             if (add_verify_resources(ji->res_attr, vptr, FILTER_DATA))
-              print_qsub_usage_exit("qsub: illegal -l value");
+              print_qsub_usage_throw("qsub: illegal -l value");
 
             break;
 
@@ -4230,7 +4230,7 @@ void process_config_file(
     if ((param_val = get_trq_param("VALIDATEGROUP", torque_cfg_buf)) != NULL)
       {
       if (getgrgid(getgid()) == NULL)
-        print_qsub_usage_exit("qsub: cannot validate submit group.");
+        print_qsub_usage_throw("qsub: cannot validate submit group.");
 
       hash_add_or_throw(ji->client_attr, "validate_group", param_val, CONFIG_DATA);
       }
@@ -4294,7 +4294,7 @@ void process_config_file(
  * display the qsub usage information
  * exit
  */
-void print_qsub_usage_exit(const char *error_msg)
+void print_qsub_usage_throw(const char *error_msg)
   {
   static char usage[] =
     "usage: qsub [-a date_time] [-A account_string] [-b secs]\n\
@@ -4311,9 +4311,9 @@ void print_qsub_usage_exit(const char *error_msg)
   static char usage2[] =
     "    [-W additional_attributes] [-v variable_list] [-V ] [-x] [-X] [-z] [script]\n";
     
-  fprintf(stderr,"[%s]\n\n%s%s\n", error_msg, usage, usage2);
+  sprintf(error_str,"[%s]\n\n%s%s\n", error_msg, usage, usage2);
 
-  exit(2);
+  throw std::runtime_error(error_str);
   }
 
 void add_submit_args_to_job(
@@ -4466,8 +4466,8 @@ void process_early_opts(
         }
       else if (strcmp(name, "version") == 0)
         {
-        fprintf(stdout, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);
-        throw std::runtime_error("");//functions as exit(0)
+        sprintf(error_str, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);
+        throw std::runtime_error(error_str);
         }
       }
     }
@@ -4614,12 +4614,12 @@ void main_func(
   /* check/set submit filter_path */
   if (validate_submit_filter(ji.job_attr) == -1)
     {
-     hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
-     fprintf(stderr,
+    hash_find(ji.job_attr, ATTR_pbs_o_submit_filter, &tmp_job_info);
+    sprintf(error_str,
              "qsub: invalid submit filter: \"%s\"\n",
              tmp_job_info->value.c_str());
 
-     exit(1);
+     throw std::runtime_error(error_str);
     }
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
@@ -4670,7 +4670,7 @@ void main_func(
         {
         unlink(script_tmp);
 
-        exit(1);
+        throw std::runtime_error("failed to get script"); 
         }
 
       }
@@ -4681,18 +4681,16 @@ void main_func(
 
     if (stat(script, &statbuf) < 0)
       {
-      fprintf(stderr, "qsub: script file '%s' cannot be loaded - %s\n",
+      sprintf(error_str, "qsub: script file '%s' cannot be loaded - %s\n",
               script,
               strerror(errno));
 
-      exit(1);
+      throw std::runtime_error(error_str);
       }
 
     if (!S_ISREG(statbuf.st_mode))
       {
-      fprintf(stderr, "qsub: script not a file\n");
-
-      exit(1);
+      throw std::runtime_error("qsub: script not a file\n");
       }
 
     if ((script_fp = fopen(script, "r")) != NULL)
@@ -4707,7 +4705,7 @@ void main_func(
         if (check_job_name(bnp, 0) == 0)
           hash_add_or_throw(ji.job_attr, ATTR_N, bnp, CMDLINE_DATA);
         else
-          print_qsub_usage_exit("qsub: cannot form a valid job name from the script name");
+          print_qsub_usage_throw("qsub: cannot form a valid job name from the script name");
         }
 
       /* (3) */
@@ -4727,7 +4725,7 @@ void main_func(
     else
       {
       unlink(script_tmp);
-      print_qsub_usage_exit("qsub: opening script file:");
+      print_qsub_usage_throw("qsub: opening script file:");
       }
     }    /* END else (!strcmp(script,"") || !strcmp(script,"-")) */
  
@@ -4735,7 +4733,7 @@ void main_func(
   process_opts(argc, argv, &ji, CMDLINE_DATA);
 
   if (((optind + 1) < argc) && (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE))
-    print_qsub_usage_exit("index issues");
+    print_qsub_usage_throw("index issues");
   
   post_check_attributes(&ji, script_tmp);
 
@@ -4762,7 +4760,7 @@ void main_func(
                 x11authstr);
       }
     else
-      print_qsub_usage_exit("qsub: Failed to get xauth data (check $DISPLAY variable)");
+      print_qsub_usage_throw("qsub: Failed to get xauth data (check $DISPLAY variable)");
     }
 
 
@@ -4906,7 +4904,7 @@ void main_func(
     {
     pbs_disconnect(sock_num);
     unlink(script_tmp);
-    print_qsub_usage_exit("unable to catch signals");
+    print_qsub_usage_throw("unable to catch signals");
     }
 
   // If we are doing an interactive job, don't send the job script even if one exists
