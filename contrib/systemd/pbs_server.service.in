@@ -8,6 +8,8 @@ After=trqauthd.service network.target local-fs.target rsyslog.target
 Type=simple
 User=root
 
+LimitCORE=infinity
+
 # Let systemd guess the pid.
 #
 # PIDFile should not be set to PBS_HOME/server_priv/server.lock

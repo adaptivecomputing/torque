@@ -8,6 +8,8 @@ After=network.target local-fs.target syslog.target
 Type=simple
 User=root
 
+LimitCORE=infinity
+
 ExecStart=@sbindir@/trqauthd -F
 ExecStop=-@sbindir@/trqauthd -d
 
