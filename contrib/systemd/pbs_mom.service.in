@@ -11,6 +11,7 @@ User=root
 LimitNOFILE=32768
 LimitMEMLOCK=infinity
 LimitSTACK=12582912
+LimitCORE=infinity
 
 Environment=PBS_HOME=@PBS_HOME@
 Environment=PBS_ARGS=
