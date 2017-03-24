@@ -230,6 +230,7 @@ enum srv_atr
   SRV_ATR_CgroupPerTask,
   SRV_ATR_NoteAppendOnError,
   SRV_ATR_DefaultGpuMode,
+  SRV_ATR_SendmailPath,
 
   /* This must be last */
   SRV_ATR_LAST

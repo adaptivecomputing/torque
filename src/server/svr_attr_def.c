@@ -1638,4 +1638,17 @@ attribute_def svr_attr_def[] =
    PARENT_TYPE_SERVER
   },
 
+  /* SRV_ATR_SendmailPath */
+  {(char *)ATTR_sendmail_path, // "sendmail_path"
+    	decode_str,
+    	encode_str,
+    	set_str,
+    	comp_str,
+    	free_str,
+    	NULL_FUNC,
+    	MGR_ONLY_SET,
+    	ATR_TYPE_STR,
+    	PARENT_TYPE_SERVER
+  },
+
   };
