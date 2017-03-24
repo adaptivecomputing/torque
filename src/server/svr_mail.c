@@ -226,6 +226,7 @@ int get_sendmail_args(
   int         rc = PBSE_NONE;
   int         numargs = 0;
   const char *mailfrom = NULL;
+  const char *sendmail_path = NULL;
   char       *mailptr;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
@@ -247,7 +248,17 @@ int get_sendmail_args(
       }
     }
 
-  sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+  // see if sendmail path server attribute set
+  get_svr_attr_str(SRV_ATR_SendmailPath, (char **)&sendmail_path);
+  if (sendmail_path != NULL)
+    {
+    sendmail_args[numargs++] = (char *)sendmail_path;
+    }
+  else
+    {
+    sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+    }
+
   sendmail_args[numargs++] = (char *)"-f";
   sendmail_args[numargs++] = (char *)mailfrom;
 

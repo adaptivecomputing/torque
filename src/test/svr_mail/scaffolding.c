@@ -26,6 +26,7 @@ pthread_mutex_t *listener_command_mutex;
 int listening_socket;
 threadpool_t *task_pool;
 int called;
+bool get_svr_attr_str_return_svr_sm_attr = false;
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
@@ -147,6 +148,12 @@ int get_svr_attr_str(
 
   {
   static char *bodyfmt = strdup("Zaphod");
+
+  if (get_svr_attr_str_return_svr_sm_attr)
+    {
+    *str = server.sv_attr[SRV_ATR_SendmailPath].at_val.at_str;
+    return(0);
+    }
 
   if ((index == SRV_ATR_MailBodyFmt) &&
       (empty_body == true))
