@@ -341,6 +341,7 @@
 #define ATTR_pass_cpu_clock           "pass_cpu_clock"
 #define ATTR_request_version          "request_version"
 #define ATTR_req_information          "req_information"
+#define ATTR_sendmail_path            "sendmail_path"
 /* additional node "attributes" names */
 
 #define ATTR_NODE_state                "state"
