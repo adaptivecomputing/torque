@@ -337,7 +337,7 @@ class Machine
     int get_total_gpus() const;
     int getAvailableSockets() const;
     int getAvailableChips() const;
-    int getAvailableMemory() const;
+    hwloc_uint64_t getAvailableMemory() const;
     int getAvailableCores() const;
     int getAvailableThreads() const;
     int getDedicatedSockets() const;
@@ -367,6 +367,7 @@ class Machine
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
     bool is_initialized() const;
     void reinitialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
+    void compare_remaining_values(allocation &remaining, const char *caller) const;
   };
 
 extern Machine this_node;
