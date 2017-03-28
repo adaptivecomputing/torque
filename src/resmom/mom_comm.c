@@ -2629,10 +2629,7 @@ int im_join_job_as_sister(
       }
     }
 
-  bool good;
-
-  good = check_pwd(pjob);
-  if (good == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     /* log_buffer populated in check_pwd() */
     
