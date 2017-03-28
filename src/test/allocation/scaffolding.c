@@ -14,6 +14,8 @@ const char *place_legacy2 = "legacy2";
 
 const char *use_cores = "usecores";
 
+int         tc = 1;
+
 std::string req::getPlacementType() const
   {
   return("");
@@ -31,6 +33,11 @@ int req::getExecutionSlots() const
 
   {
   return(2);
+  }
+
+int req::getTaskCount() const
+  {
+  return(tc);
   }
 
 std::string req::getThreadUsageString() const

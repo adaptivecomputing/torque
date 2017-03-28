@@ -1027,7 +1027,7 @@ double Chip::how_many_tasks_fit(
     else
       cpu_tasks = this->availableThreads / max_cpus;
 
-    unsigned long memory = r.getMemory();
+    unsigned long memory = r.getMemory() / r.getTaskCount();
 
     // Memory isn't required for submission
     if (memory != 0)
@@ -1432,7 +1432,7 @@ bool Chip::task_will_fit(
   {
   bool           fits = false;
   int            max_cpus = r.getExecutionSlots();
-  hwloc_uint64_t mem_per_task = r.getMemory();
+  hwloc_uint64_t mem_per_task = r.getMemory() / r.getTaskCount();
   int            gpus_per_task = r.get_gpus();
   int            mics_per_task = r.getMics();
   bool           cores_only = (r.getThreadUsageString() == use_cores);
@@ -2058,7 +2058,7 @@ int Chip::place_task(
   allocation     chip_alloc(master.jobid.c_str());
   int            tasks_placed = 0;
   int            execution_slots_per_task = r.getExecutionSlots();
-  hwloc_uint64_t mem_per_task = r.getMemory();
+  hwloc_uint64_t mem_per_task = r.getMemory() / r.getTaskCount();
   int            practical_place = master.place_type;
 
   chip_alloc.place_type = master.place_type;

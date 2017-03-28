@@ -66,6 +66,11 @@ hwloc_uint64_t Socket::getMemory() const
   return(sock_mem);
   }
 
+hwloc_uint64_t Socket::getAvailableMemory() const
+  {
+  return(sock_mem);
+  }
+
 hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
 
   unsigned long diff,
@@ -245,6 +250,11 @@ int Socket::get_total_gpus() const
 unsigned long req::getMemory() const
   {
   return(req_mem);
+  }
+
+int req::getTaskCount() const
+  {
+  return(1);
   }
 
 int req::getPlaceCores() const

@@ -686,6 +686,17 @@ START_TEST(test_how_many_tasks_fit)
   c.setMemory(5);
   tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
+  
+  // Make sure we handle memory per task
+  req rpt;
+  rpt.set_value("lprocs", "1", false);
+  rpt.set_value("memory", "5kb", false);
+  tasks = c.how_many_tasks_fit(rpt, 0);
+  fail_unless(tasks == 1, "%d tasks fit, expected 1", tasks);
+
+  rpt.set_value("task_count", "5", false);
+  tasks = c.how_many_tasks_fit(rpt, 0);
+  fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
 
   thread_type = use_cores;
   // Cores are currently 0

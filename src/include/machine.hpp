@@ -333,7 +333,7 @@ class Machine
     int get_total_gpus() const;
     int getAvailableSockets() const;
     int getAvailableChips() const;
-    int getAvailableMemory() const;
+    hwloc_uint64_t getAvailableMemory() const;
     int getAvailableCores() const;
     int getAvailableThreads() const;
     int getDedicatedSockets() const;
@@ -361,6 +361,7 @@ class Machine
     void update_internal_counts();
     void populate_job_ids(std::vector<std::string> &job_ids) const;
     bool check_if_possible(int &sockets, int &numa_nodes, int &cores, int &threads) const;
+    void compare_remaining_values(allocation &remaining, const char *caller) const;
   };
 
 extern Machine this_node;

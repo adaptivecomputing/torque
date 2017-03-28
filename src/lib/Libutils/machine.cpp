@@ -375,6 +375,16 @@ hwloc_uint64_t Machine::getTotalMemory() const
   return(this->totalMemory);
   }
 
+hwloc_uint64_t Machine::getAvailableMemory() const
+  {
+  hwloc_uint64_t available = 0;
+
+  for (size_t i = 0; i < this->sockets.size(); i++)
+    available += this->sockets[i].getAvailableMemory();
+
+  return(available);
+  }
+
 int Machine::getTotalSockets() const
   {
   return(this->totalSockets);
@@ -568,6 +578,61 @@ void Machine::place_all_execution_slots(
 
 
 /*
+ * compare_remaining_values()
+ *
+ * Looks at what couldn't be placed in the allocation remaining and logs an appropriate message.
+ * @param remaining - the allocation that couldn't be completely placed.
+ * @param caller - the name of the calling function.
+ */
+
+void Machine::compare_remaining_values(
+
+  allocation &remaining,
+  const char *caller) const
+
+  {
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string error;
+
+  if (remaining.cpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d cpus, have %d/%d cores and threads available. ",
+      remaining.cpus, this->getAvailableCores(), this->getAvailableThreads());
+    error += log_buf;
+    }
+
+  if (remaining.memory != 0)
+    {
+    sprintf(log_buf, "Couldn't place %lukb memory, have %lukb available. ",
+      remaining.memory, (unsigned long)this->getAvailableMemory());
+    error += log_buf;
+    }
+
+  if (remaining.mics != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d mics. ", remaining.mics);
+    error += log_buf;
+    }
+
+  if (remaining.gpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d gpus. ", remaining.gpus);
+    error += log_buf;
+    }
+
+  if (remaining.place_cpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d place cpus, have %d/%d cores and threads available. ",
+      remaining.place_cpus, this->getAvailableCores(), this->getAvailableThreads());
+    error += log_buf;
+    }
+  
+  log_err(-1, caller, error.c_str());
+  } // END compare_remaining_values()
+
+
+
+/*
  * place_remaining()
  *
  * Places any tasks remaining - these tasks don't fit within a single numa node
@@ -684,9 +749,12 @@ void Machine::place_remaining(
       master.set_place_type(place_legacy);
       }
 
+    // If it didn't get placed, log what prevented it from being placed
     if (fit_somewhere == false)
+      {
+      compare_remaining_values(remaining, __func__);
       break;
-
+      }
    
     remaining_tasks--;
     }
@@ -828,7 +896,7 @@ int Machine::spread_place(
   else
     {
     // Make sure we are grabbing enough memory
-    unsigned long mem_needed = r.getMemory();
+    unsigned long mem_needed = r.getMemory() / r.getTaskCount();
     unsigned long mem_count = 0;
     int           mem_quantity = 0;
 
