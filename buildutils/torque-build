@@ -213,7 +213,7 @@ then
     usage
 fi
 
-if [ $cgroups -ne 0]
+if [ $cgroups -ne 0 ]
 then
   configure_options="$configure_options --enable-cgroups"
 fi
