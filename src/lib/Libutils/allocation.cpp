@@ -159,7 +159,7 @@ allocation::allocation(
 
   {
   this->cpus = r.getExecutionSlots();
-  this->memory = r.getMemory();
+  this->memory = r.getMemory() / r.getTaskCount();
   this->gpus = r.get_gpus();
   this->mics = r.getMics();
 

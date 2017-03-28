@@ -137,11 +137,16 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-req::req() : mem(0), cores(0), threads(0), gpus(0), mics(0) {}
+req::req() : mem(0), cores(0), threads(0), gpus(0), mics(0), task_count(1) {}
 
 unsigned long req::getMemory() const
   {
   return(this->mem);
+  }
+
+int req::getTaskCount() const
+  {
+  return(this->task_count);
   }
 
 int req::getPlaceCores() const
@@ -180,6 +185,8 @@ int req::set_value(const char *name, const char *value, bool is_default)
     this->gpus = atoi(value);
   else if (!strcmp(name, MICS))
     this->mics = atoi(value);
+  else if (!strcmp(name, "task_count"))
+    this->task_count = atoi(value);
 
   return(0);
   }

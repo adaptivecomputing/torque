@@ -2550,6 +2550,7 @@ void req::clear_allocations()
 
   {
   this->task_allocations.clear();
+  this->hostlist.clear();
   } // END clear_allocations()
 
 
