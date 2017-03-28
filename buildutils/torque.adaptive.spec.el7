@@ -574,10 +574,10 @@ echo '$pbsserver __AC_HOSTNAME_NOT_SET__' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
 %{__mkdir_p} %{buildroot}/etc/profile.d
-echo 'test -d ${_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
+echo 'test -d %{_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
 echo 'test `id -u` = 0 && test -d %{_sbindir} && export PATH=%{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.sh
-echo 'test -d ${_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
-echo 'test `id -u` = 0 && test-d ${_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
+echo 'test -d %{_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
+echo 'test `id -u` = 0 && test -d %{_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
 
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0
