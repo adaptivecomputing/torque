@@ -3435,13 +3435,15 @@ void removeBeforeAnyDependencies(
   if (pLockedJob != NULL)
     {
     mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+    job_mutex.set_unlock_on_exit(false);
+
     pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
     struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
     if (pDep != NULL)
       {
-
       unsigned int dp_jobs_size = pDep->dp_jobs.size();
+
       for (unsigned int i = 0; i < dp_jobs_size; i++)
         {
         depend_job *pDepJob = pDep->dp_jobs[i];
