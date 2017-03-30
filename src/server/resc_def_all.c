@@ -1466,10 +1466,12 @@ int verify_as_time(
   int            mode)
 
   {
-  if (pattr->at_val.at_str != NULL)
+  if (r->rs_value.at_val.at_str != NULL)
     {
-    if (time_str_to_seconds(pattr->at_val.at_str) < 0)
+    if (time_str_to_seconds(r->rs_value.at_val.at_str) < 0)
+      {
       return(-1);
+      }
     }
 
   return(PBSE_NONE);
