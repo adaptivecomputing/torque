@@ -3401,7 +3401,9 @@ void removeBeforeAnyDependencies(
   job        *pLockedJob = *pjob_ptr;
   std::string jobid(pLockedJob->ji_qs.ji_jobid);
 
-  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+  mutex_mgr job_mutex(pLockedJob->ji_mutex, true);
+  job_mutex.set_unlock_on_exit(false);
+  
   pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_BEFOREANY,pattr);
