@@ -116,6 +116,7 @@ extern char            *auto_ideal_load;
 extern char            *auto_max_load;
 extern int              exec_with_exec;
 extern int              ServerStatUpdateInterval;
+extern int              varattr_tv;
 extern char            *AllocParCmd;
 extern char             PBSNodeCheckPath[];
 extern int              PBSNodeCheckProlog;

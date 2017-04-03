@@ -89,6 +89,7 @@ struct config   *config_array = NULL;
 char           **maskclient = NULL; /* wildcard connections */
 char             PBSNodeCheckPath[MAXLINE];
 int       CheckPollTime;
+int varattr_tv;
 char             rcp_args[MAXPATHLEN];
 long      log_file_max_size;
 char             mom_host[PBS_MAXHOSTNAME + 1];
@@ -1141,3 +1142,4 @@ int read_all_devices()
   {
   return(PBSE_NONE);
   }
+
