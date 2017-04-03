@@ -5136,6 +5136,13 @@ int setup_program_environment(void)
 
     exit(1);
     }
+  if(varattr_tv != -1 && varattr_tv < ServerStatUpdateInterval)
+    {
+    sprintf(log_buffer,
+      "WARNING: varattr time value of %i is less than server update interval of ($status_update_time) %i. Varattr will only be run after the server update interval. Suggest setting varattr time to a multiple of server update interval\n",
+      varattr_tv, ServerStatUpdateInterval);
+    log_record(PBSE_NONE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buffer);
+    }
 
 #ifdef PENABLE_LINUX26_CPUSETS
   rc = initialize_hwloc_topology();

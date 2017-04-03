@@ -129,6 +129,7 @@ double           cputfactor = 1.00;
 float            ideal_load_val = -1.0;
 int              exec_with_exec = 0;
 int              ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int              varattr_tv = -1;
 float            max_load_val = -1.0;
 char            *auto_ideal_load = NULL;
 char            *auto_max_load   = NULL;
@@ -969,7 +970,7 @@ u_long setvarattr(
   ptr = value;
 
   pva->va_ttl = strtol(ptr, NULL, 10);
-
+  varattr_tv = pva->va_ttl;
   /* step forward to end of TTL */
 
   while ((!isspace(*ptr)) &&
@@ -3275,7 +3276,6 @@ const char *reqgres(
 
     strncat(GResBuf, tmpLine, (sizeof(GResBuf) - strlen(GResBuf) - 1));
     }  /* END for (cp) */
-
   return(GResBuf);
   }  /* END reqgres() */
 
