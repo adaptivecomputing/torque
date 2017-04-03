@@ -145,13 +145,13 @@ START_TEST(test_get_set_values)
   req r;
 
   r.set_value("index", "0", false);
+  r.set_value("task_count", "5", false);
   r.set_value("lprocs", "all", false);
   r.set_value("memory", "1024mb", false);
   r.set_value("swap", "1024kb", false);
   r.set_value("disk", "10000000kb", false);
   r.set_value("socket", "1", false);
   r.set_value("gpus", "2", false);
-  r.set_value("task_count", "5", false);
   r.set_value("gpu_mode", "exclusive_thread", false);
   r.set_value("mics", "1", false);
   r.set_value("thread_usage_policy", "use threads", false);
@@ -173,38 +173,42 @@ START_TEST(test_get_set_values)
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
   fail_unless(names[2] == "memory.0");
-  fail_unless(names[3] == "swap.0");
-  fail_unless(names[4] == "disk.0");
-  fail_unless(names[5] == "socket.0");
-  fail_unless(names[6] == "gpus.0");
-  fail_unless(names[7] == "gpu_mode.0");
-  fail_unless(names[8] == "mics.0");
-  fail_unless(names[9] == "thread_usage_policy.0", names[9].c_str());
-  fail_unless(names[10] == "reqattr.0");
-  fail_unless(names[11] == "gres.0");
-  fail_unless(names[12] == "opsys.0");
-  fail_unless(names[13] == "arch.0");
-  fail_unless(names[14] == "features.0", names[14].c_str());
-  fail_unless(names[15] == "single_job_access.0");
-  fail_unless(names[16] == "hostlist.0", names[16].c_str());
+  fail_unless(names[3] == "memory_per_task.0");
+  fail_unless(names[4] == "swap.0");
+  fail_unless(names[5] == "swap_per_task.0");
+  fail_unless(names[6] == "disk.0");
+  fail_unless(names[7] == "socket.0");
+  fail_unless(names[8] == "gpus.0");
+  fail_unless(names[9] == "gpu_mode.0");
+  fail_unless(names[10] == "mics.0");
+  fail_unless(names[11] == "thread_usage_policy.0", names[9].c_str());
+  fail_unless(names[12] == "reqattr.0");
+  fail_unless(names[13] == "gres.0");
+  fail_unless(names[14] == "opsys.0");
+  fail_unless(names[15] == "arch.0");
+  fail_unless(names[16] == "features.0", names[14].c_str());
+  fail_unless(names[17] == "single_job_access.0");
+  fail_unless(names[18] == "hostlist.0", names[16].c_str());
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
   fail_unless(values[2] == "1048576kb", "value: %s", values[2].c_str());
-  fail_unless(values[3] == "1024kb");
-  fail_unless(values[4] == "10000000kb");
-  fail_unless(values[5] == "1");
-  fail_unless(values[6] == "2");
-  fail_unless(values[7] == "exclusive_thread");
-  fail_unless(values[8] == "1");
-  fail_unless(values[9] == "use threads");
-  fail_unless(values[10] == "matlab>7");
-  fail_unless(values[11] == "gresA");
-  fail_unless(values[12] == "ubuntu");
-  fail_unless(values[13] == "64bit");
-  fail_unless(values[14] == "fast");
-  fail_unless(values[15] == "true");
-  fail_unless(values[16] == "napali:ppn=32");
+  fail_unless(values[3] == "209715kb", "value: %s", values[3].c_str());
+  fail_unless(values[4] == "1024kb");
+  fail_unless(values[5] == "204kb");
+  fail_unless(values[6] == "10000000kb");
+  fail_unless(values[7] == "1");
+  fail_unless(values[8] == "2");
+  fail_unless(values[9] == "exclusive_thread");
+  fail_unless(values[10] == "1");
+  fail_unless(values[11] == "use threads");
+  fail_unless(values[12] == "matlab>7");
+  fail_unless(values[13] == "gresA");
+  fail_unless(values[14] == "ubuntu");
+  fail_unless(values[15] == "64bit");
+  fail_unless(values[16] == "fast");
+  fail_unless(values[17] == "true");
+  fail_unless(values[18] == "napali:ppn=32");
 
   req r2;
   r2.set_value("lprocs", "2", false);
@@ -367,7 +371,8 @@ START_TEST(test_constructors)
   fail_unless(r2.getGres() == "matlab=1");
   fail_unless(r2.getDisk() == 0);
   fail_unless(r2.getSwap() == 0);
-  fail_unless(r2.getMemory() == 12 * 1024 * 1024);
+  fail_unless(r2.getMemory() == 12 * 1024 * 1024 * 5);
+  fail_unless(r2.get_memory_per_task() == 12 * 1024 * 1024);
   fail_unless(r2.getExecutionSlots() == 4);
   fail_unless(r2.getFeatures() == "fast", "features '%s'", r2.getFeatures().c_str());
 
@@ -379,7 +384,8 @@ START_TEST(test_constructors)
   fail_unless(copy_r2.getGres() == "matlab=1");
   fail_unless(copy_r2.getDisk() == 0);
   fail_unless(copy_r2.getSwap() == 0);
-  fail_unless(copy_r2.getMemory() == 12 * 1024 * 1024);
+  fail_unless(copy_r2.getMemory() == 12 * 1024 * 1024 * 5);
+  fail_unless(copy_r2.get_memory_per_task() == 12 * 1024 * 1024);
   fail_unless(copy_r2.getExecutionSlots() == 4);
   fail_unless(copy_r2.getFeatures() == "fast", "features '%s'", copy_r2.getFeatures().c_str());
  
@@ -520,6 +526,7 @@ START_TEST(test_set_from_string)
   fail_unless(r.getFeatures() == "fast");
   fail_unless(r.getExecutionSlots() == ALL_EXECUTION_SLOTS);
   fail_unless(r.getMemory() == 10000);
+  fail_unless(r.get_memory_per_task() == 10000 / 10, "%d per task", r.get_memory_per_task());
   fail_unless(r.getSwap() == 1024);
   fail_unless(r.getDisk() == 10000000);
   fail_unless(r.getTaskCount() == 10);
@@ -582,10 +589,10 @@ START_TEST(test_get_memory_for_host)
   unsigned long mem;
 
   r.set_value("index", "0", false);
+  r.set_value("task_count", "5", false);
   r.set_value("lprocs", "all", false);
   r.set_value("memory", "1024kb", false);
   r.set_value("swap", "1024kb", false);
-  r.set_value("task_count", "5", false);
   r.set_value("thread_usage_policy", "use threads", false);
   r.set_value("hostlist", "napali:ppn=32", false);
   

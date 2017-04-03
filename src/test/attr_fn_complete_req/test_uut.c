@@ -66,12 +66,12 @@ START_TEST(test_decode_encode_complete_req)
   called_encode = 0;
   fail_unless(encode_complete_req(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
 
-  // we set 2 attributes + there are 2 that should go by default
-  fail_unless(called_encode == 4, "encoded %d", called_encode);
+  // we set 2 attributes + there are 2 that should go by default + mem_per_task
+  fail_unless(called_encode == 5, "encoded %d", called_encode);
   pattr.at_val.at_ptr = NULL;
   fail_unless(encode_complete_req(&pattr, NULL, NULL, NULL, 0, 0) == PBSE_NONE);
   // make sure we didn't encode anything new
-  fail_unless(called_encode == 4);
+  fail_unless(called_encode == 5);
   }
 END_TEST
 
