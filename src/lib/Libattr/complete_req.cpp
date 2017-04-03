@@ -143,10 +143,12 @@ complete_req::complete_req(
       }
     }
 
+  if (task_count == 0)
+    task_count = 1;
+
   // Set mem_per_task and swap_per_task from mem_values
   unsigned long long mem_per_task = mem_values[_MEM_];
-  if (task_count != 0)
-    mem_per_task /= task_count;
+  mem_per_task /= task_count;
 
   if (this->reqs.size() > 0)
     {
@@ -166,8 +168,7 @@ complete_req::complete_req(
     }
 
   unsigned long long vmem_per_task = mem_values[_VMEM_];
-  if (task_count != 0)
-    vmem_per_task /= task_count;
+  vmem_per_task /= task_count;
 
   if (this->reqs.size() > 0)
     {
@@ -191,7 +192,7 @@ complete_req::complete_req(
     // Handle the case where no -lnodes request was made
     // Distribute the memory across the tasks as -l memory is per job
     req r;
-    if (task_count != 0)
+    if (task_count > 1)
       {
       r.set_task_count(task_count);
       r.set_placement_type(place_legacy);

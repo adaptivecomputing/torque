@@ -117,7 +117,9 @@ class req
   {
     int               execution_slots;
     unsigned long     mem;
+    unsigned long     mem_per_task;
     unsigned long     swap;
+    unsigned long     swap_per_task;
     unsigned long     disk;
     int               nodes;
     int               socket;
