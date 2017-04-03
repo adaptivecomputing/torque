@@ -155,6 +155,7 @@
 #define FALSE 0
 #endif
 
+#define ARRAY_ROUTING_RETRY_SECONDS 45
 #define MAXLINE 1024
 extern int LOGLEVEL;
 
@@ -195,8 +196,6 @@ extern char *path_checkpoint;
 extern char *path_jobinfo_log;
 extern char *log_file;
 extern char *job_log_file;
-
-extern sem_t *job_clone_semaphore;
 
 static void send_qsub_delmsg(
 
@@ -1106,7 +1105,6 @@ int create_and_queue_array_subjob(
 
     if ((pa = get_array(arrayid.c_str())) == NULL)
       {
-      sem_wait(job_clone_semaphore);
       return(FATAL_ERROR);
       }
 
@@ -1123,7 +1121,6 @@ int create_and_queue_array_subjob(
       clone_mgr.set_unlock_on_exit(false);
       }
 
-    sem_wait(job_clone_semaphore);
     return(FATAL_ERROR);
     }
     
@@ -1137,7 +1134,6 @@ int create_and_queue_array_subjob(
     
     if ((pa = get_array(arrayid.c_str())) == NULL)
       {
-      sem_wait(job_clone_semaphore);
       return(FATAL_ERROR);
       }
 
@@ -1264,9 +1260,21 @@ int perform_array_postprocessing(
 
 
 
-#ifndef CLONE_BATCH_SIZE
-#define CLONE_BATCH_SIZE 256
-#endif /* CLONE_BATCH_SIZE */
+void job_clone_task_wrapper(
+
+  work_task *ptask)
+
+  {
+  char *job_id = (char *)ptask->wt_parm1;
+
+  if (job_id != NULL)
+    {
+    job_clone_wt(job_id);
+    }
+
+  free(ptask->wt_mutex);
+  free(ptask);
+  } // END job_clone_task_wrapper()
 
 
 
@@ -1282,10 +1290,12 @@ void *job_clone_wt(
   svr_job     *template_job;
   char        *jobid;
   int          rc;
-  std::string  prev_job_id;
   char         namebuf[MAXPATHLEN];
   job_array   *pa;
 
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+
+  std::string  prev_job_id;
   std::string	 adjusted_path_jobs;
 
   jobid = (char *)cloned_id;
@@ -1293,15 +1303,7 @@ void *job_clone_wt(
   if (jobid == NULL)
     {
     log_err(ENOMEM, __func__, "Can't malloc");
-    return(NULL);
-    }
-
-  /* increment the job_clone_semaphore so people 
-     know we are making jobs for this array */
-  rc = sem_post(job_clone_semaphore);
-  if (rc)
-    {
-    log_err(-1, __func__, "failed to post job_clone_semaphore");
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
     return(NULL);
     }
 
@@ -1313,12 +1315,21 @@ void *job_clone_wt(
 
     if (template_job != NULL)
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
-    sem_wait(job_clone_semaphore);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
     return(NULL);
     }
 
   mutex_mgr array_mgr(pa->ai_mutex, true);
   mutex_mgr template_job_mgr(template_job->ji_mutex,true);
+
+  if (template_job->ji_routed == false)
+    {
+    // Do not create the array sub-jobs until the job has been routed
+    set_task(WORK_Timed, time(NULL) + ARRAY_ROUTING_RETRY_SECONDS, job_clone_task_wrapper, strdup(jobid), FALSE);
+    free(jobid);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    return(NULL);
+    }
 
   free(jobid);
 
@@ -1349,6 +1360,7 @@ void *job_clone_wt(
 
     if (rc == FATAL_ERROR)
       {
+      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
       return(NULL);
       }
 
@@ -1362,8 +1374,7 @@ void *job_clone_wt(
 
   perform_array_postprocessing(pa);
 
-  unlock_ai_mutex(pa, __func__, "3", LOGLEVEL);
-  sem_wait(job_clone_semaphore);
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
   return(NULL);
   }  /* END job_clone_wt */
 

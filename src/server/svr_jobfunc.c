@@ -550,7 +550,7 @@ int svr_enquejob(
   if (!pjob->ji_is_array_template)
     {
     rc = insert_into_alljobs_by_rank(pque->qu_jobs, pjob, job_id);
-
+    
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
       {
@@ -2463,9 +2463,10 @@ int check_for_complete_req_and_limits(
 
 static int check_queue_job_limit(
 
-    struct svr_job       *const pjob,
-    struct pbs_queue *const pque,
-    char             *const EMsg)
+  svr_job   *const pjob,
+  pbs_queue *const pque,
+  char      *const EMsg)
+
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
   int array_jobs = 0;
