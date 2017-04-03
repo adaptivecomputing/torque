@@ -14,7 +14,7 @@ job::job() : ji_plugin_usage_info(), ji_momstat(0), ji_modified(0), ji_momhandle
              ji_have_nodes_request(false), ji_external_clone(NULL),
              ji_cray_clone(NULL), ji_parent_job(NULL), ji_internal_id(-1),
              ji_being_recycled(false), ji_last_reported_time(0), ji_mod_time(0),
-             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false)
+             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false), ji_routed(true)
 
   {
   memset(this->ji_arraystructid, 0, sizeof(ji_arraystructid));

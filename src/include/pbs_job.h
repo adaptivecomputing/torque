@@ -809,6 +809,7 @@ class job
   unsigned          ji_queue_counted;
   bool              ji_being_deleted;
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
+  bool              ji_routed; // false if the job is an array template that is stuck in a routing queue.
 
   /*
    * fixed size internal data - maintained via "quick save"
