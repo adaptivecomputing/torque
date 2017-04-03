@@ -763,6 +763,7 @@ struct job
   bool              ji_being_deleted;
 #endif/* PBS_MOM */   /* END SERVER ONLY */
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
+  bool              ji_routed; // false if the job is an array template that is stuck in a routing queue.
 
   /*
    * fixed size internal data - maintained via "quick save"
