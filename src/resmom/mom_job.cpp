@@ -1,6 +1,9 @@
 
+#include <stdio.h>
+
 #include "pbs_job.h"
 #include "start_exec.h"
+#include "log.h"
 
 const std::string NUMNODES("numnodes");
 const std::string PORTOUT("portout");
@@ -95,11 +98,22 @@ int mom_job::initialize_joined_job_from_json(
   {
   int rc = PBSE_NONE;
 
-  this->ji_numnodes = job_json[NUMNODES].asInt();
-  this->ji_portout = job_json[PORTOUT].asInt();
-  this->ji_porterr = job_json[PORTERR].asInt();
+  try 
+    {
+    this->ji_numnodes = job_json[NUMNODES].asInt();
+    this->ji_portout = job_json[PORTOUT].asInt();
+    this->ji_porterr = job_json[PORTERR].asInt();
 
-  this->set_attrs_from_json(job_json[ATTRIBUTES]);
+    this->set_attrs_from_json(job_json[ATTRIBUTES]);
+    }
+  catch (...)
+    {
+    snprintf(log_buffer, sizeof(log_buffer),
+      "Couldn't properly initialize the job from the json provided: %s",
+      job_json.toStyledString().c_str());
+    log_err(-1, __func__, log_buffer);
+    rc = -1;
+    }
 
   return(rc);
   } // END initialize_joined_job_from_json()

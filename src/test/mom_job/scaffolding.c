@@ -4,6 +4,9 @@
 
 #include "attribute.h"
 #include "pbs_job.h"
+#include "log.h"
+
+char log_buffer[LOG_BUF_SIZE];
 
 task::~task() {}
 attribute_def job_attr_def[100];
@@ -67,5 +70,14 @@ int attr_to_str(
 
   {
   return(0);
+  }
+
+void log_err(
+
+  int         errnum,  /* I (errno or PBSErrno) */
+  const char *routine, /* I */
+  const char *text)    /* I */
+
+  {
   }
 
