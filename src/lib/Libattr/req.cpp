@@ -1757,7 +1757,8 @@ void req::set_from_string(
     }
 
   current += 2; // move past the ': '
-  this->task_count = strtol(current, &current, 10);
+  if ((this->task_count = strtol(current, &current, 10)) == 0)
+    this->task_count = 1;
 
   while (is_whitespace(*current))
     current++;
