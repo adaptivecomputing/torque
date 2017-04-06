@@ -351,7 +351,7 @@
 ### Macro variables
 %{!?torque_user:%global torque_user root}
 %{!?torque_home:%global torque_home %{_var}/spool/%{project_name}}
-%{!?sendmail_path:%global sendmail_path %{_sbindir}/sendmail}
+%{!?sendmail_path:%global sendmail_path /usr/sbin/sendmail}
 
 # This ensures that the debugging symbols are not stripped
 %define __os_install_post /usr/lib/rpm/brp-compress
